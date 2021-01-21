@@ -1,5 +1,3 @@
-# pylint: disable=undefined-variable
-# we do some setattrs which confuse pylint
 # TODO using doctest may be nice for the atomic validators
 # TODO split in multiple files?
 # TODO do not use underscore for protection but instead specify __all__
@@ -83,6 +81,7 @@ from cdedb.database.constants import FieldAssociations, FieldDatatypes
 from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS
 from cdedb.query import (
     MULTI_VALUE_OPERATORS, NO_VALUE_OPERATORS, VALID_QUERY_OPERATORS, QueryOperators,
+    QueryOrder,
 )
 from cdedb.validationdata import (
     FREQUENCY_LISTS, GERMAN_PHONE_CODES, GERMAN_POSTAL_CODES, IBAN_LENGTHS, ITU_CODES,
@@ -284,17 +283,6 @@ def _allow_None(fun: Callable[..., T]) -> Callable[..., Optional[T]]:
     return new_fun
 
 
-def _create_validators(funs: Iterable[F]) -> None:
-    """This instantiates the validators used in the rest of the code."""
-    for fun in funs:
-        setattr(current_module, "is{}".format(fun.__name__),
-                _create_is_valid(fun))
-        setattr(current_module, "assert{}".format(fun.__name__),
-                _create_assert_valid(fun))
-        setattr(current_module, "check{}".format(fun.__name__),
-                _create_check_valid(fun))
-
-
 def _add_typed_validator(fun: F, return_type: Type[Any] = None) -> F:
     """Mark a typed function for processing into validators."""
     # TODO get rid of dynamic return types for enum
@@ -304,8 +292,6 @@ def _add_typed_validator(fun: F, return_type: Type[Any] = None) -> F:
     if return_type in _ALL_TYPED:
         raise RuntimeError(f"Type {return_type} already registered")
     _ALL_TYPED[return_type] = fun
-    allow_none = _allow_None(fun)
-    setattr(current_module, allow_none.__name__, allow_none)
 
     return fun
 
@@ -1721,22 +1707,22 @@ def _period(
     val = _mapping(val, argname, **kwargs)
 
     # TODO make these public?
-    optional_fields = {
-        'billing_state': Optional[ID],
+    optional_fields: TypeMapping = {
+        'billing_state': Optional[ID],  # type: ignore
         'billing_done': datetime.datetime,
         'billing_count': NonNegativeInt,
-        'ejection_state': Optional[ID],
+        'ejection_state': Optional[ID],  # type: ignore
         'ejection_done': datetime.datetime,
         'ejection_count': NonNegativeInt,
         'ejection_balance': NonNegativeDecimal,
-        'balance_state': Optional[ID],
+        'balance_state': Optional[ID],  # type: ignore
         'balance_done': datetime.datetime,
         'balance_trialmembers': NonNegativeInt,
         'balance_total': NonNegativeLargeDecimal,
     }
 
     return Period(_examine_dictionary_fields(
-        val, {'id': ID}, optional_fields, **kwargs))  # type: ignore
+        val, {'id': ID}, optional_fields, **kwargs))
 
 
 @_add_typed_validator
@@ -1746,13 +1732,13 @@ def _expuls(
     val = _mapping(val, argname, **kwargs)
 
     # TODO make these public?
-    optional_fields = {
-        'addresscheck_state': Optional[ID],
+    optional_fields: TypeMapping = {
+        'addresscheck_state': Optional[ID],  # type: ignore
         'addresscheck_done': datetime.datetime,
         'addresscheck_count': NonNegativeInt,
     }
     return ExPuls(_examine_dictionary_fields(
-        val, {'id': ID}, optional_fields, **kwargs))  # type: ignore
+        val, {'id': ID}, optional_fields, **kwargs))
 
 
 def _LASTSCHRIFT_COMMON_FIELDS() -> Mapping[str, Any]: return {
@@ -2033,9 +2019,12 @@ def _meta_info(
 ) -> MetaInfo:
     val = _mapping(val, argname, **kwargs)
 
-    optional_fields = {key: Optional[str] for key in keys}
+    optional_fields: TypeMapping = {
+        key: Optional[str]  # type: ignore
+        for key in keys
+    }
     val = _examine_dictionary_fields(
-        val, {}, optional_fields, **kwargs)  # type: ignore
+        val, {}, optional_fields, **kwargs)
 
     return MetaInfo(val)
 
@@ -2198,7 +2187,7 @@ def _event(
             else:  # TODO maybe use continue instead of else or move into try block
                 creation = (anid < 0)
                 try:
-                    part = _event_part_or_None(  # type: ignore
+                    part = _ALL_TYPED[Optional[EventPart]](  # type: ignore
                         part, 'parts', creation=creation, **kwargs)
                 except ValidationSummary as e:
                     errs.extend(e)
@@ -2217,7 +2206,7 @@ def _event(
             else:
                 creation = (anid < 0)
                 try:
-                    field = _event_field_or_None(  # type: ignore
+                    field = _ALL_TYPED[Optional[EventField]](  # type: ignore
                         field, 'fields', creation=creation, **kwargs)
                 except ValidationSummary as e:
                     errs.extend(e)
@@ -2235,7 +2224,9 @@ def _event(
             else:
                 creation = (anid < 0)
                 try:
-                    fee_modifier = _event_fee_modifier_or_None(  # type: ignore
+                    fee_modifier = _ALL_TYPED[
+                        Optional[EventFeeModifier]  # type: ignore
+                    ](
                         fee_modifier, 'fee_modifiers', creation=creation, **kwargs)
                 except ValidationSummary as e:
                     errs.extend(e)
@@ -2258,13 +2249,13 @@ def _event(
     return Event(val)
 
 
-_EVENT_PART_COMMON_FIELDS = {
+_EVENT_PART_COMMON_FIELDS: TypeMapping = {
     'title': str,
     'shortname': str,
     'part_begin': datetime.date,
     'part_end': datetime.date,
     'fee': NonNegativeDecimal,
-    'waitlist_field': Optional[ID],
+    'waitlist_field': Optional[ID],  # type: ignore
     'tracks': Mapping,
 }
 
@@ -2280,6 +2271,9 @@ def _event_part(
     """
     val = _mapping(val, argname, **kwargs)
 
+    mandatory_fields: TypeMapping
+    optional_fields: TypeMapping
+
     if creation:
         mandatory_fields = _EVENT_PART_COMMON_FIELDS
         optional_fields = {}
@@ -2287,8 +2281,7 @@ def _event_part(
         mandatory_fields = {}
         optional_fields = _EVENT_PART_COMMON_FIELDS
 
-    val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs)  # type: ignore
+    val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
 
     errs = ValidationSummary()
     if ('part_begin' in val and 'part_end' in val
@@ -2306,10 +2299,10 @@ def _event_part(
                 creation = (anid < 0)
                 try:
                     if creation:
-                        track = _event_track(
+                        track = _ALL_TYPED[EventTrack](
                             track, 'tracks', creation=True, **kwargs)
                     else:
-                        track = _event_track_or_None(  # type: ignore
+                        track = _ALL_TYPED[Optional[EventTrack]](  # type: ignore
                             track, 'tracks', **kwargs)
                 except ValidationSummary as e:
                     errs.extend(e)
@@ -2859,8 +2852,10 @@ def _by_field_datatype(
     :type kind: FieldDatatypes or int
     """
     kind = FieldDatatypes(kind)
-    validator = getattr(current_module, "_{}".format(kind.name))
-    val = validator(val, argname, **kwargs)
+    # using Any seems fine, otherwise this would need a big Union
+    val: Any = _ALL_TYPED[
+        Optional[VALIDATOR_LOOKUP[kind.name]]  # type: ignore
+    ](val, argname, **kwargs)
 
     if kind == FieldDatatypes.date or kind == FieldDatatypes.datetime:
         val = val.isoformat()
@@ -3275,7 +3270,7 @@ def _partial_course(
         for key, entry in val['segments'].items():
             try:
                 new_key = _int(key, 'segments', **{**kwargs, '_convert': True})
-                new_entry = _bool_or_None(  # type: ignore
+                new_entry = _ALL_TYPED[Optional[bool]](  # type: ignore
                     entry, 'segments', **kwargs)
             except ValidationSummary as e:
                 errs.extend(e)
@@ -3560,15 +3555,6 @@ def _mailinglist(
                            (optional_validation_fields, optional_fields)):
         for key, validator in source.items():
             target[key] = validator
-            # if (
-            #     isinstance(validator, str)
-            #     and validator.startswith('[')
-            #     and validator.endswith(']')
-            # ):
-            #     target[key] = _iterable
-            #     iterable_fields.append((key, "_" + validator_str[1:-1]))
-            # else:
-            #     target[key] = getattr(current_module, "_" + validator_str)
     # Optionally remove readonly attributes, take care to keep the original.
     if _allow_readonly:
         val = dict(copy.deepcopy(val))
@@ -3593,18 +3579,6 @@ def _mailinglist(
             "moderators", n_("Must not be empty.")))
 
     errs = ValidationSummary()
-    # for key, validator_str in iterable_fields:
-    #     validator = getattr(current_module, validator_str)
-    #     newarray = []
-    #     if key in val:
-    #         for x in val[key]:
-    #             try:
-    #                 v = validator(x, argname=key, **kwargs)
-    #             except ValidationSummary as e:
-    #                 errs.extend(e)
-    #             else:
-    #                 newarray.append(v)
-    #         val[key] = newarray
 
     if "domain" in val:
         if "ml_type" not in val:
@@ -3803,7 +3777,7 @@ def _ballot(
             else:
                 creation = (anid < 0)
                 try:
-                    candidate = _ballot_candidate_or_None(  # type: ignore
+                    candidate = _ALL_TYPED[Optional[BallotCandidate]](  # type: ignore
                         candidate, 'candidates', creation=creation, **kwargs)
                 except ValidationSummary as e:
                     errs.extend(e)
@@ -4065,7 +4039,7 @@ def _query_input(
 
     fields_of_interest = []
     constraints = []
-    order = []
+    order: List[QueryOrder] = []
     errs = ValidationSummary()
     for field, validator in spec.items():
         # First the selection of fields of interest
@@ -4117,8 +4091,10 @@ def _query_input(
                 # Validate every single value
                 # TODO do not allow None/falsy
                 try:
-                    vv = getattr(current_module, "_{}_or_None".format(
-                        validator))(v, field, **kwargs)
+                    vv: Any = _ALL_TYPED[
+                        Optional[VALIDATOR_LOOKUP[validator]]  # type: ignore
+                    ](
+                        v, field, **kwargs)
                 except ValidationSummary as e:
                     errs.extend(e)
                     continue
@@ -4146,21 +4122,24 @@ def _query_input(
         elif operator in (QueryOperators.match, QueryOperators.unmatch):
             # TODO remove all _or_None in this validator!
             try:
-                value = _non_regex_or_None(  # type: ignore
+                value = _ALL_TYPED[Optional[NonRegex]](  # type: ignore
                     value, field, **kwargs)
             except ValidationSummary as e:
                 errs.extend(e)
                 continue
         elif operator in (QueryOperators.regex, QueryOperators.notregex):
             try:
-                value = _regex_or_None(value, field, **kwargs)  # type: ignore
+                value = _ALL_TYPED[Optional[Regex]](  # type: ignore
+                    value, field, **kwargs)
             except ValidationSummary as e:
                 errs.extend(e)
                 continue
         else:
             try:
-                value = getattr(current_module, "_{}_or_None".format(
-                    validator))(value, field, **kwargs)
+                value = _ALL_TYPED[
+                    Optional[VALIDATOR_LOOKUP[validator]]  # type: ignore
+                ](
+                    value, field, **kwargs)
             except ValidationSummary as e:
                 errs.extend(e)
                 continue
@@ -4179,23 +4158,24 @@ def _query_input(
             continue
 
         try:
-            value = _csv_identifier_or_None(  # type: ignore
-                val["qord_" + postfix], "qord_" + postfix, **kwargs)
+            entry: Optional[CSVIdentifier] = _ALL_TYPED[
+                Optional[CSVIdentifier]  # type: ignore
+            ](val["qord_" + postfix], "qord_" + postfix, **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
             continue
 
-        if not value:
+        if not entry:
             continue
 
         tmp = "qord_" + postfix + "_ascending"
         try:
-            ascending = _bool(val.get(tmp, "True"), tmp, **kwargs)
+            ascending = _ALL_TYPED[bool](val.get(tmp, "True"), tmp, **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
             continue
 
-        order.append((value, ascending))
+        order.append((entry, ascending))
 
     if errs:
         raise errs
@@ -4287,7 +4267,8 @@ def _query(
             value = None
 
         elif operator in MULTI_VALUE_OPERATORS:
-            validator = getattr(current_module, "_{}".format(val.spec[field]))
+            validator = _ALL_TYPED[
+                Optional[VALIDATOR_LOOKUP[val.spec[field]]]]  # type: ignore
             for v in value:
                 try:
                     validator(v, "constraints/{}".format(field),
@@ -4296,16 +4277,21 @@ def _query(
                     errs.extend(e)
         else:
             try:
-                getattr(current_module, "_{}".format(val.spec[field]))(
-                    value, "constraints/{}".format(field),
-                    **{**kwargs, '_convert': False})
+                _ALL_TYPED[
+                    Optional[VALIDATOR_LOOKUP[val.spec[field]]]  # type: ignore
+                ](
+                    value,
+                    "constraints/{}".format(field),
+                    **{**kwargs, '_convert': False}
+                )
             except ValidationSummary as e:
                 errs.extend(e)
 
     # order
     for idx, entry in enumerate(val.order):
         try:
-            entry = _iterable(  # type: ignore
+            # TODO use generic tuple here once implemented 
+            entry = _ALL_TYPED[Iterable](  # type: ignore
                 entry, 'order', **{**kwargs, '_convert': False})
         except ValidationSummary as e:
             errs.extend(e)
@@ -4318,8 +4304,7 @@ def _query(
             errs.append(ValueError("order", msg, {'index': idx}))
         else:
             try:
-                _csv_identifier(field, "order", **
-                                {**kwargs, '_convert': False})
+                _csv_identifier(field, "order", **{**kwargs, '_convert': False})
                 _bool(ascending, "order", **{**kwargs, '_convert': False})
             except ValidationSummary as e:
                 errs.extend(e)
@@ -4387,7 +4372,6 @@ def _enum_validator_maker(
 
     if not internal:
         _add_typed_validator(the_validator, anenum)
-        setattr(current_module, the_validator.__name__, the_validator)
 
     return the_validator
 
@@ -4448,15 +4432,7 @@ def _infinite_enum_validator_maker(anenum: Type[E], name: str = None) -> None:
 
     the_validator.__name__ = name or f"_infinite_enum_{anenum.__name__.lower()}"
     _add_typed_validator(the_validator, InfiniteEnum[anenum])  # type: ignore
-    setattr(current_module, the_validator.__name__, the_validator)
 
 
 for oneenum in ALL_INFINITE_ENUMS:
     _infinite_enum_validator_maker(oneenum)
-
-
-#
-# Above is the real stuff
-#
-
-_create_validators(_ALL_TYPED.values())
