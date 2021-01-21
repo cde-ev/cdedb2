@@ -68,8 +68,6 @@ class MlBaseFrontend(AbstractUserFrontend):
         This will usually be done by a cron job, but sometimes it can be nice to trigger
         this immediately.
         """
-        rs.ignore_validation_errors()
-
         mailinglist_ids = self.mlproxy.list_mailinglists(rs)
 
         code = 1
