@@ -96,8 +96,8 @@ class Application(BaseApp):
                     n_("Refusing to start in debug/offline mode."))
 
     def make_error_page(self, error: werkzeug.exceptions.HTTPException,
-                        request: werkzeug.wrappers.Request, message: str = None,
-                        ) -> Response:
+                        request: werkzeug.wrappers.Request, user: User,
+                        message: str = None) -> Response:
         """Helper to format an error page.
 
         This is similar to
@@ -133,7 +133,7 @@ class Application(BaseApp):
                 'ngettext': self.translations[lang].ngettext,
                 'lang': lang,
                 'notifications': tuple(),
-                'user': User(),
+                'user': user,
                 'values': {},
                 'error': error,
                 'help': message,
@@ -152,26 +152,25 @@ class Application(BaseApp):
 
     @werkzeug.wrappers.Request.application
     def __call__(self, request: werkzeug.wrappers.Request) -> werkzeug.Response:
+        # note time for performance measurement
+        begin = now()
+        user = User()
         try:
-            # note time for performance measurement
-            begin = now()
             sessionkey = request.cookies.get("sessionkey")
             # TODO remove ml script key backwards compatibility code
             apitoken = (request.headers.get("X-CdEDB-API-Token")
                         or request.headers.get("MLSCRIPTKEY"))
             urls = self.urlmap.bind_to_environ(request.environ)
-            endpoint, args = urls.match()
+
             if apitoken:
                 sessionkey = None
-                user = self.sessionproxy.lookuptoken(apitoken,
-                                                        request.remote_addr)
+                user = self.sessionproxy.lookuptoken(apitoken, request.remote_addr)
                 # Error early to make debugging easier.
                 if 'droid' not in user.roles:
                     raise werkzeug.exceptions.Forbidden(
                         "API token invalid.")
             else:
-                user = self.sessionproxy.lookupsession(sessionkey,
-                                                        request.remote_addr)
+                user = self.sessionproxy.lookupsession(sessionkey, request.remote_addr)
 
                 # Check for timed out / invalid sessionkey
                 if sessionkey and not user.persona_id:
@@ -196,6 +195,9 @@ class Application(BaseApp):
                                                     "error", n_("Session expired."))])
                     ret.set_cookie("displaynote", notifications)
                     return ret
+
+            endpoint, args = urls.match()
+
             coders: Dict[str, Callable[..., Any]] = {
                 "encode_parameter": self.encode_parameter,
                 "decode_parameter": self.decode_parameter,
@@ -288,8 +290,7 @@ class Application(BaseApp):
                 rs._conn.close()
         except QuotaException as e:
             return self.make_error_page(
-                e,
-                request,
+                e, request, user,
                 n_("You reached the internal limit for user profile views. "
                    "This is a privacy feature to prevent users from cloning "
                    "the address database. Unfortunatetly, this may also yield "
@@ -298,12 +299,12 @@ class Application(BaseApp):
         except werkzeug.routing.RequestRedirect as e:
             return e.get_response(request.environ)
         except werkzeug.exceptions.HTTPException as e:
-            return self.make_error_page(e, request)
+            return self.make_error_page(e, request, user)
         except psycopg2.extensions.TransactionRollbackError as e:
             # Serialization error
             return self.make_error_page(
                 werkzeug.exceptions.InternalServerError(str(e.args)),
-                request,
+                request, user,
                 n_("A modification to the database could not be executed due "
                    "to simultaneous access. Please reload the page to try "
                    "again."))
@@ -328,7 +329,7 @@ class Application(BaseApp):
             # generic errors
             # TODO add original_error after upgrading to werkzeug 1.0
             return self.make_error_page(
-                werkzeug.exceptions.InternalServerError(repr(e)), request)
+                werkzeug.exceptions.InternalServerError(repr(e)), request, user)
 
     def get_locale(self, request: werkzeug.wrappers.Request) -> str:
         """
