@@ -929,8 +929,7 @@ class CoreFrontend(AbstractFrontend):
         # which potentially are no subscriber yet.
         if mailinglist:
             pol = const.MailinglistInteractionPolicy
-            allowed_pols = {pol.opt_out, pol.opt_in, pol.moderated_opt_in,
-                            pol.invitation_only}
+            allowed_pols = {pol.subscribable, pol.moderated_opt_in, pol.invitation_only}
             data = self.mlproxy.filter_personas_by_policy(
                 rs, mailinglist, data, allowed_pols)
 

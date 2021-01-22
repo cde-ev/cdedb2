@@ -17,7 +17,8 @@ from typing import Union
 from cdedb.script import setup
 
 
-def execute_script(input: Union[Path, str], *, dbuser: str, dbpassword: str, dbname: str):
+def execute_script(sql_input: Union[Path, str], *, dbuser: str, dbpassword: str,
+                   dbname: str) -> None:
     with setup(
         persona_id=-1,
         dbuser=dbuser,
@@ -28,11 +29,11 @@ def execute_script(input: Union[Path, str], *, dbuser: str, dbpassword: str, dbn
         conn.set_session(autocommit=True)
 
         with conn.cursor() as curr:
-            if isinstance(input, Path):
-                with input.open() as f:
-                    input = f.read()
+            if isinstance(sql_input, Path):
+                with sql_input.open() as f:
+                    sql_input = f.read()
 
-            curr.execute(input)
+            curr.execute(sql_input)
 
 
 if __name__ == "__main__":

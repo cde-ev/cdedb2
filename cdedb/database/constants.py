@@ -227,13 +227,11 @@ _DOMAIN_STR_MAP: Dict[MailinglistDomain, str] = {
 @enum.unique
 class MailinglistInteractionPolicy(enum.IntEnum):
     """Regulate (un)subscriptions to mailinglists."""
-    #: everybody is subscribed (think CdE-all)
-    mandatory = 1
-    opt_out = 2  #:
-    opt_in = 3  #:
-    #: everybody may subscribe, but only after approval
+    #: user may subscribe
+    subscribable = 3
+    #: user may subscribe, but only after approval
     moderated_opt_in = 4
-    #: nobody may subscribe by themselves
+    #: user may not subscribe by themselves
     invitation_only = 5
     #: only implicit subscribers allowed
     implicits_only = 6
