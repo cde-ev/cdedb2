@@ -1205,7 +1205,7 @@ class CoreBackend(AbstractBackend):
             )
             """
             event_end = unwrap(self.query_one(rs, query, (persona_id, persona_id)))
-            if event_end and event_end > cutoff.date():
+            if event_end and event_end > cutoff:
                 return False
 
             # Check assembly involvement
