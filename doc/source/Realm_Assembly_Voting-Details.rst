@@ -174,7 +174,7 @@ Classical Votes
 
 In classical votes, the rejection option behaves as **rejection of all candidates**.
 
-If a voter choose the ``_bar_`` option, all other individual votes are lost.
+If a voter chooses the ``_bar_`` option, all other individual votes are lost.
 So, the following is a legal vote
 
 * |uncheck| Anton
