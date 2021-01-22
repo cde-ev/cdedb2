@@ -14,12 +14,12 @@ the user:
 * Preferential Votes
 * Classical Votes
 
-Internally, we handle them equal, so we have only one complex facility of
-determining results and not two which are used in parallel.
-
 Additionally, we allow for both voting types to include an optional rejection
 option into the vote. So, we gain in total four different combinations of vote
 settings.
+
+Internally, we model classical votes as preferential ones, so we have only one
+complex facility of determining the result of a ballot and not two used in parallel.
 
 
 Preferential Votes
@@ -33,14 +33,16 @@ A sample preferential vote string might look as follows::
 
   Charly=Daniel>Anton>Berta=Nina>Janis
 
-In our example, there exists four different level of preferences:
+In our example, there exists four different levels of preferences:
 Charly and Daniel got equally the highest preference, while Anton gets lower
 preference. Berta and Nina get both even lower preference than Anton, but are
 still higher preferred than Janis, who got the lowest preference in this vote.
 
-Note that the steps between every two levels of preference are *equidistant*; there
-is no way you can rank Berta and Nina lower to Anton than you can rank Charly
-and Daniel higher to Anton; both distances are the same.
+Note that the preferential vote is a purely ordinal ranking and does not allow
+to specify a cardinality between the candidates. In other words, you may only
+specify in which relative order you prefer each level of candidates, but you
+can not describe which specific preference about a level is most important to
+you.
 
 If you want to *abstain* from a vote, meaning none of the candidates were more
 preferred by you than any other, you put them all equal to each other::
@@ -64,7 +66,7 @@ rejection option. We call this "*winning* or *loosing* against the bar"
 respectively.
 
 You could also rank candidates equal to the ``_bar_``. In this case, your vote
-will be threaten as abstention with regard to those candidates.
+will be treated as abstention with regard to those candidates.
 
 So, also the following is a legal preferential vote string with rejection option::
 
@@ -84,11 +86,12 @@ the vote will be stored in the database. After the voting period ends, we need
 to determine a result per ballot taking all given votes into account.
 
 To solve this task, we use the `Schulze Method`_ internally. We therefore get
-an overall preference string reflecting the result of the voting. Note that we
-do not have equidistant steps between candidate levels anymore. Instead,
-the method gives us two numbers of votes for each level, representing how many
-voters ranked this level higher than the next lower level (Pro Votes) and how
-many voters ranked this level lower than the next lower level (Contra Votes).
+an overall preference string reflecting the result of the voting.
+
+Additionally, we provide some extra information per level of preference:
+We count how many votes ranked a level A higher than the next lower one
+(calling this Pro Votes for level A) and, in contrast, how many votes ranked
+level A lower than the next lower level (calling this Contra Votes for level A).
 
 Presentation of result
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -98,23 +101,23 @@ the important information of the vote, including the candidates, each given vote
 and the combined preference string, which can be used to verify the result(
 see :doc:`Realm_Assembly_Voting-Procedere` for more information).
 
-We show the combined preference and the Pro and Contra counts for level of
+We show the combined preference and the Pro and Contra counts for each level of
 preference to the user.
 
 
 Classical Vote
 --------------
 
-In classical votes, the voter gets a specified amount of choices, which can be
-distributed over all candidates. Only one choice per candidate is allowed,
-not given choices are lost.
+In classical votes, the voter gets a specified amount of *individual votes*,
+which can be distributed over all candidates. Only one vote per candidate is
+allowed, unused votes are lost.
 
 Internal, we map classical votes into preferential votes. Since we only allow a
-maximum of one choice per candidate and give no possibility of ranking between
+maximum of one vote per candidate and give no possibility of ranking between
 candidates, we got at most two preference levels of candidates:
 Those which were chosen, and those which were not chosen.
 
-Lets take the following example ballot with **3 choices per voter** and the
+Lets take the following example ballot with **3 individual votes** and the
 following candidates:
 
 * |uncheck| Anton
@@ -133,7 +136,7 @@ will be mapped to the preference string::
 
   Anton=Berta=Daniel>Charly
 
-We may not assign all choices, so also the following would be a legal vote
+We may not assign all individual votes, so also the following would be a legal vote
 
 * |uncheck| Anton
 * |check| Berta
@@ -144,7 +147,7 @@ which will be mapped to the string::
 
   Berta>Anton=Charly=Daniel
 
-To abstain, we simply do not assign any choice at all, so this would be
+To abstain, we simply do not assign any individual vote at all, so this would be
 
 * |uncheck| Anton
 * |uncheck| Berta
@@ -156,13 +159,13 @@ and will be mapped to the string::
   Anton=Berta=Charly=Daniel
 
 .. warning::
-  Since we are allowed to assign any number of choices from *0 (abstaining)*
+  Since we are allowed to assign any number of individual votes from *0 (abstaining)*
   to *the total number of candidates*, we can not distinguish between
   *abstaining* on the one hand and *voting for all candidates* on the other hand.
 
-To circumvent this problem, we introduce an **implicit _bar_** option into each
-vote. Implicit means here, the voter can not chose the ``_bar_`` option, but the
-vote will be treated as if it was available and simply not chosen.
+  To circumvent this problem, we introduce an **implicit _bar_** option into each
+  vote. Implicit means here, the voter can not chose the ``_bar_`` option, but the
+  vote will be treated as if it was available and simply not chosen.
 
 With employing this trick, we can distinguish between those two voting
 scenarios, since voting for all candidates
@@ -194,8 +197,8 @@ As mentioned above, we allow also a rejection options in classical votes. This
 is also denoted as ``_bar_`` but has a slightly different semantically meaning:
 It behaves as option to **reject all candidates**.
 
-I the a voter choose the ``_bar_`` option, all other choices are lost. So, the
-following is a legal vote
+I the a voter choose the ``_bar_`` option, all other individual votes are lost.
+So, the following is a legal vote
 
 * |uncheck| Anton
 * |uncheck| Berta
@@ -243,7 +246,7 @@ the important information of the vote, including the candidates, each given vote
 and the combined preference string, which can be used to verify the result(
 see :doc:`Realm_Assembly_Voting-Procedere` for more information).
 
-We show the combined preference and the Pro counts for level of preference to
+We show the combined preference and the Pro counts for each level of preference to
 the user.
 
 .. _Schulze Method: https://en.wikipedia.org/w/index.php?title=Schulze_method&oldid=904460701
