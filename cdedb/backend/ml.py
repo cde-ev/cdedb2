@@ -1449,14 +1449,15 @@ class MlBackend(AbstractBackend):
         with Atomizer(rs):
             # check the source user is ml_only, no admin and not archived
             source = self.core.get_ml_user(rs, source_persona_id)
+            if not self.core.verify_persona(rs, source_persona_id, allowed_roles={'ml'}):
+                raise RuntimeError(n_("Source User must be ml realm only."))
             if source['is_archived'] or source['is_purged']:
                 raise RuntimeError(n_("Source User is not accessible."))
             if any(source[admin_bit] for admin_bit in ADMIN_KEYS):
                 raise RuntimeError(n_("Source User is admin and can not be merged."))
 
             # check the target user is a valid persona
-            if not self.core.verify_persona(rs, target_persona_id):
-                # TODO add required_roles=is_ml_realm ?
+            if not self.core.verify_persona(rs, target_persona_id, required_roles={'ml'}):
                 raise RuntimeError(n_("Target User is no valid ml user."))
 
             # retrieve all mailinglists they are subscribed to
