@@ -408,15 +408,11 @@ class CdEDBTest(BasicTest):
     conf: ClassVar[Config]
 
     def setUp(self) -> None:
-        try:
-            subprocess.check_call(("make", "sample-data-test-shallow"),
-                                  stdout=subprocess.DEVNULL,
-                                  stderr=subprocess.DEVNULL)
-        except subprocess.CalledProcessError as e:
-            if e.returncode == -signal.SIGINT:
-                self.skipTest("Setup was interrupted.")
-            else:
-                raise
+        # Start the call in a new session, so that a SIGINT does not interrupt this.
+        subprocess.check_call(("make", "sample-data-test-shallow"),
+                              stdout=subprocess.DEVNULL,
+                              stderr=subprocess.DEVNULL,
+                              start_new_session=True)
         super(CdEDBTest, self).setUp()
 
 
