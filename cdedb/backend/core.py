@@ -33,7 +33,7 @@ from cdedb.common import (
     DefaultReturnCode, DeletionBlockers, Error, PathLike, PrivilegeError, PsycoJson,
     QuotaException, Realm, RequestState, Role, User, decode_parameter, encode_parameter,
     extract_realms, extract_roles, get_hash, glue, implied_realms, merge_dicts, n_, now,
-    privilege_tier, unwrap, xsorted,
+    privilege_tier, unwrap, xsorted, ALL_ROLES
 )
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -1980,20 +1980,26 @@ class CoreBackend(AbstractBackend):
     @access("persona")
     def verify_personas(self, rs: RequestState, persona_ids: Collection[int],
                         required_roles: Collection[Role] = None,
+                        allowed_roles: Collection[Role] = None,
                         introspection_only: bool = True) -> bool:
         """Check whether certain ids map to actual (active) personas.
 
         Note that this will return True for an empty set of ids.
 
-        :param required_roles: If given check that all personas have
-          these roles.
+        :param required_roles: If given, check that all personas have these roles.
+        :param allowed_roles: If given, check that all personas roles are a subset of
+            these.
         """
         persona_ids = affirm_set(vtypes.ID, persona_ids)
         required_roles = required_roles or tuple()
         required_roles = affirm_set(str, required_roles)
+        allowed_roles = allowed_roles or set(ALL_ROLES)
+        # add always allowed roles for personas
+        allowed_roles |= {"persona", "anonymous"}
         roles = self.get_roles_multi(rs, persona_ids, introspection_only)
         return len(roles) == len(persona_ids) and all(
-            value >= required_roles for value in roles.values())
+            value >= required_roles for value in roles.values()) and all(
+            allowed_roles >= value for value in roles.values())
 
     class _VerifyPersonaProtocol(Protocol):
         def __call__(self, rs: RequestState, anid: int,
