@@ -898,6 +898,7 @@ class MlBackend(AbstractBackend):
     def do_subscription_action(self, rs: RequestState,
                                action: SubscriptionActions, mailinglist_id: int,
                                persona_id: Optional[int] = None,
+                               change_note: Optional[str] = None,
                                ) -> DefaultReturnCode:
         """Provide a single entry point for all subscription actions.
 
@@ -910,6 +911,7 @@ class MlBackend(AbstractBackend):
         """
         action = affirm(SubscriptionActions, action)
         sa = SubscriptionActions
+        change_note = affirm_optional(str, change_note)
 
         # 1: Check if everything is alright – current state comes later
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
@@ -954,7 +956,7 @@ class MlBackend(AbstractBackend):
                 ret = self._remove_subscription(rs, datum)
             if ret and code:
                 self.ml_log(
-                    rs, code, datum['mailinglist_id'], datum['persona_id'])
+                    rs, code, datum['mailinglist_id'], datum['persona_id'], change_note)
 
             return ret
 
