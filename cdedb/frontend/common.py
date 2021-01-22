@@ -1686,8 +1686,10 @@ class Worker(threading.Thread):
     def __init__(self, conf: Config, tasks: Union[WorkerTarget, Sequence[WorkerTarget]],
                  rs: RequestState, *args: Any, **kwargs: Any) -> None:
         """
-        :param task: Will be called with exactly one argument (the cloned
-          request state) until it returns something falsy.
+        :param tasks: Every task will called with the cloned request state as a single
+            argument.
+        :param args: This will be passed to `threading.Thread` but it will be ignored.
+        :param kwargs: This will be passed to `threading.Thread` but it will be ignored.
         """
         # noinspection PyProtectedMember
         rrs = RequestState(
@@ -1703,18 +1705,17 @@ class Worker(threading.Thread):
         rrs._conn = connpool[roles_to_db_role(rs.user.roles)]
         logger = logging.getLogger("cdedb.frontend.worker")
 
-        def make_task_infos() -> Tuple[TaskInfo, ...]:
+        def make_task_infos() -> List[TaskInfo]:
             def get_doc(task: WorkerTarget) -> str:
                 return task.__doc__.splitlines()[0] if task.__doc__ else ""
 
             if isinstance(tasks, Sequence):
-                return tuple(TaskInfo(task, task.__name__, get_doc(task))
-                             for task in tasks)
-            return (TaskInfo(tasks, tasks.__name__, get_doc(tasks)),)
+                return [TaskInfo(task, task.__name__, get_doc(task)) for task in tasks]
+            return [TaskInfo(tasks, tasks.__name__, get_doc(tasks))]
 
         task_infos = make_task_infos()
 
-        def runner() -> None:
+        def runner(*args: Any, **kwargs: Any) -> None:
             """Implement the actual loop running the task inside the Thread."""
             if len(task_infos) > 1:
                 task_queue = "\n".join(f"'{n}': {doc}" for _, n, doc in task_infos)
