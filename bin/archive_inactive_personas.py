@@ -50,7 +50,14 @@ with Script(rs, dry_run=DRY_RUN):
     print(f"{len(archive_error)} archivals failed with an archive error.")
     print(f"{len(other_error)} archivals failed for an unknown reason.")
 
-    print("Here comes a list of archive errors:")
-    for persona_id, e in archive_error:
-        print(persona_id, e)
-        print()
+    if archive_error:
+        print("Here comes a list of archive errors:")
+        for persona_id, e in archive_error:
+            print(persona_id, e)
+            print()
+
+    if other_error:
+        print("Here comes a list of other archival fails:")
+        for persona_id in other_error:
+            print(persona_id)
+            print()
