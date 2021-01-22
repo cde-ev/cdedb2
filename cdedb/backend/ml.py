@@ -1475,6 +1475,9 @@ class MlBackend(AbstractBackend):
             msg_constructive = f"User {source_persona_id} mit diesem Account gemergt."
             msg_destructive = f"Account in User {target_persona_id} gemergt."
             for ml_id, state in source_subscriptions.items():
+                # get the adress the source is subscribed to the mailinglist
+                address = self.get_subscription_address(
+                    rs, ml_id, persona_id=source_persona_id)
                 # delegate handling of implicit subscription states
                 if state == SS.implicit:
                     code *= self.write_subscription_states(rs, ml_id)
@@ -1487,6 +1490,9 @@ class MlBackend(AbstractBackend):
                     rs, action=state_to_destructive_action[state],
                     mailinglist_id=ml_id, persona_id=source_persona_id,
                     change_note=msg_destructive)
+                # set the address of the source as the address of the target for this ml
+                code *= self.set_subscription_address(
+                    rs, ml_id, persona_id=target_persona_id, email=address)
 
             mls = self.get_mailinglists(rs, source_moderates)
             for ml_id in source_moderates:
