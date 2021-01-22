@@ -369,8 +369,7 @@ class AssemblyBackend(AbstractBackend):
 
         # Rule out people who can not participate at any assembly to prevent
         # privilege errors
-        if (persona_id == rs.user.persona_id and
-                "assembly" not in rs.user.roles):
+        if persona_id == rs.user.persona_id and "assembly" not in rs.user.roles:
             return False
 
         # ml_admins are allowed to do this to be able to manage
