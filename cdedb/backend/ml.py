@@ -22,7 +22,7 @@ from cdedb.common import (
     MAILINGLIST_FIELDS, MOD_ALLOWED_FIELDS, PRIVILEGED_MOD_ALLOWED_FIELDS, CdEDBLog,
     CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, PathLike,
     PrivilegeError, RequestState, SubscriptionActions, SubscriptionError, glue,
-    implying_realms, make_proxy, mixed_existence_sorter, n_, now, unwrap,
+    implying_realms, make_proxy, mixed_existence_sorter, n_, now, unwrap, ADMIN_KEYS,
 )
 from cdedb.database.connection import Atomizer
 from cdedb.ml_type_aux import MLType, MLTypeLike
@@ -1417,6 +1417,93 @@ class MlBackend(AbstractBackend):
         query = "SELECT COUNT(*) AS num FROM ml.mailinglists WHERE address = %s"
         data = self.query_one(rs, query, (address,))
         return bool(unwrap(data))
+
+    # both roles are required
+    @access("ml_admin")
+    @access("core_admin")
+    def merge_accounts(self, rs: RequestState, source_persona_id: vtypes.ID,
+                       target_persona_id: vtypes.ID) -> DefaultReturnCode:
+        source_persona_id = affirm(vtypes.ID, source_persona_id)
+        target_persona_id = affirm(vtypes.ID, target_persona_id)
+
+        SS = const.SubscriptionStates
+        state_to_constructive_action: Dict[SS, SubscriptionActions] = {
+            SS.subscribed: SubscriptionActions.add_subscriber,
+            SS.unsubscribed: SubscriptionActions.remove_subscriber,
+            SS.subscription_override: SubscriptionActions.add_subscription_override,
+            SS.unsubscription_override: SubscriptionActions.add_unsubscription_override,
+            # TODO can a moderator do this for an user?
+            SS.pending: SubscriptionActions.request_subscription,
+            # This will be adjusted when calling write_subscription_states at the end
+            # SS.implicit: None,
+        }
+        state_to_destructive_action: Dict[SS, SubscriptionActions] = {
+            SS.subscribed: SubscriptionActions.remove_subscriber,
+            SS.unsubscribed: SubscriptionActions.remove_subscriber,
+            SS.subscription_override: SubscriptionActions.remove_subscription_override,
+            SS.unsubscription_override: SubscriptionActions.remove_unsubscription_override,
+            SS.pending: SubscriptionActions.deny_request,
+            # This will be adjusted when calling write_subscription_states at the end
+            # SS.implicit: None,
+        }
+
+        with Atomizer(rs):
+            # check the source user is ml_only, no admin and not archived
+            source = self.core.get_ml_user(rs, source_persona_id)
+            if source['is_archived'] or source['is_purged']:
+                raise RuntimeError(n_("Source User is not accessible."))
+            if any(source[admin_bit] for admin_bit in ADMIN_KEYS):
+                raise RuntimeError(n_("Source User is admin and can not be merged."))
+
+            # check the target user is a valid persona
+            if not self.core.verify_persona(rs, target_persona_id):
+                # TODO add required_roles=is_ml_realm ?
+                raise RuntimeError(n_("Target User is no valid ml user."))
+
+            # retrieve all mailinglists they are subscribed to
+            # TODO restrict to active mailinglists?
+            source_subscriptions = self.get_user_subscriptions(rs, source_persona_id)
+            target_subscriptions = self.get_user_subscriptions(rs, target_persona_id)
+
+            # retrieve all mailinglists moderated by the source
+            source_moderates = self.moderator_info(rs, source_persona_id)
+
+            if set(source_subscriptions) & set(target_subscriptions):
+                raise ValueError(n_("Both users are related to the same mailinglists"))
+
+            code = 1
+            msg_constructive = f"User {source_persona_id} mit diesem Account gemergt."
+            msg_destructive = f"Account in User {target_persona_id} gemergt."
+            for ml_id, state in source_subscriptions.items():
+                # delegate handling of implicit subscription states
+                if state == SS.implicit:
+                    code *= self.write_subscription_states(rs, ml_id)
+                    continue
+                code *= self.do_subscription_action(
+                    rs, action=state_to_constructive_action[state],
+                    mailinglist_id=ml_id, persona_id=target_persona_id,
+                    change_note=msg_constructive)
+                code *= self.do_subscription_action(
+                    rs, action=state_to_destructive_action[state],
+                    mailinglist_id=ml_id, persona_id=source_persona_id,
+                    change_note=msg_destructive)
+
+            mls = self.get_mailinglists(rs, source_moderates)
+            for ml_id in source_moderates:
+                current_moderators: set = mls[ml_id]["moderators"]
+                new_moderators = (
+                    (current_moderators - {source_persona_id}) | {target_persona_id})
+                code *= self.set_moderators(rs, ml_id, new_moderators)
+
+            # at last, deactivate the source user
+            data = {
+                'id': source_persona_id,
+                'is_active': False,
+            }
+            msg = f"Account in User {target_persona_id} gemergt."
+            code *= self.core.change_persona(rs, data, may_wait=False, change_note=msg)
+
+        return code
 
     # Everythin beyond this point is for communication with the mailinglist
     # software, and should normally not be used otherwise.
