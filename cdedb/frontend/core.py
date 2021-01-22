@@ -218,7 +218,7 @@ class CoreFrontend(AbstractFrontend):
 
     @access("anonymous", modi={"POST"})
     @REQUESTdata("username", "password", "#wants")
-    def login(self, rs: RequestState, username: vtypes.PrintableASCII,
+    def login(self, rs: RequestState, username: vtypes.Email,
               password: str, wants: Optional[str]) -> Response:
         """Create session.
 
