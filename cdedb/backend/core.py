@@ -1160,7 +1160,7 @@ class CoreBackend(AbstractBackend):
             * The persona having logged in in the last two years.
             * The persona having been changed/created in the last two years.
             * The persona being involved (orga/registration) with any recent event.
-            * The persona being involved (preside/attendee) with an active assembly.
+            * The persona being involved (presider/attendee) with an active assembly.
             * The persona being explicitly subscribed to any mailinglist.
         """
         persona_id = affirm(vtypes.ID, persona_id)
