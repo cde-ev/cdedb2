@@ -2094,7 +2094,7 @@ class CdEFrontend(AbstractUserFrontend):
                          'Subject': "Inaktivität in Deinem CdE-Datenbank-Account"},
                         {'persona': persona,
                          'management': self.conf["MANAGEMENT_ADDRESS"]})
-                    period_update['archival_nofication_count'] = \
+                    period_update['archival_notification_count'] = \
                         period['archival_notification_count'] + 1
                 if testrun:
                     return False
