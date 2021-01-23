@@ -1,16 +1,25 @@
 import enum
+import itertools
 from collections import OrderedDict
-from typing import TYPE_CHECKING, Collection, Dict, List, Set, Tuple, Type, Union
+from typing import (
+    TYPE_CHECKING, Any, Collection, Dict, List, Mapping, Optional, Set, Tuple, Type,
+    Union,
+)
+
+from typing_extensions import Literal
 
 import cdedb.database.constants as const
+import cdedb.validationtypes as vtypes
 from cdedb.common import CdEDBObject, RequestState, User, extract_roles, n_
 from cdedb.database.constants import (
     MailinglistDomain, MailinglistInteractionPolicy, MailinglistTypes,
+    RegistrationPartStati,
 )
 from cdedb.query import Query, QueryOperators
 
 MIPol = Union[MailinglistInteractionPolicy, None]
 MIPolMap = Dict[int, MIPol]
+TypeMapping = Mapping[str, Type[Any]]
 
 
 class BackendContainer:
@@ -55,8 +64,8 @@ class AllMembersImplicitMeta:
 class EventAssociatedMeta:
     """Metaclass for all event associated mailinglists."""
     # Allow empty event_id to mark legacy event-lists.
-    mandatory_validation_fields = {
-        ("event_id", "id_or_None"),
+    mandatory_validation_fields: TypeMapping = {
+        "event_id": Optional[vtypes.ID]  # type: ignore
     }
 
     @classmethod
@@ -111,18 +120,22 @@ class GeneralMailinglist:
     allow_unsub: bool = True
 
     # Additional fields for validation. See docstring for details.
-    mandatory_validation_fields: Set[Tuple[str, str]] = set()
-    optional_validation_fields: Set[Tuple[str, str]] = set()
+    mandatory_validation_fields: TypeMapping = {}
+    optional_validation_fields: TypeMapping = {}
 
     @classmethod
-    def get_additional_fields(cls) -> Set[Tuple[str, str]]:
-        ret = set()
-        for field, argtype in (cls.mandatory_validation_fields
-                               | cls.optional_validation_fields):
-            if argtype.startswith('[') and argtype.endswith(']'):
-                ret.add((field, "[str]"))
+    def get_additional_fields(cls) -> Mapping[
+        str, Union[Literal["str"], Literal["[str]"]]
+    ]:
+        ret: Dict[str, Union[Literal["str"], Literal["[str]"]]] = {}
+        for field, argtype in {
+            **cls.mandatory_validation_fields,
+            **cls.optional_validation_fields,
+        }.items():
+            if getattr(argtype, "__origin__", None) is list:
+                ret[field] = "[str]"
             else:
-                ret.add((field, "str"))
+                ret[field] = "str"
         return ret
 
     viewer_roles: Set[str] = {"ml"}
@@ -345,9 +358,10 @@ class RestrictedTeamMailinglist(TeamMeta, MemberInvitationOnlyMailinglist):
 
 
 class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
-    mandatory_validation_fields = (
-            EventAssociatedMeta.mandatory_validation_fields
-            | {("registration_stati", "[enum_registrationpartstati]")})
+    mandatory_validation_fields: TypeMapping = {
+            **EventAssociatedMeta.mandatory_validation_fields,
+            "registration_stati": List[RegistrationPartStati],
+    }
 
     @classmethod
     def is_privileged_moderator(cls, rs: RequestState, bc: BackendContainer,
@@ -477,9 +491,7 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
 
 
 class AssemblyAssociatedMailinglist(AssemblyMailinglist):
-    mandatory_validation_fields = {
-        ("assembly_id", "id"),
-    }
+    mandatory_validation_fields = {"assembly_id": vtypes.ID}
 
     @classmethod
     def is_privileged_moderator(cls, rs: RequestState, bc: BackendContainer,
@@ -653,5 +665,7 @@ TYPE_MAP = {
     MailinglistTypes.cdelokal: CdeLokalMailinglist,
 }
 
-ADDITIONAL_TYPE_FIELDS = set.union(*(atype.get_additional_fields()
-                                     for atype in TYPE_MAP.values()))
+ADDITIONAL_TYPE_FIELDS = dict(itertools.chain.from_iterable(
+    atype.get_additional_fields().items()
+    for atype in TYPE_MAP.values()
+))

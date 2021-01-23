@@ -5,7 +5,7 @@
 import collections
 import copy
 from datetime import datetime
-from typing import Any, Collection, Dict, Optional, cast
+from typing import Any, Collection, Dict, Optional, Set, cast
 
 import werkzeug
 from werkzeug import Response
@@ -19,7 +19,7 @@ from cdedb.common import (
 )
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, calculate_db_logparams, calculate_loglinks,
-    cdedbid_filter as cdedbid, check_validation_typed as check, csv_output,
+    cdedbid_filter as cdedbid, check_validation as check, csv_output,
     keydictsort_filter, mailinglist_guard, periodic,
 )
 from cdedb.frontend.uncommon import AbstractUserFrontend
@@ -86,8 +86,8 @@ class MlBaseFrontend(AbstractUserFrontend):
         return super().create_user(rs, data, ignore_warnings)
 
     @access("core_admin", "ml_admin")
-    @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
-    def user_search(self, rs: RequestState, download: str,
+    @REQUESTdata("download", "is_search")
+    def user_search(self, rs: RequestState, download: Optional[str],
                     is_search: bool) -> Response:
         """Perform search."""
         spec = copy.deepcopy(QUERY_SPECS['qview_persona'])
@@ -179,7 +179,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             'assemblies': assemblies})
 
     @access("ml")
-    @REQUESTdata(("ml_type", "enum_mailinglisttypes_or_None"))
+    @REQUESTdata("ml_type")
     def create_mailinglist_form(self, rs: RequestState,
                                 ml_type: Optional[const.MailinglistTypes]) -> Response:
         """Render form."""
@@ -198,7 +198,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                     ("ml_type", ValueError(n_(
                         "May not create mailinglist of this type."))))
             available_domains = atype.domains
-            additional_fields = [f for f, _ in atype.get_additional_fields()]
+            additional_fields = atype.get_additional_fields().keys()
             if "event_id" in additional_fields:
                 event_ids = self.eventproxy.list_events(rs)
                 events = self.eventproxy.get_events(rs, event_ids)
@@ -219,12 +219,11 @@ class MlBaseFrontend(AbstractUserFrontend):
     @REQUESTdatadict(
         "title", "local_part", "domain", "description", "mod_policy",
         "attachment_policy", "ml_type", "subject_prefix",
-        "maxsize", "is_active", "notes", *ADDITIONAL_TYPE_FIELDS)
-    @REQUESTdata(("ml_type", "enum_mailinglisttypes"),
-                 ("moderators", "cdedbid_csv_list"))
+        "maxsize", "is_active", "notes", *ADDITIONAL_TYPE_FIELDS.items())
+    @REQUESTdata("ml_type", "moderators")
     def create_mailinglist(self, rs: RequestState, data: Dict[str, Any],
                            ml_type: const.MailinglistTypes,
-                           moderators: Collection[int]) -> Response:
+                           moderators: vtypes.CdedbIDList) -> Response:
         """Make a new list."""
         data["moderators"] = moderators
         data['ml_type'] = ml_type
@@ -256,18 +255,14 @@ class MlBaseFrontend(AbstractUserFrontend):
             'mailinglist_id': new_id})
 
     @access("ml")
-    @REQUESTdata(("codes", "[int]"), ("mailinglist_id", "id_or_None"),
-                 ("persona_id", "cdedbid_or_None"),
-                 ("submitted_by", "cdedbid_or_None"),
-                 ("change_note", "str_or_None"),
-                 ("offset", "int_or_None"),
-                 ("length", "positive_int_or_None"),
-                 ("time_start", "datetime_or_None"),
-                 ("time_stop", "datetime_or_None"))
+    @REQUESTdata("codes", "mailinglist_id", "persona_id", "submitted_by",
+                 "change_note", "offset", "length", "time_start", "time_stop")
     def view_log(self, rs: RequestState, codes: Collection[const.MlLogCodes],
-                 mailinglist_id: Optional[int], offset: Optional[int],
-                 length: Optional[int], persona_id: Optional[int],
-                 submitted_by: Optional[int], change_note: Optional[str],
+                 mailinglist_id: Optional[vtypes.ID], offset: Optional[int],
+                 length: Optional[vtypes.PositiveInt],
+                 persona_id: Optional[vtypes.CdedbID],
+                 submitted_by: Optional[vtypes.CdedbID],
+                 change_note: Optional[str],
                  time_start: Optional[datetime],
                  time_stop: Optional[datetime]) -> Response:
         """View activities."""
@@ -283,7 +278,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
         relevant_mls = self.mlproxy.list_mailinglists(rs, active_only=False,
                                                       managed='managed')
-        relevant_set = set(relevant_mls)
+        relevant_set: Set[vtypes.ID] = set(relevant_mls)  # type: ignore
         if not self.is_admin(rs):
             if db_mailinglist_ids is None:
                 db_mailinglist_ids = relevant_set
@@ -364,7 +359,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         """Render form."""
         atype = TYPE_MAP[rs.ambience['mailinglist']['ml_type']]
         available_domains = atype.domains
-        additional_fields = {f for f, _ in atype.get_additional_fields()}
+        additional_fields = atype.get_additional_fields().keys()
         if "event_id" in additional_fields:
             event_ids = self.eventproxy.list_events(rs)
             events = self.eventproxy.get_events(rs, event_ids)
@@ -400,7 +395,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     @REQUESTdatadict(
         "title", "local_part", "domain", "description", "mod_policy",
         "notes", "attachment_policy", "ml_type", "subject_prefix", "maxsize",
-        "is_active", *ADDITIONAL_TYPE_FIELDS)
+        "is_active", *ADDITIONAL_TYPE_FIELDS.items())
     def change_mailinglist(self, rs: RequestState, mailinglist_id: int,
                            data: CdEDBObject) -> Response:
         """Modify simple attributes of mailinglists."""
@@ -453,7 +448,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("ml", modi={"POST"})
     @mailinglist_guard(allow_moderators=False)
-    @REQUESTdatadict("ml_type", *ADDITIONAL_TYPE_FIELDS)
+    @REQUESTdatadict("ml_type", *ADDITIONAL_TYPE_FIELDS.items())
     def change_ml_type(self, rs: RequestState, mailinglist_id: int,
                        data: CdEDBObject) -> Response:
         ml = rs.ambience['mailinglist']
@@ -472,7 +467,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("ml", modi={"POST"})
     @mailinglist_guard(allow_moderators=False)
-    @REQUESTdata(("ack_delete", "bool"))
+    @REQUESTdata("ack_delete")
     def delete_mailinglist(self, rs: RequestState, mailinglist_id: int,
                            ack_delete: bool) -> Response:
         """Remove a mailinglist."""
@@ -490,18 +485,15 @@ class MlBaseFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/list_mailinglists")
 
     @access("ml")
-    @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
-                 ("submitted_by", "cdedbid_or_None"),
-                 ("change_note", "str_or_None"),
-                 ("offset", "int_or_None"),
-                 ("length", "positive_int_or_None"),
-                 ("time_start", "datetime_or_None"),
-                 ("time_stop", "datetime_or_None"))
     @mailinglist_guard()
+    @REQUESTdata("codes", "persona_id", "submitted_by", "change_note", "offset",
+                 "length", "time_start", "time_stop")
     def view_ml_log(self, rs: RequestState, mailinglist_id: int,
                     codes: Collection[const.MlLogCodes], offset: Optional[int],
-                    length: Optional[int], persona_id: Optional[int],
-                    submitted_by: Optional[int], change_note: Optional[str],
+                    length: Optional[vtypes.PositiveInt],
+                    persona_id: Optional[vtypes.CdedbID],
+                    submitted_by: Optional[vtypes.CdedbID],
+                    change_note: Optional[str],
                     time_start: Optional[datetime],
                     time_stop: Optional[datetime]) -> Response:
         """View activities pertaining to one list."""
@@ -632,10 +624,10 @@ class MlBaseFrontend(AbstractUserFrontend):
                 rs.ambience['mailinglist']['id']))
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("moderators", "cdedbid_csv_list"))
     @mailinglist_guard()
+    @REQUESTdata("moderators")
     def add_moderators(self, rs: RequestState, mailinglist_id: int,
-                       moderators: Collection[int]) -> Response:
+                       moderators: vtypes.CdedbIDList) -> Response:
         """Promote personas to moderator."""
         if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
@@ -658,10 +650,10 @@ class MlBaseFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/management")
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("moderator_id", "id"))
     @mailinglist_guard()
+    @REQUESTdata("moderator_id")
     def remove_moderator(self, rs: RequestState, mailinglist_id: int,
-                         moderator_id: int) -> Response:
+                         moderator_id: vtypes.ID) -> Response:
         """Demote persona from moderator status."""
         moderators = set(rs.ambience['mailinglist']['moderators'])
         if moderator_id is not None and moderator_id not in moderators:  # type: ignore
@@ -686,10 +678,10 @@ class MlBaseFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/management")
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("email", "email"))
     @mailinglist_guard()
+    @REQUESTdata("email")
     def add_whitelist(self, rs: RequestState, mailinglist_id: int,
-                      email: str) -> Response:
+                      email: vtypes.Email) -> Response:
         """Allow address to write to the list."""
         if rs.has_validation_errors():
             return self.show_subscription_details(rs, mailinglist_id)
@@ -700,10 +692,10 @@ class MlBaseFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/show_subscription_details")
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("email", "email"))
     @mailinglist_guard()
+    @REQUESTdata("email")
     def remove_whitelist(self, rs: RequestState, mailinglist_id: int,
-                         email: str) -> Response:
+                         email: vtypes.Email) -> Response:
         """Withdraw privilege of writing to list."""
         if rs.has_validation_errors():
             return self.show_subscription_details(rs, mailinglist_id)
@@ -771,10 +763,10 @@ class MlBaseFrontend(AbstractUserFrontend):
             self.notify_return_code(rs, code)
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("persona_id", "id"))
     @mailinglist_guard(requires_privilege=True)
+    @REQUESTdata("persona_id")
     def approve_request(self, rs: RequestState, mailinglist_id: int,
-                        persona_id: int) -> Response:
+                        persona_id: vtypes.ID) -> Response:
         """Evaluate whether to admit subscribers."""
         if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
@@ -784,10 +776,10 @@ class MlBaseFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/management")
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("persona_id", "id"))
     @mailinglist_guard(requires_privilege=True)
+    @REQUESTdata("persona_id")
     def deny_request(self, rs: RequestState, mailinglist_id: int,
-                     persona_id: int) -> Response:
+                     persona_id: vtypes.ID) -> Response:
         """Evaluate whether to admit subscribers."""
         if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
@@ -797,10 +789,10 @@ class MlBaseFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/management")
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("persona_id", "id"))
     @mailinglist_guard(requires_privilege=True)
+    @REQUESTdata("persona_id")
     def block_request(self, rs: RequestState, mailinglist_id: int,
-                      persona_id: int) -> Response:
+                      persona_id: vtypes.ID) -> Response:
         """Evaluate whether to admit subscribers."""
         if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
@@ -810,10 +802,10 @@ class MlBaseFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/management")
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("subscriber_ids", "cdedbid_csv_list"))
     @mailinglist_guard(requires_privilege=True)
+    @REQUESTdata("subscriber_ids")
     def add_subscribers(self, rs: RequestState, mailinglist_id: int,
-                        subscriber_ids: Collection[int]) -> Response:
+                        subscriber_ids: vtypes.CdedbIDList) -> Response:
         """Administratively subscribe somebody."""
         if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
@@ -826,10 +818,10 @@ class MlBaseFrontend(AbstractUserFrontend):
             return self.redirect(rs, "ml/management")
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("subscriber_id", "id"))
     @mailinglist_guard(requires_privilege=True)
+    @REQUESTdata("subscriber_id")
     def remove_subscriber(self, rs: RequestState, mailinglist_id: int,
-                          subscriber_id: int) -> Response:
+                          subscriber_id: vtypes.ID) -> Response:
         """Administratively unsubscribe somebody."""
         if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
@@ -839,10 +831,10 @@ class MlBaseFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/management")
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("modsubscriber_ids", "cdedbid_csv_list"))
     @mailinglist_guard(requires_privilege=True)
+    @REQUESTdata("modsubscriber_ids")
     def add_subscription_overrides(self, rs: RequestState, mailinglist_id: int,
-                                   modsubscriber_ids: Collection[int]) -> Response:
+                                   modsubscriber_ids: vtypes.CdedbIDList) -> Response:
         """Administratively subscribe somebody with moderator override."""
         if rs.has_validation_errors():
             return self.show_subscription_details(rs, mailinglist_id)
@@ -855,11 +847,11 @@ class MlBaseFrontend(AbstractUserFrontend):
             return self.redirect(rs, "ml/show_subscription_details")
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("modsubscriber_id", "id"))
     @mailinglist_guard(requires_privilege=True)
+    @REQUESTdata("modsubscriber_id")
     def remove_subscription_override(self, rs: RequestState,
                                      mailinglist_id: int,
-                                     modsubscriber_id: int) -> Response:
+                                     modsubscriber_id: vtypes.ID) -> Response:
         """Administratively remove somebody with moderator override."""
         if rs.has_validation_errors():
             return self.show_subscription_details(rs, mailinglist_id)
@@ -869,10 +861,11 @@ class MlBaseFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/show_subscription_details")
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("modunsubscriber_ids", "cdedbid_csv_list"))
     @mailinglist_guard(requires_privilege=True)
+    @REQUESTdata("modunsubscriber_ids")
     def add_unsubscription_overrides(self, rs: RequestState, mailinglist_id: int,
-                                     modunsubscriber_ids: Collection[int]) -> Response:
+                                     modunsubscriber_ids: vtypes.CdedbIDList
+                                     ) -> Response:
         """Administratively block somebody."""
         if rs.has_validation_errors():
             return self.show_subscription_details(rs, mailinglist_id)
@@ -885,11 +878,11 @@ class MlBaseFrontend(AbstractUserFrontend):
             return self.redirect(rs, "ml/show_subscription_details")
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("modunsubscriber_id", "id"))
     @mailinglist_guard(requires_privilege=True)
+    @REQUESTdata("modunsubscriber_id")
     def remove_unsubscription_override(self, rs: RequestState,
                                        mailinglist_id: int,
-                                       modunsubscriber_id: int) -> Response:
+                                       modunsubscriber_id: vtypes.ID) -> Response:
         """Administratively remove block."""
         if rs.has_validation_errors():
             return self.show_subscription_details(rs, mailinglist_id)
@@ -941,9 +934,9 @@ class MlBaseFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/show_mailinglist")
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("email", "email_or_None"))
+    @REQUESTdata("email")
     def change_address(self, rs: RequestState, mailinglist_id: int,
-                       email: str) -> Response:
+                       email: Optional[vtypes.Email]) -> Response:
         """Modify address to which emails are delivered for this list.
 
         If this address has not been used before, we verify it.
@@ -978,9 +971,9 @@ class MlBaseFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/show_mailinglist")
 
     @access("ml")
-    @REQUESTdata(("email", "#email"))
+    @REQUESTdata("#email")
     def do_address_change(self, rs: RequestState, mailinglist_id: int,
-                          email: str) -> Response:
+                          email: vtypes.Email) -> Response:
         """Successful verification for new address in :py:meth:`change_address`.
 
         This is not a POST since the link is shared via email.

@@ -25,7 +25,7 @@ class MlFrontend(RKListsMixin, MailmanMixin, MlBaseFrontend):
 
     @access("ml", modi={"POST"})
     @mailinglist_guard()
-    @REQUESTdata(("request_id", "int"), ("action", "str"))
+    @REQUESTdata("request_id", "action")
     def message_moderation(self, rs: RequestState, mailinglist_id: int,
                            request_id: int, action: str) -> Response:
         """Moderate a held message."""

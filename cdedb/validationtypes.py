@@ -109,8 +109,6 @@ Mailinglist = NewType("Mailinglist", CdEDBObject)
 SubscriptionIdentifier = NewType("SubscriptionIdentifier", CdEDBObject)
 SubscriptionState = NewType("SubscriptionState", CdEDBObject)
 SubscriptionAddress = NewType("SubscriptionAddress", CdEDBObject)
-SubscriptionRequestResolution = NewType(
-    "SubscriptionRequestResolution", CdEDBObject)
 Assembly = NewType("Assembly", CdEDBObject)
 Ballot = NewType("Ballot", CdEDBObject)
 BallotCandidate = NewType("BallotCandidate", CdEDBObject)
