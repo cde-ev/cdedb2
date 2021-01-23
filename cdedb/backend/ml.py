@@ -898,7 +898,6 @@ class MlBackend(AbstractBackend):
     def do_subscription_action(self, rs: RequestState,
                                action: SubscriptionActions, mailinglist_id: int,
                                persona_id: Optional[int] = None,
-                               change_note: Optional[str] = None,
                                ) -> DefaultReturnCode:
         """Provide a single entry point for all subscription actions.
 
@@ -911,7 +910,6 @@ class MlBackend(AbstractBackend):
         """
         action = affirm(SubscriptionActions, action)
         sa = SubscriptionActions
-        change_note = affirm_optional(str, change_note)
 
         # 1: Check if everything is alright – current state comes later
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
@@ -955,8 +953,7 @@ class MlBackend(AbstractBackend):
                 del datum['subscription_state']
                 ret = self._remove_subscription(rs, datum)
             if ret and code:
-                self.ml_log(
-                    rs, code, datum['mailinglist_id'], datum['persona_id'], change_note)
+                self.ml_log(rs, code, datum['mailinglist_id'], datum['persona_id'])
 
             return ret
 
@@ -1182,6 +1179,7 @@ class MlBackend(AbstractBackend):
         subscribers (or a subset given via `persona_ids`) to email addresses.
         If they have expicitly specified a subscription address that one is
         returned, otherwise the username is returned.
+        # TODO this must not happen
         If a subscriber has neither a username nor a explicit subscription
         address then for that subscriber None is returned.
 
@@ -1471,8 +1469,14 @@ class MlBackend(AbstractBackend):
             msg_destructive = f"Account in User {target_persona_id} gemergt."
 
             for ml_id, state in source_subscriptions.items():
+                # state=None is only possible, if we handle a set of mailinglists
+                # to get_subscription_states
+                assert state is not None
+
                 address = self.get_subscription_address(
                     rs, ml_id, persona_id=source_persona_id)
+                # get_subscription_address may returns only None if explicits_only=True
+                assert address is not None
 
                 # set the target to the subscription state of the source
                 datum = {
@@ -1501,7 +1505,7 @@ class MlBackend(AbstractBackend):
 
             mls = self.get_mailinglists(rs, source_moderates)
             for ml_id in source_moderates:
-                current_moderators: set = mls[ml_id]["moderators"]
+                current_moderators: Set[int] = mls[ml_id]["moderators"]
                 new_moderators = (
                     (current_moderators - {source_persona_id}) | {target_persona_id})
                 code *= self.set_moderators(rs, ml_id, new_moderators)

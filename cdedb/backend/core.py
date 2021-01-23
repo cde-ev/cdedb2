@@ -1993,7 +1993,8 @@ class CoreBackend(AbstractBackend):
         persona_ids = affirm_set(vtypes.ID, persona_ids)
         required_roles = required_roles or tuple()
         required_roles = affirm_set(str, required_roles)
-        allowed_roles = allowed_roles or set(ALL_ROLES)
+        allowed_roles = allowed_roles or ALL_ROLES
+        allowed_roles = affirm_set(str, allowed_roles)
         # add always allowed roles for personas
         allowed_roles |= {"persona", "anonymous"}
         roles = self.get_roles_multi(rs, persona_ids, introspection_only)
@@ -2004,6 +2005,7 @@ class CoreBackend(AbstractBackend):
     class _VerifyPersonaProtocol(Protocol):
         def __call__(self, rs: RequestState, anid: int,
                      required_roles: Collection[Role] = None,
+                     allowed_roles: Collection[Role] = None,
                      introspection_only: bool = True) -> bool: ...
     verify_persona: _VerifyPersonaProtocol = singularize(
         verify_personas, "persona_ids", "persona_id", passthrough=True)
