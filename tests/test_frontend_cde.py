@@ -6,14 +6,13 @@ import decimal
 import itertools
 import json
 import re
-import unittest
 
 import webtest
 
 import cdedb.database.constants as const
 from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, extract_roles, now
 from cdedb.query import QueryOperators
-from tests.common import USER_DICT, FrontendTest, as_users
+from tests.common import USER_DICT, FrontendTest, as_users, prepsql
 
 
 class TestCdEFrontend(FrontendTest):
@@ -1493,6 +1492,8 @@ class TestCdEFrontend(FrontendTest):
         self.admin_view_profile("daniel")
         self.assertNonPresence("CdE-Mitglied", div='membership')
 
+    @prepsql(f"UPDATE core.changelog SET ctime ="
+             f" '{now() - datetime.timedelta(days=365 * 2 + 1)}' WHERE persona_id = 18")
     @as_users("farin")
     def test_semester(self, user):
         link = {'description': 'Semesterverwaltung'}
@@ -1618,7 +1619,9 @@ class TestCdEFrontend(FrontendTest):
         # Verify Log
         self.traverse({'description': 'CdE-Log'})
         self.assertTitle("CdE-Log [1–12 von 12]")
+        self.assertPresence("1 E-Mails versandt.", div="2-1002")
         self.assertPresence("0 inaktive Mitglieder gestrichen.", div="3-1003")
+        self.assertPresence("1 Accounts archiviert.", div="4-1004")
         self.assertPresence("3 Probemitgliedschaften beendet", div="5-1005")
         self.assertPresence("15.00 € Guthaben abgebucht.", div="5-1005")
 
