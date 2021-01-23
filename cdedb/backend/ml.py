@@ -456,18 +456,13 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def set_moderators(self, rs: RequestState, mailinglist_id: int,
-                       moderators: Collection[int]) -> DefaultReturnCode:
+                       moderators: Collection[int], change_note: Optional[str] = None
+                       ) -> DefaultReturnCode:
         """Set moderators of a mailinglist.
 
         A complete set must be passed, which will superseed the current set.
 
         Contrary to `set_mailinglist` this may be used by moderators.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type mailinglist_id: int
-        :type moderators: {int}
-        :rtype: int
-        :returns: default return code
         """
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
         moderators = affirm_set(vtypes.ID, moderators)
@@ -498,15 +493,15 @@ class MlBackend(AbstractBackend):
                         'mailinglist_id': mailinglist_id,
                     }
                     ret *= self.sql_insert(rs, "ml.moderators", new_mod)
-                    self.ml_log(rs, const.MlLogCodes.moderator_added,
-                                mailinglist_id, persona_id=anid)
+                    self.ml_log(rs, const.MlLogCodes.moderator_added, mailinglist_id,
+                                persona_id=anid, change_note=change_note)
             if deleted:
                 query = ("DELETE FROM ml.moderators"
                          " WHERE persona_id = ANY(%s) AND mailinglist_id = %s")
                 ret *= self.query_exec(rs, query, (deleted, mailinglist_id))
                 for anid in mixed_existence_sorter(deleted):
-                    self.ml_log(rs, const.MlLogCodes.moderator_removed,
-                                mailinglist_id, persona_id=anid)
+                    self.ml_log(rs, const.MlLogCodes.moderator_removed, mailinglist_id,
+                                persona_id=anid, change_note=change_note)
         return ret
 
     @access("ml")
