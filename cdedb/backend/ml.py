@@ -1498,12 +1498,13 @@ class MlBackend(AbstractBackend):
                 code *= self.set_subscription_address(
                     rs, ml_id, persona_id=target_persona_id, email=address)
 
+            msg = f"User {source_persona_id} in User {target_persona_id} gemergt."
             mls = self.get_mailinglists(rs, source_moderates)
             for ml_id in source_moderates:
                 current_moderators: Set[int] = mls[ml_id]["moderators"]
                 new_moderators = (
                     (current_moderators - {source_persona_id}) | {target_persona_id})
-                code *= self.set_moderators(rs, ml_id, new_moderators)
+                code *= self.set_moderators(rs, ml_id, new_moderators, change_note=msg)
 
             # at last, deactivate the source user
             data = {
