@@ -1426,23 +1426,15 @@ class MlBackend(AbstractBackend):
         target_persona_id = affirm(vtypes.ID, target_persona_id)
 
         SS = const.SubscriptionStates
-        state_to_constructive_action: Dict[SS, SubscriptionActions] = {
-            SS.subscribed: SubscriptionActions.add_subscriber,
-            SS.unsubscribed: SubscriptionActions.remove_subscriber,
-            SS.subscription_override: SubscriptionActions.add_subscription_override,
-            SS.unsubscription_override: SubscriptionActions.add_unsubscription_override,
-            # TODO can a moderator do this for an user?
-            SS.pending: SubscriptionActions.request_subscription,
-            # This will be adjusted when calling write_subscription_states at the end
-            # SS.implicit: None,
-        }
-        state_to_destructive_action: Dict[SS, SubscriptionActions] = {
-            SS.subscribed: SubscriptionActions.remove_subscriber,
-            SS.unsubscribed: SubscriptionActions.remove_subscriber,
-            SS.subscription_override: SubscriptionActions.remove_subscription_override,
-            SS.unsubscription_override: SubscriptionActions.remove_unsubscription_override,
-            SS.pending: SubscriptionActions.deny_request,
-            # This will be adjusted when calling write_subscription_states at the end
+        SA = SubscriptionActions
+
+        state_to_log: Dict[const.SubscriptionStates, const.MlLogCodes] = {
+            SS.subscribed: SA.add_subscriber.get_log_code(),
+            SS.unsubscribed: SA.remove_subscriber.get_log_code(),
+            SS.subscription_override: SA.add_subscription_override.get_log_code(),
+            SS.unsubscription_override: SA.add_unsubscription_override.get_log_code(),
+            SS.pending: SA.request_subscription.get_log_code(),
+            # we do not allow ml users who are implicit subscribed to be merged
             # SS.implicit: None,
         }
 
@@ -1468,29 +1460,42 @@ class MlBackend(AbstractBackend):
             # retrieve all mailinglists moderated by the source
             source_moderates = self.moderator_info(rs, source_persona_id)
 
+            if SS.implicit in set(source_subscriptions.values()):
+                raise ValueError(n_("Remove all implicit subscriptions of the source."))
+
             if set(source_subscriptions) & set(target_subscriptions):
                 raise ValueError(n_("Both users are related to the same mailinglists"))
 
             code = 1
             msg_constructive = f"User {source_persona_id} mit diesem Account gemergt."
             msg_destructive = f"Account in User {target_persona_id} gemergt."
+
             for ml_id, state in source_subscriptions.items():
-                # get the adress the source is subscribed to the mailinglist
                 address = self.get_subscription_address(
                     rs, ml_id, persona_id=source_persona_id)
-                # delegate handling of implicit subscription states
-                if state == SS.implicit:
-                    code *= self.write_subscription_states(rs, ml_id)
-                    continue
-                code *= self.do_subscription_action(
-                    rs, action=state_to_constructive_action[state],
-                    mailinglist_id=ml_id, persona_id=target_persona_id,
-                    change_note=msg_constructive)
-                code *= self.do_subscription_action(
-                    rs, action=state_to_destructive_action[state],
-                    mailinglist_id=ml_id, persona_id=source_persona_id,
-                    change_note=msg_destructive)
-                # set the address of the source as the address of the target for this ml
+
+                # set the target to the subscription state of the source
+                datum = {
+                    'mailinglist_id': ml_id,
+                    'persona_id': target_persona_id,
+                    'subscription_state': state,
+                }
+                code *= self._set_subscription(rs, datum)
+                self.ml_log(
+                    rs, state_to_log[state], datum['mailinglist_id'],
+                    datum['persona_id'], change_note=msg_constructive)
+
+                # remove the subscription state of the source
+                datum = {
+                    'mailinglist_id': ml_id,
+                    'persona_id': source_persona_id,
+                }
+                code *= self._remove_subscription(rs, datum)
+                self.ml_log(
+                    rs, const.MlLogCodes.unsubscribed, datum['mailinglist_id'],
+                    datum['persona_id'], change_note=msg_destructive)
+
+                # set the subscribing address of the target to the address of the source
                 code *= self.set_subscription_address(
                     rs, ml_id, persona_id=target_persona_id, email=address)
 
