@@ -1421,13 +1421,15 @@ class MlBackend(AbstractBackend):
         SS = const.SubscriptionStates
         SA = SubscriptionActions
 
+        non_implicit_states = {state for state in SS if state != SS.implicit}
+
         state_to_log: Dict[const.SubscriptionStates, const.MlLogCodes] = {
             SS.subscribed: SA.add_subscriber.get_log_code(),
             SS.unsubscribed: SA.remove_subscriber.get_log_code(),
             SS.subscription_override: SA.add_subscription_override.get_log_code(),
             SS.unsubscription_override: SA.add_unsubscription_override.get_log_code(),
             SS.pending: SA.request_subscription.get_log_code(),
-            # we do not allow ml users who are implicit subscribed to be merged
+            # we ignore implicit subscriptions
             # SS.implicit: None,
         }
 
@@ -1447,21 +1449,18 @@ class MlBackend(AbstractBackend):
 
             # retrieve all mailinglists they are subscribed to
             # TODO restrict to active mailinglists?
-            source_subscriptions = self.get_user_subscriptions(rs, source_persona_id)
+            source_subscriptions = self.get_user_subscriptions(
+                rs, source_persona_id, states=non_implicit_states)
             target_subscriptions = self.get_user_subscriptions(rs, target_persona_id)
 
             # retrieve all mailinglists moderated by the source
             source_moderates = self.moderator_info(rs, source_persona_id)
 
-            if SS.implicit in set(source_subscriptions.values()):
-                raise ValueError(n_("Remove all implicit subscriptions of the source."))
-
             if set(source_subscriptions) & set(target_subscriptions):
                 raise ValueError(n_("Both users are related to the same mailinglists"))
 
             code = 1
-            msg_constructive = f"User {source_persona_id} mit diesem Account gemergt."
-            msg_destructive = f"Account in User {target_persona_id} gemergt."
+            msg = f"User {source_persona_id} mit diesem Account gemergt."
 
             for ml_id, state in source_subscriptions.items():
                 # state=None is only possible, if we handle a set of mailinglists
@@ -1482,17 +1481,7 @@ class MlBackend(AbstractBackend):
                 code *= self._set_subscription(rs, datum)
                 self.ml_log(
                     rs, state_to_log[state], datum['mailinglist_id'],
-                    datum['persona_id'], change_note=msg_constructive)
-
-                # remove the subscription state of the source
-                datum = {
-                    'mailinglist_id': ml_id,
-                    'persona_id': source_persona_id,
-                }
-                code *= self._remove_subscription(rs, datum)
-                self.ml_log(
-                    rs, const.MlLogCodes.unsubscribed, datum['mailinglist_id'],
-                    datum['persona_id'], change_note=msg_destructive)
+                    datum['persona_id'], change_note=msg)
 
                 # set the subscribing address of the target to the address of the source
                 code *= self.set_subscription_address(
@@ -1502,17 +1491,13 @@ class MlBackend(AbstractBackend):
             mls = self.get_mailinglists(rs, source_moderates)
             for ml_id in source_moderates:
                 current_moderators: Set[int] = mls[ml_id]["moderators"]
-                new_moderators = (
-                    (current_moderators - {source_persona_id}) | {target_persona_id})
+                new_moderators = current_moderators | {target_persona_id}
                 code *= self.set_moderators(rs, ml_id, new_moderators, change_note=msg)
 
-            # at last, deactivate the source user
-            data = {
-                'id': source_persona_id,
-                'is_active': False,
-            }
+            # at last, archive the source user
+            # this will delete all subscriptions and remove all moderator rights
             msg = f"Account in User {target_persona_id} gemergt."
-            code *= self.core.change_persona(rs, data, may_wait=False, change_note=msg)
+            code *= self.core.archive_persona(rs, persona_id=source_persona_id, note=msg)
 
         return code
 
