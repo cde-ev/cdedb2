@@ -572,9 +572,14 @@ class MlBaseFrontend(AbstractUserFrontend):
         unsubscription_overrides = self.mlproxy.get_subscription_states(
             rs, mailinglist_id,
             states=(const.SubscriptionStates.unsubscription_override,))
+        all_unsubscriptions = self.mlproxy.get_subscription_states(
+            rs, mailinglist_id, states=(const.SubscriptionStates.unsubscribed,))
+        deletable_unsubscriptions = self.mlproxy.get_deletable_unsubscriptions(
+            rs, mailinglist_id)
         persona_ids = (set(rs.ambience['mailinglist']['moderators'])
                        | set(subscription_overrides.keys())
-                       | set(unsubscription_overrides.keys()))
+                       | set(unsubscription_overrides.keys())
+                       | set(all_unsubscriptions.keys()))
         personas = self.coreproxy.get_personas(rs, persona_ids)
         subscription_overrides = collections.OrderedDict(
             (anid, personas[anid]) for anid in sorted(
@@ -584,10 +589,16 @@ class MlBaseFrontend(AbstractUserFrontend):
             (anid, personas[anid]) for anid in sorted(
                 unsubscription_overrides,
                 key=lambda anid: EntitySorter.persona(personas[anid])))
+        all_unsubscriptions = collections.OrderedDict(
+            (anid, personas[anid]) for anid in sorted(
+                all_unsubscriptions,
+                key=lambda anid: EntitySorter.persona(personas[anid])))
         privileged = self.mlproxy.may_manage(rs, mailinglist_id, privileged=True)
         return self.render(rs, "show_subscription_details", {
             'subscription_overrides': subscription_overrides,
             'unsubscription_overrides': unsubscription_overrides,
+            'all_unsubscriptions': all_unsubscriptions,
+            'deletable_unsubscriptions': deletable_unsubscriptions,
             'privileged': privileged})
 
     @access("ml")
@@ -837,6 +848,19 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs, SubscriptionActions.remove_subscriber,
             mailinglist_id=mailinglist_id, persona_id=subscriber_id)
         return self.redirect(rs, "ml/management")
+
+    @access("ml", modi={"POST"})
+    @REQUESTdata(("unsubscription_id", "id"))
+    @mailinglist_guard(requires_privilege=True)
+    def delete_unsubscription(self, rs: RequestState, mailinglist_id: int,
+                              unsubscription_id: int) -> Response:
+        """Administratively delete an unsubscription state."""
+        if rs.has_validation_errors():
+            return self.show_subscription_details(rs, mailinglist_id)
+        self._subscription_action_handler(
+            rs, SubscriptionActions.delete_unsubscription,
+            mailinglist_id=mailinglist_id, persona_id=unsubscription_id)
+        return self.redirect(rs, "ml/show_subscription_details")
 
     @access("ml", modi={"POST"})
     @REQUESTdata(("modsubscriber_ids", "cdedbid_csv_list"))

@@ -186,6 +186,42 @@
         </div>
     </div>
 
+    <h2>{% trans %}Unsubscribers{% endtrans %} [{{ deletable_unsubscriptions|length }}]</h2>
+        <p class="text-muted">
+            {{ util.make_icon('info-circle') }}
+            {% trans %}
+                Users who unsubscribed from this list. They will not be re-added automatically, but can be subscribed
+                manually by themself or a moderator.
+            {% endtrans %}
+        </p>
+        <p class="text-danger">
+            {{ util.make_icon('exclamation-triangle') }}
+            {% trans %}
+                This should not be changed if you do not know what you do.
+            {% endtrans %}
+        </p>
+
+    <ul id="unsubscriber-list">
+        {% for unsubscription, persona in all_unsubscriptions.items() %} {# This is already sorted. #}
+            <li class="hide-hover-container clearfix-after">
+                {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
+                {% if privileged and unsubscription in deletable_unsubscriptions %}
+                    <form action="{{ cdedblink('ml/delete_unsubscription') }}"
+                          method="POST" style="display: inline;"
+                          id="deleteunsubscriberform{{ unsubscription }}"
+                          class="hide-hover display-inline">
+                        {{ util.anti_csrf_token('ml/delete_unsubscription') }}
+                        {{ util.input_hidden(name="unsubscription_id", value=unsubscription) }}
+                        {{ util.input_submit(value='', aclass="btn btn-xs btn-danger list-button-float", icon="minus",
+                                title=gettext("Delete %(given_names)s %(family_name)s unsubscription")|format(
+                                    given_names=persona['given_names'],
+                                    family_name=persona['family_name'])) }}
+                    </form>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+
     {% call util.bootstrap_panel(title=gettext("Downloads"), icon="file-download", aclass="panel-default mosp") %}
         <div class="row">
             <div class="col-sm-4">
