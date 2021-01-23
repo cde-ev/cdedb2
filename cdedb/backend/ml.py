@@ -990,6 +990,9 @@ class MlBackend(AbstractBackend):
         elif (action == sa.request_subscription and
               policy != const.MailinglistInteractionPolicy.moderated_opt_in):
             raise SubscriptionError(n_("Can not request subscription."))
+        elif action == sa.delete_unsubscription:
+            if persona_id not in self.get_deletable_unsubscriptions(rs, mailinglist_id):
+                raise SubscriptionError(n_("Can not delete unsubscription."))
 
     @access("ml")
     def set_subscription_address(self, rs: RequestState, mailinglist_id: int,
@@ -1109,6 +1112,26 @@ class MlBackend(AbstractBackend):
                      ) -> Dict[int, const.SubscriptionStates]: ...
     get_subscription_states: _GetSubScriptionStatesProtocol = singularize(
         get_many_subscription_states, "mailinglist_ids", "mailinglist_id")
+
+    @access("ml")
+    def get_deletable_unsubscriptions(self, rs: RequestState, mailinglist_id: int
+                                      ) -> Set[int]:
+        """Retrieve all unsubscribed users whos unsubscription may be deleted.
+
+        This is the case if the user is no implicit subscriber of the mailing list.
+        """
+        mailinglist_id = affirm(vtypes.ID, mailinglist_id)
+
+        atype = self.get_ml_type(rs, mailinglist_id)
+        ml = self.get_mailinglist(rs, mailinglist_id)
+
+        possible_implicits = atype.get_implicit_subscribers(rs, self.backends, ml)
+        data = self.get_subscription_states(
+            rs, mailinglist_id, states={const.SubscriptionStates.unsubscribed})
+
+        ret: Set[int] = {persona_id for persona_id in data
+                         if persona_id not in possible_implicits}
+        return ret
 
     @access("ml")
     def get_user_subscriptions(

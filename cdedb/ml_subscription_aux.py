@@ -82,6 +82,7 @@ class SubscriptionActions(enum.IntEnum):
     remove_subscriber = 30  #: A moderator manually removing a subscribed user.
     remove_subscription_override = 31  #: A mod removing a fixed subscription.
     remove_unsubscription_override = 32  #: A moderator unblocking a user.
+    delete_unsubscription = 40  #: A moderator removing the relation of an unsubscribed user to the mailinglist.
 
     def get_target_state(self) -> Optional[SubscriptionStates]:
         """Get the target state associated with an action."""
@@ -111,7 +112,9 @@ class SubscriptionActions(enum.IntEnum):
             SubscriptionActions.remove_subscription_override:
                 SubscriptionStates.subscribed,
             SubscriptionActions.remove_unsubscription_override:
-                SubscriptionStates.unsubscribed
+                SubscriptionStates.unsubscribed,
+            SubscriptionActions.delete_unsubscription:
+                None,
         }
         return target_state.get(self)
 
@@ -144,6 +147,8 @@ class SubscriptionActions(enum.IntEnum):
                 MlLogCodes.subscribed,
             SubscriptionActions.remove_unsubscription_override:
                 MlLogCodes.unsubscribed,
+            SubscriptionActions.delete_unsubscription:
+                MlLogCodes.unsubscription_removed,
         }
         return log_code_map[self]
 
@@ -261,6 +266,13 @@ class SubscriptionActions(enum.IntEnum):
                     n_("Not a pending subscription request.")),
                 ss.pending: None,
             },
+            SubscriptionActions.delete_unsubscription: {
+                ss.subscribed: error(n_("User is not unsubscribed.")),
+                ss.unsubscribed: None,
+                ss.subscription_override: error(n_("User is not unsubscribed.")),
+                ss.unsubscription_override: error(n_("User is not unsubscribed.")),
+                ss.pending: error(n_("User is not unsubscribed.")),
+            }
         }
 
         for row in matrix.keys():
@@ -294,7 +306,8 @@ class SubscriptionActions(enum.IntEnum):
             SubscriptionActions.add_unsubscription_override,
             SubscriptionActions.remove_subscriber,
             SubscriptionActions.remove_subscription_override,
-            SubscriptionActions.remove_unsubscription_override
+            SubscriptionActions.remove_unsubscription_override,
+            SubscriptionActions.delete_unsubscription,
         }
 
     def is_managing(self) -> bool:
