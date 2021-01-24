@@ -12,11 +12,11 @@ converted to e.g. :py:class:`datetime.datetime`).
 
 We offer three variants.
 
-* ``check_*`` return a tuple ``(mangled_value, errors)``.
-* ``affirm_*`` on success return the mangled value, but if there is
-  an error raise an exception.
-* ``is_*`` returns a :py:class:`boolean`, but does no type conversion (hence
-  things like dates mustn't be strings)
+* ``validate_check`` return a tuple ``(mangled_value, errors)``.
+* ``validate_affirm`` on success return the mangled value,
+    but if there is an error raise an exception.
+* ``validate_is`` returns a :py:class:`boolean`,
+    but does no type conversion (hence things like dates mustn't be strings)
 
 The raw validator implementations are functions with signature
 ``(val, argname, **kwargs)`` of which many support the keyword arguments
@@ -25,12 +25,12 @@ These functions are registered and than wrapped to generate the above variants.
 
 They return the the validated and optionally converted value
 and raise a ``ValidationSummary`` when encountering errors.
-Each exception summary contains a list of ``ValdidationError``s
+Each exception summary contains a list of errors
 which store the ``argname`` of the validator where the error occured
-as well as the original ``exception``.
+as well as an explanation of what exactly is wrong.
 A ``ValidationError`` may also store a third argument.
 This optional argument should be a ``Mapping[str, Any]``
-describing substitutions of the error string to done after i18n.
+describing substitutions of the error string to be done by i18n.
 
 The parameter ``_convert`` is present in many validators
 and is usually passed along from the original caller to every validation inside
@@ -55,7 +55,6 @@ import logging
 import math
 import re
 import string
-import sys
 from enum import Enum
 from typing import (
     Callable, Dict, Sequence, Set, Tuple, Type, TypeVar, cast, get_type_hints, overload,
@@ -90,8 +89,6 @@ from cdedb.validationtypes import *
 
 _BASICCONF = BasicConfig()
 NoneType = type(None)
-
-current_module = sys.modules[__name__]
 
 zxcvbn.matching.add_frequency_lists(FREQUENCY_LISTS)
 
@@ -157,25 +154,6 @@ class ValidatorStorage(Dict[Type[Any], Callable[..., Any]]):
 _ALL_TYPED = ValidatorStorage()
 
 
-def _create_assert_valid(fun: Callable[..., T]) -> Callable[..., T]:
-    @functools.wraps(fun)
-    def assert_valid(*args: Any, **kwargs: Any) -> T:
-        try:
-            val = fun(*args, **kwargs)
-        except ValidationSummary as errs:
-            old_format = [(e.args[0], type(e)(*e.args[1:])) for e in errs]
-            _LOGGER.debug(
-                f"{old_format} for '{fun.__name__}'"
-                f" with input {args}, {kwargs}."
-            )
-            e = errs[0]
-            e.args = ("{} ({})".format(e.args[1], e.args[0]),) + e.args[2:]
-            raise e from errs
-        return val
-
-    return assert_valid
-
-
 def validate_assert(type_: Type[T], value: Any, **kwargs: Any) -> T:
     try:
         return _ALL_TYPED[type_](value, **kwargs)
@@ -194,19 +172,6 @@ def validate_assert_optional(type_: Type[T], value: Any, **kwargs: Any) -> Optio
     return validate_assert(Optional[type_], value, **kwargs)  # type: ignore
 
 
-def _create_is_valid(fun: Callable[..., T]) -> Callable[..., bool]:
-    @functools.wraps(fun)
-    def is_valid(*args: Any, **kwargs: Any) -> bool:
-        kwargs['_convert'] = False
-        try:
-            fun(*args, **kwargs)
-            return True
-        except ValidationSummary as errs:
-            return False
-
-    return is_valid
-
-
 def validate_is(type_: Type[T], value: Any, **kwargs: Any) -> bool:
     kwargs['_convert'] = False
     try:
@@ -218,24 +183,6 @@ def validate_is(type_: Type[T], value: Any, **kwargs: Any) -> bool:
 
 def validate_is_optional(type_: Type[T], value: Any, **kwargs: Any) -> Optional[T]:
     return validate_is(Optional[type_], value, **kwargs)  # type: ignore
-
-
-def _create_check_valid(fun: Callable[..., T]
-                        ) -> Callable[..., Tuple[Optional[T], List[Error]]]:
-    @functools.wraps(fun)
-    def check_valid(*args: Any, **kwargs: Any) -> Tuple[Optional[T], List[Error]]:
-        try:
-            val = fun(*args, **kwargs)
-            return val, []
-        except ValidationSummary as errs:
-            old_format = [(e.args[0], type(e)(*e.args[1:])) for e in errs]
-            _LOGGER.debug(
-                f"{old_format} for '{fun.__name__}'"
-                f" with input {args}, {kwargs}."
-            )
-            return None, old_format
-
-    return check_valid
 
 
 def validate_check(
