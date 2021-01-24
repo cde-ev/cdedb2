@@ -1082,7 +1082,7 @@ GRANT SELECT, UPDATE on assembly.attachment_versions_id_seq TO cdb_member;
 CREATE TABLE assembly.log (
         id                      bigserial PRIMARY KEY,
         ctime                   timestamp WITH TIME ZONE DEFAULT now(),
-        -- see cdedb.database.constants.AssembyLogCodes
+        -- see cdedb.database.constants.AssemblyLogCodes
         code                    integer NOT NULL,
         submitted_by            integer REFERENCES core.personas(id),
         assembly_id             integer REFERENCES assembly.assemblies(id),
