@@ -218,7 +218,7 @@ class CoreFrontend(AbstractFrontend):
 
     @access("anonymous", modi={"POST"})
     @REQUESTdata("username", "password", "#wants")
-    def login(self, rs: RequestState, username: vtypes.PrintableASCII,
+    def login(self, rs: RequestState, username: vtypes.Email,
               password: str, wants: Optional[str]) -> Response:
         """Create session.
 
@@ -930,8 +930,7 @@ class CoreFrontend(AbstractFrontend):
         # which potentially are no subscriber yet.
         if mailinglist:
             pol = const.MailinglistInteractionPolicy
-            allowed_pols = {pol.opt_out, pol.opt_in, pol.moderated_opt_in,
-                            pol.invitation_only}
+            allowed_pols = {pol.subscribable, pol.moderated_opt_in, pol.invitation_only}
             data = self.mlproxy.filter_personas_by_policy(
                 rs, mailinglist, data, allowed_pols)
 
@@ -2490,10 +2489,10 @@ class CoreFrontend(AbstractFrontend):
         return self.redirect_show_user(rs, persona_id)
 
     @access("core_admin")
-    @REQUESTdata("stati", "submitted_by", "reviewed_by", "persona_id",
+    @REQUESTdata("codes", "submitted_by", "reviewed_by", "persona_id",
                  "change_note", "offset", "length", "time_start", "time_stop")
     def view_changelog_meta(self, rs: RequestState,
-                            stati: Collection[const.MemberChangeStati],
+                            codes: Collection[const.MemberChangeStati],
                             offset: Optional[int],
                             length: Optional[vtypes.PositiveInt],
                             persona_id: Optional[CdedbID],
@@ -2512,7 +2511,7 @@ class CoreFrontend(AbstractFrontend):
         # are lost
         rs.ignore_validation_errors()
         total, log = self.coreproxy.retrieve_changelog_meta(
-            rs, stati, _offset, _length, persona_id=persona_id,
+            rs, codes, _offset, _length, persona_id=persona_id,
             submitted_by=submitted_by, change_note=change_note,
             time_start=time_start, time_stop=time_stop, reviewed_by=reviewed_by)
         persona_ids = (

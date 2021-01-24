@@ -366,9 +366,17 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f = self.response.forms['changeassemblyform']
         f['title'] = 'Drittes CdE-Konzil'
         f['description'] = "Wir werden alle Häretiker exkommunizieren."
+        f['presider_address'] = "drittes konzil@example.cde"
+        self.submit(f, check_notification=False)
+        self.assertValidationError('presider_address',
+                                   "Muss eine valide E-Mail-Adresse sein.")
+        f['presider_address'] = "Konzil@example.cde"
         self.submit(f)
         self.assertTitle("Drittes CdE-Konzil")
         self.assertPresence("Häretiker", div='description')
+        self.traverse({'description': 'Konfiguration'},)
+        f = self.response.forms['changeassemblyform']
+        self.assertEqual(f['presider_address'].value, 'konzil@example.cde')
 
     @as_users("werner")
     def test_past_assembly(self, user: CdEDBObject) -> None:
@@ -386,11 +394,15 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
     # Use ferdinand since viktor is not a member and may not signup.
     @as_users("ferdinand")
     def test_create_delete_assembly(self, user: CdEDBObject) -> None:
-        self._create_assembly(delta={'create_presider_list': True})
+        presider_address = "presider@lists.cde-ev.de"
+        self._create_assembly(delta={'create_presider_list': True,
+                                     'presider_address': presider_address})
         self.assertPresence("Häretiker", div='description')
         self.assertPresence("Aprilscherz", div='notes')
         self.assertPresence("Versammlungsleitungs-Mailingliste angelegt.",
                             div="notifications")
+        self.assertPresence("Versammlungsleitungs-E-Mail-Adresse durch Adresse der"
+                            " neuen Mailingliste ersetzt.", div="notifications")
         self.assertNotIn('createpresiderlistform', self.response.forms)
         f = self.response.forms['createattendeelistform']
         self.submit(f)
@@ -408,11 +420,10 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertTitle("Versammlungen")
         self.assertNonPresence("Drittes CdE-Konzil")
 
-        presider_address = "presider@lists.cde-ev.de"
         self._create_assembly(delta={'presider_address': presider_address})
         self.traverse("Konfiguration")
-        f = self.response.forms["changeassemblyform"]
-        self.assertEqual(f["presider_address"].value, presider_address)
+        f = self.response.forms['changeassemblyform']
+        self.assertEqual(f['presider_address'].value, presider_address)
 
     @as_users("charly")
     def test_signup(self, user: CdEDBObject) -> None:

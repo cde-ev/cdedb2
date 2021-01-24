@@ -1087,8 +1087,6 @@ class EventFrontend(AbstractUserFrontend):
     @staticmethod
     def _get_mailinglist_setter(event: CdEDBObject, orgalist: bool = False
                                 ) -> CdEDBObject:
-        email_local_part = "{}{}".format(
-            event['shortname'], "" if orgalist else "-all")
         # During event creation the id is not yet known.
         event_id = event.get('id')
         if orgalist:
@@ -1096,8 +1094,8 @@ class EventFrontend(AbstractUserFrontend):
                      " unserer Veranstaltung zusammenhängen, über diese Liste"
                      " an uns.")
             orga_ml_data = {
-                'title': "{} Orgateam".format(event['title']),
-                'local_part': email_local_part,
+                'title': f"{event['title']} Orgateam",
+                'local_part': f"{event['shortname'].lower()}",
                 'domain': const.MailinglistDomain.aka,
                 'description': descr,
                 'mod_policy': const.ModerationPolicy.unmoderated,
@@ -1118,8 +1116,8 @@ class EventFrontend(AbstractUserFrontend):
                      "Teilnehmer unserer Veranstaltung; sie kann im Vorfeld "
                      "zum Austausch untereinander genutzt werden.")
             participant_ml_data = {
-                'title': "{} Teilnehmer".format(event['title']),
-                'local_part': email_local_part,
+                'title': f"{event['title']} Teilnehmer",
+                'local_part': f"{event['shortname'].lower()}-all",
                 'domain': const.MailinglistDomain.aka,
                 'description': descr,
                 'mod_policy': const.ModerationPolicy.non_subscribers,

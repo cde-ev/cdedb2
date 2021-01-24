@@ -199,8 +199,9 @@ class MailinglistDomain(enum.IntEnum):
     general = 3
     cdelokal = 4
 
-    cdemuenchen = 10
-    dokuforge = 11
+    # The domains are not supported. To avoid conflicts, do not reuse:
+    # cdemuenchen = 10
+    # dokuforge = 11
 
     testmail = 100
 
@@ -211,7 +212,7 @@ class MailinglistDomain(enum.IntEnum):
 
     @classmethod
     def mailman_domains(cls) -> Set['MailinglistDomain']:
-        return {cls.aka, cls.testmail}
+        return {cls.lists, cls.aka, cls.general, cls.cdelokal, cls.testmail}
 
 
 # Instead of importing this, call str() on a MailinglistDomain.
@@ -220,8 +221,6 @@ _DOMAIN_STR_MAP: Dict[MailinglistDomain, str] = {
     MailinglistDomain.aka: "aka.cde-ev.de",
     MailinglistDomain.general: "cde-ev.de",
     MailinglistDomain.cdelokal: "cdelokal.cde-ev.de",
-    MailinglistDomain.cdemuenchen: "cde-muenchen.de",
-    MailinglistDomain.dokuforge: "dokuforge.de",
     MailinglistDomain.testmail: "testmail.cde-ev.de",
 }
 
@@ -229,13 +228,11 @@ _DOMAIN_STR_MAP: Dict[MailinglistDomain, str] = {
 @enum.unique
 class MailinglistInteractionPolicy(enum.IntEnum):
     """Regulate (un)subscriptions to mailinglists."""
-    #: everybody is subscribed (think CdE-all)
-    mandatory = 1
-    opt_out = 2  #:
-    opt_in = 3  #:
-    #: everybody may subscribe, but only after approval
+    #: user may subscribe
+    subscribable = 3
+    #: user may subscribe, but only after approval
     moderated_opt_in = 4
-    #: nobody may subscribe by themselves
+    #: user may not subscribe by themselves
     invitation_only = 5
     #: only implicit subscribers allowed
     implicits_only = 6

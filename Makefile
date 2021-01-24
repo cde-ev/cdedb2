@@ -311,4 +311,4 @@ mypy-test:
 	${MYPYBIN} tests
 
 mypy:
-	${MYPYBIN} cdedb tests
+	${MYPYBIN} bin cdedb tests

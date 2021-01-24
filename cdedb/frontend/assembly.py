@@ -333,7 +333,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                      " Versammlung zusammenhängen, über diese Liste an uns.")
             presider_ml_data = {
                 'title': f"{assembly['title']} Versammlungsleitung",
-                'local_part': f"{assembly['shortname']}-leitung",
+                'local_part': f"{assembly['shortname'].lower()}-leitung",
                 'domain': const.MailinglistDomain.lists,
                 'description': descr,
                 'mod_policy': const.ModerationPolicy.unmoderated,
@@ -352,7 +352,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                      " der [Versammlung anmeldest]({}).")
             attendee_ml_data = {
                 'title': assembly['title'],
-                'local_part': assembly['shortname'],
+                'local_part': assembly['shortname'].lower(),
                 'domain': const.MailinglistDomain.lists,
                 'description': descr,
                 'mod_policy': const.ModerationPolicy.non_subscribers,
@@ -410,7 +410,9 @@ class AssemblyFrontend(AbstractUserFrontend):
         assert data is not None
         presider_ml_data = None
         if create_presider_list:
-            # TODO maybe display a notification?
+            if presider_address:
+                rs.notify("info", n_("Given presider address ignored in favor of"
+                                     " newly created mailinglist."))
             presider_ml_data = self._get_mailinglist_setter(data, presider=True)
             presider_address = ml_type.get_full_address(  # type: ignore
                 presider_ml_data)
@@ -422,7 +424,6 @@ class AssemblyFrontend(AbstractUserFrontend):
                           {'address': presider_address})
         else:
             data["presider_address"] = presider_address
-        data = check(rs, vtypes.Assembly, data, creation=True)
         if presider_ids:
             if not self.coreproxy.verify_ids(rs, presider_ids, is_archived=False):
                 rs.append_validation_error(
