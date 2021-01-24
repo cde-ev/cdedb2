@@ -301,14 +301,5 @@ tests/ancillary_files/sample_data.sql: tests/ancillary_files/sample_data.json \
 		&& cp "$${SQLTEMPFILE}" tests/ancillary_files/sample_data.sql \
 		&& sudo -u www-data rm "$${SQLTEMPFILE}"
 
-mypy-backend:
-	${MYPYBIN} cdedb/backend/
-
-mypy-frontend:
-	${MYPYBIN} cdedb/frontend/
-
-mypy-test:
-	${MYPYBIN} tests
-
 mypy:
 	${MYPYBIN} bin cdedb tests
