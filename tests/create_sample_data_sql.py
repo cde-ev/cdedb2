@@ -152,13 +152,6 @@ def build_commands(data: Dict[str, Any], aux: AuxData) -> List[str]:
     return ret
 
 
-def write_output(commands: List[str], outfile: str) -> None:
-    with open(outfile, "w") as f:
-        for cmd in commands:
-            f.write(cmd)
-            f.write("\n")
-
-
 def main() -> None:
     # Import filelocations from commandline.
     parser = argparse.ArgumentParser(
@@ -171,11 +164,16 @@ def main() -> None:
         "-o", "--outfile", default="/tmp/sample_data.sql")
     args = parser.parse_args()
 
-    data = json.loads(args.infile)
+    with open(args.infile) as f:
+        data = json.load(f)
+
     assert isinstance(data, dict)
     aux = prepare_aux(data)
     commands = build_commands(data, aux)
-    write_output(commands, args.outfile)
+    
+    with open(args.outfile, "w") as f:
+        for cmd in commands:
+            print(cmd, file=f)
 
 
 if __name__ == '__main__':
