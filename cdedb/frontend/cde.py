@@ -2182,11 +2182,28 @@ class CdEFrontend(AbstractUserFrontend):
                     except ArchiveError as e:
                         self.logger.exception(f"Unexpected error during archival of"
                                               f" persona {persona_id}.")
+                        # TODO: somehow combine all failures into a single mail.
+                        #  This requires storing the ids somehow.
+                        mail = self._create_mail(
+                            text=f"Automated archival of persona {persona_id} failed"
+                                 f" with ArchivalError:\n{e}",
+                            headers={'Subject': "Automated Archival failure",
+                                     'To': (rrs.user.username,)},
+                            attachments=None)
+                        self._send_mail(mail)
                     if code:
                         period_update['archival_count'] = period['archival_count'] + 1
                     else:
                         self.logger.error(f"Automated archival of persona {persona_id}"
                                           f" failed for unknown reasons.")
+                        # TODO: combine all failures into a single mail. See above.
+                        mail = self._create_mail(
+                            text=f"Automated archival of persona {persona_id} failed"
+                                 f" with unknown error.",
+                            headers={'Subject': "Automated Archival failure",
+                                     'To': (rrs.user.username,)},
+                            attachments=None)
+                        self._send_mail(mail)
                 self.cdeproxy.set_period(rrs, period_update)
                 return True
 
