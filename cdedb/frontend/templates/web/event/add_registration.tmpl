@@ -46,8 +46,7 @@
         {{ util.form_input_text(name="reg.amount_paid", label=gettext("Amount Paid"), type="number",
                                 attributes='step="0.01"'|s, defaultvalue="0.00") }}
         {{ util.form_input_checkbox(name="reg.parental_agreement", label=gettext("Parental Consent")) }}
-        {{ util.form_input_text(name="reg.checkin", label=gettext("Checked-In"), type="datetime-local",
-                                placeholder="YYYY-MM-DD hh:ii") }}
+        {{ util.form_input_text(name="reg.checkin", label=gettext("Checked-In"), type="datetime-local") }}
 
         {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
             {% if ambience['event']['parts']|length > 1 %}
