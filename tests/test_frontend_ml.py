@@ -1345,15 +1345,27 @@ class TestMlFrontend(FrontendTest):
 
     @as_users("janis")
     @prepsql("INSERT INTO ml.moderators (mailinglist_id, persona_id) VALUES (5, 10)")
+    @prepsql(f"INSERT INTO ml.subscription_states"
+             f" (mailinglist_id, persona_id, subscription_state)"
+             f" VALUES (5, 5, {const.SubscriptionStates.unsubscribed.value})")
     def test_non_privileged_moderator(self, user: CdEDBObject) -> None:
         self.traverse({"description": "Mailinglisten"},
                       {"description": "Sozialistischer Kampfbrief"},
                       {"description": "Erweiterte Verwaltung"})
         self.assertPresence("Du hast keinen Zugriff als Privilegierter Moderator",
                             div="static-notifications")
+
         # they can neither add nor remove subscriptions.
         self.assertNotIn('addmodsubscriberform', self.response.forms)
+        self.assertPresence("Akira", div='modsubscriber-list')
         self.assertNotIn('removemodsubscriberform100', self.response.forms)
+
+        self.assertNotIn('addmodunsubscriberform', self.response.forms)
+        self.assertPresence("Inga", div='modunsubscriber-list')
+        self.assertNotIn('removemodsubscriberform9', self.response.forms)
+
+        self.assertPresence("Emilia", div="unsubscriber-list")
+        self.assertNotIn('deleteunsubscriberform5', self.response.forms)
 
     @as_users("inga")
     def test_cdelokal_admin(self, user: CdEDBObject) -> None:

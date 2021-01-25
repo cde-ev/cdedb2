@@ -1122,6 +1122,10 @@ class MlBackend(AbstractBackend):
         """
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
 
+        # shortcut if the user is not privileged to change subscription states of the ml
+        if not self.may_manage(rs, mailinglist_id, privileged=True):
+            return set()
+
         atype = self.get_ml_type(rs, mailinglist_id)
         ml = self.get_mailinglist(rs, mailinglist_id)
 
