@@ -5,9 +5,6 @@ from typing import Any, AnyStr, Dict, Iterable, List, Mapping, NewType, Optional
 from cdedb.common import CdEDBObject
 from cdedb.query import Query
 
-# needs typing_extensions.TypedDict until 3.9 due to runtime inspection
-# from typing_extensions import Literal, TypedDict
-
 # SIMPLE/PRIMITIVE/ATOMIC TYPES
 
 NonNegativeInt = NewType("NonNegativeInt", int)
@@ -109,8 +106,6 @@ Mailinglist = NewType("Mailinglist", CdEDBObject)
 SubscriptionIdentifier = NewType("SubscriptionIdentifier", CdEDBObject)
 SubscriptionState = NewType("SubscriptionState", CdEDBObject)
 SubscriptionAddress = NewType("SubscriptionAddress", CdEDBObject)
-SubscriptionRequestResolution = NewType(
-    "SubscriptionRequestResolution", CdEDBObject)
 Assembly = NewType("Assembly", CdEDBObject)
 Ballot = NewType("Ballot", CdEDBObject)
 BallotCandidate = NewType("BallotCandidate", CdEDBObject)

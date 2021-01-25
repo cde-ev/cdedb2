@@ -794,7 +794,8 @@ def affirm_validation_typed_optional(
     assertion: Type[T], value: Any, **kwargs: Any
 ) -> Optional[T]:
     """Wrapper to call asserts in :py:mod:`cdedb.validation`."""
-    return validate.validate_assert_optional(assertion, value, **kwargs)
+    return validate.validate_assert(
+        Optional[assertion], value, **kwargs)  # type: ignore
 
 
 def affirm_array_validation(

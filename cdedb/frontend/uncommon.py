@@ -14,7 +14,7 @@ from typing import Callable, Mapping
 import werkzeug
 
 from cdedb.common import PERSONA_DEFAULTS, CdEDBObject, RequestState, merge_dicts, n_
-from cdedb.frontend.common import AbstractFrontend, check_validation_typed as check
+from cdedb.frontend.common import AbstractFrontend, check_validation as check
 import cdedb.validationtypes as vtypes
 
 

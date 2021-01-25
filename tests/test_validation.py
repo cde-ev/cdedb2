@@ -4,6 +4,7 @@ import copy
 import datetime
 import decimal
 import unittest
+from typing import List, Optional
 
 import pytz
 
@@ -52,39 +53,39 @@ class TestValidation(unittest.TestCase):
                     onepass, **extraparams)[0]
                 self.assertEqual(onepass, twopass)
 
-    def test_or_None(self) -> None:
-        self.assertTrue(validate.is_int(12))
-        self.assertFalse(validate.is_int(None))
-        self.assertFalse(validate.is_int("12"))
-        self.assertFalse(validate.is_int("garbage"))
-        self.assertTrue(validate.is_int_or_None(12))
-        self.assertTrue(validate.is_int_or_None(None))
-        self.assertFalse(validate.is_int_or_None("12"))
-        self.assertFalse(validate.is_int_or_None("garbage"))
+    def test_optional(self) -> None:
+        self.assertTrue(validate.validate_is(int, 12))
+        self.assertFalse(validate.validate_is(int, None))
+        self.assertFalse(validate.validate_is(int, "12"))
+        self.assertFalse(validate.validate_is(int, "garbage"))
+        self.assertTrue(validate.validate_is_optional(int, 12))
+        self.assertTrue(validate.validate_is_optional(int, None))
+        self.assertFalse(validate.validate_is_optional(int, "12"))
+        self.assertFalse(validate.validate_is_optional(int, "garbage"))
 
-        self.assertEqual((12, []), validate.check_int(12))
-        self.assertEqual(None, validate.check_int(None)[0])
-        self.assertLess(0, len(validate.check_int(None)[1]))
-        self.assertEqual(None, validate.check_int("garbage")[0])
-        self.assertLess(0, len(validate.check_int("garbage")[1]))
-        self.assertEqual((12, []), validate.check_int("12"))
-        self.assertEqual((12, []), validate.check_int_or_None(12))
-        self.assertEqual((None, []), validate.check_int_or_None(None))
-        self.assertEqual((12, []), validate.check_int_or_None("12"))
-        self.assertEqual(None, validate.check_int_or_None("garbage")[0])
-        self.assertLess(0, len(validate.check_int_or_None("garbage")[1]))
+        self.assertEqual((12, []), validate.validate_check(int, 12))
+        self.assertEqual(None, validate.validate_check(int, None)[0])
+        self.assertLess(0, len(validate.validate_check(int, None)[1]))
+        self.assertEqual(None, validate.validate_check(int, "garbage")[0])
+        self.assertLess(0, len(validate.validate_check(int, "garbage")[1]))
+        self.assertEqual((12, []), validate.validate_check(int, "12"))
+        self.assertEqual((12, []), validate.validate_check_optional(int, 12))
+        self.assertEqual((None, []), validate.validate_check_optional(int, None))
+        self.assertEqual((12, []), validate.validate_check_optional(int, "12"))
+        self.assertEqual(None, validate.validate_check_optional(int, "garbage")[0])
+        self.assertLess(0, len(validate.validate_check_optional(int, "garbage")[1]))
 
-        self.assertEqual(12, validate.assert_int(12))
+        self.assertEqual(12, validate.validate_assert(int, 12))
         with self.assertRaises(TypeError):
-            validate.assert_int(None)
+            validate.validate_assert(int, None)
         with self.assertRaises(ValueError):
-            validate.assert_int("garbage")
-        self.assertEqual(12, validate.assert_int("12"))
-        self.assertEqual(12, validate.assert_int_or_None(12))
-        self.assertEqual(None, validate.assert_int_or_None(None))
-        self.assertEqual(12, validate.assert_int_or_None("12"))
+            validate.validate_assert(int, "garbage")
+        self.assertEqual(12, validate.validate_assert(int, "12"))
+        self.assertEqual(12, validate.validate_assert_optional(int, 12))
+        self.assertEqual(None, validate.validate_assert_optional(int, None))
+        self.assertEqual(12, validate.validate_assert_optional(int, "12"))
         with self.assertRaises(ValueError):
-            validate.assert_int_or_None("garbage")
+            validate.validate_assert_optional(int, "garbage")
 
     def test_int(self) -> None:
         self.do_validator_test("_int", (
@@ -587,3 +588,7 @@ class TestValidation(unittest.TestCase):
                 "Forbidden characters (%(chars)s). (None)", {"chars": "&[]"}), False),
         ]
         self.do_validator_test("_safe_str", spec)
+
+    def test_generic_list(self):
+        self.assertTrue(validate.validate_is(List[int], [0, 1, 2, 3]))
+        self.assertFalse(validate.validate_is(List[int], [0, 1.7, 2, 3]))
