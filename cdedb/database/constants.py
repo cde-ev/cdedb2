@@ -442,7 +442,7 @@ class MlLogCodes(enum.IntEnum):
     marked_override = 24  #: SubscriptionStates.subscription_override
     marked_blocked = 25  #: SubscriptionStates.unsubscription_override
     cron_removed = 28  #:
-    unsubscription_removed = 29  #:
+    unsubscription_deleted = 29  #:
     request_approved = 30  #:
     request_denied = 31  #:
     request_cancelled = 32  #:
