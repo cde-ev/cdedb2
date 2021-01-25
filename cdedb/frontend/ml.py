@@ -11,10 +11,9 @@ from cdedb.common import RequestState, n_
 from cdedb.frontend.common import REQUESTdata, access, mailinglist_guard
 from cdedb.frontend.ml_base import MlBaseFrontend
 from cdedb.frontend.ml_mailman import MailmanMixin
-from cdedb.frontend.ml_rklists import RKListsMixin
 
 
-class MlFrontend(RKListsMixin, MailmanMixin, MlBaseFrontend):
+class MlFrontend(MailmanMixin, MlBaseFrontend):
     @access("ml")
     @mailinglist_guard()
     def message_moderation_form(self, rs: RequestState, mailinglist_id: int
@@ -44,7 +43,7 @@ class MlFrontend(RKListsMixin, MailmanMixin, MlBaseFrontend):
         if (self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or (
                 self.conf["CDEDB_DEV"] and not self.conf["CDEDB_TEST"])):
             self.logger.info("Skipping mailman request in dev/offline mode.")
-        elif dblist['domain'] in const.MailinglistDomain.mailman_domains():
+        else:
             mailman = self.get_mailman()
             mmlist = mailman.get_list_safe(dblist['address'])
             if mmlist is None:
