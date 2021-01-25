@@ -488,13 +488,16 @@ class TestMlFrontend(FrontendTest):
         f = self.response.forms['removemodsubscriberform9']
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch – Erweiterte Verwaltung")
-        self.assertNonPresence("Inga Iota")
+        self.assertNonPresence("Inga Iota", div="modsubscriber-list")
+        # Inga is now in SubscriptionState 'subscribed'
+        # self.assertPresence("Inga Iota", div="unsubscriber-list")
 
         self.assertPresence("Emilia E. Eventis")
         f = self.response.forms['removemodunsubscriberform5']
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch – Erweiterte Verwaltung")
-        self.assertNonPresence("Emilia E. Eventis")
+        self.assertNonPresence("Emilia E. Eventis", div="modunsubscriber-list")
+        self.assertPresence("Emilia E. Eventis", div="unsubscriber-list")
 
         self.assertPresence("zelda@example.cde")
         f = self.response.forms['removewhitelistform1']
