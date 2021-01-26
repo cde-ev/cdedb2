@@ -566,7 +566,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             states=(const.SubscriptionStates.unsubscription_override,))
         all_unsubscriptions = self.mlproxy.get_subscription_states(
             rs, mailinglist_id, states=(const.SubscriptionStates.unsubscribed,))
-        deletable_unsubscriptions = self.mlproxy.get_deletable_unsubscriptions(
+        redundant_unsubscriptions = self.mlproxy.get_redundant_unsubscriptions(
             rs, mailinglist_id)
         persona_ids = (set(rs.ambience['mailinglist']['moderators'])
                        | set(subscription_overrides.keys())
@@ -590,7 +590,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             'subscription_overrides': subscription_overrides,
             'unsubscription_overrides': unsubscription_overrides,
             'all_unsubscriptions': all_unsubscriptions,
-            'deletable_unsubscriptions': deletable_unsubscriptions,
+            'redundant_unsubscriptions': redundant_unsubscriptions,
             'privileged': privileged})
 
     @access("ml")
@@ -844,13 +844,20 @@ class MlBaseFrontend(AbstractUserFrontend):
     @access("ml", modi={"POST"})
     @REQUESTdata("unsubscription_id")
     @mailinglist_guard(requires_privilege=True)
-    def delete_unsubscription(self, rs: RequestState, mailinglist_id: int,
+    def reset_unsubscription(self, rs: RequestState, mailinglist_id: int,
                               unsubscription_id: vtypes.ID) -> Response:
-        """Administratively delete an unsubscription state."""
+        """Administratively reset an unsubscription state.
+
+        This is the only way to remove an explicit association of an user with a
+        mailinglist. It replaces the explicit with an implict unsubscribtion.
+
+        This should be used with care, since it may deletes a conscious decision of the
+        user about his relation to this mailinglist.
+        """
         if rs.has_validation_errors():
             return self.show_subscription_details(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, SubscriptionActions.delete_unsubscription,
+            rs, SubscriptionActions.reset_unsubscription,
             mailinglist_id=mailinglist_id, persona_id=unsubscription_id)
         return self.redirect(rs, "ml/show_subscription_details")
 

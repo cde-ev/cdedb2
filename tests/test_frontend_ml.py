@@ -1368,7 +1368,7 @@ class TestMlFrontend(FrontendTest):
         self.assertNotIn('removemodsubscriberform9', self.response.forms)
 
         self.assertPresence("Emilia", div="unsubscriber-list")
-        self.assertNotIn('deleteunsubscriberform5', self.response.forms)
+        self.assertNotIn('resetunsubscriberform5', self.response.forms)
 
     @as_users("inga")
     def test_cdelokal_admin(self, user: CdEDBObject) -> None:

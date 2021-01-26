@@ -992,9 +992,9 @@ class MlBackend(AbstractBackend):
         elif (action == sa.request_subscription and
               policy != const.MailinglistInteractionPolicy.moderated_opt_in):
             raise SubscriptionError(n_("Can not request subscription."))
-        elif action == sa.delete_unsubscription:
-            if persona_id not in self.get_deletable_unsubscriptions(rs, mailinglist_id):
-                raise SubscriptionError(n_("Can not delete unsubscription."))
+        elif action == sa.reset_unsubscription:
+            if persona_id not in self.get_redundant_unsubscriptions(rs, mailinglist_id):
+                raise SubscriptionError(n_("Can not reset unsubscription."))
 
     @access("ml")
     def set_subscription_address(self, rs: RequestState, mailinglist_id: int,
@@ -1116,11 +1116,12 @@ class MlBackend(AbstractBackend):
         get_many_subscription_states, "mailinglist_ids", "mailinglist_id")
 
     @access("ml")
-    def get_deletable_unsubscriptions(self, rs: RequestState, mailinglist_id: int
+    def get_redundant_unsubscriptions(self, rs: RequestState, mailinglist_id: int
                                       ) -> Set[int]:
-        """Retrieve all unsubscribed users whos unsubscription may be deleted.
+        """Retrieve all unsubscribed users who's unsubscriptions have no effect.
 
-        This is the case if the user is no implicit subscriber of the mailing list.
+        This is the case if and only if the user is no implicit subscriber of the
+        mailing list.
         """
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
 
