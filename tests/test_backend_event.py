@@ -13,7 +13,7 @@ import pytz
 import cdedb.database.constants as const
 from cdedb.backend.common import cast_fields
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, PartialImportError, PrivilegeError,
+    CdEDBObject, CdEDBObjectMap, InfiniteEnum, PartialImportError, PrivilegeError,
     CourseFilterPositions,
 )
 from cdedb.query import QUERY_SPECS, Query, QueryOperators
@@ -1246,7 +1246,8 @@ class TestEventBackend(BackendTest):
             self.key, event_id, course_id=1))
         expectation = {2: 5, 4: 9, 5: 100}
         self.assertEqual(expectation, self.event.registrations_by_course(
-            self.key, event_id, course_id=1, position=CourseFilterPositions.assigned))
+            self.key, event_id, course_id=1, position=InfiniteEnum(
+                CourseFilterPositions.assigned, 0)))
 
     @as_users("annika", "garcia")
     def test_entity_lodgement_group(self, user: CdEDBObject) -> None:

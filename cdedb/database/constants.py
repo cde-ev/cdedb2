@@ -7,8 +7,9 @@ correct numeric values. The raw values should never be used, instead
 their symbolic names provided by this module should be used.
 """
 
+import datetime
 import enum
-from typing import Dict, Set
+from typing import Any, Dict, Set, Type
 
 
 def n_(x: str) -> str:
@@ -86,6 +87,17 @@ class FieldDatatypes(enum.IntEnum):
     float = 4  #:
     date = 5  #:
     datetime = 6  #:
+
+    def to_type(self) -> Type[Any]:
+        type_associations = {
+            FieldDatatypes.str: str,
+            FieldDatatypes.bool: bool,
+            FieldDatatypes.int: int,
+            FieldDatatypes.float: float,
+            FieldDatatypes.date: datetime.date,
+            FieldDatatypes.datetime: datetime.datetime,
+        }
+        return type_associations[self]
 
 
 @enum.unique
@@ -229,13 +241,11 @@ _DOMAIN_STR_MAP: Dict[MailinglistDomain, str] = {
 @enum.unique
 class MailinglistInteractionPolicy(enum.IntEnum):
     """Regulate (un)subscriptions to mailinglists."""
-    #: everybody is subscribed (think CdE-all)
-    mandatory = 1
-    opt_out = 2  #:
-    opt_in = 3  #:
-    #: everybody may subscribe, but only after approval
+    #: user may subscribe
+    subscribable = 3
+    #: user may subscribe, but only after approval
     moderated_opt_in = 4
-    #: nobody may subscribe by themselves
+    #: user may not subscribe by themselves
     invitation_only = 5
     #: only implicit subscribers allowed
     implicits_only = 6

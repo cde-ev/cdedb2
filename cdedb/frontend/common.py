@@ -33,8 +33,9 @@ import smtplib
 import subprocess
 import tempfile
 import threading
-import urllib.parse
+import typing
 import urllib.error
+import urllib.parse
 from email.mime.nonmultipart import MIMENonMultipart
 from secrets import token_hex
 from typing import (
@@ -964,7 +965,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :param templatename: file name of template without extension
         """
 
-        def _cdedblink(endpoint: str, params: CdEDBObject = None,
+        def _cdedblink(endpoint: str, params: CdEDBMultiDict = None,
                        magic_placeholders: Collection[str] = None) -> str:
             """We don't want to pass the whole request state to the
             template, hence this wrapper.
@@ -976,7 +977,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             :type magic_placeholders: [str]
             :rtype: str
             """
-            params = params or {}
+            params = params or werkzeug.datastructures.MultiDict()
             return cdedburl(rs, endpoint, params,
                             force_external=(modus != "web"),
                             magic_placeholders=magic_placeholders)
@@ -1914,7 +1915,8 @@ def periodic(name: str, period: int = 1
     return decorator
 
 
-def cdedburl(rs: RequestState, endpoint: str, params: CdEDBObject = None,
+def cdedburl(rs: RequestState, endpoint: str,
+             params: Union[CdEDBObject, CdEDBMultiDict] = None,
              force_external: bool = False,
              magic_placeholders: Collection[str] = None) -> str:
     """Construct an HTTP URL.
@@ -1968,6 +1970,14 @@ def cdedburl(rs: RequestState, endpoint: str, params: CdEDBObject = None,
     else:
         for key in params:
             allparams[key] = params[key]
+
+    # Until Werkzeug 0.15, this workaround is necessary to keep duplicates.
+    allparams = allparams.to_dict(flat=False)
+    for key in allparams:
+        # And then, this needs to be done to keep <magic replacements> working
+        if len(allparams[key]) == 1:
+            allparams[key] = unwrap(allparams[key])
+
     return rs.urls.build(endpoint, allparams, force_external=force_external)
 
 
@@ -2046,57 +2056,96 @@ def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
 
 
 # noinspection PyPep8Naming
-def REQUESTdata(*spec: Tuple[str, str]) -> Callable[[F], F]:
-    """Decorator to extract parameters from requests and validate them. This
-    should always be used, so automatic form filling works as expected.
+def REQUESTdata(
+    *spec: str, _hints: validate.TypeMapping = None
+) -> Callable[[F], F]:
+    """Decorator to extract parameters from requests and validate them.
 
-    :param spec: Specification of parameters to extract. The
-      first value of a tuple is the name of the parameter to look out
-      for. The second value of each tuple denotes the sort of parameter to
-      extract, valid values are all validators from
-      :py:mod:`cdedb.validation` vanilla, enclosed in square brackets or
-      with a leading hash, the square brackets are for HTML elements which
-      submit multiple values for the same parameter (e.g. <select>) which
-      are extracted as lists and the hash signals an encoded parameter,
-      which needs to be decoded first.
+    This should always be used, so automatic form filling works as expected.
+    The decorator should be the innermost one
+    as it needs access to the original "__defaults__" attribute
+    to correctly determine types (e.g. "foo: str = None" -> "Optional[str]").
+    Alternatively "functools.wraps" can be invoked in a way
+    which also updates this attribute if the signature allows this.
+
+    :param spec: Names of the parameters to extract.
+        The type of the parameter will be dynamically extracted
+        from the type annotations of the decorated function.
+        Permitted types are the ones registered in :py:mod:`cdedb.validation`.
+        This includes all types from :py:mod:`cdedb.validationtypes`
+        as well as some native python types (primitives, datetimes, decimals).
+        Additonally the generic types ``Optional[T]`` and ``Collection[T]``
+        are valid as a type.
+        To extract an encoded parameter one may prepended the name of it 
+        with an octothorpe (``#``).
     """
 
     def wrap(fun: F) -> F:
         @functools.wraps(fun)
         def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
                     **kwargs: Any) -> Any:
-            for name, argtype in spec:
+            hints = _hints or typing.get_type_hints(fun)
+            for item in spec:
+                if item.startswith('#'):
+                    name = item[1:]
+                    encoded = True
+                else:
+                    name = item
+                    encoded = False
+
                 if name not in kwargs:
-                    if argtype.startswith('[') and argtype.endswith(']'):
+
+                    if getattr(hints[name], "__origin__", None) is Union:
+                        type_, _ = hints[name].__args__
+                        optional = True
+                    else:
+                        type_ = hints[name]
+                        optional = False
+
+                    val = rs.request.values.get(name, "")
+
+                    # TODO allow encoded collections?
+                    if encoded and val:
+                        # only decode if exists
+                        # noinspection PyProtectedMember
+                        timeout, val = rs._coders['decode_parameter'](
+                            "{}/{}".format(obj.realm, fun.__name__),
+                            name, val, persona_id=rs.user.persona_id)
+                        if timeout is True:
+                            rs.notify("warning", n_("Link expired."))
+                        if timeout is False:
+                            rs.notify("warning", n_("Link invalid."))
+
+                    if getattr(
+                        type_, "__origin__", None
+                    ) is collections.abc.Collection:
+                        type_ = unwrap(type_.__args__)
                         vals = tuple(rs.request.values.getlist(name))
                         if vals:
                             rs.values.setlist(name, vals)
                         else:
+                            # TODO should also work normally
                             # We have to be careful, since empty lists are
                             # problematic for the werkzeug MultiDict
                             rs.values[name] = None
-                        kwargs[name] = tuple(
-                            _check_validation(rs, argtype[1:-1], val, name)
-                            for val in vals)
+                        if optional:
+                            kwargs[name] = tuple(
+                                check_validation_optional(rs, type_, val, name)
+                                for val in vals
+                            )
+                        else:
+                            kwargs[name] = tuple(
+                                check_validation(rs, type_, val, name)
+                                for val in vals
+                            )
                     else:
-                        val = rs.request.values.get(name, "")
                         rs.values[name] = val
-                        if argtype.startswith('#'):
-                            argtype = argtype[1:]
-                            if val:
-                                # only decode if exists
-                                # noinspection PyProtectedMember
-                                timeout, val = rs._coders['decode_parameter'](
-                                    "{}/{}".format(obj.realm, fun.__name__),
-                                    name, val, persona_id=rs.user.persona_id)
-                                if timeout is True:
-                                    rs.notify("warning", n_("Link expired."))
-                                if timeout is False:
-                                    rs.notify("warning", n_("Link invalid."))
-                                if val is None:
-                                    # Clean out the invalid value
-                                    rs.values[name] = None
-                        kwargs[name] = _check_validation(rs, argtype, val, name)
+                        if optional:
+                            kwargs[name] = check_validation_optional(
+                                rs, type_, val, name)
+                        else:
+                            kwargs[name] = check_validation(
+                                rs, type_, val, name)
             return fun(obj, rs, *args, **kwargs)
 
         return cast(F, new_fun)
@@ -2150,7 +2199,7 @@ RequestConstraint = Tuple[Callable[[CdEDBObject], bool], Error]
 
 
 def request_extractor(
-        rs: RequestState, args: Iterable[Tuple[str, str]],
+        rs: RequestState, spec: validate.TypeMapping,
         constraints: Collection[RequestConstraint] = None) -> CdEDBObject:
     """Utility to apply REQUESTdata later than usual.
 
@@ -2168,12 +2217,12 @@ def request_extractor(
     list of callables that perform a check and associated errors that
     are reported if the check fails.
 
-    :param args: handed through to the decorator
+    :param spec: handed through to the decorator
     :param constraints: additional constraints that shoud produce
       validation errors
     :returns: dict containing the requested values
     """
-    @REQUESTdata(*args)
+    @REQUESTdata(*spec, _hints=spec)
     def fun(_: None, rs: RequestState, **kwargs: Any) -> CdEDBObject:
         if not rs.has_validation_errors():
             for checker, error in constraints or []:
@@ -2326,31 +2375,9 @@ def assembly_guard(fun: F) -> F:
     return cast(F, new_fun)
 
 
-def _check_validation(rs: RequestState, assertion: str, value: T,
+def check_validation(rs: RequestState, type_: Type[T], value: Any,
                      name: str = None, **kwargs: Any) -> Optional[T]:
     """Helper to perform parameter sanitization.
-
-    :param assertion: name of validation routine to call
-    :param name: name of the parameter to check (bonus points if you find
-      out how to nicely get rid of this -- python has huge introspection
-      capabilities, but I didn't see how this should be done).
-    """
-    checker: Callable[..., Tuple[Optional[T], List[Error]]] = getattr(
-        validate, "check_{}".format(assertion))
-    if name is not None:
-        ret, errs = checker(value, name, **kwargs)
-    else:
-        ret, errs = checker(value, **kwargs)
-    rs.extend_validation_errors(errs)
-    return ret
-
-
-def check_validation_typed(rs: RequestState, type_: Type[T], value: Any,
-                     name: str = None, **kwargs: Any) -> Optional[T]:
-    """Helper to perform parameter sanitization.
-
-    This is similar to :func:`~cdedb.frontend.common.check_validation`
-    but accepts a type object instead of a string.
 
     :param type_: type to check for
     :param name: name of the parameter to check (bonus points if you find
@@ -2365,12 +2392,12 @@ def check_validation_typed(rs: RequestState, type_: Type[T], value: Any,
     return ret
 
 
-def check_validation_typed_optional(rs: RequestState, type_: Type[T], value: Any,
+def check_validation_optional(rs: RequestState, type_: Type[T], value: Any,
                      name: str = None, **kwargs: Any) -> Optional[T]:
     """Helper to perform parameter sanitization.
 
     This is similar to :func:`~cdedb.frontend.common.check_validation`
-    but accepts a type object instead of a string.
+    but also allows optional/falsy values.
 
     :param type_: type to check for
     :param name: name of the parameter to check (bonus points if you find
@@ -2477,7 +2504,7 @@ def make_event_fee_reference(persona: CdEDBObject, event: CdEDBObject) -> str:
 
 
 def process_dynamic_input(rs: RequestState, existing: Collection[int],
-                          spec: Mapping[str, str],
+                          spec: validate.TypeMapping,
                           additional: CdEDBObject = None
                           ) -> Dict[int, Optional[CdEDBObject]]:
     """Retrieve information provided by flux tables.
@@ -2491,13 +2518,13 @@ def process_dynamic_input(rs: RequestState, existing: Collection[int],
     :param spec: name of input fields, mapped to their validation
     :param additional: additional keys added to each output object
     """
-    delete_flags = request_extractor(
-        rs, ((f"delete_{anid}", "bool") for anid in existing))
+    delete_flags = request_extractor(rs, {f"delete_{anid}": bool for anid in existing})
     deletes = {anid for anid in existing if delete_flags[f"delete_{anid}"]}
-    params = tuple(
-        (f"{key}_{anid}", value)
+    params: validate.TypeMapping = {
+        f"{key}_{anid}": value
         for anid in existing if anid not in deletes
-        for key, value in spec.items())
+        for key, value in spec.items()
+    }
     data = request_extractor(rs, params)
     ret: Dict[int, Optional[CdEDBObject]] = {
         anid: {key: data[f"{key}_{anid}"] for key in spec}
@@ -2511,10 +2538,9 @@ def process_dynamic_input(rs: RequestState, existing: Collection[int],
     marker = 1
     while marker < 2 ** 10:
         will_create = unwrap(
-            request_extractor(rs, ((f"create_-{marker}", "bool"),)))
+            request_extractor(rs, {f"create_-{marker}": bool}))
         if will_create:
-            params = tuple((f"{key}_-{marker}", value)
-                           for key, value in spec.items())
+            params = {f"{key}_-{marker}": value for key, value in spec.items()}
             data = request_extractor(rs, params)
             ret[-marker] = {key: data[f"{key}_-{marker}"] for key in spec}
             if additional:

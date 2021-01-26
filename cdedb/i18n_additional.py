@@ -212,13 +212,6 @@ I18N_STRINGS = (
     n_("RegistrationPartStati.cancelled"),
     n_("RegistrationPartStati.rejected"),
 
-    n_("MailinglistInteractionPolicy.mandatory"),
-    n_("MailinglistInteractionPolicy.opt_out"),
-    n_("MailinglistInteractionPolicy.opt_in"),
-    n_("MailinglistInteractionPolicy.moderated_opt_in"),
-    n_("MailinglistInteractionPolicy.invitation_only"),
-    n_("MailinglistInteractionPolicy.implicits_only"),
-
     n_("LastschriftTransactionStati.issued"),
     n_("LastschriftTransactionStati.skipped"),
     n_("LastschriftTransactionStati.success"),
