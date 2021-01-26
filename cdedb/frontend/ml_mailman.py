@@ -104,7 +104,7 @@ do nothing.
 """.strip(),
         }
         desired_header_matches = {
-            ('x-spam-flag', 'YES', 'hold'),
+            ('x-spam-flag', 'YES', 'discard'),
         }
         if not db_list['is_active']:
             desired_settings.update({
@@ -120,9 +120,6 @@ The list is currently inactive and does not process messages.
 
 The original message as received by Mailman is attached.
 """.strip()
-            desired_header_matches = {
-                ('x-spam-flag', 'YES', 'discard'),
-            }
 
         # Second, update values to mailman if changed
         changed = False
