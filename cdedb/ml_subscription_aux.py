@@ -148,7 +148,7 @@ class SubscriptionActions(enum.IntEnum):
             SubscriptionActions.remove_unsubscription_override:
                 MlLogCodes.unsubscribed,
             SubscriptionActions.reset_unsubscription:
-                MlLogCodes.unsubscription_reseted,
+                MlLogCodes.unsubscription_reset,
         }
         return log_code_map[self]
 

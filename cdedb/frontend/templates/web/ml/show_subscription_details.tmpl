@@ -218,11 +218,11 @@
                                         family_name=persona['family_name'])) }}
                         </form>
                     {% else %}
-                        <form action="{{ cdedblink('ml/add_subscriber') }}"
+                        <form action="{{ cdedblink('ml/readd_subscriber') }}"
                               method="POST" style="display: inline;"
                               id="addsubscriberform{{ unsubscription }}"
                               class="hide-hover display-inline">
-                            {{ util.anti_csrf_token('ml/add_subscriber') }}
+                            {{ util.anti_csrf_token('ml/readd_subscriber') }}
                             {{ util.input_hidden(name="subscriber_id", value=unsubscription) }}
                             {{ util.input_submit(value='', aclass="btn btn-xs btn-success list-button-float", icon="plus",
                                     title=gettext("Subscribe %(given_names)s %(family_name)s")|format(
