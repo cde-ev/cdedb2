@@ -190,14 +190,13 @@
         <p class="text-muted">
             {{ util.make_icon('info-circle') }}
             {% trans %}
-                Users who unsubscribed from this list. They will not be re-added automatically, but can be subscribed
-                manually by themself or a moderator.
+                Users who unsubscribed from this list. They will not be re-added automatically, but can subscribe manually.
             {% endtrans %}
         </p>
         <p class="text-danger">
             {{ util.make_icon('exclamation-triangle') }}
-            {% trans %}
-                This should not be changed if you do not know what you do.
+            {% trans link=util.href(docurl("Realm_Mailinglist_Management", anchor='explicitly-unsubscribed'), gettext("documentation"), title=gettext("Explicity Unsubscribed State")) %}
+                This should only be used as a cleanup for specific tools like the account merger. Consult the {{ link }} for more details.
             {% endtrans %}
         </p>
 

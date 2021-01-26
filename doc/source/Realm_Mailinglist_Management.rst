@@ -79,9 +79,11 @@ None (Implicitly Unsubscribed)
     whatsoever, because they never were listed on it or lost access to it.
     This state is the only one not explicitly saved in the database.
 
+.. _Explicitly_Unsubscribed:
+
 Explicitly Unsubscribed
     Users, which have specified they do not want to receive emails from a
-    specifc mailinglist anymore. This decision is permanent, until manually
+    specific mailinglist anymore. This decision is permanent, until manually
     reverted by them or a moderator. Even if they lose access to a list, this
     information is kept. Thus, if they regain access later on, these users
     will not be receiving emails from it.
