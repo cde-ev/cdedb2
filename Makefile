@@ -301,17 +301,5 @@ tests/ancillary_files/sample_data.sql: tests/ancillary_files/sample_data.json \
 		&& cp "$${SQLTEMPFILE}" tests/ancillary_files/sample_data.sql \
 		&& sudo -u www-data rm "$${SQLTEMPFILE}"
 
-mypy-backend:
-	${MYPYBIN} cdedb/backend/
-
-mypy-frontend:
-	${MYPYBIN} cdedb/frontend/
-
-mypy-test:
-	${MYPYBIN} tests/__init__.py tests/common.py \
-		tests/create_sample_data_json.py tests/create_sample_data_sql.py \
-		tests/main.py tests/singular.py
-
 mypy:
-	# Match all test files except `test_validation`.
-	${MYPYBIN} bin/ cdedb tests/common.py tests/test_[^v]*
+	${MYPYBIN} bin cdedb tests

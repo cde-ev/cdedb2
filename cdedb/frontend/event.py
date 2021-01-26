@@ -51,6 +51,7 @@ from cdedb.query import (
     QUERY_SPECS, Query, QueryConstraint, QueryOperators, mangle_query_input,
 )
 from cdedb.validation import TypeMapping, validate_check
+from cdedb.validationtypes import VALIDATOR_LOOKUP
 
 LodgementProblem = NamedTuple(
     "LodgementProblem", [("description", str), ("lodgement_id", int),
@@ -1306,7 +1307,7 @@ class EventFrontend(AbstractUserFrontend):
         data['active_segments'] = active_segments
         field_params: TypeMapping = {
             f"fields.{field['field_name']}": Optional[  # type: ignore
-                const.FieldDatatypes(field['kind']).to_type()]
+                VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]
             for field in rs.ambience['event']['fields'].values()
             if field['association'] == const.FieldAssociations.course
         }
@@ -1346,7 +1347,7 @@ class EventFrontend(AbstractUserFrontend):
         data['segments'] = segments
         field_params: TypeMapping = {
             f"fields.{field['field_name']}": Optional[  # type: ignore
-                const.FieldDatatypes(field['kind']).to_type()]
+                VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]
             for field in rs.ambience['event']['fields'].values()
             if field['association'] == const.FieldAssociations.course
         }
@@ -3322,7 +3323,8 @@ class EventFrontend(AbstractUserFrontend):
 
         f = lambda entry: rs.ambience['event']['fields'][entry['field_id']]
         params: TypeMapping = {
-            f(entry)['field_name']: const.FieldDatatypes(f(entry)['kind']).to_type()
+            f(entry)['field_name']: VALIDATOR_LOOKUP[
+                const.FieldDatatypes(f(entry)['kind']).name]
             for entry in reg_questionnaire
             if entry['field_id'] and not entry['readonly']
         }
@@ -3697,7 +3699,7 @@ class EventFrontend(AbstractUserFrontend):
         f = lambda entry: rs.ambience['event']['fields'][entry['field_id']]
         params: TypeMapping = {
             f(entry)['field_name']: Optional[  # type: ignore
-                const.FieldDatatypes(f(entry)['kind']).to_type()]
+                VALIDATOR_LOOKUP[const.FieldDatatypes(f(entry)['kind']).name]]
             for entry in add_questionnaire
             if entry['field_id'] and not entry['readonly']
         }
@@ -4049,7 +4051,7 @@ class EventFrontend(AbstractUserFrontend):
             })
         field_params: TypeMapping = {
             f"fields.{field['field_name']}": Optional[  # type: ignore
-                const.FieldDatatypes(field['kind']).to_type()]
+                VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]
             for field in event['fields'].values()
             if field['association'] == const.FieldAssociations.registration
         }
@@ -4773,7 +4775,7 @@ class EventFrontend(AbstractUserFrontend):
         data['event_id'] = event_id
         field_params: TypeMapping = {
             f"fields.{field['field_name']}": Optional[  # type: ignore
-                const.FieldDatatypes(field['kind']).to_type()]
+                VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]
             for field in rs.ambience['event']['fields'].values()
             if field['association'] == const.FieldAssociations.lodgement
         }
@@ -4816,7 +4818,7 @@ class EventFrontend(AbstractUserFrontend):
         data['id'] = lodgement_id
         field_params: TypeMapping = {
             f"fields.{field['field_name']}": Optional[  # type: ignore
-                const.FieldDatatypes(field['kind']).to_type()]
+                VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]
             for field in rs.ambience['event']['fields'].values()
             if field['association'] == const.FieldAssociations.lodgement
         }
@@ -6110,7 +6112,7 @@ class EventFrontend(AbstractUserFrontend):
 
         data_params: TypeMapping = {
             f"input{anid}": Optional[  # type: ignore
-                const.FieldDatatypes(field['kind']).to_type()]
+                VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]
             for anid in entities
         }
         data = request_extractor(rs, data_params)
