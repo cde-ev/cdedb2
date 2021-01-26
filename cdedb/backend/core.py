@@ -565,14 +565,19 @@ class CoreBackend(AbstractBackend):
 
     @internal
     @access("ml")
-    def list_all_moderators(self, rs: RequestState) -> Set[int]:
+    def list_all_moderators(self, rs: RequestState,
+                            ml_types: Collection[const.MailinglistTypes] = set()
+                            ) -> Set[int]:
         """List all moderators of any mailinglists.
 
         Due to architectural limitations of the BackendContainer used for
         mailinglist types, this is found here instead of in the MlBackend.
         """
-        query = "SELECT DISTINCT persona_id from ml.moderators"
-        data = self.query_all(rs, query, params=tuple())
+        query = "SELECT DISTINCT mod.persona_id from ml.moderators as mod"
+        if ml_types:
+            query += (" JOIN ml.mailinglists As ml ON mod.mailinglist_id = ml.id"
+                      " WHERE ml.ml_type = ANY(%s)")
+        data = self.query_all(rs, query, params=(ml_types,))
         return {e["persona_id"] for e in data}
 
     @access("core_admin")

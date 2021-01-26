@@ -1014,6 +1014,9 @@ class TestMlFrontend(FrontendTest):
             {'address': 'participants@aka.cde-ev.de', 'is_active': True},
             {'address': 'wait@aka.cde-ev.de', 'is_active': True},
             {'address': 'opt@lists.cde-ev.de', 'is_active': True},
+            {'address': 'moderatoren@lists.cde-ev.de', 'is_active': True},
+            {'address': 'everyone@lists.cde-ev.de', 'is_active': True},
+            {'address': 'lokalgruppen@lists.cde-ev.de', 'is_active': True},
             {'address': 'all@lists.cde-ev.de', 'is_active': True},
             {'address': 'info@lists.cde-ev.de', 'is_active': True},
             {'address': 'mitgestaltung@lists.cde-ev.de', 'is_active': True},
@@ -1116,6 +1119,24 @@ class TestMlFrontend(FrontendTest):
             },
             {
                 'address': 'opt@lists.cde-ev.de',
+                'inactive': False,
+                'maxsize': None,
+                'mime': False,
+            },
+            {
+                'address': 'moderatoren@lists.cde-ev.de',
+                'inactive': False,
+                'maxsize': None,
+                'mime': False,
+            },
+            {
+                'address': 'everyone@lists.cde-ev.de',
+                'inactive': False,
+                'maxsize': 64,
+                'mime': False,
+            },
+            {
+                'address': 'lokalgruppen@lists.cde-ev.de',
                 'inactive': False,
                 'maxsize': None,
                 'mime': False,
@@ -1379,7 +1400,7 @@ class TestMlFrontend(FrontendTest):
                       {"description": "Mailingliste anlegen"})
         f = self.response.forms['selectmltypeform']
         f['ml_type'] = const.MailinglistTypes.cdelokal.value
-        self.assertEqual(len(f['ml_type'].options), 1)
+        self.assertEqual(len(f['ml_type'].options), 2)
         self.submit(f)
         f = self.response.forms['createlistform']
         f['title'] = "Little Whinging"

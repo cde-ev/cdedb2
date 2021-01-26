@@ -6265,6 +6265,25 @@
             "assembly_id": null
         },
         {
+            "id": 14,
+            "title": "Lokalgruppen-Liste",
+            "address": "lokalgruppen@lists.cde-ev.de",
+            "local_part": "lokalgruppen",
+            "domain": 1,
+            "description": "Für alle Moderatoren von CdELokal-Mailinglisten.",
+            "mod_policy": 3,
+            "attachment_policy": 1,
+            "ml_type": 46,
+            "subject_prefix": "lokalgruppen",
+            "maxsize": null,
+            "is_active": true,
+            "notes": null,
+            "gateway": null,
+            "event_id": null,
+            "registration_stati": [],
+            "assembly_id": null
+        },
+        {
             "id": 51,
             "title": "CdE-All",
             "address": "all@lists.cde-ev.de",
@@ -6652,6 +6671,18 @@
         {
             "mailinglist_id": 10,
             "persona_id": 7
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 1
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 1
+        },
+         {
+            "mailinglist_id": 14,
+            "persona_id": 1
         },
         {
             "mailinglist_id": 52,
@@ -7308,6 +7339,11 @@
             "mailinglist_id": 13,
             "persona_id": 48,
             "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 14,
+            "persona_id": 5,
+            "subscription_state": 30
         },
         {
             "mailinglist_id": 51,
