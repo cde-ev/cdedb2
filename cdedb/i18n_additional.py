@@ -264,6 +264,7 @@ I18N_STRINGS = (
     n_("MailinglistTypes.general_mandatory"),
     n_("MailinglistTypes.general_opt_in"),
     n_("MailinglistTypes.general_moderators"),
+    n_("MailinglistTypes.cdelokal_moderators"),
     n_("MailinglistTypes.semi_public"),
     n_("MailinglistTypes.cdelokal"),
 
