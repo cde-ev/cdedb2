@@ -831,6 +831,26 @@ class MlBaseFrontend(AbstractUserFrontend):
     @access("ml", modi={"POST"})
     @mailinglist_guard(requires_privilege=True)
     @REQUESTdata("subscriber_id")
+    def add_subscriber(self, rs: RequestState, mailinglist_id: int,
+                       subscriber_id: vtypes.ID) -> Response:
+        """Administratively subscribe somebody.
+
+        This is used as a shortcut to re-subscribe an unsubscribed user from the list
+        of all unsubscriptions.
+        """
+        if rs.has_validation_errors():
+            return self.show_subscription_details(rs, mailinglist_id)
+        self._subscription_action_handler(
+            rs, SubscriptionActions.add_subscriber,
+            mailinglist_id=mailinglist_id, persona_id=subscriber_id)
+        if rs.has_validation_errors():
+            return self.show_subscription_details(rs, mailinglist_id)
+        else:
+            return self.redirect(rs, "ml/show_subscription_details")
+
+    @access("ml", modi={"POST"})
+    @mailinglist_guard(requires_privilege=True)
+    @REQUESTdata("subscriber_id")
     def remove_subscriber(self, rs: RequestState, mailinglist_id: int,
                           subscriber_id: vtypes.ID) -> Response:
         """Administratively unsubscribe somebody."""

@@ -205,18 +205,32 @@
         {% for unsubscription, persona in all_unsubscriptions.items() %} {# This is already sorted. #}
             <li class="hide-hover-container clearfix-after">
                 {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
-                {% if privileged and unsubscription in redundant_unsubscriptions %}
-                    <form action="{{ cdedblink('ml/reset_unsubscription') }}"
-                          method="POST" style="display: inline;"
-                          id="resetunsubscriberform{{ unsubscription }}"
-                          class="hide-hover display-inline">
-                        {{ util.anti_csrf_token('ml/reset_unsubscription') }}
-                        {{ util.input_hidden(name="unsubscription_id", value=unsubscription) }}
-                        {{ util.input_submit(value='', aclass="btn btn-xs btn-danger list-button-float", icon="minus",
-                                title=gettext("Reset %(given_names)s %(family_name)s explicit unsubscription")|format(
-                                    given_names=persona['given_names'],
-                                    family_name=persona['family_name'])) }}
-                    </form>
+                {% if privileged %}
+                    {% if unsubscription in redundant_unsubscriptions %}
+                        <form action="{{ cdedblink('ml/reset_unsubscription') }}"
+                              method="POST" style="display: inline;"
+                              id="resetunsubscriberform{{ unsubscription }}"
+                              class="hide-hover display-inline">
+                            {{ util.anti_csrf_token('ml/reset_unsubscription') }}
+                            {{ util.input_hidden(name="unsubscription_id", value=unsubscription) }}
+                            {{ util.input_submit(value='', aclass="btn btn-xs btn-danger list-button-float", icon="trash-alt",
+                                    title=gettext("Reset %(given_names)s %(family_name)s explicit unsubscription")|format(
+                                        given_names=persona['given_names'],
+                                        family_name=persona['family_name'])) }}
+                        </form>
+                    {% else %}
+                        <form action="{{ cdedblink('ml/add_subscriber') }}"
+                              method="POST" style="display: inline;"
+                              id="addsubscriberform{{ unsubscription }}"
+                              class="hide-hover display-inline">
+                            {{ util.anti_csrf_token('ml/add_subscriber') }}
+                            {{ util.input_hidden(name="subscriber_id", value=unsubscription) }}
+                            {{ util.input_submit(value='', aclass="btn btn-xs btn-success list-button-float", icon="plus",
+                                    title=gettext("Subscribe %(given_names)s %(family_name)s")|format(
+                                        given_names=persona['given_names'],
+                                        family_name=persona['family_name'])) }}
+                        </form>
+                    {% endif %}
                 {% endif %}
             </li>
         {% endfor %}
