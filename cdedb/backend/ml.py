@@ -1136,9 +1136,7 @@ class MlBackend(AbstractBackend):
         data = self.get_subscription_states(
             rs, mailinglist_id, states={const.SubscriptionStates.unsubscribed})
 
-        ret: Set[int] = {persona_id for persona_id in data
-                         if persona_id not in possible_implicits}
-        return ret
+        return data.keys() - possible_implicits
 
     @access("ml")
     def get_user_subscriptions(
