@@ -550,9 +550,9 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                          "(Internationaler Kongress)")
         self.assertPresence("Nach dem Leben, dem Universum und dem ganzen Rest")
         self.traverse({'description': 'Ergebnisdetails'})
-        self.assertPresence(
-            "Du hast mit der folgenden Präferenz abgestimmt: 2>3>_bar_>1=4",
-            div='own-vote', exact=True)
+        own_vote = ("Du hast mit der folgenden Präferenz abgestimmt:"
+                    " 23 > 42 > Ablehnungsgrenze > Ich = Philosophie")
+        self.assertPresence(own_vote, div='own-vote', exact=True)
 
     @as_users("garcia")
     def test_show_ballot_without_vote(self, user: CdEDBObject) -> None:
@@ -957,7 +957,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                               {'description': bdata['title']},
                               {'description': 'Ergebnisdetails'})
                 self.assertPresence("Du hast für die folgenden Kandidaten "
-                                    "gestimmt: arthur, ford",
+                                    "gestimmt: Arthur Dent = Ford Prefect",
                                     div='own-vote', exact=True)
 
     @as_users("werner", "inga", "kalif")
@@ -1040,6 +1040,80 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                 self.assertNonPresence("Nächste")
 
             self.response = save
+
+    @as_users("anton")
+    def test_ballot_result_page_extended(self, user: CdEDBObject) -> None:
+        # classical vote with bar
+        self.traverse({'description': 'Versammlung'},
+                      {'description': 'Kanonische Beispielversammlung'},
+                      {'description': 'Zusammenfassung'},
+                      {'description': 'Eine damals wichtige Frage'},
+                      {'description': 'Ergebnisdetails'})
+        self.assertTitle("Ergebnis (Kanonische Beispielversammlung/Eine damals wichtige Frage)")
+
+        # test if the overall result is displayed correctly
+        result = "CdE Wappen > CdE Glühbirne = Baum & Blätter = Gegen alle Kandidaten"
+        self.assertPresence(result, div='combined-preference', exact=True)
+
+        # test if the sorting of the single votes is correct
+        self.assertPresence("CdE Wappen 3", div='vote-1', exact=True)
+        self.assertPresence("CdE Glühbirne 1 ", div='vote-2', exact=True)
+        self.assertPresence("Baum & Blätter 1", div='vote-3', exact=True)
+        self.assertPresence("Gegen alle Kandidaten 1", div='vote-4', exact=True)
+        self.assertNonPresence("", div='vote-5', check_div=False)
+
+        # test the list of all voters
+        self.assertPresence("Anton Armin A. Administrator", div='voters-list')
+        self.assertPresence("Rowena Ravenclaw", div='voters-list')
+        self.assertNonPresence("Vera", div='voters-list')
+
+
+        # classical vote without bar
+        self.traverse({'description': 'Abstimmungen'},
+                      {'description': 'Entlastung des Vorstands'},
+                      {'description': 'Ergebnisdetails'})
+        self.assertTitle("Ergebnis (Kanonische Beispielversammlung/Entlastung des Vorstands)")
+
+        # test if the overall result is displayed correctly
+        result = "Ja > Nein"
+        self.assertPresence(result, div='combined-preference', exact=True)
+
+        # test if abstentions are rendered correctly
+        self.assertPresence("Enthalten 1", div='vote-3', exact=True)
+
+
+        # preferential vote without bar
+        self.traverse({'description': 'Abstimmungen'},
+                      {'description': 'Wie soll der CdE mit seinem Vermögen umgehen?'},
+                      {'description': 'Ergebnisdetails'})
+        self.assertTitle("Ergebnis (Kanonische Beispielversammlung/Wie soll der CdE mit seinem Vermögen umgehen?)")
+
+        # test if the overall result is displayed correctly
+        result = "Wir kaufen den Eisenberg! = Kostenlose Akademien für alle. > Investieren in Aktien und Fonds."
+        self.assertPresence(result, div='combined-preference', exact=True)
+
+        # test a vote string
+        vote = "Kostenlose Akademien für alle. > Investieren in Aktien und Fonds. = Wir kaufen den Eisenberg! 3"
+        self.assertPresence(vote, div='vote-1', exact=True)
+
+
+        # preferential vote with bar
+        self.traverse({'description': 'Versammlung'},
+                      {'description': 'Internationaler Kongress'},
+                      {'description': 'Abstimmungen'},
+                      {'description': 'Antwort auf die letzte aller Fragen'},
+                      {'description': 'Ergebnisdetails'})
+        self.assertTitle(
+            "Ergebnis (Internationaler Kongress/Antwort auf die letzte aller Fragen)")
+
+        # test if the overall result is displayed correctly
+        result = "42 > 23 = Philosophie > Ablehnungsgrenze > Ich"
+        self.assertPresence(result, div='combined-preference', exact=True)
+
+        # test a vote string
+        self.assertPresence("42 > 23 = Philosophie > Ablehnungsgrenze > Ich 1",
+                            div='vote-1', exact=True)
+
 
     @as_users("werner")
     def test_extend(self, user: CdEDBObject) -> None:
@@ -1177,7 +1251,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.traverse({'description': 'Abstimmungen'},
                       {'description': bdata['title']},
                       {'description': 'Ergebnisdetails'})
-        self.assertPresence("Du hast für die folgenden Kandidaten gestimmt: ja",
+        self.assertPresence("Du hast für die folgenden Kandidaten gestimmt: Ja",
                             div='own-vote', exact=True)
 
         self.traverse({'description': 'Abstimmungen'},
@@ -1221,7 +1295,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.submit(f, check_notification=False)
         self.assertNonPresence("Die Versammlung wurde beendet und die "
                                "Stimmen sind nun verschlüsselt.")
-        self.assertPresence("Du hast für die folgenden Kandidaten gestimmt: ja",
+        self.assertPresence("Du hast für die folgenden Kandidaten gestimmt: Ja",
                             div='own-vote', exact=True)
 
     def test_log(self) -> None:
@@ -1242,7 +1316,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.login(USER_DICT['anton'])
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Log'})
-        self.assertTitle("Versammlungs-Log [1–18 von 18]")
+        self.assertTitle("Versammlungs-Log [1–26 von 26]")
         self.assertNonPresence("LogCodes")
         f = self.response.forms['logshowform']
         codes = [const.AssemblyLogCodes.assembly_created.value,

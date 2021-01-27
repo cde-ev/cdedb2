@@ -1192,16 +1192,28 @@ class AssemblyFrontend(AbstractUserFrontend):
             vote_counts = {vote: sum((1 for v in result['votes']
                                       if v.get('vote').split('>')[0] == vote))
                            for vote in vote_set}
-            # count the abstentions, which have no >
-            vote_counts[MAGIC_ABSTAIN] = sum(1 for v in result['votes']
-                                             if len(v.get('vote').split('>')) == 1)
-            if vote_counts[MAGIC_ABSTAIN] == 0:
-                del vote_counts[MAGIC_ABSTAIN]
         else:
-            vote_set = {vote['vote'] for vote in result['votes']}
+            # if there are no >, it is an abstention which will be counted later
+            vote_set = {vote['vote'] for vote in result['votes']
+                        if len(vote['vote'].split('>')) != 1}
             vote_counts = {vote: sum((1 for v in result['votes']
                                       if v.get('vote') == vote))
                            for vote in vote_set}
+        # count the abstentions, which have no >
+        vote_counts[MAGIC_ABSTAIN] = sum(1 for v in result['votes']
+                                         if len(v.get('vote').split('>')) == 1)
+        if vote_counts[MAGIC_ABSTAIN] == 0:
+            del vote_counts[MAGIC_ABSTAIN]
+
+        # map the candidate shortnames to their titles
+        candidates = {candidate['shortname']: candidate['title']
+                      for candidate in ballot['candidates'].values()}
+        candidates[MAGIC_ABSTAIN] = rs.gettext("Abstained")
+        if ballot['use_bar']:
+            if ballot['votes']:
+                candidates[ASSEMBLY_BAR_SHORTNAME] = rs.gettext("Against all Candidates")
+            else:
+                candidates[ASSEMBLY_BAR_SHORTNAME] = rs.gettext("Rejection limit")
 
         # calculate the hash of the result file
         result_bytes = self.assemblyproxy.get_ballot_result(rs, ballot['id'])
@@ -1226,7 +1238,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             'result_hash': result_hash, 'secret': secret, **vote_dict,
             'vote_counts': vote_counts, 'MAGIC_ABSTAIN': MAGIC_ABSTAIN,
             'BALLOT_TALLY_ADDRESS': self.conf["BALLOT_TALLY_ADDRESS"],
-            'prev_ballot': prev_ballot, 'next_ballot': next_ballot})
+            'prev_ballot': prev_ballot, 'next_ballot': next_ballot,
+            'candidates': candidates})
 
     def _retrieve_own_vote(self, rs: RequestState, ballot: CdEDBObject,
                            secret: str = None) -> CdEDBObject:
@@ -1366,6 +1379,13 @@ class AssemblyFrontend(AbstractUserFrontend):
                 if '>' not in vote['vote']:
                     abstentions += 1
             result['abstentions'] = abstentions
+
+            # strip the leading _bar_ of the result if it has only technical meanings
+            if not result['use_bar']:
+                if result['result'].endswith(ASSEMBLY_BAR_SHORTNAME):
+                    # remove also the trailing > or =
+                    result['result'] = result['result'][:-len(ASSEMBLY_BAR_SHORTNAME)-1]
+
             return result
         return None
 

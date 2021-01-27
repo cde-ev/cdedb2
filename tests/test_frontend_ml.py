@@ -19,6 +19,19 @@ class TestMlFrontend(FrontendTest):
     def test_index(self, user: CdEDBObject) -> None:
         self.traverse({'href': '/ml/'})
 
+    @as_users("nina", "berta", "annika")
+    def test_manually_write_subscription_states(self, user: CdEDBObject) -> None:
+        self.traverse({'description': 'Mailinglisten'})
+        self.assertTitle('Mailinglisten')
+
+        # we show this only for ml admins, not for moderators or relative admins
+        if user == USER_DICT['nina']:
+            self.assertPresence("Aktualisieren der Subscription States")
+            f = self.response.forms['writesubscriptionstates']
+            self.submit(f)
+        else:
+            self.assertNonPresence("Aktualisieren der Subscription States")
+
     @as_users("annika", "anton", "berta", "martin", "nina", "vera", "viktor")
     def test_sidebar(self, user: CdEDBObject) -> None:
         self.traverse({'description': 'Mailinglisten'})
