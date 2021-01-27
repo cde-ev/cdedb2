@@ -1051,6 +1051,9 @@ span.color-legend {
 .clickable {
     cursor: pointer;
 }
+.dummy {
+    visibility: hidden;
+}
 ul.styleless {
     list-style: none;
     padding-left: 15px;
