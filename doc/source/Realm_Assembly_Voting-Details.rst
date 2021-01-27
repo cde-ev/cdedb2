@@ -101,14 +101,13 @@ and will be mapped to the string::
 
   Anton=Berta=Charly=Daniel
 
-.. warning::
-  Since we are allowed to assign any number of individual votes from *0 (abstaining)*
-  to *the total number of candidates*, we can not distinguish between
-  *abstaining* on the one hand and *voting for all candidates* on the other hand.
+Since we are allowed to assign any number of individual votes from *0 (abstaining)*
+to *the total number of candidates*, we can not distinguish between
+*abstaining* on the one hand and *voting for all candidates* on the other hand.
 
-  To circumvent this problem, we introduce an **implicit _bar_** option into each
-  vote. Implicit means here, the voter can not chose the ``_bar_`` option, but the
-  vote will be treated as if it was available and simply not chosen.
+To circumvent this problem, we introduce an **implicit _bar_** option into each
+vote. Implicit means here, the voter can not chose the ``_bar_`` option, but the
+vote will be treated as if it was available and simply not chosen.
 
 With employing this trick, we can distinguish between those two voting
 scenarios, since voting for all candidates
@@ -133,6 +132,11 @@ will result in the different preference string::
 
   Anton=Berta=Charly=Daniel=_bar_
 
+.. warning::
+  There exist some classical votes in the productive version without the
+  implicit ``_bar_`` introduced above, causing the problems described above.
+
+  Since a voting is immutable after finishing, this can not be fixed by design.
 
 Optional Rejection
 ------------------
