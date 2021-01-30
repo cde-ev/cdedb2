@@ -7178,6 +7178,16 @@
         },
         {
             "mailinglist_id": 1,
+            "persona_id": 16,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 1,
+            "persona_id": 17,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 1,
             "persona_id": 22,
             "subscription_state": 2
         },
@@ -7245,6 +7255,16 @@
             "mailinglist_id": 2,
             "persona_id": 15,
             "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 2,
+            "persona_id": 16,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 2,
+            "persona_id": 17,
+            "subscription_state": 2
         },
         {
             "mailinglist_id": 2,
@@ -7362,6 +7382,11 @@
             "subscription_state": 1
         },
         {
+            "mailinglist_id": 6,
+            "persona_id": 4,
+            "subscription_state": 1
+        },
+        {
             "mailinglist_id": 7,
             "persona_id": 1,
             "subscription_state": 2
@@ -7384,6 +7409,11 @@
         {
             "mailinglist_id": 9,
             "persona_id": 1,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 9,
+            "persona_id": 2,
             "subscription_state": 30
         },
         {
@@ -7498,6 +7528,16 @@
         },
         {
             "mailinglist_id": 51,
+            "persona_id": 16,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 51,
+            "persona_id": 17,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 51,
             "persona_id": 22,
             "subscription_state": 2
         },
@@ -7565,6 +7605,16 @@
             "mailinglist_id": 52,
             "persona_id": 15,
             "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 52,
+            "persona_id": 16,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 52,
+            "persona_id": 17,
+            "subscription_state": 2
         },
         {
             "mailinglist_id": 52,
@@ -7697,6 +7747,41 @@
             "subscription_state": 30
         },
         {
+            "mailinglist_id": 61,
+            "persona_id": 1,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 61,
+            "persona_id": 3,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 61,
+            "persona_id": 7,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 61,
+            "persona_id": 9,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 61,
+            "persona_id": 17,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 61,
+            "persona_id": 22,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 61,
+            "persona_id": 32,
+            "subscription_state": 30
+        },
+        {
             "mailinglist_id": 62,
             "persona_id": 23,
             "subscription_state": 1
@@ -7772,51 +7857,6 @@
             "subscription_state": 11
         },
         {
-            "mailinglist_id": 52,
-            "persona_id": 17,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 51,
-            "persona_id": 17,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 2,
-            "persona_id": 17,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 1,
-            "persona_id": 17,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 9,
-            "persona_id": 2,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 1,
-            "persona_id": 16,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 2,
-            "persona_id": 16,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 51,
-            "persona_id": 16,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 52,
-            "persona_id": 16,
-            "subscription_state": 2
-        },
-        {
             "mailinglist_id": 61,
             "persona_id": 18,
             "subscription_state": 30
@@ -7825,46 +7865,6 @@
             "mailinglist_id": 66,
             "persona_id": 23,
             "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 61,
-            "persona_id": 32,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 61,
-            "persona_id": 1,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 61,
-            "persona_id": 17,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 61,
-            "persona_id": 3,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 61,
-            "persona_id": 22,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 61,
-            "persona_id": 7,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 61,
-            "persona_id": 9,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 6,
-            "persona_id": 4,
-            "subscription_state": 1
         }
     ],
     "ml.subscription_addresses": [
@@ -7996,6 +7996,14 @@
             "persona_id": 7
         },
         {
+            "mailinglist_id": 11,
+            "persona_id": 2
+        },
+        {
+            "mailinglist_id": 51,
+            "persona_id": 27
+        },
+        {
             "mailinglist_id": 52,
             "persona_id": 3
         },
@@ -8049,6 +8057,10 @@
         },
         {
             "mailinglist_id": 59,
+            "persona_id": 27
+        },
+        {
+            "mailinglist_id": 59,
             "persona_id": 100
         },
         {
@@ -8086,18 +8098,6 @@
         {
             "mailinglist_id": 65,
             "persona_id": 5
-        },
-        {
-            "mailinglist_id": 51,
-            "persona_id": 27
-        },
-        {
-            "mailinglist_id": 59,
-            "persona_id": 27
-        },
-        {
-            "mailinglist_id": 11,
-            "persona_id": 2
         },
         {
             "mailinglist_id": 66,
