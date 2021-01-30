@@ -1,6 +1,6 @@
 import datetime
 import decimal
-from typing import Any, AnyStr, Dict, Iterable, List, Mapping, NewType, Optional, Union
+from typing import Any, AnyStr, Dict, Iterable, List, Mapping, NewType, Optional, Type, Union
 
 from cdedb.common import CdEDBObject
 from cdedb.query import Query
@@ -112,3 +112,16 @@ BallotCandidate = NewType("BallotCandidate", CdEDBObject)
 AssemblyAttachment = NewType("AssemblyAttachment", CdEDBObject)
 AssemblyAttachmentVersion = NewType("AssemblyAttachmentVersion", CdEDBObject)
 QueryInput = NewType("QueryInput", Query)
+
+
+# This is used for places where transitioning to the new API is not yet feasible
+# e.g. query specifications
+VALIDATOR_LOOKUP: Dict[str, Type[Any]] = {
+    "str": str,
+    "id": ID,
+    "int": int,
+    "float": float,
+    "date": datetime.date,
+    "datetime": datetime.datetime,
+    "bool": bool,
+}
