@@ -60,7 +60,9 @@ class MailmanMixin(MlBaseFrontend):
             'convert_html_to_plaintext': True,
             'dmarc_mitigate_action': 'wrap_message',
             'dmarc_mitigate_unconditionally': False,
-            'dmarc_wrapped_message_text': 'Nachricht wegen DMARC eingepackt.',
+            'dmarc_wrapped_message_text': ("Diese Nachricht wurde mit abgeänderter"
+                "Senderadresse weitergeleitet, da die DMARC-Sicherheitsrichtlinien des"
+                "urspünglichen Mailproviders mit Maillinglisten inkompatibel sind."),
             'administrivia': True,
             'member_roster_visibility': 'moderators',
             'advertised': True,
