@@ -1,6 +1,9 @@
 import datetime
 import json
 import re
+import sys
+
+sys.path.insert(0, "/cdedb2/")
 
 from cdedb.common import CustomJSONEncoder
 from cdedb.script import make_backend, setup
@@ -46,24 +49,45 @@ ignored_tables = {
 # mark some columns which shall not be filled with information extracted from the
 # database, meanly because they will be filled at runtime in create_sample_data_sql.py
 ignored_columns = {
-    "core.personas":
-        {
-            "fulltext",
-        },
+    "core.personas": {"fulltext"},
+}
+
+# mark some columns which shall not be filled with information extracted from the
+# database, because they can be filled by sql automatically.
+implicit_columns = {
+    "core.log": {"id"},
+    "cde.finance_log": {"id"},
+    "cde.log": {"id"},
+    "past_event.participants": {"id"},
+    "past_event.log": {"id"},
+    "event.log": {"id"},
+    "assembly.presiders": {"id"},
+    "assembly.attendees": {"id"},
+    "assembly.voter_register": {"id"},
+    "assembly.votes": {"id"},
+    "assembly.log": {"id"},
+    "ml.subscription_states": {"id"},
+    "ml.subscription_addresses": {"id"},
+    "ml.whitelist": {"id"},
+    "ml.moderators": {"id"},
+    "ml.log": {"id"},
 }
 
 for table in tables:
     query = f"SELECT * FROM {table} ORDER BY id"
-    entities = core.query_all(rs, f"SELECT * FROM {table} ORDER BY id", ())
+    entities = list(core.query_all(rs, f"SELECT * FROM {table} ORDER BY id", ()))
     if table in ignored_tables:
         entities = list()
     print(f"{query:60} ==> {len(entities):3}", "" if entities else "!")
-    for entity in entities:
-        for field, value in entity.items():
+    for i, _ in enumerate(entities):
+        # Drop implicit keys. This can not be done inside a for loop.
+        entities[i] = {field: v for field, v in entities[i].items()
+                  if field not in implicit_columns.get(table, {})}
+        for field, value in entities[i].items():
             if isinstance(value, datetime.datetime) and value == nearly_now():
-                entity[field] = "---now---"
+                entities[i][field] = "---now---"
             if table in ignored_columns and field in ignored_columns[table]:
-                entity[field] = None
+                entities[i][field] = None
     full_sample_data[table] = entities
 
 with open("/cdedb2/tests/ancillary_files/sample_data.json", "w") as f:
