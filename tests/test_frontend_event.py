@@ -972,7 +972,7 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
 
     @as_users("annika", "garcia")
-    def test_event_fields_query(self, user: CdEDBObject) -> None:
+    def test_event_fields_query_capital_letter(self, user: CdEDBObject) -> None:
         self.get("/event/event/1/field/summary")
         f = self.response.forms['fieldsummaryform']
         f['create_-1'].checked = True
@@ -997,10 +997,18 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['queryform']
         f['qsel_reg_fields.xfield_CapitalLetters'].checked = True
         f['qop_reg_fields.xfield_CapitalLetters'] = QueryOperators.nonempty.value
+        f['qord_primary'] = 'reg_fields.xfield_CapitalLetters'
         self.submit(f)
         self.assertPresence("Anton Armin A.")
         self.assertPresence("Garcia G.")
         self.assertNonPresence("Emilia E.")
+        self.assertPresence("Other Text")
+        # Reset and do not specify operator to exhibit bug #1754
+        self.traverse({'href': '/event/event/1/registration/query'})
+        f = self.response.forms['queryform']
+        f['qsel_reg_fields.xfield_CapitalLetters'].checked = True
+        f['qord_primary'] = 'reg_fields.xfield_CapitalLetters'
+        self.submit(f)
         self.assertPresence("Other Text")
 
     @as_users("annika", "garcia")
