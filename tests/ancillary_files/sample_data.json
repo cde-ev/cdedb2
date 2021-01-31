@@ -3780,6 +3780,14 @@
             "kind": 2,
             "association": 1,
             "entries": null
+        },
+        {
+            "id": 1001,
+            "event_id": 1,
+            "field_name": "anzahl_GROSSBUCHSTABEN",
+            "kind": 3,
+            "association": 1,
+            "entries": null
         }
     ],
     "event.fee_modifiers": [
@@ -4124,7 +4132,8 @@
             "list_consent": true,
             "fields": {
                 "lodge": "Die üblichen Verdächtigen :)",
-                "is_child": false
+                "is_child": false,
+                "anzahl_GROSSBUCHSTABEN": 4
             }
         },
         {
@@ -4144,7 +4153,8 @@
             "fields": {
                 "is_child": false,
                 "brings_balls": true,
-                "transportation": "pedes"
+                "transportation": "pedes",
+                "anzahl_GROSSBUCHSTABEN": 3
             }
         },
         {
@@ -4163,7 +4173,8 @@
             "list_consent": false,
             "fields": {
                 "is_child": false,
-                "transportation": "car"
+                "transportation": "car",
+                "anzahl_GROSSBUCHSTABEN": 3
             }
         },
         {
@@ -4184,7 +4195,8 @@
                 "is_child": true,
                 "may_reserve": true,
                 "brings_balls": false,
-                "transportation": "etc"
+                "transportation": "etc",
+                "anzahl_GROSSBUCHSTABEN": 2
             }
         },
         {
@@ -4203,7 +4215,8 @@
             "list_consent": true,
             "fields": {
                 "is_child": false,
-                "transportation": "pedes"
+                "transportation": "pedes",
+                "anzahl_GROSSBUCHSTABEN": 2
             }
         },
         {
@@ -4222,7 +4235,8 @@
             "list_consent": true,
             "fields": {
                 "is_child": false,
-                "transportation": "pedes"
+                "transportation": "pedes",
+                "anzahl_GROSSBUCHSTABEN": 2
             }
         },
         {
