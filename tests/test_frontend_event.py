@@ -773,7 +773,7 @@ class TestEventFrontend(FrontendTest):
         # fields
         f = self.response.forms['fieldsummaryform']
         self.assertEqual('transportation', f['field_name_2'].value)
-        self.assertNotIn('field_name_8', f.fields)
+        self.assertNotIn('field_name_9', f.fields)
         f['create_-1'].checked = True
         f['field_name_-1'] = "food_stuff"
         f['association_-1'] = const.FieldAssociations.registration.value
@@ -801,7 +801,7 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.assertTitle("Datenfelder konfigurieren (Große Testakademie 2222)")
         f = self.response.forms['fieldsummaryform']
-        self.assertNotIn('field_name_8', f.fields)
+        self.assertNotIn('field_name_9', f.fields)
 
     @as_users("garcia")
     def test_event_fields_unique_name(self, user: CdEDBObject) -> None:
@@ -816,7 +816,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertValidationError('field_name_-1', "Feldname nicht eindeutig.")
         f = self.response.forms['fieldsummaryform']
         self.assertIn('field_name_1', f.fields)
-        self.assertNotIn('field_name_8', f.fields)
+        self.assertNotIn('field_name_9', f.fields)
 
         f = self.response.forms['fieldsummaryform']
         # If the form would be valid in the first turn, we would need the
@@ -1651,7 +1651,7 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'description': "Veranstaltungsteile"})
         f: webtest.Form = self.response.forms["partsummaryform"]
         self.assertEqual(
-            [x[0] for x in f['waitlist_field_3'].options], ['', '1001'])
+            [x[0] for x in f['waitlist_field_3'].options], ['', '8', '1001'])
         f['waitlist_field_1'].force_value(1002)
         self.submit(f, check_notification=False)
         self.assertValidationError('waitlist_field_1',
