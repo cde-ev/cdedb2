@@ -5,9 +5,8 @@ import sys
 
 sys.path.insert(0, "/cdedb2/")
 
-from cdedb.common import CustomJSONEncoder
+from cdedb.common import CustomJSONEncoder, nearly_now
 from cdedb.script import make_backend, setup
-from tests.common import nearly_now
 
 rs = setup(1, "cdb_admin", "9876543210abcdefghijklmnopqrst")()
 

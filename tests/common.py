@@ -75,29 +75,6 @@ def check_test_setup() -> None:
         raise RuntimeError("Not configured for test (CDEDB_TEST unset).")
 
 
-class NearlyNow(datetime.datetime):
-    """This is something, that equals an automatically generated timestamp.
-
-    Since automatically generated timestamp are not totally predictible,
-    we use this to avoid nasty work arounds.
-    """
-
-    def __eq__(self, other: Any) -> bool:
-        if isinstance(other, datetime.datetime):
-            delta = self - other
-            return (datetime.timedelta(minutes=10) > delta
-                    > datetime.timedelta(minutes=-10))
-        return False
-
-    def __ne__(self, other: Any) -> bool:
-        return not self.__eq__(other)
-
-    @classmethod
-    def from_datetime(cls, datetime: datetime.datetime) -> "NearlyNow":
-        ret = cls.fromisoformat(datetime.isoformat())
-        return ret
-
-
 def create_mock_image(file_type: str = "png") -> bytes:
     """This returns a bytes object representing a picture of the given type.
 
@@ -108,14 +85,6 @@ def create_mock_image(file_type: str = "png") -> bytes:
     image.save(afile, file_type)
     afile.seek(0)
     return afile.read()
-
-
-def nearly_now() -> NearlyNow:
-    """Create a NearlyNow."""
-    now = datetime.datetime.now(pytz.utc)
-    return NearlyNow(
-        year=now.year, month=now.month, day=now.day, hour=now.hour,
-        minute=now.minute, second=now.second, tzinfo=pytz.utc)
 
 
 T = TypeVar("T")

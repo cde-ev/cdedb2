@@ -6,10 +6,10 @@ import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
 from cdedb.common import (
     CdEDBObject, PrivilegeError, RequestState, SubscriptionActions as SA,
-    SubscriptionError
+    SubscriptionError, nearly_now
 )
 from cdedb.database.constants import SubscriptionStates as SS
-from tests.common import USER_DICT, BackendTest, as_users, nearly_now, prepsql
+from tests.common import USER_DICT, BackendTest, as_users, prepsql
 
 
 class TestMlBackend(BackendTest):
