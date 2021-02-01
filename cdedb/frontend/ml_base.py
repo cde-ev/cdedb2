@@ -865,13 +865,13 @@ class MlBaseFrontend(AbstractUserFrontend):
     @REQUESTdata("unsubscription_id")
     @mailinglist_guard(requires_privilege=True)
     def reset_unsubscription(self, rs: RequestState, mailinglist_id: int,
-                              unsubscription_id: vtypes.ID) -> Response:
+                             unsubscription_id: vtypes.ID) -> Response:
         """Administratively reset an unsubscription state.
 
         This is the only way to remove an explicit association of an user with a
         mailinglist. It replaces the explicit with an implict unsubscribtion.
 
-        This should be used with care, since it may deletes a conscious decision of the
+        This should be used with care, since it may delete a conscious decision of the
         user about his relation to this mailinglist.
         """
         if rs.has_validation_errors():
