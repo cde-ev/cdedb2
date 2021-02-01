@@ -13070,12 +13070,12 @@ msgid "QueryOperators.greater"
 msgstr "is greater than"
 
 #: cdedb/i18n_additional.py:252 cdedb/i18n_additional.py:245
-msgid "MailinglistGroup.other"
-msgstr "Other mailinglists"
+msgid "MailinglistGroup.public"
+msgstr "Public mailinglists"
 
 #: cdedb/i18n_additional.py:253 cdedb/i18n_additional.py:246
 msgid "MailinglistGroup.cde"
-msgstr "General mailinglists"
+msgstr "Member mailinglists"
 
 #: cdedb/i18n_additional.py:254 cdedb/i18n_additional.py:247
 msgid "MailinglistGroup.team"

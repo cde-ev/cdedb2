@@ -110,7 +110,7 @@ class GeneralMailinglist:
     def __init__(self) -> None:
         raise RuntimeError()
 
-    sortkey: MailinglistGroup = MailinglistGroup.other
+    sortkey: MailinglistGroup = MailinglistGroup.public
 
     domains: List[MailinglistDomain] = [MailinglistDomain.lists]
 
