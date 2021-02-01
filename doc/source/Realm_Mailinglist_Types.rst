@@ -120,9 +120,15 @@ CdElokal Mailinglists
     * sortkey: cdelokal
 
 Moderator Mailinglists
-    Mailinglists that contain all moderators of the cdedb. Other users are not
+    Mailinglists that contain moderators of the cdedb. Other users are not
     allowed to subscribe.
 
     * visible to: all users
-    * additional admins: None
+    * additional admins: None for All Moderators, cdelokal for CdElokal Moderators
     * sortkey: other
+
+    For specific use cases, we support different sets of moderators to be
+    implicitly subscribed. The following subtypes are supported:
+
+    * All Moderators
+    * CdElokal Moderators
