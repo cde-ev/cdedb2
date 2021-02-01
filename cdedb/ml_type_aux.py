@@ -41,12 +41,12 @@ def get_full_address(val: CdEDBObject) -> str:
 
 class MailinglistGroup(enum.IntEnum):
     """To be used in `MlType.sortkey` to group similar mailinglists together."""
+    public = 1
     cde = 2
     team = 3
     event = 10
     assembly = 20
     cdelokal = 30
-    other = 1
 
 
 class AllMembersImplicitMeta:
