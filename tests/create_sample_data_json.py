@@ -79,15 +79,15 @@ for table in tables:
     if table in ignored_tables:
         entities = list()
     print(f"{query:60} ==> {len(entities):3}", "" if entities else "!")
-    for i, _ in enumerate(entities):
-        # Drop implicit keys. This can not be done inside a for loop.
-        entities[i] = {field: v for field, v in entities[i].items()
-                  if field not in implicit_columns.get(table, {})}
-        for field, value in entities[i].items():
+    # Since we want to modify the list in-place, we have to iterate in this way.
+    for i in range(len(entities)):
+        for field, value in list(entities[i].items()):
+            if field in implicit_columns.get(table, {}):
+                del entities[i][field]
+            if field in ignored_columns.get(table, {}):
+                entities[i][field] = None
             if isinstance(value, datetime.datetime) and value == nearly_now():
                 entities[i][field] = "---now---"
-            if table in ignored_columns and field in ignored_columns[table]:
-                entities[i][field] = None
     full_sample_data[table] = entities
 
 with open("/cdedb2/tests/ancillary_files/sample_data.json", "w") as f:

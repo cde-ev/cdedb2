@@ -5313,7 +5313,7 @@
         {
             "id": 8,
             "ballot_id": 2,
-            "title": "Gr\u00fcn",
+            "title": "Grün",
             "shortname": "gruen"
         },
         {
@@ -5349,7 +5349,7 @@
         {
             "id": 14,
             "ballot_id": 3,
-            "title": "L\u00f6scher",
+            "title": "Löscher",
             "shortname": "Lo"
         },
         {
@@ -5529,19 +5529,19 @@
         {
             "id": 46,
             "ballot_id": 8,
-            "title": "Eine Glühbirne mit Schriftzug",
+            "title": "CdE Glühbirne",
             "shortname": "Gluehbirne"
         },
         {
             "id": 47,
             "ballot_id": 8,
-            "title": "Die vier Wappentiere, die den Schriftzug CdE umringen",
+            "title": "CdE Wappen",
             "shortname": "Wappen"
         },
         {
             "id": 48,
             "ballot_id": 8,
-            "title": "Ein Baum mit Blättern und Grün!",
+            "title": "Baum & Blätter",
             "shortname": "Baum"
         },
         {
