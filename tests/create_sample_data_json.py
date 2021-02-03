@@ -9,24 +9,6 @@ rs = setup(1, "cdb_admin", "9876543210abcdefghijklmnopqrst")()
 
 core = make_backend("core", proxy=False)
 
-# The following code was initially used to generate the list below.
-# However to preserve referential integrity, the order of the tables had to
-# be slightly adjusted, so we cannot keep the dynamic list of table.
-
-# query = "SELECT schemaname, tablename " \
-#         "FROM pg_catalog.pg_tables " \
-#         "WHERE schemaname != 'pg_catalog' " \
-#         "AND schemaname != 'information_schema'"
-# params = tuple()
-#
-# table_data = core.query_all(rs, query, params)
-#
-# tables = []
-# for table in table_data:
-#     tables.append(table["schemaname"] + "." + table["tablename"])
-#
-# # pprint(tables)
-
 
 # extract the tables to be created from the database tables
 with open("/cdedb2/cdedb/database/cdedb-tables.sql", "r") as f:
