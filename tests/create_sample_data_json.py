@@ -75,19 +75,19 @@ implicit_columns = {
 
 for table in tables:
     query = f"SELECT * FROM {table} ORDER BY id"
-    entities = list(core.query_all(rs, f"SELECT * FROM {table} ORDER BY id", ()))
+    entities = core.query_all(rs, f"SELECT * FROM {table} ORDER BY id", ())
     if table in ignored_tables:
         entities = list()
     print(f"{query:60} ==> {len(entities):3}", "" if entities else "!")
-    # Since we want to modify the list in-place, we have to iterate in this way.
-    for i in range(len(entities)):
-        for field, value in list(entities[i].items()):
-            if field in implicit_columns.get(table, {}):
-                del entities[i][field]
-            if field in ignored_columns.get(table, {}):
-                entities[i][field] = None
+    for entity in entities:
+        # Since we want to modify the list in-place, we have to iterate in this way.
+        for field, value in list(entity.items()):
             if isinstance(value, datetime.datetime) and value == nearly_now():
-                entities[i][field] = "---now---"
+                entity[field] = "---now---"
+            if field in ignored_columns.get(table, {}):
+                entity[field] = None
+            if field in implicit_columns.get(table, {}):
+                del entity[field]
     full_sample_data[table] = entities
 
 with open("/cdedb2/tests/ancillary_files/sample_data.json", "w") as f:
