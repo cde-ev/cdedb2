@@ -1,9 +1,6 @@
 import datetime
 import json
 import re
-import sys
-
-sys.path.insert(0, "/cdedb2/")
 
 from cdedb.common import CustomJSONEncoder, nearly_now
 from cdedb.script import make_backend, setup
