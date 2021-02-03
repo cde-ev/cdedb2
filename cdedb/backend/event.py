@@ -2255,8 +2255,8 @@ class EventBackend(AbstractBackend):
                 if 'active_segments' in data:
                     pdata['active_segments'] = data['active_segments']
                 self.set_course(rs, pdata)
-        self.event_log(rs, const.EventLogCodes.course_created,
-                       data['event_id'], change_note=data['title'])
+            self.event_log(rs, const.EventLogCodes.course_created,
+                           data['event_id'], change_note=data['title'])
         return new_id
 
     @access("event")
@@ -3032,9 +3032,9 @@ class EventBackend(AbstractBackend):
                 new_track['registration_id'] = new_id
                 new_track['track_id'] = track_id
                 self.sql_insert(rs, "event.registration_tracks", new_track)
-        self.event_log(
-            rs, const.EventLogCodes.registration_created, data['event_id'],
-            persona_id=data['persona_id'])
+            self.event_log(
+                rs, const.EventLogCodes.registration_created, data['event_id'],
+                persona_id=data['persona_id'])
         return new_id
 
     @access("event")
@@ -3678,8 +3678,9 @@ class EventBackend(AbstractBackend):
             'id': event_id,
             'offline_lock': not self.conf["CDEDB_OFFLINE_DEPLOYMENT"],
         }
-        ret = self.sql_update(rs, "event.events", update)
-        self.event_log(rs, const.EventLogCodes.event_locked, event_id)
+        with Atomizer(rs):
+            ret = self.sql_update(rs, "event.events", update)
+            ret *= self.event_log(rs, const.EventLogCodes.event_locked, event_id)
         return ret
 
     @access("event")

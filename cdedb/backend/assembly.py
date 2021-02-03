@@ -928,8 +928,8 @@ class AssemblyBackend(AbstractBackend):
                 'vote_begin': begin,
             }
             self.set_ballot(rs, update)
-        self.assembly_log(rs, const.AssemblyLogCodes.ballot_created,
-                          data['assembly_id'], change_note=data['title'])
+            self.assembly_log(rs, const.AssemblyLogCodes.ballot_created,
+                              data['assembly_id'], change_note=data['title'])
         return new_id
 
     @access("assembly")

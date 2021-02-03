@@ -150,10 +150,11 @@ class PastEventBackend(AbstractBackend):
                         ) -> DefaultReturnCode:
         """Update some keys of an institution."""
         data = affirm(vtypes.Institution, data)
-        ret = self.sql_update(rs, "past_event.institutions", data)
-        current = unwrap(self.get_institutions(rs, (data['id'],)))
-        self.past_event_log(rs, const.PastEventLogCodes.institution_changed,
-                            pevent_id=None, change_note=current['title'])
+        with Atomizer(rs):
+            ret = self.sql_update(rs, "past_event.institutions", data)
+            current = unwrap(self.get_institutions(rs, (data['id'],)))
+            self.past_event_log(rs, const.PastEventLogCodes.institution_changed,
+                                pevent_id=None, change_note=current['title'])
         return ret
 
     @access("cde_admin", "event_admin")
@@ -161,9 +162,10 @@ class PastEventBackend(AbstractBackend):
                            ) -> DefaultReturnCode:
         """Make a new institution."""
         data = affirm(vtypes.Institution, data, creation=True)
-        ret = self.sql_insert(rs, "past_event.institutions", data)
-        self.past_event_log(rs, const.PastEventLogCodes.institution_created,
-                            pevent_id=None, change_note=data['title'])
+        with Atomizer(rs):
+            ret = self.sql_insert(rs, "past_event.institutions", data)
+            self.past_event_log(rs, const.PastEventLogCodes.institution_created,
+                                pevent_id=None, change_note=data['title'])
         return ret
 
     # TODO: rework deletion interface
@@ -266,9 +268,9 @@ class PastEventBackend(AbstractBackend):
                        ) -> DefaultReturnCode:
         """Update some keys of a concluded event."""
         data = affirm(vtypes.PastEvent, data)
-        ret = self.sql_update(rs, "past_event.events", data)
-        self.past_event_log(rs, const.PastEventLogCodes.event_changed,
-                            data['id'])
+        with Atomizer(rs):
+            ret = self.sql_update(rs, "past_event.events", data)
+            self.past_event_log(rs, const.PastEventLogCodes.event_changed, data['id'])
         return ret
 
     @access("cde_admin", "event_admin")
@@ -276,8 +278,9 @@ class PastEventBackend(AbstractBackend):
                           ) -> DefaultReturnCode:
         """Make a new concluded event."""
         data = affirm(vtypes.PastEvent, data, creation=True)
-        ret = self.sql_insert(rs, "past_event.events", data)
-        self.past_event_log(rs, const.PastEventLogCodes.event_created, ret)
+        with Atomizer(rs):
+            ret = self.sql_insert(rs, "past_event.events", data)
+            self.past_event_log(rs, const.PastEventLogCodes.event_created, ret)
         return ret
 
     @access("cde_admin")
@@ -400,16 +403,16 @@ class PastEventBackend(AbstractBackend):
                         ) -> DefaultReturnCode:
         """Update some keys of a concluded course."""
         data = affirm(vtypes.PastCourse, data)
-        current = self.sql_select_one(rs, "past_event.courses",
-                                      ("title", "pevent_id"), data['id'])
-        # TODO do more checking here?
-        if current is None:
-            raise ValueError(n_("Referenced past course does not exist."))
-        ret = self.sql_update(rs, "past_event.courses", data)
-        current.update(data)
-        self.past_event_log(
-            rs, const.PastEventLogCodes.course_changed, current['pevent_id'],
-            change_note=current['title'])
+        with Atomizer(rs):
+            current = self.sql_select_one(rs, "past_event.courses",
+                                          ("title", "pevent_id"), data['id'])
+            # TODO do more checking here?
+            if current is None:
+                raise ValueError(n_("Referenced past course does not exist."))
+            ret = self.sql_update(rs, "past_event.courses", data)
+            current.update(data)
+            self.past_event_log(rs, const.PastEventLogCodes.course_changed,
+                                current['pevent_id'], change_note=current['title'])
         return ret
 
     @access("cde_admin", "event_admin")
@@ -417,9 +420,10 @@ class PastEventBackend(AbstractBackend):
                            ) -> DefaultReturnCode:
         """Make a new concluded course."""
         data = affirm(vtypes.PastCourse, data, creation=True)
-        ret = self.sql_insert(rs, "past_event.courses", data)
-        self.past_event_log(rs, const.PastEventLogCodes.course_created,
-                            data['pevent_id'], change_note=data['title'])
+        with Atomizer(rs):
+            ret = self.sql_insert(rs, "past_event.courses", data)
+            self.past_event_log(rs, const.PastEventLogCodes.course_created,
+                                data['pevent_id'], change_note=data['title'])
         return ret
 
     @access("cde_admin")
@@ -523,10 +527,10 @@ class PastEventBackend(AbstractBackend):
         query = glue("DELETE FROM past_event.participants WHERE pevent_id = %s",
                      "AND persona_id = %s AND pcourse_id {} %s")
         query = query.format("IS" if pcourse_id is None else "=")
-        ret = self.query_exec(rs, query, (pevent_id, persona_id, pcourse_id))
-        self.past_event_log(
-            rs, const.PastEventLogCodes.participant_removed, pevent_id,
-            persona_id=persona_id)
+        with Atomizer(rs):
+            ret = self.query_exec(rs, query, (pevent_id, persona_id, pcourse_id))
+            self.past_event_log(rs, const.PastEventLogCodes.participant_removed,
+                                pevent_id, persona_id=persona_id)
         return ret
 
     @access("cde", "event")
