@@ -34,16 +34,15 @@ class TestCdEBackend(BackendTest):
     def test_quota(self, user: CdEDBObject) -> None:
         self.assertEqual(0, self.core.quota(self.key))
         # Do two quotable accesses per loop, a number of times equal to half the limit.
-        for i in range(1, self.conf["QUOTA_VIEWS_PER_DAY"]//2 + 1):
+        for i in range(1, self.conf["QUOTA_VIEWS_PER_DAY"] // 2 + 1):
             if i % 3 == 0:
-                self.assertEqual(i*2, self.core.quota(self.key, ids=(1, 2, 6)))
-                self.assertEqual(i*2, self.core.quota(self.key, ids=(1, 2, 6)))
+                self.assertEqual(i * 2, self.core.quota(self.key, ids=(1, 2, 6)))
+                self.assertEqual(i * 2, self.core.quota(self.key, ids=(1, 2, 6)))
             elif i % 3 == 1:
-                self.assertEqual(i*2, self.core.quota(self.key, ids=(3, 4)))
-                self.assertEqual(i*2, self.core.quota(self.key, ids=(3, 4)))
+                self.assertEqual(i * 2, self.core.quota(self.key, ids=(3, 4)))
+                self.assertEqual(i * 2, self.core.quota(self.key, ids=(3, 4)))
             else:
-                self.assertEqual(i*2, self.core.quota(self.key, num=2))
-        self.core.get_cde_users(self.key, (1, 2, 6))
+                self.assertEqual(i * 2, self.core.quota(self.key, num=2))
         with self.assertRaises(QuotaException):
             self.core.get_cde_users(self.key, (3, 4))
         # The missing 2 does not create a new kind of access as it's Berta's
@@ -54,6 +53,7 @@ class TestCdEBackend(BackendTest):
                       fields_of_interest=["id"], constraints=[], order=[])
         with self.assertRaises(QuotaException):
             self.cde.submit_general_query(self.key, query)
+
 
     @as_users("berta")
     def test_displacement(self, user: CdEDBObject) -> None:

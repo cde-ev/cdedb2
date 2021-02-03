@@ -341,10 +341,12 @@ class TestCdEFrontend(FrontendTest):
                 self.response = f.submit(status=429)
                 self.assertPresence("Limit für Zugriffe")
                 self.assertPresence("automatisch zurückgesetzt")
-                # Check that the redirect from a previous search now also fails.
-                self.get(save, status=429)
-                self.assertPresence("Limit für Zugriffe")
-                self.assertPresence("automatisch zurückgesetzt")
+                # Check that the redirect from a previous search does not fail.
+                self.get(save, status=200)
+                self.assertNonPresence("Limit für Zugriffe")
+                self.assertNonPresence("automatisch zurückgesetzt")
+                # Check that own profile remains accessible
+                self.traverse({'href': '/core/self/show'})
                 break
 
     @as_users("anton", "berta", "inga")

@@ -1681,8 +1681,7 @@ class CoreBackend(AbstractBackend):
         return unwrap(self.query_one(rs, query, params)) or 0
 
     @overload
-    def check_quota(self, rs: RequestState, *, ids: Collection[int]) -> bool:
-        ...
+    def check_quota(self, rs: RequestState, *, ids: Collection[int]) -> bool: ...
 
     @overload
     def check_quota(self, rs: RequestState, *, num: int) -> bool: ...
@@ -1694,8 +1693,13 @@ class CoreBackend(AbstractBackend):
     @access("persona")
     def check_quota(self, rs: RequestState, *, ids: Collection[int] = None,
                     num: int = None) -> bool:
-        """Check whether the quota was exceeded today."""
+        """Check whether the quota was exceeded today.
+
+        Even if quota has been exceeded, never block access to own profile.
+        """
         # Validation is done inside.
+        if ids is not None and ids == {rs.user.persona_id}:
+            return False
         quota = self.quota(rs, ids=ids, num=num)  # type: ignore
         return (quota > self.conf["QUOTA_VIEWS_PER_DAY"]
                 and not {"cde_admin", "core_admin"} & rs.user.roles)

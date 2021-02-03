@@ -823,44 +823,47 @@ class CdEBackend(AbstractBackend):
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
         """
         query = affirm(Query, query)
-        if query.scope == "qview_cde_member":
-            if self.core.check_quota(rs, num=1):
-                raise QuotaException(n_("Too many queries."))
-            query.constraints.append(
-                ("is_cde_realm", QueryOperators.equal, True))
-            query.constraints.append(
-                ("is_member", QueryOperators.equal, True))
-            query.constraints.append(
-                ("is_searchable", QueryOperators.equal, True))
-            query.constraints.append(
-                ("is_archived", QueryOperators.equal, False))
-            query.spec['is_cde_realm'] = "bool"
-            query.spec['is_member'] = "bool"
-            query.spec['is_searchable'] = "bool"
-            query.spec["is_archived"] = "bool"
-        elif query.scope == "qview_cde_user":
-            if not self.is_admin(rs):
-                raise PrivilegeError(n_("Admin only."))
-            query.constraints.append(
-                ("is_cde_realm", QueryOperators.equal, True))
-            query.constraints.append(
-                ("is_archived", QueryOperators.equal, False))
-            query.spec['is_cde_realm'] = "bool"
-            query.spec["is_archived"] = "bool"
-            # Exclude users of any higher realm (implying event)
-            for realm in implying_realms('cde'):
+        with Atomizer(rs):
+            if query.scope == "qview_cde_member":
+                # This should be in an atomizer, such that the quota rise leading to the
+                # exception is rolled back.
+                if self.core.check_quota(rs, num=1):
+                    raise QuotaException(n_("Too many queries."))
                 query.constraints.append(
-                    ("is_{}_realm".format(realm), QueryOperators.equal, False))
-                query.spec["is_{}_realm".format(realm)] = "bool"
-        elif query.scope == "qview_past_event_user":
-            if not self.is_admin(rs):
-                raise PrivilegeError(n_("Admin only."))
-            query.constraints.append(
-                ("is_event_realm", QueryOperators.equal, True))
-            query.constraints.append(
-                ("is_archived", QueryOperators.equal, False))
-            query.spec['is_event_realm'] = "bool"
-            query.spec["is_archived"] = "bool"
-        else:
-            raise RuntimeError(n_("Bad scope."))
-        return self.general_query(rs, query)
+                    ("is_cde_realm", QueryOperators.equal, True))
+                query.constraints.append(
+                    ("is_member", QueryOperators.equal, True))
+                query.constraints.append(
+                    ("is_searchable", QueryOperators.equal, True))
+                query.constraints.append(
+                    ("is_archived", QueryOperators.equal, False))
+                query.spec['is_cde_realm'] = "bool"
+                query.spec['is_member'] = "bool"
+                query.spec['is_searchable'] = "bool"
+                query.spec["is_archived"] = "bool"
+            elif query.scope == "qview_cde_user":
+                if not self.is_admin(rs):
+                    raise PrivilegeError(n_("Admin only."))
+                query.constraints.append(
+                    ("is_cde_realm", QueryOperators.equal, True))
+                query.constraints.append(
+                    ("is_archived", QueryOperators.equal, False))
+                query.spec['is_cde_realm'] = "bool"
+                query.spec["is_archived"] = "bool"
+                # Exclude users of any higher realm (implying event)
+                for realm in implying_realms('cde'):
+                    query.constraints.append(
+                        ("is_{}_realm".format(realm), QueryOperators.equal, False))
+                    query.spec["is_{}_realm".format(realm)] = "bool"
+            elif query.scope == "qview_past_event_user":
+                if not self.is_admin(rs):
+                    raise PrivilegeError(n_("Admin only."))
+                query.constraints.append(
+                    ("is_event_realm", QueryOperators.equal, True))
+                query.constraints.append(
+                    ("is_archived", QueryOperators.equal, False))
+                query.spec['is_event_realm'] = "bool"
+                query.spec["is_archived"] = "bool"
+            else:
+                raise RuntimeError(n_("Bad scope."))
+            return self.general_query(rs, query)
