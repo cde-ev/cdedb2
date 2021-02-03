@@ -75,7 +75,7 @@ from cdedb.common import (
     RequestState, Role, User, ValidationWarning, _tdelta, asciificator,
     compute_checkdigit, decode_parameter, encode_parameter, glue, json_serialize,
     make_proxy, make_root_logger, merge_dicts, n_, now, roles_to_db_role, unwrap,
-    xsorted,
+    xsorted, PrivilegeError
 )
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -1831,6 +1831,13 @@ def reconnoitre_ambience(obj: AbstractFrontend,
                 raise werkzeug.exceptions.NotFound(
                     rs.gettext("Object {param}={value} not found").format(
                         param=param, value=value))
+            except PrivilegeError as e:
+                if not obj.conf.CDEDB_DEV:
+                    msg = "Not privileged to view object {param}={value}: {exc}"
+                    raise werkzeug.exceptions.Forbidden(
+                        rs.gettext(msg).format(param=param, value=value, exc=str(e)))
+                else:
+                    raise
     for param, value in rs.requestargs.items():
         if param in scouts_dict:
             for consistency_checker in scouts_dict[param].dependencies:
