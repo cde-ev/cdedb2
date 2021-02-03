@@ -1832,7 +1832,7 @@ def reconnoitre_ambience(obj: AbstractFrontend,
                     rs.gettext("Object {param}={value} not found").format(
                         param=param, value=value))
             except PrivilegeError as e:
-                if not obj.conf.CDEDB_DEV:
+                if not obj.conf['CDEDB_DEV']:
                     msg = "Not privileged to view object {param}={value}: {exc}"
                     raise werkzeug.exceptions.Forbidden(
                         rs.gettext(msg).format(param=param, value=value, exc=str(e)))
