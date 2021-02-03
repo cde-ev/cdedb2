@@ -490,7 +490,7 @@ class PastEventBackend(AbstractBackend):
     @access("cde_admin", "event_admin")
     def add_participant(self, rs: RequestState, pevent_id: int,
                         pcourse_id: Optional[int], persona_id: int,
-                        is_instructor: bool, is_orga: bool
+                        is_instructor: bool = False, is_orga: bool = False
                         ) -> DefaultReturnCode:
         """Add a participant to a concluded event.
 
@@ -505,10 +505,19 @@ class PastEventBackend(AbstractBackend):
                 'pcourse_id': affirm_optional(vtypes.ID, pcourse_id),
                 'is_instructor': affirm(bool, is_instructor),
                 'is_orga': affirm(bool, is_orga)}
-        ret = self.sql_insert(rs, "past_event.participants", data)
-        self.past_event_log(
-            rs, const.PastEventLogCodes.participant_added, pevent_id,
-            persona_id=persona_id)
+        with Atomizer(rs):
+            # Check that participant is no pure pevent participant if they are
+            # course participant as well.
+            if self.check_pure_event_participation(rs, persona_id, pevent_id):
+                if pcourse_id:
+                    self.remove_participant(rs, pevent_id, pcourse_id=None,
+                                            persona_id=persona_id)
+                else:
+                    rs.notify("error", n_("User is already pure event participant."))
+                    return 0
+            ret = self.sql_insert(rs, "past_event.participants", data)
+            self.past_event_log(rs, const.PastEventLogCodes.participant_added,
+                                pevent_id, persona_id=persona_id)
         return ret
 
     @access("cde_admin", "event_admin")
@@ -561,6 +570,15 @@ class PastEventBackend(AbstractBackend):
             entity_key=entity_key)
         return {(e['persona_id'], e['pcourse_id']): e
                 for e in data}
+
+    def check_pure_event_participation(self, rs: RequestState, persona_id: int,
+                                       pevent_id: int) -> bool:
+        """List users who participate at an event without any course."""
+        persona_id = affirm(vtypes.ID, persona_id)
+        pevent_id = affirm(vtypes.ID, pevent_id)
+        query = ("SELECT persona_id FROM past_event.participants "
+                 "WHERE persona_id = %s AND pevent_id = %s AND pcourse_id IS null")
+        return bool(self.query_one(rs, query, (persona_id, pevent_id)))
 
     @access("cde_admin", "event_admin")
     def find_past_event(self, rs: RequestState, shortname: str

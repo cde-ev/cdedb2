@@ -2110,7 +2110,7 @@ class TestCdEFrontend(FrontendTest):
             'persona_ids',
             "Einige dieser Nutzer sind keine Veranstaltungsnutzer.")
         f = self.response.forms['addparticipantform']
-        f['persona_ids'] = "DB-7-8, DB-8-6, DB-5-1"
+        f['persona_ids'] = "DB-7-8, DB-8-6, DB-5-1, DB-3-5"
         f['is_orga'].checked = True
         f['is_instructor'].checked = True
         self.submit(f)
@@ -2124,10 +2124,17 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
         self.assertNonPresence("Garcia")
 
+        f = self.response.forms['removeparticipantform3']
+        self.submit(f)
+        self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
+        self.assertNonPresence("Garcia")
+
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Verg. Veranstaltungen'},
                       {'description': 'PfingstAkademie 2014'})
         self.assertNonPresence("Garcia")
+        # See #1458
+        self.assertNonPresence("Charly")
         f = self.response.forms['addparticipantform']
         f['persona_ids'] = "DB-7-8"
         f['is_orga'].checked = True
