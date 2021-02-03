@@ -168,6 +168,11 @@ class CoreBackend(AbstractBackend):
         return self.query_exec(
             rs, query, (code, rs.user.persona_id, persona_id, change_note))
 
+    @access("persona")
+    def log_quota_violation(self, rs: RequestState) -> DefaultReturnCode:
+        """Log a quota violation."""
+        return self.core_log(rs, const.CoreLogCodes.quota_violation, rs.user.persona_id)
+
     @internal
     @access("cde")
     def finance_log(self, rs: RequestState, code: const.FinanceLogCodes,

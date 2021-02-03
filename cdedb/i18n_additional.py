@@ -64,6 +64,7 @@ I18N_STRINGS = (
     n_("CoreLogCodes.privilege_change_rejected"),
     n_("CoreLogCodes.realm_change"),
     n_("CoreLogCodes.username_change"),
+    n_("CoreLogCodes.quota_violation"),
 
     n_("EventLogCodes.event_created"),
     n_("EventLogCodes.event_changed"),

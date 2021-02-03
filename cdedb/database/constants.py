@@ -306,6 +306,7 @@ class CoreLogCodes(enum.IntEnum):
     privilege_change_rejected = 32  #:
     realm_change = 40  #:
     username_change = 50  #:
+    quota_violation = 60  #:
 
 
 @enum.unique
