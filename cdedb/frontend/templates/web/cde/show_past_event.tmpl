@@ -32,6 +32,26 @@
         {% endif %}
         <dt>{% trans %}Institution{% endtrans %}</dt>
         <dd id="institution">{{ institutions[ambience['pevent']['institution']] }}</dd>
+        {% if orgas %}
+        <dt>{% trans %}Orgas{% endtrans %}</dt>
+        <dd id="orgas">
+            {% for anid, orga in orgas.items() %} {# This is already sorted. #}
+                {% if orga['viewable'] %}
+                    {{ util.persona_anchor(personas[anid], quote_me=not is_admin) -}}
+                {% else %}
+                    {{ personas[anid]['given_names'] }} {{ personas[anid]['family_name'] -}}
+                {% endif -%}
+                {% if not loop.last %},{% endif %}
+            {% endfor %}
+            {% if extra_orgas %}
+                {% trans count=extra_orgas %}
+                     extra_participants_singular
+                {%- pluralize count -%}
+                     extra_participants_plural
+                {% endtrans %}
+            {% endif %}
+        </dd>
+        {% endif %}
     </dl>
 
     <div id="description">

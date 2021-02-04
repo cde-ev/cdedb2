@@ -2314,7 +2314,7 @@ class CdEFrontend(AbstractUserFrontend):
         return self.redirect(rs, "cde/institution_summary_form")
 
     def process_participants(self, rs: RequestState, pevent_id: int,
-                             pcourse_id: int = None
+                             pcourse_id: int = None, orgas_only: bool = False
                              ) -> Tuple[CdEDBObjectMap, CdEDBObjectMap, int]:
         """Helper to pretty up participation infos.
 
@@ -2361,6 +2361,9 @@ class CdEFrontend(AbstractUserFrontend):
                 if pcourse_id and pcourse_id not in entry['pcourse_ids']:
                     # remove non-participants with respect to the relevant
                     # course if there is a relevant course
+                    continue
+                if orgas_only and not entry['is_orga']:
+                    # remove non-orgas
                     continue
                 participants[persona_id] = entry
 
@@ -2418,6 +2421,8 @@ class CdEFrontend(AbstractUserFrontend):
         institutions = self.pasteventproxy.list_institutions(rs)
         participants, personas, extra_participants = self.process_participants(
             rs, pevent_id)
+        orgas, _, extra_orgas = self.process_participants(rs, pevent_id,
+                                                          orgas_only=True)
         for p_id, p in participants.items():
             p['pcourses'] = {
                 pc_id: {
@@ -2432,10 +2437,9 @@ class CdEFrontend(AbstractUserFrontend):
         is_participant = any(anid == rs.user.persona_id
                              for anid, _ in participant_infos.keys())
         return self.render(rs, "show_past_event", {
-            'courses': courses, 'participants': participants,
-            'personas': personas, 'institutions': institutions,
-            'extra_participants': extra_participants,
-            'is_participant': is_participant,
+            'courses': courses, 'personas': personas, 'institutions': institutions,
+            'participants': participants, 'extra_participants': extra_participants,
+            'orgas': orgas, 'extra_orgas': extra_orgas,'is_participant': is_participant,
         })
 
     @access("member", "cde_admin")

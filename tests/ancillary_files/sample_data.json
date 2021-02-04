@@ -3457,6 +3457,15 @@
             "description": null,
             "tempus": "2010-12-31",
             "notes": null
+        },
+        {
+            "id": 4,
+            "title": "FingerAkademie 2020",
+            "shortname": "Digital",
+            "institution": 1,
+            "description": null,
+            "tempus": "2020-06-01",
+            "notes": null
         }
     ],
     "past_event.courses": [
@@ -3513,6 +3522,38 @@
             "persona_id": 100,
             "pevent_id": 1,
             "pcourse_id": 2,
+            "is_instructor": false,
+            "is_orga": false
+        },
+        {
+            "id": 6,
+            "persona_id": 3,
+            "pevent_id": 4,
+            "pcourse_id": null,
+            "is_instructor": false,
+            "is_orga": true
+        },
+        {
+            "id": 7,
+            "persona_id": 5,
+            "pevent_id": 4,
+            "pcourse_id": null,
+            "is_instructor": false,
+            "is_orga": true
+        },
+        {
+            "id": 8,
+            "persona_id": 6,
+            "pevent_id": 4,
+            "pcourse_id": null,
+            "is_instructor": false,
+            "is_orga": true
+        },
+        {
+            "id": 9,
+            "persona_id": 7,
+            "pevent_id": 4,
+            "pcourse_id": null,
             "is_instructor": false,
             "is_orga": false
         }
