@@ -270,7 +270,9 @@ class SubscriptionActions(enum.IntEnum):
                 ss.subscribed: error(n_("User is not unsubscribed.")),
                 ss.unsubscribed: None,
                 ss.subscription_override: error(n_("User is not unsubscribed.")),
-                ss.unsubscription_override: error(n_("User is not unsubscribed.")),
+                ss.unsubscription_override: error(n_(
+                    "User has been blocked. You can use Advanced Management to"
+                    " change this.")),
                 ss.pending: error(n_("User is not unsubscribed.")),
             }
         }
