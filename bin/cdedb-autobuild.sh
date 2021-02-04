@@ -76,5 +76,6 @@ mv $AUTOBUILDDIR/images/cdedb-$PORT.qcow2 $WWWDIR/
 mv $AUTOBUILDDIR/images/cdedb-$PORT.vdi.gz $WWWDIR/
 echo "images moved, removing intermediary images"
 rm -f $AUTOBUILDDIR/work/*.qcow2
+sudo /sbin/fstrim -a -v
 echo "done cleaning"
 exit 1

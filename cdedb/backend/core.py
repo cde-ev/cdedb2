@@ -537,8 +537,20 @@ class CoreBackend(AbstractBackend):
 
     @internal
     @access("ml")
-    def list_current_members(self, rs: RequestState,
-                             is_active: bool = False) -> Set[int]:
+    def list_all_personas(self, rs: RequestState, is_active: bool = False,
+                          valid_email: bool = False) -> Set[int]:
+        query = "SELECT id from core.personas WHERE is_archived = False"
+        if is_active:
+            query += " AND is_active = True"
+        if valid_email:
+            query += " AND username IS NOT NULL"
+        data = self.query_all(rs, query, params=tuple())
+        return {e["id"] for e in data}
+
+    @internal
+    @access("ml")
+    def list_current_members(self, rs: RequestState, is_active: bool = False,
+                             valid_email: bool = False) -> Set[int]:
         """Helper to list all current members.
 
         Used to determine subscribers of mandatory/opt-out member mailinglists.
@@ -546,8 +558,27 @@ class CoreBackend(AbstractBackend):
         query = "SELECT id from core.personas WHERE is_member = True"
         if is_active:
             query += " AND is_active = True"
+        if valid_email:
+            query += " AND username IS NOT NULL"
         data = self.query_all(rs, query, params=tuple())
         return {e["id"] for e in data}
+
+    @internal
+    @access("ml")
+    def list_all_moderators(self, rs: RequestState,
+                            ml_types: Optional[Collection[const.MailinglistTypes]] = None
+                            ) -> Set[int]:
+        """List all moderators of any mailinglists.
+
+        Due to architectural limitations of the BackendContainer used for
+        mailinglist types, this is found here instead of in the MlBackend.
+        """
+        query = "SELECT DISTINCT mod.persona_id from ml.moderators as mod"
+        if ml_types:
+            query += (" JOIN ml.mailinglists As ml ON mod.mailinglist_id = ml.id"
+                      " WHERE ml.ml_type = ANY(%s)")
+        data = self.query_all(rs, query, params=(ml_types,))
+        return {e["persona_id"] for e in data}
 
     @access("core_admin")
     def next_persona(self, rs: RequestState, persona_id: int,
