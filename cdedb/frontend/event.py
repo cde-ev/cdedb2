@@ -202,7 +202,21 @@ class EventFrontend(AbstractUserFrontend):
             for event in events.values():
                 regs = self.eventproxy.list_registrations(rs, event['id'])
                 event['registrations'] = len(regs)
-        return self.render(rs, "list_events", {'events': events})
+
+        def querylink(event_id: int) -> str:
+            query = Query(
+                "qview_registration",
+                self.make_registration_query_spec(events[event_id]),
+                ("persona.given_names", "persona.family_name"),
+                (),
+                (("persona.family_name", True), ("persona.given_names", True)))
+            params = querytoparams_filter(query)
+            params['is_search'] = True
+            params['event_id'] = event_id
+            return cdedburl(rs, 'event/registration_query', params)
+
+        return self.render(rs, "list_events",
+                           {'events': events, 'querylink': querylink})
 
     @access("anonymous")
     def show_event(self, rs: RequestState, event_id: int) -> Response:

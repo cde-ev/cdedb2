@@ -6817,6 +6817,63 @@
             "assembly_id": null
         },
         {
+            "id": 12,
+            "title": "Moderatoren-Liste",
+            "address": "moderatoren@lists.cde-ev.de",
+            "local_part": "moderatoren",
+            "domain": 1,
+            "description": "Für alle Moderatoren von Mailinglisten.",
+            "mod_policy": 3,
+            "attachment_policy": 1,
+            "ml_type": 45,
+            "subject_prefix": "mod",
+            "maxsize": null,
+            "is_active": true,
+            "notes": "Moderatoren haben Spam verdient!",
+            "gateway": null,
+            "event_id": null,
+            "registration_stati": [],
+            "assembly_id": null
+        },
+        {
+            "id": 13,
+            "title": "Allumfassende Liste",
+            "address": "everyone@lists.cde-ev.de",
+            "local_part": "everyone",
+            "domain": 1,
+            "description": "Für alle und jeden. Übersteigt Zeit und Baum.",
+            "mod_policy": 3,
+            "attachment_policy": 1,
+            "ml_type": 38,
+            "subject_prefix": "all",
+            "maxsize": 64,
+            "is_active": true,
+            "notes": "",
+            "gateway": null,
+            "event_id": null,
+            "registration_stati": [],
+            "assembly_id": null
+        },
+        {
+            "id": 14,
+            "title": "Lokalgruppen-Liste",
+            "address": "lokalgruppen@lists.cde-ev.de",
+            "local_part": "lokalgruppen",
+            "domain": 1,
+            "description": "Für alle Moderatoren von CdELokal-Mailinglisten.",
+            "mod_policy": 3,
+            "attachment_policy": 1,
+            "ml_type": 46,
+            "subject_prefix": "lokalgruppen",
+            "maxsize": null,
+            "is_active": true,
+            "notes": null,
+            "gateway": null,
+            "event_id": null,
+            "registration_stati": [],
+            "assembly_id": null
+        },
+        {
             "id": 51,
             "title": "CdE-All",
             "address": "all@lists.cde-ev.de",
@@ -7177,11 +7234,6 @@
         },
         {
             "mailinglist_id": 1,
-            "persona_id": 12,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 1,
             "persona_id": 13,
             "subscription_state": 2
         },
@@ -7253,11 +7305,6 @@
         {
             "mailinglist_id": 2,
             "persona_id": 9,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 2,
-            "persona_id": 12,
             "subscription_state": 30
         },
         {
@@ -7486,6 +7533,186 @@
             "subscription_state": 11
         },
         {
+            "mailinglist_id": 12,
+            "persona_id": 1,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 2,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 3,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 4,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 5,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 7,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 9,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 10,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 11,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 15,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 23,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 27,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 100,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 32,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 1,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 2,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 3,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 4,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 5,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 100,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 6,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 7,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 9,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 10,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 11,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 13,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 14,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 15,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 16,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 17,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 18,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 22,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 23,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 27,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 48,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 14,
+            "persona_id": 5,
+            "subscription_state": 30
+        },
+        {
             "mailinglist_id": 51,
             "persona_id": 32,
             "subscription_state": 2
@@ -7523,11 +7750,6 @@
         {
             "mailinglist_id": 51,
             "persona_id": 9,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 51,
-            "persona_id": 12,
             "subscription_state": 30
         },
         {
@@ -7603,11 +7825,6 @@
         {
             "mailinglist_id": 52,
             "persona_id": 9,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 52,
-            "persona_id": 12,
             "subscription_state": 30
         },
         {
@@ -7737,7 +7954,7 @@
         },
         {
             "mailinglist_id": 57,
-            "persona_id": 12,
+            "persona_id": 15,
             "subscription_state": 1
         },
         {
@@ -8013,6 +8230,18 @@
             "mailinglist_id": 11,
             "persona_id": 2
         },
+         {
+            "mailinglist_id": 12,
+            "persona_id": 1
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 1
+        },
+        {
+            "mailinglist_id": 14,
+            "persona_id": 1
+        },
         {
             "mailinglist_id": 51,
             "persona_id": 27
@@ -8055,7 +8284,7 @@
         },
         {
             "mailinglist_id": 57,
-            "persona_id": 12
+            "persona_id": 15
         },
         {
             "mailinglist_id": 58,
