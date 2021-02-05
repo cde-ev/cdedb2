@@ -159,7 +159,8 @@ class TestPastEventBackend(BackendTest):
                          self.pastevent.list_participants(self.key, pevent_id=1))
 
     @as_users("vera")
-    def test_1458(self, user: CdEDBObject) -> None:
+    def test_participant_consistency(self, user: CdEDBObject) -> None:
+        # See issue #1458
         participants = self.pastevent.list_participants(self.key, pevent_id=1)
         self.assertIn((3, None), participants)
         self.pastevent.add_participant(self.key, pevent_id=1, pcourse_id=2,

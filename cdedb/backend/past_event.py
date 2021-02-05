@@ -508,7 +508,7 @@ class PastEventBackend(AbstractBackend):
         with Atomizer(rs):
             # Check that participant is no pure pevent participant if they are
             # course participant as well.
-            if self.check_pure_event_participation(rs, persona_id, pevent_id):
+            if self._check_pure_event_participation(rs, persona_id, pevent_id):
                 if pcourse_id:
                     self.remove_participant(rs, pevent_id, pcourse_id=None,
                                             persona_id=persona_id)
@@ -571,11 +571,9 @@ class PastEventBackend(AbstractBackend):
         return {(e['persona_id'], e['pcourse_id']): e
                 for e in data}
 
-    def check_pure_event_participation(self, rs: RequestState, persona_id: int,
-                                       pevent_id: int) -> bool:
-        """List users who participate at an event without any course."""
-        persona_id = affirm(vtypes.ID, persona_id)
-        pevent_id = affirm(vtypes.ID, pevent_id)
+    def _check_pure_event_participation(self, rs: RequestState, persona_id: int,
+                                        pevent_id: int) -> bool:
+        """Return if user participates at an event without any course."""
         query = ("SELECT persona_id FROM past_event.participants "
                  "WHERE persona_id = %s AND pevent_id = %s AND pcourse_id IS null")
         return bool(self.query_one(rs, query, (persona_id, pevent_id)))
