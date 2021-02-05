@@ -7279,8 +7279,8 @@ msgstr "Entfernen"
 
 #: cdedb/frontend/templates/web/cde/show_past_course.tmpl:101
 #: cdedb/frontend/templates/web/cde/show_past_event.tmpl:152
-msgid "extra_participants_singular"
-msgid_plural "extra_participants_plural"
+msgid "and_one_more"
+msgid_plural "and_count_more"
 msgstr[0] "und %(count)s weiterer"
 msgstr[1] "und %(count)s weitere"
 
