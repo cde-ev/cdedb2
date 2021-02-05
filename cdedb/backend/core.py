@@ -152,8 +152,8 @@ class CoreBackend(AbstractBackend):
         return " ".join(values)
 
     def core_log(self, rs: RequestState, code: const.CoreLogCodes,
-                 persona_id: int = None,
-                 change_note: str = None) -> DefaultReturnCode:
+                 persona_id: int = None, change_note: str = None,
+                 atomized: bool = True) -> DefaultReturnCode:
         """Make an entry in the log.
 
         See
@@ -161,6 +161,10 @@ class CoreBackend(AbstractBackend):
          """
         if rs.is_quiet:
             return 0
+        # To ensure logging is done if and only if the corresponding action happened,
+        # we require atomization by default.
+        if atomized:
+            self.affirm_atomized_context(rs)
         # do not use sql_insert since it throws an error for selecting the id
         query = ("INSERT INTO core.log "
                  "(code, submitted_by, persona_id, change_note) "
@@ -185,6 +189,9 @@ class CoreBackend(AbstractBackend):
         if rs.is_quiet:
             self.logger.warning("Finance log was suppressed.")
             return 0
+        # To ensure logging is done if and only if the corresponding action happened,
+        # we require atomization here.
+        self.affirm_atomized_context(rs)
         data = {
             "code": code,
             "submitted_by": rs.user.persona_id,
@@ -1135,15 +1142,17 @@ class CoreBackend(AbstractBackend):
             "$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/"
             "S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHE/si/")
         query = "UPDATE core.personas SET password_hash = %s WHERE id = %s"
-        ret = self.query_exec(rs, query, (password_hash, persona_id))
 
-        # Invalidate alle active sessions.
-        query = ("UPDATE core.sessions SET is_active = False "
-                 "WHERE persona_id = %s AND is_active = True")
-        self.query_exec(rs, query, (persona_id,))
+        with Atomizer(rs):
+            ret = self.query_exec(rs, query, (password_hash, persona_id))
 
-        ret *= self.core_log(rs, code=const.CoreLogCodes.password_invalidated,
-                             persona_id=persona_id)
+            # Invalidate alle active sessions.
+            query = ("UPDATE core.sessions SET is_active = False "
+                     "WHERE persona_id = %s AND is_active = True")
+            self.query_exec(rs, query, (persona_id,))
+
+            self.core_log(rs, code=const.CoreLogCodes.password_invalidated,
+                          persona_id=persona_id)
 
         return ret
 
@@ -2237,9 +2246,10 @@ class CoreBackend(AbstractBackend):
         """
         old_password = affirm(str, old_password)
         new_password = affirm(str, new_password)
-        ret = self.modify_password(rs, new_password, old_password=old_password)
-        self.core_log(rs, const.CoreLogCodes.password_change,
-                      rs.user.persona_id)
+        with Atomizer(rs):
+            ret = self.modify_password(rs, new_password, old_password=old_password)
+            self.core_log(rs, const.CoreLogCodes.password_change,
+                          rs.user.persona_id)
         return ret
 
     @access("anonymous")
@@ -2329,8 +2339,9 @@ class CoreBackend(AbstractBackend):
             return False, n_("Nonexistent user.")
         if not data['is_active']:
             return False, n_("Inactive user.")
-        ret = self.generate_reset_cookie(rs, data['id'], timeout=timeout)
-        self.core_log(rs, const.CoreLogCodes.password_reset_cookie, data['id'])
+        with Atomizer(rs):
+            ret = self.generate_reset_cookie(rs, data['id'], timeout=timeout)
+            self.core_log(rs, const.CoreLogCodes.password_reset_cookie, data['id'])
         return True, ret
 
     @access("anonymous")
@@ -2355,7 +2366,11 @@ class CoreBackend(AbstractBackend):
         success, msg = self.modify_password(
             rs, new_password, reset_cookie=cookie, persona_id=persona_id)
         if success:
-            self.core_log(rs, const.CoreLogCodes.password_reset, persona_id)
+            # Since they should usually be called inside an atomized context, logs
+            # demand an Atomizer by default. However, due to privilege escalation inside
+            # modify_password, this does not work and relax that claim.
+            self.core_log(rs, const.CoreLogCodes.password_reset, persona_id,
+                          atomized=False)
         return success, msg
 
     @access("anonymous")
@@ -2378,9 +2393,10 @@ class CoreBackend(AbstractBackend):
         if self.conf["LOCKDOWN"] and not self.is_admin(rs):
             return None
         data['case_status'] = const.GenesisStati.unconfirmed
-        ret = self.sql_insert(rs, "core.genesis_cases", data)
-        self.core_log(rs, const.CoreLogCodes.genesis_request, persona_id=None,
-                      change_note=data['username'])
+        with Atomizer(rs):
+            ret = self.sql_insert(rs, "core.genesis_cases", data)
+            self.core_log(rs, const.CoreLogCodes.genesis_request, persona_id=None,
+                          change_note=data['username'])
         return ret
 
     @access("core_admin", "cde_admin", "event_admin", "assembly_admin",

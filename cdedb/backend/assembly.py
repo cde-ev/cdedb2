@@ -232,6 +232,9 @@ class AssemblyBackend(AbstractBackend):
         """
         if rs.is_quiet:
             return 0
+        # To ensure logging is done if and only if the corresponding action happened,
+        # we require atomization here.
+        self.affirm_atomized_context(rs)
         # do not use sql_insert since it throws an error for selecting the id
         query = ("INSERT INTO assembly.log (code, assembly_id, submitted_by,"
                  " persona_id, change_note) VALUES (%s, %s, %s, %s, %s)")

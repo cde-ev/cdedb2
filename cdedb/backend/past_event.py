@@ -90,6 +90,9 @@ class PastEventBackend(AbstractBackend):
         """
         if rs.is_quiet:
             return 0
+        # To ensure logging is done if and only if the corresponding action happened,
+        # we require atomization here.
+        self.affirm_atomized_context(rs)
         data = {
             "code": code,
             "pevent_id": pevent_id,

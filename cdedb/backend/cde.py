@@ -50,6 +50,9 @@ class CdEBackend(AbstractBackend):
         """
         if rs.is_quiet:
             return 0
+        # To ensure logging is done if and only if the corresponding action happened,
+        # we require atomization here.
+        self.affirm_atomized_context(rs)
         data = {
             "code": code,
             "submitted_by": rs.user.persona_id,
