@@ -1647,6 +1647,12 @@ class CoreBackend(AbstractBackend):
         or add them if an entry already exists, as entries are unique across
         persona_id and date.
 
+        Beware that this function can optionally be called in an atomized setting.
+        If this is the case, the quota is not actually raised by the offending query,
+        but access is blocked nonetheless. Otherwise, a value exceeding the quota limit
+        is saved into the database, which means that actions that should still be
+        possible need to be exempt in the check_quota function.
+
         :returns: Return the number of restricted actions the user has
             performed today including the ones given with this call, if any.
         """
@@ -1698,7 +1704,7 @@ class CoreBackend(AbstractBackend):
         Even if quota has been exceeded, never block access to own profile.
         """
         # Validation is done inside.
-        if ids is not None and ids == {rs.user.persona_id}:
+        if ids == {rs.user.persona_id}:
             return False
         quota = self.quota(rs, ids=ids, num=num)  # type: ignore
         return (quota > self.conf["QUOTA_VIEWS_PER_DAY"]
