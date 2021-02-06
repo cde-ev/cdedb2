@@ -255,7 +255,7 @@ class TestMlFrontend(FrontendTest):
     @as_users("anton", "janis")
     def test_show_ml_buttons_change_address(self, user: CdEDBObject) -> None:
         # not-mandatory
-        self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/3'},)
+        self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/3/show'},)
         self.assertTitle("Witz des Tages")
         if user['id'] == USER_DICT['anton']['id']:
             self.assertPresence("new-anton@example.cde")
@@ -271,7 +271,7 @@ class TestMlFrontend(FrontendTest):
         if user['id'] == USER_DICT['janis']['id']:
             self.logout()
             self.login(USER_DICT['inga'])
-        self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/1'},)
+        self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/1/show'},)
         self.assertTitle("Verkündungen")
         if user['id'] == USER_DICT['anton']['id']:
             self.assertPresence("anton@example.cde (default)")
