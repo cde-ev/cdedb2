@@ -4718,7 +4718,7 @@ msgstr "Skript zum Verifizieren der eigenen Stimme"
 
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:121
 msgid "Result file hash"
-msgstr "Hash der Ergebnis Datei"
+msgstr "Hash der Ergebnisdatei"
 
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:125
 #, python-format
@@ -4726,7 +4726,7 @@ msgid ""
 "After a ballot has been tallied, the generated result file and its hash will "
 "be sent to %(tally)s and %(presider)s."
 msgstr ""
-"Nachdem eine Abstimmung ausgezählt wurde, wird die generierte Ergebnis Datei "
+"Nachdem eine Abstimmung ausgezählt wurde, wird die generierte Ergebnisdatei "
 "und ihr Hash an %(tally)s und %(presider)s gesendet."
 
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:131
@@ -4735,7 +4735,7 @@ msgid ""
 "After a ballot has been tallied, the generated result file and its hash will "
 "be sent to %(tally)s."
 msgstr ""
-"Nachdem eine Abstimmung ausgezählt wurde, wird die generierte Ergebnis Datei "
+"Nachdem eine Abstimmung ausgezählt wurde, wird die generierte Ergebnisdatei "
 "und ihr Hash an %(tally)s gesendet."
 
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:138
@@ -4746,10 +4746,10 @@ msgid ""
 "Of course, you can also download the result file and calculate the "
 "%(algorithm)s hash by yourself."
 msgstr ""
-"Um sicherzustellen das die Ergebnis Datei auf dem CdE Server nicht verändert "
-"wurde, wird hier der Hash der gespeicherten Ergebnis Datei angezeigt, damit "
+"Um sicherzustellen, dass die Ergebnisdatei auf dem CdE Server nicht verändert "
+"wurde, wird hier der Hash der gespeicherten Ergebnisdatei angezeigt, damit "
 "ihr diesen mit dem verschickten Hash abgleichen könnt. Natürlich kannst du "
-"die Ergebnis Datei auch herunterladen und ihren %(algorithm)s Hash selbst "
+"die Ergebnisdatei auch herunterladen und ihren %(algorithm)s Hash selbst "
 "berechnen."
 
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:148
