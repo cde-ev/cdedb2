@@ -4710,7 +4710,7 @@ msgstr "Ergebnisdatei herunterladen"
 
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:117
 msgid "Download Result Verification Script"
-msgstr "Skript zum Verifizieren des Ergebnises"
+msgstr "Skript zum Verifizieren des Ergebnisses"
 
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:118
 msgid "Download Own Vote Verification Script"
