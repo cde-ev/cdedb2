@@ -4663,7 +4663,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:96
 msgid "<code>Result Verification</code>"
-msgstr "<code>Verifizieren des Ergebnis</code>"
+msgstr "<code>Verifizieren des Ergebnisses</code>"
 
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:96
 #, python-format
@@ -4710,7 +4710,7 @@ msgstr "Ergebnisdatei herunterladen"
 
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:117
 msgid "Download Result Verification Script"
-msgstr "Skript zum Verifizieren des Ergebnis"
+msgstr "Skript zum Verifizieren des Ergebnises"
 
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:118
 msgid "Download Own Vote Verification Script"
@@ -4746,11 +4746,11 @@ msgid ""
 "Of course, you can also download the result file and calculate the "
 "%(algorithm)s hash by yourself."
 msgstr ""
-"Um sicherzustellen, dass die Ergebnisdatei auf dem CdE Server nicht verändert "
-"wurde, wird hier der Hash der gespeicherten Ergebnisdatei angezeigt, damit "
-"ihr diesen mit dem verschickten Hash abgleichen könnt. Natürlich kannst du "
-"die Ergebnisdatei auch herunterladen und ihren %(algorithm)s Hash selbst "
-"berechnen."
+"Um sicherzustellen, dass die Ergebnisdatei auf dem CdE Server nicht "
+"verändert wurde, wird hier der Hash der gespeicherten Ergebnisdatei "
+"angezeigt, damit ihr diesen mit dem verschickten Hash abgleichen könnt. "
+"Natürlich kannst du die Ergebnisdatei auch herunterladen und ihren "
+"%(algorithm)s Hash selbst berechnen."
 
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:148
 msgid "Votes"
