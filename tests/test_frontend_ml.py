@@ -255,7 +255,7 @@ class TestMlFrontend(FrontendTest):
     @as_users("anton", "janis")
     def test_show_ml_buttons_change_address(self, user: CdEDBObject) -> None:
         # not-mandatory
-        self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/3'},)
+        self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/3/show'},)
         self.assertTitle("Witz des Tages")
         if user['id'] == USER_DICT['anton']['id']:
             self.assertPresence("new-anton@example.cde")
@@ -271,7 +271,7 @@ class TestMlFrontend(FrontendTest):
         if user['id'] == USER_DICT['janis']['id']:
             self.logout()
             self.login(USER_DICT['inga'])
-        self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/1'},)
+        self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/1/show'},)
         self.assertTitle("Verkündungen")
         if user['id'] == USER_DICT['anton']['id']:
             self.assertPresence("anton@example.cde (default)")
@@ -340,8 +340,8 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("Internationaler Kongress")
         # Nina is no assembly user
         self.assertNoLink("Internationaler Kongress")
-        self.assertPresence("Andere Mailinglisten")
-        self.traverse({'href': '/ml/mailinglist/6'})
+        self.assertPresence("Öffentliche Mailinglisten")
+        self.traverse({'href': '/ml/mailinglist/6/show'})
         self.assertTitle("Aktivenforum 2000")
 
     @as_users("annika")
@@ -354,8 +354,8 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("Veranstaltungslisten")
         # Moderated, but not administered mailinglists
         self.assertNonPresence("Versammlungslisten")
-        self.assertNonPresence("Allgemeine Mailinglisten")
-        self.assertNonPresence("Andere Mailinglisten")
+        self.assertNonPresence("Mitgliedermailinglisten")
+        self.assertNonPresence("Öffentliche Mailinglisten")
         self.assertNonPresence("CdE-All")
 
     @as_users("berta", "janis")
@@ -364,7 +364,7 @@ class TestMlFrontend(FrontendTest):
                       {'href': '/ml/mailinglist/moderated'})
         self.assertTitle("Moderierte Mailinglisten")
         # Moderated mailinglists
-        self.assertPresence("Allgemeine Mailinglisten")
+        self.assertPresence("Mitgliedermailinglisten")
         self.assertPresence("Aktivenforum 2001", div="mailinglist-7-row")
         self.assertPresence("Mitglieder (Opt-in)", div="mailinglist-7-row")
         self.assertPresence("3", div="mailinglist-7-row")
@@ -383,7 +383,7 @@ class TestMlFrontend(FrontendTest):
                       {'href': '/ml/mailinglist/moderated'})
         self.assertTitle("Moderierte Mailinglisten")
         # Moderated mailinglists
-        self.assertPresence("Allgemeine Mailinglisten")
+        self.assertPresence("Mitgliedermailinglisten")
         self.assertPresence("CdE-All")
         self.assertPresence("Veranstaltungslisten")
         self.assertPresence("CdE-Party 2050 Orgateam")

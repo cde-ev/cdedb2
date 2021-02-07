@@ -14412,7 +14412,7 @@ msgstr "Andere Mailinglisten"
 
 #: cdedb/i18n_additional.py:246 cdedb/i18n_additional.py:253
 msgid "MailinglistGroup.cde"
-msgstr "Allgemeine Mailinglisten"
+msgstr "Mitgliedermailinglisten"
 
 #: cdedb/i18n_additional.py:247 cdedb/i18n_additional.py:254
 msgid "MailinglistGroup.team"
@@ -15441,3 +15441,7 @@ msgstr "Nur durch Moderatoren"
 #: cdedb/i18n_additional.py:220
 msgid "MailinglistInteractionPolicy.implicits_only"
 msgstr "Nur implizit"
+
+#: cdedb/i18n_additional.py:252 cdedb/i18n_additional.py:245
+msgid "MailinglistGroup.public"
+msgstr "Öffentliche Mailinglisten"
