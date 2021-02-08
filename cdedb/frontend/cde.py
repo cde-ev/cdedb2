@@ -1996,26 +1996,21 @@ class CdEFrontend(AbstractUserFrontend):
         return self.render(rs, "show_semester", {
             'period': period, 'expuls': expuls, 'stats': stats,
             'period_history': period_history, 'expuls_history': expuls_history,
+            'current_period_step': current_period_step,
         })
 
     @access("finance_admin", modi={"POST"})
     @REQUESTdata(("addresscheck", "bool"), ("testrun", "bool"))
     def semester_bill(self, rs: RequestState, addresscheck: bool, testrun: bool
                       ) -> Response:
-        """Send billing mail to all members.
+        """Send billing mail to all members and archival notification to inactive users.
 
-        In case of a test run we send only a single mail to the button
-        presser.
-
-        Additionally this will determine any accounts that should be automatically
-        archived and send a notification to them informing them of the pending archival.
+        In case of a test run we send a single mail of each to the button presser.
         """
         if rs.has_validation_errors():
             return self.redirect(rs, "cde/show_semester")
         period_id = self.cdeproxy.current_period(rs)
-        period = self.cdeproxy.get_period(rs, period_id)
-        # TODO this should also check 'archival_notification_done'.
-        if period['billing_done']:
+        if not self.cdeproxy.may_start_semester_bill(rs):
             rs.notify("error", n_("Billing already done."))
             return self.redirect(rs, "cde/show_semester")
         open_lastschrift = self.determine_open_permits(rs)
@@ -2097,7 +2092,9 @@ class CdEFrontend(AbstractUserFrontend):
                     'id': period_id,
                     'archival_notification_state': persona_id,
                 }
-                if self.coreproxy.is_persona_automatically_archivable(rrs, persona_id):
+                is_archivable = self.coreproxy.is_persona_automatically_archivable(
+                    rrs, persona_id)
+                if is_archivable or testrun:
                     persona = self.coreproxy.get_persona(rrs, persona_id)
                     self.do_mail(
                         rrs, "imminent_archival",
@@ -2105,7 +2102,8 @@ class CdEFrontend(AbstractUserFrontend):
                          'Subject': "Bevorstehende Löschung Deines"
                                     " CdE-Datenbank-Accounts"},
                         {'persona': persona,
-                         'management': self.conf["MANAGEMENT_ADDRESS"]})
+                         'management': self.conf["MANAGEMENT_ADDRESS"],
+                         'meta_info': meta_info})
                     period_update['archival_notification_count'] = \
                         period['archival_notification_count'] + 1
                 if testrun:
@@ -2120,15 +2118,9 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("finance_admin", modi={"POST"})
     def semester_eject(self, rs: RequestState) -> Response:
-        """Eject members without enough credit.
-
-        Additionally this archives inactive accounts that have been previously
-        notified about this in the billing step.
-        """
+        """Eject members without enough credit and archive inactive users."""
         period_id = self.cdeproxy.current_period(rs)
-        period = self.cdeproxy.get_period(rs, period_id)
-        # TODO this should also check 'archival_notification_done' and 'archival_done'
-        if not period['billing_done'] or period['ejection_done']:
+        if not self.cdeproxy.may_start_semester_ejection(rs):
             rs.notify("error", n_("Wrong timing for ejection."))
             return self.redirect(rs, "cde/show_semester")
 
@@ -2228,8 +2220,7 @@ class CdEFrontend(AbstractUserFrontend):
     def semester_balance_update(self, rs: RequestState) -> Response:
         """Deduct membership fees from all member accounts."""
         period_id = self.cdeproxy.current_period(rs)
-        period = self.cdeproxy.get_period(rs, period_id)
-        if not period['ejection_done'] or period['balance_done']:
+        if not self.cdeproxy.may_start_semester_balance_update(rs):
             rs.notify("error", n_("Wrong timing for balance update."))
             return self.redirect(rs, "cde/show_semester")
 
