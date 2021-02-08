@@ -621,12 +621,28 @@ class CdEBackend(AbstractBackend):
             return self.sql_update(rs, "cde.org_period", period)
 
     @access("finance_admin")
+    def may_advance_semester(self, rs: RequestState) -> bool:
+        """Helper to determine if now is the right time to advance the semester.
+
+        :returns: True if the semester may be advanced, False otherwise.
+        """
+        with Atomizer(rs):
+            period_id = self.current_period(rs)
+            period = self.get_period(rs, period_id)
+            # Take special care about all previous steps.
+            if any(not period[key] for key in
+                   ('billing_done', 'archival_notification_done', 'ejection_done',
+                    'archival_done', 'balance_done')):
+                return False
+            return True
+
+    @access("finance_admin")
     def advance_semester(self, rs: RequestState) -> DefaultReturnCode:
         """Mark  the current semester as finished and create a new semester."""
         with Atomizer(rs):
             current_id = self.current_period(rs)
             current = self.get_period(rs, current_id)
-            if not current['balance_done']:
+            if not self.may_advance_semester(rs):
                 raise RuntimeError(n_("Current period not finalized."))
             update = {
                 'id': current_id,
@@ -640,6 +656,23 @@ class CdEBackend(AbstractBackend):
             return ret
 
     @access("finance_admin")
+    def may_start_semester_bill(self, rs: RequestState) -> bool:
+        """Helper to determine if now is the right time to start the semester bill step.
+
+        Beware that this step also involves the sending of archival notifications, so
+        we check both.
+
+        :returns: True if billing may be started, False otherwise.
+        """
+        with Atomizer(rs):
+            period_id = self.current_period(rs)
+            period = self.get_period(rs, period_id)
+            if period['billing_done'] and period['archival_notification_done']:
+                # Both parts of this step are already done.
+                return False
+            return True
+
+    @access("finance_admin")
     def finish_semester_bill(self, rs: RequestState,
                              addresscheck: bool = False) -> DefaultReturnCode:
         """Conclude the semester bill step."""
@@ -647,7 +680,7 @@ class CdEBackend(AbstractBackend):
         with Atomizer(rs):
             period_id = self.current_period(rs)
             period = self.get_period(rs, period_id)
-            if not period['balance_done'] is None:
+            if period['balance_done'] is not None:
                 raise RuntimeError(n_("Billing already done for this period."))
             period_update = {
                 'id': period_id,
@@ -672,7 +705,7 @@ class CdEBackend(AbstractBackend):
         with Atomizer(rs):
             period_id = self.current_period(rs)
             period = self.get_period(rs, period_id)
-            if not period['archival_notification_done'] is None:
+            if period['archival_notification_done'] is not None:
                 raise RuntimeError(n_("Archival notifications done for this period."))
             period_update = {
                 'id': period_id,
@@ -687,12 +720,33 @@ class CdEBackend(AbstractBackend):
             return ret
 
     @access("finance_admin")
+    def may_start_semester_ejection(self, rs: RequestState) -> bool:
+        """Helper to determine if now is the right time to start the semester ejection.
+
+        Beware that this step also involves the automated archival, so we check both.
+
+        :returns: True if ejection may be started, False otherwise.
+        """
+        with Atomizer(rs):
+            period_id = self.current_period(rs)
+            period = self.get_period(rs, period_id)
+            if not period['billing_done'] or not period['archival_notification_done']:
+                # The previous step was not fully completed.
+                return False
+            if period['ejection_done'] and period['archival_done']:
+                # This step was already fully completed.
+                return False
+            return True
+
+    @access("finance_admin")
     def finish_automated_archival(self, rs: RequestState) -> DefaultReturnCode:
         """Conclude the automated archival."""
         with Atomizer(rs):
             period_id = self.current_period(rs)
             period = self.get_period(rs, period_id)
-            if not period['archival_done'] is None:
+            if not period['archival_notification_done']:
+                raise RuntimeError(n_("Archival notifications not sent yet."))
+            if period['archival_done'] is not None:
                 raise RuntimeError(n_("Automated archival done for this period."))
             period_update = {
                 'id': period_id,
@@ -714,9 +768,8 @@ class CdEBackend(AbstractBackend):
             period = self.get_period(rs, period_id)
             if not period['billing_done']:
                 raise RuntimeError(n_("Billing not done for this semester."))
-            if not period['ejection_done'] is None:
-                raise RuntimeError(n_(
-                "Ejection already done for this semester."))
+            if period['ejection_done'] is not None:
+                raise RuntimeError(n_("Ejection already done for this semester."))
             period_update = {
                 'id': period_id,
                 'ejection_state': None,
@@ -731,17 +784,34 @@ class CdEBackend(AbstractBackend):
             return ret
 
     @access("finance_admin")
-    def finish_semester_balance_update(
-            self, rs: RequestState) -> DefaultReturnCode:
+    def may_start_semester_balance_update(self, rs: RequestState) -> bool:
+        """Helper to determine if now is the right time to start the balance update.
+
+        :returns: True if the balance update may be started, False otherwise.
+        """
+        with Atomizer(rs):
+            period_id = self.current_period(rs)
+            period = self.get_period(rs, period_id)
+            if not period['ejection_done'] or not period['archival_done']:
+                # The previous step was not fully completed.
+                return False
+            if period['balance_done']:
+                # This step was already done.
+                return False
+            return True
+
+    @access("finance_admin")
+    def finish_semester_balance_update(self, rs: RequestState) -> DefaultReturnCode:
         """Conclude the semester balance update step."""
         with Atomizer(rs):
             period_id = self.current_period(rs)
             period = self.get_period(rs, period_id)
+            # TODO: technically this does not need to wait for automated archival to be
+            #  done, even though the current workflow mandates it anyway.
             if not period['ejection_done']:
                 raise RuntimeError(n_("Ejection not done for this period."))
-            if not period['balance_done'] is None:
-                raise RuntimeError(n_(
-                    "Balance update already done for this period."))
+            if period['balance_done'] is not None:
+                raise RuntimeError(n_("Balance update already done for this period."))
             period_update = {
                 'id': period_id,
                 'balance_state': None,
