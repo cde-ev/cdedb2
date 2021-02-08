@@ -1415,8 +1415,10 @@ class MlBackend(AbstractBackend):
     # both roles are required
     @access("ml_admin")
     @access("core_admin")
-    def merge_accounts(self, rs: RequestState, source_persona_id: vtypes.ID,
-                       target_persona_id: vtypes.ID) -> DefaultReturnCode:
+    def merge_accounts(self, rs: RequestState,
+                       source_persona_id: vtypes.ID,
+                       target_persona_id: vtypes.ID,
+                       clone_addresses: bool = True) -> DefaultReturnCode:
         source_persona_id = affirm(vtypes.ID, source_persona_id)
         target_persona_id = affirm(vtypes.ID, target_persona_id)
 
@@ -1469,10 +1471,11 @@ class MlBackend(AbstractBackend):
                 # to get_subscription_states
                 assert state is not None
 
-                address = self.get_subscription_address(
-                    rs, ml_id, persona_id=source_persona_id)
-                # get_subscription_address may returns only None if explicits_only=True
-                assert address is not None
+                if clone_addresses:
+                    address = self.get_subscription_address(
+                        rs, ml_id, explicits_only=False, persona_id=source_persona_id)
+                    # get_subscription_address returns only None if explicits_only=True
+                    assert address is not None
 
                 # set the target to the subscription state of the source
                 datum = {
@@ -1486,8 +1489,9 @@ class MlBackend(AbstractBackend):
                     datum['persona_id'], change_note=msg)
 
                 # set the subscribing address of the target to the address of the source
-                code *= self.set_subscription_address(
-                    rs, ml_id, persona_id=target_persona_id, email=address)
+                if clone_addresses:
+                    code *= self.set_subscription_address(
+                        rs, ml_id, persona_id=target_persona_id, email=address)
 
             msg = f"User {source_persona_id} in User {target_persona_id} gemergt."
             mls = self.get_mailinglists(rs, source_moderates)
