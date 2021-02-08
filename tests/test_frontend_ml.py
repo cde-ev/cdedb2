@@ -518,6 +518,34 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Klatsch und Tratsch – Erweiterte Verwaltung")
         self.assertNonPresence("zelda@example.cde")
 
+    @as_users("janis")
+    def test_remove_unsubscriptions(self, user: CdEDBObject) -> None:
+        self.traverse({'description': 'Mailinglisten'},
+                      {'description': 'Werbung'},
+                      {'description': 'Erweiterte Verwaltung'})
+        self.assertTitle("Werbung – Erweiterte Verwaltung")
+        self.assertPresence("Annika", div='unsubscriber-list')
+        self.assertPresence("Ferdinand", div='unsubscriber-list')
+
+        # remove Annikas unsubscription
+        f = self.response.forms['resetunsubscriberform27']
+        assert 'addsubscriberform27' not in self.response.forms
+        self.submit(f)
+        self.assertNonPresence("Annika", div='unsubscriber-list')
+
+        # re-add Ferdinand, he got implicit subscribing rights
+        f = self.response.forms['addsubscriberform6']
+        assert 'resetunsubscriberform6' not in self.response.forms
+        self.submit(f)
+        self.assertNonPresence("Ferdinand", div='unsubscriber-list')
+
+        # check that Ferdinand was subscribed, while Annikas relation was removed
+        self.assertNonPresence('Annika')
+        self.traverse({'description': 'Verwaltung'})
+        self.assertTitle("Werbung – Verwaltung")
+        self.assertNonPresence("Annika")
+        self.assertPresence("Ferdinand", div="subscriber-list")
+
     # TODO add a presider as moderator and use him too in this test
     @as_users("nina")
     def test_mailinglist_management_outside_audience(self, user: CdEDBObject) -> None:

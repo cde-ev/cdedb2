@@ -184,7 +184,7 @@
     </form>
     {% endif %}
 
-    <div class="row">
+    <div class="row" id="subscriber-list">
         {% set col_width = 4 if subscribers|length > 10 else (6 if subscribers|length > 5 else 12) %}
         {% for list in subscribers | slice(3 if subscribers|length > 10 else (2 if subscribers|length > 5 else 1)) %}
             <div class="col-sm-{{ col_width }}">
