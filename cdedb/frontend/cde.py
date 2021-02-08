@@ -30,9 +30,9 @@ import cdedb.frontend.parse_statement as parse
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
     PERSONA_DEFAULTS, ArchiveError, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
-    EntitySorter, Error, LineResolutions, RequestState, TransactionType, asciificator,
-    deduct_years, determine_age_class, diacritic_patterns, get_hash, glue, int_to_words,
-    lastschrift_reference, merge_dicts, n_, now, unwrap, xsorted,
+    EntitySorter, Error, LineResolutions, RequestState, SemesterSteps, TransactionType,
+    asciificator, deduct_years, determine_age_class, diacritic_patterns, get_hash,
+    glue, int_to_words, lastschrift_reference, merge_dicts, n_, now, unwrap, xsorted,
 )
 from cdedb.database.connection import Atomizer
 from cdedb.frontend.common import (
@@ -1978,6 +1978,17 @@ class CdEFrontend(AbstractUserFrontend):
         period_id = self.cdeproxy.current_period(rs)
         period = self.cdeproxy.get_period(rs, period_id)
         period_history = self.cdeproxy.get_period_history(rs)
+        if self.cdeproxy.may_start_semester_bill(rs):
+            current_period_step = SemesterSteps.billing
+        elif self.cdeproxy.may_start_semester_ejection(rs):
+            current_period_step = SemesterSteps.ejection
+        elif self.cdeproxy.may_start_semester_balance_update(rs):
+            current_period_step = SemesterSteps.balance
+        elif self.cdeproxy.may_advance_semester(rs):
+            current_period_step = SemesterSteps.advance
+        else:
+            rs.notify("error", n_("Inconsistent semester state."))
+            current_period_step = SemesterSteps.error
         expuls_id = self.cdeproxy.current_expuls(rs)
         expuls = self.cdeproxy.get_expuls(rs, expuls_id)
         expuls_history = self.cdeproxy.get_expuls_history(rs)

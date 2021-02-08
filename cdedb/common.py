@@ -1276,6 +1276,20 @@ class TransactionType(enum.IntEnum):
         else:
             return repr(self)
 
+class SemesterSteps(enum.Enum):
+    billing = 1
+    archival_notification = 2
+    ejection = 10
+    automated_archival = 11
+    balance = 20
+    advance = 30
+    error = 100
+
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, str):
+            return self.name == other
+        return super(SemesterSteps, self).__eq__(other)
+
 
 def mixed_existence_sorter(iterable: Union[Collection[int], KeysView[int]]
                            ) -> Generator[int, None, None]:
