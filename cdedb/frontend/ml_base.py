@@ -270,6 +270,37 @@ class MlBaseFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/show_mailinglist", {
             'mailinglist_id': new_id})
 
+    @access("ml_admin")
+    def merge_accounts_form(self, rs: RequestState):
+        return self.render(rs, "merge_accounts")
+
+    @access("ml_admin", modi={"POST"})
+    @REQUESTdata("source_persona_id", "target_persona_id", "clone_addresses")
+    def merge_accounts(self, rs:RequestState,
+                       source_persona_id: vtypes.ID,
+                       target_persona_id: vtypes.ID,
+                       clone_addresses: bool) -> Response:
+        if rs.has_validation_errors():
+            return self.merge_accounts_form(rs)
+        if not self.coreproxy.verify_id(rs, source_persona_id, is_archived=False):
+            rs.append_validation_error(
+                ("source_persona_id", ValueError(n_(
+                    "User does not exist or is archived."))))
+        if not self.coreproxy.verify_id(rs, target_persona_id, is_archived=False):
+            rs.append_validation_error(
+                ("target_persona_id", ValueError(n_(
+                    "User does not exist or is archived."))))
+        if not self.coreproxy.verify_persona(rs, source_persona_id, allowed_roles={"ml"}):
+            rs.append_validation_error(
+                ("source_persona_id", ValueError(n_(
+                    "Source persona must be ml-only user."))))
+        if rs.has_validation_errors():
+            return self.merge_accounts_form(rs)
+        code = self.mlproxy.merge_accounts(
+            rs, source_persona_id, target_persona_id, clone_addresses)
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "ml/merge_accounts")
+
     @access("ml")
     @REQUESTdata("codes", "mailinglist_id", "persona_id", "submitted_by",
                  "change_note", "offset", "length", "time_start", "time_stop")
