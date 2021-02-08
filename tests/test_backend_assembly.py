@@ -859,15 +859,80 @@ class TestAssemblyBackend(BackendTest):
         self.assertEqual(expectation, self.assembly.list_assemblies(self.key))
 
     def test_log(self) -> None:
-        # first generate some data
+        # first check the already existing log
+        offset = 8
+        expectation = (offset, (
+            {"id": 1,
+             "ctime": nearly_now(),
+             "code": const.AssemblyLogCodes.new_attendee,
+             "submitted_by": 1,
+             "assembly_id": 2,
+             "persona_id": 18,
+             "change_note": None},
+            {"id": 2,
+             "ctime": nearly_now(),
+             "code": const.AssemblyLogCodes.new_attendee,
+             "submitted_by": 1,
+             "assembly_id": 2,
+             "persona_id": 1,
+             "change_note": None},
+            {"id": 3,
+             "ctime": nearly_now(),
+             "code": const.AssemblyLogCodes.new_attendee,
+             "submitted_by": 3,
+             "assembly_id": 2,
+             "persona_id": 3,
+             "change_note": None},
+            {"id": 4,
+             "ctime": nearly_now(),
+             "code": const.AssemblyLogCodes.new_attendee,
+             "submitted_by": 32,
+             "assembly_id": 2,
+             "persona_id": 32,
+             "change_note": None},
+            {"id": 5,
+             "ctime": nearly_now(),
+             "code": const.AssemblyLogCodes.new_attendee,
+             "submitted_by": 7,
+             "assembly_id": 2,
+             "persona_id": 7,
+             "change_note": None},
+            {"id": 6,
+             "ctime": nearly_now(),
+             "code": const.AssemblyLogCodes.new_attendee,
+             "submitted_by": 9,
+             "assembly_id": 2,
+             "persona_id": 9,
+             "change_note": None},
+            {"id": 7,
+             "ctime": nearly_now(),
+             "code": const.AssemblyLogCodes.new_attendee,
+             "submitted_by": 1,
+             "assembly_id": 2,
+             "persona_id": 17,
+             "change_note": None},
+            {"id": 8,
+             "ctime": nearly_now(),
+             "code": const.AssemblyLogCodes.new_attendee,
+             "submitted_by": 1,
+             "assembly_id": 2,
+             "persona_id": 22,
+             "change_note": None},
+        ))
+        self.login("viktor")
+        result = self.assembly.retrieve_log(self.key)
+        self.assertEqual(expectation, result)
+        self.core.logout(self.key)
+
+        # now generate some data
         self.test_entity_assembly()
         self.test_vote()
         self.test_entity_ballot()
 
         self.login("viktor")
-        # now check it
+        # check the new data
         sub_id = USER_DICT['werner']['id']
-        expectation = (11, (
+        expectation = (11+offset, (
             {'id': 1001,
              'change_note': None,
              'assembly_id': 1,
@@ -947,5 +1012,5 @@ class TestAssemblyBackend(BackendTest):
              'persona_id': None,
              'submitted_by': sub_id},
         ))
-        result = self.assembly.retrieve_log(self.key)
+        result = self.assembly.retrieve_log(self.key, offset=offset)
         self.assertEqual(expectation, result)

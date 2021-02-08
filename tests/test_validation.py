@@ -4,90 +4,98 @@ import copy
 import datetime
 import decimal
 import unittest
+from typing import Any, Iterable, List, Optional, Tuple, Type, TypeVar
 
 import pytz
 
 import cdedb.database.constants as const
 import cdedb.validation as validate
 from cdedb.common import ValidationWarning
+from cdedb.validationtypes import *
 
 
 class TestValidation(unittest.TestCase):
-    def do_validator_test(self, name, spec, extraparams=None):
+    def do_validator_test(
+        self,
+        type_: Type[Any],
+        spec: Iterable[Tuple[Any, Any, Union[Type[Exception], Exception, None], bool]],
+        extraparams: Mapping[str, Any]=None
+    ) -> None:
         extraparams = extraparams or {}
         for inval, retval, exception, verifies in spec:
             with self.subTest(inval=inval):
                 if not exception:
-                    self.assertEqual((retval, []),
-                                     getattr(validate, "check" + name)(
-                                         inval, **extraparams))
-                    self.assertEqual(retval,
-                                     getattr(validate, "assert" + name)(
-                                         inval, **extraparams))
+                    self.assertEqual(
+                        validate.validate_check(type_, inval, **extraparams),
+                        (retval, []),
+                    )
+                    self.assertEqual(
+                        validate.validate_assert(type_, inval, **extraparams),
+                        retval,
+                    )
                 else:
-                    self.assertEqual(None,
-                                     getattr(validate, "check" + name)(
-                                         inval, **extraparams)[0])
-                    self.assertLess(0,
-                                    len(getattr(validate, "check" + name)(
-                                        inval, **extraparams)[1]))
+                    self.assertEqual(
+                        None,
+                        validate.validate_check(type_, inval, **extraparams)[0],
+                    )
+                    self.assertNotEqual(
+                        [],
+                        validate.validate_check(type_, inval, **extraparams)[1],
+                    )
                     exception_args = None
                     if isinstance(exception, Exception):
                         exception_args = exception.args
                         exception = type(exception)
                     with self.assertRaises(exception) as cm:
-                        getattr(validate, "assert" +
-                                name)(inval, **extraparams)
+                        validate.validate_assert(type_, inval, **extraparams)
                     if exception_args:
                         self.assertEqual(cm.exception.args, exception_args)
                 if verifies:
-                    self.assertTrue(getattr(validate, "is" + name)(
-                        inval, **extraparams))
+                    self.assertTrue(validate.validate_is(
+                        type_, inval, **extraparams))
                 else:
-                    self.assertFalse(getattr(validate, "is" + name)(
-                        inval, **extraparams))
-                onepass = getattr(validate, "check" + name)(
-                    inval, **extraparams)[0]
-                twopass = getattr(validate, "check" + name)(
-                    onepass, **extraparams)[0]
+                    self.assertFalse(validate.validate_is(
+                        type_, inval, **extraparams))
+                onepass = validate.validate_check(type_, inval, **extraparams)[0]
+                twopass = validate.validate_check(type_, onepass, **extraparams)[0]
                 self.assertEqual(onepass, twopass)
 
-    def test_or_None(self) -> None:
-        self.assertTrue(validate.is_int(12))
-        self.assertFalse(validate.is_int(None))
-        self.assertFalse(validate.is_int("12"))
-        self.assertFalse(validate.is_int("garbage"))
-        self.assertTrue(validate.is_int_or_None(12))
-        self.assertTrue(validate.is_int_or_None(None))
-        self.assertFalse(validate.is_int_or_None("12"))
-        self.assertFalse(validate.is_int_or_None("garbage"))
+    def test_optional(self) -> None:
+        self.assertTrue(validate.validate_is(int, 12))
+        self.assertFalse(validate.validate_is(int, None))
+        self.assertFalse(validate.validate_is(int, "12"))
+        self.assertFalse(validate.validate_is(int, "garbage"))
+        self.assertTrue(validate.validate_is_optional(int, 12))
+        self.assertTrue(validate.validate_is_optional(int, None))
+        self.assertFalse(validate.validate_is_optional(int, "12"))
+        self.assertFalse(validate.validate_is_optional(int, "garbage"))
 
-        self.assertEqual((12, []), validate.check_int(12))
-        self.assertEqual(None, validate.check_int(None)[0])
-        self.assertLess(0, len(validate.check_int(None)[1]))
-        self.assertEqual(None, validate.check_int("garbage")[0])
-        self.assertLess(0, len(validate.check_int("garbage")[1]))
-        self.assertEqual((12, []), validate.check_int("12"))
-        self.assertEqual((12, []), validate.check_int_or_None(12))
-        self.assertEqual((None, []), validate.check_int_or_None(None))
-        self.assertEqual((12, []), validate.check_int_or_None("12"))
-        self.assertEqual(None, validate.check_int_or_None("garbage")[0])
-        self.assertLess(0, len(validate.check_int_or_None("garbage")[1]))
+        self.assertEqual((12, []), validate.validate_check(int, 12))
+        self.assertEqual(None, validate.validate_check(int, None)[0])
+        self.assertLess(0, len(validate.validate_check(int, None)[1]))
+        self.assertEqual(None, validate.validate_check(int, "garbage")[0])
+        self.assertLess(0, len(validate.validate_check(int, "garbage")[1]))
+        self.assertEqual((12, []), validate.validate_check(int, "12"))
+        self.assertEqual((12, []), validate.validate_check_optional(int, 12))
+        self.assertEqual((None, []), validate.validate_check_optional(int, None))
+        self.assertEqual((12, []), validate.validate_check_optional(int, "12"))
+        self.assertEqual(None, validate.validate_check_optional(int, "garbage")[0])
+        self.assertLess(0, len(validate.validate_check_optional(int, "garbage")[1]))
 
-        self.assertEqual(12, validate.assert_int(12))
+        self.assertEqual(12, validate.validate_assert(int, 12))
         with self.assertRaises(TypeError):
-            validate.assert_int(None)
+            validate.validate_assert(int, None)
         with self.assertRaises(ValueError):
-            validate.assert_int("garbage")
-        self.assertEqual(12, validate.assert_int("12"))
-        self.assertEqual(12, validate.assert_int_or_None(12))
-        self.assertEqual(None, validate.assert_int_or_None(None))
-        self.assertEqual(12, validate.assert_int_or_None("12"))
+            validate.validate_assert(int, "garbage")
+        self.assertEqual(12, validate.validate_assert(int, "12"))
+        self.assertEqual(12, validate.validate_assert_optional(int, 12))
+        self.assertEqual(None, validate.validate_assert_optional(int, None))
+        self.assertEqual(12, validate.validate_assert_optional(int, "12"))
         with self.assertRaises(ValueError):
-            validate.assert_int_or_None("garbage")
+            validate.validate_assert_optional(int, "garbage")
 
     def test_int(self) -> None:
-        self.do_validator_test("_int", (
+        self.do_validator_test(int, (
             (0, 0, None, True),
             (12, 12, None, True),
             (None, None, TypeError, False),
@@ -103,13 +111,13 @@ class TestValidation(unittest.TestCase):
         ))
 
     def test_bool_int(self) -> None:
-        self.do_validator_test("_int", (
+        self.do_validator_test(int, (
             (True, None, TypeError, False),
             (False, None, TypeError, False),
         ), {"_convert": False})
 
     def test_float(self) -> None:
-        self.do_validator_test("_float", (
+        self.do_validator_test(float, (
             (0.0, 0.0, None, True),
             (12.3, 12.3, None, True),
             (None, None, ValueError, False),
@@ -122,7 +130,7 @@ class TestValidation(unittest.TestCase):
         ))
 
     def test_decimal(self) -> None:
-        self.do_validator_test("_decimal", (
+        self.do_validator_test(decimal.Decimal, (
             (decimal.Decimal(0), decimal.Decimal(0), None, True),
             (decimal.Decimal(12.3), decimal.Decimal(12.3), None, True),
             (None, None, TypeError, False),
@@ -134,22 +142,22 @@ class TestValidation(unittest.TestCase):
         ))
 
     def test_str_type(self) -> None:
-        self.do_validator_test("_str_type", (
+        self.do_validator_test(StringType, (
             ("a string", "a string", None, True),
             ("with stuff äößł€ ", "with stuff äößł€ ", None, True),
             ("", "", None, True),
             (54, "54", None, False),
             ("multiple\r\nlines\rof\ntext", "multiple\nlines\nof\ntext", None, True),
         ))
-        self.do_validator_test("_str_type", (
+        self.do_validator_test(StringType, (
             ("a string", "a stig", None, True),
         ), extraparams={'zap': 'rn'})
-        self.do_validator_test("_str_type", (
+        self.do_validator_test(StringType, (
             ("a string", "a sti", None, True),
         ), extraparams={'sieve': ' aist'})
 
     def test_str(self) -> None:
-        self.do_validator_test("_str", (
+        self.do_validator_test(str, (
             ("a string", "a string", None, True),
             ("string with stuff äößł€", "string with stuff äößł€", None, True),
             ("", "", ValueError, False),
@@ -158,13 +166,13 @@ class TestValidation(unittest.TestCase):
         ))
 
     def test_mapping(self) -> None:
-        self.do_validator_test("_mapping", (
+        self.do_validator_test(Mapping, (
             ({"a": "dict"}, {"a": "dict"}, None, True),
             ("something else", "", TypeError, False),
         ))
 
     def test_bool(self) -> None:
-        self.do_validator_test("_bool", (
+        self.do_validator_test(bool, (
             (True, True, None, True),
             (False, False, None, True),
             ("a string", True, None, False),
@@ -175,7 +183,7 @@ class TestValidation(unittest.TestCase):
         ))
 
     def test_printable_ascii_type(self) -> None:
-        self.do_validator_test("_printable_ascii_type", (
+        self.do_validator_test(PrintableASCIIType, (
             ("a string", "a string", None, True),
             ("string with stuff äößł€", None, ValueError, False),
             ("", "", None, True),
@@ -183,7 +191,7 @@ class TestValidation(unittest.TestCase):
         ))
 
     def test_printable_ascii(self) -> None:
-        self.do_validator_test("_printable_ascii", (
+        self.do_validator_test(PrintableASCII, (
             ("a string", "a string", None, True),
             ("string with stuff äößł€", None, ValueError, False),
             ("", "", ValueError, False),
@@ -191,7 +199,7 @@ class TestValidation(unittest.TestCase):
         ))
 
     def test_password_strength(self) -> None:
-        self.do_validator_test("_password_strength", (
+        self.do_validator_test(PasswordStrength, (
             ("Secure String 0#", "Secure String 0#", None, True),
             ("short", None, ValueError, False),
             ("insecure", None, ValueError, False),
@@ -199,7 +207,7 @@ class TestValidation(unittest.TestCase):
         ))
 
     def test_email(self) -> None:
-        self.do_validator_test("_email", (
+        self.do_validator_test(Email, (
             ("address@domain.tld", "address@domain.tld", None, True),
             ("eXtRaS_-4+@DomAin.tld", "extras_-4+@domain.tld", None, True),
             ("other@mailer.berlin", "other@mailer.berlin", None, True),
@@ -227,7 +235,7 @@ class TestValidation(unittest.TestCase):
         password_example["password_hash"] = "something"
         value_example = copy.deepcopy(base_example)
         value_example["username"] = "garbage"
-        self.do_validator_test("_persona", (
+        self.do_validator_test(Persona, (
             (base_example, base_example, None, True),
             (stripped_example, stripped_example, None, True),
             (key_example, key_example, KeyError, False),
@@ -237,7 +245,7 @@ class TestValidation(unittest.TestCase):
 
     def test_date(self) -> None:
         now = datetime.datetime.now()
-        self.do_validator_test("_date", (
+        self.do_validator_test(datetime.date, (
             (now.date(), now.date(), None, True),
             (now, now.date(), None, True),
             ("2014-04-2", datetime.date(2014, 4, 2), None, False),
@@ -254,7 +262,7 @@ class TestValidation(unittest.TestCase):
         now = datetime.datetime.now()
         now_aware = datetime.datetime.now(pytz.utc)
         now_other = pytz.timezone('America/New_York').localize(now)
-        self.do_validator_test("_datetime", (
+        self.do_validator_test(datetime.datetime, (
             (now, now, None, True),
             (now_aware, now_aware, None, True),
             (now_other, now_other, None, True),
@@ -278,7 +286,7 @@ class TestValidation(unittest.TestCase):
             # see above
             # ("more garbage", None, TypeError, False),
         ))
-        self.do_validator_test("_datetime", (
+        self.do_validator_test(datetime.datetime, (
             (now, now, None, True),
             (now_aware, now_aware, None, True),
             (now_other, now_other, None, True),
@@ -306,7 +314,7 @@ class TestValidation(unittest.TestCase):
         ), extraparams={'default_date': datetime.date(2000, 5, 23)})
 
     def test_phone(self) -> None:
-        self.do_validator_test("_phone", (
+        self.do_validator_test(Phone, (
             ("+49 (3641) 12345", "+49 (3641) 12345", None, True),
             ("0049364112345", "+49 (3641) 12345", None, True),
             ("03641/12345", "+49 (3641) 12345", None, True),
@@ -322,7 +330,7 @@ class TestValidation(unittest.TestCase):
         ))
 
     def test_member_data(self) -> None:
-        base_example = {
+        base_example: Dict[str, Any] = {
             "id": 42,
             "username": "address@domain.tld",
             "display_name": "Blübb the First",
@@ -366,7 +374,7 @@ class TestValidation(unittest.TestCase):
         value_example["postal_code"] = "07742"
         convert_example = copy.deepcopy(base_example)
         convert_example["birthday"] = base_example["birthday"].isoformat()
-        self.do_validator_test("_persona", (
+        self.do_validator_test(Persona, (
             (base_example, base_example, None, True),
             (convert_example, base_example, None, False),
             (stripped_example, stripped_example, None, True),
@@ -375,7 +383,7 @@ class TestValidation(unittest.TestCase):
         ))
 
     def test_event_user_data(self) -> None:
-        base_example = {
+        base_example: Dict[str, Any] = {
             "id": 42,
             "username": "address@domain.tld",
             "display_name": "Blübb the First",
@@ -404,7 +412,7 @@ class TestValidation(unittest.TestCase):
         value_example["postal_code"] = "07742"
         convert_example = copy.deepcopy(base_example)
         convert_example["birthday"] = base_example["birthday"].isoformat()
-        self.do_validator_test("_persona", (
+        self.do_validator_test(Persona, (
             (base_example, base_example, None, True),
             (convert_example, base_example, None, False),
             (stripped_example, stripped_example, None, True),
@@ -414,7 +422,7 @@ class TestValidation(unittest.TestCase):
 
     def test_enum_validators(self) -> None:
         stati = const.RegistrationPartStati
-        self.do_validator_test("_enum_registrationpartstati", (
+        self.do_validator_test(const.RegistrationPartStati, (
             (stati.participant, stati.participant, None, True),
             (2, stati.participant, None, True),
             ("2", stati.participant, None, False),
@@ -423,7 +431,7 @@ class TestValidation(unittest.TestCase):
         ))
 
     def test_vote(self) -> None:
-        ballot = {
+        ballot: Dict[str, Any] = {
             'votes': None,
             'use_bar': True,
             'candidates': {
@@ -436,7 +444,7 @@ class TestValidation(unittest.TestCase):
         }
         classical_ballot = copy.deepcopy(ballot)
         classical_ballot['votes'] = 2
-        self.do_validator_test("_vote", (
+        self.do_validator_test(Vote, (
             ("A>B>C=D>E>_bar_", "A>B>C=D>E>_bar_", None, True),
             ("_bar_=B>E=C=D>A", "_bar_=B>E=C=D>A", None, True),
             ("_bar_=B>F=C=D>A", None, KeyError, False),
@@ -446,7 +454,7 @@ class TestValidation(unittest.TestCase):
             ("_bar_=B>E=C>A>F=D", None, KeyError, False),
             ("=>=>>=", None, KeyError, False),
         ), extraparams={'ballot': ballot})
-        self.do_validator_test("_vote", (
+        self.do_validator_test(Vote, (
             ("A=B>C=D=E=_bar_", "A=B>C=D=E=_bar_", None, True),
             ("A>B=C=D=E=_bar_", "A>B=C=D=E=_bar_", None, True),
             ("_bar_>A=B=C=D=E", "_bar_>A=B=C=D=E", None, True),
@@ -462,7 +470,7 @@ class TestValidation(unittest.TestCase):
         ), extraparams={'ballot': classical_ballot})
 
     def test_iban(self) -> None:
-        self.do_validator_test("_iban", (
+        self.do_validator_test(IBAN, (
             ("DE75512108001245126199", "DE75512108001245126199", None, True),
             ("DE75 5121 0800 1245 1261 99", "DE75512108001245126199", None, True),
             ("IT60X0542811101000000123456",
@@ -494,7 +502,7 @@ class TestValidation(unittest.TestCase):
                 (b'{"open": 1', None, ValueError),
                 (b"\xff", None, ValueError)):
             with self.subTest(input=input_):
-                result, errs = validate.check_json(input_, _convert=True)
+                result, errs = validate.validate_check(JSON, input_, _convert=True)
                 self.assertEqual(output, result)
                 if error is None:
                     self.assertFalse(errs)
@@ -503,7 +511,7 @@ class TestValidation(unittest.TestCase):
                         self.assertIsInstance(e, error)
 
     def test_german_postal_code(self) -> None:
-        for assertion in ("_persona", "_genesis_case"):
+        for assertion in (Persona, GenesisCase):
             spec = (
                 ({'id': 1, 'postal_code': "ABC", 'country': ""},
                  None,
@@ -529,7 +537,7 @@ class TestValidation(unittest.TestCase):
                  {'id': 1, 'postal_code': "47239"},
                  None, True),
             )
-            if assertion == "_genesis_case":
+            if assertion == GenesisCase:
                 for inv, outv, _, _ in spec:
                     inv['realm'] = "event"
                     if outv is not None:
@@ -561,7 +569,7 @@ class TestValidation(unittest.TestCase):
                  {'id': 1, 'postal_code': "47239"},
                  None, True),
             )
-            if assertion == "_genesis_case":
+            if assertion == GenesisCase:
                 for inv, outv, _, _ in spec:
                     inv['realm'] = "event"
                     if outv is not None:
@@ -586,4 +594,8 @@ class TestValidation(unittest.TestCase):
             ("abc[]&def", None, ValueError(
                 "Forbidden characters (%(chars)s). (None)", {"chars": "&[]"}), False),
         ]
-        self.do_validator_test("_safe_str", spec)
+        self.do_validator_test(SafeStr, spec)
+
+    def test_generic_list(self) -> None:
+        self.assertTrue(validate.validate_is(List[int], [0, 1, 2, 3]))
+        self.assertFalse(validate.validate_is(List[int], [0, 1.7, 2, 3]))

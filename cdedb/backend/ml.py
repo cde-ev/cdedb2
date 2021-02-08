@@ -557,8 +557,10 @@ class MlBackend(AbstractBackend):
         new_type = ml_type.get_type(new_type)
         # implicitly atomized context.
         self.affirm_atomized_context(rs)
-        obsolete_fields = set(f for f, _ in (old_type.get_additional_fields() -
-                                             new_type.get_additional_fields()))
+        obsolete_fields = (
+            old_type.get_additional_fields().keys()
+            - new_type.get_additional_fields().keys()
+        )
         if obsolete_fields:
             setter = ", ".join(f"{f} = DEFAULT" for f in obsolete_fields)
             query = f"UPDATE ml.mailinglists SET {setter} WHERE id = %s"

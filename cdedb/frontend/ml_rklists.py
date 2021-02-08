@@ -6,6 +6,7 @@ This utilizes a custom software for mailinglist management.
 """
 from werkzeug import Response
 
+import cdedb.validationtypes as vtypes
 from cdedb.frontend.common import REQUESTdata, RequestState, access
 from cdedb.frontend.ml_base import MlBaseFrontend
 
@@ -21,8 +22,8 @@ class RKListsMixin(MlBaseFrontend):
         return self.send_json(rs, self.mlproxy.export_overview(rs))
 
     @access("droid_rklist")
-    @REQUESTdata(("address", "email"))
-    def export_one(self, rs: RequestState, address: str) -> Response:
+    @REQUESTdata("address")
+    def export_one(self, rs: RequestState, address: vtypes.Email) -> Response:
         """Provide specific infos for mailinglist software"""
         if rs.has_validation_errors():
             return self.send_json(
@@ -41,9 +42,9 @@ class RKListsMixin(MlBaseFrontend):
             rs, self.mlproxy.oldstyle_mailinglist_config_export(rs))
 
     @access("droid_rklist")
-    @REQUESTdata(("address", "email"))
+    @REQUESTdata("address")
     def oldstyle_mailinglist_export(self, rs: RequestState,
-                                    address: str) -> Response:
+                                    address: vtypes.Email) -> Response:
         """Provide specific infos for comptability mailinglist software"""
         if rs.has_validation_errors():
             return self.send_json(
@@ -53,9 +54,9 @@ class RKListsMixin(MlBaseFrontend):
             rs, address))
 
     @access("droid_rklist")
-    @REQUESTdata(("address", "email"))
+    @REQUESTdata("address")
     def oldstyle_modlist_export(self, rs: RequestState,
-                                address: str) -> Response:
+                                address: vtypes.Email) -> Response:
         """Provide specific infos for comptability mailinglist software"""
         if rs.has_validation_errors():
             return self.send_json(
@@ -65,8 +66,8 @@ class RKListsMixin(MlBaseFrontend):
             rs, address))
 
     @access("droid_rklist", modi={"POST"})
-    @REQUESTdata(("address", "email"), ("error", "int"))
-    def oldstyle_bounce(self, rs: RequestState, address: str,
+    @REQUESTdata("address", "error")
+    def oldstyle_bounce(self, rs: RequestState, address: vtypes.Email,
                         error: int) -> Response:
         """Provide specific infos for comptability mailinglist software"""
         if rs.has_validation_errors():

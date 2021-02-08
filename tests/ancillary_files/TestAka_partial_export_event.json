@@ -156,6 +156,7 @@
             "checkin": null,
             "list_consent": true,
             "fields": {
+                "anzahl_GROSSBUCHSTABEN": 4,
                 "lodge": "Die \u00fcblichen Verd\u00e4chtigen :)",
                 "is_child": false
             },
@@ -235,6 +236,7 @@
             "checkin": null,
             "list_consent": true,
             "fields": {
+                "anzahl_GROSSBUCHSTABEN": 3,
                 "is_child": false,
                 "brings_balls": true,
                 "transportation": "pedes"
@@ -315,6 +317,7 @@
             "checkin": null,
             "list_consent": false,
             "fields": {
+                "anzahl_GROSSBUCHSTABEN": 3,
                 "is_child": false,
                 "transportation": "car"
             },
@@ -394,6 +397,7 @@
             "checkin": null,
             "list_consent": false,
             "fields": {
+                "anzahl_GROSSBUCHSTABEN": 2,
                 "is_child": true,
                 "may_reserve": true,
                 "brings_balls": false,
@@ -475,6 +479,7 @@
             "checkin": null,
             "list_consent": true,
             "fields": {
+                "anzahl_GROSSBUCHSTABEN": 2,
                 "is_child": false,
                 "transportation": "pedes"
             },
@@ -554,6 +559,7 @@
             "checkin": null,
             "list_consent": true,
             "fields": {
+                "anzahl_GROSSBUCHSTABEN": 2,
                 "is_child": false,
                 "transportation": "pedes"
             },
@@ -711,6 +717,11 @@
             }
         },
         "fields": {
+            "anzahl_GROSSBUCHSTABEN": {
+                "association": 1,
+                "entries": null,
+                "kind": 3
+            },
             "brings_balls": {
                 "kind": 2,
                 "association": 1,

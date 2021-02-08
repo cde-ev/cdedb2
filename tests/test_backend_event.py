@@ -13,7 +13,7 @@ import pytz
 import cdedb.database.constants as const
 from cdedb.backend.common import cast_fields
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, PartialImportError, PrivilegeError,
+    CdEDBObject, CdEDBObjectMap, InfiniteEnum, PartialImportError, PrivilegeError,
     CourseFilterPositions,
 )
 from cdedb.query import QUERY_SPECS, Query, QueryOperators
@@ -598,6 +598,7 @@ class TestEventBackend(BackendTest):
         self.event.set_registration(self.key, update_registration)
         data = self.event.get_registration(self.key, reg_id)
         expectation = {
+            'anzahl_GROSSBUCHSTABEN': 4,
             'arrival': datetime.datetime(2222, 11, 9, 8, 55, 44, tzinfo=pytz.utc),
             'lodge': 'Die üblichen Verdächtigen :)',
             'is_child': False,
@@ -788,6 +789,7 @@ class TestEventBackend(BackendTest):
             'checkin': None,
             'event_id': 1,
             'fields': {
+                'anzahl_GROSSBUCHSTABEN': 3,
                 'brings_balls': True,
                 'transportation': 'pedes',
                 'is_child': False,
@@ -948,6 +950,7 @@ class TestEventBackend(BackendTest):
                 'checkin': None,
                 'event_id': 1,
                 'fields': {
+                    'anzahl_GROSSBUCHSTABEN': 4,
                     'lodge': 'Die üblichen Verdächtigen :)',
                     'is_child': False,
                 },
@@ -997,6 +1000,7 @@ class TestEventBackend(BackendTest):
                 'checkin': None,
                 'event_id': 1,
                 'fields': {
+                    'anzahl_GROSSBUCHSTABEN': 3,
                     'brings_balls': True,
                     'transportation': 'pedes',
                     'is_child': False,
@@ -1047,6 +1051,7 @@ class TestEventBackend(BackendTest):
                 'checkin': None,
                 'event_id': 1,
                 'fields': {
+                    'anzahl_GROSSBUCHSTABEN': 2,
                     'brings_balls': False,
                     'may_reserve': True,
                     'transportation': 'etc',
@@ -1246,7 +1251,8 @@ class TestEventBackend(BackendTest):
             self.key, event_id, course_id=1))
         expectation = {2: 5, 4: 9, 5: 100}
         self.assertEqual(expectation, self.event.registrations_by_course(
-            self.key, event_id, course_id=1, position=CourseFilterPositions.assigned))
+            self.key, event_id, course_id=1, position=InfiniteEnum(
+                CourseFilterPositions.assigned, 0)))
 
     @as_users("annika", "garcia")
     def test_entity_lodgement_group(self, user: CdEDBObject) -> None:

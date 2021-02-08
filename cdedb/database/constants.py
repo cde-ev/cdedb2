@@ -7,8 +7,9 @@ correct numeric values. The raw values should never be used, instead
 their symbolic names provided by this module should be used.
 """
 
+import datetime
 import enum
-from typing import Dict, Set
+from typing import Any, Dict, Set, Type
 
 
 def n_(x: str) -> str:
@@ -185,7 +186,11 @@ class MailinglistTypes(enum.IntEnum):
     assembly_opt_in = 31
     assembly_presider = 32
 
+    general_mandatory = 38
     general_opt_in = 40
+
+    general_moderators = 45
+    cdelokal_moderators = 46
 
     semi_public = 50
 

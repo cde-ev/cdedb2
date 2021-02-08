@@ -42,7 +42,7 @@ from cdedb.database.connection import Atomizer
 from cdedb.frontend.common import (
     CustomCSVDialect, RequestConstraint, REQUESTdata, REQUESTdatadict, REQUESTfile,
     access, calculate_db_logparams, calculate_loglinks, cdedbid_filter, cdedburl,
-    check_validation_typed as check, check_validation_typed_optional as check_optional,
+    check_validation as check, check_validation_optional as check_optional,
     enum_entries_filter, event_guard, keydictsort_filter, make_event_fee_reference,
     process_dynamic_input, querytoparams_filter, request_extractor, safe_filter,
 )
@@ -50,7 +50,8 @@ from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import (
     QUERY_SPECS, Query, QueryConstraint, QueryOperators, mangle_query_input,
 )
-from cdedb.validation import validate_check
+from cdedb.validation import TypeMapping, validate_check
+from cdedb.validationtypes import VALIDATOR_LOOKUP
 
 LodgementProblem = NamedTuple(
     "LodgementProblem", [("description", str), ("lodgement_id", int),
@@ -154,7 +155,7 @@ class EventFrontend(AbstractUserFrontend):
         return super().create_user(rs, data, ignore_warnings=ignore_warnings)
 
     @access("core_admin", "event_admin")
-    @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
+    @REQUESTdata("download", "is_search")
     def user_search(self, rs: RequestState, download: Optional[str],
                     is_search: bool) -> Response:
         """Perform search."""
@@ -201,7 +202,21 @@ class EventFrontend(AbstractUserFrontend):
             for event in events.values():
                 regs = self.eventproxy.list_registrations(rs, event['id'])
                 event['registrations'] = len(regs)
-        return self.render(rs, "list_events", {'events': events})
+
+        def querylink(event_id: int) -> str:
+            query = Query(
+                "qview_registration",
+                self.make_registration_query_spec(events[event_id]),
+                ("persona.given_names", "persona.family_name"),
+                (),
+                (("persona.family_name", True), ("persona.given_names", True)))
+            params = querytoparams_filter(query)
+            params['is_search'] = True
+            params['event_id'] = event_id
+            return cdedburl(rs, 'event/registration_query', params)
+
+        return self.render(rs, "list_events",
+                           {'events': events, 'querylink': querylink})
 
     @access("anonymous")
     def show_event(self, rs: RequestState, event_id: int) -> Response:
@@ -240,11 +255,9 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "course_list", {'courses': courses})
 
     @access("event")
-    @REQUESTdata(("part_id", "id_or_None"),
-                 ("sortkey", "str_or_None"),
-                 ("reverse", "bool"))
+    @REQUESTdata("part_id", "sortkey", "reverse")
     def participant_list(self, rs: RequestState, event_id: int,
-                         part_id: int = None, sortkey: str = "persona",
+                         part_id: vtypes.ID = None, sortkey: Optional[str] = "persona",
                          reverse: bool = False) -> Response:
         """List participants of an event"""
         if rs.has_validation_errors():
@@ -275,7 +288,7 @@ class EventFrontend(AbstractUserFrontend):
             part_ids = rs.ambience['event']['parts'].keys()
 
         data = self._get_participant_list_data(
-            rs, event_id, part_ids, sortkey, reverse=reverse)
+            rs, event_id, part_ids, sortkey or "persona", reverse=reverse)
         if len(rs.ambience['event']['parts']) == 1:
             part_id = unwrap(rs.ambience['event']['parts'].keys())
         data['part_id'] = part_id
@@ -396,6 +409,7 @@ class EventFrontend(AbstractUserFrontend):
             'course_room_fields': course_room_fields})
 
     @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
     @REQUESTdatadict(
         "title", "institution", "description", "shortname",
         "registration_start", "registration_soft_limit",
@@ -405,7 +419,6 @@ class EventFrontend(AbstractUserFrontend):
         "is_course_state_visible", "is_participant_list_visible",
         "courses_in_participant_list", "is_cancelled", "course_room_field",
         "nonmember_surcharge")
-    @event_guard(check_offline=True)
     def change_event(self, rs: RequestState, event_id: int, data: CdEDBObject
                      ) -> Response:
         """Modify an event organized via DB."""
@@ -434,9 +447,9 @@ class EventFrontend(AbstractUserFrontend):
                 rs.ambience['event']['shortname']))
 
     @access("event", modi={"POST"})
-    @REQUESTfile("minor_form")
-    @REQUESTdata(("delete", "bool"))
     @event_guard(check_offline=True)
+    @REQUESTfile("minor_form")
+    @REQUESTdata("delete")
     def change_minor_form(self, rs: RequestState, event_id: int,
                           minor_form: werkzeug.FileStorage, delete: bool
                           ) -> Response:
@@ -459,9 +472,9 @@ class EventFrontend(AbstractUserFrontend):
         return self.redirect(rs, "event/show_event")
 
     @access("event_admin", modi={"POST"})
-    @REQUESTdata(("orga_id", "cdedbid"))
     @event_guard(check_offline=True)
-    def add_orga(self, rs: RequestState, event_id: int, orga_id: int
+    @REQUESTdata("orga_id")
+    def add_orga(self, rs: RequestState, event_id: int, orga_id: vtypes.CdedbID
                  ) -> Response:
         """Make an additional persona become orga."""
         if rs.has_validation_errors():
@@ -482,9 +495,9 @@ class EventFrontend(AbstractUserFrontend):
         return self.redirect(rs, "event/show_event")
 
     @access("event_admin", modi={"POST"})
-    @REQUESTdata(("orga_id", "id"))
     @event_guard(check_offline=True)
-    def remove_orga(self, rs: RequestState, event_id: int, orga_id: int
+    @REQUESTdata("orga_id")
+    def remove_orga(self, rs: RequestState, event_id: int, orga_id: vtypes.ID
                     ) -> Response:
         """Remove a persona as orga of an event.
 
@@ -498,7 +511,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.redirect(rs, "event/show_event")
 
     @access("event_admin", modi={"POST"})
-    @REQUESTdata(("orgalist", "bool"))
+    @REQUESTdata("orgalist")
     def create_event_mailinglist(self, rs: RequestState, event_id: int,
                                  orgalist: bool = False) -> Response:
         """Create a default mailinglist for the event."""
@@ -601,22 +614,24 @@ class EventFrontend(AbstractUserFrontend):
 
         # Handle basic part data
         delete_flags = request_extractor(
-            rs, (("delete_{}".format(part_id), "bool") for part_id in parts))
+            rs, {f"delete_{part_id}": bool for part_id in parts})
         deletes = {part_id for part_id in parts
                    if delete_flags['delete_{}'.format(part_id)]}
         if has_registrations and deletes:
             raise ValueError(n_("Registrations exist, no deletion."))
-        spec = {
-            'title': "str",
-            'shortname': "str",
-            'part_begin': "date",
-            'part_end': "date",
-            'fee': "decimal",
-            'waitlist_field': "id_or_None",
+        spec: TypeMapping = {
+            'title': str,
+            'shortname': str,
+            'part_begin': datetime.date,
+            'part_end': datetime.date,
+            'fee': decimal.Decimal,
+            'waitlist_field': Optional[vtypes.ID],  # type: ignore
         }
-        params = tuple(("{}_{}".format(key, part_id), value)
-                       for part_id in parts if part_id not in deletes
-                       for key, value in spec.items())
+        params: TypeMapping = {
+            f"{key}_{part_id}": value
+            for part_id in parts if part_id not in deletes
+            for key, value in spec.items()
+        }
 
         # noinspection PyRedundantParentheses
         def part_constraint_maker(part_id: int) -> List[RequestConstraint]:
@@ -646,18 +661,21 @@ class EventFrontend(AbstractUserFrontend):
             for part_id in parts if part_id not in deletes
         }
 
-        def track_params(part_id: int, track_id: int
-                         ) -> List[Tuple[str, str]]:
+        def track_params(part_id: int, track_id: int) -> TypeMapping:
             """
             Helper function to create the parameter extraction configuration
             for the data of a single track.
             """
-            return [
-                ("track_{}_{}_{}".format(k, part_id, track_id), t)
-                for k, t in (('title', 'str'), ('shortname', 'str'),
-                             ('num_choices', 'non_negative_int'),
-                             ('min_choices', 'non_negative_int'),
-                             ('sortkey', 'int'))]
+            return {
+                f"track_{k}_{part_id}_{track_id}": t
+                for k, t in {
+                    'title': str,
+                    'shortname': str,
+                    'num_choices': vtypes.NonNegativeInt,
+                    'min_choices': vtypes.NonNegativeInt,
+                    'sortkey': int
+                }.items()
+            }
 
         def track_excavator(req_data: CdEDBObject, part_id: int, track_id: int
                             ) -> CdEDBObject:
@@ -674,16 +692,14 @@ class EventFrontend(AbstractUserFrontend):
         marker = 1
         while marker < 2 ** 10:
             will_create = unwrap(request_extractor(
-                rs, (("create_-{}".format(marker), "bool"),)))
+                rs, {f"create_-{marker}": bool}))
             if will_create:
                 if has_registrations:
                     raise ValueError(n_("Registrations exist, no creation."))
-                params = tuple(("{}_-{}".format(key, marker), value)
-                               for key, value in spec.items())
+                params = {f"{key}_-{marker}": value for key, value in spec.items()}
                 constraints = part_constraint_maker(-marker)
                 data = request_extractor(rs, params, constraints)
-                ret[-marker] = {key: data["{}_-{}".format(key, marker)]
-                                for key in spec}
+                ret[-marker] = {key: data[f"{key}_-{marker}"] for key in spec}
             else:
                 break
             marker += 1
@@ -692,10 +708,11 @@ class EventFrontend(AbstractUserFrontend):
         rs.values['create_last_index'] = marker - 1
 
         # Handle track data
-        track_delete_flags = request_extractor(
-            rs, (("track_delete_{}_{}".format(part_id, track_id), "bool")
-                 for part_id, part in parts.items()
-                 for track_id in part['tracks']))
+        track_delete_flags = request_extractor(rs, {
+            f"track_delete_{part_id}_{track_id}": bool
+            for part_id, part in parts.items()
+            for track_id in part['tracks']
+        })
         track_deletes = {
             track_id
             for part_id, part in parts.items() for track_id in part['tracks']
@@ -704,11 +721,14 @@ class EventFrontend(AbstractUserFrontend):
         }
         if has_registrations and track_deletes:
             raise ValueError(n_("Registrations exist, no deletion."))
-        params = tuple(itertools.chain.from_iterable(
-            track_params(part_id, track_id)
-            for part_id, part in parts.items()
-            for track_id in part['tracks']
-            if track_id not in track_deletes))
+        params = dict(itertools.chain.from_iterable(map(lambda d: d.items(),
+            (
+                track_params(part_id, track_id)
+                for part_id, part in parts.items()
+                for track_id in part['tracks']
+                if track_id not in track_deletes
+            )
+        )))
 
         # noinspection PyRedundantParentheses
         def track_constraint_maker(part_id: int, track_id: int
@@ -736,12 +756,12 @@ class EventFrontend(AbstractUserFrontend):
             while marker < 2 ** 5:
                 will_create = unwrap(request_extractor(
                     rs,
-                    (("track_create_{}_-{}".format(part_id, marker), "bool"),)))
+                    {f"track_create_{part_id}_-{marker}": bool}))
                 if will_create:
                     if has_registrations:
                         raise ValueError(
                             n_("Registrations exist, no creation."))
-                    params = tuple(track_params(part_id, -marker))
+                    params = track_params(part_id, -marker)
                     constraints = [track_constraint_maker(part_id, -marker)]
                     newtrack = track_excavator(
                         request_extractor(rs, params, constraints),
@@ -759,10 +779,9 @@ class EventFrontend(AbstractUserFrontend):
             while marker < 2 ** 5:
                 will_create = unwrap(request_extractor(
                     rs,
-                    (("track_create_-{}_-{}".format(new_part_id, marker),
-                      "bool"),)))
+                    {f"track_create_-{new_part_id}_-{marker}": bool}))
                 if will_create:
-                    params = tuple(track_params(-new_part_id, -marker))
+                    params = track_params(-new_part_id, -marker)
                     constraints = [
                         track_constraint_maker(-new_part_id, -marker)]
                     newtrack = track_excavator(
@@ -774,17 +793,19 @@ class EventFrontend(AbstractUserFrontend):
                 marker += 1
             rs.values['track_create_last_index'][-new_part_id] = marker - 1
 
-        def fee_modifier_params(part_id: int, fee_modifier_id: int
-                                ) -> List[Tuple[str, str]]:
+        def fee_modifier_params(part_id: int, fee_modifier_id: int) -> TypeMapping:
             """
             Helper function to create the parameter extraction configuration
             for the data of a single fee modifier.
             """
-            return [
-                ("fee_modifier_{}_{}_{}".format(k, part_id, fee_modifier_id), t)
-                for k, t in (('modifier_name', 'restrictive_identifier'),
-                             ('amount', 'decimal'),
-                             ('field_id', 'id'))]
+            return {
+                f"fee_modifier_{k}_{part_id}_{fee_modifier_id}": t
+                for k, t in {
+                    'modifier_name': vtypes.RestrictiveIdentifier,
+                    'amount': decimal.Decimal,
+                    'field_id': vtypes.ID,
+                }.items()
+            }
 
         def fee_modifier_excavator(req_data: CdEDBObject, part_id: int,
                                    fee_modifier_id: int) -> CdEDBObject:
@@ -803,9 +824,8 @@ class EventFrontend(AbstractUserFrontend):
 
         # Handle fee modifier data
         fee_modifier_delete_flags = request_extractor(
-            rs, (("fee_modifier_delete_{}_{}".format(mod['part_id'], mod['id']),
-                  "bool")
-                 for mod in fee_modifiers.values()))
+            rs, {f"fee_modifier_delete_{mod['part_id']}_{mod['id']}": bool
+                 for mod in fee_modifiers.values()})
         fee_modifier_deletes = {
             mod['id']
             for mod in fee_modifiers.values()
@@ -814,10 +834,13 @@ class EventFrontend(AbstractUserFrontend):
         }
         if has_registrations and fee_modifier_deletes:
             raise ValueError(n_("Registrations exist, no deletion."))
-        params = tuple(itertools.chain.from_iterable(
-            fee_modifier_params(mod['part_id'], mod['id'])
-            for mod in fee_modifiers.values()
-            if mod['id'] not in fee_modifier_deletes))
+        params = dict(itertools.chain.from_iterable(map(lambda d: d.items(),
+            (
+                fee_modifier_params(mod['part_id'], mod['id'])
+                for mod in fee_modifiers.values()
+                if mod['id'] not in fee_modifier_deletes)
+            )
+        ))
 
         def constraint_maker(part_id: int, fee_modifier_id: int
                              ) -> List[RequestConstraint]:
@@ -880,13 +903,12 @@ class EventFrontend(AbstractUserFrontend):
             marker = 1
             while marker < 2 ** 5:
                 will_create = unwrap(request_extractor(
-                    rs, (("fee_modifier_create_{}_-{}".format(part_id, marker),
-                          "bool"),)))
+                    rs, {f"fee_modifier_create_{part_id}_-{marker}": bool}))
                 if will_create:
                     if has_registrations:
                         raise ValueError(n_(
                             "Registrations exist, no creation."))
-                    params = tuple(fee_modifier_params(part_id, -marker))
+                    params = fee_modifier_params(part_id, -marker)
                     constraints = constraint_maker(part_id, -marker)
                     new_fee_modifier = fee_modifier_excavator(
                         request_extractor(rs, params, constraints),
@@ -986,17 +1008,19 @@ class EventFrontend(AbstractUserFrontend):
         statically. This takes care of validation too.
         """
         delete_flags = request_extractor(
-            rs, (("delete_{}".format(field_id), "bool") for field_id in fields))
+            rs, {f"delete_{field_id}": bool for field_id in fields})
         deletes = {field_id for field_id in fields
                    if delete_flags['delete_{}'.format(field_id)]}
         ret: CdEDBOptionalMap = {}
-        params = lambda anid: (("kind_{}".format(anid), "enum_fielddatatypes"),
-                               ("association_{}".format(anid),
-                                "enum_fieldassociations"),
-                               ("entries_{}".format(anid), "str_or_None"))
+        def params_a(anid: int) -> TypeMapping:
+            return {
+                f"kind_{anid}": const.FieldDatatypes,
+                f"association_{anid}": const.FieldAssociations,
+                f"entries_{anid}": Optional[str],  # type: ignore
+            }
         for field_id in fields:
             if field_id not in deletes:
-                tmp: Optional[CdEDBObject] = request_extractor(rs, params(field_id))
+                tmp: Optional[CdEDBObject] = request_extractor(rs, params_a(field_id))
                 if rs.has_validation_errors():
                     break
                 tmp = check(rs, vtypes.EventField, tmp,
@@ -1010,16 +1034,18 @@ class EventFrontend(AbstractUserFrontend):
         for field_id in deletes:
             ret[field_id] = None
         marker = 1
-        params = lambda anid: (("field_name_-{}".format(anid), "str"),
-                               ("kind_-{}".format(anid), "enum_fielddatatypes"),
-                               ("association_-{}".format(anid),
-                                "enum_fieldassociations"),
-                               ("entries_-{}".format(anid), "str_or_None"))
+        def params_b(anid: int) -> TypeMapping:
+            return {
+                f"field_name_-{anid}": str,
+                f"kind_-{anid}": const.FieldDatatypes,
+                f"association_-{anid}": const.FieldAssociations,
+                f"entries_-{anid}": Optional[str],  # type: ignore
+            }
         while marker < 2 ** 10:
             will_create = unwrap(request_extractor(
-                rs, (("create_-{}".format(marker), "bool"),)))
+                rs, {f"create_-{marker}": bool}))
             if will_create:
-                tmp = request_extractor(rs, params(marker))
+                tmp = request_extractor(rs, params_b(marker))
                 if rs.has_validation_errors():
                     marker += 1
                     break
@@ -1050,7 +1076,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdata(('active_tab', 'str_or_None'))
+    @REQUESTdata("active_tab")
     def field_summary(self, rs: RequestState, event_id: int, active_tab: Optional[str]
                       ) -> Response:
         """Manipulate the fields of an event."""
@@ -1131,15 +1157,13 @@ class EventFrontend(AbstractUserFrontend):
                             'accounts': self.conf["EVENT_BANK_ACCOUNTS"]})
 
     @access("event_admin", modi={"POST"})
-    @REQUESTdata(("part_begin", "date"), ("part_end", "date"),
-                 ("orga_ids", "cdedbid_csv_list"), ("create_track", "bool"),
-                 ("create_orga_list", "bool"),
-                 ("create_participant_list", "bool"))
+    @REQUESTdata("part_begin", "part_end", "orga_ids", "create_track",
+                 "create_orga_list", "create_participant_list")
     @REQUESTdatadict(
         "title", "institution", "description", "shortname",
         "iban", "nonmember_surcharge", "notes")
     def create_event(self, rs: RequestState, part_begin: datetime.date,
-                     part_end: datetime.date, orga_ids: Collection[int],
+                     part_end: datetime.date, orga_ids: vtypes.CdedbIDList,
                      create_track: bool, create_orga_list: bool,
                      create_participant_list: bool, data: CdEDBObject
                      ) -> Response:
@@ -1283,10 +1307,10 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "change_course")
 
     @access("event", modi={"POST"})
-    @REQUESTdata(("segments", "[int]"), ("active_segments", "[int]"))
+    @event_guard(check_offline=True)
     @REQUESTdatadict("title", "description", "nr", "shortname", "instructors",
                      "max_size", "min_size", "notes")
-    @event_guard(check_offline=True)
+    @REQUESTdata("segments", "active_segments")
     def change_course(self, rs: RequestState, event_id: int, course_id: int,
                       segments: Collection[int],
                       active_segments: Collection[int], data: CdEDBObject
@@ -1295,11 +1319,12 @@ class EventFrontend(AbstractUserFrontend):
         data['id'] = course_id
         data['segments'] = segments
         data['active_segments'] = active_segments
-        field_params = tuple(
-            ("fields.{}".format(field['field_name']),
-             "{}_or_None".format(const.FieldDatatypes(field['kind']).name))
+        field_params: TypeMapping = {
+            f"fields.{field['field_name']}": Optional[  # type: ignore
+                VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]
             for field in rs.ambience['event']['fields'].values()
-            if field['association'] == const.FieldAssociations.course)
+            if field['association'] == const.FieldAssociations.course
+        }
         raw_fields = request_extractor(rs, field_params)
         data['fields'] = {
             key.split('.', 1)[1]: value for key, value in raw_fields.items()}
@@ -1325,20 +1350,21 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "create_course")
 
     @access("event", modi={"POST"})
-    @REQUESTdata(("segments", "[int]"))
+    @event_guard(check_offline=True)
     @REQUESTdatadict("title", "description", "nr", "shortname", "instructors",
                      "max_size", "min_size", "notes")
-    @event_guard(check_offline=True)
+    @REQUESTdata("segments")
     def create_course(self, rs: RequestState, event_id: int,
                       segments: Collection[int], data: CdEDBObject) -> Response:
         """Create a new course associated to an event organized via DB."""
         data['event_id'] = event_id
         data['segments'] = segments
-        field_params = tuple(
-            ("fields.{}".format(field['field_name']),
-             "{}_or_None".format(const.FieldDatatypes(field['kind']).name))
+        field_params: TypeMapping = {
+            f"fields.{field['field_name']}": Optional[  # type: ignore
+                VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]
             for field in rs.ambience['event']['fields'].values()
-            if field['association'] == const.FieldAssociations.course)
+            if field['association'] == const.FieldAssociations.course
+        }
         raw_fields = request_extractor(rs, field_params)
         data['fields'] = {
             key.split('.', 1)[1]: value for key, value in raw_fields.items()
@@ -1353,8 +1379,8 @@ class EventFrontend(AbstractUserFrontend):
         return self.redirect(rs, "event/show_course", {'course_id': new_id})
 
     @access("event", modi={"POST"})
-    @REQUESTdata(("ack_delete", "bool"))
     @event_guard(check_offline=True)
+    @REQUESTdata("ack_delete")
     def delete_course(self, rs: RequestState, event_id: int, course_id: int,
                       ack_delete: bool) -> Response:
         """Delete a course from an event organized via DB."""
@@ -1778,15 +1804,14 @@ class EventFrontend(AbstractUserFrontend):
             'reg_problems': reg_problems})
 
     @access("event")
-    @REQUESTdata(("course_id", "id_or_None"), ("track_id", "id_or_None"),
-                 ("position", "infinite_enum_coursefilterpositions_or_None"),
-                 ("ids", "int_csv_list_or_None"),
-                 ("include_active", "bool_or_None"))
     @event_guard()
+    @REQUESTdata("course_id", "track_id", "position", "ids", "include_active")
     def course_choices_form(
-            self, rs: RequestState, event_id: int, course_id: Optional[int],
-            track_id: Optional[int], position: Optional[CourseFilterPositions],
-            ids: Optional[Collection[int]], include_active: bool) -> Response:
+            self, rs: RequestState, event_id: int, course_id: Optional[vtypes.ID],
+            track_id: Optional[vtypes.ID],
+            position: Optional[InfiniteEnum[CourseFilterPositions]],
+            ids: Optional[vtypes.IntCSVList], include_active: Optional[bool]
+            ) -> Response:
         """Provide an overview of course choices.
 
         This allows flexible filtering of the displayed registrations.
@@ -1887,22 +1912,19 @@ class EventFrontend(AbstractUserFrontend):
             'action_entries': action_entries})
 
     @access("event", modi={"POST"})
-    @REQUESTdata(("course_id", "id_or_None"), ("track_id", "id_or_None"),
-                 ("position", "infinite_enum_coursefilterpositions_or_None"),
-                 ("ids", "int_csv_list_or_None"),
-                 ("include_active", "bool_or_None"),
-                 ("registration_ids", "[int]"), ("assign_track_ids", "[int]"),
-                 ("assign_action", "infinite_enum_coursechoicetoolactions"),
-                 ("assign_course_id", "id_or_None"))
     @event_guard(check_offline=True)
+    @REQUESTdata("course_id", "track_id", "position", "ids", "include_active",
+                 "registration_ids", "assign_track_ids", "assign_action",
+                 "assign_course_id")
     def course_choices(self, rs: RequestState, event_id: int,
-                       course_id: Optional[int], track_id: Optional[int],
-                       position: Optional[CourseFilterPositions],
-                       ids: Collection[int], include_active: bool,
+                       course_id: Optional[vtypes.ID], track_id: Optional[vtypes.ID],
+                       position: Optional[InfiniteEnum[CourseFilterPositions]],
+                       ids: Optional[vtypes.IntCSVList],
+                       include_active: Optional[bool],
                        registration_ids: Collection[int],
                        assign_track_ids: Collection[int],
-                       assign_action: InfiniteEnum,
-                       assign_course_id: Optional[int]) -> Response:
+                       assign_action: InfiniteEnum[CourseChoiceToolActions],
+                       assign_course_id: Optional[vtypes.ID]) -> Response:
         """Manipulate course choices.
 
         The first four parameters (course_id, track_id, position, ids) are the
@@ -1915,6 +1937,8 @@ class EventFrontend(AbstractUserFrontend):
         """
         if rs.has_validation_errors():
             return self.course_choices_form(rs, event_id)  # type: ignore
+        if ids is None:
+            ids = cast(vtypes.IntCSVList, [])
 
         tracks = rs.ambience['event']['tracks']
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
@@ -2010,9 +2034,9 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard()
-    @REQUESTdata(("include_active", "bool_or_None"))
-    def course_stats(self, rs: RequestState, event_id: int,
-                     include_active: bool) -> Response:
+    @REQUESTdata("include_active")
+    def course_stats(self, rs: RequestState, event_id: int, include_active: bool
+                     ) -> Response:
         """List courses.
 
         Provide an overview of the number of choices and assignments for
@@ -2259,11 +2283,9 @@ class EventFrontend(AbstractUserFrontend):
         return True, count
 
     @access("event", modi={"POST"})
-    @REQUESTdata(("force", "bool"), ("fee_data", "str_or_None"),
-                 ("checksum", "str_or_None"), ("send_notifications", "bool"),
-                 ("full_payment", "bool"))
-    @REQUESTfile("fee_data_file")
     @event_guard(check_offline=True)
+    @REQUESTfile("fee_data_file")
+    @REQUESTdata("force", "fee_data", "checksum", "send_notifications", "full_payment")
     def batch_fees(self, rs: RequestState, event_id: int, force: bool,
                    fee_data: Optional[str],
                    fee_data_file: Optional[werkzeug.FileStorage],
@@ -2341,10 +2363,10 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "downloads")
 
     @access("event")
-    @REQUESTdata(("runs", "single_digit_int"))
     @event_guard()
-    def download_nametags(self, rs: RequestState, event_id: int, runs: int
-                          ) -> Response:
+    @REQUESTdata("runs")
+    def download_nametags(self, rs: RequestState, event_id: int,
+                          runs: vtypes.SingleDigitInt) -> Response:
         """Create nametags.
 
         You probably want to edit the provided tex file.
@@ -2397,10 +2419,10 @@ class EventFrontend(AbstractUserFrontend):
                 return self.redirect(rs, "event/downloads")
 
     @access("event")
-    @REQUESTdata(("runs", "single_digit_int"))
     @event_guard()
-    def download_course_puzzle(self, rs: RequestState, event_id: int, runs: int
-                               ) -> Response:
+    @REQUESTdata("runs")
+    def download_course_puzzle(self, rs: RequestState, event_id: int,
+                               runs: vtypes.SingleDigitInt) -> Response:
         """Aggregate course choice information.
 
         This can be printed and cut to help with distribution of participants.
@@ -2450,10 +2472,10 @@ class EventFrontend(AbstractUserFrontend):
             return self.redirect(rs, "event/downloads")
 
     @access("event")
-    @REQUESTdata(("runs", "single_digit_int"))
     @event_guard()
+    @REQUESTdata("runs")
     def download_lodgement_puzzle(self, rs: RequestState, event_id: int,
-                                  runs: int) -> Response:
+                                  runs: vtypes.SingleDigitInt) -> Response:
         """Aggregate lodgement information.
 
         This can be printed and cut to help with distribution of participants.
@@ -2515,10 +2537,10 @@ class EventFrontend(AbstractUserFrontend):
             return self.redirect(rs, "event/downloads")
 
     @access("event")
-    @REQUESTdata(("runs", "single_digit_int"))
     @event_guard()
-    def download_course_lists(self, rs: RequestState, event_id: int, runs: int
-                              ) -> Response:
+    @REQUESTdata("runs")
+    def download_course_lists(self, rs: RequestState, event_id: int,
+                              runs: vtypes.SingleDigitInt) -> Response:
         """Create lists to post to course rooms."""
         if rs.has_validation_errors():
             return self.redirect(rs, 'event/downloads')
@@ -2588,10 +2610,10 @@ class EventFrontend(AbstractUserFrontend):
                 return self.redirect(rs, "event/downloads")
 
     @access("event")
-    @REQUESTdata(("runs", "single_digit_int"))
     @event_guard()
+    @REQUESTdata("runs")
     def download_lodgement_lists(self, rs: RequestState, event_id: int,
-                                 runs: int) -> Response:
+                                 runs: vtypes.SingleDigitInt) -> Response:
         """Create lists to post to lodgements."""
         if rs.has_validation_errors():
             return self.redirect(rs, 'event/downloads')
@@ -2628,13 +2650,12 @@ class EventFrontend(AbstractUserFrontend):
                 return self.redirect(rs, "event/downloads")
 
     @access("event")
-    @REQUESTdata(("runs", "single_digit_int"), ("landscape", "bool"),
-                 ("orgas_only", "bool"), ("part_ids", "[id]"))
     @event_guard()
+    @REQUESTdata("runs", "landscape", "orgas_only", "part_ids")
     def download_participant_list(self, rs: RequestState, event_id: int,
-                                  runs: int, landscape: bool,
+                                  runs: vtypes.SingleDigitInt, landscape: bool,
                                   orgas_only: bool,
-                                  part_ids: Collection[int] = ()) -> Response:
+                                  part_ids: Collection[vtypes.ID]) -> Response:
         """Create list to send to all participants."""
         if rs.has_validation_errors():
             return self.redirect(rs, 'event/downloads')
@@ -2808,10 +2829,10 @@ class EventFrontend(AbstractUserFrontend):
             filename=f"{rs.ambience['event']['shortname']}_registrations")
 
     @access("event", modi={"GET"})
-    @REQUESTdata(("agree_unlocked_download", "bool_or_None"))
     @event_guard()
+    @REQUESTdata("agree_unlocked_download")
     def download_export(self, rs: RequestState, event_id: int,
-                        agree_unlocked_download: bool) -> Response:
+                        agree_unlocked_download: Optional[bool]) -> Response:
         """Retrieve all data for this event to initialize an offline
         instance."""
         if rs.has_validation_errors():
@@ -2875,10 +2896,9 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "partial_import")
 
     @access("event", modi={"POST"})
-    @REQUESTfile("json_file")
-    @REQUESTdata(("partial_import_data", "str_or_None"),
-                 ("token", "str_or_None"))
     @event_guard(check_offline=True)
+    @REQUESTfile("json_file")
+    @REQUESTdata("partial_import_data", "token")
     def partial_import(self, rs: RequestState, event_id: int,
                        json_file: Optional[werkzeug.FileStorage],
                        partial_import_data: Optional[str], token: Optional[str]
@@ -3167,7 +3187,7 @@ class EventFrontend(AbstractUserFrontend):
                 lodgement_titles)
 
     @access("event")
-    @REQUESTdata(("preview", "bool"))
+    @REQUESTdata("preview")
     def register_form(self, rs: RequestState, event_id: int,
                       preview: bool = False) -> Response:
         """Render form."""
@@ -3241,26 +3261,30 @@ class EventFrontend(AbstractUserFrontend):
         :returns: registration data set
         """
         tracks = event['tracks']
-        standard_params = [("mixed_lodging", "bool"), ("notes", "str_or_None"),
-                           ("list_consent", "bool")]
+        standard_params: TypeMapping = {
+            "mixed_lodging": bool,
+            "notes": Optional[str],  # type: ignore
+            "list_consent": bool
+        }
         if parts is None:
-            standard_params += (("parts", "[int]"),)
+            standard_params["parts"] = Collection[int]  # type: ignore
         standard = request_extractor(rs, standard_params)
         if parts is not None:
             standard['parts'] = tuple(
                 part_id for part_id, entry in parts.items()
                 if const.RegistrationPartStati(entry['status']).is_involved())
-        choice_params = (("course_choice{}_{}".format(track_id, i),
-                          "id_or_None")
-                         for part_id in standard['parts']
-                         for track_id in event['parts'][part_id]['tracks']
-                         for i in range(event['tracks'][track_id]
-                                        ['num_choices']))
-        choices = request_extractor(rs, choice_params)
-        instructor_params = (
-            ("course_instructor{}".format(track_id), "id_or_None")
+        choice_params: TypeMapping = {
+            f"course_choice{track_id}_{i}": Optional[vtypes.ID]  # type: ignore
             for part_id in standard['parts']
-            for track_id in event['parts'][part_id]['tracks'])
+            for track_id in event['parts'][part_id]['tracks']
+            for i in range(event['tracks'][track_id]['num_choices'])
+        }
+        choices = request_extractor(rs, choice_params)
+        instructor_params: TypeMapping = {
+            f"course_instructor{track_id}": Optional[vtypes.ID]  # type: ignore
+            for part_id in standard['parts']
+            for track_id in event['parts'][part_id]['tracks']
+        }
         instructor = request_extractor(rs, instructor_params)
         if not standard['parts']:
             rs.append_validation_error(
@@ -3312,11 +3336,12 @@ class EventFrontend(AbstractUserFrontend):
                 if choice_getter(track_id, i) is not None)
 
         f = lambda entry: rs.ambience['event']['fields'][entry['field_id']]
-        params = tuple(
-            (f(entry)['field_name'],
-             "{}".format(const.FieldDatatypes(f(entry)['kind']).name))
+        params: TypeMapping = {
+            f(entry)['field_name']: VALIDATOR_LOOKUP[
+                const.FieldDatatypes(f(entry)['kind']).name]
             for entry in reg_questionnaire
-            if entry['field_id'] and not entry['readonly'])
+            if entry['field_id'] and not entry['readonly']
+        }
         field_data = request_extractor(rs, params)
 
         registration = {
@@ -3623,7 +3648,7 @@ class EventFrontend(AbstractUserFrontend):
         return code
 
     @access("event")
-    @REQUESTdata(("preview", "bool_or_None"))
+    @REQUESTdata("preview")
     def additional_questionnaire_form(self, rs: RequestState, event_id: int,
                                       preview: bool = False,
                                       internal: bool = False) -> Response:
@@ -3686,11 +3711,12 @@ class EventFrontend(AbstractUserFrontend):
         add_questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, kinds=(const.QuestionnaireUsages.additional,)))
         f = lambda entry: rs.ambience['event']['fields'][entry['field_id']]
-        params = tuple(
-            (f(entry)['field_name'],
-             "{}_or_None".format(const.FieldDatatypes(f(entry)['kind']).name))
+        params: TypeMapping = {
+            f(entry)['field_name']: Optional[  # type: ignore
+                VALIDATOR_LOOKUP[const.FieldDatatypes(f(entry)['kind']).name]]
             for entry in add_questionnaire
-            if entry['field_id'] and not entry['readonly'])
+            if entry['field_id'] and not entry['readonly']
+        }
         data = request_extractor(rs, params)
         if rs.has_validation_errors():
             return self.additional_questionnaire_form(
@@ -3719,21 +3745,19 @@ class EventFrontend(AbstractUserFrontend):
         :param kind: For which kind of questionnaire are these rows?
         :rtype: [{str: object}]
         """
-        del_flags = request_extractor(
-            rs, (("delete_{}".format(i), "bool") for i in range(num)))
+        del_flags = request_extractor(rs, {f"delete_{i}": bool for i in range(num)})
         deletes = {i for i in range(num) if del_flags['delete_{}'.format(i)]}
-        spec = {
-            'field_id': "id_or_None",
-            'title': "str_or_None",
-            'info': "str_or_None",
-            'input_size': "int_or_None",
-            'readonly': "bool_or_None",
-            'default_value': "str_or_None",
+        spec: TypeMapping = {
+            'field_id': Optional[vtypes.ID],  # type: ignore
+            'title': Optional[str],  # type: ignore
+            'info': Optional[str],  # type: ignore
+            'input_size': Optional[int],  # type: ignore
+            'readonly': Optional[bool],  # type: ignore
+            'default_value': Optional[str],  # type: ignore
         }
         marker = 1
         while marker < 2 ** 10:
-            if not unwrap(request_extractor(
-                    rs, (("create_-{}".format(marker), "bool"),))):
+            if not unwrap(request_extractor(rs, {f"create_-{marker}": bool})):
                 break
             marker += 1
         rs.values['create_last_index'] = marker - 1
@@ -3793,8 +3817,8 @@ class EventFrontend(AbstractUserFrontend):
              duplicate_kind_constraint(idx))
             for idx in indices))
 
-        params = tuple(("{}_{}".format(key, i), value)
-                       for i in indices for key, value in spec.items())
+        params: TypeMapping = {
+            f"{key}_{i}": value for i in indices for key, value in spec.items()}
         data = request_extractor(rs, params, constraints)
         for idx in indices:
             dv_key = default_value_key(idx)
@@ -3828,7 +3852,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard(check_offline=True)
-    @REQUESTdata(("kind", "enum_questionnaireusages"))
+    @REQUESTdata("kind")
     def reorder_questionnaire_form(self, rs: RequestState, event_id: int,
                                    kind: const.QuestionnaireUsages) -> Response:
         """Render form."""
@@ -3856,11 +3880,10 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdata(("order", "int_csv_list"),
-                 ("kind", "enum_questionnaireusages"))
+    @REQUESTdata("order", "kind")
     def reorder_questionnaire(self, rs: RequestState, event_id: int,
                               kind: const.QuestionnaireUsages,
-                              order: Sequence[int]) -> Response:
+                              order: vtypes.IntCSVList) -> Response:
         """Shuffle rows of the orga designed form.
 
         This is strictly speaking redundant functionality, but it's pretty
@@ -3910,7 +3933,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard(check_offline=True)
-    @REQUESTdata(('skip', '[str]'))
+    @REQUESTdata("skip")
     def change_registration_form(self, rs: RequestState, event_id: int,
                                  registration_id: int, skip: Collection[str],
                                  internal: bool = False) -> Response:
@@ -4000,51 +4023,58 @@ class EventFrontend(AbstractUserFrontend):
         :returns: registration data set
         """
 
-        def filter_parameters(params: Collection[Tuple[str, str]]
-                              ) -> List[Tuple[str, str]]:
+        def filter_parameters(params: TypeMapping) -> TypeMapping:
             """Helper function to filter parameters by `skip` list and `enabled`
             checkboxes"""
-            params = [(key, kind) for key, kind in params if key not in skip]
+            params = {key: kind for key, kind in params.items() if key not in skip}
             if not check_enabled:
                 return params
-            enable_params = tuple(("enable_{}".format(i), "bool")
-                                  for i, t in params)
+            enable_params = {f"enable_{i}": bool for i, t in params.items()}
             enable = request_extractor(rs, enable_params)
-            return list((key, kind) for key, kind in params
-                        if enable["enable_{}".format(key)])
+            return {
+                key: kind for key, kind in params.items() if enable[f"enable_{key}"]}
 
         # Extract parameters from request
         tracks = event['tracks']
-        reg_params = [
-            ("reg.notes", "str_or_None"), ("reg.orga_notes", "str_or_None"),
-            ("reg.payment", "date_or_None"),
-            ("reg.amount_paid", "non_negative_decimal"),
-            ("reg.parental_agreement", "bool"), ("reg.mixed_lodging", "bool"),
-            ("reg.checkin", "datetime_or_None"), ("reg.list_consent", "bool"),]
-        part_params: List[Tuple[str, str]] = []
+        reg_params: TypeMapping = {
+            "reg.notes": Optional[str],  # type: ignore
+            "reg.orga_notes": Optional[str],  # type: ignore
+            "reg.payment": Optional[datetime.date],  # type: ignore
+            "reg.amount_paid": vtypes.NonNegativeDecimal,
+            "reg.parental_agreement": bool,
+            "reg.mixed_lodging": bool,
+            "reg.checkin": Optional[datetime.datetime],  # type: ignore
+            "reg.list_consent": bool,
+        }
+        part_params: TypeMapping = {}
         for part_id in event['parts']:
-            part_params.extend((
-                ("part{}.status".format(part_id), "enum_registrationpartstati"),
-                ("part{}.lodgement_id".format(part_id), "id_or_None"),
-                ("part{}.is_camping_mat".format(part_id), "bool")))
-        track_params: List[Tuple[str, str]] = []
+            part_params.update({  # type: ignore
+                f"part{part_id}.status": const.RegistrationPartStati,
+                f"part{part_id}.lodgement_id": Optional[vtypes.ID],
+                f"part{part_id}.is_camping_mat": bool
+            })
+        track_params: TypeMapping = {}
         for track_id, track in tracks.items():
-            track_params.extend(
-                ("track{}.{}".format(track_id, key), "id_or_None")
-                for key in ("course_id", "course_instructor"))
-            track_params.extend(
-                ("track{}.course_choice_{}".format(track_id, i), "id_or_None")
-                for i in range(track['num_choices']))
-        field_params = tuple(
-            ("fields.{}".format(field['field_name']),
-             "{}_or_None".format(const.FieldDatatypes(field['kind']).name))
+            track_params.update({  # type: ignore
+                f"track{track_id}.{key}": Optional[vtypes.ID]
+                for key in ("course_id", "course_instructor")
+            })
+            track_params.update({  # type: ignore
+                f"track{track_id}.course_choice_{i}": Optional[vtypes.ID]
+                for i in range(track['num_choices'])
+            })
+        field_params: TypeMapping = {
+            f"fields.{field['field_name']}": Optional[  # type: ignore
+                VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]
             for field in event['fields'].values()
-            if field['association'] == const.FieldAssociations.registration)
+            if field['association'] == const.FieldAssociations.registration
+        }
 
         raw_reg = request_extractor(rs, filter_parameters(reg_params))
         if do_real_persona_id:
-            raw_reg.update(request_extractor(rs, filter_parameters((
-                ("reg.real_persona_id", "cdedbid_or_None"),))))
+            raw_reg.update(request_extractor(rs, filter_parameters({
+                "reg.real_persona_id": Optional[vtypes.CdedbID]  # type: ignore
+            })))
         raw_parts = request_extractor(rs, filter_parameters(part_params))
         raw_tracks = request_extractor(rs, filter_parameters(track_params))
         raw_fields = request_extractor(rs, filter_parameters(field_params))
@@ -4098,7 +4128,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdata(('skip', '[str]'))
+    @REQUESTdata("skip")
     def change_registration(self, rs: RequestState, event_id: int,
                             registration_id: int, skip: Collection[str]
                             ) -> Response:
@@ -4157,7 +4187,7 @@ class EventFrontend(AbstractUserFrontend):
         singnal legal consent which is not provided this way.
         """
         persona_id = unwrap(
-            request_extractor(rs, (("persona.persona_id", "cdedbid"),)))
+            request_extractor(rs, {"persona.persona_id": vtypes.CdedbID}))
         if persona_id is not None:
             if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):
                 rs.append_validation_error(
@@ -4193,8 +4223,8 @@ class EventFrontend(AbstractUserFrontend):
                              {'registration_id': new_id})
 
     @access("event", modi={"POST"})
-    @REQUESTdata(("ack_delete", "bool"))
     @event_guard(check_offline=True)
+    @REQUESTdata("ack_delete")
     def delete_registration(self, rs: RequestState, event_id: int,
                             registration_id: int, ack_delete: bool) -> Response:
         """Remove a registration."""
@@ -4214,10 +4244,10 @@ class EventFrontend(AbstractUserFrontend):
         return self.redirect(rs, "event/registration_query")
 
     @access("event")
-    @REQUESTdata(("reg_ids", "int_csv_list"))
     @event_guard(check_offline=True)
+    @REQUESTdata("reg_ids")
     def change_registrations_form(self, rs: RequestState, event_id: int,
-                                  reg_ids: Collection[int]) -> Response:
+                                  reg_ids: vtypes.IntCSVList) -> Response:
         """Render form for changing multiple registrations."""
 
         # Redirect, if the reg_ids parameters is error-prone, to avoid backend
@@ -4305,10 +4335,10 @@ class EventFrontend(AbstractUserFrontend):
             'lodgements': lodgements})
 
     @access("event", modi={"POST"})
-    @REQUESTdata(("reg_ids", "int_csv_list"))
     @event_guard(check_offline=True)
+    @REQUESTdata("reg_ids")
     def change_registrations(self, rs: RequestState, event_id: int,
-                             reg_ids: Collection[int]) -> Response:
+                             reg_ids: vtypes.IntCSVList) -> Response:
         """Make privileged changes to any information pertaining to multiple
         registrations.
         """
@@ -4488,11 +4518,9 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard()
-    @REQUESTdata(("sort_part_id", "id_or_None"),
-                 ("sortkey", "enum_lodgementssortkeys_or_None"),
-                 ("reverse", "bool"))
+    @REQUESTdata("sort_part_id", "sortkey", "reverse")
     def lodgements(self, rs: RequestState, event_id: int,
-                   sort_part_id: int = None, sortkey: LodgementsSortkeys = None,
+                   sort_part_id: vtypes.ID = None, sortkey: LodgementsSortkeys = None,
                    reverse: bool = False) -> Response:
         """Overview of the lodgements of an event.
 
@@ -4689,7 +4717,7 @@ class EventFrontend(AbstractUserFrontend):
                                 ) -> Response:
         """Manipulate groups of lodgements."""
         group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
-        groups = process_dynamic_input(rs, group_ids.keys(), {'title': "str"},
+        groups = process_dynamic_input(rs, group_ids.keys(), {'title': str},
                                        {'event_id': event_id})
         if rs.has_validation_errors():
             return self.lodgement_group_summary_form(rs, event_id)
@@ -4752,18 +4780,19 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "create_lodgement", {'groups': groups})
 
     @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
     @REQUESTdatadict("title", "regular_capacity", "camping_mat_capacity",
                      "group_id", "notes")
-    @event_guard(check_offline=True)
     def create_lodgement(self, rs: RequestState, event_id: int,
                          data: CdEDBObject) -> Response:
         """Add a new lodgement."""
         data['event_id'] = event_id
-        field_params = tuple(
-            ("fields.{}".format(field['field_name']),
-             "{}_or_None".format(const.FieldDatatypes(field['kind']).name))
+        field_params: TypeMapping = {
+            f"fields.{field['field_name']}": Optional[  # type: ignore
+                VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]
             for field in rs.ambience['event']['fields'].values()
-            if field['association'] == const.FieldAssociations.lodgement)
+            if field['association'] == const.FieldAssociations.lodgement
+        }
         raw_fields = request_extractor(rs, field_params)
         data['fields'] = {
             key.split('.', 1)[1]: value for key, value in raw_fields.items()
@@ -4791,9 +4820,9 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "change_lodgement", {'groups': groups})
 
     @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
     @REQUESTdatadict("title", "regular_capacity", "camping_mat_capacity",
                      "notes", "group_id")
-    @event_guard(check_offline=True)
     def change_lodgement(self, rs: RequestState, event_id: int,
                          lodgement_id: int, data: CdEDBObject) -> Response:
         """Alter the attributes of a lodgement.
@@ -4801,11 +4830,12 @@ class EventFrontend(AbstractUserFrontend):
         This does not enable changing the inhabitants of this lodgement.
         """
         data['id'] = lodgement_id
-        field_params = tuple(
-            ("fields.{}".format(field['field_name']),
-             "{}_or_None".format(const.FieldDatatypes(field['kind']).name))
+        field_params: TypeMapping = {
+            f"fields.{field['field_name']}": Optional[  # type: ignore
+                VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]
             for field in rs.ambience['event']['fields'].values()
-            if field['association'] == const.FieldAssociations.lodgement)
+            if field['association'] == const.FieldAssociations.lodgement
+        }
         raw_fields = request_extractor(rs, field_params)
         data['fields'] = {
             key.split('.', 1)[1]: value for key, value in raw_fields.items()}
@@ -4819,8 +4849,8 @@ class EventFrontend(AbstractUserFrontend):
         return self.redirect(rs, "event/show_lodgement")
 
     @access("event", modi={"POST"})
-    @REQUESTdata(("ack_delete", "bool"))
     @event_guard(check_offline=True)
+    @REQUESTdata("ack_delete")
     def delete_lodgement(self, rs: RequestState, event_id: int,
                          lodgement_id: int, ack_delete: bool) -> Response:
         """Remove a lodgement."""
@@ -4921,16 +4951,22 @@ class EventFrontend(AbstractUserFrontend):
                       == lodgement_id]
             for part_id in rs.ambience['event']['parts']}
         # Parse request data
-        params = tuple(("new_{}".format(part_id), "[id_or_None]")
-                       for part_id in rs.ambience['event']['parts']) \
-            + tuple(itertools.chain(
-                (("delete_{}_{}".format(part_id, reg_id), "bool")
-                 for part_id in rs.ambience['event']['parts']
-                 for reg_id in current_inhabitants[part_id]),
-
-                (("camping_mat_capacity_{}_{}".format(part_id, reg_id), "bool")
-                 for part_id in rs.ambience['event']['parts']
-                 for reg_id in current_inhabitants[part_id])))
+        params: TypeMapping = {
+            **{
+                f"new_{part_id}": Collection[Optional[vtypes.ID]]
+                for part_id in rs.ambience['event']['parts']
+            },
+            **{
+                f"delete_{part_id}_{reg_id}": bool
+                for part_id in rs.ambience['event']['parts']
+                for reg_id in current_inhabitants[part_id]
+            },
+            **{
+                f"camping_mat_capacity_{part_id}_{reg_id}": bool
+                for part_id in rs.ambience['event']['parts']
+                for reg_id in current_inhabitants[part_id]
+            }
+        }
         data = request_extractor(rs, params)
         if rs.has_validation_errors():
             return self.manage_inhabitants_form(rs, event_id, lodgement_id)
@@ -5057,12 +5093,17 @@ class EventFrontend(AbstractUserFrontend):
             for track_id in rs.ambience['course']['segments']}
 
         # Parse request data
-        params = (tuple(("new_{}".format(track_id), "[id_or_None]")
-                        for track_id in rs.ambience['course']['segments'])
-                  + tuple(
-                    ("delete_{}_{}".format(track_id, reg_id), "bool")
-                    for track_id in rs.ambience['course']['segments']
-                    for reg_id in current_attendees[track_id]))
+        params: TypeMapping = {
+            **{
+                f"new_{track_id}": Collection[Optional[vtypes.ID]]
+                for track_id in rs.ambience['course']['segments']
+            },
+            **{
+                f"delete_{track_id}_{reg_id}": bool
+                for track_id in rs.ambience['course']['segments']
+                for reg_id in current_attendees[track_id]
+            }
+        }
         data = request_extractor(rs, params)
         if rs.has_validation_errors():
             return self.manage_attendees_form(rs, event_id, course_id)
@@ -5486,8 +5527,8 @@ class EventFrontend(AbstractUserFrontend):
         return choices, titles
 
     @access("event")
-    @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
     @event_guard()
+    @REQUESTdata("download", "is_search")
     def registration_query(self, rs: RequestState, event_id: int,
                            download: Optional[str], is_search: bool
                            ) -> Response:
@@ -5649,8 +5690,8 @@ class EventFrontend(AbstractUserFrontend):
         return choices, titles
 
     @access("event")
-    @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
     @event_guard()
+    @REQUESTdata("download", "is_search")
     def course_query(self, rs: RequestState, event_id: int,
                      download: Optional[str], is_search: bool) -> Response:
 
@@ -5812,10 +5853,10 @@ class EventFrontend(AbstractUserFrontend):
         return choices, titles
 
     @access("event")
-    @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
     @event_guard()
+    @REQUESTdata("download", "is_search")
     def lodgement_query(self, rs: RequestState, event_id: int,
-                        download: str, is_search: bool) -> Response:
+                        download: Optional[str], is_search: bool) -> Response:
 
         spec = self.make_lodgement_query_spec(rs.ambience['event'])
         query_input = mangle_query_input(rs, spec)
@@ -5913,9 +5954,9 @@ class EventFrontend(AbstractUserFrontend):
             'lodgements': lodgements})
 
     @access("event", modi={"POST"})
-    @REQUESTdata(("registration_id", "id"))
     @event_guard(check_offline=True)
-    def checkin(self, rs: RequestState, event_id: int, registration_id: int
+    @REQUESTdata("registration_id")
+    def checkin(self, rs: RequestState, event_id: int, registration_id: vtypes.ID
                 ) -> Response:
         """Check a participant in."""
         if rs.has_validation_errors():
@@ -6009,15 +6050,18 @@ class EventFrontend(AbstractUserFrontend):
         return entities, ordered_ids, labels, field
 
     @access("event")
-    @REQUESTdata(("field_id", "id_or_None"),
-                 ("ids", "int_csv_list_or_None"),
-                 ("kind", "enum_fieldassociations"))
     @event_guard(check_offline=True)
-    def field_set_select(self, rs: RequestState, event_id: int, field_id: int,
-                         ids: Collection[int], kind: const.FieldAssociations) -> Response:
+    @REQUESTdata("field_id", "ids", "kind")
+    def field_set_select(self, rs: RequestState, event_id: int,
+                         field_id: Optional[vtypes.ID],
+                         ids: Optional[vtypes.IntCSVList],
+                         kind: const.FieldAssociations) -> Response:
         """Select a field for manipulation across multiple entities."""
         if rs.has_validation_errors():
             return self.render(rs, "field_set_select")
+        if ids is None:
+            ids = cast(vtypes.IntCSVList, [])
+
         if field_id:
             return self.redirect(
                 rs, "event/field_set_form", {
@@ -6035,12 +6079,10 @@ class EventFrontend(AbstractUserFrontend):
                 'kind': kind.value, 'cancellink': self.FIELD_REDIRECT[kind]})
 
     @access("event")
-    @REQUESTdata(("field_id", "id"),
-                 ("ids", "int_csv_list_or_None"),
-                 ("kind", "enum_fieldassociations"))
     @event_guard(check_offline=True)
-    def field_set_form(self, rs: RequestState, event_id: int, field_id: int,
-                       ids: Collection[int], kind: const.FieldAssociations,
+    @REQUESTdata("field_id", "ids", "kind")
+    def field_set_form(self, rs: RequestState, event_id: int, field_id: vtypes.ID,
+                       ids: Optional[vtypes.IntCSVList], kind: const.FieldAssociations,
                        internal: bool = False) -> Response:
         """Render form.
 
@@ -6050,6 +6092,9 @@ class EventFrontend(AbstractUserFrontend):
         if rs.has_validation_errors() and not internal:
             redirect = self.FIELD_REDIRECT.get(kind, "event/show_event")
             return self.redirect(rs, redirect)
+        if ids is None:
+            ids = cast(vtypes.IntCSVList, [])
+
         entities, ordered_ids, labels, field = self.field_set_aux(
             rs, event_id, field_id, ids, kind)
         assert field is not None  # to make mypy happy
@@ -6063,22 +6108,27 @@ class EventFrontend(AbstractUserFrontend):
             'kind': kind.value, 'cancellink': self.FIELD_REDIRECT[kind]})
 
     @access("event", modi={"POST"})
-    @REQUESTdata(("field_id", "id"),
-                 ("ids", "int_csv_list_or_None"),
-                 ("kind", "enum_fieldassociations"))
     @event_guard(check_offline=True)
-    def field_set(self, rs: RequestState, event_id: int, field_id: int,
-                  ids: Collection[int], kind: const.FieldAssociations) -> Response:
+    @REQUESTdata("field_id", "ids", "kind")
+    def field_set(self, rs: RequestState, event_id: int, field_id: vtypes.ID,
+                  ids: Optional[vtypes.IntCSVList],
+                  kind: const.FieldAssociations) -> Response:
         """Modify a specific field on the given entities."""
         if rs.has_validation_errors():
             return self.field_set_form(  # type: ignore
                 rs, event_id, kind=kind, internal=True)
+        if ids is None:
+            ids = cast(vtypes.IntCSVList, [])
+
         entities, ordered_ids, _, field = self.field_set_aux(
             rs, event_id, field_id, ids, kind)
         assert field is not None  # to make mypy happy
 
-        field_kind = f"{const.FieldDatatypes(field['kind']).name}_or_None"
-        data_params = tuple((f"input{anid}", field_kind) for anid in entities)
+        data_params: TypeMapping = {
+            f"input{anid}": Optional[  # type: ignore
+                VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]
+            for anid in entities
+        }
         data = request_extractor(rs, data_params)
         if rs.has_validation_errors():
             return self.field_set_form(  # type: ignore
@@ -6147,8 +6197,8 @@ class EventFrontend(AbstractUserFrontend):
         return self.redirect(rs, "event/show_event")
 
     @access("event", modi={"POST"})
-    @REQUESTfile("json")
     @event_guard()
+    @REQUESTfile("json")
     def unlock_event(self, rs: RequestState, event_id: int,
                      json: werkzeug.FileStorage) -> Response:
         """Unlock an event after offline usage and incorporate the offline
@@ -6173,9 +6223,8 @@ class EventFrontend(AbstractUserFrontend):
         return self.redirect(rs, "event/show_event")
 
     @access("event_admin", modi={"POST"})
-    @REQUESTdata(("ack_archive", "bool"),
-                 ("create_past_event", "bool"))
     @event_guard(check_offline=True)
+    @REQUESTdata("ack_archive", "create_past_event")
     def archive_event(self, rs: RequestState, event_id: int, ack_archive: bool,
                       create_past_event: bool) -> Response:
         """Archive an event and optionally create a past event.
@@ -6213,8 +6262,8 @@ class EventFrontend(AbstractUserFrontend):
             return self.redirect(rs, "event/show_event")
 
     @access("event_admin", modi={"POST"})
-    @REQUESTdata(("ack_delete", "bool"))
     @event_guard(check_offline=True)
+    @REQUESTdata("ack_delete")
     def delete_event(self, rs: RequestState, event_id: int, ack_delete: bool
                      ) -> Response:
         """Remove an event."""
@@ -6241,9 +6290,9 @@ class EventFrontend(AbstractUserFrontend):
             return self.redirect(rs, "event/index")
 
     @access("event")
-    @REQUESTdata(("phrase", "str"), ("kind", "str"), ("aux", "id_or_None"))
+    @REQUESTdata("phrase", "kind", "aux")
     def select_registration(self, rs: RequestState, phrase: str,
-                            kind: str, aux: Optional[int]) -> Response:
+                            kind: str, aux: Optional[vtypes.ID]) -> Response:
         """Provide data for inteligent input fields.
 
         This searches for registrations (and associated users) by name
@@ -6361,7 +6410,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard()
-    @REQUESTdata(("phrase", "str"))
+    @REQUESTdata("phrase")
     def quick_show_registration(self, rs: RequestState, event_id: int,
                                 phrase: str) -> Response:
         """Allow orgas to quickly retrieve a registration.
@@ -6450,18 +6499,14 @@ class EventFrontend(AbstractUserFrontend):
         return self.show_event(rs, event_id)
 
     @access("event_admin")
-    @REQUESTdata(("codes", "[int]"), ("event_id", "id_or_None"),
-                 ("persona_id", "cdedbid_or_None"),
-                 ("submitted_by", "cdedbid_or_None"),
-                 ("change_note", "str_or_None"),
-                 ("offset", "int_or_None"),
-                 ("length", "positive_int_or_None"),
-                 ("time_start", "datetime_or_None"),
-                 ("time_stop", "datetime_or_None"))
+    @REQUESTdata("codes", "event_id", "persona_id", "submitted_by",
+                 "change_note", "offset", "length", "time_start", "time_stop")
     def view_log(self, rs: RequestState, codes: Collection[const.EventLogCodes],
-                 event_id: Optional[int], offset: Optional[int],
-                 length: Optional[int], persona_id: Optional[int],
-                 submitted_by: Optional[int], change_note: Optional[str],
+                 event_id: Optional[vtypes.ID], offset: Optional[int],
+                 length: Optional[vtypes.PositiveInt],
+                 persona_id: Optional[vtypes.CdedbID],
+                 submitted_by: Optional[vtypes.CdedbID],
+                 change_note: Optional[str],
                  time_start: Optional[datetime.datetime],
                  time_stop: Optional[datetime.datetime]) -> Response:
         """View activities concerning events organized via DB."""
@@ -6494,18 +6539,14 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard()
-    @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
-                 ("submitted_by", "cdedbid_or_None"),
-                 ("change_note", "str_or_None"),
-                 ("offset", "int_or_None"),
-                 ("length", "positive_int_or_None"),
-                 ("time_start", "datetime_or_None"),
-                 ("time_stop", "datetime_or_None"))
+    @REQUESTdata("codes", "persona_id", "submitted_by", "change_note", "offset",
+                 "length", "time_start", "time_stop")
     def view_event_log(self, rs: RequestState,
                        codes: Collection[const.EventLogCodes],
                        event_id: int, offset: Optional[int],
-                       length: Optional[int], persona_id: Optional[int],
-                       submitted_by: Optional[int],
+                       length: Optional[vtypes.PositiveInt],
+                       persona_id: Optional[vtypes.CdedbID],
+                       submitted_by: Optional[vtypes.CdedbID],
                        change_note: Optional[str],
                        time_start: Optional[datetime.datetime],
                        time_stop: Optional[datetime.datetime]) -> Response:
