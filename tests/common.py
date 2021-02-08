@@ -446,6 +446,16 @@ class BackendTest(CdEDBTest):
         return self.key
 
     @staticmethod
+    def is_user(user: UserIdentifier, identifier: UserIdentifier) -> bool:
+        # TODO: this needs a change from master to be simplyfied.
+        # return get_user(user)["id"] == get_user(identifier)["id"]
+        if isinstance(user, str):
+            user = USER_DICT[user]
+        if isinstance(identifier, str):
+            identifier = USER_DICT[identifier]
+        return user["id"] == identifier["id"]
+
+    @staticmethod
     def initialize_raw_backend(backendcls: Type[SessionBackend]
                                ) -> SessionBackend:
         return backendcls()
