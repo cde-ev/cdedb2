@@ -2091,7 +2091,8 @@ class CdEFrontend(AbstractUserFrontend):
                     self.do_mail(
                         rrs, "imminent_archival",
                         {'To': (persona['username'],),
-                         'Subject': "Inaktivität in Deinem CdE-Datenbank-Account"},
+                         'Subject': "Bevorstehende Löschung Deines"
+                                    " CdE-Datenbank-Accounts"},
                         {'persona': persona,
                          'management': self.conf["MANAGEMENT_ADDRESS"]})
                     period_update['archival_notification_count'] = \
