@@ -398,8 +398,8 @@ class TestMlFrontend(FrontendTest):
                       {'href': '/ml/mailinglist/4'},
                       {'href': '/ml/mailinglist/4/management'})
         self.assertTitle("Klatsch und Tratsch – Verwaltung")
-        self.assertNonPresence("Inga Iota", div="moderator_list")
-        self.assertNonPresence("Anton Armin A. Administrator", div="moderator_list")
+        self.assertNonPresence("Inga Iota", div="moderator-list")
+        self.assertNonPresence("Anton Armin A. Administrator", div="moderator-list")
         f = self.response.forms['addmoderatorform']
         # Check that you cannot add non-existing or archived moderators.
         errormsg = "Einige dieser Nutzer existieren nicht oder sind archiviert."
@@ -415,13 +415,13 @@ class TestMlFrontend(FrontendTest):
         f['moderators'] = "DB-9-4, DB-1-9"
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch – Verwaltung")
-        self.assertPresence("Inga Iota", div="moderator_list")
+        self.assertPresence("Inga Iota", div="moderator-list")
         self.assertPresence("Anton Armin A. Administrator",
-                            div="moderator_list")
+                            div="moderator-list")
         f = self.response.forms['removemoderatorform9']
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch – Verwaltung")
-        self.assertNonPresence("Inga Iota", div="moderator_list")
+        self.assertNonPresence("Inga Iota", div="moderator-list")
         self.assertNotIn("removesubscriberform9", self.response.forms)
         f = self.response.forms['addsubscriberform']
         f['subscriber_ids'] = "DB-9-4"
@@ -1442,10 +1442,10 @@ class TestMlFrontend(FrontendTest):
         f = self.response.forms['addmoderatorform']
         f['moderators'] = user['DB-ID']
         self.submit(f)
-        self.assertPresence(user['given_names'], div="moderator_list")
+        self.assertPresence(user['given_names'], div="moderator-list")
         f = self.response.forms[f"removemoderatorform{user['id']}"]
         self.submit(f)
-        self.assertNonPresence(user['given_names'], div="moderator_list")
+        self.assertNonPresence(user['given_names'], div="moderator-list")
         self.traverse({"description": "Konfiguration"})
         f = self.response.forms['changelistform']
         new_notes = "Free Butterbeer for everyone!"
@@ -1472,7 +1472,7 @@ class TestMlFrontend(FrontendTest):
         f['moderators'] = moderator["DB-ID"]
         self.submit(f)
         self.assertTitle("Little Whinging")
-        self.assertPresence(moderator['given_names'], div="moderator_list")
+        self.assertPresence(moderator['given_names'], div="moderator-list")
 
     @as_users("anton")
     def test_1342(self, user: CdEDBObject) -> None:
