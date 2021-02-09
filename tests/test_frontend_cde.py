@@ -2245,55 +2245,58 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['billform']
         self.submit(f)
         logs.append((1001, const.CdeLogCodes.semester_bill))
+        logs.append((1002, const.CdeLogCodes.automated_archival_notification_done))
 
         # Remove Inactive Members
         self.reload_and_check_form('ejectform', link)
         f = self.response.forms['ejectform']
         self.submit(f)
-        logs.append((1002, const.CdeLogCodes.semester_ejection))
+        logs.append((1003, const.CdeLogCodes.semester_ejection))
+        logs.append((1004, const.CdeLogCodes.automated_archival_done))
 
         # Update Balances
         self.reload_and_check_form('balanceform', link)
         f = self.response.forms['balanceform']
         self.submit(f)
-        logs.append((1003, const.CdeLogCodes.semester_balance_update))
+        logs.append((1005, const.CdeLogCodes.semester_balance_update))
 
         # Next Semester
         self.reload_and_check_form('proceedform', link)
         f = self.response.forms['proceedform']
         self.submit(f)
-        logs.append((1004, const.CdeLogCodes.semester_advance))
+        logs.append((1006, const.CdeLogCodes.semester_advance))
 
         # Payment Request with addresscheck
         self.reload_and_check_form('billform', link)
         f = self.response.forms['billform']
         f['addresscheck'].checked = True
         self.submit(f)
-        logs.append((1005, const.CdeLogCodes.semester_bill_with_addresscheck))
+        logs.append((1007, const.CdeLogCodes.semester_bill_with_addresscheck))
+        logs.append((1008, const.CdeLogCodes.automated_archival_notification_done))
 
         # exPuls with addresscheck
         self.reload_and_check_form('addresscheckform', link)
         f = self.response.forms['addresscheckform']
         self.submit(f)
-        logs.append((1006, const.CdeLogCodes.expuls_addresscheck))
+        logs.append((1009, const.CdeLogCodes.expuls_addresscheck))
 
         # Next exPuls
         self.reload_and_check_form('proceedexpulsform', link)
         f = self.response.forms['proceedexpulsform']
         self.submit(f)
-        logs.append((1007, const.CdeLogCodes.expuls_advance))
+        logs.append((1010, const.CdeLogCodes.expuls_advance))
 
         # exPuls without addresscheck
         self.reload_and_check_form('noaddresscheckform', link)
         f = self.response.forms['noaddresscheckform']
         self.submit(f)
-        logs.append((1008, const.CdeLogCodes.expuls_addresscheck_skipped))
+        logs.append((1011, const.CdeLogCodes.expuls_addresscheck_skipped))
 
         # Next exPuls
         self.reload_and_check_form('proceedexpulsform', link)
         f = self.response.forms['proceedexpulsform']
         self.submit(f)
-        logs.append((1009, const.CdeLogCodes.expuls_advance))
+        logs.append((1012, const.CdeLogCodes.expuls_advance))
 
         # Now check it
         self.traverse({'description': "CdE-Log"})
