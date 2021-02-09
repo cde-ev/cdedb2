@@ -1409,28 +1409,77 @@ class TestMlFrontend(FrontendTest):
         self.assertEqual("1111", f['maxsize'].value)
 
     @as_users("janis")
-    @prepsql("INSERT INTO ml.moderators (mailinglist_id, persona_id) VALUES (5, 10)")
+    # add Janis as unprivileged moderator
+    @prepsql("INSERT INTO ml.moderators (mailinglist_id, persona_id) VALUES (9, 10)")
+    # add someone (Charly) in unsubscription override state
     @prepsql(f"INSERT INTO ml.subscription_states"
              f" (mailinglist_id, persona_id, subscription_state)"
-             f" VALUES (5, 5, {const.SubscriptionStates.unsubscribed.value})")
+             f" VALUES (9, 3, {const.SubscriptionStates.unsubscription_override.value})")
+    # add someone (Daniel) in subscription override state
+    @prepsql(f"INSERT INTO ml.subscription_states"
+             f" (mailinglist_id, persona_id, subscription_state)"
+             f" VALUES (9, 4, {const.SubscriptionStates.subscription_override.value})")
+    # add someone (Ferdinand) in unsubscription state (no implicit subscribing right)
+    @prepsql(f"INSERT INTO ml.subscription_states"
+             f" (mailinglist_id, persona_id, subscription_state)"
+             f" VALUES (9, 6, {const.SubscriptionStates.unsubscribed.value})")
+    # add someone (Werner) in request subscription state
+    @prepsql(f"INSERT INTO ml.subscription_states"
+             f" (mailinglist_id, persona_id, subscription_state)"
+             f" VALUES (9, 23, {const.SubscriptionStates.pending.value})")
     def test_non_privileged_moderator(self, user: CdEDBObject) -> None:
         self.traverse({"description": "Mailinglisten"},
-                      {"description": "Sozialistischer Kampfbrief"},
-                      {"description": "Erweiterte Verwaltung"})
+                      {"description": "Teilnehmer-Liste"},
+                      {"description": "Verwaltung"})
         self.assertPresence("Du hast keinen Zugriff als Privilegierter Moderator",
                             div="static-notifications")
 
-        # they can neither add nor remove subscriptions.
+        # he can neither add nor remove subscriptions ...
+        self.assertNotIn('addsubscriberform', self.response.forms)
+        self.assertPresence("Anton", div='subscriber-list')
+        self.assertNotIn('removesubscriberform1', self.response.forms)
+
+        self.assertPresence("Werner", div='pending-list')
+        self.assertNotIn('blockrequestform23', self.response.forms)
+        self.assertNotIn('denyrequestform23', self.response.forms)
+        self.assertNotIn('approverequestform23', self.response.forms)
+
+        # ... but he can add and remove moderators
+        f = self.response.forms['addmoderatorform']
+        f['moderators'] = USER_DICT['berta']['DB-ID']
+        self.submit(f)
+        self.assertPresence("Bertålotta", div='moderator-list')
+        self.assertPresence("Garcia", div='moderator-list')
+        f = self.response.forms['removemoderatorform7']
+        self.submit(f)
+        self.assertNonPresence("Garcia", div='moderator-list')
+
+        self.traverse({"description": "Erweiterte Verwaltung"})
+        self.assertPresence("Du hast keinen Zugriff als Privilegierter Moderator",
+                            div="static-notifications")
+
+        # he can neither add nor remove subscriptions ...
         self.assertNotIn('addmodsubscriberform', self.response.forms)
-        self.assertPresence("Akira", div='modsubscriber-list')
-        self.assertNotIn('removemodsubscriberform100', self.response.forms)
+        self.assertPresence("Daniel", div='modsubscriber-list')
+        self.assertNotIn('removemodsubscriberform4', self.response.forms)
 
         self.assertNotIn('addmodunsubscriberform', self.response.forms)
-        self.assertPresence("Inga", div='modunsubscriber-list')
-        self.assertNotIn('removemodsubscriberform9', self.response.forms)
+        self.assertPresence("Charly", div='modunsubscriber-list')
+        self.assertNotIn('removemodsubscriberform3', self.response.forms)
 
+        self.assertPresence("Ferdinand", div='unsubscriber-list')
+        self.assertNotIn('resetunsubscriberform6', self.response.forms)
+        # Emilia is already unsubscribed, but has implicit subscription rights
         self.assertPresence("Emilia", div="unsubscriber-list")
-        self.assertNotIn('resetunsubscriberform5', self.response.forms)
+        self.assertNotIn('addsubscriberform5', self.response.forms)
+
+        # ... but he can add and remove whitelist entries
+        f = self.response.forms['addwhitelistform']
+        f['email'] = "testmail@example.cde"
+        self.submit(f)
+        self.assertPresence("testmail@example.cde", div='whitelist')
+        f = self.response.forms['removewhitelistform1']
+        self.submit(f)
 
     @as_users("inga")
     def test_cdelokal_admin(self, user: CdEDBObject) -> None:
