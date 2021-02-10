@@ -2165,6 +2165,7 @@ class CdEFrontend(AbstractUserFrontend):
                 return True
 
         def automated_archival(rrs: RequestState, rs: None = None) -> bool:
+            """Archive one inactive user if they are eligible."""
             with Atomizer(rrs):
                 period = self.cdeproxy.get_period(rrs, period_id)
                 persona_id = self.coreproxy.next_persona(
