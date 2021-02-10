@@ -795,6 +795,9 @@ class MlBaseFrontend(AbstractUserFrontend):
         """Evaluate whether to admit subscribers."""
         if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
+        if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):
+            rs.notify("error", n_("User does not exist or is archived."))
+            return self.management(rs, mailinglist_id)
         self._subscription_action_handler(
             rs, SubscriptionActions.approve_request,
             mailinglist_id=mailinglist_id, persona_id=persona_id)
@@ -808,6 +811,9 @@ class MlBaseFrontend(AbstractUserFrontend):
         """Evaluate whether to admit subscribers."""
         if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
+        if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):
+            rs.notify("error", n_("User does not exist or is archived."))
+            return self.management(rs, mailinglist_id)
         self._subscription_action_handler(
             rs, SubscriptionActions.deny_request,
             mailinglist_id=mailinglist_id, persona_id=persona_id)
@@ -820,6 +826,9 @@ class MlBaseFrontend(AbstractUserFrontend):
                       persona_id: vtypes.ID) -> Response:
         """Evaluate whether to admit subscribers."""
         if rs.has_validation_errors():
+            return self.management(rs, mailinglist_id)
+        if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):
+            rs.notify("error", n_("User does not exist or is archived."))
             return self.management(rs, mailinglist_id)
         self._subscription_action_handler(
             rs, SubscriptionActions.block_request,
@@ -854,13 +863,13 @@ class MlBaseFrontend(AbstractUserFrontend):
         """
         if rs.has_validation_errors():
             return self.show_subscription_details(rs, mailinglist_id)
+        if not self.coreproxy.verify_id(rs, subscriber_id, is_archived=False):
+            rs.notify("error", n_("User does not exist or is archived."))
+            return self.show_subscription_details(rs, mailinglist_id)
         self._subscription_action_handler(
             rs, SubscriptionActions.add_subscriber,
             mailinglist_id=mailinglist_id, persona_id=subscriber_id)
-        if rs.has_validation_errors():
-            return self.show_subscription_details(rs, mailinglist_id)
-        else:
-            return self.redirect(rs, "ml/show_subscription_details")
+        return self.redirect(rs, "ml/show_subscription_details")
 
     @access("ml", modi={"POST"})
     @mailinglist_guard(requires_privilege=True)
@@ -869,6 +878,9 @@ class MlBaseFrontend(AbstractUserFrontend):
                           subscriber_id: vtypes.ID) -> Response:
         """Administratively unsubscribe somebody."""
         if rs.has_validation_errors():
+            return self.management(rs, mailinglist_id)
+        if not self.coreproxy.verify_id(rs, subscriber_id, is_archived=False):
+            rs.notify("error", n_("User does not exist or is archived."))
             return self.management(rs, mailinglist_id)
         self._subscription_action_handler(
             rs, SubscriptionActions.remove_subscriber,
@@ -889,6 +901,9 @@ class MlBaseFrontend(AbstractUserFrontend):
         user about his relation to this mailinglist.
         """
         if rs.has_validation_errors():
+            return self.show_subscription_details(rs, mailinglist_id)
+        if not self.coreproxy.verify_id(rs, unsubscription_id, is_archived=False):
+            rs.notify("error", n_("User does not exist or is archived."))
             return self.show_subscription_details(rs, mailinglist_id)
         self._subscription_action_handler(
             rs, SubscriptionActions.reset_unsubscription,
@@ -920,6 +935,9 @@ class MlBaseFrontend(AbstractUserFrontend):
         """Administratively remove somebody with moderator override."""
         if rs.has_validation_errors():
             return self.show_subscription_details(rs, mailinglist_id)
+        if not self.coreproxy.verify_id(rs, modsubscriber_id, is_archived=False):
+            rs.notify("error", n_("User does not exist or is archived."))
+            return self.show_subscription_details(rs, mailinglist_id)
         self._subscription_action_handler(
             rs, SubscriptionActions.remove_subscription_override,
             mailinglist_id=mailinglist_id, persona_id=modsubscriber_id)
@@ -950,6 +968,9 @@ class MlBaseFrontend(AbstractUserFrontend):
                                        modunsubscriber_id: vtypes.ID) -> Response:
         """Administratively remove block."""
         if rs.has_validation_errors():
+            return self.show_subscription_details(rs, mailinglist_id)
+        if not self.coreproxy.verify_id(rs, modunsubscriber_id, is_archived=False):
+            rs.notify("error", n_("User does not exist or is archived."))
             return self.show_subscription_details(rs, mailinglist_id)
         self._subscription_action_handler(
             rs, SubscriptionActions.remove_unsubscription_override,
