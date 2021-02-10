@@ -602,12 +602,15 @@ class TestEventFrontend(FrontendTest):
 
     @as_users("annika", "garcia")
     def test_part_summary_trivial(self, user: CdEDBObject) -> None:
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/part/summary'})
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Log")
+        self.assertTitle("Große Testakademie 2222: Log [1–4 von 4]")
+        self.traverse("Veranstaltungsteile")
         self.assertTitle("Veranstaltungsteile konfigurieren (Große Testakademie 2222)")
         f = self.response.forms['partsummaryform']
         self.assertEqual("Warmup", f['title_1'].value)
+        self.submit(f)
+        self.traverse("Log")
+        self.assertTitle("Große Testakademie 2222: Log [1–4 von 4]")
 
     @as_users("annika")
     def test_part_summary_complex(self, user: CdEDBObject) -> None:
