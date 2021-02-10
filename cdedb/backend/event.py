@@ -1715,8 +1715,8 @@ class EventBackend(AbstractBackend):
                         change_note=new_part['title'])
                 current = self.sql_select(
                     rs, "event.event_parts", EVENT_PART_FIELDS, updated | deleted)
-                current = {e['id']: {k: v for k, v in e.items()
-                                     if k not in {'event_id'}} for e in current}
+                current_data = {e['id']: {k: v for k, v in e.items()
+                                          if k not in {'event_id'}} for e in current}
                 for x in mixed_existence_sorter(updated):
                     update = copy.deepcopy(parts[x])
                     update['id'] = x
@@ -1735,7 +1735,7 @@ class EventBackend(AbstractBackend):
                             raise ValueError(n_("Unfit field for %(field)s"),
                                              {'field': 'waitlist_field'})
                     ret *= self._set_tracks(rs, data['id'], x, tracks)
-                    if current[x] != update:
+                    if current_data[x] != update:
                         ret *= self.sql_update(rs, "event.event_parts", update)
                         self.event_log(rs, const.EventLogCodes.part_changed, data['id'],
                                        change_note=current[x]['title'])
@@ -1833,8 +1833,8 @@ class EventBackend(AbstractBackend):
                 current = self.sql_select(
                     rs, "event.fee_modifiers", FEE_MODIFIER_FIELDS, part_ids,
                     entity_key="part_id")
-                current = {e['id']: e for e in current}
-                existing = set(current)
+                current_data = {e['id']: e for e in current}
+                existing = set(current_data)
                 if not (existing >= {x for x in fee_modifiers if x > 0}):
                     raise ValueError(n_("Non-existing fee modifier specified."))
                 new = {x for x in fee_modifiers if x < 0}
@@ -1850,19 +1850,19 @@ class EventBackend(AbstractBackend):
                         rs, elc.fee_modifier_created, data['id'],
                         change_note=fee_modifiers[x]['modifier_name'])
                 for x in mixed_existence_sorter(updated):
-                    if fee_modifiers[x] != current[x]:
+                    if fee_modifiers[x] != current_data[x]:
                         print("here")
                         ret *= self.sql_update(
                             rs, "event.fee_modifiers", fee_modifiers[x])
                         self.event_log(
                             rs, elc.fee_modifier_changed, data['id'],
-                            change_note=current[x]['modifier_name'])
+                            change_note=current_data[x]['modifier_name'])
                 if deleted:
                     ret *= self.sql_delete(rs, "event.fee_modifiers", deleted)
                     for x in mixed_existence_sorter(deleted):
                         self.event_log(
                             rs, elc.fee_modifier_deleted,
-                            data['id'], change_note=current[x]['modifier_name'])
+                            data['id'], change_note=current_data[x]['modifier_name'])
 
         return ret
 
