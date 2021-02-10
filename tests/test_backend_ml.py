@@ -705,12 +705,10 @@ class TestMlBackend(BackendTest):
 
     @as_users("anton")
     def test_opt_out_unsubscriptions(self, user: CdEDBObject) -> None:
+        # the mailinglist is member opt-out. Quintus, Annika and Farin are no member
+        # but explict unsubscribed from this list
         mailinglist_id = 2
 
-        # Ferdinand is unsubscribed already, resubscribe
-        if user['id'] == 6:
-            self._change_sub(6, mailinglist_id, SA.add_subscriber,
-                             state=SS.subscribed)
         for persona_id in {17, 27, 32}:
             self._change_sub(persona_id, mailinglist_id,
                              SA.reset_unsubscription,
@@ -718,7 +716,7 @@ class TestMlBackend(BackendTest):
         self.ml.write_subscription_states(self.key, mailinglist_id)
         for persona_id in {17, 27, 32}:
             new_state = self.ml.get_subscription(self.key, persona_id=persona_id,
-                                                mailinglist_id=mailinglist_id)
+                                                 mailinglist_id=mailinglist_id)
             self.assertIsNone(new_state)
             self._change_sub(persona_id, mailinglist_id, SA.add_subscriber,
                              state=None, kind='error')
@@ -729,7 +727,7 @@ class TestMlBackend(BackendTest):
         self.ml.write_subscription_states(self.key, mailinglist_id)
         for persona_id in {17, 27, 32}:
             new_state = self.ml.get_subscription(self.key, persona_id=persona_id,
-                                                mailinglist_id=mailinglist_id)
+                                                 mailinglist_id=mailinglist_id)
             self.assertIsNone(new_state)
 
     @as_users("anton", "berta", "ferdinand")
