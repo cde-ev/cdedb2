@@ -28,7 +28,7 @@ with Script(rs, dry_run=DRY_RUN):
         is_archivable = core.is_persona_automatically_archivable(rs, persona_id)
         last_session = core.get_persona_latest_session(rs, persona_id)
         if is_archivable and last_session is None:
-            note = "Automatically archived after prolonged inactivity."
+            note = "Automatisch archiviert auf Grund von langer Inaktivität."
             print(f"Archiving user {persona_id}...", end=" ")
             try:
                 code = core.archive_persona(rs, persona_id, note)
