@@ -1680,6 +1680,21 @@ class CdEMailmanClient(mailmanclient.Client):
             return mmlist.held if mmlist else None
         return None
 
+    def get_held_message_count(self, dblist: CdEDBObject) -> Optional[int]:
+        """Returns the number of held messages for a mailman list.
+
+        If the list is not managed by mailman, this returns None instead.
+        """
+        if self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or self.conf["CDEDB_DEV"]:
+            self.logger.info("Skipping mailman query in dev/offline mode.")
+            if self.conf["CDEDB_DEV"]:
+                if dblist["domain"] in const.MailinglistDomain.mailman_domains():
+                    return len(HELD_MESSAGE_SAMPLE)
+        elif dblist["domain"] in const.MailinglistDomain.mailman_domains():
+            mmlist = self.get_list_safe(dblist['address'])
+            return mmlist.get_held_count() if mmlist else None
+        return None
+
 
 class Worker(threading.Thread):
     """Customization wrapper around ``threading.Thread``.
@@ -2092,7 +2107,7 @@ def REQUESTdata(
         as well as some native python types (primitives, datetimes, decimals).
         Additonally the generic types ``Optional[T]`` and ``Collection[T]``
         are valid as a type.
-        To extract an encoded parameter one may prepended the name of it 
+        To extract an encoded parameter one may prepended the name of it
         with an octothorpe (``#``).
     """
 
