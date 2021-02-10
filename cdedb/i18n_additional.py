@@ -217,13 +217,6 @@ I18N_STRINGS = (
     n_("RegistrationPartStati.cancelled"),
     n_("RegistrationPartStati.rejected"),
 
-    n_("MailinglistInteractionPolicy.mandatory"),
-    n_("MailinglistInteractionPolicy.opt_out"),
-    n_("MailinglistInteractionPolicy.opt_in"),
-    n_("MailinglistInteractionPolicy.moderated_opt_in"),
-    n_("MailinglistInteractionPolicy.invitation_only"),
-    n_("MailinglistInteractionPolicy.implicits_only"),
-
     n_("LastschriftTransactionStati.issued"),
     n_("LastschriftTransactionStati.skipped"),
     n_("LastschriftTransactionStati.success"),
@@ -254,7 +247,7 @@ I18N_STRINGS = (
     n_("QueryOperators.greaterequal"),
     n_("QueryOperators.greater"),
 
-    n_("MailinglistGroup.other"),
+    n_("MailinglistGroup.public"),
     n_("MailinglistGroup.cde"),
     n_("MailinglistGroup.team"),
     n_("MailinglistGroup.event"),
@@ -273,7 +266,10 @@ I18N_STRINGS = (
     n_("MailinglistTypes.assembly_associated"),
     n_("MailinglistTypes.assembly_opt_in"),
     n_("MailinglistTypes.assembly_presider"),
+    n_("MailinglistTypes.general_mandatory"),
     n_("MailinglistTypes.general_opt_in"),
+    n_("MailinglistTypes.general_moderators"),
+    n_("MailinglistTypes.cdelokal_moderators"),
     n_("MailinglistTypes.semi_public"),
     n_("MailinglistTypes.cdelokal"),
 

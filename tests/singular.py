@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
     unittest.defaultTestLoader.testNamePatterns = [
         pattern if "*" in pattern else f"*{pattern}*" for pattern in patterns]
-    all_tests = unittest.defaultTestLoader.discover('./tests/', top_level_dir=root)
+    all_tests = unittest.defaultTestLoader.discover('tests', top_level_dir=str(root))
 
     unittest.installHandler()
     testRunner = MyTextTestRunner(verbosity=2, resultclass=MyTextTestResult)

@@ -562,8 +562,10 @@ class MlBackend(AbstractBackend):
         new_type = ml_type.get_type(new_type)
         # implicitly atomized context.
         self.affirm_atomized_context(rs)
-        obsolete_fields = set(f for f, _ in (old_type.get_additional_fields() -
-                                             new_type.get_additional_fields()))
+        obsolete_fields = (
+            old_type.get_additional_fields().keys()
+            - new_type.get_additional_fields().keys()
+        )
         if obsolete_fields:
             setter = ", ".join(f"{f} = DEFAULT" for f in obsolete_fields)
             query = f"UPDATE ml.mailinglists SET {setter} WHERE id = %s"
@@ -981,9 +983,8 @@ class MlBackend(AbstractBackend):
                 not policy or policy.is_implicit()):
             raise SubscriptionError(n_(
                 "User has no means to access this list."))
-        elif action == sa.subscribe and policy not in (
-                const.MailinglistInteractionPolicy.opt_out,
-                const.MailinglistInteractionPolicy.opt_in):
+        elif (action == sa.subscribe and
+                policy != const.MailinglistInteractionPolicy.subscribable):
             raise SubscriptionError(n_("Can not subscribe."))
         elif (action.is_unsubscribing()
                 and not self.get_ml_type(rs, mailinglist_id).allow_unsub):
@@ -1343,7 +1344,9 @@ class MlBackend(AbstractBackend):
             if not self.may_manage(rs, mailinglist_id, privileged=True):
                 raise PrivilegeError(n_("Not privileged."))
 
-            if not atype.periodic_cleanup(rs, ml):
+            # Only run write_subscription_states if the mailinglist is active and has
+            # periodic cleanup enabled.
+            if not atype.periodic_cleanup(rs, ml) or not ml['is_active']:
                 return ret
 
             old_subscribers = self.get_subscription_states(
@@ -1407,13 +1410,7 @@ class MlBackend(AbstractBackend):
 
     @access("persona")
     def verify_existence(self, rs: RequestState, address: str) -> bool:
-        """
-        Check whether a mailinglist with the given address is known.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type address: str
-        :rtype: bool
-        """
+        """Check whether a mailinglist with the given address is known."""
         address = affirm(vtypes.Email, address)
 
         query = "SELECT COUNT(*) AS num FROM ml.mailinglists WHERE address = %s"

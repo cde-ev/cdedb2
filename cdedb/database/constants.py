@@ -7,8 +7,9 @@ correct numeric values. The raw values should never be used, instead
 their symbolic names provided by this module should be used.
 """
 
+import datetime
 import enum
-from typing import Dict, Set
+from typing import Any, Dict, Set, Type
 
 
 def n_(x: str) -> str:
@@ -185,7 +186,11 @@ class MailinglistTypes(enum.IntEnum):
     assembly_opt_in = 31
     assembly_presider = 32
 
+    general_mandatory = 38
     general_opt_in = 40
+
+    general_moderators = 45
+    cdelokal_moderators = 46
 
     semi_public = 50
 
@@ -198,8 +203,9 @@ class MailinglistDomain(enum.IntEnum):
     general = 3
     cdelokal = 4
 
-    cdemuenchen = 10
-    dokuforge = 11
+    # The domains are not supported. To avoid conflicts, do not reuse:
+    # cdemuenchen = 10
+    # dokuforge = 11
 
     testmail = 100
 
@@ -219,8 +225,6 @@ _DOMAIN_STR_MAP: Dict[MailinglistDomain, str] = {
     MailinglistDomain.aka: "aka.cde-ev.de",
     MailinglistDomain.general: "cde-ev.de",
     MailinglistDomain.cdelokal: "cdelokal.cde-ev.de",
-    MailinglistDomain.cdemuenchen: "cde-muenchen.de",
-    MailinglistDomain.dokuforge: "dokuforge.de",
     MailinglistDomain.testmail: "testmail.cde-ev.de",
 }
 
@@ -228,13 +232,11 @@ _DOMAIN_STR_MAP: Dict[MailinglistDomain, str] = {
 @enum.unique
 class MailinglistInteractionPolicy(enum.IntEnum):
     """Regulate (un)subscriptions to mailinglists."""
-    #: everybody is subscribed (think CdE-all)
-    mandatory = 1
-    opt_out = 2  #:
-    opt_in = 3  #:
-    #: everybody may subscribe, but only after approval
+    #: user may subscribe
+    subscribable = 3
+    #: user may subscribe, but only after approval
     moderated_opt_in = 4
-    #: nobody may subscribe by themselves
+    #: user may not subscribe by themselves
     invitation_only = 5
     #: only implicit subscribers allowed
     implicits_only = 6

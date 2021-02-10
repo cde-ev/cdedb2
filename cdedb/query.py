@@ -157,10 +157,22 @@ class Query:
                       for atom in entry.split(".")),
              ascending)
             for entry, ascending in self.order]
-        for field, _, _ in self.constraints:
-            if '"' in field:
-                self.spec[field] = self.spec[field.replace('"', '')]
-                del self.spec[field.replace('"', '')]
+        # Fix our fix
+        changed_fields = set()
+        for column in self.fields_of_interest:
+            for moniker in column.split(","):
+                if '"' in moniker:
+                    changed_fields.add(moniker)
+        for column, _, _ in self.constraints:
+            for moniker in column.split(","):
+                if '"' in moniker:
+                    changed_fields.add(moniker)
+        for moniker, _ in self.order:
+            if '"' in moniker:
+                changed_fields.add(moniker)
+        for field in changed_fields:
+            self.spec[field] = self.spec[field.replace('"', '')]
+            del self.spec[field.replace('"', '')]
 
 
 #: Available query templates. These may be enriched by ext-fields. Order is

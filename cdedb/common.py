@@ -20,9 +20,9 @@ import string
 import sys
 from secrets import choice
 from typing import (
-    TYPE_CHECKING, AbstractSet, Any, Callable, Collection, Container, Dict, Generator,
+    Generic, NamedTuple, TYPE_CHECKING, AbstractSet, Any, Callable, Collection, Container, Dict, Generator,
     Iterable, KeysView, List, Mapping, MutableMapping, MutableSequence, Optional,
-    Sequence, Set, Tuple, Type, TypeVar, Union, cast, overload,
+    Sequence, Set, Tuple, Type, TypeVar, Union, cast, overload
 )
 
 import icu
@@ -1111,12 +1111,14 @@ def infinite_enum(aclass: T) -> T:
     return aclass
 
 
+E = TypeVar("E", bound=enum.IntEnum)
+
 #: Storage facility for infinite enums with associated data, see
 #: :py:func:`infinite_enum`
 @functools.total_ordering
-class InfiniteEnum:
+class InfiniteEnum(Generic[E]):
     # noinspection PyShadowingBuiltins
-    def __init__(self, enum: enum.IntEnum, int_: int):
+    def __init__(self, enum: E, int_: int):
         self.enum = enum
         self.int = int_
 

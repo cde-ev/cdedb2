@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 
-import datetime
-import decimal
+from typing import Collection, Set, Optional, cast
 
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
-from cdedb.common import PrivilegeError, SubscriptionActions as SA, SubscriptionError
+from cdedb.common import (
+    CdEDBObject, PrivilegeError, RequestState, SubscriptionActions as SA,
+    SubscriptionError
+)
 from cdedb.database.constants import SubscriptionStates as SS
-from cdedb.query import QUERY_SPECS, QueryOperators
 from tests.common import USER_DICT, BackendTest, as_users, nearly_now, prepsql
 
 
@@ -15,7 +16,7 @@ class TestMlBackend(BackendTest):
     used_backends = ("core", "ml")
 
     @as_users("janis")
-    def test_basics(self, user):
+    def test_basics(self, user: CdEDBObject) -> None:
         data = self.core.get_ml_user(self.key, user['id'])
         data['display_name'] = "Zelda"
         data['family_name'] = "Lord von und zu Hylia"
@@ -26,7 +27,7 @@ class TestMlBackend(BackendTest):
         self.assertEqual(data, new_data)
 
     @as_users("nina")
-    def test_entity_mailinglist(self, user):
+    def test_entity_mailinglist(self, user: CdEDBObject) -> None:
         expectation = {
             1: 'Verkündungen',
             2: 'Werbung',
@@ -38,6 +39,9 @@ class TestMlBackend(BackendTest):
             9: 'Teilnehmer-Liste',
             10: 'Warte-Liste',
             11: 'Kampfbrief-Kommentare',
+            12: 'Moderatoren-Liste',
+            13: 'Allumfassende Liste',
+            14: 'Lokalgruppen-Liste',
             51: 'CdE-All',
             52: 'CdE-Info',
             53: 'Mitgestaltungsforum',
@@ -145,7 +149,7 @@ class TestMlBackend(BackendTest):
         self.assertEqual(expectation, self.ml.get_mailinglist(self.key, 7))
 
     @as_users("janis")
-    def test_double_link(self, user):
+    def test_double_link(self, user: CdEDBObject) -> None:
         setter = {
             'id': 7,
             'event_id': 1,
@@ -155,7 +159,7 @@ class TestMlBackend(BackendTest):
             self.ml.set_mailinglist(self.key, setter)
 
     @as_users("nina")
-    def test_mailinglist_creation_deletion(self, user):
+    def test_mailinglist_creation_deletion(self, user: CdEDBObject) -> None:
         oldlists = self.ml.list_mailinglists(self.key)
         new_data = {
             'local_part': 'revolution',
@@ -176,7 +180,7 @@ class TestMlBackend(BackendTest):
                 'fidel@example.cde',
                 'che@example.cde',
             },
-            'ml_type': const.MailinglistTypes.member_invitation_only.value,
+            'ml_type': const.MailinglistTypes.member_invitation_only,
         }
         new_id = self.ml.create_mailinglist(self.key, new_data)
         self.assertLess(0, new_id)
@@ -185,7 +189,9 @@ class TestMlBackend(BackendTest):
         new_data['id'] = new_id
         new_data['address'] = ml_type.get_full_address(new_data)
         new_data['domain_str'] = str(new_data['domain'])
-        new_data['ml_type_class'] = ml_type.get_type(new_data['ml_type'])
+        atype = new_data['ml_type']
+        assert isinstance(atype, const.MailinglistTypes)
+        new_data['ml_type_class'] = ml_type.get_type(atype)
         self.assertEqual(new_data, self.ml.get_mailinglist(self.key, new_id))
         self.assertLess(0, self.ml.delete_mailinglist(
             self.key, new_id, cascade=("subscriptions", "addresses",
@@ -193,7 +199,7 @@ class TestMlBackend(BackendTest):
         self.assertNotIn(new_id, self.ml.list_mailinglists(self.key))
 
     @as_users("nina")
-    def test_mailinglist_creation_optional_fields(self, user):
+    def test_mailinglist_creation_optional_fields(self, user: CdEDBObject) -> None:
         new_data = {
             'local_part': 'revolution',
             'domain': const.MailinglistDomain.lists,
@@ -209,6 +215,7 @@ class TestMlBackend(BackendTest):
             'title': 'Proletarier aller Länder',
         }
         self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
+        assert isinstance(new_data['moderators'], Set)
         new_data['moderators'] |= {100000}
         with self.assertRaises(ValueError):
             self.ml.create_mailinglist(self.key, new_data)
@@ -218,6 +225,7 @@ class TestMlBackend(BackendTest):
         with self.assertRaises(ValueError):
             self.ml.create_mailinglist(self.key, new_data)
         new_data['moderators'] -= {8}
+        assert isinstance(new_data['local_part'], str)
         new_data['local_part'] += "x"
         new_data['registration_stati'] = [const.RegistrationPartStati.guest]
         with self.assertRaises(ValueError):
@@ -248,7 +256,7 @@ class TestMlBackend(BackendTest):
         self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
 
     @as_users("nina")
-    def test_sample_data(self, user):
+    def test_sample_data(self, user: CdEDBObject) -> None:
         ml_ids = self.ml.list_mailinglists(self.key, active_only=False)
 
         for ml_id in ml_ids:
@@ -261,10 +269,10 @@ class TestMlBackend(BackendTest):
 
     @as_users("nina", "berta", "janis")
     @prepsql("INSERT INTO ml.moderators (mailinglist_id, persona_id) VALUES (60, 10)")
-    def test_moderator_set_mailinglist(self, user):
+    def test_moderator_set_mailinglist(self, user: CdEDBObject) -> None:
         mailinglist_id = 60
 
-        admin_mdatas = [
+        admin_mdatas: Collection[CdEDBObject] = [
             {
                 'id': mailinglist_id,
                 'ml_type': const.MailinglistTypes.event_associated,
@@ -343,7 +351,7 @@ class TestMlBackend(BackendTest):
         self.assertEqual(expectation, reality)
 
     @as_users("nina", "berta")
-    def test_subscriptions(self, user):
+    def test_subscriptions(self, user: CdEDBObject) -> None:
         # Which lists is Berta subscribed to.
         expectation = {
             1: SS.implicit,
@@ -353,56 +361,67 @@ class TestMlBackend(BackendTest):
             5: SS.implicit,
             6: SS.subscribed,
             9: SS.implicit,
-           51: SS.implicit,
-           52: SS.implicit,
-           53: SS.subscribed,
-           54: SS.pending,
-           59: SS.implicit,
-           63: SS.subscribed
+            12: SS.implicit,
+            13: SS.implicit,
+            51: SS.implicit,
+            52: SS.implicit,
+            53: SS.subscribed,
+            54: SS.pending,
+            59: SS.implicit,
+            63: SS.subscribed
         }
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=2))
 
     @as_users("nina", "janis")
-    def test_subscriptions_two(self, user):
+    def test_subscriptions_two(self, user: CdEDBObject) -> None:
         # Which lists is Janis subscribed to.
         expectation = {
             3: SS.subscribed,
-           64: SS.subscribed,
-           65: SS.subscribed,
+            12: SS.implicit,
+            13: SS.implicit,
+            64: SS.subscribed,
+            65: SS.subscribed,
         }
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=10))
 
     @as_users("nina", "emilia")
-    def test_subscriptions_three(self, user):
+    def test_subscriptions_three(self, user: CdEDBObject) -> None:
         expectation = {
             9: SS.unsubscribed,
-           10: SS.implicit,
-           58: SS.implicit,
+            10: SS.implicit,
+            12: SS.implicit,
+            13: SS.implicit,
+            14: SS.implicit,
+            58: SS.implicit,
         }
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=5))
 
     @as_users("nina", "garcia")
-    def test_subscriptions_four(self, user):
+    def test_subscriptions_four(self, user: CdEDBObject) -> None:
         expectation = {
             1: SS.implicit,
             2: SS.implicit,
             4: SS.unsubscription_override,
             8: SS.implicit,
             9: SS.subscribed,
-           51: SS.implicit,
-           52: SS.implicit,
-           53: SS.subscribed,
-           54: SS.unsubscription_override,
-           56: SS.pending,
+            12: SS.implicit,
+            13: SS.implicit,
+            51: SS.implicit,
+            52: SS.implicit,
+            53: SS.subscribed,
+            54: SS.unsubscription_override,
+            56: SS.pending,
+            61: SS.implicit,
         }
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=7))
 
     # These are some helpers to make the following tests less ugly
-    def _check_state(self, persona_id, mailinglist_id, expected_state):
+    def _check_state(self, persona_id: int, mailinglist_id: int,
+                     expected_state: Optional[SS]) -> None:
         """This asserts that user has expected_state on given mailinglist."""
         state = self.ml.get_subscription(
             self.key, persona_id=persona_id, mailinglist_id=mailinglist_id)
@@ -411,28 +430,26 @@ class TestMlBackend(BackendTest):
         else:
             self.assertIsNone(state)
 
-    def _change_sub(self, persona_id, mailinglist_id, action, code=None,
-                    state=None, kind=None):
+    def _change_sub(self, persona_id: int, mailinglist_id: int, action: SA,
+                    state: SS = None, kind: str = None) -> None:
         """This calls functions to (administratively) modify the own subscription
         state on a given mailinglist to state and asserts they return code and
-        have the correct state after the operation. code=None asserts that a
-        SubscriptionError is raised. If kind is given, the error is verified
-        to be of the specified kind."""
-        if code is not None:
+        have the correct state after the operation. If kind is given, we assert that a
+        SubscriptionError of the specified kind is raised."""
+        if kind is None:
             result = self.ml.do_subscription_action(
                 self.key, action, mailinglist_id=mailinglist_id,
                 persona_id=persona_id)
-            self.assertEqual(result, code)
+            self.assertEqual(result, 1)
             action_state = action.get_target_state()
         else:
             with self.assertRaises(SubscriptionError) as cm:
                 self.ml.do_subscription_action(
                     self.key, action, mailinglist_id=mailinglist_id,
                     persona_id=persona_id)
-            if kind is not None:
-                self.assertEqual(cm.exception.kind, kind)
+            self.assertEqual(cm.exception.kind, kind)
             action_state = state
-        # "This asserts that user has state on a given mailinglist.
+        # This asserts that user has state on a given mailinglist.
         actual_state = self.ml.get_subscription(
             self.key, persona_id=persona_id, mailinglist_id=mailinglist_id)
         if state is not None:
@@ -444,7 +461,7 @@ class TestMlBackend(BackendTest):
         # In case of success and check if log entry was created, if the required
         # permissions are present. This should work for moderators as well,
         # but it does not for some reason.
-        if code is not None and self.ml.may_manage(self.key, mailinglist_id):
+        if kind is None and self.ml.may_manage(self.key, mailinglist_id):
             expected_log = {
                 'change_note': None,
                 'code': action.get_log_code(),
@@ -461,7 +478,7 @@ class TestMlBackend(BackendTest):
             self.assertIn(expected_log, log_entries)
 
     @as_users("anton", "berta", "ferdinand")
-    def test_opt_in(self, user):
+    def test_opt_in(self, user: CdEDBObject) -> None:
         # this does test only ml_admins and moderators thoroughly, as we need
         # a user managing a list and a user interacting with it normally at
         # the same time.
@@ -471,87 +488,87 @@ class TestMlBackend(BackendTest):
         # this list is opt in. He should just be able to subscribe now.
         # This plays around with subscribing and unsubscribing.
         self._change_sub(user['id'], mailinglist_id, SA.subscribe,
-                         code=1, state=SS.subscribed)
+                         state=SS.subscribed)
         self._change_sub(user['id'], mailinglist_id, SA.subscribe,
-                         code=None, state=SS.subscribed, kind="info")
+                         state=SS.subscribed, kind="info")
         self._change_sub(user['id'], mailinglist_id, SA.add_subscriber,
-                         code=None, state=SS.subscribed, kind="info")
+                         state=SS.subscribed, kind="info")
         self._change_sub(user['id'], mailinglist_id, SA.unsubscribe,
-                         code=1, state=SS.unsubscribed)
+                         state=SS.unsubscribed)
         self._change_sub(user['id'], mailinglist_id, SA.unsubscribe,
-                         code=None, state=SS.unsubscribed, kind="info")
+                         state=SS.unsubscribed, kind="info")
         self._change_sub(user['id'], mailinglist_id, SA.remove_subscriber,
-                         code=None, state=SS.unsubscribed, kind="info")
+                         state=SS.unsubscribed, kind="info")
 
         # This does some basic override testing.
         self._change_sub(user['id'], mailinglist_id,
                          SA.add_unsubscription_override,
-                         code=1, state=SS.unsubscription_override)
+                         state=SS.unsubscription_override)
         self._change_sub(user['id'], mailinglist_id, SA.subscribe,
-                         code=None, state=SS.unsubscription_override, kind="error")
+                         state=SS.unsubscription_override, kind="error")
         self._change_sub(user['id'], mailinglist_id, SA.add_subscriber,
-                         code=None, state=SS.unsubscription_override, kind="error")
+                         state=SS.unsubscription_override, kind="error")
         self._change_sub(user['id'], mailinglist_id, SA.unsubscribe,
-                         code=None, state=SS.unsubscription_override, kind="info")
+                         state=SS.unsubscription_override, kind="info")
         self._change_sub(user['id'], mailinglist_id, SA.remove_subscriber,
-                         code=None, state=SS.unsubscription_override, kind="info")
+                         state=SS.unsubscription_override, kind="info")
         self._change_sub(user['id'], mailinglist_id, SA.add_subscription_override,
-                         code=1, state=SS.subscription_override)
+                         state=SS.subscription_override)
         self._change_sub(user['id'], mailinglist_id, SA.remove_subscriber,
-                         code=None, state=SS.subscription_override, kind="error")
+                         state=SS.subscription_override, kind="error")
         self._change_sub(user['id'], mailinglist_id, SA.subscribe,
-                         code=None, state=SS.subscription_override, kind="info")
+                         state=SS.subscription_override, kind="info")
         self._change_sub(user['id'], mailinglist_id, SA.add_subscriber,
-                         code=None, state=SS.subscription_override, kind="info")
+                         state=SS.subscription_override, kind="info")
         self._change_sub(user['id'], mailinglist_id, SA.unsubscribe,
-                         code=1, state=SS.unsubscribed)
+                         state=SS.unsubscribed)
         self._change_sub(user['id'], mailinglist_id,
                          SA.remove_subscription_override,
-                         code=None, state=SS.unsubscribed, kind="error")
+                         state=SS.unsubscribed, kind="error")
 
         # You cannot request subscriptions to such lists
         self._change_sub(user['id'], mailinglist_id,
                          SA.request_subscription,
-                         code=None, state=SS.unsubscribed, kind="error")
+                         state=SS.unsubscribed, kind="error")
 
         # This adds and removes some subscriptions
         self._change_sub(user['id'], mailinglist_id, SA.add_subscriber,
-                         code=1, state=SS.subscribed)
+                         state=SS.subscribed)
         self._change_sub(user['id'], mailinglist_id, SA.add_subscriber,
-                         code=None, state=SS.subscribed, kind="info")
+                         state=SS.subscribed, kind="info")
         self._change_sub(user['id'], mailinglist_id, SA.remove_subscriber,
-                         code=1, state=SS.unsubscribed)
+                         state=SS.unsubscribed)
         self._change_sub(user['id'], mailinglist_id, SA.remove_subscriber,
-                         code=None, state=SS.unsubscribed, kind="info")
+                         state=SS.unsubscribed, kind="info")
 
         # This does more override management testing
         self._change_sub(user['id'], mailinglist_id,
                          SA.remove_unsubscription_override,
-                         code=None, state=SS.unsubscribed, kind="error")
+                         state=SS.unsubscribed, kind="error")
         self._change_sub(user['id'], mailinglist_id,
                          SA.remove_subscription_override,
-                         code=None, state=SS.unsubscribed, kind="error")
+                         state=SS.unsubscribed, kind="error")
         self._change_sub(user['id'], mailinglist_id,
-                             SA.subscribe,
-                         code=1, state=SS.subscribed)
+                         SA.subscribe,
+                         state=SS.subscribed)
         self._change_sub(user['id'], mailinglist_id,
                          SA.add_unsubscription_override,
-                         code=1, state=SS.unsubscription_override)
+                         state=SS.unsubscription_override)
         self._change_sub(user['id'], mailinglist_id,
                          SA.remove_unsubscription_override,
-                         code=1, state=SS.unsubscribed)
+                         state=SS.unsubscribed)
         self._change_sub(user['id'], mailinglist_id,
                          SA.add_subscription_override,
-                         code=1, state=SS.subscription_override)
+                         state=SS.subscription_override)
         self._change_sub(user['id'], mailinglist_id,
                          SA.remove_subscription_override,
-                         code=1, state=SS.subscribed)
+                         state=SS.subscribed)
         self._change_sub(user['id'], mailinglist_id,
                          SA.remove_subscription_override,
-                         code=None, state=SS.subscribed, kind="error")
+                         state=SS.subscribed, kind="error")
 
     @as_users("anton", "berta", "ferdinand")
-    def test_moderated_opt_in(self, user):
+    def test_moderated_opt_in(self, user: CdEDBObject) -> None:
         # this does test only ml_admins and moderators thoroughly, as we need
         # a user managing a list and a user interacting with it normally at
         # the same time.
@@ -560,66 +577,66 @@ class TestMlBackend(BackendTest):
         # Anton and Berta are already subscribed, unsubscribe them first
         if user['id'] in {1, 2}:
             self._change_sub(user['id'], mailinglist_id,
-                                 SA.unsubscribe,
-                             code=1, state=SS.unsubscribed)
+                             SA.unsubscribe,
+                             state=SS.unsubscribed)
 
         # Try to subscribe
         expected_state = SS.unsubscribed if user['id'] in {1, 2} else None
         self._change_sub(user['id'], mailinglist_id, SA.subscribe,
-                         code=None, state=expected_state, kind="error")
+                         state=expected_state, kind="error")
 
         # Test cancelling a subscription request
         self._change_sub(user['id'], mailinglist_id, SA.request_subscription,
-                         code=1, state=SS.pending)
+                         state=SS.pending)
         self._change_sub(user['id'], mailinglist_id, SA.cancel_request,
-                         code=1, state=None)
+                         state=None)
         self._change_sub(user['id'], mailinglist_id, SA.deny_request,
-                         code=None, state=None)
+                         state=None, kind='error')
 
         # Test different resolutions
         self._change_sub(user['id'], mailinglist_id, SA.request_subscription,
-                         code=1, state=SS.pending)
+                         state=SS.pending)
         self._change_sub(user['id'], mailinglist_id, SA.deny_request,
-                         code=1, state=None)
+                         state=None)
 
         self._change_sub(user['id'], mailinglist_id, SA.request_subscription,
-                         code=1, state=SS.pending)
+                         state=SS.pending)
         self._change_sub(user['id'], mailinglist_id, SA.approve_request,
-                         code=1, state=SS.subscribed)
+                         state=SS.subscribed)
         self._change_sub(user['id'], mailinglist_id, SA.unsubscribe,
-                         code=1, state=SS.unsubscribed)
+                         state=SS.unsubscribed)
 
         # Make sure it is impossible to subscribe if blocked
         self._change_sub(user['id'], mailinglist_id, SA.request_subscription,
-                         code=1, state=SS.pending)
+                         state=SS.pending)
         self._change_sub(user['id'], mailinglist_id, SA.block_request,
-                         code=1, state=SS.unsubscription_override)
+                         state=SS.unsubscription_override)
         self._change_sub(user['id'], mailinglist_id,
                          SA.request_subscription,
-                         code=None, state=SS.unsubscription_override, kind="error")
+                         state=SS.unsubscription_override, kind="error")
 
         self._change_sub(user['id'], mailinglist_id,
                          SA.remove_unsubscription_override,
-                         code=1, state=SS.unsubscribed)
+                         state=SS.unsubscribed)
 
         # Make sure it is impossible to remove a subscription request without
         # actually deciding it
         self._change_sub(user['id'], mailinglist_id, SA.request_subscription,
-                         code=1, state=SS.pending)
+                         state=SS.pending)
         self._change_sub(user['id'], mailinglist_id, SA.add_subscriber,
-                         code=None, state=SS.pending, kind="error")
+                         state=SS.pending, kind="error")
         self._change_sub(user['id'], mailinglist_id, SA.add_subscription_override,
-                         code=None, state=SS.pending, kind="error")
+                         state=SS.pending, kind="error")
         self._change_sub(user['id'], mailinglist_id,
                          SA.add_unsubscription_override,
-                         code=None, state=SS.pending, kind="error")
+                         state=SS.pending, kind="error")
         self._change_sub(user['id'], mailinglist_id, SA.deny_request,
-                         code=1, state=None)
+                         state=None)
         self._change_sub(user['id'], mailinglist_id, SA.add_subscriber,
-                         code=1, state=SS.subscribed)
+                         state=SS.subscribed)
 
     @as_users("anton", "ferdinand")
-    def test_opt_out(self, user):
+    def test_opt_out(self, user: CdEDBObject) -> None:
         # this does test only ml_admins and moderators thoroughly, as we need
         # a user managing a list and a user interacting with it normally at
         # the same time.
@@ -628,82 +645,82 @@ class TestMlBackend(BackendTest):
         # Ferdinand is unsubscribed already, resubscribe
         if user['id'] == 6:
             self._change_sub(user['id'], mailinglist_id, SA.subscribe,
-                             code=1, state=SS.subscribed)
+                             state=SS.subscribed)
 
         # Now we have a mix of explicit and implicit subscriptions, try to
         # subscribe again
         expected_state = SS.subscribed if user['id'] in {6, 14} else SS.implicit
         self._change_sub(user['id'], mailinglist_id, SA.subscribe,
-                         code=None, state=expected_state, kind="info")
+                         state=expected_state, kind="info")
 
         # Now everyone unsubscribes (twice)
         self._change_sub(user['id'], mailinglist_id, SA.unsubscribe,
-                         code=1, state=SS.unsubscribed)
+                         state=SS.unsubscribed)
         self._change_sub(user['id'], mailinglist_id, SA.unsubscribe,
-                         code=None, state=SS.unsubscribed, kind="info")
+                         state=SS.unsubscribed, kind="info")
 
         # Test administrative subscriptions
         self._change_sub(user['id'], mailinglist_id, SA.add_subscriber,
-                         code=1, state=SS.subscribed)
+                         state=SS.subscribed)
         self._change_sub(user['id'], mailinglist_id, SA.add_subscriber,
-                         code=None, state=SS.subscribed, kind="info")
+                         state=SS.subscribed, kind="info")
         self._change_sub(user['id'], mailinglist_id, SA.subscribe,
-                         code=None, state=SS.subscribed, kind="info")
+                         state=SS.subscribed, kind="info")
         self._change_sub(user['id'], mailinglist_id, SA.remove_subscriber,
-                         code=1, state=SS.unsubscribed)
+                         state=SS.unsubscribed)
 
         # Test blocks
         self._change_sub(user['id'], mailinglist_id, SA.add_unsubscription_override,
-                         code=1, state=SS.unsubscription_override)
+                         state=SS.unsubscription_override)
         self._change_sub(user['id'], mailinglist_id, SA.subscribe,
-                         code=None, state=SS.unsubscription_override, kind="error")
+                         state=SS.unsubscription_override, kind="error")
         self._change_sub(user['id'], mailinglist_id, SA.add_subscriber,
-                         code=None, state=SS.unsubscription_override, kind="error")
+                         state=SS.unsubscription_override, kind="error")
         self._change_sub(user['id'], mailinglist_id, SA.remove_unsubscription_override,
-                         code=1, state=SS.unsubscribed)
+                         state=SS.unsubscribed)
 
         # Test forced subscriptions
         self._change_sub(user['id'], mailinglist_id, SA.subscribe,
-                         code=1, state=SS.subscribed)
+                         state=SS.subscribed)
         self._change_sub(user['id'], mailinglist_id, SA.add_subscription_override,
-                         code=1, state=SS.subscription_override)
+                         state=SS.subscription_override)
         self._change_sub(user['id'], mailinglist_id, SA.remove_subscriber,
-                         code=None, state=SS.subscription_override, kind="error")
+                         state=SS.subscription_override, kind="error")
         self._change_sub(user['id'], mailinglist_id, SA.unsubscribe,
-                         code=1, state=SS.unsubscribed)
+                         state=SS.unsubscribed)
 
     @as_users("anton", "berta", "ferdinand")
-    def test_mandatory(self, user):
+    def test_mandatory(self, user: CdEDBObject) -> None:
         # this does test only ml_admins and moderators thoroughly, as we need
         # a user managing a list and a user interacting with it normally at
         # the same time.
         mailinglist_id = 1
 
-        def _try_unsubscribe(expected_state):
+        def _try_unsubscribe(expected_state: SS) -> None:
             # Try to unsubscribe
             self._change_sub(user['id'], mailinglist_id,
                              SA.unsubscribe,
-                             code=None, state=expected_state, kind="error")
+                             state=expected_state, kind="error")
             # Try to remove subscription
             self._change_sub(user['id'], mailinglist_id,
                              SA.remove_subscriber,
-                             code=None, state=expected_state, kind="error")
+                             state=expected_state, kind="error")
             # Try to block user
             self._change_sub(user['id'], mailinglist_id,
                              SA.add_unsubscription_override,
-                             code=None, state=expected_state, kind="error")
+                             state=expected_state, kind="error")
 
         _try_unsubscribe(SS.implicit)
 
         # Force subscription
         self._change_sub(user['id'], mailinglist_id, SA.add_subscription_override,
-                         code=1, state=SS.subscription_override)
+                         state=SS.subscription_override)
         _try_unsubscribe(SS.subscription_override)
 
         # Remove forced subscription
         self._change_sub(user['id'], mailinglist_id,
                          SA.remove_subscription_override,
-                         code=1, state=SS.subscribed)
+                         state=SS.subscribed)
         _try_unsubscribe(SS.subscribed)
 
         # For admins, some shallow cron testing
@@ -712,7 +729,7 @@ class TestMlBackend(BackendTest):
             self._check_state(user['id'], mailinglist_id, SS.subscribed)
 
     @as_users('nina')
-    def test_mandatory_two(self, user):
+    def test_mandatory_two(self, user: CdEDBObject) -> None:
         # this does test only ml_admins and moderators thoroughly, as we need
         # a user managing a list and a user interacting with it normally at
         # the same time.
@@ -720,13 +737,13 @@ class TestMlBackend(BackendTest):
 
         # Try to subscribe somehow
         self._change_sub(user['id'], mailinglist_id, SA.subscribe,
-                         code=None, state=None, kind="error")
+                         state=None, kind="error")
         self._change_sub(user['id'], mailinglist_id, SA.add_subscriber,
-                         code=None, state=None, kind="error")
+                         state=None, kind="error")
 
         # Force subscription
         self._change_sub(user['id'], mailinglist_id, SA.add_subscription_override,
-                         code=1, state=SS.subscription_override)
+                         state=SS.subscription_override)
 
         # Cron testing
         self.ml.write_subscription_states(self.key, mailinglist_id)
@@ -734,20 +751,20 @@ class TestMlBackend(BackendTest):
 
         # It is impossible to unsubscribe normally
         self._change_sub(user['id'], mailinglist_id, SA.unsubscribe,
-                         code=None, state=SS.subscription_override, kind="error")
+                         state=SS.subscription_override, kind="error")
         self._change_sub(user['id'], mailinglist_id, SA.remove_subscriber,
-                         code=None, state=SS.subscription_override, kind="error")
+                         state=SS.subscription_override, kind="error")
 
         # Remove subscription
         self._change_sub(user['id'], mailinglist_id, SA.remove_subscription_override,
-                         code=1, state=SS.subscribed)
+                         state=SS.subscribed)
 
         # Cron testing
         self.ml.write_subscription_states(self.key, mailinglist_id)
         self._check_state(user['id'], mailinglist_id, None)
 
     @as_users("anton")
-    def test_ml_event(self, user):
+    def test_ml_event(self, user: CdEDBObject) -> None:
         ml_id = 9
 
         expectation = {
@@ -761,18 +778,18 @@ class TestMlBackend(BackendTest):
         result = self.ml.get_subscription_states(self.key, ml_id)
         self.assertEqual(result, expectation)
 
-        self._change_sub(user['id'],  ml_id, SA.subscribe,
-                         code=None, state=SS.implicit, kind="info")
-        self._change_sub(user['id'],  ml_id, SA.unsubscribe,
-                         code=1, state=SS.unsubscribed)
-        self._change_sub(user['id'],  ml_id, SA.unsubscribe,
-                         code=None, state=SS.unsubscribed, kind="info")
-        self._change_sub(user['id'],  ml_id, SA.request_subscription,
-                         code=None, state=SS.unsubscribed, kind="error")
-        self._change_sub(user['id'],  ml_id, SA.subscribe,
-                         code=1, state=SS.subscribed)
-        self._change_sub(user['id'],  ml_id, SA.subscribe,
-                         code=None, state=SS.subscribed, kind="info")
+        self._change_sub(user['id'], ml_id, SA.subscribe,
+                         state=SS.implicit, kind="info")
+        self._change_sub(user['id'], ml_id, SA.unsubscribe,
+                         state=SS.unsubscribed)
+        self._change_sub(user['id'], ml_id, SA.unsubscribe,
+                         state=SS.unsubscribed, kind="info")
+        self._change_sub(user['id'], ml_id, SA.request_subscription,
+                         state=SS.unsubscribed, kind="error")
+        self._change_sub(user['id'], ml_id, SA.subscribe,
+                         state=SS.subscribed)
+        self._change_sub(user['id'], ml_id, SA.subscribe,
+                         state=SS.subscribed, kind="info")
 
         self.ml.write_subscription_states(self.key, ml_id)
 
@@ -800,24 +817,24 @@ class TestMlBackend(BackendTest):
         result = self.ml.get_subscription_states(self.key, ml_id)
         self.assertEqual(result, expectation)
 
-        self._change_sub(user['id'],  ml_id, SA.subscribe,
-                         code=None, state=None, kind="error")
-        self._change_sub(user['id'],  ml_id, SA.unsubscribe,
-                         code=None, state=None, kind="info")
-        self._change_sub(user['id'],  ml_id, SA.request_subscription,
-                         code=None, state=None, kind="error")
+        self._change_sub(user['id'], ml_id, SA.subscribe,
+                         state=None, kind="error")
+        self._change_sub(user['id'], ml_id, SA.unsubscribe,
+                         state=None, kind="info")
+        self._change_sub(user['id'], ml_id, SA.request_subscription,
+                         state=None, kind="error")
 
     @as_users("ferdinand")
-    def test_ml_event_two(self, user):
+    def test_ml_event_two(self, user: CdEDBObject) -> None:
         ml_id = 9
 
         self._change_sub(user['id'], ml_id, SA.subscribe,
-                         code=None, state=None, kind="error")
+                         state=None, kind="error")
         self._change_sub(user['id'], ml_id, SA.add_subscriber,
-                         code=None, state=None, kind="error")
+                         state=None, kind="error")
 
     @as_users("werner")
-    def test_ml_assembly(self, user):
+    def test_ml_assembly(self, user: CdEDBObject) -> None:
         ml_id = 5
 
         expectation = {
@@ -833,16 +850,16 @@ class TestMlBackend(BackendTest):
         result = self.ml.get_subscription_states(self.key, ml_id)
         self.assertEqual(result, expectation)
 
-        self._change_sub(user['id'],  ml_id, SA.subscribe,
-                         code=None, state=SS.implicit, kind="info")
-        self._change_sub(user['id'],  ml_id, SA.unsubscribe,
-                         code=1, state=SS.unsubscribed)
-        self._change_sub(user['id'],  ml_id, SA.unsubscribe,
-                         code=None, state=SS.unsubscribed, kind="info")
-        self._change_sub(user['id'],  ml_id, SA.request_subscription,
-                         code=None, state=SS.unsubscribed, kind="error")
-        self._change_sub(user['id'],  ml_id, SA.subscribe,
-                         code=1, state=SS.subscribed)
+        self._change_sub(user['id'], ml_id, SA.subscribe,
+                         state=SS.implicit, kind="info")
+        self._change_sub(user['id'], ml_id, SA.unsubscribe,
+                         state=SS.unsubscribed)
+        self._change_sub(user['id'], ml_id, SA.unsubscribe,
+                         state=SS.unsubscribed, kind="info")
+        self._change_sub(user['id'], ml_id, SA.request_subscription,
+                         state=SS.unsubscribed, kind="error")
+        self._change_sub(user['id'], ml_id, SA.subscribe,
+                         state=SS.subscribed)
 
         ml_id = 66
         assembly_id = self.ml.get_mailinglist(self.key, ml_id)["assembly_id"]
@@ -853,7 +870,7 @@ class TestMlBackend(BackendTest):
         result = self.ml.get_subscription_states(self.key, ml_id)
         self.assertEqual(result, expectation)
 
-        admin_key = self.login("viktor")
+        admin_key = cast(RequestState, self.login("viktor"))
         self.assembly.set_assembly_presiders(admin_key, assembly_id, set())
         self.ml.write_subscription_states(self.key, ml_id)
         self.assertEqual({}, self.ml.get_subscription_states(self.key, ml_id))
@@ -867,7 +884,7 @@ class TestMlBackend(BackendTest):
         self.assertEqual(result, expectation)
 
     @as_users("nina")
-    def test_bullshit_requests(self, user):
+    def test_bullshit_requests(self, user: CdEDBObject) -> None:
         # Can I remove people from lists they have not subscribed to?
         with self.assertRaises(SubscriptionError) as cm:
             self.ml.do_subscription_action(
@@ -891,9 +908,9 @@ class TestMlBackend(BackendTest):
             mailinglist_id=3, persona_id=3, expected_state=None)
 
     @as_users("charly", "emilia", "janis")
-    def test_no_privileges(self, user):
+    def test_no_privileges(self, user: CdEDBObject) -> None:
 
-        def _try_everything(ml_id, user_id):
+        def _try_everything(ml_id: int, user_id: int) -> None:
             moderator_actions = {
                 SA.add_subscriber, SA.remove_subscriber,
                 SA.add_subscription_override, SA.remove_subscription_override,
@@ -928,32 +945,32 @@ class TestMlBackend(BackendTest):
             _try_everything(5, subscriber['id'])
 
     @as_users("janis", "kalif")
-    def test_audience(self, user):
+    def test_audience(self, user: CdEDBObject) -> None:
         # List 4 is moderated opt-in for members only.
         self._change_sub(user['id'], 4, SA.subscribe,
-                         code=None, state=None, kind="error")
+                         state=None, kind="error")
         self._change_sub(user['id'], 4, SA.request_subscription,
-                         code=None, state=None, kind="error")
+                         state=None, kind="error")
         self._change_sub(user['id'], 4, SA.cancel_request,
-                         code=None, state=None, kind="error")
+                         state=None, kind="error")
         # List 7 is not joinable by non-members
         self._change_sub(user['id'], 7, SA.subscribe,
-                         code=None, state=None, kind="error")
+                         state=None, kind="error")
         # List 9 is only allowed for event users, and not joinable anyway
-        self._change_sub(user['id'],  9, SA.subscribe,
-                         code=None, state=None, kind="error")
+        self._change_sub(user['id'], 9, SA.subscribe,
+                         state=None, kind="error")
         # List 11 is only joinable by assembly users
         if user['id'] == 11:
             self._change_sub(user['id'], 11, SA.unsubscribe,
-                             code=1, state=SS.unsubscribed)
+                             state=SS.unsubscribed)
             self._change_sub(user['id'], 11, SA.subscribe,
-                             code=1, state=SS.subscribed)
+                             state=SS.subscribed)
         else:
             self._change_sub(user['id'], 11, SA.subscribe,
-                             code=None, state=None, kind="error")
+                             state=None, kind="error")
 
     @as_users("nina")
-    def test_write_subscription_states(self, user):
+    def test_write_subscription_states(self, user: CdEDBObject) -> None:
         # CdE-Member list.
         mailinglist_id = 7
 
@@ -1086,7 +1103,7 @@ class TestMlBackend(BackendTest):
         self.assertEqual(result, expectation)
 
     @as_users("nina")
-    def test_change_sub_policy(self, user):
+    def test_change_sub_policy(self, user: CdEDBObject) -> None:
         mdata = {
             'local_part': 'revolution',
             'domain': const.MailinglistDomain.lists,
@@ -1127,7 +1144,6 @@ class TestMlBackend(BackendTest):
             6: SS.implicit,
             7: SS.implicit,
             9: SS.implicit,
-            12: SS.implicit,
             15: SS.implicit,
             100: SS.implicit,
         }
@@ -1190,7 +1206,6 @@ class TestMlBackend(BackendTest):
             6: SS.implicit,
             7: SS.implicit,
             9: SS.implicit,
-            12: SS.implicit,
             15: SS.implicit,
             100: SS.implicit,
         }
@@ -1198,7 +1213,7 @@ class TestMlBackend(BackendTest):
         self.assertEqual(expectation, result)
 
     @as_users("nina")
-    def test_change_mailinglist_association(self, user):
+    def test_change_mailinglist_association(self, user: CdEDBObject) -> None:
         mdata = {
             'local_part': 'orga',
             'domain': const.MailinglistDomain.aka,
@@ -1274,14 +1289,13 @@ class TestMlBackend(BackendTest):
         self.assertEqual(expectation, result)
 
     @as_users("nina", "janis")
-    def test_subscription_addresses(self, user):
+    def test_subscription_addresses(self, user: CdEDBObject) -> None:
         expectation = {
             1: 'anton@example.cde',
             2: 'berta@example.cde',
             3: 'charly@example.cde',
             7: 'garcia@example.cde',
             9: 'inga@example.cde',
-            12: None,
             15: 'olaf@example.cde',
             100: 'akira@example.cde',
         }
@@ -1300,7 +1314,7 @@ class TestMlBackend(BackendTest):
                          self.ml.get_subscription_addresses(self.key, 7))
 
     @as_users("nina", "berta")
-    def test_subscription_addresses_two(self, user):
+    def test_subscription_addresses_two(self, user: CdEDBObject) -> None:
         expectation = {1: 'anton@example.cde',
                        2: 'berta@example.cde',
                        3: 'charly@example.cde',
@@ -1312,23 +1326,23 @@ class TestMlBackend(BackendTest):
                          self.ml.get_subscription_addresses(self.key, 5))
 
     @as_users("nina", "garcia")
-    def test_subscription_addresses_three(self, user):
-            expectation = {7: 'garcia@example.cde'}
-            self.assertEqual(expectation,
-                             self.ml.get_subscription_addresses(self.key, 8))
-            expectation = {1: 'anton@example.cde',
-                           2: 'berta@example.cde',
-                           7: 'garcia@example.cde',
-                           9: 'inga@example.cde',
-                           100: 'akira@example.cde'}
-            self.assertEqual(expectation,
-                             self.ml.get_subscription_addresses(self.key, 9))
-            expectation = {5: 'emilia@example.cde'}
-            self.assertEqual(expectation,
-                             self.ml.get_subscription_addresses(self.key, 10))
+    def test_subscription_addresses_three(self, user: CdEDBObject) -> None:
+        expectation = {7: 'garcia@example.cde'}
+        self.assertEqual(expectation,
+                         self.ml.get_subscription_addresses(self.key, 8))
+        expectation = {1: 'anton@example.cde',
+                       2: 'berta@example.cde',
+                       7: 'garcia@example.cde',
+                       9: 'inga@example.cde',
+                       100: 'akira@example.cde'}
+        self.assertEqual(expectation,
+                         self.ml.get_subscription_addresses(self.key, 9))
+        expectation = {5: 'emilia@example.cde'}
+        self.assertEqual(expectation,
+                         self.ml.get_subscription_addresses(self.key, 10))
 
     @as_users("janis")
-    def test_set_subscription_address(self, user):
+    def test_set_subscription_address(self, user: CdEDBObject) -> None:
         # This is a bit tricky, since users may only change their own
         # subscrption address.
         mailinglist_id = 3
@@ -1376,7 +1390,7 @@ class TestMlBackend(BackendTest):
         self.assertEqual(result, expectation)
 
     @as_users("janis")
-    def test_remove_subscription_address(self, user):
+    def test_remove_subscription_address(self, user: CdEDBObject) -> None:
         mailinglist_id = 3
 
         # Check sample data.
@@ -1417,19 +1431,22 @@ class TestMlBackend(BackendTest):
         self.assertEqual(result, expectation)
 
     @as_users("inga")
-    def test_moderation(self, user):
+    def test_moderation(self, user: CdEDBObject) -> None:
         expectation = {
             1: SS.implicit,
             2: SS.implicit,
             5: SS.unsubscription_override,
             9: SS.implicit,
-           11: SS.unsubscription_override,
-           51: SS.implicit,
-           52: SS.implicit,
-           53: SS.subscribed,
-           56: SS.subscribed,
-           63: SS.subscribed,
-           64: SS.subscribed,
+            11: SS.unsubscription_override,
+            12: SS.implicit,
+            13: SS.implicit,
+            51: SS.implicit,
+            52: SS.implicit,
+            53: SS.subscribed,
+            56: SS.subscribed,
+            61: SS.implicit,
+            63: SS.subscribed,
+            64: SS.subscribed,
         }
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=9))
@@ -1457,13 +1474,16 @@ class TestMlBackend(BackendTest):
             4: SS.pending,
             5: SS.unsubscription_override,
             9: SS.unsubscribed,
-           11: SS.unsubscription_override,
-           51: SS.implicit,
-           52: SS.implicit,
-           53: SS.subscribed,
-           56: SS.subscribed,
-           63: SS.subscribed,
-           64: SS.subscribed,
+            11: SS.unsubscription_override,
+            12: SS.implicit,
+            13: SS.implicit,
+            51: SS.implicit,
+            52: SS.implicit,
+            53: SS.subscribed,
+            56: SS.subscribed,
+            61: SS.implicit,
+            63: SS.subscribed,
+            64: SS.subscribed,
         }
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=9))
@@ -1484,13 +1504,16 @@ class TestMlBackend(BackendTest):
             4: SS.subscribed,
             5: SS.unsubscription_override,
             9: SS.unsubscribed,
-           11: SS.unsubscription_override,
-           51: SS.implicit,
-           52: SS.implicit,
-           53: SS.subscribed,
-           56: SS.subscribed,
-           63: SS.subscribed,
-           64: SS.subscribed,
+            11: SS.unsubscription_override,
+            12: SS.implicit,
+            13: SS.implicit,
+            51: SS.implicit,
+            52: SS.implicit,
+            53: SS.subscribed,
+            56: SS.subscribed,
+            61: SS.implicit,
+            63: SS.subscribed,
+            64: SS.subscribed,
         }
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=9))
@@ -1507,13 +1530,16 @@ class TestMlBackend(BackendTest):
             4: SS.unsubscribed,
             5: SS.unsubscription_override,
             9: SS.unsubscribed,
-           11: SS.unsubscription_override,
-           51: SS.implicit,
-           52: SS.implicit,
-           53: SS.subscribed,
-           56: SS.subscribed,
-           63: SS.subscribed,
-           64: SS.subscribed,
+            11: SS.unsubscription_override,
+            12: SS.implicit,
+            13: SS.implicit,
+            51: SS.implicit,
+            52: SS.implicit,
+            53: SS.subscribed,
+            56: SS.subscribed,
+            61: SS.implicit,
+            63: SS.subscribed,
+            64: SS.subscribed,
         }
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=9))
@@ -1530,13 +1556,16 @@ class TestMlBackend(BackendTest):
             4: SS.pending,
             5: SS.unsubscription_override,
             9: SS.unsubscribed,
-           11: SS.unsubscription_override,
-           51: SS.implicit,
-           52: SS.implicit,
-           53: SS.subscribed,
-           56: SS.subscribed,
-           63: SS.subscribed,
-           64: SS.subscribed,
+            11: SS.unsubscription_override,
+            12: SS.implicit,
+            13: SS.implicit,
+            51: SS.implicit,
+            52: SS.implicit,
+            53: SS.subscribed,
+            56: SS.subscribed,
+            61: SS.implicit,
+            63: SS.subscribed,
+            64: SS.subscribed,
         }
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=9))
@@ -1556,19 +1585,22 @@ class TestMlBackend(BackendTest):
             2: SS.unsubscribed,
             5: SS.unsubscription_override,
             9: SS.unsubscribed,
-           11: SS.unsubscription_override,
-           51: SS.implicit,
-           52: SS.implicit,
-           53: SS.subscribed,
-           56: SS.subscribed,
-           63: SS.subscribed,
-           64: SS.subscribed,
+            11: SS.unsubscription_override,
+            12: SS.implicit,
+            13: SS.implicit,
+            51: SS.implicit,
+            52: SS.implicit,
+            53: SS.subscribed,
+            56: SS.subscribed,
+            61: SS.implicit,
+            63: SS.subscribed,
+            64: SS.subscribed,
         }
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=9))
 
     @as_users("inga")
-    def test_request_cancellation(self, user):
+    def test_request_cancellation(self, user: CdEDBObject) -> None:
         expectation = None
         self.assertEqual(expectation,
                          self.ml.get_subscription(
@@ -1596,7 +1628,7 @@ class TestMlBackend(BackendTest):
                              self.key, persona_id=9, mailinglist_id=4))
 
     @as_users("annika", "viktor", "quintus", "nina")
-    def test_relevant_admins(self, user):
+    def test_relevant_admins(self, user: CdEDBObject) -> None:
         if user['display_name'] in {"Annika", "Nina"}:
             # Create a new event mailinglist.
             mldata = {
@@ -1753,10 +1785,10 @@ class TestMlBackend(BackendTest):
                 cascade=["moderators", "subscriptions", "log"]))
 
     @as_users("anton")
-    def test_log(self, user):
+    def test_log(self, user: CdEDBObject) -> None:
         # first generate some data
         self.ml.do_subscription_action(self.key, SA.unsubscribe, 2, 1)
-        datum = {
+        datum: CdEDBObject = {
             'mailinglist_id': 4,
             'persona_id': 1,
             'email': 'devnull@example.cde',
@@ -1860,7 +1892,7 @@ class TestMlBackend(BackendTest):
                 self.key, codes=(const.MlLogCodes.moderator_added,)))
 
     @as_users("nina")
-    def test_export(self, user):
+    def test_export(self, user: CdEDBObject) -> None:
         expectation = ({'address': 'announce@lists.cde-ev.de',
                         'is_active': True},
                        {'address': 'werbung@lists.cde-ev.de',
@@ -1882,6 +1914,12 @@ class TestMlBackend(BackendTest):
                        {'address': 'wait@aka.cde-ev.de',
                         'is_active': True},
                        {'address': 'opt@lists.cde-ev.de',
+                        'is_active': True},
+                       {'address': 'moderatoren@lists.cde-ev.de',
+                        'is_active': True},
+                       {'address': 'everyone@lists.cde-ev.de',
+                        'is_active': True},
+                       {'address': 'lokalgruppen@lists.cde-ev.de',
                         'is_active': True},
                        {'address': 'all@lists.cde-ev.de',
                         'is_active': True},
@@ -1920,12 +1958,12 @@ class TestMlBackend(BackendTest):
 
         self.assertEqual(
             expectation,
-            self.ml.export_overview("c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3"))
+            self.ml.export_overview("c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3"))  # type: ignore
         expectation = {
             'address': 'werbung@lists.cde-ev.de',
             'admin_address': 'werbung-owner@lists.cde-ev.de',
             'listname': 'Werbung',
-            'moderators': ['janis@example.cde',],
+            'moderators': ['janis@example.cde', ],
             'sender': 'werbung@lists.cde-ev.de',
             'size_max': None,
             'subscribers': ['anton@example.cde',
@@ -1938,11 +1976,11 @@ class TestMlBackend(BackendTest):
             'whitelist': {'honeypot@example.cde'}}
         self.assertEqual(
             expectation,
-            self.ml.export_one("c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3",
+            self.ml.export_one("c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3",  # type: ignore
                                "werbung@lists.cde-ev.de"))
 
     @as_users("nina")
-    def test_oldstyle_scripting(self, user):
+    def test_oldstyle_scripting(self, user: CdEDBObject) -> None:
         expectation = ({'address': 'announce@lists.cde-ev.de',
                         'inactive': False,
                         'maxsize': None,
@@ -1984,6 +2022,18 @@ class TestMlBackend(BackendTest):
                         'maxsize': None,
                         'mime': False},
                        {'address': 'opt@lists.cde-ev.de',
+                        'inactive': False,
+                        'maxsize': None,
+                        'mime': False},
+                       {'address': 'moderatoren@lists.cde-ev.de',
+                        'inactive': False,
+                        'maxsize': None,
+                        'mime': False},
+                       {'address': 'everyone@lists.cde-ev.de',
+                        'inactive': False,
+                        'maxsize': 64,
+                        'mime': False},
+                       {'address': 'lokalgruppen@lists.cde-ev.de',
                         'inactive': False,
                         'maxsize': None,
                         'mime': False},
@@ -2058,13 +2108,13 @@ class TestMlBackend(BackendTest):
         self.assertEqual(
             expectation,
             self.ml.oldstyle_mailinglist_config_export(
-                "c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3"))
+                "c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3"))  # type: ignore
         expectation = {'address': 'werbung@lists.cde-ev.de',
                        'list-owner': 'https://db.cde-ev.de/',
                        'list-subscribe': 'https://db.cde-ev.de/',
                        'list-unsubscribe': 'https://db.cde-ev.de/',
                        'listname': 'werbung',
-                       'moderators': ['janis@example.cde',],
+                       'moderators': ['janis@example.cde', ],
                        'sender': 'werbung-bounces@lists.cde-ev.de',
                        'subscribers': ['anton@example.cde',
                                        'berta@example.cde',
@@ -2077,22 +2127,23 @@ class TestMlBackend(BackendTest):
         self.assertEqual(
             expectation,
             self.ml.oldstyle_mailinglist_export(
-                "c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3",
+                "c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3",  # type: ignore
                 "werbung@lists.cde-ev.de"))
         expectation = {'address': 'werbung@lists.cde-ev.de',
                        'list-owner': 'https://db.cde-ev.de/',
                        'list-subscribe': 'https://db.cde-ev.de/',
                        'list-unsubscribe': 'https://db.cde-ev.de/',
                        'listname': 'werbung',
-                       'moderators': ['janis@example.cde',],
+                       'moderators': ['janis@example.cde', ],
                        'sender': 'cdedb-doublebounces@cde-ev.de',
-                       'subscribers': ['janis@example.cde',],
+                       'subscribers': ['janis@example.cde', ],
                        'whitelist': ['*']}
         self.assertEqual(
             expectation,
-            self.ml.oldstyle_modlist_export("c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3",
-                                            "werbung@lists.cde-ev.de"))
+            self.ml.oldstyle_modlist_export(
+                "c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3",  # type: ignore
+                "werbung@lists.cde-ev.de"))
         self.assertEqual(
             True,
-            self.ml.oldstyle_bounce("c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3",
+            self.ml.oldstyle_bounce("c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3",  # type: ignore
                                     "anton@example.cde", 1))

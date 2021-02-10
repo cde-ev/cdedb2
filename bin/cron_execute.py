@@ -14,7 +14,5 @@ if __name__ == "__main__":
     if getpass.getuser() != "www-data":
         raise RuntimeError("Must be run as user www-data.")
     configpath = pathlib.Path("/etc/cdedb-application-config.py")
-    if not configpath.exists():
-        configpath = None
-    cron = CronFrontend(configpath)
+    cron = CronFrontend(configpath if configpath.exists() else None)
     cron.execute()

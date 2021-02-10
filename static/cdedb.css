@@ -166,7 +166,7 @@ h4.heading-underline, h5.heading-underline, h6.heading-underline {
 }
 @media (min-width: 768px) {
     h1 small, h2 small {
-        white-space: nowrap;
+        display: inline-block;
     }
 }
 .checkbox.input-sm {
@@ -539,10 +539,21 @@ p.textbox {
     text-decoration: none;
 }
 
+code.result {
+    color: #0f0f0f;
+    background-color: #f5f5f5;
+}
+
 pre.result {
     display: inline-block;
     margin-bottom: 4px;
+    color: #0f0f0f;
+    background-color: #f5f5f5;
+}
+
+span.result-separator, code.result-separator {
     color: #c7254e;
+    background-color: #f5f5f5;
 }
 
 /* query form */
@@ -1050,6 +1061,9 @@ span.color-legend {
 }
 .clickable {
     cursor: pointer;
+}
+.dummy {
+    visibility: hidden;
 }
 ul.styleless {
     list-style: none;

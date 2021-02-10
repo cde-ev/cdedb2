@@ -152,14 +152,6 @@
     {%- endif -%}
 {% endmacro %}
 
-{% macro web_link(weblink) %}
-    {%- if weblink.startswith(("http://", "https://")) -%}
-        {{ util.href(weblink, weblink) }}
-    {%- else -%}
-        {{ util.href('https://%s'|format(weblink), weblink) }}
-    {%- endif -%}
-{% endmacro %}
-
 {# Macro to generate breadcrumb links. Should be used like this in individual templates:
 
        {% block breadcrumb %}
@@ -528,7 +520,7 @@
 {%- endmacro %}
 
 {% macro input_submit(value="Save", name="submitform", anid=none, aclass='btn btn-primary', icon="check",
-        readonly=False, title=none, arialabel=none) %}
+        readonly=False, title=none, ariahidden=false) %}
     <button{{ dict(
         type="sumbit",
         name=name,
@@ -537,7 +529,7 @@
         title=title,
         value="True",
         disabled="disabled" if readonly,
-        **{ 'aria-label': arialabeledby }
+        **{ "aria-hidden": "true" if ariahidden }
     )|xmlattr }}>
         {{ make_icon(icon) if icon }}
         {{ value }}

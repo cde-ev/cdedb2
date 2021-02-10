@@ -1,16 +1,25 @@
 import enum
+import itertools
 from collections import OrderedDict
-from typing import TYPE_CHECKING, Collection, Dict, List, Set, Tuple, Type, Union
+from typing import (
+    TYPE_CHECKING, Any, Collection, Dict, List, Mapping, Optional, Set, Tuple, Type,
+    Union,
+)
+
+from typing_extensions import Literal
 
 import cdedb.database.constants as const
+import cdedb.validationtypes as vtypes
 from cdedb.common import CdEDBObject, RequestState, User, extract_roles, n_
 from cdedb.database.constants import (
     MailinglistDomain, MailinglistInteractionPolicy, MailinglistTypes,
+    RegistrationPartStati,
 )
 from cdedb.query import Query, QueryOperators
 
 MIPol = Union[MailinglistInteractionPolicy, None]
 MIPolMap = Dict[int, MIPol]
+TypeMapping = Mapping[str, Type[Any]]
 
 
 class BackendContainer:
@@ -32,12 +41,26 @@ def get_full_address(val: CdEDBObject) -> str:
 
 class MailinglistGroup(enum.IntEnum):
     """To be used in `MlType.sortkey` to group similar mailinglists together."""
+    public = 1
     cde = 2
     team = 3
     event = 10
     assembly = 20
     cdelokal = 30
-    other = 1
+
+
+class AllUsersImplicitMeta:
+    """Metaclass for all mailinglists with all users as implicit subscribers."""
+    maxsize_default = 64
+
+    @classmethod
+    def get_implicit_subscribers(cls, rs: RequestState, bc: BackendContainer,
+                                 mailinglist: CdEDBObject) -> Set[int]:
+        """Return a set of all personas.
+
+        Leave out personas which are archived or have no valid email set.."""
+        check_appropriate_type(mailinglist, cls)  # type: ignore
+        return bc.core.list_all_personas(rs, is_active=False, valid_email=True)
 
 
 class AllMembersImplicitMeta:
@@ -49,14 +72,14 @@ class AllMembersImplicitMeta:
                                  mailinglist: CdEDBObject) -> Set[int]:
         """Return a set of all current members."""
         check_appropriate_type(mailinglist, cls)  # type: ignore
-        return bc.core.list_current_members(rs, is_active=False)
+        return bc.core.list_current_members(rs, is_active=False, valid_email=True)
 
 
 class EventAssociatedMeta:
     """Metaclass for all event associated mailinglists."""
     # Allow empty event_id to mark legacy event-lists.
-    mandatory_validation_fields = {
-        ("event_id", "id_or_None"),
+    mandatory_validation_fields: TypeMapping = {
+        "event_id": Optional[vtypes.ID]  # type: ignore
     }
 
     @classmethod
@@ -71,7 +94,7 @@ class TeamMeta:
     """Metaclass for all team lists."""
     sortkey = MailinglistGroup.team
     viewer_roles = {"persona"}
-    domains = [MailinglistDomain.lists, MailinglistDomain.dokuforge]
+    domains = [MailinglistDomain.lists]
     maxsize_default = 4096
 
 
@@ -101,7 +124,7 @@ class GeneralMailinglist:
     def __init__(self) -> None:
         raise RuntimeError()
 
-    sortkey: MailinglistGroup = MailinglistGroup.other
+    sortkey: MailinglistGroup = MailinglistGroup.public
 
     domains: List[MailinglistDomain] = [MailinglistDomain.lists]
 
@@ -111,18 +134,22 @@ class GeneralMailinglist:
     allow_unsub: bool = True
 
     # Additional fields for validation. See docstring for details.
-    mandatory_validation_fields: Set[Tuple[str, str]] = set()
-    optional_validation_fields: Set[Tuple[str, str]] = set()
+    mandatory_validation_fields: TypeMapping = {}
+    optional_validation_fields: TypeMapping = {}
 
     @classmethod
-    def get_additional_fields(cls) -> Set[Tuple[str, str]]:
-        ret = set()
-        for field, argtype in (cls.mandatory_validation_fields
-                               | cls.optional_validation_fields):
-            if argtype.startswith('[') and argtype.endswith(']'):
-                ret.add((field, "[str]"))
+    def get_additional_fields(cls) -> Mapping[
+        str, Union[Literal["str"], Literal["[str]"]]
+    ]:
+        ret: Dict[str, Union[Literal["str"], Literal["[str]"]]] = {}
+        for field, argtype in {
+            **cls.mandatory_validation_fields,
+            **cls.optional_validation_fields,
+        }.items():
+            if getattr(argtype, "__origin__", None) is list:
+                ret[field] = "[str]"
             else:
-                ret.add((field, "str"))
+                ret[field] = "str"
         return ret
 
     viewer_roles: Set[str] = {"ml"}
@@ -304,7 +331,7 @@ class MemberMailinglist(CdEMailinglist):
 
 class MemberMandatoryMailinglist(AllMembersImplicitMeta, MemberMailinglist):
     role_map = OrderedDict([
-        ("member", MailinglistInteractionPolicy.mandatory)
+        ("member", MailinglistInteractionPolicy.subscribable)
     ])
     # For mandatory lists, ignore all unsubscriptions.
     allow_unsub = False
@@ -314,13 +341,13 @@ class MemberMandatoryMailinglist(AllMembersImplicitMeta, MemberMailinglist):
 
 class MemberOptOutMailinglist(AllMembersImplicitMeta, MemberMailinglist):
     role_map = OrderedDict([
-        ("member", MailinglistInteractionPolicy.opt_out)
+        ("member", MailinglistInteractionPolicy.subscribable)
     ])
 
 
 class MemberOptInMailinglist(MemberMailinglist):
     role_map = OrderedDict([
-        ("member", MailinglistInteractionPolicy.opt_in)
+        ("member", MailinglistInteractionPolicy.subscribable)
     ])
 
 
@@ -345,9 +372,10 @@ class RestrictedTeamMailinglist(TeamMeta, MemberInvitationOnlyMailinglist):
 
 
 class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
-    mandatory_validation_fields = (
-            EventAssociatedMeta.mandatory_validation_fields
-            | {("registration_stati", "[enum_registrationpartstati]")})
+    mandatory_validation_fields: TypeMapping = {
+            **EventAssociatedMeta.mandatory_validation_fields,
+            "registration_stati": List[RegistrationPartStati],
+    }
 
     @classmethod
     def is_privileged_moderator(cls, rs: RequestState, bc: BackendContainer,
@@ -388,7 +416,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
             if bc.event.check_registration_status(
                     rs, persona_id, mailinglist['event_id'],
                     mailinglist['registration_stati']):
-                ret[persona_id] = MailinglistInteractionPolicy.opt_out
+                ret[persona_id] = MailinglistInteractionPolicy.subscribable
             else:
                 ret[persona_id] = None
 
@@ -454,7 +482,7 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
         event = bc.event.get_event(rs, mailinglist["event_id"])
         for persona_id in persona_ids:
             if persona_id in event["orgas"]:
-                ret[persona_id] = const.MailinglistInteractionPolicy.opt_out
+                ret[persona_id] = const.MailinglistInteractionPolicy.subscribable
             else:
                 ret[persona_id] = None
         return ret
@@ -477,9 +505,7 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
 
 
 class AssemblyAssociatedMailinglist(AssemblyMailinglist):
-    mandatory_validation_fields = {
-        ("assembly_id", "id"),
-    }
+    mandatory_validation_fields = {"assembly_id": vtypes.ID}
 
     @classmethod
     def is_privileged_moderator(cls, rs: RequestState, bc: BackendContainer,
@@ -515,7 +541,7 @@ class AssemblyAssociatedMailinglist(AssemblyMailinglist):
                 rs, persona_id=persona_id,
                 assembly_id=mailinglist["assembly_id"])
             if attending:
-                ret[persona_id] = const.MailinglistInteractionPolicy.opt_out
+                ret[persona_id] = const.MailinglistInteractionPolicy.subscribable
             else:
                 ret[persona_id] = None
         return ret
@@ -550,7 +576,7 @@ class AssemblyPresiderMailinglist(AssemblyAssociatedMailinglist):
         ret: MIPolMap = {}
         for persona_id in persona_ids:
             if persona_id in presiders:
-                ret[persona_id] = MailinglistInteractionPolicy.opt_out
+                ret[persona_id] = MailinglistInteractionPolicy.subscribable
             else:
                 ret[persona_id] = None
         return ret
@@ -569,13 +595,21 @@ class AssemblyPresiderMailinglist(AssemblyAssociatedMailinglist):
 
 class AssemblyOptInMailinglist(AssemblyMailinglist):
     role_map = OrderedDict([
-        ("assembly", MailinglistInteractionPolicy.opt_in)
+        ("assembly", MailinglistInteractionPolicy.subscribable)
     ])
+
+
+class GeneralMandatoryMailinglist(AllUsersImplicitMeta, GeneralMailinglist):
+    role_map = OrderedDict([
+        ("persona", MailinglistInteractionPolicy.subscribable)
+    ])
+    # For mandatory lists, ignore all unsubscriptions.
+    allow_unsub = False
 
 
 class GeneralOptInMailinglist(GeneralMailinglist):
     role_map = OrderedDict([
-        ("ml", MailinglistInteractionPolicy.opt_in)
+        ("ml", MailinglistInteractionPolicy.subscribable)
     ])
 
 
@@ -591,16 +625,69 @@ class GeneralInvitationOnlyMailinglist(GeneralMailinglist):
     ])
 
 
+class GeneralModeratorMailinglist(GeneralMailinglist):
+    # For mandatory lists, ignore all unsubscriptions.
+    allow_unsub = False
+
+    @classmethod
+    def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
+                                 mailinglist: CdEDBObject,
+                                 persona_ids: Collection[int],
+                                 ) -> MIPolMap:
+        """Determine the MIPol of the user or a persona with a mailinglist.
+
+        For the `GeneralModeratorMailinglist` this means mandatory for all users who
+        are moderators, while other users are not allowed to subscribe.
+        """
+        check_appropriate_type(mailinglist, cls)
+
+        ret: MIPolMap = {}
+        all_moderators = cls.get_implicit_subscribers(rs, bc, mailinglist)
+
+        for persona_id in persona_ids:
+            if persona_id in all_moderators:
+                ret[persona_id] = const.MailinglistInteractionPolicy.subscribable
+            else:
+                ret[persona_id] = None
+        return ret
+
+    @classmethod
+    def get_implicit_subscribers(cls, rs: RequestState, bc: BackendContainer,
+                                 mailinglist: CdEDBObject) -> Set[int]:
+        """Get a list of people that should be on this mailinglist.
+
+        For the `GeneralModeratorMailinglist` this means mandatory for all users who
+        are moderators of any mailinglist.
+        """
+        check_appropriate_type(mailinglist, cls)
+        return bc.core.list_all_moderators(rs)
+
+
+class CdELokalModeratorMailinglist(GeneralModeratorMailinglist):
+    relevant_admins = {"cdelokal_admin"}
+
+    @classmethod
+    def get_implicit_subscribers(cls, rs: RequestState, bc: BackendContainer,
+                                 mailinglist: CdEDBObject) -> Set[int]:
+        """Get a list of people that should be on this mailinglist.
+
+        For the `CdELokalModeratorMailinglist` this means mandatory for all users who
+        are moderators of any cdelokal mailinglist.
+        """
+        check_appropriate_type(mailinglist, cls)
+        return bc.core.list_all_moderators(rs, ml_types={MailinglistTypes.cdelokal})
+
+
 class SemiPublicMailinglist(GeneralMailinglist):
     role_map = OrderedDict([
-        ("member", MailinglistInteractionPolicy.opt_in),
+        ("member", MailinglistInteractionPolicy.subscribable),
         ("ml", MailinglistInteractionPolicy.moderated_opt_in)
     ])
 
 
 class CdeLokalMailinglist(SemiPublicMailinglist):
     sortkey = MailinglistGroup.cdelokal
-    domains = [MailinglistDomain.cdelokal, MailinglistDomain.cdemuenchen]
+    domains = [MailinglistDomain.cdelokal]
     relevant_admins = {"cdelokal_admin"}
 
 
@@ -648,10 +735,15 @@ TYPE_MAP = {
     MailinglistTypes.assembly_associated: AssemblyAssociatedMailinglist,
     MailinglistTypes.assembly_opt_in: AssemblyOptInMailinglist,
     MailinglistTypes.assembly_presider: AssemblyPresiderMailinglist,
+    MailinglistTypes.general_mandatory: GeneralMandatoryMailinglist,
     MailinglistTypes.general_opt_in: GeneralOptInMailinglist,
+    MailinglistTypes.general_moderators: GeneralModeratorMailinglist,
+    MailinglistTypes.cdelokal_moderators: CdELokalModeratorMailinglist,
     MailinglistTypes.semi_public: SemiPublicMailinglist,
     MailinglistTypes.cdelokal: CdeLokalMailinglist,
 }
 
-ADDITIONAL_TYPE_FIELDS = set.union(*(atype.get_additional_fields()
-                                     for atype in TYPE_MAP.values()))
+ADDITIONAL_TYPE_FIELDS = dict(itertools.chain.from_iterable(
+    atype.get_additional_fields().items()
+    for atype in TYPE_MAP.values()
+))

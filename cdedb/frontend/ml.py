@@ -25,7 +25,7 @@ class MlFrontend(RKListsMixin, MailmanMixin, MlBaseFrontend):
 
     @access("ml", modi={"POST"})
     @mailinglist_guard()
-    @REQUESTdata(("request_id", "int"), ("action", "str"))
+    @REQUESTdata("request_id", "action")
     def message_moderation(self, rs: RequestState, mailinglist_id: int,
                            request_id: int, action: str) -> Response:
         """Moderate a held message."""
@@ -44,6 +44,7 @@ class MlFrontend(RKListsMixin, MailmanMixin, MlBaseFrontend):
         if (self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or (
                 self.conf["CDEDB_DEV"] and not self.conf["CDEDB_TEST"])):
             self.logger.info("Skipping mailman request in dev/offline mode.")
+            rs.notify('info', n_("Skipping mailman request in dev/offline mode."))
         elif dblist['domain'] in const.MailinglistDomain.mailman_domains():
             mailman = self.get_mailman()
             mmlist = mailman.get_list_safe(dblist['address'])

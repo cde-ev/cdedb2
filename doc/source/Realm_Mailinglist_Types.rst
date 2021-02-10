@@ -98,7 +98,7 @@ General Mailinglists
 
     * visible to: all users
     * additional admins: None
-    * sortkey: other
+    * sortkey: public
 
     The following subtypes are supported:
 
@@ -110,7 +110,7 @@ Semi-public Mailinglists
 
     * visible to: all users
     * additional admins: None
-    * sortkey: other
+    * sortkey: public
 
 CdElokal Mailinglists
     Semi-public mailinglists with a special sortkey.
@@ -118,3 +118,17 @@ CdElokal Mailinglists
     * visible to: all users
     * additional admins: cdelokal
     * sortkey: cdelokal
+
+Moderator Mailinglists
+    Mailinglists that contain moderators of the cdedb. Other users are not
+    allowed to subscribe.
+
+    * visible to: all users
+    * additional admins: None for All Moderators, cdelokal for CdElokal Moderators
+    * sortkey: other
+
+    For specific use cases, we support different sets of moderators to be
+    implicitly subscribed. The following subtypes are supported:
+
+    * All Moderators
+    * CdElokal Moderators

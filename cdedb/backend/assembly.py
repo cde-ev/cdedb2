@@ -103,7 +103,7 @@ class AssemblyBackend(AbstractBackend):
                 rs, ballot_id=ballot_id, attachment_id=attachment_id)
         assembly_id = affirm_optional(vtypes.ID, assembly_id)
 
-        if not persona_id:
+        if persona_id is None or persona_id == rs.user.persona_id:
             return self.is_admin(rs) or assembly_id in rs.user.presider
         else:
             roles = self.core.get_roles_single(rs, persona_id)
@@ -369,8 +369,7 @@ class AssemblyBackend(AbstractBackend):
 
         # Rule out people who can not participate at any assembly to prevent
         # privilege errors
-        if (persona_id == rs.user.persona_id and
-                "assembly" not in rs.user.roles):
+        if persona_id == rs.user.persona_id and "assembly" not in rs.user.roles:
             return False
 
         # ml_admins are allowed to do this to be able to manage

@@ -14,7 +14,7 @@ import gettext
 import tempfile
 import time
 from types import TracebackType
-from typing import Any, Callable, Optional, Set, Type, cast
+from typing import Any, Optional, Set, Type, cast
 from typing_extensions import Protocol
 
 import psycopg2
@@ -41,6 +41,7 @@ class User:
         self.roles = ALL_ROLES
         self.orga: Set[int] = set()
         self.moderator: Set[int] = set()
+        self.presider: Set[int] = set()
         self.username = None
         self.display_name = None
         self.given_names = None
@@ -188,7 +189,7 @@ class Script(Atomizer):
         """
         self.end_time = time.time()
         time_diff = self.end_time - self.start_time
-        formatmsg = lambda msg: f"{msg} Time taken: {time_diff:.0f} seconds."
+        formatmsg = lambda msg: f"{msg} Time taken: {time_diff:.3f} seconds."
         if exc_type is None:
             if self.dry_run:
                 msg = "Aborting Dry Run!"
