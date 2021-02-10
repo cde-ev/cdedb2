@@ -517,6 +517,10 @@ class EventFrontend(AbstractUserFrontend):
         """Create a default mailinglist for the event."""
         if rs.has_validation_errors():
             return self.redirect(rs, "event/show_event")
+        if not rs.ambience['event']['orgas']:
+            rs.notify('error',
+                      n_("Must have orgas in order to create a mailinglist."))
+            return self.redirect(rs, "event/show_event")
 
         ml_data = self._get_mailinglist_setter(rs.ambience['event'], orgalist)
         ml_address = ml_type.get_full_address(ml_data)
