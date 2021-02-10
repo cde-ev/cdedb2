@@ -609,6 +609,9 @@ class TestEventFrontend(FrontendTest):
         f = self.response.forms['partsummaryform']
         self.assertEqual("Warmup", f['title_1'].value)
         self.submit(f)
+        self.traverse("Datenfelder konfigurieren")
+        f = self.response.forms['fieldsummaryform']
+        self.submit(f)
         self.traverse("Log")
         self.assertTitle("Große Testakademie 2222: Log [1–4 von 4]")
 
