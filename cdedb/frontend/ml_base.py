@@ -691,16 +691,14 @@ class MlBaseFrontend(AbstractUserFrontend):
         if (moderator_id == rs.user.persona_id
                 and not self.mlproxy.is_relevant_admin(
                     rs, mailinglist_id=mailinglist_id)):
-            rs.notify("error",
-                      n_("Not allowed to remove yourself as moderator."))
+            rs.notify("error", n_("Not allowed to remove yourself as moderator."))
             return self.management(rs, mailinglist_id)
 
         moderators -= {moderator_id}
         if not moderators:
             rs.notify("error", n_("Cannot remove last moderator."))
         else:
-            code = self.mlproxy.set_moderators(
-                rs, mailinglist_id, moderators)
+            code = self.mlproxy.set_moderators(rs, mailinglist_id, moderators)
             self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/management")
 
@@ -969,8 +967,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/show_mailinglist")
 
     @access("ml", modi={"POST"})
-    def request_subscription(self, rs: RequestState,
-                             mailinglist_id: int) -> Response:
+    def request_subscription(self, rs: RequestState, mailinglist_id: int) -> Response:
         """Change own subscription state to subscribed or pending."""
         if rs.has_validation_errors():
             return self.show_mailinglist(rs, mailinglist_id)
@@ -990,8 +987,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/show_mailinglist")
 
     @access("ml", modi={"POST"})
-    def cancel_subscription(self, rs: RequestState,
-                            mailinglist_id: int) -> Response:
+    def cancel_subscription(self, rs: RequestState, mailinglist_id: int) -> Response:
         """Cancel subscription request."""
         if rs.has_validation_errors():
             return self.show_mailinglist(rs, mailinglist_id)
