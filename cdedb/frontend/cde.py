@@ -2196,19 +2196,22 @@ class CdEFrontend(AbstractUserFrontend):
                                      'To': (rrs.user.username,)},
                             attachments=None)
                         self._send_mail(mail)
-                    if code:
-                        period_update['archival_count'] = period['archival_count'] + 1
                     else:
-                        self.logger.error(f"Automated archival of persona {persona_id}"
-                                          f" failed for unknown reasons.")
-                        # TODO: combine all failures into a single mail. See above.
-                        mail = self._create_mail(
-                            text=f"Automated archival of persona {persona_id} failed"
-                                 f" with unknown error.",
-                            headers={'Subject': "Automated Archival failure",
-                                     'To': (rrs.user.username,)},
-                            attachments=None)
-                        self._send_mail(mail)
+                        if code:
+                            period_update['archival_count'] = \
+                                period['archival_count'] + 1
+                        else:
+                            self.logger.error(
+                                f"Automated archival of persona {persona_id} failed"
+                                f" for unknown reasons.")
+                            # TODO: combine all failures into a single mail. See above.
+                            mail = self._create_mail(
+                                text=f"Automated archival of persona {persona_id}"
+                                     f" failed with unknown error.",
+                                headers={'Subject': "Automated Archival failure",
+                                         'To': (rrs.user.username,)},
+                                attachments=None)
+                            self._send_mail(mail)
                 self.cdeproxy.set_period(rrs, period_update)
                 return True
 
