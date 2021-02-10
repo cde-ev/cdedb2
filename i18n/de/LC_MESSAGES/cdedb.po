@@ -1274,6 +1274,9 @@ msgstr "Dokuteam Kursliste"
 msgid "00_query_cde_user_all"
 msgstr "Alle Nutzer"
 
+msgid "02_query_cde_members"
+msgstr "Alle Mitglieder"
+
 #: cdedb/config.py:481
 msgid "10_query_cde_user_trial_members"
 msgstr "Probemitglieder"
