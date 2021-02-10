@@ -1,1 +1,1 @@
-*.po	diff=podiff merge=pomerge
+*.po diff=podiff merge=pomerge

@@ -18,5 +18,5 @@ max_line_length = 120
 [.drone.yml]
 indent_size = 2
 
-[{Makefile,.gitattributes}]
+[Makefile]
 indent_style = tab
