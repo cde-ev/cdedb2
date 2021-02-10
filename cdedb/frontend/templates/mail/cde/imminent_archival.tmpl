@@ -1,13 +1,13 @@
 Hallo {{ persona['display_name'] }},
 
-Dein Account in der CdE-Datenbank hat seit über zwei Jahren keine Aktivität mehr gehabt.
+Dein Account in der CdE-Datenbank war seit über zwei Jahren inaktiv.
 {% if persona['is_cde_realm'] -%}
 Da Du außerdem kein Mitglied im CdE mehr bist, werden wir Deinen Account in circa vier Wochen stilllegen und die meisten damit verbundenen Daten löschen.
 {%- else -%}
 Daher werden wir Deinen Account in etwa vier Wochen stilllegen und die meisten damit verbundenen Daten löschen.
 {%- endif %}
 {% if persona['is_event_realm'] -%}
-Lediglich Deinen Namen, Dein Geschlecht und Dein Geburtsdatum sowie ggf. Deine Teilnahmen an vergangenen Veranstaltungen (CdE, DSA, DJA, etc.) werden wir behalten, um diese im Falle einer späteren Wiederaufnahme widerherstellen zu können.
+Lediglich Deinen Namen, Dein Geschlecht und Dein Geburtsdatum sowie ggf. Deine Teilnahmen an vergangenen Veranstaltungen (CdE, DSA, DJA, etc.) werden wir behalten, um diese im Falle einer späteren Wiederaufnahme wiederherstellen zu können.
 {%- else -%}
 Lediglich Deinen Namen behalten wir, für den Fall dass Du deinen Account später nocheinmal reaktivieren möchtest.
 {%- endif %}
