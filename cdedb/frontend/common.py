@@ -1684,12 +1684,10 @@ class Worker(threading.Thread):
     """
 
     def __init__(self, conf: Config, tasks: Union[WorkerTarget, Sequence[WorkerTarget]],
-                 rs: RequestState, *args: Any, **kwargs: Any) -> None:
+                 rs: RequestState) -> None:
         """
         :param tasks: Every task will called with the cloned request state as a single
             argument.
-        :param args: This will be passed to `threading.Thread` but it will be ignored.
-        :param kwargs: This will be passed to `threading.Thread` but it will be ignored.
         """
         # noinspection PyProtectedMember
         rrs = RequestState(
@@ -1705,17 +1703,15 @@ class Worker(threading.Thread):
         rrs._conn = connpool[roles_to_db_role(rs.user.roles)]
         logger = logging.getLogger("cdedb.frontend.worker")
 
-        def make_task_infos() -> List[TaskInfo]:
-            def get_doc(task: WorkerTarget) -> str:
-                return task.__doc__.splitlines()[0] if task.__doc__ else ""
+        def get_doc(task: WorkerTarget) -> str:
+            return task.__doc__.splitlines()[0] if task.__doc__ else ""
 
-            if isinstance(tasks, Sequence):
-                return [TaskInfo(task, task.__name__, get_doc(task)) for task in tasks]
-            return [TaskInfo(tasks, tasks.__name__, get_doc(tasks))]
+        if isinstance(tasks, Sequence):
+            task_infos = [TaskInfo(t, t.__name__, get_doc(t)) for t in tasks]
+        else:
+            task_infos = [TaskInfo(tasks, tasks.__name__, get_doc(tasks))]
 
-        task_infos = make_task_infos()
-
-        def runner(*args: Any, **kwargs: Any) -> None:
+        def runner() -> None:
             """Implement the actual loop running the task inside the Thread."""
             if len(task_infos) > 1:
                 task_queue = "\n".join(f"'{n}': {doc}" for _, n, doc in task_infos)
@@ -1746,11 +1742,10 @@ class Worker(threading.Thread):
                                 f"{len(remaining_tasks)} remaining tasks aborted:"
                                 f" {', '.join(n for _, n, _ in remaining_tasks)}")
                         raise
-            else:
-                if len(task_infos) > 1:
-                    logger.debug(f"{len(task_infos)} tasks completed successfully.")
+            if len(task_infos) > 1:
+                logger.debug(f"{len(task_infos)} tasks completed successfully.")
 
-        super().__init__(target=runner, daemon=False, args=args, kwargs=kwargs)
+        super().__init__(target=runner, daemon=False)
 
 
 def reconnoitre_ambience(obj: AbstractFrontend,
