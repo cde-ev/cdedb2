@@ -29,6 +29,7 @@ steps:
   # - git merge "$DRONE_SOURCE_BRANCH"
   commands:
   - make mypy
+  - exit 1 # just for testing
 
 volumes:
 - name: dockersock
