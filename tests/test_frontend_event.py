@@ -602,12 +602,18 @@ class TestEventFrontend(FrontendTest):
 
     @as_users("annika", "garcia")
     def test_part_summary_trivial(self, user: CdEDBObject) -> None:
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/part/summary'})
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Log")
+        self.assertTitle("Große Testakademie 2222: Log [1–4 von 4]")
+        self.traverse("Veranstaltungsteile")
         self.assertTitle("Veranstaltungsteile konfigurieren (Große Testakademie 2222)")
         f = self.response.forms['partsummaryform']
         self.assertEqual("Warmup", f['title_1'].value)
+        self.submit(f)
+        self.traverse("Datenfelder konfigurieren")
+        f = self.response.forms['fieldsummaryform']
+        self.submit(f)
+        self.traverse("Log")
+        self.assertTitle("Große Testakademie 2222: Log [1–4 von 4]")
 
     @as_users("annika")
     def test_part_summary_complex(self, user: CdEDBObject) -> None:
@@ -773,7 +779,7 @@ class TestEventFrontend(FrontendTest):
         # fields
         f = self.response.forms['fieldsummaryform']
         self.assertEqual('transportation', f['field_name_2'].value)
-        self.assertNotIn('field_name_8', f.fields)
+        self.assertNotIn('field_name_9', f.fields)
         f['create_-1'].checked = True
         f['field_name_-1'] = "food_stuff"
         f['association_-1'] = const.FieldAssociations.registration.value
@@ -801,7 +807,7 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.assertTitle("Datenfelder konfigurieren (Große Testakademie 2222)")
         f = self.response.forms['fieldsummaryform']
-        self.assertNotIn('field_name_8', f.fields)
+        self.assertNotIn('field_name_9', f.fields)
 
     @as_users("garcia")
     def test_event_fields_unique_name(self, user: CdEDBObject) -> None:
@@ -816,7 +822,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertValidationError('field_name_-1', "Feldname nicht eindeutig.")
         f = self.response.forms['fieldsummaryform']
         self.assertIn('field_name_1', f.fields)
-        self.assertNotIn('field_name_8', f.fields)
+        self.assertNotIn('field_name_9', f.fields)
 
         f = self.response.forms['fieldsummaryform']
         # If the form would be valid in the first turn, we would need the
@@ -972,7 +978,7 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
 
     @as_users("annika", "garcia")
-    def test_event_fields_query(self, user: CdEDBObject) -> None:
+    def test_event_fields_query_capital_letter(self, user: CdEDBObject) -> None:
         self.get("/event/event/1/field/summary")
         f = self.response.forms['fieldsummaryform']
         f['create_-1'].checked = True
@@ -997,10 +1003,18 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['queryform']
         f['qsel_reg_fields.xfield_CapitalLetters'].checked = True
         f['qop_reg_fields.xfield_CapitalLetters'] = QueryOperators.nonempty.value
+        f['qord_primary'] = 'reg_fields.xfield_CapitalLetters'
         self.submit(f)
         self.assertPresence("Anton Armin A.")
         self.assertPresence("Garcia G.")
         self.assertNonPresence("Emilia E.")
+        self.assertPresence("Other Text")
+        # Reset and do not specify operator to exhibit bug #1754
+        self.traverse({'href': '/event/event/1/registration/query'})
+        f = self.response.forms['queryform']
+        f['qsel_reg_fields.xfield_CapitalLetters'].checked = True
+        f['qord_primary'] = 'reg_fields.xfield_CapitalLetters'
+        self.submit(f)
         self.assertPresence("Other Text")
 
     @as_users("annika", "garcia")
@@ -1643,7 +1657,7 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'description': "Veranstaltungsteile"})
         f: webtest.Form = self.response.forms["partsummaryform"]
         self.assertEqual(
-            [x[0] for x in f['waitlist_field_3'].options], ['', '1001'])
+            [x[0] for x in f['waitlist_field_3'].options], ['', '8', '1001'])
         f['waitlist_field_1'].force_value(1002)
         self.submit(f, check_notification=False)
         self.assertValidationError('waitlist_field_1',

@@ -88,17 +88,6 @@ class FieldDatatypes(enum.IntEnum):
     date = 5  #:
     datetime = 6  #:
 
-    def to_type(self) -> Type[Any]:
-        type_associations = {
-            FieldDatatypes.str: str,
-            FieldDatatypes.bool: bool,
-            FieldDatatypes.int: int,
-            FieldDatatypes.float: float,
-            FieldDatatypes.date: datetime.date,
-            FieldDatatypes.datetime: datetime.datetime,
-        }
-        return type_associations[self]
-
 
 @enum.unique
 class QuestionnaireUsages(enum.IntEnum):
@@ -197,7 +186,11 @@ class MailinglistTypes(enum.IntEnum):
     assembly_opt_in = 31
     assembly_presider = 32
 
+    general_mandatory = 38
     general_opt_in = 40
+
+    general_moderators = 45
+    cdelokal_moderators = 46
 
     semi_public = 50
 

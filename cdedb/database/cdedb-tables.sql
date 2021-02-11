@@ -295,8 +295,7 @@ GRANT DELETE ON core.quota TO cdb_admin;
 -- keys of the dict stored here, will be runtime configurable.
 --
 -- This is in the core schema to allow anonymous access.
-CREATE TABLE core.meta_info
-(
+CREATE TABLE core.meta_info (
         id                      serial PRIMARY KEY,
         -- variable store for things like names of persons on
         -- regularily changing posts
@@ -399,8 +398,7 @@ GRANT UPDATE (code) ON core.changelog TO cdb_persona;
 GRANT UPDATE (reviewed_by) ON core.changelog TO cdb_admin;
 GRANT DELETE ON core.changelog TO cdb_admin;
 
-CREATE TABLE core.cron_store
-(
+CREATE TABLE core.cron_store (
         id                      serial PRIMARY KEY,
         title                   varchar NOT NULL UNIQUE,
         store                   jsonb NOT NULL
@@ -474,8 +472,7 @@ GRANT SELECT ON cde.lastschrift TO cdb_member;
 GRANT UPDATE, INSERT, DELETE ON cde.lastschrift TO cdb_admin;
 GRANT SELECT, UPDATE ON cde.lastschrift_id_seq TO cdb_admin;
 
-CREATE TABLE cde.lastschrift_transactions
-(
+CREATE TABLE cde.lastschrift_transactions (
         id                      serial PRIMARY KEY,
         submitted_by            integer REFERENCES core.personas(id) NOT NULL,
         lastschrift_id          integer REFERENCES cde.lastschrift(id) NOT NULL,

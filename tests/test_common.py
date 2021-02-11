@@ -292,7 +292,7 @@ class TestCommon(BasicTest):
         with tempfile.TemporaryDirectory() as tempdir:
             tmppath = pathlib.Path(tempdir, 'i18n')
             shutil.copytree(i18n_path, tmppath)
-            subprocess.run(["make", f"I18NDIR={tmppath}" "i18n-refresh"],
+            subprocess.run(["make", f"I18NDIR={tmppath}", "i18n-refresh"],
                            check=True, capture_output=True)
             try:
                 result = subprocess.run(

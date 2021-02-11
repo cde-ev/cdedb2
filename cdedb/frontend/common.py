@@ -75,7 +75,7 @@ from cdedb.common import (
     RequestState, Role, User, ValidationWarning, _tdelta, asciificator,
     compute_checkdigit, decode_parameter, encode_parameter, glue, json_serialize,
     make_proxy, make_root_logger, merge_dicts, n_, now, roles_to_db_role, unwrap,
-    xsorted,
+    xsorted, PrivilegeError
 )
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -707,14 +707,23 @@ def sort_filter(env: jinja2.Environment, value: Iterable[T],
     return xsorted(value, key=key_func, reverse=reverse)
 
 
-def dictsort_filter(value: Mapping[T, S],
+def dictsort_filter(value: Mapping[T, S], by: Literal["key", "value"] = "key",
                     reverse: bool = False) -> List[Tuple[T, S]]:
     """Sort a dict and yield (key, value) pairs.
 
     Because python dicts are unsorted you may want to use this function to
     order them by key.
     """
-    return xsorted(value.items(), key=lambda x: x[0], reverse=reverse)
+
+    def sortfunc(x: Any) -> Any:
+        if by == "key":
+            return x[0]
+        elif by == "value":
+            return x[1], x[0]
+        else:
+            raise ValueError
+
+    return xsorted(value.items(), key=sortfunc, reverse=reverse)
 
 
 def set_filter(value: Iterable[T]) -> Set[T]:
@@ -1821,6 +1830,13 @@ def reconnoitre_ambience(obj: AbstractFrontend,
                 raise werkzeug.exceptions.NotFound(
                     rs.gettext("Object {param}={value} not found").format(
                         param=param, value=value))
+            except PrivilegeError as e:
+                if not obj.conf['CDEDB_DEV']:
+                    msg = "Not privileged to view object {param}={value}: {exc}"
+                    raise werkzeug.exceptions.Forbidden(
+                        rs.gettext(msg).format(param=param, value=value, exc=str(e)))
+                else:
+                    raise
     for param, value in rs.requestargs.items():
         if param in scouts_dict:
             for consistency_checker in scouts_dict[param].dependencies:

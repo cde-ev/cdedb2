@@ -41,12 +41,26 @@ def get_full_address(val: CdEDBObject) -> str:
 
 class MailinglistGroup(enum.IntEnum):
     """To be used in `MlType.sortkey` to group similar mailinglists together."""
+    public = 1
     cde = 2
     team = 3
     event = 10
     assembly = 20
     cdelokal = 30
-    other = 1
+
+
+class AllUsersImplicitMeta:
+    """Metaclass for all mailinglists with all users as implicit subscribers."""
+    maxsize_default = 64
+
+    @classmethod
+    def get_implicit_subscribers(cls, rs: RequestState, bc: BackendContainer,
+                                 mailinglist: CdEDBObject) -> Set[int]:
+        """Return a set of all personas.
+
+        Leave out personas which are archived or have no valid email set.."""
+        check_appropriate_type(mailinglist, cls)  # type: ignore
+        return bc.core.list_all_personas(rs, is_active=False, valid_email=True)
 
 
 class AllMembersImplicitMeta:
@@ -58,7 +72,7 @@ class AllMembersImplicitMeta:
                                  mailinglist: CdEDBObject) -> Set[int]:
         """Return a set of all current members."""
         check_appropriate_type(mailinglist, cls)  # type: ignore
-        return bc.core.list_current_members(rs, is_active=False)
+        return bc.core.list_current_members(rs, is_active=False, valid_email=True)
 
 
 class EventAssociatedMeta:
@@ -110,7 +124,7 @@ class GeneralMailinglist:
     def __init__(self) -> None:
         raise RuntimeError()
 
-    sortkey: MailinglistGroup = MailinglistGroup.other
+    sortkey: MailinglistGroup = MailinglistGroup.public
 
     domains: List[MailinglistDomain] = [MailinglistDomain.lists]
 
@@ -585,6 +599,14 @@ class AssemblyOptInMailinglist(AssemblyMailinglist):
     ])
 
 
+class GeneralMandatoryMailinglist(AllUsersImplicitMeta, GeneralMailinglist):
+    role_map = OrderedDict([
+        ("persona", MailinglistInteractionPolicy.subscribable)
+    ])
+    # For mandatory lists, ignore all unsubscriptions.
+    allow_unsub = False
+
+
 class GeneralOptInMailinglist(GeneralMailinglist):
     role_map = OrderedDict([
         ("ml", MailinglistInteractionPolicy.subscribable)
@@ -601,6 +623,59 @@ class GeneralInvitationOnlyMailinglist(GeneralMailinglist):
     role_map = OrderedDict([
         ("ml", MailinglistInteractionPolicy.invitation_only)
     ])
+
+
+class GeneralModeratorMailinglist(GeneralMailinglist):
+    # For mandatory lists, ignore all unsubscriptions.
+    allow_unsub = False
+
+    @classmethod
+    def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
+                                 mailinglist: CdEDBObject,
+                                 persona_ids: Collection[int],
+                                 ) -> MIPolMap:
+        """Determine the MIPol of the user or a persona with a mailinglist.
+
+        For the `GeneralModeratorMailinglist` this means mandatory for all users who
+        are moderators, while other users are not allowed to subscribe.
+        """
+        check_appropriate_type(mailinglist, cls)
+
+        ret: MIPolMap = {}
+        all_moderators = cls.get_implicit_subscribers(rs, bc, mailinglist)
+
+        for persona_id in persona_ids:
+            if persona_id in all_moderators:
+                ret[persona_id] = const.MailinglistInteractionPolicy.subscribable
+            else:
+                ret[persona_id] = None
+        return ret
+
+    @classmethod
+    def get_implicit_subscribers(cls, rs: RequestState, bc: BackendContainer,
+                                 mailinglist: CdEDBObject) -> Set[int]:
+        """Get a list of people that should be on this mailinglist.
+
+        For the `GeneralModeratorMailinglist` this means mandatory for all users who
+        are moderators of any mailinglist.
+        """
+        check_appropriate_type(mailinglist, cls)
+        return bc.core.list_all_moderators(rs)
+
+
+class CdELokalModeratorMailinglist(GeneralModeratorMailinglist):
+    relevant_admins = {"cdelokal_admin"}
+
+    @classmethod
+    def get_implicit_subscribers(cls, rs: RequestState, bc: BackendContainer,
+                                 mailinglist: CdEDBObject) -> Set[int]:
+        """Get a list of people that should be on this mailinglist.
+
+        For the `CdELokalModeratorMailinglist` this means mandatory for all users who
+        are moderators of any cdelokal mailinglist.
+        """
+        check_appropriate_type(mailinglist, cls)
+        return bc.core.list_all_moderators(rs, ml_types={MailinglistTypes.cdelokal})
 
 
 class SemiPublicMailinglist(GeneralMailinglist):
@@ -660,7 +735,10 @@ TYPE_MAP = {
     MailinglistTypes.assembly_associated: AssemblyAssociatedMailinglist,
     MailinglistTypes.assembly_opt_in: AssemblyOptInMailinglist,
     MailinglistTypes.assembly_presider: AssemblyPresiderMailinglist,
+    MailinglistTypes.general_mandatory: GeneralMandatoryMailinglist,
     MailinglistTypes.general_opt_in: GeneralOptInMailinglist,
+    MailinglistTypes.general_moderators: GeneralModeratorMailinglist,
+    MailinglistTypes.cdelokal_moderators: CdELokalModeratorMailinglist,
     MailinglistTypes.semi_public: SemiPublicMailinglist,
     MailinglistTypes.cdelokal: CdeLokalMailinglist,
 }

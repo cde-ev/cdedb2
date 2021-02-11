@@ -537,8 +537,20 @@ class CoreBackend(AbstractBackend):
 
     @internal
     @access("ml")
-    def list_current_members(self, rs: RequestState,
-                             is_active: bool = False) -> Set[int]:
+    def list_all_personas(self, rs: RequestState, is_active: bool = False,
+                          valid_email: bool = False) -> Set[int]:
+        query = "SELECT id from core.personas WHERE is_archived = False"
+        if is_active:
+            query += " AND is_active = True"
+        if valid_email:
+            query += " AND username IS NOT NULL"
+        data = self.query_all(rs, query, params=tuple())
+        return {e["id"] for e in data}
+
+    @internal
+    @access("ml")
+    def list_current_members(self, rs: RequestState, is_active: bool = False,
+                             valid_email: bool = False) -> Set[int]:
         """Helper to list all current members.
 
         Used to determine subscribers of mandatory/opt-out member mailinglists.
@@ -546,8 +558,27 @@ class CoreBackend(AbstractBackend):
         query = "SELECT id from core.personas WHERE is_member = True"
         if is_active:
             query += " AND is_active = True"
+        if valid_email:
+            query += " AND username IS NOT NULL"
         data = self.query_all(rs, query, params=tuple())
         return {e["id"] for e in data}
+
+    @internal
+    @access("ml")
+    def list_all_moderators(self, rs: RequestState,
+                            ml_types: Optional[Collection[const.MailinglistTypes]] = None
+                            ) -> Set[int]:
+        """List all moderators of any mailinglists.
+
+        Due to architectural limitations of the BackendContainer used for
+        mailinglist types, this is found here instead of in the MlBackend.
+        """
+        query = "SELECT DISTINCT mod.persona_id from ml.moderators as mod"
+        if ml_types:
+            query += (" JOIN ml.mailinglists As ml ON mod.mailinglist_id = ml.id"
+                      " WHERE ml.ml_type = ANY(%s)")
+        data = self.query_all(rs, query, params=(ml_types,))
+        return {e["persona_id"] for e in data}
 
     @access("core_admin")
     def next_persona(self, rs: RequestState, persona_id: int,
@@ -1616,6 +1647,12 @@ class CoreBackend(AbstractBackend):
         or add them if an entry already exists, as entries are unique across
         persona_id and date.
 
+        Beware that this function can optionally be called in an atomized setting.
+        If this is the case, the quota is not actually raised by the offending query,
+        but access is blocked nonetheless. Otherwise, a value exceeding the quota limit
+        is saved into the database, which means that actions that should still be
+        possible need to be exempt in the check_quota function.
+
         :returns: Return the number of restricted actions the user has
             performed today including the ones given with this call, if any.
         """
@@ -1650,8 +1687,7 @@ class CoreBackend(AbstractBackend):
         return unwrap(self.query_one(rs, query, params)) or 0
 
     @overload
-    def check_quota(self, rs: RequestState, *, ids: Collection[int]) -> bool:
-        ...
+    def check_quota(self, rs: RequestState, *, ids: Collection[int]) -> bool: ...
 
     @overload
     def check_quota(self, rs: RequestState, *, num: int) -> bool: ...
@@ -1663,8 +1699,13 @@ class CoreBackend(AbstractBackend):
     @access("persona")
     def check_quota(self, rs: RequestState, *, ids: Collection[int] = None,
                     num: int = None) -> bool:
-        """Check whether the quota was exceeded today."""
+        """Check whether the quota was exceeded today.
+
+        Even if quota has been exceeded, never block access to own profile.
+        """
         # Validation is done inside.
+        if num is None and ids is not None and set(ids) == {rs.user.persona_id}:
+            return False
         quota = self.quota(rs, ids=ids, num=num)  # type: ignore
         return (quota > self.conf["QUOTA_VIEWS_PER_DAY"]
                 and not {"cde_admin", "core_admin"} & rs.user.roles)

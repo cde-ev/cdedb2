@@ -43,6 +43,7 @@ class MlFrontend(MailmanMixin, MlBaseFrontend):
         if (self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or (
                 self.conf["CDEDB_DEV"] and not self.conf["CDEDB_TEST"])):
             self.logger.info("Skipping mailman request in dev/offline mode.")
+            rs.notify('info', n_("Skipping mailman request in dev/offline mode."))
         else:
             mailman = self.get_mailman()
             mmlist = mailman.get_list_safe(dblist['address'])

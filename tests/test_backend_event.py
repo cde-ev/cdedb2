@@ -598,6 +598,7 @@ class TestEventBackend(BackendTest):
         self.event.set_registration(self.key, update_registration)
         data = self.event.get_registration(self.key, reg_id)
         expectation = {
+            'anzahl_GROSSBUCHSTABEN': 4,
             'arrival': datetime.datetime(2222, 11, 9, 8, 55, 44, tzinfo=pytz.utc),
             'lodge': 'Die üblichen Verdächtigen :)',
             'is_child': False,
@@ -788,6 +789,7 @@ class TestEventBackend(BackendTest):
             'checkin': None,
             'event_id': 1,
             'fields': {
+                'anzahl_GROSSBUCHSTABEN': 3,
                 'brings_balls': True,
                 'transportation': 'pedes',
                 'is_child': False,
@@ -948,6 +950,7 @@ class TestEventBackend(BackendTest):
                 'checkin': None,
                 'event_id': 1,
                 'fields': {
+                    'anzahl_GROSSBUCHSTABEN': 4,
                     'lodge': 'Die üblichen Verdächtigen :)',
                     'is_child': False,
                 },
@@ -997,6 +1000,7 @@ class TestEventBackend(BackendTest):
                 'checkin': None,
                 'event_id': 1,
                 'fields': {
+                    'anzahl_GROSSBUCHSTABEN': 3,
                     'brings_balls': True,
                     'transportation': 'pedes',
                     'is_child': False,
@@ -1047,6 +1051,7 @@ class TestEventBackend(BackendTest):
                 'checkin': None,
                 'event_id': 1,
                 'fields': {
+                    'anzahl_GROSSBUCHSTABEN': 2,
                     'brings_balls': False,
                     'may_reserve': True,
                     'transportation': 'etc',

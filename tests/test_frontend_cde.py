@@ -345,6 +345,8 @@ class TestCdEFrontend(FrontendTest):
                 self.get(save, status=429)
                 self.assertPresence("Limit für Zugriffe")
                 self.assertPresence("automatisch zurückgesetzt")
+                # Check that own profile remains accessible
+                self.traverse({'href': '/core/self/show'})
                 break
 
     @as_users("anton", "berta", "inga")
@@ -1925,6 +1927,36 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("PfingstAkademie 2014")
         self.traverse({'description': '{} {}'.format(user['given_names'],
                                                      user['family_name'])})
+
+    @as_users("anton", "charly", "garcia", "inga")
+    def test_show_past_event_orgas(self, user: CdEDBObject) -> None:
+        self.traverse({'description': 'Mitglieder'},
+                      {'description': 'Verg. Veranstaltungen'},
+                      {'description': 'FingerAkademie 2020'})
+        self.assertTitle("FingerAkademie 2020")
+        self.assertPresence("Ferdinand F. Findus", div="orgas")
+        if user == USER_DICT["inga"]:
+            # no patricipant, but searchable.
+            self.assertPresence("und 2 weitere", div="orgas")
+            self.assertNonPresence("Charly")
+            self.assertNonPresence("Emilia")
+            self.assertNonPresence("Garcia", div="orgas")
+            self.traverse({'description': 'Ferdinand'})
+        else:
+            self.assertPresence("Charly C. Clown", div="orgas")
+            self.assertPresence("Emilia E. Eventis", div="orgas")
+            self.assertPresence("Ferdinand F. Findus", div="orgas")
+            self.assertNonPresence("Garcia", div="orgas")
+            self.assertNonPresence("weitere")
+            if user == USER_DICT["anton"]:
+                self.traverse({'description': 'Emilia'})
+            else:
+                # requesting user not searchable / no member
+                self.assertNoLink(content="Emilia")
+                self.assertNoLink(content="Ferdindand")
+                if user != USER_DICT["charly"]:
+                    # requested user not searchable.
+                    self.assertNoLink(content="Charly")
 
     @as_users("vera")
     def test_past_event_addresslist(self, user: CdEDBObject) -> None:

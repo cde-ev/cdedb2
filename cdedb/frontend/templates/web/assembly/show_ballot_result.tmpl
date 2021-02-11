@@ -30,6 +30,20 @@
     {{ util.breadcrumb_link(cdedblink("assembly/show_ballot_result"), gettext("Detailed Results"), active=True) }}
 {% endblock %}
 
+{% macro print_vote(votestring) %}
+    {%- for candidate_level in votestring.split(">") -%}
+        {%- for candidate in candidate_level.split("=") -%}
+            {{- candidates[candidate] -}}
+            {%- if not loop.last -%}
+                {{ nbsp }}<span class="result-separator">=</span>{{ nbsp }}
+            {%- endif -%}
+        {%- endfor -%}
+        {%- if not loop.last -%}
+            {{ nbsp }}<span class="result-separator">></span>{{ nbsp }}
+        {%- endif -%}
+    {%- endfor -%}
+{% endmacro %}
+
 {% block content %}
 
     {% set classical = ambience['ballot']['votes'] %}
@@ -48,10 +62,12 @@
         {% endtrans %}
     </p>
 
-    <pre class="result">{{ result['result'] }}</pre>
+    <pre class="result" id="combined-preference">
+        {{- print_vote(result['result']) -}}
+    </pre>
 
     <p>
-        {% trans  gt="<code>></code>"|s, eq="<code>=</code>"|s %}
+        {% trans  gt="<code class=result-separator >></code>"|s, eq="<code class=result-separator >=</code>"|s %}
             The greater-than character {{ gt }} means that the candidate, represented by their
             shortname, on the left has higher overall preference than the one on the right.
             The equals character {{ eq }} means that two or more candidates have the same overall
@@ -61,7 +77,7 @@
 
     {% if ambience['ballot']['use_bar'] %}
         <p>
-            {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_SHORTNAME) %}
+            {% trans abm="<code class=result >%(abm)s</code>"|s|format(abm=candidates[ASSEMBLY_BAR_SHORTNAME]) %}
                 Additionally the shortname {{ abm }} shows where in the election the rejection limit was ranked.
             {% endtrans %}
         </p>
@@ -135,28 +151,20 @@
             <thead>
                 <tr>
                     <th class="col-sm-11">{% trans %}Vote_[[on a voting paper]]{% endtrans %}</th>
-                    <th class="col-sm-push-1">{% trans %}Count{% endtrans %}</th>
+                    <th class="col-sm-push-1 text-right">{% trans %}Count{% endtrans %}</th>
                 </tr>
             </thead>
             <tbody>
-                {% for vote, count in vote_counts|dictsort|reverse %}
-                    <tr>
+                {% for votestring, count in vote_counts|dictsort(by="value", reverse=True) %}
+                    <tr id="vote-{{ loop.index }}">
                         <td>
                             {% if vote == MAGIC_ABSTAIN %}
                                 {% trans %}Abstained{% endtrans %}
                             {% else %}
-                                <code>
-                                    {% if classical %}
-                                        {%- for vote in vote.split("=") -%}
-                                            {{ vote }}{% if not loop.last %},{{ nbsp }}{% endif %}
-                                        {%- endfor -%}
-                                    {% else %}
-                                        {{ vote }}
-                                    {% endif %}
-                                </code>
+                                <code class="result">{{ print_vote(votestring) }}</code>
                             {% endif %}
                         </td>
-                        <td>
+                        <td class="text-right">
                             {{ count }}
                         </td>
                     </tr>
@@ -167,7 +175,44 @@
 
     <h2 class="mosp">{% trans %}Your Vote{% endtrans %}</h2>
 
-        {{ ballot_tallied.show_own_vote() }}
+    <div id="own-vote">
+        {% if not attends %}
+            {% trans %}You are not participating in this assembly.{% endtrans %}
+        {% elif not has_voted %}
+                {% trans %}You did not vote.{% endtrans %}
+        {% elif own_vote %}
+            {% if own_vote == MAGIC_ABSTAIN %}
+                <p>{% trans %}You abstained.{% endtrans %}</p>
+            {% elif own_vote == ASSEMBLY_BAR_SHORTNAME %}
+                <p>{% trans %}You voted against all candidates.{% endtrans %}</p>
+            {% else %}
+                {% if classical %}
+                    <p>{% trans %}You voted for the following candidates:{% endtrans %}</p>
+                {% else %}
+                    <p>{% trans %}You voted in the following preference:{% endtrans %}</p>
+                {% endif %}
+                <pre class="result">{{ print_vote(own_vote) }}</pre>
+            {% endif %}
+        {% else %}
+            <p>
+                {% trans %}The assembly concluded. The votes of specific users can no longer be extracted from the database in any way.{% endtrans %}
+                {% trans %}To show your vote, enter the secret you were sent when registering for the assembly.{% endtrans %}
+            </p>
+            <form action="{{ cdedblink("assembly/show_old_vote") }}" id="showoldvoteform" method="POST">
+                {{ util.anti_csrf_token("assembly/show_old_vote") }}
+                <div class="input-group">
+                    <span class="input-group-addon"><label for="input-secret">
+                        {% trans %}Secret{% endtrans %}
+                    </label></span>
+                    {{ util.input_text(name="secret", anid="input-secret") }}
+                    <div class="input-group-btn">
+                        {{ util.input_submit(value=gettext("Show Vote"), aclass="btn btn-success", icon="lock") }}
+                    </div>
+                </div>
+                {{ util.output_errors('secret', wrapper=True) }}
+            </form>
+        {% endif %}
+    </div>
 
 
     <h2 class="mosp">{% trans %}Voters{% endtrans %}</h2>

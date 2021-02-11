@@ -88,6 +88,8 @@
                                             given_names=persona['given_names'],
                                             family_name=persona['family_name'])) }}
                             </form>
+                        {% else %}
+                            {{ util.input_submit(value="", aclass="btn btn-xs btn-danger list-button-float dummy", icon="minus", ariahidden=True) }}
                         {% endif %}
                     </li>
                 {% endfor %}
