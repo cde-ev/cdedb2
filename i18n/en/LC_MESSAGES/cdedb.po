@@ -14717,6 +14717,9 @@ msgstr "Members by Birthyear"
 msgid "members_by_first_event"
 msgstr "Members by First Event"
 
+msgid "unique_participants_per_year"
+msgstr "Unque Participants per Year"
+
 msgid "num_members"
 msgstr "Members"
 

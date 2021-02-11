@@ -15383,6 +15383,9 @@ msgstr "Mitglieder nach Geburtsjahr"
 msgid "members_by_first_event"
 msgstr "Mitglieder nach erster Akademieteilnahme"
 
+msgid "unique_participants_per_year"
+msgstr "Verschiedene Akademie-Teilnehmer nach Jahr"
+
 msgid "num_members"
 msgstr "Mitglieder"
 
