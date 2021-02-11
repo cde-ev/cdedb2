@@ -2042,23 +2042,24 @@ class CdEFrontend(AbstractUserFrontend):
                     subject = "Mitgliedschaft verlängern"
                 else:
                     subject = "Mitgliedschaft verlängert"
-                self.do_mail(
-                    rrs, "billing",
-                    {'To': (persona['username'],),
-                     'Subject': subject},
-                    {'persona': persona,
-                     'fee': self.conf["MEMBERSHIP_FEE"],
-                     'lastschrift': lastschrift,
-                     'open_lastschrift': open_lastschrift,
-                     'address': address,
-                     'transaction_subject': transaction_subject,
-                     'addresscheck': addresscheck,
-                     'meta_info': meta_info})
                 period_update['billing_count'] = period['billing_count'] + 1
-                if testrun:
-                    return False
-                self.cdeproxy.set_period(rrs, period_update)
-                return True
+                if not testrun:
+                    self.cdeproxy.set_period(rrs, period_update)
+
+            # Send mail only if transaction completed successfully.
+            self.do_mail(
+                rrs, "billing",
+                {'To': (persona['username'],),
+                 'Subject': subject},
+                {'persona': persona,
+                 'fee': self.conf["MEMBERSHIP_FEE"],
+                 'lastschrift': lastschrift,
+                 'open_lastschrift': open_lastschrift,
+                 'address': address,
+                 'transaction_subject': transaction_subject,
+                 'addresscheck': addresscheck,
+                 'meta_info': meta_info})
+            return not testrun
 
         def send_archival_notification(rrs: RequestState, rs: None = None) -> bool:
             """Send archival notifications to inactive accounts."""
@@ -2082,20 +2083,21 @@ class CdEFrontend(AbstractUserFrontend):
                     rrs, persona_id)
                 if is_archivable or testrun:
                     persona = self.coreproxy.get_persona(rrs, persona_id)
-                    self.do_mail(
-                        rrs, "imminent_archival",
-                        {'To': (persona['username'],),
-                         'Subject': "Bevorstehende Löschung Deines"
-                                    " CdE-Datenbank-Accounts"},
-                        {'persona': persona,
-                         'management': self.conf["MANAGEMENT_ADDRESS"],
-                         'meta_info': meta_info})
                     period_update['archival_notification_count'] = \
                         period['archival_notification_count'] + 1
-                if testrun:
-                    return False
-                self.cdeproxy.set_period(rrs, period_update)
-                return True
+                if not testrun:
+                    self.cdeproxy.set_period(rrs, period_update)
+
+            if is_archivable or testrun:
+                self.do_mail(
+                    rrs, "imminent_archival",
+                    {'To': (persona['username'],),
+                     'Subject': "Bevorstehende Löschung Deines"
+                                " CdE-Datenbank-Accounts"},
+                    {'persona': persona,
+                     'management': self.conf["MANAGEMENT_ADDRESS"],
+                     'meta_info': meta_info})
+            return not testrun
 
         Worker(self.conf, (send_billing_mail, send_archival_notification), rs).start()
         rs.notify("success", n_("Started sending billing mails."))
@@ -2128,8 +2130,9 @@ class CdEFrontend(AbstractUserFrontend):
                     'ejection_state': persona_id,
                 }
                 persona = self.coreproxy.get_cde_user(rrs, persona_id)
-                if (persona['balance'] < self.conf["MEMBERSHIP_FEE"]
-                        and not persona['trial_member']):
+                do_eject = (persona['balance'] < self.conf["MEMBERSHIP_FEE"]
+                            and not persona['trial_member'])
+                if do_eject:
                     self.coreproxy.change_membership(rrs, persona_id,
                                                      is_member=False)
                     period_update['ejection_count'] = \
@@ -2138,17 +2141,17 @@ class CdEFrontend(AbstractUserFrontend):
                         period['ejection_balance'] + persona['balance']
                     transaction_subject = make_membership_fee_reference(persona)
                     meta_info = self.coreproxy.get_meta_info(rrs)
-                    self.do_mail(
-                        rrs, "ejection",
-                        {'To': (persona['username'],),
-                         'Subject': "Austritt aus dem CdE e.V."},
-                        {'persona': persona,
-                         'fee': self.conf["MEMBERSHIP_FEE"],
-                         'transaction_subject': transaction_subject,
-                         'meta_info': meta_info,
-                         })
                 self.cdeproxy.set_period(rrs, period_update)
-                return True
+            if do_eject:
+                self.do_mail(
+                    rrs, "ejection",
+                    {'To': (persona['username'],),
+                     'Subject': "Austritt aus dem CdE e.V."},
+                    {'persona': persona,
+                     'fee': self.conf["MEMBERSHIP_FEE"],
+                     'transaction_subject': transaction_subject,
+                     'meta_info': meta_info})
+            return True
 
         def automated_archival(rrs: RequestState, rs: None = None) -> bool:
             """Archive one inactive user if they are eligible."""
@@ -2165,6 +2168,7 @@ class CdEFrontend(AbstractUserFrontend):
                     'id': period_id,
                     'archival_state': persona_id,
                 }
+                mail = None
                 if self.coreproxy.is_persona_automatically_archivable(
                         rrs, persona_id, reference_date=period['billing_done']):
                     note = "Autmoatisch archiviert wegen Inaktivität."
@@ -2181,7 +2185,6 @@ class CdEFrontend(AbstractUserFrontend):
                             headers={'Subject': "Automated Archival failure",
                                      'To': (rrs.user.username,)},
                             attachments=None)
-                        self._send_mail(mail)
                     else:
                         if code:
                             period_update['archival_count'] = \
@@ -2197,9 +2200,10 @@ class CdEFrontend(AbstractUserFrontend):
                                 headers={'Subject': "Automated Archival failure",
                                          'To': (rrs.user.username,)},
                                 attachments=None)
-                            self._send_mail(mail)
                 self.cdeproxy.set_period(rrs, period_update)
-                return True
+            if mail is not None:
+                self._send_mail(mail)
+            return True
 
         Worker(self.conf, (eject_member, automated_archival), rs).start()
         rs.notify("success", n_("Started ejection."))
@@ -2317,22 +2321,19 @@ class CdEFrontend(AbstractUserFrontend):
                     return False
                 persona = self.coreproxy.get_cde_user(rrs, persona_id)
                 address = make_postal_address(persona)
-                self.do_mail(
-                    rrs, "addresscheck",
-                    {'To': (persona['username'],),
-                     'Subject': "Adressabfrage für den exPuls"},
-                    {'persona': persona,
-                     'address': address,
-                     })
-                if testrun:
-                    return False
-                expuls_update = {
-                    'id': expuls_id,
-                    'addresscheck_state': persona_id,
-                    'addresscheck_count': expuls['addresscheck_count'] + 1,
-                }
-                self.cdeproxy.set_expuls(rrs, expuls_update)
-                return True
+                if not testrun:
+                    expuls_update = {
+                        'id': expuls_id,
+                        'addresscheck_state': persona_id,
+                        'addresscheck_count': expuls['addresscheck_count'] + 1,
+                    }
+                    self.cdeproxy.set_expuls(rrs, expuls_update)
+            self.do_mail(
+                rrs, "addresscheck",
+                {'To': (persona['username'],),
+                 'Subject': "Adressabfrage für den exPuls"},
+                {'persona': persona, 'address': address})
+            return not testrun
 
         if skip:
             self.cdeproxy.finish_expuls_addresscheck(rs, skip=True)
