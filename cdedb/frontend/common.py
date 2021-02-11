@@ -2092,7 +2092,7 @@ def REQUESTdata(
         as well as some native python types (primitives, datetimes, decimals).
         Additonally the generic types ``Optional[T]`` and ``Collection[T]``
         are valid as a type.
-        To extract an encoded parameter one may prepended the name of it 
+        To extract an encoded parameter one may prepended the name of it
         with an octothorpe (``#``).
     """
 
