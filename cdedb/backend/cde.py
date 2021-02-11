@@ -842,6 +842,7 @@ class CdEBackend(AbstractBackend):
             ) AS ex_member_count
         """
         data = self.query_one(rs, query, ())
+        assert data is not None
 
         ret: CdEDBObject = {
             'simple_stats': OrderedDict((k, data[k]) for k in (
