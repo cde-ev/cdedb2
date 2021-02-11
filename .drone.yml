@@ -29,7 +29,7 @@ steps:
   # - git merge "$DRONE_SOURCE_BRANCH"
   commands:
   - make mypy
-  - exit 1 # just for testing
+  - make lint # this will never fail but still yields useful output
 
 volumes:
 - name: dockersock

@@ -212,7 +212,7 @@ lint:
 	@echo "All of pylint"
 	@echo $(BANNERLINE)
 	@echo ""
-	${PYLINTBIN} --rcfile='./lint.rc' cdedb || true
+	${PYLINTBIN} --rcfile='./lint.rc' --exit-zero cdedb
 	@echo ""
 	@echo $(BANNERLINE)
 	@echo "And now only errors and warnings"
