@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2021-02-11 20:22+0100\n"
+"POT-Creation-Date: 2021-02-11 16:52+0100\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -11279,6 +11279,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/ml/base.tmpl:46
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:26
 #: cdedb/frontend/templates/web/ml/change_ml_type.tmpl:24
+#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:22
 msgid "Mailinglist"
 msgstr ""
 
@@ -11319,6 +11320,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/ml/base.tmpl:16
 #: cdedb/frontend/templates/web/ml/message_moderation.tmpl:15
+#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:20
 msgid "Message Moderation"
 msgstr ""
 
@@ -11663,14 +11665,24 @@ msgstr ""
 msgid "%(title)s – Message Moderation"
 msgstr ""
 
+#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:30
 #: cdedb/frontend/templates/web/ml/message_moderation.tmpl:21
 msgid "This mailing list is not moderated via CdEDB."
 msgstr ""
 
+#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:37
+msgid ""
+"If you reject a message, its author will recieve a notification message. If "
+"you discard a message, no notification message will be sent. This is "
+"preferred for spam messages."
+msgstr ""
+
+#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:67
 #: cdedb/frontend/templates/web/ml/message_moderation.tmpl:47
 msgid "Message details"
 msgstr ""
 
+#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:74
 #: cdedb/frontend/templates/web/ml/message_moderation.tmpl:54
 msgid "No held messages."
 msgstr ""

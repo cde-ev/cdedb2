@@ -1485,20 +1485,20 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("Verschwurbelung")
         self.assertPresence("unerwartetes Erbe")
         client.get_held_messages.return_value = messages[1:]
-        f = self.response.forms['acceptmsg1']
-        self.submit(f)
+        f = self.response.forms['msg1']
+        self.submit(f, button='action', value='accept')
         self.assertNonPresence("Finanzbericht")
         self.assertPresence("Verschwurbelung")
         self.assertPresence("unerwartetes Erbe")
         client.get_held_messages.return_value = messages[2:]
-        f = self.response.forms['rejectmsg2']
-        self.submit(f)
+        f = self.response.forms['msg2']
+        self.submit(f, button='action', value='reject')
         self.assertNonPresence("Finanzbericht")
         self.assertNonPresence("Verschwurbelung")
         self.assertPresence("unerwartetes Erbe")
         client.get_held_messages.return_value = messages[3:]
-        f = self.response.forms['discardmsg3']
-        self.submit(f)
+        f = self.response.forms['msg3']
+        self.submit(f, button='action', value='discard')
         self.assertNonPresence("Finanzbericht")
         self.assertNonPresence("Verschwurbelung")
         self.assertNonPresence("unerwartetes Erbe")
