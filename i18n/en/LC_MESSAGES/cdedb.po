@@ -11666,6 +11666,7 @@ msgid "%(title)s – Message Moderation"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/message_moderation.tmpl:30
+#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:21
 msgid "This mailing list is not moderated via CdEDB."
 msgstr ""
 
@@ -11677,10 +11678,12 @@ msgid ""
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/message_moderation.tmpl:67
+#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:47
 msgid "Message details"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/message_moderation.tmpl:74
+#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:54
 msgid "No held messages."
 msgstr ""
 

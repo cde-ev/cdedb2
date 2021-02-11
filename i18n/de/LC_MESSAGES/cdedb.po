@@ -12352,6 +12352,7 @@ msgid "%(title)s – Message Moderation"
 msgstr "%(title)s – Nachrichtenmoderation"
 
 #: cdedb/frontend/templates/web/ml/message_moderation.tmpl:30
+#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:21
 msgid "This mailing list is not moderated via CdEDB."
 msgstr "Diese Mailingliste wird nicht via Datenbank moderiert."
 
@@ -12360,15 +12361,18 @@ msgid ""
 "If you reject a message, its author will recieve a notification message. If "
 "you discard a message, no notification message will be sent. The latter is "
 "preferred for spam messages."
-msgstr "Wenn du eine Nachricht ablehnst, erhält ihr Autor eine Benachrichtigung. "
-"Wenn du eine Nachricht verwirfst, wird hingegen keine Nachricht versendet. Letzteres "
-"wird für Spam empfohlen."
+msgstr ""
+"Wenn du eine Nachricht ablehnst, erhält ihr Autor eine Benachrichtigung. "
+"Wenn du eine Nachricht verwirfst, wird hingegen keine Nachricht versendet. "
+"Letzteres wird für Spam empfohlen."
 
 #: cdedb/frontend/templates/web/ml/message_moderation.tmpl:67
+#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:47
 msgid "Message details"
 msgstr "Nachrichtendetails"
 
 #: cdedb/frontend/templates/web/ml/message_moderation.tmpl:74
+#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:54
 msgid "No held messages."
 msgstr "Keine zurückgehaltenen Nachrichten."
 
