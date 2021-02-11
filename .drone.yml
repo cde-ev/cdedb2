@@ -13,12 +13,16 @@ steps:
   # which would not be cleared from docker cache
   - docker build --file related/docker/Dockerfile-postgres --tag cdepostgres .
   - docker build --file related/docker/Dockerfile-cdedb --tag cdedb .
-- name: linting
+- name: mypy
+  image: cdedb
+  pull: never # do not try to pull image from docker hub
+  commands:
+  - make mypy
+- name: lint
   image: cdedb
   pull: never # do not try to pull image from docker hub
   commands:
   - make lint # this will never fail but still yields useful output
-  - make mypy
 - name: cdb # is used as the hostname for the container
   image: cdepostgres
   pull: never # do not try to pull image from docker hub
@@ -40,6 +44,8 @@ steps:
   - make i18n-compile # required for sample-data target
   - make sample-data # this creates the sql schema and copies the localconfig.py
   - make check
+  depends_on:
+  - cdb # only needs db allowing mypy and lint to run parallel to this
 
 volumes:
 - name: dockersock
