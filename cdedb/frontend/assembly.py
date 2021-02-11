@@ -29,6 +29,7 @@ from cdedb.frontend.common import (
 )
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, Query, mangle_query_input
+from cdedb.validation import _ASSEMBLY_COMMON_FIELDS
 from cdedb.validationtypes import CdedbID, Email
 
 #: Magic value to signal abstention during voting. Used during the emulation
@@ -302,12 +303,14 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     @access("assembly", modi={"POST"})
     @assembly_guard
-    @REQUESTdatadict("title", "description", "shortname",
-                     "presider_address", "signup_end", "notes")
+    @REQUESTdatadict(*_ASSEMBLY_COMMON_FIELDS().keys())
+    @REQUESTdata("presider_address")
     def change_assembly(self, rs: RequestState, assembly_id: int,
-                        data: Dict[str, Any]) -> Response:
+                        presider_address: Optional[str], data: Dict[str, Any]
+                        ) -> Response:
         """Modify an assembly."""
         data['id'] = assembly_id
+        data['presider_address'] = presider_address
         data = check(rs, vtypes.Assembly, data)
         if rs.has_validation_errors():
             return self.change_assembly_form(rs, assembly_id)
@@ -392,7 +395,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         return self.redirect(rs, "assembly/show_assembly")
 
     @access("assembly_admin", modi={"POST"})
-    @REQUESTdatadict("title", "description", "shortname", "signup_end", "notes")
+    @REQUESTdatadict(*_ASSEMBLY_COMMON_FIELDS().keys())
     @REQUESTdata("presider_ids", "create_attendee_list", "create_presider_list",
                  "presider_address")
     def create_assembly(self, rs: RequestState, presider_ids: vtypes.CdedbIDList,

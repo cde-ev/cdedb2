@@ -2018,6 +2018,9 @@ def _PAST_EVENT_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
 }
 
 
+_PAST_EVENT_FIELDS = {**_PAST_EVENT_COMMON_FIELDS(), **_PAST_EVENT_OPTIONAL_FIELDS()}
+
+
 @_add_typed_validator
 def _past_event(
     val: Any, argname: str = "past_event", *,
@@ -3463,6 +3466,8 @@ def _MAILINGLIST_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
     'registration_stati': EmptyList,
 }
 
+ALL_MAILINGLIST_FIELDS = (_MAILINGLIST_COMMON_FIELDS().keys() |
+                          ml_type.ADDITIONAL_TYPE_FIELDS.items())
 
 _MAILINGLIST_READONLY_FIELDS = {
     'address',
@@ -3663,7 +3668,6 @@ def _BALLOT_COMMON_FIELDS() -> Mapping[str, Any]: return {
     'vote_end': datetime.datetime,
     'notes': Optional[str],
 }
-
 
 def _BALLOT_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
     'extended': Optional[bool],
@@ -4237,7 +4241,7 @@ def _query(
     # order
     for idx, entry in enumerate(val.order):
         try:
-            # TODO use generic tuple here once implemented 
+            # TODO use generic tuple here once implemented
             entry = _ALL_TYPED[Iterable](  # type: ignore
                 entry, 'order', **{**kwargs, '_convert': False})
         except ValidationSummary as e:
