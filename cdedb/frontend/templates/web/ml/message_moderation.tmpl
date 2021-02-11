@@ -49,7 +49,7 @@
                                   class="hide-hover display-inline">
                             {{ util.anti_csrf_token('ml/message_moderation') }}
                             {{ util.input_hidden(name="request_id", value=email.request_id) }}
-                            <div class="btn-group pull-right">
+                            <div class="pull-right">
                                 {% for action, coloring, icon in (('accept', 'success', 'check'),
                                                                   ('reject', 'warning', 'reply'),
                                                                   ('discard', 'danger', 'trash-alt')) %}
