@@ -12548,8 +12548,7 @@ msgid ""
 "automatically, but may be able to subscribe manually."
 msgstr ""
 "Nutzer, die diese Liste abbestellt haben. Sie werden nicht wieder "
-"automatisch hinzugefügt, können aber eventuell manuell die Liste "
-"abonnieren."
+"automatisch, können sich aber eventuell manuell hinzufügen."
 
 #: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:198
 msgid "Explicity Unsubscribed State"
