@@ -200,7 +200,7 @@ class CdEFrontend(AbstractUserFrontend):
         stats = self.cdeproxy.get_member_stats(rs)
         return self.render(rs, "member_stats", {'stats': stats})
 
-    @access("searchable")
+    @access("persona")
     @REQUESTdata("is_search")
     def member_search(self, rs: RequestState, is_search: bool) -> Response:
         """Search for members."""

@@ -103,7 +103,6 @@ class TestCdEFrontend(FrontendTest):
         everyone = ["Mitglieder", "Übersicht"]
         past_event = ["Verg. Veranstaltungen"]
         member = ["Sonstiges", "Datenschutzerklärung", "Kurssuche"]
-        not_searchable = ["Datenschutzerklärung"]
         searchable = ["CdE-Mitglied suchen"]
         cde_admin = ["Nutzer verwalten", "Organisationen verwalten",
                      "Mitglieder-Statistik", "Verg.-Veranstaltungen-Log"]
