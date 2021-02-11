@@ -3,7 +3,7 @@
 import sys
 import unittest
 
-from tests.common import MyTextTestRunner, MyTextTestResult, check_test_setup
+from tests.common import MyTextTestResult, MyTextTestRunner, check_test_setup
 
 if __name__ == "__main__":
     check_test_setup()
@@ -16,4 +16,5 @@ if __name__ == "__main__":
             suite.addTests(loader.discover('./tests/', pattern='*{}*.py'.format(arg)))
     else:
         suite.addTests(loader.discover('./tests/', pattern='test*.py'))
-    testRunner.run(suite)
+
+    sys.exit(0 if testRunner.run(suite).wasSuccessful() else 1)
