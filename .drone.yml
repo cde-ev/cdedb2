@@ -13,13 +13,19 @@ steps:
   # which would not be cleared from docker cache
   - docker build --file related/docker/Dockerfile-postgres --tag cdepostgres .
   - docker build --file related/docker/Dockerfile-cdedb --tag cdedb .
-#- name: cdb # is used as the hostname for the container
-#  image: cdepostgres
-#  pull: never # do not try to pull image from docker hub
-#  detach: true # detach to keep running for the following steps
-#  environment:
-#    POSTGRES_PASSWORD: passwd
 - name: linting
+  image: cdedb
+  pull: never # do not try to pull image from docker hub
+  commands:
+  - make mypy
+  # temporarily disabled - make lint # this will never fail but still yields useful output
+- name: cdb # is used as the hostname for the container
+  image: cdepostgres
+  pull: never # do not try to pull image from docker hub
+  detach: true # detach to keep running for the following steps
+  environment:
+    POSTGRES_PASSWORD: passwd
+- name: testsuite
   image: cdedb
   pull: never # do not try to pull image from docker hub
   # merge into master before testing
@@ -28,8 +34,12 @@ steps:
   # - git switch "$DRONE_TARGET_BRANCH"
   # - git merge "$DRONE_SOURCE_BRANCH"
   commands:
-  - make mypy
-  - make lint # this will never fail but still yields useful output
+  - cp -r /drone/src/. /cdedb2 # the dot also copies hidden files
+  - cd /cdedb2
+  - sleep 10 # wait for db to come online
+  - make i18n-compile # required for sample-data target
+  - make sample-data # this creates the sql schema and copies the localconfig.py
+  - make check
 
 volumes:
 - name: dockersock
