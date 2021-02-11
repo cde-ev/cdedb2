@@ -23,11 +23,11 @@ from werkzeug import Response
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    ADMIN_KEYS, ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, REALM_INHERITANCE,
-    REALM_SPECIFIC_GENESIS_FIELDS, ArchiveError, CdEDBObject, DefaultReturnCode,
-    EntitySorter, PathLike, PrivilegeError, Realm, RequestState, extract_roles,
-    get_persona_fields_by_realm, implied_realms, merge_dicts, n_, now, pairwise, unwrap,
-    xsorted,
+    ADMIN_KEYS, ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, LOG_FIELDS_COMMON,
+    REALM_ADMINS, REALM_INHERITANCE, REALM_SPECIFIC_GENESIS_FIELDS, ArchiveError,
+    CdEDBObject, DefaultReturnCode, EntitySorter, PathLike, PrivilegeError, Realm,
+    RequestState, extract_roles, get_persona_fields_by_realm, implied_realms,
+    merge_dicts, n_, now, pairwise, unwrap, xsorted,
 )
 
 from cdedb.config import SecretsConfig
@@ -645,8 +645,7 @@ class CoreFrontend(AbstractFrontend):
             'quoteable': quoteable, 'access_mode': access_mode,
         })
 
-    @access("core_admin", "cde_admin", "event_admin", "ml_admin",
-            "assembly_admin")
+    @access(*REALM_ADMINS)
     def show_history(self, rs: RequestState, persona_id: int) -> Response:
         """Display user history."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
@@ -1130,8 +1129,7 @@ class CoreFrontend(AbstractFrontend):
                 ret |= {realm} | implied_realms(realm)
         return ret
 
-    @access("core_admin", "cde_admin", "event_admin", "ml_admin",
-            "assembly_admin")
+    @access(*REALM_ADMINS)
     def admin_change_user_form(self, rs: RequestState, persona_id: int
                                ) -> Response:
         """Render form."""
@@ -1156,8 +1154,7 @@ class CoreFrontend(AbstractFrontend):
             'shown_fields': shown_fields,
         })
 
-    @access("core_admin", "cde_admin", "event_admin", "ml_admin",
-            "assembly_admin", modi={"POST"})
+    @access(*REALM_ADMINS, modi={"POST"})
     @REQUESTdata("generation", "change_note", "ignore_warnings")
     def admin_change_user(self, rs: RequestState, persona_id: int,
                           generation: int, change_note: Optional[str],
@@ -1789,8 +1786,7 @@ class CoreFrontend(AbstractFrontend):
             rs.notify("success", n_("Email sent."))
         return self.redirect(rs, "core/index")
 
-    @access("core_admin", "meta_admin", "cde_admin", "event_admin", "ml_admin",
-            "assembly_admin", modi={"POST"})
+    @access(*REALM_ADMINS, modi={"POST"})
     def admin_send_password_reset_link(self, rs: RequestState, persona_id: int,
                                        internal: bool = False) -> Response:
         """Generate a password reset email for an arbitrary persona.
@@ -1953,8 +1949,7 @@ class CoreFrontend(AbstractFrontend):
                          {'new_username': new_username})
             return self.redirect(rs, "core/index")
 
-    @access("core_admin", "cde_admin", "event_admin", "ml_admin",
-            "assembly_admin")
+    @access(*REALM_ADMINS)
     def admin_username_change_form(self, rs: RequestState, persona_id: int
                                    ) -> Response:
         """Render form."""
@@ -1966,8 +1961,7 @@ class CoreFrontend(AbstractFrontend):
         data = self.coreproxy.get_persona(rs, persona_id)
         return self.render(rs, "admin_username_change", {'data': data})
 
-    @access("core_admin", "cde_admin", "event_admin", "ml_admin",
-            "assembly_admin", modi={"POST"})
+    @access(*REALM_ADMINS, modi={"POST"})
     @REQUESTdata("new_username")
     def admin_username_change(self, rs: RequestState, persona_id: int,
                               new_username: Optional[vtypes.Email]) -> Response:
@@ -1985,8 +1979,7 @@ class CoreFrontend(AbstractFrontend):
         else:
             return self.redirect_show_user(rs, persona_id)
 
-    @access("core_admin", "cde_admin", "event_admin", "ml_admin",
-            "assembly_admin", modi={"POST"})
+    @access(*REALM_ADMINS, modi={"POST"})
     @REQUESTdata("activity")
     def toggle_activity(self, rs: RequestState, persona_id: int, activity: bool
                         ) -> Response:
@@ -2527,8 +2520,7 @@ class CoreFrontend(AbstractFrontend):
             'personas': personas, 'loglinks': loglinks})
 
     @access("core_admin")
-    @REQUESTdata("codes", "persona_id", "submitted_by", "change_note", "offset",
-                 "length", "time_start", "time_stop")
+    @REQUESTdata(*LOG_FIELDS_COMMON, "submitted_by")
     def view_log(self, rs: RequestState, codes: Collection[const.CoreLogCodes],
                  offset: Optional[int], length: Optional[vtypes.PositiveInt],
                  persona_id: Optional[CdedbID], submitted_by: Optional[CdedbID],

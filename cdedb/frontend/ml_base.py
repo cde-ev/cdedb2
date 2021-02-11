@@ -13,9 +13,10 @@ from werkzeug import Response
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    MOD_ALLOWED_FIELDS, PRIVILEGE_MOD_REQUIRING_FIELDS, PRIVILEGED_MOD_ALLOWED_FIELDS,
-    CdEDBObject, CdEDBObjectMap, EntitySorter, PathLike, PrivilegeError, RequestState,
-    SubscriptionActions, SubscriptionError, merge_dicts, n_, now, unwrap,
+    LOG_FIELDS_COMMON, MOD_ALLOWED_FIELDS, PRIVILEGE_MOD_REQUIRING_FIELDS,
+    PRIVILEGED_MOD_ALLOWED_FIELDS, CdEDBObject, CdEDBObjectMap, EntitySorter, PathLike,
+    PrivilegeError, RequestState, SubscriptionActions, SubscriptionError, merge_dicts,
+    n_, now, unwrap,
 )
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, calculate_db_logparams, calculate_loglinks,
@@ -271,8 +272,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             'mailinglist_id': new_id})
 
     @access("ml")
-    @REQUESTdata("codes", "mailinglist_id", "persona_id", "submitted_by",
-                 "change_note", "offset", "length", "time_start", "time_stop")
+    @REQUESTdata(*LOG_FIELDS_COMMON, "mailinglist_id")
     def view_log(self, rs: RequestState, codes: Collection[const.MlLogCodes],
                  mailinglist_id: Optional[vtypes.ID], offset: Optional[int],
                  length: Optional[vtypes.PositiveInt],

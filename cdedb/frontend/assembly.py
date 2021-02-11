@@ -18,9 +18,9 @@ import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    ASSEMBLY_BAR_SHORTNAME, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
-    EntitySorter, RequestState, get_hash, merge_dicts, n_, now, schulze_evaluate,
-    unwrap, xsorted,
+    ASSEMBLY_BAR_SHORTNAME, LOG_FIELDS_COMMON, CdEDBObject, CdEDBObjectMap,
+    DefaultReturnCode, EntitySorter, RequestState, get_hash, merge_dicts, n_, now,
+    schulze_evaluate, unwrap, xsorted,
 )
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access, assembly_guard,
@@ -125,8 +125,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         return self.render(rs, "user_search", params)
 
     @access("assembly_admin")
-    @REQUESTdata("codes", "assembly_id", "persona_id", "submitted_by",
-                 "change_note", "offset", "length", "time_start", "time_stop")
+    @REQUESTdata(*LOG_FIELDS_COMMON, "assembly_id")
     def view_log(self, rs: RequestState,
                  codes: Collection[const.AssemblyLogCodes],
                  assembly_id: Optional[vtypes.ID], offset: Optional[int],
@@ -164,8 +163,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     @access("assembly")
     @assembly_guard
-    @REQUESTdata("codes", "persona_id", "submitted_by", "change_note", "offset",
-                "length", "time_start", "time_stop")
+    @REQUESTdata(*LOG_FIELDS_COMMON, "submitted_by")
     def view_assembly_log(self, rs: RequestState,
                           codes: Optional[Collection[const.AssemblyLogCodes]],
                           assembly_id: Optional[int], offset: Optional[int],

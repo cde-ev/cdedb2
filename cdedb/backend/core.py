@@ -1772,8 +1772,7 @@ class CoreBackend(AbstractBackend):
     get_total_persona: _GetPersonaProtocol = singularize(
         get_total_personas, "persona_ids", "persona_id")
 
-    @access("core_admin", "cde_admin", "event_admin", "ml_admin",
-            "assembly_admin")
+    @access(*REALM_ADMINS)
     def create_persona(self, rs: RequestState, data: CdEDBObject,
                        submitted_by: int = None, ignore_warnings: bool = False
                        ) -> DefaultReturnCode:
@@ -2067,8 +2066,7 @@ class CoreBackend(AbstractBackend):
         path = self.genesis_attachment_dir / attachment_hash
         return path.is_file()
 
-    @access("core_admin", "cde_admin", "event_admin", "ml_admin",
-            "assembly_admin")
+    @access(*REALM_ADMINS)
     def genesis_get_attachment(self, rs: RequestState, attachment_hash: str
                                ) -> Optional[bytes]:
         """Retrieve a stored genesis attachment."""
@@ -2393,8 +2391,7 @@ class CoreBackend(AbstractBackend):
                       change_note=data['username'])
         return ret
 
-    @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
-            "ml_admin")
+    @access(*REALM_ADMINS)
     def delete_genesis_case_blockers(self, rs: RequestState,
                                      case_id: int) -> DeletionBlockers:
         """Determine what keeps a genesis case from being deleted.
@@ -2423,8 +2420,7 @@ class CoreBackend(AbstractBackend):
 
         return blockers
 
-    @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
-            "ml_admin")
+    @access(*REALM_ADMINS)
     def delete_genesis_case(self, rs: RequestState, case_id: int,
                             cascade: Collection[str] = None
                             ) -> DefaultReturnCode:
@@ -2520,8 +2516,7 @@ class CoreBackend(AbstractBackend):
                     change_note=data["username"])
             return ret, data["realm"]
 
-    @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
-            "ml_admin")
+    @access(*REALM_ADMINS)
     def genesis_list_cases(self, rs: RequestState,
                            stati: Collection[const.GenesisStati] = None,
                            realms: Collection[str] = None) -> CdEDBObjectMap:
@@ -2554,8 +2549,7 @@ class CoreBackend(AbstractBackend):
         data = self.query_all(rs, query, params)
         return {e['id']: e for e in data}
 
-    @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
-            "ml_admin")
+    @access(*REALM_ADMINS)
     def genesis_get_cases(self, rs: RequestState, genesis_case_ids: Collection[int]
                           ) -> CdEDBObjectMap:
         """Retrieve datasets for persona creation cases."""
@@ -2573,8 +2567,7 @@ class CoreBackend(AbstractBackend):
     genesis_get_case: _GenesisGetCaseProtocol = singularize(
         genesis_get_cases, "genesis_case_ids", "genesis_case_id")
 
-    @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
-            "ml_admin")
+    @access(*REALM_ADMINS)
     def genesis_modify_case(self, rs: RequestState, data: CdEDBObject,
                             ignore_warnings: bool = False) -> DefaultReturnCode:
         """Modify a persona creation case.
@@ -2610,8 +2603,7 @@ class CoreBackend(AbstractBackend):
                         change_note=current['username'])
         return ret
 
-    @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
-            "ml_admin")
+    @access(*REALM_ADMINS)
     def genesis(self, rs: RequestState, case_id: int) -> DefaultReturnCode:
         """Create a new user account upon request.
 

@@ -31,11 +31,11 @@ import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    DEFAULT_NUM_COURSE_CHOICES, EVENT_FIELD_SPEC, AgeClasses, CdEDBObject,
-    CdEDBObjectMap, CdEDBOptionalMap, CourseChoiceToolActions, CourseFilterPositions,
-    DefaultReturnCode, EntitySorter, Error, InfiniteEnum, KeyFunction,
-    LodgementsSortkeys, PartialImportError, RequestState, Sortkey, asciificator,
-    deduct_years, determine_age_class, diacritic_patterns, get_hash, glue,
+    DEFAULT_NUM_COURSE_CHOICES, EVENT_FIELD_SPEC, LOG_FIELDS_COMMON, AgeClasses,
+    CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap, CourseChoiceToolActions,
+    CourseFilterPositions, DefaultReturnCode, EntitySorter, Error, InfiniteEnum,
+    KeyFunction, LodgementsSortkeys, PartialImportError, RequestState, Sortkey,
+    asciificator, deduct_years, determine_age_class, diacritic_patterns, get_hash, glue,
     json_serialize, merge_dicts, mixed_existence_sorter, n_, now, unwrap, xsorted,
 )
 from cdedb.database.connection import Atomizer
@@ -6499,8 +6499,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.show_event(rs, event_id)
 
     @access("event_admin")
-    @REQUESTdata("codes", "event_id", "persona_id", "submitted_by",
-                 "change_note", "offset", "length", "time_start", "time_stop")
+    @REQUESTdata(*LOG_FIELDS_COMMON, "event_id")
     def view_log(self, rs: RequestState, codes: Collection[const.EventLogCodes],
                  event_id: Optional[vtypes.ID], offset: Optional[int],
                  length: Optional[vtypes.PositiveInt],
@@ -6539,8 +6538,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard()
-    @REQUESTdata("codes", "persona_id", "submitted_by", "change_note", "offset",
-                 "length", "time_start", "time_stop")
+    @REQUESTdata(*LOG_FIELDS_COMMON, "event_id")
     def view_event_log(self, rs: RequestState,
                        codes: Collection[const.EventLogCodes],
                        event_id: int, offset: Optional[int],

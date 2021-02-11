@@ -30,8 +30,8 @@ import cdedb.frontend.parse_statement as parse
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
     Accounts, PERSONA_DEFAULTS, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, EntitySorter,
-    Error, LineResolutions, RequestState, TransactionType, asciificator, deduct_years,
-    determine_age_class, diacritic_patterns, get_hash, glue, int_to_words,
+    Error, LineResolutions, LOG_FIELDS_COMMON, RequestState, TransactionType, asciificator,
+    deduct_years, determine_age_class, diacritic_patterns, get_hash, glue, int_to_words,
     lastschrift_reference, merge_dicts, n_, now, unwrap, xsorted,
 )
 from cdedb.database.connection import Atomizer
@@ -2714,8 +2714,7 @@ class CdEFrontend(AbstractUserFrontend):
         return self.render(rs, "view_misc", {"cde_misc": cde_misc})
 
     @access("cde_admin")
-    @REQUESTdata("codes", "persona_id", "submitted_by", "change_note", "offset",
-                 "length", "time_start", "time_stop")
+    @REQUESTdata(*LOG_FIELDS_COMMON, "submitted_by")
     def view_cde_log(self, rs: RequestState,
                      codes: Collection[const.CdeLogCodes],
                      offset: Optional[int],
@@ -2749,8 +2748,7 @@ class CdEFrontend(AbstractUserFrontend):
             'personas': personas, 'loglinks': loglinks})
 
     @access("cde_admin")
-    @REQUESTdata("codes", "persona_id", "submitted_by", "change_note", "offset",
-                 "length", "time_start", "time_stop")
+    @REQUESTdata(*LOG_FIELDS_COMMON, "submitted_by")
     def view_finance_log(self, rs: RequestState,
                          codes: Collection[const.FinanceLogCodes],
                          offset: Optional[int],
@@ -2784,8 +2782,7 @@ class CdEFrontend(AbstractUserFrontend):
             'personas': personas, 'loglinks': loglinks})
 
     @access("cde_admin")
-    @REQUESTdata("codes", "pevent_id", "persona_id", "submitted_by", "change_note",
-                 "offset", "length", "time_start", "time_stop")
+    @REQUESTdata(*LOG_FIELDS_COMMON, "pevent_id")
     def view_past_log(self, rs: RequestState,
                       codes: Collection[const.PastEventLogCodes],
                       pevent_id: Optional[vtypes.ID],

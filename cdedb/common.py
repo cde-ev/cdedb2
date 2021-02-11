@@ -1764,6 +1764,9 @@ ADMIN_KEYS = {"is_meta_admin", "is_core_admin", "is_cde_admin",
               "is_finance_admin", "is_event_admin", "is_ml_admin",
               "is_assembly_admin", "is_cdelokal_admin"}
 
+#: List of all admin roles who actually have a corresponding realm with a user role.
+REALM_ADMINS = {"core_admin", "cde_admin", "event_admin", "ml_admin", "assembly_admin"}
+
 DB_ROLE_MAPPING: role_map_type = collections.OrderedDict((
     ("meta_admin", "cdb_admin"),
     ("core_admin", "cdb_admin"),
@@ -2158,6 +2161,9 @@ EVENT_FIELD_SPEC: Dict[
     'waitlist': ({const.FieldDatatypes.int}, {const.FieldAssociations.registration}),
     'fee_modifier': ({const.FieldDatatypes.bool}, {const.FieldAssociations.registration}),
 }
+
+LOG_FIELDS_COMMON = ("codes", "persona_id", "submitted_by", "change_note", "offset",
+                     "length", "time_start", "time_stop")
 
 EPSILON = 10 ** (-6)  #:
 
