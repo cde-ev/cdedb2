@@ -1738,7 +1738,7 @@ class EventBackend(AbstractBackend):
                     if current_data[x] != update:
                         ret *= self.sql_update(rs, "event.event_parts", update)
                         self.event_log(rs, const.EventLogCodes.part_changed, data['id'],
-                                       change_note=current[x]['title'])
+                                       change_note=current_data[x]['title'])
                 if deleted:
                     for x in mixed_existence_sorter(deleted):
                         # Implicitly delete fee modifiers and course tracks.
