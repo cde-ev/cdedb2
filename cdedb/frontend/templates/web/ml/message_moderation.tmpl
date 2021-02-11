@@ -15,6 +15,15 @@
     {{ util.breadcrumb_link(cdedblink("ml/message_moderation"), gettext("Message Moderation"), active=True) }}
 {% endblock %}
 
+{% block heading %}
+    <h1 class="title">
+        {% trans %}Message Moderation{% endtrans %}
+        <small>
+            {{- util.make_icon('envelope', arialabel=gettext("Mailinglist")) }} {{ ambience['mailinglist']['title'] -}}
+        </small>
+    </h1>
+{% endblock %}
+
 {% block content %}
     {% if held is none %}
         <p>
@@ -23,25 +32,36 @@
             {% endtrans %}
         </p>
     {% else %}
+        <p class="text-info">
+         {{ util.make_icon('info-circle') }}
+         {% trans %}
+            If you reject a message, its author will recieve a notification message. If you discard a message, no
+            notification message will be sent. This is preferred for spam messages.
+         {% endtrans %}
+    </p>
         {% if held %}
             <ul>
                 {% for email in held %}
                     <li class="hide-hover-container clearfix-after">
-                        {{ email.sender }} / {{ email.subject }}
-                        {% for action, coloring, icon in (('accept', 'success', 'check'),
-                                                          ('reject', 'warning', 'reply'),
-                                                          ('discard', 'danger', 'trash-alt')) %}
-                            <form action="{{ cdedblink('ml/message_moderation') }}"
+                        <form action="{{ cdedblink('ml/message_moderation') }}"
                                   method="POST"
-                                  id="{{ action }}msg{{ email.request_id }}"
+                                  id="msg{{ email.request_id }}"
                                   class="hide-hover display-inline">
-                                {{ util.anti_csrf_token('ml/message_moderation') }}
-                                {{ util.input_hidden(name="request_id", value=email.request_id) }}
-                                {{ util.input_hidden(name="action", value=action) }}
-                                {{ util.input_submit(value=gettext(action.capitalize()), icon=icon,
-                                                     aclass=("btn btn-xs btn-" + coloring)) }}
-                            </form>
-                        {% endfor %}
+                            {{ util.anti_csrf_token('ml/message_moderation') }}
+                            {{ util.input_hidden(name="request_id", value=email.request_id) }}
+                            <div class="btn-group pull-right">
+                                {% for action, coloring, icon in (('accept', 'success', 'check'),
+                                                                  ('reject', 'warning', 'reply'),
+                                                                  ('discard', 'danger', 'trash-alt')) %}
+                                    <button type="sumbit", name="action", value="{{ action }}"
+                                            class="{{ ("btn btn-xs btn-" + coloring) }}">
+                                        {{ util.make_icon(icon) if icon }}
+                                        {{ gettext(action.capitalize()) }}
+                                    </button>
+                                {% endfor %}
+                            </div>
+                        </form>
+                        {{ email.sender }} / {{ email.subject }}
                         <br />
                         <details>
                             <summary>{% trans %}Message details{% endtrans %}</summary>
