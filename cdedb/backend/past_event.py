@@ -577,8 +577,8 @@ class PastEventBackend(AbstractBackend):
     def _check_pure_event_participation(self, rs: RequestState, persona_id: int,
                                         pevent_id: int) -> bool:
         """Return if user participates at an event without any course."""
-        query = ("SELECT persona_id FROM past_event.participants "
-                 "WHERE persona_id = %s AND pevent_id = %s AND pcourse_id IS null")
+        query = ("SELECT persona_id FROM past_event.participants"
+                 " WHERE persona_id = %s AND pevent_id = %s AND pcourse_id IS null")
         return bool(self.query_one(rs, query, (persona_id, pevent_id)))
 
     @access("cde_admin", "event_admin")

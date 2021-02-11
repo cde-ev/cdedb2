@@ -158,6 +158,9 @@ class CoreBackend(AbstractBackend):
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
+
+        :param atomized: Whether this function should enforce an atomized context
+            to be present.
          """
         if rs.is_quiet:
             return 0
