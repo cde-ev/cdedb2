@@ -1,0 +1,57 @@
+kind: pipeline
+type: docker
+name: default
+
+steps:
+- name: build images
+  image: docker:20.10
+  volumes:
+  - name: dockersock
+    path: /var/run/docker.sock
+  commands:
+  # we do not tag a version as this would create many images
+  # which would not be cleared from docker cache
+  - docker build --file related/docker/Dockerfile-postgres --tag cdepostgres .
+  - docker build --file related/docker/Dockerfile-cdedb --tag cdedb .
+- name: mypy
+  image: cdedb
+  pull: never # do not try to pull image from docker hub
+  commands:
+  - make mypy
+- name: lint
+  image: cdedb
+  pull: never # do not try to pull image from docker hub
+  commands:
+  - make lint # this will never fail but still yields useful output
+- name: cdb # is used as the hostname for the container
+  image: cdepostgres
+  pull: never # do not try to pull image from docker hub
+  detach: true # detach to keep running for the following steps
+  environment:
+    POSTGRES_PASSWORD: passwd
+- name: testsuite
+  image: cdedb
+  pull: never # do not try to pull image from docker hub
+  # merge into master before testing
+  # this does not rerun when master updates so not too useful currently
+  # clone:
+  # - git switch "$DRONE_TARGET_BRANCH"
+  # - git merge "$DRONE_SOURCE_BRANCH"
+  commands:
+  - cp -r /drone/src/. /cdedb2 # the dot also copies hidden files
+  - cd /cdedb2
+  - sleep 5 # wait for db to come online
+  - make i18n-compile # required for sample-data target
+  - make sample-data # this creates the sql schema and copies the localconfig.py
+  - make check
+  depends_on:
+  - cdb # only needs db allowing mypy and lint to run parallel to this
+
+volumes:
+- name: dockersock
+  host:
+    path: /var/run/docker.sock
+
+trigger:
+  branch:
+  - master
