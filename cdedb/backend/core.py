@@ -1704,7 +1704,7 @@ class CoreBackend(AbstractBackend):
         Even if quota has been exceeded, never block access to own profile.
         """
         # Validation is done inside.
-        if ids == {rs.user.persona_id}:
+        if num is None and set(ids) == {rs.user.persona_id}:
             return False
         quota = self.quota(rs, ids=ids, num=num)  # type: ignore
         return (quota > self.conf["QUOTA_VIEWS_PER_DAY"]
