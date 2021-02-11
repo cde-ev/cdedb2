@@ -72,7 +72,7 @@
                 {{ util.output_errors('moderators', wrapper=True) }}
             </form>
 
-            <ul id="moderator-list">
+            <ul class="slim" id="moderator-list">
                 {% for moderator, persona in moderators.items() %} {# This is already sorted. #}
                     <li class="hide-hover-container clearfix-after">
                         {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
@@ -106,7 +106,7 @@
                 </p>
             {# TODO Restyle #}
             {% if requests|length > 0 %}
-                <ul id="pending-list">
+                <ul class="slim" id="pending-list">
                     {% for request, persona in requests.items() %} {# This is already sorted. #}
                         <li class="hide-hover-container clearfix-after">
                             {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
@@ -177,7 +177,7 @@
                 );
             </script>
             <div class="input-group-btn">
-                {{ util.input_submit(value=gettext("Add Subscriber"), aclass="btn btn-success") }}
+                {{ util.input_submit(value=gettext("Add"), aclass="btn btn-success") }}
             </div>
         </div>
         {{ util.output_errors('subscriber_ids', wrapper=True) }}
