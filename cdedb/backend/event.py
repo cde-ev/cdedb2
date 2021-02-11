@@ -1851,7 +1851,6 @@ class EventBackend(AbstractBackend):
                         change_note=fee_modifiers[x]['modifier_name'])
                 for x in mixed_existence_sorter(updated):
                     if fee_modifiers[x] != current_data[x]:
-                        print("here")
                         ret *= self.sql_update(
                             rs, "event.fee_modifiers", fee_modifiers[x])
                         self.event_log(
