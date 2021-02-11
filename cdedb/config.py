@@ -478,6 +478,12 @@ _DEFAULTS = {
             n_("00_query_cde_user_all"): Query(
                 "qview_cde_user", QUERY_SPECS['qview_cde_user'],
                 ("personas.id", "given_names", "family_name"),
+                (),
+                (("family_name", True), ("given_names", True),
+                 ("personas.id", True))),
+            n_("02_query_cde_members"): Query(
+                "qview_cde_user", QUERY_SPECS['qview_cde_user'],
+                ("personas.id", "given_names", "family_name"),
                 (("is_member", QueryOperators.equal, True),),
                 (("family_name", True), ("given_names", True),
                  ("personas.id", True))),

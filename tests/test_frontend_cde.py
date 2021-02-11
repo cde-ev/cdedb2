@@ -347,6 +347,8 @@ class TestCdEFrontend(FrontendTest):
                 self.get(save, status=429)
                 self.assertPresence("Limit für Zugriffe")
                 self.assertPresence("automatisch zurückgesetzt")
+                # Check that own profile remains accessible
+                self.traverse({'href': '/core/self/show'})
                 break
 
     @as_users("anton", "berta", "inga")
