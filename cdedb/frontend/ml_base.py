@@ -851,7 +851,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         else:
             return self.redirect(rs, "ml/management")
 
-    @access("ml", modi={"POST"})
+    @access("ml_admin", modi={"POST"})
     @mailinglist_guard(requires_privilege=True)
     @REQUESTdata("subscriber_id")
     def readd_subscriber(self, rs: RequestState, mailinglist_id: int,
@@ -860,6 +860,10 @@ class MlBaseFrontend(AbstractUserFrontend):
 
         This is used as a shortcut to re-subscribe an unsubscribed user from the list
         of all unsubscriptions.
+
+        Note that this requires ml admin privileges, even if this is allowed for
+        moderators in the backend. We want to prevent our moderators from being
+        unnecessarily confused, since we can not imagine a real use case for them here.
         """
         if rs.has_validation_errors():
             return self.show_subscription_details(rs, mailinglist_id)
@@ -887,7 +891,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             mailinglist_id=mailinglist_id, persona_id=subscriber_id)
         return self.redirect(rs, "ml/management")
 
-    @access("ml", modi={"POST"})
+    @access("ml_admin", modi={"POST"})
     @REQUESTdata("unsubscription_id")
     @mailinglist_guard(requires_privilege=True)
     def reset_unsubscription(self, rs: RequestState, mailinglist_id: int,
@@ -899,6 +903,10 @@ class MlBaseFrontend(AbstractUserFrontend):
 
         This should be used with care, since it may delete a conscious decision of the
         user about his relation to this mailinglist.
+
+        Note that this requires ml admin privileges, even if this is allowed for
+        moderators in the backend. We want to prevent our moderators from being
+        unnecessarily confused, since we can not imagine a real use case for them here.
         """
         if rs.has_validation_errors():
             return self.show_subscription_details(rs, mailinglist_id)

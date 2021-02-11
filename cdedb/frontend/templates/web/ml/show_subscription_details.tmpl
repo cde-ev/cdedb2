@@ -213,8 +213,9 @@
                 <ul class="nosp slim">
                     {% for unsubscription in list %} {# This is already sorted. #}
                         <li class="hide-hover-container clearfix-after">
-                            {{ util.persona_anchor(all_unsubscriptions[unsubscription], ml_id=ambience['mailinglist']['id']) }}
-                            {% if privileged %}
+                            {{ util.persona_anchor(all_unsubscriptions[unsubscription], ml_id=ambience['mailinglist']['id'],
+                                                   aclass='text-muted' if unsubscription not in redundant_unsubscriptions else '' ) }}
+                            {% if "ml_mgmt" in user.admin_views %}
                                 {% if unsubscription in redundant_unsubscriptions %}
                                     <form action="{{ cdedblink('ml/reset_unsubscription') }}"
                                           method="POST" style="display: inline;"
@@ -239,6 +240,12 @@
                                                     given_names=all_unsubscriptions[unsubscription]['given_names'],
                                                     family_name=all_unsubscriptions[unsubscription]['family_name'])) }}
                                     </form>
+                                {% endif %}
+                            {% else %}
+                                {% if unsubscription in redundant_unsubscriptions %}
+                                    {{ util.make_icon('trash-alt', aclass="list-button-float") }}
+                                {% else %}
+                                    {{ util.make_icon('plus', aclass="list-button-float") }}
                                 {% endif %}
                             {% endif %}
                         </li>
