@@ -12358,10 +12358,10 @@ msgstr "Diese Mailingliste wird nicht via Datenbank moderiert."
 #: cdedb/frontend/templates/web/ml/message_moderation.tmpl:37
 msgid ""
 "If you reject a message, its author will recieve a notification message. If "
-"you discard a message, no notification message will be sent. This is "
+"you discard a message, no notification message will be sent. The latter is "
 "preferred for spam messages."
 msgstr "Wenn du eine Nachricht ablehnst, erhält ihr Autor eine Benachrichtigung. "
-"Wenn du eine Nachricht verwifst, wird hingegen keine Nachricht versendet. Dies "
+"Wenn du eine Nachricht verwirfst, wird hingegen keine Nachricht versendet. Letzteres "
 "wird für Spam empfohlen."
 
 #: cdedb/frontend/templates/web/ml/message_moderation.tmpl:67

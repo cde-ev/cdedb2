@@ -19,7 +19,7 @@
     <h1 class="title">
         {% trans %}Message Moderation{% endtrans %}
         <small>
-            {{- util.make_icon('envelope', arialabel=gettext("Mailinglist")) }} {{ ambience['mailinglist']['title'] -}}
+            {{ util.make_icon('envelope', arialabel=gettext("Mailinglist")) }} {{ ambience['mailinglist']['title'] }}
         </small>
     </h1>
 {% endblock %}
@@ -36,7 +36,7 @@
          {{ util.make_icon('info-circle') }}
          {% trans %}
             If you reject a message, its author will recieve a notification message. If you discard a message, no
-            notification message will be sent. This is preferred for spam messages.
+            notification message will be sent. The latter is preferred for spam messages.
          {% endtrans %}
     </p>
         {% if held %}
@@ -53,7 +53,7 @@
                                 {% for action, coloring, icon in (('accept', 'success', 'check'),
                                                                   ('reject', 'warning', 'reply'),
                                                                   ('discard', 'danger', 'trash-alt')) %}
-                                    <button type="sumbit", name="action", value="{{ action }}"
+                                    <button type="sumbit" name="action" value="{{ action }}"
                                             class="{{ ("btn btn-xs btn-" + coloring) }}">
                                         {{ util.make_icon(icon) if icon }}
                                         {{ gettext(action.capitalize()) }}
