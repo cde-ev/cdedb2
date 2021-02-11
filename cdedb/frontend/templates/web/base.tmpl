@@ -43,48 +43,53 @@
     </head>
     <body class="{% if CDEDB_DEV %}development{% elif CDEDB_OFFLINE_DEPLOYMENT %}offline{% endif %}">
         <div class="container page" id="maincontainer">
-            <div class="clearfix" role="banner">
-                <div class="pull-right text-right" style="width: 20%;">
-                    {% if CDEDB_DEV %}
-                        <div class="text-danger text-uppercase"><small>Development Mode</small></div>
-                    {% elif CDEDB_OFFLINE_DEPLOYMENT %}
-                        <div class="text-info text-uppercase"><small>Offline Deployment</small></div>
-                    {% endif %}
-                    {% if I18N_LANGUAGES %}
-                        <form action="{{ cdedblink('core/change_locale') }}" id="changelocaleform" method="post"
-                              style="display: inline;">
-                            {% if original_request and original_request.url %}
-                                {# In the anonymous case we must have a timeout. #}
-                                {{ util.input_hidden("wants", encode_parameter(
-                                       "core/change_locale", "wants", original_request.url, user.persona_id,
-                                       timeout=(None if user.persona_id else UNCRITICAL_PARAMETER_TIMEOUT))) }}
-                            {% endif %}
-                            {% with TITLES = {'de': ("Deutsch", "Auf Deutsch umschalten"),
-                                              'en': ("English", "Switch to English"),} %}
-                                {% for l in I18N_LANGUAGES if l != lang %}
-                                    <button type="submit" class="btn-lang-change" name="locale" value="{{ l }}"
-                                            title="{{ TITLES.get(l, (None, None))[1] }}">
-                                        <img src="{{ staticurl("flags/{}.png".format(l)) }}"
-                                             alt="{{ TITLES.get(l, (None, None))[0] }}" />
-                                    </button>
-                                {% endfor %}
-                            {% endwith %}
-                        </form>
-                    {% endif %}
+            <div style="padding-bottom: 1em;" role="banner">
+                <div class="clearfix">
+                    <a href={{ cdedblink("core/index") }} class="logo">
+                        <img src="{{ staticurl("logo.svg") }}" alt="CdE-Datenbank" />
+                    </a>
+                    <div class="pull-right text-right">
+                        {% if CDEDB_DEV %}
+                            <div class="text-danger text-uppercase"><small>Development Mode</small></div>
+                        {% elif CDEDB_OFFLINE_DEPLOYMENT %}
+                            <div class="text-info text-uppercase"><small>Offline Deployment</small></div>
+                        {% endif %}
+                        {% if I18N_LANGUAGES %}
+                            <form action="{{ cdedblink('core/change_locale') }}" id="changelocaleform" method="post"
+                                class="display-inline">
+                                {% if original_request and original_request.url %}
+                                    {# In the anonymous case we must have a timeout. #}
+                                    {{ util.input_hidden("wants", encode_parameter(
+                                        "core/change_locale", "wants", original_request.url, user.persona_id,
+                                        timeout=(None if user.persona_id else UNCRITICAL_PARAMETER_TIMEOUT))) }}
+                                {% endif %}
+                                {% with TITLES = {'de': ("Deutsch", "Auf Deutsch umschalten"),
+                                                'en': ("English", "Switch to English"),} %}
+                                    {% for l in I18N_LANGUAGES if l != lang %}
+                                        <button type="submit" class="btn-lang-change" name="locale" value="{{ l }}"
+                                                title="{{ TITLES.get(l, (None, None))[1] }}">
+                                            <img src="{{ staticurl("flags/{}.png".format(l)) }}"
+                                                alt="{{ TITLES.get(l, (None, None))[0] }}" />
+                                        </button>
+                                    {% endfor %}
+                                {% endwith %}
+                            </form>
+                            |
+                        {% endif %}
+                        <span class="text-info text-uppercase small">
+                            {{ util.href(docurl("index"), gettext("Doc"), title=gettext("Documentation"), icon="book") }}
+                        </span>
+                    </div>
                 </div>
-                <div class="logo pull-left">
-                    <a href={{ cdedblink("core/index") }} ><img src="{{ staticurl("logo.svg") }}" alt="CdE-Datenbank" /></a>
-                </div>
-
                 {% if jshint %}
                     <noscript>
                         {% if jshint == 'strong' %}
-                            <div class="jshint pull-right text-danger">
+                            <div class="text-right text-danger">
                                 {{ util.make_icon('exclamation-triangle') }}
                                 {% trans %}This site provides additional functionality with JavaScript enabled.{% endtrans %}
                             </div>
                         {% else %}
-                            <div class="jshint pull-right text-warning">
+                            <div class="text-right text-warning">
                                 {{ util.make_icon('exclamation-triangle') }}
                                 {% trans %}This site can be used more easily with JavaScript enabled.{% endtrans %}
                             </div>
@@ -175,7 +180,7 @@
                     </div>
                 </nav>
                 <div class="col-md-9">
-                    {% if self.breadcrumb %}
+                    {% if self.breadcrumb() %}
                         <h6 id="bc-title" class="sr-only">{% trans %}You are here:{% endtrans %}</h6>
                         <nav>
                             <ol class="breadcrumb breadcrumb-hanging" aria-labelledby="bc-title">
@@ -185,26 +190,25 @@
                     {% endif %}
 
                     <div id="notifications">
-                        {% with icontypes = {"success" : "check-circle", "info" : "info-circle", "question" : "question-circle",
-                                             "warning" : "exclamation-circle", "error" : "times-circle"},
-                                alerttypes = {"success" : "success", "info" : "info", "question" : "info",
-                                              "warning" : "warning", "error" : "danger"},
-                                messagetypes = {"success" : _("Success!"), "info" : _("Info!"), "question" : _("Question:"),
-                                                "warning" : _("Warning!"), "error" : _("Error!")} %}
-                            {% for ntype, message, params in notifications %}
-                                <div class="alert alert-{{ alerttypes[ntype]|s }}" role="alert">
-                                    {{ util.make_icon( icontypes[ntype] ) }}
-                                    <strong>{{ messagetypes[ntype]|s }}</strong>
-                                    <span class="notificationMessage">{{ gettext(message)|format(**params) }}</span>
-                                </div>
-                            {% endfor %}
-                        {% endwith %}
+                        {% for ntype, message, params in notifications %}
+                            {% call util.notification(ntype) %}
+                                {{ gettext(message)|e|format(**params) }}
+                            {% endcall %}
+                        {% endfor %}
                     </div>
 
                     <div role="main">
                         {% block heading %}
-                            <h1 class="title" id="title">{{ gettext(self.title()) }}</h1>
+                            <h1 class="title" id="title">{{ self.title() }}</h1>
                         {% endblock %}
+
+                        <div id="static-notifications">
+                            {% block static_notifications %}
+                                {# For notifications indicating a state instead of the results of a user interaction.
+                                   Hence, they are shown below their respective heading. #}
+                            {% endblock %}
+                        </div>
+
 
                         <div id="content">
                             {% block content %}

@@ -24,6 +24,16 @@
         <small>{{ util.make_icon('envelope') }} {{ ambience['mailinglist']['title'] }}</small>
     </h1>
 {% endblock %}
+{% block static_notifications %}
+    {% if not privileged %}
+        {% call util.notification('info') %}
+            {% trans link = util.href(docurl("Handbuch_Moderator", anchor="privilegierte-moderatoren"),
+                                      gettext("privileged moderator access"))|s %}
+                You do not have %(link)s and may not change subscriptions.
+            {% endtrans %}
+        {% endcall %}
+    {% endif %}
+{% endblock %}
 {% block content %}
     <p class="text-info">
         {{ util.make_icon('info-circle') }}
@@ -51,9 +61,8 @@
                                        arialabel=gettext("IDs of the new moderators")) }}
                     <script nonce="{{ csp_nonce }}">
                         $('#input-add-moderator').cdedbSearchPerson(
-                            '{{ (cdedblink('core/select_persona')|e) + ('?kind=mod_ml_user&phrase=%s&aux='|s) +
-                                (ambience['mailinglist']['id']|string|e) }}', {{ ambience['mailinglist']['moderators']|list|json|s }},
-                            false, true, "{{ gettext("ID, name, email") }}"
+                            '{{ (cdedblink('core/select_persona')|e) + ('?kind=ml_user&phrase=%s'|s) }}', {{ ambience['mailinglist']['moderators']|list|json|s }},
+                            false, true, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                         );
                     </script>
                     <div class="input-group-btn">
@@ -79,6 +88,8 @@
                                             given_names=persona['given_names'],
                                             family_name=persona['family_name'])) }}
                             </form>
+                        {% else %}
+                            {{ util.input_submit(value="", aclass="btn btn-xs btn-danger list-button-float dummy", icon="minus", ariahidden=True) }}
                         {% endif %}
                     </li>
                 {% endfor %}
@@ -99,6 +110,7 @@
                     {% for request, persona in requests.items() %} {# This is already sorted. #}
                         <li class="hide-hover-container clearfix-after">
                             {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
+                            {% if privileged %}
                             <div class="nowrap display-inline">
                                 {# TODO consider merging endpoints and use a single form - would enable usage of btn-group #}
                                 <form action="{{ cdedblink('ml/approve_request') }}"
@@ -129,6 +141,7 @@
                                         aclass="btn btn-xs btn-danger list-button-float") }}
                                 </form>
                             </div>
+                            {% endif %}
                         </li>
                     {% endfor %}
                 </ul>
@@ -148,27 +161,28 @@
                 Use the {{ link }} site instead. People who are already subscribed are not proposed for adding.
             {% endtrans %}
         </p>
-    <form action="{{ cdedblink('ml/add_subscriber') }}" method="POST"
+    {% if privileged %}
+    <form action="{{ cdedblink('ml/add_subscribers') }}" method="POST"
           id="addsubscriberform" class="p">
-        {{ util.anti_csrf_token('ml/add_subscriber') }}
+        {{ util.anti_csrf_token('ml/add_subscribers') }}
         <div class="input-group has-success">
             <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
-            {{ util.input_text(name="subscriber_id", placeholder="DB-XXXX-X", anid="input-add-subscriber",
+            {{ util.input_text(name="subscriber_ids", placeholder="DB-XXXX-X,DB-XXXX-X,…", anid="input-add-subscriber",
                                arialabel=gettext("ID of the new Subscriber")) }}
             <script nonce="{{ csp_nonce }}">
                 $('#input-add-subscriber').cdedbSearchPerson(
-                    '{{ (cdedblink('core/select_persona')|e) + ('?kind=mod_ml_user&phrase=%s&aux='|s) +
-                        (ambience['mailinglist']['id']|string|e) + ('&variant='|s) +
-                        (enums['SubscriptionActions'].add_subscriber.value|string|e) }}', {{ subscribers|list|json|s }},
-                    false, false, '{{ gettext("CdEDB-ID, Name or E-Mail") }}'
+                    '{{ (cdedblink('core/select_persona')|e) + ('?kind=ml_subscriber&phrase=%s&aux='|s) +
+                        (ambience['mailinglist']['id']|string|e) }}', {{ subscribers|list|json|s }},
+                    false, true, '{{ gettext("CdEDB-ID, Name or E-Mail") }}'
                 );
             </script>
             <div class="input-group-btn">
                 {{ util.input_submit(value=gettext("Add Subscriber"), aclass="btn btn-success") }}
             </div>
         </div>
-        {{ util.output_errors('subscriber_id', wrapper=True) }}
+        {{ util.output_errors('subscriber_ids', wrapper=True) }}
     </form>
+    {% endif %}
 
     <div class="row">
         {% set col_width = 4 if subscribers|length > 10 else (6 if subscribers|length > 5 else 12) %}
@@ -179,17 +193,19 @@
                         <li class="hide-hover-container clearfix-after">
                             {{ util.persona_anchor(subscribers[subscriber], ml_id=ambience['mailinglist']['id']) }}
                             {% if subscriber in explicits %}({{ explicits[subscriber] }}){% endif %}
-                            <form action="{{ cdedblink('ml/remove_subscriber') }}"
-                                  method="POST"
-                                  id="removesubscriberform{{ subscriber }}"
-                                  class="hide-hover display-inline">
-                                {{ util.anti_csrf_token('ml/remove_subscriber') }}
-                                {{ util.input_hidden(name="subscriber_id", value=subscriber) }}
-                                {{ util.input_submit(value="", icon="minus", aclass="btn btn-xs btn-danger list-button-float",
-                                        title=gettext("Remove %(given_names)s %(family_name)s as subscriber")|format(
-                                            given_names=subscribers[subscriber]['given_names'],
-                                            family_name=subscribers[subscriber]['family_name'])) }}
-                            </form>
+                            {% if privileged %}
+                                <form action="{{ cdedblink('ml/remove_subscriber') }}"
+                                      method="POST"
+                                      id="removesubscriberform{{ subscriber }}"
+                                      class="hide-hover display-inline">
+                                    {{ util.anti_csrf_token('ml/remove_subscriber') }}
+                                    {{ util.input_hidden(name="subscriber_id", value=subscriber) }}
+                                    {{ util.input_submit(value="", icon="minus", aclass="btn btn-xs btn-danger list-button-float",
+                                            title=gettext("Remove %(given_names)s %(family_name)s as subscriber")|format(
+                                                given_names=subscribers[subscriber]['given_names'],
+                                                family_name=subscribers[subscriber]['family_name'])) }}
+                                </form>
+                            {% endif %}
                         </li>
                     {% endfor %}
                 </ul>

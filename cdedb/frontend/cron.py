@@ -10,19 +10,18 @@ import gettext
 import inspect
 import pathlib
 import sys
+from typing import Any, Callable, Collection, Dict, Iterator
 
-from typing import Collection, Iterator, Callable, Dict
-
-from cdedb.frontend.core import CoreFrontend
-from cdedb.frontend.cde import CdEFrontend
-from cdedb.frontend.event import EventFrontend
-from cdedb.frontend.assembly import AssemblyFrontend
-from cdedb.frontend.ml import MlFrontend
-from cdedb.common import n_, glue, now, RequestState, User, PathLike, ALL_ROLES
-from cdedb.frontend.common import BaseApp, AbstractFrontend, PeriodicJob
+from cdedb.common import ALL_ROLES, PathLike, RequestState, User, glue, n_, now
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
+from cdedb.frontend.assembly import AssemblyFrontend
+from cdedb.frontend.cde import CdEFrontend
+from cdedb.frontend.common import AbstractFrontend, BaseApp, PeriodicJob
+from cdedb.frontend.core import CoreFrontend
+from cdedb.frontend.event import EventFrontend
+from cdedb.frontend.ml import MlFrontend
 from cdedb.frontend.paths import CDEDB_PATHS
 
 
@@ -59,7 +58,7 @@ class CronFrontend(BaseApp):
         roles = ALL_ROLES
         user = User(roles=roles, persona_id=None)
         lang = "en"
-        coders: Dict[str, Callable] = {
+        coders: Dict[str, Callable[..., Any]] = {
             "encode_parameter": self.encode_parameter,
             "decode_parameter": self.decode_parameter,
             "encode_notification": self.encode_notification,
@@ -68,8 +67,8 @@ class CronFrontend(BaseApp):
         urls = self.urlmap.bind("db.cde-ev.de", script_name="/db/",
                                 url_scheme="https")
         # This is not a real request, so we can go without some of these.
-        rs = RequestState(  # type: ignore
-            sessionkey=None, apitoken=None, user=user, request=None,
+        rs = RequestState(
+            sessionkey=None, apitoken=None, user=user, request=None,  # type: ignore
             notifications=[], mapadapter=urls, requestargs={}, errors=[],
             values=None, lang=lang, coders=coders, begin=None,
             gettext=self.translations[lang].gettext,
@@ -108,6 +107,7 @@ class CronFrontend(BaseApp):
                             or self.conf["CDEDB_DEV"]):
                         rs.begin = now()
                         state = self.core.get_cron_store(rs, hook.cron['name'])
+                        self.logger.info(f"Starting execution of {hook.cron['name']}:")
                         # noinspection PyBroadException
                         try:
                             tmp = hook(rs, state)
@@ -125,8 +125,12 @@ class CronFrontend(BaseApp):
                             if self.conf["CDEDB_TEST"]:
                                 raise
                         else:
-                            self.core.set_cron_store(rs, hook.cron['name'],
-                                                     tmp)
+                            self.core.set_cron_store(rs, hook.cron['name'], tmp)
+                        finally:
+                            time_taken = now() - rs.begin
+                            self.logger.info(
+                                f"Finished execution of {hook.cron['name']}."
+                                f" Time taken: {time_taken}.")
         finally:
             self.core.set_cron_store(rs, "_base", base_state)
         return True

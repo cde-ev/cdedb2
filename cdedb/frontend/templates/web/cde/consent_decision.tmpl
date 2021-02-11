@@ -28,6 +28,9 @@
             {% trans %}
                 You have decided to be visible in this index.
             {% endtrans %}
+            {% trans link=util.href(util.mailto(verwaltung), verwaltung) %}
+                If you would like to revoke this consent, please contact {{ link }}.
+            {% endtrans %}
         </p>
     {% else %}
         <p>
@@ -41,44 +44,63 @@
         {% if not decided_search %}
             {{ util.href(cdedblink("core/index"), gettext("Decide later"), icon="clock", aclass="btn btn-default") }}
         {% endif %}
-        {{ util.href(docurl('Privacy'), gettext("Who can see my data?"), aclass="btn btn-info btn-default", icon="question-circle") }}
+        {{ util.href(docurl('Realm_Core_Privacy'), gettext("Who can see my data?"), aclass="btn btn-info btn-default", icon="question-circle") }}
     </p>
 
     <h1>{% trans %}Consent{% endtrans %}</h1>
 
+        {% if "searchable" in user.roles and not decided_search %}
+            <p>
+                {% trans %}
+                    The CdE-Datenbank relies on the principle of mutuality:
+                    Only if you allow others to access your data you can search for and access others.
+                    In your case, an admin has manually set you to be searchable.
+                    If you do not want this, you can refuse consent below.
+                    Alternatively, please confirm that you consent to the following.
+                {% endtrans %}
+            </p>
+        {% elif "searchable" in user.roles %}
+            <p>
+                {% trans %}
+                    The CdE-Datenbank relies on the principle of mutuality:
+                    Because you have consented to the following, others can access your data
+                    and you can search for and access others.
+                {% endtrans %}
+            </p>
+        {% else %}
+            <p>
+                 {% trans %}
+                    The CdE-Datenbank relies on the principle of mutuality:
+                    Only if you consent to the following, others can access your data
+                    and you can search for and access others.
+                {% endtrans %}
+            </p>
+        {% endif %}
+    </p>
+
     <p>
         {% trans %}
-        	The CdE-Datenbank relies on the principle of mutuality:
-            Only if you consent to the following, others can access your data
-            and you can search for and access others.
+            I accept that my data may be mailed to other CdE-Members by post.
         {% endtrans %}
     </p>
 
-    <div class="well">
-        <p>
-            {% trans %}
-            	I accept that my data may be mailed to other CdE-Members by post.
-            {% endtrans %}
-        </p>
+    <p>
+        {% trans %}
+            I accept that my personal information can be accessed by other CdE-Members via the internet.
+            (All data is encrypted and password-protected. The CdE can only contact you per E-Mail to give
+            you important information and to remind you about outstanding fees, if you consent to the
+            storage of your data.)
+        {% endtrans %}
+    </p>
 
-        <p>
-            {% trans %}
-                I accept that my personal information can be accessed by other CdE-Members via the internet.
-                (All data is encrypted and password-protected. The CdE can only contact you per E-Mail to give
-                you important information and to remind you about outstanding fees, if you consent to the
-                storage of your data.)
-            {% endtrans %}
-        </p>
+    <p>
+        {% trans %}
+            I hereby declare that I will not pass the data of CdE-Members to third parties
+            and that I will will not use it for any purpose, that is not in the sense and purpose of the CdE.
+        {% endtrans %}
+    </p>
 
-        <p>
-            {% trans %}
-            	I hereby declare that I will not pass the data of CdE-Members to third parties
-                and that I will will not use it for any purpose, that is not in the sense and purpose of the CdE.
-            {% endtrans %}
-        </p>
-    </div>
-
-    {% if "searchable" not in user.roles %}
+    {% if not decided_search or "searchable" not in user.roles %}
         <form action="{{ cdedblink('cde/consent_decision') }}" method="POST" id="ackconsentform" style="display: inline;">
             {{ util.anti_csrf_token('cde/consent_decision') }}
             {{ util.input_hidden(name="ack", value="True") }}
@@ -95,7 +117,7 @@
         </form>
 
         {{ util.href(cdedblink("core/index"), gettext("Decide later"), icon="clock", aclass="btn btn-default") }}
-    {% else %}
+    {% elif "searchable" not in user.roles %}
         {{ util.href(cdedblink("cde/index"), gettext("Don’t change anything"), icon="asterisk", aclass="btn btn-default") }}
     {% endif %}
 

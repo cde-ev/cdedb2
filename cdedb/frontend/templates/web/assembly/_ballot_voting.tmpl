@@ -6,44 +6,44 @@
     <ul id="classical-candidates">
         {% for candidate_id, candidate in ambience['ballot']['candidates']|keydictsort(EntitySorter.candidates) %}
             <li>
-                {{ candidate['description'] }}
+                {{ candidate['title'] }}
             </li>
         {% endfor %}
     </ul>
 {%- endmacro %}
+
+
 
 {# Classical voting: Voting form #}
 {% macro show_classical_voting() -%}
     <h3>{% trans %}Ballot{% endtrans %}</h3>
     <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="voteform" class="form-horizontal">
         {{ util.anti_csrf_token('assembly/vote') }}
-        {% if ambience['ballot']['votes'] > 1 %}
-            {{ util.form_input_static(value=gettext("You have %(votes)s votes.")|
-                                            format(votes=ambience['ballot']['votes']), small=True) }}
-        {% endif %}
         {{ util.form_input_checkboxes("vote", label=gettext("Candidates"),
-                                      entries=ambience['ballot']['candidates']|keydictsort(EntitySorter.candidates)|dict_entries('moniker', 'description'),
+                                      entries=ambience['ballot']['candidates']|keydictsort(EntitySorter.candidates)|dict_entries('shortname', 'title'),
                                       radio=(ambience['ballot']['votes'] == 1), small=True) }}
         {% if ambience['ballot']['use_bar'] %}
-            {{ util.form_input_checkboxes(
-                "vote", label="", entries=[(ASSEMBLY_BAR_MONIKER, gettext("Against all Candidates"))],
-                small=True, radio=(ambience['ballot']['votes'] == 1),
-                info=gettext("With this option you reject all candidates. "
-                             "If this gets a majority the board may take additional measures.")) }}
+            <div style="margin-top: 13px">
+                {{ util.form_input_checkboxes(
+                   "vote", label='', entries=[(ASSEMBLY_BAR_SHORTNAME, gettext("Against all Candidates"))],
+                   small=True, radio=(ambience['ballot']['votes'] == 1),
+                   info=gettext("With this option you reject all candidates.")) }}
+            </div>
+
         {% endif %}
-        {{ util.form_input_submit(value=gettext("Vote"), small=True) }}
+        {{ util.form_input_submit(value=gettext("Vote_[[to vote in a ballot]]"), small=True) }}
     </form>
     <script nonce="{{ csp_nonce }}">
         {% if ambience['ballot']['votes'] > 1 %}
-            $('#voteform').cdedbMultiVote({{ ambience['ballot']['votes'] }}, '{{ ASSEMBLY_BAR_MONIKER }}');
+            $('#voteform').cdedbMultiVote({{ ambience['ballot']['votes'] }}, '{{ ASSEMBLY_BAR_SHORTNAME }}');
         {% endif %}
         $('#voteform').cdedbProtectChanges();
     </script>
 
     <div class="form-horizontal">
-        <div class="form-group">
+        <div class="form-group mosp">
             <div class="col-sm-2 control-label">
-                <strong>{% trans %}Additional Options{% endtrans %}</strong>
+                <strong>{% trans %}Additional{% endtrans %}</strong>
             </div>
             <div class="col-sm-10">
                 <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="abstentionform"
@@ -57,16 +57,19 @@
     </div>
 {%- endmacro %}
 
+
+
 {# Preferential voting: Presentation of candidates #}
 {% macro show_preferential_candidates() -%}
     <h3>{% trans %}Candidates{% endtrans %}</h3>
     <ul id="preferential-candidates">
         {% for candidate_id, candidate in ambience['ballot']['candidates']|keydictsort(EntitySorter.candidates) %}
             <li>
-                {{ candidate['description'] }}
+                {{ candidate['title'] }}
+                {# We show the candidates shortnames on purpose even before the vote starts, so mistakes have a better chance to be noticed #}
                 {% if attends %}
                     <span class="label label-primary"><span class="sr-only">{% trans %}Short: {% endtrans %}</span>
-                        {{ candidate['moniker'] }}
+                        {{ candidate['shortname'] }}
                     </span>
                 {% endif %}
             </li>
@@ -74,13 +77,15 @@
     </ul>
 {%- endmacro %}
 
+
+
 {% macro show_manual_for_text_preferential_voting() -%}
-    {% call util.bootstrap_panel(title=gettext("Help"), icon='info-circle', aclass='panel-default mosp') %}
+    {% call util.bootstrap_panel(title=gettext("Help for voting"), icon='info-circle', aclass='panel-default panel-condensed mosp') %}
         <p>
             {% trans link=gettext("<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>")|s %}
                 This vote is a preferential vote. You can arrange the candidates in the field above
                 according to your personal preference. The preferences of all participants will be
-                evaluated using the {{ link }}, to determine the winner.
+                evaluated using the {{ link }}, to determine the option with the most votes.
             {% endtrans %}
         </p>
         <p>
@@ -94,12 +99,11 @@
         </p>
         {% if ambience['ballot']['use_bar'] %}
             <p>
-                {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_MONIKER) %}
+                {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_SHORTNAME) %}
                     Additionally you need to use the rejection bar {{ abm }} in your preferencelist.
                     Use it in your preferencelist like you would a candidate. Put all
                     candidates you deem suitable higher than {{ abm }} and all
                     candidates you reject lower, i. e. to the right of {{ abm }}.
-                    Should no candidate win against the bar, the board may take additional measures.
                 {% endtrans %}
             </p>
         {% endif %}
@@ -124,21 +128,21 @@
                         You deem all candidates suitable, but you like Leia the best,
                         with no difference between the other candidates.
                     {% endtrans %}<br />
-                    <code>Leia&gt;Luke=Han=ObiWan&gt;{{ ASSEMBLY_BAR_MONIKER }}</code></li>
+                    <code>Leia&gt;Luke=Han=ObiWan&gt;{{ ASSEMBLY_BAR_SHORTNAME }}</code></li>
                 <li>{% trans %}
                         You deem Leia and Obi-Wan (equally) suitable, you want to reject Luke
                         and you absolutely can’t stand Han Solo.
                     {% endtrans %}<br />
-                    <code>Leia=ObiWan&gt;{{ ASSEMBLY_BAR_MONIKER }}&gt;Luke&gt;Han</code></li>
+                    <code>Leia=ObiWan&gt;{{ ASSEMBLY_BAR_SHORTNAME }}&gt;Luke&gt;Han</code></li>
                 <li>{% trans %}
                         You want to vote for Luke and if he doesn’t make it, you think Obi-Wan should.
                         You don’t have an opinion about the others.
                     {% endtrans %}<br />
-                    <code>Luke&gt;ObiWan&gt;{{ ASSEMBLY_BAR_MONIKER }}=Han=Leia</code></li>
+                    <code>Luke&gt;ObiWan&gt;{{ ASSEMBLY_BAR_SHORTNAME }}=Han=Leia</code></li>
                 <li>{% trans %}
                         You want to completely abstain.
                     {% endtrans %}<br />
-                    <code>Luke=ObiWan=Han=Leia={{ ASSEMBLY_BAR_MONIKER }}</code></li>
+                    <code>Luke=ObiWan=Han=Leia={{ ASSEMBLY_BAR_SHORTNAME }}</code></li>
             </ul>
         {% else %}
             <ul>
@@ -164,13 +168,15 @@
     {% endcall %}
 {%- endmacro %}
 
+
+
 {% macro show_manual_for_js_preferential_voting() -%}
-    {% call util.bootstrap_panel(title=gettext("Help"), icon='info-circle', aclass='panel-default mosp') %}
+    {% call util.bootstrap_panel(title=gettext("Help for voting"), icon='info-circle', aclass='panel-default panel-condensed mosp') %}
         <p>
             {% trans link=gettext("<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>")|s %}
                 This vote is a preferential vote. You can arrange the candidates in the field above
                 according to your personal preference. The preferences of all participants will be
-                evaluated using the {{ link }}, to determine the winner.
+                evaluated using the {{ link }}, to determine the option with the most votes.
             {% endtrans %}
         </p>
         <p>
@@ -195,8 +201,7 @@
                 {% trans %}
                     One of the boxes is marked as “Neutral”. Please place candidates cou deem suitable
                     above this box (they will be highlighted in green) and candidates you want to reject
-                    below this box (they will be highlighted in red). Should all candidates be rejected,
-                    the board may take additional measures.
+                    below this box (they will be highlighted in red).
                 {% endtrans %}
             </p>
             <p>
@@ -210,9 +215,11 @@
     {% endcall %}
 {%- endmacro %}
 
+
+
 {# Preferential voting: Voting form #}
 {% macro show_preferential_voting() -%}
-    <h3>{% trans %}Ballot{% endtrans %}</h3>
+    <h3 class="mosp">{% trans %}Ballot{% endtrans %}</h3>
 
     {# Tab controls to switch to javascript preferential voting form #}
     <ul class="nav nav-tabs mosp softhide" role="tablist" id="tablist-formselect">
@@ -238,7 +245,7 @@
                 {{ util.anti_csrf_token('assembly/vote') }}
                 {{ util.form_input_text(name="vote", label=gettext("Preferencelist"), small=True,
                                         anid='input-preferencelist') }}
-                {{ util.form_input_submit(value=gettext("Vote"), small=True) }}
+                {{ util.form_input_submit(value=gettext("Vote_[[to vote in a ballot]]"), small=True) }}
             </form>
             <script nonce="{{ csp_nonce }}">
                 $('#voteform').cdedbProtectChanges();
@@ -261,7 +268,7 @@
             </div>
             <div class="p clearfix">
                 <button class="btn btn-primary" id="button-jsvote">
-                    {{ util.make_icon('check') }} {% trans %}Vote{% endtrans %}
+                    {{ util.make_icon('check') }} {% trans %}Vote_[[to vote in a ballot]]{% endtrans %}
                 </button>
             </div>
             <script nonce="{{ csp_nonce }}">
@@ -270,7 +277,7 @@
                 /* Initialize JS Fancy form */
                 $('#prefvote_container').cdedbPrefVote(
                     {{ ambience['ballot']['candidates']|keydictsort(EntitySorter.candidates)|json|s }},
-                    {{ "'"|s+ASSEMBLY_BAR_MONIKER+"'"|s if ambience['ballot']['use_bar'] else "null" }},
+                    {{ "'"|s+ASSEMBLY_BAR_SHORTNAME+"'"|s if ambience['ballot']['use_bar'] else "null" }},
                     $('#input-preferencelist'),
                     {{ {'bar_name': gettext('neutral'),
                         'box': gettext('Box {0}'),
@@ -305,11 +312,13 @@
     </div>
 {%- endmacro %}
 
+
+
 {% macro add_candidate_form() -%}
     <h3>{% trans %}Candidates{% endtrans %}</h3>
 
-    {% set columns =  [dict(name="moniker", label="Shortname", func=util.input_text),
-                       dict(name="description", label="Description", func=util.input_text)] %}
+    {% set columns =  [dict(name="shortname", label=gettext("Shortname"), func=util.input_text),
+                       dict(name="title", label=gettext("Title_[[name of an entity]]"), func=util.input_text)] %}
 
     <form action="{{ cdedblink('assembly/edit_candidates') }}" method="POST" id="candidatessummaryform">
         {{ util.anti_csrf_token('assembly/edit_candidates') }}

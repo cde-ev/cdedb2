@@ -1,6 +1,7 @@
 {% if data['id'] == user.persona_id %}{% set sidenav_active='core_mydata'%}{% endif %}
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% import "web/generic.tmpl" as generic with context %}
 {% block title %}
@@ -26,7 +27,7 @@
     {{ views.append((gettext("Core Administration"), ["core"], None)) }}
     {{ views.append((gettext("Finance Administration"), ["finance"], None)) }}
     {% if "moderator" in access_mode %}
-        {{ views.append((gettext("Moderator Controls"), ["ml_moderator"], None)) }}
+        {{ views.append((gettext("Moderator Controls"), ALL_MOD_ADMIN_VIEWS, None)) }}
     {% endif %}
     {% if "orga" in access_mode %}
         {{ views.append((gettext("Orga Controls"), ["event_orga"], None)) }}
@@ -35,21 +36,25 @@
     {{ util.admin_views_toggle(views) }}
 {% endblock %}
 
-
-{% block content %}
+{% block static_notifications %}
     {% if is_relative_admin %}
-        {% if not ambience['persona']['is_active'] %}
-            <div class="alert alert-info" id="deactivated">
-                {{ util.make_icon('info-circle') }} {% trans %}The User is deactivated.{% endtrans %}
-            </div>
-        {% endif %}
-        {% if ambience['persona']['is_archived'] %}
-            <div class="alert alert-info" id="archived">
-                {{ util.make_icon('info-circle') }} {% trans %}The User is archived.{% endtrans %}
-            </div>
+        {% if ambience['persona']['is_purged'] %}
+            {% call util.notification('info', id='purged') %}
+                {% trans %}This user has been purged.{% endtrans %}
+            {% endcall %}
+        {% elif ambience['persona']['is_archived'] %}
+            {% call util.notification('info', id='archived') %}
+                {% trans %}The user is archived.{% endtrans %}
+            {% endcall %}
+        {% elif not ambience['persona']['is_active'] %}
+            {% call util.notification('info', id='deactivated') %}
+                {% trans %}The user is deactivated.{% endtrans %}
+            {% endcall %}
         {% endif %}
     {% endif %}
+{% endblock %}
 
+{% block content %}
     {% if quoteable %}
         {{ util.href(show_user_link(user, ambience['persona']['id'], quote_me=True), gettext("Show complete Profile"),
                      aclass="btn btn-info btn-sm", icon='eye-slash') }}
@@ -60,44 +65,69 @@
                 {% if is_relative_admin %}
                     {% if data['id'] == user.persona_id %}
                         {{ util.href(cdedblink('core/change_user_form'), gettext("Edit (normal)"),
-                                aclass="btn btn-warning btn-sm", icon="pen") }}
+                                aclass="btn btn-warning btn-sm mosp", icon="pen") }}
                         {{ util.href(cdedblink('core/admin_change_user_form'), gettext("Edit (as Admin)"),
-                                aclass="btn btn-warning btn-sm", icon="pen") }}
+                                aclass="btn btn-warning btn-sm mosp", icon="pen") }}
                     {% else %}
                         {{ util.href(cdedblink('core/admin_change_user_form'), gettext("Edit"),
-                                aclass="btn btn-warning btn-sm", icon="pen") }}
+                                aclass="btn btn-warning btn-sm mosp", icon="pen") }}
                     {% endif %}
                 {% else %}
                     {{ util.href(cdedblink('core/change_user_form'), gettext("Edit"),
-                            aclass="btn btn-warning btn-sm", icon="pen") }}
+                            aclass="btn btn-warning btn-sm mosp", icon="pen") }}
                 {% endif %}
                 {% if data['id'] == user.persona_id %}
                     {{ util.href(cdedblink("core/change_password_form"), gettext("Change Password"),
-                            aclass="btn btn-warning btn-sm", icon="edit") }}
-                    {{ util.href(docurl('Privacy'), gettext("Who can see my data?"),aclass="btn btn-info btn-sm pull-right", icon="question-circle") }}
+                            aclass="btn btn-warning btn-sm mosp", icon="edit") }}
+                    <form action="{{ cdedblink("core/logout_all") }}" method="POST" id="logoutallform"
+                          class="display-inline">
+                        {{ util.anti_csrf_token('core/logout_all') }}
+                        {{ util.input_submit(value=gettext("Logout Everywhere"), title=gettext("Logout Everywhere"),
+                                             icon="power-off", aclass="btn btn-danger btn-sm mosp") }}
+                    </form>
+                    {{ util.href(docurl('Realm_Core_Privacy'), gettext("Who can see my data?"),aclass="btn btn-info btn-sm pull-right mosp", icon="question-circle") }}
                 {% endif %}
                 {% if is_relative_admin %}
-                    {{ util.href(cdedblink("core/show_history"), gettext("Change History"), aclass="btn btn-info btn-sm",
-                            icon="clock") }}
+                    {{ util.href(cdedblink("core/show_history"), gettext("Change History"),
+                            aclass="btn btn-info btn-sm mosp", icon="clock") }}
                 {% endif %}
             {% endif %}
         </div>
     {% endif %}
 
-    {# Profile photo/avatar #}
-    {% if 'foto' in data %}
-        <div class="pull-right-responsive text-right-responsive" id="profile-foto">
-            {% if data['foto'] %}
-                <img src="{{ cdedblink('core/get_foto', {'foto': data['foto']}) }}"
-                     alt="{{ gettext("Profile Picture") }}" class="profilepic img-thumbnail">
-            {%- else %}
-                <img src="{{ staticurl("generic-avatar.png") }}" alt="{{ gettext("Default Profile Picture") }}"
-                  class="profilepic img-thumbnail">
-            {%- endif -%}
-            {% if data['id'] == user.persona_id or is_relative_admin -%}
-                <br />
-                {{ util.href(cdedblink('core/set_foto_form'), gettext("Change Profile Picture"),
-                        aclass="btn btn-xs btn-warning", icon="pen") }}
+    {% if 'foto' in data or data['show_vcard'] %}
+        <div class="pull-right-responsive text-right-responsive">
+            {# Profile photo/avatar #}
+            {% if 'foto' in data %}
+                <div id="profile-foto">
+                    {% if data['foto'] %}
+                        <img src="{{ cdedblink('core/get_foto', {'foto': data['foto']}) }}"
+                             alt="{{ gettext("Profile Picture") }}" class="profilepic img-thumbnail mosp">
+                    {%- else %}
+                        <img src="{{ staticurl("generic-avatar.png") }}" alt="{{ gettext("Default Profile Picture") }}"
+                             class="profilepic img-thumbnail mosp">
+                    {%- endif -%}
+                    {% if data['id'] == user.persona_id or is_relative_admin -%}
+                        <br />
+                        {{ util.href(cdedblink('core/set_foto_form'), gettext("Change Profile Picture"),
+                                aclass="btn btn-xs btn-warning mosp", icon="pen") }}
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            {% if data['show_vcard'] %}
+                <div id="vcard">
+                    {% set confirm_id = encode_parameter("core/qr_vcard", "confirm_id", ambience['persona']['id'], persona_id=user.persona_id, timeout=None) %}
+                    <a href="{{ cdedblink('core/qr_vcard', {'persona_id': ambience['persona']['id'], 'confirm_id': confirm_id}) }}" class="btn btn-default mosp">
+                        {{ util.make_icon('qrcode') }}
+                        {% trans %}QR{% endtrans %}
+                    </a>
+                    {% set confirm_id = encode_parameter("core/download_vcard", "confirm_id", ambience['persona']['id'], persona_id=user.persona_id, timeout=None) %}
+                    <a href="{{ cdedblink("core/download_vcard", {'persona_id': ambience['persona']['id'], 'confirm_id': confirm_id}) }}" class="btn btn-default mosp">
+                        {{ util.make_icon('download') }}
+                        {% trans %}VCard{% endtrans %}
+                    </a>
+                </div>
             {% endif %}
         </div>
     {% endif %}
@@ -314,7 +344,7 @@
                     <dt>{% trans %}WWW{% endtrans %}</dt>
                     {# TODO maybe add links or so - must be validated before! #}
                     <dd id="contact-weblink">
-                        {{ util.web_link(data['weblink']) }}
+                        {{ data['weblink']|md }}
                     </dd>
                 {% endif %}
             </dl>
@@ -409,7 +439,8 @@
             </tbody>
             </table>
         {% endif %}
-        {%  if is_relative_admin and data["is_cde_realm"] and not CDEDB_OFFLINE_DEPLOYMENT %}
+
+        {% if is_relative_admin and data["is_cde_realm"] and not CDEDB_OFFLINE_DEPLOYMENT and not ambience['persona']['is_purged'] %}
             <h4 class="heading-underline">{% trans %}Copy-Paste Template{% endtrans %}</h4>
             <pre id="copy-paste-template">
 Kontoinhaber:       {{ meta_info['CdE_Konto_Inhaber'] }}
@@ -430,7 +461,7 @@ Mitglied.</pre>
         {% endif %}
     </div>
 
-    {% if data['id'] != user.persona_id and is_relative_admin %}
+    {% if data['id'] != user.persona_id and is_relative_admin and not ambience['persona']['is_purged'] %}
         {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
             {% if not ambience['persona']['is_archived'] %}
                     <div class="row">
@@ -524,7 +555,7 @@ Mitglied.</pre>
                         <div class="col-sm-8">
                             <p class="text-muted">
                                 {% trans %}
-                                	Archives the Account. The User can no longer login and most Information is deleted.
+                                    Archives the Account. The User can no longer login and most Information is deleted.
                                     Only Information necessary to restore Membership will be retained
                                     (i. e. Name and Past Events attendance).
                                     Other Users can no longer see the Account.

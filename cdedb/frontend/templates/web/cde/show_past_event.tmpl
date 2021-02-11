@@ -32,6 +32,26 @@
         {% endif %}
         <dt>{% trans %}Institution{% endtrans %}</dt>
         <dd id="institution">{{ institutions[ambience['pevent']['institution']] }}</dd>
+        {% if orgas %}
+        <dt>{% trans %}Orgas{% endtrans %}</dt>
+        <dd id="orgas">
+            {% for anid, orga in orgas.items() %} {# This is already sorted. #}
+                {% if orga['viewable'] %}
+                    {{ util.persona_anchor(personas[anid], quote_me=not is_admin) -}}
+                {% else %}
+                    {{ personas[anid]['given_names'] }} {{ personas[anid]['family_name'] -}}
+                {% endif -%}
+                {% if not loop.last %},{% endif %}
+            {% endfor %}
+            {% if extra_orgas %}
+                {% trans count=extra_orgas %}
+                     and_one_more
+                {%- pluralize count -%}
+                     and_count_more
+                {% endtrans %}
+            {% endif %}
+        </dd>
+        {% endif %}
     </dl>
 
     <div id="description">
@@ -78,22 +98,23 @@
                 <h4 class="panel-title">{{util.make_icon('plus') }} {% trans %}Add Participant <u>without</u> Course{% endtrans %}</h4>
             </div>
             <div class="panel-body">
-                <form action="{{ cdedblink('cde/add_participant') }}" method="POST" id="addparticipantform">
-                    {{ util.anti_csrf_token('cde/add_participant') }}
+                <form action="{{ cdedblink('cde/add_participants') }}" method="POST" id="addparticipantform">
+                    {{ util.anti_csrf_token('cde/add_participants') }}
                     {{ util.input_hidden(name="pcourse_id", value="") }}
                     {{ util.input_hidden(name="is_instructor", value=False) }}
                     <div class="row">
-                        <div class="col-sm-7 {% if 'persona_id' in errors %}has-error{% endif %}">
-                            {{ util.input_text(name="persona_id", placeholder=gettext("DB-XXXX-X"),
-                                    anid="input-add-participant", aclass="form-control input-sm",
-                                    arialabel=gettext("ID of the new Participant")) }}
-                            <script nonce="{{ csp_nonce }}">
-                                $('#input-add-participant').cdedbSearchPerson(
-                                    '{{ (cdedblink('core/select_persona')|e) + ('?kind=past_event_user&phrase=%s'|s) }}',
-                                    {{ participants.keys()|list|json|s }}, false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
-                                );
-                            </script>
-                            {{ util.output_errors('persona_id') }}
+                        <div class="col-sm-7 {% if 'persona_ids' in errors %}has-error{% endif %}">
+                            {% call util.output_errors('persona_ids') %}
+                                {{ util.input_text(name="persona_ids", placeholder="DB-XXXX-X,DB-XXXX-X,…",
+                                                   anid='input-add-participant', aclass='form-control input-sm',
+                                                   arialabel=gettext("ID of the new Participant")) }}
+                                <script nonce="{{ csp_nonce }}">
+                                    $('#input-add-participant').cdedbSearchPerson(
+                                        '{{ cdedblink('core/select_persona') + '?kind=past_event_user&phrase=%s'|s }}',
+                                        {{ participants.keys()|list|json|s }}, false, true, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
+                                    );
+                                </script>
+                            {% endcall %}
                         </div>
                         <div class="col-sm-2">
                             <div class="checkbox input-sm">
@@ -149,9 +170,9 @@
             {% if extra_participants %}
                 <li id="count-extra-participants">
                     {% trans count=extra_participants %}
-                        extra_participants_singular
+                        and_one_more
                     {%- pluralize count -%}
-                        extra_participants_plural
+                        and_count_more
                     {% endtrans %} …
                 </li>
             {% endif %}

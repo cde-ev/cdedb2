@@ -1,0 +1,80 @@
+{% set sidenav_active='event_list' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block title %}
+    {% trans %}
+        All Events
+    {% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/list_events"), gettext("All Events"), active="True") }}
+{% endblock %}
+
+{% macro format_entry(event) %}
+    <div class="row list-group-item{% if event['is_archived'] %} list-group-item-muted{% endif %}">
+        <div class="col-sm-4">
+            {{ util.href(cdedblink("event/show_event", {'event_id': event['id']}), event['title']) }}
+        </div>
+        <div class="col-sm-5 small">
+            {{ event['begin']|date(lang=lang) }}&#8239;–&#8239;{{ event['end']|date(lang=lang) }}
+            {% if event['parts']|length > 1 or event['is_cancelled'] %}
+                ({% if event['parts']|length > 1 -%}
+                    {% trans count=event['parts']|length %}
+                        {{ count }} Parts
+                    {% endtrans %}
+                 {%- endif %}
+                 {%- if event['parts']|length > 1 and event['is_cancelled'] -%}
+                    ,
+                 {% endif %}
+                 {%- if event['is_cancelled'] -%}
+                    {% trans %}
+                        is cancelled
+                    {% endtrans %}
+                {%- endif %})
+            {% endif %}
+        </div>
+        {% if "event_mgmt" in user.admin_views %}
+        <div class="col-sm-3 small">
+            <a href="{{ querylink(event['id']) }}">
+                {% trans count=event['registrations'] %}
+                	{{ count }} Registrations
+                {% endtrans -%}
+            </a>,
+            {% trans count=event['orgas']|length %}
+                {{ count }} Orga
+            {%- pluralize count -%}
+                {{ count }} Orgas
+            {% endtrans %}
+        </div>
+        {% endif %}
+    </div>
+{% endmacro %}
+{% block content %}
+    {% if "event_mgmt" in user.admin_views %}
+    <div class="p">
+        {{ util.href(cdedblink("event/create_event_form"), gettext("Create Event"), aclass="btn btn-success btn-sm",
+                icon="plus") }}
+    </div>
+    {% endif %}
+
+    <h3>{% trans %}Current Events{% endtrans %}</h3>
+    <div class="list-group list-group-hover list-group-condensed" id="current-events">
+        {% for event_id, entry in events|keydictsort(EntitySorter.event) %}
+            {% if not entry['is_archived'] and
+                    ('event_mgmt' in user.admin_views or user.persona_id in entry['orgas'] or entry['is_visible']) %}
+                {{ format_entry(entry) }}
+            {% endif %}
+        {% endfor %}
+    </div>
+
+    <h3>{% trans %}Archived Events{% endtrans %}</h3>
+    <div class="list-group list-group-hover list-group-condensed" id="archived-events">
+        {% for event_id, entry in events|keydictsort(EntitySorter.event) %}
+            {% if entry['is_archived'] and
+                    ('event_mgmt' in user.admin_views or user.persona_id in entry['orgas'] or entry['is_visible']) %}
+                {{ format_entry(entry) }}
+            {% endif %}
+        {% endfor %}
+    </div>
+{% endblock %}

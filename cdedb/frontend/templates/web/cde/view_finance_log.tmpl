@@ -50,7 +50,7 @@
                     </td>
                     <td>{{ entry['delta']|money(lang=lang) }}</td>
                     <td>{{ entry['new_balance']|money(lang=lang) }}</td>
-                    <td>{{ entry['additional_info'] }}</td>
+                    <td>{{ entry['change_note'] }}</td>
                     <td>{{ entry['members'] }}</td>
                     <td>{{ entry['total']|money(lang=lang) }}</td>
                 </tr>
@@ -58,6 +58,6 @@
         </tbody>
     </table>
 
-    {{ logging.filter('cde/view_finance_log', enums['FinanceLogCodes'], 'admin_persona') }}
     {{ logging.navigation('cde/view_finance_log', total, length, loglinks) }}
+    {{ logging.filter('cde/view_finance_log', enums['FinanceLogCodes'], 'admin_persona') }}
 {% endblock %}

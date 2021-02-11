@@ -9,29 +9,31 @@ template for all services.
 import abc
 import collections.abc
 import copy
+import datetime
 import enum
 import functools
 import logging
-import datetime
-import psycopg2.extras
-import psycopg2.extensions
+from types import TracebackType
 from typing import (
-    Any, Callable, TypeVar, Iterable, Tuple, Set, List, Collection,
-    Optional, Sequence, cast, overload, Mapping, Union, KeysView, Dict,
-    ClassVar
+    Any, Callable, ClassVar, Collection, Dict, Iterable, KeysView, List, Mapping,
+    Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast, overload,
 )
 
+import psycopg2.extensions
+import psycopg2.extras
+from typing_extensions import Literal
+
 import cdedb.validation as validate
+import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    PrivilegeError, PsycoJson, diacritic_patterns, glue, make_proxy,
-    make_root_logger, n_, unwrap, RequestState, Role, Realm, PathLike,
-    CdEDBObject, CdEDBObjectMap, CdEDBLog,
+    LOCALE, CdEDBLog, CdEDBObject, CdEDBObjectMap, PathLike, PrivilegeError, PsycoJson,
+    Realm, RequestState, Role, diacritic_patterns, glue, make_proxy, make_root_logger,
+    n_, unwrap,
 )
-from cdedb.query import Query
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
 from cdedb.database.constants import FieldDatatypes
-from cdedb.query import QUERY_PRIMARIES, QUERY_VIEWS, QueryOperators
+from cdedb.query import QUERY_PRIMARIES, QUERY_VIEWS, Query, QueryOperators
 from cdedb.validation import parse_date, parse_datetime
 
 F = TypeVar('F', bound=Callable[..., Any])
@@ -39,10 +41,23 @@ T = TypeVar('T')
 S = TypeVar('S')
 
 
-def singularize(function: Callable,
+@overload
+def singularize(function: Callable[..., Mapping[Any, T]],
+                array_param_name: str = "",
+                singular_param_name: str = ""
+                ) -> Callable[..., T]: ...
+
+
+@overload
+def singularize(function: Callable[..., T], array_param_name: str = "",
+                singular_param_name: str = "",
+                passthrough: Literal[True] = True) -> Callable[..., T]: ...
+
+
+def singularize(function: Callable[..., Union[T, Mapping[Any, T]]],
                 array_param_name: str = "ids",
                 singular_param_name: str = "anid",
-                passthrough: bool = False) -> Callable:
+                passthrough: bool = False) -> Callable[..., T]:
     """This takes a function and returns a singularized version.
 
     The function has to accept an array as a parameter and return a dict
@@ -59,7 +74,8 @@ def singularize(function: Callable,
     """
 
     @functools.wraps(function)
-    def singularized(self, rs: RequestState, *args: Any, **kwargs: Any) -> Any:
+    def singularized(self: AbstractBackend, rs: RequestState, *args: Any,
+                     **kwargs: Any) -> T:
         if singular_param_name in kwargs:
             param = kwargs.pop(singular_param_name)
             kwargs[array_param_name] = (param,)
@@ -68,9 +84,9 @@ def singularize(function: Callable,
             args = ((param,),) + args[1:]
         data = function(self, rs, *args, **kwargs)
         if passthrough:
-            return data
+            return cast(T, data)
         else:
-            return data[param]
+            return cast(Mapping[Any, T], data)[param]
 
     return singularized
 
@@ -92,7 +108,8 @@ def batchify(function: Callable[..., T],
     """
 
     @functools.wraps(function)
-    def batchified(self, rs: RequestState, *args: Any, **kwargs: Any) -> List:
+    def batchified(self: AbstractBackend, rs: RequestState, *args: Any,
+                   **kwargs: Any) -> List[T]:
         ret = []
         with Atomizer(rs):
             if array_param_name in kwargs:
@@ -124,7 +141,8 @@ def access(*roles: Role) -> Callable[[F], F]:
     def decorator(function: F) -> F:
 
         @functools.wraps(function)
-        def wrapper(self, rs: RequestState, *args: Any, **kwargs: Any) -> Any:
+        def wrapper(self: AbstractBackend, rs: RequestState, *args: Any,
+                    **kwargs: Any) -> Any:
             if rs.user.roles.isdisjoint(roles):
                 raise PrivilegeError(
                     n_("%(user_roles)s is disjoint from %(roles)s"),
@@ -224,7 +242,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                             ) -> CdEDBObject: ...
 
     @staticmethod
-    def _sanitize_db_output(output):
+    def _sanitize_db_output(output: Optional[psycopg2.extras.RealDictRow]
+                            ) -> Optional[CdEDBObject]:
         """Convert a :py:class:`psycopg2.extras.RealDictRow` into a normal
         :py:class:`dict`. We only use the outputs as dictionaries and
         the psycopg variant has some rough edges (e.g. it does not survive
@@ -241,8 +260,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
     # differently than others, so we just ignore everything here.
     @staticmethod
     @overload
-    def _sanitize_db_input(obj: Mapping[S, T]       # type: ignore
-                           ) -> Mapping[S, T]: ...  # type: ignore
+    def _sanitize_db_input(obj: Mapping[S, T]) -> Mapping[S, T]: ...  # type: ignore
 
     @staticmethod
     @overload
@@ -258,10 +276,10 @@ class AbstractBackend(metaclass=abc.ABCMeta):
 
     @staticmethod
     @overload
-    def _sanitize_db_input(obj: T) -> T: ...  # type: ignore
+    def _sanitize_db_input(obj: T) -> T: ...
 
     @staticmethod
-    def _sanitize_db_input(obj):
+    def _sanitize_db_input(obj: Any) -> Any:
         """Mangle data to make psycopg happy.
 
         Convert :py:class:`tuple`s (and all other iterables, but not strings
@@ -289,7 +307,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             raise RuntimeError(n_("No contamination!"))
 
     def execute_db_query(self, cur: psycopg2.extensions.cursor, query: str,
-                         params: Sequence) -> None:
+                         params: Sequence[Any]) -> None:
         """Perform a database query. This low-level wrapper should be used
         for all explicit database queries, mostly because it invokes
         :py:meth:`_sanitize_db_input`. However in nearly all cases you want to
@@ -306,14 +324,14 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             query, sanitized_params)))
         cur.execute(query, sanitized_params)
 
-    def query_exec(self, rs: RequestState, query: str, params: Sequence) -> int:
+    def query_exec(self, rs: RequestState, query: str, params: Sequence[Any]) -> int:
         """Execute a query in a safe way (inside a transaction)."""
         with rs.conn as conn:
             with conn.cursor() as cur:
                 self.execute_db_query(cur, query, params)
                 return cur.rowcount
 
-    def query_one(self, rs: RequestState, query: str, params: Sequence
+    def query_one(self, rs: RequestState, query: str, params: Sequence[Any]
                   ) -> Optional[CdEDBObject]:
         """Execute a query in a safe way (inside a transaction).
 
@@ -324,7 +342,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                 self.execute_db_query(cur, query, params)
                 return self._sanitize_db_output(cur.fetchone())  # type: ignore
 
-    def query_all(self, rs: RequestState, query: str, params: Sequence
+    def query_all(self, rs: RequestState, query: str, params: Sequence[Any]
                   ) -> Tuple[CdEDBObject, ...]:
         """Execute a query in a safe way (inside a transaction).
 
@@ -374,9 +392,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         query = f"INSERT INTO {table} ({', '.join(keys)}) VALUES {value_list}"
         return self.query_exec(rs, query, params)
 
-    # KeysView should be a subclass of Collection, but PyCharm disagrees :/
     def sql_select(self, rs: RequestState, table: str, columns: Sequence[str],
-                   entities: Union[Collection, KeysView], entity_key: str = "id"
+                   entities: Collection[Any], entity_key: str = "id"
                    ) -> Tuple[CdEDBObject, ...]:
         """Generic SQL select query.
 
@@ -443,8 +460,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         params += (data[entity_key],)
         return self.query_exec(rs, query, params)
 
-    def sql_delete(self, rs: RequestState, table: str, entities: Collection,
-                   entity_key: str = "id") -> int:
+    def sql_delete(self, rs: RequestState, table: str,
+                   entities: Collection[Any], entity_key: str = "id") -> int:
         """Generic SQL deletion query.
 
         See :py:meth:`sql_select` for thoughts on this.
@@ -455,7 +472,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         return self.query_exec(rs, query, (entities,))
 
     def sql_delete_one(self, rs: RequestState, table: str, entity: Any,
-                       entity_key: str = "id"):
+                       entity_key: str = "id") -> int:
         """Generic SQL deletion query for a single row.
 
         See :py:meth:`sql_select` for thoughts on this.
@@ -482,12 +499,17 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                            for field in query.fields_of_interest
                            for column in field.split(','))
         if query.order:
-            orders = ", ".join(entry.split(',')[0] for entry, _ in query.order)
-            select = glue(select, ',', orders)
+            # Collate compatible to COLLATOR in python
+            orders = []
+            for entry, _ in query.order:
+                if query.spec[entry] == 'str':
+                    orders.append(f'{entry.split(",")[0]} COLLATE "{LOCALE}"')
+                else:
+                    orders.append(entry.split(',')[0])
+            select += ", " + ", ".join(orders)
         select = glue(select, ',', QUERY_PRIMARIES[query.scope])
         view = view or QUERY_VIEWS[query.scope]
-        q = "SELECT {} {} FROM {}".format("DISTINCT" if distinct else "",
-                                          select, view)
+        q = f"SELECT {'DISTINCT' if distinct else ''} {select} FROM {view}"
         params: List[Any] = []
         constraints = []
         _ops = QueryOperators
@@ -590,20 +612,30 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         if constraints:
             q = glue(q, "WHERE", "({})".format(" ) AND ( ".join(constraints)))
         if query.order:
-            q = glue(q, "ORDER BY",
-                     ", ".join("{} {}".format(entry.split(',')[0],
-                                              "ASC" if ascending else "DESC")
-                               for entry, ascending in query.order))
+            # Collate compatible to COLLATOR in python
+            orders = []
+            for entry, ascending in query.order:
+                if query.spec[entry] == 'str':
+                    orders.append(
+                        f'{entry.split(",")[0]} COLLATE "{LOCALE}" '
+                        f'{"ASC" if ascending else "DESC"}')
+                else:
+                    orders.append(
+                        f'{entry.split(",")[0]} '
+                        f'{"ASC" if ascending else "DESC"}')
+            q = glue(q, "ORDER BY", ", ".join(orders))
         return self.query_all(rs, q, params)
 
-    def generic_retrieve_log(self, rs: RequestState, code_validator: str,
+    def generic_retrieve_log(self, rs: RequestState, code_validator: Type[T],
                              entity_name: str, table: str,
                              codes: Collection[int] = None,
-                             entity_ids: Collection = None,
+                             entity_ids: Collection[Any] = None,
                              offset: int = None, length: int = None,
                              additional_columns: Collection[str] = None,
-                             persona_id: int = None, submitted_by: int = None,
-                             additional_info: str = None,
+                             persona_id: int = None,
+                             submitted_by: int = None,
+                             reviewed_by: int = None,
+                             change_note: str = None,
                              time_start: datetime.datetime = None,
                              time_stop: datetime.datetime = None
                              ) -> CdEDBLog:
@@ -632,24 +664,29 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         :param additional_columns: Extra values to retrieve.
         :param persona_id: Filter for persona_id column.
         :param submitted_by: Filter for submitted_by column.
-        :param additional_info: Filter for additional_info column
+        :param reviewed_by: Filter for reviewed_by column.
+            Only for core.changelog.
+        :param change_note: Filter for change_note column
         :param time_start: lower bound for ctime columns
         :param time_stop: upper bound for ctime column
         """
-        codes = affirm_set_validation(code_validator, codes, allow_None=True)
-        entity_ids = affirm_set_validation("id", entity_ids, allow_None=True)
-        offset = affirm_validation("non_negative_int_or_None", offset)
-        length = affirm_validation("positive_int_or_None", length)
+        codes = affirm_set_validation(code_validator, codes or set())
+        entity_ids = affirm_set_validation(vtypes.ID, entity_ids or set())
+        offset: Optional[int] = affirm_validation_typed_optional(
+            vtypes.NonNegativeInt, offset)
+        length: Optional[int] = affirm_validation_typed_optional(
+            vtypes.PositiveInt, length)
         additional_columns = affirm_set_validation(
-            "restrictive_identifier", additional_columns, allow_None=True)
-        persona_id = affirm_validation("id_or_None", persona_id)
-        submitted_by = affirm_validation("id_or_None", submitted_by)
-        additional_info = affirm_validation("regex_or_None", additional_info)
-        time_start = affirm_validation("datetime_or_None", time_start)
-        time_stop = affirm_validation("datetime_or_None", time_stop)
+            vtypes.RestrictiveIdentifier, additional_columns or set())
+        persona_id = affirm_validation_typed_optional(vtypes.ID, persona_id)
+        submitted_by = affirm_validation_typed_optional(vtypes.ID, submitted_by)
+        reviewed_by = affirm_validation_typed_optional(vtypes.ID, reviewed_by)
+        change_note = affirm_validation_typed_optional(vtypes.Regex, change_note)
+        time_start = affirm_validation_typed_optional(datetime.datetime, time_start)
+        time_stop = affirm_validation_typed_optional(datetime.datetime, time_stop)
 
         length = length or self.conf["DEFAULT_LOG_LENGTH"]
-        additional_columns: Collection[str] = additional_columns or tuple()
+        additional_columns: List[str] = list(additional_columns or [])
 
         # First, define the common WHERE filter clauses
         conditions = []
@@ -666,9 +703,9 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         if submitted_by:
             conditions.append("submitted_by = %s")
             params.append(submitted_by)
-        if additional_info:
-            conditions.append("additional_info ~* %s")
-            params.append(diacritic_patterns(additional_info))
+        if change_note:
+            conditions.append("change_note ~* %s")
+            params.append(diacritic_patterns(change_note))
         if time_start and time_stop:
             conditions.append("%s <= ctime AND ctime <= %s")
             params.extend((time_start, time_stop))
@@ -679,6 +716,16 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             conditions.append("ctime <= %s")
             params.append(time_stop)
 
+        # Special column for core.changelog
+        if table == "core.changelog":
+            additional_columns += ["reviewed_by", "generation"]
+            if reviewed_by:
+                conditions.append("reviewed_by = %s")
+                params.append(reviewed_by)
+        elif reviewed_by:
+            raise ValueError(
+                "reviewed_by column only defined for changelog.")
+
         if conditions:
             condition = "WHERE {}".format(" AND ".join(conditions))
         else:
@@ -687,7 +734,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         # The first query determines the absolute number of logs existing
         # matching the given criteria
         query = f"SELECT COUNT(*) AS count FROM {table} {condition}"
-        total = unwrap(self.query_one(rs, query, params)) or 0
+        total: int = unwrap(self.query_one(rs, query, params)) or 0
         if offset and offset > total:
             # Why you do this
             return total, tuple()
@@ -700,7 +747,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
 
         # Now, query the actual information
         query = (f"SELECT id, ctime, code, submitted_by, {entity_name}_id,"
-                 f" persona_id, additional_info {extra_columns} FROM {table}"
+                 f" persona_id, change_note {extra_columns} FROM {table}"
                  f" {condition} ORDER BY id LIMIT {length}")
         if offset is not None:
             query = glue(query, "OFFSET {}".format(offset))
@@ -724,80 +771,51 @@ class Silencer:
     def __init__(self, rs: RequestState):
         self.rs = rs
 
-    def __enter__(self):
+    def __enter__(self) -> None:
         self.rs.is_quiet = True
 
-    def __exit__(self, atype, value, tb):
+    def __exit__(self, atype: Type[Exception], value: Exception,
+                 tb: TracebackType) -> None:
         self.rs.is_quiet = False
 
 
-def affirm_validation(assertion: str, value: T, **kwargs: Any) -> T:
+def _affirm_validation(assertion: str, value: T, **kwargs: Any) -> T:
     """Wrapper to call asserts in :py:mod:`cdedb.validation`."""
     checker = getattr(validate, "assert_{}".format(assertion))
     return checker(value, **kwargs)
 
 
-# Ignore the parameter name allow_None
-# noinspection PyPep8Naming
-@overload
-def affirm_array_validation(assertion: str, values: None,
-                            allow_None: bool = False, **kwargs: Any
-                            ) -> None: ...
+def affirm_validation_typed(assertion: Type[T], value: Any, **kwargs: Any) -> T:
+    """Wrapper to call asserts in :py:mod:`cdedb.validation`."""
+    return validate.validate_assert(assertion, value, **kwargs)
 
 
-# noinspection PyPep8Naming
-@overload
-def affirm_array_validation(assertion: str, values: Iterable[T],
-                            allow_None: bool = False, **kwargs: Any
-                            ) -> Tuple[T, ...]: ...
+def affirm_validation_typed_optional(
+    assertion: Type[T], value: Any, **kwargs: Any
+) -> Optional[T]:
+    """Wrapper to call asserts in :py:mod:`cdedb.validation`."""
+    return validate.validate_assert(
+        Optional[assertion], value, **kwargs)  # type: ignore
 
 
-# noinspection PyPep8Naming
-def affirm_array_validation(assertion, values, allow_None=False, **kwargs: Any):
-    """Wrapper to call asserts in :py:mod:`cdedb.validation` for an array.
-
-    :param allow_None: Since we don't have the luxury of an automatic
-      '_or_None' variant like with other validators we have this parameter.
-    """
-    if values is None:
-        if allow_None:
-            return None
-        else:
-            raise ValueError(n_("Is not iterable."))
-    checker: Callable[..., T] = getattr(
-        validate, "assert_{}".format(assertion))
-    return tuple(checker(value, **kwargs) for value in values)
+def affirm_array_validation(
+    assertion: Type[T], values: Iterable[Any], **kwargs: Any
+) -> Tuple[T, ...]:
+    """Wrapper to call asserts in :py:mod:`cdedb.validation` for an array."""
+    return tuple(
+        affirm_validation_typed(assertion, value, **kwargs)
+        for value in values
+    )
 
 
-# Ignore the parameter name allow_None
-# noinspection PyPep8Naming
-@overload
-def affirm_set_validation(assertion: str, values: None,
-                          allow_None: bool = False, **kwargs: Any) -> None: ...
-
-
-# noinspection PyPep8Naming
-@overload
-def affirm_set_validation(assertion: str, values: Iterable[T],
-                          allow_None: bool = False, **kwargs: Any
-                          ) -> Set[T]: ...
-
-
-# noinspection PyPep8Naming
-def affirm_set_validation(assertion, values, allow_None=False, **kwargs):
-    """Wrapper to call asserts in :py:mod:`cdedb.validation` for a set.
-
-    :param allow_None: Since we don't have the luxury of an automatic
-      '_or_None' variant like with other validators we have this parameter.
-    """
-    if values is None:
-        if allow_None:
-            return None
-        else:
-            raise ValueError(n_("Is not iterable."))
-    checker: Callable[..., T] = getattr(
-        validate, "assert_{}".format(assertion))
-    return {checker(value, **kwargs) for value in values}
+def affirm_set_validation(
+    assertion: Type[T], values: Iterable[T], **kwargs: Any
+) -> Set[T]:
+    """Wrapper to call asserts in :py:mod:`cdedb.validation` for a set."""
+    return set(
+        affirm_validation_typed(assertion, value, **kwargs)
+        for value in values
+    )
 
 
 def cast_fields(data: CdEDBObject, fields: CdEDBObjectMap) -> CdEDBObject:
@@ -808,7 +826,7 @@ def cast_fields(data: CdEDBObject, fields: CdEDBObjectMap) -> CdEDBObject:
     """
     spec: Dict[str, FieldDatatypes]
     spec = {v['field_name']: v['kind'] for v in fields.values()}
-    casters = {
+    casters: Dict[FieldDatatypes, Callable[[Any], Any]] = {
         FieldDatatypes.int: lambda x: x,
         FieldDatatypes.str: lambda x: x,
         FieldDatatypes.float: lambda x: x,
@@ -817,7 +835,7 @@ def cast_fields(data: CdEDBObject, fields: CdEDBObjectMap) -> CdEDBObject:
         FieldDatatypes.bool: lambda x: x,
     }
 
-    def _do_cast(key, val):
+    def _do_cast(key: str, val: Any) -> Any:
         if val is None:
             return None
         if key in spec:

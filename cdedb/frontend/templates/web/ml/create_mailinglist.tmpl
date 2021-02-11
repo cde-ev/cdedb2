@@ -16,7 +16,7 @@
 {% endblock %}
 {% block content %}
     {% if ml_type is none %}
-        <form action="{{ cdedblink('ml/create_mailinglist_form') }}" method="GET" id="selectmltypeform",
+        <form action="{{ cdedblink('ml/create_mailinglist_form') }}" method="GET" id="selectmltypeform"
               class="form-horizontal">
             {{ util.form_input_select(name="ml_type", label=gettext("Mailinglist Type"), entries=available_types|enum_entries(processing=gettext)) }}
             {{ util.form_input_submit(value=gettext("Continue"), cancellink=cdedblink("ml/index"), icon="pen") }}
@@ -31,7 +31,7 @@
         {{ util.anti_csrf_token('ml/create_mailinglist') }}
         <h4 class="heading-underline">{% trans %}Meta{% endtrans %}</h4>
         {{ util.form_input_checkbox(name="is_active", label=gettext("Active"), defaultvalue='True') }}
-        {{ util.form_input_text(name="title", label=gettext("Title")) }}
+        {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]")) }}
         {{ util.form_input_text(name="local_part", label=gettext("Address")) }}
         {{ util.form_input_select(name="domain", entries=available_domains|enum_entries(processing=gettext, prefix="@"),
                                   label=gettext("Domain")) }}
@@ -47,18 +47,15 @@
                 update_domain();
             </script>
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
-                                    info=gettext("Supports %(infolink)s.")|format(
-                                    infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
-        {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="5",
-                                    info=gettext("Supports %(infolink)s.")|format(
-                                    infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
+                                    info=util.markdownhint) }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="5", info=util.markdownhint) }}
 
         <h4 class="heading-underline">{% trans %}Moderation & Subscribers{% endtrans %}</h4>
         {{ util.form_input_select(name="mod_policy", label=gettext("Moderation"),
                 entries=enums['ModerationPolicy']|enum_entries(processing=gettext)) }}
         {{ util.input_hidden("ml_type", value=ml_type.value) }}
-        {{ util.form_input_select(name="ml_type", label=gettext("Mailinglist Type"),
-                entries=enums['MailinglistTypes']|enum_entries(processing=gettext), readonly=True) }}
+        {{ util.form_input_static(label=gettext("Mailinglist Type"),
+                    value=(gettext( enums['MailinglistTypes'](ml_type)|string ))) }}
         {% if "event_id" in additional_fields %}
             {{ util.form_input_select(name="event_id", label=gettext("Event"), nulloption=nbsp,
                 entries=events|dictsort|dict_entries('id', 'title'), info=gettext("The participants of this event will "
@@ -80,7 +77,7 @@
             anid="input-moderators") }}
         <script nonce="{{ csp_nonce }}">
             $('#input-moderators').cdedbSearchPerson(
-                '{{ (cdedblink('core/select_persona')|e) + ('?kind=ml_admin_user&phrase=%s'|s) }}',
+                '{{ (cdedblink('core/select_persona')|e) + ('?kind=ml_user&phrase=%s'|s) }}',
                 [],
                 false,
                 true,
@@ -107,8 +104,12 @@
                 build_preview();
             </script>
         {{ util.form_input_select(name="attachment_policy", label=gettext("MIME filter / Attachments"),
-                entries=enums['AttachmentPolicy']|enum_entries(processing=gettext)) }}
-        {{ util.form_input_text(name="maxsize", label=gettext("max. message size (in kB)"), type="number") }}
+                entries=enums['AttachmentPolicy']|enum_entries(processing=gettext), info=gettext(
+                    "For Mailman mailinglists, this setting currently has no effect. "
+                    "By default, these mailinglists accept PDF attachments only. "
+                    "Other attachment policy can be changed by the Admin-Team.")) }}
+        {{ util.form_input_text(name="maxsize", label=gettext("max. message size (in kB)"), type="number",
+                                defaultvalue=maxsize_default) }}
         {{ util.form_input_submit(value=gettext("Create"), cancellink=cdedblink('ml/index')) }}
     </form>
     {% endif %}

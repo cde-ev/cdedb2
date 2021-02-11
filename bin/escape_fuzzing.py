@@ -7,8 +7,9 @@ First, load manually the special sample data, which contains the magic
 token "<script>abcdef</script>" in every user definable string:
 
     make sample-data-test
-    sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/clean_data.sql
-    sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/sample_data_escaping.sql
+    sudo -u cdb psql -U cdb -d cdb_test -f tests/ancillary_files/clean_data.sql
+    sudo -u cdb psql -U cdb -d cdb_test
+        -f tests/ancillary_files/sample_data_escaping.sql
 
 This script logs in as Anton (our testing meta admin account) and traverses all
 links and forms it can find. In every response it checks for the magic string
@@ -29,10 +30,10 @@ this script, as follows:
    python3 -m bin.escape_fuzzing 2>/dev/null
 """
 import itertools
-import queue
-import logging
 import os
 import pathlib
+import queue
+from typing import NamedTuple, Optional
 
 import webtest
 
@@ -40,6 +41,7 @@ os.environ['CDEDB_TEST'] = "True"
 
 from cdedb.config import BasicConfig
 from cdedb.frontend.application import Application
+
 _BASICCONF = BasicConfig()
 
 outdir = pathlib.Path('./out')
@@ -52,7 +54,9 @@ wt_app = webtest.TestApp(app, extra_environ={
 
 visited_urls = set()
 posted_urls = set()
-response_queue = queue.Queue()
+ResponseData = NamedTuple("ResponseData", [("response", webtest.TestResponse),
+                                           ("url", str), ("referer", Optional[str])])
+response_queue: queue.Queue[ResponseData] = queue.Queue()
 
 # URL parameters to ignore when checking for unique urls
 IGNORE_URL_PARAMS = ('confirm_id',)
@@ -70,7 +74,7 @@ login_form['username'] = "anton@example.cde"
 login_form['password'] = "secret"
 start_page = login_form.submit()
 start_page = start_page.maybe_follow()
-response_queue.put((start_page, '/', None))
+response_queue.put(ResponseData(start_page, '/', None))
 
 
 while True:
@@ -114,12 +118,12 @@ while True:
 
         # Strip ambiguous parameters from the url to check if it has already
         # been visited
-        l = target.split('?', maxsplit=1)
-        if len(l) == 1:
-            unique_target = l[0]
+        tmp = target.split('?', maxsplit=1)
+        if len(tmp) == 1:
+            unique_target = tmp[0]
         else:
-            unique_target = l[0] + "?" + "&".join(
-                p for p in l[1].split('&')
+            unique_target = tmp[0] + "?" + "&".join(
+                p for p in tmp[1].split('&')
                 if p.split('=')[0] not in IGNORE_URL_PARAMS)
 
         if not target or unique_target in visited_urls:
@@ -132,7 +136,7 @@ while True:
             print("Got error when following {}: {}".format(target, str(e)[:70]))
             continue
         visited_urls.add(unique_target)
-        response_queue.put((new_response, target, url), True)
+        response_queue.put(ResponseData(new_response, target, url))
 
     # Submit all forms to unvisited action urls
     for form in response.forms.values():
@@ -147,7 +151,7 @@ while True:
                   .format(form.action, str(e)[:70]))
             continue
         posted_urls.add(form.action)
-        response_queue.put((new_response, form.action + " [P]", url), True)
+        response_queue.put(ResponseData(new_response, form.action + " [P]", url), True)
 
         # Second try: Fill in the magic token into every form field
         for field in itertools.chain.from_iterable(form.fields.values()):
@@ -162,5 +166,4 @@ while True:
             print("Got error when posting to {} with marker data: {}"
                   .format(form.action, str(e)[:70]))
             continue
-        response_queue.put((new_response, form.action + " [P+token]", url),
-                           True)
+        response_queue.put(ResponseData(new_response, form.action + " [P+token]", url))

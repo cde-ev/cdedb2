@@ -2,37 +2,37 @@
 
 """Services for the assembly realm."""
 
+import collections
 import copy
+import datetime
+import io
 import json
 import pathlib
-import collections
-import datetime
 import time
-import io
-from typing import (
-    Any, Dict, Tuple, Union, Optional, Collection, List, cast, Set
-)
+from typing import Any, Collection, Dict, List, Optional, Set, Tuple, Union, cast
 
 import werkzeug.exceptions
 from werkzeug import Response
 
+import cdedb.database.constants as const
+import cdedb.ml_type_aux as ml_type
+import cdedb.validationtypes as vtypes
+from cdedb.common import (
+    ASSEMBLY_BAR_SHORTNAME, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
+    EntitySorter, RequestState, get_hash, merge_dicts, n_, now, schulze_evaluate,
+    unwrap, xsorted,
+)
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, REQUESTfile, access, csv_output,
-    check_validation as check, request_extractor, query_result_to_json,
-    calculate_db_logparams, calculate_loglinks, process_dynamic_input,
-    periodic
+    REQUESTdata, REQUESTdatadict, REQUESTfile, access, assembly_guard,
+    calculate_db_logparams, calculate_loglinks, cdedburl, check_validation as check,
+    periodic, process_dynamic_input, request_extractor,
 )
 from cdedb.frontend.uncommon import AbstractUserFrontend
-from cdedb.query import Query, QUERY_SPECS, mangle_query_input
-from cdedb.common import (
-    n_, merge_dicts, unwrap, now, ASSEMBLY_BAR_MONIKER, EntitySorter,
-    schulze_evaluate, xsorted, RequestState, get_hash, CdEDBObject,
-    DefaultReturnCode, CdEDBObjectMap,
-)
-import cdedb.database.constants as const
+from cdedb.query import QUERY_SPECS, Query, mangle_query_input
+from cdedb.validationtypes import CdedbID, Email
 
 #: Magic value to signal abstention during voting. Used during the emulation
-#: of classical voting. This can not occur as a moniker since it contains
+#: of classical voting. This can not occur as a shortname since it contains
 #: forbidden characters.
 MAGIC_ABSTAIN = "special: abstain"
 
@@ -40,9 +40,6 @@ MAGIC_ABSTAIN = "special: abstain"
 class AssemblyFrontend(AbstractUserFrontend):
     """Organize congregations and vote on ballots."""
     realm = "assembly"
-    user_management = {
-        "persona_getter": lambda obj: obj.coreproxy.get_assembly_user,
-    }
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:
@@ -68,9 +65,13 @@ class AssemblyFrontend(AbstractUserFrontend):
         for assembly_id, assembly in assemblies.items():
             assembly['does_attend'] = self.assemblyproxy.does_attend(
                 rs, assembly_id=assembly_id)
-        return self.render(rs, "index", {'assemblies': assemblies})
+        attendees_count = {assembly_id: len(
+                           self.assemblyproxy.list_attendees(rs, assembly_id))
+                           for assembly_id in rs.user.presider}
+        return self.render(rs, "index", {'assemblies': assemblies,
+                                         'attendees_count': attendees_count})
 
-    @access("assembly_admin")
+    @access("core_admin", "assembly_admin")
     def create_user_form(self, rs: RequestState) -> Response:
         defaults = {
             'is_member': False,
@@ -79,7 +80,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         merge_dicts(rs.values, defaults)
         return super().create_user_form(rs)
 
-    @access("assembly_admin", modi={"POST"})
+    @access("core_admin", "assembly_admin", modi={"POST"})
     @REQUESTdatadict(
         "given_names", "family_name", "display_name", "notes", "username")
     def create_user(self, rs: RequestState, data: CdEDBObject,
@@ -94,20 +95,18 @@ class AssemblyFrontend(AbstractUserFrontend):
         data.update(defaults)
         return super().create_user(rs, data, ignore_warnings)
 
-    @access("assembly_admin")
-    @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
-    def user_search(self, rs: RequestState, download: str,
+    @access("core_admin", "assembly_admin")
+    @REQUESTdata("download", "is_search")
+    def user_search(self, rs: RequestState, download: Optional[str],
                     is_search: bool) -> Response:
         """Perform search."""
         spec = copy.deepcopy(QUERY_SPECS['qview_persona'])
         # mangle the input, so we can prefill the form
         query_input = mangle_query_input(rs, spec)
-        query: Optional[Query]
+        query: Optional[Query] = None
         if is_search:
-            query = check(rs, "query_input", query_input, "query",
-                          spec=spec, allow_empty=False)
-        else:
-            query = None
+            query = check(rs, vtypes.QueryInput, query_input, "query",
+                                      spec=spec, allow_empty=False)
         default_queries = self.conf["DEFAULT_QUERIES"]['qview_assembly_user']
         params = {
             'spec': spec, 'default_queries': default_queries, 'choices': {},
@@ -126,21 +125,15 @@ class AssemblyFrontend(AbstractUserFrontend):
         return self.render(rs, "user_search", params)
 
     @access("assembly_admin")
-    @REQUESTdata(("codes", "[int]"), ("assembly_id", "id_or_None"),
-                 ("persona_id", "cdedbid_or_None"),
-                 ("submitted_by", "cdedbid_or_None"),
-                 ("additional_info", "str_or_None"),
-                 ("offset", "int_or_None"),
-                 ("length", "positive_int_or_None"),
-                 ("time_start", "datetime_or_None"),
-                 ("time_stop", "datetime_or_None"))
+    @REQUESTdata("codes", "assembly_id", "persona_id", "submitted_by",
+                 "change_note", "offset", "length", "time_start", "time_stop")
     def view_log(self, rs: RequestState,
                  codes: Collection[const.AssemblyLogCodes],
-                 assembly_id: Optional[int], offset: Optional[int],
-                 length: Optional[int], persona_id: Optional[int],
-                 submitted_by: Optional[int], additional_info: Optional[str],
+                 assembly_id: Optional[vtypes.ID], offset: Optional[int],
+                 length: Optional[vtypes.PositiveInt], persona_id: Optional[CdedbID],
+                 submitted_by: Optional[CdedbID], change_note: Optional[str],
                  time_start: Optional[datetime.datetime],
-                 time_stop: Optional[datetime.datetime]):
+                 time_stop: Optional[datetime.datetime]) -> Response:
         """View activities."""
         length = length or self.conf["DEFAULT_LOG_LENGTH"]
         # length is the requested length, _length the theoretically
@@ -152,7 +145,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         rs.ignore_validation_errors()
         total, log = self.assemblyproxy.retrieve_log(
             rs, codes, assembly_id, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, additional_info=additional_info,
+            submitted_by=submitted_by, change_note=change_note,
             time_start=time_start, time_stop=time_stop)
         personas = (
                 {entry['submitted_by'] for entry in log if
@@ -169,20 +162,17 @@ class AssemblyFrontend(AbstractUserFrontend):
             'assemblies': assemblies, 'all_assemblies': all_assemblies,
             'loglinks': loglinks})
 
-    @access("assembly_admin")
-    @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
-                 ("submitted_by", "cdedbid_or_None"),
-                 ("additional_info", "str_or_None"),
-                 ("offset", "int_or_None"),
-                 ("length", "positive_int_or_None"),
-                 ("time_start", "datetime_or_None"),
-                 ("time_stop", "datetime_or_None"))
+    @access("assembly")
+    @assembly_guard
+    @REQUESTdata("codes", "persona_id", "submitted_by", "change_note", "offset",
+                "length", "time_start", "time_stop")
     def view_assembly_log(self, rs: RequestState,
                           codes: Optional[Collection[const.AssemblyLogCodes]],
                           assembly_id: Optional[int], offset: Optional[int],
-                          length: Optional[int], persona_id: Optional[int],
-                          submitted_by: Optional[int],
-                          additional_info: Optional[str],
+                          length: Optional[vtypes.PositiveInt],
+                          persona_id: Optional[CdedbID],
+                          submitted_by: Optional[CdedbID],
+                          change_note: Optional[str],
                           time_start: Optional[datetime.datetime],
                           time_stop: Optional[datetime.datetime]) -> Response:
         """View activities."""
@@ -196,7 +186,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         rs.ignore_validation_errors()
         total, log = self.assemblyproxy.retrieve_log(
             rs, codes, assembly_id, _offset, _length, persona_id=persona_id,
-            submitted_by=submitted_by, additional_info=additional_info,
+            submitted_by=submitted_by, change_note=change_note,
             time_start=time_start, time_stop=time_stop)
         personas = (
                 {entry['submitted_by'] for entry in log if
@@ -222,6 +212,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         attends = self.assemblyproxy.does_attend(rs, assembly_id=assembly_id)
         ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
         ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
+        presiders = self.coreproxy.get_personas(
+            rs, rs.ambience['assembly']['presiders'])
 
         has_ballot_attachments = False
         ballot_attachments = {}
@@ -246,17 +238,61 @@ class AssemblyFrontend(AbstractUserFrontend):
             conclude_blockers = {"is_admin": [False]}
             delete_blockers = {"is_admin": [False]}
 
-        return self.render(rs, "show_assembly", {
+        params = {
             "attachments": attachments,
             "attachment_histories": attachment_histories,
             "attends": attends, "ballots": ballots,
-            "delete_blockers": delete_blockers,
-            "conclude_blockers": conclude_blockers,
             "ballot_attachments": ballot_attachments,
+            "conclude_blockers": conclude_blockers,
+            "delete_blockers": delete_blockers,
             "has_ballot_attachments": has_ballot_attachments,
-        })
+            "presiders": presiders,
+        }
 
-    @access("assembly_admin")
+        if "ml" in rs.user.roles:
+            ml_data = self._get_mailinglist_setter(rs.ambience['assembly'])
+            params['attendee_list_exists'] = self.mlproxy.verify_existence(
+                rs, ml_type.get_full_address(ml_data))
+
+        return self.render(rs, "show_assembly", params)
+
+    @access("assembly_admin", modi={"POST"})
+    @REQUESTdata("presider_ids")
+    def add_presiders(self, rs: RequestState, assembly_id: int,
+                      presider_ids: vtypes.CdedbIDList) -> Response:
+        if rs.has_validation_errors():
+            return self.show_assembly(rs, assembly_id)
+        if not self.coreproxy.verify_ids(rs, presider_ids, is_archived=False):
+            rs.append_validation_error(("presider_ids", ValueError(n_(
+                "Some of these users do not exist or are archived."))))
+        elif not self.coreproxy.verify_personas(rs, presider_ids, {"assembly"}):
+            rs.append_validation_error(("presider_ids", ValueError(n_(
+                "Some of these users are not assembly users."))))
+        if rs.has_validation_errors():
+            return self.show_assembly(rs, assembly_id)
+        presider_ids = set(presider_ids) | rs.ambience['assembly']['presiders']
+        code = self.assemblyproxy.set_assembly_presiders(
+            rs, assembly_id, presider_ids)
+        self.notify_return_code(rs, code, info=n_("Action had no effect."))
+        return self.redirect(rs, "assembly/show_assembly")
+
+    @access("assembly_admin", modi={"POST"})
+    @REQUESTdata("presider_id")
+    def remove_presider(self, rs: RequestState, assembly_id: int,
+                        presider_id: vtypes.ID) -> Response:
+        if rs.has_validation_errors():
+            return self.show_assembly(rs, assembly_id)
+        if presider_id not in rs.ambience['assembly']['presiders']:
+            rs.notify("info", n_(
+                "This user is not a presider for this assembly."))
+            return self.redirect(rs, "assembly/show")
+        ids = rs.ambience['assembly']['presiders'] - {presider_id}
+        code = self.assemblyproxy.set_assembly_presiders(rs, assembly_id, ids)
+        self.notify_return_code(rs, code, info=n_("Action had no effect."))
+        return self.redirect(rs, "assembly/show_assembly")
+
+    @access("assembly")
+    @assembly_guard
     def change_assembly_form(self, rs: RequestState,
                              assembly_id: int) -> Response:
         """Render form."""
@@ -264,18 +300,20 @@ class AssemblyFrontend(AbstractUserFrontend):
             rs.notify("warning", n_("Assembly already concluded."))
             return self.redirect(rs, "assembly/show_assembly")
         merge_dicts(rs.values, rs.ambience['assembly'])
-        return self.render(rs, "change_assembly")
+        return self.render(rs, "assembly_data")
 
-    @access("assembly_admin", modi={"POST"})
-    @REQUESTdatadict("title", "description", "mail_address", "signup_end",
-                     "notes")
+    @access("assembly", modi={"POST"})
+    @assembly_guard
+    @REQUESTdatadict("title", "description", "shortname",
+                     "presider_address", "signup_end", "notes")
     def change_assembly(self, rs: RequestState, assembly_id: int,
                         data: Dict[str, Any]) -> Response:
         """Modify an assembly."""
         data['id'] = assembly_id
-        data = check(rs, "assembly", data)
+        data = check(rs, vtypes.Assembly, data)
         if rs.has_validation_errors():
             return self.change_assembly_form(rs, assembly_id)
+        assert data is not None
         code = self.assemblyproxy.set_assembly(rs, data)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/show_assembly")
@@ -283,23 +321,153 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly_admin")
     def create_assembly_form(self, rs: RequestState) -> Response:
         """Render form."""
-        return self.render(rs, "create_assembly")
+        return self.render(rs, "assembly_data")
+
+    @staticmethod
+    def _get_mailinglist_setter(assembly: CdEDBObject, presider: bool = False
+                                ) -> CdEDBObject:
+        # The id is not yet known during creation.
+        assembly_id = assembly.get('id')
+        if presider:
+            descr = ("Bitte wende Dich bei Fragen oder Problemen, die mit dieser"
+                     " Versammlung zusammenhängen, über diese Liste an uns.")
+            presider_ml_data = {
+                'title': f"{assembly['title']} Versammlungsleitung",
+                'local_part': f"{assembly['shortname'].lower()}-leitung",
+                'domain': const.MailinglistDomain.lists,
+                'description': descr,
+                'mod_policy': const.ModerationPolicy.unmoderated,
+                'attachment_policy': const.AttachmentPolicy.allow,
+                'subject_prefix': f"{assembly['shortname']}-leitung",
+                'maxsize': ml_type.AssemblyPresiderMailinglist.maxsize_default,
+                'is_active': True,
+                'assembly_id': assembly_id,
+                'notes': None,
+                'moderators': assembly['presiders'],
+                'ml_type': const.MailinglistTypes.assembly_presider,
+            }
+            return presider_ml_data
+        else:
+            descr = ("Dieser Liste kannst Du nur beitreten, indem Du Dich direkt zu"
+                     " der [Versammlung anmeldest]({}).")
+            attendee_ml_data = {
+                'title': assembly['title'],
+                'local_part': assembly['shortname'].lower(),
+                'domain': const.MailinglistDomain.lists,
+                'description': descr,
+                'mod_policy': const.ModerationPolicy.non_subscribers,
+                'attachment_policy': const.AttachmentPolicy.pdf_only,
+                'subject_prefix': assembly['shortname'],
+                'maxsize': ml_type.AssemblyAssociatedMailinglist.maxsize_default,
+                'is_active': True,
+                'assembly_id': assembly_id,
+                'notes': None,
+                'moderators': assembly['presiders'],
+                'ml_type': const.MailinglistTypes.assembly_associated,
+            }
+            return attendee_ml_data
 
     @access("assembly_admin", modi={"POST"})
-    @REQUESTdatadict("title", "description", "signup_end", "notes")
-    def create_assembly(self, rs: RequestState,
-                        data: Dict[str, Any]) -> Response:
+    @REQUESTdata("presider_list")
+    def create_assembly_mailinglist(self, rs: RequestState, assembly_id: int,
+                                    presider_list: bool) -> Response:
+        if rs.has_validation_errors():
+            return self.redirect(rs, "assembly/show_assembly")
+
+        ml_data = self._get_mailinglist_setter(rs.ambience['assembly'], presider_list)
+        ml_address = ml_type.get_full_address(ml_data)
+        if not self.mlproxy.verify_existence(rs, ml_address):
+            if not presider_list:
+                link = cdedburl(rs, "assembly/show_assembly",
+                                {'assembly_id': assembly_id})
+                ml_data['description'] = ml_data['description'].format(link)
+            new_id = self.mlproxy.create_mailinglist(rs, ml_data)
+            msg = (n_("Presider mailinglist created.") if presider_list
+                   else n_("Attendee mailinglist created."))
+            self.notify_return_code(rs, new_id, success=msg)
+            if new_id and presider_list:
+                data = {'id': assembly_id, 'presider_address': ml_address}
+                self.assemblyproxy.set_assembly(rs, data)
+        else:
+            rs.notify("info", n_("Mailinglist %(address)s already exists."),
+                      {'address': ml_address})
+        return self.redirect(rs, "assembly/show_assembly")
+
+    @access("assembly_admin", modi={"POST"})
+    @REQUESTdatadict("title", "description", "shortname", "signup_end", "notes")
+    @REQUESTdata("presider_ids", "create_attendee_list", "create_presider_list",
+                 "presider_address")
+    def create_assembly(self, rs: RequestState, presider_ids: vtypes.CdedbIDList,
+                        create_attendee_list: bool, create_presider_list: bool,
+                        presider_address: Optional[Email], data: Dict[str, Any]
+                        ) -> Response:
         """Make a new assembly."""
-        data = check(rs, "assembly", data, creation=True)
+        if presider_ids is not None:
+            data["presiders"] = presider_ids
+        data = check(rs, vtypes.Assembly, data, creation=True)
         if rs.has_validation_errors():
             return self.create_assembly_form(rs)
+        assert data is not None
+        presider_ml_data = None
+        if create_presider_list:
+            if presider_address:
+                rs.notify("info", n_("Given presider address ignored in favor of"
+                                     " newly created mailinglist."))
+            presider_ml_data = self._get_mailinglist_setter(data, presider=True)
+            presider_address = ml_type.get_full_address(  # type: ignore
+                presider_ml_data)
+            assert presider_address is not None
+            data["presider_address"] = presider_address
+            if self.mlproxy.verify_existence(rs, presider_address):
+                presider_ml_data = None
+                rs.notify("info", n_("Mailinglist %(address)s already exists."),
+                          {'address': presider_address})
+        else:
+            data["presider_address"] = presider_address
+        if presider_ids:
+            if not self.coreproxy.verify_ids(rs, presider_ids, is_archived=False):
+                rs.append_validation_error(
+                    ('presider_ids', ValueError(
+                        n_("Some of these users do not exist or are archived."))))
+            if not self.coreproxy.verify_personas(rs, presider_ids, {"assembly"}):
+                rs.append_validation_error(
+                    ('presider_ids', ValueError(
+                        n_("Some of these users are not assembly users."))))
+        else:
+            # We check presider_ml_data here instead of create_presider_list, since
+            # the former is falsy if a presider mailinglist already exists.
+            if presider_ml_data or create_attendee_list:
+                rs.append_validation_error(
+                    ('presider_ids', ValueError(
+                        n_("Must not be empty in order to create a mailinglist."))))
+        if rs.has_validation_errors():
+            return self.create_assembly_form(rs)
+        assert data is not None
         new_id = self.assemblyproxy.create_assembly(rs, data)
-        self.notify_return_code(rs, new_id)
-        return self.redirect(rs, "assembly/show_assembly", {
-            'assembly_id': new_id})
+        if presider_ml_data:
+            presider_ml_data['assembly_id'] = new_id
+            code = self.mlproxy.create_mailinglist(rs, presider_ml_data)
+            self.notify_return_code(
+                rs, code, success=n_("Presider mailinglist created."))
+        if create_attendee_list:
+            attendee_ml_data = self._get_mailinglist_setter(data)
+            attendee_address = ml_type.get_full_address(attendee_ml_data)
+            if not self.mlproxy.verify_existence(rs, attendee_address):
+                link = cdedburl(rs, "assembly/show_assembly", {'assembly_id': new_id})
+                descr = attendee_ml_data['description'].format(link)
+                attendee_ml_data['description'] = descr
+                attendee_ml_data['assembly_id'] = new_id
+                code = self.mlproxy.create_mailinglist(rs, attendee_ml_data)
+                self.notify_return_code(
+                    rs, code, success=n_("Attendee mailinglist created."))
+            else:
+                rs.notify("info", n_("Mailinglist %(address)s already exists."),
+                          {'address': attendee_address})
+        self.notify_return_code(rs, new_id, success=n_("Assembly created."))
+        return self.redirect(rs, "assembly/show_assembly", {'assembly_id': new_id})
 
     @access("assembly_admin", modi={"POST"})
-    @REQUESTdata(("ack_delete", "bool"))
+    @REQUESTdata("ack_delete")
     def delete_assembly(self, rs: RequestState, assembly_id: int,
                         ack_delete: bool) -> Response:
         if not ack_delete:
@@ -314,7 +482,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         # Specify what to cascade
         cascade = {"ballots", "attendees", "attachments", "log",
-                   "mailinglists"} & blockers.keys()
+                   "mailinglists", "presiders"} & blockers.keys()
         code = self.assemblyproxy.delete_assembly(
             rs, assembly_id, cascade=cascade)
 
@@ -329,6 +497,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.redirect(rs, "assembly/index")
         assembly_attachments = self.assemblyproxy.list_attachments(
                 rs, assembly_id=assembly_id)
+        count = len(assembly_attachments)
         all_attachments: Dict[Optional[int], CdEDBObjectMap] = {
             None: self.assemblyproxy.get_attachments(
                 rs, assembly_attachments)
@@ -342,6 +511,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         for ballot_id in ballot_ids:
             attachment_ids = self.assemblyproxy.list_attachments(
                 rs, ballot_id=ballot_id)
+            count += len(attachment_ids)
             all_attachments[ballot_id] = self.assemblyproxy.get_attachments(
                 rs, attachment_ids)
             attachment_histories[ballot_id] = (
@@ -350,6 +520,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             "all_attachments": all_attachments,
             "attachment_histories": attachment_histories,
             "ballots": ballots,
+            "count": count,
         })
 
     def process_signup(self, rs: RequestState, assembly_id: int,
@@ -371,7 +542,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         if secret:
             rs.notify("success", n_("Signed up."))
             subject = f"Teilnahme an {rs.ambience['assembly']['title']}"
-            reply_to = (rs.ambience['assembly']['mail_address'] or
+            reply_to = (rs.ambience['assembly']['presider_address'] or
                         self.conf["ASSEMBLY_ADMIN_ADDRESS"])
             self.do_mail(
                 rs, "signup",
@@ -393,14 +564,28 @@ class AssemblyFrontend(AbstractUserFrontend):
         self.process_signup(rs, assembly_id)
         return self.redirect(rs, "assembly/show_assembly")
 
-    @access("assembly_admin", modi={"POST"})
-    @REQUESTdata(("persona_id", "cdedbid"))
+    @access("assembly", modi={"POST"})
+    @assembly_guard
+    @REQUESTdata("persona_id")
     def external_signup(self, rs: RequestState, assembly_id: int,
-                        persona_id: int) -> Response:
+                        persona_id: CdedbID) -> Response:
         """Add an external participant to an assembly."""
         if now() > rs.ambience['assembly']['signup_end']:
             rs.notify("warning", n_("Signup already ended."))
             return self.redirect(rs, "assembly/list_attendees")
+        if rs.has_validation_errors():
+            # Shortcircuit for invalid id
+            return self.list_attendees(rs, assembly_id)
+        if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):
+            rs.append_validation_error(
+                ('persona_id',
+                 ValueError(n_("This user does not exist or is archived."))))
+        elif not self.coreproxy.verify_persona(rs, persona_id, {"assembly"}):
+            rs.append_validation_error(
+                ('persona_id', ValueError(n_("This user is not an assembly user."))))
+        elif self.coreproxy.verify_persona(rs, persona_id, {"member"}):
+            rs.append_validation_error(
+                ('persona_id', ValueError(n_("Members must sign up themselves."))))
         if rs.has_validation_errors():
             return self.list_attendees(rs, assembly_id)
         self.process_signup(rs, assembly_id, persona_id)
@@ -426,7 +611,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         attendees = self._get_list_attendees_data(rs, assembly_id)
         return self.render(rs, "list_attendees", {"attendees": attendees})
 
-    @access("assembly_admin")
+    @access("assembly")
+    @assembly_guard
     def download_list_attendees(self, rs: RequestState,
                                 assembly_id: int) -> Response:
         """Provides a tex-snipped with all attendes of an assembly."""
@@ -437,10 +623,10 @@ class AssemblyFrontend(AbstractUserFrontend):
         tex = self.fill_template(
             rs, "tex", "list_attendees", {'attendees': attendees})
         return self.send_file(
-            rs, data=tex, inline=False, filename="Anwesenheitsliste.tex")
+            rs, data=tex, inline=False, filename="Anwesenheitsliste-Export.tex")
 
     @access("assembly_admin", modi={"POST"})
-    @REQUESTdata(("ack_conclude", "bool"))
+    @REQUESTdata("ack_conclude")
     def conclude_assembly(self, rs: RequestState, assembly_id: int,
                           ack_conclude: bool) -> Response:
         """Archive an assembly.
@@ -528,7 +714,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             'ballots': ballots, 'future': future, 'current': current,
             'done': done, 'votes': votes})
 
-    @access("assembly_admin")
+    @access("assembly")
+    @assembly_guard
     def create_ballot_form(self, rs: RequestState,
                            assembly_id: int) -> Response:
         """Render form."""
@@ -537,17 +724,19 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.redirect(rs, "assembly/show_assembly")
         return self.render(rs, "create_ballot")
 
-    @access("assembly_admin", modi={"POST"})
+    @access("assembly", modi={"POST"})
+    @assembly_guard
     @REQUESTdatadict("title", "description", "vote_begin", "vote_end",
-                     "vote_extension_end", "quorum", "votes", "notes",
-                     "use_bar")
+                     "vote_extension_end", "abs_quorum", "rel_quorum", "votes",
+                     "notes", "use_bar")
     def create_ballot(self, rs: RequestState, assembly_id: int,
                       data: Dict[str, Any]) -> Response:
         """Make a new ballot."""
         data['assembly_id'] = assembly_id
-        data = check(rs, "ballot", data, creation=True)
+        data = check(rs, vtypes.Ballot, data, creation=True)
         if rs.has_validation_errors():
             return self.create_ballot_form(rs, assembly_id)
+        assert data is not None
         new_id = self.assemblyproxy.create_ballot(rs, data)
         self.notify_return_code(rs, new_id)
         return self.redirect(rs, "assembly/show_ballot", {
@@ -589,7 +778,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             'edit': edit,
         })
 
-    @access("assembly_admin")
+    @access("assembly")
+    @assembly_guard
     def add_attachment_form(self, rs: RequestState, assembly_id: int,
                             ballot_id: int = None,
                             attachment_id: int = None) -> Response:
@@ -616,16 +806,15 @@ class AssemblyFrontend(AbstractUserFrontend):
                 'attachment': attachment, 'history': history,
             })
 
-    @access("assembly_admin", modi={"POST"})
-    @REQUESTdata(("title", "str"),
-                 ("authors", "str_or_None"),
-                 ("filename", "identifier_or_None"),)
+    @access("assembly", modi={"POST"})
+    @assembly_guard
+    @REQUESTdata("title", "authors", "filename")
     @REQUESTfile("attachment")
     # ballot_id and attachment_id come semantically after asssembly_id,
     # but are optional, so need to be at the end.
     def add_attachment(self, rs: RequestState, assembly_id: int,
                        attachment: werkzeug.FileStorage,
-                       title: str, filename: Optional[str],
+                       title: str, filename: Optional[vtypes.Identifier],
                        authors: Optional[str], ballot_id: int = None,
                        attachment_id: int = None) -> Response:
         """Create a new attachment.
@@ -633,13 +822,15 @@ class AssemblyFrontend(AbstractUserFrontend):
         It can either be associated to an assembly or a ballot.
         """
         if attachment and not filename:
+            assert attachment.filename is not None
             tmp = pathlib.Path(attachment.filename).parts[-1]
-            filename = check(rs, "identifier", tmp, 'filename')
-        attachment = cast(bytes, check(rs, "pdffile", attachment, 'attachment'))
+            filename = check(rs, vtypes.Identifier, tmp, 'filename')
+        attachment = check(rs, vtypes.PDFFile, attachment, 'attachment')
         if rs.has_validation_errors():
             return self.add_attachment_form(
                 rs, assembly_id=assembly_id, ballot_id=ballot_id,
                 attachment_id=attachment_id)
+        assert attachment is not None
         data: CdEDBObject = {
             'title': title,
             'filename': filename,
@@ -668,7 +859,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             'attachment_id': attachment_id if attachment_id else code,
         })
 
-    @access("assembly_admin")
+    @access("assembly")
+    @assembly_guard
     def change_attachment_link_form(self, rs: RequestState,
                                     assembly_id: int, attachment_id: int,
                                     ballot_id: int = None) -> Response:
@@ -705,10 +897,11 @@ class AssemblyFrontend(AbstractUserFrontend):
             'ballot_entries': ballot_entries,
         })
 
-    @access("assembly_admin", modi={"POST"})
-    @REQUESTdata(("new_ballot_id", "id_or_None"))
+    @access("assembly", modi={"POST"})
+    @assembly_guard
+    @REQUESTdata("new_ballot_id")
     def change_attachment_link(self, rs: RequestState, assembly_id: int,
-                               attachment_id: int, new_ballot_id: Optional[int],
+                               attachment_id: int, new_ballot_id: Optional[vtypes.ID],
                                ballot_id: int = None) -> Response:
         """Change the association of an existing attachment incl. versions."""
         if rs.has_validation_errors():
@@ -751,7 +944,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             'ballot_id': new_ballot_id,
         })
 
-    @access("assembly_admin")
+    @access("assembly")
+    @assembly_guard
     # ballot_id comes semantically after assembly_id, but is optional,
     # so needs to be at the end.
     def edit_attachment_version_form(
@@ -788,9 +982,9 @@ class AssemblyFrontend(AbstractUserFrontend):
             'version': version,
         })
 
-    @access("assembly_admin", modi={"POST"})
-    @REQUESTdata(("title", "str"), ("authors", "str_or_None"),
-                 ("filename", "str"))
+    @access("assembly", modi={"POST"})
+    @assembly_guard
+    @REQUESTdata("title", "authors", "filename")
     def edit_attachment_version(self, rs: RequestState, assembly_id: int,
                                 attachment_id: int, version: int, title: str,
                                 authors: Optional[str], filename: str,
@@ -835,8 +1029,9 @@ class AssemblyFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/show_attachment")
 
-    @access("assembly_admin", modi={"POST"})
-    @REQUESTdata(("attachment_ack_delete", "bool"))
+    @access("assembly", modi={"POST"})
+    @assembly_guard
+    @REQUESTdata("attachment_ack_delete")
     # ballot_id is optional, but comes semantically before attachment_id
     def delete_attachment(self, rs: RequestState, assembly_id: int,
                           attachment_id: int, attachment_ack_delete: bool,
@@ -879,18 +1074,19 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.redirect(rs, "assembly/show_attachment")
 
     @access("assembly", modi={"POST"})
-    @REQUESTdata(("secret", "str"))
+    @REQUESTdata("secret")
     def show_old_vote(self, rs: RequestState, assembly_id: int, ballot_id: int,
                       secret: str) -> Response:
         """Show a vote in a ballot of an old assembly by providing secret."""
-        if (rs.has_validation_errors() or rs.ambience["assembly"]["is_active"]
-                or not rs.ambience["ballot"]["is_tallied"]):
+        if rs.ambience["assembly"]["is_active"] or not rs.ambience["ballot"]["is_tallied"]:
             return self.show_ballot(rs, assembly_id, ballot_id)
-        return self.show_ballot(rs, assembly_id, ballot_id, secret.strip())
+        if rs.has_validation_errors():
+            return self.show_ballot_result(rs, assembly_id, ballot_id)
+        return self.show_ballot_result(rs, assembly_id, ballot_id, secret.strip())
 
     @access("assembly")
-    def show_ballot(self, rs: RequestState, assembly_id: int, ballot_id: int,
-                    secret: str = None) -> Response:
+    def show_ballot(self, rs: RequestState, assembly_id: int, ballot_id: int
+                    ) -> Response:
         """Present a ballot.
 
         This has pretty expansive functionality. It especially checks
@@ -899,9 +1095,6 @@ class AssemblyFrontend(AbstractUserFrontend):
         This does a bit of extra work to accomodate the compatability mode
         for classical voting (i.e. with a fixed number of equally weighted
         votes).
-
-        If a secret is provided, this will fetch the vote belonging to that
-        secret.
         """
         if not self.assemblyproxy.may_assemble(rs, ballot_id=ballot_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
@@ -919,33 +1112,16 @@ class AssemblyFrontend(AbstractUserFrontend):
         ballot['vote_count'] = self.assemblyproxy.count_votes(rs, ballot_id)
         result = self.get_online_result(rs, ballot)
         attends = self.assemblyproxy.does_attend(rs, ballot_id=ballot_id)
-        has_voted = False
-        own_vote = None
-        if attends:
-            has_voted = self.assemblyproxy.has_voted(rs, ballot_id)
-            if has_voted:
-                try:
-                    own_vote = self.assemblyproxy.get_vote(
-                        rs, ballot_id, secret=secret)
-                except ValueError:
-                    own_vote = None
-        merge_dicts(rs.values, {'vote': own_vote})
-        split_vote = None
-        if own_vote:
-            split_vote = tuple(x.split('=') for x in own_vote.split('>'))
-        if ballot['votes'] and split_vote:
-            if len(split_vote) == 1:
-                # abstention
-                rs.values['vote'] = MAGIC_ABSTAIN
-            else:
-                # select voted options
-                rs.values.setlist('vote', split_vote[0])
 
-        candidates = {e['moniker']: e
-                      for e in ballot['candidates'].values()}
-        if ballot['use_bar']:
-            candidates[ASSEMBLY_BAR_MONIKER] = rs.gettext(
-                "bar (options below this are declined)")
+        vote_dict = self._retrieve_own_vote(rs, ballot, secret=None)
+        # convert the own_vote in a shape which can be consumed by the (classical or
+        # preferential) vote form
+        if ballot['votes']:
+            merge_dicts(rs.values, {'vote': vote_dict['own_vote'].split('=')
+                                            if vote_dict['own_vote'] else None})
+        else:
+            merge_dicts(rs.values, {'vote': vote_dict['own_vote']})
+
         # this is used for the flux candidate table
         current = {
             f"{key}_{candidate_id}": value
@@ -969,14 +1145,135 @@ class AssemblyFrontend(AbstractUserFrontend):
         next_ballot = ballots[ballot_list[i+1]] if i + 1 < length else None
 
         return self.render(rs, "show_ballot", {
-            'attachments': attachments,
-            'attachment_histories': attachment_histories,
-            'split_vote': split_vote, 'own_vote': own_vote, 'result': result,
-            'candidates': candidates, 'attends': attends,
-            'ASSEMBLY_BAR_MONIKER': ASSEMBLY_BAR_MONIKER,
-            'prev_ballot': prev_ballot, 'next_ballot': next_ballot,
-            'secret': secret, 'has_voted': has_voted,
+            'attachments': attachments, 'MAGIC_ABSTAIN': MAGIC_ABSTAIN,
+            'attachment_histories': attachment_histories, 'result': result,
+            'attends': attends, 'ASSEMBLY_BAR_SHORTNAME': ASSEMBLY_BAR_SHORTNAME,
+            'prev_ballot': prev_ballot, 'next_ballot': next_ballot, **vote_dict
         })
+
+    @access("assembly")
+    def show_ballot_result(self, rs: RequestState, assembly_id: int, ballot_id: int,
+                           secret: str = None) -> Response:
+        """This shows a more detailed result of a tallied ballot.
+
+        All information provided on this side is constructable from the downloadable
+        json result file and the verification scripts.
+
+        However, we provide them also online for the sake of laziness.
+        """
+        if rs.has_validation_errors():
+            return self.redirect(rs, "assembly/show_ballot_result")
+
+        if not self.assemblyproxy.may_assemble(rs, ballot_id=ballot_id):
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+        ballot = rs.ambience['ballot']
+
+        if self._update_ballot_state(rs, ballot):
+            return self.redirect(rs, "assembly/show_ballot_result")
+
+        if not ballot['is_tallied']:
+            rs.notify("error", n_("Ballot has not been tallied."))
+            return self.redirect(rs, "assembly/show_ballot")
+
+        vote_dict = self._retrieve_own_vote(rs, ballot, secret)
+        # we may get a validation error from an invalid secret, which will be handled by
+        # the user and we may ignore here
+        rs.ignore_validation_errors()
+
+        result = self.get_online_result(rs, ballot)
+        assert result is not None
+
+        # calculate the occurrence of each vote
+        if ballot['votes']:
+            # we actually voted in classical votes for the candidates before the first >
+            # if there are no >, it is an abstention which will be counted later
+            vote_set = {vote['vote'].split('>')[0] for vote in result['votes']
+                        if len(vote['vote'].split('>')) != 1}
+            vote_counts = {vote: sum((1 for v in result['votes']
+                                      if v.get('vote').split('>')[0] == vote))
+                           for vote in vote_set}
+        else:
+            # if there are no >, it is an abstention which will be counted later
+            vote_set = {vote['vote'] for vote in result['votes']
+                        if len(vote['vote'].split('>')) != 1}
+            vote_counts = {vote: sum((1 for v in result['votes']
+                                      if v.get('vote') == vote))
+                           for vote in vote_set}
+        # count the abstentions, which have no >
+        vote_counts[MAGIC_ABSTAIN] = sum(1 for v in result['votes']
+                                         if len(v.get('vote').split('>')) == 1)
+        if vote_counts[MAGIC_ABSTAIN] == 0:
+            del vote_counts[MAGIC_ABSTAIN]
+
+        # map the candidate shortnames to their titles
+        candidates = {candidate['shortname']: candidate['title']
+                      for candidate in ballot['candidates'].values()}
+        candidates[MAGIC_ABSTAIN] = rs.gettext("Abstained")
+        if ballot['use_bar']:
+            if ballot['votes']:
+                candidates[ASSEMBLY_BAR_SHORTNAME] = rs.gettext("Against all Candidates")
+            else:
+                candidates[ASSEMBLY_BAR_SHORTNAME] = rs.gettext("Rejection limit")
+
+        # calculate the hash of the result file
+        result_bytes = self.assemblyproxy.get_ballot_result(rs, ballot['id'])
+        assert result_bytes is not None
+        result_hash = get_hash(result_bytes)
+
+        # show links to next and previous ballots
+        ballots_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
+        ballots = self.assemblyproxy.get_ballots(rs, ballots_ids)
+        done, _, _, _ = self.group_ballots(ballots)
+
+        # we are only interested in done ballots
+        ballot_list: List[int] = xsorted(done, key=lambda key: done[key]["title"])
+
+        i = ballot_list.index(ballot_id)
+        length = len(ballot_list)
+        prev_ballot = ballots[ballot_list[i - 1]] if i > 0 else None
+        next_ballot = ballots[ballot_list[i + 1]] if i + 1 < length else None
+
+        return self.render(rs, "show_ballot_result", {
+            'result': result, 'ASSEMBLY_BAR_SHORTNAME': ASSEMBLY_BAR_SHORTNAME,
+            'result_hash': result_hash, 'secret': secret, **vote_dict,
+            'vote_counts': vote_counts, 'MAGIC_ABSTAIN': MAGIC_ABSTAIN,
+            'BALLOT_TALLY_ADDRESS': self.conf["BALLOT_TALLY_ADDRESS"],
+            'prev_ballot': prev_ballot, 'next_ballot': next_ballot,
+            'candidates': candidates})
+
+    def _retrieve_own_vote(self, rs: RequestState, ballot: CdEDBObject,
+                           secret: str = None) -> CdEDBObject:
+        """Helper function to present the own vote
+
+        This handles the personalised information of the current viewer interacting with
+        the ballot.
+        """
+        ballot_id = ballot['id']
+
+        # fetches the vote from the database
+        attends = self.assemblyproxy.does_attend(rs, ballot_id=ballot_id)
+        has_voted = False
+        own_vote = None
+        if attends:
+            has_voted = self.assemblyproxy.has_voted(rs, ballot_id)
+            if has_voted:
+                try:
+                    own_vote = self.assemblyproxy.get_vote(rs, ballot_id, secret=secret)
+                except ValueError:
+                    rs.append_validation_error(
+                        ("secret", ValueError(n_("Entered invalid secret"))))
+                    own_vote = None
+
+        if own_vote:
+            split_vote = own_vote.split('>')
+            if len(split_vote) == 1:
+                # abstention
+                own_vote = MAGIC_ABSTAIN
+            elif ballot['votes']:
+                # select voted options in classical voting
+                own_vote = split_vote[0]
+
+        return {'attends': attends, 'has_voted': has_voted, 'own_vote': own_vote}
 
     def _update_ballot_state(self, rs: RequestState,
                              ballot: Dict[str, Any]) -> DefaultReturnCode:
@@ -994,7 +1291,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         # check for extension
         if ballot['extended'] is None and timestamp > ballot['vote_end']:
-            self.assemblyproxy.check_voting_priod_extension(rs, ballot['id'])
+            self.assemblyproxy.check_voting_period_extension(rs, ballot['id'])
             return -1
 
         finished = (
@@ -1007,14 +1304,14 @@ class AssemblyFrontend(AbstractUserFrontend):
             if result:
                 afile = io.BytesIO(result)
                 my_hash = get_hash(result)
-                attachment_result: Dict[str, str] = {  # type: ignore
-                    'file': afile,
+                attachment_result: Dict[str, str] = {
+                    'file': afile,  # type: ignore
                     'filename': 'result.json',
                     'mimetype': 'application/json'}
                 to = [self.conf["BALLOT_TALLY_ADDRESS"]]
-                if rs.ambience['assembly']['mail_address']:
-                    to.append(rs.ambience['assembly']['mail_address'])
-                reply_to = (rs.ambience['assembly']['mail_address'] or
+                if rs.ambience['assembly']['presider_address']:
+                    to.append(rs.ambience['assembly']['presider_address'])
+                reply_to = (rs.ambience['assembly']['presider_address'] or
                             self.conf["ASSEMBLY_ADMIN_ADDRESS"])
                 subject = f"Abstimmung '{ballot['title']}' ausgezählt"
                 self.do_mail(
@@ -1028,25 +1325,25 @@ class AssemblyFrontend(AbstractUserFrontend):
                 return 1
         return 0
 
-    def get_online_result(self, rs, ballot: Dict[str, Any]
-                          ) -> Union[Dict[str, Any], None]:
+    def get_online_result(self, rs: RequestState, ballot: Dict[str, Any]
+                          ) -> Optional[CdEDBObject]:
         """Helper to get the result information of a tallied ballot."""
-        result = None
         if ballot['is_tallied']:
-            result = json.loads(  # type: ignore
-                self.assemblyproxy.get_ballot_result(rs, ballot['id']))
+            ballot_result = self.assemblyproxy.get_ballot_result(rs, ballot['id'])
+            assert ballot_result is not None
+            result = json.loads(ballot_result)
             tiers = tuple(x.split('=') for x in result['result'].split('>'))
             winners: List[Collection[str]] = []
             losers: List[Collection[str]] = []
             tmp = winners
-            lookup = {e['moniker']: e['id']
+            lookup = {e['shortname']: e['id']
                       for e in ballot['candidates'].values()}
             for tier in tiers:
                 # Remove bar if present
                 ntier = tuple(lookup[x] for x in tier if x in lookup)
                 if ntier:
                     tmp.append(ntier)
-                if ASSEMBLY_BAR_MONIKER in tier:
+                if ASSEMBLY_BAR_SHORTNAME in tier:
                     tmp = losers
             result['winners'] = winners
             result['losers'] = losers
@@ -1055,10 +1352,10 @@ class AssemblyFrontend(AbstractUserFrontend):
             counts: Union[Dict[str, int],
                           List[Dict[str, Union[int, List[str]]]]]
             if ballot['votes']:
-                counts = {e['moniker']: 0
+                counts = {e['shortname']: 0
                           for e in ballot['candidates'].values()}
                 if ballot['use_bar']:
-                    counts[ASSEMBLY_BAR_MONIKER] = 0
+                    counts[ASSEMBLY_BAR_SHORTNAME] = 0
                 for vote in result['votes']:
                     raw = vote['vote']
                     if '>' in raw:
@@ -1071,7 +1368,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 votes = [e['vote'] for e in result['votes']]
                 candidates = [k for k, v in result['candidates'].items()]
                 if ballot['use_bar']:
-                    candidates += (ASSEMBLY_BAR_MONIKER,)
+                    candidates += (ASSEMBLY_BAR_SHORTNAME,)
                 condensed, counts = schulze_evaluate(votes, candidates)
 
             result['counts'] = counts
@@ -1083,7 +1380,14 @@ class AssemblyFrontend(AbstractUserFrontend):
                     abstentions += 1
             result['abstentions'] = abstentions
 
-        return result
+            # strip the leading _bar_ of the result if it has only technical meanings
+            if not result['use_bar']:
+                if result['result'].endswith(ASSEMBLY_BAR_SHORTNAME):
+                    # remove also the trailing > or =
+                    result['result'] = result['result'][:-len(ASSEMBLY_BAR_SHORTNAME)-1]
+
+            return result
+        return None
 
     @periodic("check_tally_ballot", period=1)
     def check_tally_ballot(self, rs: RequestState, store: CdEDBObject
@@ -1131,10 +1435,11 @@ class AssemblyFrontend(AbstractUserFrontend):
         result = {k: self.get_online_result(rs, v) for k, v in done.items()}
 
         return self.render(rs, "summary_ballots", {
-            'ballots': done, 'ASSEMBLY_BAR_MONIKER': ASSEMBLY_BAR_MONIKER,
+            'ballots': done, 'ASSEMBLY_BAR_SHORTNAME': ASSEMBLY_BAR_SHORTNAME,
             'result': result})
 
-    @access("assembly_admin")
+    @access("assembly")
+    @assembly_guard
     def change_ballot_form(self, rs: RequestState, assembly_id: int,
                            ballot_id: int) -> Response:
         """Render form"""
@@ -1144,22 +1449,25 @@ class AssemblyFrontend(AbstractUserFrontend):
         merge_dicts(rs.values, rs.ambience['ballot'])
         return self.render(rs, "change_ballot")
 
-    @access("assembly_admin", modi={"POST"})
+    @access("assembly", modi={"POST"})
+    @assembly_guard
     @REQUESTdatadict("title", "description", "vote_begin", "vote_end",
-                     "vote_extension_end", "use_bar", "quorum", "votes",
-                     "notes")
+                     "vote_extension_end", "use_bar", "abs_quorum", "rel_quorum",
+                     "votes", "notes")
     def change_ballot(self, rs: RequestState, assembly_id: int,
                       ballot_id: int, data: Dict[str, Any]) -> Response:
         """Modify a ballot."""
         data['id'] = ballot_id
-        data = check(rs, "ballot", data)
+        data = check(rs, vtypes.Ballot, data)
         if rs.has_validation_errors():
             return self.change_ballot_form(rs, assembly_id, ballot_id)
+        assert data is not None
         code = self.assemblyproxy.set_ballot(rs, data)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/show_ballot")
 
-    @access("assembly_admin", modi={"POST"})
+    @access("assembly", modi={"POST"})
+    @assembly_guard
     def ballot_start_voting(self, rs: RequestState, assembly_id: int,
                             ballot_id: int) -> Response:
         """Immediately start voting period of a ballot.
@@ -1178,8 +1486,9 @@ class AssemblyFrontend(AbstractUserFrontend):
         time.sleep(1)
         return self.redirect(rs, "assembly/show_ballot")
 
-    @access("assembly_admin", modi={"POST"})
-    @REQUESTdata(("ack_delete", "bool"))
+    @access("assembly", modi={"POST"})
+    @assembly_guard
+    @REQUESTdata("ack_delete")
     def delete_ballot(self, rs: RequestState, assembly_id: int, ballot_id: int,
                       ack_delete: bool) -> Response:
         """Remove a ballot."""
@@ -1212,24 +1521,24 @@ class AssemblyFrontend(AbstractUserFrontend):
         if not self.assemblyproxy.may_assemble(rs, ballot_id=ballot_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         ballot = rs.ambience['ballot']
-        candidates = tuple(e['moniker']
+        candidates = tuple(e['shortname']
                            for e in ballot['candidates'].values())
+        vote: Optional[str]
         if ballot['votes']:
-            voted = unwrap(
-                request_extractor(rs, (("vote", "[str]"),)))
+            voted = unwrap(request_extractor(rs, {"vote": Collection[str]}))
             if rs.has_validation_errors():
                 return self.show_ballot(rs, assembly_id, ballot_id)
-            if voted == (ASSEMBLY_BAR_MONIKER,):
+            if voted == (ASSEMBLY_BAR_SHORTNAME,):
                 if not ballot['use_bar']:
                     raise ValueError(n_("Option not available."))
                 vote = "{}>{}".format(
-                    ASSEMBLY_BAR_MONIKER, "=".join(candidates))
+                    ASSEMBLY_BAR_SHORTNAME, "=".join(candidates))
             elif voted == (MAGIC_ABSTAIN,):
                 vote = "=".join(candidates)
                 # When abstaining, the bar is equal do all candidates. This is
                 # different from voting *for* all candidates.
-                vote += "={}".format(ASSEMBLY_BAR_MONIKER)
-            elif ASSEMBLY_BAR_MONIKER in voted and len(voted) > 1:
+                vote += "={}".format(ASSEMBLY_BAR_SHORTNAME)
+            elif ASSEMBLY_BAR_SHORTNAME in voted and len(voted) > 1:
                 rs.notify("error", n_("Rejection is exclusive."))
                 return self.show_ballot(rs, assembly_id, ballot_id)
             else:
@@ -1238,23 +1547,25 @@ class AssemblyFrontend(AbstractUserFrontend):
                 # When voting for certain candidates, they are ranked higher
                 # than the bar (to distinguish the vote from abstaining)
                 if losers:
-                    losers += "={}".format(ASSEMBLY_BAR_MONIKER)
+                    losers += "={}".format(ASSEMBLY_BAR_SHORTNAME)
                 else:
-                    losers = ASSEMBLY_BAR_MONIKER
+                    losers = ASSEMBLY_BAR_SHORTNAME
                 if winners and losers:
                     vote = "{}>{}".format(winners, losers)
                 else:
                     vote = winners + losers
         else:
-            vote = unwrap(request_extractor(rs, (("vote", "str_or_None"),)))
+            vote = unwrap(request_extractor(
+                rs, {"vote": Optional[str]}))  # type: ignore
             # Empty preferential vote counts as abstaining
             if not vote:
                 vote = "=".join(candidates)
                 if ballot['use_bar']:
-                    vote += "={}".format(ASSEMBLY_BAR_MONIKER)
-        vote = check(rs, "vote", vote, "vote", ballot=ballot)
+                    vote += "={}".format(ASSEMBLY_BAR_SHORTNAME)
+        vote = check(rs, vtypes.Vote, vote, "vote", ballot=ballot)
         if rs.has_validation_errors():
             return self.show_ballot(rs, assembly_id, ballot_id)
+        assert vote is not None
         code = self.assemblyproxy.vote(rs, ballot_id, vote, secret=None)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/show_ballot")
@@ -1272,7 +1583,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         return self.send_file(rs, data=result, inline=False,
                               filename=f"ballot_{ballot_id}_result.json")
 
-    @access("assembly_admin", modi={"POST"})
+    @access("assembly", modi={"POST"})
+    @assembly_guard
     def edit_candidates(self, rs: RequestState, assembly_id: int,
                         ballot_id: int) -> Response:
         """Create, edit and delete candidates of ballot.
@@ -1283,22 +1595,22 @@ class AssemblyFrontend(AbstractUserFrontend):
         """
         candidates = process_dynamic_input(
             rs, rs.ambience['ballot']['candidates'].keys(),
-            {'moniker': "restrictive_identifier", 'description': "str"})
+            {'shortname': vtypes.RestrictiveIdentifier, 'title': str})
 
-        monikers: Set[str] = set()
+        shortnames: Set[str] = set()
         for candidate_id, candidate in candidates.items():
-            if candidate and candidate['moniker'] == ASSEMBLY_BAR_MONIKER:
+            if candidate and candidate['shortname'] == ASSEMBLY_BAR_SHORTNAME:
                 rs.append_validation_error(
-                    (f"moniker_{candidate_id}",
-                     ValueError(n_("Mustn’t be the bar moniker.")))
+                    (f"shortname_{candidate_id}",
+                     ValueError(n_("Mustn’t be the bar shortname.")))
                 )
-            if candidate and candidate['moniker'] in monikers:
+            if candidate and candidate['shortname'] in shortnames:
                 rs.append_validation_error(
-                    (f"moniker_{candidate_id}",
-                     ValueError(n_("Duplicate moniker.")))
+                    (f"shortname_{candidate_id}",
+                     ValueError(n_("Duplicate shortname.")))
                 )
             if candidate:
-                monikers.add(candidate['moniker'])
+                shortnames.add(candidate['shortname'])
         if rs.has_validation_errors():
             return self.show_ballot(rs, assembly_id, ballot_id)
 

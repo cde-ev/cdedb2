@@ -23,15 +23,14 @@
 {% block content %}
     <form action="{{ cdedblink('event/change_event') }}" method="POST" id="changeeventform" class="form-horizontal">
         {{ util.anti_csrf_token('event/change_event') }}
-        {{ util.form_input_textarea(name="notes", label=gettext("Orga-Notes"), rows="5") }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Orga-Notes"), rows="5", info=util.markdownhint) }}
 
         <h4 class="heading-underline">{% trans %}Event Meta Data{% endtrans %}</h4>
-        {{ util.form_input_text(name="title", label=gettext("Title")) }}
+        {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]")) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
-                                    info=gettext("Supports %(infolink)s. This description is visible publicly (without "
-                                                 "login), if “Visibility of the Event” is set.")
-                                        |format(infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"),
-                                                                   title=gettext("Short Markdown summary")))|s) }}
+                                    info=(util.markdownhint + " " +
+                                          gettext("This description is visible to all event users, if “Visibility "
+                                                  "of the Event” is set."))) }}
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
         {{ util.form_input_text(name="orga_address", label=gettext("Orga Address"),
                                 info=gettext("This address is visible publicly (without login), if “Visibility of the "
@@ -87,39 +86,19 @@
         {{ util.form_input_text(name="nonmember_surcharge", label=gettext("Additional Fee for External Participants."), addon='€',
                                 info=gettext("Participants who are not currently members will have to pay this additional fee.")) }}
         {{ util.form_input_textarea(name="registration_text", label=gettext("Registration page free text"), rows="5",
-                                    info=gettext("Supports %(infolink)s.")|format(
-                                        infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"),
-                                                           title=gettext("Short Markdown summary")))|s) }}
+                                    info=util.markdownhint) }}
         {{ util.form_input_textarea(name="mail_text", label=gettext("Registration mail free text"), rows="5") }}
 
         <h4 class="heading-underline">{% trans %}Special Purpose Custom Fields{% endtrans %}</h4>
-        {#- jinja does not support list comprehension ... #}
-        {%- set myentries = [] %}
-        {%- for field_id, field in ambience['event']['fields']|keydictsort(EntitySorter.event_field)
-                if field['kind'] == enums['FieldDatatypes'].str and field['association'] == enums['FieldAssociations'].registration %}
-            {%- do myentries.append((field_id, field['field_name'])) %}
-        {%- endfor %}
-        {{ util.form_input_select(name="lodge_field", label=gettext("Field for Rooming Preferences"), entries=myentries,
+        {{ util.form_input_select(name="lodge_field", label=gettext("Field for Rooming Preferences"), entries=lodge_fields,
                                   nulloption=nbsp, info=gettext("The custom field in which the participants’ "
                                   "rooming preferences will be saved. It is used for the PDF lodgement puzzle "
                                   "download. Fieldtype: Text")) }}
-        {#- jinja does not support list comprehension ... #}
-        {%- set myentries = [] %}
-        {%- for field_id, field in ambience['event']['fields']|keydictsort(EntitySorter.event_field)
-                if field['kind'] == enums['FieldDatatypes'].bool and field['association'] == enums['FieldAssociations'].registration %}
-            {%- do myentries.append((field_id, field['field_name'])) %}
-        {%- endfor %}
-        {{ util.form_input_select(name="camping_mat_field", label=gettext("Field for Camping Mat"), entries=myentries,
+        {{ util.form_input_select(name="camping_mat_field", label=gettext("Field for Camping Mat"), entries=camping_mat_fields,
                                   nulloption=nbsp, info=gettext("The custom field in which the participants’ "
                                   "willingness to sleep on a camping mat will be saved. It is used for the PDF "
                                   "lodgement puzzle download. Fieldtype: Yes/No")) }}
-        {#- jinja does not support list comprehension ... #}
-        {%- set myentries = [] %}
-        {%- for field_id, field in ambience['event']['fields']|keydictsort(EntitySorter.event_field)
-                if field['kind'] == enums['FieldDatatypes'].str and field['association'] == enums['FieldAssociations'].course %}
-            {%- do myentries.append((field_id, field['field_name'])) %}
-        {%- endfor %}
-        {{ util.form_input_select(name="course_room_field", label=gettext("Field for Course Room"), entries=myentries,
+        {{ util.form_input_select(name="course_room_field", label=gettext("Field for Course Room"), entries=course_room_fields,
                                   nulloption=nbsp, info=gettext("The custom field in which the course’s "
                                   "assigned course room will be saved. It is used for PDF participant lists and "
                                   "nametags. Fieldtype: Text")) }}

@@ -1,0 +1,77 @@
+{% set sidenav_active='ml_moderation' %}
+{% extends "web/ml/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% import "web/ml/generic.tmpl" as generic_ml with context %}
+{% block title %}
+    {% trans title=ambience['mailinglist']['title'] %}{{ title }} – Message Moderation
+    {% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {% if is_admin %}
+        {{ util.breadcrumb_link(cdedblink("ml/list_mailinglists"), gettext("All Mailinglists")) }}
+    {% endif %}
+    {{ util.breadcrumb_link(cdedblink("ml/show_mailinglist"), ambience['mailinglist']['title'], icon="envelope") }}
+    {{ util.breadcrumb_link(cdedblink("ml/message_moderation"), gettext("Message Moderation"), active=True) }}
+{% endblock %}
+
+{% block heading %}
+    <h1 class="title">
+        {% trans %}Message Moderation{% endtrans %}
+        <small>
+            {{ util.make_icon('envelope', arialabel=gettext("Mailinglist")) }} {{ ambience['mailinglist']['title'] }}
+        </small>
+    </h1>
+{% endblock %}
+
+{% block content %}
+    {% if held is none %}
+        <p>
+            {% trans %}
+                This mailing list is not moderated via CdEDB.
+            {% endtrans %}
+        </p>
+    {% else %}
+        <p class="text-info">
+         {{ util.make_icon('info-circle') }}
+         {% trans %}
+            If you reject a message, its author will recieve a notification message. If you discard a message, no
+            notification message will be sent. The latter is preferred for spam messages.
+         {% endtrans %}
+    </p>
+        {% if held %}
+            <ul>
+                {% for email in held %}
+                    <li class="hide-hover-container clearfix-after">
+                        <form action="{{ cdedblink('ml/message_moderation') }}"
+                                  method="POST"
+                                  id="msg{{ email.request_id }}"
+                                  class="hide-hover display-inline">
+                            {{ util.anti_csrf_token('ml/message_moderation') }}
+                            {{ util.input_hidden(name="request_id", value=email.request_id) }}
+                            <div class="pull-right">
+                                {% for action, coloring, icon in (('accept', 'success', 'check'),
+                                                                  ('reject', 'warning', 'reply'),
+                                                                  ('discard', 'danger', 'trash-alt')) %}
+                                    <button type="sumbit" name="action" value="{{ action }}"
+                                            class="{{ ("btn btn-xs btn-" + coloring) }}">
+                                        {{ util.make_icon(icon) if icon }}
+                                        {{ gettext(action.capitalize()) }}
+                                    </button>
+                                {% endfor %}
+                            </div>
+                        </form>
+                        {{ email.sender }} / {{ email.subject }}
+                        <br />
+                        <details>
+                            <summary>{% trans %}Message details{% endtrans %}</summary>
+                            <pre>{{ email.msg }}</pre>
+                        </details>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>{% trans %}No held messages.{% endtrans %}</p>
+        {% endif %}
+    {% endif %}
+{% endblock %}

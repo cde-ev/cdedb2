@@ -1,25 +1,23 @@
-import datetime
-import enum
-import re
-import decimal
 import collections
+import datetime
+import decimal
+import enum
 import json
+import re
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
-from typing import (
-    Tuple, Optional, List, Union, Dict, Callable
-)
-
+import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    diacritic_patterns, Accounts, TransactionType, now, n_, CdEDBObject, Error,
-    CdEDBObjectMap
+    Accounts, CdEDBObject, CdEDBObjectMap, Error, TransactionType, diacritic_patterns,
+    n_, now,
 )
 from cdedb.frontend.common import cdedbid_filter
-import cdedb.validation as validate
+from cdedb.validation import validate_check
 
 # This is the specification of the order of the fields in the input.
 # This could be changed in the online banking, but we woud lose backwards
 # compability with multiple years of saved csv exports.
-# Note that "reference" is a `restkey` rather thatn a real key.
+# Note that "reference" is a `restkey` rather than a real key.
 STATEMENT_CSV_FIELDS = ("myBLZ", "myAccNr", "statementNr",
                         "statementDate", "currency", "valuta", "date",
                         "currency2", "amount", "textKey",
@@ -168,6 +166,7 @@ def get_event_name_pattern(event: CdEDBObject) -> str:
     y_p = re.compile(r"(\d\d)(\d\d)")
     replacements = [
         ("Pseudo", r"Pseudo"),  # For testing purposes.
+        ("Cyber", r"Cyber"),
         ("Winter", r"Winter"),
         ("Sommer", r"Sommer"),
         ("Musik", r"Musik"),
@@ -229,7 +228,7 @@ def parse_amount(amount: str) -> decimal.Decimal:
     return ret
 
 
-def _reconstruct_cdedbid(db_id: str) -> Tuple[int, List[Error]]:
+def _reconstruct_cdedbid(db_id: str) -> Tuple[Optional[int], List[Error]]:
     """
     Uninlined code from `Transaction._find_cdedb_ids`.
 
@@ -243,8 +242,8 @@ def _reconstruct_cdedbid(db_id: str) -> Tuple[int, List[Error]]:
     checkdigit = db_id[-1].upper()
 
     # Check the DB-ID
-    p_id, p = validate.check_cdedbid(
-        "DB-{}-{}".format(value, checkdigit), "persona_id")
+    p_id, p = validate_check(vtypes.CdedbID,
+        "DB-{}-{}".format(value, checkdigit), argname="persona_id")
 
     return p_id, p
 
@@ -282,7 +281,7 @@ class ConfidenceLevel(enum.IntEnum):
     Full = 4
 
     @classmethod
-    def destroy(cls):
+    def destroy(cls) -> "ConfidenceLevel":
         return cls.Null
 
     def decrease(self, amount: int = 1) -> "ConfidenceLevel":
@@ -297,7 +296,7 @@ class ConfidenceLevel(enum.IntEnum):
         else:
             return self.__class__.Full
 
-    def __format__(self, format_spec):
+    def __format__(self, format_spec: str) -> str:
         return str(self)
 
 
@@ -357,7 +356,7 @@ class Transaction:
     def from_csv(cls, raw: CdEDBObject) -> "Transaction":
         """
         Convert DictReader line of BFS import to Transaction.
-        
+
         :param raw: DictReader line of parse_statement input.
         """
         data = {}
@@ -471,6 +470,7 @@ class Transaction:
                             p_id, p = _reconstruct_cdedbid(db_id)
 
                             if not p:
+                                assert p_id is not None
                                 if p_id not in ret:
                                     ret[p_id] = confidence
 
@@ -594,7 +594,7 @@ class Transaction:
     def _match_members(self, get_persona: BackendGetter) -> None:
         """
         Assign all matching members to self.member_matches.
-        
+
         Assign the best match to self.best_member_match and it's Confidence to
         self.best_member_confidence.
         """

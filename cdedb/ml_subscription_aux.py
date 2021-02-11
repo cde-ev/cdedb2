@@ -24,10 +24,12 @@ These are be imported in `cdedb:common.py` and should be imported from there.
 """
 
 import enum
-from cdedb.database.constants import SubscriptionStates, MlLogCodes
+from typing import Any, Dict, Optional, Set
+
+from cdedb.database.constants import MlLogCodes, SubscriptionStates
 
 
-def n_(x):
+def n_(x: str) -> str:
     """Clone of `cdedb.common.n_` used for marking translatable strings."""
     return x
 
@@ -37,20 +39,31 @@ class SubscriptionError(RuntimeError):
     Exception for signalling that an action trying to change a subscription
     failed.
     """
-    def __init__(self, *args, kind="error", **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args: Any, kind: str = "error") -> None:
+        super(SubscriptionError, self).__init__(*args)
         if args:
             self.msg = args[0]
         else:
             self.msg = ""
+
+        # Kind if only a single notification is shown
         self.kind = kind
-    pass
+
+        # Kind if multiple notifications are shown
+        self.multikind = kind
+        if self.multikind == "error":
+            self.multikind = "warning"
 
 
 class SubscriptionInfo(SubscriptionError):
     """Exception for SubscriptionErrors with kind info."""
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, kind="info", **kwargs)
+    def __init__(self, *args: Any) -> None:
+        super().__init__(*args, kind="info")
+
+
+SubscriptionErrorMatrix = Dict["SubscriptionActions",
+                               Dict[Optional[SubscriptionStates],
+                                    Optional[SubscriptionError]]]
 
 
 @enum.unique
@@ -70,7 +83,7 @@ class SubscriptionActions(enum.IntEnum):
     remove_subscription_override = 31  #: A mod removing a fixed subscription.
     remove_unsubscription_override = 32  #: A moderator unblocking a user.
 
-    def get_target_state(self):
+    def get_target_state(self) -> Optional[SubscriptionStates]:
         """Get the target state associated with an action."""
         target_state = {
             SubscriptionActions.subscribe:
@@ -102,7 +115,7 @@ class SubscriptionActions(enum.IntEnum):
         }
         return target_state.get(self)
 
-    def get_log_code(self):
+    def get_log_code(self) -> MlLogCodes:
         """Get the log code associated with performing an action."""
         log_code_map = {
             SubscriptionActions.subscribe:
@@ -132,10 +145,10 @@ class SubscriptionActions(enum.IntEnum):
             SubscriptionActions.remove_unsubscription_override:
                 MlLogCodes.unsubscribed,
         }
-        return log_code_map.get(self)
+        return log_code_map[self]
 
     @staticmethod
-    def error_matrix():
+    def error_matrix() -> SubscriptionErrorMatrix:
         """This defines the logic of which state transitions are legal.
 
         SubscriptionErrors defined in this matrix will be raised by the backend.
@@ -144,7 +157,7 @@ class SubscriptionActions(enum.IntEnum):
         error = SubscriptionError
         info = SubscriptionInfo
 
-        matrix = {
+        matrix: SubscriptionErrorMatrix = {
             SubscriptionActions.add_subscriber: {
                 ss.subscribed: info(n_("User already subscribed.")),
                 ss.unsubscribed: None,
@@ -166,7 +179,7 @@ class SubscriptionActions(enum.IntEnum):
             SubscriptionActions.add_subscription_override: {
                 ss.subscribed: None,
                 ss.unsubscribed: None,
-                ss.subscription_override: None,
+                ss.subscription_override: info(n_("User is already force-subscribed.")),
                 ss.unsubscription_override: None,
                 ss.pending: error(n_("User has pending subscription request.")),
             },
@@ -181,7 +194,7 @@ class SubscriptionActions(enum.IntEnum):
                 ss.subscribed: None,
                 ss.unsubscribed: None,
                 ss.subscription_override: None,
-                ss.unsubscription_override: None,
+                ss.unsubscription_override: info(n_("User has already been blocked.")),
                 ss.pending: error(n_("User has pending subscription request.")),
             },
             SubscriptionActions.remove_unsubscription_override: {
@@ -257,7 +270,7 @@ class SubscriptionActions(enum.IntEnum):
         return matrix
 
     @classmethod
-    def unsubscribing_actions(cls):
+    def unsubscribing_actions(cls) -> Set["SubscriptionActions"]:
         """All actions that unsubscribe a user from a mailinglist."""
         return {
             SubscriptionActions.unsubscribe,
@@ -265,12 +278,12 @@ class SubscriptionActions(enum.IntEnum):
             SubscriptionActions.add_unsubscription_override,
         }
 
-    def is_unsubscribing(self):
+    def is_unsubscribing(self) -> bool:
         """Whether ot not an action unsubscribes a user."""
         return self in self.unsubscribing_actions()
 
     @classmethod
-    def managing_actions(cls):
+    def managing_actions(cls) -> Set["SubscriptionActions"]:
         """All actions that require additional privileges."""
         return {
             SubscriptionActions.approve_request,
@@ -284,7 +297,7 @@ class SubscriptionActions(enum.IntEnum):
             SubscriptionActions.remove_unsubscription_override
         }
 
-    def is_managing(self):
+    def is_managing(self) -> bool:
         """Whether or not an action requires additional privileges."""
         return self in self.managing_actions()
 

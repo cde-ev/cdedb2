@@ -143,7 +143,7 @@
     {% endif %}
     {% with current = history[version] %}
         {% if icon %}
-            {{- util.make_icon('file', arialabel='Attachment') }}
+            {{- util.make_icon('file', arialabel=gettext('Attachment')) }}
         {% endif %}
         {{ current['title'] -}}
         {% if version_info %}
@@ -154,7 +154,7 @@
 
 {% macro attachment_box(attachments, histories, title=gettext("General Files"), ballot=None, edit=False,
                         new_attachment_button=False, full_history=True, icon='file', edit_buttons_below=True) %}
-    {% call util.bootstrap_panel(title=title, icon=icon) %}
+    {% call util.bootstrap_panel(title=title, icon=icon, aclass="panel-default panel-condensed mosp") %}
         {{ attachment_list(attachments=attachments, histories=histories, ballot=ballot, edit=edit,
                            new_attachment_button=new_attachment_button, full_history=full_history,
                            edit_buttons_below=edit_buttons_below) }}
@@ -192,7 +192,7 @@
         {% endif %}
             {% if attachments|length > 1 %}
                 <ul class="slim" id="attachments-{{ "ballot-{}".format(ballot['id']) if ballot else "general"}}">
-                    {% for attachment_id, attachment in attachments.items() %}
+                    {% for attachment_id, attachment in attachments|keydictsort(EntitySorter.get_attachment_sorter(histories)) %}
                         <li class="hide-hover-container clearfix-after" id="attachment{{ attachment_id }}">
                             {{ print_attachment(attachment, histories[attachment_id], edit=edit,
                                                 full_history=full_history, ballot=ballot,

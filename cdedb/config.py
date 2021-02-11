@@ -16,12 +16,15 @@ import importlib.util
 import logging
 import pathlib
 import subprocess
+from typing import Any, Callable, Dict, Iterator, Mapping
 
 import pytz
 
-from cdedb.query import Query, QUERY_SPECS, QueryOperators
-from cdedb.common import n_, deduct_years, now, PathLike
 import cdedb.database.constants as const
+from cdedb.common import (
+    CdEDBObject, EntitySorter, PathLike, deduct_years, n_, now, xsorted,
+)
+from cdedb.query import QUERY_SPECS, Query, QueryOperators
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -29,8 +32,17 @@ _currentpath = pathlib.Path(__file__).resolve().parent
 if _currentpath.parts[0] != '/' or _currentpath.parts[-1] != 'cdedb':
     raise RuntimeError(n_("Failed to locate repository"))
 _repopath = _currentpath.parent
-_git_commit = subprocess.check_output(
-    ("git", "rev-parse", "HEAD"), cwd=str(_repopath)).decode().strip()
+
+try:
+    _git_commit = subprocess.check_output(
+        ("git", "rev-parse", "HEAD"), cwd=str(_repopath)).decode().strip()
+except FileNotFoundError: # only catch git executable not found
+    with pathlib.Path(_repopath, '.git/HEAD').open() as head:
+        _git_commit = head.read().strip()
+
+    if _git_commit.startswith('ref'):
+        with pathlib.Path(_repopath, '.git', _git_commit[len('ref: '):]).open() as ref:
+            _git_commit = ref.read().strip()
 
 #: defaults for :py:class:`BasicConfig`
 _BASIC_DEFAULTS = {
@@ -51,13 +63,16 @@ _BASIC_DEFAULTS = {
 }
 
 
-def generate_event_registration_default_queries(event, spec):
+def generate_event_registration_default_queries(
+        gettext: Callable[[str], str], event: CdEDBObject,
+        spec: Dict[str, str]) -> Dict[str, Query]:
     """
     Generate default queries for registration_query.
 
     Some of these contain dynamic information about the event's Parts,
     Tracks, etc.
 
+    :param gettext: The translation function for the current locale.
     :param event: The Event for which to generate the queries
     :type event:
     :param spec: The Query Spec, dynamically generated for the event
@@ -71,14 +86,19 @@ def generate_event_registration_default_queries(event, spec):
     all_part_stati_column = ",".join(
         "part{0}.status".format(part_id) for part_id in event['parts'])
 
-    dokuteam_course_fields_of_interest = [
-        "persona.given_names", "persona.family_name", "persona.username"]
-    for part_id in event['parts']:
-        dokuteam_course_fields_of_interest.append(
-            "part{}.status".format(part_id))
+    dokuteam_course_picture_fields_of_interest = [
+        "persona.id", "persona.given_names", "persona.family_name"]
     for track_id in event['tracks']:
-        dokuteam_course_fields_of_interest.append(
-            "course{}.id".format(track_id))
+        dokuteam_course_picture_fields_of_interest.append(f"course{track_id}.nr")
+        dokuteam_course_picture_fields_of_interest.append(
+            f"track{track_id}.is_course_instructor")
+
+    dokuteam_dokuforge_fields_of_interest = [
+        "persona.id", "persona.given_names", "persona.family_name", "persona.username"]
+    for track_id in event['tracks']:
+        dokuteam_dokuforge_fields_of_interest.append(f"course{track_id}.nr")
+        dokuteam_dokuforge_fields_of_interest.append(
+            f"track{track_id}.is_course_instructor")
 
     dokuteam_address_fields_of_interest = [
         "persona.given_names", "persona.family_name", "persona.address",
@@ -114,14 +134,6 @@ def generate_event_registration_default_queries(event, spec):
             ((all_part_stati_column, QueryOperators.equal,
               const.RegistrationPartStati.participant.value),),
             default_sort),
-        n_("14_query_event_registration_waitlist"): Query(
-            "qview_registration", spec,
-            all_part_stati_column.split(",") +
-            ["persona.given_names", "persona.family_name",
-             "ctime.creation_time", "reg.payment"],
-            ((all_part_stati_column, QueryOperators.equal,
-              const.RegistrationPartStati.waitlist.value),),
-            (("ctime.creation_time", True),)),
         n_("20_query_event_registration_non_members"): Query(
             "qview_registration", spec,
             ("persona.given_names", "persona.family_name"),
@@ -161,16 +173,83 @@ def generate_event_registration_default_queries(event, spec):
              ("reg.parental_agreement", QueryOperators.equal, False)),
             (("persona.birthday", True), ("persona.family_name", True),
              ("persona.given_names", True))),
-        n_("60_query_dokuteam_course_export"): Query(
-            "qview_registration", spec, dokuteam_course_fields_of_interest,
+        n_("60_query_dokuteam_course_picture"): Query(
+            "qview_registration", spec, dokuteam_course_picture_fields_of_interest,
             ((all_part_stati_column, QueryOperators.equal,
-              const.RegistrationPartStati.participant.value),),
-            default_sort),
+              const.RegistrationPartStati.participant.value),), default_sort),
+        n_("61_query_dokuteam_dokuforge"): Query(
+            "qview_registration", spec, dokuteam_dokuforge_fields_of_interest,
+            ((all_part_stati_column, QueryOperators.equal,
+              const.RegistrationPartStati.participant.value),
+             ("reg.list_consent", QueryOperators.equal, True),), default_sort),
         n_("62_query_dokuteam_address_export"): Query(
             "qview_registration", spec, dokuteam_address_fields_of_interest,
             ((all_part_stati_column, QueryOperators.equal,
-              const.RegistrationPartStati.participant.value),),
-            default_sort),
+              const.RegistrationPartStati.participant.value),), default_sort),
+    }
+
+    def get_waitlist_order(part: CdEDBObject) -> str:
+        if part['waitlist_field']:
+            field = event['fields'][part['waitlist_field']]
+            return f"reg_fields.xfield_{field['field_name']}"
+        return "ctime.creation_time"
+
+    def waitlist_query_name(part: CdEDBObject) -> str:
+        ret = gettext("17_query_event_registration_waitlist")
+        if len(event['parts']) > 1:
+            ret += f" {part['shortname']}"
+        return ret
+
+    if len(event['parts']) > 1:
+        queries.update({
+            n_("16_query_event_registration_waitlist"): Query(
+                "qview_registration", spec,
+                all_part_stati_column.split(",") +
+                ["persona.given_names", "persona.family_name",
+                 "ctime.creation_time", "reg.payment"],
+                ((all_part_stati_column, QueryOperators.equal,
+                  const.RegistrationPartStati.waitlist.value),),
+                (("ctime.creation_time", True),)),
+        })
+
+    queries.update({
+        n_("17_query_event_registration_waitlist") + f"_{i}_part{part['id']}":
+            Query(
+                "qview_registration", spec,
+                ("persona.given_names", "persona.family_name"),
+                ((f"part{part['id']}.status", QueryOperators.equal,
+                  const.RegistrationPartStati.waitlist.value),),
+                ((get_waitlist_order(part), True),),
+                name=waitlist_query_name(part)
+            )
+        for i, part in enumerate(xsorted(
+            event['parts'].values(), key=EntitySorter.event_part))
+    })
+
+    return queries
+
+
+def generate_event_course_default_queries(
+        gettext: Callable[[str], str], event: CdEDBObject,
+        spec: Dict[str, str]) -> Dict[str, Query]:
+    """
+    Generate default queries for course_queries.
+
+    Some of these contain dynamic information about the event's Parts,
+    Tracks, etc.
+
+    :param gettext: The translation function for the current locale.
+    :param event: The event for which to generate the queries
+    :param spec: The Query Spec, dynamically generated for the event
+    :return: Dict of default queries
+    """
+
+    queries = {
+        n_("50_query_dokuteam_courselist"): Query(
+            "qview_event_course", spec,
+            ("course.nr", "course.shortname", "course.title"),
+            tuple(),
+            (("course.nr", True),)),
     }
 
     return queries
@@ -283,6 +362,8 @@ _DEFAULTS = {
     "ASSEMBLY_FRONTEND_LOG": pathlib.Path("/tmp/cdedb-frontend-assembly.log"),
     "CRON_FRONTEND_LOG": pathlib.Path("/tmp/cdedb-frontend-cron.log"),
     "WORKER_LOG": pathlib.Path("/tmp/cdedb-frontend-worker.log"),
+    "MAILMAN_LOG": pathlib.Path("/tmp/cdedb-frontend-mailman.log"),
+
 
     #################
     # Backend stuff #
@@ -308,6 +389,9 @@ _DEFAULTS = {
     # session parameters
     "SESSION_TIMEOUT": datetime.timedelta(days=2),
     "SESSION_LIFESPAN": datetime.timedelta(days=7),
+
+    # Maximum concurrent sessions per user.
+    "MAX_ACTIVE_SESSIONS": 5,
 
     #
     # CdE stuff
@@ -391,6 +475,12 @@ _DEFAULTS = {
             n_("00_query_cde_user_all"): Query(
                 "qview_cde_user", QUERY_SPECS['qview_cde_user'],
                 ("personas.id", "given_names", "family_name"),
+                (),
+                (("family_name", True), ("given_names", True),
+                 ("personas.id", True))),
+            n_("02_query_cde_members"): Query(
+                "qview_cde_user", QUERY_SPECS['qview_cde_user'],
+                ("personas.id", "given_names", "family_name"),
                 (("is_member", QueryOperators.equal, True),),
                 (("family_name", True), ("given_names", True),
                  ("personas.id", True))),
@@ -427,7 +517,7 @@ _DEFAULTS = {
                  ("personas.id", True))),
             n_("10_query_event_user_minors"): Query(
                 "qview_event_user", QUERY_SPECS['qview_event_user'],
-                ("persona.persona_id", "given_names", "family_name",
+                ("personas.id", "given_names", "family_name",
                  "birthday"),
                 (("birthday", QueryOperators.greater,
                   deduct_years(now().date(), 18)),),
@@ -455,13 +545,13 @@ _DEFAULTS = {
         "qview_assembly_user": {
             n_("00_query_assembly_user_all"): Query(
                 "qview_persona", QUERY_SPECS['qview_persona'],
-                ("persona.id", "given_names", "family_name"),
+                ("personas.id", "given_names", "family_name"),
                 tuple(),
                 (("family_name", True), ("given_names", True),
                  ("personas.id", True))),
             n_("02_query_assembly_user_admin"): Query(
                 "qview_persona", QUERY_SPECS['qview_persona'],
-                ("persona.id", "given_names", "family_name",
+                ("personas.id", "given_names", "family_name",
                  "is_assembly_admin"),
                 (("is_assembly_admin", QueryOperators.equal, True),),
                 (("family_name", True), ("given_names", True),
@@ -470,13 +560,13 @@ _DEFAULTS = {
         "qview_ml_user": {
             n_("00_query_ml_user_all"): Query(
                 "qview_persona", QUERY_SPECS['qview_persona'],
-                ("persona.id", "given_names", "family_name"),
+                ("personas.id", "given_names", "family_name"),
                 tuple(),
                 (("family_name", True), ("given_names", True),
                  ("personas.id", True))),
             n_("02_query_ml_user_admin"): Query(
                 "qview_persona", QUERY_SPECS['qview_persona'],
-                ("persona.id", "given_names", "family_name",
+                ("personas.id", "given_names", "family_name",
                  "is_ml_admin"),
                 (("is_ml_admin", QueryOperators.equal, True),),
                 (("family_name", True), ("given_names", True),
@@ -486,6 +576,9 @@ _DEFAULTS = {
 
     "DEFAULT_QUERIES_REGISTRATION":
         generate_event_registration_default_queries,
+
+    "DEFAULT_QUERIES_COURSE":
+        generate_event_course_default_queries,
 
 }
 
@@ -526,7 +619,7 @@ _SECRECTS_DEFAULTS = {
 }
 
 
-class BasicConfig(collections.abc.Mapping):
+class BasicConfig(Mapping[str, Any]):
     """Global configuration for elementary options.
 
     This is the global configuration which is the same for all
@@ -536,28 +629,28 @@ class BasicConfig(collections.abc.Mapping):
     by this should be as small as possible.
     """
 
-    def __init__(self):
+    # noinspection PyUnresolvedReferences
+    def __init__(self) -> None:
         try:
-            import cdedb.localconfig as config
+            import cdedb.localconfig as config_mod
             config = {
-                key: getattr(config, key)
-                for key in _BASIC_DEFAULTS.keys() & dir(config)
+                key: getattr(config_mod, key)
+                for key in _BASIC_DEFAULTS.keys() & set(dir(config_mod))
             }
         except ImportError:
             config = {}
 
         self._configchain = collections.ChainMap(
-            config,
-            _BASIC_DEFAULTS
+            config, _BASIC_DEFAULTS
         )
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> Any:
         return self._configchain.__getitem__(key)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         return self._configchain.__iter__()
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self._configchain.__len__()
 
 
@@ -583,6 +676,7 @@ class Config(BasicConfig):
                 "primaryconf", str(configpath)
             )
             primaryconf = importlib.util.module_from_spec(spec)
+            # noinspection PyUnresolvedReferences
             spec.loader.exec_module(primaryconf)  # type: ignore
             primaryconf = {
                 key: getattr(primaryconf, key)
@@ -609,7 +703,7 @@ class Config(BasicConfig):
             _LOGGER.debug(f"Ignored basic config entry {key} in {configpath}.")
 
 
-class SecretsConfig(collections.abc.Mapping):
+class SecretsConfig(Mapping[str, Any]):
     """Container for secrets (i.e. passwords).
 
     This works like :py:class:`Config`, but is used for secrets. Thus
@@ -624,6 +718,7 @@ class SecretsConfig(collections.abc.Mapping):
                 "primaryconf", str(configpath)
             )
             primaryconf = importlib.util.module_from_spec(spec)
+            # noinspection PyUnresolvedReferences
             spec.loader.exec_module(primaryconf)  # type: ignore
             primaryconf = {
                 key: getattr(primaryconf, key)
@@ -647,11 +742,11 @@ class SecretsConfig(collections.abc.Mapping):
             primaryconf, secondaryconf, _SECRECTS_DEFAULTS
         )
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> Any:
         return self._configchain.__getitem__(key)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         return self._configchain.__iter__()
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self._configchain.__len__()

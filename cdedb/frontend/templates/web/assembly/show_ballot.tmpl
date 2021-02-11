@@ -2,7 +2,7 @@
 {% extends "web/assembly/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/assembly/_ballot_meta.tmpl" as ballot_meta with context %}
-{% import "web/assembly/_ballot_result.tmpl" as ballot_result with context %}
+{% import "web/assembly/_ballot_tallied.tmpl" as ballot_tallied with context %}
 {% import "web/assembly/_ballot_voting.tmpl" as ballot_voting with context %}
 
 {% block scripts %}
@@ -12,7 +12,10 @@
 {% endblock %}
 
 {% set jshint = 'weak' %}
-{% block title %}{{ ambience['ballot']['title'] }} ({{ ambience['assembly']['title'] }}){% endblock %}
+
+{% block title %}
+    {{ ambience['ballot']['title'] }} ({{ ambience['assembly']['title'] }})
+{% endblock %}
 
 {% block heading %}
     <h1 class="title">
@@ -29,9 +32,11 @@
 {% endblock %}
 
 {% block content %}
-    {% set edit_mode = "assembly_contents" in user.admin_views and now() < ambience['ballot']['vote_begin'] %}
-    {% set classical = ambience['ballot']['votes'] %}
-    {% set preferential = not ambience['ballot']['votes'] %}
+    {% set edit_mode = now() < ambience['ballot']['vote_begin']
+                       and ("assembly_presider" in user.admin_views
+                            or ambience['assembly']['id'] in user.presider) %}
+    {% set is_classical = ambience['ballot']['votes'] %}
+    {% set is_preferential = not ambience['ballot']['votes'] %}
 
     {# Admin modification options (delete and edit) #}
     {% if edit_mode %}
@@ -51,28 +56,24 @@
 
     {# General information about ballot and personalized state info #}
     {{ ambience['ballot']['description']|md }}
-
     {{ ballot_meta.show_status() }}
 
     {# Display of result #}
     {% if ambience['ballot']['is_tallied'] %}
-        <h3>{% trans %}Result{% endtrans %}</h3>
-        {{ ballot_result.show_result(ambience['ballot'], result) }}
-        {{ ballot_result.explain_result(classical=classical, preferential=preferential, use_bar=ambience['ballot']['use_bar']) }}
-
-        <h4>{% trans %}Summary{% endtrans %}</h4>
-        {% if preferential  %}
-            {{ ballot_result.show_summary() }}
-        {% endif %}
-        <p>{{ util.href(cdedblink("assembly/get_result"), gettext("Download Results"), icon="download") }}</p>
-
-        {{ ballot_result.show_own_vote() }}
+        <h3>
+            {% trans %}Result{% endtrans %}
+            {{ util.href(cdedblink("assembly/show_ballot_result"), gettext("Detailed Results"),
+                         aclass="btn btn-info btn-sm pull-right", icon="book") }}
+        </h3>
+        {{ ballot_tallied.show_result(ambience['ballot'], result) }}
+        {{ ballot_tallied.explain_result(classical=is_classical, preferential=is_preferential,
+                                        use_bar=ambience['ballot']['use_bar']) }}
     {% else %}
         {% if edit_mode %}
             {{ ballot_voting.add_candidate_form() }}
         {% else %}
             {# Classical voting, not tallied #}
-            {% if ambience['ballot']['votes'] %}
+            {% if is_classical %}
                 {% if ambience['ballot']['is_voting'] and attends %}
                     {{ ballot_voting.show_classical_voting() }}
                 {% else %}
@@ -90,12 +91,13 @@
 
 
     {% if attachments or edit_mode %}
-        <br />
         {{ ballot_meta.show_attachments(edit_mode) }}
     {% endif %}
-    {{ ballot_meta.show_navigation() }}
+
+    {{ ballot_meta.show_navigation(page_name="assembly/show_ballot") }}
 
     {% if edit_mode %}
         {{ ballot_meta.ballot_action_panel() }}
     {% endif %}
+
 {% endblock %}

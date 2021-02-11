@@ -1,28 +1,24 @@
 #!/usr/bin/env python3
 
+import csv
 import datetime
 import gettext
-import csv
+import shutil
+import time
+from pathlib import Path
 from pprint import pprint
 
 import psycopg2
-import psycopg2.extras
 import psycopg2.extensions
-
+import psycopg2.extras
 import pytz
-import sys
-from pathlib import Path
-import shutil
-import time
 
-sys.path.insert(0, "/cdedb2/")
-
-from cdedb.backend.core import CoreBackend
-from cdedb.backend.cde import CdEBackend
-from cdedb.backend.past_event import PastEventBackend
-from cdedb.backend.ml import MlBackend
 from cdedb.backend.assembly import AssemblyBackend
-from cdedb.database.connection import IrradiatedConnection, Atomizer
+from cdedb.backend.cde import CdEBackend
+from cdedb.backend.core import CoreBackend
+from cdedb.backend.ml import MlBackend
+from cdedb.backend.past_event import PastEventBackend
+from cdedb.database.connection import Atomizer, IrradiatedConnection
 
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)

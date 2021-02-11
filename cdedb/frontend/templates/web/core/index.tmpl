@@ -8,21 +8,21 @@
     {% trans %}
     	CdE-Datenbank
     {% endtrans %}{% endblock %}
+
 {% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("core/index"), gettext("Index"), active="True") }}
+    {{ util.breadcrumb_link(cdedblink("core/index"), gettext("Index"), active="True") }}
 {% endblock %}
-{% block content %}
+
+{% block static_notifications %}
     {% if CDEDB_OFFLINE_DEPLOYMENT %}
-        <div class="alert alert-info">
-            <p>
-                {{ util.make_icon('info-circle') }} <strong>{% trans %}Info{% endtrans %}</strong>
-                {% trans %}This is an Offline-Instance of the CdE-DB{% endtrans %}
-            </p>
-
-            <p class=nosp>{# TODO Erklärtext #}</p>
-        </div>
+        {% call util.notification('info') %}
+            {% trans %}This is an Offline-Instance of the CdEDB{% endtrans %}
+            {# TODO Erklärtext #}
+        {% endcall %}
     {% endif %}
+{% endblock %}
 
+{% block content %}
     {{ util.meta_info_banner('banner_after_login') }}
 
     <div class="row">
@@ -175,10 +175,17 @@
                         <li>
                             {{ util.href(cdedblink('ml/show_mailinglist', {'mailinglist_id': mailinglist_id}),
                                          mailinglist['title'], icon='envelope') }}
+                            {% if mailinglist['held_mails'] %}
+                                <br />
+                                {{ util.href(cdedblink('ml/message_moderation', {'mailinglist_id' : mailinglist_id}),
+                                             ngettext("%(count)s email awaiting moderation", "%(count)s emails awaiting moderation",
+                                                      mailinglist['held_mails'])
+                                                 |format(count=mailinglist['held_mails'])) }}
+                            {% endif %}
                             {% if mailinglist['requests'] %}
                                 <br />
                                 {{ util.href(cdedblink('ml/management', {'mailinglist_id' : mailinglist_id}),
-                                             ngettext("%(count)s Request", "%(count)s Requests",
+                                             ngettext("%(count)s Subscription Request", "%(count)s Subscription Requests",
                                                       mailinglist['requests'])
                                                  |format(count=mailinglist['requests'])) }}
                             {% endif %}

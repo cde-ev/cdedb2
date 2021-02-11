@@ -7,7 +7,7 @@
       class="form-horizontal">
         {{ util.anti_csrf_token('{}/create_user'.format(realm)) }}
         <h4 class="heading-underline">{{ gettext("Personal Information") }}</h4>
-        {{ util.form_input_text(name="title", label=gettext("Title")) }}
+        {{ util.form_input_text(name="title", label=gettext("Title_[[of a persona]]")) }}
         {{ util.form_input_text(name="given_names", label=gettext("Given Names")) }}
         {{ util.form_input_text(name="family_name", label=gettext("Family Name")) }}
         {% if realm == "cde" %}
@@ -35,7 +35,7 @@
             {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone"), type="tel") }}
         {% endif %}
         {% if realm == "cde" %}
-            {{ util.form_input_text(name="weblink", label=gettext("WWW")) }}
+            {{ util.form_input_text(name="weblink", label=gettext("WWW"), info=util.markdownhint) }}
         {% endif %}
 
         {% if realm in ("cde", "event") %}
@@ -66,10 +66,7 @@
             {{ util.form_input_checkbox(name="paper_expuls", label=gettext("Printed exPuls"),
                                    anid="input_checkbox_is_searchable") }}
         {% endif %}
-        {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="7",
-                                    info=gettext("Supports %(infolink)s.")|format(
-                                    infolink=util.href(docurl("Handbuch_Markdown"),
-                                    gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="7", info=util.markdownhint) }}
 
 
         {{ util.form_input_submit(value=gettext("Create User"), cancellink=cdedblink("{}/user_search".format(realm))) }}
@@ -114,7 +111,7 @@
         "birth_name": gettext("Birth Name"),
         "given_names": gettext("Given Names"),
         "display_name": gettext("First Given Name"),
-        "title": gettext("Title"),
+        "title": gettext("Title_[[of a persona]]"),
         "name_supplement": gettext("Name Affix"),
         "gender": gettext("Gender"),
         "birthday": gettext("Birthday"),
@@ -157,6 +154,10 @@
         'is_ml_admin,is_event_admin,is_assembly_admin,is_cde_admin,is_core_admin,is_meta_admin':
             gettext("Admin") + ": " + gettext("Any"),
         'is_meta_admin': gettext("Admin") + ": " + gettext("Meta"),
+        'lastschrift.granted_at': gettext("Lastschrift Granted"),
+        'lastschrift.revoked_at': gettext("Lastschrift Revoked"),
+        'lastschrift.active_lastschrift': gettext("Active Lastschrift"),
+        'lastschrift.amount': gettext("Lastschrift Amount"),
     } %}
 
             {% if realm == "archived" %}
@@ -181,7 +182,7 @@
         "birth_name": gettext("Birth Name"),
         "given_names": gettext("Given Names"),
         "display_name": gettext("First Given Name"),
-        "title": gettext("Title"),
+        "title": gettext("Title_[[of a persona]]"),
         "name_supplement": gettext("Name Affix"),
         "gender": gettext("Gender"),
         "birthday": gettext("Birthday"),
@@ -222,6 +223,10 @@
         'is_cde_admin': "Admin " + util.make_icon('graduation-cap', title=gettext("Admin") + ": " + gettext("cde_realm")),
         'is_core_admin': "Admin " + util.make_icon('user', title=gettext("Admin") + ": " + gettext("Core")),
         'is_meta_admin': "Admin " + util.make_icon('wrench', title=gettext("Admin") + ": " + gettext("Meta")),
+        'lastschrift.granted_at': gettext("Lastschrift Granted"),
+        'lastschrift.revoked_at': gettext("Lastschrift Revoked"),
+        'lastschrift.active_lastschrift': gettext("Active Lastschrift"),
+        'lastschrift.amount': gettext("Lastschrift Amount"),
     } %}
 
         {{ display_query_result(result, query, TITLES, choices) }}
@@ -469,11 +474,11 @@
                 {% for list in queries | sort | slice(2) %}
                 <div class="col-sm-6">
                     <ul>
-                        {% for query in list %}
-                            <li>
-                                {{ util.href(cdedblink(target, queries[query]|querytoparams) + '#query-results',
-                                        gettext(query), aclass="default-query") }}
-                            </li>
+                        {% for query_name in list %}
+                            {% with query = queries[query_name] %}<li>
+                                {{ util.href(cdedblink(target, query|querytoparams) + '#query-results',
+                                        query.name if query.name else gettext(query_name), aclass="default-query") }}
+                            </li>{% endwith %}
                         {% endfor %}
                     </ul>
                 </div>
@@ -636,4 +641,23 @@
         </table>
         </div>
     {% endif %}
+{% endmacro %}
+
+{% macro query_button_field_set(field_association) %}
+    <button type="button" class="btn btn-warning btn-sm" id="btn-set-field">
+        {{ util.make_icon('edit') }} {% trans %}Set Field{% endtrans %}
+    </button>
+    <script nonce="{{ csp_nonce }}">
+        $('#btn-set-field').click(function(){
+            var list = [];
+            $('#query-result').find('.ls-selected').each(function(){
+                list.push($(this).attr('data-id'));
+            });
+            if (list.length === 0)
+                return;
+            location.href =
+                "{{ cdedblink("event/field_set_select", {'kind': field_association.value}, magic_placeholders=['ids'])|safe }}"
+                    .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', list.join(','));
+        });
+    </script>
 {% endmacro %}

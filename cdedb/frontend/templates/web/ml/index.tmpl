@@ -1,11 +1,14 @@
 {% set sidenav_active='ml_index' %}
 {% extends "web/ml/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+
 {% block title %}
     {% trans %}Mailinglists{% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("ml/index"), gettext("Mailinglists"), active=True) }}
 {% endblock %}
+
 {% macro format_entry(mailinglist_id, title) %}
     <li class="hide-hover-container clearfix-after">
         {{ util.deko_checkbox(mailinglist_id in subscriptions, titles=[gettext("not subscribed"), gettext("subscribed")]) }}
@@ -16,11 +19,20 @@
         {% endif %}
     </li>
 {% endmacro %}
+
 {% block content %}
-    {% if 'ml_mgmt' in user.admin_views %}
+    {% if user.admin_views.intersection(ALL_MGMT_ADMIN_VIEWS) %}
         <div class="p">
             {{ util.href(cdedblink("ml/create_mailinglist_form"), gettext("Create Mailinglist"), icon="plus",
                     aclass="btn btn-sm btn-success") }}
+            {% if "ml_admin" in user.roles %}
+                <form action="{{ cdedblink("ml/manually_write_subscription_states") }}" method="POST"
+                      id="writesubscriptionstates" style="display: inline;">
+                    {{ util.anti_csrf_token("ml/manually_write_subscription_states") }}
+                    {{ util.input_submit(value=gettext("Write Subscription States"), aclass="btn btn-sm btn-success",
+                            icon="sync-alt") }}
+                </form>
+            {% endif %}
         </div>
     {% endif %}
     <p>

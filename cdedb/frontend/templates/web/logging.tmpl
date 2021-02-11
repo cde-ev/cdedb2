@@ -22,7 +22,7 @@
 
 {% macro table(log, keytitle='') %}
     {{ filterlink() }}
-    <table class="table table-condensed table-hover">
+    <table class="table table-condensed table-hover table-log">
         <thead>
         <tr>
             <th>{% trans %}Timestamp{% endtrans %}</th>
@@ -72,11 +72,11 @@
                 –
             {% endif %}
         </td>
-        <td>{{ entry['additional_info'] }}</td>
+        <td>{{ entry['change_note'] }}</td>
     </tr>
 {% endmacro %}
 
-{% macro filter(endpoint, enum, kind, filter_name=None, aux=None) %}
+{% macro filter(endpoint, enum, kind, filter_name=None) %}
     {% call util.bootstrap_panel(title=gettext("Filter"), icon="search", aclass="panel-primary") %}
         <form action="{{ cdedblink(endpoint) }}" method="GET" id="logshowform" class="form-horizontal">
             {{ util.form_input_checkboxes("codes", label=gettext("Categories"), info=gettext("No selection means everything."),
@@ -87,11 +87,11 @@
                         anid="input-persona_id") }}
             <script type="text/javascript" nonce="{{ csp_nonce }}">
                 $('#input-submitted_by').cdedbSearchPerson(
-                    '{{ (cdedblink('core/select_persona')|e) + ('?kind=') + kind + (('&aux='|s) + aux|string if aux else '') + ('&phrase=%s'|s) }}', [],
+                    '{{ (cdedblink('core/select_persona')|e) + ('?kind=') + kind + ('&phrase=%s'|s) }}', [],
                     false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                 );
                 $('#input-persona_id').cdedbSearchPerson(
-                    '{{ (cdedblink('core/select_persona')|e) + ('?kind=') + kind + (('&aux='|s) + aux|string if aux else '') + ('&phrase=%s'|s) }}', [],
+                    '{{ (cdedblink('core/select_persona')|e) + ('?kind=') + kind + ('&phrase=%s'|s) }}', [],
                     false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                 );
             </script>
@@ -118,10 +118,11 @@
                     );
                 </script>
             {% endif %}
-            {{ util.form_input_text("additional_info", label=gettext("Additional Info"), small=True) }}
+            {{ util.form_input_text("change_note", label=gettext("Additional Info"), small=True) }}
             {{ util.form_input_text('length', label=gettext("Length"), type='number', small=True) }}
             {{ util.form_input_text('offset', label=gettext("Offset"), type='number', small=True) }}
-            {{ util.form_input_from_to('time_start', 'time_stop', label=gettext("Timestamp"), type='datetime', small=True) }}
+            {{ util.form_input_from_to(
+                'time_start', 'time_stop', label=gettext("Timestamp"), type='datetime-local', small=True) }}
             {{ util.form_input_submit(value=gettext("Apply"), small=True) }}
         </form>
     {% endcall %}
@@ -129,7 +130,7 @@
 
 {% macro navigation(endpoint, total, length, loglinks) %}
     <nav class="text-center" aria-label="{% trans %}Log page navigation{% endtrans %}">
-    <ul class="pagination pagination-lg", id="log-pagination">
+    <ul class="pagination", id="log-pagination">
         {# How can I properly automate the target? #}
         {% if loglinks["current"]["offset"] < 0 %}
             {% set page = 0 %}

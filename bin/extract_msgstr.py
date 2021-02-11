@@ -1,5 +1,7 @@
-import re
+#!/usr/bin/env python3
+
 import pathlib
+import re
 
 main_dir = pathlib.Path.resolve(pathlib.Path(__file__).parent).parent
 infile = str(main_dir / "i18n/de/LC_MESSAGES/cdedb.po")

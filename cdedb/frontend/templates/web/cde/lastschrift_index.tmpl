@@ -25,6 +25,11 @@
         });
     </script>
 
+    <div class="p">
+        {{ util.href(cdedblink('cde/lastschrift_create'), gettext("New Direct Debit Authorization"),
+                     readonly=is_locked, icon='plus', aclass='btn btn-success btn-sm') }}
+    </div>
+
     <h2>{% trans %}Open Direct Debit Authorizations{% endtrans %}</h2>
 
     <p>
@@ -146,7 +151,8 @@
                             {{ util.href(cdedblink('cde/lastschrift_show', {'persona_id': persona['id']}),
                                          "{} {}".format(persona['given_names'], persona['family_name'])) }}
                             {% if all_lastschrifts[transaction['lastschrift_id']]['revoked_at'] %}
-                                <b class="alert-danger">{{ util.make_icon('exclamation-triangle') }}
+                                <b class="text-danger">
+                                {{ util.make_icon('exclamation-triangle') }}
                                 {% trans %}
                                     This transaction needs to be cancelled!
                                 {% endtrans %}

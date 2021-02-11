@@ -30,43 +30,50 @@
     {% endcall %}
 {%- endmacro %}
 
+
+
 {% macro show_status() -%}
-<dl class="dl-horizontal">
-    <dt>{% trans %}Voting Period{% endtrans %}</dt>
+    <dl class="dl-horizontal mosp" id="ballot-status">
+        <dt>{% trans %}Period{% endtrans %}</dt>
         <dd id="voting-period">
-            {% trans begin=ambience['ballot']['vote_begin']|datetime(lang=lang),
-                     end=ambience['ballot']['vote_end']|datetime(lang=lang) -%}
-            From {{ begin }} until {{ end }}.
-            {% endtrans %}
-            {% if ambience['ballot']['extended'] is none %}
-                {% if ambience['ballot']['quorum'] %}
-                    <br />
-                    {% trans extension=ambience['ballot']['vote_extension_end']|datetime(lang=lang),
-                             quorum=ambience['ballot']['quorum'] -%}
-                    Extension until {{ extension }} if {{ quorum }} votes are not reached.
-                    {% endtrans %}
+            <div id="regular-voting-period">
+                {% trans begin=ambience['ballot']['vote_begin']|datetime(lang=lang),
+                        end=ambience['ballot']['vote_end']|datetime(lang=lang) -%}
+                    From {{ begin }} until {{ end }}.
+                {% endtrans %}
+            </div>
+            <div id="extension-period">
+                {% if ambience['ballot']['extended'] is none %}
+                    {% if ambience['ballot']['quorum'] %}
+                        <br />
+                        {% trans extension=ambience['ballot']['vote_extension_end']|datetime(lang=lang),
+                                 quorum=ambience['ballot']['quorum'] -%}
+                        Extension until {{ extension }} if {{ quorum }} votes are not reached.
+                        {% endtrans %}
+                    {% endif %}
+                {% else %}
+                    {% if ambience['ballot']['extended'] %}
+                        <br />
+                        {% trans extension=ambience['ballot']['vote_extension_end']|datetime(lang=lang),
+                                 quorum=ambience['ballot']['quorum'] -%}
+                        Extended until {{ extension }} because {{ quorum }} votes were not reached.
+                        {% endtrans %}
+                    {% elif ambience['ballot']['quorum'] %}
+                        <br />
+                        {% trans quorum=anbience['ballot']['quorum'] %}
+                        No extension neccessary, because {{ quorum }} votes were reached.
+                        {% endtrans %}
+                    {% endif %}
                 {% endif %}
-            {% else %}
-                {% if ambience['ballot']['extended'] %}
-                    <br />
-                    {% trans extension=ambience['ballot']['vote_extension_end']|datetime(lang=lang),
-                             quorum=ambience['ballot']['quorum'] -%}
-                    Extended until {{ extension }} because {{ quorum }} votes were not reached.
-                    {% endtrans %}
-                {% elif ambience['ballot']['quorum'] %}
-                    <br />
-                    {% trans quorum=anbience['ballot']['quorum'] %}
-                    No extension neccessary, because {{ quorum }} votes were reached.
-                    {% endtrans %}
-                {% endif %}
-            {% endif %}
+            </div>
         </dd>
+
         <dt>{% trans %}Status{% endtrans %}</dt>
         <dd id="status">
             {% if now() < ambience['ballot']['vote_begin'] %}
                 <strong>{% trans %}This ballot has not yet begun.{% endtrans %}</strong><br />
                 {% trans %}Admins can still make changes to description, files and candidates.{% endtrans %}
-                {% if "assembly_contents" in user.admin_views %}
+                {% if "assembly_presider" in user.admin_views %}
                     {% trans %}
                         All CdE-Members and external assembly participants can already
                         see this ballot and all associated information.
@@ -82,7 +89,7 @@
             {% elif ambience['ballot']['is_voting'] %}
                 <strong>{% trans %}This ballot is currently open for voting.{% endtrans %}</strong><br />
                 {% if own_vote %}
-                    {% if split_vote|length == 1 %}
+                    {% if own_vote == MAGIC_ABSTAIN %}
                         <span class='text-warning'>{% trans %}You have abstained.{% endtrans %}</span>
                         {% trans %}You can make your choice below, during the voting period.{% endtrans %}
                     {% else %}
@@ -95,7 +102,8 @@
                 {% endif %}
             {% endif %}
         </dd>
-        <dt>{% trans %}Voting Modality{% endtrans %}</dt>
+
+        <dt>{% trans %}Modality{% endtrans %}</dt>
         <dd>
             {% if ambience['ballot']['votes'] == 1 %}
                 {% if ambience['ballot']['use_bar'] %}
@@ -129,16 +137,16 @@
                 {% endif %}
             {% endif %}
         </dd>
+
         {% if ambience['ballot']['vote_begin'] < now() %}
+            <dt>{% trans %}Voted{% endtrans %}</dt>
             {% if ambience['ballot']['is_tallied'] %}
-                <dt>{% trans %}Had voted{% endtrans %}</dt>
                 <dd id="had-voted">
                     {% trans count=ambience['ballot']['vote_count'] %}
                         {{ count }} attendees had given their vote for this ballot.
                     {% endtrans %}
                 </dd>
             {% else %}
-                <dt>{% trans %}Already voted{% endtrans %}</dt>
                 <dd id="already-voted">
                     {% trans count=ambience['ballot']['vote_count'] %}
                         Until now, {{ count }} attendees had given their vote for this ballot.
@@ -148,27 +156,31 @@
         {% endif %}
     </dl>
 
-    {% if "assembly_contents" in user.admin_views and ambience['ballot']['notes'] %}
+    {% if "assembly_presider" in user.admin_views and ambience['ballot']['notes'] %}
         {% call util.bootstrap_panel(title=gettext("Admin-Notes"), icon="tag", aclass="panel-default panel-condensed") %}
             {{ ambience['ballot']['notes']|md }}
         {% endcall %}
     {% endif %}
 {%- endmacro %}
 
+
+
 {% macro show_attachments(edit_mode) -%}
     {{ assembly_util.attachment_box(attachments, attachment_histories, edit=edit_mode, title=gettext("Files"),
                                     ballot=ambience['ballot'], new_attachment_button=True, full_history=False) }}
 {%- endmacro %}
 
-{% macro show_navigation() -%}
+
+
+{% macro show_navigation(page_name) -%}
     <nav>
         <ul class="pager">
             {% if prev_ballot %}
-                <li class="previous">{{ util.href(cdedblink("assembly/show_ballot", {"ballot_id": prev_ballot["id"]}),
+                <li class="previous">{{ util.href(cdedblink(page_name, {"ballot_id": prev_ballot["id"]}),
                          '<span aria-hidden="true">&larr;</span> '|s + gettext("Previous"), title=prev_ballot["title"]) }}</li>
             {% endif %}
             {%  if next_ballot %}
-                <li class="next">{{ util.href(cdedblink("assembly/show_ballot", {"ballot_id": next_ballot["id"]}),
+                <li class="next">{{ util.href(cdedblink(page_name, {"ballot_id": next_ballot["id"]}),
                          gettext("Next") + ' <span aria-hidden="true">&rarr;</span>'|s, title=next_ballot["title"]) }}</li>
             {% endif %}
         </ul>

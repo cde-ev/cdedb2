@@ -130,6 +130,9 @@
                     <dd>
                         {{ gettext(ambience['registration']['parts'][part_id]['status']
                                 |enum(enums['RegistrationPartStati'])) }}
+                        {% if ambience['registration']['parts'][part_id]['status'] == enums['RegistrationPartStati'].waitlist and waitlist_position[part_id] %}
+                            ({% trans %}Placement{% endtrans %}&nbsp;{{ waitlist_position[part_id] }})
+                        {% endif %}
                     </dd>
                     {% if enums['RegistrationPartStati'](ambience['registration']['parts'][part_id]['status'])
                             .is_involved() %}
@@ -158,7 +161,7 @@
                             {% with lodgement_id = ambience['registration']['parts'][part_id]['lodgement_id'] %}
                                 {% if lodgement_id %}
                                     {{ util.href(cdedblink('event/show_lodgement', {'lodgement_id': lodgement_id}),
-                                                 lodgements[lodgement_id]['moniker']) }}
+                                                 lodgements[lodgement_id]['title']) }}
                                 {% else %}
                                     —
                                 {% endif %}

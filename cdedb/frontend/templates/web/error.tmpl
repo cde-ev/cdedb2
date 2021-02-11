@@ -1,22 +1,22 @@
 {% extends "web/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block title %}{{ error.code }}: {{ error.name }}{% endblock %}
-{% block content %}
-{% set maillink = util.href(util.mailto("cdedb@lists.cde-ev.de", gettext("CdE-Datenbank development team")), "cdedb@lists.cde-ev.de") %}
-    <div class="alert alert-danger">
-        {{ util.make_icon('times-circle') }}
+{% block title %}
+    {{ error.code }}: {{ error.name }}
+{% endblock %}
+{% block static_notifications %}
+    {% call util.notification('error') %}
         {% if error.code == 403 %}
             {% trans %}You do not have sufficient permissions to access this page:{% endtrans %}
-            {{ error.description }}
+            {{ gettext(error.description) }}
         {% elif error.code == 404 %}
             {% trans %}Couldn’t find the requested page.{% endtrans %}
-            {% if error.description %}({{ error.description }}){% endif %}
+            {% if error.description %}({{ gettext(error.description) }}){% endif %}
         {% elif error.code == 405 %}
             {% trans %}This HTTP method is not allowed for this URL.{% endtrans %}
         {% elif error.code == 500 %}
             {% trans %}An internal error occured:{% endtrans %}
             {% if error.description %}
-               {{ error.description.split(')')[0] }})
+               {{ gettext(error.description.split(')')[0]) }})
             {% endif %}
         {% else %}
             {% trans %}An unknown error occurred.{% endtrans %}
@@ -24,10 +24,12 @@
                 {{ (error.description|string)[:21] }}
             {% endif %}
         {% endif %}
-    </div>
-
+    {% endcall %}
+{% endblock %}
+{% block content %}
+    {% set maillink = util.href(util.mailto("cdedb@lists.cde-ev.de", gettext("CdE-Datenbank development team")), "cdedb@lists.cde-ev.de") %}
     {% if error.code == 403 %}
-        {% if not help is none %}
+        {% if help is not none %}
             <p>{{ gettext(help) }}</p>
         {% endif %}
         <p>
@@ -52,7 +54,7 @@
             {% endtrans %}
         </p>
     {% else %}
-            {% if not help is none %}
+            {% if help is not none %}
                 <p>{{ gettext(help) }}</p>
             {% else %}
                 <p>{% trans %}First try reloading this page.{% endtrans %}</p>

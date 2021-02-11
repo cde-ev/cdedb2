@@ -11,30 +11,22 @@
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("core/index"), gettext("Index"), active="True") }}
+    {{ util.breadcrumb_link(cdedblink("core/index"), gettext("Index"), active="True") }}
+{% endblock %}
+{% block static_notifications %}
+    {% if CDEDB_OFFLINE_DEPLOYMENT %}
+        {% call util.notification('info') %}
+            {% trans %}This is an Offline-Instance of the CdEDB{% endtrans %}
+            {# TODO Erklärtext #}
+        {% endcall %}
+    {% endif %}
 {% endblock %}
 {% block content %}
-    {% if CDEDB_OFFLINE_DEPLOYMENT %}
-        <div class="alert alert-info">
-            <p>
-                {{ util.make_icon('info-circle') }} <strong>{% trans %}Info{% endtrans %}</strong>
-                {% trans %}This is an Offline-Instance of the CdE-DB{% endtrans %}
-            </p>
-
-            <p class=nosp>{# TODO Erklärtext #}</p>
-        </div>
-    {% endif %}
-
     <form action="{{ cdedblink('core/login') }}" method="POST" id="loginform" class="form-horizontal">
         {{ util.form_input_text(name="username", label=gettext("E-Mail"), type="email", small=True,
-                                anid="login_name") }}
+                                anid="login_name", attributes='autocomplete="email" autofocus'|s) }}
         {{ util.form_input_text(name="password", label=gettext("Password"), small=True, anid="login_password",
-                                type="password") }}
-        <script nonce="{{ csp_nonce }}">
-            $(function() {
-                $('#login_name').focus();
-            });
-        </script>
+                                type="password", attributes='autocomplete="current-password"'|s) }}
 
         {{ util.input_hidden(name="wants") }}
 

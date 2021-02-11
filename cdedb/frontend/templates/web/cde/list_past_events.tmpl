@@ -1,7 +1,7 @@
 {% set sidenav_active='cde_past_events' %}
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block title %}{% trans %}Past Events (long){% endtrans %}{% endblock %}
+{% block title %}{% trans %}Past Events_[[long form]]{% endtrans %}{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("cde/list_past_events"), gettext("Past Events"), active="True") }}
@@ -21,7 +21,7 @@
             </li>
             {% for i_id, i in institutions.items() %}
                 <li role="presentation" {% if i_id == institution_id %}class="active" aria-current="page" {% endif %}>
-                    {{ util.href(cdedblink('cde/list_past_events', {'institution_id': i_id}), i['moniker']) }}
+                    {{ util.href(cdedblink('cde/list_past_events', {'institution_id': i_id}), i['shortname']) }}
                 </li>
             {% endfor %}
         </ul>
@@ -34,7 +34,7 @@
                 <li>
                     {{ util.href(cdedblink("cde/show_past_event", {"pevent_id": pevent_id}), events[pevent_id]) }}
                     {% if "past_event" in user.admin_views %}[{{ shortnames[pevent_id] }}]{% endif %}
-                    {% if not institution_id %}({{ stats[pevent_id]['institution_moniker'] }}){% endif %}
+                    {% if not institution_id %}({{ stats[pevent_id]['institution_shortname'] }}){% endif %}
                     {% if "past_event" in user.admin_views %}
                         <small class="text-muted nowrap">
                             {% trans count=stats[pevent_id]['courses'] %}

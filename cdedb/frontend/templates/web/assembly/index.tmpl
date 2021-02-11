@@ -12,7 +12,7 @@
         {% trans %}Here You can find the CdE’s general assemblies.{% endtrans %}
     {% endif %}
     <h3>{{ gettext("Active Assemblies") }}</h3>
-    <ul class="spaced">
+    <ul class="spaced" id="active-assemblies">
         {% for assembly_id, assembly in assemblies|keydictsort(EntitySorter.assembly) %}
             {% if assembly['is_active'] %}
                 <li>
@@ -22,21 +22,52 @@
                         {% trans %}
                             (already attending)
                         {% endtrans %}
-                    {% else %}
+                    {% elif assembly['signup_end'] >= now() %}
                         {% trans date=assembly['signup_end']|datetime(lang=lang) %}
                             (registration possible until {{ date }})
+                        {% endtrans %}
+                    {% else %}
+                        {% trans %}
+                            (registration no longer possible)
                         {% endtrans %}
                     {% endif %}
                 </li>
             {% endif %}
         {% endfor %}
     </ul>
-    <h3>{{ gettext("Inactive Assemblies") }}</h3>
-    <ul class="spaced">
-        {% for assembly_id, data in assemblies|keydictsort(EntitySorter.assembly, reverse=True) %}
-            {% if not data['is_active'] %}
+
+    {% if user.presider %}
+    <h3>{{ gettext("Presided Assemblies") }}</h3>
+    <ul class="spaced" id="presided-assemblies">
+        {% for assembly_id, assembly in assemblies|keydictsort(EntitySorter.assembly) %}
+            {% if assembly_id in user.presider %}
                 <li>
-                    {{ util.href(cdedblink("assembly/show_assembly", {'assembly_id': data['id']}), data['title']) }}
+                    {{ util.href(cdedblink("assembly/show_assembly", {'assembly_id': assembly_id}), assembly['title']) }}
+                    <br />
+                    {{ gettext("%(count)s participants")|format(count=attendees_count[assembly_id]) }}
+                    <br />
+                    <span class="small">
+                        {{ util.href(cdedblink('assembly/list_ballots', {'assembly_id': assembly_id}),
+                                     gettext("Ballots"), icon='thumbs-up') }}
+                        &bull;
+                        {{ util.href(cdedblink('assembly/list_attachments', {'assembly_id': assembly_id}),
+                                     gettext("Attachments"), icon='file') }}
+                        &bull;
+                        {{ util.href(cdedblink('assembly/view_assembly_log', {'assembly_id': assembly_id}),
+                                     gettext("Log"), icon='far fa-list-alt') }}
+                    </span>
+                </li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    <h3>{{ gettext("Inactive Assemblies") }}</h3>
+    <ul class="spaced" id="inactive-assemblies">
+        {% for assembly_id, assembly in assemblies|keydictsort(EntitySorter.assembly, reverse=True) %}
+            {% if not assembly['is_active'] %}
+                <li>
+                    {{ util.href(cdedblink("assembly/show_assembly", {'assembly_id': assembly['id']}), assembly['title']) }}
                 </li>
             {% endif %}
         {% endfor %}

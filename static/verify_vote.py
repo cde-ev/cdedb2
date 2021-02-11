@@ -10,9 +10,11 @@ import argparse
 import hmac
 import json
 import pathlib
+from typing import Collection, Dict, Optional
 
 
-def encrypt_vote(salt, secret, vote):
+
+def encrypt_vote(salt: str, secret: str, vote: str) -> str:
     """Berechne Hash zum Datensatz einer Stimme."""
     h = hmac.new(salt.encode('ascii'), digestmod="sha512")
     h.update(secret.encode('ascii'))
@@ -20,7 +22,8 @@ def encrypt_vote(salt, secret, vote):
     return h.hexdigest()
 
 
-def retrieve_vote(votes, secret):
+def retrieve_vote(votes: Collection[Dict[str,str]], secret: str
+                  ) -> Optional[Dict[str,str]]:
     """Ermittle Stimme, die mit dem Geheimnis abgegeben wurde."""
     for v in votes:
         if v['hash'] == encrypt_vote(v['salt'], secret, v['vote']):
@@ -55,9 +58,9 @@ if __name__ == "__main__":
             for key, value in sorted(data['candidates'].items()))
         print("Optionen: {}".format(candidates))
         # ... und ermittle die eigene Stimme
-        vote = retrieve_vote(data['votes'], args.secret)
-        if not vote:
+        vote_dict = retrieve_vote(data['votes'], args.secret)
+        if not vote_dict:
             vote = "Keine Stimme abgegeben"
         else:
-            vote = vote['vote']
+            vote = vote_dict['vote']
         print("Eigene Stimme: {}".format(vote))

@@ -11,12 +11,9 @@ up an environment for passing a query from frontend to backend.
 
 import collections
 import enum
+from typing import TYPE_CHECKING, Any, Collection, Dict, Tuple
 
-from typing import (
-    Collection, Tuple, Any
-)
-
-from cdedb.common import glue, CdEDBObject
+from cdedb.common import CdEDBObject, RequestState, glue
 
 
 @enum.unique
@@ -49,7 +46,7 @@ class QueryOperators(enum.IntEnum):
 _ops = QueryOperators
 #: Only a subset of all possible operators is appropriate for each data
 #: type. Order is important for UI purpose hence no sets.
-VALID_QUERY_OPERATORS = {
+VALID_QUERY_OPERATORS: Dict[str, Tuple[QueryOperators, ...]] = {
     "str": (_ops.match, _ops.unmatch, _ops.equal, _ops.unequal,
             _ops.equalornull, _ops.unequalornull, _ops.containsall,
             _ops.containsnone, _ops.containssome, _ops.oneof, _ops.otherthan,
@@ -108,7 +105,7 @@ class Query:
     def __init__(self, scope: str, spec: CdEDBObject,
                  fields_of_interest: Collection[str],
                  constraints: Collection[QueryConstraint],
-                 order: Collection[QueryOrder]):
+                 order: Collection[QueryOrder], name: str = None):
         """
         :type scope: str
         :param scope: target of FROM clause; key for :py:data:`QUERY_VIEWS`.
@@ -131,6 +128,7 @@ class Query:
         self.fields_of_interest = list(fields_of_interest)
         self.constraints = list(constraints)
         self.order = list(order)
+        self.name = name
 
     def __repr__(self) -> str:
         return (f"Query(scope={self.scope},"
@@ -138,7 +136,7 @@ class Query:
                 f" constraints={self.constraints}, order={self.order},"
                 f" spec={self.spec})")
 
-    def fix_custom_columns(self):
+    def fix_custom_columns(self) -> None:
         """Custom columns may contain upper case, this wraps them in qoutes."""
         self.fields_of_interest = [
             ",".join(
@@ -159,10 +157,22 @@ class Query:
                       for atom in entry.split(".")),
              ascending)
             for entry, ascending in self.order]
-        for field, _, _ in self.constraints:
-            if '"' in field:
-                self.spec[field] = self.spec[field.replace('"', '')]
-                del self.spec[field.replace('"', '')]
+        # Fix our fix
+        changed_fields = set()
+        for column in self.fields_of_interest:
+            for moniker in column.split(","):
+                if '"' in moniker:
+                    changed_fields.add(moniker)
+        for column, _, _ in self.constraints:
+            for moniker in column.split(","):
+                if '"' in moniker:
+                    changed_fields.add(moniker)
+        for moniker, _ in self.order:
+            if '"' in moniker:
+                changed_fields.add(moniker)
+        for field in changed_fields:
+            self.spec[field] = self.spec[field.replace('"', '')]
+            del self.spec[field.replace('"', '')]
 
 
 #: Available query templates. These may be enriched by ext-fields. Order is
@@ -171,6 +181,8 @@ class Query:
 #: .. note:: For schema specified columns (like ``personas.id``)
 #:           the schema part does not survive querying and needs to be stripped
 #:           before output.
+if TYPE_CHECKING:
+    QUERY_SPECS: Dict[str, collections.OrderedDict[str, str]]
 QUERY_SPECS = {
     "qview_cde_member":
         collections.OrderedDict([
@@ -183,8 +195,7 @@ QUERY_SPECS = {
             ("telephone,mobile", "str"),
             ("location,location2", "str"),
             ("country,country2", "str"),
-            ("weblink,specialisation,affiliation,timeline,interests,free_form",
-             "str"),
+            ("weblink,specialisation,affiliation,timeline,interests,free_form", "str"),
             ("pevent_id", "id"),
             ("pcourse_id", "id"),
             ("fulltext", "str"),
@@ -236,6 +247,10 @@ QUERY_SPECS = {
             ("pcourse_id", "id"),
             ("notes", "str"),
             ("fulltext", "str"),
+            ("lastschrift.granted_at", "datetime"),
+            ("lastschrift.revoked_at", "datetime"),
+            ("lastschrift.active_lastschrift", "bool"),
+            ("lastschrift.amount", "float"),
         ]),
     "qview_archived_persona":
         collections.OrderedDict([
@@ -357,13 +372,24 @@ QUERY_SPECS = {
         collections.OrderedDict([
             ("lodgement.id", "id"),
             ("lodgement.lodgement_id", "id"),
-            ("lodgement.moniker", "str"),
+            ("lodgement.title", "str"),
             ("lodgement.regular_capacity", "int"),
             ("lodgement.camping_mat_capacity", "int"),
             ("lodgement.notes", "str"),
             ("lodgement.group_id", "int"),
-            ("lodgement_group.moniker", "int"),
+            ("lodgement_group.title", "int"),
             # This will be augmented with additional fields in the fly.
+        ]),
+    "qview_pevent_course":
+        collections.OrderedDict([
+            ("courses.id", "id"),
+            ("courses.pcourse_id", "id"),
+            ("courses.pevent_id", "id"),
+            ("courses.nr", "str"),
+            ("courses.title", "str"),
+            ("courses.description", "str"),
+            ("events.title", "str"),
+            ("events.tempus", "date")
         ]),
     "qview_core_user":  # query for a general user including past event infos
         collections.OrderedDict([
@@ -393,7 +419,7 @@ QUERY_SPECS = {
         ]),
     "qview_persona":  # query for a persona without past event infos
         collections.OrderedDict([
-            ("id", "id"),
+            ("personas.id", "id"),
             ("given_names", "str"),
             ("family_name", "str"),
             ("username", "str"),
@@ -424,10 +450,19 @@ QUERY_VIEWS = {
         "core.personas",
         "LEFT OUTER JOIN past_event.participants",
         "ON personas.id = participants.persona_id"),
-    "qview_cde_user": glue(
-        "core.personas",
-        "LEFT OUTER JOIN past_event.participants",
-        "ON personas.id = participants.persona_id"),
+    "qview_cde_user": """core.personas
+    LEFT OUTER JOIN past_event.participants ON personas.id = participants.persona_id
+    LEFT OUTER JOIN (
+        SELECT
+            id, granted_at, revoked_at, revoked_at IS NOT NULL AS active_lastschrift,
+            amount, persona_id
+        FROM cde.lastschrift
+        WHERE (granted_at, persona_id) IN (
+            SELECT MAX(granted_at) AS granted_at, persona_id
+            FROM cde.lastschrift GROUP BY persona_id
+        )
+    ) AS lastschrift ON personas.id = lastschrift.persona_id
+    """,
     "qview_past_event_user": glue(
         "core.personas",
         "LEFT OUTER JOIN past_event.participants",
@@ -441,6 +476,10 @@ QUERY_VIEWS = {
         "core.personas",
         "INNER JOIN event.registrations",
         "ON personas.id = registrations.persona_id"),
+    "qview_pevent_course": glue(
+        "past_event.courses",
+        "LEFT OUTER JOIN past_event.events",
+        "ON courses.pevent_id = events.id"),
     "qview_core_user": glue(
         "core.personas",
         "LEFT OUTER JOIN past_event.participants",
@@ -464,13 +503,15 @@ QUERY_PRIMARIES = {
     "qview_quick_registration": "registrations.id",
     "qview_event_course": "course.id",
     "qview_event_lodgement": "lodgement.id",
+    "qview_pevent_course": "courses.id",
     "qview_core_user": "personas.id",
     "qview_persona": "id",
     "qview_archived_persona": "personas.id",
 }
 
 
-def mangle_query_input(rs, spec, defaults=None):
+def mangle_query_input(rs: RequestState, spec: Dict[str, str],
+                       defaults: CdEDBObject = None) -> Dict[str, str]:
     """This is to be used in conjunction with the ``query_input`` validator,
     which is exceptional since it is not used via a decorator. To take
     care of the differences this function exists.

@@ -25,7 +25,7 @@
         {{ util.input_hidden(name="generation") }}
 
         <h4 class="heading-underline">{% trans %}Personal Information{% endtrans %}</h4>
-        {{ util.form_input_text(name="title", label=gettext("Title")) }}
+        {{ util.form_input_text(name="title", label=gettext("Title_[[of a persona]]")) }}
         {{ util.form_input_text(name="given_names", label=gettext("Given Names")) }}
         {{ util.form_input_text(name="family_name", label=gettext("Family Name")) }}
         {% if "birth_name" in shown_fields %}
@@ -52,7 +52,7 @@
             {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone"), type="tel") }}
         {% endif %}
         {% if "weblink" in shown_fields %}
-            {{ util.form_input_text(name="weblink", label=gettext("WWW")) }}
+            {{ util.form_input_text(name="weblink", label=gettext("WWW"), info=util.markdownhint) }}
         {% endif %}
 
         {% if "address" in shown_fields %}
@@ -74,7 +74,7 @@
             <h4 class="heading-underline">{% trans %}Second Address{% endtrans %}</h4>
             <p>
             {% trans %}
-                This address is meant to be a “backup”,, should the primary address not work. Please give an address where
+                This address is meant to be a “backup”, should the primary address not work. Please give an address where
                 you can be reached long-term, e.g. your parents' address.
             {% endtrans %}
             </p>
@@ -87,20 +87,14 @@
         {% if "specialisation" in shown_fields %}
             <h4 class="heading-underline">{% trans %}Miscellaneous{% endtrans %}</h4>
             {{ util.form_input_textarea(name="specialisation", label=gettext("Specialisation"),
-                                        info=gettext("Supports %(infolink)s.")|format(
-                                        infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
+                                        info=util.markdownhint) }}
             {{ util.form_input_textarea(name="affiliation", label=gettext("School, University, …"),
-                                        info=gettext("Supports %(infolink)s.")|format(
-                                        infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
+                                        info=util.markdownhint) }}
             {{ util.form_input_textarea(name="timeline", label=gettext("Year(s) of Graduation"),
-                                        info=gettext("Supports %(infolink)s.")|format(
-                                        infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
-            {{ util.form_input_textarea(name="interests", label=gettext("Interests"),
-                                        info=gettext("Supports %(infolink)s.")|format(
-                                        infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
+                                        info=util.markdownhint) }}
+            {{ util.form_input_textarea(name="interests", label=gettext("Interests"), info=util.markdownhint) }}
             {{ util.form_input_textarea(name="free_form", label=gettext("Miscellaneous"), rows="5",
-                                        info=gettext("Supports %(infolink)s.")|format(
-                                        infolink=util.href(docurl("Handbuch_Markdown"), gettext("Markdown"), title=gettext("Short Markdown summary")))|s) }}
+                                        info=util.markdownhint) }}
         {% endif %}
         {{ util.form_input_submit(value=gettext("Save"), cancellink=show_user_link(user, user.persona_id), differentiate_warnings=True) }}
     </form>

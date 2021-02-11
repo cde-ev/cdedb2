@@ -1,8 +1,7 @@
 {% set sidenav_active='assembly_summary' %}
 {% extends "web/assembly/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% import "web/assembly/_ballot_result.tmpl" as ballot_result with context %}
-{% set jshint = 'weak' %}
+{% import "web/assembly/_ballot_tallied.tmpl" as ballot_tallied with context %}
 {% block title %}{{ gettext("Summary") }} ({{ ambience['assembly']['title'] }}){% endblock %}
 {% block heading %}
     <h1 class="title">
@@ -23,11 +22,17 @@
         {% call util.bootstrap_panel(title=title, icon='thumbs-up') %}
         <div class="row">
             <div class="col-md-7">{{ ballot['description']|md }}</div>
-            <div class="col-md-5">{{ ballot_result.show_result(ballot, result[ballot_id], short=True) }}</div>
+            <div class="col-md-5">{{ ballot_tallied.show_result(ballot, result[ballot_id], short=True) }}</div>
         </div>
         {% endcall %}
+    {% else %}
+        <p class="text-muted">
+            {% trans %}No ballots have been tallied yet.{% endtrans %}
+        </p>
     {% endfor %}
 
-    {{ ballot_result.explain_result(classical=True, preferential=True, use_bar=True) }}
+    {% if ballots %}
+        {{ ballot_tallied.explain_result(classical=True, preferential=True, use_bar=True) }}
+    {% endif %}
 
 {% endblock %}

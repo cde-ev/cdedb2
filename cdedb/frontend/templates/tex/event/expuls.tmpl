@@ -1,15 +1,50 @@
-<<# This is just a part of a tex document, so we do not inherit the base template. #>>
+<<#- This is just a part of a tex document, so we do not inherit the base template. -#>>
+
+<<#- We have two usecases: The table of courses without description ... -#>>
+<<% for track_id in tracks -%>>
+\articledetails{
+    title=<<< ambience['event']['tracks'][track_id]['title']|te >>>,
+}
+
+\begin{article}[kurstabelle]
+
+<<% for course_id, course in courses|keydictsort(EntitySorter.course) -%>>
+<<% if track_id in course['active_segments'] -%>>
+    \kurs[<<< course['nr'] >>>]{<<< course['title']|te >>>}[<<< course['instructors']|te >>>]
+<<% endif %>>
+<<%- endfor %>>
+\end{article}
 
 
-<<%- for track_id in tracks %>>
-\zwischentitel{<<< ambience['event']['tracks'][track_id]['title']|te >>>}
-<<% for course_id, course in courses|keydictsort(EntitySorter.course) %>>
-<<%- if track_id in course['active_segments'] %>>
-\kurs[<<< course['nr'] >>>]{<<< course['title']|te >>>}[<<< course['instructors']|te >>>]
 
-<<< course['description'] >>>
+
+<<% endfor %>>
+
+% ---------------------------------------------------------------------------- %
+
+
+
+
+
+
+<<# ... and the longform of courses with description. -#>>
+<<% for track_id in tracks -%>>
+\articledetails{
+    title=<<< ambience['event']['tracks'][track_id]['title']|te >>>,
+}
+
+\begin{article}
+
+<<% for course_id, course in courses|keydictsort(EntitySorter.course) -%>>
+<<% if track_id in course['active_segments'] -%>>
+    \kurs[<<< course['nr'] >>>]{<<< course['title']|te >>>}[<<< course['instructors']|te >>>]
+    <<< course['description'] >>>
 
 <<% endif %>>
 <<%- endfor %>>
+\end{article}
+
+
+
 
 <<% endfor %>>

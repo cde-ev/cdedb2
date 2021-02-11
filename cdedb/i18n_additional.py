@@ -26,18 +26,18 @@ I18N_STRINGS = (
     n_("AssemblyLogCodes.candidate_updated"),
     n_("AssemblyLogCodes.candidate_removed"),
     n_("AssemblyLogCodes.new_attendee"),
+    n_("AssemblyLogCodes.assembly_presider_added"),
+    n_("AssemblyLogCodes.assembly_presider_removed"),
     n_("AssemblyLogCodes.attachment_added"),
+    n_("AssemblyLogCodes.attachment_changed"),
     n_("AssemblyLogCodes.attachment_removed"),
+    n_("AssemblyLogCodes.attachment_version_added"),
+    n_("AssemblyLogCodes.attachment_version_removed"),
+    n_("AssemblyLogCodes.attachment_version_changed"),
 
     n_("AttachmentPolicy.allow"),
     n_("AttachmentPolicy.pdf_only"),
     n_("AttachmentPolicy.forbid"),
-
-    n_("AudiencePolicy.everybody"),
-    n_("AudiencePolicy.require_assembly"),
-    n_("AudiencePolicy.require_cde"),
-    n_("AudiencePolicy.require_event"),
-    n_("AudiencePolicy.require_member"),
 
     n_("CdeLogCodes.semester_bill"),
     n_("CdeLogCodes.semester_bill_with_addresscheck"),
@@ -114,6 +114,7 @@ I18N_STRINGS = (
     n_("FinanceLogCodes.grant_lastschrift"),
     n_("FinanceLogCodes.revoke_lastschrift"),
     n_("FinanceLogCodes.modify_lastschrift"),
+    n_("FinanceLogCodes.lastschrift_deleted"),
     n_("FinanceLogCodes.lastschrift_transaction_issue"),
     n_("FinanceLogCodes.lastschrift_transaction_success"),
     n_("FinanceLogCodes.lastschrift_transaction_failure"),
@@ -175,6 +176,9 @@ I18N_STRINGS = (
     n_("MlLogCodes.request_cancelled"),
     n_("MlLogCodes.request_blocked"),
     n_("MlLogCodes.cron_removed"),
+    n_("MlLogCodes.moderate_accept"),
+    n_("MlLogCodes.moderate_reject"),
+    n_("MlLogCodes.moderate_discard"),
 
     n_("ModerationPolicy.unmoderated"),
     n_("ModerationPolicy.non_subscribers"),
@@ -208,13 +212,6 @@ I18N_STRINGS = (
     n_("RegistrationPartStati.cancelled"),
     n_("RegistrationPartStati.rejected"),
 
-    n_("MailinglistInteractionPolicy.mandatory"),
-    n_("MailinglistInteractionPolicy.opt_out"),
-    n_("MailinglistInteractionPolicy.opt_in"),
-    n_("MailinglistInteractionPolicy.moderated_opt_in"),
-    n_("MailinglistInteractionPolicy.invitation_only"),
-    n_("MailinglistInteractionPolicy.implicits_only"),
-
     n_("LastschriftTransactionStati.issued"),
     n_("LastschriftTransactionStati.skipped"),
     n_("LastschriftTransactionStati.success"),
@@ -245,7 +242,7 @@ I18N_STRINGS = (
     n_("QueryOperators.greaterequal"),
     n_("QueryOperators.greater"),
 
-    n_("MailinglistGroup.other"),
+    n_("MailinglistGroup.public"),
     n_("MailinglistGroup.cde"),
     n_("MailinglistGroup.team"),
     n_("MailinglistGroup.event"),
@@ -263,7 +260,11 @@ I18N_STRINGS = (
     n_("MailinglistTypes.event_orga"),
     n_("MailinglistTypes.assembly_associated"),
     n_("MailinglistTypes.assembly_opt_in"),
+    n_("MailinglistTypes.assembly_presider"),
+    n_("MailinglistTypes.general_mandatory"),
     n_("MailinglistTypes.general_opt_in"),
+    n_("MailinglistTypes.general_moderators"),
+    n_("MailinglistTypes.cdelokal_moderators"),
     n_("MailinglistTypes.semi_public"),
     n_("MailinglistTypes.cdelokal"),
 
@@ -337,4 +338,11 @@ I18N_STRINGS = (
     n_("banner_after_login"),
     n_("banner_genesis"),
     n_("cde_misc"),
+
+    #
+    # hidden strings, see ml/message_moderation.tmpl
+    #
+    n_("Accept"),
+    n_("Reject"),
+    n_("Discard"),
 )

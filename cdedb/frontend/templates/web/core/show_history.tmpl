@@ -26,7 +26,7 @@
             <div class="row history-row {{ STATUS[eventual_status[f][c]][0] }}">
                 <div class="col-xs-3">
                     Gen {{ c }}
-                    {% if entries[c]['change_status'] != 1 %}
+                    {% if entries[c]['code'] != enums['MemberChangeStati'].pending %}
                         {{ util.make_icon(STATUS[eventual_status[f][c]][1],
                                 title=STATUS[eventual_status[f][c]][2]) }}
                     {% endif %}
@@ -59,7 +59,7 @@
             <div class="row history-row {{ STATUS[vars['eventual_status']][0] }}">
                 <div class="col-xs-3">
                     {% trans %}Gen{% endtrans %} {{ c }}
-                    {% if entries[c]['change_status'] != 1 %}
+                    {% if entries[c]['code'] != enums['MemberChangeStati'].pending %}
                         {{ util.make_icon(STATUS[vars['eventual_status']][1],
                                 title=STATUS[vars['eventual_status']][2]) }}
                     {% endif %}                </div>
@@ -88,12 +88,7 @@
     {% endif %}
     {% if not current['is_active'] %}
         <p class="text-danger">
-            {% trans %}The User is deactivated.{% endtrans %}
-        </p>
-    {% endif %}
-    {% if current['is_archived'] %}
-        <p class="text-danger">
-            {% trans %}The User is archived.{% endtrans %}
+            {% trans %}The user is deactivated.{% endtrans %}
         </p>
     {% endif %}
 
@@ -287,7 +282,7 @@
                 <tr>
                     <td class="nowrap">{% trans %}Gen{% endtrans %} {{ entry['generation'] }}</td>
                     <td>{{ entry['ctime']|datetime(lang=lang) }}</td>
-                    <td>{{ gettext(entry['change_status']|enum(enums['MemberChangeStati'])) }}</td>
+                    <td>{{ gettext(entry['code']|enum(enums['MemberChangeStati'])) }}</td>
                     <td>{{ util.persona_anchor(personas[entry['submitted_by']]) }}</td>
                     <td>
                         {% if entry['reviewed_by'] %}

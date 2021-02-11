@@ -56,7 +56,7 @@
 
     {% if ambience['mailinglist']['notes']
             and (ambience['mailinglist']['id'] in user.moderator
-                 or ('ml_mgmt' in user.admin_views and is_relevant_admin(mailinglist=ambience['mailinglist']))) %}
+                 or ambience['mailinglist']['ml_type_class'].has_moderator_view(user)) %}
         {% call util.bootstrap_panel(title=gettext("Admin-Notes"), icon="tag", aclass="panel-default panel-condensed",
                                      anid="adminnotes") %}
             {{ ambience['mailinglist']['notes']|md }}
@@ -82,7 +82,7 @@
                             {% endif %}
                         </dd>
                     </dl>
-                    {% if interaction_policy != enums['MailinglistInteractionPolicy'].mandatory %}
+                    {% if allow_unsub %}
                         <div class="p">
                             {% if sub_address %}
                                 <form action="{{ cdedblink('ml/change_address') }}" method="POST"
@@ -159,7 +159,7 @@
                                     {{ util.input_submit(value=gettext("Request subscription"), aclass="btn btn-sm btn-success") }}
                                 </div>
                             </form>
-                        {% elif interaction_policy in (enums['MailinglistInteractionPolicy'].opt_in, enums['MailinglistInteractionPolicy'].opt_out) %}
+                        {% elif interaction_policy == enums['MailinglistInteractionPolicy'].subscribable %}
                             <form action="{{ cdedblink('ml/subscribe') }}" method="POST" id="subscribe-no-mod-form">
                                 {{ util.anti_csrf_token('ml/subscribe') }}
                                 <div>
@@ -178,7 +178,7 @@
         {% endcall %}
     {% endif %}
 
-    {% if is_relevant_admin(mailinglist_id=ambience['mailinglist']['id']) and 'ml_mgmt' in user.admin_views %}
+    {% if ambience['mailinglist']['ml_type_class'].has_management_view(user) %}
         {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
             <div class="row">
                 <div class="col-sm-4">

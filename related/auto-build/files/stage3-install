@@ -39,6 +39,9 @@ sudo -u cdedb echo '        rebase = merges' >> /cdedb2/.git/config
 sudo -u cdedb echo '' >> /cdedb2/.git/info/attributes
 sudo -u cdedb echo '*.po diff=podiff merge=pomerge' >> /cdedb2/.git/info/attributes
 sudo -u cdedb echo '*.pot diff=podiff merge=pomerge' >> /cdedb2/.git/info/attributes
+# add cdedb to python path
+mkdir -p /usr/local/lib/python3.7/dist-packages
+sudo ln -s /cdedb2/cdedb/ /usr/local/lib/python3.7/dist-packages/cdedb
 # build the documentation
 sudo -u cdedb make doc
 # build the i18n files
@@ -106,8 +109,8 @@ echo ""
 echo "Create central directory for log files..."
 echo "--------------------------------------------"
 
-mkdir -p /log
-chown www-data:www-data /log
+mkdir /var/log/cdedb
+chown www-data:www-data /var/log/cdedb
 
 echo ""
 echo "Set up the apache2..."

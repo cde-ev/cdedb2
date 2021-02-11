@@ -60,7 +60,7 @@
                                 placeholder="YYYY-MM-DD") }}
         {{ util.form_input_text(name="reg.amount_paid", label=gettext("Amount Paid"), type="number", attributes='step="0.01"'|s) }}
         {{ util.form_input_checkbox(name="reg.parental_agreement", label=gettext("Parental Consent")) }}
-        {{ util.form_input_text(name="reg.checkin", label="Checked-In", type="datetime-local",
+        {{ util.form_input_text(name="reg.checkin", label=gettext("Checked-In"), type="datetime-local",
                                 placeholder="YYYY-MM-DD hh:ii", readonly='reg.checkin' in skip) }}
 
         {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
@@ -70,7 +70,7 @@
             {{ util.form_input_select(name="part{}.status".format(part_id), label=gettext("Status"),
                                       entries=enums['RegistrationPartStati']|enum_entries(processing=gettext)) }}
             {{ util.form_input_select(name="part{}.lodgement_id".format(part_id), label=gettext("Lodgement"),
-                                      entries=lodgements|keydictsort(EntitySorter.lodgement)|dict_entries('id', 'moniker'), nulloption=nbsp) }}
+                                      entries=lodgements|keydictsort(EntitySorter.lodgement)|dict_entries('id', 'title'), nulloption=nbsp) }}
             {{ util.form_input_checkbox(name="part{}.is_camping_mat".format(part_id), label=gettext("Uses Camping Mat")) }}
 
             {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) if track['part_id'] == part_id %}
