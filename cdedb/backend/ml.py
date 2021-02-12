@@ -991,6 +991,9 @@ class MlBackend(AbstractBackend):
         elif (action == sa.request_subscription and
               policy != const.MailinglistInteractionPolicy.moderated_opt_in):
             raise SubscriptionError(n_("Can not request subscription."))
+        elif action == sa.reset_unsubscription:
+            if persona_id not in self.get_redundant_unsubscriptions(rs, mailinglist_id):
+                raise SubscriptionError(n_("Can not reset unsubscription."))
 
     @access("ml")
     def set_subscription_address(self, rs: RequestState, mailinglist_id: int,
@@ -1110,6 +1113,29 @@ class MlBackend(AbstractBackend):
                      ) -> Dict[int, const.SubscriptionStates]: ...
     get_subscription_states: _GetSubScriptionStatesProtocol = singularize(
         get_many_subscription_states, "mailinglist_ids", "mailinglist_id")
+
+    @access("ml")
+    def get_redundant_unsubscriptions(self, rs: RequestState, mailinglist_id: int
+                                      ) -> Set[int]:
+        """Retrieve all unsubscribed users who's unsubscriptions have no effect.
+
+        This is the case if and only if the user is no implicit subscriber of the
+        mailing list.
+        """
+        mailinglist_id = affirm(vtypes.ID, mailinglist_id)
+
+        # shortcut if the user is not privileged to change subscription states of the ml
+        if not self.may_manage(rs, mailinglist_id, privileged=True):
+            return set()
+
+        atype = self.get_ml_type(rs, mailinglist_id)
+        ml = self.get_mailinglist(rs, mailinglist_id)
+
+        possible_implicits = atype.get_implicit_subscribers(rs, self.backends, ml)
+        data = self.get_subscription_states(
+            rs, mailinglist_id, states={const.SubscriptionStates.unsubscribed})
+
+        return data.keys() - possible_implicits
 
     @access("ml")
     def get_user_subscriptions(
