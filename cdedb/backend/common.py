@@ -15,7 +15,7 @@ import functools
 import logging
 from types import TracebackType
 from typing import (
-    Any, Callable, ClassVar, Collection, Dict, Iterable, KeysView, List, Mapping,
+    Any, Callable, ClassVar, Collection, Dict, Iterable, List, Mapping,
     Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast, overload,
 )
 
@@ -167,6 +167,13 @@ def internal(function: F) -> F:
     return function
 
 
+def _affirm_atomized_context(rs: RequestState) -> None:
+    """Make sure that we are operating in a atomized transaction."""
+
+    if not rs.conn.is_contaminated:
+        raise RuntimeError(n_("No contamination!"))
+
+
 class AbstractBackend(metaclass=abc.ABCMeta):
     """Basic template for all backend services.
 
@@ -205,6 +212,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             self.core = make_proxy(self, internal=True)
         else:
             self.core = make_proxy(CoreBackend(configpath), internal=True)
+
+    affirm_atomized_context = staticmethod(_affirm_atomized_context)
 
     def affirm_realm(self, rs: RequestState, ids: Collection[int],
                      realms: Set[Realm] = None) -> None:
@@ -298,13 +307,6 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             return obj.value
         else:
             return obj
-
-    @staticmethod
-    def affirm_atomized_context(rs: RequestState) -> None:
-        """Make sure that we are operating in a atomized transaction."""
-
-        if not rs.conn.is_contaminated:
-            raise RuntimeError(n_("No contamination!"))
 
     def execute_db_query(self, cur: psycopg2.extensions.cursor, query: str,
                          params: Sequence[Any]) -> None:
@@ -770,9 +772,11 @@ class Silencer:
 
     def __init__(self, rs: RequestState):
         self.rs = rs
+        _affirm_atomized_context(self.rs)
 
     def __enter__(self) -> None:
         self.rs.is_quiet = True
+        _affirm_atomized_context(self.rs)
 
     def __exit__(self, atype: Type[Exception], value: Exception,
                  tb: TracebackType) -> None:
