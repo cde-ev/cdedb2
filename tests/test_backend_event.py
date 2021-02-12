@@ -14,10 +14,10 @@ import cdedb.database.constants as const
 from cdedb.backend.common import cast_fields
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, InfiniteEnum, PartialImportError, PrivilegeError,
-    CourseFilterPositions,
+    CourseFilterPositions, nearly_now
 )
 from cdedb.query import QUERY_SPECS, Query, QueryOperators
-from tests.common import USER_DICT, BackendTest, as_users, json_keys_to_int, nearly_now
+from tests.common import USER_DICT, BackendTest, as_users, json_keys_to_int
 
 
 class TestEventBackend(BackendTest):
