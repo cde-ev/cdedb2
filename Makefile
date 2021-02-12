@@ -210,7 +210,7 @@ lint:
 	@echo "All of pylint"
 	@echo $(BANNERLINE)
 	@echo ""
-	${PYLINTBIN} --rcfile='./lint.rc' cdedb
+	${PYLINTBIN} cdedb
 
 
 prepare-check:
