@@ -8,9 +8,11 @@ from typing import Collection, Optional, NamedTuple
 import pytz
 
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, CdEDBObjectMap, FUTURE_TIMESTAMP, get_hash, now
+from cdedb.common import (
+    CdEDBObject, CdEDBObjectMap, FUTURE_TIMESTAMP, get_hash, now, nearly_now,
+)
 from tests.common import (
-    BackendTest, UserIdentifier, USER_DICT, as_users, nearly_now, prepsql,
+    BackendTest, UserIdentifier, USER_DICT, as_users, prepsql,
 )
 
 

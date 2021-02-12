@@ -194,6 +194,12 @@ class CdEFrontend(AbstractUserFrontend):
             return self.redirect(rs, "core/index")
         return self.redirect(rs, "cde/index")
 
+    @access("cde_admin")
+    def member_stats(self, rs: RequestState) -> Response:
+        """Display stats about our members."""
+        stats = self.cdeproxy.get_member_stats(rs)
+        return self.render(rs, "member_stats", {'stats': stats})
+
     @access("persona")
     @REQUESTdata("is_search")
     def member_search(self, rs: RequestState, is_search: bool) -> Response:
@@ -2313,9 +2319,9 @@ class CdEFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "cde/institution_summary_form")
 
-    def process_participants(self, rs: RequestState, pevent_id: int,
-                             pcourse_id: int = None
-                             ) -> Tuple[CdEDBObjectMap, CdEDBObjectMap, int]:
+    def _process_participants(self, rs: RequestState, pevent_id: int,
+                              pcourse_id: int = None, orgas_only: bool = False
+                              ) -> Tuple[CdEDBObjectMap, CdEDBObjectMap, int]:
         """Helper to pretty up participation infos.
 
         The problem is, that multiple participations can be logged for a
@@ -2361,6 +2367,9 @@ class CdEFrontend(AbstractUserFrontend):
                 if pcourse_id and pcourse_id not in entry['pcourse_ids']:
                     # remove non-participants with respect to the relevant
                     # course if there is a relevant course
+                    continue
+                if orgas_only and not entry['is_orga']:
+                    # remove non-orgas
                     continue
                 participants[persona_id] = entry
 
@@ -2416,8 +2425,10 @@ class CdEFrontend(AbstractUserFrontend):
         course_ids = self.pasteventproxy.list_past_courses(rs, pevent_id)
         courses = self.pasteventproxy.get_past_courses(rs, course_ids)
         institutions = self.pasteventproxy.list_institutions(rs)
-        participants, personas, extra_participants = self.process_participants(
+        participants, personas, extra_participants = self._process_participants(
             rs, pevent_id)
+        orgas, _, extra_orgas = self._process_participants(rs, pevent_id,
+                                                           orgas_only=True)
         for p_id, p in participants.items():
             p['pcourses'] = {
                 pc_id: {
@@ -2432,9 +2443,9 @@ class CdEFrontend(AbstractUserFrontend):
         is_participant = any(anid == rs.user.persona_id
                              for anid, _ in participant_infos.keys())
         return self.render(rs, "show_past_event", {
-            'courses': courses, 'participants': participants,
-            'personas': personas, 'institutions': institutions,
-            'extra_participants': extra_participants,
+            'courses': courses, 'personas': personas, 'institutions': institutions,
+            'participants': participants, 'extra_participants': extra_participants,
+            'orgas': orgas, 'extra_orgas': extra_orgas,
             'is_participant': is_participant,
         })
 
@@ -2442,7 +2453,7 @@ class CdEFrontend(AbstractUserFrontend):
     def show_past_course(self, rs: RequestState, pevent_id: int,
                          pcourse_id: int) -> Response:
         """Display concluded course."""
-        participants, personas, extra_participants = self.process_participants(
+        participants, personas, extra_participants = self._process_participants(
             rs, pevent_id, pcourse_id=pcourse_id)
         return self.render(rs, "show_past_course", {
             'participants': participants, 'personas': personas,
