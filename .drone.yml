@@ -22,7 +22,7 @@ steps:
   image: cdedb
   pull: never # do not try to pull image from docker hub
   commands:
-  - make lint # this will never fail but still yields useful output
+  - make lint
 - name: cdb # is used as the hostname for the container
   image: cdepostgres
   pull: never # do not try to pull image from docker hub
