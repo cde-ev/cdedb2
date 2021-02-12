@@ -38,7 +38,7 @@ from cdedb.database.connection import IrradiatedConnection
 # here. All other uses should import them from here and not their
 # original source which is basically just uninlined code.
 # noinspection PyUnresolvedReferences
-from cdedb.ml_subscription_aux import ( # pylint: disable=unused-import
+from cdedb.ml_subscription_aux import (  # pylint: disable=unused-import
     SubscriptionActions, SubscriptionError, SubscriptionInfo,
 )
 

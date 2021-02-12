@@ -1262,10 +1262,8 @@ class EventFrontend(AbstractUserFrontend):
             registrations = {
                 k: v
                 for k, v in all_registrations.items()
-                if any(
-                    course_id in {track['course_id'], track['course_instructor']}
-                    for track in v['tracks'].values()
-                )
+                if any(course_id in {track['course_id'], track['course_instructor']}
+                       for track in v['tracks'].values())
             }
             personas = self.coreproxy.get_personas(
                 rs, tuple(e['persona_id'] for e in registrations.values()))

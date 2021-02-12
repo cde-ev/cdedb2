@@ -701,7 +701,7 @@ class Transaction:
 
         matched_events = []
         for event_name, value in event_names.items():
-            pattern, _shortname, event_id = value
+            pattern, _, event_id = value
 
             if re.search(re.escape(event_name), self.reference,
                          flags=re.IGNORECASE):
