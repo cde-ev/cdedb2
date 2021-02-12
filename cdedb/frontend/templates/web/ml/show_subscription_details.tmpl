@@ -145,7 +145,7 @@
         </div>
     </div>
 
-    <h2>{% trans %}Whitelist{% endtrans %} [{{ ambience['mailinglist']['whitelist']|length }}]</h2>
+    <h2 class="mosp">{% trans %}Whitelist{% endtrans %} [{{ ambience['mailinglist']['whitelist']|length }}]</h2>
         <p class="text-muted">
             {{ util.make_icon('info-circle') }}
             {% trans %}
@@ -190,9 +190,8 @@
         {% endfor %}
     </div>
 
-    {# TODO fix the spacing between whitelist and list of unsubscribers. Nosp in whitelist is required to hide space in mobile #}
-    <h2>{% trans %}Unsubscribers{% endtrans %} [{{ all_unsubscriptions|length }}]</h2>
-        <p class="nosp text-muted">
+    <h2 class="mosp">{% trans %}Unsubscribers{% endtrans %} [{{ all_unsubscriptions|length }}]</h2>
+        <p class="text-muted {% if "ml_mgmt" in user.admin_views %}nosp{% endif %}">
             {{ util.make_icon('info-circle') }}
             {% trans %}
                 Users who unsubscribed from this list. They will not be re-added automatically, but may be able to subscribe manually.
@@ -213,9 +212,10 @@
                 <ul class="nosp slim">
                     {% for unsubscription in list %} {# This is already sorted. #}
                         <li class="hide-hover-container clearfix-after">
-                            {{ util.persona_anchor(all_unsubscriptions[unsubscription], ml_id=ambience['mailinglist']['id'],
-                                                   aclass='text-muted' if unsubscription in redundant_unsubscriptions else '',
-                                                   readonly=False if "ml_mgmt" in user.admin_views else True) }}
+                            {# Since they are unsubscribed, giving a mailinglist as context does not make sense. #}
+                            {{ util.persona_anchor(all_unsubscriptions[unsubscription],
+                                                   readonly=False if "ml_mgmt" in user.admin_views else True,
+                                                   aclass='text-muted' if unsubscription in redundant_unsubscriptions else '') }}
                             {% if "ml_mgmt" in user.admin_views %}
                                 {% if unsubscription in redundant_unsubscriptions %}
                                     <form action="{{ cdedblink('ml/reset_unsubscription') }}"
