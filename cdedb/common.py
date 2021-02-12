@@ -1315,8 +1315,8 @@ class SemesterSteps(enum.Enum):
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, str):
-            return self.name == other
-        return super(SemesterSteps, self).__eq__(other)
+            return self.name == other  # pylint: disable=comparison-with-callable
+        return super().__eq__(other)
 
 
 def mixed_existence_sorter(iterable: Union[Collection[int], KeysView[int]]
