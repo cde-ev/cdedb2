@@ -56,8 +56,7 @@
     <form action="{{ cdedblink('ml/change_mailinglist') }}" method="POST" id="changelistform" class="form-horizontal">
         {{ util.anti_csrf_token('ml/change_mailinglist') }}
     <h4 class="heading-underline">{% trans %}Meta{% endtrans %}</h4>
-        {{ util.form_input_checkbox(name="is_active", label=gettext("Active"), readonly=readonly, info=gettext(
-            "Due to limitations of our current mailinglist infrastructure, disabling can not be undone.")) }}
+        {{ util.form_input_checkbox(name="is_active", label=gettext("Active"), readonly=readonly) }}
         {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]"), actualreadonly=readonly) }}
         {{ util.form_input_text(name="local_part", label=gettext("Address"), actualreadonly=readonly,
                                 addon='@' + enums['MailinglistDomain'](ambience['mailinglist']['domain'])|string) }}
@@ -125,7 +124,7 @@
         {{ util.form_input_select(name="attachment_policy", label=gettext("MIME filter / Attachments"),
                 entries=enums['AttachmentPolicy']|enum_entries(processing=gettext), info=gettext(
                     "This setting currently has no effect. By default, mailinglists accept PDF attachments only. "
-                    "Other attachment policy can be changed by the Admin-Team.") if is_mailman else "") }}
+                    "Other attachment policy can be changed by the Admin-Team.")) }}
         {{ util.form_input_text(name="maxsize", label=gettext("max. message size (in kB)"), type="number") }}
         {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink('ml/show_mailinglist')) }}
     </form>

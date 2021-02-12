@@ -8,6 +8,7 @@ members are also possible.
 
 import datetime
 import decimal
+from collections import OrderedDict
 from typing import Any, Collection, Dict, List, Optional, Tuple
 
 from typing_extensions import Protocol
@@ -893,6 +894,138 @@ class CdEBackend(AbstractBackend):
                 self.cde_log(rs, const.CdeLogCodes.expuls_addresscheck,
                              persona_id=None, change_note=msg)
             return ret
+
+    @access("member", "cde_admin")
+    def get_member_stats(self, rs: RequestState) -> CdEDBObject:
+        """Retrieve some generic statistics about members."""
+        # Simple stats first.
+        query = """SELECT
+            num_members, num_searchable, num_ex_members
+        FROM
+            (
+                SELECT COUNT(*) AS num_members
+                FROM core.personas
+                WHERE is_member = True
+            ) AS member_count,
+            (
+                SELECT COUNT(*) AS num_searchable
+                FROM core.personas
+                WHERE is_member = True AND is_searchable = True
+            ) AS searchable_count,
+            (
+                SELECT COUNT(*) AS num_ex_members
+                FROM core.personas
+                WHERE is_cde_realm = True AND is_member = False
+                    AND is_archived = False
+            ) AS ex_member_count
+        """
+        data = self.query_one(rs, query, ())
+        assert data is not None
+
+        ret: CdEDBObject = {
+            'simple_stats': OrderedDict((k, data[k]) for k in (
+                n_("num_members"), n_("num_searchable"), n_("num_ex_members")))
+        }
+
+        def query_stats(params: Dict[str, str]) -> None:
+            query = ("SELECT COUNT(*) AS num, {select} AS datum"
+                     " FROM core.personas"
+                     " WHERE is_member = True AND {condition} IS NOT NULL"
+                     " GROUP BY datum ORDER BY {order}")
+            data = self.query_all(rs, query.format(**params), ())
+            ret[params["name"]] = OrderedDict(
+                (e['datum'], e['num']) for e in data)
+
+        # Members by country.
+        params = {
+            "name": n_("members_by_country"),
+            "select": "COALESCE(country, 'Deutschland')",
+            "condition": "location",
+            "order": "num DESC, datum ASC",
+        }
+        query_stats(params)
+        # Members by PLZ.
+        params = {
+            "name": n_("members_by_plz"),
+            "select": "postal_code",
+            "condition": "postal_code",
+            "order": "num DESC, datum ASC",
+        }
+        # We don't want the PLZ stats for now. See #380.
+        # query_stats(params)
+        # Members by city.
+        params = {
+            "name": n_("members_by_city"),
+            "select": "location",
+            "condition": "location",
+            "order": "num DESC, datum ASC",
+        }
+        query_stats(params)
+        # Members by birthday.
+        params = {
+            "name": n_("members_by_birthday"),
+            "select": "EXTRACT(year FROM birthday)::integer",
+            "condition": "birthday",
+            "order": "datum ASC",
+        }
+        query_stats(params)
+        # Members by first event.
+        query = """SELECT
+            COUNT(*) AS num, EXTRACT(year FROM min_tempus.t)::integer AS datum
+        FROM
+            (
+                SELECT persona.id, MIN(pevents.tempus) as t
+                FROM
+                    (
+                        SELECT id FROM core.personas
+                        WHERE is_member = TRUE
+                    ) as persona
+                    LEFT OUTER JOIN (
+                        SELECT DISTINCT persona_id, pevent_id
+                        FROM past_event.participants
+                    ) AS participants ON persona.id = participants.persona_id
+                    LEFT OUTER JOIN (
+                        SELECT id, tempus
+                        FROM past_event.events
+                    ) AS pevents ON participants.pevent_id = pevents.id
+                WHERE
+                    pevents.id IS NOT NULL
+                GROUP BY
+                    persona.id
+            ) AS min_tempus
+        GROUP BY
+            datum
+        ORDER BY
+            -- num DESC,
+            datum ASC
+        """
+        ret[n_("members_by_first_event")] = OrderedDict(
+            (e['datum'], e['num']) for e in self.query_all(rs, query, ()))
+
+        # Unique event attendees per year:
+        query = """SELECT
+            COUNT(DISTINCT persona_id) AS num, EXTRACT(year FROM events.tempus)::integer AS datum
+        FROM
+            (
+                past_event.institutions
+                LEFT OUTER JOIN (
+                    SELECT id, institution, tempus FROM past_event.events
+                ) AS events ON events.institution = institutions.id
+                LEFT OUTER JOIN (
+                    SELECT persona_id, pevent_id FROM past_event.participants
+                ) AS participants ON participants.pevent_id = events.id
+            )
+        WHERE
+            shortname = 'CdE'
+        GROUP BY
+            datum
+        ORDER BY
+            datum ASC
+        """
+        ret[n_("unique_participants_per_year")] = dict(
+            (e['datum'], e['num']) for e in self.query_all(rs, query, ()))
+
+        return ret
 
     @access("searchable", "core_admin", "cde_admin")
     def submit_general_query(self, rs: RequestState,

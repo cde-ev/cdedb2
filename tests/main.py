@@ -9,7 +9,8 @@ if __name__ == "__main__":
     check_test_setup()
     loader = unittest.TestLoader()
     unittest.installHandler()
-    testRunner = MyTextTestRunner(verbosity=2, resultclass=MyTextTestResult)
+    testRunner = MyTextTestRunner(
+        verbosity=2, resultclass=MyTextTestResult, descriptions=False)
     suite = unittest.TestSuite()
     if any(sys.argv[1:]):
         for arg in sys.argv[1:]:
