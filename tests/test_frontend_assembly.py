@@ -10,13 +10,13 @@ import webtest
 
 import cdedb.database.constants as const
 from cdedb.common import (
-    CdEDBObject, ADMIN_VIEWS_COOKIE_NAME, ASSEMBLY_BAR_SHORTNAME, now,
+    CdEDBObject, ADMIN_VIEWS_COOKIE_NAME, ASSEMBLY_BAR_SHORTNAME, now, NearlyNow
 )
 from cdedb.frontend.common import datetime_filter
 from cdedb.query import QueryOperators
 from cdedb.validation import parse_datetime
 from tests.common import (
-    FrontendTest, MultiAppFrontendTest, NearlyNow, UserIdentifier, USER_DICT, as_users,
+    FrontendTest, MultiAppFrontendTest, UserIdentifier, USER_DICT, as_users,
     get_user,
 )
 

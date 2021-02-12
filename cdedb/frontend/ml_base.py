@@ -426,15 +426,12 @@ class MlBaseFrontend(AbstractUserFrontend):
         # requiring privileged access
         privileged = (self.mlproxy.may_manage(rs, mailinglist_id, privileged=True)
                       or not (additional_fields & PRIVILEGE_MOD_REQUIRING_FIELDS))
-        is_mailman = (const.MailinglistDomain(int(rs.values['domain']))
-            in const.MailinglistDomain.mailman_domains())
         return self.render(rs, "change_mailinglist", {
             'event_entries': event_entries,
             'assembly_entries': assembly_entries,
             'available_domains': available_domains,
             'additional_fields': additional_fields,
             'privileged': privileged,
-            'is_mailman': is_mailman,
         })
 
     @access("ml", modi={"POST"})

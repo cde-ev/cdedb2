@@ -157,9 +157,7 @@ class Application(BaseApp):
         user = User()
         try:
             sessionkey = request.cookies.get("sessionkey")
-            # TODO remove ml script key backwards compatibility code
-            apitoken = (request.headers.get("X-CdEDB-API-Token")
-                        or request.headers.get("MLSCRIPTKEY"))
+            apitoken = request.headers.get("X-CdEDB-API-Token")
             urls = self.urlmap.bind_to_environ(request.environ)
 
             if apitoken:
@@ -314,7 +312,7 @@ class Application(BaseApp):
                 "<<<\n<<<\n<<<\n<<<").format(request.url))
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
-            
+
             self.logger.error(cgitb.text(sys.exc_info(), context=7))
 
             # Raise exceptions when in TEST environment to let the test runner
