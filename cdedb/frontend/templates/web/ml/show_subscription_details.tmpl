@@ -193,16 +193,18 @@
     <h2 class="mosp">{% trans %}Unsubscribers{% endtrans %} [{{ all_unsubscriptions|length }}]</h2>
         <p class="text-muted {% if "ml_mgmt" in user.admin_views %}nosp{% endif %}">
             {{ util.make_icon('info-circle') }}
-            {% trans %}
-                Users who unsubscribed from this list. They will not be re-added automatically, but may be able to subscribe manually.
-            {% endtrans %}
-        </p>
-        <p class="text-danger">
-            {{ util.make_icon('exclamation-triangle') }}
             {% trans link=util.href(docurl("Realm_Mailinglist_Management", anchor='explicitly-unsubscribed'), gettext("documentation"), title=gettext("Explicity Unsubscribed State")) %}
-                This should only be used as a cleanup for specific tools like the account merger. Consult the {{ link }} for more details.
+                Users who unsubscribed from this list. They will not be re-added automatically, but may be able to subscribe manually. Consult the {{ link }} for more details.
             {% endtrans %}
         </p>
+        {% if "ml_mgmt" in user.admin_views %}
+            <p class="text-danger">
+                {{ util.make_icon('exclamation-triangle') }}
+                {% trans %}
+                    This should only be used as a cleanup for specific tools like the account merger.
+                {% endtrans %}
+            </p>
+        {% endif %}
 
 
     <div class="row" id="unsubscriber-list">
