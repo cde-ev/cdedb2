@@ -435,10 +435,10 @@ CREATE TABLE cde.org_period (
         balance_trialmembers    integer NOT NULL DEFAULT 0,
         balance_total           numeric(11, 2) NOT NULL DEFAULT 0,
         -- keep track of automated archival progress and stats.
-        archival_notification_state integer REFERENCES core.personas(id),
-        archival_notification_done timestamp WITH TIME ZONE DEFAULT NULL,
-        archival_notification_count integer NOT NULL DEFAULT 0,
-        archival_state            integer REFERENCES core.personas(id),
+        archival_notification_state     integer REFERENCES core.personas(id),
+        archival_notification_done      timestamp WITH TIME ZONE DEFAULT NULL,
+        archival_notification_count     integer NOT NULL DEFAULT 0,
+        archival_state          integer REFERENCES core.personas(id),
         archival_done           timestamp WITH TIME ZONE DEFAULT NULL,
         archival_count          integer NOT NULL DEFAULT 0,
         -- keep track of when the semester was advanced.
