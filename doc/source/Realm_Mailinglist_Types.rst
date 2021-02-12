@@ -98,7 +98,7 @@ General Mailinglists
 
     * visible to: all users
     * additional admins: None
-    * sortkey: other
+    * sortkey: public
 
     The following subtypes are supported:
 
@@ -110,7 +110,7 @@ Semi-public Mailinglists
 
     * visible to: all users
     * additional admins: None
-    * sortkey: other
+    * sortkey: public
 
 CdElokal Mailinglists
     Semi-public mailinglists with a special sortkey.

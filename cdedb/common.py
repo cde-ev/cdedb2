@@ -447,6 +447,37 @@ def now() -> datetime.datetime:
     return datetime.datetime.now(pytz.utc)
 
 
+class NearlyNow(datetime.datetime):
+    """This is something, that equals an automatically generated timestamp.
+
+    Since automatically generated timestamp are not totally predictible,
+    we use this to avoid nasty work arounds.
+    """
+
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, datetime.datetime):
+            delta = self - other
+            return (datetime.timedelta(minutes=10) > delta
+                    > datetime.timedelta(minutes=-10))
+        return False
+
+    def __ne__(self, other: Any) -> bool:
+        return not self.__eq__(other)
+
+    @classmethod
+    def from_datetime(cls, datetime: datetime.datetime) -> "NearlyNow":
+        ret = cls.fromisoformat(datetime.isoformat())
+        return ret
+
+
+def nearly_now() -> NearlyNow:
+    """Create a NearlyNow."""
+    now = datetime.datetime.now(pytz.utc)
+    return NearlyNow(
+        year=now.year, month=now.month, day=now.day, hour=now.hour,
+        minute=now.minute, second=now.second, tzinfo=pytz.utc)
+
+
 class QuotaException(werkzeug.exceptions.TooManyRequests):
     """
     Exception for signalling a quota excess. This is thrown in
@@ -1548,7 +1579,7 @@ def extract_roles(session: CdEDBObject, introspection_only: bool = False
 
 # The following droids are exempt from lockdown to keep our infrastructure
 # working
-INFRASTRUCTURE_DROIDS: Set[str] = {'rklist', 'resolve'}
+INFRASTRUCTURE_DROIDS: Set[str] = {'resolve'}
 
 
 def droid_roles(identity: str) -> Set[Role]:
@@ -1557,7 +1588,7 @@ def droid_roles(identity: str) -> Set[Role]:
     Currently this is rather trivial, but could be more involved in the
     future if more API capabilities are added to the DB.
 
-    :param identity: The name for the API functionality, e.g. ``rklist``.
+    :param identity: The name for the API functionality, e.g. ``resolve``.
     """
     ret = {'anonymous', 'droid', f'droid_{identity}'}
     if identity in INFRASTRUCTURE_DROIDS:

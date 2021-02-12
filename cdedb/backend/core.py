@@ -1659,6 +1659,12 @@ class CoreBackend(AbstractBackend):
         or add them if an entry already exists, as entries are unique across
         persona_id and date.
 
+        Beware that this function can optionally be called in an atomized setting.
+        If this is the case, the quota is not actually raised by the offending query,
+        but access is blocked nonetheless. Otherwise, a value exceeding the quota limit
+        is saved into the database, which means that actions that should still be
+        possible need to be exempt in the check_quota function.
+
         :returns: Return the number of restricted actions the user has
             performed today including the ones given with this call, if any.
         """
@@ -1693,8 +1699,7 @@ class CoreBackend(AbstractBackend):
         return unwrap(self.query_one(rs, query, params)) or 0
 
     @overload
-    def check_quota(self, rs: RequestState, *, ids: Collection[int]) -> bool:
-        ...
+    def check_quota(self, rs: RequestState, *, ids: Collection[int]) -> bool: ...
 
     @overload
     def check_quota(self, rs: RequestState, *, num: int) -> bool: ...
@@ -1706,8 +1711,13 @@ class CoreBackend(AbstractBackend):
     @access("persona")
     def check_quota(self, rs: RequestState, *, ids: Collection[int] = None,
                     num: int = None) -> bool:
-        """Check whether the quota was exceeded today."""
+        """Check whether the quota was exceeded today.
+
+        Even if quota has been exceeded, never block access to own profile.
+        """
         # Validation is done inside.
+        if num is None and ids is not None and set(ids) == {rs.user.persona_id}:
+            return False
         quota = self.quota(rs, ids=ids, num=num)  # type: ignore
         return (quota > self.conf["QUOTA_VIEWS_PER_DAY"]
                 and not {"cde_admin", "core_admin"} & rs.user.roles)

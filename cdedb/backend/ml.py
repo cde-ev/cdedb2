@@ -88,13 +88,12 @@ class MlBackend(AbstractBackend):
             atype = ml_type.get_type(mailinglist['ml_type'])
         return atype.is_relevant_admin(rs.user)
 
-    @access("ml", "droid_rklist")
+    @access("ml")
     def is_moderator(self, rs: RequestState, ml_id: int,
                      privileged: bool = False) -> bool:
         """Check for moderator privileges as specified in the ml.moderators
         table.
 
-        This exceptionally promotes droid_rklist to moderator.
         :param privileged: Whether or not to check if the moderator is in the
             pool of privileged moderators. Delegated to
             `MailinglistType.is_privileged_moderator`.
@@ -108,9 +107,9 @@ class MlBackend(AbstractBackend):
             is_privileged = atype.is_privileged_moderator(rs, self.backends, ml)
             is_moderator = is_moderator and is_privileged
 
-        return is_moderator or "droid_rklist" in rs.user.roles
+        return is_moderator
 
-    @access("ml", "droid_rklist")
+    @access("ml")
     def may_manage(self, rs: RequestState, mailinglist_id: int,
                    privileged: bool = False) -> bool:
         """Check whether a user is allowed to manage a given mailinglist.
@@ -1056,7 +1055,7 @@ class MlBackend(AbstractBackend):
 
         return ret
 
-    @access("ml", "droid_rklist")
+    @access("ml")
     def get_many_subscription_states(
             self, rs: RequestState, mailinglist_ids: Collection[int],
             states: Optional[SubStates] = None,
@@ -1168,7 +1167,7 @@ class MlBackend(AbstractBackend):
     get_subscription: _GetSubscriptionProtocol = singularize(
         get_user_subscriptions, "mailinglist_ids", "mailinglist_id")
 
-    @access("ml", "droid_rklist")
+    @access("ml")
     def get_subscription_addresses(self, rs: RequestState, mailinglist_id: int,
                                    persona_ids: Collection[int] = None,
                                    explicits_only: bool = False,
@@ -1237,7 +1236,7 @@ class MlBackend(AbstractBackend):
 
         return ret
 
-    @access("ml", "droid_rklist")
+    @access("ml")
     def get_subscription_address(self, rs: RequestState,
                                  mailinglist_id: int, persona_id: int,
                                  explicits_only: bool = False) -> Optional[str]:
@@ -1413,227 +1412,6 @@ class MlBackend(AbstractBackend):
         query = "SELECT COUNT(*) AS num FROM ml.mailinglists WHERE address = %s"
         data = self.query_one(rs, query, (address,))
         return bool(unwrap(data))
-
-    # Everythin beyond this point is for communication with the mailinglist
-    # software, and should normally not be used otherwise.
-    @access("droid_rklist")
-    def export_overview(self, rs: RequestState) -> Tuple[CdEDBObject, ...]:
-        """Get a summary of all existing mailing lists.
-
-        This is used to setup the mailinglist software.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :rtype: [{str: object}]
-        """
-        query = "SELECT address, is_active FROM ml.mailinglists"
-        data = self.query_all(rs, query, tuple())
-        return data
-
-    @access("droid_rklist")
-    def export_one(self, rs: RequestState,
-                   address: str) -> Optional[CdEDBObject]:
-        """Retrieve data about a specific mailinglist.
-
-        This is invoked by the mailinglist software to query for the
-        configuration of a specific mailinglist.
-
-        Care has to be taken, to filter away any empty email addresses which
-        may happen because they were unset in the backend.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type address: str
-        :rtype: {str: object}
-        """
-        address = affirm(vtypes.Email, address)
-        with Atomizer(rs):
-            query = "SELECT id FROM ml.mailinglists WHERE address = %s"
-            mailinglist_id = unwrap(self.query_one(rs, query, (address,)))
-            if not mailinglist_id:
-                return None
-            mailinglist = unwrap(self.get_mailinglists(rs, (mailinglist_id,)))
-            local_part, domain = mailinglist['address'].split('@')
-            # We do not use self.core.get_personas since this triggers an
-            # access violation. It would be quite tedious to fix this so
-            # it's better to allow a small hack.
-            query = "SELECT username FROM core.personas WHERE id = ANY(%s)"
-            moderators = self.query_all(rs, query, (mailinglist['moderators'],))
-            moderators_addresses: List[str] = list(
-                filter(None, (e['username'] for e in moderators)))
-            # TODO fix this.
-            subscribers = self.get_subscription_addresses(
-                rs, mailinglist_id, explicits_only=True)
-            defaults = {anid for anid in subscribers if not subscribers[anid]}
-            tmp = self.query_all(rs, query, (defaults,))
-            subscribers.update({e['username']: e['username'] for e in tmp})
-            subscriber_addresses = list(filter(None, subscribers.values()))
-            return {
-                "listname": mailinglist['title'],
-                "address": mailinglist['address'],
-                "admin_address": "{}-owner@{}".format(local_part, domain),
-                "sender": mailinglist['address'],
-                # "footer" will be set in the frontend
-                # FIXME "prefix" currently not supported
-                "size_max": mailinglist['maxsize'],
-                "moderators": moderators_addresses,
-                "subscribers": subscriber_addresses,
-                "whitelist": mailinglist['whitelist'],
-            }
-
-    @access("droid_rklist")
-    def oldstyle_mailinglist_config_export(self, rs: RequestState,
-                                           ) -> Tuple[CdEDBObject, ...]:
-        """
-        mailinglist_config_export() - get config information about all lists
-
-        Get configuration information for all lists which are needed
-        for autoconfiguration. See the description of table mailinglist
-        for the meaning of the entries in the dict returned.
-
-        :rtype: [{'address' : unicode, 'inactive' : bool,
-                  'maxsize' : int or None, 'mime' : bool or None}]
-        """
-        query = glue("SELECT address, NOT is_active AS inactive, maxsize,",
-                     "attachment_policy AS mime FROM ml.mailinglists")
-        data = self.query_all(rs, query, tuple())
-        attachment_policy_map = {
-            const.AttachmentPolicy.allow: False,
-            const.AttachmentPolicy.pdf_only: None,
-            const.AttachmentPolicy.forbid: True,
-        }
-        for entry in data:
-            entry['mime'] = attachment_policy_map[entry['mime']]
-        return data
-
-    @access("droid_rklist")
-    def oldstyle_mailinglist_export(self, rs: RequestState,
-                                    address: str) -> Optional[CdEDBObject]:
-        """
-        mailinglist_export() - get export information about a list
-
-        This function returns a dict containing all necessary fields
-        for the mailinglist software to run the list with the list
-        address @address.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type address: unicode
-        :rtype: {'listname' : unicode, 'address' : unicode,
-                 'sender' : unicode, 'list-unsubscribe' : unicode,
-                 'list-subscribe' : unicode, 'list-owner' : unicode,
-                 'moderators' : [unicode, ...],
-                 'subscribers' : [unicode, ...],
-                 'whitelist' : [unicode, ...]}
-        """
-        address = affirm(vtypes.Email, address)
-        with Atomizer(rs):
-            query = "SELECT id FROM ml.mailinglists WHERE address = %s"
-            mailinglist_id = unwrap(self.query_one(rs, query, (address,)))
-            if not mailinglist_id:
-                return None
-            mailinglist = unwrap(self.get_mailinglists(rs, (mailinglist_id,)))
-            local_part, domain = mailinglist['address'].split('@')
-            envelope = local_part + u"-bounces@" + domain
-            # We do not use self.core.get_personas since this triggers an
-            # access violation. It would be quite tedious to fix this so
-            # it's better to allow a small hack.
-            query = "SELECT username FROM core.personas WHERE id = ANY(%s)"
-            moderators = self.query_all(rs, query, (mailinglist['moderators'],))
-            moderators_addresses: List[str] = list(
-                filter(None, (e['username'] for e in moderators)))
-            # TODO fix this.
-            subscribers = self.get_subscription_addresses(
-                rs, mailinglist_id, explicits_only=True)
-            defaults = {anid for anid in subscribers if not subscribers[anid]}
-            tmp = self.query_all(rs, query, (defaults,))
-            subscribers.update({e['username']: e['username'] for e in tmp})
-            subscribers_addresses = list(filter(None, subscribers.values()))
-            mod_policy = const.ModerationPolicy
-            if mailinglist['mod_policy'] == mod_policy.unmoderated:
-                whitelist = ['*']
-            else:
-                whitelist = list(mailinglist['whitelist'])
-                if mailinglist['mod_policy'] == mod_policy.non_subscribers:
-                    whitelist.append('.')
-            return {
-                'listname': mailinglist['subject_prefix'],
-                'address': mailinglist['address'],
-                'moderators': moderators_addresses,
-                'subscribers': subscribers_addresses,
-                'whitelist': whitelist,
-                'sender': envelope,
-                'list-unsubscribe': u"https://db.cde-ev.de/",
-                'list-subscribe': u"https://db.cde-ev.de/",
-                'list-owner': u"https://db.cde-ev.de/",
-            }
-
-    @access("droid_rklist")
-    def oldstyle_modlist_export(self, rs: RequestState,
-                                address: str) -> Optional[CdEDBObject]:
-        """
-        mod_export() - get export information for moderators' list
-
-        This function returns a dict containing all necessary fields
-        for the mailinglist software to run a list for the moderators
-        of the list with address @address.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type address: unicode
-        :rtype: {'listname' : unicode, 'address' : unicode,
-                 'sender' : unicode, 'list-unsubscribe' : unicode,
-                 'list-subscribe' : unicode, 'list-owner' : unicode,
-                 'moderators' : [unicode, ...],
-                 'subscribers' : [unicode, ...],
-                 'whitelist' : [unicode, ...]}
-        """
-        address = affirm(vtypes.Email, address)
-        with Atomizer(rs):
-            query = "SELECT id FROM ml.mailinglists WHERE address = %s"
-            mailinglist_id = unwrap(self.query_one(rs, query, (address,)))
-            if not mailinglist_id:
-                return None
-            mailinglist = unwrap(self.get_mailinglists(rs, (mailinglist_id,)))
-            local_part, domain = mailinglist['address'].split('@')
-            # We do not use self.core.get_personas since this triggers an
-            # access violation. It would be quite tedious to fix this so
-            # it's better to allow a small hack.
-            query = "SELECT username FROM core.personas WHERE id = ANY(%s)"
-            tmp = self.query_all(rs, query, (mailinglist['moderators'],))
-            moderators: List[str] = list(
-                filter(None, (e['username'] for e in tmp)))
-            return {
-                'listname': mailinglist['subject_prefix'],
-                'address': mailinglist['address'],
-                'moderators': moderators,
-                'subscribers': moderators,
-                'whitelist': ['*'],
-                'sender': "cdedb-doublebounces@cde-ev.de",
-                'list-unsubscribe': u"https://db.cde-ev.de/",
-                'list-subscribe': u"https://db.cde-ev.de/",
-                'list-owner': u"https://db.cde-ev.de/",
-            }
-
-    @access("droid_rklist")
-    def oldstyle_bounce(self, rs: RequestState, address: str,
-                        error: int) -> Optional[bool]:
-        address = affirm(vtypes.Email, address)
-        error = affirm(int, error)
-        with Atomizer(rs):
-            # We do not use self.core.get_personas since this triggers an
-            # access violation. It would be quite tedious to fix this so
-            # it's better to allow a small hack.
-            query = glue("SELECT id, username FROM core.personas",
-                         "WHERE username = lower(%s)")
-            data = self.query_all(rs, query, (address,))
-            if not data:
-                return None
-            reasons = {1: "Ungültige E-Mail",
-                       2: "Postfach voll.",
-                       3: "Anderes Problem."}
-            line = "E-Mail-Adresse '{}' macht Probleme - {} - {}".format(
-                address, reasons.get(error, "Unbekanntes Problem."),
-                now().date().isoformat())
-            self.ml_log(rs, const.MlLogCodes.email_trouble, None,
-                        persona_id=unwrap(data)['id'], change_note=line)
-            return True
 
     @access("ml")
     def log_moderation(self, rs: RequestState, code: const.MlLogCodes,
