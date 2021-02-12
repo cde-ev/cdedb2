@@ -1163,9 +1163,7 @@ class TestMlFrontend(FrontendTest):
         self.assertEqual({str(x) for x in stati} | {None}, tmp)
 
     @unittest.mock.patch("cdedb.frontend.common.CdEMailmanClient")
-    @as_users("anton")
-    def test_mailman_moderation(self, client_class: unittest.mock.Mock,
-                                user: CdEDBObject) -> None:
+    def test_mailman_moderation(self, client_class: unittest.mock.Mock) -> None:
         #
         # Prepare
         #
@@ -1176,11 +1174,13 @@ class TestMlFrontend(FrontendTest):
         mmlist.moderate_message.return_value = moderation_response
         client = client_class.return_value
         client.get_held_messages.return_value = messages
+        client.get_held_message_count.return_value = len(messages)
         client.get_list_safe.return_value = mmlist
 
         #
         # Run
         #
+        self.login("anton")
         self.traverse({'href': '/ml/$'})
         self.traverse({'href': '/ml/mailinglist/99'})
         self.traverse({'href': '/ml/mailinglist/99/moderate'})
@@ -1189,18 +1189,21 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("Verschwurbelung")
         self.assertPresence("unerwartetes Erbe")
         client.get_held_messages.return_value = messages[1:]
+        client.get_held_message_count.return_value = len(messages[1:])
         f = self.response.forms['msg1']
         self.submit(f, button='action', value='accept')
         self.assertNonPresence("Finanzbericht")
         self.assertPresence("Verschwurbelung")
         self.assertPresence("unerwartetes Erbe")
         client.get_held_messages.return_value = messages[2:]
+        client.get_held_message_count.return_value = len(messages[2:])
         f = self.response.forms['msg2']
         self.submit(f, button='action', value='reject')
         self.assertNonPresence("Finanzbericht")
         self.assertNonPresence("Verschwurbelung")
         self.assertPresence("unerwartetes Erbe")
         client.get_held_messages.return_value = messages[3:]
+        client.get_held_message_count.return_value = len(messages[3:])
         f = self.response.forms['msg3']
         self.submit(f, button='action', value='discard')
         self.assertNonPresence("Finanzbericht")
