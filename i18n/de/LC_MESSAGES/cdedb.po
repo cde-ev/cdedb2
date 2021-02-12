@@ -3048,7 +3048,6 @@ msgstr "Darf Abonnements nicht ändern."
 #: cdedb/frontend/ml_base.py:828 cdedb/frontend/ml_base.py:868
 #: cdedb/frontend/ml_base.py:884 cdedb/frontend/ml_base.py:911
 #: cdedb/frontend/ml_base.py:944 cdedb/frontend/ml_base.py:978
-#, fuzzy
 msgid "User does not exist or is archived."
 msgstr "Dieser Benutzer existiert nicht oder ist archiviert."
 
