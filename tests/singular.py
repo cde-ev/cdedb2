@@ -21,6 +21,7 @@ if __name__ == "__main__":
     all_tests = unittest.defaultTestLoader.discover('tests', top_level_dir=str(root))
 
     unittest.installHandler()
-    testRunner = MyTextTestRunner(verbosity=2, resultclass=MyTextTestResult)
+    testRunner = MyTextTestRunner(
+        verbosity=2, resultclass=MyTextTestResult, descriptions=False)
 
     sys.exit(0 if testRunner.run(all_tests).wasSuccessful() else 1)
