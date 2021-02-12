@@ -50,19 +50,13 @@
 
     <div class="row">
             <div class="col-md-6">
-            <div id="payment-request" class="panel {% if period['billing_done'] %}panel-default{% else %}panel-primary{% endif %}">
+            <div id="payment-request" class="panel {% if current_period_step == "billing" %}panel-primary{% else %}panel-default{% endif %}">
                 <div class="panel-heading">
                     <span class="pull-right">(01.01./01.07.)</span>
                     <h4 class="panel-title">{% trans %}Send Payment Requests/Information{% endtrans %}</h4>
                 </div>
                 <div class="panel-body">
-                    {% if period['billing_done'] %}
-                        <span class="text-success">
-                            {% trans date=period['billing_done']|datetime(lang=lang), count=period['billing_count'] %}
-                                Done on the {{ date }}. {{ count }} emails were sent.
-                            {% endtrans %}
-                        </span>
-                    {% else %}
+                    {% if current_period_step == "billing" %}
                         {% if period['billing_state'] %}
                             <p>
                                 {% trans state=period['billing_state']|cdedbid, count=period['billing_count'] %}
@@ -81,28 +75,23 @@
                             </div>
                             {{ util.input_submit(value=gettext("Send Mails"), icon="paper-plane") }}
                         </form>
+                    {% else %}
+                        <span class="text-success">
+                            {% trans date=period['billing_done']|datetime(lang=lang), count=period['billing_count'] %}
+                                Done on the {{ date }}. {{ count }} emails were sent.
+                            {% endtrans %}
+                        </span>
                     {% endif %}
                 </div>
             </div>
 
-            <div id="eject-members" class="panel {% if period['ejection_done'] or not period['billing_done'] %}
-                    panel-default{% else %}panel-primary{% endif %}">
+            <div id="eject-members" class="panel {% if current_period_step == "ejection" %}panel-primary{% else %}panel-default{% endif %}">
                 <div class="panel-heading">
                     <span class="pull-right">(01.02./01.08.)</span>
                     <h4 class="panel-title">{% trans %}Remove inactive Members{% endtrans %}</h4>
                 </div>
                 <div class="panel-body">
-                    {% if period['ejection_done'] %}
-                        <span class="text-success">
-                            {% trans date=period['ejection_done']|datetime(lang=lang),
-                                     count=period['ejection_count'],
-                                     balance=period['ejection_balance']|money(lang=lang) %}
-                                Done on the {{ date }}.
-                                {{ count }} memberships were ended.
-                                A total of {{ balance }} was deducted.
-                            {% endtrans %}
-                        </span>
-                    {% elif period['billing_done'] %}
+                    {% if current_period_step == "ejection" %}
                         {% if period['ejection_state'] %}
                             <p>
                                 {% trans state=period['ejection_state']|cdedbid,
@@ -129,31 +118,32 @@
                             {{ util.anti_csrf_token('cde/semester_eject') }}
                             {{ util.input_submit(value=gettext("Remove inactive Members")) }}
                         </form>
-                    {% else %}
+                    {% elif current_period_step == "billing" %}
                         <span class="text-muted">{% trans %}To be done later.{% endtrans %}</span>
+                    {% else %}
+                        <span class="text-success">
+                            {% trans date=period['ejection_done']|datetime(lang=lang),
+                                     count=period['ejection_count'],
+                                     balance=period['ejection_balance']|money(lang=lang) %}
+                                Done on the {{ date }}.
+                                {{ count }} memberships were ended.
+                                A total of {{ balance }} was deducted.
+                            {% endtrans %}
+                        </span>
                     {% endif %}
                 </div>
             </div>
         </div>
         <div class="col-md-6">
-            <div id="balance-update" class="panel {% if period['balance_done'] or not period['ejection_done'] %}
-                    panel-default{% else %}panel-primary{% endif %}">
+            <div id="balance-update" class="panel {% if current_period_step == "balance" %}panel-primary{% else %}panel-default{% endif %}">
                 <div class="panel-heading">
                     <span class="pull-right">(15.02./15.08.)</span>
                     <h4 class="panel-title">{% trans %}Update Balances{% endtrans %}</h4>
                 </div>
                 <div class="panel-body">
-                    {% if period['balance_done'] %}
-                        <span class="text-success">
-                            {% trans date=period['balance_done']|datetime(lang=lang),
-                                     count=period['balance_trialmembers'],
-                                     total=period['balance_total']|money(lang=lang) %}
-                                Done on the {{ date }}.
-                                {{ count }} trial memberships were ended.
-                                A total of {{ total }} was deducted.
-                            {% endtrans %}
-                        </span>
-                    {% elif period['ejection_done'] %}
+                    {% if current_period_step in ["billing", "ejection"] %}
+                        <span class="text-muted">{% trans %}To be done later.{% endtrans %}</span>
+                    {% elif current_period_step == "balance" %}
                         {% if period['balance_state'] %}
                             <p>
                                 {% trans date=period['balance_done']|datetime(lang=lang),
@@ -177,12 +167,20 @@
                             {{ util.input_submit(value=gettext("Update Balances")) }}
                         </form>
                     {% else %}
-                        <span class="text-muted">{% trans %}To be done later.{% endtrans %}</span>
+                        <span class="text-success">
+                            {% trans date=period['balance_done']|datetime(lang=lang),
+                                     count=period['balance_trialmembers'],
+                                     total=period['balance_total']|money(lang=lang) %}
+                                Done on the {{ date }}.
+                                {{ count }} trial memberships were ended.
+                                A total of {{ total }} was deducted.
+                            {% endtrans %}
+                        </span>
                     {% endif %}
                 </div>
             </div>
 
-            <div id="next-semester" class="panel {% if not period['balance_done'] %}panel-default{% else %}panel-primary{% endif %}">
+            <div id="next-semester" class="panel {% if current_period_step == "advance" %}panel-primary{% else %}panel-default{% endif %}">
                 <div class="panel-heading">
                     <span class="pull-right">(01.07./01.01.)</span>
                     <h4 class="panel-title">{% trans %}Next Semester{% endtrans %}</h4>
@@ -194,7 +192,7 @@
                             target date (give or take three weeks).
                         {% endtrans %}
                     </p>
-                    {% if period['balance_done'] %}
+                    {% if current_period_step == "advance" %}
                         <form action="{{ cdedblink('cde/semester_advance') }}" method="POST" id="proceedform">
                             {{ util.anti_csrf_token('cde/semester_advance') }}
                             {{ util.input_submit(value=gettext("Next Semester")) }}
@@ -214,9 +212,13 @@
                 <th>{% trans %}Semester{% endtrans %}</th>
                 <th>{% trans %}Billing Mails Sent{% endtrans %}</th>
                 <th>{% trans %}Billing Done{% endtrans %}</th>
+                <th>{% trans %}Archival Notifications Sent{% endtrans %}</th>
+                <th>{% trans %}Archival Notifications Done{% endtrans %}</th>
                 <th>{% trans %}Members Ejected{% endtrans %}</th>
                 <th>{% trans %}Ejection Balance{% endtrans %}</th>
                 <th>{% trans %}Ejection Done{% endtrans %}</th>
+                <th>{% trans %}Accounts Archived{% endtrans %}</th>
+                <th>{% trans %}Automated Archival Done{% endtrans %}</th>
                 <th>{% trans %}Trialmemberships Ended{% endtrans %}</th>
                 <th>{% trans %}Balance Deducted{% endtrans %}</th>
                 <th>{% trans %}Balance Update Done{% endtrans %}</th>
@@ -229,9 +231,13 @@
                     <td>{{ period['id'] }}</td>
                     <td>{{ period['billing_count'] }}</td>
                     <td>{{ period['billing_done']|datetime(lang=lang) }}</td>
+                    <td>{{ period['archival_notification_count'] }}</td>
+                    <td>{{ period['archival_notification_done']|datetime(lang=lang) }}</td>
                     <td>{{ period['ejection_count'] }}</td>
                     <td>{{ period['ejection_balance']|money(lang=lang) }}</td>
                     <td>{{ period['ejection_done']|datetime(lang=lang) }}</td>
+                    <td>{{ period['archival_count'] }}</td>
+                    <td>{{ period['archival_done']|datetime(lang=lang) }}</td>
                     <td>{{ period['balance_trialmembers'] }}</td>
                     <td>{{ period['balance_total']|money(lang=lang) }}</td>
                     <td>{{ period['balance_done']|datetime(lang=lang) }}</td>

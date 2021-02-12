@@ -40,8 +40,8 @@ from email.mime.nonmultipart import MIMENonMultipart
 from secrets import token_hex
 from typing import (
     IO, AbstractSet, Any, AnyStr, Callable, ClassVar, Collection, Container, Dict,
-    Generator, ItemsView, Iterable, List, Mapping, MutableMapping, Optional, Sequence,
-    Set, Tuple, Type, TypeVar, Union, cast, overload,
+    Generator, ItemsView, Iterable, List, Mapping, MutableMapping, NamedTuple,
+    Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast, overload,
 )
 
 import babel.dates
@@ -1680,6 +1680,10 @@ class CdEMailmanClient(mailmanclient.Client):
             return mmlist.held if mmlist else None
 
 
+WorkerTarget = Callable[[RequestState], bool]
+TaskInfo = NamedTuple("TaskInfo", (("task", WorkerTarget), ("name", str), ("doc", str)))
+
+
 class Worker(threading.Thread):
     """Customization wrapper around ``threading.Thread``.
 
@@ -1688,11 +1692,11 @@ class Worker(threading.Thread):
     concurrency is no concern.
     """
 
-    def __init__(self, conf: Config, task: Callable[..., bool],
-                 rs: RequestState, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, conf: Config, tasks: Union[WorkerTarget, Sequence[WorkerTarget]],
+                 rs: RequestState) -> None:
         """
-        :param task: Will be called with exactly one argument (the cloned
-          request state) until it returns something falsy.
+        :param tasks: Every task will called with the cloned request state as a single
+            argument.
         """
         # noinspection PyProtectedMember
         rrs = RequestState(
@@ -1708,31 +1712,49 @@ class Worker(threading.Thread):
         rrs._conn = connpool[roles_to_db_role(rs.user.roles)]
         logger = logging.getLogger("cdedb.frontend.worker")
 
+        def get_doc(task: WorkerTarget) -> str:
+            return task.__doc__.splitlines()[0] if task.__doc__ else ""
+
+        if isinstance(tasks, Sequence):
+            task_infos = [TaskInfo(t, t.__name__, get_doc(t)) for t in tasks]
+        else:
+            task_infos = [TaskInfo(tasks, tasks.__name__, get_doc(tasks))]
+
         def runner() -> None:
             """Implement the actual loop running the task inside the Thread."""
-            name = task.__name__
-            doc = f" {task.__doc__.splitlines()[0]}" if task.__doc__ else ""
+            if len(task_infos) > 1:
+                task_queue = "\n".join(f"'{n}': {doc}" for _, n, doc in task_infos)
+                logger.debug(f"Worker queue started:\n{task_queue}")
             p_id = rrs.user.persona_id if rrs.user else None
             username = rrs.user.username if rrs.user else None
-            logger.debug(
-                f"Task `{name}`{doc} started by user {p_id} ({username}).")
-            count = 0
-            while True:
-                try:
-                    count += 1
-                    if not task(rrs):
-                        logger.debug(
-                            f"Finished task `{name}` successfully"
-                            f" after {count} iterations.")
-                        return
-                except Exception as e:
-                    logger.exception(
-                        f"The following error occurred during the {count}th"
-                        f" iteration of `{name}: {e}")
-                    logger.debug(f"Task {name} aborted.")
-                    raise
+            for i, task_info in enumerate(task_infos):
+                logger.debug(
+                    f"Task `{task_info.name}`{task_info.doc} started by user"
+                    f" {p_id} ({username}).")
+                count = 0
+                while True:
+                    try:
+                        count += 1
+                        if not task_info.task(rrs):
+                            logger.debug(
+                                f"Finished task `{task_info.name}` successfully"
+                                f" after {count} iterations.")
+                            break
+                    except Exception as e:
+                        logger.exception(
+                            f"The following error occurred during the {count}th"
+                            f" iteration of `{task_info.name}: {e}")
+                        logger.debug(f"Task {task_info.name} aborted.")
+                        remaining_tasks = task_infos[i+1:]
+                        if remaining_tasks:
+                            logger.error(
+                                f"{len(remaining_tasks)} remaining tasks aborted:"
+                                f" {', '.join(n for _, n, _ in remaining_tasks)}")
+                        raise
+            if len(task_infos) > 1:
+                logger.debug(f"{len(task_infos)} tasks completed successfully.")
 
-        super().__init__(target=runner, daemon=False, args=args, kwargs=kwargs)
+        super().__init__(target=runner, daemon=False)
 
 
 def reconnoitre_ambience(obj: AbstractFrontend,

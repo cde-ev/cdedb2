@@ -57,7 +57,7 @@ import re
 import string
 from enum import Enum
 from typing import (
-    Callable, Dict, Sequence, Set, Tuple, Type, TypeVar, cast, get_type_hints, overload,
+    Callable, Dict, Sequence, Set, Tuple, TypeVar, cast, get_type_hints, overload,
 )
 
 import magic
@@ -133,7 +133,7 @@ class ValidatorStorage(Dict[Type[Any], Callable[..., Any]]):
     def __getitem__(self, type_: Type[T]) -> Callable[..., T]:
         # TODO replace with get_origin etc in Python 3.8
         if hasattr(type_, "__origin__"):
-            if (type_.__origin__ is Union):  # type: ignore
+            if type_.__origin__ is Union:  # type: ignore
                 inner_type, none_type = type_.__args__  # type: ignore
                 if none_type is not NoneType:
                     raise KeyError("Complex unions not supported")
@@ -186,15 +186,15 @@ def validate_is_optional(type_: Type[T], value: Any, **kwargs: Any) -> Optional[
 
 
 def validate_check(
-    type: Type[T], value: Any, **kwargs: Any
+    type_: Type[T], value: Any, **kwargs: Any
 ) -> Tuple[Optional[T], List[Error]]:
     try:
-        val = _ALL_TYPED[type](value, **kwargs)
+        val = _ALL_TYPED[type_](value, **kwargs)
         return val, []
     except ValidationSummary as errs:
         old_format = [(e.args[0], e.__class__(*e.args[1:])) for e in errs]
         _LOGGER.debug(
-            f"{old_format} for '{str(type)}'"
+            f"{old_format} for '{str(type_)}'"
             f" with input {value}, {kwargs}."
         )
         return None, old_format
@@ -848,7 +848,7 @@ def _list_of(
 
 
 class ListValidator(Protocol[T]):
-    def __call__(val: Any, argname: str = None, **kargs: Any) -> List[T]:
+    def __call__(self, val: Any, argname: str = None, **kargs: Any) -> List[T]:
         ...
 
 
@@ -1654,18 +1654,23 @@ def _period(
     val = _mapping(val, argname, **kwargs)
 
     # TODO make these public?
-    optional_fields: TypeMapping = {
-        'billing_state': Optional[ID],  # type: ignore
-        'billing_done': datetime.datetime,
-        'billing_count': NonNegativeInt,
-        'ejection_state': Optional[ID],  # type: ignore
-        'ejection_done': datetime.datetime,
-        'ejection_count': NonNegativeInt,
-        'ejection_balance': NonNegativeDecimal,
-        'balance_state': Optional[ID],  # type: ignore
-        'balance_done': datetime.datetime,
-        'balance_trialmembers': NonNegativeInt,
-        'balance_total': NonNegativeLargeDecimal,
+    prefix_map = {
+        'billing': ('state', 'done', 'count'),
+        'ejection': ('state', 'done', 'count', 'balance'),
+        'balance': ('state', 'done', 'trialmembers', 'total'),
+        'archival_notification': ('state', 'done', 'count'),
+        'archival': ('state', 'done', 'count'),
+    }
+    type_map: TypeMapping = {
+        'state': Optional[ID],  # type: ignore
+        'done': datetime.datetime, 'count': NonNegativeInt,
+        'trialmembers': NonNegativeInt, 'total': NonNegativeDecimal,
+        'balance': NonNegativeDecimal,
+    }
+
+    optional_fields = {
+        f"{pre}_{suf}": type_map[suf]
+        for pre, suffixes in prefix_map.items() for suf in suffixes
     }
 
     return Period(_examine_dictionary_fields(
@@ -4237,7 +4242,7 @@ def _query(
     # order
     for idx, entry in enumerate(val.order):
         try:
-            # TODO use generic tuple here once implemented 
+            # TODO use generic tuple here once implemented
             entry = _ALL_TYPED[Iterable](  # type: ignore
                 entry, 'order', **{**kwargs, '_convert': False})
         except ValidationSummary as e:
