@@ -475,6 +475,12 @@ _DEFAULTS = {
             n_("00_query_cde_user_all"): Query(
                 "qview_cde_user", QUERY_SPECS['qview_cde_user'],
                 ("personas.id", "given_names", "family_name"),
+                (),
+                (("family_name", True), ("given_names", True),
+                 ("personas.id", True))),
+            n_("02_query_cde_members"): Query(
+                "qview_cde_user", QUERY_SPECS['qview_cde_user'],
+                ("personas.id", "given_names", "family_name"),
                 (("is_member", QueryOperators.equal, True),),
                 (("family_name", True), ("given_names", True),
                  ("personas.id", True))),
@@ -601,9 +607,6 @@ _SECRECTS_DEFAULTS = {
 
     # fixed tokens for API access
     "API_TOKENS": {
-        # for mailing list software
-        "rklist": "c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3",
-
         # resolve API for CyberAka
         "resolve": "a1o2e3u4i5d6h7t8n9s0",
 
