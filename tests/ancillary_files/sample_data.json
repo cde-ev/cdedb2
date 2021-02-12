@@ -3519,7 +3519,6 @@
             "is_orga": false
         },
         {
-            "id": 6,
             "persona_id": 3,
             "pevent_id": 4,
             "pcourse_id": null,
@@ -3527,7 +3526,6 @@
             "is_orga": true
         },
         {
-            "id": 7,
             "persona_id": 5,
             "pevent_id": 4,
             "pcourse_id": null,
@@ -3535,7 +3533,6 @@
             "is_orga": true
         },
         {
-            "id": 8,
             "persona_id": 6,
             "pevent_id": 4,
             "pcourse_id": null,
@@ -3543,7 +3540,6 @@
             "is_orga": true
         },
         {
-            "id": 9,
             "persona_id": 7,
             "pevent_id": 4,
             "pcourse_id": null,
