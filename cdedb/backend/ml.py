@@ -245,25 +245,22 @@ class MlBackend(AbstractBackend):
 
     def ml_log(self, rs: RequestState, code: const.MlLogCodes,
                mailinglist_id: Optional[int], persona_id: Optional[int] = None,
-               change_note: Optional[str] = None) -> DefaultReturnCode:
+               change_note: Optional[str] = None, atomized: bool = True
+               ) -> DefaultReturnCode:
         """Make an entry in the log.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type code: int
-        :param code: One of :py:class:`cdedb.database.constants.MlLogCodes`.
-        :type mailinglist_id: int or None
-        :type persona_id: int or None
-        :param persona_id: ID of affected user (like who was subscribed).
-        :type change_note: str or None
-        :param change_note: Infos not conveyed by other columns.
-        :rtype: int
-        :returns: default return code
+        :param atomized: Whether this function should enforce an atomized context
+            to be present.
         """
         if rs.is_quiet:
             return 0
+        # To ensure logging is done if and only if the corresponding action happened,
+        # we require atomization by default.
+        if atomized:
+            self.affirm_atomized_context(rs)
         new_log = {
             "code": code,
             "mailinglist_id": mailinglist_id,
@@ -1445,8 +1442,14 @@ class MlBackend(AbstractBackend):
     @access("ml")
     def log_moderation(self, rs: RequestState, code: const.MlLogCodes,
                        mailinglist_id: int, change_note: str) -> DefaultReturnCode:
-        """Log a moderation action (delegated to Mailman)."""
+        """Log a moderation action (delegated to Mailman).
+
+        Since they should usually be called inside an atomized context, logs demand an
+        Atomizer by default. However, since we are not acting on our database here,
+        this is not applicable.
+        """
         code = affirm(const.MlLogCodes, code)
         mailinglist_id = affirm(int, mailinglist_id)
         change_note = affirm(str, change_note)
-        return self.ml_log(rs, code, mailinglist_id, change_note=change_note)
+        return self.ml_log(rs, code, mailinglist_id, change_note=change_note,
+                           atomized=False)
