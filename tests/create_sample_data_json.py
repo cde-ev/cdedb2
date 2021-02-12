@@ -12,7 +12,8 @@ from cdedb.backend.core import CoreBackend
 # mark some tables which shall not be filled with information extracted from the
 # database.
 ignored_tables = {
-    "core.sessions"
+    "core.sessions",
+    "core.quota",
 }
 
 # mark some columns which shall not be filled with information extracted from the
