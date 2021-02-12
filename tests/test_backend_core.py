@@ -9,11 +9,11 @@ from typing import cast
 import cdedb.database.constants as const
 from cdedb.common import (
     CdEDBObject, PERSONA_CDE_FIELDS, PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS,
-    ArchiveError, PrivilegeError, RequestState, get_hash, merge_dicts, now,
+    ArchiveError, PrivilegeError, RequestState, get_hash, merge_dicts, now, nearly_now
 )
 from cdedb.validation import _PERSONA_CDE_CREATION
 from tests.common import (
-    ANONYMOUS, BackendTest, USER_DICT, as_users, create_mock_image, nearly_now,
+    ANONYMOUS, BackendTest, USER_DICT, as_users, create_mock_image,
 )
 
 PERSONA_TEMPLATE = {

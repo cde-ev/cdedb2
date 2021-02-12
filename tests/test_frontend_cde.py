@@ -105,7 +105,7 @@ class TestCdEFrontend(FrontendTest):
         member = ["Sonstiges", "Datenschutzerklärung", "Kurssuche"]
         searchable = ["CdE-Mitglied suchen"]
         cde_admin = ["Nutzer verwalten", "Organisationen verwalten",
-                     "Verg.-Veranstaltungen-Log"]
+                     "Mitglieder-Statistik", "Verg.-Veranstaltungen-Log"]
         finance_admin = [
             "Einzugsermächtigungen", "Kontoauszug parsen", "Finanz-Log",
             "Überweisungen eintragen", "Semesterverwaltung", "CdE-Log"]
@@ -345,6 +345,8 @@ class TestCdEFrontend(FrontendTest):
                 self.get(save, status=429)
                 self.assertPresence("Limit für Zugriffe")
                 self.assertPresence("automatisch zurückgesetzt")
+                # Check that own profile remains accessible
+                self.traverse({'href': '/core/self/show'})
                 break
 
     @as_users("anton", "berta", "inga")
@@ -2168,6 +2170,10 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("PfingstAkademie 2014")
         self.assertNonPresence("Garcia")
+
+    @as_users("farin")
+    def test_member_stats(self, user: CdEDBObject) -> None:
+        self.traverse("Mitglieder", "Mitglieder-Statistik")
 
     @as_users("vera")
     def test_past_log(self, user: CdEDBObject) -> None:

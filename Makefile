@@ -72,10 +72,9 @@ i18n-compile:
 		$(I18NDIR)/en/LC_MESSAGES/cdedb.po
 
 sample-data:
+	cp -f related/auto-build/files/stage3/localconfig.py cdedb/localconfig.py
 	$(MAKE) storage > /dev/null
 	$(MAKE) sql > /dev/null
-	cp -f related/auto-build/files/stage3/localconfig.py \
-		cdedb/localconfig.py
 
 sample-data-test:
 	$(MAKE) storage-test
@@ -212,7 +211,7 @@ lint:
 	@echo "All of pylint"
 	@echo $(BANNERLINE)
 	@echo ""
-	${PYLINTBIN} --rcfile='./lint.rc' cdedb || true
+	${PYLINTBIN} --rcfile='./lint.rc' --exit-zero cdedb
 	@echo ""
 	@echo $(BANNERLINE)
 	@echo "And now only errors and warnings"
