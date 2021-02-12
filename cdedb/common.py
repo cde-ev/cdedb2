@@ -830,7 +830,7 @@ def _schulze_winners(d: Mapping[Tuple[str, str], int],
             if i == j:
                 continue
             for k in candidates:
-                if k in (i, j):
+                if k in {i, j}:
                     continue
                 p[(j, k)] = max(p[(j, k)], min(p[(j, i)], p[(i, k)]))
     # Second determine winners

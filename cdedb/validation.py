@@ -75,6 +75,7 @@ from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, EPSILON, EVENT_SCHEMA_VERSION, INFINITE_ENUM_MAGIC_NUMBER,
     REALM_SPECIFIC_GENESIS_FIELDS, CdEDBObjectMap, Error, InfiniteEnum,
     ValidationWarning, asciificator, compute_checkdigit, extract_roles, n_, now,
+    xsorted,
 )
 from cdedb.config import BasicConfig
 from cdedb.database.constants import FieldAssociations, FieldDatatypes
@@ -1946,9 +1947,8 @@ def _safe_str(
     val = _str(val, argname, **kwargs)
     errs = ValidationSummary()
 
-    forbidden_chars = "".join(sorted({
-        c
-        for c in val  # pylint: disable=not-an-iterable
+    forbidden_chars = "".join(xsorted({
+        c for c in val  # pylint: disable=not-an-iterable
         if not (c.isalnum() or c.isspace() or c in allowed_chars)
     }))
     if forbidden_chars:
@@ -2804,7 +2804,7 @@ def _by_field_datatype(
         Optional[VALIDATOR_LOOKUP[kind.name]]  # type: ignore
     ](val, argname, **kwargs)
 
-    if kind in (FieldDatatypes.date, FieldDatatypes.datetime):
+    if kind in {FieldDatatypes.date, FieldDatatypes.datetime}:
         val = val.isoformat()
     else:
         val = str(val)

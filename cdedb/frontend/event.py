@@ -1263,7 +1263,7 @@ class EventFrontend(AbstractUserFrontend):
                 k: v
                 for k, v in all_registrations.items()
                 if any(
-                    course_id in (track['course_id'], track['course_instructor'])
+                    course_id in {track['course_id'], track['course_instructor']}
                     for track in v['tracks'].values()
                 )
             }
