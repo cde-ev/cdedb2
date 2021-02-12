@@ -1548,7 +1548,7 @@ def extract_roles(session: CdEDBObject, introspection_only: bool = False
 
 # The following droids are exempt from lockdown to keep our infrastructure
 # working
-INFRASTRUCTURE_DROIDS: Set[str] = {'rklist', 'resolve'}
+INFRASTRUCTURE_DROIDS: Set[str] = {'resolve'}
 
 
 def droid_roles(identity: str) -> Set[Role]:
@@ -1557,7 +1557,7 @@ def droid_roles(identity: str) -> Set[Role]:
     Currently this is rather trivial, but could be more involved in the
     future if more API capabilities are added to the DB.
 
-    :param identity: The name for the API functionality, e.g. ``rklist``.
+    :param identity: The name for the API functionality, e.g. ``resolve``.
     """
     ret = {'anonymous', 'droid', f'droid_{identity}'}
     if identity in INFRASTRUCTURE_DROIDS:
