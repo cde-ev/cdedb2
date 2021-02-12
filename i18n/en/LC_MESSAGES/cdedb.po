@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2021-02-12 03:02+0100\n"
+"POT-Creation-Date: 2021-02-12 09:58+0100\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -3941,7 +3941,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/participant_list.tmpl:79
 #: cdedb/frontend/templates/web/ml/base.tmpl:8
 #: cdedb/frontend/templates/web/ml/base.tmpl:56
-#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:262
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:263
 msgid "Overview"
 msgstr ""
 
@@ -8552,7 +8552,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/base.tmpl:48
 #: cdedb/frontend/templates/web/event/downloads.tmpl:12
 #: cdedb/frontend/templates/web/event/downloads.tmpl:16
-#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:258
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:259
 msgid "Downloads"
 msgstr ""
 
@@ -11915,28 +11915,36 @@ msgid ""
 "merger. Consult the %(link)s for more details."
 msgstr ""
 
-#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:227
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:228
 #, python-format
 msgid "Reset %(given_names)s %(family_name)s explicit unsubscription"
 msgstr ""
 
-#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:239
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:240
 #, python-format
 msgid "Subscribe %(given_names)s %(family_name)s"
 msgstr ""
 
-#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:267
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:247
+msgid "Unsubscribition has currently no effect."
+msgstr ""
+
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:249
+msgid "User would be implicit subscribed otherwise."
+msgstr ""
+
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:268
 #, python-format
 msgid ""
 "A download csv file of all users associated with this mailinglist (including "
 "name, email address and %(link)s)."
 msgstr ""
 
-#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:267
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:268
 msgid "Summary of subscription states"
 msgstr ""
 
-#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:267
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:268
 msgid "subscription state"
 msgstr ""
 

@@ -243,9 +243,9 @@
                                 {% endif %}
                             {% else %}
                                 {% if unsubscription in redundant_unsubscriptions %}
-                                    {{ util.make_icon('trash-alt', aclass="list-button-float") }}
+                                    {{ util.make_icon('broom', aclass="list-button-float", title=gettext("Explicit unsubscribition has currently no effect.")) }}
                                 {% else %}
-                                    {{ util.make_icon('plus', aclass="list-button-float") }}
+                                    {{ util.make_icon('bell-slash', aclass="list-button-float", title=gettext("User would be implicit subscribed otherwise.")) }}
                                 {% endif %}
                             {% endif %}
                         </li>
