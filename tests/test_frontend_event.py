@@ -323,8 +323,7 @@ class TestEventFrontend(FrontendTest):
                       {'description': 'Große Testakademie 2222'})
         self.assertTitle("Große Testakademie 2222")
 
-        # TODO This should be fixed with introducing of relative admins
-        # self.assertIn("createorgalistform", self.response.forms)
+        self.assertIn("createparticipantlistform", self.response.forms)
         self.assertIn("addorgaform", self.response.forms)
         self.assertIn("removeorgaform7", self.response.forms)
 
