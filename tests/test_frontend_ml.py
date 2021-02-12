@@ -518,7 +518,7 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Klatsch und Tratsch – Erweiterte Verwaltung")
         self.assertNonPresence("zelda@example.cde")
 
-    @as_users("janis")
+    @as_users("nina")
     def test_remove_unsubscriptions(self, user: CdEDBObject) -> None:
         self.traverse({'description': 'Mailinglisten'},
                       {'description': 'Werbung'},
@@ -545,6 +545,20 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Werbung – Verwaltung")
         self.assertNonPresence("Annika")
         self.assertPresence("Ferdinand", div="subscriber-list")
+
+    @as_users("janis")
+    def test_not_remove_unsubscriptions(self, user: CdEDBObject) -> None:
+        self.traverse({'description': 'Mailinglisten'},
+                      {'description': 'Werbung'},
+                      {'description': 'Erweiterte Verwaltung'})
+        self.assertTitle("Werbung – Erweiterte Verwaltung")
+        self.assertPresence("Annika", div='unsubscriber-list')
+        self.assertPresence("Ferdinand", div='unsubscriber-list')
+
+        assert 'resetunsubscriberform27' not in self.response.forms
+        assert 'addsubscriberform27' not in self.response.forms
+        assert 'addsubscriberform6' not in self.response.forms
+        assert 'resetunsubscriberform6' not in self.response.forms
 
     # TODO add a presider as moderator and use him too in this test
     @as_users("nina")
