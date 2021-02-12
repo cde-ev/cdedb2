@@ -3690,7 +3690,7 @@ class EventBackend(AbstractBackend):
         }
         with Atomizer(rs):
             ret = self.sql_update(rs, "event.events", update)
-            ret *= self.event_log(rs, const.EventLogCodes.event_locked, event_id)
+            self.event_log(rs, const.EventLogCodes.event_locked, event_id)
         return ret
 
     @access("event")
