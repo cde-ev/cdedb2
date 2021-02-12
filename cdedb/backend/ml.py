@@ -245,25 +245,22 @@ class MlBackend(AbstractBackend):
 
     def ml_log(self, rs: RequestState, code: const.MlLogCodes,
                mailinglist_id: Optional[int], persona_id: Optional[int] = None,
-               change_note: Optional[str] = None) -> DefaultReturnCode:
+               change_note: Optional[str] = None, atomized: bool = True
+               ) -> DefaultReturnCode:
         """Make an entry in the log.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type code: int
-        :param code: One of :py:class:`cdedb.database.constants.MlLogCodes`.
-        :type mailinglist_id: int or None
-        :type persona_id: int or None
-        :param persona_id: ID of affected user (like who was subscribed).
-        :type change_note: str or None
-        :param change_note: Infos not conveyed by other columns.
-        :rtype: int
-        :returns: default return code
+        :param atomized: Whether this function should enforce an atomized context
+            to be present.
         """
         if rs.is_quiet:
             return 0
+        # To ensure logging is done if and only if the corresponding action happened,
+        # we require atomization by default.
+        if atomized:
+            self.affirm_atomized_context(rs)
         new_log = {
             "code": code,
             "mailinglist_id": mailinglist_id,
@@ -991,6 +988,9 @@ class MlBackend(AbstractBackend):
         elif (action == sa.request_subscription and
               policy != const.MailinglistInteractionPolicy.moderated_opt_in):
             raise SubscriptionError(n_("Can not request subscription."))
+        elif action == sa.reset_unsubscription:
+            if persona_id not in self.get_redundant_unsubscriptions(rs, mailinglist_id):
+                raise SubscriptionError(n_("Can not reset unsubscription."))
 
     @access("ml")
     def set_subscription_address(self, rs: RequestState, mailinglist_id: int,
@@ -1110,6 +1110,29 @@ class MlBackend(AbstractBackend):
                      ) -> Dict[int, const.SubscriptionStates]: ...
     get_subscription_states: _GetSubScriptionStatesProtocol = singularize(
         get_many_subscription_states, "mailinglist_ids", "mailinglist_id")
+
+    @access("ml")
+    def get_redundant_unsubscriptions(self, rs: RequestState, mailinglist_id: int
+                                      ) -> Set[int]:
+        """Retrieve all unsubscribed users who's unsubscriptions have no effect.
+
+        This is the case if and only if the user is no implicit subscriber of the
+        mailing list.
+        """
+        mailinglist_id = affirm(vtypes.ID, mailinglist_id)
+
+        # shortcut if the user is not privileged to change subscription states of the ml
+        if not self.may_manage(rs, mailinglist_id, privileged=True):
+            return set()
+
+        atype = self.get_ml_type(rs, mailinglist_id)
+        ml = self.get_mailinglist(rs, mailinglist_id)
+
+        possible_implicits = atype.get_implicit_subscribers(rs, self.backends, ml)
+        data = self.get_subscription_states(
+            rs, mailinglist_id, states={const.SubscriptionStates.unsubscribed})
+
+        return data.keys() - possible_implicits
 
     @access("ml")
     def get_user_subscriptions(
@@ -1419,8 +1442,14 @@ class MlBackend(AbstractBackend):
     @access("ml")
     def log_moderation(self, rs: RequestState, code: const.MlLogCodes,
                        mailinglist_id: int, change_note: str) -> DefaultReturnCode:
-        """Log a moderation action (delegated to Mailman)."""
+        """Log a moderation action (delegated to Mailman).
+
+        Since they should usually be called inside an atomized context, logs demand an
+        Atomizer by default. However, since we are not acting on our database here,
+        this is not applicable.
+        """
         code = affirm(const.MlLogCodes, code)
         mailinglist_id = affirm(int, mailinglist_id)
         change_note = affirm(str, change_note)
-        return self.ml_log(rs, code, mailinglist_id, change_note=change_note)
+        return self.ml_log(rs, code, mailinglist_id, change_note=change_note,
+                           atomized=False)

@@ -77,7 +77,7 @@ class MockRequestState:
 
 class _RSFactory(Protocol):
     # pylint: disable=pointless-statement
-    def __call__(self, persona_id: int = -1) -> MockRequestState: ...
+    def __call__(self, persona_id: int = -1) -> RequestState: ...
 
 
 def setup(persona_id: int, dbuser: str, dbpassword: str,
@@ -107,14 +107,14 @@ def setup(persona_id: int, dbuser: str, dbpassword: str,
     }
     try:
         cdb = psycopg2.connect(**connection_parameters, host="localhost")
-    except psycopg2.OperationalError as e: # DB inside Docker listens on "cdb"
+    except psycopg2.OperationalError as e:  # DB inside Docker listens on "cdb"
         if "Passwort-Authentifizierung" in e.args[0]:
-            raise # fail fast if wrong password is the problem
+            raise  # fail fast if wrong password is the problem
         cdb = psycopg2.connect(**connection_parameters, host="cdb")
     cdb.set_client_encoding("UTF8")
 
-    def rs(persona_id: int = persona_id) -> MockRequestState:
-        return MockRequestState(persona_id, cdb)
+    def rs(persona_id: int = persona_id) -> RequestState:
+        return cast(RequestState, MockRequestState(persona_id, cdb))
 
     return rs
 
@@ -171,9 +171,9 @@ class Script(Atomizer):
     """
     start_time: float
 
-    def __init__(self, rs: MockRequestState, *, dry_run: bool = True) -> None:
+    def __init__(self, rs: RequestState, *, dry_run: bool = True) -> None:
         self.dry_run = dry_run
-        super().__init__(cast(RequestState, rs))
+        super().__init__(rs)
 
     def __enter__(self) -> IrradiatedConnection:
         self.start_time = time.monotonic()

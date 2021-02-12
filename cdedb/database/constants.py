@@ -286,6 +286,9 @@ class CoreLogCodes(enum.IntEnum):
     """Available log messages core.log."""
     persona_creation = 1  #:
     persona_change = 2  #:
+    persona_archived = 3  #:
+    persona_dearchived = 4  #:
+    persona_purged = 5  #:
     password_change = 10  #:
     password_reset_cookie = 11  #:
     password_reset = 12  #:
@@ -313,6 +316,8 @@ class CdeLogCodes(enum.IntEnum):
     expuls_addresscheck = 20
     expuls_addresscheck_skipped = 21
     expuls_advance = 2
+    automated_archival_notification_done = 30
+    automated_archival_done = 31
 
 
 @enum.unique
@@ -441,6 +446,7 @@ class MlLogCodes(enum.IntEnum):
     marked_override = 24  #: SubscriptionStates.subscription_override
     marked_blocked = 25  #: SubscriptionStates.unsubscription_override
     cron_removed = 28  #:
+    unsubscription_reset = 29  #:
     request_approved = 30  #:
     request_denied = 31  #:
     request_cancelled = 32  #:

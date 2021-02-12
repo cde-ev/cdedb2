@@ -1304,6 +1304,20 @@ class TransactionType(enum.IntEnum):
         else:
             return repr(self)
 
+class SemesterSteps(enum.Enum):
+    billing = 1
+    archival_notification = 2
+    ejection = 10
+    automated_archival = 11
+    balance = 20
+    advance = 30
+    error = 100
+
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, str):
+            return self.name == other
+        return super(SemesterSteps, self).__eq__(other)
+
 
 def mixed_existence_sorter(iterable: Union[Collection[int], KeysView[int]]
                            ) -> Generator[int, None, None]:
@@ -2127,6 +2141,8 @@ ORG_PERIOD_FIELDS = (
     "id", "billing_state", "billing_done", "billing_count",
     "ejection_state", "ejection_done", "ejection_count", "ejection_balance",
     "balance_state", "balance_done", "balance_trialmembers", "balance_total",
+    "archival_notification_state", "archival_notification_count",
+    "archival_notification_done", "archival_state", "archival_count", "archival_done",
     "semester_done")
 
 #: Fielsd of an expuls

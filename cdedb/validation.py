@@ -840,8 +840,7 @@ def _list_of(
 
 
 class ListValidator(Protocol[T]):
-    # pylint: disable=no-self-argument
-    def __call__(val: Any, argname: str = None, **kargs: Any) -> List[T]:
+    def __call__(self, val: Any, argname: str = None, **kargs: Any) -> List[T]:
         ...
 
 
@@ -1647,18 +1646,23 @@ def _period(
     val = _mapping(val, argname, **kwargs)
 
     # TODO make these public?
-    optional_fields: TypeMapping = {
-        'billing_state': Optional[ID],  # type: ignore
-        'billing_done': datetime.datetime,
-        'billing_count': NonNegativeInt,
-        'ejection_state': Optional[ID],  # type: ignore
-        'ejection_done': datetime.datetime,
-        'ejection_count': NonNegativeInt,
-        'ejection_balance': NonNegativeDecimal,
-        'balance_state': Optional[ID],  # type: ignore
-        'balance_done': datetime.datetime,
-        'balance_trialmembers': NonNegativeInt,
-        'balance_total': NonNegativeLargeDecimal,
+    prefix_map = {
+        'billing': ('state', 'done', 'count'),
+        'ejection': ('state', 'done', 'count', 'balance'),
+        'balance': ('state', 'done', 'trialmembers', 'total'),
+        'archival_notification': ('state', 'done', 'count'),
+        'archival': ('state', 'done', 'count'),
+    }
+    type_map: TypeMapping = {
+        'state': Optional[ID],  # type: ignore
+        'done': datetime.datetime, 'count': NonNegativeInt,
+        'trialmembers': NonNegativeInt, 'total': NonNegativeDecimal,
+        'balance': NonNegativeDecimal,
+    }
+
+    optional_fields = {
+        f"{pre}_{suf}": type_map[suf]
+        for pre, suffixes in prefix_map.items() for suf in suffixes
     }
 
     return Period(_examine_dictionary_fields(
