@@ -184,6 +184,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
         sub('/cde', (
             rule("/", methods=_GET,
                  endpoint="index"),
+            rule("/stats", methods=_GET,
+                 endpoint="member_stats"),
             rule("/log", methods=_GET,
                  endpoint="view_cde_log"),
             rule("/misc", methods=_GET,
