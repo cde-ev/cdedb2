@@ -271,7 +271,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             'mailinglist_id': new_id})
 
     @access("ml_admin")
-    def merge_accounts_form(self, rs: RequestState):
+    def merge_accounts_form(self, rs: RequestState) -> Response:
         return self.render(rs, "merge_accounts")
 
     @access("ml_admin", modi={"POST"})

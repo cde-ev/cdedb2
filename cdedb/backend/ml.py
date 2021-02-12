@@ -1489,6 +1489,7 @@ class MlBackend(AbstractBackend):
 
                 # set the subscribing address of the target to the address of the source
                 if clone_addresses:
+                    assert address is not None
                     code *= self.set_subscription_address(
                         rs, ml_id, persona_id=target_persona_id, email=address)
 
