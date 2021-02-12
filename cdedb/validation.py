@@ -57,7 +57,8 @@ import re
 import string
 from enum import Enum
 from typing import (
-    Callable, Dict, Sequence, Set, Tuple, Type, TypeVar, cast, get_type_hints, overload,
+    Callable, Dict, Iterable, Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar,
+    Union, cast, get_type_hints, overload,
 )
 
 import magic
@@ -85,7 +86,7 @@ from cdedb.query import (
 from cdedb.validationdata import (
     FREQUENCY_LISTS, GERMAN_PHONE_CODES, GERMAN_POSTAL_CODES, IBAN_LENGTHS, ITU_CODES,
 )
-from cdedb.validationtypes import *
+from cdedb.validationtypes import *  # pylint: disable=wildcard-import,unused-wildcard-import
 
 _BASICCONF = BasicConfig()
 NoneType = type(None)
@@ -101,9 +102,6 @@ TypeMapping = Mapping[str, Type[Any]]
 
 class ValidationSummary(ValueError, Sequence[Exception]):
     args: Tuple[Exception, ...]
-
-    def __init__(self, *errors: Exception):
-        super().__init__(*errors)
 
     def __len__(self) -> int:
         return len(self.args)
@@ -133,7 +131,7 @@ class ValidatorStorage(Dict[Type[Any], Callable[..., Any]]):
     def __getitem__(self, type_: Type[T]) -> Callable[..., T]:
         # TODO replace with get_origin etc in Python 3.8
         if hasattr(type_, "__origin__"):
-            if (type_.__origin__ is Union):  # type: ignore
+            if type_.__origin__ is Union:  # type: ignore
                 inner_type, none_type = type_.__args__  # type: ignore
                 if none_type is not NoneType:
                     raise KeyError("Complex unions not supported")
@@ -144,11 +142,6 @@ class ValidatorStorage(Dict[Type[Any], Callable[..., Any]]):
                 return make_list_validator(inner_type)  # type: ignore
             # TODO more container types like tuple
         return super().__getitem__(type_)
-
-    # def __missing__(self, type_: Type[T]) -> Callable[..., T]:
-    #     if callable(type_):
-    #         return type_
-    #     raise NotImplementedError(type_)
 
 
 _ALL_TYPED = ValidatorStorage()
@@ -177,7 +170,7 @@ def validate_is(type_: Type[T], value: Any, **kwargs: Any) -> bool:
     try:
         _ALL_TYPED[type_](value, **kwargs)
         return True
-    except ValidationSummary as errs:
+    except ValidationSummary:
         return False
 
 
@@ -186,15 +179,15 @@ def validate_is_optional(type_: Type[T], value: Any, **kwargs: Any) -> Optional[
 
 
 def validate_check(
-    type: Type[T], value: Any, **kwargs: Any
+    type_: Type[T], value: Any, **kwargs: Any
 ) -> Tuple[Optional[T], List[Error]]:
     try:
-        val = _ALL_TYPED[type](value, **kwargs)
+        val = _ALL_TYPED[type_](value, **kwargs)
         return val, []
     except ValidationSummary as errs:
         old_format = [(e.args[0], e.__class__(*e.args[1:])) for e in errs]
         _LOGGER.debug(
-            f"{old_format} for '{str(type)}'"
+            f"{old_format} for '{str(type_)}'"
             f" with input {value}, {kwargs}."
         )
         return None, old_format
@@ -219,7 +212,7 @@ def _allow_None(fun: Callable[..., T]) -> Callable[..., Optional[T]]:
         else:
             try:
                 return fun(val, *args, **kwargs)
-            except ValidationSummary as errs:  # we need to catch everything
+            except ValidationSummary:  # we need to catch everything
                 if kwargs.get('_convert', True) and not val:
                     return None
                 else:
@@ -393,7 +386,6 @@ def _None(
             val = None
     if val is not None:
         raise ValidationSummary(ValueError(argname, n_("Must be empty.")))
-    return None
 
 
 @_add_typed_validator
@@ -413,7 +405,7 @@ def _int(
     val: Any, argname: str = None, *, _convert: bool = True, **kwargs: Any
 ) -> int:
     if _convert:
-        if isinstance(val, str) or isinstance(val, bool):
+        if isinstance(val, (str, bool)):
             try:
                 val = int(val)
             except ValueError as e:
@@ -848,6 +840,7 @@ def _list_of(
 
 
 class ListValidator(Protocol[T]):
+    # pylint: disable=no-self-argument
     def __call__(val: Any, argname: str = None, **kargs: Any) -> List[T]:
         ...
 
@@ -1324,7 +1317,7 @@ def _phone(
 ) -> Phone:
     val = _printable_ascii(val, argname, **kwargs)
     orig = val.strip()
-    val = ''.join(c for c in val if c in '+1234567890')
+    val = ''.join(c for c in val if c in '+1234567890')  # pylint: disable=not-an-iterable
 
     if len(val) < 7:
         raise ValidationSummary(ValueError(argname, n_("Too short.")))
@@ -1379,7 +1372,7 @@ def _phone(
         try:
             national = rest[:rest.index(sep)]
             local = rest[rest.index(sep) + len(sep):]
-            if not len(national) or not len(local):
+            if not national or not local:
                 raise ValidationSummary()  # TODO more specific?
             retval += " ({}) {}".format(national, local)
         except ValueError:
@@ -1853,7 +1846,7 @@ def _sepa_transactions(
             continue
 
         for attribute, validator in _SEPA_TRANSACTIONS_FIELDS.items():
-            if validator == _str:
+            if validator is _str:
                 entry[attribute] = asciificator(entry[attribute])
             if attribute in _SEPA_TRANSACTIONS_LIMITS:
                 if len(entry[attribute]
@@ -1929,7 +1922,7 @@ def _sepa_meta(
             errs.append(ValueError('address', n_("Too long.")))
 
     for attribute, validator in _SEPA_SENDER_FIELDS.items():
-        if validator == _str:
+        if validator is _str:
             val['sender'][attribute] = asciificator(val['sender'][attribute])
     if len(val['sender']['name']) > 70:
         errs.append(ValueError('name', n_("Too long.")))
@@ -1949,8 +1942,11 @@ def _safe_str(
     val = _str(val, argname, **kwargs)
     errs = ValidationSummary()
 
-    forbidden_chars = "".join(sorted({c for c in val if not (c.isalnum() or c.isspace()
-                                                             or c in allowed_chars)}))
+    forbidden_chars = "".join(sorted({
+        c
+        for c in val  # pylint: disable=not-an-iterable
+        if not (c.isalnum() or c.isspace() or c in allowed_chars)
+    }))
     if forbidden_chars:
         errs.append(ValueError(argname, n_(
             "Forbidden characters (%(chars)s)."), {'chars': forbidden_chars}))
@@ -2690,7 +2686,7 @@ def _event_associated_fields(
         if field['association'] == association:
             dt = _ALL_TYPED[const.FieldDatatypes](
                 field['kind'], field['field_name'], **kwargs)
-            datatypes[field['field_name']] = cast(Type[Any], eval(
+            datatypes[field['field_name']] = cast(Type[Any], eval(  # pylint: disable=eval-used
                 f"Optional[{dt.name}]",
                 {
                     'Optional': Optional,
@@ -2804,7 +2800,7 @@ def _by_field_datatype(
         Optional[VALIDATOR_LOOKUP[kind.name]]  # type: ignore
     ](val, argname, **kwargs)
 
-    if kind == FieldDatatypes.date or kind == FieldDatatypes.datetime:
+    if kind in (FieldDatatypes.date, FieldDatatypes.datetime):
         val = val.isoformat()
     else:
         val = str(val)
@@ -3071,8 +3067,7 @@ def _serialized_event(
     if len(val['event.events']) != 1:
         errs.append(ValueError('event.events', n_(
             "Only a single event is supported.")))
-    if (len(val['event.events'])
-            and val['id'] != val['event.events'][val['id']]['id']):
+    if val['event.events'] and val['id'] != val['event.events'][val['id']]['id']:
         errs.append(ValueError('event.events', n_("Wrong event specified.")))
 
     for k, v in val.items():
@@ -3520,7 +3515,7 @@ def _mailinglist(
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
 
-    if val and "moderators" in val and len(val["moderators"]) == 0:
+    if val and "moderators" in val and not val["moderators"]:
         # TODO is this legitimate (postpone after other errors?)
         raise ValidationSummary(ValueError(
             "moderators", n_("Must not be empty.")))
@@ -3739,9 +3734,7 @@ def _ballot(
             ValueError('rel_quorum', msg),
         ])
 
-    quorum = None
-    if 'abs_quorum' in val:
-        quorum = val['abs_quorum']
+    quorum = val.get('abs_quorum')
     if 'rel_quorum' in val and not quorum:
         quorum = val['rel_quorum']
         if not 0 <= quorum <= 100:
@@ -3908,7 +3901,7 @@ def _vote(
         errs.append(KeyError(argname, n_("Missing candidates.")))
     if errs:
         raise errs
-    if ballot['votes'] and '>' in val:
+    if ballot['votes'] and '>' in val:  # pylint: disable=unsupported-membership-test
         # ordinary voting has more constraints
         # if no strictly greater we have a valid abstention
         groups = val.split('>')
@@ -3952,7 +3945,7 @@ def _non_regex(
     forbidden_chars = r'\*+?{}()[]|'
     msg = n_("Must not contain any forbidden characters"
              " (which are %(forbidden_chars)s while .^$ are allowed).")
-    if any(char in val for char in forbidden_chars):
+    if any(char in val for char in forbidden_chars):  # pylint: disable=unsupported-membership-test
         raise ValidationSummary(
             ValueError(argname, msg, {"forbidden_chars": forbidden_chars}))
     return NonRegex(val)
@@ -4237,7 +4230,7 @@ def _query(
     # order
     for idx, entry in enumerate(val.order):
         try:
-            # TODO use generic tuple here once implemented 
+            # TODO use generic tuple here once implemented
             entry = _ALL_TYPED[Iterable](  # type: ignore
                 entry, 'order', **{**kwargs, '_convert': False})
         except ValidationSummary as e:

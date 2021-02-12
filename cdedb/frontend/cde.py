@@ -23,7 +23,7 @@ from typing import Collection, Dict, List, Optional, Sequence, Set, Tuple, cast
 import dateutil.easter
 import psycopg2.extensions
 import werkzeug.exceptions
-from werkzeug import FileStorage, Response  # FIXME
+from werkzeug import FileStorage, Response
 
 import cdedb.database.constants as const
 import cdedb.frontend.parse_statement as parse
@@ -36,7 +36,7 @@ from cdedb.common import (
 )
 from cdedb.database.connection import Atomizer
 from cdedb.frontend.common import (
-    CustomCSVDialect, REQUESTdata, REQUESTdatadict, REQUESTfile, Response, Worker,
+    CustomCSVDialect, REQUESTdata, REQUESTdatadict, REQUESTfile, Worker,
     access, calculate_db_logparams, calculate_loglinks, cdedbid_filter,
     check_validation as check, check_validation_optional as check_optional, csv_output,
     enum_entries_filter, make_membership_fee_reference, make_postal_address,

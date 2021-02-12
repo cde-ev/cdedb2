@@ -4,7 +4,7 @@ import copy
 import datetime
 import decimal
 import unittest
-from typing import Any, Iterable, List, Optional, Tuple, Type, TypeVar
+from typing import Any, Iterable, List, Mapping, Tuple, Type, Union
 
 import pytz
 

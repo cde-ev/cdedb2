@@ -200,7 +200,6 @@ cron:
 BANNERLINE := "============================================================$\
 		===================="
 lint:
-	@echo ""
 	@echo $(BANNERLINE)
 	@echo "Lines too long in templates"
 	@echo $(BANNERLINE)
@@ -211,14 +210,7 @@ lint:
 	@echo "All of pylint"
 	@echo $(BANNERLINE)
 	@echo ""
-	${PYLINTBIN} --rcfile='./lint.rc' --exit-zero cdedb
-	@echo ""
-	@echo $(BANNERLINE)
-	@echo "And now only errors and warnings"
-	@echo $(BANNERLINE)
-	@echo ""
-	$(PYLINTBIN) --rcfile='./lint.rc' --output-format=text cdedb \
-		| grep -E '^(\*\*\*\*|E:|W:)'
+	${PYLINTBIN} --rcfile='./lint.rc' cdedb
 
 
 prepare-check:

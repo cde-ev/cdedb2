@@ -15,14 +15,14 @@ from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.common import (
     AbstractBackend, access, affirm_array_validation as affirm_array,
     affirm_set_validation as affirm_set, affirm_validation_typed as affirm,
-    affirm_validation_typed_optional as affirm_optional, internal, singularize,
+    internal, singularize,
 )
 from cdedb.backend.event import EventBackend
 from cdedb.common import (
     MAILINGLIST_FIELDS, MOD_ALLOWED_FIELDS, PRIVILEGED_MOD_ALLOWED_FIELDS, CdEDBLog,
     CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, PathLike,
-    PrivilegeError, RequestState, SubscriptionActions, SubscriptionError, glue,
-    implying_realms, make_proxy, mixed_existence_sorter, n_, now, unwrap,
+    PrivilegeError, RequestState, SubscriptionActions, SubscriptionError,
+    implying_realms, make_proxy, mixed_existence_sorter, n_, unwrap,
 )
 from cdedb.database.connection import Atomizer
 from cdedb.ml_type_aux import MLType, MLTypeLike
@@ -1360,7 +1360,7 @@ class MlBackend(AbstractBackend):
             delete = []
             personas = self.core.get_personas(
                 rs, set(old_subscribers) - new_implicits)
-            for persona_id, persona in personas.items():
+            for persona_id in personas:
                 may_subscribe = atype.get_interaction_policy(
                     rs, self.backends, mailinglist=ml, persona_id=persona_id)
                 state = old_subscribers[persona_id]

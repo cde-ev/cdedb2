@@ -19,7 +19,7 @@ import sys
 import tempfile
 from collections import Counter, OrderedDict
 from typing import (
-    Any, Callable, Collection, Dict, List, Mapping, NamedTuple, Optional, Sequence, Set,
+    Any, Callable, Collection, Dict, List, Mapping, NamedTuple, Optional, Set,
     Tuple, Union, cast,
 )
 
@@ -731,8 +731,8 @@ class EventFrontend(AbstractUserFrontend):
         )))
 
         # noinspection PyRedundantParentheses
-        def track_constraint_maker(part_id: int, track_id: int
-                                   ) -> RequestConstraint:
+        def track_constraint_maker(part_id: int, track_id: int) -> RequestConstraint:
+            # pylint: disable=redefined-builtin
             min = "track_min_choices_{}_{}".format(part_id, track_id)
             num = "track_num_choices_{}_{}".format(part_id, track_id)
             msg = n_("Must be less or equal than total Course Choices.")
@@ -980,7 +980,7 @@ class EventFrontend(AbstractUserFrontend):
         referenced = set()
         fee_modifiers = set()
         full_questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
-        for k, v in full_questionnaire.items():
+        for v in full_questionnaire.values():
             for row in v:
                 if row['field_id']:
                     referenced.add(row['field_id'])
@@ -993,7 +993,7 @@ class EventFrontend(AbstractUserFrontend):
         for mod in rs.ambience['event']['fee_modifiers'].values():
             referenced.add(mod['field_id'])
             fee_modifiers.add(mod['field_id'])
-        for part_id, part in rs.ambience['event']['parts'].items():
+        for part in rs.ambience['event']['parts'].values():
             if part['waitlist_field']:
                 referenced.add(part['waitlist_field'])
         return self.render(rs, "field_summary", {
@@ -1262,9 +1262,10 @@ class EventFrontend(AbstractUserFrontend):
             registrations = {
                 k: v
                 for k, v in all_registrations.items()
-                if any(track['course_id'] == course_id
-                       or track['course_instructor'] == course_id
-                       for track in v['tracks'].values())
+                if any(
+                    course_id in (track['course_id'], track['course_instructor'])
+                    for track in v['tracks'].values()
+                )
             }
             personas = self.coreproxy.get_personas(
                 rs, tuple(e['persona_id'] for e in registrations.values()))
@@ -1846,8 +1847,8 @@ class EventFrontend(AbstractUserFrontend):
         course_infos = {}
         reg_part = lambda registration, track_id: \
             registration['parts'][tracks[track_id]['part_id']]
-        for course_id, course in courses.items():
-            for track_id in tracks:
+        for course_id, course in courses.items():  # pylint: disable=redefined-argument-from-local
+            for track_id in tracks:  # pylint: disable=redefined-argument-from-local
                 assigned = sum(
                     1 for reg in all_regs.values()
                     if reg_part(reg, track_id)['status'] == stati.participant
@@ -4310,7 +4311,7 @@ class EventFrontend(AbstractUserFrontend):
                        if key in r['fields']}
             # If none of the registration has a value for this field yet, we
             # consider them equal
-            if len(present) == 0:
+            if not present:
                 reg_values['enable_fields.{}'.format(key)] = True
             # If all registrations have a value, we have to compare them
             elif len(present) == len(registrations):
@@ -4584,7 +4585,7 @@ class EventFrontend(AbstractUserFrontend):
             problems_here = [p for p in problems
                              if p[1] == lodgement_id and p[2] == part_id]
             problems_condensed[(lodgement_id, part_id)] = (
-                max(p[4] for p in problems_here) if len(problems_here) else 0,
+                max(p[4] for p in problems_here) if problems_here else 0,
                 "; ".join(rs.gettext(p[0]) for p in problems_here),)
 
         # Calculate groups
@@ -4661,7 +4662,7 @@ class EventFrontend(AbstractUserFrontend):
                 (lodgement_id, lodgement)
                 for lodgement_id, lodgement
                 in xsorted(lodgements.items(), reverse=reverse,
-                           key=lambda e: sort_lodgement(e, group_id))
+                           key=lambda e: sort_lodgement(e, group_id))  # pylint: disable=cell-var-from-loop
                 if lodgement['group_id'] == group_id
             ]))
             for group_id, group
@@ -4988,7 +4989,7 @@ class EventFrontend(AbstractUserFrontend):
                 changed_inhabitant = (
                         reg_id in current_inhabitants[part_id]
                         and data.get(f"camping_mat_capacity_{part_id}_{reg_id}",
-                                     False)!= is_camping_mat)
+                                     False) != is_camping_mat)
                 if new_inhabitant or deleted_inhabitant:
                     new_reg['parts'][part_id] = {
                         'lodgement_id': (
@@ -5328,7 +5329,7 @@ class EventFrontend(AbstractUserFrontend):
                     for field in course_fields.values():
                         key = f"{temp}{track_id}.xfield_{field['field_name']}"
                         if field['entries']:
-                            choices[key]= OrderedDict(field['entries'])
+                            choices[key] = OrderedDict(field['entries'])
         if len(event['parts']) > 1:
             choices.update({
                 # RegistrationPartStati enum
@@ -6120,7 +6121,7 @@ class EventFrontend(AbstractUserFrontend):
         if ids is None:
             ids = cast(vtypes.IntCSVList, [])
 
-        entities, ordered_ids, _, field = self.field_set_aux(
+        entities, _, _, field = self.field_set_aux(
             rs, event_id, field_id, ids, kind)
         assert field is not None  # to make mypy happy
 
@@ -6464,7 +6465,7 @@ class EventFrontend(AbstractUserFrontend):
         if len(result) == 1:
             return self.redirect(rs, "event/show_registration",
                                  {'registration_id': result[0]['id']})
-        elif len(result) > 0:
+        elif result:
             # TODO make this accessible
             pass
         base_query = Query(
@@ -6491,7 +6492,7 @@ class EventFrontend(AbstractUserFrontend):
             if len(result) == 1:
                 return self.redirect(rs, "event/show_registration",
                                      {'registration_id': result[0]['id']})
-            elif len(result) > 0:
+            elif result:
                 params = querytoparams_filter(query)
                 return self.redirect(rs, "event/registration_query",
                                      params)
@@ -6534,7 +6535,7 @@ class EventFrontend(AbstractUserFrontend):
         loglinks = calculate_loglinks(rs, total, offset, length)
         return self.render(rs, "view_log", {
             'log': log, 'total': total, 'length': _length,
-            'personas': personas, 'events': events,'all_events': all_events,
+            'personas': personas, 'events': events, 'all_events': all_events,
             'registration_map': registration_map, 'loglinks': loglinks})
 
     @access("event")

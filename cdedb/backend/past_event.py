@@ -583,19 +583,17 @@ class PastEventBackend(AbstractBackend):
         warnings: List[Error] = []
         # retry with less restrictive conditions until we find something or
         # give up
-        if len(ret) == 0:
-            ret = self.query_all(rs, query,
-                                 (shortname, shortname, datetime.date.min))
-        if len(ret) == 0:
+        if not ret:
+            ret = self.query_all(rs, query, (shortname, shortname, datetime.date.min))
+        if not ret:
             warnings.append(("pevent_id", ValueError(n_("Only fuzzy match."))))
             ret = self.query_all(rs, query2, (shortname, 0.5, reference))
-        if len(ret) == 0:
+        if not ret:
             ret = self.query_all(rs, query2, (shortname, 0.5, datetime.date.min))
-        if len(ret) == 0:
+        if not ret:
             return None, [], [("pevent_id", ValueError(n_("No event found.")))]
         elif len(ret) > 1:
-            return None, warnings, [("pevent_id",
-                                     ValueError(n_("Ambiguous event.")))]
+            return None, warnings, [("pevent_id", ValueError(n_("Ambiguous event.")))]
         else:
             return unwrap(unwrap(ret)), warnings, []
 
@@ -624,13 +622,13 @@ class PastEventBackend(AbstractBackend):
         warnings: List[Error] = []
         # retry with less restrictive conditions until we find something or
         # give up
-        if len(ret) == 0:
+        if not ret:
             warnings.append(("pcourse_id", ValueError(n_("Only title match."))))
             ret = self.query_all(rs, q2, params)
-        if len(ret) == 0:
+        if not ret:
             warnings.append(("pcourse_id", ValueError(n_("Only fuzzy match."))))
             ret = self.query_all(rs, q3, params + (0.5,))
-        if len(ret) == 0:
+        if not ret:
             return None, [], [
                 ("pcourse_id", ValueError(n_("No course found.")))]
         elif len(ret) > 1:
@@ -683,7 +681,7 @@ class PastEventBackend(AbstractBackend):
             if reg['parts'][part_id]['status'] != participant_status:
                 continue
             is_orga = reg['persona_id'] in event['orgas']
-            for track_id, track in part['tracks'].items():
+            for track_id in part['tracks']:
                 rtrack = reg['tracks'][track_id]
                 is_instructor = False
                 if rtrack['course_id']:
