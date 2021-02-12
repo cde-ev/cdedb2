@@ -214,7 +214,8 @@
                     {% for unsubscription in list %} {# This is already sorted. #}
                         <li class="hide-hover-container clearfix-after">
                             {{ util.persona_anchor(all_unsubscriptions[unsubscription], ml_id=ambience['mailinglist']['id'],
-                                                   aclass='text-muted' if unsubscription not in redundant_unsubscriptions else '' ) }}
+                                                   aclass='text-muted' if unsubscription in redundant_unsubscriptions else '',
+                                                   readonly=False if "ml_mgmt" in user.admin_views else True) }}
                             {% if "ml_mgmt" in user.admin_views %}
                                 {% if unsubscription in redundant_unsubscriptions %}
                                     <form action="{{ cdedblink('ml/reset_unsubscription') }}"
