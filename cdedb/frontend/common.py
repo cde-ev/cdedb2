@@ -2329,7 +2329,10 @@ def event_guard(argname: str = "event_id",
         @functools.wraps(fun)
         def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
                     **kwargs: Any) -> Any:
-            arg = kwargs.get(argname, default=args[0])
+            if argname in kwargs:  # pylint: disable=consider-using-get
+                arg = kwargs[argname]
+            else:
+                arg = args[0]
             if arg not in rs.user.orga and not obj.is_admin(rs):
                 raise werkzeug.exceptions.Forbidden(
                     rs.gettext("This page can only be accessed by orgas."))
@@ -2363,7 +2366,10 @@ def mailinglist_guard(argname: str = "mailinglist_id",
         @functools.wraps(fun)
         def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
                     **kwargs: Any) -> Any:
-            arg = kwargs.get(argname, default=args[0])
+            if argname in kwargs:  # pylint: disable=consider-using-get
+                arg = kwargs[argname]
+            else:
+                arg = args[0]
             if allow_moderators:
                 if not obj.mlproxy.may_manage(rs, **{argname: arg}):
                     raise werkzeug.exceptions.Forbidden(rs.gettext(
@@ -2393,7 +2399,10 @@ def assembly_guard(fun: F) -> F:
     @functools.wraps(fun)
     def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
                 **kwargs: Any) -> Any:
-        assembly_id = kwargs.get("assembly_id", default=args[0])
+        if "assembly_id" in kwargs:  # pylint: disable=consider-using-get
+            assembly_id = kwargs["assembly_id"]
+        else:
+            assembly_id = args[0]
         if not obj.assemblyproxy.is_presider(rs, assembly_id=assembly_id):
             raise werkzeug.exceptions.Forbidden(rs.gettext(
                 "This page may only be accessed by the assembly's"
