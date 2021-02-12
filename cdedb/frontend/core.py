@@ -802,6 +802,8 @@ class CoreFrontend(AbstractFrontend):
           assembly_admin or presider. Needed for external_signup.
         - ``assembly_user``: Search for an assembly user as assembly_admin or presider
         - ``ml_user``: Search for a mailinglist user as ml_admin or moderator
+        - ``pure_ml_user``: Search for an assembly only user as ml_admin.
+          Needed for the account merger.
         - ``ml_subscriber``: Search for a mailinglist user for subscription purposes.
           Needed for add_subscriber action only.
         - ``event_user``: Search an event user as event_admin or orga
@@ -864,6 +866,13 @@ class CoreFrontend(AbstractFrontend):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append(
                 ("is_ml_realm", QueryOperators.equal, True))
+        elif kind == "pure_ml_user":
+            if "ml_admin" not in rs.user.roles:
+                raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+            search_additions.extend((
+                ("is_ml_realm", QueryOperators.equal, True),
+                ("is_assembly_realm", QueryOperators.equal, False),
+                ("is_event_realm", QueryOperators.equal, False)))
         elif kind == "ml_subscriber":
             if aux is None:
                 raise werkzeug.exceptions.BadRequest(n_(

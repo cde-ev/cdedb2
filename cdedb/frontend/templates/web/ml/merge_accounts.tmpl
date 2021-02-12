@@ -34,20 +34,18 @@
     <form action="{{ cdedblink('ml/merge_accounts') }}" method="POST">
         {{ util.anti_csrf_token('ml/merge_accounts') }}
         {{ util.form_input_text(name="source_persona_id", label=gettext("Source User"),
-                                placeholder="DB-XXXX-X,DB-XXXX-X,…",
-                                anid="input-source-persona") }}
+                                placeholder="DB-XXXX-X", anid="input-source-persona") }}
         <script nonce="{{ csp_nonce }}">
             $('#input-source-persona').cdedbSearchPerson(
-                '{{ (cdedblink('core/select_persona')|e) + ('?kind=ml_user'|s) }}', null,
+                '{{ (cdedblink('core/select_persona')|e) + ('?kind=pure_ml_user&phrase=%s'|s) }}', [],
                 false, false, '{{ gettext("CdEDB-ID, Name or E-Mail") }}'
             );
         </script>
         {{ util.form_input_text(name="target_persona_id", label=gettext("Target User"),
-                                placeholder="DB-XXXX-X,DB-XXXX-X,…",
-                                anid="input-target-persona") }}
+                                placeholder="DB-XXXX-X", anid="input-target-persona") }}
         <script nonce="{{ csp_nonce }}">
             $('#input-target-persona').cdedbSearchPerson(
-                '{{ (cdedblink('core/select_persona')|e) + ('?kind=admin_persona'|s) }}', null,
+                '{{ (cdedblink('core/select_persona')|e) + ('?kind=ml_user&phrase=%s'|s) }}', [],
                 false, false, '{{ gettext("CdEDB-ID, Name or E-Mail") }}'
             );
         </script>

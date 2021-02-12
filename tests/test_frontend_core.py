@@ -278,6 +278,10 @@ class TestCoreFrontend(FrontendTest):
         expectation = (1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 13, 14)
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
+        self.get('/core/persona/select?kind=pure_ml_user&phrase=@exam')
+        expectation = (10, 14)
+        reality = tuple(e['id'] for e in self.response.json['personas'])
+        self.assertEqual(expectation, reality)
         self.get('/core/persona/select?kind=event_user&phrase=bert')
         expectation = (2,)
         reality = tuple(e['id'] for e in self.response.json['personas'])
@@ -311,6 +315,10 @@ class TestCoreFrontend(FrontendTest):
             self.assertTitle('403: Forbidden')
         if user['display_name'] in {"Martin", "Rowena"}:
             self.get('/core/persona/select?kind=ml_user&phrase=@exam',
+                     status=403)
+            self.assertTitle('403: Forbidden')
+        if user['display_name'] != "Nina":
+            self.get('/core/persona/select?kind=pure_ml_user&phrase=@exam',
                      status=403)
             self.assertTitle('403: Forbidden')
         if user['display_name'] not in {"Annika", "Bertå"}:
