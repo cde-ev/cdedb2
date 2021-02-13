@@ -27,9 +27,10 @@ help:
 	@echo "coverage -- run coverage to determine test suite coverage"
 
 PYTHONBIN ?= python3
-PYLINTBIN ?= pylint3
-COVERAGEBIN ?= python3-coverage
-MYPYBIN ?= mypy
+FLAKE8 ?= $(PYTHONBIN) -m flake8
+PYLINT ?= $(PYTHONBIN) -m pylint
+COVERAGE ?= $(PYTHONBIN) -m coverage
+MYPY ?= $(PYTHONBIN) -m mypy
 TESTPREPARATION ?= automatic
 I18NDIR ?= ./i18n
 
@@ -207,10 +208,16 @@ lint:
 	grep -E -R '^.{121,}' cdedb/frontend/templates/ | grep 'tmpl:'
 	@echo ""
 	@echo $(BANNERLINE)
+	@echo "All of flake8"
+	@echo $(BANNERLINE)
+	@echo ""
+	$(FLAKE8) cdedb
+	@echo ""
+	@echo $(BANNERLINE)
 	@echo "All of pylint"
 	@echo $(BANNERLINE)
 	@echo ""
-	${PYLINTBIN} cdedb
+	$(PYLINT) cdedb
 
 
 prepare-check:
@@ -274,11 +281,11 @@ VALIDATORCHECKSUM := "c7d8d7c925dbd64fd5270f7b81a56f526e6bbef0 $\
 		$(wildcard cdedb/frontend/*.py) \
 		$(wildcard cdedb/backend/*.py) $(wildcard tests/*.py)
 	$(MAKE) prepare-check
-	$(COVERAGEBIN) run -m tests.main
+	$(COVERAGE) run -m tests.main
 
 coverage: .coverage
-	$(COVERAGEBIN) report --include 'cdedb/*' --show-missing
-	$(COVERAGEBIN) html --include 'cdedb/*'
+	$(COVERAGE) report --include 'cdedb/*' --show-missing
+	$(COVERAGE) html --include 'cdedb/*'
 	@echo "HTML reports for easier inspection are in ./htmlcov"
 
 tests/ancillary_files/sample_data.sql: tests/ancillary_files/sample_data.json \
@@ -293,4 +300,4 @@ tests/ancillary_files/sample_data.sql: tests/ancillary_files/sample_data.json \
 		&& sudo -u www-data rm "$${SQLTEMPFILE}"
 
 mypy:
-	${MYPYBIN} bin cdedb tests
+	$(MYPY) bin cdedb tests
