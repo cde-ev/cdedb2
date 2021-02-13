@@ -1468,7 +1468,7 @@ class MlBackend(AbstractBackend):
                         set(source_subscriptions) - set(target_subscriptions))))
 
             code = 1
-            msg = f"User {source_persona_id} mit diesem Account gemergt."
+            msg = f"Dieser Account hat User {source_persona_id} geschluckt."
 
             for ml_id, state in source_subscriptions.items():
                 # state=None is only possible, if we handle a set of mailinglists
@@ -1498,7 +1498,7 @@ class MlBackend(AbstractBackend):
                     code *= self.set_subscription_address(
                         rs, ml_id, persona_id=target_persona_id, email=address)
 
-            msg = f"User {source_persona_id} in User {target_persona_id} gemergt."
+            msg = f"User {source_persona_id} wurde von User {target_persona_id} geschluckt."
             mls = self.get_mailinglists(rs, source_moderates)
             for ml_id in source_moderates:
                 current_moderators: Set[int] = mls[ml_id]["moderators"]
@@ -1507,7 +1507,7 @@ class MlBackend(AbstractBackend):
 
             # at last, archive the source user
             # this will delete all subscriptions and remove all moderator rights
-            msg = f"Account in User {target_persona_id} gemergt."
+            msg = f"User {target_persona_id} hat diesen Account geschluckt."
             code *= self.core.archive_persona(rs, persona_id=source_persona_id, note=msg)
 
         return code
