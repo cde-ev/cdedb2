@@ -1418,6 +1418,19 @@ class MlBackend(AbstractBackend):
                        source_persona_id: vtypes.ID,
                        target_persona_id: vtypes.ID,
                        clone_addresses: bool = True) -> DefaultReturnCode:
+        """Merge an ml_only account into another persona.
+
+        This takes the source_persona, mirror all subscription states and moderator
+        privileges to the target_persona, and archive the source_persona at last.
+
+        Note that this will abort if both users are related to the same mailinglist.
+        This must be solved manually before calling this function.
+
+        :param source_persona_id: user from which will be merged
+        :param target_persona_id: user into which will be merged
+        :param clone_addresses: if true, use the address (explicit set or username) of
+            the source when subscribing the target to a mailinglist
+        """
         source_persona_id = affirm(vtypes.ID, source_persona_id)
         target_persona_id = affirm(vtypes.ID, target_persona_id)
 
