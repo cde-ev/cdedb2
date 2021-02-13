@@ -461,7 +461,7 @@ class MlBackend(AbstractBackend):
 
         A complete set must be passed, which will superseed the current set.
 
-        Contrary to `set_mailinglist` this may be used by moderators.
+        This may also be used by moderators.
         """
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
         moderators = affirm_set(vtypes.ID, moderators)
