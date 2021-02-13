@@ -296,9 +296,13 @@ class MlBaseFrontend(AbstractUserFrontend):
                     "Source persona must be ml-only user."))))
         if rs.has_validation_errors():
             return self.merge_accounts_form(rs)
-        code = self.mlproxy.merge_accounts(
-            rs, source_persona_id, target_persona_id, clone_addresses)
-        self.notify_return_code(rs, code)
+        try:
+            code = self.mlproxy.merge_accounts(
+                rs, source_persona_id, target_persona_id, clone_addresses)
+            self.notify_return_code(rs, code)
+        except ValueError as e:
+            rs.notify("error", message=str(e))
+            return self.merge_accounts_form(rs)
         return self.redirect(rs, "ml/merge_accounts")
 
     @access("ml")

@@ -1440,18 +1440,18 @@ class MlBackend(AbstractBackend):
             # check the source user is ml_only, no admin and not archived
             source = self.core.get_ml_user(rs, source_persona_id)
             if not self.core.verify_persona(rs, source_persona_id, allowed_roles={'ml'}):
-                raise RuntimeError(n_("Source User must be ml realm only."))
+                raise ValueError(n_("Source User must be ml realm only."))
             if source['is_archived']:
-                raise RuntimeError(n_("Source User is not accessible."))
+                raise ValueError(n_("Source User is not accessible."))
             if any(source[admin_bit] for admin_bit in ADMIN_KEYS):
-                raise RuntimeError(n_("Source User is admin and can not be merged."))
+                raise ValueError(n_("Source User is admin and can not be merged."))
 
             # check the target user is a valid persona
             target = self.core.get_ml_user(rs, target_persona_id)
             if not self.core.verify_persona(rs, target_persona_id, required_roles={'ml'}):
-                raise RuntimeError(n_("Target User is no valid ml user."))
+                raise ValueError(n_("Target User is no valid ml user."))
             if target['is_archived']:
-                raise RuntimeError(n_("Target User is not accessible."))
+                raise ValueError(n_("Target User is not accessible."))
 
             # retrieve all mailinglists they are subscribed to
             # TODO restrict to active mailinglists?
@@ -1463,7 +1463,9 @@ class MlBackend(AbstractBackend):
             source_moderates = self.moderator_info(rs, source_persona_id)
 
             if set(source_subscriptions) & set(target_subscriptions):
-                raise ValueError(n_("Both users are related to the same mailinglists"))
+                raise ValueError(
+                    n_("Both users are related to the same mailinglists: {}".format(
+                        set(source_subscriptions) - set(target_subscriptions))))
 
             code = 1
             msg = f"User {source_persona_id} mit diesem Account gemergt."
