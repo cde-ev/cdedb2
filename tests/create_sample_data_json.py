@@ -52,6 +52,7 @@ def dump_sql_data(rs: MockRequestState, core: CoreBackend
                   for table in re.finditer(r'CREATE TABLE\s(?P<name>\w+\.\w+)', f.read())]
 
     full_sample_data = {}
+    reference_frame = nearly_now(delta=datetime.timedelta(days=30))
 
     for table in tables:
         query = f"SELECT * FROM {table} ORDER BY id"
@@ -62,7 +63,7 @@ def dump_sql_data(rs: MockRequestState, core: CoreBackend
         for entity in entities:
             # Since we want to modify the list in-place, we have to iterate in this way.
             for field, value in list(entity.items()):
-                if isinstance(value, datetime.datetime) and value == nearly_now():
+                if isinstance(value, datetime.datetime) and value == reference_frame:
                     entity[field] = "---now---"
                 if field in ignored_columns.get(table, {}):
                     entity[field] = None
