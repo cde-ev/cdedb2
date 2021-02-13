@@ -5,13 +5,12 @@
 import collections
 import copy
 import datetime
-import decimal
 import itertools
 import operator
 import pathlib
 import quopri
 import tempfile
-from typing import Any, Collection, Dict, List, Optional, Set, Tuple, Union, cast
+from typing import Any, Collection, Dict, List, Optional, Set, Tuple
 
 import magic
 import qrcode
@@ -25,12 +24,11 @@ import cdedb.validationtypes as vtypes
 from cdedb.common import (
     ADMIN_KEYS, ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, REALM_INHERITANCE,
     REALM_SPECIFIC_GENESIS_FIELDS, ArchiveError, CdEDBObject, DefaultReturnCode,
-    EntitySorter, PathLike, PrivilegeError, Realm, RequestState, extract_roles,
+    EntitySorter, PrivilegeError, Realm, RequestState, extract_roles,
     get_persona_fields_by_realm, implied_realms, merge_dicts, n_, now, pairwise, unwrap,
     xsorted,
 )
 
-from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
 from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, access, basic_redirect,
@@ -593,7 +591,7 @@ class CoreFrontend(AbstractFrontend):
             if "core" in access_levels and "member" in roles:
                 user_lastschrift = self.cdeproxy.list_lastschrift(
                     rs, persona_ids=(persona_id,), active=True)
-                data['has_lastschrift'] = len(user_lastschrift) > 0
+                data['has_lastschrift'] = bool(user_lastschrift)
         if is_relative_or_meta_admin and is_relative_or_meta_admin_view:
             # This is a bit involved to not contaminate the data dict
             # with keys which are not applicable to the requested persona
@@ -757,7 +755,7 @@ class CoreFrontend(AbstractFrontend):
         result = self.coreproxy.submit_general_query(rs, query)
         if len(result) == 1:
             return self.redirect_show_user(rs, result[0]["id"])
-        elif len(result) > 0:
+        elif result:
             # TODO make this accessible
             pass
         query = Query(
@@ -770,7 +768,7 @@ class CoreFrontend(AbstractFrontend):
         result = self.coreproxy.submit_general_query(rs, query)
         if len(result) == 1:
             return self.redirect_show_user(rs, result[0]["id"])
-        elif len(result) > 0:
+        elif result:
             params = querytoparams_filter(query)
             rs.values.update(params)
             return self.user_search(rs, is_search=True, download=None,
@@ -2237,7 +2235,7 @@ class CoreFrontend(AbstractFrontend):
                             for realm in REALM_SPECIFIC_GENESIS_FIELDS))
     def genesis_list_cases(self, rs: RequestState) -> Response:
         """Compile a list of genesis cases to review."""
-        realms = [realm for realm in REALM_SPECIFIC_GENESIS_FIELDS.keys()
+        realms = [realm for realm in REALM_SPECIFIC_GENESIS_FIELDS
                   if {"{}_admin".format(realm), 'core_admin'} & rs.user.roles]
         data = self.coreproxy.genesis_list_cases(
             rs, stati=(const.GenesisStati.to_review,), realms=realms)

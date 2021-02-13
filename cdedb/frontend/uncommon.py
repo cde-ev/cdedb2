@@ -9,7 +9,6 @@ dependencies.
 """
 
 import abc
-from typing import Callable, Mapping
 
 import werkzeug
 
