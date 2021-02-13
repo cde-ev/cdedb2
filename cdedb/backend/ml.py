@@ -1500,10 +1500,10 @@ class MlBackend(AbstractBackend):
 
             ml_overlap = set(source_subscriptions) & set(target_subscriptions)
             if ml_overlap:
-                mls = [str(ml) for ml in sorted(ml_overlap)]
+                ml_list = [str(ml) for ml in sorted(ml_overlap)]
                 raise ValueError(
                     n_("Both users are related to the same mailinglists: {}".format(
-                        ", ".join(mls))))
+                        ", ".join(ml_list))))
 
             code = 1
             msg = f"Dieser Account hat User {source_persona_id} geschluckt."
