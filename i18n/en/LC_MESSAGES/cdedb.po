@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2021-02-04 00:17+0100\n"
+"POT-Creation-Date: 2021-02-13 05:09+0100\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -34,8 +34,8 @@ msgstr ""
 msgid "Must have privileged access to view assembly log."
 msgstr ""
 
-#: cdedb/backend/assembly.py:293 cdedb/backend/cde.py:868
-#: cdedb/backend/core.py:2752 cdedb/backend/event.py:914
+#: cdedb/backend/assembly.py:293 cdedb/backend/cde.py:865
+#: cdedb/backend/core.py:2748 cdedb/backend/event.py:914
 #: cdedb/backend/ml.py:345 cdedb/backend/past_event.py:767
 msgid "Bad scope."
 msgstr ""
@@ -67,9 +67,9 @@ msgstr ""
 #: cdedb/backend/assembly.py:1910 cdedb/backend/assembly.py:1937
 #: cdedb/backend/assembly.py:1997 cdedb/backend/cde.py:113
 #: cdedb/backend/cde.py:138 cdedb/backend/cde.py:289 cdedb/backend/core.py:504
-#: cdedb/backend/core.py:704 cdedb/backend/core.py:2536
-#: cdedb/backend/core.py:2539 cdedb/backend/core.py:2567
-#: cdedb/backend/core.py:2594 cdedb/backend/core.py:2598
+#: cdedb/backend/core.py:704 cdedb/backend/core.py:2532
+#: cdedb/backend/core.py:2535 cdedb/backend/core.py:2563
+#: cdedb/backend/core.py:2590 cdedb/backend/core.py:2594
 #: cdedb/backend/event.py:172 cdedb/backend/event.py:248
 #: cdedb/backend/event.py:470 cdedb/backend/event.py:494
 #: cdedb/backend/event.py:713 cdedb/backend/event.py:1623
@@ -144,8 +144,8 @@ msgstr ""
 #: cdedb/backend/assembly.py:688 cdedb/backend/assembly.py:737
 #: cdedb/backend/assembly.py:1006 cdedb/backend/assembly.py:1048
 #: cdedb/backend/assembly.py:1719 cdedb/backend/assembly.py:1750
-#: cdedb/backend/cde.py:241 cdedb/backend/cde.py:267 cdedb/backend/core.py:2444
-#: cdedb/backend/core.py:2467 cdedb/backend/event.py:1070
+#: cdedb/backend/cde.py:241 cdedb/backend/cde.py:267 cdedb/backend/core.py:2440
+#: cdedb/backend/core.py:2463 cdedb/backend/event.py:1070
 #: cdedb/backend/event.py:1106 cdedb/backend/event.py:1299
 #: cdedb/backend/event.py:1332 cdedb/backend/event.py:1419
 #: cdedb/backend/event.py:1477 cdedb/backend/event.py:1993
@@ -162,7 +162,7 @@ msgstr ""
 
 #: cdedb/backend/assembly.py:699 cdedb/backend/assembly.py:1469
 #: cdedb/backend/assembly.py:1472 cdedb/backend/cde.py:247
-#: cdedb/backend/core.py:2455 cdedb/backend/core.py:2458
+#: cdedb/backend/core.py:2451 cdedb/backend/core.py:2454
 #, python-format
 msgid "Unable to cascade %(blocker)s."
 msgstr ""
@@ -415,11 +415,11 @@ msgstr ""
 msgid "Addresscheck already done for this expuls."
 msgstr ""
 
-#: cdedb/backend/cde.py:831 cdedb/backend/core.py:1719
+#: cdedb/backend/cde.py:828 cdedb/backend/core.py:1715
 msgid "Too many queries."
 msgstr ""
 
-#: cdedb/backend/cde.py:846 cdedb/backend/cde.py:860 cdedb/backend/event.py:476
+#: cdedb/backend/cde.py:843 cdedb/backend/cde.py:857 cdedb/backend/event.py:476
 msgid "Admin only."
 msgstr ""
 
@@ -452,13 +452,13 @@ msgstr ""
 msgid "Modification failed."
 msgstr ""
 
-#: cdedb/backend/core.py:613 cdedb/backend/core.py:2338
-#: cdedb/backend/core.py:2360 cdedb/frontend/core.py:1759
+#: cdedb/backend/core.py:613 cdedb/backend/core.py:2334
+#: cdedb/backend/core.py:2356 cdedb/frontend/core.py:1759
 msgid "Nonexistent user."
 msgstr ""
 
-#: cdedb/backend/core.py:658 cdedb/backend/core.py:2134
-#: cdedb/backend/core.py:2163 cdedb/backend/core.py:2295
+#: cdedb/backend/core.py:658 cdedb/backend/core.py:2130
+#: cdedb/backend/core.py:2159 cdedb/backend/core.py:2291
 msgid "Persona does not exist."
 msgstr ""
 
@@ -618,106 +618,106 @@ msgstr ""
 msgid "May not provide more than one input."
 msgstr ""
 
-#: cdedb/backend/core.py:1722
+#: cdedb/backend/core.py:1718
 msgid "Not a CdE user."
 msgstr ""
 
-#: cdedb/backend/core.py:1728
+#: cdedb/backend/core.py:1724
 msgid "Improper access to member data."
 msgstr ""
 
-#: cdedb/backend/core.py:1740
+#: cdedb/backend/core.py:1736
 msgid "Not an ml user."
 msgstr ""
 
-#: cdedb/backend/core.py:1752
+#: cdedb/backend/core.py:1748
 msgid "Not an assembly user."
 msgstr ""
 
-#: cdedb/backend/core.py:1769
+#: cdedb/backend/core.py:1765
 msgid "Must be privileged."
 msgstr ""
 
-#: cdedb/backend/core.py:1807
+#: cdedb/backend/core.py:1803
 msgid "Unable to create this sort of persona."
 msgstr ""
 
-#: cdedb/backend/core.py:1895 cdedb/backend/core.py:2219
-#: cdedb/backend/core.py:2289
+#: cdedb/backend/core.py:1891 cdedb/backend/core.py:2215
+#: cdedb/backend/core.py:2285
 msgid "Atomized – impossible to escalate."
 msgstr ""
 
-#: cdedb/backend/core.py:2129
+#: cdedb/backend/core.py:2125
 msgid "Preventing reset of admin."
 msgstr ""
 
-#: cdedb/backend/core.py:2168 cdedb/frontend/common.py:2131
+#: cdedb/backend/core.py:2164 cdedb/frontend/common.py:2131
 msgid "Link expired."
 msgstr ""
 
-#: cdedb/backend/core.py:2170 cdedb/backend/core.py:2172
+#: cdedb/backend/core.py:2166 cdedb/backend/core.py:2168
 msgid "Link invalid or already used."
 msgstr ""
 
-#: cdedb/backend/core.py:2195
+#: cdedb/backend/core.py:2191
 msgid "Selecting persona allowed for reset only."
 msgstr ""
 
-#: cdedb/backend/core.py:2198
+#: cdedb/backend/core.py:2194
 msgid "Could not determine persona to reset."
 msgstr ""
 
-#: cdedb/backend/core.py:2200
+#: cdedb/backend/core.py:2196
 msgid "No authorization provided."
 msgstr ""
 
-#: cdedb/backend/core.py:2203
+#: cdedb/backend/core.py:2199
 msgid "Password verification failed."
 msgstr ""
 
-#: cdedb/backend/core.py:2210
+#: cdedb/backend/core.py:2206
 msgid "No new password provided."
 msgstr ""
 
-#: cdedb/backend/core.py:2212 cdedb/frontend/core.py:1715
+#: cdedb/backend/core.py:2208 cdedb/frontend/core.py:1715
 #: cdedb/frontend/core.py:1877 cdedb/validation.py:912
 msgid "Password too weak."
 msgstr ""
 
-#: cdedb/backend/core.py:2270 cdedb/frontend/cde.py:1269
+#: cdedb/backend/core.py:2266 cdedb/frontend/cde.py:1269
 #: cdedb/frontend/common.py:1377 cdedb/frontend/event.py:2310
 msgid "No input provided."
 msgstr ""
 
-#: cdedb/backend/core.py:2272
+#: cdedb/backend/core.py:2268
 msgid "More than one input provided."
 msgstr ""
 
-#: cdedb/backend/core.py:2340
+#: cdedb/backend/core.py:2336
 msgid "Inactive user."
 msgstr ""
 
-#: cdedb/backend/core.py:2362
+#: cdedb/backend/core.py:2358
 msgid "Lockdown active."
 msgstr ""
 
-#: cdedb/backend/core.py:2435
+#: cdedb/backend/core.py:2431
 msgid "Unable to remove unconfirmed genesis case before confirmation timeout."
 msgstr ""
 
-#: cdedb/backend/core.py:2438
+#: cdedb/backend/core.py:2434
 msgid "Unable to remove genesis case with status {}."
 msgstr ""
 
-#: cdedb/backend/core.py:2591
+#: cdedb/backend/core.py:2587
 msgid "Genesis case does not exist."
 msgstr ""
 
-#: cdedb/backend/core.py:2632
+#: cdedb/backend/core.py:2628
 msgid "Invalid genesis state."
 msgstr ""
 
-#: cdedb/backend/core.py:2636
+#: cdedb/backend/core.py:2632
 msgid "Wrong target realm."
 msgstr ""
 
@@ -12195,7 +12195,6 @@ msgid "CoreLogCodes.username_change"
 msgstr "Email changed"
 
 #: cdedb/i18n_additional.py:67
-#, fuzzy
 msgid "CoreLogCodes.quota_violation"
 msgstr "Quota exceeded"
 
