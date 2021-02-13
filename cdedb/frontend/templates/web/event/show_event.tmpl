@@ -88,7 +88,7 @@
                 {% for anid, entry in orgas.items() %} {# This is already sorted. #}
                     {{ util.persona_anchor(entry) }}{% if not loop.last %},{% endif %}
                 {% else %}
-                    {% trans %}none{% endtrans %}
+                    {% trans %}None{% endtrans %}
                 {% endfor %}
             </dd>
         {% endif %}

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2021-02-12 04:12+0100\n"
+"POT-Creation-Date: 2021-02-14 00:31+0100\n"
 "PO-Revision-Date: 2020-12-06 11:30+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -6224,6 +6224,7 @@ msgstr "Keine auswählen"
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:124
 #: cdedb/frontend/templates/web/core/show_user.tmpl:217
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:162
+#: cdedb/frontend/templates/web/event/show_event.tmpl:91
 msgid "None"
 msgstr "Keine"
 
@@ -11320,11 +11321,6 @@ msgstr "(Nachmeldungen bis %(date)s)"
 msgid "(Late registration open)"
 msgstr "(Nachmeldung geöffnet)"
 
-#: cdedb/frontend/templates/web/event/show_event.tmpl:91
-#: cdedb/frontend/templates/web/generic.tmpl:547
-msgid "none"
-msgstr "keines"
-
 #: cdedb/frontend/templates/web/event/show_event.tmpl:105
 msgid "Questionnaire active"
 msgstr "Fragebogen aktiv"
@@ -11946,6 +11942,10 @@ msgstr "alle"
 #: cdedb/frontend/templates/web/generic.tmpl:546
 msgid "select none"
 msgstr "Keines auswählen"
+
+#: cdedb/frontend/templates/web/generic.tmpl:547
+msgid "none"
+msgstr "keines"
 
 #: cdedb/frontend/templates/web/generic.tmpl:549
 msgid "invert selection"
