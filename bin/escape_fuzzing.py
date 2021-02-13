@@ -21,8 +21,7 @@ Please note, that this will still not catch any vulnerabilities, since it does
 not visits any page in any possible state with any possible request data. For
 example the following things not taken into account:
   * locked events
-  * form submits with some valid data and only some values set to to the
-    marker string
+  * form submits with some valid data and only some values set to to the payload
 
 To avoid confusion by the error output of the cdedb, you may want to execute
 this script, as follows:
@@ -30,24 +29,17 @@ this script, as follows:
    python3 -m bin.escape_fuzzing 2>/dev/null
 """
 import itertools
-import os
 import pathlib
 import queue
+import time
 from typing import NamedTuple, Optional, TYPE_CHECKING
 
 import webtest
-
-os.environ['CDEDB_TEST'] = "True"
 
 from cdedb.config import BasicConfig
 from cdedb.frontend.application import Application
 
 _BASICCONF = BasicConfig()
-
-
-def _(e: Exception) -> str:
-    return str(e)[:90]
-
 
 outdir = pathlib.Path('./out')
 
@@ -85,8 +77,10 @@ start_page = login_form.submit()
 start_page = start_page.maybe_follow()
 response_queue.put(ResponseData(start_page, '/', None))
 
-
 errors = []
+
+payload = "<script>abcdef</script>"
+double_escape = "&amp;lt;"
 
 
 def log_error(s: str) -> None:
@@ -94,6 +88,12 @@ def log_error(s: str) -> None:
     errors.append(s)
 
 
+def f(e: Exception) -> str:
+    """Helper to format overly long exceptions."""
+    return str(e)[:90]
+
+
+start_time = time.time()
 while True:
     try:
         response, url, referer = response_queue.get(False)
@@ -109,18 +109,18 @@ while True:
 
     # Do checks
     # print(f"Checking {url} ...")
-    if "<script>abcdef" in response.text:
-        log_error(f">>> Found unescaped marker <script> in {url}, reached from {referer}.")
+    if payload in response.text:
+        log_error(f"Found unescaped payload in {url}, reached from {referer}.")
         if outdir.exists():
             outfile = outdir / str(len(list(outdir.iterdir())))
-            with open(outfile, 'wb') as f:
-                f.write(response.body)
-    if "&amp;lt;" in response.text:
-        log_error(f">>> Found double escaped '<' in {url}, reached from {referer}")
+            with open(outfile, 'wb') as out:
+                out.write(response.body)
+    if double_escape in response.text:
+        log_error(f"Found double escaped '<' in {url}, reached from {referer}")
         if outdir.exists():
             outfile = outdir / str(len(list(outdir.iterdir())))
-            with open(outfile, 'wb') as f:
-                f.write(response.body)
+            with open(outfile, 'wb') as out:
+                out.write(response.body)
 
     # Follow all links to unvisited page urls
     for link_element in response.html.find_all('a'):
@@ -130,6 +130,8 @@ while True:
         if target.startswith(('http://', 'https://', 'mailto:', 'tel:', '/doc/',
                               '/static/')):
             continue
+        if target.startswith('/db'):
+            target = target[3:]
         target = target.split('#')[0]
 
         # Strip ambiguous parameters from the url to check if it has already
@@ -149,7 +151,7 @@ while True:
             new_response = response.goto(target)
             new_response = new_response.maybe_follow()
         except webtest.app.AppError as e:
-            log_error(f"Got error when following {target} from {url}: {_(e)}")
+            log_error(f"Got error when following {target} from {url}: {f(e)}")
             continue
         visited_urls.add(unique_target)
         response_queue.put(ResponseData(new_response, target, url))
@@ -163,7 +165,7 @@ while True:
             new_response = form.submit()
             new_response = new_response.maybe_follow()
         except webtest.app.AppError as e:
-            log_error(f"Got error when posting to {form.action}: {_(e)}")
+            log_error(f"Got error when posting to {form.action}: {f(e)}")
             continue
         posted_urls.add(form.action)
         response_queue.put(ResponseData(new_response, form.action + " [P]", url), True)
@@ -173,13 +175,14 @@ while True:
             if isinstance(field, (webtest.forms.Checkbox, webtest.forms.Radio,
                                   webtest.forms.File)):
                 continue
-            field.force_value("<script>abcdef</script>")
+            field.force_value(payload)
         try:
             new_response = form.submit()
             new_response = new_response.maybe_follow()
         except webtest.app.AppError as e:
-            log_error(f"Got error when posting to {form.action} with marker data: {_(e)}")
+            log_error(f"Got error when posting to {form.action} with payload: {f(e)}")
             continue
         response_queue.put(ResponseData(new_response, form.action + " [P+token]", url))
 
-print(f"Found {len(errors)} errors.")
+end_time = time.time()
+print(f"Found {len(errors)} errors in {end_time - start_time:.3f} seconds.")
