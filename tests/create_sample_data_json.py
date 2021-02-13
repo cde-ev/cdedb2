@@ -2,12 +2,11 @@ import argparse
 import datetime
 import json
 import re
-import collections
 
-from typing import Any, OrderedDict, List
+from typing import Dict, Optional, List
 
 from cdedb.common import CustomJSONEncoder, nearly_now
-from cdedb.script import make_backend, setup, MockRequestState
+from cdedb.script import make_backend, MockRequestState, setup
 from cdedb.backend.core import CoreBackend
 
 # per default, we sort entries in a table by their id. Here we can specify any arbitrary
@@ -58,25 +57,27 @@ implicit_columns = {
 
 
 def dump_sql_data(rs: MockRequestState, core: CoreBackend
-                  ) -> OrderedDict[str, List[OrderedDict[str, Any]]]:
+                  ) -> Dict[str, List[Dict[str, Optional[str]]]]:
     # extract the tables to be created from the database tables
     with open("/cdedb2/cdedb/database/cdedb-tables.sql", "r") as f:
         tables = [table.group('name')
                   for table in re.finditer(r'CREATE TABLE\s(?P<name>\w+\.\w+)', f.read())]
 
-    full_sample_data = collections.OrderedDict()
+    # take care that the order is preserved
+    full_sample_data = dict()
     reference_frame = nearly_now(delta=datetime.timedelta(days=30))
 
     for table in tables:
-        order = ", ".join((sort_table_by.get(table) or []) + ['id'])
+        order = ", ".join(sort_table_by.get(table, []) + ['id'])
         query = f"SELECT * FROM {table} ORDER BY {order}"
         entities = core.query_all(rs, query, ())  # type: ignore
         if table in ignored_tables:
-            entities = list()
+            entities = tuple()
         print(f"{query:100} ==> {len(entities):3}", "" if entities else "!")
         sorted_entities = list()
         for entity in entities:
-            sorted_entity = collections.OrderedDict()
+            # take care that the order is preserved
+            sorted_entity: Dict[str, Optional[str]] = dict()
             for field, value in entity.items():
                 if field in implicit_columns.get(table, {}):
                     pass
@@ -105,10 +106,10 @@ def main() -> None:
     rs = setup(1, "cdb_admin", "9876543210abcdefghijklmnopqrst")()
     core = make_backend("core", proxy=False)
 
-    sample_data = dump_sql_data(rs, core)
+    data = dump_sql_data(rs, core)
 
     with open(args.outfile, "w") as f:
-        json.dump(sample_data, f, cls=CustomJSONEncoder, indent=4, ensure_ascii=False)
+        json.dump(data, f, cls=CustomJSONEncoder, indent=4, ensure_ascii=False)
 
 
 if __name__ == '__main__':
