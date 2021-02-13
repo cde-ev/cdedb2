@@ -772,7 +772,6 @@ class Silencer:
 
     def __init__(self, rs: RequestState):
         self.rs = rs
-        _affirm_atomized_context(self.rs)
 
     def __enter__(self) -> None:
         self.rs.is_quiet = True
