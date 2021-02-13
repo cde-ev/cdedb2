@@ -2,12 +2,23 @@ import argparse
 import datetime
 import json
 import re
+import collections
 
 from typing import Dict, Any, Tuple
 
-from cdedb.common import CustomJSONEncoder, nearly_now
+from cdedb.common import CustomJSONEncoder, nearly_now, xsorted
 from cdedb.script import make_backend, setup, MockRequestState
 from cdedb.backend.core import CoreBackend
+
+sort_table_by = {
+    "ml.subscription_states": "mailinglist_id",
+    "ml.whitelist": "mailinglist_id",
+    "ml.moderators": "mailinglist_id",
+    "assembly.presiders": "assembly_id",
+    "assembly.attendees": "assembly_id",
+    "assembly.voter_register": "ballot_id",
+    "assembly.votes": "ballot_id",
+}
 
 # mark some tables which shall not be filled with information extracted from the
 # database.
@@ -55,21 +66,26 @@ def dump_sql_data(rs: MockRequestState, core: CoreBackend
     reference_frame = nearly_now(delta=datetime.timedelta(days=30))
 
     for table in tables:
-        query = f"SELECT * FROM {table} ORDER BY id"
+        query = f"SELECT * FROM {table} ORDER BY {sort_table_by.get(table, 'id')}"
         entities = core.query_all(rs, f"SELECT * FROM {table} ORDER BY id", ())  # type: ignore
         if table in ignored_tables:
             entities = tuple(dict())
         print(f"{query:60} ==> {len(entities):3}", "" if entities else "!")
-        for entity in entities:
-            # Since we want to modify the list in-place, we have to iterate in this way.
-            for field, value in list(entity.items()):
-                if isinstance(value, datetime.datetime) and value == reference_frame:
-                    entity[field] = "---now---"
-                if field in ignored_columns.get(table, {}):
-                    entity[field] = None
+        sorted_entities = list()
+        for entity in xsorted(entities, key=lambda x: x[sort_table_by.get(table, 'id')]):
+            sorted_entity = collections.OrderedDict()
+            for field, value in entity.items():
                 if field in implicit_columns.get(table, {}):
-                    del entity[field]
-        full_sample_data[table] = entities
+                    pass
+                elif field in ignored_columns.get(table, {}):
+                    sorted_entity[field] = None
+                elif isinstance(value, datetime.datetime) and value == reference_frame:
+                    sorted_entity[field] = "---now---"
+                else:
+                    sorted_entity[field] = value
+            sorted_entities.append(sorted_entity)
+
+        full_sample_data[table] = sorted_entities
 
     return full_sample_data
 
