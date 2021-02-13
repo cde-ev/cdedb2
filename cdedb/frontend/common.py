@@ -6,6 +6,7 @@ overall topic.
 
 import abc
 import collections
+import collections.abc
 import copy
 import csv
 import datetime
@@ -48,7 +49,8 @@ import babel.dates
 import babel.numbers
 import bleach
 import jinja2
-import mailmanclient
+import mailmanclient.restobjects.mailinglist
+import mailmanclient.restobjects.held_message
 import markdown
 import markdown.extensions.toc
 import werkzeug
@@ -755,9 +757,8 @@ def keydictsort_filter(value: Mapping[T, S], sortkey: Callable[[Any], Any],
     return xsorted(value.items(), key=lambda e: sortkey(e[1]), reverse=reverse)
 
 
-def map_dict_filter(d: Dict[str, str],
-                      processing: Callable[[Any], str]
-                      ) -> ItemsView[str, str]:
+def map_dict_filter(d: Dict[str, str], processing: Callable[[Any], str]
+                    ) -> ItemsView[str, str]:
     """
     Processes the values of some string using processing function
 
@@ -1451,7 +1452,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         pending review) or None (signalling failure to acquire something).
 
         :param success: Affirmative message for positive return codes.
-        :param pending: Message for negative return codes signalling review.
+        :param info: Message for negative return codes signalling review.
         :param error: Exception message for zero return codes.
         """
         if not code:
@@ -2375,11 +2376,11 @@ def mailinglist_guard(argname: str = "mailinglist_id",
                     raise werkzeug.exceptions.Forbidden(rs.gettext(
                         "This page can only be accessed by the mailinglist’s "
                         "moderators."))
-                if (requires_privilege and not
-                    obj.mlproxy.may_manage(rs, mailinglist_id=arg, privileged=True)):
+                if requires_privilege and not obj.mlproxy.may_manage(
+                        rs, mailinglist_id=arg, privileged=True):
                     raise werkzeug.exceptions.Forbidden(rs.gettext(
-                        "You do not have privileged moderator access and may not change "
-                        "subscriptions."))
+                        "You do not have privileged moderator access and may not"
+                        " change subscriptions."))
             else:
                 if not obj.mlproxy.is_relevant_admin(rs, **{argname: arg}):
                     raise werkzeug.exceptions.Forbidden(rs.gettext(
@@ -2430,7 +2431,7 @@ def check_validation(rs: RequestState, type_: Type[T], value: Any,
 
 
 def check_validation_optional(rs: RequestState, type_: Type[T], value: Any,
-                     name: str = None, **kwargs: Any) -> Optional[T]:
+                              name: str = None, **kwargs: Any) -> Optional[T]:
     """Helper to perform parameter sanitization.
 
     This is similar to :func:`~cdedb.frontend.common.check_validation`
