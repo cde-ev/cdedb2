@@ -120,14 +120,14 @@
     {% if title %}<span class="sr-only">{{ title }}</span>{% endif %}
 {%- endmacro %}
 
-{% macro persona_anchor(persona, verbose=False, quote_me=False, event_id=none, ml_id=none) %}
+{% macro persona_anchor(persona, verbose=False, quote_me=False, event_id=none, ml_id=none, aclass='', readonly=False) %}
     {%- if verbose -%}
         {{ href(show_user_link(user, persona['id'], quote_me, event_id=event_id, ml_id=ml_id), "{} {} {} {}".format(
               persona['title'], persona['given_names'],
-              persona['family_name'], persona['name_supplement'])) }}
+              persona['family_name'], persona['name_supplement']), aclass=aclass, readonly=readonly) }}
     {%- else -%}
         {{ href(show_user_link(user, persona['id'], quote_me, event_id=event_id, ml_id=ml_id), "{} {}".format(
-              persona['given_names'], persona['family_name'])) }}
+              persona['given_names'], persona['family_name']), aclass=aclass, readonly=readonly) }}
     {%- endif -%}
 {% endmacro %}
 

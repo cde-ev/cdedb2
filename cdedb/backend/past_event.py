@@ -90,6 +90,9 @@ class PastEventBackend(AbstractBackend):
         """
         if rs.is_quiet:
             return 0
+        # To ensure logging is done if and only if the corresponding action happened,
+        # we require atomization here.
+        self.affirm_atomized_context(rs)
         data = {
             "code": code,
             "pevent_id": pevent_id,
@@ -150,10 +153,11 @@ class PastEventBackend(AbstractBackend):
                         ) -> DefaultReturnCode:
         """Update some keys of an institution."""
         data = affirm(vtypes.Institution, data)
-        ret = self.sql_update(rs, "past_event.institutions", data)
-        current = unwrap(self.get_institutions(rs, (data['id'],)))
-        self.past_event_log(rs, const.PastEventLogCodes.institution_changed,
-                            pevent_id=None, change_note=current['title'])
+        with Atomizer(rs):
+            ret = self.sql_update(rs, "past_event.institutions", data)
+            current = unwrap(self.get_institutions(rs, (data['id'],)))
+            self.past_event_log(rs, const.PastEventLogCodes.institution_changed,
+                                pevent_id=None, change_note=current['title'])
         return ret
 
     @access("cde_admin", "event_admin")
@@ -161,9 +165,10 @@ class PastEventBackend(AbstractBackend):
                            ) -> DefaultReturnCode:
         """Make a new institution."""
         data = affirm(vtypes.Institution, data, creation=True)
-        ret = self.sql_insert(rs, "past_event.institutions", data)
-        self.past_event_log(rs, const.PastEventLogCodes.institution_created,
-                            pevent_id=None, change_note=data['title'])
+        with Atomizer(rs):
+            ret = self.sql_insert(rs, "past_event.institutions", data)
+            self.past_event_log(rs, const.PastEventLogCodes.institution_created,
+                                pevent_id=None, change_note=data['title'])
         return ret
 
     # TODO: rework deletion interface
@@ -266,9 +271,9 @@ class PastEventBackend(AbstractBackend):
                        ) -> DefaultReturnCode:
         """Update some keys of a concluded event."""
         data = affirm(vtypes.PastEvent, data)
-        ret = self.sql_update(rs, "past_event.events", data)
-        self.past_event_log(rs, const.PastEventLogCodes.event_changed,
-                            data['id'])
+        with Atomizer(rs):
+            ret = self.sql_update(rs, "past_event.events", data)
+            self.past_event_log(rs, const.PastEventLogCodes.event_changed, data['id'])
         return ret
 
     @access("cde_admin", "event_admin")
@@ -276,8 +281,9 @@ class PastEventBackend(AbstractBackend):
                           ) -> DefaultReturnCode:
         """Make a new concluded event."""
         data = affirm(vtypes.PastEvent, data, creation=True)
-        ret = self.sql_insert(rs, "past_event.events", data)
-        self.past_event_log(rs, const.PastEventLogCodes.event_created, ret)
+        with Atomizer(rs):
+            ret = self.sql_insert(rs, "past_event.events", data)
+            self.past_event_log(rs, const.PastEventLogCodes.event_created, ret)
         return ret
 
     @access("cde_admin")
@@ -400,16 +406,16 @@ class PastEventBackend(AbstractBackend):
                         ) -> DefaultReturnCode:
         """Update some keys of a concluded course."""
         data = affirm(vtypes.PastCourse, data)
-        current = self.sql_select_one(rs, "past_event.courses",
-                                      ("title", "pevent_id"), data['id'])
-        # TODO do more checking here?
-        if current is None:
-            raise ValueError(n_("Referenced past course does not exist."))
-        ret = self.sql_update(rs, "past_event.courses", data)
-        current.update(data)
-        self.past_event_log(
-            rs, const.PastEventLogCodes.course_changed, current['pevent_id'],
-            change_note=current['title'])
+        with Atomizer(rs):
+            current = self.sql_select_one(rs, "past_event.courses",
+                                          ("title", "pevent_id"), data['id'])
+            # TODO do more checking here?
+            if current is None:
+                raise ValueError(n_("Referenced past course does not exist."))
+            ret = self.sql_update(rs, "past_event.courses", data)
+            current.update(data)
+            self.past_event_log(rs, const.PastEventLogCodes.course_changed,
+                                current['pevent_id'], change_note=current['title'])
         return ret
 
     @access("cde_admin", "event_admin")
@@ -417,9 +423,10 @@ class PastEventBackend(AbstractBackend):
                            ) -> DefaultReturnCode:
         """Make a new concluded course."""
         data = affirm(vtypes.PastCourse, data, creation=True)
-        ret = self.sql_insert(rs, "past_event.courses", data)
-        self.past_event_log(rs, const.PastEventLogCodes.course_created,
-                            data['pevent_id'], change_note=data['title'])
+        with Atomizer(rs):
+            ret = self.sql_insert(rs, "past_event.courses", data)
+            self.past_event_log(rs, const.PastEventLogCodes.course_created,
+                                data['pevent_id'], change_note=data['title'])
         return ret
 
     @access("cde_admin")
@@ -486,7 +493,7 @@ class PastEventBackend(AbstractBackend):
     @access("cde_admin", "event_admin")
     def add_participant(self, rs: RequestState, pevent_id: int,
                         pcourse_id: Optional[int], persona_id: int,
-                        is_instructor: bool, is_orga: bool
+                        is_instructor: bool = False, is_orga: bool = False
                         ) -> DefaultReturnCode:
         """Add a participant to a concluded event.
 
@@ -501,10 +508,19 @@ class PastEventBackend(AbstractBackend):
                 'pcourse_id': affirm_optional(vtypes.ID, pcourse_id),
                 'is_instructor': affirm(bool, is_instructor),
                 'is_orga': affirm(bool, is_orga)}
-        ret = self.sql_insert(rs, "past_event.participants", data)
-        self.past_event_log(
-            rs, const.PastEventLogCodes.participant_added, pevent_id,
-            persona_id=persona_id)
+        with Atomizer(rs):
+            # Check that participant is no pure pevent participant if they are
+            # course participant as well.
+            if self._check_pure_event_participation(rs, persona_id, pevent_id):
+                if pcourse_id:
+                    self.remove_participant(rs, pevent_id, pcourse_id=None,
+                                            persona_id=persona_id)
+                else:
+                    rs.notify("error", n_("User is already pure event participant."))
+                    return 0
+            ret = self.sql_insert(rs, "past_event.participants", data)
+            self.past_event_log(rs, const.PastEventLogCodes.participant_added,
+                                pevent_id, persona_id=persona_id)
         return ret
 
     @access("cde_admin", "event_admin")
@@ -523,10 +539,10 @@ class PastEventBackend(AbstractBackend):
         query = glue("DELETE FROM past_event.participants WHERE pevent_id = %s",
                      "AND persona_id = %s AND pcourse_id {} %s")
         query = query.format("IS" if pcourse_id is None else "=")
-        ret = self.query_exec(rs, query, (pevent_id, persona_id, pcourse_id))
-        self.past_event_log(
-            rs, const.PastEventLogCodes.participant_removed, pevent_id,
-            persona_id=persona_id)
+        with Atomizer(rs):
+            ret = self.query_exec(rs, query, (pevent_id, persona_id, pcourse_id))
+            self.past_event_log(rs, const.PastEventLogCodes.participant_removed,
+                                pevent_id, persona_id=persona_id)
         return ret
 
     @access("cde", "event")
@@ -558,6 +574,13 @@ class PastEventBackend(AbstractBackend):
         return {(e['persona_id'], e['pcourse_id']): e
                 for e in data}
 
+    def _check_pure_event_participation(self, rs: RequestState, persona_id: int,
+                                        pevent_id: int) -> bool:
+        """Return if user participates at an event without any course."""
+        query = ("SELECT persona_id FROM past_event.participants"
+                 " WHERE persona_id = %s AND pevent_id = %s AND pcourse_id IS null")
+        return bool(self.query_one(rs, query, (persona_id, pevent_id)))
+
     @access("cde_admin", "event_admin")
     def find_past_event(self, rs: RequestState, shortname: str
                         ) -> Tuple[Optional[int], List[Error], List[Error]]:
@@ -583,19 +606,17 @@ class PastEventBackend(AbstractBackend):
         warnings: List[Error] = []
         # retry with less restrictive conditions until we find something or
         # give up
-        if len(ret) == 0:
-            ret = self.query_all(rs, query,
-                                 (shortname, shortname, datetime.date.min))
-        if len(ret) == 0:
+        if not ret:
+            ret = self.query_all(rs, query, (shortname, shortname, datetime.date.min))
+        if not ret:
             warnings.append(("pevent_id", ValueError(n_("Only fuzzy match."))))
             ret = self.query_all(rs, query2, (shortname, 0.5, reference))
-        if len(ret) == 0:
+        if not ret:
             ret = self.query_all(rs, query2, (shortname, 0.5, datetime.date.min))
-        if len(ret) == 0:
+        if not ret:
             return None, [], [("pevent_id", ValueError(n_("No event found.")))]
         elif len(ret) > 1:
-            return None, warnings, [("pevent_id",
-                                     ValueError(n_("Ambiguous event.")))]
+            return None, warnings, [("pevent_id", ValueError(n_("Ambiguous event.")))]
         else:
             return unwrap(unwrap(ret)), warnings, []
 
@@ -624,13 +645,13 @@ class PastEventBackend(AbstractBackend):
         warnings: List[Error] = []
         # retry with less restrictive conditions until we find something or
         # give up
-        if len(ret) == 0:
+        if not ret:
             warnings.append(("pcourse_id", ValueError(n_("Only title match."))))
             ret = self.query_all(rs, q2, params)
-        if len(ret) == 0:
+        if not ret:
             warnings.append(("pcourse_id", ValueError(n_("Only fuzzy match."))))
             ret = self.query_all(rs, q3, params + (0.5,))
-        if len(ret) == 0:
+        if not ret:
             return None, [], [
                 ("pcourse_id", ValueError(n_("No course found.")))]
         elif len(ret) > 1:
@@ -683,7 +704,7 @@ class PastEventBackend(AbstractBackend):
             if reg['parts'][part_id]['status'] != participant_status:
                 continue
             is_orga = reg['persona_id'] in event['orgas']
-            for track_id, track in part['tracks'].items():
+            for track_id in part['tracks']:
                 rtrack = reg['tracks'][track_id]
                 is_instructor = False
                 if rtrack['course_id']:

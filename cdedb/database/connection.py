@@ -10,7 +10,7 @@ This should be the only module which makes subsistantial use of psycopg.
 
 import logging
 from types import TracebackType
-from typing import Any, Collection, Mapping, NoReturn, Optional, Type, cast
+from typing import Any, Collection, Mapping, NoReturn, Optional, Type
 
 import psycopg2
 import psycopg2.extensions

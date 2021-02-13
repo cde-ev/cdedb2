@@ -133,17 +133,21 @@ class EventBackend(AbstractBackend):
 
     def event_log(self, rs: RequestState, code: const.EventLogCodes,
                   event_id: Optional[int], persona_id: int = None,
-                  change_note: str = None) -> DefaultReturnCode:
+                  change_note: str = None, atomized: bool = True) -> DefaultReturnCode:
         """Make an entry in the log.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
 
-        :param persona_id: ID of affected user
-        :param change_note: Infos not conveyed by other columns.
+        :param atomized: Whether this function should enforce an atomized context
+            to be present.
         """
         if rs.is_quiet:
             return 0
+        # To ensure logging is done if and only if the corresponding action happened,
+        # we require atomization by default.
+        if atomized:
+            self.affirm_atomized_context(rs)
         data = {
             "code": code,
             "event_id": event_id,
@@ -1118,7 +1122,7 @@ class EventBackend(AbstractBackend):
         ret = 1
         if not data:
             return ret
-        # implicit Atomizer by caller
+        # implicit atomized context.
         self.affirm_atomized_context(rs)
         current = self.sql_select(rs, "event.course_tracks", COURSE_TRACK_FIELDS,
                                   (part_id,), entity_key="part_id")
@@ -1494,15 +1498,20 @@ class EventBackend(AbstractBackend):
         if minor_form is None:
             if path.exists():
                 path.unlink()
-                self.event_log(rs, const.EventLogCodes.minor_form_removed,
-                               event_id)
+                # Since this is not acting on our database, do not demand an atomized
+                # context.
+                self.event_log(rs, const.EventLogCodes.minor_form_removed, event_id,
+                               atomized=False)
                 return -1
             else:
                 return 0
         else:
             with open(path, "wb") as f:
                 f.write(minor_form)
-            self.event_log(rs, const.EventLogCodes.minor_form_updated, event_id)
+            # Since this is not acting on our database, do not demand an atomized
+            # context.
+            self.event_log(rs, const.EventLogCodes.minor_form_updated, event_id,
+                           atomized=False)
             return 1
 
     @access("event")
@@ -2256,8 +2265,8 @@ class EventBackend(AbstractBackend):
                 if 'active_segments' in data:
                     pdata['active_segments'] = data['active_segments']
                 self.set_course(rs, pdata)
-        self.event_log(rs, const.EventLogCodes.course_created,
-                       data['event_id'], change_note=data['title'])
+            self.event_log(rs, const.EventLogCodes.course_created,
+                           data['event_id'], change_note=data['title'])
         return new_id
 
     @access("event")
@@ -2548,7 +2557,7 @@ class EventBackend(AbstractBackend):
                 data = self.query_all(rs, query, (part_id, waitlist))
                 ret[part_id] = xsorted(
                     (reg['id'] for reg in data), key=lambda r_id:
-                    (fields_by_id[r_id].get(field['field_name'], 0), r_id))
+                    (fields_by_id[r_id].get(field['field_name'], 0), r_id))  # pylint: disable=cell-var-from-loop
             return ret
 
     @access("event")
@@ -2927,8 +2936,7 @@ class EventBackend(AbstractBackend):
                     raise NotImplementedError(n_("This is not useful."))
             if 'tracks' in data:
                 tracks = data['tracks']
-                all_tracks = set(event['tracks'])
-                if not (all_tracks >= set(tracks)):
+                if not set(tracks).issubset(event['tracks']):
                     raise ValueError(n_("Non-existing tracks specified."))
                 existing = {e['track_id']: e['id'] for e in self.sql_select(
                     rs, "event.registration_tracks", ("id", "track_id"),
@@ -3033,9 +3041,9 @@ class EventBackend(AbstractBackend):
                 new_track['registration_id'] = new_id
                 new_track['track_id'] = track_id
                 self.sql_insert(rs, "event.registration_tracks", new_track)
-        self.event_log(
-            rs, const.EventLogCodes.registration_created, data['event_id'],
-            persona_id=data['persona_id'])
+            self.event_log(
+                rs, const.EventLogCodes.registration_created, data['event_id'],
+                persona_id=data['persona_id'])
         return new_id
 
     @access("event")
@@ -3631,7 +3639,7 @@ class EventBackend(AbstractBackend):
         if data is not None:
             current = self.get_questionnaire(rs, event_id)
             current.update(data)
-            for k, v in current.items():
+            for v in current.values():
                 for e in v:
                     if 'pos' in e:
                         del e['pos']
@@ -3679,8 +3687,9 @@ class EventBackend(AbstractBackend):
             'id': event_id,
             'offline_lock': not self.conf["CDEDB_OFFLINE_DEPLOYMENT"],
         }
-        ret = self.sql_update(rs, "event.events", update)
-        self.event_log(rs, const.EventLogCodes.event_locked, event_id)
+        with Atomizer(rs):
+            ret = self.sql_update(rs, "event.events", update)
+            self.event_log(rs, const.EventLogCodes.event_locked, event_id)
         return ret
 
     @access("event")
