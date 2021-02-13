@@ -49,8 +49,7 @@
                                     {% if not loop.last %} • {% endif %}
                                 {% endfor %}
                             </span>
-                        {% elif (registration['parts']|keydictsort(EntitySorter.event_part))[0]['status']
-                                == enums['RegistrationPartStati'].guest.value %}
+                        {% elif (registration['parts']|dictsort())[0]['status'] == enums['RegistrationPartStati'].guest.value %}
                             ({{ gettext(enums['RegistrationPartStati'].guest|string) }})
                         {% endif %}
                     </div>
