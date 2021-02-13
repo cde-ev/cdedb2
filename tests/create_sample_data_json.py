@@ -4,20 +4,22 @@ import json
 import re
 import collections
 
-from typing import Dict, Any, Tuple
+from typing import Any, OrderedDict, List
 
-from cdedb.common import CustomJSONEncoder, nearly_now, xsorted
+from cdedb.common import CustomJSONEncoder, nearly_now
 from cdedb.script import make_backend, setup, MockRequestState
 from cdedb.backend.core import CoreBackend
 
+# per default, we sort entries in a table by their id. Here we can specify any arbitrary
+# columns which should be used as sorting key for the table.
 sort_table_by = {
-    "ml.subscription_states": "mailinglist_id",
-    "ml.whitelist": "mailinglist_id",
-    "ml.moderators": "mailinglist_id",
-    "assembly.presiders": "assembly_id",
-    "assembly.attendees": "assembly_id",
-    "assembly.voter_register": "ballot_id",
-    "assembly.votes": "ballot_id",
+    "ml.subscription_states": ["mailinglist_id", "persona_id"],
+    "ml.whitelist": ["mailinglist_id"],
+    "ml.moderators": ["mailinglist_id", "persona_id"],
+    "assembly.presiders": ["assembly_id", "persona_id"],
+    "assembly.attendees": ["assembly_id", "persona_id"],
+    "assembly.voter_register": ["ballot_id"],
+    "assembly.votes": ["ballot_id", "vote"],
 }
 
 # mark some tables which shall not be filled with information extracted from the
@@ -56,23 +58,24 @@ implicit_columns = {
 
 
 def dump_sql_data(rs: MockRequestState, core: CoreBackend
-                  ) -> Dict[str, Tuple[Dict[str, Any], ...]]:
+                  ) -> OrderedDict[str, List[OrderedDict[str, Any]]]:
     # extract the tables to be created from the database tables
     with open("/cdedb2/cdedb/database/cdedb-tables.sql", "r") as f:
         tables = [table.group('name')
                   for table in re.finditer(r'CREATE TABLE\s(?P<name>\w+\.\w+)', f.read())]
 
-    full_sample_data = {}
+    full_sample_data = collections.OrderedDict()
     reference_frame = nearly_now(delta=datetime.timedelta(days=30))
 
     for table in tables:
-        query = f"SELECT * FROM {table} ORDER BY {sort_table_by.get(table, 'id')}"
-        entities = core.query_all(rs, f"SELECT * FROM {table} ORDER BY id", ())  # type: ignore
+        order = ", ".join((sort_table_by.get(table) or []) + ['id'])
+        query = f"SELECT * FROM {table} ORDER BY {order}"
+        entities = core.query_all(rs, query, ())  # type: ignore
         if table in ignored_tables:
-            entities = tuple(dict())
-        print(f"{query:60} ==> {len(entities):3}", "" if entities else "!")
+            entities = list()
+        print(f"{query:100} ==> {len(entities):3}", "" if entities else "!")
         sorted_entities = list()
-        for entity in xsorted(entities, key=lambda x: x[sort_table_by.get(table, 'id')]):
+        for entity in entities:
             sorted_entity = collections.OrderedDict()
             for field, value in entity.items():
                 if field in implicit_columns.get(table, {}):
