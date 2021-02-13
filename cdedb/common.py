@@ -1386,7 +1386,9 @@ def asciificator(s: str) -> str:
     for char in s:
         if char in umlaut_map:
             ret += umlaut_map[char]
-        elif char in string.ascii_letters + string.digits + " /-?:().,+":
+        elif char in (  # pylint: disable=superfluous-parens
+            string.ascii_letters + string.digits + " /-?:().,+"
+        ):
             ret += char
         else:
             ret += ' '

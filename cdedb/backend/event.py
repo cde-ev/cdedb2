@@ -2936,7 +2936,7 @@ class EventBackend(AbstractBackend):
                     raise NotImplementedError(n_("This is not useful."))
             if 'tracks' in data:
                 tracks = data['tracks']
-                if set(tracks) > set(event['tracks']):
+                if not set(tracks).issubset(event['tracks']):
                     raise ValueError(n_("Non-existing tracks specified."))
                 existing = {e['track_id']: e['id'] for e in self.sql_select(
                     rs, "event.registration_tracks", ("id", "track_id"),

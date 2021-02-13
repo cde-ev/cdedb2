@@ -394,7 +394,8 @@ class MlBaseFrontend(AbstractUserFrontend):
         # privileged is only set if there are actually fields,
         # requiring privileged access
         privileged = (self.mlproxy.may_manage(rs, mailinglist_id, privileged=True)
-                      or not additional_fields & PRIVILEGE_MOD_REQUIRING_FIELDS)
+                      or not (additional_fields  # pylint: disable=superfluous-parens
+                              & PRIVILEGE_MOD_REQUIRING_FIELDS))
         return self.render(rs, "change_mailinglist", {
             'event_entries': event_entries,
             'assembly_entries': assembly_entries,
