@@ -457,8 +457,8 @@ class NearlyNow(datetime.datetime):
     """
     _delta: datetime.timedelta
 
-    def __new__(cls, *args: Any, delta: datetime.timedelta = _NEARLY_DELTA_DEFAULT,
-                **kwargs: Any) -> "NearlyNow":  # pylint: disable=arguments-differ
+    def __new__(cls, *args: Any, delta: datetime.timedelta = _NEARLY_DELTA_DEFAULT, # pylint: disable=arguments-differ
+                **kwargs: Any) -> "NearlyNow":
         self = super(NearlyNow, cls).__new__(cls, *args, **kwargs)
         self._delta = delta
         return self
