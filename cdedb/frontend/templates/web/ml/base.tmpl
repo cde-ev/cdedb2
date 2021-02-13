@@ -71,7 +71,7 @@
                              aclass="list-group-item", active=(sidenav_active == 'ml_moderated')) }}
             {% endif %}
         </div>
-        {% if 'ml_mgmt' in user.admin_views %}
+        {% if 'ml_user' in user.admin_views %}
             <div class="list-group tear-down">
                 {{ util.href(cdedblink("ml/merge_accounts_form"), gettext("Merge Accounts"),
                         icon="user", aclass="list-group-item", active=(sidenav_active == 'ml_merger')) }}
