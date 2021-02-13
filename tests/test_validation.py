@@ -592,7 +592,7 @@ class TestValidation(unittest.TestCase):
             (1, "1", None, False),
             ((1, 2, 3), "(1, 2, 3)", None, False),
             ("abc[]&def", None, ValueError(
-                "Forbidden characters (%(chars)s). (None)", {"chars": "&[]"}), False),
+                "Forbidden characters (%(chars)s). (None)", {"chars": "[]&"}), False),
         ]
         self.do_validator_test(SafeStr, spec)
 
