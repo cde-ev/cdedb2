@@ -286,7 +286,7 @@ class TestEventFrontend(FrontendTest):
         self.assertNotIn("quickregistrationform", self.response.forms)
         self.assertNotIn("changeminorformform", self.response.forms)
         self.assertNotIn("lockform", self.response.forms)
-        self.assertNotIn("createorgalistform", self.response.forms)
+        self.assertNotIn("createparticipantlistform", self.response.forms)
 
     @as_users("annika", "garcia")
     def test_show_event_orga(self, user: CdEDBObject) -> None:
@@ -306,6 +306,8 @@ class TestEventFrontend(FrontendTest):
         self.assertIn("quickregistrationform", self.response.forms)
         self.assertIn("changeminorformform", self.response.forms)
         self.assertIn("lockform", self.response.forms)
+        if user == USER_DICT['garcia']:  # annika is also admin
+            self.assertNotIn("createparticipantlistform", self.response.forms)
 
     @as_users("berta", "garcia")
     def test_show_event_noadmin(self, user: CdEDBObject) -> None:
@@ -313,7 +315,7 @@ class TestEventFrontend(FrontendTest):
                       {'description': 'Große Testakademie 2222'})
         self.assertTitle("Große Testakademie 2222")
 
-        self.assertNotIn("createorgalistform", self.response.forms)
+        self.assertNotIn("createparticipantlistform", self.response.forms)
         self.assertNotIn("addorgaform", self.response.forms)
         self.assertNotIn("removeorgaform7", self.response.forms)
 
@@ -323,10 +325,21 @@ class TestEventFrontend(FrontendTest):
                       {'description': 'Große Testakademie 2222'})
         self.assertTitle("Große Testakademie 2222")
 
-        self.assertIn("createparticipantlistform", self.response.forms)
-        self.assertIn("addorgaform", self.response.forms)
-        self.assertIn("removeorgaform7", self.response.forms)
-
+        self.assertNotIn('createorgalistform', self.response.forms)
+        f = self.response.forms[f"removeorgaform{ USER_DICT['garcia']['id'] }"]
+        self.submit(f)
+        # TODO: can we check the disabled state of this button more specifically?
+        self.assertIn("Mailingliste kann nur mit Orgas erstellt werden.",
+                      self.response.text)
+        f = self.response.forms['createparticipantlistform']
+        self.submit(f, check_notification=False)
+        self.assertPresence("Mailingliste kann nur mit Orgas erstellt werden.",
+                            div='notifications')
+        f = self.response.forms['addorgaform']
+        f['orga_id'] = USER_DICT['garcia']['DB-ID']
+        self.submit(f)
+        f = self.response.forms['createparticipantlistform']
+        self.submit(f)
     @as_users("anton")
     def test_create_participant_list(self, user: CdEDBObject) -> None:
         self.traverse({'description': 'Veranstaltungen'},
