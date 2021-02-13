@@ -2055,6 +2055,8 @@ class CoreBackend(AbstractBackend):
     def logout(self, rs: RequestState, this_session: bool = True,
                other_sessions: bool = False) -> DefaultReturnCode:
         """Invalidate some sessions, depending on the parameters."""
+        this_session = affirm(bool, this_session)
+        other_sessions = affirm(bool, other_sessions)
         query = "UPDATE core.sessions SET is_active = False, atime = now()"
         constraints = ["persona_id = %s", "is_active = True"]
         params: List[Any] = [rs.user.persona_id]
