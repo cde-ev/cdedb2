@@ -2285,7 +2285,7 @@ class CoreBackend(AbstractBackend):
     ret_type = Tuple[bool, Optional[str]]
 
     def _verify_reset_cookie(self, rs: RequestState, persona_id: int, salt: str,
-                             cookie: str) -> ret_type:
+                             cookie: str) -> ret_type: # pylint: disable=undefined-variable
         """Check a provided cookie for correctness.
 
         :returns: The bool signals success, the str is an error message or

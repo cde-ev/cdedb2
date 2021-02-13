@@ -340,7 +340,7 @@ class AssemblyBackend(AbstractBackend):
             attachment_ids = {affirm(vtypes.ID, attachment_id)}
         ret = self.get_assembly_ids(
             rs, ballot_ids=ballot_ids, attachment_ids=attachment_ids)
-        if len(ret) == 0:
+        if not ret:
             raise ValueError(n_("No input specified."))
         if len(ret) > 1:
             raise ValueError(n_(
@@ -1362,8 +1362,7 @@ class AssemblyBackend(AbstractBackend):
                 x['shortname'] for x in ballot['candidates'].values())
             if ballot['use_bar'] or ballot['votes']:
                 shortnames += (ASSEMBLY_BAR_SHORTNAME,)
-            condensed, detailed = schulze_evaluate([e['vote'] for e in votes],
-                                                   shortnames)
+            condensed, _ = schulze_evaluate([e['vote'] for e in votes], shortnames)
             update = {
                 'id': ballot_id,
                 'is_tallied': True,
@@ -1390,7 +1389,7 @@ class AssemblyBackend(AbstractBackend):
             voter_names = list(f"{e['given_names']} {e['family_name']}"
                                for e in xsorted(voters.values(),
                                                 key=EntitySorter.persona))
-            vote_list = xsorted(votes, key=lambda v: json_serialize(v))
+            vote_list = xsorted(votes, key=json_serialize)
             result = {
                 "assembly": assembly['title'],
                 "ballot": ballot['title'],

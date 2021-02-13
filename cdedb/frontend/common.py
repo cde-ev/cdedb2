@@ -22,7 +22,7 @@ import email.mime.image
 import email.mime.multipart
 import email.mime.text
 import email.utils
-import enum
+import enum  # pylint: disable=unused-import
 import functools
 import io
 import json
@@ -74,10 +74,10 @@ from cdedb.common import (
     ALL_MGMT_ADMIN_VIEWS, ALL_MOD_ADMIN_VIEWS, ANTI_CSRF_TOKEN_NAME,
     ANTI_CSRF_TOKEN_PAYLOAD, REALM_SPECIFIC_GENESIS_FIELDS, CdEDBMultiDict, CdEDBObject,
     CustomJSONEncoder, EntitySorter, Error, Notification, NotificationType, PathLike,
-    RequestState, Role, User, ValidationWarning, _tdelta, asciificator,
+    PrivilegeError, RequestState, Role, User, ValidationWarning, _tdelta, asciificator,
     compute_checkdigit, decode_parameter, encode_parameter, glue, json_serialize,
     make_proxy, make_root_logger, merge_dicts, n_, now, roles_to_db_role, unwrap,
-    xsorted, PrivilegeError
+    xsorted,
 )
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -111,7 +111,7 @@ class BaseApp(metaclass=abc.ABCMeta):
     """
     realm: ClassVar[str]
 
-    def __init__(self, configpath: PathLike = None, *args: Any,
+    def __init__(self, configpath: PathLike = None, *args: Any,  # pylint: disable=keyword-arg-before-vararg
                  **kwargs: Any) -> None:
         self.conf = Config(configpath)
         secrets = SecretsConfig(configpath)
@@ -885,7 +885,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     """Common base class for all frontends."""
     #: to be overridden by children
 
-    def __init__(self, configpath: PathLike = None, *args: Any,
+    def __init__(self, configpath: PathLike = None, *args: Any,  # pylint: disable=keyword-arg-before-vararg
                  **kwargs: Any) -> None:
         super().__init__(configpath, *args, **kwargs)
         self.template_dir = pathlib.Path(self.conf["REPOSITORY_PATH"], "cdedb",
@@ -2330,7 +2330,7 @@ def event_guard(argname: str = "event_id",
         @functools.wraps(fun)
         def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
                     **kwargs: Any) -> Any:
-            if argname in kwargs:
+            if argname in kwargs:  # pylint: disable=consider-using-get
                 arg = kwargs[argname]
             else:
                 arg = args[0]
@@ -2367,7 +2367,7 @@ def mailinglist_guard(argname: str = "mailinglist_id",
         @functools.wraps(fun)
         def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
                     **kwargs: Any) -> Any:
-            if argname in kwargs:
+            if argname in kwargs:  # pylint: disable=consider-using-get
                 arg = kwargs[argname]
             else:
                 arg = args[0]
@@ -2400,7 +2400,7 @@ def assembly_guard(fun: F) -> F:
     @functools.wraps(fun)
     def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
                 **kwargs: Any) -> Any:
-        if "assembly_id" in kwargs:
+        if "assembly_id" in kwargs:  # pylint: disable=consider-using-get
             assembly_id = kwargs["assembly_id"]
         else:
             assembly_id = args[0]
