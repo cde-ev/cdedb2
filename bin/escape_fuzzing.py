@@ -33,7 +33,7 @@ import itertools
 import os
 import pathlib
 import queue
-from typing import NamedTuple, Optional
+from typing import NamedTuple, Optional, TYPE_CHECKING
 
 import webtest
 
@@ -43,6 +43,11 @@ from cdedb.config import BasicConfig
 from cdedb.frontend.application import Application
 
 _BASICCONF = BasicConfig()
+
+
+def _(e: Exception) -> str:
+    return str(e)[:90]
+
 
 outdir = pathlib.Path('./out')
 
@@ -56,16 +61,20 @@ visited_urls = set()
 posted_urls = set()
 ResponseData = NamedTuple("ResponseData", [("response", webtest.TestResponse),
                                            ("url", str), ("referer", Optional[str])])
-response_queue: queue.Queue[ResponseData] = queue.Queue()
+if TYPE_CHECKING:
+    response_queue: queue.Queue[ResponseData]
+response_queue = queue.Queue()
 
 # URL parameters to ignore when checking for unique urls
 IGNORE_URL_PARAMS = ('confirm_id',)
 
 # exclude some forms which do some undesired behaviour
 posted_urls.add('/core/logout')
+posted_urls.add('/core/logout/all')
 posted_urls.add('/core/locale')
 posted_urls.add('/event/event/1/lock')
 posted_urls.add('/event/event/2/lock')
+posted_urls.add('/event/event/3/lock')
 
 # login as Anton and add the start page
 start_page = wt_app.get('/')
@@ -75,6 +84,14 @@ login_form['password'] = "secret"
 start_page = login_form.submit()
 start_page = start_page.maybe_follow()
 response_queue.put(ResponseData(start_page, '/', None))
+
+
+errors = []
+
+
+def log_error(s: str) -> None:
+    print(s)
+    errors.append(s)
 
 
 while True:
@@ -87,21 +104,19 @@ while True:
         continue
 
     if b"cgitb" in response.body:
-        print("Found a cgitb error page while following {}".format(url))
+        log_error(f"Found a cgitb error page while following {url}")
         continue
 
     # Do checks
-    # print("Checking {} ...".format(url))
+    # print(f"Checking {url} ...")
     if "<script>abcdef" in response.text:
-        print(">>> Found unescaped marker <script> in {}, reached from {}"
-              .format(url, referer))
+        log_error(f">>> Found unescaped marker <script> in {url}, reached from {referer}.")
         if outdir.exists():
             outfile = outdir / str(len(list(outdir.iterdir())))
             with open(outfile, 'wb') as f:
                 f.write(response.body)
     if "&amp;lt;" in response.text:
-        print(">>> Found double escaped '<' in {}, reached from {}"
-              .format(url, referer))
+        log_error(f">>> Found double escaped '<' in {url}, reached from {referer}")
         if outdir.exists():
             outfile = outdir / str(len(list(outdir.iterdir())))
             with open(outfile, 'wb') as f:
@@ -112,7 +127,8 @@ while True:
         if 'href' not in link_element.attrs:
             continue
         target = str(link_element.attrs['href'])
-        if target.startswith(('http://', 'https://', 'mailto:', '/doc/')):
+        if target.startswith(('http://', 'https://', 'mailto:', 'tel:', '/doc/',
+                              '/static/')):
             continue
         target = target.split('#')[0]
 
@@ -133,7 +149,7 @@ while True:
             new_response = response.goto(target)
             new_response = new_response.maybe_follow()
         except webtest.app.AppError as e:
-            print("Got error when following {}: {}".format(target, str(e)[:70]))
+            log_error(f"Got error when following {target} from {url}: {_(e)}")
             continue
         visited_urls.add(unique_target)
         response_queue.put(ResponseData(new_response, target, url))
@@ -147,8 +163,7 @@ while True:
             new_response = form.submit()
             new_response = new_response.maybe_follow()
         except webtest.app.AppError as e:
-            print("Got error when posting to {}: {}"
-                  .format(form.action, str(e)[:70]))
+            log_error(f"Got error when posting to {form.action}: {_(e)}")
             continue
         posted_urls.add(form.action)
         response_queue.put(ResponseData(new_response, form.action + " [P]", url), True)
@@ -163,7 +178,8 @@ while True:
             new_response = form.submit()
             new_response = new_response.maybe_follow()
         except webtest.app.AppError as e:
-            print("Got error when posting to {} with marker data: {}"
-                  .format(form.action, str(e)[:70]))
+            log_error(f"Got error when posting to {form.action} with marker data: {_(e)}")
             continue
         response_queue.put(ResponseData(new_response, form.action + " [P+token]", url))
+
+print(f"Found {len(errors)} errors.")

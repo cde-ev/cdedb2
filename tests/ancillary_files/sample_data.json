@@ -6933,7 +6933,7 @@
             "address": "party50-all@aka.cde-ev.de",
             "local_part": "party50-all",
             "domain": 2,
-            "description": "Dieser Liste kannst du nur beitreten, indem du dich zu unserer [Veranstaltung anmeldest](/db/event/event/2/register) und den Status *Teilnehmer* erhälst. Auf dieser Liste stehen alle Teilnehmer unserer Veranstaltung; sie kann im Vorfeld zum Austausch untereinander genutzt werden.",
+            "description": "Dieser Liste kannst du nur beitreten, indem du dich zu unserer [Veranstaltung anmeldest](/event/event/2/register) und den Status *Teilnehmer* erhälst. Auf dieser Liste stehen alle Teilnehmer unserer Veranstaltung; sie kann im Vorfeld zum Austausch untereinander genutzt werden.",
             "mod_policy": 2,
             "attachment_policy": 2,
             "ml_type": 20,
