@@ -1296,7 +1296,7 @@ msgstr "Dieser Nutzer ist kein Wahlleiter für diese Versammlung."
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:167
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:193
 msgid "Must have presiders in order to create a mailinglist."
-msgstr "Mailingliste kann nur mit Versammlungsleitern erstellt werden.."
+msgstr "Mailingliste kann nur mit Versammlungsleitern erstellt werden."
 
 #: cdedb/frontend/assembly.py:389 cdedb/frontend/assembly.py:455
 msgid "Presider mailinglist created."

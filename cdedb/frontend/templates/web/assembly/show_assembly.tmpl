@@ -101,7 +101,7 @@
 
     {% if attachments or has_ballot_attachments or ("assembly_presider" in user.admin_views
                                                     or ambience['assembly']['id'] in user.presider) %}
-        {% call util.bootstrap_panel(title=gettext("Files"), icon='file') %}
+        {% call util.bootstrap_panel(title=gettext("Files"), icon='file', anid='attachmentspanel') %}
         <div class="row">
             {% if attachments or ("assembly_presider" in user.admin_views
                                   or ambience['assembly']['id'] in user.presider) %}
