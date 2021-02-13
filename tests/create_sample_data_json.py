@@ -5,8 +5,8 @@ import re
 
 from typing import Dict, Optional, List
 
-from cdedb.common import CustomJSONEncoder, nearly_now
-from cdedb.script import make_backend, MockRequestState, setup
+from cdedb.common import CustomJSONEncoder, nearly_now, RequestState
+from cdedb.script import make_backend, setup
 from cdedb.backend.core import CoreBackend
 
 # per default, we sort entries in a table by their id. Here we can specify any arbitrary
@@ -56,7 +56,7 @@ implicit_columns = {
 }
 
 
-def dump_sql_data(rs: MockRequestState, core: CoreBackend
+def dump_sql_data(rs: RequestState, core: CoreBackend
                   ) -> Dict[str, List[Dict[str, Optional[str]]]]:
     # extract the tables to be created from the database tables
     with open("/cdedb2/cdedb/database/cdedb-tables.sql", "r") as f:
@@ -70,7 +70,7 @@ def dump_sql_data(rs: MockRequestState, core: CoreBackend
     for table in tables:
         order = ", ".join(sort_table_by.get(table, []) + ['id'])
         query = f"SELECT * FROM {table} ORDER BY {order}"
-        entities = core.query_all(rs, query, ())  # type: ignore
+        entities = core.query_all(rs, query, ())
         if table in ignored_tables:
             entities = tuple()
         print(f"{query:100} ==> {len(entities):3}", "" if entities else "!")
