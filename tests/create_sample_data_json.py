@@ -3,7 +3,7 @@ import datetime
 import json
 import re
 
-from typing import Dict, Optional, List
+from typing import Any, Dict, List
 
 from cdedb.common import CustomJSONEncoder, nearly_now, RequestState
 from cdedb.script import make_backend, setup
@@ -57,7 +57,7 @@ implicit_columns = {
 
 
 def dump_sql_data(rs: RequestState, core: CoreBackend
-                  ) -> Dict[str, List[Dict[str, Optional[str]]]]:
+                  ) -> Dict[str, List[Dict[str, Any]]]:
     # extract the tables to be created from the database tables
     with open("/cdedb2/cdedb/database/cdedb-tables.sql", "r") as f:
         tables = [table.group('name')
@@ -77,7 +77,7 @@ def dump_sql_data(rs: RequestState, core: CoreBackend
         sorted_entities = list()
         for entity in entities:
             # take care that the order is preserved
-            sorted_entity: Dict[str, Optional[str]] = dict()
+            sorted_entity: Dict[str, Any] = dict()
             for field, value in entity.items():
                 if field in implicit_columns.get(table, {}):
                     pass
