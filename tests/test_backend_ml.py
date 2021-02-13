@@ -6,7 +6,7 @@ import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
 from cdedb.common import (
     CdEDBObject, PrivilegeError, RequestState, SubscriptionActions as SA,
-    SubscriptionError, nearly_now
+    SubscriptionError, nearly_now, merge_dicts
 )
 from cdedb.database.constants import SubscriptionStates as SS
 from tests.common import USER_DICT, BackendTest, as_users, prepsql
@@ -25,6 +25,120 @@ class TestMlBackend(BackendTest):
         self.core.change_persona(self.key, setter)
         new_data = self.core.get_ml_user(self.key, user['id'])
         self.assertEqual(data, new_data)
+
+    @as_users("anton")
+    def test_merge_accounts(self, user: CdEDBObject) -> None:
+        berta_id = USER_DICT['berta']['id']
+        janis_id = USER_DICT['janis']['id']
+
+        # try some failing cases
+        with self.assertRaises(ValueError) as e:
+            self.ml.merge_accounts(self.key,
+                                   source_persona_id=USER_DICT['rowena']['id'],
+                                   target_persona_id=berta_id)
+        self.assertEqual("Source User must be ml realm only.", str(e.exception))
+
+        with self.assertRaises(ValueError) as e:
+            self.ml.merge_accounts(self.key,
+                                   source_persona_id=USER_DICT['nina']['id'],
+                                   target_persona_id=berta_id)
+        self.assertEqual("Source User is admin and can not be merged.", str(e.exception))
+
+        with self.assertRaises(ValueError) as e:
+            self.ml.merge_accounts(self.key,
+                                   source_persona_id=janis_id,
+                                   target_persona_id=USER_DICT['hades']['id'])
+        self.assertEqual("Target User is not accessible.", str(e.exception))
+
+        with self.assertRaises(ValueError) as e:
+            self.ml.merge_accounts(self.key,
+                                   source_persona_id=janis_id,
+                                   target_persona_id=berta_id)
+        self.assertEqual("Both users are related to the same mailinglists: 3",
+                         str(e.exception))
+
+        # remove the blocking subscription of berta
+        self.ml._remove_subscription(self.key, {'mailinglist_id': 3, 'persona_id': 2})
+        berta_mls = self.ml.get_user_subscriptions(self.key, berta_id)
+        berta_mod = self.ml.moderator_info(self.key, berta_id)
+        janis_mls = self.ml.get_user_subscriptions(self.key, janis_id)
+        janis_mod = self.ml.moderator_info(self.key, janis_id)
+        code = self.ml.merge_accounts(self.key,
+                                      source_persona_id=janis_id,
+                                      target_persona_id=berta_id)
+        self.assertLess(0, code)
+
+        # assert the merging of subscription states and moderator rights was successfull
+        berta_new_mls = self.ml.get_user_subscriptions(self.key, berta_id)
+        berta_new_mod = self.ml.moderator_info(self.key, berta_id)
+        merge_dicts(berta_mls, {ml: state for ml, state in janis_mls.items()
+                                if state != SS.implicit})
+        self.assertEqual(berta_new_mls, berta_mls)
+        self.assertEqual(berta_new_mod, berta_mod | janis_mod)
+
+        # check the logs
+        expectation = (8, (
+            {'change_note': 'Dieser Account hat User 10 geschluckt.',
+             'code': const.MlLogCodes.subscribed,
+             'ctime': nearly_now(),
+             'id': 1001,
+             'mailinglist_id': 3,
+             'persona_id': 2,
+             'submitted_by': 1},
+            {'change_note': 'janis-spam@example.cde',
+             'code': const.MlLogCodes.subscription_changed,
+             'ctime': nearly_now(),
+             'id': 1002,
+             'mailinglist_id': 3,
+             'persona_id': 2,
+             'submitted_by': 1},
+            {'change_note': 'Dieser Account hat User 10 geschluckt.',
+             'code': const.MlLogCodes.subscribed,
+             'ctime': nearly_now(),
+             'id': 1003,
+             'mailinglist_id': 64,
+             'persona_id': 2,
+             'submitted_by': 1},
+            {'change_note': 'janis@example.cde',
+             'code': const.MlLogCodes.subscription_changed,
+             'ctime': nearly_now(),
+             'id': 1004,
+             'mailinglist_id': 64,
+             'persona_id': 2,
+             'submitted_by': 1},
+            {'change_note': 'Dieser Account hat User 10 geschluckt.',
+             'code': const.MlLogCodes.subscribed,
+             'ctime': nearly_now(),
+             'id': 1005,
+             'mailinglist_id': 65,
+             'persona_id': 2,
+             'submitted_by': 1},
+            {'change_note': 'janis@example.cde',
+             'code': const.MlLogCodes.subscription_changed,
+             'ctime': nearly_now(),
+             'id': 1006,
+             'mailinglist_id': 65,
+             'persona_id': 2,
+             'submitted_by': 1},
+            {'change_note': 'User 10 wurde von User 2 geschluckt.',
+             'code': const.MlLogCodes.moderator_added,
+             'ctime': nearly_now(),
+             'id': 1007,
+             'mailinglist_id': 2,
+             'persona_id': 2,
+             'submitted_by': 1},
+            {'change_note': 'User 10 wurde von User 2 geschluckt.',
+             'code': const.MlLogCodes.moderator_added,
+             'ctime': nearly_now(),
+             'id': 1008,
+             'mailinglist_id': 63,
+             'persona_id': 2,
+             'submitted_by': 1}))
+        self.assertEqual(expectation, self.ml.retrieve_log(self.key))
+
+        # assure janis is archived
+        janis = self.core.get_persona(self.key, janis_id)
+        self.assertTrue(janis['is_archived'])
 
     @as_users("nina")
     def test_entity_mailinglist(self, user: CdEDBObject) -> None:
