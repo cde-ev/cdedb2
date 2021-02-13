@@ -133,17 +133,21 @@ class EventBackend(AbstractBackend):
 
     def event_log(self, rs: RequestState, code: const.EventLogCodes,
                   event_id: Optional[int], persona_id: int = None,
-                  change_note: str = None) -> DefaultReturnCode:
+                  change_note: str = None, atomized: bool = True) -> DefaultReturnCode:
         """Make an entry in the log.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
 
-        :param persona_id: ID of affected user
-        :param change_note: Infos not conveyed by other columns.
+        :param atomized: Whether this function should enforce an atomized context
+            to be present.
         """
         if rs.is_quiet:
             return 0
+        # To ensure logging is done if and only if the corresponding action happened,
+        # we require atomization by default.
+        if atomized:
+            self.affirm_atomized_context(rs)
         data = {
             "code": code,
             "event_id": event_id,
@@ -1118,12 +1122,12 @@ class EventBackend(AbstractBackend):
         ret = 1
         if not data:
             return ret
-        # implicit Atomizer by caller
+        # implicit atomized context.
         self.affirm_atomized_context(rs)
-        current = self.sql_select(
-            rs, "event.course_tracks", COURSE_TRACK_FIELDS, (part_id,),
-            entity_key="part_id")
-        current = {e['id']: e for e in current}
+        current = self.sql_select(rs, "event.course_tracks", COURSE_TRACK_FIELDS,
+                                  (part_id,), entity_key="part_id")
+        current = {e['id']: {k: v for k, v in e.items()if k not in {'id', 'part_id'}}
+                   for e in current}
         existing = set(current)
         if not (existing >= {x for x in data if x > 0}):
             raise ValueError(n_("Non-existing tracks specified."))
@@ -1163,9 +1167,8 @@ class EventBackend(AbstractBackend):
                     **track_data
                 }
                 ret *= self.sql_update(rs, "event.course_tracks", update)
-                self.event_log(
-                    rs, const.EventLogCodes.track_updated, event_id,
-                    change_note=track_data['title'])
+                self.event_log(rs, const.EventLogCodes.track_updated, event_id,
+                               change_note=track_data['title'])
 
         # deleted
         if deleted:
@@ -1495,15 +1498,20 @@ class EventBackend(AbstractBackend):
         if minor_form is None:
             if path.exists():
                 path.unlink()
-                self.event_log(rs, const.EventLogCodes.minor_form_removed,
-                               event_id)
+                # Since this is not acting on our database, do not demand an atomized
+                # context.
+                self.event_log(rs, const.EventLogCodes.minor_form_removed, event_id,
+                               atomized=False)
                 return -1
             else:
                 return 0
         else:
             with open(path, "wb") as f:
                 f.write(minor_form)
-            self.event_log(rs, const.EventLogCodes.minor_form_updated, event_id)
+            # Since this is not acting on our database, do not demand an atomized
+            # context.
+            self.event_log(rs, const.EventLogCodes.minor_form_updated, event_id,
+                           atomized=False)
             return 1
 
     @access("event")
@@ -1715,8 +1723,9 @@ class EventBackend(AbstractBackend):
                         rs, const.EventLogCodes.part_created, data['id'],
                         change_note=new_part['title'])
                 current = self.sql_select(
-                    rs, "event.event_parts", ("id", "title"), updated | deleted)
-                titles = {e['id']: e['title'] for e in current}
+                    rs, "event.event_parts", EVENT_PART_FIELDS, updated | deleted)
+                current_data = {e['id']: {k: v for k, v in e.items()
+                                          if k not in {'event_id'}} for e in current}
                 for x in mixed_existence_sorter(updated):
                     update = copy.deepcopy(parts[x])
                     update['id'] = x
@@ -1734,11 +1743,11 @@ class EventBackend(AbstractBackend):
                                 or field['association'] not in legal_assocs):
                             raise ValueError(n_("Unfit field for %(field)s"),
                                              {'field': 'waitlist_field'})
-                    ret *= self.sql_update(rs, "event.event_parts", update)
                     ret *= self._set_tracks(rs, data['id'], x, tracks)
-                    self.event_log(
-                        rs, const.EventLogCodes.part_changed, data['id'],
-                        change_note=titles[x])
+                    if current_data[x] != update:
+                        ret *= self.sql_update(rs, "event.event_parts", update)
+                        self.event_log(rs, const.EventLogCodes.part_changed, data['id'],
+                                       change_note=current_data[x]['title'])
                 if deleted:
                     for x in mixed_existence_sorter(deleted):
                         # Implicitly delete fee modifiers and course tracks.
@@ -1778,6 +1787,9 @@ class EventBackend(AbstractBackend):
                 for x in mixed_existence_sorter(updated):
                     update = copy.deepcopy(fields[x])
                     update['id'] = x
+                    if field_data[x]['entries'] is not None:
+                        field_data[x]['entries'] = [
+                            tuple(e) for e in field_data[x]['entries']]
                     if all(field_data[x][k] == update[k] for k in update):
                         continue
                     if self.sql_select_one(
@@ -1786,12 +1798,10 @@ class EventBackend(AbstractBackend):
                         raise ValueError(n_(
                             "Cannot change field that is "
                             "associated with a fee modifier."))
-                    if ('kind' in update
-                            and update['kind'] != field_data[x]['kind']):
-                        self._cast_field_values(rs, field_data[x],
-                                                update['kind'])
-                    ret *= self.sql_update(rs, "event.field_definitions",
-                                           update)
+                    kind = field_data[x]['kind']
+                    if update.get('kind', kind) != kind:
+                        self._cast_field_values(rs, field_data[x], update['kind'])
+                    ret *= self.sql_update(rs, "event.field_definitions", update)
                     self.event_log(
                         rs, const.EventLogCodes.field_updated, data['id'],
                         change_note=field_data[x]['field_name'])
@@ -1832,7 +1842,8 @@ class EventBackend(AbstractBackend):
                 current = self.sql_select(
                     rs, "event.fee_modifiers", FEE_MODIFIER_FIELDS, part_ids,
                     entity_key="part_id")
-                existing = {e['id'] for e in current}
+                current_data = {e['id']: e for e in current}
+                existing = set(current_data)
                 if not (existing >= {x for x in fee_modifiers if x > 0}):
                     raise ValueError(n_("Non-existing fee modifier specified."))
                 new = {x for x in fee_modifiers if x < 0}
@@ -1840,7 +1851,6 @@ class EventBackend(AbstractBackend):
                            if x > 0 and fee_modifiers[x] is not None}
                 deleted = {x for x in fee_modifiers
                            if x > 0 and fee_modifiers[x] is None}
-                fee_modifier_data = {e['id']: e for e in current}
                 elc = const.EventLogCodes
                 for x in mixed_existence_sorter(new):
                     ret *= self.sql_insert(
@@ -1849,18 +1859,18 @@ class EventBackend(AbstractBackend):
                         rs, elc.fee_modifier_created, data['id'],
                         change_note=fee_modifiers[x]['modifier_name'])
                 for x in mixed_existence_sorter(updated):
-                    ret *= self.sql_update(
-                        rs, "event.fee_modifiers", fee_modifiers[x])
-                    self.event_log(
-                        rs, elc.fee_modifier_changed, data['id'],
-                        change_note=fee_modifier_data[x]['modifier_name'])
+                    if fee_modifiers[x] != current_data[x]:
+                        ret *= self.sql_update(
+                            rs, "event.fee_modifiers", fee_modifiers[x])
+                        self.event_log(
+                            rs, elc.fee_modifier_changed, data['id'],
+                            change_note=current_data[x]['modifier_name'])
                 if deleted:
                     ret *= self.sql_delete(rs, "event.fee_modifiers", deleted)
                     for x in mixed_existence_sorter(deleted):
-                        modifier_name = fee_modifier_data[x]['modifier_name']
                         self.event_log(
                             rs, elc.fee_modifier_deleted,
-                            data['id'], change_note=modifier_name)
+                            data['id'], change_note=current_data[x]['modifier_name'])
 
         return ret
 
@@ -2255,8 +2265,8 @@ class EventBackend(AbstractBackend):
                 if 'active_segments' in data:
                     pdata['active_segments'] = data['active_segments']
                 self.set_course(rs, pdata)
-        self.event_log(rs, const.EventLogCodes.course_created,
-                       data['event_id'], change_note=data['title'])
+            self.event_log(rs, const.EventLogCodes.course_created,
+                           data['event_id'], change_note=data['title'])
         return new_id
 
     @access("event")
@@ -3032,9 +3042,9 @@ class EventBackend(AbstractBackend):
                 new_track['registration_id'] = new_id
                 new_track['track_id'] = track_id
                 self.sql_insert(rs, "event.registration_tracks", new_track)
-        self.event_log(
-            rs, const.EventLogCodes.registration_created, data['event_id'],
-            persona_id=data['persona_id'])
+            self.event_log(
+                rs, const.EventLogCodes.registration_created, data['event_id'],
+                persona_id=data['persona_id'])
         return new_id
 
     @access("event")
@@ -3678,8 +3688,9 @@ class EventBackend(AbstractBackend):
             'id': event_id,
             'offline_lock': not self.conf["CDEDB_OFFLINE_DEPLOYMENT"],
         }
-        ret = self.sql_update(rs, "event.events", update)
-        self.event_log(rs, const.EventLogCodes.event_locked, event_id)
+        with Atomizer(rs):
+            ret = self.sql_update(rs, "event.events", update)
+            self.event_log(rs, const.EventLogCodes.event_locked, event_id)
         return ret
 
     @access("event")

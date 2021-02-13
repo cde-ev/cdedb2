@@ -7,11 +7,12 @@ from typing_extensions import TypedDict
 
 from cdedb.backend.common import PsycoJson
 from cdedb.backend.core import CoreBackend
-from cdedb.script import MockRequestState, setup
+from cdedb.common import RequestState
+from cdedb.script import setup
 
 
 class AuxData(TypedDict):
-    rs: MockRequestState
+    rs: RequestState
     core: Type[CoreBackend]
     PsycoJson: Type[PsycoJson]
     seq_id_tables: List[str]
@@ -170,7 +171,7 @@ def main() -> None:
     assert isinstance(data, dict)
     aux = prepare_aux(data)
     commands = build_commands(data, aux)
-    
+
     with open(args.outfile, "w") as f:
         for cmd in commands:
             print(cmd, file=f)

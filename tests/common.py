@@ -44,7 +44,7 @@ from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.common import (
     ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, CdEDBObject, CdEDBObjectMap, PathLike,
-    PrivilegeError, RequestState, n_, now, roles_to_db_role,
+    PrivilegeError, RequestState, n_, now, roles_to_db_role, nearly_now
 )
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -75,29 +75,6 @@ def check_test_setup() -> None:
         raise RuntimeError("Not configured for test (CDEDB_TEST unset).")
 
 
-class NearlyNow(datetime.datetime):
-    """This is something, that equals an automatically generated timestamp.
-
-    Since automatically generated timestamp are not totally predictible,
-    we use this to avoid nasty work arounds.
-    """
-
-    def __eq__(self, other: Any) -> bool:
-        if isinstance(other, datetime.datetime):
-            delta = self - other
-            return (datetime.timedelta(minutes=10) > delta
-                    > datetime.timedelta(minutes=-10))
-        return False
-
-    def __ne__(self, other: Any) -> bool:
-        return not self.__eq__(other)
-
-    @classmethod
-    def from_datetime(cls, datetime: datetime.datetime) -> "NearlyNow":
-        ret = cls.fromisoformat(datetime.isoformat())
-        return ret
-
-
 def create_mock_image(file_type: str = "png") -> bytes:
     """This returns a bytes object representing a picture of the given type.
 
@@ -108,14 +85,6 @@ def create_mock_image(file_type: str = "png") -> bytes:
     image.save(afile, file_type)
     afile.seek(0)
     return afile.read()
-
-
-def nearly_now() -> NearlyNow:
-    """Create a NearlyNow."""
-    now = datetime.datetime.now(pytz.utc)
-    return NearlyNow(
-        year=now.year, month=now.month, day=now.day, hour=now.hour,
-        minute=now.minute, second=now.second, tzinfo=pytz.utc)
 
 
 T = TypeVar("T")
@@ -457,6 +426,10 @@ class BackendTest(CdEDBTest):
         self.key = cast(RequestState, self.core.login(
             ANONYMOUS, user['username'], user['password'], ip))
         return self.key  # type: ignore
+
+    @staticmethod
+    def is_user(user: UserIdentifier, identifier: UserIdentifier) -> bool:
+        return get_user(user)["id"] == get_user(identifier)["id"]
 
     @staticmethod
     def initialize_raw_backend(backendcls: Type[SessionBackend]

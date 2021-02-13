@@ -447,6 +447,37 @@ def now() -> datetime.datetime:
     return datetime.datetime.now(pytz.utc)
 
 
+class NearlyNow(datetime.datetime):
+    """This is something, that equals an automatically generated timestamp.
+
+    Since automatically generated timestamp are not totally predictible,
+    we use this to avoid nasty work arounds.
+    """
+
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, datetime.datetime):
+            delta = self - other
+            return (datetime.timedelta(minutes=10) > delta
+                    > datetime.timedelta(minutes=-10))
+        return False
+
+    def __ne__(self, other: Any) -> bool:
+        return not self.__eq__(other)
+
+    @classmethod
+    def from_datetime(cls, datetime: datetime.datetime) -> "NearlyNow":
+        ret = cls.fromisoformat(datetime.isoformat())
+        return ret
+
+
+def nearly_now() -> NearlyNow:
+    """Create a NearlyNow."""
+    now = datetime.datetime.now(pytz.utc)
+    return NearlyNow(
+        year=now.year, month=now.month, day=now.day, hour=now.hour,
+        minute=now.minute, second=now.second, tzinfo=pytz.utc)
+
+
 class QuotaException(werkzeug.exceptions.TooManyRequests):
     """
     Exception for signalling a quota excess. This is thrown in
@@ -1278,6 +1309,20 @@ class TransactionType(enum.IntEnum):
         else:
             return repr(self)
 
+class SemesterSteps(enum.Enum):
+    billing = 1
+    archival_notification = 2
+    ejection = 10
+    automated_archival = 11
+    balance = 20
+    advance = 30
+    error = 100
+
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, str):
+            return self.name == other
+        return super(SemesterSteps, self).__eq__(other)
+
 
 def mixed_existence_sorter(iterable: Union[Collection[int], KeysView[int]]
                            ) -> Generator[int, None, None]:
@@ -1548,7 +1593,7 @@ def extract_roles(session: CdEDBObject, introspection_only: bool = False
 
 # The following droids are exempt from lockdown to keep our infrastructure
 # working
-INFRASTRUCTURE_DROIDS: Set[str] = {'rklist', 'resolve'}
+INFRASTRUCTURE_DROIDS: Set[str] = {'resolve'}
 
 
 def droid_roles(identity: str) -> Set[Role]:
@@ -1557,7 +1602,7 @@ def droid_roles(identity: str) -> Set[Role]:
     Currently this is rather trivial, but could be more involved in the
     future if more API capabilities are added to the DB.
 
-    :param identity: The name for the API functionality, e.g. ``rklist``.
+    :param identity: The name for the API functionality, e.g. ``resolve``.
     """
     ret = {'anonymous', 'droid', f'droid_{identity}'}
     if identity in INFRASTRUCTURE_DROIDS:
@@ -2102,6 +2147,8 @@ ORG_PERIOD_FIELDS = (
     "id", "billing_state", "billing_done", "billing_count",
     "ejection_state", "ejection_done", "ejection_count", "ejection_balance",
     "balance_state", "balance_done", "balance_trialmembers", "balance_total",
+    "archival_notification_state", "archival_notification_count",
+    "archival_notification_done", "archival_state", "archival_count", "archival_done",
     "semester_done")
 
 #: Fielsd of an expuls

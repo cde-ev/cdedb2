@@ -9,11 +9,11 @@ from typing import cast
 import cdedb.database.constants as const
 from cdedb.common import (
     CdEDBObject, PERSONA_CDE_FIELDS, PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS,
-    ArchiveError, PrivilegeError, RequestState, get_hash, merge_dicts, now,
+    ArchiveError, PrivilegeError, RequestState, get_hash, merge_dicts, now, nearly_now
 )
 from cdedb.validation import _PERSONA_CDE_CREATION
 from tests.common import (
-    ANONYMOUS, BackendTest, USER_DICT, as_users, create_mock_image, nearly_now,
+    ANONYMOUS, BackendTest, USER_DICT, as_users, create_mock_image, prepsql,
 )
 
 PERSONA_TEMPLATE = {
@@ -1186,6 +1186,16 @@ class TestCoreBackend(BackendTest):
                     self.assertEqual(
                         nearly_now(),
                         self.core.get_persona_latest_session(self.key, u["id"]))
+
+    @prepsql(f"UPDATE core.changelog SET ctime ="
+             f" '{now() - datetime.timedelta(days=365 * 2 + 1)}' WHERE persona_id = 18")
+    @as_users("vera")
+    def test_automated_archival(self, user: CdEDBObject) -> None:
+        for u in USER_DICT.values():
+            with self.subTest(u=u["id"]):
+                expectation = u["id"] in {18}
+                res = self.core.is_persona_automatically_archivable(self.key, u["id"])
+                self.assertEqual(expectation, res)
 
     @as_users("janis")
     def test_list_personas(self, user: CdEDBObject) -> None:

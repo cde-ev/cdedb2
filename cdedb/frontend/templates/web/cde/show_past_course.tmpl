@@ -99,9 +99,9 @@
             {% if extra_participants %}
                 <li id="count-extra-participants">
                     {% trans count=extra_participants %}
-                        extra_participants_singular
+                        and_one_more
                     {%- pluralize count -%}
-                        extra_participants_plural
+                        and_count_more
                     {% endtrans %} …
                 </li>
             {% endif %}

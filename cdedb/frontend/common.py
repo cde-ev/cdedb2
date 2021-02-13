@@ -6,6 +6,7 @@ overall topic.
 
 import abc
 import collections
+import collections.abc
 import copy
 import csv
 import datetime
@@ -40,15 +41,16 @@ from email.mime.nonmultipart import MIMENonMultipart
 from secrets import token_hex
 from typing import (
     IO, AbstractSet, Any, AnyStr, Callable, ClassVar, Collection, Container, Dict,
-    Generator, ItemsView, Iterable, List, Mapping, MutableMapping, Optional, Sequence,
-    Set, Tuple, Type, TypeVar, Union, cast, overload,
+    Generator, ItemsView, Iterable, List, Mapping, MutableMapping, NamedTuple,
+    Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast, overload,
 )
 
 import babel.dates
 import babel.numbers
 import bleach
 import jinja2
-import mailmanclient
+import mailmanclient.restobjects.mailinglist
+import mailmanclient.restobjects.held_message
 import markdown
 import markdown.extensions.toc
 import werkzeug
@@ -755,9 +757,8 @@ def keydictsort_filter(value: Mapping[T, S], sortkey: Callable[[Any], Any],
     return xsorted(value.items(), key=lambda e: sortkey(e[1]), reverse=reverse)
 
 
-def map_dict_filter(d: Dict[str, str],
-                      processing: Callable[[Any], str]
-                      ) -> ItemsView[str, str]:
+def map_dict_filter(d: Dict[str, str], processing: Callable[[Any], str]
+                    ) -> ItemsView[str, str]:
     """
     Processes the values of some string using processing function
 
@@ -1451,7 +1452,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         pending review) or None (signalling failure to acquire something).
 
         :param success: Affirmative message for positive return codes.
-        :param pending: Message for negative return codes signalling review.
+        :param info: Message for negative return codes signalling review.
         :param error: Exception message for zero return codes.
         """
         if not code:
@@ -1673,12 +1674,15 @@ class CdEMailmanClient(mailmanclient.Client):
         if self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or self.conf["CDEDB_DEV"]:
             self.logger.info("Skipping mailman query in dev/offline mode.")
             if self.conf["CDEDB_DEV"]:
-                if dblist['domain'] in const.MailinglistDomain.mailman_domains():
-                    return HELD_MESSAGE_SAMPLE
-        elif dblist['domain'] in const.MailinglistDomain.mailman_domains():
+                return HELD_MESSAGE_SAMPLE
+            return None
+        else:
             mmlist = self.get_list_safe(dblist['address'])
             return mmlist.held if mmlist else None
-        return None
+
+
+WorkerTarget = Callable[[RequestState], bool]
+TaskInfo = NamedTuple("TaskInfo", (("task", WorkerTarget), ("name", str), ("doc", str)))
 
 
 class Worker(threading.Thread):
@@ -1689,11 +1693,11 @@ class Worker(threading.Thread):
     concurrency is no concern.
     """
 
-    def __init__(self, conf: Config, task: Callable[..., bool],
-                 rs: RequestState, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, conf: Config, tasks: Union[WorkerTarget, Sequence[WorkerTarget]],
+                 rs: RequestState) -> None:
         """
-        :param task: Will be called with exactly one argument (the cloned
-          request state) until it returns something falsy.
+        :param tasks: Every task will called with the cloned request state as a single
+            argument.
         """
         # noinspection PyProtectedMember
         rrs = RequestState(
@@ -1709,31 +1713,49 @@ class Worker(threading.Thread):
         rrs._conn = connpool[roles_to_db_role(rs.user.roles)]
         logger = logging.getLogger("cdedb.frontend.worker")
 
+        def get_doc(task: WorkerTarget) -> str:
+            return task.__doc__.splitlines()[0] if task.__doc__ else ""
+
+        if isinstance(tasks, Sequence):
+            task_infos = [TaskInfo(t, t.__name__, get_doc(t)) for t in tasks]
+        else:
+            task_infos = [TaskInfo(tasks, tasks.__name__, get_doc(tasks))]
+
         def runner() -> None:
             """Implement the actual loop running the task inside the Thread."""
-            name = task.__name__
-            doc = f" {task.__doc__.splitlines()[0]}" if task.__doc__ else ""
+            if len(task_infos) > 1:
+                task_queue = "\n".join(f"'{n}': {doc}" for _, n, doc in task_infos)
+                logger.debug(f"Worker queue started:\n{task_queue}")
             p_id = rrs.user.persona_id if rrs.user else None
             username = rrs.user.username if rrs.user else None
-            logger.debug(
-                f"Task `{name}`{doc} started by user {p_id} ({username}).")
-            count = 0
-            while True:
-                try:
-                    count += 1
-                    if not task(rrs):
-                        logger.debug(
-                            f"Finished task `{name}` successfully"
-                            f" after {count} iterations.")
-                        return
-                except Exception as e:
-                    logger.exception(
-                        f"The following error occurred during the {count}th"
-                        f" iteration of `{name}: {e}")
-                    logger.debug(f"Task {name} aborted.")
-                    raise
+            for i, task_info in enumerate(task_infos):
+                logger.debug(
+                    f"Task `{task_info.name}`{task_info.doc} started by user"
+                    f" {p_id} ({username}).")
+                count = 0
+                while True:
+                    try:
+                        count += 1
+                        if not task_info.task(rrs):
+                            logger.debug(
+                                f"Finished task `{task_info.name}` successfully"
+                                f" after {count} iterations.")
+                            break
+                    except Exception as e:
+                        logger.exception(
+                            f"The following error occurred during the {count}th"
+                            f" iteration of `{task_info.name}: {e}")
+                        logger.debug(f"Task {task_info.name} aborted.")
+                        remaining_tasks = task_infos[i+1:]
+                        if remaining_tasks:
+                            logger.error(
+                                f"{len(remaining_tasks)} remaining tasks aborted:"
+                                f" {', '.join(n for _, n, _ in remaining_tasks)}")
+                        raise
+            if len(task_infos) > 1:
+                logger.debug(f"{len(task_infos)} tasks completed successfully.")
 
-        super().__init__(target=runner, daemon=False, args=args, kwargs=kwargs)
+        super().__init__(target=runner, daemon=False)
 
 
 def reconnoitre_ambience(obj: AbstractFrontend,
@@ -2092,7 +2114,7 @@ def REQUESTdata(
         as well as some native python types (primitives, datetimes, decimals).
         Additonally the generic types ``Optional[T]`` and ``Collection[T]``
         are valid as a type.
-        To extract an encoded parameter one may prepended the name of it 
+        To extract an encoded parameter one may prepended the name of it
         with an octothorpe (``#``).
     """
 
@@ -2354,11 +2376,11 @@ def mailinglist_guard(argname: str = "mailinglist_id",
                     raise werkzeug.exceptions.Forbidden(rs.gettext(
                         "This page can only be accessed by the mailinglist’s "
                         "moderators."))
-                if (requires_privilege and not
-                    obj.mlproxy.may_manage(rs, mailinglist_id=arg, privileged=True)):
+                if requires_privilege and not obj.mlproxy.may_manage(
+                        rs, mailinglist_id=arg, privileged=True):
                     raise werkzeug.exceptions.Forbidden(rs.gettext(
-                        "You do not have privileged moderator access and may not change "
-                        "subscriptions."))
+                        "You do not have privileged moderator access and may not"
+                        " change subscriptions."))
             else:
                 if not obj.mlproxy.is_relevant_admin(rs, **{argname: arg}):
                     raise werkzeug.exceptions.Forbidden(rs.gettext(
@@ -2409,7 +2431,7 @@ def check_validation(rs: RequestState, type_: Type[T], value: Any,
 
 
 def check_validation_optional(rs: RequestState, type_: Type[T], value: Any,
-                     name: str = None, **kwargs: Any) -> Optional[T]:
+                              name: str = None, **kwargs: Any) -> Optional[T]:
     """Helper to perform parameter sanitization.
 
     This is similar to :func:`~cdedb.frontend.common.check_validation`

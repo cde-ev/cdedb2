@@ -395,15 +395,12 @@ class MlBaseFrontend(AbstractUserFrontend):
         # requiring privileged access
         privileged = (self.mlproxy.may_manage(rs, mailinglist_id, privileged=True)
                       or not (additional_fields & PRIVILEGE_MOD_REQUIRING_FIELDS))
-        is_mailman = (const.MailinglistDomain(int(rs.values['domain']))
-            in const.MailinglistDomain.mailman_domains())
         return self.render(rs, "change_mailinglist", {
             'event_entries': event_entries,
             'assembly_entries': assembly_entries,
             'available_domains': available_domains,
             'additional_fields': additional_fields,
             'privileged': privileged,
-            'is_mailman': is_mailman,
         })
 
     @access("ml", modi={"POST"})
@@ -580,9 +577,14 @@ class MlBaseFrontend(AbstractUserFrontend):
         unsubscription_overrides = self.mlproxy.get_subscription_states(
             rs, mailinglist_id,
             states=(const.SubscriptionStates.unsubscription_override,))
+        all_unsubscriptions = self.mlproxy.get_subscription_states(
+            rs, mailinglist_id, states=(const.SubscriptionStates.unsubscribed,))
+        redundant_unsubscriptions = self.mlproxy.get_redundant_unsubscriptions(
+            rs, mailinglist_id)
         persona_ids = (set(rs.ambience['mailinglist']['moderators'])
                        | set(subscription_overrides.keys())
-                       | set(unsubscription_overrides.keys()))
+                       | set(unsubscription_overrides.keys())
+                       | set(all_unsubscriptions.keys()))
         personas = self.coreproxy.get_personas(rs, persona_ids)
         subscription_overrides = collections.OrderedDict(
             (anid, personas[anid]) for anid in sorted(
@@ -592,10 +594,16 @@ class MlBaseFrontend(AbstractUserFrontend):
             (anid, personas[anid]) for anid in sorted(
                 unsubscription_overrides,
                 key=lambda anid: EntitySorter.persona(personas[anid])))
+        all_unsubscriptions = collections.OrderedDict(
+            (anid, personas[anid]) for anid in sorted(
+                all_unsubscriptions,
+                key=lambda anid: EntitySorter.persona(personas[anid])))
         privileged = self.mlproxy.may_manage(rs, mailinglist_id, privileged=True)
         return self.render(rs, "show_subscription_details", {
             'subscription_overrides': subscription_overrides,
             'unsubscription_overrides': unsubscription_overrides,
+            'all_unsubscriptions': all_unsubscriptions,
+            'redundant_unsubscriptions': redundant_unsubscriptions,
             'privileged': privileged})
 
     @access("ml")
@@ -680,16 +688,14 @@ class MlBaseFrontend(AbstractUserFrontend):
         if (moderator_id == rs.user.persona_id
                 and not self.mlproxy.is_relevant_admin(
                     rs, mailinglist_id=mailinglist_id)):
-            rs.notify("error",
-                      n_("Not allowed to remove yourself as moderator."))
+            rs.notify("error", n_("Not allowed to remove yourself as moderator."))
             return self.management(rs, mailinglist_id)
 
         moderators -= {moderator_id}
         if not moderators:
             rs.notify("error", n_("Cannot remove last moderator."))
         else:
-            code = self.mlproxy.set_moderators(
-                rs, mailinglist_id, moderators)
+            code = self.mlproxy.set_moderators(rs, mailinglist_id, moderators)
             self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/management")
 
@@ -786,6 +792,9 @@ class MlBaseFrontend(AbstractUserFrontend):
         """Evaluate whether to admit subscribers."""
         if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
+        if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):
+            rs.notify("error", n_("User does not exist or is archived."))
+            return self.management(rs, mailinglist_id)
         self._subscription_action_handler(
             rs, SubscriptionActions.approve_request,
             mailinglist_id=mailinglist_id, persona_id=persona_id)
@@ -799,6 +808,9 @@ class MlBaseFrontend(AbstractUserFrontend):
         """Evaluate whether to admit subscribers."""
         if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
+        if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):
+            rs.notify("error", n_("User does not exist or is archived."))
+            return self.management(rs, mailinglist_id)
         self._subscription_action_handler(
             rs, SubscriptionActions.deny_request,
             mailinglist_id=mailinglist_id, persona_id=persona_id)
@@ -811,6 +823,9 @@ class MlBaseFrontend(AbstractUserFrontend):
                       persona_id: vtypes.ID) -> Response:
         """Evaluate whether to admit subscribers."""
         if rs.has_validation_errors():
+            return self.management(rs, mailinglist_id)
+        if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):
+            rs.notify("error", n_("User does not exist or is archived."))
             return self.management(rs, mailinglist_id)
         self._subscription_action_handler(
             rs, SubscriptionActions.block_request,
@@ -833,6 +848,30 @@ class MlBaseFrontend(AbstractUserFrontend):
         else:
             return self.redirect(rs, "ml/management")
 
+    @access("ml_admin", modi={"POST"})
+    @mailinglist_guard(requires_privilege=True)
+    @REQUESTdata("subscriber_id")
+    def readd_subscriber(self, rs: RequestState, mailinglist_id: int,
+                         subscriber_id: vtypes.ID) -> Response:
+        """Administratively subscribe somebody previously unsubscribed.
+
+        This is used as a shortcut to re-subscribe an unsubscribed user from the list
+        of all unsubscriptions.
+
+        Note that this requires ml admin privileges, even if this is allowed for
+        moderators in the backend. We want to prevent our moderators from being
+        unnecessarily confused, since we can not imagine a real use case for them here.
+        """
+        if rs.has_validation_errors():
+            return self.show_subscription_details(rs, mailinglist_id)
+        if not self.coreproxy.verify_id(rs, subscriber_id, is_archived=False):
+            rs.notify("error", n_("User does not exist or is archived."))
+            return self.show_subscription_details(rs, mailinglist_id)
+        self._subscription_action_handler(
+            rs, SubscriptionActions.add_subscriber,
+            mailinglist_id=mailinglist_id, persona_id=subscriber_id)
+        return self.redirect(rs, "ml/show_subscription_details")
+
     @access("ml", modi={"POST"})
     @mailinglist_guard(requires_privilege=True)
     @REQUESTdata("subscriber_id")
@@ -841,10 +880,40 @@ class MlBaseFrontend(AbstractUserFrontend):
         """Administratively unsubscribe somebody."""
         if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
+        if not self.coreproxy.verify_id(rs, subscriber_id, is_archived=False):
+            rs.notify("error", n_("User does not exist or is archived."))
+            return self.management(rs, mailinglist_id)
         self._subscription_action_handler(
             rs, SubscriptionActions.remove_subscriber,
             mailinglist_id=mailinglist_id, persona_id=subscriber_id)
         return self.redirect(rs, "ml/management")
+
+    @access("ml_admin", modi={"POST"})
+    @REQUESTdata("unsubscription_id")
+    @mailinglist_guard(requires_privilege=True)
+    def reset_unsubscription(self, rs: RequestState, mailinglist_id: int,
+                             unsubscription_id: vtypes.ID) -> Response:
+        """Administratively reset an unsubscription state.
+
+        This is the only way to remove an explicit association of an user with a
+        mailinglist. It replaces the explicit with an implict unsubscribtion.
+
+        This should be used with care, since it may delete a conscious decision of the
+        user about his relation to this mailinglist.
+
+        Note that this requires ml admin privileges, even if this is allowed for
+        moderators in the backend. We want to prevent our moderators from being
+        unnecessarily confused, since we can not imagine a real use case for them here.
+        """
+        if rs.has_validation_errors():
+            return self.show_subscription_details(rs, mailinglist_id)
+        if not self.coreproxy.verify_id(rs, unsubscription_id, is_archived=False):
+            rs.notify("error", n_("User does not exist or is archived."))
+            return self.show_subscription_details(rs, mailinglist_id)
+        self._subscription_action_handler(
+            rs, SubscriptionActions.reset_unsubscription,
+            mailinglist_id=mailinglist_id, persona_id=unsubscription_id)
+        return self.redirect(rs, "ml/show_subscription_details")
 
     @access("ml", modi={"POST"})
     @mailinglist_guard(requires_privilege=True)
@@ -870,6 +939,9 @@ class MlBaseFrontend(AbstractUserFrontend):
                                      modsubscriber_id: vtypes.ID) -> Response:
         """Administratively remove somebody with moderator override."""
         if rs.has_validation_errors():
+            return self.show_subscription_details(rs, mailinglist_id)
+        if not self.coreproxy.verify_id(rs, modsubscriber_id, is_archived=False):
+            rs.notify("error", n_("User does not exist or is archived."))
             return self.show_subscription_details(rs, mailinglist_id)
         self._subscription_action_handler(
             rs, SubscriptionActions.remove_subscription_override,
@@ -902,6 +974,9 @@ class MlBaseFrontend(AbstractUserFrontend):
         """Administratively remove block."""
         if rs.has_validation_errors():
             return self.show_subscription_details(rs, mailinglist_id)
+        if not self.coreproxy.verify_id(rs, modunsubscriber_id, is_archived=False):
+            rs.notify("error", n_("User does not exist or is archived."))
+            return self.show_subscription_details(rs, mailinglist_id)
         self._subscription_action_handler(
             rs, SubscriptionActions.remove_unsubscription_override,
             mailinglist_id=mailinglist_id, persona_id=modunsubscriber_id)
@@ -918,8 +993,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/show_mailinglist")
 
     @access("ml", modi={"POST"})
-    def request_subscription(self, rs: RequestState,
-                             mailinglist_id: int) -> Response:
+    def request_subscription(self, rs: RequestState, mailinglist_id: int) -> Response:
         """Change own subscription state to subscribed or pending."""
         if rs.has_validation_errors():
             return self.show_mailinglist(rs, mailinglist_id)
@@ -939,8 +1013,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/show_mailinglist")
 
     @access("ml", modi={"POST"})
-    def cancel_subscription(self, rs: RequestState,
-                            mailinglist_id: int) -> Response:
+    def cancel_subscription(self, rs: RequestState, mailinglist_id: int) -> Response:
         """Cancel subscription request."""
         if rs.has_validation_errors():
             return self.show_mailinglist(rs, mailinglist_id)

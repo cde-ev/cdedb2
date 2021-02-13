@@ -159,9 +159,7 @@ class Application(BaseApp):
         user = User()
         try:
             sessionkey = request.cookies.get("sessionkey")
-            # TODO remove ml script key backwards compatibility code
-            apitoken = (request.headers.get("X-CdEDB-API-Token")
-                        or request.headers.get("MLSCRIPTKEY"))
+            apitoken = request.headers.get("X-CdEDB-API-Token")
             urls = self.urlmap.bind_to_environ(request.environ)
 
             if apitoken:

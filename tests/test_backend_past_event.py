@@ -5,8 +5,8 @@ import datetime
 import pytz
 
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, xsorted
-from tests.common import BackendTest, as_users, nearly_now
+from cdedb.common import CdEDBObject, xsorted, nearly_now
+from tests.common import BackendTest, as_users
 
 
 class TestPastEventBackend(BackendTest):
@@ -157,6 +157,17 @@ class TestPastEventBackend(BackendTest):
         del expectation[(5, 1)]
         self.assertEqual(expectation,
                          self.pastevent.list_participants(self.key, pevent_id=1))
+
+    @as_users("vera")
+    def test_participant_consistency(self, user: CdEDBObject) -> None:
+        # See issue #1458
+        participants = self.pastevent.list_participants(self.key, pevent_id=1)
+        self.assertIn((3, None), participants)
+        self.pastevent.add_participant(self.key, pevent_id=1, pcourse_id=2,
+                                       persona_id=3)
+        participants = self.pastevent.list_participants(self.key, pevent_id=1)
+        self.assertNotIn((3, None), participants)
+        self.assertIn((3, 2), participants)
 
     @as_users("vera")
     def test_past_log(self, user: CdEDBObject) -> None:

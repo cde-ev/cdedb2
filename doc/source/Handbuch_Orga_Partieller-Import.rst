@@ -109,6 +109,10 @@ Hinweise
 
   Außerdem ist es bei der Erstellung einer Anmeldungen erforderlich die
   zugehörige Person mit dem Attribut ``persona_id`` anzugeben.
+* Sowohl Export als auch Import verwenden für einige Felder wie das
+  Geschlecht der Teilnehmer oder den Teilnahmestatus Ganzzahlen, um
+  verschiedene Werte darzustellen. Wie diese Ganzzahlen auf die
+  entsprechenden Werte abbilden, ist unter :doc:`API_Constants` zu finden.
 
 .. _handbuch-partieller-import-versionierung:
 

@@ -255,7 +255,7 @@ class TestMlFrontend(FrontendTest):
     @as_users("anton", "janis")
     def test_show_ml_buttons_change_address(self, user: CdEDBObject) -> None:
         # not-mandatory
-        self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/3'},)
+        self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/3/show'},)
         self.assertTitle("Witz des Tages")
         if user['id'] == USER_DICT['anton']['id']:
             self.assertPresence("new-anton@example.cde")
@@ -271,7 +271,7 @@ class TestMlFrontend(FrontendTest):
         if user['id'] == USER_DICT['janis']['id']:
             self.logout()
             self.login(USER_DICT['inga'])
-        self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/1'},)
+        self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/1/show'},)
         self.assertTitle("Verkündungen")
         if user['id'] == USER_DICT['anton']['id']:
             self.assertPresence("anton@example.cde (default)")
@@ -340,8 +340,8 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("Internationaler Kongress")
         # Nina is no assembly user
         self.assertNoLink("Internationaler Kongress")
-        self.assertPresence("Andere Mailinglisten")
-        self.traverse({'href': '/ml/mailinglist/6'})
+        self.assertPresence("Öffentliche Mailinglisten")
+        self.traverse({'href': '/ml/mailinglist/6/show'})
         self.assertTitle("Aktivenforum 2000")
 
     @as_users("annika")
@@ -354,8 +354,8 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("Veranstaltungslisten")
         # Moderated, but not administered mailinglists
         self.assertNonPresence("Versammlungslisten")
-        self.assertNonPresence("Allgemeine Mailinglisten")
-        self.assertNonPresence("Andere Mailinglisten")
+        self.assertNonPresence("Mitgliedermailinglisten")
+        self.assertNonPresence("Öffentliche Mailinglisten")
         self.assertNonPresence("CdE-All")
 
     @as_users("berta", "janis")
@@ -364,7 +364,7 @@ class TestMlFrontend(FrontendTest):
                       {'href': '/ml/mailinglist/moderated'})
         self.assertTitle("Moderierte Mailinglisten")
         # Moderated mailinglists
-        self.assertPresence("Allgemeine Mailinglisten")
+        self.assertPresence("Mitgliedermailinglisten")
         self.assertPresence("Aktivenforum 2001", div="mailinglist-7-row")
         self.assertPresence("Mitglieder (Opt-in)", div="mailinglist-7-row")
         self.assertPresence("3", div="mailinglist-7-row")
@@ -383,7 +383,7 @@ class TestMlFrontend(FrontendTest):
                       {'href': '/ml/mailinglist/moderated'})
         self.assertTitle("Moderierte Mailinglisten")
         # Moderated mailinglists
-        self.assertPresence("Allgemeine Mailinglisten")
+        self.assertPresence("Mitgliedermailinglisten")
         self.assertPresence("CdE-All")
         self.assertPresence("Veranstaltungslisten")
         self.assertPresence("CdE-Party 2050 Orgateam")
@@ -398,8 +398,8 @@ class TestMlFrontend(FrontendTest):
                       {'href': '/ml/mailinglist/4'},
                       {'href': '/ml/mailinglist/4/management'})
         self.assertTitle("Klatsch und Tratsch – Verwaltung")
-        self.assertNonPresence("Inga Iota", div="moderator_list")
-        self.assertNonPresence("Anton Armin A. Administrator", div="moderator_list")
+        self.assertNonPresence("Inga Iota", div="moderator-list")
+        self.assertNonPresence("Anton Armin A. Administrator", div="moderator-list")
         f = self.response.forms['addmoderatorform']
         # Check that you cannot add non-existing or archived moderators.
         errormsg = "Einige dieser Nutzer existieren nicht oder sind archiviert."
@@ -415,13 +415,13 @@ class TestMlFrontend(FrontendTest):
         f['moderators'] = "DB-9-4, DB-1-9"
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch – Verwaltung")
-        self.assertPresence("Inga Iota", div="moderator_list")
+        self.assertPresence("Inga Iota", div="moderator-list")
         self.assertPresence("Anton Armin A. Administrator",
-                            div="moderator_list")
+                            div="moderator-list")
         f = self.response.forms['removemoderatorform9']
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch – Verwaltung")
-        self.assertNonPresence("Inga Iota", div="moderator_list")
+        self.assertNonPresence("Inga Iota", div="moderator-list")
         self.assertNotIn("removesubscriberform9", self.response.forms)
         f = self.response.forms['addsubscriberform']
         f['subscriber_ids'] = "DB-9-4"
@@ -501,19 +501,64 @@ class TestMlFrontend(FrontendTest):
         f = self.response.forms['removemodsubscriberform9']
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch – Erweiterte Verwaltung")
-        self.assertNonPresence("Inga Iota")
+        self.assertNonPresence("Inga Iota", div="modsubscriber-list")
+        # Inga is now in SubscriptionState 'subscribed'
+        # self.assertPresence("Inga Iota", div="unsubscriber-list")
 
         self.assertPresence("Emilia E. Eventis")
         f = self.response.forms['removemodunsubscriberform5']
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch – Erweiterte Verwaltung")
-        self.assertNonPresence("Emilia E. Eventis")
+        self.assertNonPresence("Emilia E. Eventis", div="modunsubscriber-list")
+        self.assertPresence("Emilia E. Eventis", div="unsubscriber-list")
 
         self.assertPresence("zelda@example.cde")
         f = self.response.forms['removewhitelistform1']
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch – Erweiterte Verwaltung")
         self.assertNonPresence("zelda@example.cde")
+
+    @as_users("nina")
+    def test_remove_unsubscriptions(self, user: CdEDBObject) -> None:
+        self.traverse({'description': 'Mailinglisten'},
+                      {'description': 'Werbung'},
+                      {'description': 'Erweiterte Verwaltung'})
+        self.assertTitle("Werbung – Erweiterte Verwaltung")
+        self.assertPresence("Annika", div='unsubscriber-list')
+        self.assertPresence("Ferdinand", div='unsubscriber-list')
+
+        # remove Annikas unsubscription
+        f = self.response.forms['resetunsubscriberform27']
+        assert 'addsubscriberform27' not in self.response.forms
+        self.submit(f)
+        self.assertNonPresence("Annika", div='unsubscriber-list')
+
+        # re-add Ferdinand, he got implicit subscribing rights
+        f = self.response.forms['addsubscriberform6']
+        assert 'resetunsubscriberform6' not in self.response.forms
+        self.submit(f)
+        self.assertNonPresence("Ferdinand", div='unsubscriber-list')
+
+        # check that Ferdinand was subscribed, while Annikas relation was removed
+        self.assertNonPresence('Annika')
+        self.traverse({'description': 'Verwaltung'})
+        self.assertTitle("Werbung – Verwaltung")
+        self.assertNonPresence("Annika")
+        self.assertPresence("Ferdinand", div="subscriber-list")
+
+    @as_users("janis")
+    def test_not_remove_unsubscriptions(self, user: CdEDBObject) -> None:
+        self.traverse({'description': 'Mailinglisten'},
+                      {'description': 'Werbung'},
+                      {'description': 'Erweiterte Verwaltung'})
+        self.assertTitle("Werbung – Erweiterte Verwaltung")
+        self.assertPresence("Annika", div='unsubscriber-list')
+        self.assertPresence("Ferdinand", div='unsubscriber-list')
+
+        assert 'resetunsubscriberform27' not in self.response.forms
+        assert 'addsubscriberform27' not in self.response.forms
+        assert 'addsubscriberform6' not in self.response.forms
+        assert 'resetunsubscriberform6' not in self.response.forms
 
     # TODO add a presider as moderator and use him too in this test
     @as_users("nina")
@@ -1013,302 +1058,6 @@ class TestMlFrontend(FrontendTest):
                             "Dies kannst du unter Erweiterte Verwaltung ändern.",
                             div="notifications")
 
-    def test_export(self) -> None:
-        HEADERS = {'MLSCRIPTKEY': "c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3"}
-        expectation = [
-            {'address': 'announce@lists.cde-ev.de', 'is_active': True},
-            {'address': 'werbung@lists.cde-ev.de', 'is_active': True},
-            {'address': 'witz@lists.cde-ev.de', 'is_active': True},
-            {'address': 'klatsch@lists.cde-ev.de', 'is_active': True},
-            {'address': 'kongress@lists.cde-ev.de', 'is_active': True},
-            {'address': 'aktivenforum2000@lists.cde-ev.de', 'is_active': False},
-            {'address': 'aktivenforum@lists.cde-ev.de', 'is_active': True},
-            {'address': 'aka@aka.cde-ev.de', 'is_active': True},
-            {'address': 'participants@aka.cde-ev.de', 'is_active': True},
-            {'address': 'wait@aka.cde-ev.de', 'is_active': True},
-            {'address': 'opt@lists.cde-ev.de', 'is_active': True},
-            {'address': 'moderatoren@lists.cde-ev.de', 'is_active': True},
-            {'address': 'everyone@lists.cde-ev.de', 'is_active': True},
-            {'address': 'lokalgruppen@lists.cde-ev.de', 'is_active': True},
-            {'address': 'all@lists.cde-ev.de', 'is_active': True},
-            {'address': 'info@lists.cde-ev.de', 'is_active': True},
-            {'address': 'mitgestaltung@lists.cde-ev.de', 'is_active': True},
-            {'address': 'gutscheine@lists.cde-ev.de', 'is_active': True},
-            {'address': 'platin@lists.cde-ev.de', 'is_active': True},
-            {'address': 'bau@lists.cde-ev.de', 'is_active': True},
-            {'address': 'geheim@lists.cde-ev.de', 'is_active': True},
-            {'address': 'test-gast@aka.cde-ev.de', 'is_active': True},
-            {'address': 'party50@aka.cde-ev.de', 'is_active': True},
-            {'address': 'party50-all@aka.cde-ev.de', 'is_active': True},
-            {'address': 'kanonisch@lists.cde-ev.de', 'is_active': True},
-            {'address': 'wal@lists.cde-ev.de', 'is_active': True},
-            {'address': 'dsa@lists.cde-ev.de', 'is_active': True},
-            {'address': '42@lists.cde-ev.de', 'is_active': True},
-            {'address': 'hogwarts@cdelokal.cde-ev.de', 'is_active': True},
-            {'address': 'kongress-leitung@lists.cde-ev.de', 'is_active': True},
-            {'address': 'migration@testmail.cde-ev.de', 'is_active': True},
-        ]
-        self.get("/ml/script/all", headers=HEADERS)
-        self.assertEqual(expectation, self.response.json)
-        expectation = {
-            'address': 'werbung@lists.cde-ev.de',
-            'admin_address': 'werbung-owner@lists.cde-ev.de',
-            'listname': 'Werbung',
-            'moderators': ['janis@example.cde'],
-            'sender': 'werbung@lists.cde-ev.de',
-            'size_max': None,
-            'subscribers': ['anton@example.cde',
-                            'berta@example.cde',
-                            'charly@example.cde',
-                            'garcia@example.cde',
-                            'inga@example.cde',
-                            'olaf@example.cde',
-                            'akira@example.cde'],
-            'whitelist': ['honeypot@example.cde']}
-        self.get("/ml/script/one?address=werbung@lists.cde-ev.de", headers=HEADERS)
-        self.assertEqual(expectation, self.response.json)
-
-    def test_oldstyle_access(self) -> None:
-        expectation = [
-            {
-                'address': 'announce@lists.cde-ev.de',
-                'inactive': False,
-                'maxsize': None,
-                'mime': True,
-            },
-            {
-                'address': 'werbung@lists.cde-ev.de',
-                'inactive': False,
-                'maxsize': None,
-                'mime': False,
-            },
-            {
-                'address': 'witz@lists.cde-ev.de',
-                'inactive': False,
-                'maxsize': 2048,
-                'mime': None,
-            },
-            {
-                'address': 'klatsch@lists.cde-ev.de',
-                'inactive': False,
-                'maxsize': None,
-                'mime': False,
-            },
-            {
-                'address': 'kongress@lists.cde-ev.de',
-                'inactive': False,
-                'maxsize': 1024,
-                'mime': None,
-            },
-            {
-                'address': 'aktivenforum2000@lists.cde-ev.de',
-                'inactive': True,
-                'maxsize': 1024,
-                'mime': None,
-            },
-            {
-                'address': 'aktivenforum@lists.cde-ev.de',
-                'inactive': False,
-                'maxsize': 1024,
-                'mime': None,
-            },
-            {
-                'address': 'aka@aka.cde-ev.de',
-                'inactive': False,
-                'maxsize': None,
-                'mime': False,
-            },
-            {
-                'address': 'participants@aka.cde-ev.de',
-                'inactive': False,
-                'maxsize': None,
-                'mime': False,
-            },
-            {
-                'address': 'wait@aka.cde-ev.de',
-                'inactive': False,
-                'maxsize': None,
-                'mime': False,
-            },
-            {
-                'address': 'opt@lists.cde-ev.de',
-                'inactive': False,
-                'maxsize': None,
-                'mime': False,
-            },
-            {
-                'address': 'moderatoren@lists.cde-ev.de',
-                'inactive': False,
-                'maxsize': None,
-                'mime': False,
-            },
-            {
-                'address': 'everyone@lists.cde-ev.de',
-                'inactive': False,
-                'maxsize': 64,
-                'mime': False,
-            },
-            {
-                'address': 'lokalgruppen@lists.cde-ev.de',
-                'inactive': False,
-                'maxsize': None,
-                'mime': False,
-            },
-            {
-                'address': 'all@lists.cde-ev.de',
-                'inactive': False,
-                'maxsize': None,
-                'mime': False,
-            },
-            {
-                'address': 'info@lists.cde-ev.de',
-                'inactive': False,
-                'maxsize': None,
-                'mime': None,
-            },
-            {
-                'address': 'mitgestaltung@lists.cde-ev.de',
-                'inactive': False,
-                'maxsize': None,
-                'mime': False,
-            },
-            {
-                'address': 'gutscheine@lists.cde-ev.de',
-                'inactive': False,
-                'maxsize': None,
-                'mime': False,
-            },
-            {
-                'address': 'platin@lists.cde-ev.de',
-                'inactive': False,
-                'maxsize': None,
-                'mime': False,
-            },
-            {
-                'address': 'bau@lists.cde-ev.de',
-                'inactive': False,
-                'maxsize': None,
-                'mime': False,
-            },
-            {
-                'address': 'geheim@lists.cde-ev.de',
-                'inactive': False,
-                'maxsize': None,
-                'mime': False,
-            },
-            {
-                'address': 'test-gast@aka.cde-ev.de',
-                'inactive': False,
-                'maxsize': None,
-                'mime': True,
-            },
-            {
-                'address': 'party50@aka.cde-ev.de',
-                'inactive': False,
-                'maxsize': 1024,
-                'mime': False,
-            },
-            {
-                'address': 'party50-all@aka.cde-ev.de',
-                'inactive': False,
-                'maxsize': 1024,
-                'mime': None,
-            },
-            {
-                'address': 'kanonisch@lists.cde-ev.de',
-                'inactive': False,
-                'maxsize': None,
-                'mime': None,
-            },
-            {
-                'address': 'wal@lists.cde-ev.de',
-                'inactive': False,
-                'maxsize': None,
-                'mime': False,
-            },
-            {
-                'address': 'dsa@lists.cde-ev.de',
-                'inactive': False,
-                'maxsize': None,
-                'mime': True,
-            },
-            {
-                'address': '42@lists.cde-ev.de',
-                'inactive': False,
-                'maxsize': None,
-                'mime': False,
-            },
-            {
-                'address': 'hogwarts@cdelokal.cde-ev.de',
-                'inactive': False,
-                'maxsize': None,
-                'mime': False,
-            },
-            {
-                'address': 'kongress-leitung@lists.cde-ev.de',
-                'inactive': False,
-                'maxsize': None,
-                'mime': False,
-            },
-            {
-                'address': 'migration@testmail.cde-ev.de',
-                'inactive': False,
-                'maxsize': 1024,
-                'mime': None,
-            },
-        ]
-        HEADERS = {'MLSCRIPTKEY': "c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3"}
-        self.get("/ml/script/all/compat", headers=HEADERS)
-        self.assertEqual(expectation, self.response.json)
-        expectation = {
-            'address': 'werbung@lists.cde-ev.de',
-            'list-owner': 'https://db.cde-ev.de/',
-            'list-subscribe': 'https://db.cde-ev.de/',
-            'list-unsubscribe': 'https://db.cde-ev.de/',
-            'listname': 'werbung',
-            'moderators': [
-                'janis@example.cde',
-            ],
-            'sender': 'werbung-bounces@lists.cde-ev.de',
-            'subscribers': [
-                'anton@example.cde',
-                'berta@example.cde',
-                'charly@example.cde',
-                'garcia@example.cde',
-                'inga@example.cde',
-                'olaf@example.cde',
-                'akira@example.cde',
-            ],
-            'whitelist': [
-                'honeypot@example.cde',
-            ]}
-        self.get("/ml/script/one/compat?address=werbung@lists.cde-ev.de",
-                 headers=HEADERS)
-        self.assertEqual(expectation, self.response.json)
-        expectation = {
-            'address': 'werbung@lists.cde-ev.de',
-            'list-owner': 'https://db.cde-ev.de/',
-            'list-subscribe': 'https://db.cde-ev.de/',
-            'list-unsubscribe': 'https://db.cde-ev.de/',
-            'listname': 'werbung',
-            'moderators': [
-                'janis@example.cde',
-            ],
-            'sender': 'cdedb-doublebounces@cde-ev.de',
-            'subscribers': [
-                'janis@example.cde',
-            ],
-            'whitelist': [
-                '*',
-            ]}
-        self.get("/ml/script/mod/compat?address=werbung@lists.cde-ev.de",
-                 headers=HEADERS)
-        self.assertEqual(expectation, self.response.json)
-        self.post("/ml/script/bounce/compat",
-                  params={'address': "anton@example.cde", 'error': 1},
-                  headers=HEADERS)
-        self.assertEqual(True, self.response.json)
-
     @as_users("berta", "janis")
     def test_moderator_access(self, user: CdEDBObject) -> None:
         self.traverse({"href": "/ml"},
@@ -1378,16 +1127,77 @@ class TestMlFrontend(FrontendTest):
         self.assertEqual("1111", f['maxsize'].value)
 
     @as_users("janis")
-    @prepsql("INSERT INTO ml.moderators (mailinglist_id, persona_id) VALUES (5, 10)")
+    # add Janis as unprivileged moderator
+    @prepsql("INSERT INTO ml.moderators (mailinglist_id, persona_id) VALUES (9, 10)")
+    # add someone (Charly) in unsubscription override state
+    @prepsql(f"INSERT INTO ml.subscription_states"
+             f" (mailinglist_id, persona_id, subscription_state)"
+             f" VALUES (9, 3, {const.SubscriptionStates.unsubscription_override.value})")
+    # add someone (Daniel) in subscription override state
+    @prepsql(f"INSERT INTO ml.subscription_states"
+             f" (mailinglist_id, persona_id, subscription_state)"
+             f" VALUES (9, 4, {const.SubscriptionStates.subscription_override.value})")
+    # add someone (Ferdinand) in unsubscription state (no implicit subscribing right)
+    @prepsql(f"INSERT INTO ml.subscription_states"
+             f" (mailinglist_id, persona_id, subscription_state)"
+             f" VALUES (9, 6, {const.SubscriptionStates.unsubscribed.value})")
+    # add someone (Werner) in request subscription state
+    @prepsql(f"INSERT INTO ml.subscription_states"
+             f" (mailinglist_id, persona_id, subscription_state)"
+             f" VALUES (9, 23, {const.SubscriptionStates.pending.value})")
     def test_non_privileged_moderator(self, user: CdEDBObject) -> None:
         self.traverse({"description": "Mailinglisten"},
-                      {"description": "Sozialistischer Kampfbrief"},
-                      {"description": "Erweiterte Verwaltung"})
+                      {"description": "Teilnehmer-Liste"},
+                      {"description": "Verwaltung"})
         self.assertPresence("Du hast keinen Zugriff als Privilegierter Moderator",
                             div="static-notifications")
-        # they can neither add nor remove subscriptions.
+
+        # he can neither add nor remove subscriptions ...
+        self.assertNotIn('addsubscriberform', self.response.forms)
+        self.assertPresence("Anton", div='subscriber-list')
+        self.assertNotIn('removesubscriberform1', self.response.forms)
+
+        self.assertPresence("Werner", div='pending-list')
+        self.assertNotIn('blockrequestform23', self.response.forms)
+        self.assertNotIn('denyrequestform23', self.response.forms)
+        self.assertNotIn('approverequestform23', self.response.forms)
+
+        # ... but he can add and remove moderators
+        f = self.response.forms['addmoderatorform']
+        f['moderators'] = USER_DICT['berta']['DB-ID']
+        self.submit(f)
+        self.assertPresence("Bertålotta", div='moderator-list')
+        self.assertPresence("Garcia", div='moderator-list')
+        f = self.response.forms['removemoderatorform7']
+        self.submit(f)
+        self.assertNonPresence("Garcia", div='moderator-list')
+
+        self.traverse({"description": "Erweiterte Verwaltung"})
+        self.assertPresence("Du hast keinen Zugriff als Privilegierter Moderator",
+                            div="static-notifications")
+
+        # he can neither add nor remove subscriptions ...
         self.assertNotIn('addmodsubscriberform', self.response.forms)
-        self.assertNotIn('removemodsubscriberform100', self.response.forms)
+        self.assertPresence("Daniel", div='modsubscriber-list')
+        self.assertNotIn('removemodsubscriberform4', self.response.forms)
+
+        self.assertNotIn('addmodunsubscriberform', self.response.forms)
+        self.assertPresence("Charly", div='modunsubscriber-list')
+        self.assertNotIn('removemodsubscriberform3', self.response.forms)
+
+        self.assertPresence("Ferdinand", div='unsubscriber-list')
+        self.assertNotIn('resetunsubscriberform6', self.response.forms)
+        # Emilia is already unsubscribed, but has implicit subscription rights
+        self.assertPresence("Emilia", div="unsubscriber-list")
+        self.assertNotIn('addsubscriberform5', self.response.forms)
+
+        # ... but he can add and remove whitelist entries
+        f = self.response.forms['addwhitelistform']
+        f['email'] = "testmail@example.cde"
+        self.submit(f)
+        self.assertPresence("testmail@example.cde", div='whitelist')
+        f = self.response.forms['removewhitelistform1']
+        self.submit(f)
 
     @as_users("inga")
     def test_cdelokal_admin(self, user: CdEDBObject) -> None:
@@ -1399,10 +1209,10 @@ class TestMlFrontend(FrontendTest):
         f = self.response.forms['addmoderatorform']
         f['moderators'] = user['DB-ID']
         self.submit(f)
-        self.assertPresence(user['given_names'], div="moderator_list")
+        self.assertPresence(user['given_names'], div="moderator-list")
         f = self.response.forms[f"removemoderatorform{user['id']}"]
         self.submit(f)
-        self.assertNonPresence(user['given_names'], div="moderator_list")
+        self.assertNonPresence(user['given_names'], div="moderator-list")
         self.traverse({"description": "Konfiguration"})
         f = self.response.forms['changelistform']
         new_notes = "Free Butterbeer for everyone!"
@@ -1429,7 +1239,7 @@ class TestMlFrontend(FrontendTest):
         f['moderators'] = moderator["DB-ID"]
         self.submit(f)
         self.assertTitle("Little Whinging")
-        self.assertPresence(moderator['given_names'], div="moderator_list")
+        self.assertPresence(moderator['given_names'], div="moderator-list")
 
     @as_users("anton")
     def test_1342(self, user: CdEDBObject) -> None:
@@ -1485,20 +1295,20 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("Verschwurbelung")
         self.assertPresence("unerwartetes Erbe")
         client.get_held_messages.return_value = messages[1:]
-        f = self.response.forms['acceptmsg1']
-        self.submit(f)
+        f = self.response.forms['msg1']
+        self.submit(f, button='action', value='accept')
         self.assertNonPresence("Finanzbericht")
         self.assertPresence("Verschwurbelung")
         self.assertPresence("unerwartetes Erbe")
         client.get_held_messages.return_value = messages[2:]
-        f = self.response.forms['rejectmsg2']
-        self.submit(f)
+        f = self.response.forms['msg2']
+        self.submit(f, button='action', value='reject')
         self.assertNonPresence("Finanzbericht")
         self.assertNonPresence("Verschwurbelung")
         self.assertPresence("unerwartetes Erbe")
         client.get_held_messages.return_value = messages[3:]
-        f = self.response.forms['discardmsg3']
-        self.submit(f)
+        f = self.response.forms['msg3']
+        self.submit(f, button='action', value='discard')
         self.assertNonPresence("Finanzbericht")
         self.assertNonPresence("Verschwurbelung")
         self.assertNonPresence("unerwartetes Erbe")

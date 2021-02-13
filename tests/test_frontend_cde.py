@@ -13,7 +13,9 @@ import webtest
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, ADMIN_VIEWS_COOKIE_NAME, Role, extract_roles, now
 from cdedb.query import QueryOperators
-from tests.common import FrontendTest, UserIdentifier, USER_DICT, as_users, get_user
+from tests.common import (
+    FrontendTest, UserIdentifier, USER_DICT, as_users, get_user, prepsql,
+)
 
 
 class TestCdEFrontend(FrontendTest):
@@ -105,7 +107,7 @@ class TestCdEFrontend(FrontendTest):
         member = ["Sonstiges", "Datenschutzerklärung", "Kurssuche"]
         searchable = ["CdE-Mitglied suchen"]
         cde_admin = ["Nutzer verwalten", "Organisationen verwalten",
-                     "Verg.-Veranstaltungen-Log"]
+                     "Mitglieder-Statistik", "Verg.-Veranstaltungen-Log"]
         finance_admin = [
             "Einzugsermächtigungen", "Kontoauszug parsen", "Finanz-Log",
             "Überweisungen eintragen", "Semesterverwaltung", "CdE-Log"]
@@ -345,6 +347,8 @@ class TestCdEFrontend(FrontendTest):
                 self.get(save, status=429)
                 self.assertPresence("Limit für Zugriffe")
                 self.assertPresence("automatisch zurückgesetzt")
+                # Check that own profile remains accessible
+                self.traverse({'href': '/core/self/show'})
                 break
 
     @as_users("anton", "berta", "inga")
@@ -1507,6 +1511,8 @@ class TestCdEFrontend(FrontendTest):
         self.admin_view_profile("daniel")
         self.assertNonPresence("CdE-Mitglied", div='membership')
 
+    @prepsql(f"UPDATE core.changelog SET ctime ="
+             f" '{now() - datetime.timedelta(days=365 * 2 + 1)}' WHERE persona_id = 18")
     @as_users("farin")
     def test_semester(self, user: CdEDBObject) -> None:
         link = {'description': 'Semesterverwaltung'}
@@ -1631,14 +1637,16 @@ class TestCdEFrontend(FrontendTest):
 
         # Verify Log
         self.traverse({'description': 'CdE-Log'})
-        self.assertTitle("CdE-Log [1–8 von 8]")
-        self.assertPresence("0 inaktive Mitglieder gestrichen.", div="2-1002")
-        self.assertPresence("3 Probemitgliedschaften beendet", div="3-1003")
-        self.assertPresence("15.00 € Guthaben abgebucht.", div="3-1003")
+        self.assertTitle("CdE-Log [1–12 von 12]")
+        self.assertPresence("1 E-Mails versandt.", div="2-1002")
+        self.assertPresence("0 inaktive Mitglieder gestrichen.", div="3-1003")
+        self.assertPresence("1 Accounts archiviert.", div="4-1004")
+        self.assertPresence("3 Probemitgliedschaften beendet", div="5-1005")
+        self.assertPresence("15.00 € Guthaben abgebucht.", div="5-1005")
 
-        self.assertPresence("3 inaktive Mitglieder gestrichen.", div="6-1006")
-        self.assertPresence("0 Probemitgliedschaften beendet", div="7-1007")
-        self.assertPresence("15.00 € Guthaben abgebucht.", div="7-1007")
+        self.assertPresence("3 inaktive Mitglieder gestrichen.", div="9-1009")
+        self.assertPresence("0 Probemitgliedschaften beendet", div="11-1011")
+        self.assertPresence("15.00 € Guthaben abgebucht.", div="11-1011")
 
     @as_users("farin")
     def test_expuls(self, user: CdEDBObject) -> None:
@@ -1926,6 +1934,36 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': '{} {}'.format(user['given_names'],
                                                      user['family_name'])})
 
+    @as_users("anton", "charly", "garcia", "inga")
+    def test_show_past_event_orgas(self, user: CdEDBObject) -> None:
+        self.traverse({'description': 'Mitglieder'},
+                      {'description': 'Verg. Veranstaltungen'},
+                      {'description': 'FingerAkademie 2020'})
+        self.assertTitle("FingerAkademie 2020")
+        self.assertPresence("Ferdinand F. Findus", div="orgas")
+        if user == USER_DICT["inga"]:
+            # no patricipant, but searchable.
+            self.assertPresence("und 2 weitere", div="orgas")
+            self.assertNonPresence("Charly")
+            self.assertNonPresence("Emilia")
+            self.assertNonPresence("Garcia", div="orgas")
+            self.traverse({'description': 'Ferdinand'})
+        else:
+            self.assertPresence("Charly C. Clown", div="orgas")
+            self.assertPresence("Emilia E. Eventis", div="orgas")
+            self.assertPresence("Ferdinand F. Findus", div="orgas")
+            self.assertNonPresence("Garcia", div="orgas")
+            self.assertNonPresence("weitere")
+            if user == USER_DICT["anton"]:
+                self.traverse({'description': 'Emilia'})
+            else:
+                # requesting user not searchable / no member
+                self.assertNoLink(content="Emilia")
+                self.assertNoLink(content="Ferdindand")
+                if user != USER_DICT["charly"]:
+                    # requested user not searchable.
+                    self.assertNoLink(content="Charly")
+
     @as_users("vera")
     def test_past_event_addresslist(self, user: CdEDBObject) -> None:
         self.traverse({'description': 'Mitglieder'},
@@ -2110,7 +2148,7 @@ class TestCdEFrontend(FrontendTest):
             'persona_ids',
             "Einige dieser Nutzer sind keine Veranstaltungsnutzer.")
         f = self.response.forms['addparticipantform']
-        f['persona_ids'] = "DB-7-8, DB-8-6, DB-5-1"
+        f['persona_ids'] = "DB-7-8, DB-8-6, DB-5-1, DB-3-5"
         f['is_orga'].checked = True
         f['is_instructor'].checked = True
         self.submit(f)
@@ -2124,10 +2162,17 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
         self.assertNonPresence("Garcia")
 
+        f = self.response.forms['removeparticipantform3']
+        self.submit(f)
+        self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
+        self.assertNonPresence("Garcia")
+
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Verg. Veranstaltungen'},
                       {'description': 'PfingstAkademie 2014'})
         self.assertNonPresence("Garcia")
+        # See #1458
+        self.assertNonPresence("Charly")
         f = self.response.forms['addparticipantform']
         f['persona_ids'] = "DB-7-8"
         f['is_orga'].checked = True
@@ -2138,6 +2183,10 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("PfingstAkademie 2014")
         self.assertNonPresence("Garcia")
+
+    @as_users("farin")
+    def test_member_stats(self, user: CdEDBObject) -> None:
+        self.traverse("Mitglieder", "Mitglieder-Statistik")
 
     @as_users("vera")
     def test_past_log(self, user: CdEDBObject) -> None:
@@ -2256,55 +2305,58 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['billform']
         self.submit(f)
         logs.append((1001, const.CdeLogCodes.semester_bill))
+        logs.append((1002, const.CdeLogCodes.automated_archival_notification_done))
 
         # Remove Inactive Members
         self.reload_and_check_form('ejectform', link)
         f = self.response.forms['ejectform']
         self.submit(f)
-        logs.append((1002, const.CdeLogCodes.semester_ejection))
+        logs.append((1003, const.CdeLogCodes.semester_ejection))
+        logs.append((1004, const.CdeLogCodes.automated_archival_done))
 
         # Update Balances
         self.reload_and_check_form('balanceform', link)
         f = self.response.forms['balanceform']
         self.submit(f)
-        logs.append((1003, const.CdeLogCodes.semester_balance_update))
+        logs.append((1005, const.CdeLogCodes.semester_balance_update))
 
         # Next Semester
         self.reload_and_check_form('proceedform', link)
         f = self.response.forms['proceedform']
         self.submit(f)
-        logs.append((1004, const.CdeLogCodes.semester_advance))
+        logs.append((1006, const.CdeLogCodes.semester_advance))
 
         # Payment Request with addresscheck
         self.reload_and_check_form('billform', link)
         f = self.response.forms['billform']
         f['addresscheck'].checked = True
         self.submit(f)
-        logs.append((1005, const.CdeLogCodes.semester_bill_with_addresscheck))
+        logs.append((1007, const.CdeLogCodes.semester_bill_with_addresscheck))
+        logs.append((1008, const.CdeLogCodes.automated_archival_notification_done))
 
         # exPuls with addresscheck
         self.reload_and_check_form('addresscheckform', link)
         f = self.response.forms['addresscheckform']
         self.submit(f)
-        logs.append((1006, const.CdeLogCodes.expuls_addresscheck))
+        logs.append((1009, const.CdeLogCodes.expuls_addresscheck))
 
         # Next exPuls
         self.reload_and_check_form('proceedexpulsform', link)
         f = self.response.forms['proceedexpulsform']
         self.submit(f)
-        logs.append((1007, const.CdeLogCodes.expuls_advance))
+        logs.append((1010, const.CdeLogCodes.expuls_advance))
 
         # exPuls without addresscheck
         self.reload_and_check_form('noaddresscheckform', link)
         f = self.response.forms['noaddresscheckform']
         self.submit(f)
-        logs.append((1008, const.CdeLogCodes.expuls_addresscheck_skipped))
+        logs.append((1011, const.CdeLogCodes.expuls_addresscheck_skipped))
 
         # Next exPuls
         self.reload_and_check_form('proceedexpulsform', link)
         f = self.response.forms['proceedexpulsform']
         self.submit(f)
-        logs.append((1009, const.CdeLogCodes.expuls_advance))
+        logs.append((1012, const.CdeLogCodes.expuls_advance))
 
         # Now check it
         self.traverse({'description': "CdE-Log"})

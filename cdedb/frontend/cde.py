@@ -23,20 +23,21 @@ from typing import Collection, Dict, List, Optional, Sequence, Set, Tuple, cast
 import dateutil.easter
 import psycopg2.extensions
 import werkzeug.exceptions
-from werkzeug import FileStorage, Response  # FIXME
+from werkzeug import FileStorage, Response
 
 import cdedb.database.constants as const
 import cdedb.frontend.parse_statement as parse
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    Accounts, PERSONA_DEFAULTS, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, EntitySorter,
-    Error, LineResolutions, RequestState, TransactionType, asciificator, deduct_years,
-    determine_age_class, diacritic_patterns, get_hash, glue, int_to_words,
-    lastschrift_reference, merge_dicts, n_, now, unwrap, xsorted,
+    Accounts, ArchiveError, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
+    EntitySorter, Error, LineResolutions, PERSONA_DEFAULTS, RequestState,
+    SemesterSteps, TransactionType, asciificator, deduct_years, determine_age_class,
+    diacritic_patterns, get_hash, glue, int_to_words, lastschrift_reference,
+    merge_dicts, n_, now, unwrap, xsorted,
 )
 from cdedb.database.connection import Atomizer
 from cdedb.frontend.common import (
-    CustomCSVDialect, REQUESTdata, REQUESTdatadict, REQUESTfile, Response, Worker,
+    CustomCSVDialect, REQUESTdata, REQUESTdatadict, REQUESTfile, Worker,
     access, calculate_db_logparams, calculate_loglinks, cdedbid_filter,
     check_validation as check, check_validation_optional as check_optional, csv_output,
     enum_entries_filter, make_membership_fee_reference, make_postal_address,
@@ -194,6 +195,12 @@ class CdEFrontend(AbstractUserFrontend):
             return self.redirect(rs, "core/index")
         return self.redirect(rs, "cde/index")
 
+    @access("cde_admin")
+    def member_stats(self, rs: RequestState) -> Response:
+        """Display stats about our members."""
+        stats = self.cdeproxy.get_member_stats(rs)
+        return self.render(rs, "member_stats", {'stats': stats})
+
     @access("persona")
     @REQUESTdata("is_search")
     def member_search(self, rs: RequestState, is_search: bool) -> Response:
@@ -219,8 +226,8 @@ class CdEFrontend(AbstractUserFrontend):
             defaults['qop_postal_code,postal_code2'] = QueryOperators.match
         spec = copy.deepcopy(QUERY_SPECS['qview_cde_member'])
         query = check(rs, vtypes.QueryInput,
-            mangle_query_input(rs, spec, defaults), "query", spec=spec,
-            allow_empty=not is_search, separator=" ")
+                      mangle_query_input(rs, spec, defaults), "query", spec=spec,
+                      allow_empty=not is_search, separator=" ")
 
         events = self.pasteventproxy.list_past_events(rs)
         pevent_id = None
@@ -249,21 +256,20 @@ class CdEFrontend(AbstractUserFrontend):
                     field, operation, value = constraint
                     if field == 'fulltext':
                         value = [r"\m{}\M".format(val) if len(val) <= 3 else val
-                                for val in value]
+                                 for val in value]
                     elif len(str(value)) <= 3:
                         operation = QueryOperators.equal
                     constraint = (field, operation, value)
                     return constraint
 
                 query.constraints = [restrict(constrain)
-                                    for constrain in query.constraints]
+                                     for constrain in query.constraints]
                 query.scope = "qview_cde_member"
                 query.fields_of_interest.append('personas.id')
                 result = self.cdeproxy.submit_general_query(rs, query)
                 count = len(result)
                 if count == 1:
-                    return self.redirect_show_user(rs, result[0]['id'],
-                                                quote_me=True)
+                    return self.redirect_show_user(rs, result[0]['id'], quote_me=True)
                 if count > cutoff:
                     result = result[:cutoff]
                     rs.notify("info", n_("Too many query results."))
@@ -280,8 +286,8 @@ class CdEFrontend(AbstractUserFrontend):
         defaults = copy.deepcopy(COURSESEARCH_DEFAULTS)
         spec = copy.deepcopy(QUERY_SPECS['qview_pevent_course'])
         query = check(rs, vtypes.QueryInput,
-            mangle_query_input(rs, spec, defaults), "query", spec=spec,
-            allow_empty=not is_search, separator=" ")
+                      mangle_query_input(rs, spec, defaults), "query", spec=spec,
+                      allow_empty=not is_search, separator=" ")
         result: Optional[Sequence[CdEDBObject]] = None
         count = 0
 
@@ -485,8 +491,7 @@ class CdEFrontend(AbstractUserFrontend):
             if (datum['resolution'] == LineResolutions.create
                     and self.coreproxy.verify_existence(rs, persona['username'])):
                 warnings.append(
-                    ("persona",
-                    ValueError(n_("Email address already taken."))))
+                    ("persona", ValueError(n_("Email address already taken."))))
             temp = copy.deepcopy(persona)
             temp['id'] = 1
             doppelgangers = self.coreproxy.find_doppelgangers(rs, temp)
@@ -1965,6 +1970,17 @@ class CdEFrontend(AbstractUserFrontend):
         period_id = self.cdeproxy.current_period(rs)
         period = self.cdeproxy.get_period(rs, period_id)
         period_history = self.cdeproxy.get_period_history(rs)
+        if self.cdeproxy.may_start_semester_bill(rs):
+            current_period_step = SemesterSteps.billing
+        elif self.cdeproxy.may_start_semester_ejection(rs):
+            current_period_step = SemesterSteps.ejection
+        elif self.cdeproxy.may_start_semester_balance_update(rs):
+            current_period_step = SemesterSteps.balance
+        elif self.cdeproxy.may_advance_semester(rs):
+            current_period_step = SemesterSteps.advance
+        else:
+            rs.notify("error", n_("Inconsistent semester state."))
+            current_period_step = SemesterSteps.error
         expuls_id = self.cdeproxy.current_expuls(rs)
         expuls = self.cdeproxy.get_expuls(rs, expuls_id)
         expuls_history = self.cdeproxy.get_expuls_history(rs)
@@ -1972,25 +1988,25 @@ class CdEFrontend(AbstractUserFrontend):
         return self.render(rs, "show_semester", {
             'period': period, 'expuls': expuls, 'stats': stats,
             'period_history': period_history, 'expuls_history': expuls_history,
+            'current_period_step': current_period_step,
         })
 
     @access("finance_admin", modi={"POST"})
     @REQUESTdata("addresscheck", "testrun")
     def semester_bill(self, rs: RequestState, addresscheck: bool, testrun: bool
                       ) -> Response:
-        """Send billing mail to all members.
+        """Send billing mail to all members and archival notification to inactive users.
 
-        In case of a test run we send only a single mail to the button
-        presser.
+        In case of a test run we send a single mail of each to the button presser.
         """
         if rs.has_validation_errors():
             return self.redirect(rs, "cde/show_semester")
         period_id = self.cdeproxy.current_period(rs)
-        period = self.cdeproxy.get_period(rs, period_id)
-        if period['billing_done']:
+        if not self.cdeproxy.may_start_semester_bill(rs):
             rs.notify("error", n_("Billing already done."))
             return self.redirect(rs, "cde/show_semester")
         open_lastschrift = self.determine_open_permits(rs)
+        meta_info = self.coreproxy.get_meta_info(rs)
 
         if rs.has_validation_errors():
             return self.show_semester(rs)
@@ -2000,18 +2016,20 @@ class CdEFrontend(AbstractUserFrontend):
         def send_billing_mail(rrs: RequestState, rs: None = None) -> bool:
             """Send one billing mail and advance semester state."""
             with Atomizer(rrs):
-                period_id = self.cdeproxy.current_period(rrs)
                 period = self.cdeproxy.get_period(rrs, period_id)
-                meta_info = self.coreproxy.get_meta_info(rrs)
-                previous = period['billing_state'] or 0
-                count = period['billing_count'] or 0
-                persona_id = self.coreproxy.next_persona(rrs, previous)
+                persona_id = self.coreproxy.next_persona(
+                    rrs, period['billing_state'], is_member=True, is_archived=False)
                 if testrun:
                     persona_id = rrs.user.persona_id
+                # We are finished if we reached the end or if this was previously done.
                 if not persona_id or period['billing_done']:
                     if not period['billing_done']:
                         self.cdeproxy.finish_semester_bill(rrs, addresscheck)
                     return False
+                period_update = {
+                    'id': period_id,
+                    'billing_state': persona_id,
+                }
                 persona = self.coreproxy.get_cde_user(rrs, persona_id)
                 lastschrift_list = self.cdeproxy.list_lastschrift(
                     rrs, persona_ids=(persona_id,))
@@ -2030,39 +2048,73 @@ class CdEFrontend(AbstractUserFrontend):
                     subject = "Mitgliedschaft verlängern"
                 else:
                     subject = "Mitgliedschaft verlängert"
-                self.do_mail(
-                    rrs, "billing",
-                    {'To': (persona['username'],),
-                     'Subject': subject},
-                    {'persona': persona,
-                     'fee': self.conf["MEMBERSHIP_FEE"],
-                     'lastschrift': lastschrift,
-                     'open_lastschrift': open_lastschrift,
-                     'address': address,
-                     'transaction_subject': transaction_subject,
-                     'addresscheck': addresscheck,
-                     'meta_info': meta_info})
+                period_update['billing_count'] = period['billing_count'] + 1
+                if not testrun:
+                    self.cdeproxy.set_period(rrs, period_update)
+
+            # Send mail only if transaction completed successfully.
+            self.do_mail(
+                rrs, "billing",
+                {'To': (persona['username'],),
+                 'Subject': subject},
+                {'persona': persona,
+                 'fee': self.conf["MEMBERSHIP_FEE"],
+                 'lastschrift': lastschrift,
+                 'open_lastschrift': open_lastschrift,
+                 'address': address,
+                 'transaction_subject': transaction_subject,
+                 'addresscheck': addresscheck,
+                 'meta_info': meta_info})
+            return not testrun
+
+        def send_archival_notification(rrs: RequestState, rs: None = None) -> bool:
+            """Send archival notifications to inactive accounts."""
+            with Atomizer(rrs):
+                period = self.cdeproxy.get_period(rrs, period_id)
+                persona_id = self.coreproxy.next_persona(
+                    rrs, period['archival_notification_state'], is_member=None,
+                    is_archived=False)
                 if testrun:
+                    persona_id = rrs.user.persona_id
+                # We are finished if we reached the end or if this was previously done.
+                if not persona_id or period['archival_notification_done']:
+                    if not period['archival_notification_done']:
+                        self.cdeproxy.finish_archival_notification(rrs)
                     return False
                 period_update = {
                     'id': period_id,
-                    'billing_state': persona_id,
-                    'billing_count': count + 1,
+                    'archival_notification_state': persona_id,
                 }
-                self.cdeproxy.set_period(rrs, period_update)
-                return True
+                is_archivable = self.coreproxy.is_persona_automatically_archivable(
+                    rrs, persona_id)
+                if is_archivable or testrun:
+                    persona = self.coreproxy.get_persona(rrs, persona_id)
+                    period_update['archival_notification_count'] = \
+                        period['archival_notification_count'] + 1
+                if not testrun:
+                    self.cdeproxy.set_period(rrs, period_update)
 
-        worker = Worker(self.conf, send_billing_mail, rs)
-        worker.start()
-        rs.notify("success", n_("Started sending mail."))
+            if is_archivable or testrun:
+                self.do_mail(
+                    rrs, "imminent_archival",
+                    {'To': (persona['username'],),
+                     'Subject': "Bevorstehende Löschung Deines"
+                                " CdE-Datenbank-Accounts"},
+                    {'persona': persona,
+                     'management': self.conf["MANAGEMENT_ADDRESS"],
+                     'meta_info': meta_info})
+            return not testrun
+
+        Worker(self.conf, (send_billing_mail, send_archival_notification), rs).start()
+        rs.notify("success", n_("Started sending billing mails."))
+        rs.notify("success", n_("Started sending archival notifications."))
         return self.redirect(rs, "cde/show_semester")
 
     @access("finance_admin", modi={"POST"})
     def semester_eject(self, rs: RequestState) -> Response:
-        """Eject members without enough credit."""
+        """Eject members without enough credit and archive inactive users."""
         period_id = self.cdeproxy.current_period(rs)
-        period = self.cdeproxy.get_period(rs, period_id)
-        if not period['billing_done'] or period['ejection_done']:
+        if not self.cdeproxy.may_start_semester_ejection(rs):
             rs.notify("error", n_("Wrong timing for ejection."))
             return self.redirect(rs, "cde/show_semester")
 
@@ -2071,21 +2123,22 @@ class CdEFrontend(AbstractUserFrontend):
         def eject_member(rrs: RequestState, rs: None = None) -> bool:
             """Check one member for ejection and advance semester state."""
             with Atomizer(rrs):
-                period_id = self.cdeproxy.current_period(rrs)
                 period = self.cdeproxy.get_period(rrs, period_id)
-                previous = period['ejection_state'] or 0
-                persona_id = self.coreproxy.next_persona(rrs, previous)
+                persona_id = self.coreproxy.next_persona(
+                    rrs, period['ejection_state'], is_member=True, is_archived=False)
+                # We are finished if we reached the end or if this was previously done.
                 if not persona_id or period['ejection_done']:
                     if not period['ejection_done']:
                         self.cdeproxy.finish_semester_ejection(rrs)
                     return False
-                persona = self.coreproxy.get_cde_user(rrs, persona_id)
                 period_update = {
                     'id': period_id,
                     'ejection_state': persona_id,
                 }
-                if (persona['balance'] < self.conf["MEMBERSHIP_FEE"]
-                        and not persona['trial_member']):
+                persona = self.coreproxy.get_cde_user(rrs, persona_id)
+                do_eject = (persona['balance'] < self.conf["MEMBERSHIP_FEE"]
+                            and not persona['trial_member'])
+                if do_eject:
                     self.coreproxy.change_membership(rrs, persona_id,
                                                      is_member=False)
                     period_update['ejection_count'] = \
@@ -2094,29 +2147,80 @@ class CdEFrontend(AbstractUserFrontend):
                         period['ejection_balance'] + persona['balance']
                     transaction_subject = make_membership_fee_reference(persona)
                     meta_info = self.coreproxy.get_meta_info(rrs)
-                    self.do_mail(
-                        rrs, "ejection",
-                        {'To': (persona['username'],),
-                         'Subject': "Austritt aus dem CdE e.V."},
-                        {'persona': persona,
-                         'fee': self.conf["MEMBERSHIP_FEE"],
-                         'transaction_subject': transaction_subject,
-                         'meta_info': meta_info,
-                         })
                 self.cdeproxy.set_period(rrs, period_update)
-                return True
+            if do_eject:
+                self.do_mail(
+                    rrs, "ejection",
+                    {'To': (persona['username'],),
+                     'Subject': "Austritt aus dem CdE e.V."},
+                    {'persona': persona,
+                     'fee': self.conf["MEMBERSHIP_FEE"],
+                     'transaction_subject': transaction_subject,
+                     'meta_info': meta_info})
+            return True
 
-        worker = Worker(self.conf, eject_member, rs)
-        worker.start()
+        def automated_archival(rrs: RequestState, rs: None = None) -> bool:
+            """Archive one inactive user if they are eligible."""
+            with Atomizer(rrs):
+                period = self.cdeproxy.get_period(rrs, period_id)
+                persona_id = self.coreproxy.next_persona(
+                    rrs, period['archival_state'], is_member=False, is_archived=False)
+                # We are finished if we reached the end or if this was previously done.
+                if not persona_id or period['archival_done']:
+                    if not period['archival_done']:
+                        self.cdeproxy.finish_automated_archival(rrs)
+                    return False
+                period_update = {
+                    'id': period_id,
+                    'archival_state': persona_id,
+                }
+                mail = None
+                if self.coreproxy.is_persona_automatically_archivable(
+                        rrs, persona_id, reference_date=period['billing_done']):
+                    note = "Autmoatisch archiviert wegen Inaktivität."
+                    try:
+                        code = self.coreproxy.archive_persona(rrs, persona_id, note)
+                    except ArchiveError as e:
+                        self.logger.exception(f"Unexpected error during archival of"
+                                              f" persona {persona_id}.")
+                        # TODO: somehow combine all failures into a single mail.
+                        #  This requires storing the ids somehow.
+                        mail = self._create_mail(
+                            text=f"Automated archival of persona {persona_id} failed"
+                                 f" with ArchivalError:\n{e}",
+                            headers={'Subject': "Automated Archival failure",
+                                     'To': (rrs.user.username,)},
+                            attachments=None)
+                    else:
+                        if code:
+                            period_update['archival_count'] = \
+                                period['archival_count'] + 1
+                        else:
+                            self.logger.error(
+                                f"Automated archival of persona {persona_id} failed"
+                                f" for unknown reasons.")
+                            # TODO: combine all failures into a single mail. See above.
+                            mail = self._create_mail(
+                                text=f"Automated archival of persona {persona_id}"
+                                     f" failed with unknown error.",
+                                headers={'Subject': "Automated Archival failure",
+                                         'To': (rrs.user.username,)},
+                                attachments=None)
+                self.cdeproxy.set_period(rrs, period_update)
+            if mail is not None:
+                self._send_mail(mail)
+            return True
+
+        Worker(self.conf, (eject_member, automated_archival), rs).start()
         rs.notify("success", n_("Started ejection."))
+        rs.notify("success", n_("Started automated archival."))
         return self.redirect(rs, "cde/show_semester")
 
     @access("finance_admin", modi={"POST"})
     def semester_balance_update(self, rs: RequestState) -> Response:
         """Deduct membership fees from all member accounts."""
         period_id = self.cdeproxy.current_period(rs)
-        period = self.cdeproxy.get_period(rs, period_id)
-        if not period['ejection_done'] or period['balance_done']:
+        if not self.cdeproxy.may_start_semester_balance_update(rs):
             rs.notify("error", n_("Wrong timing for balance update."))
             return self.redirect(rs, "cde/show_semester")
 
@@ -2125,10 +2229,10 @@ class CdEFrontend(AbstractUserFrontend):
         def update_balance(rrs: RequestState, rs: None = None) -> bool:
             """Update one members balance and advance state."""
             with Atomizer(rrs):
-                period_id = self.cdeproxy.current_period(rrs)
                 period = self.cdeproxy.get_period(rrs, period_id)
-                previous = period['balance_state'] or 0
-                persona_id = self.coreproxy.next_persona(rrs, previous)
+                persona_id = self.coreproxy.next_persona(
+                    rrs, period['balance_state'], is_member=True, is_archived=False)
+                # We are finished if we reached the end or if this was previously done.
                 if not persona_id or period['balance_done']:
                     if not period['balance_done']:
                         self.cdeproxy.finish_semester_balance_update(rrs)
@@ -2209,36 +2313,33 @@ class CdEFrontend(AbstractUserFrontend):
         def send_addresscheck(rrs: RequestState, rs: None = None) -> bool:
             """Send one address check mail and advance state."""
             with Atomizer(rrs):
-                expuls_id = self.cdeproxy.current_expuls(rrs)
                 expuls = self.cdeproxy.get_expuls(rrs, expuls_id)
-                previous = expuls['addresscheck_state'] or 0
-                count = expuls['addresscheck_count'] or 0
-                persona_id = self.coreproxy.next_persona(rrs, previous)
+                persona_id = self.coreproxy.next_persona(
+                    rrs, expuls['addresscheck_state'],
+                    is_member=True, is_archived=False)
                 if testrun:
                     persona_id = rrs.user.persona_id
+                # We are finished if we reached the end or if this was previously done.
                 if not persona_id or expuls['addresscheck_done']:
                     if not expuls['addresscheck_done']:
-                        self.cdeproxy.finish_expuls_addresscheck(rrs,
-                                                                 skip=False)
+                        self.cdeproxy.finish_expuls_addresscheck(
+                            rrs, skip=False)
                     return False
                 persona = self.coreproxy.get_cde_user(rrs, persona_id)
                 address = make_postal_address(persona)
-                self.do_mail(
-                    rrs, "addresscheck",
-                    {'To': (persona['username'],),
-                     'Subject': "Adressabfrage für den exPuls"},
-                    {'persona': persona,
-                     'address': address,
-                     })
-                if testrun:
-                    return False
-                expuls_update = {
-                    'id': expuls_id,
-                    'addresscheck_state': persona_id,
-                    'addresscheck_count': count + 1,
-                }
-                self.cdeproxy.set_expuls(rrs, expuls_update)
-                return True
+                if not testrun:
+                    expuls_update = {
+                        'id': expuls_id,
+                        'addresscheck_state': persona_id,
+                        'addresscheck_count': expuls['addresscheck_count'] + 1,
+                    }
+                    self.cdeproxy.set_expuls(rrs, expuls_update)
+            self.do_mail(
+                rrs, "addresscheck",
+                {'To': (persona['username'],),
+                 'Subject': "Adressabfrage für den exPuls"},
+                {'persona': persona, 'address': address})
+            return not testrun
 
         if skip:
             self.cdeproxy.finish_expuls_addresscheck(rs, skip=True)
@@ -2313,9 +2414,9 @@ class CdEFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "cde/institution_summary_form")
 
-    def process_participants(self, rs: RequestState, pevent_id: int,
-                             pcourse_id: int = None
-                             ) -> Tuple[CdEDBObjectMap, CdEDBObjectMap, int]:
+    def _process_participants(self, rs: RequestState, pevent_id: int,
+                              pcourse_id: int = None, orgas_only: bool = False
+                              ) -> Tuple[CdEDBObjectMap, CdEDBObjectMap, int]:
         """Helper to pretty up participation infos.
 
         The problem is, that multiple participations can be logged for a
@@ -2361,6 +2462,9 @@ class CdEFrontend(AbstractUserFrontend):
                 if pcourse_id and pcourse_id not in entry['pcourse_ids']:
                     # remove non-participants with respect to the relevant
                     # course if there is a relevant course
+                    continue
+                if orgas_only and not entry['is_orga']:
+                    # remove non-orgas
                     continue
                 participants[persona_id] = entry
 
@@ -2416,8 +2520,10 @@ class CdEFrontend(AbstractUserFrontend):
         course_ids = self.pasteventproxy.list_past_courses(rs, pevent_id)
         courses = self.pasteventproxy.get_past_courses(rs, course_ids)
         institutions = self.pasteventproxy.list_institutions(rs)
-        participants, personas, extra_participants = self.process_participants(
+        participants, personas, extra_participants = self._process_participants(
             rs, pevent_id)
+        orgas, _, extra_orgas = self._process_participants(rs, pevent_id,
+                                                           orgas_only=True)
         for p_id, p in participants.items():
             p['pcourses'] = {
                 pc_id: {
@@ -2432,9 +2538,9 @@ class CdEFrontend(AbstractUserFrontend):
         is_participant = any(anid == rs.user.persona_id
                              for anid, _ in participant_infos.keys())
         return self.render(rs, "show_past_event", {
-            'courses': courses, 'participants': participants,
-            'personas': personas, 'institutions': institutions,
-            'extra_participants': extra_participants,
+            'courses': courses, 'personas': personas, 'institutions': institutions,
+            'participants': participants, 'extra_participants': extra_participants,
+            'orgas': orgas, 'extra_orgas': extra_orgas,
             'is_participant': is_participant,
         })
 
@@ -2442,7 +2548,7 @@ class CdEFrontend(AbstractUserFrontend):
     def show_past_course(self, rs: RequestState, pevent_id: int,
                          pcourse_id: int) -> Response:
         """Display concluded course."""
-        participants, personas, extra_participants = self.process_participants(
+        participants, personas, extra_participants = self._process_participants(
             rs, pevent_id, pcourse_id=pcourse_id)
         return self.render(rs, "show_past_course", {
             'participants': participants, 'personas': personas,
