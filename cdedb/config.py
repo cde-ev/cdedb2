@@ -379,6 +379,9 @@ _DEFAULTS = {
     # log
     "CORE_BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend-core.log"),
 
+    # amount of time after which an inactive account may be archived.
+    "AUTOMATED_ARCHIVAL_CUTOFF": datetime.timedelta(days=365*2),
+
     #
     # Session stuff
     #

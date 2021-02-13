@@ -16,7 +16,7 @@ import psycopg2.extensions
 
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    PERSONA_STATUS_FIELDS, PathLike, User, droid_roles, extract_roles, glue,
+    PERSONA_STATUS_FIELDS, PathLike, User, droid_roles, extract_roles,
     make_root_logger, now,
 )
 from cdedb.config import Config, SecretsConfig
@@ -39,7 +39,7 @@ class SessionBackend:
 
         # local variable also to prevent closure over secrets
         lookup = {v: k for k, v in secrets['API_TOKENS'].items()}
-        self.api_token_lookup = lambda token: lookup.get(token)
+        self.api_token_lookup = lookup.get
 
         make_root_logger(
             "cdedb.backend.session", self.conf["SESSION_BACKEND_LOG"],

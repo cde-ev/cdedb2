@@ -45,7 +45,7 @@
         <dt>{% trans %}Mailinglist Address{% endtrans %}</dt>
         <dd>{{ util.href(util.mailto(ambience['mailinglist']['address']), ambience['mailinglist']['address']) }}</dd>
         <dt>{% trans %}Moderators{% endtrans %}</dt>
-        <dd id="moderator_list">
+        <dd id="moderator-list">
             {% for moderator, persona in moderators.items() %} {# This is already sorted. #}
                 {{ util.persona_anchor(persona) }}{% if not loop.last %},{% endif %}
             {% endfor %}

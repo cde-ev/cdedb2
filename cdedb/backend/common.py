@@ -15,7 +15,7 @@ import functools
 import logging
 from types import TracebackType
 from typing import (
-    Any, Callable, ClassVar, Collection, Dict, Iterable, KeysView, List, Mapping,
+    Any, Callable, ClassVar, Collection, Dict, Iterable, List, Mapping,
     Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast, overload,
 )
 
@@ -72,7 +72,7 @@ def singularize(function: Callable[..., Union[T, Mapping[Any, T]]],
         directly. If this is false, the output is assumed to be a dict with the
         singular param as a key.
     """
-
+    # pylint: disable=used-before-assignment
     @functools.wraps(function)
     def singularized(self: AbstractBackend, rs: RequestState, *args: Any,
                      **kwargs: Any) -> T:
@@ -218,7 +218,6 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         actual_realms = self.core.get_realms_multi(rs, ids)
         if any(not x >= realms for x in actual_realms.values()):
             raise ValueError(n_("Wrong realm for personas."))
-        return
 
     @classmethod
     @abc.abstractmethod

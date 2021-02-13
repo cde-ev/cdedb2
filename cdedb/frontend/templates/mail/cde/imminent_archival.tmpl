@@ -1,0 +1,41 @@
+Hallo {{ persona['display_name'] }},
+
+Dein Account in der CdE-Datenbank war seit über zwei Jahren inaktiv.
+{% if persona['is_cde_realm'] -%}
+Da Du außerdem kein Mitglied im CdE mehr bist, werden wir Deinen Account in circa vier Wochen stilllegen und die meisten damit verbundenen Daten löschen.
+{%- else -%}
+Daher werden wir Deinen Account in etwa vier Wochen stilllegen und die meisten damit verbundenen Daten löschen.
+{%- endif %}
+{% if persona['is_event_realm'] -%}
+Lediglich Deinen Namen, Dein Geschlecht und Dein Geburtsdatum sowie ggf. Deine Teilnahmen an vergangenen Veranstaltungen (CdE, DSA, DJA, etc.) werden wir behalten, um diese im Falle einer späteren Wiederaufnahme wiederherstellen zu können.
+{%- else -%}
+Lediglich Deinen Namen behalten wir, für den Fall dass Du deinen Account später nocheinmal reaktivieren möchtest.
+{%- endif %}
+
+Wenn Du dies verhindern möchtest reicht es aus, Dich einmal kurz in der CdE-Datenbank [1] einzuloggen.
+Falls Du Dein Passwort nicht (mehr) weißt, kannst Du dir unter [2] ein neues geben lassen.
+
+{% if persona['is_cde_realm'] -%}
+Du kannst auch dafür sorgen, dass Dein Account erhalten bleibt, indem Du wieder Mitglied wirst.
+Dafür musst Du lediglich den aktuellen Mitgliedsbeitrag, oder ein beliebiges Vielfaches davon an folgendes Konto überweisen.
+Noch einfacher ist die Teilnahme an der Initiative 25+.
+Damit erlaubst Du uns einmal im Jahr den Mitgliedsbeitrag sowie eine zusätzliche Spende per Lastschrift direkt von Deinem Konto einzuziehen.
+Wie Du an der Initiative 25+ teilnehmen kannst erfährst Du unter [3].
+
+Kontoinhaber:     {{ meta_info['CdE_Konto_Inhaber'] }}
+IBAN:             {{ meta_info['CdE_Konto_IBAN'] }}
+BIC:              {{ meta_info['CdE_Konto_BIC'] }}
+Kreditinstitut:   {{ meta_info['CdE_Konto_Institut'] }}
+Verwendungszweck: {{ transaction_subject }}
+{%- endif %}
+
+Falls Du möchtest, dass wir Deine Daten vollständig löschen, wende Dich bitte per Mail an <{{ management }}>.
+
+
+Viele Grüße
+Die Datenbank
+
+
+[1]: {{ cdedblink("core/index") }}
+[2]: {{ cdedblink("core/reset_password_form") }}
+[3]: {{ cdedblink("cde/i25p_index") }}

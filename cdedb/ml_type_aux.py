@@ -2,8 +2,7 @@ import enum
 import itertools
 from collections import OrderedDict
 from typing import (
-    TYPE_CHECKING, Any, Collection, Dict, List, Mapping, Optional, Set, Tuple, Type,
-    Union,
+    TYPE_CHECKING, Any, Collection, Dict, List, Mapping, Optional, Set, Type, Union,
 )
 
 from typing_extensions import Literal
@@ -206,6 +205,7 @@ class GeneralMailinglist:
         return bool((cls.relevant_admins | {"ml_admin"}) & user.roles)
 
     if TYPE_CHECKING:
+        # pylint: disable=unsubscriptable-object
         role_map: OrderedDict[str, MailinglistInteractionPolicy]
     role_map = OrderedDict()
 

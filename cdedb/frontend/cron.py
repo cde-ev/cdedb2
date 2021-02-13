@@ -137,6 +137,6 @@ class CronFrontend(BaseApp):
 
     @staticmethod
     def find_periodics(frontend: AbstractFrontend) -> Iterator[PeriodicJob]:
-        for name, func in inspect.getmembers(frontend, inspect.ismethod):
+        for _, func in inspect.getmembers(frontend, inspect.ismethod):
             if hasattr(func, "cron"):
                 yield func

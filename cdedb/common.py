@@ -18,11 +18,10 @@ import pathlib
 import re
 import string
 import sys
-from secrets import choice
 from typing import (
-    Generic, NamedTuple, TYPE_CHECKING, AbstractSet, Any, Callable, Collection, Container, Dict, Generator,
-    Iterable, KeysView, List, Mapping, MutableMapping, MutableSequence, Optional,
-    Sequence, Set, Tuple, Type, TypeVar, Union, cast, overload
+    Generic, TYPE_CHECKING, Any, Callable, Collection, Container, Dict, Generator,
+    Iterable, KeysView, List, Mapping, MutableMapping, Optional, Set, Tuple, Type,
+    TypeVar, Union, cast, overload
 )
 
 import icu
@@ -39,7 +38,7 @@ from cdedb.database.connection import IrradiatedConnection
 # here. All other uses should import them from here and not their
 # original source which is basically just uninlined code.
 # noinspection PyUnresolvedReferences
-from cdedb.ml_subscription_aux import (
+from cdedb.ml_subscription_aux import (  # pylint: disable=unused-import
     SubscriptionActions, SubscriptionError, SubscriptionInfo,
 )
 
@@ -485,7 +484,6 @@ class QuotaException(werkzeug.exceptions.TooManyRequests):
     :py:mod:`cdedb.frontend.application`. We use a custom class so that
     we can distinguish it from other exceptions.
     """
-    pass
 
 
 class PrivilegeError(RuntimeError):
@@ -497,7 +495,6 @@ class PrivilegeError(RuntimeError):
     error. In some cases the frontend may catch and handle the exception
     instead of preventing it in the first place.
     """
-    pass
 
 
 class ArchiveError(RuntimeError):
@@ -505,7 +502,6 @@ class ArchiveError(RuntimeError):
     Exception for signalling an exact error when archiving a persona
     goes awry.
     """
-    pass
 
 
 class PartialImportError(RuntimeError):
@@ -513,12 +509,10 @@ class PartialImportError(RuntimeError):
 
     Making this an exception rolls back the database transaction.
     """
-    pass
 
 
 class ValidationWarning(Exception):
     """Exception which should be suppressable by the user."""
-    pass
 
 
 def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,
@@ -772,6 +766,7 @@ def int_to_words(num: int, lang: str) -> str:
 
 class CustomJSONEncoder(json.JSONEncoder):
     """Custom JSON encoder to handle the types that occur for us."""
+    # pylint: disable=method-hidden,arguments-differ
 
     @overload
     def default(self, obj: Union[datetime.date, datetime.datetime,
@@ -835,7 +830,7 @@ def _schulze_winners(d: Mapping[Tuple[str, str], int],
             if i == j:
                 continue
             for k in candidates:
-                if i == k or j == k:
+                if k in {i, j}:
                     continue
                 p[(j, k)] = max(p[(j, k)], min(p[(j, i)], p[(i, k)]))
     # Second determine winners
@@ -1309,6 +1304,20 @@ class TransactionType(enum.IntEnum):
         else:
             return repr(self)
 
+class SemesterSteps(enum.Enum):
+    billing = 1
+    archival_notification = 2
+    ejection = 10
+    automated_archival = 11
+    balance = 20
+    advance = 30
+    error = 100
+
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, str):
+            return self.name == other  # pylint: disable=comparison-with-callable
+        return super().__eq__(other)
+
 
 def mixed_existence_sorter(iterable: Union[Collection[int], KeysView[int]]
                            ) -> Generator[int, None, None]:
@@ -1377,7 +1386,9 @@ def asciificator(s: str) -> str:
     for char in s:
         if char in umlaut_map:
             ret += umlaut_map[char]
-        elif char in (string.ascii_letters + string.digits + " /-?:().,+"):
+        elif char in (  # pylint: disable=superfluous-parens
+            string.ascii_letters + string.digits + " /-?:().,+"
+        ):
             ret += char
         else:
             ret += ' '
@@ -1798,9 +1809,8 @@ def roles_to_db_role(roles: Set[Role]) -> str:
     for role in DB_ROLE_MAPPING:
         if role in roles:
             return DB_ROLE_MAPPING[role]
-    else:
-        # TODO default to "cdb_anonymous"?
-        raise RuntimeError(n_("Could not determine any db role."))
+
+    raise RuntimeError(n_("Could not determine any db role."))
 
 
 ADMIN_VIEWS_COOKIE_NAME = "enabled_admin_views"
@@ -2133,6 +2143,8 @@ ORG_PERIOD_FIELDS = (
     "id", "billing_state", "billing_done", "billing_count",
     "ejection_state", "ejection_done", "ejection_count", "ejection_balance",
     "balance_state", "balance_done", "balance_trialmembers", "balance_total",
+    "archival_notification_state", "archival_notification_count",
+    "archival_notification_done", "archival_state", "archival_count", "archival_done",
     "semester_done")
 
 #: Fielsd of an expuls
