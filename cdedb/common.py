@@ -38,7 +38,7 @@ from cdedb.database.connection import IrradiatedConnection
 # here. All other uses should import them from here and not their
 # original source which is basically just uninlined code.
 # noinspection PyUnresolvedReferences
-from cdedb.ml_subscription_aux import (  # pylint: disable=unused-import
+from cdedb.ml_subscription_aux import (  # pylint: disable=unused-import; # noqa
     SubscriptionActions, SubscriptionError, SubscriptionInfo,
 )
 
@@ -1139,10 +1139,13 @@ def infinite_enum(aclass: T) -> T:
 
 E = TypeVar("E", bound=enum.IntEnum)
 
-#: Storage facility for infinite enums with associated data, see
-#: :py:func:`infinite_enum`
+
 @functools.total_ordering
 class InfiniteEnum(Generic[E]):
+    """Storage facility for infinite enums with associated data
+
+    Also see :py:func:`infinite_enum`"""
+
     # noinspection PyShadowingBuiltins
     def __init__(self, enum: E, int_: int):
         self.enum = enum
@@ -1303,6 +1306,7 @@ class TransactionType(enum.IntEnum):
             return to_string[self.name]
         else:
             return repr(self)
+
 
 class SemesterSteps(enum.Enum):
     billing = 1
@@ -1824,7 +1828,8 @@ ALL_ADMIN_VIEWS: Set[AdminView] = {
     "event_user", "event_mgmt", "event_orga", "ml_mgmt_event", "ml_mod_event",
     "ml_user", "ml_mgmt", "ml_mod",
     "ml_mgmt_cdelokal", "ml_mod_cdelokal",
-    "assembly_user", "assembly_mgmt", "assembly_presider", "ml_mgmt_assembly", "ml_mod_assembly",
+    "assembly_user", "assembly_mgmt", "assembly_presider",
+    "ml_mgmt_assembly", "ml_mod_assembly",
     "genesis"}
 
 ALL_MOD_ADMIN_VIEWS: Set[AdminView] = {
@@ -2165,10 +2170,12 @@ LASTSCHRIFT_TRANSACTION_FIELDS = (
 EVENT_FIELD_SPEC: Dict[
     str, Tuple[Set[const.FieldDatatypes], Set[const.FieldAssociations]]] = {
     'lodge': ({const.FieldDatatypes.str}, {const.FieldAssociations.registration}),
-    'camping_mat': ({const.FieldDatatypes.bool}, {const.FieldAssociations.registration}),
+    'camping_mat': (
+        {const.FieldDatatypes.bool}, {const.FieldAssociations.registration}),
     'course_room': ({const.FieldDatatypes.str}, {const.FieldAssociations.course}),
     'waitlist': ({const.FieldDatatypes.int}, {const.FieldAssociations.registration}),
-    'fee_modifier': ({const.FieldDatatypes.bool}, {const.FieldAssociations.registration}),
+    'fee_modifier': (
+        {const.FieldDatatypes.bool}, {const.FieldAssociations.registration}),
 }
 
 EPSILON = 10 ** (-6)  #:

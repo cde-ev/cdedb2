@@ -288,12 +288,12 @@ class CdEBackend(AbstractBackend):
         """
         lastschrift_ids = affirm_set(vtypes.ID, lastschrift_ids or set())
         if "cde_admin" not in rs.user.roles:
-            # Don't allow None for non admins.
             if lastschrift_ids is None:
+                # Don't allow None for non admins.
                 raise PrivilegeError(n_("Not privileged."))
-            # Otherwise pass this to get_lastschrift, which does access check.
             else:
-                _ = self.get_lastschrifts(rs, lastschrift_ids)
+                # Otherwise pass this to get_lastschrift, which does access check.
+                self.get_lastschrifts(rs, lastschrift_ids)
         stati = affirm_set(const.LastschriftTransactionStati, stati or set())
         periods = affirm_set(vtypes.ID, periods or set())
         query = "SELECT id, lastschrift_id FROM cde.lastschrift_transactions"
@@ -321,7 +321,7 @@ class CdEBackend(AbstractBackend):
         data = self.sql_select(rs, "cde.lastschrift_transactions",
                                LASTSCHRIFT_TRANSACTION_FIELDS, ids)
         # We only need these for access checking, which is done inside.
-        _ = self.get_lastschrifts(rs, {e["lastschrift_id"] for e in data})
+        self.get_lastschrifts(rs, {e["lastschrift_id"] for e in data})
 
         return {e['id']: e for e in data}
 
@@ -643,7 +643,8 @@ class CdEBackend(AbstractBackend):
         """Mark  the current semester as finished and create a new semester."""
         with Atomizer(rs):
             current_id = self.current_period(rs)
-            current = self.get_period(rs, current_id)
+            # XXX this does something ?
+            self.get_period(rs, current_id)
             if not self.may_advance_semester(rs):
                 raise RuntimeError(n_("Current period not finalized."))
             update = {

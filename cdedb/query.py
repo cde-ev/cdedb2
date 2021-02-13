@@ -183,7 +183,7 @@ class Query:
 #:           before output.
 if TYPE_CHECKING:
     QUERY_SPECS: Dict[
-        str, collections.OrderedDict[str, str] # pylint: disable=unsubscriptable-object
+        str, collections.OrderedDict[str, str]  # pylint: disable=unsubscriptable-object
     ]
 QUERY_SPECS = {
     "qview_cde_member":

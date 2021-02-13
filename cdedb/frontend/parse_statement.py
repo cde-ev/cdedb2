@@ -242,8 +242,8 @@ def _reconstruct_cdedbid(db_id: str) -> Tuple[Optional[int], List[Error]]:
     checkdigit = db_id[-1].upper()
 
     # Check the DB-ID
-    p_id, p = validate_check(vtypes.CdedbID,
-        "DB-{}-{}".format(value, checkdigit), argname="persona_id")
+    p_id, p = validate_check(
+        vtypes.CdedbID, "DB-{}-{}".format(value, checkdigit), argname="persona_id")
 
     return p_id, p
 
@@ -825,7 +825,7 @@ class Transaction:
         Rather the specific user can choose which of these fields to use.
         See also the export definitons at the top of this file.
         """
-        gv = lambda e: e.value if e else None
+
         ret = {
             "reference": self.reference,
             "account": self.account.value,
@@ -841,10 +841,10 @@ class Transaction:
             "cdedbid":
                 cdedbid_filter(self.persona_id) if self.persona_id else None,
             "persona_id": self.persona_id,
-            "persona_id_confidence": gv(self.persona_id_confidence),
+            "persona_id_confidence": self.persona_id_confidence or None,
             "persona_id_confidence_str": str(self.persona_id_confidence),
             "event_id": self.event_id,
-            "event_id_confidence": gv(self.event_id_confidence),
+            "event_id_confidence": self.event_id_confidence or None,
             "event_id_confidence_str": str(self.event_id_confidence),
             "errors_str": ", ".join("{}: {}".format(
                 key, e.args[0].format(**e.args[1]) if len(e.args) == 2 else e)

@@ -82,7 +82,9 @@ class SubscriptionActions(enum.IntEnum):
     remove_subscriber = 30  #: A moderator manually removing a subscribed user.
     remove_subscription_override = 31  #: A mod removing a fixed subscription.
     remove_unsubscription_override = 32  #: A moderator unblocking a user.
-    reset_unsubscription = 40  #: A moderator removing the relation of an unsubscribed user to the mailinglist.
+    # A moderator removing the relation
+    # of an unsubscribed user to the mailinglist.
+    reset_unsubscription = 40
 
     def get_target_state(self) -> Optional[SubscriptionStates]:
         """Get the target state associated with an action."""
@@ -245,15 +247,19 @@ class SubscriptionActions(enum.IntEnum):
             SubscriptionActions.approve_request: {
                 ss.subscribed: error(n_("Not a pending subscription request.")),
                 ss.unsubscribed: error(n_("Not a pending subscription request.")),
-                ss.subscription_override: error(n_("Not a pending subscription request.")),
-                ss.unsubscription_override: error(n_("Not a pending subscription request.")),
+                ss.subscription_override: error(
+                    n_("Not a pending subscription request.")),
+                ss.unsubscription_override: error(
+                    n_("Not a pending subscription request.")),
                 ss.pending: None,
             },
             SubscriptionActions.deny_request: {
                 ss.subscribed: error(n_("Not a pending subscription request.")),
                 ss.unsubscribed: error(n_("Not a pending subscription request.")),
-                ss.subscription_override: error(n_("Not a pending subscription request.")),
-                ss.unsubscription_override: error(n_("Not a pending subscription request.")),
+                ss.subscription_override: error(
+                    n_("Not a pending subscription request.")),
+                ss.unsubscription_override: error(
+                    n_("Not a pending subscription request.")),
                 ss.pending: None,
             },
             SubscriptionActions.block_request: {

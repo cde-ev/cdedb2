@@ -87,6 +87,7 @@ class FieldDatatypes(enum.IntEnum):
     date = 5  #:
     datetime = 6  #:
 
+
 @enum.unique
 class QuestionnaireUsages(enum.IntEnum):
     """Where a questionnaire row will be displayed."""

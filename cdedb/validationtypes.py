@@ -54,7 +54,7 @@ ProfilePicture = NewType("ProfilePicture", bytes)
 PDFFile = NewType("PDFFile", bytes)
 
 
-JSON = NewType("JSON", Any) # type: ignore  # TODO can we narrow this down?
+JSON = NewType("JSON", Any)  # type: ignore  # TODO can we narrow this down?
 
 # TODO this probably requires custom logic...
 ByFieldDatatype = NewType("ByFieldDatatype", str)
@@ -87,7 +87,7 @@ RegistrationTrack = NewType("RegistrationTrack", CdEDBObject)
 EventAssociatedFields = NewType("EventAssociatedFields", CdEDBObject)
 LodgementGroup = NewType("LodgementGroup", CdEDBObject)
 Lodgement = NewType("Lodgement", CdEDBObject)
-Questionnaire = NewType("Questionnaire", Dict[int, Any]) # TODO maybe cast keys to str
+Questionnaire = NewType("Questionnaire", Dict[int, Any])  # TODO maybe cast keys to str
 
 SerializedEvent = NewType("SerializedEvent", CdEDBObject)
 SerializedEventUpload = NewType("SerializedEventUpload", SerializedEvent)

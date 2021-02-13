@@ -189,7 +189,10 @@ class Script(Atomizer):
         Suppress traceback for DryRunErrors by returning True.
         """
         time_diff = time.monotonic() - self.start_time
-        formatmsg = lambda msg: f"{msg} Time taken: {time_diff:.3f} seconds."
+
+        def formatmsg(msg: str) -> str:
+            return f"{msg} Time taken: {time_diff:.3f} seconds."
+
         if exc_type is None:
             if self.dry_run:
                 msg = "Aborting Dry Run!"
