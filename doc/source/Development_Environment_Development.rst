@@ -57,7 +57,7 @@ you can remove the following lines from your ``.git/config`` file::
 
 or add the following line to your ``.git/info/attributes`` file::
 
-    *.po	diff
+    *.po diff
 
 
 The second one is a three-way merge driver for ``.po`` and ``.pot`` files,
@@ -74,7 +74,7 @@ remove the following lines from your ``.git/config`` file::
 
 or add the following line from your ``.git/info/attributes`` file::
 
-    *.po	merge
+    *.po merge
 
 Sample dev setup
 ----------------
