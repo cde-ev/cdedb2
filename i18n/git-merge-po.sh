@@ -111,17 +111,16 @@ m_msgcat -o ${TEMP}.remote-only --unique ${TEMP}.remote-changes ${TEMP}.conflict
 m_msgcat -o ${TEMP}.merge1 ${TEMP}.unchanged ${TEMP}.conflicts ${TEMP}.local-only ${TEMP}.remote-only
 
 # create a template to filter messages actually needed (those on local and remote)
+# and remove messages that became obsolete
 m_msgcat -o - ${TEMP}.local ${TEMP}.remote \
-  | m_msgmerge -o ${TEMP}.merge2 ${TEMP}.merge1 -
+  | m_msgmerge -o - ${TEMP}.merge1 - \
+  | msgattrib --no-obsolete -o ${TEMP}.merge2 -
 
 # final merge, adds saved header
 m_msgcat -o ${TEMP}.merge3 --use-first ${TEMP}.header ${TEMP}.merge2
 
-# remove obsolete strings
-msgattrib --no-obsolete -o ${TEMP}.merge4 ${TEMP}.merge3
-
 # produce output file (overwrites input LOCAL file)
-cat ${TEMP}.merge4 > $OUTPUT
+cat ${TEMP}.merge3 > $OUTPUT
 
 # check for conflicts
 if grep -q '#-#-#-#-#' $OUTPUT ; then
