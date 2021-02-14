@@ -117,7 +117,7 @@ m_msgcat -o - ${TEMP}.local ${TEMP}.remote \
   | msgattrib --no-obsolete -o ${TEMP}.merge2 -
 
 # final merge, adds saved header
-m_msgcat -o ${TEMP}.merge3 --use-first ${TEMP}.header ${TEMP}.merge2
+m_msgcat --sort-by-file -o ${TEMP}.merge3 --use-first ${TEMP}.header ${TEMP}.merge2
 
 # produce output file (overwrites input LOCAL file)
 cat ${TEMP}.merge3 > $OUTPUT
