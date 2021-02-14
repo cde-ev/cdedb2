@@ -55,13 +55,11 @@ i18n-extract:
 		--output=$(I18NDIR)/cdedb.pot --input-dirs=.
 
 i18n-update:
-	msgmerge --sort-by-file --lang=de --update \
-		$(I18NDIR)/de/LC_MESSAGES/cdedb.po $(I18NDIR)/cdedb.pot
-	msgmerge --sort-by-file --lang=en --update \
-		$(I18NDIR)/en/LC_MESSAGES/cdedb.po $(I18NDIR)/cdedb.pot
-	msgattrib --no-obsolete -o $(I18NDIR)/de/LC_MESSAGES/cdedb.po \
+	msgmerge --lang=de --update $(I18NDIR)/de/LC_MESSAGES/cdedb.po $(I18NDIR)/cdedb.pot
+	msgmerge --lang=en --update $(I18NDIR)/en/LC_MESSAGES/cdedb.po $(I18NDIR)/cdedb.pot
+	msgattrib --no-obsolete --sort-by-file -o $(I18NDIR)/de/LC_MESSAGES/cdedb.po \
 		$(I18NDIR)/de/LC_MESSAGES/cdedb.po
-	msgattrib --no-obsolete -o $(I18NDIR)/en/LC_MESSAGES/cdedb.po \
+	msgattrib --no-obsolete --sort-by-file -o $(I18NDIR)/en/LC_MESSAGES/cdedb.po \
 		$(I18NDIR)/en/LC_MESSAGES/cdedb.po
 	# TODO: do we want to use msgattribs --indent option for prettier po files?
 
