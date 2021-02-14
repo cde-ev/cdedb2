@@ -8,6 +8,25 @@ Test Suite
 Sample Data
 -----------
 
+The sample data lives in ``tests/ancillary_files/sample_data.json``. You can fill
+the database with the sample data by calling ``make sample-data`` in the directory
+``/cdedb2``. This will create a ``sample_data.sql`` file, drop the current
+database state and at last repopulate the database with the sample data. Now,
+you can use the DB as you would use it online, log in with the users described
+below.
+
+If you want to extend the sample data, you may simply change the ``sample_data.json``
+file. Be aware that changing existing and sometimes also adding new sample data
+can have side effects on some tests, so you should run the whole test suite
+afterwards to check that no test breaks.
+
+As an alternative to fill the ``sample_data.json`` file manually, we provide
+a script to dump the current database state into a JSON file. This can be
+very helpfull if you want to add a huge amount of new sample data, which
+sometimes comes with dependencies between different SQL-tables and can be quite
+frustrating to be done manually. We also provide a make target for this purpose,
+simply call ``make sample-data-dump`` inside ``/cdedb2``.
+
 Users
 ^^^^^
 
