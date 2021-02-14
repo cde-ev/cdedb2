@@ -2,8 +2,9 @@
 #
 # Three-way merge driver for PO files
 #
-# It uses the gettext utils (msgcat, msggrep, msgmerge, msguniq) to correctly process the .po and .pot files. These
-# tools are typically contained in the `gettext` package of Linux distributions.
+# It uses the gettext utils (msgcat, msggrep, msgmerge, msguniq) to correctly process
+# the .po and .pot files. These tools are typically contained in the `gettext` package
+# of Linux distributions.
 #
 # To set this up, add the following to your .git/config file:
 #
@@ -11,12 +12,11 @@
 #     name = Gettext merge driver
 #     driver = i18n/get-merge-po.sh %O %A %B
 #
-# Attention: This driver may silently drop duplicate messages in one of the po files to be merged. Even if these
-# duplicate definitions are in the block of commented, old message definitions at the end of the file. So, make sure to
-# delete all duplicte message defintions before trying to merge branches.
+# It is recommended to delete all duplicte message defintions before trying to
+# merge branches.
 #
 # Taken from https://github.com/mezis/git-whistles/blob/master/libexec/git-merge-po.sh
-# and adapted to remove obsolete strings.
+# and adapted to remove obsolete strings and sort by file.
 #
 set -e
 IFS=
