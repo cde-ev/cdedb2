@@ -98,17 +98,8 @@ m_msgcat -o - ${TEMP}.base ${TEMP}.local ${TEMP}.remote \
   | grep_conflicts -v \
   > ${TEMP}.unchanged
 
-# messages changed on both local and remote (conflicts)
-m_msgcat -o - ${TEMP}.remote-changes ${TEMP}.local-changes \
-  | grep_conflicts \
-  > ${TEMP}.conflicts
-
-# messages changed on local, not on remote; and vice-versa
-m_msgcat -o ${TEMP}.local-only --unique ${TEMP}.local-changes  ${TEMP}.conflicts
-m_msgcat -o ${TEMP}.remote-only --unique ${TEMP}.remote-changes ${TEMP}.conflicts
-
 # the big merge
-m_msgcat -o ${TEMP}.merge1 ${TEMP}.unchanged ${TEMP}.conflicts ${TEMP}.local-only ${TEMP}.remote-only
+m_msgcat -o ${TEMP}.merge1 ${TEMP}.unchanged ${TEMP}.local-changes ${TEMP}.remote-changes
 
 # create a template to filter messages actually needed (those on local and remote)
 # and remove messages that became obsolete
