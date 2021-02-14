@@ -4235,8 +4235,6 @@ class EventFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.show_registration(rs, event_id, registration_id)
 
-        # XXX why do this if we do not use the return value?
-        self.eventproxy.delete_registration_blockers(rs, registration_id)
         # maybe exclude some blockers
         code = self.eventproxy.delete_registration(
             rs, registration_id, {"registration_parts", "registration_tracks",

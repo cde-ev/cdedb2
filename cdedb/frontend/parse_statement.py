@@ -841,10 +841,12 @@ class Transaction:
             "cdedbid":
                 cdedbid_filter(self.persona_id) if self.persona_id else None,
             "persona_id": self.persona_id,
-            "persona_id_confidence": self.persona_id_confidence or None,
+            "persona_id_confidence":
+                getattr(self.persona_id_confidence, "value", default=None),
             "persona_id_confidence_str": str(self.persona_id_confidence),
             "event_id": self.event_id,
-            "event_id_confidence": self.event_id_confidence or None,
+            "event_id_confidence":
+                getattr(self.event_id_confidence, "value", default=None),
             "event_id_confidence_str": str(self.event_id_confidence),
             "errors_str": ", ".join("{}: {}".format(
                 key, e.args[0].format(**e.args[1]) if len(e.args) == 2 else e)

@@ -1950,7 +1950,6 @@ class CdEFrontend(AbstractUserFrontend):
             if "revoked_at" not in self.cdeproxy.delete_lastschrift_blockers(
                     rs, ls_id):
                 try:
-                    # XXX do we want to use the return code
                     self.cdeproxy.delete_lastschrift(rs, ls_id, {"transactions"})
                 except ValueError as e:
                     self.logger.error(

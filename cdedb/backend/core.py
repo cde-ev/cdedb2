@@ -576,8 +576,9 @@ class CoreBackend(AbstractBackend):
     @internal
     @access("ml")
     def list_all_moderators(self, rs: RequestState,
-        ml_types: Optional[Collection[const.MailinglistTypes]] = None
-    ) -> Set[int]:
+                            ml_types: Optional[
+                                Collection[const.MailinglistTypes]] = None
+                            ) -> Set[int]:
         """List all moderators of any mailinglists.
 
         Due to architectural limitations of the BackendContainer used for

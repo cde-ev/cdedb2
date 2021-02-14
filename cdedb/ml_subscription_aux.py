@@ -82,8 +82,8 @@ class SubscriptionActions(enum.IntEnum):
     remove_subscriber = 30  #: A moderator manually removing a subscribed user.
     remove_subscription_override = 31  #: A mod removing a fixed subscription.
     remove_unsubscription_override = 32  #: A moderator unblocking a user.
-    # A moderator removing the relation
-    # of an unsubscribed user to the mailinglist.
+    #: A moderator removing the relation
+    #: of an unsubscribed user to the mailinglist.
     reset_unsubscription = 40
 
     def get_target_state(self) -> Optional[SubscriptionStates]:

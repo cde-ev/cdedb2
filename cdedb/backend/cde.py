@@ -289,7 +289,7 @@ class CdEBackend(AbstractBackend):
         lastschrift_ids = affirm_set(vtypes.ID, lastschrift_ids or set())
         if "cde_admin" not in rs.user.roles:
             if lastschrift_ids is None:
-                # Don't allow None for non admins.
+                # Don't allow None for non-admins.
                 raise PrivilegeError(n_("Not privileged."))
             else:
                 # Otherwise pass this to get_lastschrift, which does access check.
@@ -643,8 +643,6 @@ class CdEBackend(AbstractBackend):
         """Mark  the current semester as finished and create a new semester."""
         with Atomizer(rs):
             current_id = self.current_period(rs)
-            # XXX this does something ?
-            self.get_period(rs, current_id)
             if not self.may_advance_semester(rs):
                 raise RuntimeError(n_("Current period not finalized."))
             update = {

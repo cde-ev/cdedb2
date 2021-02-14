@@ -1078,10 +1078,8 @@ class AssemblyFrontend(AbstractUserFrontend):
     def show_old_vote(self, rs: RequestState, assembly_id: int, ballot_id: int,
                       secret: str) -> Response:
         """Show a vote in a ballot of an old assembly by providing secret."""
-        if (
-            rs.ambience["assembly"]["is_active"]
-            or not rs.ambience["ballot"]["is_tallied"]
-        ):
+        if (rs.ambience["assembly"]["is_active"]
+                or not rs.ambience["ballot"]["is_tallied"]):
             return self.show_ballot(rs, assembly_id, ballot_id)
         if rs.has_validation_errors():
             return self.show_ballot_result(rs, assembly_id, ballot_id)
@@ -1486,8 +1484,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             "vote_end": now() + datetime.timedelta(minutes=1),
         }
 
-        # XXX do we want to use notify_return_code here?
-        self.assemblyproxy.set_ballot(rs, bdata)
+        self.notify_return_code(rs, self.assemblyproxy.set_ballot(rs, bdata))
         time.sleep(1)
         return self.redirect(rs, "assembly/show_ballot")
 
