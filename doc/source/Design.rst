@@ -14,7 +14,7 @@ General Design
    Design_Configuration
    Design_Validation
    Design_Logging
-   Design_Internationalisation
+   Design_Internationalization
 
 This WSGI-application has three main parts: frontend (python), backend
 (python) and database (SQL). The communication between frontend and backend

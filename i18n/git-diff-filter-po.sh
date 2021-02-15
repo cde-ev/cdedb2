@@ -10,11 +10,6 @@
 #   [diff "podiff"]
 #     textconv = i18n/git-diff-filter-po.sh
 #
-# Then add the following line to your .git/info/attributes file:
-#
-#   *.po diff=podiff
-#   *.pot diff=podiff
-#
 # taken from: https://gist.github.com/stephenharris/3c3792568494b2a7cf48
 
 grep -vE '^#:|POT-Creation-Date' $1

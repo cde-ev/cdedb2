@@ -56,13 +56,11 @@ i18n-extract:
 		--output=$(I18NDIR)/cdedb.pot --input-dirs=.
 
 i18n-update:
-	msgmerge --sort-by-file --lang=de --update \
-		$(I18NDIR)/de/LC_MESSAGES/cdedb.po $(I18NDIR)/cdedb.pot
-	msgmerge --sort-by-file --lang=en --update \
-		$(I18NDIR)/en/LC_MESSAGES/cdedb.po $(I18NDIR)/cdedb.pot
-	msgattrib --no-obsolete -o $(I18NDIR)/de/LC_MESSAGES/cdedb.po \
+	msgmerge --lang=de --update $(I18NDIR)/de/LC_MESSAGES/cdedb.po $(I18NDIR)/cdedb.pot
+	msgmerge --lang=en --update $(I18NDIR)/en/LC_MESSAGES/cdedb.po $(I18NDIR)/cdedb.pot
+	msgattrib --no-obsolete --sort-by-file -o $(I18NDIR)/de/LC_MESSAGES/cdedb.po \
 		$(I18NDIR)/de/LC_MESSAGES/cdedb.po
-	msgattrib --no-obsolete -o $(I18NDIR)/en/LC_MESSAGES/cdedb.po \
+	msgattrib --no-obsolete --sort-by-file -o $(I18NDIR)/en/LC_MESSAGES/cdedb.po \
 		$(I18NDIR)/en/LC_MESSAGES/cdedb.po
 	# TODO: do we want to use msgattribs --indent option for prettier po files?
 
@@ -76,6 +74,13 @@ sample-data:
 	cp -f related/auto-build/files/stage3/localconfig.py cdedb/localconfig.py
 	$(MAKE) storage > /dev/null
 	$(MAKE) sql > /dev/null
+
+sample-data-dump:
+	JSONTEMPFILE=`sudo -u www-data mktemp` \
+		&& sudo -u www-data chmod +r "$${JSONTEMPFILE}" \
+		&& sudo -u www-data $(PYTHONBIN) tests/create_sample_data_json.py -o "$${JSONTEMPFILE}" \
+		&& cp "$${JSONTEMPFILE}" tests/ancillary_files/sample_data.json \
+		&& sudo -u www-data rm "$${JSONTEMPFILE}"
 
 sample-data-test:
 	$(MAKE) storage-test

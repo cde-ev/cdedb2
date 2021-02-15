@@ -446,18 +446,27 @@ def now() -> datetime.datetime:
     return datetime.datetime.now(pytz.utc)
 
 
+_NEARLY_DELTA_DEFAULT = datetime.timedelta(minutes=10)
+
+
 class NearlyNow(datetime.datetime):
     """This is something, that equals an automatically generated timestamp.
 
     Since automatically generated timestamp are not totally predictible,
     we use this to avoid nasty work arounds.
     """
+    _delta: datetime.timedelta
+
+    def __new__(cls, *args: Any, delta: datetime.timedelta = _NEARLY_DELTA_DEFAULT,  # pylint: disable=arguments-differ
+                **kwargs: Any) -> "NearlyNow":
+        self = super().__new__(cls, *args, **kwargs)
+        self._delta = delta
+        return self
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, datetime.datetime):
             delta = self - other
-            return (datetime.timedelta(minutes=10) > delta
-                    > datetime.timedelta(minutes=-10))
+            return self._delta > delta > -1 * self._delta
         return False
 
     def __ne__(self, other: Any) -> bool:
@@ -469,12 +478,12 @@ class NearlyNow(datetime.datetime):
         return ret
 
 
-def nearly_now() -> NearlyNow:
+def nearly_now(delta: datetime.timedelta = _NEARLY_DELTA_DEFAULT) -> NearlyNow:
     """Create a NearlyNow."""
     now = datetime.datetime.now(pytz.utc)
     return NearlyNow(
         year=now.year, month=now.month, day=now.day, hour=now.hour,
-        minute=now.minute, second=now.second, tzinfo=pytz.utc)
+        minute=now.minute, second=now.second, tzinfo=pytz.utc, delta=delta)
 
 
 class QuotaException(werkzeug.exceptions.TooManyRequests):
