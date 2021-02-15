@@ -3819,9 +3819,9 @@ def _ballot_candidate(
 
 
 ASSEMBLY_ATTACHMENT_FIELDS: Mapping[str, Any] = {
-    'assembly_id': Optional[ID],
-    'ballot_id': Optional[ID],
+    'assembly_id': ID,
 }
+
 
 ASSEMBLY_ATTACHMENT_VERSION_FIELDS: Mapping[str, Any] = {
     'title': str,
@@ -3832,29 +3832,14 @@ ASSEMBLY_ATTACHMENT_VERSION_FIELDS: Mapping[str, Any] = {
 
 @_add_typed_validator
 def _assembly_attachment(
-    val: Any, argname: str = "assembly_attachment", *,
-    creation: bool = False, **kwargs: Any
+    val: Any, argname: str = "assembly_attachment", **kwargs: Any
 ) -> AssemblyAttachment:
     val = _mapping(val, argname, **kwargs)
 
-    if creation:
-        mandatory_fields = {**ASSEMBLY_ATTACHMENT_VERSION_FIELDS}
-        optional_fields = {**ASSEMBLY_ATTACHMENT_FIELDS}
-    else:
-        mandatory_fields = dict(ASSEMBLY_ATTACHMENT_FIELDS, id=ID)
-        optional_fields = {}
+    mandatory_fields = dict(ASSEMBLY_ATTACHMENT_VERSION_FIELDS,
+                            **ASSEMBLY_ATTACHMENT_FIELDS)
 
-    val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs)
-
-    errs = ValidationSummary()
-    if val.get("assembly_id") and val.get("ballot_id"):
-        errs.append(ValueError(argname, n_("Only one host allowed.")))
-    if not val.get("assembly_id") and not val.get("ballot_id"):
-        errs.append(ValueError(argname, n_("No host given.")))
-
-    if errs:
-        raise errs
+    val = _examine_dictionary_fields(val, mandatory_fields, **kwargs)
 
     return AssemblyAttachment(val)
 

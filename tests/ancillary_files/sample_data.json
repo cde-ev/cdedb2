@@ -5408,6 +5408,23 @@
             "votes": null,
             "is_tallied": false,
             "notes": null
+        },
+        {
+            "id": 17,
+            "assembly_id": 3,
+            "title": "Genauso wichtige Wahl",
+            "description": null,
+            "vote_begin": "2222-02-22T00:00:00+00:00",
+            "vote_end": "2222-02-22T00:01:00+00:00",
+            "vote_extension_end": null,
+            "extended": null,
+            "use_bar": false,
+            "abs_quorum": 0,
+            "rel_quorum": 0,
+            "quorum": null,
+            "votes": null,
+            "is_tallied": false,
+            "notes": null
         }
     ],
     "assembly.candidates": [
@@ -6431,17 +6448,24 @@
     "assembly.attachments": [
         {
             "id": 1,
-            "assembly_id": 3,
-            "ballot_id": null
+            "assembly_id": 3
         },
         {
             "id": 2,
-            "assembly_id": 3,
-            "ballot_id": null
+            "assembly_id": 3
         },
         {
             "id": 3,
-            "assembly_id": null,
+            "assembly_id": 3
+        }
+    ],
+    "assembly.attachment_ballot_links": [
+        {
+            "attachment_id": 3,
+            "ballot_id": 6
+        },
+        {
+            "attachment_id": 3,
             "ballot_id": 16
         }
     ],

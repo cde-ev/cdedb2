@@ -2143,7 +2143,7 @@ BALLOT_FIELDS = (
 
 #: Fields of an attachment in the assembly realm (attached either to an
 #: assembly or a ballot)
-ASSEMBLY_ATTACHMENT_FIELDS = ("id", "assembly_id", "ballot_id")
+ASSEMBLY_ATTACHMENT_FIELDS = ("id", "assembly_id")
 
 ASSEMBLY_ATTACHMENT_VERSION_FIELDS = ("attachment_id", "version", "title",
                                       "authors", "filename", "ctime", "dtime",
