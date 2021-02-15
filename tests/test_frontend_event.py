@@ -306,7 +306,7 @@ class TestEventFrontend(FrontendTest):
         self.assertIn("quickregistrationform", self.response.forms)
         self.assertIn("changeminorformform", self.response.forms)
         self.assertIn("lockform", self.response.forms)
-        if user == USER_DICT['garcia']:  # annika is also admin
+        if user != USER_DICT['annika']:  # annika is also admin
             self.assertNotIn("createparticipantlistform", self.response.forms)
 
     @as_users("berta", "garcia")
