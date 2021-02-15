@@ -7,9 +7,8 @@ correct numeric values. The raw values should never be used, instead
 their symbolic names provided by this module should be used.
 """
 
-import datetime
 import enum
-from typing import Any, Dict, Set, Type
+from typing import Dict, Set
 
 
 def n_(x: str) -> str:
@@ -87,7 +86,6 @@ class FieldDatatypes(enum.IntEnum):
     float = 4  #:
     date = 5  #:
     datetime = 6  #:
-
 
 @enum.unique
 class QuestionnaireUsages(enum.IntEnum):

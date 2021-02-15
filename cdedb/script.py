@@ -76,6 +76,7 @@ class MockRequestState:
 
 
 class _RSFactory(Protocol):
+    # pylint: disable=pointless-statement
     def __call__(self, persona_id: int = -1) -> RequestState: ...
 
 
@@ -136,7 +137,6 @@ def make_backend(realm: str, proxy: bool = True, *,  # type: ignore
             for k, v in config.items():
                 f.write(f"{k} = {v}\n")
             f.flush()
-            filename = f.name
             backend = backend_map[realm](f.name)
     else:
         backend = backend_map[realm](configpath)
@@ -161,7 +161,6 @@ class DryRunError(Exception):
     Signify that the script ran successfully, but no changes should be
     committed.
     """
-    pass
 
 
 class Script(Atomizer):
@@ -170,12 +169,14 @@ class Script(Atomizer):
     :param dry_run: If True, do not commit changes if script ran successfully,
         instead roll back.
     """
+    start_time: float
+
     def __init__(self, rs: RequestState, *, dry_run: bool = True) -> None:
         self.dry_run = dry_run
         super().__init__(rs)
 
     def __enter__(self) -> IrradiatedConnection:
-        self.start_time = time.time()
+        self.start_time = time.monotonic()
         return super().__enter__()
 
     def __exit__(self, exc_type: Optional[Type[Exception]],  # type: ignore
@@ -187,8 +188,7 @@ class Script(Atomizer):
 
         Suppress traceback for DryRunErrors by returning True.
         """
-        self.end_time = time.time()
-        time_diff = self.end_time - self.start_time
+        time_diff = time.monotonic() - self.start_time
         formatmsg = lambda msg: f"{msg} Time taken: {time_diff:.3f} seconds."
         if exc_type is None:
             if self.dry_run:

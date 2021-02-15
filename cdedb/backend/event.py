@@ -2557,7 +2557,7 @@ class EventBackend(AbstractBackend):
                 data = self.query_all(rs, query, (part_id, waitlist))
                 ret[part_id] = xsorted(
                     (reg['id'] for reg in data), key=lambda r_id:
-                    (fields_by_id[r_id].get(field['field_name'], 0), r_id))
+                    (fields_by_id[r_id].get(field['field_name'], 0), r_id))  # pylint: disable=cell-var-from-loop
             return ret
 
     @access("event")
@@ -2936,8 +2936,7 @@ class EventBackend(AbstractBackend):
                     raise NotImplementedError(n_("This is not useful."))
             if 'tracks' in data:
                 tracks = data['tracks']
-                all_tracks = set(event['tracks'])
-                if not (all_tracks >= set(tracks)):
+                if not set(tracks).issubset(event['tracks']):
                     raise ValueError(n_("Non-existing tracks specified."))
                 existing = {e['track_id']: e['id'] for e in self.sql_select(
                     rs, "event.registration_tracks", ("id", "track_id"),
@@ -3640,7 +3639,7 @@ class EventBackend(AbstractBackend):
         if data is not None:
             current = self.get_questionnaire(rs, event_id)
             current.update(data)
-            for k, v in current.items():
+            for v in current.values():
                 for e in v:
                     if 'pos' in e:
                         del e['pos']

@@ -277,7 +277,7 @@ class SubscriptionActions(enum.IntEnum):
             }
         }
 
-        for row in matrix.keys():
+        for row in matrix:
             # Implicit (un-)subscriptions behave identically.
             matrix[row][ss.implicit] = matrix[row][ss.subscribed]
             matrix[row][None] = matrix[row][ss.unsubscribed]
@@ -315,4 +315,3 @@ class SubscriptionActions(enum.IntEnum):
     def is_managing(self) -> bool:
         """Whether or not an action requires additional privileges."""
         return self in self.managing_actions()
-
