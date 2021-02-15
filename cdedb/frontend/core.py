@@ -41,7 +41,8 @@ from cdedb.frontend.common import (
 )
 from cdedb.query import QUERY_SPECS, Query, QueryOperators, mangle_query_input
 from cdedb.validation import (
-    TypeMapping, _PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
+    TypeMapping, _GENESIS_CASE_EXPOSED_FIELDS,
+    _PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
     _PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS, validate_check,
 )
 from cdedb.validationtypes import CdedbID
@@ -1471,10 +1472,7 @@ class CoreFrontend(AbstractFrontend):
         return self.render(rs, "promote_user")
 
     @access("core_admin", modi={"POST"})
-    @REQUESTdatadict(
-        "title", "name_supplement", "birthday", "gender", "free_form",
-        "telephone", "mobile", "address", "address_supplement", "postal_code",
-        "location", "country", "trial_member")
+    @REQUESTdatadict(*CDE_TRANSITION_FIELDS().keys())
     @REQUESTdata("target_realm")
     def promote_user(self, rs: RequestState, persona_id: int,
                      target_realm: vtypes.Realm, data: CdEDBObject) -> Response:
@@ -2021,15 +2019,11 @@ class CoreFrontend(AbstractFrontend):
         })
 
     @access("anonymous", modi={"POST"})
-    @REQUESTdatadict(
-        "notes", "realm", "username", "given_names", "family_name", "gender",
-        "birthday", "telephone", "mobile", "address_supplement", "address",
-        "postal_code", "location", "country", "birth_name")
+    @REQUESTdatadict(*_GENESIS_CASE_EXPOSED_FIELDS.keys())
     @REQUESTfile("attachment")
-    @REQUESTdata("attachment_hash", "attachment_filename", "ignore_warnings")
+    @REQUESTdata("attachment_filename", "ignore_warnings")
     def genesis_request(self, rs: RequestState, data: CdEDBObject,
                         attachment: Optional[werkzeug.FileStorage],
-                        attachment_hash: Optional[str],
                         attachment_filename: str = None,
                         ignore_warnings: bool = False) -> Response:
         """Voice the desire to become a persona.
@@ -2041,23 +2035,20 @@ class CoreFrontend(AbstractFrontend):
             attachment_filename = attachment.filename
             attachment_data = check(
                 rs, vtypes.PDFFile, attachment, 'attachment')
-        attachment_base_path = self.conf["STORAGE_DIR"] / 'genesis_attachment'
         if attachment_data:
             myhash = self.coreproxy.genesis_set_attachment(rs, attachment_data)
-            data['attachment'] = myhash
+            data['attachment_hash'] = myhash
             rs.values['attachment_hash'] = myhash
             rs.values['attachment_filename'] = attachment_filename
-        elif attachment_hash:
+        elif data['attachment_hash']:
             attachment_stored = self.coreproxy.genesis_check_attachment(
-                rs, attachment_hash)
+                rs, data['attachment_hash'])
             if not attachment_stored:
-                data['attachment'] = None
+                data['attachment_hash'] = None
                 e = ("attachment", ValueError(n_(
                     "It seems like you took too long and "
                     "your previous upload was deleted.")))
                 rs.append_validation_error(e)
-            else:
-                data['attachment'] = attachment_hash
         data = check(rs, vtypes.GenesisCase, data, creation=True,
                      _ignore_warnings=ignore_warnings)
         if rs.has_validation_errors():
@@ -2278,10 +2269,7 @@ class CoreFrontend(AbstractFrontend):
     @access("core_admin", *("{}_admin".format(realm)
                             for realm in REALM_SPECIFIC_GENESIS_FIELDS),
             modi={"POST"})
-    @REQUESTdatadict(
-        "notes", "realm", "username", "given_names", "family_name", "gender",
-        "birthday", "telephone", "mobile", "address_supplement", "address",
-        "postal_code", "location", "country", "birth_name")
+    @REQUESTdatadict(*_GENESIS_CASE_EXPOSED_FIELDS.keys())
     @REQUESTdata("ignore_warnings")
     def genesis_modify(self, rs: RequestState, genesis_case_id: int,
                        data: CdEDBObject, ignore_warnings: bool = False

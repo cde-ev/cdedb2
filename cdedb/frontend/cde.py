@@ -48,7 +48,8 @@ from cdedb.query import (
 )
 from cdedb.validation import (
     _LASTSCHRIFT_COMMON_FIELDS, _PAST_EVENT_FIELDS, _PAST_COURSE_COMMON_FIELDS,
-    TypeMapping, validate_check, validate_check_optional,
+    _PERSONA_FULL_CDE_CREATION, TypeMapping, filter_none, validate_check,
+    validate_check_optional,
 )
 
 MEMBERSEARCH_DEFAULTS = {
@@ -374,15 +375,7 @@ class CdEFrontend(AbstractUserFrontend):
         return super().create_user_form(rs)
 
     @access("core_admin", "cde_admin", modi={"POST"})
-    @REQUESTdatadict(
-        "title", "given_names", "family_name", "birth_name", "name_supplement",
-        "display_name", "specialisation", "affiliation", "timeline",
-        "interests", "free_form", "gender", "birthday", "username",
-        "telephone", "mobile", "weblink", "address", "address_supplement",
-        "postal_code", "location", "country", "address2",
-        "address_supplement2", "postal_code2", "location2", "country2",
-        "is_member", "is_searchable", "trial_member", "bub_search", "notes",
-        "paper_expuls")
+    @REQUESTdatadict(*filter_none(_PERSONA_FULL_CDE_CREATION).keys())
     def create_user(self, rs: RequestState, data: CdEDBObject,
                     ignore_warnings: bool = False) -> Response:
         defaults = {

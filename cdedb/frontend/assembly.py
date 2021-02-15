@@ -29,7 +29,10 @@ from cdedb.frontend.common import (
 )
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, Query, mangle_query_input
-from cdedb.validation import _ASSEMBLY_COMMON_FIELDS, _BALLOT_EXPOSED_FIELDS
+from cdedb.validation import (
+    _ASSEMBLY_COMMON_FIELDS, _BALLOT_EXPOSED_FIELDS, _PERSONA_FULL_ASSEMBLY_CREATION,
+    filter_none,
+)
 from cdedb.validationtypes import CdedbID, Email
 
 #: Magic value to signal abstention during voting. Used during the emulation
@@ -82,8 +85,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         return super().create_user_form(rs)
 
     @access("core_admin", "assembly_admin", modi={"POST"})
-    @REQUESTdatadict(
-        "given_names", "family_name", "display_name", "notes", "username")
+    @REQUESTdatadict(*filter_none(_PERSONA_FULL_ASSEMBLY_CREATION).keys())
     def create_user(self, rs: RequestState, data: CdEDBObject,
                     ignore_warnings: bool = False) -> Response:
         defaults = {

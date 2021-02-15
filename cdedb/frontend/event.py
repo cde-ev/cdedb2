@@ -51,7 +51,8 @@ from cdedb.query import (
     QUERY_SPECS, Query, QueryConstraint, QueryOperators, mangle_query_input,
 )
 from cdedb.validation import (
-    _COURSE_COMMON_FIELDS, _LODGEMENT_COMMON_FIELDS, TypeMapping, validate_check,
+    _COURSE_COMMON_FIELDS, _EVENT_EXPOSED_FIELDS, _LODGEMENT_COMMON_FIELDS,
+    _PERSONA_FULL_EVENT_CREATION, TypeMapping, filter_none, validate_check,
 )
 from cdedb.validationtypes import VALIDATOR_LOOKUP
 
@@ -139,11 +140,7 @@ class EventFrontend(AbstractUserFrontend):
         return super().create_user_form(rs)
 
     @access("core_admin", "event_admin", modi={"POST"})
-    @REQUESTdatadict(
-        "title", "given_names", "family_name", "name_supplement",
-        "display_name", "gender", "birthday", "username", "telephone",
-        "mobile", "address", "address_supplement", "postal_code",
-        "location", "country", "notes")
+    @REQUESTdatadict(*filter_none(_PERSONA_FULL_EVENT_CREATION).keys())
     def create_user(self, rs: RequestState, data: CdEDBObject,
                     ignore_warnings: bool = False) -> Response:
         defaults = {
@@ -412,15 +409,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdatadict(
-        "title", "institution", "description", "shortname",
-        "registration_start", "registration_soft_limit",
-        "registration_hard_limit", "iban", "orga_address", "registration_text",
-        "mail_text", "use_additional_questionnaire", "notes", "lodge_field",
-        "camping_mat_field", "is_visible", "is_course_list_visible",
-        "is_course_state_visible", "is_participant_list_visible",
-        "courses_in_participant_list", "is_cancelled", "course_room_field",
-        "nonmember_surcharge")
+    @REQUESTdatadict(*_EVENT_EXPOSED_FIELDS.keys())
     def change_event(self, rs: RequestState, event_id: int, data: CdEDBObject
                      ) -> Response:
         """Modify an event organized via DB."""
@@ -1161,9 +1150,7 @@ class EventFrontend(AbstractUserFrontend):
     @access("event_admin", modi={"POST"})
     @REQUESTdata("part_begin", "part_end", "orga_ids", "create_track",
                  "create_orga_list", "create_participant_list")
-    @REQUESTdatadict(
-        "title", "institution", "description", "shortname",
-        "iban", "nonmember_surcharge", "notes")
+    @REQUESTdatadict(*_EVENT_EXPOSED_FIELDS.keys())
     def create_event(self, rs: RequestState, part_begin: datetime.date,
                      part_end: datetime.date, orga_ids: vtypes.CdedbIDList,
                      create_track: bool, create_orga_list: bool,
