@@ -303,11 +303,11 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("Kristallkugel-basiertes Kurszuteilungssystem",
                             div='mail-text')
 
-        self.assertIn("quickregistrationform", self.response.forms)
-        self.assertIn("changeminorformform", self.response.forms)
-        self.assertIn("lockform", self.response.forms)
-        if user != USER_DICT['annika']:  # annika is also admin
-            self.assertNotIn("createparticipantlistform", self.response.forms)
+        self.assertIn('quickregistrationform', self.response.forms)
+        self.assertIn('changeminorformform', self.response.forms)
+        self.assertIn('lockform', self.response.forms)
+        if not self.is_user(user, 'annika'):  # annika is also admin
+            self.assertNotIn('createparticipantlistform', self.response.forms)
 
     @as_users("berta", "garcia")
     def test_show_event_noadmin(self, user: CdEDBObject) -> None:
