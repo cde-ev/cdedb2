@@ -2482,8 +2482,7 @@ class CoreFrontend(AbstractFrontend):
         return self.redirect_show_user(rs, persona_id)
 
     @access("core_admin")
-    @REQUESTdata("codes", "submitted_by", "reviewed_by", "persona_id",
-                 "change_note", "offset", "length", "time_start", "time_stop")
+    @REQUESTdata(*LOG_FIELDS_COMMON, "reviewed_by")
     def view_changelog_meta(self, rs: RequestState,
                             codes: Collection[const.MemberChangeStati],
                             offset: Optional[int],
@@ -2520,7 +2519,7 @@ class CoreFrontend(AbstractFrontend):
             'personas': personas, 'loglinks': loglinks})
 
     @access("core_admin")
-    @REQUESTdata(*LOG_FIELDS_COMMON, "submitted_by")
+    @REQUESTdata(*LOG_FIELDS_COMMON)
     def view_log(self, rs: RequestState, codes: Collection[const.CoreLogCodes],
                  offset: Optional[int], length: Optional[vtypes.PositiveInt],
                  persona_id: Optional[CdedbID], submitted_by: Optional[CdedbID],

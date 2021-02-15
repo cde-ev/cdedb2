@@ -164,7 +164,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     @access("assembly")
     @assembly_guard
-    @REQUESTdata(*LOG_FIELDS_COMMON, "submitted_by")
+    @REQUESTdata(*LOG_FIELDS_COMMON)
     def view_assembly_log(self, rs: RequestState,
                           codes: Optional[Collection[const.AssemblyLogCodes]],
                           assembly_id: Optional[int], offset: Optional[int],

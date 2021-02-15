@@ -496,8 +496,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("ml")
     @mailinglist_guard()
-    @REQUESTdata("codes", "persona_id", "submitted_by", "change_note", "offset",
-                 "length", "time_start", "time_stop")
+    @REQUESTdata(*LOG_FIELDS_COMMON)
     def view_ml_log(self, rs: RequestState, mailinglist_id: int,
                     codes: Collection[const.MlLogCodes], offset: Optional[int],
                     length: Optional[vtypes.PositiveInt],

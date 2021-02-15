@@ -2714,7 +2714,7 @@ class CdEFrontend(AbstractUserFrontend):
         return self.render(rs, "view_misc", {"cde_misc": cde_misc})
 
     @access("cde_admin")
-    @REQUESTdata(*LOG_FIELDS_COMMON, "submitted_by")
+    @REQUESTdata(*LOG_FIELDS_COMMON)
     def view_cde_log(self, rs: RequestState,
                      codes: Collection[const.CdeLogCodes],
                      offset: Optional[int],
@@ -2748,7 +2748,7 @@ class CdEFrontend(AbstractUserFrontend):
             'personas': personas, 'loglinks': loglinks})
 
     @access("cde_admin")
-    @REQUESTdata(*LOG_FIELDS_COMMON, "submitted_by")
+    @REQUESTdata(*LOG_FIELDS_COMMON)
     def view_finance_log(self, rs: RequestState,
                          codes: Collection[const.FinanceLogCodes],
                          offset: Optional[int],

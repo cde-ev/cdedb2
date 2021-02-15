@@ -6536,7 +6536,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard()
-    @REQUESTdata(*LOG_FIELDS_COMMON, "event_id")
+    @REQUESTdata(*LOG_FIELDS_COMMON)
     def view_event_log(self, rs: RequestState,
                        codes: Collection[const.EventLogCodes],
                        event_id: int, offset: Optional[int],
