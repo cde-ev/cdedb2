@@ -613,7 +613,6 @@ class CdEFrontend(AbstractUserFrontend):
                     stored = self.coreproxy.get_event_user(rs, persona_id)
                     for field in set(batch_fields) - invariant_fields:
                         promotion[field] = stored.get(field)
-                # XXX should this be the return code value?
                 self.coreproxy.change_persona_realms(rs, promotion)
             if datum['resolution'].do_trial():
                 self.coreproxy.change_membership(
