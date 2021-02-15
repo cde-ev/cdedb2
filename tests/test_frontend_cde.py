@@ -346,6 +346,7 @@ class TestCdEFrontend(FrontendTest):
                 # Check that the redirect from a previous search now also fails.
                 self.get(save, status=429)
                 self.assertPresence("Limit für Zugriffe")
+                self.assertNonPresence("unbekannter Fehler")
                 self.assertPresence("automatisch zurückgesetzt")
                 # Check that own profile remains accessible
                 self.traverse({'href': '/core/self/show'})
