@@ -1360,7 +1360,7 @@ class TestMultiAssemblyFrontend(MultiAppFrontendTest, AssemblyTestHelpers):
         self.traverse("Versammlung", "Drittes CdE-Konzil", "Konfiguration")
         f = self.response.forms['changeassemblyform']
         f['notes'] = "Werner war hier!"
-        self.submit(f, verbose=True)
+        self.submit(f)
         self.assertTitle("Drittes CdE-Konzil")
         self.assertPresence("Werner war hier!", div='notes')
         self.assertNotIn('removepresiderform23', self.response.forms)
