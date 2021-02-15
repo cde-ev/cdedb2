@@ -3669,15 +3669,24 @@ def _BALLOT_COMMON_FIELDS() -> Mapping[str, Any]: return {
     'notes': Optional[str],
 }
 
-def _BALLOT_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
-    'extended': Optional[bool],
+def _BALLOT_EXPOSED_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
     'vote_extension_end': Optional[datetime.datetime],
     'abs_quorum': int,
     'rel_quorum': int,
     'votes': Optional[PositiveInt],
     'use_bar': bool,
-    'is_tallied': bool,
-    'candidates': Mapping
+}
+
+_BALLOT_EXPOSED_FIELDS = {**_BALLOT_COMMON_FIELDS(),
+                          **_BALLOT_EXPOSED_OPTIONAL_FIELDS()}
+
+def _BALLOT_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
+    **_BALLOT_EXPOSED_OPTIONAL_FIELDS(),
+    **{
+        'extended': Optional[bool],
+        'is_tallied': bool,
+        'candidates': Mapping
+    }
 }
 
 

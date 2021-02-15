@@ -29,7 +29,7 @@ from cdedb.frontend.common import (
 )
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, Query, mangle_query_input
-from cdedb.validation import _ASSEMBLY_COMMON_FIELDS
+from cdedb.validation import _ASSEMBLY_COMMON_FIELDS, _BALLOT_EXPOSED_FIELDS
 from cdedb.validationtypes import CdedbID, Email
 
 #: Magic value to signal abstention during voting. Used during the emulation
@@ -727,9 +727,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     @access("assembly", modi={"POST"})
     @assembly_guard
-    @REQUESTdatadict("title", "description", "vote_begin", "vote_end",
-                     "vote_extension_end", "abs_quorum", "rel_quorum", "votes",
-                     "notes", "use_bar")
+    @REQUESTdatadict(*_BALLOT_EXPOSED_FIELDS.keys())
     def create_ballot(self, rs: RequestState, assembly_id: int,
                       data: Dict[str, Any]) -> Response:
         """Make a new ballot."""
@@ -1452,9 +1450,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     @access("assembly", modi={"POST"})
     @assembly_guard
-    @REQUESTdatadict("title", "description", "vote_begin", "vote_end",
-                     "vote_extension_end", "use_bar", "abs_quorum", "rel_quorum",
-                     "votes", "notes")
+    @REQUESTdatadict(*_BALLOT_EXPOSED_FIELDS.keys())
     def change_ballot(self, rs: RequestState, assembly_id: int,
                       ballot_id: int, data: Dict[str, Any]) -> Response:
         """Modify a ballot."""
