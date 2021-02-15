@@ -2102,6 +2102,7 @@ class CdEFrontend(AbstractUserFrontend):
                                 " CdE-Datenbank-Accounts"},
                     {'persona': persona,
                      'management': self.conf["MANAGEMENT_ADDRESS"],
+                     'fee': self.conf["MEMBERSHIP_FEE"],
                      'meta_info': meta_info})
             return not testrun
 
