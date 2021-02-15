@@ -285,6 +285,8 @@ class Application(BaseApp):
                 return ret
             except QuotaException as e:
                 # Handle this earlier, since it needs database access.
+                # Beware that this means that quota violations will only be logged if
+                # they happen through the frontend.
                 self.coreproxy.log_quota_violation(rs)
                 return self.make_error_page(
                     e, request, user,

@@ -352,6 +352,16 @@ class TestCdEFrontend(FrontendTest):
                 self.traverse({'href': '/core/self/show'})
                 break
 
+        # Check if all of this has been logged properly
+        self.logout()
+        self.login(USER_DICT['anton'])
+        self.traverse({'description': 'Account-Log'})
+        self.assertTitle("Account-Log [1–2 von 2]")
+        self.assertPresence("Quota überschritten", div='1-1001')
+        self.assertPresence("Quota überschritten", div='2-1002')
+        self.assertPresence("Bertålotta Beispiel", div='1-1001')
+        self.assertPresence("Bertålotta Beispiel", div='2-1002')
+
     @as_users("anton", "berta", "inga")
     def test_member_search(self, user: CdEDBObject) -> None:
         # by family_name and birth_name
