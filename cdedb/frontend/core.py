@@ -529,7 +529,8 @@ class CoreFrontend(AbstractFrontend):
                     access_levels.add(realm)
         # Members see other members (modulo quota)
         if "searchable" in rs.user.roles and quote_me:
-            if (not rs.ambience['persona']['is_searchable']
+            if (not (rs.ambience['persona']['is_member'] and
+                     rs.ambience['persona']['is_searchable'])
                     and "cde_admin" not in access_levels):
                 raise werkzeug.exceptions.Forbidden(n_(
                     "Access to non-searchable member data."))
@@ -634,6 +635,7 @@ class CoreFrontend(AbstractFrontend):
         quoteable = (not quote_me
                      and "cde" not in access_levels
                      and "searchable" in rs.user.roles
+                     and rs.ambience['persona']['is_member']
                      and rs.ambience['persona']['is_searchable'])
 
         meta_info = self.coreproxy.get_meta_info(rs)
