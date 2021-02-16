@@ -328,10 +328,8 @@ class TestEventFrontend(FrontendTest):
         self.assertNotIn('createorgalistform', self.response.forms)
         f = self.response.forms[f"removeorgaform{ USER_DICT['garcia']['id'] }"]
         self.submit(f)
-        # TODO: can we check the disabled state of this button more specifically?
-        self.assertIn("Mailingliste kann nur mit Orgas erstellt werden.",
-                      self.response.text)
         f = self.response.forms['createparticipantlistform']
+        self.assertIn('disabled', f.fields['submitform'][0].attrs)
         self.submit(f, check_notification=False)
         self.assertPresence("Mailingliste kann nur mit Orgas erstellt werden.",
                             div='notifications')

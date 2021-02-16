@@ -433,10 +433,9 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence("Datei hinzufügen", div='attachmentspanel')
         self.submit(
             self.response.forms[f"removepresiderform{ USER_DICT['werner']['id'] }"])
-        self.assertIn("Mailingliste kann nur mit Versammlungsleitern erstellt werden.",
-                      self.response.text)
-        self.submit(self.response.forms['createpresiderlistform'],
-                    check_notification=False)
+        f = self.response.forms['createpresiderlistform']
+        self.assertIn('disabled', f.fields['submitform'][0].attrs)
+        self.submit(f, check_notification=False)
         self.assertPresence(
             "Mailingliste kann nur mit Versammlungsleitern erstellt werden.",
             div='notifications')
