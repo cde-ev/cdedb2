@@ -576,7 +576,8 @@ class CoreBackend(AbstractBackend):
     @internal
     @access("ml")
     def list_all_moderators(self, rs: RequestState,
-                            ml_types: Optional[Collection[const.MailinglistTypes]] = None
+                            ml_types: Optional[
+                                Collection[const.MailinglistTypes]] = None
                             ) -> Set[int]:
         """List all moderators of any mailinglists.
 
@@ -2285,7 +2286,7 @@ class CoreBackend(AbstractBackend):
     ret_type = Tuple[bool, Optional[str]]
 
     def _verify_reset_cookie(self, rs: RequestState, persona_id: int, salt: str,
-                             cookie: str) -> ret_type: # pylint: disable=undefined-variable
+                             cookie: str) -> ret_type:  # pylint: disable=undefined-variable
         """Check a provided cookie for correctness.
 
         :returns: The bool signals success, the str is an error message or

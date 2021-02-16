@@ -736,7 +736,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             code = self.mlproxy.do_subscription_action(rs, action, **kwargs)
         except SubscriptionError as se:
             rs.notify(se.kind, se.msg)
-        except PrivilegeError as pe:
+        except PrivilegeError:
             rs.notify("error", n_("Not privileged to change subscriptions."))
         else:
             self.notify_return_code(rs, code)
@@ -776,7 +776,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                 rs.notify(se.multikind, se.msg)
                 if se.multikind != 'info':
                     infos_only = False
-            except PrivilegeError as pe:
+            except PrivilegeError:
                 infos_only = False
                 rs.notify("error",
                           n_("Not privileged to change subscriptions."))

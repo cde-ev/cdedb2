@@ -7,6 +7,7 @@ import copy
 import csv
 import datetime
 import decimal
+import functools
 import itertools
 import operator
 import pathlib
@@ -332,7 +333,7 @@ class CdEFrontend(AbstractUserFrontend):
         query: Optional[Query] = None
         if is_search:
             query = check(rs, vtypes.QueryInput, query_input, "query",
-                                      spec=spec, allow_empty=False)
+                          spec=spec, allow_empty=False)
         events = self.pasteventproxy.list_past_events(rs)
         choices = {
             'pevent_id': OrderedDict(
@@ -612,7 +613,7 @@ class CdEFrontend(AbstractUserFrontend):
                     stored = self.coreproxy.get_event_user(rs, persona_id)
                     for field in set(batch_fields) - invariant_fields:
                         promotion[field] = stored.get(field)
-                code = self.coreproxy.change_persona_realms(rs, promotion)
+                self.coreproxy.change_persona_realms(rs, promotion)
             if datum['resolution'].do_trial():
                 self.coreproxy.change_membership(
                     rs, datum['doppelganger_id'], is_member=True)
@@ -874,8 +875,10 @@ class CdEFrontend(AbstractUserFrontend):
             start: Optional[datetime.date], end: Optional[datetime.date],
             timestamp: datetime.datetime) -> Tuple[CdEDBObject, CdEDBObject]:
         """Organize transactions into data and params usable in the form."""
-        get_persona = lambda p_id: self.coreproxy.get_persona(rs, p_id)
-        get_event = lambda event_id: self.eventproxy.get_event(rs, event_id)
+
+        get_persona = functools.partial(self.coreproxy.get_persona, rs)
+        get_event = functools.partial(self.eventproxy.get_event, rs)
+
         data = {"{}{}".format(k, t.t_id): v
                 for t in transactions
                 for k, v in t.to_dict(get_persona, get_event).items()}
@@ -950,7 +953,7 @@ class CdEFrontend(AbstractUserFrontend):
         event_list = self.eventproxy.list_events(rs)
         events = self.eventproxy.get_events(rs, event_list)
 
-        get_persona = lambda p_id: self.coreproxy.get_persona(rs, p_id)
+        get_persona = functools.partial(self.coreproxy.get_persona, rs)
 
         # This does not use the cde csv dialect, but rather the bank's.
         reader = csv.DictReader(statementlines, delimiter=";",
@@ -1022,8 +1025,9 @@ class CdEFrontend(AbstractUserFrontend):
                 f"event_id_confirm{i}": Optional[bool],  # type: ignore
             }
 
-        get_persona = lambda p_id: self.coreproxy.get_persona(rs, p_id)
-        get_event = lambda event_id: self.eventproxy.get_event(rs, event_id)
+        get_persona = functools.partial(self.coreproxy.get_persona, rs)
+        get_event = functools.partial(self.eventproxy.get_event, rs)
+
         transactions = []
         for i in range(1, count + 1):
             t = request_extractor(rs, params_generator(i))
@@ -1661,7 +1665,6 @@ class CdEFrontend(AbstractUserFrontend):
         """
         if rs.has_validation_errors():
             return self.lastschrift_index(rs)
-        stati = const.LastschriftTransactionStati
         period = self.cdeproxy.current_period(rs)
         if not lastschrift_id:
             all_lids = self.cdeproxy.list_lastschrift(rs)
@@ -1946,8 +1949,7 @@ class CdEFrontend(AbstractUserFrontend):
             if "revoked_at" not in self.cdeproxy.delete_lastschrift_blockers(
                     rs, ls_id):
                 try:
-                    code = self.cdeproxy.delete_lastschrift(
-                        rs, ls_id, {"transactions"})
+                    self.cdeproxy.delete_lastschrift(rs, ls_id, {"transactions"})
                 except ValueError as e:
                     self.logger.error(
                         f"Deletion of lastschrift {ls_id} failed. {e}")

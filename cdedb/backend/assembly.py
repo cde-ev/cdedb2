@@ -1601,8 +1601,10 @@ class AssemblyBackend(AbstractBackend):
             if not assembly['is_active']:
                 raise ValueError(locked_msg)
             new_id = self.sql_insert(rs, "assembly.attachments", attachment)
-            version = {k: v for k, v in data.items()
-                            if k in ASSEMBLY_ATTACHMENT_VERSION_FIELDS}
+            version = {
+                k: v for k, v in data.items()
+                if k in ASSEMBLY_ATTACHMENT_VERSION_FIELDS
+            }
             version['version'] = 1
             version['attachment_id'] = new_id
             version['file_hash'] = get_hash(content)
@@ -1934,8 +1936,7 @@ class AssemblyBackend(AbstractBackend):
             raise ValueError(n_("Too many inputs specified."))
         assembly_id = affirm_optional(vtypes.ID, assembly_id)
         ballot_id = affirm_optional(vtypes.ID, ballot_id)
-        if not self.may_access(rs, assembly_id=assembly_id,
-                                 ballot_id=ballot_id):
+        if not self.may_access(rs, assembly_id=assembly_id, ballot_id=ballot_id):
             raise PrivilegeError(n_("Not privileged."))
 
         key = None

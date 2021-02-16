@@ -410,7 +410,8 @@ class CoreFrontend(AbstractFrontend):
             prefix=persona['title'] or '',
             suffix=persona['name_supplement'] or '')
         vcard.add('FN')
-        vcard.fn.value = f"{persona['given_names'] or ''} {persona['family_name'] or ''}"
+        vcard.fn.value = " ".join(
+            filter(None, (persona['given_names'], persona['family_name'])))
         vcard.add('NICKNAME')
         vcard.nickname.value = persona['display_name'] or ''
 
@@ -604,8 +605,7 @@ class CoreFrontend(AbstractFrontend):
         data['show_vcard'] = "cde" in access_levels and "cde" in roles
 
         # Cull unwanted data
-        if (not ('is_cde_realm' in data and data['is_cde_realm'])
-                 and 'foto' in data):
+        if (not ('is_cde_realm' in data and data['is_cde_realm']) and 'foto' in data):
             del data['foto']
         # relative admins, core admins and the user himself got "core"
         if "core" not in access_levels:
@@ -1032,8 +1032,8 @@ class CoreFrontend(AbstractFrontend):
         elif is_search:
             # mangle the input, so we can prefill the form
             query_input = mangle_query_input(rs, spec)
-            query = check(rs, vtypes.QueryInput,
-                query_input, "query", spec=spec, allow_empty=False)
+            query = check(rs, vtypes.QueryInput, query_input, "query",
+                          spec=spec, allow_empty=False)
         events = self.pasteventproxy.list_past_events(rs)
         choices = {
             'pevent_id': collections.OrderedDict(
@@ -1088,8 +1088,8 @@ class CoreFrontend(AbstractFrontend):
         query_input = mangle_query_input(rs, spec)
         query: Optional[Query] = None
         if is_search:
-            query = check(rs, vtypes.QueryInput,
-                query_input, "query", spec=spec, allow_empty=False)
+            query = check(rs, vtypes.QueryInput, query_input, "query",
+                          spec=spec, allow_empty=False)
         events = self.pasteventproxy.list_past_events(rs)
         choices = {
             'pevent_id': collections.OrderedDict(
@@ -2046,9 +2046,7 @@ class CoreFrontend(AbstractFrontend):
         attachment_data = None
         if attachment:
             attachment_filename = attachment.filename
-            attachment_data = check(
-                rs, vtypes.PDFFile, attachment, 'attachment')
-        attachment_base_path = self.conf["STORAGE_DIR"] / 'genesis_attachment'
+            attachment_data = check(rs, vtypes.PDFFile, attachment, 'attachment')
         if attachment_data:
             myhash = self.coreproxy.genesis_set_attachment(rs, attachment_data)
             data['attachment'] = myhash
@@ -2210,9 +2208,6 @@ class CoreFrontend(AbstractFrontend):
         count = 0
         for genesis_case_id in delete:
             count += self.coreproxy.delete_genesis_case(rs, genesis_case_id)
-
-        genesis_attachment_path: pathlib.Path = (
-                self.conf["STORAGE_DIR"] / "genesis_attachment")
 
         attachment_count = self.coreproxy.genesis_forget_attachments(rs)
 

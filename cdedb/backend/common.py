@@ -520,10 +520,12 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                 # the following should be used with operators which are allowed
                 # for str as well as for other types
                 sql_param_str = "lower({0})"
-                caser = lambda x: x.lower()
+
+                def caser(x: str) -> str: return x.lower()
             else:
                 sql_param_str = "{0}"
-                caser = lambda x: x
+
+                def caser(x: str) -> str: return x
             columns = field.split(',')
             # Treat containsall and friends special since they want to find
             # each value in any column, without caring that the columns are

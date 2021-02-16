@@ -2557,7 +2557,7 @@ class EventBackend(AbstractBackend):
                 data = self.query_all(rs, query, (part_id, waitlist))
                 ret[part_id] = xsorted(
                     (reg['id'] for reg in data), key=lambda r_id:
-                    (fields_by_id[r_id].get(field['field_name'], 0), r_id))  # pylint: disable=cell-var-from-loop
+                    (fields_by_id[r_id].get(field['field_name'], 0), r_id))  # pylint: disable=cell-var-from-loop; # noqa
             return ret
 
     @access("event")
@@ -4308,9 +4308,11 @@ class EventBackend(AbstractBackend):
             cmap: IDMap = {}
             cdelta: CdEDBOptionalMap = {}
             cprevious: CdEDBOptionalMap = {}
-            check_seg = lambda track_id, delta, original: (
-                 (track_id in delta and delta[track_id] is not None)
-                 or (track_id not in delta and track_id in original))
+
+            def check_seg(track_id, delta, original) -> bool:  # type: ignore
+                return ((track_id in delta and delta[track_id] is not None)
+                        or (track_id not in delta and track_id in original))
+
             for course_id in mes(data.get('courses', {}).keys()):
                 new_course = data['courses'][course_id]
                 current = all_current_data['courses'].get(course_id)

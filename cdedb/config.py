@@ -36,7 +36,7 @@ _repopath = _currentpath.parent
 try:
     _git_commit = subprocess.check_output(
         ("git", "rev-parse", "HEAD"), cwd=str(_repopath)).decode().strip()
-except FileNotFoundError: # only catch git executable not found
+except FileNotFoundError:  # only catch git executable not found
     with pathlib.Path(_repopath, '.git/HEAD').open() as head:
         _git_commit = head.read().strip()
 
