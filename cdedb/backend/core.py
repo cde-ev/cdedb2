@@ -175,6 +175,18 @@ class CoreBackend(AbstractBackend):
         return self.query_exec(
             rs, query, (code, rs.user.persona_id, persona_id, change_note))
 
+    @access("persona")
+    def log_quota_violation(self, rs: RequestState) -> DefaultReturnCode:
+        """Log a quota violation.
+
+        Since a quota violation raises an exception which is only handled at application
+        level, this can not be done in an Atomizer with the violating action. This leads
+        to the effect that every time a user tries to violate their quota, a log entry
+        is added.
+        """
+        return self.core_log(rs, const.CoreLogCodes.quota_violation, rs.user.persona_id,
+                             atomized=False)
+
     @internal
     @access("cde")
     def finance_log(self, rs: RequestState, code: const.FinanceLogCodes,
