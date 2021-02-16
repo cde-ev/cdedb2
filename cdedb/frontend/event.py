@@ -1016,6 +1016,7 @@ class EventFrontend(AbstractUserFrontend):
         deletes = {field_id for field_id in fields
                    if delete_flags['delete_{}'.format(field_id)]}
         ret: CdEDBOptionalMap = {}
+
         def params_a(anid: int) -> TypeMapping:
             return {
                 f"kind_{anid}": const.FieldDatatypes,
@@ -1038,6 +1039,7 @@ class EventFrontend(AbstractUserFrontend):
         for field_id in deletes:
             ret[field_id] = None
         marker = 1
+
         def params_b(anid: int) -> TypeMapping:
             return {
                 f"field_name_-{anid}": str,
@@ -4237,8 +4239,6 @@ class EventFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.show_registration(rs, event_id, registration_id)
 
-        blockers = self.eventproxy.delete_registration_blockers(
-            rs, registration_id)
         # maybe exclude some blockers
         code = self.eventproxy.delete_registration(
             rs, registration_id, {"registration_parts", "registration_tracks",
@@ -5623,13 +5623,7 @@ class EventFrontend(AbstractUserFrontend):
         """
 
         tracks = event['tracks']
-
-        if fixed_gettext:
-            gettext = rs.default_gettext
-            enum_gettext = lambda x: x.name
-        else:
-            gettext = rs.gettext
-            enum_gettext = rs.gettext
+        gettext = rs.default_gettext if fixed_gettext else rs.gettext
 
         # Construct choices.
         course_identifier = lambda c: "{}. {}".format(c["nr"], c["shortname"])
@@ -5777,14 +5771,9 @@ class EventFrontend(AbstractUserFrontend):
             function. True means static, False means localized.
         :returns: Choices for select inputs and titles for columns.
         """
-        parts = event['parts']
 
-        if fixed_gettext:
-            gettext = rs.default_gettext
-            enum_gettext = lambda x: x.name
-        else:
-            gettext = rs.gettext
-            enum_gettext = rs.gettext
+        parts = event['parts']
+        gettext = rs.default_gettext if fixed_gettext else rs.gettext
 
         # Construct choices.
         lodgement_choices = OrderedDict(

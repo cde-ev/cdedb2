@@ -106,7 +106,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         query: Optional[Query] = None
         if is_search:
             query = check(rs, vtypes.QueryInput, query_input, "query",
-                                      spec=spec, allow_empty=False)
+                          spec=spec, allow_empty=False)
         default_queries = self.conf["DEFAULT_QUERIES"]['qview_assembly_user']
         params = {
             'spec': spec, 'default_queries': default_queries, 'choices': {},
@@ -165,7 +165,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly")
     @assembly_guard
     @REQUESTdata("codes", "persona_id", "submitted_by", "change_note", "offset",
-                "length", "time_start", "time_stop")
+                 "length", "time_start", "time_stop")
     def view_assembly_log(self, rs: RequestState,
                           codes: Optional[Collection[const.AssemblyLogCodes]],
                           assembly_id: Optional[int], offset: Optional[int],
@@ -1082,7 +1082,8 @@ class AssemblyFrontend(AbstractUserFrontend):
     def show_old_vote(self, rs: RequestState, assembly_id: int, ballot_id: int,
                       secret: str) -> Response:
         """Show a vote in a ballot of an old assembly by providing secret."""
-        if rs.ambience["assembly"]["is_active"] or not rs.ambience["ballot"]["is_tallied"]:
+        if (rs.ambience["assembly"]["is_active"]
+                or not rs.ambience["ballot"]["is_tallied"]):
             return self.show_ballot(rs, assembly_id, ballot_id)
         if rs.has_validation_errors():
             return self.show_ballot_result(rs, assembly_id, ballot_id)
@@ -1122,7 +1123,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         # preferential) vote form
         if ballot['votes']:
             merge_dicts(rs.values, {'vote': vote_dict['own_vote'].split('=')
-                                            if vote_dict['own_vote'] else None})
+                                    if vote_dict['own_vote'] else None})
         else:
             merge_dicts(rs.values, {'vote': vote_dict['own_vote']})
 
@@ -1140,7 +1141,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         # Currently we don't distinguish between current and extended ballots
         current.update(extended)
         ballot_list: List[int] = sum((
-            xsorted(bdict, key=lambda key: bdict[key]["title"])  # pylint: disable=cell-var-from-loop
+            xsorted(bdict, key=lambda key: bdict[key]["title"])  # pylint: disable=cell-var-from-loop; # noqa
             for bdict in (future, current, done)), [])
 
         i = ballot_list.index(ballot_id)
@@ -1215,7 +1216,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         candidates[MAGIC_ABSTAIN] = rs.gettext("Abstained")
         if ballot['use_bar']:
             if ballot['votes']:
-                candidates[ASSEMBLY_BAR_SHORTNAME] = rs.gettext("Against all Candidates")
+                candidates[ASSEMBLY_BAR_SHORTNAME] = rs.gettext(
+                    "Against all Candidates")
             else:
                 candidates[ASSEMBLY_BAR_SHORTNAME] = rs.gettext("Rejection limit")
 
@@ -1486,7 +1488,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             "vote_end": now() + datetime.timedelta(minutes=1),
         }
 
-        code = self.assemblyproxy.set_ballot(rs, bdata)
+        self.notify_return_code(rs, self.assemblyproxy.set_ballot(rs, bdata))
         time.sleep(1)
         return self.redirect(rs, "assembly/show_ballot")
 

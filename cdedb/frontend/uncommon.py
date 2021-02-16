@@ -41,8 +41,8 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
                     ignore_warnings: bool = False) -> werkzeug.Response:
         """Create new user account."""
         merge_dicts(data, PERSONA_DEFAULTS)
-        data = check(rs, vtypes.Persona, data,
-            creation=True, _ignore_warnings=ignore_warnings)
+        data = check(
+            rs, vtypes.Persona, data, creation=True, _ignore_warnings=ignore_warnings)
         if data:
             exists = self.coreproxy.verify_existence(rs, data['username'])
             if exists:

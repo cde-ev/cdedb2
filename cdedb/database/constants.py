@@ -87,6 +87,7 @@ class FieldDatatypes(enum.IntEnum):
     date = 5  #:
     datetime = 6  #:
 
+
 @enum.unique
 class QuestionnaireUsages(enum.IntEnum):
     """Where a questionnaire row will be displayed."""
@@ -303,6 +304,7 @@ class CoreLogCodes(enum.IntEnum):
     privilege_change_rejected = 32  #:
     realm_change = 40  #:
     username_change = 50  #:
+    quota_violation = 60  #:
 
 
 @enum.unique

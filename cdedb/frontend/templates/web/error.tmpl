@@ -13,6 +13,8 @@
             {% if error.description %}({{ gettext(error.description) }}){% endif %}
         {% elif error.code == 405 %}
             {% trans %}This HTTP method is not allowed for this URL.{% endtrans %}
+        {% elif error.code == 429 %}
+            {% trans %}Quota exceeded.{% endtrans %}
         {% elif error.code == 500 %}
             {% trans %}An internal error occured:{% endtrans %}
             {% if error.description %}

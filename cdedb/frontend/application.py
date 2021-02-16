@@ -18,6 +18,7 @@ import werkzeug.routing
 import werkzeug.wrappers
 
 from cdedb.backend.assembly import AssemblyBackend
+from cdedb.backend.core import CoreBackend
 from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.session import SessionBackend
@@ -47,6 +48,7 @@ class Application(BaseApp):
 
     def __init__(self, configpath: PathLike = None) -> None:
         super().__init__(configpath)
+        self.coreproxy = make_proxy(CoreBackend(configpath))
         self.eventproxy = make_proxy(EventBackend(configpath))
         self.mlproxy = make_proxy(MlBackend(configpath))
         self.assemblyproxy = make_proxy(AssemblyBackend(configpath))
@@ -190,7 +192,7 @@ class Application(BaseApp):
                     fake_rs.user = user
                     notifications = json.dumps([
                         self.encode_notification(fake_rs,  # type: ignore
-                                                    "error", n_("Session expired."))])
+                                                 "error", n_("Session expired."))])
                     ret.set_cookie("displaynote", notifications)
                     return ret
 
@@ -281,19 +283,23 @@ class Application(BaseApp):
                 if rs.validation_appraised is False:
                     raise RuntimeError("Input validation forgotten.")
                 return ret
+            except QuotaException as e:
+                # Handle this earlier, since it needs database access.
+                # Beware that this means that quota violations will only be logged if
+                # they happen through the frontend.
+                self.coreproxy.log_quota_violation(rs)
+                return self.make_error_page(
+                    e, request, user,
+                    n_("You reached the internal limit for user profile views. "
+                       "This is a privacy feature to prevent users from cloning "
+                       "the address database. Unfortunatetly, this may also yield "
+                       "some false positive restrictions. Your limit will be "
+                       "reset in the next days."))
             finally:
                 # noinspection PyProtectedMember
                 rs._conn.commit()
                 # noinspection PyProtectedMember
                 rs._conn.close()
-        except QuotaException as e:
-            return self.make_error_page(
-                e, request, user,
-                n_("You reached the internal limit for user profile views. "
-                   "This is a privacy feature to prevent users from cloning "
-                   "the address database. Unfortunatetly, this may also yield "
-                   "some false positive restrictions. Your limit will be "
-                   "reset in the next days."))
         except werkzeug.routing.RequestRedirect as e:
             return e.get_response(request.environ)
         except werkzeug.exceptions.HTTPException as e:

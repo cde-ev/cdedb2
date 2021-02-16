@@ -87,7 +87,7 @@ from cdedb.query import (
 from cdedb.validationdata import (
     FREQUENCY_LISTS, GERMAN_PHONE_CODES, GERMAN_POSTAL_CODES, IBAN_LENGTHS, ITU_CODES,
 )
-from cdedb.validationtypes import *  # pylint: disable=wildcard-import,unused-wildcard-import
+from cdedb.validationtypes import *  # pylint: disable=wildcard-import,unused-wildcard-import; # noqa
 
 _BASICCONF = BasicConfig()
 NoneType = type(None)
@@ -1317,7 +1317,7 @@ def _phone(
 ) -> Phone:
     val = _printable_ascii(val, argname, **kwargs)
     orig = val.strip()
-    val = ''.join(c for c in val if c in '+1234567890')  # pylint: disable=not-an-iterable
+    val = ''.join(c for c in val if c in '+1234567890')  # pylint: disable=not-an-iterable; # noqa
 
     if len(val) < 7:
         raise ValidationSummary(ValueError(argname, n_("Too short.")))
@@ -2690,7 +2690,7 @@ def _event_associated_fields(
         if field['association'] == association:
             dt = _ALL_TYPED[const.FieldDatatypes](
                 field['kind'], field['field_name'], **kwargs)
-            datatypes[field['field_name']] = cast(Type[Any], eval(  # pylint: disable=eval-used
+            datatypes[field['field_name']] = cast(Type[Any], eval(  # pylint: disable=eval-used # noqa
                 f"Optional[{dt.name}]",
                 {
                     'Optional': Optional,
@@ -3949,7 +3949,7 @@ def _non_regex(
     forbidden_chars = r'\*+?{}()[]|'
     msg = n_("Must not contain any forbidden characters"
              " (which are %(forbidden_chars)s while .^$ are allowed).")
-    if any(char in val for char in forbidden_chars):  # pylint: disable=unsupported-membership-test
+    if any(char in val for char in forbidden_chars):  # pylint: disable=unsupported-membership-test; # noqa
         raise ValidationSummary(
             ValueError(argname, msg, {"forbidden_chars": forbidden_chars}))
     return NonRegex(val)

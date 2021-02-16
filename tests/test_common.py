@@ -14,8 +14,8 @@ import pytz
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
 from cdedb.common import (
-    extract_roles, int_to_words, mixed_existence_sorter, schulze_evaluate, unwrap,
-    xsorted,
+    NearlyNow, extract_roles, int_to_words, mixed_existence_sorter, nearly_now, now,
+    schulze_evaluate, unwrap, xsorted,
 )
 from tests.common import ANONYMOUS, BasicTest
 
@@ -348,3 +348,15 @@ class TestCommon(BasicTest):
         # Can use method of a parent class
         ml_type.GeneralMailinglist.get_implicit_subscribers(
             ANONYMOUS, bc, pseudo_mailinglist)
+
+    def test_nearly_now(self) -> None:
+        base_time = now()
+        self.assertEqual(base_time, nearly_now())
+        self.assertEqual(base_time + datetime.timedelta(minutes=5), nearly_now())
+        self.assertNotEqual(base_time + datetime.timedelta(minutes=15), nearly_now())
+        self.assertEqual(base_time + datetime.timedelta(minutes=15),
+                         nearly_now(datetime.timedelta(days=1)))
+        self.assertNotEqual(base_time + datetime.timedelta(minutes=5),
+                            nearly_now(datetime.timedelta(minutes=1)))
+        self.assertEqual(NearlyNow.fromisoformat("2012-12-21T12:34:56"),
+                         datetime.datetime.fromisoformat("2012-12-21T12:40:00"))
