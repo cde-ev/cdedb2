@@ -88,7 +88,7 @@ def log_error(s: str) -> None:
     errors.append(s)
 
 
-def f(e: Exception) -> str:
+def fmt(e: Exception) -> str:
     """Helper to format overly long exceptions."""
     return str(e)[:90]
 
@@ -151,7 +151,7 @@ while True:
             new_response = response.goto(target)
             new_response = new_response.maybe_follow()
         except webtest.app.AppError as e:
-            log_error(f"Got error when following {target} from {url}: {f(e)}")
+            log_error(f"Got error when following {target} from {url}: {fmt(e)}")
             continue
         visited_urls.add(unique_target)
         response_queue.put(ResponseData(new_response, target, url))
@@ -165,7 +165,7 @@ while True:
             new_response = form.submit()
             new_response = new_response.maybe_follow()
         except webtest.app.AppError as e:
-            log_error(f"Got error when posting to {form.action}: {f(e)}")
+            log_error(f"Got error when posting to {form.action}: {fmt(e)}")
             continue
         posted_urls.add(form.action)
         response_queue.put(ResponseData(new_response, form.action + " [P]", url), True)
@@ -180,7 +180,7 @@ while True:
             new_response = form.submit()
             new_response = new_response.maybe_follow()
         except webtest.app.AppError as e:
-            log_error(f"Got error when posting to {form.action} with payload: {f(e)}")
+            log_error(f"Got error when posting to {form.action} with payload: {fmt(e)}")
             continue
         response_queue.put(ResponseData(new_response, form.action + " [P+token]", url))
 
