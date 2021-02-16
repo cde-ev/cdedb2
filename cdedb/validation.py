@@ -369,6 +369,7 @@ def escaped_split(string: str, delim: str, escape: str = '\\') -> List[str]:
     ret.append(current)
     return ret
 
+
 def filter_none(data: Dict[str, Any]) -> Dict[str, Any]:
     """Helper function to remove NoneType values from dictionaies."""
     return {k: v for k, v in data.items() if v is not NoneType}
@@ -376,6 +377,7 @@ def filter_none(data: Dict[str, Any]) -> Dict[str, Any]:
 #
 # Below is the real stuff
 #
+
 
 @_add_typed_validator
 def _None(
@@ -1045,15 +1047,16 @@ def _PERSONA_EVENT_CREATION() -> Mapping[str, Any]: return {
     'country': Optional[str],
 }
 
+
 _PERSONA_FULL_ML_CREATION = {**_PERSONA_BASE_CREATION()}
 
-_PERSONA_FULL_ASSEMBLY_CREATION =  {**_PERSONA_BASE_CREATION()}
+_PERSONA_FULL_ASSEMBLY_CREATION = {**_PERSONA_BASE_CREATION()}
 
-_PERSONA_FULL_EVENT_CREATION =  {**_PERSONA_BASE_CREATION(),
-                                 **_PERSONA_EVENT_CREATION()}
+_PERSONA_FULL_EVENT_CREATION = {**_PERSONA_BASE_CREATION(), **_PERSONA_EVENT_CREATION()}
 
-_PERSONA_FULL_CDE_CREATION =  {**_PERSONA_BASE_CREATION(), **_PERSONA_CDE_CREATION(),
-                               'is_member': bool, 'is_searchable': bool}
+_PERSONA_FULL_CDE_CREATION = {**_PERSONA_BASE_CREATION(), **_PERSONA_CDE_CREATION(),
+                              'is_member': bool, 'is_searchable': bool}
+
 
 def _PERSONA_COMMON_FIELDS() -> Mapping[str, Any]: return {
     'username': Email,
@@ -1438,6 +1441,7 @@ def _GENESIS_CASE_ADDITIONAL_FIELDS() -> Mapping[str, Any]: return {
     'birth_name': Optional[str],
     'attachment_hash': str,
 }
+
 
 _GENESIS_CASE_EXPOSED_FIELDS = {**_GENESIS_CASE_COMMON_FIELDS(),
                                 **_GENESIS_CASE_ADDITIONAL_FIELDS()}
@@ -2059,7 +2063,8 @@ def _EVENT_COMMON_FIELDS() -> Mapping[str, Any]: return {
     'shortname': Identifier,
 }
 
-def _EVENT_EXPOSED_OPTIONAL_FIELDS() -> Mapping[str, Any] : return {
+
+def _EVENT_EXPOSED_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
     'is_visible': bool,
     'is_course_list_visible': bool,
     'is_course_state_visible': bool,
@@ -2081,19 +2086,18 @@ def _EVENT_EXPOSED_OPTIONAL_FIELDS() -> Mapping[str, Any] : return {
     'course_room_field': Optional[ID],
 }
 
+
 _EVENT_EXPOSED_FIELDS = {**_EVENT_COMMON_FIELDS(), **_EVENT_EXPOSED_OPTIONAL_FIELDS()}
 
 
 def _EVENT_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
     **_EVENT_EXPOSED_OPTIONAL_FIELDS(),
-    **{
-        'offline_lock': bool,
-        'is_archived': bool,
-        'orgas': Iterable,
-        'parts': Mapping,
-        'fields': Mapping,
-        'fee_modifiers': Mapping,
-    }
+    'offline_lock': bool,
+    'is_archived': bool,
+    'orgas': Iterable,
+    'parts': Mapping,
+    'fields': Mapping,
+    'fee_modifiers': Mapping,
 }
 
 
@@ -3482,6 +3486,7 @@ def _MAILINGLIST_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
     'registration_stati': EmptyList,
 }
 
+
 ALL_MAILINGLIST_FIELDS = (_MAILINGLIST_COMMON_FIELDS().keys() |
                           ml_type.ADDITIONAL_TYPE_FIELDS.items())
 
@@ -3685,6 +3690,7 @@ def _BALLOT_COMMON_FIELDS() -> Mapping[str, Any]: return {
     'notes': Optional[str],
 }
 
+
 def _BALLOT_EXPOSED_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
     'vote_extension_end': Optional[datetime.datetime],
     'abs_quorum': int,
@@ -3693,16 +3699,16 @@ def _BALLOT_EXPOSED_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
     'use_bar': bool,
 }
 
+
 _BALLOT_EXPOSED_FIELDS = {**_BALLOT_COMMON_FIELDS(),
                           **_BALLOT_EXPOSED_OPTIONAL_FIELDS()}
 
+
 def _BALLOT_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
     **_BALLOT_EXPOSED_OPTIONAL_FIELDS(),
-    **{
-        'extended': Optional[bool],
-        'is_tallied': bool,
-        'candidates': Mapping
-    }
+    'extended': Optional[bool],
+    'is_tallied': bool,
+    'candidates': Mapping
 }
 
 
