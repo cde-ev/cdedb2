@@ -5,13 +5,12 @@
 import collections
 import copy
 import datetime
-import decimal
 import itertools
 import operator
 import pathlib
 import quopri
 import tempfile
-from typing import Any, Collection, Dict, List, Optional, Set, Tuple, Union, cast
+from typing import Any, Collection, Dict, List, Optional, Set, Tuple
 
 import magic
 import qrcode
@@ -25,12 +24,11 @@ import cdedb.validationtypes as vtypes
 from cdedb.common import (
     ADMIN_KEYS, ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, LOG_FIELDS_COMMON,
     REALM_ADMINS, REALM_INHERITANCE, REALM_SPECIFIC_GENESIS_FIELDS, ArchiveError,
-    CdEDBObject, DefaultReturnCode, EntitySorter, PathLike, PrivilegeError, Realm,
+    CdEDBObject, DefaultReturnCode, EntitySorter, PrivilegeError, Realm,
     RequestState, extract_roles, get_persona_fields_by_realm, implied_realms,
     merge_dicts, n_, now, pairwise, unwrap, xsorted,
 )
 
-from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
 from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, access, basic_redirect,
@@ -413,7 +411,8 @@ class CoreFrontend(AbstractFrontend):
             prefix=persona['title'] or '',
             suffix=persona['name_supplement'] or '')
         vcard.add('FN')
-        vcard.fn.value = f"{persona['given_names'] or ''} {persona['family_name'] or ''}"
+        vcard.fn.value = " ".join(
+            filter(None, (persona['given_names'], persona['family_name'])))
         vcard.add('NICKNAME')
         vcard.nickname.value = persona['display_name'] or ''
 
@@ -530,7 +529,8 @@ class CoreFrontend(AbstractFrontend):
                     access_levels.add(realm)
         # Members see other members (modulo quota)
         if "searchable" in rs.user.roles and quote_me:
-            if (not rs.ambience['persona']['is_searchable']
+            if (not (rs.ambience['persona']['is_member'] and
+                     rs.ambience['persona']['is_searchable'])
                     and "cde_admin" not in access_levels):
                 raise werkzeug.exceptions.Forbidden(n_(
                     "Access to non-searchable member data."))
@@ -594,7 +594,7 @@ class CoreFrontend(AbstractFrontend):
             if "core" in access_levels and "member" in roles:
                 user_lastschrift = self.cdeproxy.list_lastschrift(
                     rs, persona_ids=(persona_id,), active=True)
-                data['has_lastschrift'] = len(user_lastschrift) > 0
+                data['has_lastschrift'] = bool(user_lastschrift)
         if is_relative_or_meta_admin and is_relative_or_meta_admin_view:
             # This is a bit involved to not contaminate the data dict
             # with keys which are not applicable to the requested persona
@@ -606,8 +606,7 @@ class CoreFrontend(AbstractFrontend):
         data['show_vcard'] = "cde" in access_levels and "cde" in roles
 
         # Cull unwanted data
-        if (not ('is_cde_realm' in data and data['is_cde_realm'])
-                 and 'foto' in data):
+        if (not ('is_cde_realm' in data and data['is_cde_realm']) and 'foto' in data):
             del data['foto']
         # relative admins, core admins and the user himself got "core"
         if "core" not in access_levels:
@@ -635,6 +634,7 @@ class CoreFrontend(AbstractFrontend):
         quoteable = (not quote_me
                      and "cde" not in access_levels
                      and "searchable" in rs.user.roles
+                     and rs.ambience['persona']['is_member']
                      and rs.ambience['persona']['is_searchable'])
 
         meta_info = self.coreproxy.get_meta_info(rs)
@@ -757,7 +757,7 @@ class CoreFrontend(AbstractFrontend):
         result = self.coreproxy.submit_general_query(rs, query)
         if len(result) == 1:
             return self.redirect_show_user(rs, result[0]["id"])
-        elif len(result) > 0:
+        elif result:
             # TODO make this accessible
             pass
         query = Query(
@@ -770,7 +770,7 @@ class CoreFrontend(AbstractFrontend):
         result = self.coreproxy.submit_general_query(rs, query)
         if len(result) == 1:
             return self.redirect_show_user(rs, result[0]["id"])
-        elif len(result) > 0:
+        elif result:
             params = querytoparams_filter(query)
             rs.values.update(params)
             return self.user_search(rs, is_search=True, download=None,
@@ -1032,8 +1032,8 @@ class CoreFrontend(AbstractFrontend):
         elif is_search:
             # mangle the input, so we can prefill the form
             query_input = mangle_query_input(rs, spec)
-            query = check(rs, vtypes.QueryInput,
-                query_input, "query", spec=spec, allow_empty=False)
+            query = check(rs, vtypes.QueryInput, query_input, "query",
+                          spec=spec, allow_empty=False)
         events = self.pasteventproxy.list_past_events(rs)
         choices = {
             'pevent_id': collections.OrderedDict(
@@ -1088,8 +1088,8 @@ class CoreFrontend(AbstractFrontend):
         query_input = mangle_query_input(rs, spec)
         query: Optional[Query] = None
         if is_search:
-            query = check(rs, vtypes.QueryInput,
-                query_input, "query", spec=spec, allow_empty=False)
+            query = check(rs, vtypes.QueryInput, query_input, "query",
+                          spec=spec, allow_empty=False)
         events = self.pasteventproxy.list_past_events(rs)
         choices = {
             'pevent_id': collections.OrderedDict(
@@ -2033,8 +2033,7 @@ class CoreFrontend(AbstractFrontend):
         attachment_data = None
         if attachment:
             attachment_filename = attachment.filename
-            attachment_data = check(
-                rs, vtypes.PDFFile, attachment, 'attachment')
+            attachment_data = check(rs, vtypes.PDFFile, attachment, 'attachment')
         if attachment_data:
             myhash = self.coreproxy.genesis_set_attachment(rs, attachment_data)
             data['attachment_hash'] = myhash
@@ -2195,9 +2194,6 @@ class CoreFrontend(AbstractFrontend):
         for genesis_case_id in delete:
             count += self.coreproxy.delete_genesis_case(rs, genesis_case_id)
 
-        genesis_attachment_path: pathlib.Path = (
-                self.conf["STORAGE_DIR"] / "genesis_attachment")
-
         attachment_count = self.coreproxy.genesis_forget_attachments(rs)
 
         if count or attachment_count:
@@ -2221,7 +2217,7 @@ class CoreFrontend(AbstractFrontend):
                             for realm in REALM_SPECIFIC_GENESIS_FIELDS))
     def genesis_list_cases(self, rs: RequestState) -> Response:
         """Compile a list of genesis cases to review."""
-        realms = [realm for realm in REALM_SPECIFIC_GENESIS_FIELDS.keys()
+        realms = [realm for realm in REALM_SPECIFIC_GENESIS_FIELDS
                   if {"{}_admin".format(realm), 'core_admin'} & rs.user.roles]
         data = self.coreproxy.genesis_list_cases(
             rs, stati=(const.GenesisStati.to_review,), realms=realms)

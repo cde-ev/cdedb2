@@ -286,8 +286,8 @@ The original message as received by Mailman is attached.
         mailman = self.get_mailman()
         # noinspection PyBroadException
         try:
-            _ = mailman.system  # cause the client to connect
-        except Exception as e:  # sadly this throws many different exceptions
+            _ = mailman.system  # cause the client to connect # noqa
+        except Exception:  # sadly this throws many different exceptions
             self.logger.exception("Mailman client connection failed!")
             return store
         db_lists = self.mlproxy.get_mailinglists(

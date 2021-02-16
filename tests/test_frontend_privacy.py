@@ -356,6 +356,17 @@ class TestPrivacyFrontend(FrontendTest):
             self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
                                    check_div=False)
 
+    @as_users("inga")
+    def test_ex_profile_as_member(self, user: CdEDBObject) -> None:
+        # See #1821
+        inspected = USER_DICT['martin']
+        self.get(self.show_user_link(inspected['id']))
+        # members got first an un-quoted view on a profile, showing the basics
+        found = self._profile_base_view(inspected)
+        # The username must not be visible, although "Email" occurs as field
+        self.assertNonPresence(inspected['username'])
+        self.assertNonPresence("Gesamtes Profil anzeigen")
+
     @as_users("garcia")
     def test_profile_as_orga(self, user: CdEDBObject) -> None:
         # orgas get a closer view on users associated to their event

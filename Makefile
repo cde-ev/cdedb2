@@ -27,9 +27,10 @@ help:
 	@echo "coverage -- run coverage to determine test suite coverage"
 
 PYTHONBIN ?= python3
-PYLINTBIN ?= pylint3
-COVERAGEBIN ?= python3-coverage
-MYPYBIN ?= mypy
+FLAKE8 ?= $(PYTHONBIN) -m flake8
+PYLINT ?= $(PYTHONBIN) -m pylint
+COVERAGE ?= $(PYTHONBIN) -m coverage
+MYPY ?= $(PYTHONBIN) -m mypy
 TESTPREPARATION ?= automatic
 I18NDIR ?= ./i18n
 
@@ -55,13 +56,11 @@ i18n-extract:
 		--output=$(I18NDIR)/cdedb.pot --input-dirs=.
 
 i18n-update:
-	msgmerge --sort-by-file --lang=de --update \
-		$(I18NDIR)/de/LC_MESSAGES/cdedb.po $(I18NDIR)/cdedb.pot
-	msgmerge --sort-by-file --lang=en --update \
-		$(I18NDIR)/en/LC_MESSAGES/cdedb.po $(I18NDIR)/cdedb.pot
-	msgattrib --no-obsolete -o $(I18NDIR)/de/LC_MESSAGES/cdedb.po \
+	msgmerge --lang=de --update $(I18NDIR)/de/LC_MESSAGES/cdedb.po $(I18NDIR)/cdedb.pot
+	msgmerge --lang=en --update $(I18NDIR)/en/LC_MESSAGES/cdedb.po $(I18NDIR)/cdedb.pot
+	msgattrib --no-obsolete --sort-by-file -o $(I18NDIR)/de/LC_MESSAGES/cdedb.po \
 		$(I18NDIR)/de/LC_MESSAGES/cdedb.po
-	msgattrib --no-obsolete -o $(I18NDIR)/en/LC_MESSAGES/cdedb.po \
+	msgattrib --no-obsolete --sort-by-file -o $(I18NDIR)/en/LC_MESSAGES/cdedb.po \
 		$(I18NDIR)/en/LC_MESSAGES/cdedb.po
 	# TODO: do we want to use msgattribs --indent option for prettier po files?
 
@@ -75,6 +74,13 @@ sample-data:
 	cp -f related/auto-build/files/stage3/localconfig.py cdedb/localconfig.py
 	$(MAKE) storage > /dev/null
 	$(MAKE) sql > /dev/null
+
+sample-data-dump:
+	JSONTEMPFILE=`sudo -u www-data mktemp` \
+		&& sudo -u www-data chmod +r "$${JSONTEMPFILE}" \
+		&& sudo -u www-data $(PYTHONBIN) tests/create_sample_data_json.py -o "$${JSONTEMPFILE}" \
+		&& cp "$${JSONTEMPFILE}" tests/ancillary_files/sample_data.json \
+		&& sudo -u www-data rm "$${JSONTEMPFILE}"
 
 sample-data-test:
 	$(MAKE) storage-test
@@ -200,7 +206,6 @@ cron:
 BANNERLINE := "============================================================$\
 		===================="
 lint:
-	@echo ""
 	@echo $(BANNERLINE)
 	@echo "Lines too long in templates"
 	@echo $(BANNERLINE)
@@ -208,17 +213,16 @@ lint:
 	grep -E -R '^.{121,}' cdedb/frontend/templates/ | grep 'tmpl:'
 	@echo ""
 	@echo $(BANNERLINE)
+	@echo "All of flake8"
+	@echo $(BANNERLINE)
+	@echo ""
+	$(FLAKE8) cdedb
+	@echo ""
+	@echo $(BANNERLINE)
 	@echo "All of pylint"
 	@echo $(BANNERLINE)
 	@echo ""
-	${PYLINTBIN} --rcfile='./lint.rc' --exit-zero cdedb
-	@echo ""
-	@echo $(BANNERLINE)
-	@echo "And now only errors and warnings"
-	@echo $(BANNERLINE)
-	@echo ""
-	$(PYLINTBIN) --rcfile='./lint.rc' --output-format=text cdedb \
-		| grep -E '^(\*\*\*\*|E:|W:)'
+	$(PYLINT) cdedb
 
 
 prepare-check:
@@ -282,11 +286,11 @@ VALIDATORCHECKSUM := "c7d8d7c925dbd64fd5270f7b81a56f526e6bbef0 $\
 		$(wildcard cdedb/frontend/*.py) \
 		$(wildcard cdedb/backend/*.py) $(wildcard tests/*.py)
 	$(MAKE) prepare-check
-	$(COVERAGEBIN) run -m tests.main
+	$(COVERAGE) run -m tests.main
 
 coverage: .coverage
-	$(COVERAGEBIN) report --include 'cdedb/*' --show-missing
-	$(COVERAGEBIN) html --include 'cdedb/*'
+	$(COVERAGE) report --include 'cdedb/*' --show-missing
+	$(COVERAGE) html --include 'cdedb/*'
 	@echo "HTML reports for easier inspection are in ./htmlcov"
 
 tests/ancillary_files/sample_data.sql: tests/ancillary_files/sample_data.json \
@@ -301,4 +305,4 @@ tests/ancillary_files/sample_data.sql: tests/ancillary_files/sample_data.json \
 		&& sudo -u www-data rm "$${SQLTEMPFILE}"
 
 mypy:
-	${MYPYBIN} bin cdedb tests
+	$(MYPY) bin cdedb tests

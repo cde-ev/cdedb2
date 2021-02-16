@@ -152,15 +152,22 @@ class CoreBackend(AbstractBackend):
         return " ".join(values)
 
     def core_log(self, rs: RequestState, code: const.CoreLogCodes,
-                 persona_id: int = None,
-                 change_note: str = None) -> DefaultReturnCode:
+                 persona_id: int = None, change_note: str = None,
+                 atomized: bool = True) -> DefaultReturnCode:
         """Make an entry in the log.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
+
+        :param atomized: Whether this function should enforce an atomized context
+            to be present.
          """
         if rs.is_quiet:
             return 0
+        # To ensure logging is done if and only if the corresponding action happened,
+        # we require atomization by default.
+        if atomized:
+            self.affirm_atomized_context(rs)
         # do not use sql_insert since it throws an error for selecting the id
         query = ("INSERT INTO core.log "
                  "(code, submitted_by, persona_id, change_note) "
@@ -185,6 +192,9 @@ class CoreBackend(AbstractBackend):
         if rs.is_quiet:
             self.logger.warning("Finance log was suppressed.")
             return 0
+        # To ensure logging is done if and only if the corresponding action happened,
+        # we require atomization here.
+        self.affirm_atomized_context(rs)
         data = {
             "code": code,
             "submitted_by": rs.user.persona_id,
@@ -566,7 +576,8 @@ class CoreBackend(AbstractBackend):
     @internal
     @access("ml")
     def list_all_moderators(self, rs: RequestState,
-                            ml_types: Optional[Collection[const.MailinglistTypes]] = None
+                            ml_types: Optional[
+                                Collection[const.MailinglistTypes]] = None
                             ) -> Set[int]:
         """List all moderators of any mailinglists.
 
@@ -581,19 +592,33 @@ class CoreBackend(AbstractBackend):
         return {e["persona_id"] for e in data}
 
     @access("core_admin")
-    def next_persona(self, rs: RequestState, persona_id: int,
-                     is_member: bool = True) -> Optional[int]:
+    def next_persona(self, rs: RequestState, persona_id: Optional[int], *,
+                     is_member: Optional[bool],
+                     is_archived: Optional[bool]) -> Optional[int]:
         """Look up the following persona.
+
+        :param is_member: If not None, only consider personas with a matching flag.
+        :param is_archived: If not None, only consider personas with a matching flag.
 
         :returns: Next valid id in table core.personas
         """
-        query = "SELECT MIN(id) FROM core.personas WHERE id > %s"
-        if is_member:
-            query = glue(query, "AND is_member = True")
-        tmp = self.query_one(rs, query, (persona_id,))
-        if not tmp:
-            return None
-        return unwrap(tmp)
+        persona_id = affirm_optional(int, persona_id)
+        is_member = affirm_optional(bool, is_member)
+        is_archived = affirm_optional(bool, is_archived)
+        query = "SELECT MIN(id) FROM core.personas"
+        constraints = []
+        params: List[Any] = []
+        if persona_id is not None:
+            constraints.append("id > %s")
+            params.append(persona_id)
+        if is_member is not None:
+            constraints.append("is_member = %s")
+            params.append(is_member)
+        if is_archived is not None:
+            constraints.append("is_archived = %s")
+            params.append(is_archived)
+        query += " WHERE " + " AND ".join(constraints)
+        return unwrap(self.query_one(rs, query, params))
 
     def commit_persona(self, rs: RequestState, data: CdEDBObject,
                        change_note: Optional[str]) -> DefaultReturnCode:
@@ -1135,15 +1160,17 @@ class CoreBackend(AbstractBackend):
             "$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/"
             "S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHE/si/")
         query = "UPDATE core.personas SET password_hash = %s WHERE id = %s"
-        ret = self.query_exec(rs, query, (password_hash, persona_id))
 
-        # Invalidate alle active sessions.
-        query = ("UPDATE core.sessions SET is_active = False "
-                 "WHERE persona_id = %s AND is_active = True")
-        self.query_exec(rs, query, (persona_id,))
+        with Atomizer(rs):
+            ret = self.query_exec(rs, query, (password_hash, persona_id))
 
-        ret *= self.core_log(rs, code=const.CoreLogCodes.password_invalidated,
-                             persona_id=persona_id)
+            # Invalidate alle active sessions.
+            query = ("UPDATE core.sessions SET is_active = False "
+                     "WHERE persona_id = %s AND is_active = True")
+            self.query_exec(rs, query, (persona_id,))
+
+            self.core_log(rs, code=const.CoreLogCodes.password_invalidated,
+                          persona_id=persona_id)
 
         return ret
 
@@ -1158,6 +1185,109 @@ class CoreBackend(AbstractBackend):
 
         query = "SELECT MAX(atime) AS atime FROM core.sessions WHERE persona_id = %s"
         return unwrap(self.query_one(rs, query, (persona_id,)))
+
+    @access("core_admin")
+    def is_persona_automatically_archivable(self, rs: RequestState, persona_id: int,
+                                            reference_date: datetime.date = None
+                                            ) -> bool:
+        """Determine whether a persona is eligble to be automatically archived.
+
+        :param reference_date: If given consider this as the reference point for
+            determining inactivity. Otherwise use the current date. Either way this
+            calculates the actual cutoff using a config parameter. This is intended
+            to be used during semester management to send notifications during step 1
+            and later archive those who were previosly notified, not those who turned
+            eligible for archival in between.
+
+        Things that prevent such automated archival:
+            * The persona having any admin bit.
+            * The persona being a member.
+            * The persona already being archived.
+            * The persona having logged in in the last two years.
+            * The persona having been changed/created in the last two years.
+            * The persona being involved (orga/registration) with any recent event.
+            * The persona being involved (presider/attendee) with an active assembly.
+            * The persona being explicitly subscribed to any mailinglist.
+        """
+        persona_id = affirm(vtypes.ID, persona_id)
+        reference_date = affirm(datetime.date, reference_date or now().date())
+
+        cutoff = reference_date - self.conf["AUTOMATED_ARCHIVAL_CUTOFF"]
+        with Atomizer(rs):
+            persona = self.get_persona(rs, persona_id)
+
+            # Do some basic sanity checks.
+            if any(persona[admin_key] for admin_key in ADMIN_KEYS):
+                return False
+
+            if persona['is_member'] or persona['is_archived']:
+                return False
+
+            # Check latest user session.
+            latest_session = self.get_persona_latest_session(rs, persona_id)
+            if latest_session is not None and latest_session > cutoff:
+                return False
+
+            generation = self.changelog_get_generation(rs, persona_id)
+            history = self.changelog_get_history(rs, persona_id, (generation,))
+            last_change = history[generation]
+            if last_change['ctime'].date() > cutoff:
+                return False
+
+            # Check event involvement.
+            # TODO use 'is_archived' instead of 'event_end'?
+            query = """SELECT MAX(part_end) AS event_end
+            FROM (
+                (
+                    SELECT event_id
+                    FROM event.registrations
+                    WHERE persona_id = %s
+                    UNION
+                    SELECT event_id
+                    FROM event.orgas
+                    WHERE persona_id = %s
+                ) as ids
+                JOIN event.event_parts ON ids.event_id = event_parts.event_id
+            )
+            """
+            event_end = unwrap(self.query_one(rs, query, (persona_id, persona_id)))
+            if event_end and event_end > cutoff:
+                return False
+
+            # Check assembly involvement
+            query = """SELECT assembly_id
+            FROM (
+                (
+                    SELECT assembly_id
+                    FROM assembly.attendees
+                    WHERE persona_id = %s
+                    UNION
+                    SELECT assembly_id
+                    FROM assembly.presiders
+                    WHERE persona_id = %s
+                ) AS ids
+                JOIN assembly.assemblies ON ids.assembly_id = assemblies.id
+            )
+            WHERE assemblies.is_active = True"""
+            if self.query_all(rs, query, (persona_id, persona_id)):
+                return False
+
+            # Check mailinglist subscriptions.
+            # TODO don't hardcode subscription states here?
+            query = """SELECT mailinglist_id
+            FROM ml.subscription_states AS ss
+            JOIN ml.mailinglists ON ss.mailinglist_id = mailinglists.id
+            WHERE persona_id = %s AND subscription_state = ANY(%s)
+                AND mailinglists.is_active = True"""
+            states = {
+                const.SubscriptionStates.subscribed,
+                const.SubscriptionStates.subscription_override,
+                const.SubscriptionStates.pending,
+            }
+            if self.query_all(rs, query, (persona_id, states)):
+                return False
+
+        return True
 
     @access("core_admin", "cde_admin")
     def archive_persona(self, rs: RequestState, persona_id: int,
@@ -1378,6 +1508,7 @@ class CoreBackend(AbstractBackend):
                 rs, update, generation=None, may_wait=False,
                 change_note="Benutzer archiviert.",
                 allow_specials=("archive",))
+            self.core_log(rs, const.CoreLogCodes.persona_archived, persona_id)
             #
             # 11. Clear changelog
             #
@@ -1415,10 +1546,12 @@ class CoreBackend(AbstractBackend):
                 'id': persona_id,
                 'is_archived': False,
             }
-            return self.set_persona(
+            code = self.set_persona(
                 rs, update, generation=None, may_wait=False,
                 change_note="Benutzer aus dem Archiv wiederhergestellt.",
                 allow_specials=("archive",))
+            self.core_log(rs, const.CoreLogCodes.persona_dearchived, persona_id)
+            return code
 
     @access("core_admin", "cde_admin")
     def purge_persona(self, rs: RequestState,
@@ -1486,6 +1619,7 @@ class CoreBackend(AbstractBackend):
             #
             # 4. Finish
             #
+            self.core_log(rs, const.CoreLogCodes.persona_purged, persona_id)
             return ret
 
     @access("persona")
@@ -1785,7 +1919,7 @@ class CoreBackend(AbstractBackend):
         :returns: The id of the newly created persona.
         """
         data = affirm(vtypes.Persona, data,
-            creation=True, _ignore_warnings=ignore_warnings)
+                      creation=True, _ignore_warnings=ignore_warnings)
         submitted_by = affirm_optional(vtypes.ID, submitted_by)
         # zap any admin attempts
         data.update({
@@ -1921,6 +2055,8 @@ class CoreBackend(AbstractBackend):
     def logout(self, rs: RequestState, this_session: bool = True,
                other_sessions: bool = False) -> DefaultReturnCode:
         """Invalidate some sessions, depending on the parameters."""
+        this_session = affirm(bool, this_session)
+        other_sessions = affirm(bool, other_sessions)
         query = "UPDATE core.sessions SET is_active = False, atime = now()"
         constraints = ["persona_id = %s", "is_active = True"]
         params: List[Any] = [rs.user.persona_id]
@@ -2148,7 +2284,7 @@ class CoreBackend(AbstractBackend):
     ret_type = Tuple[bool, Optional[str]]
 
     def _verify_reset_cookie(self, rs: RequestState, persona_id: int, salt: str,
-                             cookie: str) -> ret_type:
+                             cookie: str) -> ret_type:  # pylint: disable=undefined-variable
         """Check a provided cookie for correctness.
 
         :returns: The bool signals success, the str is an error message or
@@ -2245,9 +2381,10 @@ class CoreBackend(AbstractBackend):
         """
         old_password = affirm(str, old_password)
         new_password = affirm(str, new_password)
-        ret = self.modify_password(rs, new_password, old_password=old_password)
-        self.core_log(rs, const.CoreLogCodes.password_change,
-                      rs.user.persona_id)
+        with Atomizer(rs):
+            ret = self.modify_password(rs, new_password, old_password=old_password)
+            self.core_log(rs, const.CoreLogCodes.password_change,
+                          rs.user.persona_id)
         return ret
 
     @access("anonymous")
@@ -2311,8 +2448,8 @@ class CoreBackend(AbstractBackend):
         if persona['birthday']:
             inputs.extend(persona['birthday'].isoformat().split('-'))
 
-        password, errs = validate_check(vtypes.PasswordStrength,
-            password, argname=argname, admin=admin, inputs=inputs)
+        password, errs = validate_check(vtypes.PasswordStrength, password,
+                                        argname=argname, admin=admin, inputs=inputs)
 
         return password, errs
 
@@ -2337,8 +2474,9 @@ class CoreBackend(AbstractBackend):
             return False, n_("Nonexistent user.")
         if not data['is_active']:
             return False, n_("Inactive user.")
-        ret = self.generate_reset_cookie(rs, data['id'], timeout=timeout)
-        self.core_log(rs, const.CoreLogCodes.password_reset_cookie, data['id'])
+        with Atomizer(rs):
+            ret = self.generate_reset_cookie(rs, data['id'], timeout=timeout)
+            self.core_log(rs, const.CoreLogCodes.password_reset_cookie, data['id'])
         return True, ret
 
     @access("anonymous")
@@ -2363,7 +2501,11 @@ class CoreBackend(AbstractBackend):
         success, msg = self.modify_password(
             rs, new_password, reset_cookie=cookie, persona_id=persona_id)
         if success:
-            self.core_log(rs, const.CoreLogCodes.password_reset, persona_id)
+            # Since they should usually be called inside an atomized context, logs
+            # demand an Atomizer by default. However, due to privilege escalation inside
+            # modify_password, this does not work and relax that claim.
+            self.core_log(rs, const.CoreLogCodes.password_reset, persona_id,
+                          atomized=False)
         return success, msg
 
     @access("anonymous")
@@ -2386,9 +2528,10 @@ class CoreBackend(AbstractBackend):
         if self.conf["LOCKDOWN"] and not self.is_admin(rs):
             return None
         data['case_status'] = const.GenesisStati.unconfirmed
-        ret = self.sql_insert(rs, "core.genesis_cases", data)
-        self.core_log(rs, const.CoreLogCodes.genesis_request, persona_id=None,
-                      change_note=data['username'])
+        with Atomizer(rs):
+            ret = self.sql_insert(rs, "core.genesis_cases", data)
+            self.core_log(rs, const.CoreLogCodes.genesis_request, persona_id=None,
+                          change_note=data['username'])
         return ret
 
     @access(*REALM_ADMINS)
@@ -2575,7 +2718,7 @@ class CoreBackend(AbstractBackend):
         :param ignore_warnings: Ignore errors with kind ValidationWarning
         """
         data = affirm(vtypes.GenesisCase, data,
-            _ignore_warnings=ignore_warnings)
+                      _ignore_warnings=ignore_warnings)
 
         with Atomizer(rs):
             current = self.sql_select_one(
@@ -2620,7 +2763,7 @@ class CoreBackend(AbstractBackend):
             # Fix realms, so that the persona validator does the correct thing
             data.update(GENESIS_REALM_OVERRIDE[case['realm']])
             data = affirm(vtypes.Persona, data,
-                creation=True, _ignore_warnings=True)
+                          creation=True, _ignore_warnings=True)
             if case['case_status'] != const.GenesisStati.approved:
                 raise ValueError(n_("Invalid genesis state."))
             roles = extract_roles(data)

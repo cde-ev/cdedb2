@@ -1,5 +1,8 @@
-Internationalisation (i18n)
+Internationalization (i18n)
 ===========================
+
+.. seealso::
+    The description of our :doc:`Development Internationalization Workflow <Development_Workflows_Internationalization>`.
 
 Homonyms
 --------
@@ -7,7 +10,7 @@ Homonyms
 Some English words have semantically different meanings. To distinguish them in
 our translations (where desired), we use the following format::
 
-  Homonymic-phrase_[[semantic meaning]]
+    Homonymic-phrase_[[semantic meaning]]
 
 Consider the englisch word **vote** as an example:
 

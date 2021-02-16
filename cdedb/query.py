@@ -182,7 +182,9 @@ class Query:
 #:           the schema part does not survive querying and needs to be stripped
 #:           before output.
 if TYPE_CHECKING:
-    QUERY_SPECS: Dict[str, collections.OrderedDict[str, str]]
+    QUERY_SPECS: Dict[
+        str, collections.OrderedDict[str, str]  # pylint: disable=unsubscriptable-object
+    ]
 QUERY_SPECS = {
     "qview_cde_member":
         collections.OrderedDict([

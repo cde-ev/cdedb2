@@ -36,7 +36,7 @@ _repopath = _currentpath.parent
 try:
     _git_commit = subprocess.check_output(
         ("git", "rev-parse", "HEAD"), cwd=str(_repopath)).decode().strip()
-except FileNotFoundError: # only catch git executable not found
+except FileNotFoundError:  # only catch git executable not found
     with pathlib.Path(_repopath, '.git/HEAD').open() as head:
         _git_commit = head.read().strip()
 
@@ -378,6 +378,9 @@ _DEFAULTS = {
 
     # log
     "CORE_BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend-core.log"),
+
+    # amount of time after which an inactive account may be archived.
+    "AUTOMATED_ARCHIVAL_CUTOFF": datetime.timedelta(days=365*2),
 
     #
     # Session stuff

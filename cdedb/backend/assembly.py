@@ -232,6 +232,9 @@ class AssemblyBackend(AbstractBackend):
         """
         if rs.is_quiet:
             return 0
+        # To ensure logging is done if and only if the corresponding action happened,
+        # we require atomization here.
+        self.affirm_atomized_context(rs)
         # do not use sql_insert since it throws an error for selecting the id
         query = ("INSERT INTO assembly.log (code, assembly_id, submitted_by,"
                  " persona_id, change_note) VALUES (%s, %s, %s, %s, %s)")
@@ -337,7 +340,7 @@ class AssemblyBackend(AbstractBackend):
             attachment_ids = {affirm(vtypes.ID, attachment_id)}
         ret = self.get_assembly_ids(
             rs, ballot_ids=ballot_ids, attachment_ids=attachment_ids)
-        if len(ret) == 0:
+        if not ret:
             raise ValueError(n_("No input specified."))
         if len(ret) > 1:
             raise ValueError(n_(
@@ -928,8 +931,8 @@ class AssemblyBackend(AbstractBackend):
                 'vote_begin': begin,
             }
             self.set_ballot(rs, update)
-        self.assembly_log(rs, const.AssemblyLogCodes.ballot_created,
-                          data['assembly_id'], change_note=data['title'])
+            self.assembly_log(rs, const.AssemblyLogCodes.ballot_created,
+                              data['assembly_id'], change_note=data['title'])
         return new_id
 
     @access("assembly")
@@ -1359,8 +1362,7 @@ class AssemblyBackend(AbstractBackend):
                 x['shortname'] for x in ballot['candidates'].values())
             if ballot['use_bar'] or ballot['votes']:
                 shortnames += (ASSEMBLY_BAR_SHORTNAME,)
-            condensed, detailed = schulze_evaluate([e['vote'] for e in votes],
-                                                   shortnames)
+            condensed, _ = schulze_evaluate([e['vote'] for e in votes], shortnames)
             update = {
                 'id': ballot_id,
                 'is_tallied': True,
@@ -1387,7 +1389,7 @@ class AssemblyBackend(AbstractBackend):
             voter_names = list(f"{e['given_names']} {e['family_name']}"
                                for e in xsorted(voters.values(),
                                                 key=EntitySorter.persona))
-            vote_list = xsorted(votes, key=lambda v: json_serialize(v))
+            vote_list = xsorted(votes, key=json_serialize)
             result = {
                 "assembly": assembly['title'],
                 "ballot": ballot['title'],
@@ -1599,8 +1601,10 @@ class AssemblyBackend(AbstractBackend):
             if not assembly['is_active']:
                 raise ValueError(locked_msg)
             new_id = self.sql_insert(rs, "assembly.attachments", attachment)
-            version = {k: v for k, v in data.items()
-                            if k in ASSEMBLY_ATTACHMENT_VERSION_FIELDS}
+            version = {
+                k: v for k, v in data.items()
+                if k in ASSEMBLY_ATTACHMENT_VERSION_FIELDS
+            }
             version['version'] = 1
             version['attachment_id'] = new_id
             version['file_hash'] = get_hash(content)
@@ -1932,8 +1936,7 @@ class AssemblyBackend(AbstractBackend):
             raise ValueError(n_("Too many inputs specified."))
         assembly_id = affirm_optional(vtypes.ID, assembly_id)
         ballot_id = affirm_optional(vtypes.ID, ballot_id)
-        if not self.may_access(rs, assembly_id=assembly_id,
-                                 ballot_id=ballot_id):
+        if not self.may_access(rs, assembly_id=assembly_id, ballot_id=ballot_id):
             raise PrivilegeError(n_("Not privileged."))
 
         key = None
