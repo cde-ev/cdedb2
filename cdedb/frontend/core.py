@@ -2209,11 +2209,11 @@ class CoreFrontend(AbstractFrontend):
     @access("core_admin", *("{}_admin".format(realm)
                             for realm, fields in
                             REALM_SPECIFIC_GENESIS_FIELDS.items()
-                            if "attachment" in fields))
-    def genesis_get_attachment(self, rs: RequestState, attachment: str
+                            if "attachment_hash" in fields))
+    def genesis_get_attachment(self, rs: RequestState, attachment_hash: str
                                ) -> Response:
         """Retrieve attachment for genesis case."""
-        path = self.conf["STORAGE_DIR"] / 'genesis_attachment' / attachment
+        path = self.conf["STORAGE_DIR"] / 'genesis_attachment' / attachment_hash
         mimetype = magic.from_file(str(path), mime=True)
         return self.send_file(rs, path=path, mimetype=mimetype)
 
@@ -2276,6 +2276,8 @@ class CoreFrontend(AbstractFrontend):
                        ) -> Response:
         """Edit a case to fix potential issues before creation."""
         data['id'] = genesis_case_id
+        # In contrast to the genesis_request, the attachment can not be changed here.
+        del data['attachment_hash']
         data = check(
             rs, vtypes.GenesisCase, data, _ignore_warnings=ignore_warnings)
         if rs.has_validation_errors():

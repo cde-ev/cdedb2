@@ -604,7 +604,7 @@ class TestCoreBackend(BackendTest):
             'id': case_id,
             'case_status': const.GenesisStati.to_review,
             'reviewer': None,
-            'attachment': None,
+            'attachment_hash': None,
             'birth_name': None,
         })
         value = self.core.genesis_get_case(self.key, case_id)
@@ -680,7 +680,7 @@ class TestCoreBackend(BackendTest):
             'mobile': None,
             'postal_code': None,
             'telephone': None,
-            'attachment': None,
+            'attachment_hash': None,
             'birth_name': None,
         })
         value = self.core.genesis_get_case(self.key, case_id)
@@ -745,7 +745,7 @@ class TestCoreBackend(BackendTest):
             'postal_code': "12345",
             'location': "Marcuria",
             'country': "Arkadien",
-            'attachment': attachment_hash,
+            'attachment_hash': attachment_hash,
         }
         self.assertFalse(self.core.genesis_attachment_usage(
             self.key, attachment_hash))

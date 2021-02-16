@@ -1916,7 +1916,7 @@ PERSONA_ALL_FIELDS = PERSONA_CDE_FIELDS + ("notes",)
 GENESIS_CASE_FIELDS = (
     "id", "ctime", "username", "given_names", "family_name",
     "gender", "birthday", "telephone", "mobile", "address_supplement",
-    "address", "postal_code", "location", "country", "birth_name", "attachment",
+    "address", "postal_code", "location", "country", "birth_name", "attachment_hash",
     "realm", "notes", "case_status", "reviewer")
 
 # The following dict defines, which additional fields are required for genesis
@@ -1929,7 +1929,7 @@ REALM_SPECIFIC_GENESIS_FIELDS: Dict[Realm, Tuple[str, ...]] = {
               "country"),
     "cde": ("gender", "birthday", "telephone", "mobile",
             "address_supplement", "address", "postal_code", "location",
-            "country", "birth_name", "attachment"),
+            "country", "birth_name", "attachment_hash"),
 }
 
 # This overrides the more general PERSONA_DEFAULTS dict with some realm-specific

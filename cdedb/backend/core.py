@@ -2083,7 +2083,7 @@ class CoreBackend(AbstractBackend):
                                  attachment_hash: str) -> bool:
         """Check whether a genesis attachment is still referenced in a case."""
         attachment_hash = affirm(str, attachment_hash)
-        query = "SELECT COUNT(*) FROM core.genesis_cases WHERE attachment = %s"
+        query = "SELECT COUNT(*) FROM core.genesis_cases WHERE attachment_hash = %s"
         return bool(unwrap(self.query_one(rs, query, (attachment_hash,))))
 
     @access("core_admin")
