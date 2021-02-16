@@ -91,7 +91,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         return super().create_user_form(rs)
 
     @access("core_admin", "ml_admin", modi={"POST"})
-    @REQUESTdatadict(*filter_none(_PERSONA_FULL_ML_CREATION).keys())
+    @REQUESTdatadict(*filter_none(_PERSONA_FULL_ML_CREATION))
     def create_user(self, rs: RequestState, data: Dict[str, Any],
                     ignore_warnings: bool = False) -> Response:
         defaults = {

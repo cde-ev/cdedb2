@@ -85,7 +85,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         return super().create_user_form(rs)
 
     @access("core_admin", "assembly_admin", modi={"POST"})
-    @REQUESTdatadict(*filter_none(_PERSONA_FULL_ASSEMBLY_CREATION).keys())
+    @REQUESTdatadict(*filter_none(_PERSONA_FULL_ASSEMBLY_CREATION))
     def create_user(self, rs: RequestState, data: CdEDBObject,
                     ignore_warnings: bool = False) -> Response:
         defaults = {
@@ -305,7 +305,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     @access("assembly", modi={"POST"})
     @assembly_guard
-    @REQUESTdatadict(*_ASSEMBLY_COMMON_FIELDS().keys())
+    @REQUESTdatadict(*_ASSEMBLY_COMMON_FIELDS())
     @REQUESTdata("presider_address")
     def change_assembly(self, rs: RequestState, assembly_id: int,
                         presider_address: Optional[str], data: Dict[str, Any]
@@ -397,7 +397,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         return self.redirect(rs, "assembly/show_assembly")
 
     @access("assembly_admin", modi={"POST"})
-    @REQUESTdatadict(*_ASSEMBLY_COMMON_FIELDS().keys())
+    @REQUESTdatadict(*_ASSEMBLY_COMMON_FIELDS())
     @REQUESTdata("presider_ids", "create_attendee_list", "create_presider_list",
                  "presider_address")
     def create_assembly(self, rs: RequestState, presider_ids: vtypes.CdedbIDList,
@@ -729,7 +729,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     @access("assembly", modi={"POST"})
     @assembly_guard
-    @REQUESTdatadict(*_BALLOT_EXPOSED_FIELDS.keys())
+    @REQUESTdatadict(*_BALLOT_EXPOSED_FIELDS)
     def create_ballot(self, rs: RequestState, assembly_id: int,
                       data: Dict[str, Any]) -> Response:
         """Make a new ballot."""
@@ -1452,7 +1452,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     @access("assembly", modi={"POST"})
     @assembly_guard
-    @REQUESTdatadict(*_BALLOT_EXPOSED_FIELDS.keys())
+    @REQUESTdatadict(*_BALLOT_EXPOSED_FIELDS)
     def change_ballot(self, rs: RequestState, assembly_id: int,
                       ballot_id: int, data: Dict[str, Any]) -> Response:
         """Modify a ballot."""

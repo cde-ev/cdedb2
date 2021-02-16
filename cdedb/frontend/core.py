@@ -1472,7 +1472,7 @@ class CoreFrontend(AbstractFrontend):
         return self.render(rs, "promote_user")
 
     @access("core_admin", modi={"POST"})
-    @REQUESTdatadict(*CDE_TRANSITION_FIELDS().keys())
+    @REQUESTdatadict(*CDE_TRANSITION_FIELDS())
     @REQUESTdata("target_realm")
     def promote_user(self, rs: RequestState, persona_id: int,
                      target_realm: vtypes.Realm, data: CdEDBObject) -> Response:
@@ -2019,7 +2019,7 @@ class CoreFrontend(AbstractFrontend):
         })
 
     @access("anonymous", modi={"POST"})
-    @REQUESTdatadict(*_GENESIS_CASE_EXPOSED_FIELDS.keys())
+    @REQUESTdatadict(*_GENESIS_CASE_EXPOSED_FIELDS)
     @REQUESTfile("attachment")
     @REQUESTdata("attachment_filename", "ignore_warnings")
     def genesis_request(self, rs: RequestState, data: CdEDBObject,
@@ -2269,7 +2269,7 @@ class CoreFrontend(AbstractFrontend):
     @access("core_admin", *("{}_admin".format(realm)
                             for realm in REALM_SPECIFIC_GENESIS_FIELDS),
             modi={"POST"})
-    @REQUESTdatadict(*_GENESIS_CASE_EXPOSED_FIELDS.keys())
+    @REQUESTdatadict(*_GENESIS_CASE_EXPOSED_FIELDS)
     @REQUESTdata("ignore_warnings")
     def genesis_modify(self, rs: RequestState, genesis_case_id: int,
                        data: CdEDBObject, ignore_warnings: bool = False

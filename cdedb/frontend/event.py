@@ -140,7 +140,7 @@ class EventFrontend(AbstractUserFrontend):
         return super().create_user_form(rs)
 
     @access("core_admin", "event_admin", modi={"POST"})
-    @REQUESTdatadict(*filter_none(_PERSONA_FULL_EVENT_CREATION).keys())
+    @REQUESTdatadict(*filter_none(_PERSONA_FULL_EVENT_CREATION))
     def create_user(self, rs: RequestState, data: CdEDBObject,
                     ignore_warnings: bool = False) -> Response:
         defaults = {
@@ -409,7 +409,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdatadict(*_EVENT_EXPOSED_FIELDS.keys())
+    @REQUESTdatadict(*_EVENT_EXPOSED_FIELDS)
     def change_event(self, rs: RequestState, event_id: int, data: CdEDBObject
                      ) -> Response:
         """Modify an event organized via DB."""
@@ -1150,7 +1150,7 @@ class EventFrontend(AbstractUserFrontend):
     @access("event_admin", modi={"POST"})
     @REQUESTdata("part_begin", "part_end", "orga_ids", "create_track",
                  "create_orga_list", "create_participant_list")
-    @REQUESTdatadict(*_EVENT_EXPOSED_FIELDS.keys())
+    @REQUESTdatadict(*_EVENT_EXPOSED_FIELDS)
     def create_event(self, rs: RequestState, part_begin: datetime.date,
                      part_end: datetime.date, orga_ids: vtypes.CdedbIDList,
                      create_track: bool, create_orga_list: bool,
@@ -1297,7 +1297,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdatadict(*_COURSE_COMMON_FIELDS().keys())
+    @REQUESTdatadict(*_COURSE_COMMON_FIELDS())
     @REQUESTdata("segments", "active_segments")
     def change_course(self, rs: RequestState, event_id: int, course_id: int,
                       segments: Collection[int],
@@ -1339,7 +1339,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdatadict(*_COURSE_COMMON_FIELDS().keys())
+    @REQUESTdatadict(*_COURSE_COMMON_FIELDS())
     @REQUESTdata("segments")
     def create_course(self, rs: RequestState, event_id: int,
                       segments: Collection[int], data: CdEDBObject) -> Response:
@@ -4768,7 +4768,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdatadict(*_LODGEMENT_COMMON_FIELDS().keys())
+    @REQUESTdatadict(*_LODGEMENT_COMMON_FIELDS())
     def create_lodgement(self, rs: RequestState, event_id: int,
                          data: CdEDBObject) -> Response:
         """Add a new lodgement."""
@@ -4807,7 +4807,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdatadict(*_LODGEMENT_COMMON_FIELDS().keys())
+    @REQUESTdatadict(*_LODGEMENT_COMMON_FIELDS())
     def change_lodgement(self, rs: RequestState, event_id: int,
                          lodgement_id: int, data: CdEDBObject) -> Response:
         """Alter the attributes of a lodgement.
