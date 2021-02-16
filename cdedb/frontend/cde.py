@@ -30,10 +30,11 @@ import cdedb.database.constants as const
 import cdedb.frontend.parse_statement as parse
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    Accounts, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, EntitySorter, Error,
-    LineResolutions, LOG_FIELDS_COMMON, PERSONA_DEFAULTS, RequestState, TransactionType,
-    asciificator, deduct_years, determine_age_class, diacritic_patterns, get_hash, glue,
-    int_to_words, lastschrift_reference, merge_dicts, n_, now, unwrap, xsorted,
+    Accounts, ArchiveError, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
+    EntitySorter, Error, LineResolutions, LOG_FIELDS_COMMON, PERSONA_DEFAULTS,
+    RequestState, SemesterSteps, TransactionType, asciificator, deduct_years,
+    determine_age_class, diacritic_patterns, get_hash, glue, int_to_words,
+    lastschrift_reference, merge_dicts, n_, now, unwrap, xsorted,
 )
 from cdedb.database.connection import Atomizer
 from cdedb.frontend.common import (

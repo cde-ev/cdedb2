@@ -369,7 +369,7 @@ def escaped_split(string: str, delim: str, escape: str = '\\') -> List[str]:
     ret.append(current)
     return ret
 
-def filter_none(data: Dict[str, Any]):
+def filter_none(data: Dict[str, Any]) -> Dict[str, Any]:
     """Helper function to remove NoneType values from dictionaies."""
     return {k: v for k, v in data.items() if v is not NoneType}
 
@@ -1149,7 +1149,8 @@ def _persona(
         })
         roles = extract_roles(temp)
         optional_fields: TypeMapping = {}
-        mandatory_fields = {**_PERSONA_TYPE_FIELDS, **_PERSONA_BASE_CREATION()}
+        mandatory_fields: Dict[str, Any] = {**_PERSONA_TYPE_FIELDS,
+                                             **_PERSONA_BASE_CREATION()}
         if "cde" in roles:
             mandatory_fields.update(_PERSONA_CDE_CREATION())
         if "event" in roles:
