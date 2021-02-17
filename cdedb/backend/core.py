@@ -1042,9 +1042,7 @@ class CoreBackend(AbstractBackend):
 
     @access("persona")
     def list_admins(self, rs: RequestState, realm: str) -> List[int]:
-        """List all personas with admin privilidges in a given realm.
-
-        """
+        """List all personas with admin privilidges in a given realm."""
         realm = affirm(str, realm)
 
         query = "SELECT id from core.personas WHERE {constraint}"
@@ -2905,7 +2903,6 @@ class CoreBackend(AbstractBackend):
 
         This should be used solely by the resolve API. The frontend takes
         the necessary precautions.
-
         """
         query = affirm(Query, query)
         return self.general_query(rs, query)

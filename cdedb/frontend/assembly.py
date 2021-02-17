@@ -47,9 +47,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     @staticmethod
     def is_ballot_voting(ballot: Dict[str, Any]) -> bool:
-        """Determine whether a ballot is open for voting.
-
-        """
+        """Determine whether a ballot is open for voting."""
         timestamp = now()
         return (timestamp > ballot['vote_begin']
                 and (timestamp < ballot['vote_end']
@@ -523,9 +521,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     def process_signup(self, rs: RequestState, assembly_id: int,
                        persona_id: int = None) -> None:
-        """Helper to actually perform signup.
-
-        """
+        """Helper to actually perform signup."""
         if persona_id:
             secret = self.assemblyproxy.external_signup(
                 rs, assembly_id, persona_id)
@@ -1581,9 +1577,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     @assembly_guard
     def edit_candidates(self, rs: RequestState, assembly_id: int,
                         ballot_id: int) -> Response:
-        """Create, edit and delete candidates of ballot.
-
-        """
+        """Create, edit and delete candidates of a ballot."""
         candidates = process_dynamic_input(
             rs, rs.ambience['ballot']['candidates'].keys(),
             {'shortname': vtypes.RestrictiveIdentifier, 'title': str})

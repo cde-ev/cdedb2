@@ -840,7 +840,6 @@ class CdEFrontend(AbstractUserFrontend):
 
         The ``data`` parameter contains all extra information assembled
         during processing of a POST request.
-
         """
         data = data or {}
         merge_dicts(rs.values, data)
@@ -1482,8 +1481,8 @@ class CdEFrontend(AbstractUserFrontend):
             'persona_id': rs.ambience['lastschrift']['persona_id']})
 
     def _calculate_payment_date(self) -> datetime.date:
-        """Helper to calculate a payment date that is a valid TARGET2 bankday.
-
+        """Helper to calculate a payment date that is a valid TARGET2
+        bankday.
         """
         payment_date = now().date() + self.conf["SEPA_PAYMENT_OFFSET"]
 

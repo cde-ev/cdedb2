@@ -604,7 +604,6 @@ class EventFrontend(AbstractUserFrontend):
 
         Since this covers a variable number of rows, we cannot do this
         statically. This takes care of validation too.
-
         """
         parts = rs.ambience['event']['parts']
         fee_modifiers = rs.ambience['event']['fee_modifiers']
@@ -3831,7 +3830,6 @@ class EventFrontend(AbstractUserFrontend):
         ``proxy.set_questionnaire(proxy.get_questionnaire())`` fails since
         the retrieval method provides additional information which not
         settable and thus filtered by this method.
-
         """
         whitelist = ('field_id', 'title', 'info', 'input_size', 'readonly',
                      'default_value', 'kind')

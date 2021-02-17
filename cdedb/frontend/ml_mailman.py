@@ -31,7 +31,6 @@ def template_url(name: str) -> str:
 
     The handling of templates in mailman is a bit tricky involving a
     separate URI for each template which we construct here.
-
     """
     return "https://db.cde-ev.de/mailman_templates/{}".format(name)
 

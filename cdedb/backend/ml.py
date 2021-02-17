@@ -71,7 +71,6 @@ class MlBackend(AbstractBackend):
         """Check if the user is a relevant admin for a mailinglist.
 
         Exactly one of the inputs should be provided.
-
         """
         if mailinglist is None:
             if mailinglist_id is None:
@@ -121,7 +120,6 @@ class MlBackend(AbstractBackend):
     def get_available_types(self, rs: RequestState,
                             ) -> Set[const.MailinglistTypes]:
         """Get a list of MailinglistTypes, the user is allowed to manage.
-
         """
         ret = {enum_member for enum_member, atype in ml_type.TYPE_MAP.items()
                if atype.is_relevant_admin(rs.user)}
@@ -146,7 +144,6 @@ class MlBackend(AbstractBackend):
 
         If the mailinglist is available to the caller, they should pass it,
         otherwise it will be retrieved from the database.
-
         """
         # TODO put these checks in an atomizer?
         if mailinglist is None and mailinglist_id is None:
@@ -271,7 +268,6 @@ class MlBackend(AbstractBackend):
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
-
         """
         mailinglist_ids = affirm_set(vtypes.ID, mailinglist_ids or set())
         if not (self.is_admin(rs) or (mailinglist_ids
@@ -290,7 +286,6 @@ class MlBackend(AbstractBackend):
                              query: Query) -> Tuple[CdEDBObject, ...]:
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
-
         """
         query = affirm(Query, query)
         if query.scope == "qview_persona":
@@ -1179,7 +1174,6 @@ class MlBackend(AbstractBackend):
 
         Manual implementation of singularization of
         `get_subscription_addresses`, to make sure the parameters work.
-
         """
 
         if persona_id == rs.user.persona_id:
@@ -1210,7 +1204,6 @@ class MlBackend(AbstractBackend):
         """Get all confirmed email addresses for a user.
 
         This includes all subscription addresses as well as the username.
-
         """
         query = ("SELECT DISTINCT address FROM ml.subscription_addresses "
                  "WHERE persona_id = %s")
@@ -1224,7 +1217,6 @@ class MlBackend(AbstractBackend):
     def is_subscribed(self, rs: RequestState, persona_id: int,
                       mailinglist_id: int) -> bool:
         """Sugar coating around :py:meth:`get_user_subscriptions`.
-
         """
         # validation is done inside
         sub_states = const.SubscriptionStates.subscribing_states()

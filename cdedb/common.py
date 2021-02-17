@@ -273,7 +273,6 @@ class RequestState:
 
         This does not cause the validation tracking to register a
         successful check.
-
         """
         return self._errors
 
@@ -1043,15 +1042,12 @@ class AgeClasses(enum.IntEnum):
     u14 = 4  #: less than 14 years old
 
     def is_minor(self) -> bool:
-        """Checks whether a legal guardian is required.
-
-        """
+        """Checks whether a legal guardian is required."""
         return self in {AgeClasses.u14, AgeClasses.u16, AgeClasses.u18}
 
     def may_mix(self) -> bool:
         """Whether persons of this age may be legally accomodated in a mixed
         lodging together with the opposite gender.
-
         """
         return self in {AgeClasses.full, AgeClasses.u18}
 
@@ -1265,9 +1261,8 @@ class TransactionType(enum.IntEnum):
                         }
 
     def old(self) -> str:
-        """
-        Return a string representation compatible with the old excel style.
-
+        """Return a string representation compatible with the old excel
+        style.
         """
         if self == TransactionType.MembershipFee:
             return "Mitgliedsbeitrag"

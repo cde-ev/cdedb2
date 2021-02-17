@@ -2794,8 +2794,6 @@ def _lodgement(
 def _by_field_datatype(
     val: Any, argname: str = None, *, kind: FieldDatatypes, **kwargs: Any
 ) -> ByFieldDatatype:
-    """
-    """
     kind = FieldDatatypes(kind)
     # using Any seems fine, otherwise this would need a big Union
     val: Any = _ALL_TYPED[
@@ -2818,8 +2816,6 @@ def _questionnaire(
     argname: str = "questionnaire",
     **kwargs: Any
 ) -> Questionnaire:
-    """
-    """
 
     val = _mapping(val, argname, **kwargs)
 
@@ -2912,8 +2908,6 @@ def _json(
 
     This is a bit different from many other validatiors in that it is not
     idempotent.
-
-
     """
     if not _convert:
         raise RuntimeError("This is a conversion by definition.")
