@@ -1535,8 +1535,6 @@ class CoreBackend(AbstractBackend):
         """Return a persona from the attic to activity.
 
         This does nothing but flip the archiving bit.
-
-        :returns: default return code
         """
         persona_id = affirm(vtypes.ID, persona_id)
         with Atomizer(rs):
@@ -1562,9 +1560,6 @@ class CoreBackend(AbstractBackend):
         However we do not entirely delete the entry since this would
         cause havock in other areas (like assemblies), we only
         anonymize the entry by removing all identifying information.
-
-        :returns: default return code
-
         """
         persona_id = affirm(vtypes.ID, persona_id)
         with Atomizer(rs):
@@ -2618,7 +2613,8 @@ class CoreBackend(AbstractBackend):
         return unwrap(data) if data else None
 
     @access("anonymous")
-    def genesis_verify(self, rs: RequestState, case_id: int) -> Tuple[int, str]:
+    def genesis_verify(self, rs: RequestState, case_id: int
+                       ) -> Tuple[DefaultReturnCode, str]:
         """Confirm the new email address and proceed to the next stage.
 
         Returning the realm is a conflation caused by lazyness, but before

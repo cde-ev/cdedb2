@@ -416,8 +416,6 @@ class MlBackend(AbstractBackend):
         A complete set must be passed, which will superseed the current set.
 
         Contrary to `set_mailinglist` this may be used by moderators.
-
-        :returns: default return code
         """
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
         moderators = affirm_set(vtypes.ID, moderators)
@@ -467,8 +465,6 @@ class MlBackend(AbstractBackend):
         A complete set must be passed, which will superseed the current set.
 
         Contrary to `set_mailinglist` this may be used by moderators.
-
-        :returns: default return code
         """
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
         whitelist = affirm_set(str, whitelist)
@@ -535,8 +531,6 @@ class MlBackend(AbstractBackend):
         This requires different levels of access depending on what change is
         made. Most attributes of the mailinglist may set by moderators, but for
         some you need admin privileges.
-
-        :returns: default return code
         """
         data = affirm(vtypes.Mailinglist, data)
 
@@ -691,7 +685,6 @@ class MlBackend(AbstractBackend):
 
         :param cascade: Specify which deletion blockers to cascadingly
             remove or ignore. If None or empty, cascade none.
-        :returns: default return code
         """
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
         if not self.is_relevant_admin(rs, mailinglist_id=mailinglist_id):
@@ -916,8 +909,6 @@ class MlBackend(AbstractBackend):
                                  persona_id: int, email: str,
                                  ) -> DefaultReturnCode:
         """Change or add a subscription address.
-
-        :return: Default return code.
         """
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
         persona_id = affirm(vtypes.ID, persona_id)
@@ -945,10 +936,7 @@ class MlBackend(AbstractBackend):
     @access("ml")
     def remove_subscription_address(self, rs: RequestState, mailinglist_id: int,
                                     persona_id: int) -> DefaultReturnCode:
-        """Remove a subscription address.
-
-        :return: Default return code.
-        """
+        """Remove a subscription address."""
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
         persona_id = affirm(vtypes.ID, persona_id)
 
@@ -1230,8 +1218,6 @@ class MlBackend(AbstractBackend):
         """This takes care of writing implicit subscriptions to the db.
 
         This also checks the integrity of existing subscriptions.
-
-        :return: default return code.
         """
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
 
