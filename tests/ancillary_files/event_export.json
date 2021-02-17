@@ -966,7 +966,7 @@
             "id": 25,
             "course_id": 5,
             "track_id": 1
-        }, 
+        },
         "29": {
             "course_id": 1,
             "id": 29,
@@ -1197,7 +1197,7 @@
             "is_searchable": false,
             "is_archived": false,
             "is_purged": false,
-            "country": "Deutschland",
+            "country": "Germany",
             "username": "emilia@example.cde",
             "gender": 1,
             "telephone": "+49 (5432) 555666777",

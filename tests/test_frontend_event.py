@@ -93,7 +93,7 @@ class TestEventFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Emilia E. Eventis")
         self.assertPresence("(Zelda)", div='personal-information')
-        self.assertPresence("Hyrule", div='address')
+        self.assertPresence("Haiti", div='address')
 
     @as_users("annika", "ferdinand")
     def test_adminchangeuser(self, user: CdEDBObject) -> None:
@@ -153,7 +153,7 @@ class TestEventFrontend(FrontendTest):
             "address_supplement": "on the left",
             "postal_code": "12345",
             "location": "Lynna",
-            "country": "Hyrule",
+            "country": "Haiti",
             "notes": "some talk",
         }
         f = self.response.forms['newuserform']

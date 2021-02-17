@@ -66,8 +66,8 @@
                                     aclass="genesis-realm-specific") }}
             {{ util.form_input_text(name="location", label=gettext("City"), small=True,
                                     aclass="genesis-realm-specific") }}
-            {{ util.form_input_text(name="country", label=gettext("Country"), small=True,
-                                    aclass="genesis-realm-specific") }}
+            {{ util.form_input_select(name="country", label=gettext("Country"), entries=COUNTRY_NAMES, small=True,
+                                      aclass="genesis-realm-specific") }}
 
             <script nonce="{{ csp_nonce }}">
                 var $select = $('#realm-select');

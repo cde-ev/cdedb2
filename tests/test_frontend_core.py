@@ -455,11 +455,11 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
         f['location2'] = "Hyrule"
-        f['country2'] = "Arcadia"
+        f['country2'] = "Argentina"
         f['specialisation'] = "Okarinas"
         self.submit(f)
         self.assertTitle("{} {}".format(user['given_names'], user['family_name']))
-        self.assertPresence("Hyrule", div='address2')
+        self.assertPresence("Haiti", div='address2')
         self.assertPresence("Okarinas", div='additional')
         self.assertPresence("(Zelda)", div='personal-information')
 
@@ -1575,7 +1575,7 @@ class TestCoreFrontend(FrontendTest):
     EVENT_GENESIS_DATA.update({
         'realm': "event", 'gender': const.Genders.female.value,
         'birthday': "1987-06-05", 'address': "An der Eiche", 'postal_code': "12345",
-        'location': "Marcuria", 'country': "Arkadien"
+        'location': "Marcuria", 'country': "Antarctica"
     })
 
     CDE_GENESIS_DATA = EVENT_GENESIS_DATA.copy()
@@ -1869,7 +1869,7 @@ class TestCoreFrontend(FrontendTest):
         f['postal_code'] = "Z-12345"
         self.submit(f, check_notification=False)
         self.assertPresence("Ungültige Postleitzahl.")
-        f['country'] = "Arkadien"
+        f['country'] = "Antarctica"
         self.submit(f)
 
     def test_genesis_birthday(self) -> None:
@@ -1917,10 +1917,10 @@ class TestCoreFrontend(FrontendTest):
         f['address'] = "An der Eiche"
         f['postal_code'] = "12345"
         f['location'] = "Marcuria"
-        f['country'] = "Arkadien"
+        f['country'] = "Antarctica"
         self.submit(f)
         self.assertPresence("An der Eiche", div='address')
-        self.assertPresence("Arkadien", div='address')
+        self.assertPresence("Antarctica", div='address')
 
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['genesismodifyform']
