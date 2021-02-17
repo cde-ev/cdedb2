@@ -34,7 +34,7 @@ from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, access, basic_redirect,
     calculate_db_logparams, calculate_loglinks, check_validation as check,
     check_validation_optional as check_optional, date_filter, enum_entries_filter,
-    make_membership_fee_reference, periodic, querytoparams_filter,
+    make_membership_fee_reference, markdown_parse_safe, periodic, querytoparams_filter,
     request_dict_extractor, request_extractor,
 )
 from cdedb.query import QUERY_SPECS, Query, QueryOperators, mangle_query_input
@@ -349,6 +349,14 @@ class CoreFrontend(AbstractFrontend):
             ",".join(enabled_views & ALL_ADMIN_VIEWS),
             expires=now() + datetime.timedelta(days=10 * 365))
         return response
+
+    @access("ml")
+    @REQUESTdata("md_str")
+    def markdown_parse(self, rs: RequestState, md_str: str) -> Response:
+        if rs.has_validation_errors():
+            return Response("", mimetype='text/plain')
+        html_str = markdown_parse_safe(md_str)
+        return Response(html_str, mimetype='text/plain')
 
     @access("member")
     @REQUESTdata("#confirm_id")
