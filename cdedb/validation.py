@@ -1990,7 +1990,6 @@ def _institution(
     """
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
-    :rtype: (dict or None, [(str or None, exception)])
     """
     val = _mapping(val, argname, **kwargs)
 
@@ -2796,7 +2795,6 @@ def _by_field_datatype(
     val: Any, argname: str = None, *, kind: FieldDatatypes, **kwargs: Any
 ) -> ByFieldDatatype:
     """
-    :type kind: FieldDatatypes or int
     """
     kind = FieldDatatypes(kind)
     # using Any seems fine, otherwise this would need a big Union
@@ -2821,7 +2819,6 @@ def _questionnaire(
     **kwargs: Any
 ) -> Questionnaire:
     """
-    :type field_definitions: Dict[int, Dict]
     """
 
     val = _mapping(val, argname, **kwargs)
@@ -2916,7 +2913,6 @@ def _json(
     This is a bit different from many other validatiors in that it is not
     idempotent.
 
-    :rtype: (dict or None, [(str or None, exception)])
 
     """
     if not _convert:

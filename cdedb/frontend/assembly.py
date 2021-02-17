@@ -49,8 +49,6 @@ class AssemblyFrontend(AbstractUserFrontend):
     def is_ballot_voting(ballot: Dict[str, Any]) -> bool:
         """Determine whether a ballot is open for voting.
 
-        :type ballot: {str: object}
-        :rtype: bool
         """
         timestamp = now()
         return (timestamp > ballot['vote_begin']
@@ -527,10 +525,6 @@ class AssemblyFrontend(AbstractUserFrontend):
                        persona_id: int = None) -> None:
         """Helper to actually perform signup.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type assembly_id: int
-        :type persona_id: int or None
-        :rtype: None
         """
         if persona_id:
             secret = self.assemblyproxy.external_signup(
@@ -658,8 +652,6 @@ class AssemblyFrontend(AbstractUserFrontend):
                                  CdEDBObjectMap, CdEDBObjectMap]:
         """Helper to group ballots by status.
 
-        :type ballots: {int: str}
-        :rtype: tuple({int: str})
         :returns: Four dicts mapping ballot ids to ballots grouped by status
           in the order done, extended, current, future.
         """
@@ -1591,9 +1583,6 @@ class AssemblyFrontend(AbstractUserFrontend):
                         ballot_id: int) -> Response:
         """Create, edit and delete candidates of ballot.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type assembly_id: int
-        :type ballot_id: int
         """
         candidates = process_dynamic_input(
             rs, rs.ambience['ballot']['candidates'].keys(),

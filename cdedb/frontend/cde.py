@@ -649,12 +649,6 @@ class CdEFrontend(AbstractUserFrontend):
                                 sendmail: bool) -> Tuple[bool, Optional[int]]:
         """Resolve all entries in the batch admission form.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type data: [{str: object}]
-        :type trial_membership: bool
-        :type consent: bool
-        :type sendmail: bool
-        :rtype: bool, int
         :returns: Success information and for positive outcome the
           number of created accounts or for negative outcome the line
           where an exception was triggered or None if it was a DB
@@ -720,9 +714,6 @@ class CdEFrontend(AbstractUserFrontend):
         This is separate from the detection of existing accounts, and
         can happen because of some human error along the way.
 
-        :type ds1: {str: object}
-        :type ds2: {str: object}
-        :rtype: str
         :returns: One of "high", "medium" and "low" indicating similarity.
         """
         score = 0
@@ -850,9 +841,6 @@ class CdEFrontend(AbstractUserFrontend):
         The ``data`` parameter contains all extra information assembled
         during processing of a POST request.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type data: {str: obj} or None
-        :type params: {str: obj} or None
         """
         data = data or {}
         merge_dicts(rs.values, data)
@@ -1105,9 +1093,6 @@ class CdEFrontend(AbstractUserFrontend):
 
         We test for fitness of the data itself.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type datum: {str: object}
-        :rtype: {str: object}
         :returns: The processed input datum.
         """
         amount, problems = validate_check(
@@ -1499,7 +1484,6 @@ class CdEFrontend(AbstractUserFrontend):
     def _calculate_payment_date(self) -> datetime.date:
         """Helper to calculate a payment date that is a valid TARGET2 bankday.
 
-        :rtype: datetime.date
         """
         payment_date = now().date() + self.conf["SEPA_PAYMENT_OFFSET"]
 
@@ -1543,11 +1527,8 @@ class CdEFrontend(AbstractUserFrontend):
         participating members. Here we do all the dirty work to conform
         to the standard and produce an acceptable output.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type transactions: [{str: object}]
         :param transactions: Transaction infos from the backend enriched by
           some additional attributes which are necessary.
-        :rtype: str
         """
         sanitized_transactions = check(
             rs, vtypes.SepaTransactions, transactions)

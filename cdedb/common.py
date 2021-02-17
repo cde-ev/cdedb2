@@ -159,11 +159,9 @@ class RequestState:
         """
         :param mapadapter: URL generator (specific for this request)
         :param requestargs: verbatim copy of the arguments contained in the URL
-        :type values: {str: object}
         :param values: Parameter values extracted via :py:func:`REQUESTdata`
           and :py:func:`REQUESTdatadict` decorators, which allows automatically
           filling forms in.
-        :type lang: str
         :param lang: language code for i18n, currently only 'de' and 'en' are
             valid.
         :param coders: Functions for encoding and decoding parameters primed
@@ -276,7 +274,6 @@ class RequestState:
         This does not cause the validation tracking to register a
         successful check.
 
-        :rtype: [(str, Exception)]
         """
         return self._errors
 
@@ -1048,7 +1045,6 @@ class AgeClasses(enum.IntEnum):
     def is_minor(self) -> bool:
         """Checks whether a legal guardian is required.
 
-        :rtype: bool
         """
         return self in {AgeClasses.u14, AgeClasses.u16, AgeClasses.u18}
 
@@ -1056,7 +1052,6 @@ class AgeClasses(enum.IntEnum):
         """Whether persons of this age may be legally accomodated in a mixed
         lodging together with the opposite gender.
 
-        :rtype: bool
         """
         return self in {AgeClasses.full, AgeClasses.u18}
 
@@ -1273,7 +1268,6 @@ class TransactionType(enum.IntEnum):
         """
         Return a string representation compatible with the old excel style.
 
-        :rtype: str
         """
         if self == TransactionType.MembershipFee:
             return "Mitgliedsbeitrag"
@@ -1426,7 +1420,6 @@ def diacritic_patterns(s: str, two_way_replace: bool = False) -> str:
       This can be used to search for occurences of names stored
       in the db within input, that may not contain proper diacritics
       (e.g. it may be constrained to ASCII).
-    :rtype: str or None
     """
     if s is None:
         raise ValueError(f"Cannot apply diacritic patterns to {s!r}.")
