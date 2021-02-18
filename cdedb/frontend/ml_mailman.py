@@ -61,8 +61,8 @@ class MailmanMixin(MlBaseFrontend):
             'dmarc_mitigate_action': 'wrap_message',
             'dmarc_mitigate_unconditionally': False,
             'dmarc_wrapped_message_text': (
-                "Diese Nachricht wurde mit abgeänderter Senderadresse weitergeleitet,"
-                " da die DMARC-Sicherheitsrichtlinien des urspünglichen Mailproviders"
+                "Diese Nachricht wurde mit modifizierter Senderadresse weitergeleitet,"
+                " da die DMARC-Sicherheitsrichtlinien des initialen Mailproviders"
                 " mit Maillinglisten inkompatibel sind."),
             'administrivia': True,
             'member_roster_visibility': 'moderators',
