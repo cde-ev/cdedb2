@@ -378,7 +378,7 @@ class CdEDBTest(BasicTest):
 
     def setUp(self) -> None:
         # Start the call in a new session, so that a SIGINT does not interrupt this.
-        subprocess.check_call(("make", "sample-data-test-shallow"),
+        subprocess.check_call(("make", "sql-test-shallow"),
                               stdout=subprocess.DEVNULL,
                               stderr=subprocess.DEVNULL,
                               start_new_session=True)

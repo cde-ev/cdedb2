@@ -1,23 +1,18 @@
 SHELL := /bin/bash
 
-.PHONY: help doc sample-data sample-data-test sample-data-test-shallow sql \
-	sql-test sql-test-shallow lint check single-check .coverage coverage \
-	dump-html validate-html \
-	i18n-extract i18n-update i18n-compile i18n-refresh
+.PHONY: help doc sample-data sample-data-test sql sql-test sql-test-shallow lint check single-check \
+	.coverage coverage dump-html validate-html i18n-extract i18n-update i18n-compile i18n-refresh
 
 help:
 	@echo "doc -- build documentation"
 	@echo "reload -- re-compile GNU gettext data and trigger WSGI worker reload"
 	@echo "sample-data -- initialize database structures (DESTROYES DATA!)"
 	@echo "sample-data-test -- initialize database structures for test suite"
-	@echo "sample-data-test-shallow -- initialize database structures for test suite"
-	@echo "                            (this is a fast version of sample-data-test,"
-	@echo "                             can be substituted after sample-data-test was"
-	@echo "                             executed)"
 	@echo "sql -- initialize postgres (use sample-data instead)"
 	@echo "sql-test -- initialize postgres for test suite (use sample-data-test instead)"
-	@echo "sql-test-shallow -- reset postgres for test suite"
-	@echo "                    (use sample-data-test-shallow instead)"
+	@echo "sql-test-shallow -- reset database structures for test suite"
+	@echo "                    (this is a fast version of sample-data-test, can be substituted"
+	@echo "						sample-data-test was executed)"
 	@echo "lint -- run linters (mainly pylint)"
 	@echo "check -- run test suite"
 	@echo "         (TESTPATTERN specifies files, e.g. 'test_common.py')"
@@ -86,10 +81,6 @@ sample-data-dump:
 sample-data-test:
 	$(MAKE) storage-test
 	$(MAKE) sql-test
-
-sample-data-test-shallow:
-	$(MAKE) storage-test
-	$(MAKE) sql-test-shallow
 
 sample-data-xss:
 	$(MAKE) sql-xss
