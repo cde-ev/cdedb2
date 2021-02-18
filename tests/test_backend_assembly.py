@@ -843,7 +843,6 @@ class TestAssemblyBackend(BackendTest):
         (title, shortname, description, presider_address, signup_end) VALUES
         ('Umfrage', 'umfrage', 'sagt eure Meinung!', 'umfrage@example.cde',
          date '2111-11-11');""")
-    # TODO: shouldn't this better be placed in test_commmon than here in assembly?
     def test_prepsql(self, user: CdEDBObject) -> None:
         expectation = {
             1: {'id': 1, 'is_active': True,
