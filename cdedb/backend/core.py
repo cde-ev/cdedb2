@@ -2174,9 +2174,9 @@ class CoreBackend(AbstractBackend):
         # add always allowed roles for personas
         allowed_roles |= {"persona", "anonymous"}
         roles = self.get_roles_multi(rs, persona_ids, introspection_only)
-        return len(roles) == len(persona_ids) and all(
-            value >= required_roles for value in roles.values()) and all(
-            allowed_roles >= value for value in roles.values())
+        return (len(roles) == len(persona_ids)
+            and all(value >= required_roles for value in roles.values())
+            and all(allowed_roles >= value for value in roles.values()))
 
     class _VerifyPersonaProtocol(Protocol):
         def __call__(self, rs: RequestState, anid: int,

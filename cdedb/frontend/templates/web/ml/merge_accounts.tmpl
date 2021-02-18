@@ -1,5 +1,5 @@
 {% set sidenav_active='ml_merger' %}
-{% set js_hint='weak' %}
+{% set jshint='weak' %}
 {% extends "web/ml/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 
@@ -22,7 +22,7 @@
         {% trans %}
             This merges an user with only mailinglist (and core) realm ("Source User") into another
             user ("Target User"). After the merging was successfully, the source user will be archived.
-            So, you require Core Admin rights in addition to your Mailinglist Admin rights.
+            So, you need Core Admin rights in addition to your Mailinglist Admin rights.
         {% endtrans %}
     </p>
     <p>

@@ -74,7 +74,7 @@
         {% if 'ml_user' in user.admin_views %}
             <div class="list-group tear-down">
                 {{ util.href(cdedblink("ml/merge_accounts_form"), gettext("Merge Accounts"),
-                        icon="user", aclass="list-group-item", active=(sidenav_active == 'ml_merger')) }}
+                        icon="user-friends", aclass="list-group-item", active=(sidenav_active == 'ml_merger')) }}
             </div>
         {% endif %}
         {% if user.moderator or user.admin_views.intersection(ALL_MGMT_ADMIN_VIEWS) or 'ml_user' in user.admin_views %}

@@ -1443,8 +1443,8 @@ class MlBackend(AbstractBackend):
                        clone_addresses: bool = True) -> DefaultReturnCode:
         """Merge an ml_only account into another persona.
 
-        This takes the source_persona, mirror all subscription states and moderator
-        privileges to the target_persona, and archive the source_persona at last.
+        This takes the source_persona, mirrors all subscription states and moderator
+        privileges to the target_persona, and archives the source_persona at last.
 
         Note that this will abort if both users are related to the same mailinglist.
         This must be solved manually before calling this function.
@@ -1500,13 +1500,14 @@ class MlBackend(AbstractBackend):
 
             ml_overlap = set(source_subscriptions) & set(target_subscriptions)
             if ml_overlap:
-                ml_list = [str(ml) for ml in sorted(ml_overlap)]
+                ml_titles = [e['title']
+                             for e in self.get_mailinglists(rs, ml_overlap).values()]
                 raise ValueError(
                     n_("Both users are related to the same mailinglists: {}".format(
-                        ", ".join(ml_list))))
+                        ", ".join(ml_titles))))
 
             code = 1
-            msg = f"Dieser Account hat User {source_persona_id} geschluckt."
+            msg = f"Nutzer {source_persona_id} ist in diesem Account aufgegangen."
 
             for ml_id, state in source_subscriptions.items():
                 # state=None is only possible, if we handle a set of mailinglists
@@ -1536,7 +1537,8 @@ class MlBackend(AbstractBackend):
                     code *= self.set_subscription_address(
                         rs, ml_id, persona_id=target_persona_id, email=address)
 
-            msg = f"User {source_persona_id} wurde von User {target_persona_id} geschluckt."
+            msg = (f"Der Nutzer {source_persona_id} ist im Nutzer {target_persona_id}"
+                   f" aufgegangen.")
             mls = self.get_mailinglists(rs, source_moderates)
             for ml_id in source_moderates:
                 current_moderators: Set[int] = mls[ml_id]["moderators"]
@@ -1545,7 +1547,7 @@ class MlBackend(AbstractBackend):
 
             # at last, archive the source user
             # this will delete all subscriptions and remove all moderator rights
-            msg = f"User {target_persona_id} hat diesen Account geschluckt."
+            msg = f"Dieser Account ist in Nutzer {target_persona_id} aufgegangen."
             code *= self.core.archive_persona(rs, persona_id=source_persona_id, note=msg)
 
         return code
