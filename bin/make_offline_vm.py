@@ -10,6 +10,7 @@ import argparse
 import collections.abc
 import copy
 import json
+import os
 import pathlib
 import subprocess
 import sys
@@ -104,7 +105,7 @@ def update_event(cur: DictCursor, event: CdEDBObject) -> None:
 
 
 def work(args: argparse.Namespace) -> None:
-    db_name = 'cdb_test' if args.test else 'cdb'
+    db_name = os.environ['TESTDBNAME'] if args.test else 'cdb'
 
     print("Loading exported event")
     with open(args.data_path, encoding='UTF-8') as infile:

@@ -728,7 +728,7 @@ def execsql(sql: AnyStr) -> None:
     """Execute arbitrary SQL-code on the test database."""
     path = pathlib.Path("/tmp/test-cdedb-sql-commands.sql")
     psql = ("/cdedb2/bin/execute_sql_script.py",
-            "--username", "cdb", "--dbname", "cdb_test")
+            "--username", "cdb", "--dbname", os.environ['TESTDBNAME'])
     null = subprocess.DEVNULL
     mode = "w"
     if isinstance(sql, bytes):

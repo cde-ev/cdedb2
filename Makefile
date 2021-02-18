@@ -32,6 +32,7 @@ PYLINT ?= $(PYTHONBIN) -m pylint
 COVERAGE ?= $(PYTHONBIN) -m coverage
 MYPY ?= $(PYTHONBIN) -m mypy
 TESTPREPARATION ?= automatic
+TESTDATABASENAME ?= cdb_test_1
 I18NDIR ?= ./i18n
 
 doc:
@@ -161,33 +162,33 @@ endif
 ifeq ($(wildcard /CONTAINER),/CONTAINER)
 	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-users.sql
 	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb
-	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb_test
+	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-db.sql -v cdb_database_name=${TESTDATABASENAME}
 else
 	sudo systemctl stop pgbouncer
 	sudo -u postgres psql -f cdedb/database/cdedb-users.sql
 	sudo -u postgres psql -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb
-	sudo -u postgres psql -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb_test
+	sudo -u postgres psql -f cdedb/database/cdedb-db.sql -v cdb_database_name=${TESTDATABASENAME}
 	sudo systemctl start pgbouncer
 endif
 	$(PYTHONBIN) bin/execute_sql_script.py -f cdedb/database/cdedb-tables.sql --dbname=cdb
-	$(PYTHONBIN) bin/execute_sql_script.py -f cdedb/database/cdedb-tables.sql --dbname=cdb_test
+	$(PYTHONBIN) bin/execute_sql_script.py -f cdedb/database/cdedb-tables.sql --dbname=${TESTDATABASENAME}
 	$(PYTHONBIN) bin/execute_sql_script.py -f tests/ancillary_files/sample_data.sql --dbname=cdb
-	$(PYTHONBIN) bin/execute_sql_script.py -f tests/ancillary_files/sample_data.sql --dbname=cdb_test
+	$(PYTHONBIN) bin/execute_sql_script.py -f tests/ancillary_files/sample_data.sql --dbname=${TESTDATABASENAME}
 
 sql-test:
 ifeq ($(wildcard /CONTAINER),/CONTAINER)
-	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb_test
+	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-db.sql -v cdb_database_name=${TESTDATABASENAME}
 else
 	sudo systemctl stop pgbouncer
-	sudo -u postgres psql -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb_test
+	sudo -u postgres psql -f cdedb/database/cdedb-db.sql -v cdb_database_name=${TESTDATABASENAME}
 	sudo systemctl start pgbouncer
 endif
-	$(PYTHONBIN) bin/execute_sql_script.py -f cdedb/database/cdedb-tables.sql --dbname=cdb_test
+	$(PYTHONBIN) bin/execute_sql_script.py -f cdedb/database/cdedb-tables.sql --dbname=${TESTDATABASENAME}
 	$(MAKE) sql-test-shallow
 
 sql-test-shallow: tests/ancillary_files/sample_data.sql
-	$(PYTHONBIN) bin/execute_sql_script.py -f tests/ancillary_files/clean_data.sql --dbname=cdb_test
-	$(PYTHONBIN) bin/execute_sql_script.py -f tests/ancillary_files/sample_data.sql --dbname=cdb_test
+	$(PYTHONBIN) bin/execute_sql_script.py -f tests/ancillary_files/clean_data.sql --dbname=${TESTDATABASENAME}
+	$(PYTHONBIN) bin/execute_sql_script.py -f tests/ancillary_files/sample_data.sql --dbname=${TESTDATABASENAME}
 
 sql-xss: tests/ancillary_files/sample_data_escaping.sql
 ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
@@ -198,7 +199,7 @@ ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
 endif
 	$(MAKE) sql
 	$(PYTHONBIN) bin/execute_sql_script.py -f tests/ancillary_files/sample_data_escaping.sql --dbname=cdb
-	$(PYTHONBIN) bin/execute_sql_script.py -f tests/ancillary_files/sample_data_escaping.sql --dbname=cdb_test
+	$(PYTHONBIN) bin/execute_sql_script.py -f tests/ancillary_files/sample_data_escaping.sql --dbname=${TESTDATABASENAME}
 
 cron:
 	sudo -u www-data /cdedb2/bin/cron_execute.py
@@ -236,21 +237,24 @@ else
 endif
 
 check: export CDEDB_TEST=True
+check: export TESTDBNAME=$(TESTDATABASENAME)
 check:
 	$(MAKE) prepare-check
 	$(PYTHONBIN) -m tests.main "$${TESTPATTERN}"
 
 single-check: export CDEDB_TEST=True
+single-check: export TESTDBNAME=$(TESTDATABASENAME)
 single-check:
 	$(MAKE) prepare-check
 	$(PYTHONBIN) -m tests.singular "$${PATTERNS}"
 
 xss-check: export CDEDB_TEST=True
+xss-check: export TESTDBNAME=$(TESTDATABASENAME)
 xss-check:
 	$(MAKE) prepare-check
-	sudo -u cdb psql -U cdb -d cdb_test \
+	sudo -u cdb psql -U cdb -d $(TESTDATABASENAME) \
 		-f tests/ancillary_files/clean_data.sql &>/dev/null
-	sudo -u cdb psql -U cdb -d cdb_test \
+	sudo -u cdb psql -U cdb -d $(TESTDATABASENAME) \
 		-f tests/ancillary_files/sample_data_escaping.sql &>/dev/null
 	$(PYTHONBIN) -m bin.escape_fuzzing 2>/dev/null
 

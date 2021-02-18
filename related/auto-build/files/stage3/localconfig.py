@@ -8,7 +8,7 @@ import pathlib
 
 # check for test environment
 
-CDEDB_TEST = os.environ.get('CDEDB_TEST', '').lower() in ('true', 't')
+CDEDB_TEST = os.environ.get('CDEDB_TEST')
 
 # BasicConfig
 
@@ -48,7 +48,7 @@ MAILMAN_LOG = _LOG_ROOT / "frontend-mailman.log"
 
 if CDEDB_TEST:
     DB_PORT = 6432
-    CDB_DATABASE_NAME = "cdb_test"
+    CDB_DATABASE_NAME = os.environ['TESTDBNAME']
     SERVER_NAME_TEMPLATE = "test_{}_server"
     STORAGE_DIR = pathlib.Path("/tmp/cdedb-store/")
     FRONTEND_LOG = pathlib.Path("/tmp/test-cdedb-frontend.log")
