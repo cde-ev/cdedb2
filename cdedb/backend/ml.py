@@ -1543,7 +1543,9 @@ class MlBackend(AbstractBackend):
             for ml_id in source_moderates:
                 current_moderators: Set[int] = mls[ml_id]["moderators"]
                 new_moderators = current_moderators | {target_persona_id}
-                code *= self.set_moderators(rs, ml_id, new_moderators, change_note=msg)
+                # we do not mind if both users are currently moderator of a mailinglist
+                code *= abs(self.set_moderators(
+                    rs, ml_id, new_moderators, change_note=msg))
 
             # at last, archive the source user
             # this will delete all subscriptions and remove all moderator rights
