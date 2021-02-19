@@ -22,6 +22,7 @@ if __name__ == "__main__":
 
     unittest.installHandler()
     testRunner = MyTextTestRunner(
-        verbosity=2, resultclass=MyTextTestResult, descriptions=False)
+        verbosity=1, resultclass=MyTextTestResult, descriptions=False)
+    # TODO: differentiate verbosity between auto-parallel run and manual run
 
     sys.exit(0 if testRunner.run(all_tests).wasSuccessful() else 1)

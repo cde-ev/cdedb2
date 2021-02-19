@@ -227,17 +227,28 @@ else
 	@echo "Omitting test preparation."
 endif
 
+check-parallel:
+	# TODO: using inverse regex arguments possible? Would be helpful for not overlooking some tests
+	# sleeping is necessary here that the i18n-refresh runs at the very beginning to not interfere
+	TESTDATABASENAME=cdb_test_2 bin/singlecheck.sh test_backend test_common test_config \
+		test_database test_offline test_script test_session test_validation \
+		test_vote_verification & \
+	sleep 0.5; TESTDATABASENAME=cdb_test_3 bin/singlecheck.sh frontend_application \
+		frontend_assembly frontend_common frontend_core frontend_cde frontend_cron & \
+	sleep 0.5; TESTDATABASENAME=cdb_test_4 bin/singlecheck.sh frontend_event frontend_ml \
+		frontend_privacy frontend_parse
+
 check: export CDEDB_TEST=True
 check: export TESTDBNAME=$(TESTDATABASENAME)
 check:
 	$(MAKE) prepare-check
-	$(PYTHONBIN) -m tests.main "$${TESTPATTERN}"
+	$(PYTHONBIN) -m tests.main "${TESTPATTERN}"
 
 single-check: export CDEDB_TEST=True
 single-check: export TESTDBNAME=$(TESTDATABASENAME)
 single-check:
 	$(MAKE) prepare-check
-	$(PYTHONBIN) -m tests.singular "$${PATTERNS}"
+	$(PYTHONBIN) -m tests.singular "${PATTERNS}"
 
 xss-check: export CDEDB_TEST=True
 xss-check: export TESTDBNAME=$(TESTDATABASENAME)
