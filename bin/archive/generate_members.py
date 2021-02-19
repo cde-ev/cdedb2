@@ -73,7 +73,7 @@ def user_email(user_id: int) -> str:
 
 
 def create_user(driver: WebDriver, user_id: int) -> str:
-    user_format = '"{academy}";"{course}";"{surname}";"{name}";"";"";"";"2";"";"{street}";"{zip}";"{city}";"Germany";"{phone}";"{mobile}";"{email}";"{birthday}"'
+    user_format = '"{academy}";"{course}";"{surname}";"{name}";"";"";"";"2";"";"{street}";"{zip}";"{city}";"DE";"{phone}";"{mobile}";"{email}";"{birthday}"'
     return user_format.format(academy="ta{:03}".format(user_id % num_academies),
                               course="course {:03}".format(user_id % num_courses_per_academy),
                               surname="Testson",

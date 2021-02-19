@@ -155,7 +155,7 @@ class TestCdEFrontend(FrontendTest):
         f['location2'] = "Hyrule"
         f['specialisation'] = "Okarinas"
         self.submit(f)
-        self.assertPresence("Haiti", div='address2')
+        self.assertPresence("Hyrule", div='address2')
         self.assertPresence("Okarinas", div='additional')
         self.assertEqual(
             "Zelda",
@@ -814,12 +814,12 @@ class TestCdEFrontend(FrontendTest):
             "address_supplement": "on the left",
             "postal_code": "12345",
             "location": "Lynna",
-            "country": "Haiti",
+            "country": "HY",
             "address2": "Ligusterweg 4",
             "address_supplement2": "Im Schrank unter der Treppe",
             "postal_code2": "00AA",
             "location2": "Little Whinging",
-            "country2": "United Kingdom",
+            "country2": "GB",
             "notes": "some talk",
         }
         f = self.response.forms['newuserform']

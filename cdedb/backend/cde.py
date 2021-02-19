@@ -941,7 +941,7 @@ class CdEBackend(AbstractBackend):
         # Members by country.
         params = {
             "name": n_("members_by_country"),
-            "select": "COALESCE(country, 'Germany')",
+            "select": "COALESCE(country, 'DE')",
             "condition": "location",
             "order": "num DESC, datum ASC",
         }

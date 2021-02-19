@@ -1674,72 +1674,26 @@ GERMAN_POSTAL_CODES = {
 
 #: source `https://github.com/umpirsky/country-list/blob/master/data/en/country.csv`
 #:
-#: Copyright (c) Saša Stamenković <umpirsky@gmail.com>
-#:
-#: Permission is hereby granted, free of charge, to any person obtaining a copy
-#: of this software and associated documentation files (the "Software"), to deal
-#: in the Software without restriction, including without limitation the rights
-#: to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-#: copies of the Software, and to permit persons to whom the Software is furnished
-#: to do so, subject to the following conditions:
-#:
-#: The above copyright notice and this permission notice shall be included in all
-#: copies or substantial portions of the Software.
-#:
-#: THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-#: IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-#: FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-#: AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-#: LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-#: OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-#: THE SOFTWARE.
-COUNTRY_NAMES = [
-    "",
-    "Afghanistan", "Åland Islands", "Albania", "Algeria", "American Samoa", "Andorra",
-    "Angola", "Anguilla", "Antarctica", "Antigua & Barbuda", "Argentina", "Armenia",
-    "Aruba", "Australia", "Austria", "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh",
-    "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bermuda", "Bhutan", "Bolivia",
-    "Bosnia & Herzegovina", "Botswana", "Bouvet Island", "Brazil",
-    "British Indian Ocean Territory", "British Virgin Islands", "Brunei", "Bulgaria",
-    "Burkina Faso", "Burundi", "Cambodia", "Cameroon", "Canada", "Cape Verde",
-    "Caribbean Netherlands", "Cayman Islands", "Central African Republic", "Chad",
-    "Chile", "China", "Christmas Island", "Cocos (Keeling) Islands", "Colombia",
-    "Comoros", "Congo - Brazzaville", "Congo - Kinshasa", "Cook Islands", "Costa Rica",
-    "Côte d’Ivoire", "Croatia", "Cuba", "Curaçao", "Cyprus", "Czechia", "Denmark",
-    "Djibouti", "Dominica", "Dominican Republic", "Ecuador", "Egypt", "El Salvador",
-    "Equatorial Guinea", "Eritrea", "Estonia", "Eswatini", "Ethiopia",
-    "Falkland Islands", "Faroe Islands", "Fiji", "Finland", "France", "French Guiana",
-    "French Polynesia", "French Southern Territories", "Gabon", "Gambia", "Georgia",
-    "Germany", "Ghana", "Gibraltar", "Greece", "Greenland", "Grenada", "Guadeloupe",
-    "Guam", "Guatemala", "Guernsey", "Guinea", "Guinea-Bissau", "Guyana", "Haiti",
-    "Heard & McDonald Islands", "Honduras", "Hong Kong SAR China", "Hungary",
-    "Iceland", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Isle of Man",
-    "Israel", "Italy", "Jamaica", "Japan", "Jersey", "Jordan", "Kazakhstan", "Kenya",
-    "Kiribati", "Kuwait", "Kyrgyzstan", "Laos", "Latvia", "Lebanon", "Lesotho",
-    "Liberia", "Libya", "Liechtenstein", "Lithuania", "Luxembourg", "Macao SAR China",
-    "Madagascar", "Malawi", "Malaysia", "Maldives", "Mali", "Malta",
-    "Marshall Islands", "Martinique", "Mauritania", "Mauritius", "Mayotte", "Mexico",
-    "Micronesia", "Moldova", "Monaco", "Mongolia", "Montenegro", "Montserrat",
-    "Morocco", "Mozambique", "Myanmar (Burma)", "Namibia", "Nauru", "Nepal",
-    "Netherlands", "New Caledonia", "New Zealand", "Nicaragua", "Niger", "Nigeria",
-    "Niue", "Norfolk Island", "North Korea", "North Macedonia",
-    "Northern Mariana Islands", "Norway", "Oman", "Pakistan", "Palau",
-    "Palestinian Territories", "Panama", "Papua New Guinea", "Paraguay", "Peru",
-    "Philippines", "Pitcairn Islands", "Poland", "Portugal", "Puerto Rico", "Qatar",
-    "Réunion", "Romania", "Russia", "Rwanda", "Samoa", "San Marino",
-    "São Tomé & Príncipe", "Saudi Arabia", "Senegal", "Serbia", "Seychelles",
-    "Sierra Leone", "Singapore", "Sint Maarten", "Slovakia", "Slovenia",
-    "Solomon Islands", "Somalia", "South Africa",
-    "South Georgia & South Sandwich Islands", "South Korea", "South Sudan", "Spain",
-    "Sri Lanka", "St. Barthélemy", "St. Helena", "St. Kitts & Nevis", "St. Lucia",
-    "St. Martin", "St. Pierre & Miquelon", "St. Vincent & Grenadines", "Sudan",
-    "Suriname", "Svalbard & Jan Mayen", "Sweden", "Switzerland", "Syria", "Taiwan",
-    "Tajikistan", "Tanzania", "Thailand", "Timor-Leste", "Togo", "Tokelau", "Tonga",
-    "Trinidad & Tobago", "Tunisia", "Turkey", "Turkmenistan", "Turks & Caicos Islands",
-    "Tuvalu", "U.S. Outlying Islands", "U.S. Virgin Islands", "Uganda", "Ukraine",
-    "United Arab Emirates", "United Kingdom", "United States", "Uruguay", "Uzbekistan",
-    "Vanuatu", "Vatican City", "Venezuela", "Vietnam", "Wallis & Futuna",
-    "Western Sahara", "Yemen", "Zambia", "Zimbabwe",
+#: County codes according to ISO 3166-1.
+COUNTRY_CODES = [
+    "", "HY",
+    "AF", "AX", "AL", "DZ", "AS", "AD", "AO", "AI", "AQ", "AG", "AR", "AM", "AW", "AT",
+    "AZ", "BS", "BH", "BD", "BB", "BY", "BE", "BZ", "BJ", "BM", "BT", "BO", "BW", "BV",
+    "BR", "IO", "VG", "BN", "BG", "BF", "BI", "KH", "CM", "CA", "CV", "KY", "CF", "TD",
+    "CL", "CN", "CX", "CC", "CO", "KM", "CG", "CD", "CK", "CR", "HR", "CU", "CW", "CY",
+    "CZ", "DK", "DJ", "DM", "DO", "EC", "EG", "SV", "GQ", "EE", "SZ", "ET", "FK", "FO",
+    "FJ", "FI", "FR", "GF", "PF", "TF", "GA", "GM", "DE", "GH", "GI", "GR", "GL", "GD",
+    "GP", "GU", "GT", "GG", "GN", "GW", "GY", "HM", "HN", "HK", "HU", "IS", "IN", "ID",
+    "IR", "IQ", "IE", "IM", "IL", "IT", "JP", "JE", "JO", "KZ", "KE", "KI", "KW", "KG",
+    "LA", "LV", "LB", "LS", "LR", "LI", "LT", "LU", "MO", "MG", "MW", "MY", "MV", "ML",
+    "MT", "MH", "MQ", "MR", "YT", "MX", "FM", "MD", "MC", "MN", "ME", "MS", "MA", "MZ",
+    "MM", "NA", "NR", "NL", "NC", "NZ", "NI", "NE", "NG", "NU", "NF", "KP", "MK", "MP",
+    "NO", "OM", "PW", "PS", "PA", "PG", "PY", "PE", "PH", "PN", "PL", "PT", "PR", "QA",
+    "RE", "RU", "RW", "WS", "SM", "ST", "SA", "SN", "RS", "SC", "SL", "SG", "SX", "SK",
+    "SB", "SO", "ZA", "GS", "KR", "SS", "ES", "LK", "BL", "SH", "KN", "LC", "MF", "VC",
+    "SD", "SR", "SJ", "SE", "CH", "SY", "TW", "TJ", "TZ", "TH", "TL", "TG", "TO", "TT",
+    "TN", "TR", "TM", "TC", "TV", "UM", "VI", "UG", "UA", "AE", "GB", "UY", "UZ", "VU",
+    "VA", "VE", "VN", "WF", "EH", "YE", "ZM", "ZW",
 ]
 
 # source:

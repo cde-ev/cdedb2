@@ -85,7 +85,7 @@ from cdedb.query import (
     QueryOrder,
 )
 from cdedb.validationdata import (
-    COUNTRY_NAMES, FREQUENCY_LISTS, GERMAN_PHONE_CODES, GERMAN_POSTAL_CODES,
+    COUNTRY_CODES, FREQUENCY_LISTS, GERMAN_PHONE_CODES, GERMAN_POSTAL_CODES,
     IBAN_LENGTHS, ITU_CODES,
 )
 from cdedb.validationtypes import *  # pylint: disable=wildcard-import,unused-wildcard-import; # noqa
@@ -1398,7 +1398,7 @@ def _german_postal_code(
     val = _printable_ascii(
         val, argname, _ignore_warnings=_ignore_warnings, **kwargs)
     val = val.strip()
-    if not aux or aux.strip() == "Germany":
+    if not aux or aux.strip() == "DE":
         if val not in GERMAN_POSTAL_CODES and not _ignore_warnings:
             raise ValidationSummary(
                 ValidationWarning(argname, n_("Invalid german postal code.")))
@@ -1418,10 +1418,11 @@ def _country(
         val, argname, _ignore_warnings=_ignore_warnings, **kwargs)
     if val:
         val = val.strip()
-        # TODO: Remove ignore_warnings after legacy is removed
-        if val not in COUNTRY_NAMES and not _ignore_warnings:
-            raise ValidationSummary(
-                ValidationWarning(argname, n_("Enter actual country name in English.")))
+        if val not in COUNTRY_CODES:
+            if not val != "HY":
+                # TODO: Config is not available here?
+                raise ValidationSummary(ValidationWarning(
+                    argname, n_("Enter actual country name in English.")))
     return Country(val)
 
 

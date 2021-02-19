@@ -305,7 +305,7 @@ class TestCoreBackend(BackendTest):
             'address': "An der Eiche",
             'postal_code': "12345",
             'location': "Marcuria",
-            'country': "Antarctica",
+            'country': "AQ",
             'birth_name': None,
             'address_supplement2': None,
             'address2': None,
@@ -359,7 +359,7 @@ class TestCoreBackend(BackendTest):
             'address': "An der Eiche",
             'postal_code': "12345",
             'location': "Marcuria",
-            'country': "Antarctica",
+            'country': "AQ",
         })
         new_id = self.core.create_persona(self.key, data)
         data["id"] = new_id
@@ -421,7 +421,7 @@ class TestCoreBackend(BackendTest):
             'address': "An der Eiche",
             'postal_code': "12345",
             'location': "Marcuria",
-            'country': "Antarctica",
+            'country': "AQ",
         })
         new_id = self.core.create_persona(self.key, data)
         data["id"] = new_id
@@ -591,7 +591,7 @@ class TestCoreBackend(BackendTest):
             'address': "An der Eiche",
             'postal_code': "12345",
             'location': "Marcuria",
-            'country': "Antarctica",
+            'country': "AQ",
         }
         case_id = self.core.genesis_request(ANONYMOUS, data)
         self.assertGreater(case_id, 0)
@@ -744,7 +744,7 @@ class TestCoreBackend(BackendTest):
             'address': "An der Eiche",
             'postal_code': "12345",
             'location': "Marcuria",
-            'country': "Antarctica",
+            'country': "AQ",
             'attachment': attachment_hash,
         }
         self.assertFalse(self.core.genesis_attachment_usage(
@@ -926,7 +926,7 @@ class TestCoreBackend(BackendTest):
             'balance': decimal.Decimal('12.50'),
             'birth_name': 'Gemeinser',
             'bub_search': True,
-            'country2': 'United Kingdom',
+            'country2': 'GB',
             'decided_search': True,
             'foto': 'e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbe'
                     'c03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9',

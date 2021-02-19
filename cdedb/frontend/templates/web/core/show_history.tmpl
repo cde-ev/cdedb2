@@ -231,7 +231,7 @@
                     {{ entries[c]['address_supplement'] }}{% if entries[c]['address_supplement'] %}<br />{% endif %}
                     {{ entries[c]['postal_code'] }} {{ entries[c]['location'] }}
                     {% if entries[c]['location'] %}<br />{% endif %}
-                    {{ entries[c]['country'] }}
+                    {{ gettext(entries[c]['country']) }}
                 {% endcall %}
             {% endcall %}
         {% endif %}
@@ -244,7 +244,7 @@
                     {{ entries[c]['address_supplement2'] }}{% if entries[c]['address_supplement2'] %}<br />{% endif %}
                     {{ entries[c]['postal_code2'] }} {{ entries[c]['location2'] }}
                     {% if entries[c]['location2'] %}<br />{% endif %}
-                    {{ entries[c]['country2'] }}
+                    {{ gettext(entries[c]['country2']) }}
                 {% endcall %}
             {% endcall %}
         {% endif %}

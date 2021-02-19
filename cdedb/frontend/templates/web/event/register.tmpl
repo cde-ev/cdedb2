@@ -86,7 +86,7 @@
             <dt>{% trans %}City{% endtrans %}</dt>
             <dd>{{ persona['postal_code'] }} {{ persona['location'] }}</dd>
             <dt>{% trans %}Country{% endtrans %}</dt>
-            <dd>{{ persona['country'] }}</dd>
+            <dd>{{ gettext(persona['country']) }}</dd>
         </dl>
         <p>
             {% trans link=util.href(cdedblink('core/change_user'), gettext("form to edit your profile")) %}

@@ -78,7 +78,7 @@
             {{ util.form_input_text(name="address_supplement", label=gettext("Address Supplement")) }}
             {{ util.form_input_text(name="postal_code", label=gettext("Zipcode")) }}
             {{ util.form_input_text(name="location", label=gettext("City")) }}
-            {{ util.form_input_select(name="country", label=gettext("Country"), entries=COUNTRY_NAMES) }}
+            {{ util.form_input_select(name="country", label=gettext("Country"), entries=COUNTRY_CODES) }}
         {% endif %}
         {% if "address2" in shown_fields and 'cde' in admin_bits %}
             <h4 class="heading-underline">{% trans %}Second Address{% endtrans %}</h4>
@@ -92,7 +92,7 @@
             {{ util.form_input_text(name="address_supplement2", label=gettext("Address Supplement")) }}
             {{ util.form_input_text(name="postal_code2", label=gettext("Zipcode")) }}
             {{ util.form_input_text(name="location2", label=gettext("City")) }}
-            {{ util.form_input_select(name="country2", label=gettext("Country"), entries=COUNTRY_NAMES) }}
+            {{ util.form_input_select(name="country2", label=gettext("Country"), entries=COUNTRY_CODES) }}
         {% endif %}
 
         {% if "specialisation" in shown_fields and 'cde' in admin_bits %}

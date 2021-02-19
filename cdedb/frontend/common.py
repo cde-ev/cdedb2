@@ -84,7 +84,7 @@ from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.devsamples import HELD_MESSAGE_SAMPLE
 from cdedb.enums import ENUMS_DICT
-from cdedb.validationdata import COUNTRY_NAMES
+from cdedb.validationdata import COUNTRY_CODES
 
 _LOGGER = logging.getLogger(__name__)
 _BASICCONF = BasicConfig()
@@ -916,7 +916,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'I18N_LANGUAGES': self.conf["I18N_LANGUAGES"],
             'ALL_MOD_ADMIN_VIEWS': ALL_MOD_ADMIN_VIEWS,
             'ALL_MGMT_ADMIN_VIEWS': ALL_MGMT_ADMIN_VIEWS,
-            'COUNTRY_NAMES': [(v, v) for v in COUNTRY_NAMES],
             'EntitySorter': EntitySorter,
             'roles_allow_genesis_management':
                 lambda roles: roles & ({'core_admin'} | set(
@@ -1071,6 +1070,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         # here come the always accessible things promised above
         data = {
+            'COUNTRY_CODES': [(v, rs.gettext(v)) for v in COUNTRY_CODES],
             'ambience': rs.ambience,
             'cdedblink': _cdedblink,
             'doclink': _doclink,

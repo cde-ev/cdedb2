@@ -71,7 +71,7 @@
             % PLZ, Ort (Land)
             <<< personas[registration['persona_id']]['postal_code']|te >>>
             <<< personas[registration['persona_id']]['location']|te >>>
-            <<% if personas[registration['persona_id']]['country'] != "Germany" -%>>
+            <<% if personas[registration['persona_id']]['country'] != "DE" -%>>
                 <<<- personas[registration['persona_id']]['country']|te ->>>
             <<% endif -%>>
             % Kurse
