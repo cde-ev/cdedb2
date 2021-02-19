@@ -47,11 +47,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     @staticmethod
     def is_ballot_voting(ballot: Dict[str, Any]) -> bool:
-        """Determine whether a ballot is open for voting.
-
-        :type ballot: {str: object}
-        :rtype: bool
-        """
+        """Determine whether a ballot is open for voting."""
         timestamp = now()
         return (timestamp > ballot['vote_begin']
                 and (timestamp < ballot['vote_end']
@@ -525,13 +521,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     def process_signup(self, rs: RequestState, assembly_id: int,
                        persona_id: int = None) -> None:
-        """Helper to actually perform signup.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type assembly_id: int
-        :type persona_id: int or None
-        :rtype: None
-        """
+        """Helper to actually perform signup."""
         if persona_id:
             secret = self.assemblyproxy.external_signup(
                 rs, assembly_id, persona_id)
@@ -658,8 +648,6 @@ class AssemblyFrontend(AbstractUserFrontend):
                                  CdEDBObjectMap, CdEDBObjectMap]:
         """Helper to group ballots by status.
 
-        :type ballots: {int: str}
-        :rtype: tuple({int: str})
         :returns: Four dicts mapping ballot ids to ballots grouped by status
           in the order done, extended, current, future.
         """
@@ -1589,12 +1577,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     @assembly_guard
     def edit_candidates(self, rs: RequestState, assembly_id: int,
                         ballot_id: int) -> Response:
-        """Create, edit and delete candidates of ballot.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type assembly_id: int
-        :type ballot_id: int
-        """
+        """Create, edit and delete candidates of a ballot."""
         candidates = process_dynamic_input(
             rs, rs.ambience['ballot']['candidates'].keys(),
             {'shortname': vtypes.RestrictiveIdentifier, 'title': str})

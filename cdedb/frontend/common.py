@@ -980,12 +980,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             """We don't want to pass the whole request state to the
             template, hence this wrapper.
 
-            :type endpoint: str
-            :type params: {str: object}
             :param magic_placeholders: parameter names to insert as magic
                                        placeholders in url
-            :type magic_placeholders: [str]
-            :rtype: str
             """
             params = params or werkzeug.datastructures.MultiDict()
             return cdedburl(rs, endpoint, params,
@@ -2199,7 +2195,6 @@ def REQUESTdatadict(*proto_spec: Union[str, Tuple[str, str]]
     passes this as ``data`` parameter. This does not do validation since
     this is infeasible in practice.
 
-    :type proto_spec: [str or (str, str)]
     :param proto_spec: Similar to ``spec`` parameter :py:meth:`REQUESTdata`,
       but the only two allowed argument types are ``str`` and
       ``[str]``. Additionally the argument type may be omitted and a default
