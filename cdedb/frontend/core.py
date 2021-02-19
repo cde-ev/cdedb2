@@ -350,7 +350,7 @@ class CoreFrontend(AbstractFrontend):
             expires=now() + datetime.timedelta(days=10 * 365))
         return response
 
-    @access("ml")
+    @access("ml", modi={"POST"}, check_anti_csrf=False)
     @REQUESTdata("md_str")
     def markdown_parse(self, rs: RequestState, md_str: str) -> Response:
         if rs.has_validation_errors():

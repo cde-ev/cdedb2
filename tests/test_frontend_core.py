@@ -1956,7 +1956,7 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("janis")
     def test_markdown_endpoint(self, user: CdEDBObject) -> None:
-        self.get('/core/markdown/parse?md_str=**bold** <script></script>')
+        self.post('/core/markdown/parse', {'md_str': '**bold** <script></script>'})
         expectation = "<p><strong>bold</strong> &lt;script&gt;&lt;/script&gt;</p>"
         self.assertEqual(expectation, self.response.text)
 

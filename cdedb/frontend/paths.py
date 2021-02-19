@@ -30,7 +30,7 @@ CDEDB_PATHS = werkzeug.routing.Map((
         sub('/core', (
             rule("/api/resolve", methods=_GET,
                  endpoint="api_resolve_username"),
-            rule("/markdown/parse", methods=_GET,
+            rule("/markdown/parse", methods=_POST,
                  endpoint="markdown_parse"),
             rule("/login", methods=_POST,
                  endpoint="login"),
