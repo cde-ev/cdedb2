@@ -28,13 +28,13 @@ and raise a ``ValidationSummary`` when encountering errors.
 Each exception summary contains a list of errors
 which store the ``argname`` of the validator where the error occured
 as well as an explanation of what exactly is wrong.
-A ``ValidationError`` may also store a third argument.
+A ``ValueError`` may also store a third argument.
 This optional argument should be a ``Mapping[str, Any]``
 describing substitutions of the error string to be done by i18n.
 
 The parameter ``_convert`` is present in many validators
 and is usually passed along from the original caller to every validation inside
-as part of the keyword arugments.
+as part of the keyword arguments.
 If ``True``, validators may try to convert the value into the appropriate type.
 For instance ``_int`` will try to convert the input into an int
 which would be useful for string inputs especially.
