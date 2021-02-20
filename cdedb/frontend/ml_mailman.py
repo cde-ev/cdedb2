@@ -31,9 +31,6 @@ def template_url(name: str) -> str:
 
     The handling of templates in mailman is a bit tricky involving a
     separate URI for each template which we construct here.
-
-    :type name: str
-    :rtype: str
     """
     return "https://db.cde-ev.de/mailman_templates/{}".format(name)
 
@@ -61,8 +58,8 @@ class MailmanMixin(MlBaseFrontend):
             'dmarc_mitigate_action': 'wrap_message',
             'dmarc_mitigate_unconditionally': False,
             'dmarc_wrapped_message_text': (
-                "Diese Nachricht wurde mit abgeänderter Senderadresse weitergeleitet,"
-                " da die DMARC-Sicherheitsrichtlinien des urspünglichen Mailproviders"
+                "Diese Nachricht wurde mit modifizierter Senderadresse weitergeleitet,"
+                " da die DMARC-Sicherheitsrichtlinien des initialen Mailproviders"
                 " mit Maillinglisten inkompatibel sind."),
             'administrivia': True,
             'member_roster_visibility': 'moderators',

@@ -1086,8 +1086,6 @@ class MlBaseFrontend(AbstractUserFrontend):
                                            setting: bool) -> bool:
         """Check if all conditions required to change a subscription adress
         are fulfilled.
-
-        :rtype: bool
         """
         assert rs.user.persona_id is not None
         is_subscribed = self.mlproxy.is_subscribed(

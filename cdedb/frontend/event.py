@@ -517,6 +517,10 @@ class EventFrontend(AbstractUserFrontend):
         """Create a default mailinglist for the event."""
         if rs.has_validation_errors():
             return self.redirect(rs, "event/show_event")
+        if not rs.ambience['event']['orgas']:
+            rs.notify('error',
+                      n_("Must have orgas in order to create a mailinglist."))
+            return self.redirect(rs, "event/show_event")
 
         ml_data = self._get_mailinglist_setter(rs.ambience['event'], orgalist)
         ml_address = ml_type.get_full_address(ml_data)
@@ -604,10 +608,6 @@ class EventFrontend(AbstractUserFrontend):
 
         Since this covers a variable number of rows, we cannot do this
         statically. This takes care of validation too.
-
-        :type rs: :py:class:`FrontendRequestState`
-        :type has_registrations: bool
-        :rtype: {int: {str: object}}
         """
         parts = rs.ambience['event']['parts']
         fee_modifiers = rs.ambience['event']['fee_modifiers']
@@ -2129,13 +2129,8 @@ class EventFrontend(AbstractUserFrontend):
 
         We test for fitness of the data itself.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type datum: {str: object}
-        :type expected_fees: {int: decimal.Decimal}
-        :type full_payment: bool
         :param full_payment: If True, only write the payment date if the fee
             was paid in full.
-        :rtype: {str: object}
         :returns: The processed input datum.
         """
         event = rs.ambience['event']
@@ -2223,9 +2218,6 @@ class EventFrontend(AbstractUserFrontend):
                   ) -> Tuple[bool, Optional[int]]:
         """Book all paid fees.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type data: [{str: object}]
-        :rtype: bool, int
         :returns: Success information and
 
           * for positive outcome the number of recorded transfers
@@ -3744,7 +3736,6 @@ class EventFrontend(AbstractUserFrontend):
         :param num: number of rows to expect
         :param reg_fields: Available fields
         :param kind: For which kind of questionnaire are these rows?
-        :rtype: [{str: object}]
         """
         del_flags = request_extractor(rs, {f"delete_{i}": bool for i in range(num)})
         deletes = {i for i in range(num) if del_flags['delete_{}'.format(i)]}
@@ -3843,9 +3834,6 @@ class EventFrontend(AbstractUserFrontend):
         ``proxy.set_questionnaire(proxy.get_questionnaire())`` fails since
         the retrieval method provides additional information which not
         settable and thus filtered by this method.
-
-        :type row: {str: object}
-        :rtype: {str: object}
         """
         whitelist = ('field_id', 'title', 'info', 'input_size', 'readonly',
                      'default_value', 'kind')
@@ -4007,20 +3995,13 @@ class EventFrontend(AbstractUserFrontend):
         values to extract depends on the event. This puts less restrictions
         on the input (like not requiring different course choices).
 
-        :type rs: :py:class:`FrontendRequestState`
-        :type event: {str: object}
         :param do_fields: Process custom fields of the registration(s)
-        :type do_fields: bool
         :param check_enabled: Check if the "enable" checkboxes, corresponding
                               to the fields are set. This is required for the
                               multiedit page.
-        :type check_enabled: bool
         :param skip: A list of field names to be entirely skipped
-        :type skip: [str]
         :param do_real_persona_id: Process the `real_persona_id` field. Should
                                    only be done when CDEDB_OFFLINE_DEPLOYMENT
-        :type do_real_persona_id: bool
-        :rtype: {str: object}
         :returns: registration data set
         """
 
@@ -4437,12 +4418,6 @@ class EventFrontend(AbstractUserFrontend):
         """Un-inlined code to examine the current lodgements of an event for
         spots with room for improvement.
 
-        :type event: {str: object}
-        :type lodgements: {int: {str: object}}
-        :type registrations: {int: {str: object}}
-        :type personas: {int: {str: object}}
-        :type inhabitants: {(int, int): [int]}
-        :rtype: [(str, int, int, [int], int)]
         :returns: problems as five-tuples of (problem description, lodgement
           id, part id, affected registrations, severeness).
         """

@@ -28,13 +28,13 @@ and raise a ``ValidationSummary`` when encountering errors.
 Each exception summary contains a list of errors
 which store the ``argname`` of the validator where the error occured
 as well as an explanation of what exactly is wrong.
-A ``ValidationError`` may also store a third argument.
+A ``ValueError`` may also store a third argument.
 This optional argument should be a ``Mapping[str, Any]``
 describing substitutions of the error string to be done by i18n.
 
 The parameter ``_convert`` is present in many validators
 and is usually passed along from the original caller to every validation inside
-as part of the keyword arugments.
+as part of the keyword arguments.
 If ``True``, validators may try to convert the value into the appropriate type.
 For instance ``_int`` will try to convert the input into an int
 which would be useful for string inputs especially.
@@ -2009,7 +2009,6 @@ def _institution(
     """
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
-    :rtype: (dict or None, [(str or None, exception)])
     """
     val = _mapping(val, argname, **kwargs)
 
@@ -2814,9 +2813,6 @@ def _lodgement(
 def _by_field_datatype(
     val: Any, argname: str = None, *, kind: FieldDatatypes, **kwargs: Any
 ) -> ByFieldDatatype:
-    """
-    :type kind: FieldDatatypes or int
-    """
     kind = FieldDatatypes(kind)
     # using Any seems fine, otherwise this would need a big Union
     val: Any = _ALL_TYPED[
@@ -2839,9 +2835,6 @@ def _questionnaire(
     argname: str = "questionnaire",
     **kwargs: Any
 ) -> Questionnaire:
-    """
-    :type field_definitions: Dict[int, Dict]
-    """
 
     val = _mapping(val, argname, **kwargs)
 
@@ -2934,9 +2927,6 @@ def _json(
 
     This is a bit different from many other validatiors in that it is not
     idempotent.
-
-    :rtype: (dict or None, [(str or None, exception)])
-
     """
     if not _convert:
         raise RuntimeError("This is a conversion by definition.")

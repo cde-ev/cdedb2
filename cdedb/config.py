@@ -74,9 +74,7 @@ def generate_event_registration_default_queries(
 
     :param gettext: The translation function for the current locale.
     :param event: The Event for which to generate the queries
-    :type event:
     :param spec: The Query Spec, dynamically generated for the event
-    :type spec:
     :return: Dict of default queries
     """
     default_sort = (("persona.family_name", True),
