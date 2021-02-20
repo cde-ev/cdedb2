@@ -369,6 +369,10 @@ class AssemblyFrontend(AbstractUserFrontend):
                                     presider_list: bool) -> Response:
         if rs.has_validation_errors():
             return self.redirect(rs, "assembly/show_assembly")
+        if not rs.ambience['assembly']['presiders']:
+            rs.notify('error',
+                      n_("Must have presiders in order to create a mailinglist."))
+            return self.redirect(rs, "assembly/show_assembly")
 
         ml_data = self._get_mailinglist_setter(rs.ambience['assembly'], presider_list)
         ml_address = ml_type.get_full_address(ml_data)
