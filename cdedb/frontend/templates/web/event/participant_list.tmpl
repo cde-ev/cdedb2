@@ -120,7 +120,7 @@
                         <td>
                             {{ persona['postal_code'] }}
                             {{ persona['location'] -}}
-                            {%- if persona['country'] and persona['country'] != "DE" -%}
+                            {%- if persona['country'] and persona['country'] != DEFAULT_COUNTRY -%}
                                 {{- ", " + gettext(persona['country']) -}}
                             {% endif %}
                         </td>
@@ -163,7 +163,7 @@
                         <td>
                             {{ persona['postal_code'] }}
                             {{ persona['location'] -}}
-                            {%- if persona['country'] and persona['country'] != "DE" -%}
+                            {%- if persona['country'] and persona['country'] != DEFAULT_COUNTRY -%}
                                 {{- ", " + gettext(persona['country']) -}}
                             {% endif %}
                         </td>

@@ -1676,7 +1676,7 @@ GERMAN_POSTAL_CODES = {
 #:
 #: County codes according to ISO 3166-1.
 COUNTRY_CODES = [
-    "", "HY",
+    "HY",
     "AF", "AX", "AL", "DZ", "AS", "AD", "AO", "AI", "AQ", "AG", "AR", "AM", "AW", "AT",
     "AZ", "BS", "BH", "BD", "BB", "BY", "BE", "BZ", "BJ", "BM", "BT", "BO", "BW", "BV",
     "BR", "IO", "VG", "BN", "BG", "BF", "BI", "KH", "CM", "CA", "CV", "KY", "CF", "TD",

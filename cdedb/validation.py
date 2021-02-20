@@ -1414,15 +1414,12 @@ def _country(
         to the postal code.
     :param _ignore_warnings: If True, ignore invalid german postcodes.
     """
-    val = _ALL_TYPED[Optional[str]](  # type: ignore
-        val, argname, _ignore_warnings=_ignore_warnings, **kwargs)
+    val = _ALL_TYPED[str](val, argname, _ignore_warnings=_ignore_warnings, **kwargs)
     if val:
         val = val.strip()
         if val not in COUNTRY_CODES:
-            if not val != "HY":
-                # TODO: Config is not available here?
-                raise ValidationSummary(ValidationWarning(
-                    argname, n_("Enter actual country name in English.")))
+            raise ValidationSummary(ValidationWarning(
+                argname, n_("Enter actual country name in English.")))
     return Country(val)
 
 

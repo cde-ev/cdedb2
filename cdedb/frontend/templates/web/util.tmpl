@@ -474,14 +474,14 @@
         **{ 'aria-label': arialabel }
     )|xmlattr }} {{ attributes }}>
         {%- if nulloption is not none %}
-            <option value=""{% if values.get(name, defaultvalue) == none %} selected{% endif %}>
+            <option value=""{% if values.get(name, defaultvalue) == none %} selected="selected"{% endif %}>
                 {{- nulloption -}}
             </option>
         {%- endif %}
         {% set entries = entries|sort(attribute=1) if sort else entries %}
         {%- for value, label in entries %}
             <option value="{{ value }}"
-              {%- if values.get(name, defaultvalue)|string == value|string %} selected{% endif %}>
+                    {%- if not values.get(name) and defaultvalue == value %} selected="selected"{% endif %}>
                 {{- label -}}
             </option>
         {%- endfor %}

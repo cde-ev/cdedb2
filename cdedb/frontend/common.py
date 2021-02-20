@@ -914,6 +914,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'ANTI_CSRF_TOKEN_PAYLOAD': ANTI_CSRF_TOKEN_PAYLOAD,
             'GIT_COMMIT': self.conf["GIT_COMMIT"],
             'I18N_LANGUAGES': self.conf["I18N_LANGUAGES"],
+            'DEFAULT_COUNTRY': self.conf["DEFAULT_COUNTRY"],
             'ALL_MOD_ADMIN_VIEWS': ALL_MOD_ADMIN_VIEWS,
             'ALL_MGMT_ADMIN_VIEWS': ALL_MGMT_ADMIN_VIEWS,
             'EntitySorter': EntitySorter,
@@ -1070,7 +1071,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         # here come the always accessible things promised above
         data = {
-            'COUNTRY_CODES': [(v, rs.gettext(v)) for v in COUNTRY_CODES],
+            'COUNTRY_CODES': xsorted([(v, rs.gettext(v))
+                                      for v in COUNTRY_CODES], key=lambda x: x[1]),
             'ambience': rs.ambience,
             'cdedblink': _cdedblink,
             'doclink': _doclink,
