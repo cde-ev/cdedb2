@@ -1948,7 +1948,6 @@ msgid "Unsupported locale"
 msgstr "Nicht unterstützte Sprache"
 
 #: cdedb/frontend/core.py:396
-#, fuzzy
 msgid "No cde access to profile."
 msgstr "Kein CdE-Zugriff auf das Profil."
 
