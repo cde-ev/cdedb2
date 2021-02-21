@@ -1416,6 +1416,7 @@ def _country(
     :param _ignore_warnings: If True, ignore invalid german postcodes.
     """
     if _convert and not val:
+        # TODO Use self.conf["DEFAULT_COUNTRY"] here
         val = "DE"
     val = _ALL_TYPED[str](val, argname, _ignore_warnings=_ignore_warnings, **kwargs)
     if _convert:
