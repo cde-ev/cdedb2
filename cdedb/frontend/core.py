@@ -350,7 +350,7 @@ class CoreFrontend(AbstractFrontend):
             expires=now() + datetime.timedelta(days=10 * 365))
         return response
 
-    @access("member")
+    @access("member", "cde_admin")
     @REQUESTdata("#confirm_id")
     def download_vcard(self, rs: RequestState, persona_id: int, confirm_id: int
                        ) -> Response:
@@ -361,7 +361,7 @@ class CoreFrontend(AbstractFrontend):
         return self.send_file(rs, data=vcard, mimetype='text/vcard',
                               filename='vcard.vcf')
 
-    @access("member")
+    @access("member", "cde_admin")
     @REQUESTdata("#confirm_id")
     def qr_vcard(self, rs: RequestState, persona_id: int, confirm_id: int) -> Response:
         if persona_id != confirm_id or rs.has_validation_errors():
@@ -392,7 +392,7 @@ class CoreFrontend(AbstractFrontend):
 
         :return: The serialized vCard (as in a vcf file)
         """
-        if 'member' not in rs.user.roles:
+        if not {'member', 'cde_admin'} & rs.user.roles:
             raise werkzeug.exceptions.Forbidden(n_("Not a member."))
 
         if not self.coreproxy.verify_persona(rs, persona_id, required_roles=['member']):

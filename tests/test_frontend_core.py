@@ -177,6 +177,12 @@ class TestCoreFrontend(FrontendTest):
             self.assertIn(line, self.response.text)
 
     @as_users("vera")
+    def test_vcard_cde_admin(self, user: CdEDBObject) -> None:
+        self.admin_view_profile('charly')
+        self.assertTitle("Charly C. Clown")
+        self.traverse({'description': 'VCard'})
+
+    @as_users("vera")
     def test_toggle_admin_views(self, user: CdEDBObject) -> None:
         self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, '')
         # Core Administration
