@@ -279,19 +279,13 @@ class CoreBackend(AbstractBackend):
         change requires review it has to be committed using
         :py:meth:`changelog_resolve_change` by an administrator.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type data: {str: object}
-        :type generation: int or None
         :param generation: generation on which this request is based, if this
           is not the current generation we abort, may be None to override
           the check
-        :type may_wait: bool
         :param may_wait: Whether this change may wait in the changelog. If
           this is ``False`` and there is a pending change in the changelog,
           the new change is slipped in between.
-        :type change_note: str
         :param change_note: Comment to record in the changelog entry.
-        :rtype: int
         :returns: number of changed entries, however if changes were only
           written to changelog and are waiting for review, the negative number
           of changes written to changelog is returned
@@ -1048,12 +1042,7 @@ class CoreBackend(AbstractBackend):
 
     @access("persona")
     def list_admins(self, rs: RequestState, realm: str) -> List[int]:
-        """List all personas with admin privilidges in a given realm.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type realm: str
-        :rtype: [int]
-        """
+        """List all personas with admin privilidges in a given realm."""
         realm = affirm(str, realm)
 
         query = "SELECT id from core.personas WHERE {constraint}"
@@ -1546,11 +1535,6 @@ class CoreBackend(AbstractBackend):
         """Return a persona from the attic to activity.
 
         This does nothing but flip the archiving bit.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type persona_id: int
-        :rtype: int
-        :returns: default return code
         """
         persona_id = affirm(vtypes.ID, persona_id)
         with Atomizer(rs):
@@ -1576,12 +1560,6 @@ class CoreBackend(AbstractBackend):
         However we do not entirely delete the entry since this would
         cause havock in other areas (like assemblies), we only
         anonymize the entry by removing all identifying information.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type persona_id: int
-        :rtype: int
-        :returns: default return code
-
         """
         persona_id = affirm(vtypes.ID, persona_id)
         with Atomizer(rs):
@@ -2338,7 +2316,6 @@ class CoreBackend(AbstractBackend):
         :param persona_id: Must be provided only in case of reset.
         :returns: The ``bool`` indicates success and the ``str`` is
           either the new password or an error message.
-        :rtype: (bool, str)
         """
         if persona_id and not reset_cookie:
             return False, n_("Selecting persona allowed for reset only.")
@@ -2387,10 +2364,6 @@ class CoreBackend(AbstractBackend):
     def change_password(self, rs: RequestState, old_password: str,
                         new_password: str) -> Tuple[bool, str]:
         """
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type old_password: str
-        :type new_password: str
-        :rtype: (bool, str)
         :returns: see :py:meth:`modify_password`
         """
         old_password = affirm(str, old_password)
@@ -2630,9 +2603,6 @@ class CoreBackend(AbstractBackend):
                               email: str) -> Optional[int]:
         """Get the id of an unconfirmed genesis case for a given email.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type email: str
-        :rtype: int or None
         :returns: The case id or None if no such case exists.
         """
         email = affirm(str, email)
@@ -2643,7 +2613,8 @@ class CoreBackend(AbstractBackend):
         return unwrap(data) if data else None
 
     @access("anonymous")
-    def genesis_verify(self, rs: RequestState, case_id: int) -> Tuple[int, str]:
+    def genesis_verify(self, rs: RequestState, case_id: int
+                       ) -> Tuple[DefaultReturnCode, str]:
         """Confirm the new email address and proceed to the next stage.
 
         Returning the realm is a conflation caused by lazyness, but before
@@ -2928,10 +2899,6 @@ class CoreBackend(AbstractBackend):
 
         This should be used solely by the resolve API. The frontend takes
         the necessary precautions.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type query: :py:class:`cdedb.query.Query`
-        :rtype: [{str: object}]
         """
         query = affirm(Query, query)
         return self.general_query(rs, query)

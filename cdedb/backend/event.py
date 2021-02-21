@@ -1007,10 +1007,7 @@ class EventBackend(AbstractBackend):
         Helper function to retrieve the custom field definitions of an event.
         This is required by multiple backend functions.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type event_id: int
         :return: A dict mapping each event id to the dict of its fields
-        :rtype: {int: {str: object}}
         """
         data = self.sql_select(
             rs, "event.field_definitions", FIELD_DEFINITION_FIELDS,

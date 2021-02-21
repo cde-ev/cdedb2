@@ -426,6 +426,44 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f = self.response.forms['changeassemblyform']
         self.assertEqual(f['presider_address'].value, presider_address)
 
+    @as_users("viktor")
+    def test_show_assembly_admin(self, user: CdEDBObject) -> None:
+        self.traverse("Versammlungen", "Archiv-Sammlung")
+        self.assertTitle("Archiv-Sammlung")
+
+        self.assertPresence("Datei hinzufügen", div='attachmentspanel')
+        self.submit(
+            self.response.forms[f"removepresiderform{ USER_DICT['werner']['id'] }"])
+        f = self.response.forms['createpresiderlistform']
+        self.assertIn('disabled', f.fields['submitform'][0].attrs)
+        self.submit(f, check_notification=False)
+        self.assertPresence(
+            "Mailingliste kann nur mit Versammlungsleitern erstellt werden.",
+            div='notifications')
+        f = self.response.forms['addpresidersform']
+        f['presider_ids'] = USER_DICT['werner']['DB-ID']
+        self.submit(f)
+        self.submit(self.response.forms['createattendeelistform'])
+        self.submit(self.response.forms['createpresiderlistform'])
+
+    @as_users("werner")
+    def test_show_assembly_presider(self, user: CdEDBObject) -> None:
+        self.traverse("Versammlungen", "Archiv-Sammlung")
+        self.assertTitle("Archiv-Sammlung")
+
+        self.assertPresence("Datei hinzufügen", div='attachmentspanel')
+        self.assertNotIn('addpresidersform', self.response.forms)
+        self.assertNotIn('createattendeelistform', self.response.forms)
+
+    @as_users("kalif")
+    def test_show_assembly_attendee(self, user: CdEDBObject) -> None:
+        self.traverse("Versammlungen", "Internationaler Kongress")
+        self.assertTitle("Internationaler Kongress")
+
+        self.assertNonPresence("Datei hinzufügen")
+        self.assertNotIn('addpresidersform', self.response.forms)
+        self.assertNotIn('createattendeelistform', self.response.forms)
+
     @as_users("charly")
     def test_signup(self, user: CdEDBObject) -> None:
         self.traverse({'description': 'Versammlungen'},
