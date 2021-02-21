@@ -234,12 +234,12 @@ check-parallel:
 	TESTTHREADNO=2 bin/singlecheck.sh test_backend test_common test_config \
 		test_database test_offline test_script test_session test_validation \
 		test_vote_verification & \
-	sleep 0.5; TESTTHREADNO=3 bin/singlecheck.sh frontend_application \
-		frontend_assembly frontend_common frontend_core frontend_cde frontend_cron & \
 	sleep 0.5; TESTTHREADNO=4 bin/singlecheck.sh frontend_event frontend_ml \
-		frontend_privacy frontend_parse
+		frontend_privacy frontend_parse & \
+	sleep 0.5; TESTTHREADNO=3 bin/singlecheck.sh frontend_application \
+		frontend_assembly frontend_common frontend_core frontend_cde frontend_cron
 
-# TODO: this way of needing two different names for the same thing is ugly
+# TODO: this way of fulfilling the need of two different names for the same thing is ugly
 check: export CDEDB_TEST=True
 check: export TESTDBNAME=$(TESTDATABASENAME)
 check: export TESTTHREADNR=${TESTTHREADNO}

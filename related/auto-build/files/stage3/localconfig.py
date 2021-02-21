@@ -7,8 +7,6 @@ import os
 import pathlib
 
 # check for test environment
-import tempfile
-
 CDEDB_TEST = os.environ.get('CDEDB_TEST')
 
 # BasicConfig
