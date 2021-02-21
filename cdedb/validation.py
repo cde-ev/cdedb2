@@ -345,12 +345,12 @@ def _augment_dict_validator(
 
 
 def escaped_split(string: str, delim: str, escape: str = '\\') -> List[str]:
-    """Helper function for anvanced list splitting.
+    """Helper function for advanced list splitting.
 
     Split the list at every delimiter, except if it is escaped (and
     allow the escape char to be escaped itself).
 
-    Basend on http://stackoverflow.com/a/18092547
+    Based on http://stackoverflow.com/a/18092547
     """
     ret = []
     current = ''
