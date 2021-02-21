@@ -564,31 +564,27 @@ error: Dict[int, str] = {}
 # Execution
 
 with Script(rs, dry_run=DRY_RUN):
-    # First set some country everywhere where applicable
-    query = ("UPDATE core.personas SET country = \"DE\""
-             " WHERE country IS NULL AND is_event_realm = True")
-    core.query_exec(rs, query, [])
-
-    # Now, deal with the more complicated cases
     persona_id = core.next_persona(
         rs, persona_id=-1, is_member=None, is_archived=False)
     while persona_id:
         persona = core.get_total_persona(rs, persona_id)
-        if not persona['is_event_realm']:
+        if not persona['is_event_realm'] or persona['country'] in COUNTRY_CODES:
             continue
+        elif not persona['country']:
+            persona['country'] = "DE"
         elif persona['country'] not in COUNTRY_CODES:
             persona['country'] = persona['country'].strip()
             if persona['country'] in all_to_code:
                 persona['country'] = all_to_code[persona['country']]
             else:
                 error[persona_id] = persona['country']
-                print(f"Failed vor {persona_id} with country {persona['country']}.")
+                print(f"Failed for {persona_id} with country {persona['country']}.")
 
         core.set_persona(rs, persona, may_wait=False,
                          change_note="Land auf Ländercode umgestellt.")
 
         persona_id = core.next_persona(
-            rs, persona_id=persona_id, is_member=False, is_archived=False)
+            rs, persona_id=persona_id, is_member=None, is_archived=False)
 
     if error:
         print(f"{len(error)} country rewrites failed. Aborting")
