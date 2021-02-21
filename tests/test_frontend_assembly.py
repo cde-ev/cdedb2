@@ -1318,6 +1318,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence("Du hast für die folgenden Kandidaten gestimmt: Ja",
                             div='own-vote', exact=True)
 
+    @storage
     def test_log(self) -> None:
         # First: generate data
         self.test_entity_ballot_simple()
