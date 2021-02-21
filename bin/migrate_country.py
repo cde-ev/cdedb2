@@ -565,12 +565,13 @@ error: Dict[int, str] = {}
 
 with Script(rs, dry_run=DRY_RUN):
     # First set some country everywhere where applicable
-    query = "UPDATE core.personas SET country = \"DE\" WHERE country IS NULL"
+    query = ("UPDATE core.personas SET country = \"DE\""
+             " WHERE country IS NULL AND is_event_realm = True")
     core.query_exec(rs, query, [])
 
     # Now, deal with the more complicated cases
     persona_id = core.next_persona(
-        rs, persona_id=-1, is_member=False, is_archived=False)
+        rs, persona_id=-1, is_member=None, is_archived=False)
     while persona_id:
         persona = core.get_total_persona(rs, persona_id)
         if not persona['is_event_realm']:
@@ -584,7 +585,7 @@ with Script(rs, dry_run=DRY_RUN):
                 print(f"Failed vor {persona_id} with country {persona['country']}.")
 
         core.set_persona(rs, persona, may_wait=False,
-                         change_note="Country rewritten to use country code.")
+                         change_note="Land auf Ländercode umgestellt.")
 
         persona_id = core.next_persona(
             rs, persona_id=persona_id, is_member=False, is_archived=False)
