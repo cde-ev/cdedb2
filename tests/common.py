@@ -315,7 +315,7 @@ class MyTextTestResult(unittest.TextTestResult):
 
 class BasicTest(unittest.TestCase):
     """Provide some basic useful test functionalities."""
-    testfile_dir = pathlib.Path("/tmp/cdedb-store/testfiles")
+    testfile_dir = pathlib.Path(f"/tmp/cdedb-store-{os.environ['TESTTHREADNR']}/testfiles")
     _clean_sample_data: ClassVar[Dict[str, CdEDBObjectMap]]
     conf: ClassVar[Config]
 
@@ -372,7 +372,6 @@ class BasicTest(unittest.TestCase):
 
 class CdEDBTest(BasicTest):
     """Reset the DB for every test."""
-    testfile_dir = pathlib.Path("/tmp/cdedb-store/testfiles")
     _clean_sample_data: ClassVar[Dict[str, CdEDBObjectMap]]
     conf: ClassVar[Config]
 
@@ -722,6 +721,18 @@ def prepsql(sql: AnyStr) -> Callable[[F], F]:
             return fun(*args, **kwargs)
         return cast(F, new_fun)
     return decorator
+
+
+# TODO: should this better be named needs_storage?
+def storage(fun: F) -> F:
+    """Decorate a test which needs some of the test files on the local drive."""
+    def new_fun(*args: Any, **kwargs: Any) -> Any:
+        subprocess.check_call(['make', 'storage-test'],
+                              stdout=subprocess.DEVNULL)
+        res = fun(*args, **kwargs)
+        subprocess.check_call(['rm', '-rf', f"/tmp/cdedb-store-{os.environ['TESTTHREADNR']}/*"])
+        return res
+    return cast(F, new_fun)
 
 
 def execsql(sql: AnyStr) -> None:

@@ -6,6 +6,7 @@ This script tries to verify successful XSS mitigation, i.e. HTML escaping.
 First, load manually the special sample data, which contains the magic
 token "<script>abcdef</script>" in every user definable string:
 
+TODO: the following commands have to be adjusted after #1834 is ready
     make sample-data-test
     sudo -u cdb psql -U cdb -d cdb_test -f tests/ancillary_files/clean_data.sql
     sudo -u cdb psql -U cdb -d cdb_test

@@ -7,6 +7,7 @@ import os
 import pathlib
 
 # check for test environment
+import tempfile
 
 CDEDB_TEST = os.environ.get('CDEDB_TEST')
 
@@ -51,7 +52,7 @@ if CDEDB_TEST:
     CDB_DATABASE_NAME = os.environ['TESTDBNAME']
     # TODO: use this constant everywhere instead of hardcoded os.environ element
     SERVER_NAME_TEMPLATE = "test_{}_server"
-    STORAGE_DIR = pathlib.Path("/tmp/cdedb-store/")
+    STORAGE_DIR = pathlib.Path(f"/tmp/cdedb-store-{os.environ['TESTTHREADNR']}/")
     FRONTEND_LOG = pathlib.Path("/tmp/test-cdedb-frontend.log")
     CRON_FRONTEND_LOG = pathlib.Path("/tmp/test-cdedb-frontend-cron.log")
     BACKEND_LOG = pathlib.Path("/tmp/test-cdedb-backend.log")

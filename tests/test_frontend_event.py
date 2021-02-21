@@ -13,7 +13,7 @@ import cdedb.database.constants as const
 from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, CdEDBObject, now
 from cdedb.frontend.common import CustomCSVDialect, iban_filter
 from cdedb.query import QueryOperators
-from tests.common import USER_DICT, FrontendTest, as_users, prepsql
+from tests.common import USER_DICT, FrontendTest, as_users, prepsql, storage
 
 
 class TestEventFrontend(FrontendTest):
@@ -1017,18 +1017,19 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.assertPresence("Other Text")
 
+    @storage
     @as_users("annika", "garcia")
     def test_change_minor_form(self, user: CdEDBObject) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'})
         self.assertTitle("Große Testakademie 2222")
         f = self.response.forms['changeminorformform']
-        with open("/tmp/cdedb-store/testfiles/form.pdf", 'rb') as datafile:
+        with open(self.testfile_dir / "form.pdf", 'rb') as datafile:
             data = datafile.read()
         f['minor_form'] = webtest.Upload("form.pdf", data, "application/octet-stream")
         self.submit(f)
         self.traverse({'href': '/event/event/1/minorform'})
-        with open("/tmp/cdedb-store/testfiles/form.pdf", 'rb') as f:
+        with open(self.testfile_dir / "form.pdf", 'rb') as f:
             self.assertEqual(f.read(), self.response.body)
         # Remove the form again
         self.get("/event/event/1/show")
@@ -2880,6 +2881,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertTrue(self.response.body.startswith(magic_bytes['zip']))
         self.assertLess(500, len(self.response.body))
 
+    @storage
     @as_users("garcia")
     def test_download_export(self, user: CdEDBObject) -> None:
         self.traverse({'href': '/event/$'},
@@ -2896,7 +2898,7 @@ etc;anything else""", f['entries_2'].value)
 
         f['agree_unlocked_download'].checked = True
         self.submit(f)
-        with open("/tmp/cdedb-store/testfiles/event_export.json") as datafile:
+        with open(self.testfile_dir / "event_export.json") as datafile:
             expectation = json.load(datafile)
         result = json.loads(self.response.text)
         expectation['timestamp'] = result['timestamp']  # nearly_now() won't do
@@ -3190,6 +3192,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Mittelgroße Testakademie 2222")
         self.assertPresence("Die Veranstaltung ist nicht gesperrt.")
 
+    @storage
     @as_users("annika", "garcia")
     def test_partial_import_normal(self, user: CdEDBObject) -> None:
         self.traverse({'href': '/event/$'},
@@ -3253,6 +3256,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Geheime Etage")
         self.assertPresence("Geheimkabinett")
 
+    @storage
     @as_users("annika", "garcia")
     def test_partial_import_interleaved(self, user: CdEDBObject) -> None:
         self.traverse({'href': '/event/$'},
@@ -3348,6 +3352,7 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.assertTitle("Anmeldung von Emilia E. Eventis (Große Testakademie 2222)")
 
+    @storage
     @as_users("annika", "garcia")
     def test_partial_export(self, user: CdEDBObject) -> None:
         self.traverse({'href': '/event/$'},

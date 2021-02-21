@@ -8,7 +8,7 @@ import webtest
 import cdedb.frontend.parse_statement as parse
 from cdedb.common import CdEDBObject, now
 from cdedb.frontend.common import CustomCSVDialect
-from tests.common import FrontendTest, as_users
+from tests.common import FrontendTest, as_users, storage
 
 
 class TestParseFrontend(FrontendTest):
@@ -111,6 +111,7 @@ class TestParseFrontend(FrontendTest):
             else:
                 self.assertEqual(v, adict[k])
 
+    @storage
     @as_users("farin")
     def test_parse_statement(self, user: CdEDBObject) -> None:
         self.get("/cde/parse")

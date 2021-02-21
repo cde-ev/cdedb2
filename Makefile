@@ -27,7 +27,8 @@ PYLINT ?= $(PYTHONBIN) -m pylint
 COVERAGE ?= $(PYTHONBIN) -m coverage
 MYPY ?= $(PYTHONBIN) -m mypy
 TESTPREPARATION ?= automatic
-TESTDATABASENAME ?= cdb_test_1
+TESTTHREADNO ?= 1
+TESTDATABASENAME ?= cdb_test_${TESTTHREADNO}
 I18NDIR ?= ./i18n
 
 doc:
@@ -78,10 +79,6 @@ sample-data-dump:
 		&& cp "$${JSONTEMPFILE}" tests/ancillary_files/sample_data.json \
 		&& sudo -u www-data rm "$${JSONTEMPFILE}"
 
-sample-data-test:
-	$(MAKE) storage-test
-	$(MAKE) sql-test
-
 sample-data-xss:
 	$(MAKE) sql-xss
 
@@ -122,26 +119,26 @@ TESTFILES := picture.pdf,picture.png,picture.jpg,form.pdf$\
 		,TestAka_partial_export_event.json,statement.csv
 
 storage-test:
-	rm -rf -- /tmp/cdedb-store/*
-	mkdir -p /tmp/cdedb-store/foto/
-	cp tests/ancillary_files/$(TESTFOTONAME) /tmp/cdedb-store/foto/
-	mkdir -p /tmp/cdedb-store/minor_form/
-	mkdir -p /tmp/cdedb-store/event_logo/
-	mkdir -p /tmp/cdedb-store/course_logo/
-	mkdir -p /tmp/cdedb-store/ballot_result/
-	mkdir -p /tmp/cdedb-store/assembly_attachment/
-	mkdir -p /tmp/cdedb-store/genesis_attachment/
-	mkdir -p /tmp/cdedb-store/mailman_templates/
-	mkdir -p /tmp/cdedb-store/testfiles/
+	rm -rf -- /tmp//cdedb-store-${TESTTHREADNO}
+	mkdir -p /tmp/cdedb-store-${TESTTHREADNO}/foto/
+	mkdir -p /tmp/cdedb-store-${TESTTHREADNO}/minor_form/
+	mkdir -p /tmp/cdedb-store-${TESTTHREADNO}/event_logo/
+	mkdir -p /tmp/cdedb-store-${TESTTHREADNO}/course_logo/
+	mkdir -p /tmp/cdedb-store-${TESTTHREADNO}/ballot_result/
+	mkdir -p /tmp/cdedb-store-${TESTTHREADNO}/assembly_attachment/
+	mkdir -p /tmp/cdedb-store-${TESTTHREADNO}/genesis_attachment/
+	mkdir -p /tmp/cdedb-store-${TESTTHREADNO}/mailman_templates/
+	mkdir -p /tmp/cdedb-store-${TESTTHREADNO}/testfiles/
+	cp tests/ancillary_files/$(TESTFOTONAME) /tmp/cdedb-store-${TESTTHREADNO}/foto/
 	cp tests/ancillary_files/rechen.pdf \
-		/tmp/cdedb-store/assembly_attachment/1_v1
+		/tmp/cdedb-store-${TESTTHREADNO}/assembly_attachment/1_v1
 	cp tests/ancillary_files/kassen.pdf \
-		/tmp/cdedb-store/assembly_attachment/2_v1
+		/tmp/cdedb-store-${TESTTHREADNO}/assembly_attachment/2_v1
 	cp tests/ancillary_files/kassen2.pdf \
-		/tmp/cdedb-store/assembly_attachment/2_v3
+		/tmp/cdedb-store-${TESTTHREADNO}/assembly_attachment/2_v3
 	cp tests/ancillary_files/kandidaten.pdf \
-		/tmp/cdedb-store/assembly_attachment/3_v1
-	cp -t /tmp/cdedb-store/testfiles/ tests/ancillary_files/{$(TESTFILES)}
+		/tmp/cdedb-store-${TESTTHREADNO}/assembly_attachment/3_v1
+	cp -t /tmp/cdedb-store-${TESTTHREADNO}/testfiles/ tests/ancillary_files/{$(TESTFILES)}
 
 sql: tests/ancillary_files/sample_data.sql
 ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
@@ -220,7 +217,7 @@ lint:
 prepare-check:
 ifneq ($(TESTPREPARATION), manual)
 	$(MAKE) i18n-compile
-	$(MAKE) sample-data-test &> /dev/null
+	$(MAKE) sql-test &> /dev/null
 	sudo rm -f /tmp/test-cdedb* /tmp/cdedb-timing.log /tmp/cdedb-mail-* \
 		|| true
 else
@@ -230,22 +227,25 @@ endif
 check-parallel:
 	# TODO: using inverse regex arguments possible? Would be helpful for not overlooking some tests
 	# sleeping is necessary here that the i18n-refresh runs at the very beginning to not interfere
-	TESTDATABASENAME=cdb_test_2 bin/singlecheck.sh test_backend test_common test_config \
+	TESTTHREADNO=2 bin/singlecheck.sh test_backend test_common test_config \
 		test_database test_offline test_script test_session test_validation \
 		test_vote_verification & \
-	sleep 0.5; TESTDATABASENAME=cdb_test_3 bin/singlecheck.sh frontend_application \
+	sleep 0.5; TESTTHREADNO=3 bin/singlecheck.sh frontend_application \
 		frontend_assembly frontend_common frontend_core frontend_cde frontend_cron & \
-	sleep 0.5; TESTDATABASENAME=cdb_test_4 bin/singlecheck.sh frontend_event frontend_ml \
+	sleep 0.5; TESTTHREADNO=4 bin/singlecheck.sh frontend_event frontend_ml \
 		frontend_privacy frontend_parse
 
+# TODO: this way of needing two different names for the same thing is ugly
 check: export CDEDB_TEST=True
 check: export TESTDBNAME=$(TESTDATABASENAME)
+check: export TESTTHREADNR=${TESTTHREADNO}
 check:
 	$(MAKE) prepare-check
 	$(PYTHONBIN) -m tests.main "${TESTPATTERN}"
 
 single-check: export CDEDB_TEST=True
 single-check: export TESTDBNAME=$(TESTDATABASENAME)
+single-check: export TESTTHREADNR=${TESTTHREADNO}
 single-check:
 	$(MAKE) prepare-check
 	$(PYTHONBIN) -m tests.singular "${PATTERNS}"

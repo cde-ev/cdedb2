@@ -14,7 +14,7 @@ import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, ADMIN_VIEWS_COOKIE_NAME, Role, extract_roles, now
 from cdedb.query import QueryOperators
 from tests.common import (
-    FrontendTest, UserIdentifier, USER_DICT, as_users, get_user, prepsql,
+    FrontendTest, UserIdentifier, USER_DICT, as_users, get_user, prepsql, storage,
 )
 
 
@@ -928,6 +928,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Es liegen noch unbearbeitete Transaktionen vor.",
                             div="notifications")
 
+    @storage
     @as_users("farin")
     def test_lastschrift_generate_transactions(self, user: CdEDBObject) -> None:
         self.traverse({'description': 'Mitglieder'},
@@ -940,7 +941,7 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['downloadsepapainform']
         g = self.response.forms['generatetransactionsform']
         self.submit(f, check_notification=False)
-        with open("/tmp/cdedb-store/testfiles/sepapain.xml", 'rb') as f:
+        with open(self.testfile_dir / "sepapain.xml", 'rb') as f:
             expectation = f.read().split(b'\n')
         exceptions = (5, 6, 14, 28, 66,)
         for index, line in enumerate(self.response.body.split(b'\n')):
@@ -955,6 +956,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertNonPresence("Aktuell befinden sich keine Einzüge in der "
                                "Schwebe.")
 
+    @storage
     @as_users("farin")
     def test_lastschrift_generate_single_transaction(self, user: CdEDBObject) -> None:
         self.traverse({'description': 'Mitglieder'},
@@ -967,7 +969,7 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['downloadsepapainform2']
         g = self.response.forms['generatetransactionform2']
         self.submit(f, check_notification=False)
-        with open("/tmp/cdedb-store/testfiles/sepapain.xml", 'rb') as f:
+        with open(self.testfile_dir / "sepapain.xml", 'rb') as f:
             expectation = f.read().split(b'\n')
         exceptions = (5, 6, 14, 28, 66,)
         for index, line in enumerate(self.response.body.split(b'\n')):
@@ -1149,6 +1151,7 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.assertTrue(self.response.body.startswith(b"%PDF"))
 
+    @storage
     @as_users("vera")
     def test_batch_admission(self, user: CdEDBObject) -> None:
         self.traverse({'description': 'Mitglieder'},
@@ -1156,7 +1159,7 @@ class TestCdEFrontend(FrontendTest):
                       {'description': 'Massenaufnahme'})
         self.assertTitle("Accounts anlegen")
         f = self.response.forms['admissionform']
-        with open("/tmp/cdedb-store/testfiles/batch_admission.csv") as datafile:
+        with open(self.testfile_dir / "batch_admission.csv") as datafile:
             tmp = datafile.read()
             placeholder_birthday = "03.10.9999"
             wandering_birthday = "03.10.{}".format(now().year - 5)
@@ -1391,13 +1394,14 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("CdE-Mitglied (Probemitgliedschaft)",
                             div="membership")
 
+    @storage
     @as_users("farin")
     def test_money_transfers(self, user: CdEDBObject) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Überweisungen eintragen'})
         self.assertTitle("Überweisungen eintragen")
         f = self.response.forms['transfersform']
-        with open("/tmp/cdedb-store/testfiles/money_transfers.csv") as datafile:
+        with open(self.testfile_dir / "money_transfers.csv") as datafile:
             f['transfers'] = datafile.read()
         self.submit(f, check_notification=False)
 
@@ -1489,6 +1493,7 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         # Here the active regex chars where successfully neutralised
 
+    @storage
     @as_users("farin")
     def test_money_transfers_file(self, user: CdEDBObject) -> None:
         self.traverse({'description': 'Mitglieder'},

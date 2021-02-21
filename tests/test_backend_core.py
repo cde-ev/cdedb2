@@ -13,7 +13,7 @@ from cdedb.common import (
 )
 from cdedb.validation import _PERSONA_CDE_CREATION
 from tests.common import (
-    ANONYMOUS, BackendTest, USER_DICT, as_users, create_mock_image, prepsql,
+    ANONYMOUS, BackendTest, USER_DICT, as_users, create_mock_image, prepsql, storage,
 )
 
 PERSONA_TEMPLATE = {
@@ -111,6 +111,7 @@ class TestCoreBackend(BackendTest):
         self.login(newuser)
         self.assertTrue(self.key)
 
+    @storage
     # Martin may do this in the backend, but not manually via the frontend.
     @as_users("anton", "martin", "vera")
     def test_invalidate_session(self, user: CdEDBObject) -> None:
@@ -163,6 +164,7 @@ class TestCoreBackend(BackendTest):
         _, log_entry = self.core.retrieve_log(self.key)
         self.assertIn(expected_log, log_entry)
 
+    @storage
     @as_users("vera", "berta")
     def test_set_foto(self, user: CdEDBObject) -> None:
         new_foto = create_mock_image('png')
@@ -824,8 +826,9 @@ class TestCoreBackend(BackendTest):
         self.assertFalse(self.core.genesis_attachment_usage(
             self.key, attachment_hash))
 
+    @storage
     def test_genesis_attachments(self) -> None:
-        pdffile = Path("/tmp/cdedb-store/testfiles/form.pdf")
+        pdffile = self.testfile_dir / "form.pdf"
         with open(pdffile, 'rb') as f:
             pdfdata = f.read()
         pdfhash = get_hash(pdfdata)
