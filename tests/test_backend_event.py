@@ -1933,6 +1933,7 @@ class TestEventBackend(BackendTest):
 
         return ret
 
+    @storage
     @as_users("annika", "garcia")
     def test_export_event(self, user: CdEDBObject) -> None:
         with open(self.testfile_dir / "event_export.json", "r") as f:

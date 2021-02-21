@@ -1097,6 +1097,7 @@ class TestCoreFrontend(FrontendTest):
                     self.assertNonPresence(msg)
                     self.assertPresence("Ja", div='account-active')
 
+    @storage
     @as_users("vera", "berta")
     def test_get_foto(self, user: CdEDBObject) -> None:
         response = self.app.get(
