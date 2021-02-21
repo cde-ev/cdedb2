@@ -730,7 +730,7 @@ def storage(fun: F) -> F:
         subprocess.check_call(['make', 'storage-test'],
                               stdout=subprocess.DEVNULL)
         res = fun(*args, **kwargs)
-        subprocess.check_call(['rm', '-rf', f"/tmp/cdedb-store-{os.environ['TESTTHREADNR']}/*"])
+        subprocess.check_call(['rm', '-rf', f"/tmp/cdedb-store-{os.environ['TESTTHREADNR']}"])
         return res
     return cast(F, new_fun)
 
