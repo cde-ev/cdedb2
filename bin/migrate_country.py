@@ -519,11 +519,36 @@ code_to_german = {
     "CY": "Zypern",
 }
 specials_to_code = {
-    "USA": "US",
-    "NRW": "DE",
+    # Funny Germanys
+    "Alemania": "DE",
+    "Baden Württemberg, Deutschland": "DE",
+    "Bayern": "DE",
+    "Berlin": "DE",
+    "D": "DE",
+    "Deutschlad": "DE",
+    "Deutschland (DEU)": "DE",
+    "Deutschland, Nordrhein-Westfalen": "DE",
+    "Dutschland": "DE",
     "GER": "DE",
-    "Scotland": "UK",
+    "Hessen": "DE",
+    "Niedersachsen": "DE",
+    "Nordrhein-Westfalen": "DE",
+    "Nordrhein-Westfalen / Deutschland": "DE",
+    "NRW": "DE",
+
+    # Other countries
+    "Tschechische Republik": "CZ",
+    "España": "ES",
+    "Korea, Republik": "KR",
+    "Moldawien": "MD",
+    "Polska": "PL",
+    "România": "RO",
+    "Slovensko": "SK",
+    "Great Britain": "UK",
+    "Großbritannien": "UK",
     "Schottland": "UK",
+    "Scotland": "UK",
+    "USA": "US",
 }
 
 all_to_code = {
