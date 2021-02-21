@@ -4020,6 +4020,8 @@ def _query_input(
 
         if operator in MULTI_VALUE_OPERATORS:
             values = escaped_split(value, separator, escape)
+            # filter out empty strings
+            values = filter(None, values)
             value = []
             for v in values:
                 # Validate every single value

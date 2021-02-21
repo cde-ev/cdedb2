@@ -463,6 +463,15 @@ class TestCdEFrontend(FrontendTest):
             self.assertValidationError("qval_" + field,
                                        "Darf keine verbotenen Zeichen enthalten")
 
+        # Test too many separators
+        # See #1816
+        self.traverse({'description': 'Mitglieder'},
+                      {'description': 'CdE-Mitglied suchen'})
+        f = self.response.forms["membersearchform"]
+        f["qval_fulltext"] = "Inga  Iota"
+        self.submit(f)
+        self.assertTitle("Inga Iota")
+
     @as_users("inga")
     def test_member_search_restrictions(self, user: CdEDBObject) -> None:
         self.traverse({'description': 'Mitglieder'},
@@ -482,7 +491,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'CdE-Mitglied suchen'})
 
-        # Fulltext search is a bit special: This handel every word individual
+        # Fulltext search is a bit special: This handles every word individually
         # len(word) <= 3 must be a word (add word boundaries in the query)
         f = self.response.forms['membersearchform']
         f['qval_fulltext'] = "sta"
