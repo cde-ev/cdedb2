@@ -481,7 +481,7 @@
         {% set entries = entries|sort(attribute=1) if sort else entries %}
         {%- for value, label in entries %}
             <option value="{{ value }}"
-                    {%- if not values.get(name) and defaultvalue == value %} selected="selected"{% endif %}>
+                    {%- if values.get(name, defaultvalue)|string == value|string %} selected="selected"{% endif %}>
                 {{- label -}}
             </option>
         {%- endfor %}

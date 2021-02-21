@@ -1407,19 +1407,22 @@ def _german_postal_code(
 
 @_add_typed_validator
 def _country(
-    val: Any, argname: str = None, *, _ignore_warnings: bool = False, **kwargs: Any
+    val: Any, argname: str = None, *, _ignore_warnings: bool = False,
+    _convert: bool = True, **kwargs: Any
 ) -> Country:
     """
     :param aux: Additional information. In this case the country belonging
         to the postal code.
     :param _ignore_warnings: If True, ignore invalid german postcodes.
     """
+    if _convert and not val:
+        val = "DE"
     val = _ALL_TYPED[str](val, argname, _ignore_warnings=_ignore_warnings, **kwargs)
-    if val:
+    if _convert:
         val = val.strip()
-        if val not in COUNTRY_CODES:
-            raise ValidationSummary(ValidationWarning(
-                argname, n_("Enter actual country name in English.")))
+    if val not in COUNTRY_CODES:
+        raise ValidationSummary(ValidationWarning(
+            argname, n_("Enter actual country name in English.")))
     return Country(val)
 
 

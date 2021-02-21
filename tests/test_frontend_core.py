@@ -1528,6 +1528,7 @@ class TestCoreFrontend(FrontendTest):
         f['address'] = "Auf dem Hügel"
         f['postal_code'] = "ABC-123"
         f['location'] = "Überall"
+        f['country'] = "DE"
         self.assertNonPresence("Warnungen ignorieren")
         self.submit(f, check_notification=False)
         self.assertPresence("Ungültige Postleitzahl")
@@ -1865,7 +1866,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesisform']
         for field, entry in self.EVENT_GENESIS_DATA.items():
             f[field] = entry
-        f['country'] = ""
+        f['country'] = "DE"
         f['postal_code'] = "Z-12345"
         self.submit(f, check_notification=False)
         self.assertPresence("Ungültige Postleitzahl.")

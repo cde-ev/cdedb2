@@ -909,7 +909,7 @@ class TestCoreBackend(BackendTest):
             'address': 'Im Garten 77',
             'address_supplement': 'bei Spielmanns',
             'birthday': datetime.date(1981, 2, 11),
-            'country': None,
+            'country': "DE",
             'gender': 1,
             'location': 'Utopia',
             'mobile': '0163/123456789',
