@@ -29,7 +29,7 @@ from cdedb.ml_type_aux import (
 )
 from cdedb.query import QUERY_SPECS, Query, mangle_query_input
 from cdedb.validation import (
-    ALL_MAILINGLIST_FIELDS, _PERSONA_FULL_ML_CREATION, filter_none
+    ALL_MAILINGLIST_FIELDS, PERSONA_FULL_ML_CREATION, filter_none
 )
 
 
@@ -91,7 +91,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         return super().create_user_form(rs)
 
     @access("core_admin", "ml_admin", modi={"POST"})
-    @REQUESTdatadict(*filter_none(_PERSONA_FULL_ML_CREATION))
+    @REQUESTdatadict(*filter_none(PERSONA_FULL_ML_CREATION))
     def create_user(self, rs: RequestState, data: Dict[str, Any],
                     ignore_warnings: bool = False) -> Response:
         defaults = {
