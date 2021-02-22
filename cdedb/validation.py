@@ -953,7 +953,7 @@ def _email_local_part(
     return EmailLocalPart(val)
 
 
-PERSONA_TYPE_FIELDS: Mapping[str, Any] = {
+PERSONA_TYPE_FIELDS: TypeMapping = {
     'is_cde_realm': bool,
     'is_event_realm': bool,
     'is_ml_realm': bool,
@@ -1408,7 +1408,7 @@ def _german_postal_code(
     return GermanPostalCode(val)
 
 
-GENESIS_CASE_COMMON_FIELDS: Mapping[str, Any] = {
+GENESIS_CASE_COMMON_FIELDS: TypeMapping = {
     'username': Email,
     'given_names': str,
     'family_name': str,
@@ -1416,7 +1416,7 @@ GENESIS_CASE_COMMON_FIELDS: Mapping[str, Any] = {
     'notes': str,
 }
 
-GENESIS_CASE_OPTIONAL_FIELDS: Mapping[str, Any] = {
+GENESIS_CASE_OPTIONAL_FIELDS: TypeMapping = {
     'case_status': const.GenesisStati,
     'reviewer': ID,
 }
@@ -1484,7 +1484,7 @@ def _genesis_case(
     return GenesisCase(val)
 
 
-PRIVILEGE_CHANGE_COMMON_FIELDS: Mapping[str, Any] = {
+PRIVILEGE_CHANGE_COMMON_FIELDS: TypeMapping = {
     'persona_id': ID,
     'submitted_by': ID,
     'status': const.PrivilegeChangeStati,
@@ -1807,7 +1807,7 @@ def _lastschrift_transaction(
         val, mandatory_fields, optional_fields, **kwargs))
 
 
-SEPA_TRANSACTIONS_FIELDS: Mapping[str, Any] = {
+SEPA_TRANSACTIONS_FIELDS: TypeMapping = {
     'issued_at': datetime.datetime,
     'lastschrift_id': ID,
     'period_id': ID,
@@ -1874,7 +1874,7 @@ def _sepa_transactions(
     return SepaTransactions(ret)
 
 
-SEPA_META_FIELDS: Mapping[str, Any] = {
+SEPA_META_FIELDS: TypeMapping = {
     'message_id': str,
     'total_sum': PositiveDecimal,
     'partial_sums': Mapping,
@@ -1883,7 +1883,7 @@ SEPA_META_FIELDS: Mapping[str, Any] = {
     'payment_date': datetime.date,
 }
 
-SEPA_SENDER_FIELDS: Mapping[str, Any] = {
+SEPA_SENDER_FIELDS: TypeMapping = {
     'name': str,
     'address': Iterable,
     'country': str,
@@ -1982,7 +1982,7 @@ def _meta_info(
     return MetaInfo(val)
 
 
-INSTITUTION_COMMON_FIELDS: Mapping[str, Any] = {
+INSTITUTION_COMMON_FIELDS: TypeMapping = {
     'title': str,
     'shortname': str,
 }
@@ -2274,7 +2274,7 @@ def _event_part(
     return EventPart(val)
 
 
-EVENT_TRACK_COMMON_FIELDS: Mapping[str, Any] = {
+EVENT_TRACK_COMMON_FIELDS: TypeMapping = {
     'title': str,
     'shortname': str,
     'num_choices': NonNegativeInt,
@@ -2466,7 +2466,7 @@ COURSE_COMMON_FIELDS: Mapping[str, Any] = {
     'notes': Optional[str],
 }
 
-COURSE_OPTIONAL_FIELDS: Mapping[str, Any] = {
+COURSE_OPTIONAL_FIELDS: TypeMapping = {
     'segments': Iterable,
     'active_segments': Iterable,
     'fields': Mapping,
@@ -2726,7 +2726,7 @@ def _event_associated_fields(
     return EventAssociatedFields(val)
 
 
-LODGEMENT_GROUP_FIELDS: Mapping[str, Any] = {
+LODGEMENT_GROUP_FIELDS: TypeMapping = {
     'title': str,
 }
 
@@ -2763,7 +2763,7 @@ LODGEMENT_COMMON_FIELDS: Mapping[str, Any] = {
     'group_id': Optional[ID],
 }
 
-LODGEMENT_OPTIONAL_FIELDS: Mapping[str, Any] = {
+LODGEMENT_OPTIONAL_FIELDS: TypeMapping = {
     'fields': Mapping,
 }
 
@@ -3176,7 +3176,7 @@ PARTIAL_COURSE_COMMON_FIELDS: Mapping[str, Any] = {
     'notes': Optional[str],
 }
 
-PARTIAL_COURSE_OPTIONAL_FIELDS: Mapping[str, Any] = {
+PARTIAL_COURSE_OPTIONAL_FIELDS: TypeMapping = {
     'segments': Mapping,
     'fields': Mapping,
 }
@@ -3225,7 +3225,7 @@ def _partial_course(
     return PartialCourse(val)
 
 
-PARTIAL_LODGEMENT_GROUP_FIELDS: Mapping[str, Any] = {
+PARTIAL_LODGEMENT_GROUP_FIELDS: TypeMapping = {
     'title': str,
 }
 
@@ -3261,7 +3261,7 @@ PARTIAL_LODGEMENT_COMMON_FIELDS: Mapping[str, Any] = {
     'group_id': Optional[PartialImportID],
 }
 
-PARTIAL_LODGEMENT_OPTIONAL_FIELDS: Mapping[str, Any] = {
+PARTIAL_LODGEMENT_OPTIONAL_FIELDS: TypeMapping = {
     'fields': Mapping,
 }
 
@@ -3538,11 +3538,11 @@ SUBSCRIPTION_ID_FIELDS: TypeMapping = {
     'persona_id': ID,
 }
 
-SUBSCRIPTION_STATE_FIELDS: Mapping[str, Any] = {
+SUBSCRIPTION_STATE_FIELDS: TypeMapping = {
     'subscription_state': const.SubscriptionStates,
 }
 
-SUBSCRIPTION_ADDRESS_FIELDS: Mapping[str, Any] = {
+SUBSCRIPTION_ADDRESS_FIELDS: TypeMapping = {
     'address': Email,
 }
 
@@ -3770,7 +3770,7 @@ def _ballot(
     return Ballot(val)
 
 
-BALLOT_CANDIDATE_COMMON_FIELDS: Mapping[str, Any] = {
+BALLOT_CANDIDATE_COMMON_FIELDS: TypeMapping = {
     'title': str,
     'shortname': Identifier,
 }
