@@ -676,6 +676,11 @@ def get_markdown_parser() -> markdown.Markdown:
     return md
 
 
+def markdown_parse_safe(val: str) -> jinja2.Markup:
+    md = get_markdown_parser()
+    return bleach_filter(md.convert(val))
+
+
 @overload
 def md_filter(val: None) -> None: ...
 
@@ -688,8 +693,7 @@ def md_filter(val: Optional[str]) -> Optional[jinja2.Markup]:
     """Custom jinja filter to convert markdown to html."""
     if val is None:
         return None
-    md = get_markdown_parser()
-    return bleach_filter(md.convert(val))
+    return markdown_parse_safe(val)
 
 
 @jinja2.environmentfilter
