@@ -36,7 +36,7 @@ class TestMlBackend(BackendTest):
             self.ml.merge_accounts(self.key,
                                    source_persona_id=USER_DICT['rowena']['id'],
                                    target_persona_id=berta_id)
-        self.assertEqual("Source User must be ml realm only.", str(e.exception))
+        self.assertEqual("Source persona must be ml-only user.", str(e.exception))
 
         with self.assertRaises(ValueError) as e:
             self.ml.merge_accounts(self.key,
@@ -54,7 +54,7 @@ class TestMlBackend(BackendTest):
             self.ml.merge_accounts(self.key,
                                    source_persona_id=janis_id,
                                    target_persona_id=berta_id)
-        self.assertEqual("Both users are related to the same mailinglists: 3",
+        self.assertEqual("Both users are related to the same mailinglists: Witz des Tages",
                          str(e.exception))
 
         # remove the blocking subscription of berta
@@ -78,7 +78,7 @@ class TestMlBackend(BackendTest):
 
         # check the logs
         expectation = (8, (
-            {'change_note': 'Dieser Account hat User 10 geschluckt.',
+            {'change_note': 'Nutzer 10 ist in diesem Account aufgegangen.',
              'code': const.MlLogCodes.subscribed,
              'ctime': nearly_now(),
              'id': 1001,
@@ -92,7 +92,7 @@ class TestMlBackend(BackendTest):
              'mailinglist_id': 3,
              'persona_id': 2,
              'submitted_by': 1},
-            {'change_note': 'Dieser Account hat User 10 geschluckt.',
+            {'change_note': 'Nutzer 10 ist in diesem Account aufgegangen.',
              'code': const.MlLogCodes.subscribed,
              'ctime': nearly_now(),
              'id': 1003,
@@ -106,7 +106,7 @@ class TestMlBackend(BackendTest):
              'mailinglist_id': 64,
              'persona_id': 2,
              'submitted_by': 1},
-            {'change_note': 'Dieser Account hat User 10 geschluckt.',
+            {'change_note': 'Nutzer 10 ist in diesem Account aufgegangen.',
              'code': const.MlLogCodes.subscribed,
              'ctime': nearly_now(),
              'id': 1005,
@@ -120,14 +120,14 @@ class TestMlBackend(BackendTest):
              'mailinglist_id': 65,
              'persona_id': 2,
              'submitted_by': 1},
-            {'change_note': 'User 10 wurde von User 2 geschluckt.',
+            {'change_note': 'Nutzer 10 ist in diesem Account aufgegangen.',
              'code': const.MlLogCodes.moderator_added,
              'ctime': nearly_now(),
              'id': 1007,
              'mailinglist_id': 2,
              'persona_id': 2,
              'submitted_by': 1},
-            {'change_note': 'User 10 wurde von User 2 geschluckt.',
+            {'change_note': 'Nutzer 10 ist in diesem Account aufgegangen.',
              'code': const.MlLogCodes.moderator_added,
              'ctime': nearly_now(),
              'id': 1008,

@@ -1409,8 +1409,6 @@ class MlBackend(AbstractBackend):
                     code *= self.set_subscription_address(
                         rs, ml_id, persona_id=target_persona_id, email=address)
 
-            msg = (f"Der Nutzer {source_persona_id} ist im Nutzer {target_persona_id}"
-                   f" aufgegangen.")
             mls = self.get_mailinglists(rs, source_moderates)
             for ml_id in source_moderates:
                 current_moderators: Set[int] = mls[ml_id]["moderators"]
