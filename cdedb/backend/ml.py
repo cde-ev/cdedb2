@@ -1360,6 +1360,8 @@ class MlBackend(AbstractBackend):
                 raise ValueError(n_("Target User is no valid ml user."))
             if target['is_archived']:
                 raise ValueError(n_("Target User is not accessible."))
+            if source_persona_id == target_persona_id:
+                raise ValueError(n_("Can not merge user into himself."))
 
             # retrieve all mailinglists they are subscribed to
             # TODO restrict to active mailinglists?

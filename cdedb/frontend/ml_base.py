@@ -295,6 +295,10 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs.append_validation_error(
                 ("source_persona_id", ValueError(n_(
                     "Source persona must be ml-only user."))))
+        if source_persona_id == target_persona_id:
+            rs.append_validation_error(
+                ("target_persona_id", ValueError(n_(
+                    "Can not merge user into himself."))))
         if rs.has_validation_errors():
             return self.merge_accounts_form(rs)
         try:
