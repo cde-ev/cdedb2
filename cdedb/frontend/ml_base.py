@@ -272,6 +272,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("ml_admin")
     def merge_accounts_form(self, rs: RequestState) -> Response:
+        """Render form."""
         return self.render(rs, "merge_accounts")
 
     @access("ml_admin", modi={"POST"})
@@ -280,6 +281,14 @@ class MlBaseFrontend(AbstractUserFrontend):
                        source_persona_id: vtypes.CdedbID,
                        target_persona_id: vtypes.CdedbID,
                        clone_addresses: bool) -> Response:
+        """Merge a ml only user (source) into an other user (target).
+
+        This mirrors the subscription states and moderator privileges of the source
+        to the target.
+
+        Make sure that the two users are not related to the same mailinglist. Otherwise,
+        this function will abort.
+        """
         if rs.has_validation_errors():
             return self.merge_accounts_form(rs)
         # The source will be archived after successful merge, so we require a core admin
