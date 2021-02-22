@@ -66,12 +66,12 @@ class TestMlFrontend(FrontendTest):
                    "Alle Mailinglisten", "Nutzer verwalten"]
         # Users with full ml-admin privileges.
         elif user['id'] in {USER_DICT['nina']['id']}:
-            ins = ["Aktive Mailinglisten", "Alle Mailinglisten",
+            ins = ["Aktive Mailinglisten", "Alle Mailinglisten", "Accounts verschmelzen",
                    "Nutzer verwalten", "Log"]
             out = ["Übersicht", "Moderierte Mailinglisten"]
-        # Users with moderated mailinglisrs with full ml-admin privileges.
+        # Users with moderated mailinglists with full ml-admin privileges.
         elif user['id'] in {USER_DICT['anton']['id']}:
-            ins = ["Aktive Mailinglisten", "Alle Mailinglisten",
+            ins = ["Aktive Mailinglisten", "Alle Mailinglisten", "Accounts verschmelzen",
                    "Moderierte Mailinglisten", "Nutzer verwalten", "Log"]
             out = ["Übersicht"]
         else:
