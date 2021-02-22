@@ -101,7 +101,7 @@
 
     {% if attachments or has_ballot_attachments or ("assembly_presider" in user.admin_views
                                                     or ambience['assembly']['id'] in user.presider) %}
-        {% call util.bootstrap_panel(title=gettext("Files"), icon='file') %}
+        {% call util.bootstrap_panel(title=gettext("Files"), icon='file', anid='attachmentspanel') %}
         <div class="row">
             {% if attachments or ("assembly_presider" in user.admin_views
                                   or ambience['assembly']['id'] in user.presider) %}
@@ -161,10 +161,11 @@
                                         {{ util.anti_csrf_token('assembly/create_assembly_mailinglist') }}
                                         {{ util.input_hidden('presider_list', value=True) }}
                                         {{ util.input_submit(
-                                                value=gettext("Create Presider Mailinglist"), aclass="btn btn-success",
+                                                value=gettext("Create presider mailinglist"), aclass="btn btn-success",
                                                 icon="plus", readonly=not ambience['assembly']['presiders'],
                                                 title=("" if ambience['assembly']['presiders']
-                                                       else "Must have presiders to create mailinglist.")) }}
+                                                       else gettext("Must have presiders in order to"
+                                                                    " create a mailinglist."))) }}
                                     </form>
                                 </div>
                             </div>
@@ -186,10 +187,11 @@
                                         {{ util.anti_csrf_token('assembly/create_assembly_mailinglist') }}
                                         {{ util.input_hidden('presider_list', value=False) }}
                                         {{ util.input_submit(
-                                                value=gettext("Create Attendee Mailinglist"), aclass="btn btn-success",
+                                                value=gettext("Create attendee mailinglist"), aclass="btn btn-success",
                                                 icon="plus", readonly=not ambience['assembly']['presiders'],
                                                 title=("" if ambience['assembly']['presiders']
-                                                       else "Must have presiders to create mailinglist.")) }}
+                                                       else gettext("Must have presiders in order to"
+                                                                    " create a mailinglist."))) }}
                                     </form>
                                 </div>
                             </div>

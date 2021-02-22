@@ -33,6 +33,9 @@ steps:
   detach: true # detach to keep running for the following steps
   environment:
     POSTGRES_PASSWORD: passwd
+  volumes:
+  - name: database
+    path: /var/lib/postgresql/data
 - name: testsuite
   image: cdedb
   pull: never # do not try to pull image from docker hub
@@ -48,6 +51,9 @@ volumes:
 - name: dockersock
   host:
     path: /var/run/docker.sock
+- name: database
+  temp:
+    medium: memory
 
 trigger:
   branch:

@@ -27,9 +27,10 @@ help:
 	@echo "coverage -- run coverage to determine test suite coverage"
 
 PYTHONBIN ?= python3
-PYLINTBIN ?= pylint3
-COVERAGEBIN ?= python3-coverage
-MYPYBIN ?= mypy
+FLAKE8 ?= $(PYTHONBIN) -m flake8
+PYLINT ?= $(PYTHONBIN) -m pylint
+COVERAGE ?= $(PYTHONBIN) -m coverage
+MYPY ?= $(PYTHONBIN) -m mypy
 TESTPREPARATION ?= automatic
 I18NDIR ?= ./i18n
 
@@ -55,13 +56,11 @@ i18n-extract:
 		--output=$(I18NDIR)/cdedb.pot --input-dirs=.
 
 i18n-update:
-	msgmerge --sort-by-file --lang=de --update \
-		$(I18NDIR)/de/LC_MESSAGES/cdedb.po $(I18NDIR)/cdedb.pot
-	msgmerge --sort-by-file --lang=en --update \
-		$(I18NDIR)/en/LC_MESSAGES/cdedb.po $(I18NDIR)/cdedb.pot
-	msgattrib --no-obsolete -o $(I18NDIR)/de/LC_MESSAGES/cdedb.po \
+	msgmerge --lang=de --update $(I18NDIR)/de/LC_MESSAGES/cdedb.po $(I18NDIR)/cdedb.pot
+	msgmerge --lang=en --update $(I18NDIR)/en/LC_MESSAGES/cdedb.po $(I18NDIR)/cdedb.pot
+	msgattrib --no-obsolete --sort-by-file -o $(I18NDIR)/de/LC_MESSAGES/cdedb.po \
 		$(I18NDIR)/de/LC_MESSAGES/cdedb.po
-	msgattrib --no-obsolete -o $(I18NDIR)/en/LC_MESSAGES/cdedb.po \
+	msgattrib --no-obsolete --sort-by-file -o $(I18NDIR)/en/LC_MESSAGES/cdedb.po \
 		$(I18NDIR)/en/LC_MESSAGES/cdedb.po
 	# TODO: do we want to use msgattribs --indent option for prettier po files?
 
@@ -76,6 +75,13 @@ sample-data:
 	$(MAKE) storage > /dev/null
 	$(MAKE) sql > /dev/null
 
+sample-data-dump:
+	JSONTEMPFILE=`sudo -u www-data mktemp` \
+		&& sudo -u www-data chmod +r "$${JSONTEMPFILE}" \
+		&& sudo -u www-data $(PYTHONBIN) tests/create_sample_data_json.py -o "$${JSONTEMPFILE}" \
+		&& cp "$${JSONTEMPFILE}" tests/ancillary_files/sample_data.json \
+		&& sudo -u www-data rm "$${JSONTEMPFILE}"
+
 sample-data-test:
 	$(MAKE) storage-test
 	$(MAKE) sql-test
@@ -85,6 +91,8 @@ sample-data-test-shallow:
 	$(MAKE) sql-test-shallow
 
 sample-data-xss:
+	cp -f related/auto-build/files/stage3/localconfig.py cdedb/localconfig.py
+	$(MAKE) storage > /dev/null
 	$(MAKE) sql-xss
 
 TESTFOTONAME := e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e6$\
@@ -183,16 +191,28 @@ sql-test-shallow: tests/ancillary_files/sample_data.sql
 	$(PYTHONBIN) bin/execute_sql_script.py -f tests/ancillary_files/clean_data.sql --dbname=cdb_test
 	$(PYTHONBIN) bin/execute_sql_script.py -f tests/ancillary_files/sample_data.sql --dbname=cdb_test
 
-sql-xss: tests/ancillary_files/sample_data_escaping.sql
+sql-xss: tests/ancillary_files/sample_data_xss.sql
 ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
 	$(error Refusing to touch live instance)
 endif
 ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
 	$(error Refusing to touch orga instance)
 endif
-	$(MAKE) sql
-	$(PYTHONBIN) bin/execute_sql_script.py -f tests/ancillary_files/sample_data_escaping.sql --dbname=cdb
-	$(PYTHONBIN) bin/execute_sql_script.py -f tests/ancillary_files/sample_data_escaping.sql --dbname=cdb_test
+ifeq ($(wildcard /CONTAINER),/CONTAINER)
+	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-users.sql
+	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb
+	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb_test
+else
+	sudo systemctl stop pgbouncer
+	sudo -u postgres psql -f cdedb/database/cdedb-users.sql
+	sudo -u postgres psql -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb
+	sudo -u postgres psql -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb_test
+	sudo systemctl start pgbouncer
+endif
+	$(PYTHONBIN) bin/execute_sql_script.py -f cdedb/database/cdedb-tables.sql --dbname=cdb
+	$(PYTHONBIN) bin/execute_sql_script.py -f cdedb/database/cdedb-tables.sql --dbname=cdb_test
+	$(PYTHONBIN) bin/execute_sql_script.py -f tests/ancillary_files/sample_data_xss.sql --dbname=cdb
+	$(PYTHONBIN) bin/execute_sql_script.py -f tests/ancillary_files/sample_data_xss.sql --dbname=cdb_test
 
 cron:
 	sudo -u www-data /cdedb2/bin/cron_execute.py
@@ -207,10 +227,16 @@ lint:
 	grep -E -R '^.{121,}' cdedb/frontend/templates/ | grep 'tmpl:'
 	@echo ""
 	@echo $(BANNERLINE)
+	@echo "All of flake8"
+	@echo $(BANNERLINE)
+	@echo ""
+	$(FLAKE8) cdedb
+	@echo ""
+	@echo $(BANNERLINE)
 	@echo "All of pylint"
 	@echo $(BANNERLINE)
 	@echo ""
-	${PYLINTBIN} cdedb
+	$(PYLINT) cdedb
 
 
 prepare-check:
@@ -235,12 +261,9 @@ single-check:
 
 xss-check: export CDEDB_TEST=True
 xss-check:
-	$(MAKE) prepare-check
-	sudo -u cdb psql -U cdb -d cdb_test \
-		-f tests/ancillary_files/clean_data.sql &>/dev/null
-	sudo -u cdb psql -U cdb -d cdb_test \
-		-f tests/ancillary_files/sample_data_escaping.sql &>/dev/null
-	$(PYTHONBIN) -m bin.escape_fuzzing 2>/dev/null
+	$(MAKE) prepare-check &> /dev/null
+	$(MAKE) sample-data-xss &> /dev/null
+	$(PYTHONBIN) -m bin.escape_fuzzing
 
 dump-html: export SCRAP_ENCOUNTERED_PAGES=1 TESTPATTERN=test_frontend
 dump-html:
@@ -274,11 +297,11 @@ VALIDATORCHECKSUM := "c7d8d7c925dbd64fd5270f7b81a56f526e6bbef0 $\
 		$(wildcard cdedb/frontend/*.py) \
 		$(wildcard cdedb/backend/*.py) $(wildcard tests/*.py)
 	$(MAKE) prepare-check
-	$(COVERAGEBIN) run -m tests.main
+	$(COVERAGE) run -m tests.main
 
 coverage: .coverage
-	$(COVERAGEBIN) report --include 'cdedb/*' --show-missing
-	$(COVERAGEBIN) html --include 'cdedb/*'
+	$(COVERAGE) report --include 'cdedb/*' --show-missing
+	$(COVERAGE) html --include 'cdedb/*'
 	@echo "HTML reports for easier inspection are in ./htmlcov"
 
 tests/ancillary_files/sample_data.sql: tests/ancillary_files/sample_data.json \
@@ -292,5 +315,17 @@ tests/ancillary_files/sample_data.sql: tests/ancillary_files/sample_data.json \
 		&& cp "$${SQLTEMPFILE}" tests/ancillary_files/sample_data.sql \
 		&& sudo -u www-data rm "$${SQLTEMPFILE}"
 
+tests/ancillary_files/sample_data_xss.sql: tests/ancillary_files/sample_data.json \
+		tests/create_sample_data_sql.py cdedb/database/cdedb-tables.sql
+	SQLTEMPFILE=`sudo -u www-data mktemp` \
+		&& sudo -u www-data chmod +r "$${SQLTEMPFILE}" \
+		&& sudo -u www-data $(PYTHONBIN) \
+			tests/create_sample_data_sql.py \
+			-i tests/ancillary_files/sample_data.json \
+			-o "$${SQLTEMPFILE}" \
+			--xss \
+		&& cp "$${SQLTEMPFILE}" tests/ancillary_files/sample_data_xss.sql \
+		&& sudo -u www-data rm "$${SQLTEMPFILE}"
+
 mypy:
-	${MYPYBIN} bin cdedb tests
+	$(MYPY) bin cdedb tests

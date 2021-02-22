@@ -21,8 +21,7 @@ Please note, that this will still not catch any vulnerabilities, since it does
 not visits any page in any possible state with any possible request data. For
 example the following things not taken into account:
   * locked events
-  * form submits with some valid data and only some values set to to the
-    marker string
+  * form submits with some valid data and only some values set to to the payload
 
 To avoid confusion by the error output of the cdedb, you may want to execute
 this script, as follows:
@@ -30,14 +29,12 @@ this script, as follows:
    python3 -m bin.escape_fuzzing 2>/dev/null
 """
 import itertools
-import os
 import pathlib
 import queue
-from typing import NamedTuple, Optional
+import time
+from typing import NamedTuple, Optional, TYPE_CHECKING
 
 import webtest
-
-os.environ['CDEDB_TEST'] = "True"
 
 from cdedb.config import BasicConfig
 from cdedb.frontend.application import Application
@@ -56,16 +53,20 @@ visited_urls = set()
 posted_urls = set()
 ResponseData = NamedTuple("ResponseData", [("response", webtest.TestResponse),
                                            ("url", str), ("referer", Optional[str])])
-response_queue: queue.Queue[ResponseData] = queue.Queue()
+if TYPE_CHECKING:
+    response_queue: queue.Queue[ResponseData]
+response_queue = queue.Queue()
 
 # URL parameters to ignore when checking for unique urls
 IGNORE_URL_PARAMS = ('confirm_id',)
 
 # exclude some forms which do some undesired behaviour
 posted_urls.add('/core/logout')
+posted_urls.add('/core/logout/all')
 posted_urls.add('/core/locale')
 posted_urls.add('/event/event/1/lock')
 posted_urls.add('/event/event/2/lock')
+posted_urls.add('/event/event/3/lock')
 
 # login as Anton and add the start page
 start_page = wt_app.get('/')
@@ -76,7 +77,23 @@ start_page = login_form.submit()
 start_page = start_page.maybe_follow()
 response_queue.put(ResponseData(start_page, '/', None))
 
+errors = []
 
+payload = "<script>abcdef</script>"
+double_escape = "&amp;lt;"
+
+
+def log_error(s: str) -> None:
+    print(s)
+    errors.append(s)
+
+
+def fmt(e: Exception) -> str:
+    """Helper to format overly long exceptions."""
+    return str(e)[:90]
+
+
+start_time = time.time()
 while True:
     try:
         response, url, referer = response_queue.get(False)
@@ -87,33 +104,34 @@ while True:
         continue
 
     if b"cgitb" in response.body:
-        print("Found a cgitb error page while following {}".format(url))
+        log_error(f"Found a cgitb error page while following {url}")
         continue
 
     # Do checks
-    # print("Checking {} ...".format(url))
-    if "<script>abcdef" in response.text:
-        print(">>> Found unescaped marker <script> in {}, reached from {}"
-              .format(url, referer))
+    # print(f"Checking {url} ...")
+    if payload in response.text:
+        log_error(f"Found unescaped payload in {url}, reached from {referer}.")
         if outdir.exists():
             outfile = outdir / str(len(list(outdir.iterdir())))
-            with open(outfile, 'wb') as f:
-                f.write(response.body)
-    if "&amp;lt;" in response.text:
-        print(">>> Found double escaped '<' in {}, reached from {}"
-              .format(url, referer))
+            with open(outfile, 'wb') as out:
+                out.write(response.body)
+    if double_escape in response.text:
+        log_error(f"Found double escaped '<' in {url}, reached from {referer}")
         if outdir.exists():
             outfile = outdir / str(len(list(outdir.iterdir())))
-            with open(outfile, 'wb') as f:
-                f.write(response.body)
+            with open(outfile, 'wb') as out:
+                out.write(response.body)
 
     # Follow all links to unvisited page urls
     for link_element in response.html.find_all('a'):
         if 'href' not in link_element.attrs:
             continue
         target = str(link_element.attrs['href'])
-        if target.startswith(('http://', 'https://', 'mailto:', '/doc/')):
+        if target.startswith(('http://', 'https://', 'mailto:', 'tel:', '/doc/',
+                              '/static/')):
             continue
+        if target.startswith('/db'):
+            target = target[3:]
         target = target.split('#')[0]
 
         # Strip ambiguous parameters from the url to check if it has already
@@ -133,7 +151,7 @@ while True:
             new_response = response.goto(target)
             new_response = new_response.maybe_follow()
         except webtest.app.AppError as e:
-            print("Got error when following {}: {}".format(target, str(e)[:70]))
+            log_error(f"Got error when following {target} from {url}: {fmt(e)}")
             continue
         visited_urls.add(unique_target)
         response_queue.put(ResponseData(new_response, target, url))
@@ -147,8 +165,7 @@ while True:
             new_response = form.submit()
             new_response = new_response.maybe_follow()
         except webtest.app.AppError as e:
-            print("Got error when posting to {}: {}"
-                  .format(form.action, str(e)[:70]))
+            log_error(f"Got error when posting to {form.action}: {fmt(e)}")
             continue
         posted_urls.add(form.action)
         response_queue.put(ResponseData(new_response, form.action + " [P]", url), True)
@@ -158,12 +175,14 @@ while True:
             if isinstance(field, (webtest.forms.Checkbox, webtest.forms.Radio,
                                   webtest.forms.File)):
                 continue
-            field.force_value("<script>abcdef</script>")
+            field.force_value(payload)
         try:
             new_response = form.submit()
             new_response = new_response.maybe_follow()
         except webtest.app.AppError as e:
-            print("Got error when posting to {} with marker data: {}"
-                  .format(form.action, str(e)[:70]))
+            log_error(f"Got error when posting to {form.action} with payload: {fmt(e)}")
             continue
         response_queue.put(ResponseData(new_response, form.action + " [P+token]", url))
+
+end_time = time.time()
+print(f"Found {len(errors)} errors in {end_time - start_time:.3f} seconds.")
