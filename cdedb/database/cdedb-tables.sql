@@ -208,7 +208,7 @@ CREATE TABLE core.genesis_cases (
         notes                   varchar,
         -- For some realms an attachment may be included. This column contains the filename,
         -- which is the hash of the file.
-        attachment              varchar,
+        attachment_hash         varchar,
         -- A verification link is sent to the email address; upon
         -- verification an admittance email is sent to the responsible team
         --
