@@ -49,7 +49,7 @@
                 false, false, '{{ gettext("CdEDB-ID, Name or E-Mail") }}'
             );
         </script>
-        {{ util.form_input_checkbox(name="clone_addresses", label=gettext("Use sources address")) }}
-        {{ util.form_input_submit(value=gettext("Add Subscriber"), aclass="btn btn-success") }}
+        {{ util.form_input_checkbox(name="clone_addresses", label=gettext("Use sources email address")) }}
+        {{ util.form_input_submit(value=gettext("Merge"), aclass="btn btn-success") }}
     </form>
 {% endblock %}

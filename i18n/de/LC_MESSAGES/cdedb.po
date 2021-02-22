@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2021-02-22 14:15+0100\n"
+"POT-Creation-Date: 2021-02-22 21:18+0100\n"
 "PO-Revision-Date: 2020-12-06 11:30+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -129,7 +129,7 @@ msgstr ""
 #: cdedb/backend/assembly.py:547 cdedb/backend/ml.py:427
 #: cdedb/frontend/assembly.py:263 cdedb/frontend/assembly.py:434
 #: cdedb/frontend/event.py:1186 cdedb/frontend/ml_base.py:249
-#: cdedb/frontend/ml_base.py:696 cdedb/frontend/ml_base.py:788
+#: cdedb/frontend/ml_base.py:704 cdedb/frontend/ml_base.py:796
 msgid "Some of these users do not exist or are archived."
 msgstr "Einige dieser Nutzer existieren nicht oder sind archiviert."
 
@@ -979,7 +979,7 @@ msgid "Cannot remove all moderators."
 msgstr "Es können nicht sämtliche Moderatoren entfernt werden."
 
 #: cdedb/backend/ml.py:430 cdedb/frontend/ml_base.py:253
-#: cdedb/frontend/ml_base.py:700
+#: cdedb/frontend/ml_base.py:708
 msgid "Some of these users are not ml users."
 msgstr "Einige dieser Nutzer sind keine Mailinglistenutzer."
 
@@ -1039,9 +1039,14 @@ msgstr "Der Zielnutzer ist kein Mailinglisten Nutzer."
 msgid "Target User is not accessible."
 msgstr "Zielnutzer ist nicht aufrufbar."
 
-#: cdedb/backend/ml.py:1379
-msgid "Both users are related to the same mailinglists: {}"
-msgstr "Beide Benutzer haben einen Bezug zu gleichen Mailinglisten: {}"
+#: cdedb/backend/ml.py:1364 cdedb/frontend/ml_base.py:300
+msgid "Can not merge user into himself."
+msgstr "Nutzer kann nicht mit sich selbst verschmolzen werden."
+
+#: cdedb/backend/ml.py:1380
+#, python-format
+msgid "Both users are related to the same mailinglists: %(mls)s"
+msgstr "Beide Benutzer haben einen Bezug zu gleichen Mailinglisten: %(mls)s"
 
 #: cdedb/backend/past_event.py:187
 msgid "Not available."
@@ -1330,7 +1335,7 @@ msgstr "Der Anti-CSRF-Token is ungültig."
 
 #: cdedb/frontend/assembly.py:273 cdedb/frontend/assembly.py:288
 #: cdedb/frontend/event.py:485 cdedb/frontend/event.py:501
-#: cdedb/frontend/ml_base.py:707 cdedb/frontend/ml_base.py:817
+#: cdedb/frontend/ml_base.py:715 cdedb/frontend/ml_base.py:825
 msgid "Action had no effect."
 msgstr "Aktion hatte keinen Effekt."
 
@@ -1379,7 +1384,7 @@ msgstr "Versammlung angelegt."
 #: cdedb/frontend/core.py:2441 cdedb/frontend/core.py:2474
 #: cdedb/frontend/event.py:1377 cdedb/frontend/event.py:4202
 #: cdedb/frontend/event.py:4818 cdedb/frontend/event.py:6188
-#: cdedb/frontend/event.py:6220 cdedb/frontend/ml_base.py:524
+#: cdedb/frontend/event.py:6220 cdedb/frontend/ml_base.py:532
 msgid "Must be checked."
 msgstr "Muss markiert sein."
 
@@ -1407,7 +1412,7 @@ msgstr "Mitglieder müssen sich selbst anmelden."
 #: cdedb/frontend/event.py:2683 cdedb/frontend/event.py:2757
 #: cdedb/frontend/event.py:2780 cdedb/frontend/event.py:2805
 #: cdedb/frontend/event.py:2828 cdedb/frontend/event.py:2842
-#: cdedb/frontend/ml_base.py:651
+#: cdedb/frontend/ml_base.py:659
 msgid "Empty File."
 msgstr "Leere Datei."
 
@@ -3091,42 +3096,42 @@ msgid "May not create mailinglist of this type."
 msgstr "Kann keine Mailingliste des gewünschten Typs erstellen."
 
 #: cdedb/frontend/ml_base.py:288 cdedb/frontend/ml_base.py:292
-#: cdedb/frontend/ml_base.py:830 cdedb/frontend/ml_base.py:846
-#: cdedb/frontend/ml_base.py:862 cdedb/frontend/ml_base.py:902
-#: cdedb/frontend/ml_base.py:918 cdedb/frontend/ml_base.py:945
-#: cdedb/frontend/ml_base.py:978 cdedb/frontend/ml_base.py:1012
+#: cdedb/frontend/ml_base.py:838 cdedb/frontend/ml_base.py:854
+#: cdedb/frontend/ml_base.py:870 cdedb/frontend/ml_base.py:910
+#: cdedb/frontend/ml_base.py:926 cdedb/frontend/ml_base.py:953
+#: cdedb/frontend/ml_base.py:986 cdedb/frontend/ml_base.py:1020
 msgid "User does not exist or is archived."
 msgstr "Dieser Benutzer existiert nicht oder ist archiviert."
 
-#: cdedb/frontend/ml_base.py:338
+#: cdedb/frontend/ml_base.py:346
 msgid "Not privileged to view log for all these mailinglists."
 msgstr "Keine Berechtigung um auf die Logs aller Mailinglisten zuzugreifen."
 
-#: cdedb/frontend/ml_base.py:719
+#: cdedb/frontend/ml_base.py:727
 msgid "User is no moderator."
 msgstr "Person ist kein Moderator."
 
-#: cdedb/frontend/ml_base.py:725
+#: cdedb/frontend/ml_base.py:733
 msgid "Not allowed to remove yourself as moderator."
 msgstr "Du kannst Dich nicht selbst als Moderator entfernen."
 
-#: cdedb/frontend/ml_base.py:730
+#: cdedb/frontend/ml_base.py:738
 msgid "Cannot remove last moderator."
 msgstr "Der letzte Moderator kann nicht entfernt werden."
 
-#: cdedb/frontend/ml_base.py:773 cdedb/frontend/ml_base.py:815
+#: cdedb/frontend/ml_base.py:781 cdedb/frontend/ml_base.py:823
 msgid "Not privileged to change subscriptions."
 msgstr "Darf Abonnements nicht ändern."
 
-#: cdedb/frontend/ml_base.py:1093
+#: cdedb/frontend/ml_base.py:1101
 msgid "Confirmation email sent."
 msgstr "Verifizierungsmail verschickt."
 
-#: cdedb/frontend/ml_base.py:1127
+#: cdedb/frontend/ml_base.py:1135
 msgid "Not subscribed."
 msgstr "Nicht abonniert."
 
-#: cdedb/frontend/ml_base.py:1130
+#: cdedb/frontend/ml_base.py:1138
 msgid "Disallowed to change address."
 msgstr "Adressänderung unzulässig."
 
@@ -4195,7 +4200,7 @@ msgstr "Datei-Übersicht"
 #: cdedb/frontend/templates/web/event/view_event_log.tmpl:22
 #: cdedb/frontend/templates/web/event/view_log.tmpl:14
 #: cdedb/frontend/templates/web/ml/base.tmpl:26
-#: cdedb/frontend/templates/web/ml/base.tmpl:87
+#: cdedb/frontend/templates/web/ml/base.tmpl:88
 #: cdedb/frontend/templates/web/ml/view_log.tmpl:14
 #: cdedb/frontend/templates/web/ml/view_ml_log.tmpl:18
 msgid "Log"
@@ -4235,7 +4240,7 @@ msgstr "Versammlungs-Übersicht"
 #: cdedb/frontend/templates/web/event/base.tmpl:126
 #: cdedb/frontend/templates/web/event/create_user.tmpl:12
 #: cdedb/frontend/templates/web/event/user_search.tmpl:12
-#: cdedb/frontend/templates/web/ml/base.tmpl:83
+#: cdedb/frontend/templates/web/ml/base.tmpl:84
 #: cdedb/frontend/templates/web/ml/create_user.tmpl:12
 #: cdedb/frontend/templates/web/ml/user_search.tmpl:12
 msgid "Manage Users"
@@ -4256,7 +4261,7 @@ msgstr "Versammlungsleitung-Schaltflächen"
 #: cdedb/frontend/templates/web/core/base.tmpl:55
 #: cdedb/frontend/templates/web/core/show_user.tmpl:24
 #: cdedb/frontend/templates/web/event/base.tmpl:148
-#: cdedb/frontend/templates/web/ml/base.tmpl:109
+#: cdedb/frontend/templates/web/ml/base.tmpl:110
 msgid "User Administration"
 msgstr "Benutzer-Administration"
 
@@ -8422,7 +8427,7 @@ msgid "%(given_names)s %(family_name)s"
 msgstr "%(given_names)s %(family_name)s"
 
 #: cdedb/frontend/templates/web/core/show_user.tmpl:30
-#: cdedb/frontend/templates/web/ml/base.tmpl:105
+#: cdedb/frontend/templates/web/ml/base.tmpl:106
 msgid "Moderator Controls"
 msgstr "Moderator-Schaltflächen"
 
@@ -12165,15 +12170,15 @@ msgstr "Alle Mailinglisten"
 msgid "Administered Mailinglists"
 msgstr "Administrierte Mailinglisten"
 
-#: cdedb/frontend/templates/web/ml/base.tmpl:76
+#: cdedb/frontend/templates/web/ml/base.tmpl:77
 #: cdedb/frontend/templates/web/ml/merge_accounts.tmpl:12
 #: cdedb/frontend/templates/web/ml/merge_accounts.tmpl:17
 msgid "Merge Accounts"
 msgstr "Accounts verschmelzen"
 
-#: cdedb/frontend/templates/web/ml/base.tmpl:100
-#: cdedb/frontend/templates/web/ml/base.tmpl:103
-#: cdedb/frontend/templates/web/ml/base.tmpl:110
+#: cdedb/frontend/templates/web/ml/base.tmpl:101
+#: cdedb/frontend/templates/web/ml/base.tmpl:104
+#: cdedb/frontend/templates/web/ml/base.tmpl:111
 msgid "Mailinglist Administration"
 msgstr "Mailinglisten-Administration"
 
@@ -12499,8 +12504,8 @@ msgid ""
 "into another user (\"Target User\"). After the merging was successfully, the "
 "source user will be archived."
 msgstr ""
-"Verschmilzt einen reinen Mailinglisten Nutzer (\"Quellnutzer\") mit einem "
-"anderen Nutzer (\"Zielnutzer\". Nach dem erfolgreichen verschmelzen wird der "
+"Verschmelze einen reinen Mailinglisten Nutzer (\"Quellnutzer\") mit einem "
+"anderen Nutzer (\"Zielnutzer\"). Nach dem erfolgreichen verschmelzen wird der "
 "Quellnuzter archiviert."
 
 #: cdedb/frontend/templates/web/ml/merge_accounts.tmpl:28
@@ -12508,9 +12513,9 @@ msgid ""
 "Note that both users are not allowed to have an explicit relationship to the "
 "same mailinglist. You have to remove one of them manually to use this tool."
 msgstr ""
-"Beachte das nicht beide Nutzer einen expliziten Bezug zur gleichen "
+"Beachte, das nicht beide Nutzer einen expliziten Bezug zur gleichen "
 "Mailingliste besitzen dürfen. Du musst einen von ihnen manuell entfernen, "
-"befor du diese Funktion benutzen kannst."
+"bevor du diese Funktion benutzen kannst."
 
 #: cdedb/frontend/templates/web/ml/merge_accounts.tmpl:36
 msgid "Source User"
@@ -12521,12 +12526,12 @@ msgid "Target User"
 msgstr "Zielnutzer"
 
 #: cdedb/frontend/templates/web/ml/merge_accounts.tmpl:52
-msgid "Use sources address"
-msgstr "Übernehme die Adresse des Quellnutzers"
+msgid "Use sources email address"
+msgstr "Übernehme die E-Mail-Adresse des Quellnutzers"
 
-#: cdedb/frontend/templates/web/ml/merge_accounts.tmpl:54
-msgid "Add Subscriber"
-msgstr "Füge Abonnenten hinzu"
+#: cdedb/frontend/templates/web/ml/merge_accounts.tmpl:53
+msgid "Merge"
+msgstr "Verschmelze"
 
 #: cdedb/frontend/templates/web/ml/message_moderation.tmpl:6
 #, python-format
