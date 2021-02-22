@@ -1434,9 +1434,7 @@ class MlBackend(AbstractBackend):
         data = self.query_one(rs, query, (address,))
         return bool(unwrap(data))
 
-    # both roles are required
     @access("ml_admin")
-    @access("core_admin")
     def merge_accounts(self, rs: RequestState,
                        source_persona_id: vtypes.ID,
                        target_persona_id: vtypes.ID,
@@ -1446,8 +1444,8 @@ class MlBackend(AbstractBackend):
         This takes the source_persona, mirrors all subscription states and moderator
         privileges to the target_persona, and archives the source_persona at last.
 
-        Note that this will abort if both users are related to the same mailinglist.
-        This must be solved manually before calling this function.
+        Make sure that the two users are not related to the same mailinglist. Otherwise,
+        this function will abort.
 
         :param source_persona_id: user from which will be merged
         :param target_persona_id: user into which will be merged

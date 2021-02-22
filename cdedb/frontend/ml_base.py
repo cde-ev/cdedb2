@@ -283,9 +283,6 @@ class MlBaseFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.merge_accounts_form(rs)
         # The source will be archived after successful merge, so we require a core admin
-        if "core_admin" not in rs.user.roles:
-            rs.notify("error", n_("You must be core admin to use this functionality."))
-            return self.merge_accounts_form(rs)
         if not self.coreproxy.verify_id(rs, source_persona_id, is_archived=False):
             rs.append_validation_error(
                 ("source_persona_id", ValueError(n_(
