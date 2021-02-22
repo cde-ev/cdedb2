@@ -228,7 +228,6 @@ class AssemblyBackend(AbstractBackend):
           :py:class:`cdedb.database.constants.AssemblyLogCodes`.
         :param persona_id: ID of affected user (like who was subscribed).
         :param change_note: Infos not conveyed by other columns.
-        :returns: default return code
         """
         if rs.is_quiet:
             return 0
@@ -813,7 +812,7 @@ class AssemblyBackend(AbstractBackend):
     get_ballot: _GetBallotProtocol = singularize(get_ballots, "ballot_ids", "ballot_id")
 
     @access("assembly")
-    def set_ballot(self, rs: RequestState, data: CdEDBObject) -> int:
+    def set_ballot(self, rs: RequestState, data: CdEDBObject) -> DefaultReturnCode:
         """Update some keys of ballot.
 
         If the key 'candidates' is present, the associated dict mapping the
@@ -830,8 +829,6 @@ class AssemblyBackend(AbstractBackend):
 
         .. note:: It is forbidden to modify a ballot after voting has
           started.
-
-        :returns: default return code
         """
         data = affirm(vtypes.Ballot, data)
         ret = 1
@@ -1175,7 +1172,6 @@ class AssemblyBackend(AbstractBackend):
 
         :param secret: The secret of this user. May be None to signal that the
           stored secret should be used.
-        :returns: default return code
         """
         ballot_id = affirm(vtypes.ID, ballot_id)
         secret = affirm_optional(vtypes.PrintableASCII, secret)
@@ -1442,7 +1438,8 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly_admin")
     def conclude_assembly(self, rs: RequestState, assembly_id: int,
-                          cascade: Set[str] = None) -> int:
+                          cascade: Set[str] = None
+                          ) -> DefaultReturnCode:
         """Do housekeeping after an assembly has ended.
 
         This mainly purges the secrets which are no longer required for
@@ -1450,7 +1447,6 @@ class AssemblyBackend(AbstractBackend):
 
         :param cascade: Specify which conclusion blockers to cascadingly
             remove or ignore. If None or empty, cascade none.
-        :returns: default return code
         """
         assembly_id = affirm(vtypes.ID, assembly_id)
         blockers = self.conclude_assembly_blockers(rs, assembly_id)

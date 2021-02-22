@@ -71,11 +71,6 @@ class MlBackend(AbstractBackend):
         """Check if the user is a relevant admin for a mailinglist.
 
         Exactly one of the inputs should be provided.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type mailinglist: {str: object}
-        :type mailinglist_id: int
-        :rtype: bool
         """
         if mailinglist is None:
             if mailinglist_id is None:
@@ -125,9 +120,6 @@ class MlBackend(AbstractBackend):
     def get_available_types(self, rs: RequestState,
                             ) -> Set[const.MailinglistTypes]:
         """Get a list of MailinglistTypes, the user is allowed to manage.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :rtype: {const.MailinglistTypes}
         """
         ret = {enum_member for enum_member, atype in ml_type.TYPE_MAP.items()
                if atype.is_relevant_admin(rs.user)}
@@ -152,12 +144,6 @@ class MlBackend(AbstractBackend):
 
         If the mailinglist is available to the caller, they should pass it,
         otherwise it will be retrieved from the database.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type persona_id: int
-        :type mailinglist: {str: object}
-        :type mailinglist_id: int
-        :rtype: const.MailinglistInteractionPolicy or None
         """
         # TODO put these checks in an atomizer?
         if mailinglist is None and mailinglist_id is None:
@@ -192,11 +178,7 @@ class MlBackend(AbstractBackend):
         `cdedb.frontend.core.select_persona()`, to reduce the amount
         of necessary database queries.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type ml: {str: object}
-        :type data: [{str: object}]
         :param data: Return of the persona select query
-        :type allowed_pols: {const.MailinglistInteractionPolicy}
         :return: Tuple of personas whose interaction policies are in
             allowed_pols
         """
@@ -215,8 +197,6 @@ class MlBackend(AbstractBackend):
     def may_view(self, rs: RequestState, ml: CdEDBObject) -> bool:
         """Helper to determine whether a persona may view a mailinglist.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type ml: {str: object}
         :type: bool
         """
         is_subscribed = bool(self.get_subscription(
@@ -288,18 +268,6 @@ class MlBackend(AbstractBackend):
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type codes: [int] or None
-        :type mailinglist_ids: [int] or None
-        :type offset: int or None
-        :type length: int or None
-        :type persona_id: int or None
-        :type submitted_by: int or None
-        :type change_note: str or None
-        :type time_start: datetime or None
-        :type time_stop: datetime or None
-        :rtype: [{str: object}]
         """
         mailinglist_ids = affirm_set(vtypes.ID, mailinglist_ids or set())
         if not (self.is_admin(rs) or (mailinglist_ids
@@ -318,10 +286,6 @@ class MlBackend(AbstractBackend):
                              query: Query) -> Tuple[CdEDBObject, ...]:
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type query: :py:class:`cdedb.query.Query`
-        :rtype: [{str: object}]
         """
         query = affirm(Query, query)
         if query.scope == "qview_persona":
@@ -346,16 +310,12 @@ class MlBackend(AbstractBackend):
                           managed: str = None) -> Dict[int, str]:
         """List all mailinglists you may view
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type active_only: bool
         :param active_only: Toggle wether inactive lists should be included.
-        :type managed: str
         :param managed: Valid values:
 
             * None:         no additional filter
             * admin:        list only lists administrated
             * managed:      list only lists moderated or administrated
-        :rtype: {int: str}
         :returns: Mapping of mailinglist ids to titles.
         """
         active_only = affirm(bool, active_only)
@@ -396,8 +356,6 @@ class MlBackend(AbstractBackend):
         so it lists mail adresses even if you can not see the corresponding
         mailinglists.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :rtype: {int: str}
         :returns: Mapping of mailinglist ids to titles.
         """
         query = "SELECT id, address FROM ml.mailinglists"
@@ -458,12 +416,6 @@ class MlBackend(AbstractBackend):
         A complete set must be passed, which will superseed the current set.
 
         Contrary to `set_mailinglist` this may be used by moderators.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type mailinglist_id: int
-        :type moderators: {int}
-        :rtype: int
-        :returns: default return code
         """
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
         moderators = affirm_set(vtypes.ID, moderators)
@@ -513,12 +465,6 @@ class MlBackend(AbstractBackend):
         A complete set must be passed, which will superseed the current set.
 
         Contrary to `set_mailinglist` this may be used by moderators.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type mailinglist_id: int
-        :type whitelist: {str}
-        :rtype: int
-        :returns: default return code
         """
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
         whitelist = affirm_set(str, whitelist)
@@ -585,11 +531,6 @@ class MlBackend(AbstractBackend):
         This requires different levels of access depending on what change is
         made. Most attributes of the mailinglist may set by moderators, but for
         some you need admin privileges.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type data: {str: object}
-        :rtype: int
-        :returns: default return code
         """
         data = affirm(vtypes.Mailinglist, data)
 
@@ -651,9 +592,6 @@ class MlBackend(AbstractBackend):
                            data: CdEDBObject) -> DefaultReturnCode:
         """Make a new mailinglist.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type data: {str: object}
-        :rtype: int
         :returns: the id of the new mailinglist
         """
         data = affirm(vtypes.Mailinglist, data, creation=True)
@@ -676,9 +614,6 @@ class MlBackend(AbstractBackend):
     def validate_address(self, rs: RequestState, data: CdEDBObject) -> str:
         """Construct the complete address and check for duplicates.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type data: {str: object}
-        :rtype: str
         :returns: the id of the new mailinglist
         """
         address = ml_type.get_full_address(data)
@@ -702,9 +637,6 @@ class MlBackend(AbstractBackend):
         * moderator: A moderator of the mailinglist.
         * log: A log entry for the mailinglist.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type mailinglist_id: int
-        :rtype: {str: [int]}
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
         """
@@ -751,13 +683,8 @@ class MlBackend(AbstractBackend):
                            ) -> DefaultReturnCode:
         """Remove a mailinglist.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type mailinglist_id: int
-        :type cascade: {str} or None
         :param cascade: Specify which deletion blockers to cascadingly
             remove or ignore. If None or empty, cascade none.
-        :rtype: int
-        :returns: default return code
         """
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
         if not self.is_relevant_admin(rs, mailinglist_id=mailinglist_id):
@@ -819,9 +746,6 @@ class MlBackend(AbstractBackend):
         regarding the mailinglists polcies, so this should only be used
         internally.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type data: [{str: int}]
-        :rtype: int
         :returns: Number of affected rows.
         """
         data = affirm_array(vtypes.SubscriptionState, data)
@@ -861,9 +785,6 @@ class MlBackend(AbstractBackend):
                               ) -> DefaultReturnCode:
         """Remove rows from the ml.subscription_states table.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type data: [{str: int}]
-        :rtype: int
         :returns: Number of affected rows.
         """
         data = affirm_array(vtypes.SubscriptionIdentifier, data)
@@ -899,11 +820,6 @@ class MlBackend(AbstractBackend):
                                ) -> DefaultReturnCode:
         """Provide a single entry point for all subscription actions.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type action: `SubscriptionActions`
-        :type mailinglist_id: int
-        :type persona_id: int
-        :rtype: int
         :returns: number of affected rows.
         """
         action = affirm(SubscriptionActions, action)
@@ -963,10 +879,6 @@ class MlBackend(AbstractBackend):
         """Un-inlined code from `do_subscription_action`.
 
         This has to be called with an atomized context.
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type action: `SubscriptionActions`
-        :type mailinglist_id: int
-        :type persona_id: int
         """
         sa = SubscriptionActions
 
@@ -997,13 +909,6 @@ class MlBackend(AbstractBackend):
                                  persona_id: int, email: str,
                                  ) -> DefaultReturnCode:
         """Change or add a subscription address.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type mailinglist_id: int
-        :type persona_id: int
-        :type email: str
-        :rtype: int
-        :return: Default return code.
         """
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
         persona_id = affirm(vtypes.ID, persona_id)
@@ -1031,14 +936,7 @@ class MlBackend(AbstractBackend):
     @access("ml")
     def remove_subscription_address(self, rs: RequestState, mailinglist_id: int,
                                     persona_id: int) -> DefaultReturnCode:
-        """Remove a subscription address.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type mailinglist_id: int
-        :type persona_id: int
-        :rtype: int
-        :return: Default return code.
-        """
+        """Remove a subscription address."""
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
         persona_id = affirm(vtypes.ID, persona_id)
 
@@ -1065,10 +963,6 @@ class MlBackend(AbstractBackend):
     ) -> Dict[int, Dict[int, const.SubscriptionStates]]:
         """Get all users related to a given mailinglist and their sub state.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type mailinglist_ids: [int]
-        :type states: [int] or None
-        :rtype: {int: {int: const.SubscriptionStates}}
         :return: Dict mapping mailinglist ids to a dict mapping persona_ids to
             their subscription state for the respective mailinglist for the
             given mailinglists.
@@ -1210,15 +1104,10 @@ class MlBackend(AbstractBackend):
         With `explicits_only = True` every subscriber is mapped to their
         explicit subscription address or None, if none is given.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type mailinglist_id: int
-        :type persona_ids: [int] or None
         :param persona_ids: Limit the result to a subset of subscribers. Get all
             subscribers if this is None.
-        :type explicits_only: bool
         :param explicits_only: If this is False, also fetch usernames for
             subscribers without explicit subscription addresses.
-        :rtype: {int: str or None}
         :returns: Returns persona ids mapped to email addresses or None if
             `explicits_only` is True.
         """
@@ -1273,12 +1162,6 @@ class MlBackend(AbstractBackend):
 
         Manual implementation of singularization of
         `get_subscription_addresses`, to make sure the parameters work.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type mailinglist_id: int
-        :type persona_id: int
-        :type explicits_only: bool
-        :rtype: str or None
         """
 
         if persona_id == rs.user.persona_id:
@@ -1309,9 +1192,6 @@ class MlBackend(AbstractBackend):
         """Get all confirmed email addresses for a user.
 
         This includes all subscription addresses as well as the username.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :rtype: {str}
         """
         query = ("SELECT DISTINCT address FROM ml.subscription_addresses "
                  "WHERE persona_id = %s")
@@ -1325,11 +1205,6 @@ class MlBackend(AbstractBackend):
     def is_subscribed(self, rs: RequestState, persona_id: int,
                       mailinglist_id: int) -> bool:
         """Sugar coating around :py:meth:`get_user_subscriptions`.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type persona_id: int
-        :type mailinglist_id: int
-        :rtype: bool
         """
         # validation is done inside
         sub_states = const.SubscriptionStates.subscribing_states()
@@ -1343,11 +1218,6 @@ class MlBackend(AbstractBackend):
         """This takes care of writing implicit subscriptions to the db.
 
         This also checks the integrity of existing subscriptions.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type mailinglist_id: int
-        :rtype: int
-        :return: default return code.
         """
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
 

@@ -52,8 +52,6 @@ def _create_connection(dbname: str, dbuser: str, password: str, port: int,
     :param isolation_level: Isolation level of database connection, a
         constant coming from :py:mod:`psycopg2.extensions`. This should be used
         very sparingly!
-    :type isolation_level: int
-    :rtype: :py:class:`IrradiatedConnection`
     :returns: open database connection
     """
     connection_parameters = {
@@ -91,16 +89,11 @@ def connection_pool_factory(dbname: str, roles: Collection[Role],
     The first implementation of this interface was a caching connection
     factory, which used crazy amounts of resources.
 
-    :type dbname: str
     :param roles: roles for which database connections shall be available
-    :type roles: [str]
     :param secrets: container for db passwords
-    :type secrets: :py:class:`cdedb.config.SecretsConfig`
-    :type port: int
     :param isolation_level: Isolation level of database connection, a
         constant coming from :py:mod:`psycopg2.extensions`. This should be used
         very sparingly!
-    :type isolation_level: int
     :returns: dict-like object with semantics {str :
                 :py:class:`IrradiatedConnection`}
     """

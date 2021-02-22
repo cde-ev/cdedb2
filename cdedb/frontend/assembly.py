@@ -18,9 +18,9 @@ import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    ASSEMBLY_BAR_SHORTNAME, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
-    EntitySorter, RequestState, get_hash, merge_dicts, n_, now, schulze_evaluate,
-    unwrap, xsorted,
+    ASSEMBLY_BAR_SHORTNAME, LOG_FIELDS_COMMON, CdEDBObject, CdEDBObjectMap,
+    DefaultReturnCode, EntitySorter, RequestState, get_hash, merge_dicts, n_, now,
+    schulze_evaluate, unwrap, xsorted,
 )
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access, assembly_guard,
@@ -29,6 +29,10 @@ from cdedb.frontend.common import (
 )
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, Query, mangle_query_input
+from cdedb.validation import (
+    _ASSEMBLY_COMMON_FIELDS, _BALLOT_EXPOSED_FIELDS, _PERSONA_FULL_ASSEMBLY_CREATION,
+    filter_none,
+)
 from cdedb.validationtypes import CdedbID, Email
 
 #: Magic value to signal abstention during voting. Used during the emulation
@@ -47,11 +51,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     @staticmethod
     def is_ballot_voting(ballot: Dict[str, Any]) -> bool:
-        """Determine whether a ballot is open for voting.
-
-        :type ballot: {str: object}
-        :rtype: bool
-        """
+        """Determine whether a ballot is open for voting."""
         timestamp = now()
         return (timestamp > ballot['vote_begin']
                 and (timestamp < ballot['vote_end']
@@ -81,8 +81,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         return super().create_user_form(rs)
 
     @access("core_admin", "assembly_admin", modi={"POST"})
-    @REQUESTdatadict(
-        "given_names", "family_name", "display_name", "notes", "username")
+    @REQUESTdatadict(*filter_none(_PERSONA_FULL_ASSEMBLY_CREATION))
     def create_user(self, rs: RequestState, data: CdEDBObject,
                     ignore_warnings: bool = False) -> Response:
         defaults = {
@@ -125,8 +124,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         return self.render(rs, "user_search", params)
 
     @access("assembly_admin")
-    @REQUESTdata("codes", "assembly_id", "persona_id", "submitted_by",
-                 "change_note", "offset", "length", "time_start", "time_stop")
+    @REQUESTdata(*LOG_FIELDS_COMMON, "assembly_id")
     def view_log(self, rs: RequestState,
                  codes: Collection[const.AssemblyLogCodes],
                  assembly_id: Optional[vtypes.ID], offset: Optional[int],
@@ -164,8 +162,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     @access("assembly")
     @assembly_guard
-    @REQUESTdata("codes", "persona_id", "submitted_by", "change_note", "offset",
-                 "length", "time_start", "time_stop")
+    @REQUESTdata(*LOG_FIELDS_COMMON)
     def view_assembly_log(self, rs: RequestState,
                           codes: Optional[Collection[const.AssemblyLogCodes]],
                           assembly_id: Optional[int], offset: Optional[int],
@@ -304,12 +301,14 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     @access("assembly", modi={"POST"})
     @assembly_guard
-    @REQUESTdatadict("title", "description", "shortname",
-                     "presider_address", "signup_end", "notes")
+    @REQUESTdatadict(*_ASSEMBLY_COMMON_FIELDS())
+    @REQUESTdata("presider_address")
     def change_assembly(self, rs: RequestState, assembly_id: int,
-                        data: Dict[str, Any]) -> Response:
+                        presider_address: Optional[str], data: Dict[str, Any]
+                        ) -> Response:
         """Modify an assembly."""
         data['id'] = assembly_id
+        data['presider_address'] = presider_address
         data = check(rs, vtypes.Assembly, data)
         if rs.has_validation_errors():
             return self.change_assembly_form(rs, assembly_id)
@@ -373,6 +372,10 @@ class AssemblyFrontend(AbstractUserFrontend):
                                     presider_list: bool) -> Response:
         if rs.has_validation_errors():
             return self.redirect(rs, "assembly/show_assembly")
+        if not rs.ambience['assembly']['presiders']:
+            rs.notify('error',
+                      n_("Must have presiders in order to create a mailinglist."))
+            return self.redirect(rs, "assembly/show_assembly")
 
         ml_data = self._get_mailinglist_setter(rs.ambience['assembly'], presider_list)
         ml_address = ml_type.get_full_address(ml_data)
@@ -394,7 +397,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         return self.redirect(rs, "assembly/show_assembly")
 
     @access("assembly_admin", modi={"POST"})
-    @REQUESTdatadict("title", "description", "shortname", "signup_end", "notes")
+    @REQUESTdatadict(*_ASSEMBLY_COMMON_FIELDS())
     @REQUESTdata("presider_ids", "create_attendee_list", "create_presider_list",
                  "presider_address")
     def create_assembly(self, rs: RequestState, presider_ids: vtypes.CdedbIDList,
@@ -525,13 +528,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     def process_signup(self, rs: RequestState, assembly_id: int,
                        persona_id: int = None) -> None:
-        """Helper to actually perform signup.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type assembly_id: int
-        :type persona_id: int or None
-        :rtype: None
-        """
+        """Helper to actually perform signup."""
         if persona_id:
             secret = self.assemblyproxy.external_signup(
                 rs, assembly_id, persona_id)
@@ -658,8 +655,6 @@ class AssemblyFrontend(AbstractUserFrontend):
                                  CdEDBObjectMap, CdEDBObjectMap]:
         """Helper to group ballots by status.
 
-        :type ballots: {int: str}
-        :rtype: tuple({int: str})
         :returns: Four dicts mapping ballot ids to ballots grouped by status
           in the order done, extended, current, future.
         """
@@ -726,9 +721,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     @access("assembly", modi={"POST"})
     @assembly_guard
-    @REQUESTdatadict("title", "description", "vote_begin", "vote_end",
-                     "vote_extension_end", "abs_quorum", "rel_quorum", "votes",
-                     "notes", "use_bar")
+    @REQUESTdatadict(*_BALLOT_EXPOSED_FIELDS)
     def create_ballot(self, rs: RequestState, assembly_id: int,
                       data: Dict[str, Any]) -> Response:
         """Make a new ballot."""
@@ -1453,9 +1446,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     @access("assembly", modi={"POST"})
     @assembly_guard
-    @REQUESTdatadict("title", "description", "vote_begin", "vote_end",
-                     "vote_extension_end", "use_bar", "abs_quorum", "rel_quorum",
-                     "votes", "notes")
+    @REQUESTdatadict(*_BALLOT_EXPOSED_FIELDS)
     def change_ballot(self, rs: RequestState, assembly_id: int,
                       ballot_id: int, data: Dict[str, Any]) -> Response:
         """Modify a ballot."""
@@ -1589,12 +1580,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     @assembly_guard
     def edit_candidates(self, rs: RequestState, assembly_id: int,
                         ballot_id: int) -> Response:
-        """Create, edit and delete candidates of ballot.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type assembly_id: int
-        :type ballot_id: int
-        """
+        """Create, edit and delete candidates of a ballot."""
         candidates = process_dynamic_input(
             rs, rs.ambience['ballot']['candidates'].keys(),
             {'shortname': vtypes.RestrictiveIdentifier, 'title': str})

@@ -31,11 +31,11 @@ import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    DEFAULT_NUM_COURSE_CHOICES, EVENT_FIELD_SPEC, AgeClasses, CdEDBObject,
-    CdEDBObjectMap, CdEDBOptionalMap, CourseChoiceToolActions, CourseFilterPositions,
-    DefaultReturnCode, EntitySorter, Error, InfiniteEnum, KeyFunction,
-    LodgementsSortkeys, PartialImportError, RequestState, Sortkey, asciificator,
-    deduct_years, determine_age_class, diacritic_patterns, get_hash, glue,
+    DEFAULT_NUM_COURSE_CHOICES, EVENT_FIELD_SPEC, LOG_FIELDS_COMMON, AgeClasses,
+    CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap, CourseChoiceToolActions,
+    CourseFilterPositions, DefaultReturnCode, EntitySorter, Error, InfiniteEnum,
+    KeyFunction, LodgementsSortkeys, PartialImportError, RequestState, Sortkey,
+    asciificator, deduct_years, determine_age_class, diacritic_patterns, get_hash, glue,
     json_serialize, merge_dicts, mixed_existence_sorter, n_, now, unwrap, xsorted,
 )
 from cdedb.database.connection import Atomizer
@@ -50,7 +50,10 @@ from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import (
     QUERY_SPECS, Query, QueryConstraint, QueryOperators, mangle_query_input,
 )
-from cdedb.validation import TypeMapping, validate_check
+from cdedb.validation import (
+    _COURSE_COMMON_FIELDS, _EVENT_EXPOSED_FIELDS, _LODGEMENT_COMMON_FIELDS,
+    _PERSONA_FULL_EVENT_CREATION, TypeMapping, filter_none, validate_check,
+)
 from cdedb.validationtypes import VALIDATOR_LOOKUP
 
 LodgementProblem = NamedTuple(
@@ -137,11 +140,7 @@ class EventFrontend(AbstractUserFrontend):
         return super().create_user_form(rs)
 
     @access("core_admin", "event_admin", modi={"POST"})
-    @REQUESTdatadict(
-        "title", "given_names", "family_name", "name_supplement",
-        "display_name", "gender", "birthday", "username", "telephone",
-        "mobile", "address", "address_supplement", "postal_code",
-        "location", "country", "notes")
+    @REQUESTdatadict(*filter_none(_PERSONA_FULL_EVENT_CREATION))
     def create_user(self, rs: RequestState, data: CdEDBObject,
                     ignore_warnings: bool = False) -> Response:
         defaults = {
@@ -410,15 +409,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdatadict(
-        "title", "institution", "description", "shortname",
-        "registration_start", "registration_soft_limit",
-        "registration_hard_limit", "iban", "orga_address", "registration_text",
-        "mail_text", "use_additional_questionnaire", "notes", "lodge_field",
-        "camping_mat_field", "is_visible", "is_course_list_visible",
-        "is_course_state_visible", "is_participant_list_visible",
-        "courses_in_participant_list", "is_cancelled", "course_room_field",
-        "nonmember_surcharge")
+    @REQUESTdatadict(*_EVENT_EXPOSED_FIELDS)
     def change_event(self, rs: RequestState, event_id: int, data: CdEDBObject
                      ) -> Response:
         """Modify an event organized via DB."""
@@ -517,6 +508,10 @@ class EventFrontend(AbstractUserFrontend):
         """Create a default mailinglist for the event."""
         if rs.has_validation_errors():
             return self.redirect(rs, "event/show_event")
+        if not rs.ambience['event']['orgas']:
+            rs.notify('error',
+                      n_("Must have orgas in order to create a mailinglist."))
+            return self.redirect(rs, "event/show_event")
 
         ml_data = self._get_mailinglist_setter(rs.ambience['event'], orgalist)
         ml_address = ml_type.get_full_address(ml_data)
@@ -604,10 +599,6 @@ class EventFrontend(AbstractUserFrontend):
 
         Since this covers a variable number of rows, we cannot do this
         statically. This takes care of validation too.
-
-        :type rs: :py:class:`FrontendRequestState`
-        :type has_registrations: bool
-        :rtype: {int: {str: object}}
         """
         parts = rs.ambience['event']['parts']
         fee_modifiers = rs.ambience['event']['fee_modifiers']
@@ -1161,9 +1152,7 @@ class EventFrontend(AbstractUserFrontend):
     @access("event_admin", modi={"POST"})
     @REQUESTdata("part_begin", "part_end", "orga_ids", "create_track",
                  "create_orga_list", "create_participant_list")
-    @REQUESTdatadict(
-        "title", "institution", "description", "shortname",
-        "iban", "nonmember_surcharge", "notes")
+    @REQUESTdatadict(*_EVENT_EXPOSED_FIELDS)
     def create_event(self, rs: RequestState, part_begin: datetime.date,
                      part_end: datetime.date, orga_ids: vtypes.CdedbIDList,
                      create_track: bool, create_orga_list: bool,
@@ -1309,8 +1298,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdatadict("title", "description", "nr", "shortname", "instructors",
-                     "max_size", "min_size", "notes")
+    @REQUESTdatadict(*_COURSE_COMMON_FIELDS())
     @REQUESTdata("segments", "active_segments")
     def change_course(self, rs: RequestState, event_id: int, course_id: int,
                       segments: Collection[int],
@@ -1352,8 +1340,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdatadict("title", "description", "nr", "shortname", "instructors",
-                     "max_size", "min_size", "notes")
+    @REQUESTdatadict(*_COURSE_COMMON_FIELDS())
     @REQUESTdata("segments")
     def create_course(self, rs: RequestState, event_id: int,
                       segments: Collection[int], data: CdEDBObject) -> Response:
@@ -2129,13 +2116,8 @@ class EventFrontend(AbstractUserFrontend):
 
         We test for fitness of the data itself.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type datum: {str: object}
-        :type expected_fees: {int: decimal.Decimal}
-        :type full_payment: bool
         :param full_payment: If True, only write the payment date if the fee
             was paid in full.
-        :rtype: {str: object}
         :returns: The processed input datum.
         """
         event = rs.ambience['event']
@@ -2223,9 +2205,6 @@ class EventFrontend(AbstractUserFrontend):
                   ) -> Tuple[bool, Optional[int]]:
         """Book all paid fees.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type data: [{str: object}]
-        :rtype: bool, int
         :returns: Success information and
 
           * for positive outcome the number of recorded transfers
@@ -3744,7 +3723,6 @@ class EventFrontend(AbstractUserFrontend):
         :param num: number of rows to expect
         :param reg_fields: Available fields
         :param kind: For which kind of questionnaire are these rows?
-        :rtype: [{str: object}]
         """
         del_flags = request_extractor(rs, {f"delete_{i}": bool for i in range(num)})
         deletes = {i for i in range(num) if del_flags['delete_{}'.format(i)]}
@@ -3843,9 +3821,6 @@ class EventFrontend(AbstractUserFrontend):
         ``proxy.set_questionnaire(proxy.get_questionnaire())`` fails since
         the retrieval method provides additional information which not
         settable and thus filtered by this method.
-
-        :type row: {str: object}
-        :rtype: {str: object}
         """
         whitelist = ('field_id', 'title', 'info', 'input_size', 'readonly',
                      'default_value', 'kind')
@@ -4007,20 +3982,13 @@ class EventFrontend(AbstractUserFrontend):
         values to extract depends on the event. This puts less restrictions
         on the input (like not requiring different course choices).
 
-        :type rs: :py:class:`FrontendRequestState`
-        :type event: {str: object}
         :param do_fields: Process custom fields of the registration(s)
-        :type do_fields: bool
         :param check_enabled: Check if the "enable" checkboxes, corresponding
                               to the fields are set. This is required for the
                               multiedit page.
-        :type check_enabled: bool
         :param skip: A list of field names to be entirely skipped
-        :type skip: [str]
         :param do_real_persona_id: Process the `real_persona_id` field. Should
                                    only be done when CDEDB_OFFLINE_DEPLOYMENT
-        :type do_real_persona_id: bool
-        :rtype: {str: object}
         :returns: registration data set
         """
 
@@ -4437,12 +4405,6 @@ class EventFrontend(AbstractUserFrontend):
         """Un-inlined code to examine the current lodgements of an event for
         spots with room for improvement.
 
-        :type event: {str: object}
-        :type lodgements: {int: {str: object}}
-        :type registrations: {int: {str: object}}
-        :type personas: {int: {str: object}}
-        :type inhabitants: {(int, int): [int]}
-        :rtype: [(str, int, int, [int], int)]
         :returns: problems as five-tuples of (problem description, lodgement
           id, part id, affected registrations, severeness).
         """
@@ -4780,8 +4742,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdatadict("title", "regular_capacity", "camping_mat_capacity",
-                     "group_id", "notes")
+    @REQUESTdatadict(*_LODGEMENT_COMMON_FIELDS())
     def create_lodgement(self, rs: RequestState, event_id: int,
                          data: CdEDBObject) -> Response:
         """Add a new lodgement."""
@@ -4820,8 +4781,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdatadict("title", "regular_capacity", "camping_mat_capacity",
-                     "notes", "group_id")
+    @REQUESTdatadict(*_LODGEMENT_COMMON_FIELDS())
     def change_lodgement(self, rs: RequestState, event_id: int,
                          lodgement_id: int, data: CdEDBObject) -> Response:
         """Alter the attributes of a lodgement.
@@ -6487,8 +6447,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.show_event(rs, event_id)
 
     @access("event_admin")
-    @REQUESTdata("codes", "event_id", "persona_id", "submitted_by",
-                 "change_note", "offset", "length", "time_start", "time_stop")
+    @REQUESTdata(*LOG_FIELDS_COMMON, "event_id")
     def view_log(self, rs: RequestState, codes: Collection[const.EventLogCodes],
                  event_id: Optional[vtypes.ID], offset: Optional[int],
                  length: Optional[vtypes.PositiveInt],
@@ -6527,8 +6486,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard()
-    @REQUESTdata("codes", "persona_id", "submitted_by", "change_note", "offset",
-                 "length", "time_start", "time_stop")
+    @REQUESTdata(*LOG_FIELDS_COMMON)
     def view_event_log(self, rs: RequestState,
                        codes: Collection[const.EventLogCodes],
                        event_id: int, offset: Optional[int],

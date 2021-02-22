@@ -87,6 +87,8 @@
             <dd id="orgas">
                 {% for anid, entry in orgas.items() %} {# This is already sorted. #}
                     {{ util.persona_anchor(entry) }}{% if not loop.last %},{% endif %}
+                {% else %}
+                    {% trans %}None{% endtrans %}
                 {% endfor %}
             </dd>
         {% endif %}
@@ -339,8 +341,11 @@
                                     style="display: inline;">
                                 {{ util.anti_csrf_token('event/create_event_mailinglist') }}
                                 {{ util.input_hidden("orgalist", value=True) }}
-                                {{ util.input_submit(value=gettext("Create Orga-Mailinglist"),
-                                                     aclass="btn btn-success", icon="plus") }}
+                                {{ util.input_submit(
+                                        value=gettext("Create orga mailinglist"), aclass="btn btn-success",
+                                        icon="plus", readonly=not orgas,
+                                        title=("" if orgas
+                                               else gettext("Must have orgas in order to create a mailinglist."))) }}
                             </form>
                         </div>
                     </div>
@@ -361,8 +366,11 @@
                                     style="display: inline;">
                                 {{ util.anti_csrf_token('event/create_event_mailinglist') }}
                                 {{ util.input_hidden("orgalist", value=False) }}
-                                {{ util.input_submit(value=gettext("Create Participant-Mailinglist"),
-                                                     aclass="btn btn-success", icon="plus") }}
+                                {{ util.input_submit(
+                                        value=gettext("Create participant mailinglist"),
+                                        aclass="btn btn-success", icon="plus", readonly=not orgas,
+                                        title=("" if orgas
+                                               else gettext("Must have orgas in order to create a mailinglist."))) }}
                             </form>
                         </div>
                     </div>

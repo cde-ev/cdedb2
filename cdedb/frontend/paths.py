@@ -162,7 +162,7 @@ CDEDB_PATHS = werkzeug.routing.Map((
                      endpoint="genesis_verify"),
                 rule("/list", methods=_GET,
                      endpoint="genesis_list_cases"),
-                rule("/attachment/<filename:attachment>", methods=_GET,
+                rule("/attachment/<filename:attachment_hash>", methods=_GET,
                      endpoint="genesis_get_attachment"))),
             sub('/genesis/<int:genesis_case_id>', (
                 rule("/show", methods=_GET,

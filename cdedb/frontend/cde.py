@@ -31,10 +31,10 @@ import cdedb.frontend.parse_statement as parse
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
     Accounts, ArchiveError, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
-    EntitySorter, Error, LineResolutions, PERSONA_DEFAULTS, RequestState,
-    SemesterSteps, TransactionType, asciificator, deduct_years, determine_age_class,
-    diacritic_patterns, get_hash, glue, int_to_words, lastschrift_reference,
-    merge_dicts, n_, now, unwrap, xsorted,
+    EntitySorter, Error, LineResolutions, LOG_FIELDS_COMMON, PERSONA_DEFAULTS,
+    RequestState, SemesterSteps, TransactionType, asciificator, deduct_years,
+    determine_age_class, diacritic_patterns, get_hash, glue, int_to_words,
+    lastschrift_reference, merge_dicts, n_, now, unwrap, xsorted,
 )
 from cdedb.database.connection import Atomizer
 from cdedb.frontend.common import (
@@ -48,7 +48,11 @@ from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import (
     QUERY_SPECS, Query, QueryConstraint, QueryOperators, mangle_query_input,
 )
-from cdedb.validation import TypeMapping, validate_check, validate_check_optional
+from cdedb.validation import (
+    _LASTSCHRIFT_COMMON_FIELDS, _PAST_EVENT_FIELDS, _PAST_COURSE_COMMON_FIELDS,
+    _PERSONA_FULL_CDE_CREATION, TypeMapping, filter_none, validate_check,
+    validate_check_optional,
+)
 
 MEMBERSEARCH_DEFAULTS = {
     'qop_fulltext': QueryOperators.containsall,
@@ -372,15 +376,7 @@ class CdEFrontend(AbstractUserFrontend):
         return super().create_user_form(rs)
 
     @access("core_admin", "cde_admin", modi={"POST"})
-    @REQUESTdatadict(
-        "title", "given_names", "family_name", "birth_name", "name_supplement",
-        "display_name", "specialisation", "affiliation", "timeline",
-        "interests", "free_form", "gender", "birthday", "username",
-        "telephone", "mobile", "weblink", "address", "address_supplement",
-        "postal_code", "location", "country", "address2",
-        "address_supplement2", "postal_code2", "location2", "country2",
-        "is_member", "is_searchable", "trial_member", "bub_search", "notes",
-        "paper_expuls")
+    @REQUESTdatadict(*filter_none(_PERSONA_FULL_CDE_CREATION))
     def create_user(self, rs: RequestState, data: CdEDBObject,
                     ignore_warnings: bool = False) -> Response:
         defaults = {
@@ -649,12 +645,6 @@ class CdEFrontend(AbstractUserFrontend):
                                 sendmail: bool) -> Tuple[bool, Optional[int]]:
         """Resolve all entries in the batch admission form.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type data: [{str: object}]
-        :type trial_membership: bool
-        :type consent: bool
-        :type sendmail: bool
-        :rtype: bool, int
         :returns: Success information and for positive outcome the
           number of created accounts or for negative outcome the line
           where an exception was triggered or None if it was a DB
@@ -720,9 +710,6 @@ class CdEFrontend(AbstractUserFrontend):
         This is separate from the detection of existing accounts, and
         can happen because of some human error along the way.
 
-        :type ds1: {str: object}
-        :type ds2: {str: object}
-        :rtype: str
         :returns: One of "high", "medium" and "low" indicating similarity.
         """
         score = 0
@@ -849,10 +836,6 @@ class CdEFrontend(AbstractUserFrontend):
 
         The ``data`` parameter contains all extra information assembled
         during processing of a POST request.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type data: {str: obj} or None
-        :type params: {str: obj} or None
         """
         data = data or {}
         merge_dicts(rs.values, data)
@@ -1105,9 +1088,6 @@ class CdEFrontend(AbstractUserFrontend):
 
         We test for fitness of the data itself.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type datum: {str: object}
-        :rtype: {str: object}
         :returns: The processed input datum.
         """
         amount, problems = validate_check(
@@ -1426,8 +1406,7 @@ class CdEFrontend(AbstractUserFrontend):
         return self.render(rs, "lastschrift_change", {'persona': persona})
 
     @access("finance_admin", modi={"POST"})
-    @REQUESTdatadict('amount', 'iban', 'account_owner', 'account_address',
-                     'notes')
+    @REQUESTdatadict(*_LASTSCHRIFT_COMMON_FIELDS())
     def lastschrift_change(self, rs: RequestState, lastschrift_id: int,
                            data: CdEDBObject) -> Response:
         """Modify one permit."""
@@ -1448,7 +1427,7 @@ class CdEFrontend(AbstractUserFrontend):
         return self.render(rs, "lastschrift_create")
 
     @access("finance_admin", modi={"POST"})
-    @REQUESTdatadict('amount', 'iban', 'account_owner', 'account_address', 'notes')
+    @REQUESTdatadict(*_LASTSCHRIFT_COMMON_FIELDS())
     @REQUESTdata('persona_id')
     def lastschrift_create(self, rs: RequestState, persona_id: vtypes.CdedbID,
                            data: CdEDBObject) -> Response:
@@ -1497,9 +1476,8 @@ class CdEFrontend(AbstractUserFrontend):
             'persona_id': rs.ambience['lastschrift']['persona_id']})
 
     def _calculate_payment_date(self) -> datetime.date:
-        """Helper to calculate a payment date that is a valid TARGET2 bankday.
-
-        :rtype: datetime.date
+        """Helper to calculate a payment date that is a valid TARGET2
+        bankday.
         """
         payment_date = now().date() + self.conf["SEPA_PAYMENT_OFFSET"]
 
@@ -1543,11 +1521,8 @@ class CdEFrontend(AbstractUserFrontend):
         participating members. Here we do all the dirty work to conform
         to the standard and produce an acceptable output.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type transactions: [{str: object}]
         :param transactions: Transaction infos from the backend enriched by
           some additional attributes which are necessary.
-        :rtype: str
         """
         sanitized_transactions = check(
             rs, vtypes.SepaTransactions, transactions)
@@ -2104,6 +2079,7 @@ class CdEFrontend(AbstractUserFrontend):
                                 " CdE-Datenbank-Accounts"},
                     {'persona': persona,
                      'management': self.conf["MANAGEMENT_ADDRESS"],
+                     'fee': self.conf["MEMBERSHIP_FEE"],
                      'meta_info': meta_info})
             return not testrun
 
@@ -2608,8 +2584,7 @@ class CdEFrontend(AbstractUserFrontend):
             'institutions': institutions})
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdatadict("title", "shortname", "institution", "description",
-                     "tempus", "notes")
+    @REQUESTdatadict(*_PAST_EVENT_FIELDS)
     def change_past_event(self, rs: RequestState, pevent_id: int,
                           data: CdEDBObject) -> Response:
         """Modify a concluded event."""
@@ -2631,8 +2606,7 @@ class CdEFrontend(AbstractUserFrontend):
             'institutions': institutions})
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdatadict("title", "shortname", "institution", "description",
-                     "tempus", "notes")
+    @REQUESTdatadict(*_PAST_EVENT_FIELDS)
     @REQUESTdata("courses")
     def create_past_event(self, rs: RequestState, courses: Optional[str],
                           data: CdEDBObject) -> Response:
@@ -2693,7 +2667,7 @@ class CdEFrontend(AbstractUserFrontend):
         return self.render(rs, "change_past_course")
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdatadict("nr", "title", "description")
+    @REQUESTdatadict(*_PAST_COURSE_COMMON_FIELDS())
     def change_past_course(self, rs: RequestState, pevent_id: int,
                            pcourse_id: int, data: CdEDBObject) -> Response:
         """Modify a concluded course."""
@@ -2713,7 +2687,7 @@ class CdEFrontend(AbstractUserFrontend):
         return self.render(rs, "create_past_course")
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdatadict("nr", "title", "description")
+    @REQUESTdatadict(*_PAST_COURSE_COMMON_FIELDS())
     def create_past_course(self, rs: RequestState, pevent_id: int,
                            data: CdEDBObject) -> Response:
         """Add new concluded course."""
@@ -2811,8 +2785,7 @@ class CdEFrontend(AbstractUserFrontend):
         return self.render(rs, "view_misc", {"cde_misc": cde_misc})
 
     @access("cde_admin")
-    @REQUESTdata("codes", "persona_id", "submitted_by", "change_note", "offset",
-                 "length", "time_start", "time_stop")
+    @REQUESTdata(*LOG_FIELDS_COMMON)
     def view_cde_log(self, rs: RequestState,
                      codes: Collection[const.CdeLogCodes],
                      offset: Optional[int],
@@ -2846,8 +2819,7 @@ class CdEFrontend(AbstractUserFrontend):
             'personas': personas, 'loglinks': loglinks})
 
     @access("cde_admin")
-    @REQUESTdata("codes", "persona_id", "submitted_by", "change_note", "offset",
-                 "length", "time_start", "time_stop")
+    @REQUESTdata(*LOG_FIELDS_COMMON)
     def view_finance_log(self, rs: RequestState,
                          codes: Collection[const.FinanceLogCodes],
                          offset: Optional[int],
@@ -2881,8 +2853,7 @@ class CdEFrontend(AbstractUserFrontend):
             'personas': personas, 'loglinks': loglinks})
 
     @access("cde_admin")
-    @REQUESTdata("codes", "pevent_id", "persona_id", "submitted_by", "change_note",
-                 "offset", "length", "time_start", "time_stop")
+    @REQUESTdata(*LOG_FIELDS_COMMON, "pevent_id")
     def view_past_log(self, rs: RequestState,
                       codes: Collection[const.PastEventLogCodes],
                       pevent_id: Optional[vtypes.ID],

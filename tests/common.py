@@ -429,6 +429,7 @@ class BackendTest(CdEDBTest):
 
     @staticmethod
     def is_user(user: UserIdentifier, identifier: UserIdentifier) -> bool:
+        # TODO: go through all tests and make use of this
         return get_user(user)["id"] == get_user(identifier)["id"]
 
     @staticmethod

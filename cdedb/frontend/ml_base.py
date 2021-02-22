@@ -13,9 +13,10 @@ from werkzeug import Response
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    MOD_ALLOWED_FIELDS, PRIVILEGE_MOD_REQUIRING_FIELDS, PRIVILEGED_MOD_ALLOWED_FIELDS,
-    CdEDBObject, CdEDBObjectMap, EntitySorter, PathLike, PrivilegeError, RequestState,
-    SubscriptionActions, SubscriptionError, merge_dicts, n_, now, unwrap,
+    LOG_FIELDS_COMMON, MOD_ALLOWED_FIELDS, PRIVILEGE_MOD_REQUIRING_FIELDS,
+    PRIVILEGED_MOD_ALLOWED_FIELDS, CdEDBObject, CdEDBObjectMap, EntitySorter, PathLike,
+    PrivilegeError, RequestState, SubscriptionActions, SubscriptionError, merge_dicts,
+    n_, now, unwrap,
 )
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, calculate_db_logparams, calculate_loglinks,
@@ -24,9 +25,12 @@ from cdedb.frontend.common import (
 )
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.ml_type_aux import (
-    ADDITIONAL_TYPE_FIELDS, TYPE_MAP, MailinglistGroup, get_type,
+    ADDITIONAL_TYPE_FIELDS, TYPE_MAP, MailinglistGroup, get_type
 )
 from cdedb.query import QUERY_SPECS, Query, mangle_query_input
+from cdedb.validation import (
+    ALL_MAILINGLIST_FIELDS, _PERSONA_FULL_ML_CREATION, filter_none
+)
 
 
 class MlBaseFrontend(AbstractUserFrontend):
@@ -87,8 +91,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         return super().create_user_form(rs)
 
     @access("core_admin", "ml_admin", modi={"POST"})
-    @REQUESTdatadict(
-        "given_names", "family_name", "display_name", "notes", "username")
+    @REQUESTdatadict(*filter_none(_PERSONA_FULL_ML_CREATION))
     def create_user(self, rs: RequestState, data: Dict[str, Any],
                     ignore_warnings: bool = False) -> Response:
         defaults = {
@@ -232,10 +235,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             })
 
     @access("ml", modi={"POST"})
-    @REQUESTdatadict(
-        "title", "local_part", "domain", "description", "mod_policy",
-        "attachment_policy", "ml_type", "subject_prefix",
-        "maxsize", "is_active", "notes", *ADDITIONAL_TYPE_FIELDS.items())
+    @REQUESTdatadict(*ALL_MAILINGLIST_FIELDS)
     @REQUESTdata("ml_type", "moderators")
     def create_mailinglist(self, rs: RequestState, data: Dict[str, Any],
                            ml_type: const.MailinglistTypes,
@@ -271,8 +271,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             'mailinglist_id': new_id})
 
     @access("ml")
-    @REQUESTdata("codes", "mailinglist_id", "persona_id", "submitted_by",
-                 "change_note", "offset", "length", "time_start", "time_stop")
+    @REQUESTdata(*LOG_FIELDS_COMMON, "mailinglist_id")
     def view_log(self, rs: RequestState, codes: Collection[const.MlLogCodes],
                  mailinglist_id: Optional[vtypes.ID], offset: Optional[int],
                  length: Optional[vtypes.PositiveInt],
@@ -406,10 +405,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("ml", modi={"POST"})
     @mailinglist_guard()
-    @REQUESTdatadict(
-        "title", "local_part", "domain", "description", "mod_policy",
-        "notes", "attachment_policy", "ml_type", "subject_prefix", "maxsize",
-        "is_active", *ADDITIONAL_TYPE_FIELDS.items())
+    @REQUESTdatadict(*ALL_MAILINGLIST_FIELDS)
     def change_mailinglist(self, rs: RequestState, mailinglist_id: int,
                            data: CdEDBObject) -> Response:
         """Modify simple attributes of mailinglists."""
@@ -462,11 +458,13 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("ml", modi={"POST"})
     @mailinglist_guard(allow_moderators=False)
-    @REQUESTdatadict("ml_type", *ADDITIONAL_TYPE_FIELDS.items())
+    @REQUESTdatadict(*ADDITIONAL_TYPE_FIELDS.items())
+    @REQUESTdata("ml_type")
     def change_ml_type(self, rs: RequestState, mailinglist_id: int,
-                       data: CdEDBObject) -> Response:
+                       ml_type: str, data: CdEDBObject) -> Response:
         ml = rs.ambience['mailinglist']
         data['id'] = mailinglist_id
+        data['ml_type'] = ml_type
         new_type = get_type(data['ml_type'])
         if ml['domain'] not in new_type.domains:
             data['domain'] = new_type.domains[0]
@@ -500,8 +498,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("ml")
     @mailinglist_guard()
-    @REQUESTdata("codes", "persona_id", "submitted_by", "change_note", "offset",
-                 "length", "time_start", "time_stop")
+    @REQUESTdata(*LOG_FIELDS_COMMON)
     def view_ml_log(self, rs: RequestState, mailinglist_id: int,
                     codes: Collection[const.MlLogCodes], offset: Optional[int],
                     length: Optional[vtypes.PositiveInt],
@@ -1086,8 +1083,6 @@ class MlBaseFrontend(AbstractUserFrontend):
                                            setting: bool) -> bool:
         """Check if all conditions required to change a subscription adress
         are fulfilled.
-
-        :rtype: bool
         """
         assert rs.user.persona_id is not None
         is_subscribed = self.mlproxy.is_subscribed(

@@ -22,11 +22,11 @@ from werkzeug import Response
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    ADMIN_KEYS, ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, REALM_INHERITANCE,
-    REALM_SPECIFIC_GENESIS_FIELDS, ArchiveError, CdEDBObject, DefaultReturnCode,
-    EntitySorter, PrivilegeError, Realm, RequestState, extract_roles,
-    get_persona_fields_by_realm, implied_realms, merge_dicts, n_, now, pairwise, unwrap,
-    xsorted,
+    ADMIN_KEYS, ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, LOG_FIELDS_COMMON,
+    REALM_ADMINS, REALM_INHERITANCE, REALM_SPECIFIC_GENESIS_FIELDS, ArchiveError,
+    CdEDBObject, DefaultReturnCode, EntitySorter, PrivilegeError, Realm,
+    RequestState, extract_roles, get_persona_fields_by_realm, implied_realms,
+    merge_dicts, n_, now, pairwise, unwrap, xsorted,
 )
 
 from cdedb.database.connection import Atomizer
@@ -39,7 +39,8 @@ from cdedb.frontend.common import (
 )
 from cdedb.query import QUERY_SPECS, Query, QueryOperators, mangle_query_input
 from cdedb.validation import (
-    TypeMapping, _PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
+    TypeMapping, _GENESIS_CASE_EXPOSED_FIELDS,
+    _PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
     _PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS, validate_check,
 )
 from cdedb.validationtypes import CdedbID
@@ -358,7 +359,7 @@ class CoreFrontend(AbstractFrontend):
         html_str = markdown_parse_safe(md_str)
         return Response(html_str, mimetype='text/plain')
 
-    @access("member")
+    @access("searchable", "cde_admin")
     @REQUESTdata("#confirm_id")
     def download_vcard(self, rs: RequestState, persona_id: int, confirm_id: int
                        ) -> Response:
@@ -369,7 +370,7 @@ class CoreFrontend(AbstractFrontend):
         return self.send_file(rs, data=vcard, mimetype='text/vcard',
                               filename='vcard.vcf')
 
-    @access("member")
+    @access("searchable", "cde_admin")
     @REQUESTdata("#confirm_id")
     def qr_vcard(self, rs: RequestState, persona_id: int, confirm_id: int) -> Response:
         if persona_id != confirm_id or rs.has_validation_errors():
@@ -400,11 +401,14 @@ class CoreFrontend(AbstractFrontend):
 
         :return: The serialized vCard (as in a vcf file)
         """
-        if 'member' not in rs.user.roles:
-            raise werkzeug.exceptions.Forbidden(n_("Not a member."))
+        if not {'searchable', 'cde_admin'} & rs.user.roles:
+            raise werkzeug.exceptions.Forbidden(n_("No cde access to profile."))
 
-        if not self.coreproxy.verify_persona(rs, persona_id, required_roles=['member']):
-            raise werkzeug.exceptions.Forbidden(n_("Viewed persona is no member."))
+        if (not self.coreproxy.verify_persona(rs, persona_id,
+                                              required_roles=['searchable'])
+                and "cde_admin" not in rs.user.roles):
+            raise werkzeug.exceptions.Forbidden(n_(
+                "Access to non-searchable member data."))
 
         persona = self.coreproxy.get_cde_user(rs, persona_id)
 
@@ -653,8 +657,7 @@ class CoreFrontend(AbstractFrontend):
             'quoteable': quoteable, 'access_mode': access_mode,
         })
 
-    @access("core_admin", "cde_admin", "event_admin", "ml_admin",
-            "assembly_admin")
+    @access(*REALM_ADMINS)
     def show_history(self, rs: RequestState, persona_id: int) -> Response:
         """Display user history."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
@@ -1138,8 +1141,7 @@ class CoreFrontend(AbstractFrontend):
                 ret |= {realm} | implied_realms(realm)
         return ret
 
-    @access("core_admin", "cde_admin", "event_admin", "ml_admin",
-            "assembly_admin")
+    @access(*REALM_ADMINS)
     def admin_change_user_form(self, rs: RequestState, persona_id: int
                                ) -> Response:
         """Render form."""
@@ -1164,8 +1166,7 @@ class CoreFrontend(AbstractFrontend):
             'shown_fields': shown_fields,
         })
 
-    @access("core_admin", "cde_admin", "event_admin", "ml_admin",
-            "assembly_admin", modi={"POST"})
+    @access(*REALM_ADMINS, modi={"POST"})
     @REQUESTdata("generation", "change_note", "ignore_warnings")
     def admin_change_user(self, rs: RequestState, persona_id: int,
                           generation: int, change_note: Optional[str],
@@ -1482,10 +1483,7 @@ class CoreFrontend(AbstractFrontend):
         return self.render(rs, "promote_user")
 
     @access("core_admin", modi={"POST"})
-    @REQUESTdatadict(
-        "title", "name_supplement", "birthday", "gender", "free_form",
-        "telephone", "mobile", "address", "address_supplement", "postal_code",
-        "location", "country", "trial_member")
+    @REQUESTdatadict(*CDE_TRANSITION_FIELDS())
     @REQUESTdata("target_realm")
     def promote_user(self, rs: RequestState, persona_id: int,
                      target_realm: vtypes.Realm, data: CdEDBObject) -> Response:
@@ -1797,8 +1795,7 @@ class CoreFrontend(AbstractFrontend):
             rs.notify("success", n_("Email sent."))
         return self.redirect(rs, "core/index")
 
-    @access("core_admin", "meta_admin", "cde_admin", "event_admin", "ml_admin",
-            "assembly_admin", modi={"POST"})
+    @access(*REALM_ADMINS, modi={"POST"})
     def admin_send_password_reset_link(self, rs: RequestState, persona_id: int,
                                        internal: bool = False) -> Response:
         """Generate a password reset email for an arbitrary persona.
@@ -1961,8 +1958,7 @@ class CoreFrontend(AbstractFrontend):
                          {'new_username': new_username})
             return self.redirect(rs, "core/index")
 
-    @access("core_admin", "cde_admin", "event_admin", "ml_admin",
-            "assembly_admin")
+    @access(*REALM_ADMINS)
     def admin_username_change_form(self, rs: RequestState, persona_id: int
                                    ) -> Response:
         """Render form."""
@@ -1974,8 +1970,7 @@ class CoreFrontend(AbstractFrontend):
         data = self.coreproxy.get_persona(rs, persona_id)
         return self.render(rs, "admin_username_change", {'data': data})
 
-    @access("core_admin", "cde_admin", "event_admin", "ml_admin",
-            "assembly_admin", modi={"POST"})
+    @access(*REALM_ADMINS, modi={"POST"})
     @REQUESTdata("new_username")
     def admin_username_change(self, rs: RequestState, persona_id: int,
                               new_username: Optional[vtypes.Email]) -> Response:
@@ -1993,8 +1988,7 @@ class CoreFrontend(AbstractFrontend):
         else:
             return self.redirect_show_user(rs, persona_id)
 
-    @access("core_admin", "cde_admin", "event_admin", "ml_admin",
-            "assembly_admin", modi={"POST"})
+    @access(*REALM_ADMINS, modi={"POST"})
     @REQUESTdata("activity")
     def toggle_activity(self, rs: RequestState, persona_id: int, activity: bool
                         ) -> Response:
@@ -2036,15 +2030,11 @@ class CoreFrontend(AbstractFrontend):
         })
 
     @access("anonymous", modi={"POST"})
-    @REQUESTdatadict(
-        "notes", "realm", "username", "given_names", "family_name", "gender",
-        "birthday", "telephone", "mobile", "address_supplement", "address",
-        "postal_code", "location", "country", "birth_name")
+    @REQUESTdatadict(*_GENESIS_CASE_EXPOSED_FIELDS)
     @REQUESTfile("attachment")
-    @REQUESTdata("attachment_hash", "attachment_filename", "ignore_warnings")
+    @REQUESTdata("attachment_filename", "ignore_warnings")
     def genesis_request(self, rs: RequestState, data: CdEDBObject,
                         attachment: Optional[werkzeug.FileStorage],
-                        attachment_hash: Optional[str],
                         attachment_filename: str = None,
                         ignore_warnings: bool = False) -> Response:
         """Voice the desire to become a persona.
@@ -2057,20 +2047,18 @@ class CoreFrontend(AbstractFrontend):
             attachment_data = check(rs, vtypes.PDFFile, attachment, 'attachment')
         if attachment_data:
             myhash = self.coreproxy.genesis_set_attachment(rs, attachment_data)
-            data['attachment'] = myhash
+            data['attachment_hash'] = myhash
             rs.values['attachment_hash'] = myhash
             rs.values['attachment_filename'] = attachment_filename
-        elif attachment_hash:
+        elif data['attachment_hash']:
             attachment_stored = self.coreproxy.genesis_check_attachment(
-                rs, attachment_hash)
+                rs, data['attachment_hash'])
             if not attachment_stored:
-                data['attachment'] = None
+                data['attachment_hash'] = None
                 e = ("attachment", ValueError(n_(
                     "It seems like you took too long and "
                     "your previous upload was deleted.")))
                 rs.append_validation_error(e)
-            else:
-                data['attachment'] = attachment_hash
         data = check(rs, vtypes.GenesisCase, data, creation=True,
                      _ignore_warnings=ignore_warnings)
         if rs.has_validation_errors():
@@ -2228,11 +2216,11 @@ class CoreFrontend(AbstractFrontend):
     @access("core_admin", *("{}_admin".format(realm)
                             for realm, fields in
                             REALM_SPECIFIC_GENESIS_FIELDS.items()
-                            if "attachment" in fields))
-    def genesis_get_attachment(self, rs: RequestState, attachment: str
+                            if "attachment_hash" in fields))
+    def genesis_get_attachment(self, rs: RequestState, attachment_hash: str
                                ) -> Response:
         """Retrieve attachment for genesis case."""
-        path = self.conf["STORAGE_DIR"] / 'genesis_attachment' / attachment
+        path = self.conf["STORAGE_DIR"] / 'genesis_attachment' / attachment_hash
         mimetype = magic.from_file(str(path), mime=True)
         return self.send_file(rs, path=path, mimetype=mimetype)
 
@@ -2288,16 +2276,15 @@ class CoreFrontend(AbstractFrontend):
     @access("core_admin", *("{}_admin".format(realm)
                             for realm in REALM_SPECIFIC_GENESIS_FIELDS),
             modi={"POST"})
-    @REQUESTdatadict(
-        "notes", "realm", "username", "given_names", "family_name", "gender",
-        "birthday", "telephone", "mobile", "address_supplement", "address",
-        "postal_code", "location", "country", "birth_name")
+    @REQUESTdatadict(*_GENESIS_CASE_EXPOSED_FIELDS)
     @REQUESTdata("ignore_warnings")
     def genesis_modify(self, rs: RequestState, genesis_case_id: int,
                        data: CdEDBObject, ignore_warnings: bool = False
                        ) -> Response:
         """Edit a case to fix potential issues before creation."""
         data['id'] = genesis_case_id
+        # In contrast to the genesis_request, the attachment can not be changed here.
+        del data['attachment_hash']
         data = check(
             rs, vtypes.GenesisCase, data, _ignore_warnings=ignore_warnings)
         if rs.has_validation_errors():
@@ -2492,8 +2479,7 @@ class CoreFrontend(AbstractFrontend):
         return self.redirect_show_user(rs, persona_id)
 
     @access("core_admin")
-    @REQUESTdata("codes", "submitted_by", "reviewed_by", "persona_id",
-                 "change_note", "offset", "length", "time_start", "time_stop")
+    @REQUESTdata(*LOG_FIELDS_COMMON, "reviewed_by")
     def view_changelog_meta(self, rs: RequestState,
                             codes: Collection[const.MemberChangeStati],
                             offset: Optional[int],
@@ -2530,8 +2516,7 @@ class CoreFrontend(AbstractFrontend):
             'personas': personas, 'loglinks': loglinks})
 
     @access("core_admin")
-    @REQUESTdata("codes", "persona_id", "submitted_by", "change_note", "offset",
-                 "length", "time_start", "time_stop")
+    @REQUESTdata(*LOG_FIELDS_COMMON)
     def view_log(self, rs: RequestState, codes: Collection[const.CoreLogCodes],
                  offset: Optional[int], length: Optional[vtypes.PositiveInt],
                  persona_id: Optional[CdedbID], submitted_by: Optional[CdedbID],

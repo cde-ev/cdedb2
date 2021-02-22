@@ -29,11 +29,11 @@ from cdedb.common import (
     ADMIN_KEYS, GENESIS_CASE_FIELDS, GENESIS_REALM_OVERRIDE, PERSONA_ALL_FIELDS,
     PERSONA_ASSEMBLY_FIELDS, PERSONA_CDE_FIELDS, PERSONA_CORE_FIELDS, PERSONA_DEFAULTS,
     PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS, PERSONA_STATUS_FIELDS,
-    PRIVILEGE_CHANGE_FIELDS, ArchiveError, CdEDBLog, CdEDBObject, CdEDBObjectMap,
-    DefaultReturnCode, DeletionBlockers, Error, PathLike, PrivilegeError, PsycoJson,
-    QuotaException, Realm, RequestState, Role, User, decode_parameter, encode_parameter,
-    extract_realms, extract_roles, get_hash, glue, implied_realms, merge_dicts, n_, now,
-    privilege_tier, unwrap, xsorted,
+    PRIVILEGE_CHANGE_FIELDS, REALM_ADMINS, ArchiveError, CdEDBLog, CdEDBObject,
+    CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, Error, PathLike,
+    PrivilegeError, PsycoJson, QuotaException, Realm, RequestState, Role, User,
+    decode_parameter, encode_parameter, extract_realms, extract_roles, get_hash, glue,
+    implied_realms, merge_dicts, n_, now, privilege_tier, unwrap, xsorted,
 )
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -279,19 +279,13 @@ class CoreBackend(AbstractBackend):
         change requires review it has to be committed using
         :py:meth:`changelog_resolve_change` by an administrator.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type data: {str: object}
-        :type generation: int or None
         :param generation: generation on which this request is based, if this
           is not the current generation we abort, may be None to override
           the check
-        :type may_wait: bool
         :param may_wait: Whether this change may wait in the changelog. If
           this is ``False`` and there is a pending change in the changelog,
           the new change is slipped in between.
-        :type change_note: str
         :param change_note: Comment to record in the changelog entry.
-        :rtype: int
         :returns: number of changed entries, however if changes were only
           written to changelog and are waiting for review, the negative number
           of changes written to changelog is returned
@@ -1048,12 +1042,7 @@ class CoreBackend(AbstractBackend):
 
     @access("persona")
     def list_admins(self, rs: RequestState, realm: str) -> List[int]:
-        """List all personas with admin privilidges in a given realm.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type realm: str
-        :rtype: [int]
-        """
+        """List all personas with admin privilidges in a given realm."""
         realm = affirm(str, realm)
 
         query = "SELECT id from core.personas WHERE {constraint}"
@@ -1546,11 +1535,6 @@ class CoreBackend(AbstractBackend):
         """Return a persona from the attic to activity.
 
         This does nothing but flip the archiving bit.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type persona_id: int
-        :rtype: int
-        :returns: default return code
         """
         persona_id = affirm(vtypes.ID, persona_id)
         with Atomizer(rs):
@@ -1576,12 +1560,6 @@ class CoreBackend(AbstractBackend):
         However we do not entirely delete the entry since this would
         cause havock in other areas (like assemblies), we only
         anonymize the entry by removing all identifying information.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type persona_id: int
-        :rtype: int
-        :returns: default return code
-
         """
         persona_id = affirm(vtypes.ID, persona_id)
         with Atomizer(rs):
@@ -1918,8 +1896,7 @@ class CoreBackend(AbstractBackend):
     get_total_persona: _GetPersonaProtocol = singularize(
         get_total_personas, "persona_ids", "persona_id")
 
-    @access("core_admin", "cde_admin", "event_admin", "ml_admin",
-            "assembly_admin")
+    @access(*REALM_ADMINS)
     def create_persona(self, rs: RequestState, data: CdEDBObject,
                        submitted_by: int = None, ignore_warnings: bool = False
                        ) -> DefaultReturnCode:
@@ -2215,8 +2192,7 @@ class CoreBackend(AbstractBackend):
         path = self.genesis_attachment_dir / attachment_hash
         return path.is_file()
 
-    @access("core_admin", "cde_admin", "event_admin", "ml_admin",
-            "assembly_admin")
+    @access(*REALM_ADMINS)
     def genesis_get_attachment(self, rs: RequestState, attachment_hash: str
                                ) -> Optional[bytes]:
         """Retrieve a stored genesis attachment."""
@@ -2233,7 +2209,7 @@ class CoreBackend(AbstractBackend):
                                  attachment_hash: str) -> bool:
         """Check whether a genesis attachment is still referenced in a case."""
         attachment_hash = affirm(str, attachment_hash)
-        query = "SELECT COUNT(*) FROM core.genesis_cases WHERE attachment = %s"
+        query = "SELECT COUNT(*) FROM core.genesis_cases WHERE attachment_hash = %s"
         return bool(unwrap(self.query_one(rs, query, (attachment_hash,))))
 
     @access("core_admin")
@@ -2338,7 +2314,6 @@ class CoreBackend(AbstractBackend):
         :param persona_id: Must be provided only in case of reset.
         :returns: The ``bool`` indicates success and the ``str`` is
           either the new password or an error message.
-        :rtype: (bool, str)
         """
         if persona_id and not reset_cookie:
             return False, n_("Selecting persona allowed for reset only.")
@@ -2387,10 +2362,6 @@ class CoreBackend(AbstractBackend):
     def change_password(self, rs: RequestState, old_password: str,
                         new_password: str) -> Tuple[bool, str]:
         """
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type old_password: str
-        :type new_password: str
-        :rtype: (bool, str)
         :returns: see :py:meth:`modify_password`
         """
         old_password = affirm(str, old_password)
@@ -2548,8 +2519,7 @@ class CoreBackend(AbstractBackend):
                           change_note=data['username'])
         return ret
 
-    @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
-            "ml_admin")
+    @access(*REALM_ADMINS)
     def delete_genesis_case_blockers(self, rs: RequestState,
                                      case_id: int) -> DeletionBlockers:
         """Determine what keeps a genesis case from being deleted.
@@ -2578,8 +2548,7 @@ class CoreBackend(AbstractBackend):
 
         return blockers
 
-    @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
-            "ml_admin")
+    @access(*REALM_ADMINS)
     def delete_genesis_case(self, rs: RequestState, case_id: int,
                             cascade: Collection[str] = None
                             ) -> DefaultReturnCode:
@@ -2630,9 +2599,6 @@ class CoreBackend(AbstractBackend):
                               email: str) -> Optional[int]:
         """Get the id of an unconfirmed genesis case for a given email.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type email: str
-        :rtype: int or None
         :returns: The case id or None if no such case exists.
         """
         email = affirm(str, email)
@@ -2643,7 +2609,8 @@ class CoreBackend(AbstractBackend):
         return unwrap(data) if data else None
 
     @access("anonymous")
-    def genesis_verify(self, rs: RequestState, case_id: int) -> Tuple[int, str]:
+    def genesis_verify(self, rs: RequestState, case_id: int
+                       ) -> Tuple[DefaultReturnCode, str]:
         """Confirm the new email address and proceed to the next stage.
 
         Returning the realm is a conflation caused by lazyness, but before
@@ -2675,8 +2642,7 @@ class CoreBackend(AbstractBackend):
                     change_note=data["username"])
             return ret, data["realm"]
 
-    @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
-            "ml_admin")
+    @access(*REALM_ADMINS)
     def genesis_list_cases(self, rs: RequestState,
                            stati: Collection[const.GenesisStati] = None,
                            realms: Collection[str] = None) -> CdEDBObjectMap:
@@ -2709,8 +2675,7 @@ class CoreBackend(AbstractBackend):
         data = self.query_all(rs, query, params)
         return {e['id']: e for e in data}
 
-    @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
-            "ml_admin")
+    @access(*REALM_ADMINS)
     def genesis_get_cases(self, rs: RequestState, genesis_case_ids: Collection[int]
                           ) -> CdEDBObjectMap:
         """Retrieve datasets for persona creation cases."""
@@ -2728,8 +2693,7 @@ class CoreBackend(AbstractBackend):
     genesis_get_case: _GenesisGetCaseProtocol = singularize(
         genesis_get_cases, "genesis_case_ids", "genesis_case_id")
 
-    @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
-            "ml_admin")
+    @access(*REALM_ADMINS)
     def genesis_modify_case(self, rs: RequestState, data: CdEDBObject,
                             ignore_warnings: bool = False) -> DefaultReturnCode:
         """Modify a persona creation case.
@@ -2765,8 +2729,7 @@ class CoreBackend(AbstractBackend):
                         change_note=current['username'])
         return ret
 
-    @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
-            "ml_admin")
+    @access(*REALM_ADMINS)
     def genesis(self, rs: RequestState, case_id: int) -> DefaultReturnCode:
         """Create a new user account upon request.
 
@@ -2928,10 +2891,6 @@ class CoreBackend(AbstractBackend):
 
         This should be used solely by the resolve API. The frontend takes
         the necessary precautions.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type query: :py:class:`cdedb.query.Query`
-        :rtype: [{str: object}]
         """
         query = affirm(Query, query)
         return self.general_query(rs, query)
