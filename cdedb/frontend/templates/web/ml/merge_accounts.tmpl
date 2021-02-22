@@ -49,8 +49,7 @@
                 false, false, '{{ gettext("CdEDB-ID, Name or E-Mail") }}'
             );
         </script>
-        {{ util.form_input_checkbox(name="clone_addresses", label=gettext("Use sources address"),
-                                    readonly="core_admin" not in user.roles) }}
+        {{ util.form_input_checkbox(name="clone_addresses", label=gettext("Use sources address")) }}
         {{ util.form_input_submit(value=gettext("Add Subscriber"), aclass="btn btn-success") }}
     </form>
 {% endblock %}

@@ -71,7 +71,8 @@
                              aclass="list-group-item", active=(sidenav_active == 'ml_moderated')) }}
             {% endif %}
         </div>
-        {% if 'ml_user' in user.admin_views %}
+        {# This functionality is only available for true mailinglist admins. #}
+        {% if 'ml_user' in user.admin_views and 'ml_admin' in user.roles %}
             <div class="list-group tear-down">
                 {{ util.href(cdedblink("ml/merge_accounts_form"), gettext("Merge Accounts"),
                         icon="user-friends", aclass="list-group-item", active=(sidenav_active == 'ml_merger')) }}

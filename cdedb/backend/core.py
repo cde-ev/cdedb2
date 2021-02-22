@@ -1290,7 +1290,7 @@ class CoreBackend(AbstractBackend):
 
         return True
 
-    @access("core_admin", "assembly_admin", "cde_admin", "event_admin", "ml_admin")
+    @access(*REALM_ADMINS)
     def archive_persona(self, rs: RequestState, persona_id: int,
                         note: str) -> DefaultReturnCode:
         """Move a persona to the attic.
