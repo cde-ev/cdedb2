@@ -697,10 +697,10 @@ class CoreBackend(AbstractBackend):
         if (current['decided_search'] and not data.get("is_searchable", True)
                 and (not ({"cde_admin", "core_admin"} & rs.user.roles))):
             raise PrivilegeError(n_("Hiding prevented."))
-        if ("is_archived" in data
-                and ("core_admin" not in rs.user.roles
-                     or "archive" not in allow_specials)):
-            raise PrivilegeError(n_("Archive modification prevented."))
+        if "is_archived" in data:
+            if (not self.is_relative_admin(rs, data['id'], allow_meta_admin=False)
+                or "archive" not in allow_specials):
+                raise PrivilegeError(n_("Archive modification prevented."))
         if ("balance" in data
                 and ("cde_admin" not in rs.user.roles
                      or "finance" not in allow_specials)):
@@ -1288,7 +1288,7 @@ class CoreBackend(AbstractBackend):
 
         return True
 
-    @access("core_admin", "cde_admin")
+    @access("core_admin", "assembly_admin", "cde_admin", "event_admin", "ml_admin")
     def archive_persona(self, rs: RequestState, persona_id: int,
                         note: str) -> DefaultReturnCode:
         """Move a persona to the attic.
@@ -1321,6 +1321,9 @@ class CoreBackend(AbstractBackend):
             #
             # 1. Do some sanity checks.
             #
+            if not self.is_relative_admin(rs, persona_id, allow_meta_admin=False):
+                raise ArchiveError(n_("You are not allowed to archive this user."))
+
             if persona['is_archived']:
                 return 0
 
