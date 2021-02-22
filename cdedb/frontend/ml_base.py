@@ -301,16 +301,10 @@ class MlBaseFrontend(AbstractUserFrontend):
                     "Can not merge user into himself."))))
         if rs.has_validation_errors():
             return self.merge_accounts_form(rs)
-        try:
-            code = self.mlproxy.merge_accounts(
-                rs, source_persona_id, target_persona_id, clone_addresses)
-            self.notify_return_code(rs, code)
-        except ValueError as e:
-            # we want to notify the user if both users are related to the same ml
-            if "Both users are related to the same mailinglists" in e.args[0]:
-                rs.notify("error", message=e.args[0], params=e.args[1])
-            else:
-                raise e
+        code = self.mlproxy.merge_accounts(
+            rs, source_persona_id, target_persona_id, clone_addresses)
+        self.notify_return_code(rs, code)
+        if not code:
             return self.merge_accounts_form(rs)
         return self.redirect(rs, "ml/merge_accounts")
 

@@ -1376,9 +1376,9 @@ class MlBackend(AbstractBackend):
             if ml_overlap:
                 ml_titles = [e['title']
                              for e in self.get_mailinglists(rs, ml_overlap).values()]
-                raise ValueError(
-                    n_("Both users are related to the same mailinglists: %(mls)s"),
-                       {'mls': ", ".join(ml_titles)})
+                msg = n_("Both users are related to the same mailinglists: %(mls)s")
+                rs.notify("error", msg, {'mls': ", ".join(ml_titles)})
+                return 0
 
             code = 1
             msg = f"Nutzer {source_persona_id} ist in diesem Account aufgegangen."
