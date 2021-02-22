@@ -706,7 +706,7 @@ class CoreBackend(AbstractBackend):
             raise PrivilegeError(n_("Hiding prevented."))
         if "is_archived" in data:
             if (not self.is_relative_admin(rs, data['id'], allow_meta_admin=False)
-                or "archive" not in allow_specials):
+                    or "archive" not in allow_specials):
                 raise PrivilegeError(n_("Archive modification prevented."))
         if ("balance" in data
                 and ("cde_admin" not in rs.user.roles

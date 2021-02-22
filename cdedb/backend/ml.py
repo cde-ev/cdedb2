@@ -22,7 +22,7 @@ from cdedb.common import (
     MAILINGLIST_FIELDS, MOD_ALLOWED_FIELDS, PRIVILEGED_MOD_ALLOWED_FIELDS, CdEDBLog,
     CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, PathLike,
     PrivilegeError, RequestState, SubscriptionActions, SubscriptionError,
-    implying_realms, make_proxy, mixed_existence_sorter, n_, now, unwrap, ADMIN_KEYS,
+    implying_realms, make_proxy, mixed_existence_sorter, n_, unwrap, ADMIN_KEYS,
 )
 from cdedb.database.connection import Atomizer
 from cdedb.ml_type_aux import MLType, MLTypeLike

@@ -276,7 +276,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("ml_admin", modi={"POST"})
     @REQUESTdata("source_persona_id", "target_persona_id", "clone_addresses")
-    def merge_accounts(self, rs:RequestState,
+    def merge_accounts(self, rs: RequestState,
                        source_persona_id: vtypes.CdedbID,
                        target_persona_id: vtypes.CdedbID,
                        clone_addresses: bool) -> Response:
