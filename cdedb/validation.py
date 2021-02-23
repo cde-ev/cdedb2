@@ -1410,11 +1410,6 @@ def _country(
     val: Any, argname: str = None, *, _ignore_warnings: bool = False,
     _convert: bool = True, **kwargs: Any
 ) -> Country:
-    """
-    :param aux: Additional information. In this case the country belonging
-        to the postal code.
-    :param _ignore_warnings: If True, ignore invalid german postcodes.
-    """
     if _convert and not val:
         # TODO Use self.conf["DEFAULT_COUNTRY"] here
         val = "DE"
@@ -1422,8 +1417,7 @@ def _country(
     if _convert:
         val = val.strip()
     if val not in COUNTRY_CODES:
-        raise ValidationSummary(ValidationWarning(
-            argname, n_("Enter actual country name in English.")))
+        raise ValidationSummary(argname, n_("Enter actual country name in English."))
     return Country(val)
 
 
