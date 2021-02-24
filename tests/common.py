@@ -1434,9 +1434,9 @@ def make_cron_backend_proxy(cron: CronFrontend, backend: B) -> B:
     return cast(B, CronBackendProxy())
 
 
-class CronTest(unittest.TestCase):
-    _all_periodics: Set[str]
-    _run_periodics: Set[str]
+class CronTest(CdEDBTest):
+    _remaining_periodics: Set[str]
+    _remaining_tests: Set[str]
     cron: ClassVar[CronFrontend]
     core: ClassVar[CoreBackend]
     cde: ClassVar[CdEBackend]
@@ -1452,31 +1452,32 @@ class CronTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        super().setUpClass()
         cls.cron = CronFrontend()
         cls.core = make_cron_backend_proxy(cls.cron, cls.cron.core.coreproxy)
         cls.cde = make_cron_backend_proxy(cls.cron, cls.cron.core.cdeproxy)
         cls.event = make_cron_backend_proxy(cls.cron, cls.cron.core.eventproxy)
         cls.assembly = make_cron_backend_proxy(cls.cron, cls.cron.core.assemblyproxy)
         cls.ml = make_cron_backend_proxy(cls.cron, cls.cron.core.mlproxy)
-        cls._all_periodics = {
+        cls._remaining_periodics = {
             job.cron['name']
             for frontend in (cls.cron.core, cls.cron.cde, cls.cron.event,
                              cls.cron.assembly, cls.cron.ml)
             for job in cls.cron.find_periodics(frontend)
         }
-        cls._run_periodics = set()
+        cls._remaining_tests = {x for x in dir(cls) if x.startswith("test_")}
 
     @classmethod
     def tearDownClass(cls) -> None:
-        if (any(job not in cls._run_periodics for job in cls._all_periodics)
-                and not os.environ.get('CDEDB_TEST_SINGULAR')):
+        super().tearDownClass()
+        if not cls._remaining_tests and cls._remaining_periodics:
             raise AssertionError(f"The following cron-periodics never ran:"
-                                 f" {cls._all_periodics - cls._run_periodics}")
+                                 f" {cls._remaining_periodics}")
 
     def setUp(self) -> None:
-        subprocess.check_call(("make", "sql-test-shallow"),
-                              stdout=subprocess.DEVNULL,
-                              stderr=subprocess.DEVNULL)
+        super().setUp()
+
+        self._remaining_tests.remove(self._testMethodName)
         self.stores = []
         self.mails = []
 
@@ -1508,7 +1509,7 @@ class CronTest(unittest.TestCase):
     def execute(self, *args: Any, check_stores: bool = True) -> None:
         if not args:
             raise ValueError("Must specify jobs to run.")
-        self._run_periodics.update(args)
+        self._remaining_periodics.difference_update(args)
         self.cron.execute(args)
         if check_stores:
             expectation = set(args) | {"_base"}
