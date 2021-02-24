@@ -370,9 +370,14 @@ def escaped_split(string: str, delim: str, escape: str = '\\') -> List[str]:
     return ret
 
 
+def filter_none(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Helper function to remove NoneType values from dictionaies."""
+    return {k: v for k, v in data.items() if v is not NoneType}
+
 #
 # Below is the real stuff
 #
+
 
 @_add_typed_validator
 def _None(
@@ -962,13 +967,6 @@ _PERSONA_TYPE_FIELDS = {
 def _PERSONA_BASE_CREATION() -> Mapping[str, Any]: return {
     'username': Email,
     'notes': Optional[str],
-    'is_cde_realm': bool,
-    'is_event_realm': bool,
-    'is_ml_realm': bool,
-    'is_assembly_realm': bool,
-    'is_member': bool,
-    'is_searchable': bool,
-    'is_active': bool,
     'display_name': str,
     'given_names': str,
     'family_name': str,
@@ -1048,6 +1046,16 @@ def _PERSONA_EVENT_CREATION() -> Mapping[str, Any]: return {
     'location': Optional[str],
     'country': Optional[str],
 }
+
+
+_PERSONA_FULL_ML_CREATION = {**_PERSONA_BASE_CREATION()}
+
+_PERSONA_FULL_ASSEMBLY_CREATION = {**_PERSONA_BASE_CREATION()}
+
+_PERSONA_FULL_EVENT_CREATION = {**_PERSONA_BASE_CREATION(), **_PERSONA_EVENT_CREATION()}
+
+_PERSONA_FULL_CDE_CREATION = {**_PERSONA_BASE_CREATION(), **_PERSONA_CDE_CREATION(),
+                              'is_member': bool, 'is_searchable': bool}
 
 
 def _PERSONA_COMMON_FIELDS() -> Mapping[str, Any]: return {
@@ -1144,7 +1152,8 @@ def _persona(
         })
         roles = extract_roles(temp)
         optional_fields: TypeMapping = {}
-        mandatory_fields = {**_PERSONA_BASE_CREATION()}
+        mandatory_fields: Dict[str, Any] = {**_PERSONA_TYPE_FIELDS,
+                                             **_PERSONA_BASE_CREATION()}
         if "cde" in roles:
             mandatory_fields.update(_PERSONA_CDE_CREATION())
         if "event" in roles:
@@ -1430,8 +1439,12 @@ def _GENESIS_CASE_ADDITIONAL_FIELDS() -> Mapping[str, Any]: return {
     'location': str,
     'country': Optional[str],
     'birth_name': Optional[str],
-    'attachment': str,
+    'attachment_hash': str,
 }
+
+
+_GENESIS_CASE_EXPOSED_FIELDS = {**_GENESIS_CASE_COMMON_FIELDS(),
+                                **_GENESIS_CASE_ADDITIONAL_FIELDS()}
 
 
 @_add_typed_validator
@@ -2017,6 +2030,9 @@ def _PAST_EVENT_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
 }
 
 
+_PAST_EVENT_FIELDS = {**_PAST_EVENT_COMMON_FIELDS(), **_PAST_EVENT_OPTIONAL_FIELDS()}
+
+
 @_add_typed_validator
 def _past_event(
     val: Any, argname: str = "past_event", *,
@@ -2047,8 +2063,7 @@ def _EVENT_COMMON_FIELDS() -> Mapping[str, Any]: return {
 }
 
 
-def _EVENT_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
-    'offline_lock': bool,
+def _EVENT_EXPOSED_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
     'is_visible': bool,
     'is_course_list_visible': bool,
     'is_course_state_visible': bool,
@@ -2060,19 +2075,28 @@ def _EVENT_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
     'is_participant_list_visible': bool,
     'courses_in_participant_list': bool,
     'is_cancelled': bool,
-    'is_archived': bool,
     'iban': Optional[IBAN],
     'nonmember_surcharge': NonNegativeDecimal,
-    'orgas': Iterable,
     'mail_text': Optional[str],
-    'parts': Mapping,
-    'fields': Mapping,
-    'fee_modifiers': Mapping,
     'registration_text': Optional[str],
     'orga_address': Optional[Email],
     'lodge_field': Optional[ID],
     'camping_mat_field': Optional[ID],
     'course_room_field': Optional[ID],
+}
+
+
+_EVENT_EXPOSED_FIELDS = {**_EVENT_COMMON_FIELDS(), **_EVENT_EXPOSED_OPTIONAL_FIELDS()}
+
+
+def _EVENT_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
+    **_EVENT_EXPOSED_OPTIONAL_FIELDS(),
+    'offline_lock': bool,
+    'is_archived': bool,
+    'orgas': Iterable,
+    'parts': Mapping,
+    'fields': Mapping,
+    'fee_modifiers': Mapping,
 }
 
 
@@ -3453,6 +3477,9 @@ def _MAILINGLIST_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
 }
 
 
+ALL_MAILINGLIST_FIELDS = (_MAILINGLIST_COMMON_FIELDS().keys() |
+                          ml_type.ADDITIONAL_TYPE_FIELDS.items())
+
 _MAILINGLIST_READONLY_FIELDS = {
     'address',
     'domain_str',
@@ -3654,13 +3681,22 @@ def _BALLOT_COMMON_FIELDS() -> Mapping[str, Any]: return {
 }
 
 
-def _BALLOT_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
-    'extended': Optional[bool],
+def _BALLOT_EXPOSED_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
     'vote_extension_end': Optional[datetime.datetime],
     'abs_quorum': int,
     'rel_quorum': int,
     'votes': Optional[PositiveInt],
     'use_bar': bool,
+}
+
+
+_BALLOT_EXPOSED_FIELDS = {**_BALLOT_COMMON_FIELDS(),
+                          **_BALLOT_EXPOSED_OPTIONAL_FIELDS()}
+
+
+def _BALLOT_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
+    **_BALLOT_EXPOSED_OPTIONAL_FIELDS(),
+    'extended': Optional[bool],
     'is_tallied': bool,
     'candidates': Mapping
 }

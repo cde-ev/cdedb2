@@ -1964,6 +1964,12 @@ class TestCoreFrontend(FrontendTest):
         })
         self.get('/core/api/resolve', status=403)
 
+    @as_users("janis")
+    def test_markdown_endpoint(self, user: CdEDBObject) -> None:
+        self.post('/core/markdown/parse', {'md_str': '**bold** <script></script>'})
+        expectation = "<p><strong>bold</strong> &lt;script&gt;&lt;/script&gt;</p>"
+        self.assertEqual(expectation, self.response.text)
+
     def test_log(self) -> None:
         user = USER_DICT['vera']
         logs = []
