@@ -15,8 +15,8 @@ import json
 import os
 import pathlib
 import re
+import shutil
 import subprocess
-import signal
 import sys
 import tempfile
 import time
@@ -315,7 +315,9 @@ class MyTextTestResult(unittest.TextTestResult):
 
 class BasicTest(unittest.TestCase):
     """Provide some basic useful test functionalities."""
-    testfile_dir = pathlib.Path(f"/tmp/cdedb-store-{os.environ['TESTTHREADNR']}/testfiles")
+    storage_dir = pathlib.Path(f"/tmp/cdedb-store-{os.environ['TESTTHREADNR']}")
+    testfile_dir = storage_dir / "testfiles"
+    needs_storage_marker = "_needs_storage"
     _clean_sample_data: ClassVar[Dict[str, CdEDBObjectMap]]
     conf: ClassVar[Config]
 
@@ -328,6 +330,16 @@ class BasicTest(unittest.TestCase):
     def setUp(self) -> None:
         # Provide a fresh copy of clean sample data.
         self.sample_data = copy.deepcopy(self._clean_sample_data)
+
+        testMethod = getattr(self, self._testMethodName)
+        if getattr(testMethod, self.needs_storage_marker, False):
+            subprocess.run(["make", "storage-test"], stdout=subprocess.DEVNULL,
+                           check=True)
+
+    def tearDown(self) -> None:
+        testMethod = getattr(self, self._testMethodName)
+        if getattr(testMethod, self.needs_storage_marker, False):
+            shutil.rmtree(self.storage_dir)
 
     def get_sample_data(self, table: str, ids: Iterable[int],
                         keys: Iterable[str]) -> CdEDBObjectMap:
@@ -727,20 +739,8 @@ def prepsql(sql: AnyStr) -> Callable[[F], F]:
 # TODO: should this better be named needs_storage?
 def storage(fun: F) -> F:
     """Decorate a test which needs some of the test files on the local drive."""
-    def new_fun(*args: Any, **kwargs: Any) -> Any:
-        storage_dir = pathlib.Path(f"/tmp/cdedb-store-{os.environ['TESTTHREADNR']}/")
-        if storage_dir.exists():
-            # this special-casing ensures that nested tests do not cause problems. That
-            #  is currently only relevant for the assembly frontend log test. It should
-            #  be superfluous after solving #1841.
-            res = fun(*args, **kwargs)
-        else:
-            subprocess.check_call(['make', 'storage-test'],
-                                  stdout=subprocess.DEVNULL)
-            res = fun(*args, **kwargs)
-            subprocess.check_call(['rm', '-rf', storage_dir])
-        return res
-    return cast(F, new_fun)
+    setattr(fun, BasicTest.needs_storage_marker, True)
+    return fun
 
 
 def execsql(sql: AnyStr) -> None:
