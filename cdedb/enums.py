@@ -11,8 +11,9 @@ from typing import Tuple, Type
 import cdedb.database.constants as const
 from cdedb.common import (
     Accounts, AgeClasses, CourseChoiceToolActions, CourseFilterPositions,
-    LineResolutions, LodgementsSortkeys, SubscriptionActions, TransactionType,
+    LineResolutions, LodgementsSortkeys, TransactionType,
 )
+from cdedb.subman.machine import SubscriptionActions
 from cdedb.query import QueryOperators
 
 #: The list of normal enums

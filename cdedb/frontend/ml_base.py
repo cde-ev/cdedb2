@@ -15,9 +15,10 @@ import cdedb.validationtypes as vtypes
 from cdedb.common import (
     LOG_FIELDS_COMMON, MOD_ALLOWED_FIELDS, PRIVILEGE_MOD_REQUIRING_FIELDS,
     PRIVILEGED_MOD_ALLOWED_FIELDS, CdEDBObject, CdEDBObjectMap, EntitySorter, PathLike,
-    PrivilegeError, RequestState, SubscriptionActions, SubscriptionError, merge_dicts,
-    n_, now, unwrap,
+    PrivilegeError, RequestState, merge_dicts, n_, now, unwrap,
 )
+from cdedb.subman.exceptions import SubscriptionError
+from cdedb.subman.machine import SubscriptionActions
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, calculate_db_logparams, calculate_loglinks,
     cdedbid_filter as cdedbid, check_validation as check, csv_output,

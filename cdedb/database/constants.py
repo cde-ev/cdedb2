@@ -138,30 +138,7 @@ class PrivilegeChangeStati(enum.IntEnum):
     rejected = 10
 
 
-@enum.unique
-class SubscriptionStates(enum.IntEnum):
-    """Define the possible relations between user and mailinglist."""
-    #: The user is explicitly subscribed.
-    subscribed = 1
-    #: The user is explicitly unsubscribed (usually from an Opt-Out list).
-    unsubscribed = 2
-    #: The user was explicitly added by a moderator.
-    subscription_override = 10
-    #: The user was explicitly removed/blocked by a moderator.
-    unsubscription_override = 11
-    #: The user has requested a subscription to the mailinglist.
-    pending = 20
-    #: The user is subscribed by virtue of being part of some group.
-    implicit = 30
-
-    def is_subscribed(self) -> bool:
-        return self in self.subscribing_states()
-
-    @classmethod
-    def subscribing_states(cls) -> Set['SubscriptionStates']:
-        return {SubscriptionStates.subscribed,
-                SubscriptionStates.subscription_override,
-                SubscriptionStates.implicit}
+from cdedb.subman.machine import SubscriptionStates
 
 
 @enum.unique
@@ -431,8 +408,11 @@ class AssemblyLogCodes(enum.IntEnum):
     attachment_version_changed = 52
 
 
+from cdedb.subman.machine import SubscriptionLogCodes
+
 @enum.unique
-class MlLogCodes(enum.IntEnum):
+class MlLogCodes(SubscriptionLogCodes, enum.IntEnum):
+    # TODO That this weird subclassing mostly works is a bug in Python 3.8
     """Available log messages for ml.log."""
     list_created = 1  #:
     list_changed = 2  #:
@@ -441,18 +421,9 @@ class MlLogCodes(enum.IntEnum):
     moderator_removed = 11  #:
     whitelist_added = 12  #:
     whitelist_removed = 13  #:
-    subscription_requested = 20  #: SubscriptionStates.subscription_requested
-    subscribed = 21  #: SubscriptionStates.subscribed
-    subscription_changed = 22  #: This is now used for address changes.
-    unsubscribed = 23  #: SubscriptionStates.unsubscribed
-    marked_override = 24  #: SubscriptionStates.subscription_override
-    marked_blocked = 25  #: SubscriptionStates.unsubscription_override
+    # For 20s see SubscriptionLogCodes
     cron_removed = 28  #:
-    unsubscription_reset = 29  #:
-    request_approved = 30  #:
-    request_denied = 31  #:
-    request_cancelled = 32  #:
-    request_blocked = 33  #:
+    # For 30s see SubscriptionLogCodes
     email_trouble = 40  #:
     moderate_accept = 50  #:
     moderate_reject = 51  #:

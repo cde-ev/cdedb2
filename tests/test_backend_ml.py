@@ -5,10 +5,11 @@ from typing import Collection, Set, Optional, cast
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
 from cdedb.common import (
-    CdEDBObject, PrivilegeError, RequestState, SubscriptionActions as SA,
-    SubscriptionError, nearly_now
+    CdEDBObject, PrivilegeError, RequestState, nearly_now
 )
 from cdedb.database.constants import SubscriptionStates as SS
+from cdedb.subman.exceptions import SubscriptionError
+from cdedb.subman.machine import SubscriptionActions as SA
 from tests.common import USER_DICT, BackendTest, as_users, prepsql
 
 

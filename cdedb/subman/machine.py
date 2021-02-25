@@ -24,47 +24,56 @@ These are be imported in `cdedb:common.py` and should be imported from there.
 """
 
 import enum
+from gettext import gettext as _
 from typing import Any, Dict, Optional, Set
 
-from cdedb.database.constants import MlLogCodes, SubscriptionStates
+from .exceptions import SubscriptionError, SubscriptionInfo
+
+@enum.unique
+class SubscriptionStates(enum.IntEnum):
+    """Define the possible relations between user and mailinglist."""
+    #: The user is explicitly subscribed.
+    subscribed = 1
+    #: The user is explicitly unsubscribed (usually from an Opt-Out list).
+    unsubscribed = 2
+    #: The user was explicitly added by a moderator.
+    subscription_override = 10
+    #: The user was explicitly removed/blocked by a moderator.
+    unsubscription_override = 11
+    #: The user has requested a subscription to the mailinglist.
+    pending = 20
+    #: The user is subscribed by virtue of being part of some group.
+    implicit = 30
+
+    def is_subscribed(self) -> bool:
+        return self in self.subscribing_states()
+
+    @classmethod
+    def subscribing_states(cls) -> Set['SubscriptionStates']:
+        return {SubscriptionStates.subscribed,
+                SubscriptionStates.subscription_override,
+                SubscriptionStates.implicit}
 
 
-def n_(x: str) -> str:
-    """Clone of `cdedb.common.n_` used for marking translatable strings."""
-    return x
-
-
-class SubscriptionError(RuntimeError):
-    """
-    Exception for signalling that an action trying to change a subscription
-    failed.
-    """
-    def __init__(self, *args: Any, kind: str = "error") -> None:
-        super(SubscriptionError, self).__init__(*args)
-        if args:
-            self.msg = args[0]
-        else:
-            self.msg = ""
-
-        # Kind if only a single notification is shown
-        self.kind = kind
-
-        # Kind if multiple notifications are shown
-        self.multikind = kind
-        if self.multikind == "error":
-            self.multikind = "warning"
-
-
-class SubscriptionInfo(SubscriptionError):
-    """Exception for SubscriptionErrors with kind info."""
-    def __init__(self, *args: Any) -> None:
-        super().__init__(*args, kind="info")
+@enum.unique
+class SubscriptionLogCodes(enum.IntEnum):
+    """Available log codes for action logging."""
+    subscription_requested = 20  #: SubscriptionStates.subscription_requested
+    subscribed = 21  #: SubscriptionStates.subscribed
+    subscription_changed = 22  #: This is now used for address changes.
+    unsubscribed = 23  #: SubscriptionStates.unsubscribed
+    marked_override = 24  #: SubscriptionStates.subscription_override
+    marked_blocked = 25  #: SubscriptionStates.unsubscription_override
+    unsubscription_reset = 29  #:
+    request_approved = 30  #:
+    request_denied = 31  #:
+    request_cancelled = 32  #:
+    request_blocked = 33  #:
 
 
 SubscriptionErrorMatrix = Dict["SubscriptionActions",
-                               Dict[Optional[SubscriptionStates],
+                               Dict[Optional["SubscriptionStates"],
                                     Optional[SubscriptionError]]]
-
 
 @enum.unique
 class SubscriptionActions(enum.IntEnum):
@@ -120,37 +129,37 @@ class SubscriptionActions(enum.IntEnum):
         }
         return target_state.get(self)
 
-    def get_log_code(self) -> MlLogCodes:
+    def get_log_code(self) -> SubscriptionLogCodes:
         """Get the log code associated with performing an action."""
         log_code_map = {
             SubscriptionActions.subscribe:
-                MlLogCodes.subscribed,
+                SubscriptionLogCodes.subscribed,
             SubscriptionActions.unsubscribe:
-                MlLogCodes.unsubscribed,
+                SubscriptionLogCodes.unsubscribed,
             SubscriptionActions.request_subscription:
-                MlLogCodes.subscription_requested,
+                SubscriptionLogCodes.subscription_requested,
             SubscriptionActions.cancel_request:
-                MlLogCodes.request_cancelled,
+                SubscriptionLogCodes.request_cancelled,
             SubscriptionActions.approve_request:
-                MlLogCodes.request_approved,
+                SubscriptionLogCodes.request_approved,
             SubscriptionActions.deny_request:
-                MlLogCodes.request_denied,
+                SubscriptionLogCodes.request_denied,
             SubscriptionActions.block_request:
-                MlLogCodes.request_blocked,
+                SubscriptionLogCodes.request_blocked,
             SubscriptionActions.add_subscriber:
-                MlLogCodes.subscribed,
+                SubscriptionLogCodes.subscribed,
             SubscriptionActions.add_subscription_override:
-                MlLogCodes.marked_override,
+                SubscriptionLogCodes.marked_override,
             SubscriptionActions.add_unsubscription_override:
-                MlLogCodes.marked_blocked,
+                SubscriptionLogCodes.marked_blocked,
             SubscriptionActions.remove_subscriber:
-                MlLogCodes.unsubscribed,
+                SubscriptionLogCodes.unsubscribed,
             SubscriptionActions.remove_subscription_override:
-                MlLogCodes.subscribed,
+                SubscriptionLogCodes.subscribed,
             SubscriptionActions.remove_unsubscription_override:
-                MlLogCodes.unsubscribed,
+                SubscriptionLogCodes.unsubscribed,
             SubscriptionActions.reset_unsubscription:
-                MlLogCodes.unsubscription_reset,
+                SubscriptionLogCodes.unsubscription_reset,
         }
         return log_code_map[self]
 
@@ -166,120 +175,120 @@ class SubscriptionActions(enum.IntEnum):
 
         matrix: SubscriptionErrorMatrix = {
             SubscriptionActions.add_subscriber: {
-                ss.subscribed: info(n_("User already subscribed.")),
+                ss.subscribed: info(_("User already subscribed.")),
                 ss.unsubscribed: None,
-                ss.subscription_override: info(n_("User already subscribed.")),
-                ss.unsubscription_override: error(n_(
+                ss.subscription_override: info(_("User already subscribed.")),
+                ss.unsubscription_override: error(_(
                     "User has been blocked. You can use Advanced Management to"
                     " change this.")),
-                ss.pending: error(n_("User has pending subscription request.")),
+                ss.pending: error(_("User has pending subscription request.")),
             },
             SubscriptionActions.remove_subscriber: {
                 ss.subscribed: None,
-                ss.unsubscribed: info(n_("User already unsubscribed.")),
-                ss.subscription_override: error(n_(
+                ss.unsubscribed: info(_("User already unsubscribed.")),
+                ss.subscription_override: error(_(
                     "User cannot be removed, because of moderator override. You"
                     " can use Advanced Management to change this.")),
-                ss.unsubscription_override: info(n_("User already unsubscribed.")),
-                ss.pending: error(n_("User has pending subscription request.")),
+                ss.unsubscription_override: info(_("User already unsubscribed.")),
+                ss.pending: error(_("User has pending subscription request.")),
             },
             SubscriptionActions.add_subscription_override: {
                 ss.subscribed: None,
                 ss.unsubscribed: None,
-                ss.subscription_override: info(n_("User is already force-subscribed.")),
+                ss.subscription_override: info(_("User is already force-subscribed.")),
                 ss.unsubscription_override: None,
-                ss.pending: error(n_("User has pending subscription request.")),
+                ss.pending: error(_("User has pending subscription request.")),
             },
             SubscriptionActions.remove_subscription_override: {
-                ss.subscribed: error(n_("User is not force-subscribed.")),
-                ss.unsubscribed: error(n_("User is not force-subscribed.")),
+                ss.subscribed: error(_("User is not force-subscribed.")),
+                ss.unsubscribed: error(_("User is not force-subscribed.")),
                 ss.subscription_override: None,
-                ss.unsubscription_override: error(n_("User is not force-subscribed.")),
-                ss.pending: error(n_("User is not force-subscribed.")),
+                ss.unsubscription_override: error(_("User is not force-subscribed.")),
+                ss.pending: error(_("User is not force-subscribed.")),
             },
             SubscriptionActions.add_unsubscription_override: {
                 ss.subscribed: None,
                 ss.unsubscribed: None,
                 ss.subscription_override: None,
-                ss.unsubscription_override: info(n_("User has already been blocked.")),
-                ss.pending: error(n_("User has pending subscription request.")),
+                ss.unsubscription_override: info(_("User has already been blocked.")),
+                ss.pending: error(_("User has pending subscription request.")),
             },
             SubscriptionActions.remove_unsubscription_override: {
-                ss.subscribed: error(n_("User is not force-unsubscribed.")),
-                ss.unsubscribed: error(n_("User is not force-unsubscribed.")),
-                ss.subscription_override: error(n_("User is not force-unsubscribed.")),
+                ss.subscribed: error(_("User is not force-unsubscribed.")),
+                ss.unsubscribed: error(_("User is not force-unsubscribed.")),
+                ss.subscription_override: error(_("User is not force-unsubscribed.")),
                 ss.unsubscription_override: None,
-                ss.pending: error(n_("User is not force-unsubscribed.")),
+                ss.pending: error(_("User is not force-unsubscribed.")),
             },
             SubscriptionActions.subscribe: {
-                ss.subscribed: info(n_("You are already subscribed.")),
+                ss.subscribed: info(_("You are already subscribed.")),
                 ss.unsubscribed: None,
-                ss.subscription_override: info(n_("You are already subscribed.")),
+                ss.subscription_override: info(_("You are already subscribed.")),
                 ss.unsubscription_override: error(
-                    n_("Can not change subscription because you are blocked.")),
+                    _("Can not change subscription because you are blocked.")),
                 ss.pending: None,
             },
             SubscriptionActions.request_subscription: {
-                ss.subscribed: info(n_("You are already subscribed.")),
+                ss.subscribed: info(_("You are already subscribed.")),
                 ss.unsubscribed: None,
-                ss.subscription_override: info(n_("You are already subscribed.")),
+                ss.subscription_override: info(_("You are already subscribed.")),
                 ss.unsubscription_override: error(
-                    n_("Can not request subscription because you are blocked.")),
-                ss.pending: info(n_("You already requested subscription")),
+                    _("Can not request subscription because you are blocked.")),
+                ss.pending: info(_("You already requested subscription")),
             },
             SubscriptionActions.unsubscribe: {
                 ss.subscribed: None,
-                ss.unsubscribed: info(n_("You are already unsubscribed.")),
+                ss.unsubscribed: info(_("You are already unsubscribed.")),
                 # subscription_override should only block you from being unsubscribed
                 # by the cronjob. A user is still able to unsubscribe manually.
                 # (Unless the list is mandatory).
                 ss.subscription_override: None,
-                ss.unsubscription_override: info(n_("You are already unsubscribed.")),
-                ss.pending: info(n_("You are already unsubscribed.")),
+                ss.unsubscription_override: info(_("You are already unsubscribed.")),
+                ss.pending: info(_("You are already unsubscribed.")),
             },
             SubscriptionActions.cancel_request: {
-                ss.subscribed: error(n_("No subscription requested.")),
-                ss.unsubscribed: error(n_("No subscription requested.")),
-                ss.subscription_override: error(n_("No subscription requested.")),
-                ss.unsubscription_override: error(n_("No subscription requested.")),
+                ss.subscribed: error(_("No subscription requested.")),
+                ss.unsubscribed: error(_("No subscription requested.")),
+                ss.subscription_override: error(_("No subscription requested.")),
+                ss.unsubscription_override: error(_("No subscription requested.")),
                 ss.pending: None,
             },
             SubscriptionActions.approve_request: {
-                ss.subscribed: error(n_("Not a pending subscription request.")),
-                ss.unsubscribed: error(n_("Not a pending subscription request.")),
+                ss.subscribed: error(_("Not a pending subscription request.")),
+                ss.unsubscribed: error(_("Not a pending subscription request.")),
                 ss.subscription_override: error(
-                    n_("Not a pending subscription request.")),
+                    _("Not a pending subscription request.")),
                 ss.unsubscription_override: error(
-                    n_("Not a pending subscription request.")),
+                    _("Not a pending subscription request.")),
                 ss.pending: None,
             },
             SubscriptionActions.deny_request: {
-                ss.subscribed: error(n_("Not a pending subscription request.")),
-                ss.unsubscribed: error(n_("Not a pending subscription request.")),
+                ss.subscribed: error(_("Not a pending subscription request.")),
+                ss.unsubscribed: error(_("Not a pending subscription request.")),
                 ss.subscription_override: error(
-                    n_("Not a pending subscription request.")),
+                    _("Not a pending subscription request.")),
                 ss.unsubscription_override: error(
-                    n_("Not a pending subscription request.")),
+                    _("Not a pending subscription request.")),
                 ss.pending: None,
             },
             SubscriptionActions.block_request: {
-                ss.subscribed: error(n_("Not a pending subscription request.")),
+                ss.subscribed: error(_("Not a pending subscription request.")),
                 ss.unsubscribed: error(
-                    n_("Not a pending subscription request.")),
+                    _("Not a pending subscription request.")),
                 ss.subscription_override: error(
-                    n_("Not a pending subscription request.")),
+                    _("Not a pending subscription request.")),
                 ss.unsubscription_override: error(
-                    n_("Not a pending subscription request.")),
+                    _("Not a pending subscription request.")),
                 ss.pending: None,
             },
             SubscriptionActions.reset_unsubscription: {
-                ss.subscribed: error(n_("User is not unsubscribed.")),
+                ss.subscribed: error(_("User is not unsubscribed.")),
                 ss.unsubscribed: None,
-                ss.subscription_override: error(n_("User is not unsubscribed.")),
-                ss.unsubscription_override: error(n_(
+                ss.subscription_override: error(_("User is not unsubscribed.")),
+                ss.unsubscription_override: error(_(
                     "User has been blocked. You can use Advanced Management to"
                     " change this.")),
-                ss.pending: error(n_("User is not unsubscribed.")),
+                ss.pending: error(_("User is not unsubscribed.")),
             }
         }
 

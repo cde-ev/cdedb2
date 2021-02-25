@@ -433,8 +433,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
         check_appropriate_type(mailinglist, cls)
 
         if mailinglist["event_id"] is None:
-            raise ValueError(n_("No implicit subscribers possible for "
-                                "legacy event list."))
+            return set()
 
         event = bc.event.get_event(rs, mailinglist["event_id"])
 
@@ -497,8 +496,7 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
         check_appropriate_type(mailinglist, cls)
 
         if mailinglist["event_id"] is None:
-            raise ValueError(n_("No implicit subscribers possible for "
-                                "legacy event list."))
+            return set()
 
         event = bc.event.get_event(rs, mailinglist["event_id"])
         return event["orgas"]

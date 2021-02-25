@@ -18,12 +18,13 @@ from cdedb.backend.common import (
     internal, singularize,
 )
 from cdedb.backend.event import EventBackend
+from cdedb.subman import subman
 from cdedb.common import (
     MAILINGLIST_FIELDS, MOD_ALLOWED_FIELDS, PRIVILEGED_MOD_ALLOWED_FIELDS, CdEDBLog,
     CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, PathLike,
-    PrivilegeError, RequestState, SubscriptionActions, SubscriptionError,
-    implying_realms, make_proxy, mixed_existence_sorter, n_, unwrap,
+    PrivilegeError, RequestState, implying_realms, make_proxy, mixed_existence_sorter, n_, unwrap,
 )
+from cdedb.subman.machine import SubscriptionActions
 from cdedb.database.connection import Atomizer
 from cdedb.ml_type_aux import MLType, MLTypeLike
 from cdedb.query import Query, QueryOperators
@@ -823,7 +824,6 @@ class MlBackend(AbstractBackend):
         :returns: number of affected rows.
         """
         action = affirm(SubscriptionActions, action)
-        sa = SubscriptionActions
 
         # 1: Check if everything is alright – current state comes later
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
@@ -838,23 +838,22 @@ class MlBackend(AbstractBackend):
 
         with Atomizer(rs):
             assert persona_id is not None
-            self._check_transition_requirements(
-                rs, action, mailinglist_id, persona_id)
+            atype = self.get_ml_type(rs, mailinglist_id)
+            ml = self.get_mailinglist(rs, mailinglist_id)
+            subman.check_transition_requirements(
+                action=action,
+                policy=self.get_interaction_policy(rs, persona_id, mailinglist=ml),
+                allow_unsub=atype.allow_unsub,
+                is_implied=persona_id in
+                           atype.get_implicit_subscribers(rs, self.backends, ml))
 
             # 2: Check if current state allows transition
             old_state = self.get_subscription(
                 rs, persona_id, mailinglist_id=mailinglist_id,
                 states=set(const.SubscriptionStates))
-            error_matrix = sa.error_matrix()
-
-            # TODO: `if exception := error_matrix[action][old_state]`.
-            exception = error_matrix[action][old_state]
-            if exception:
-                raise exception
+            new_state, code = subman.do_transition(action, old_state)
 
             # 3: Do the transition
-            new_state = action.get_target_state()
-            code = action.get_log_code()
             datum = {
                 'mailinglist_id': mailinglist_id,
                 'persona_id': persona_id,
@@ -871,38 +870,6 @@ class MlBackend(AbstractBackend):
                     rs, code, datum['mailinglist_id'], datum['persona_id'])
 
             return ret
-
-    def _check_transition_requirements(self, rs: RequestState,
-                                       action: SubscriptionActions,
-                                       mailinglist_id: int, persona_id: int,
-                                       ) -> None:
-        """Un-inlined code from `do_subscription_action`.
-
-        This has to be called with an atomized context.
-        """
-        sa = SubscriptionActions
-
-        # This checks if a user may subscribe via the action triggered
-        # This does not check for the override states, as they are always
-        # allowed
-        policy = self.get_interaction_policy(rs, persona_id,
-                                             mailinglist_id=mailinglist_id)
-        if action == sa.add_subscriber and (
-                not policy or policy.is_implicit()):
-            raise SubscriptionError(n_(
-                "User has no means to access this list."))
-        elif (action == sa.subscribe and
-                policy != const.MailinglistInteractionPolicy.subscribable):
-            raise SubscriptionError(n_("Can not subscribe."))
-        elif (action.is_unsubscribing()
-                and not self.get_ml_type(rs, mailinglist_id).allow_unsub):
-            raise SubscriptionError(n_("Can not unsubscribe."))
-        elif (action == sa.request_subscription and
-              policy != const.MailinglistInteractionPolicy.moderated_opt_in):
-            raise SubscriptionError(n_("Can not request subscription."))
-        elif action == sa.reset_unsubscription:
-            if persona_id not in self.get_redundant_unsubscriptions(rs, mailinglist_id):
-                raise SubscriptionError(n_("Can not reset unsubscription."))
 
     @access("ml")
     def set_subscription_address(self, rs: RequestState, mailinglist_id: int,
