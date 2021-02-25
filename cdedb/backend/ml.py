@@ -1350,7 +1350,7 @@ class MlBackend(AbstractBackend):
             if any(source[admin_bit] for admin_bit in ADMIN_KEYS):
                 raise ValueError(n_("Source User is admin and can not be merged."))
             if not self.core.verify_persona(rs, source_persona_id, allowed_roles={'ml'}):
-                raise ValueError(n_("Source persona must be ml-only user."))
+                raise ValueError(n_("Source persona must be a ml-only user."))
             if source['is_archived']:
                 raise ValueError(n_("Source User is not accessible."))
 

@@ -36,7 +36,7 @@ class TestMlBackend(BackendTest):
             self.ml.merge_accounts(self.key,
                                    source_persona_id=USER_DICT['rowena']['id'],
                                    target_persona_id=berta_id)
-        self.assertEqual("Source persona must be ml-only user.", str(e.exception))
+        self.assertEqual("Source persona must be a ml-only user.", str(e.exception))
 
         with self.assertRaises(ValueError) as e:
             self.ml.merge_accounts(self.key,

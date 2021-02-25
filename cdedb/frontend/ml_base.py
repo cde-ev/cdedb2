@@ -291,7 +291,6 @@ class MlBaseFrontend(AbstractUserFrontend):
         """
         if rs.has_validation_errors():
             return self.merge_accounts_form(rs)
-        # The source will be archived after successful merge, so we require a core admin
         if not self.coreproxy.verify_id(rs, source_persona_id, is_archived=False):
             rs.append_validation_error(
                 ("source_persona_id", ValueError(n_(
@@ -303,7 +302,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         if not self.coreproxy.verify_persona(rs, source_persona_id, allowed_roles={"ml"}):
             rs.append_validation_error(
                 ("source_persona_id", ValueError(n_(
-                    "Source persona must be ml-only user."))))
+                    "Source persona must be a ml-only user and no admin."))))
         if source_persona_id == target_persona_id:
             rs.append_validation_error(
                 ("target_persona_id", ValueError(n_(
