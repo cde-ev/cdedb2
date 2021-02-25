@@ -16,7 +16,6 @@ import os
 import pathlib
 import re
 import subprocess
-import signal
 import sys
 import tempfile
 import time
@@ -30,7 +29,6 @@ from typing import (
 )
 
 import PIL.Image
-import pytz
 import webtest
 import webtest.utils
 
@@ -44,7 +42,7 @@ from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.common import (
     ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, CdEDBObject, CdEDBObjectMap, PathLike,
-    PrivilegeError, RequestState, n_, now, roles_to_db_role, nearly_now
+    PrivilegeError, RequestState, n_, nearly_now, now, roles_to_db_role,
 )
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -53,6 +51,7 @@ from cdedb.frontend.application import Application
 from cdedb.frontend.common import AbstractFrontend
 from cdedb.frontend.cron import CronFrontend
 from cdedb.query import QueryOperators
+from cdedb.script import setup
 
 _BASICCONF = BasicConfig()
 
@@ -63,7 +62,6 @@ ExceptionInfo = Union[
 
 # This is to be used in place of `self.key` for anonymous requests. It makes mypy happy.
 ANONYMOUS = cast(RequestState, None)
-
 
 def check_test_setup() -> None:
     """Raise a RuntimeError if the vm is ill-equipped for performing tests."""
@@ -133,6 +131,7 @@ def read_sample_data(filename: PathLike = "/cdedb2/tests/ancillary_files/"
         ret[table] = data
     return ret
 
+SAMPLE_DATA = read_sample_data()
 
 B = TypeVar("B", bound=AbstractBackend)
 
@@ -316,18 +315,11 @@ class MyTextTestResult(unittest.TextTestResult):
 class BasicTest(unittest.TestCase):
     """Provide some basic useful test functionalities."""
     testfile_dir = pathlib.Path("/tmp/cdedb-store/testfiles")
-    _clean_sample_data: ClassVar[Dict[str, CdEDBObjectMap]]
     conf: ClassVar[Config]
 
     @classmethod
     def setUpClass(cls) -> None:
-        # Keep a clean copy of sample data that should not be messed with.
-        cls._clean_sample_data = read_sample_data()
         cls.conf = Config()
-
-    def setUp(self) -> None:
-        # Provide a fresh copy of clean sample data.
-        self.sample_data = copy.deepcopy(self._clean_sample_data)
 
     def get_sample_data(self, table: str, ids: Iterable[int],
                         keys: Iterable[str]) -> CdEDBObjectMap:
@@ -355,7 +347,7 @@ class BasicTest(unittest.TestCase):
             if keys:
                 r = {}
                 for k in keys:
-                    r[k] = copy.deepcopy(self.sample_data[table][anid][k])
+                    r[k] = copy.deepcopy(SAMPLE_DATA[table][anid][k])
                     if table == 'core.personas':
                         if k == 'balance':
                             r[k] = decimal.Decimal(r[k])
@@ -366,8 +358,11 @@ class BasicTest(unittest.TestCase):
                         r[k] = parse_datetime(r[k])
                 ret[anid] = r
             else:
-                ret[anid] = copy.deepcopy(self.sample_data[table][anid])
+                ret[anid] = copy.deepcopy(SAMPLE_DATA[table][anid])
         return ret
+    
+    def get_sample_datum(self, table: str, id_: int) -> CdEDBObject:
+        return self.get_sample_data(table, [id_], [])[id_]
 
 
 class CdEDBTest(BasicTest):
@@ -378,11 +373,27 @@ class CdEDBTest(BasicTest):
 
     def setUp(self) -> None:
         # Start the call in a new session, so that a SIGINT does not interrupt this.
-        subprocess.check_call(("make", "sample-data-test-shallow"),
+        subprocess.check_call(("make", "storage-test"),
                               stdout=subprocess.DEVNULL,
                               stderr=subprocess.DEVNULL,
                               start_new_session=True)
-        super(CdEDBTest, self).setUp()
+        with setup(
+            persona_id=-1,
+            dbuser="cdb",
+            dbpassword="987654321098765432109876543210",
+            dbname=self.conf["CDB_DATABASE_NAME"],
+            check_system_user=False,
+        )().conn as conn:
+            conn.set_session(autocommit=True)
+            with conn.cursor() as curr:
+                with open("tests/ancillary_files/clean_data.sql") as f:
+                    sql_input = f.read()
+                curr.execute(sql_input)
+                with open("tests/ancillary_files/sample_data.sql") as f:
+                    sql_input = f.read()
+                curr.execute(sql_input)
+
+        super().setUp()
 
 
 UserIdentifier = Union[CdEDBObject, str, int]
