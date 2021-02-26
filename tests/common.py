@@ -315,7 +315,7 @@ class MyTextTestResult(unittest.TextTestResult):
 
 class BasicTest(unittest.TestCase):
     """Provide some basic useful test functionalities."""
-    storage_dir = pathlib.Path(f"/tmp/cdedb-store-{os.environ['TESTTHREADNR']}")
+    storage_dir = pathlib.Path(os.environ['CDEDB_TEST_STORAGE_PATH'])
     testfile_dir = storage_dir / "testfiles"
     needs_storage_marker = "_needs_storage"
     _clean_sample_data: ClassVar[Dict[str, CdEDBObjectMap]]
@@ -747,7 +747,7 @@ def execsql(sql: AnyStr) -> None:
     """Execute arbitrary SQL-code on the test database."""
     path = pathlib.Path("/tmp/test-cdedb-sql-commands.sql")
     psql = ("/cdedb2/bin/execute_sql_script.py",
-            "--username", "cdb", "--dbname", os.environ['TESTDBNAME'])
+            "--username", "cdb", "--dbname", os.environ['CDEDB_TEST_DATABASE'])
     null = subprocess.DEVNULL
     mode = "w"
     if isinstance(sql, bytes):

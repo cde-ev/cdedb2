@@ -105,7 +105,7 @@ def update_event(cur: DictCursor, event: CdEDBObject) -> None:
 
 
 def work(args: argparse.Namespace) -> None:
-    db_name = os.environ['TESTDBNAME'] if args.test else 'cdb'
+    db_name = os.environ['CDEDB_TEST_DATABASE'] if args.test else 'cdb'
 
     print("Loading exported event")
     with open(args.data_path, encoding='UTF-8') as infile:

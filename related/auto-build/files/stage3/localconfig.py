@@ -47,10 +47,9 @@ MAILMAN_LOG = _LOG_ROOT / "frontend-mailman.log"
 
 if CDEDB_TEST:
     DB_PORT = 6432
-    CDB_DATABASE_NAME = os.environ['TESTDBNAME']
-    # TODO: use this constant everywhere instead of hardcoded os.environ element
+    CDB_DATABASE_NAME = os.environ['CDEDB_TEST_DATABASE']
     SERVER_NAME_TEMPLATE = "test_{}_server"
-    STORAGE_DIR = pathlib.Path(f"/tmp/cdedb-store-{os.environ['TESTTHREADNR']}/")
+    STORAGE_DIR = pathlib.Path(os.environ['CDEDB_TEST_STORAGE_PATH'])
     FRONTEND_LOG = pathlib.Path("/tmp/test-cdedb-frontend.log")
     CRON_FRONTEND_LOG = pathlib.Path("/tmp/test-cdedb-frontend-cron.log")
     BACKEND_LOG = pathlib.Path("/tmp/test-cdedb-backend.log")

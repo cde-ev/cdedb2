@@ -41,6 +41,7 @@ endif
 TESTPREPARATION ?= automatic
 TESTTHREADNO ?= 1
 TESTDATABASENAME ?= cdb_test_${TESTTHREADNO}
+TESTSTORAGEPATH ?= /tmp/cdedb-test-storage-${TESTTHREADNO}
 I18NDIR ?= ./i18n
 
 doc:
@@ -133,26 +134,22 @@ TESTFILES := picture.pdf,picture.png,picture.jpg,form.pdf$\
 		,TestAka_partial_export_event.json,statement.csv
 
 storage-test:
-	rm -rf -- /tmp//cdedb-store-${TESTTHREADNO}
-	mkdir -p /tmp/cdedb-store-${TESTTHREADNO}/foto/
-	mkdir -p /tmp/cdedb-store-${TESTTHREADNO}/minor_form/
-	mkdir -p /tmp/cdedb-store-${TESTTHREADNO}/event_logo/
-	mkdir -p /tmp/cdedb-store-${TESTTHREADNO}/course_logo/
-	mkdir -p /tmp/cdedb-store-${TESTTHREADNO}/ballot_result/
-	mkdir -p /tmp/cdedb-store-${TESTTHREADNO}/assembly_attachment/
-	mkdir -p /tmp/cdedb-store-${TESTTHREADNO}/genesis_attachment/
-	mkdir -p /tmp/cdedb-store-${TESTTHREADNO}/mailman_templates/
-	mkdir -p /tmp/cdedb-store-${TESTTHREADNO}/testfiles/
-	cp tests/ancillary_files/$(TESTFOTONAME) /tmp/cdedb-store-${TESTTHREADNO}/foto/
-	cp tests/ancillary_files/rechen.pdf \
-		/tmp/cdedb-store-${TESTTHREADNO}/assembly_attachment/1_v1
-	cp tests/ancillary_files/kassen.pdf \
-		/tmp/cdedb-store-${TESTTHREADNO}/assembly_attachment/2_v1
-	cp tests/ancillary_files/kassen2.pdf \
-		/tmp/cdedb-store-${TESTTHREADNO}/assembly_attachment/2_v3
-	cp tests/ancillary_files/kandidaten.pdf \
-		/tmp/cdedb-store-${TESTTHREADNO}/assembly_attachment/3_v1
-	cp -t /tmp/cdedb-store-${TESTTHREADNO}/testfiles/ tests/ancillary_files/{$(TESTFILES)}
+	rm -rf -- ${TESTSTORAGEPATH}
+	mkdir -p ${TESTSTORAGEPATH}/foto/
+	mkdir -p ${TESTSTORAGEPATH}/minor_form/
+	mkdir -p ${TESTSTORAGEPATH}/event_logo/
+	mkdir -p ${TESTSTORAGEPATH}/course_logo/
+	mkdir -p ${TESTSTORAGEPATH}/ballot_result/
+	mkdir -p ${TESTSTORAGEPATH}/assembly_attachment/
+	mkdir -p ${TESTSTORAGEPATH}/genesis_attachment/
+	mkdir -p ${TESTSTORAGEPATH}/mailman_templates/
+	mkdir -p ${TESTSTORAGEPATH}/testfiles/
+	cp tests/ancillary_files/$(TESTFOTONAME) ${TESTSTORAGEPATH}/foto/
+	cp tests/ancillary_files/rechen.pdf ${TESTSTORAGEPATH}/assembly_attachment/1_v1
+	cp tests/ancillary_files/kassen.pdf ${TESTSTORAGEPATH}/assembly_attachment/2_v1
+	cp tests/ancillary_files/kassen2.pdf ${TESTSTORAGEPATH}/assembly_attachment/2_v3
+	cp tests/ancillary_files/kandidaten.pdf ${TESTSTORAGEPATH}/assembly_attachment/3_v1
+	cp -t ${TESTSTORAGEPATH}/testfiles/ tests/ancillary_files/{$(TESTFILES)}
 
 sql: tests/ancillary_files/sample_data.sql
 ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
@@ -165,7 +162,8 @@ ifeq ($(wildcard /CONTAINER),/CONTAINER)
 	# We need to use psql directly as DROP DATABASE and variables are not supported by our helper
 	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-users.sql
 	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb
-	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-db.sql -v cdb_database_name=${TESTDATABASENAME}
+	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-db.sql \
+		-v cdb_database_name=${TESTDATABASENAME}
 else
 	sudo systemctl stop pgbouncer
 	$(PSQL) -f cdedb/database/cdedb-users.sql
@@ -180,7 +178,8 @@ endif
 
 sql-test:
 ifeq ($(wildcard /CONTAINER),/CONTAINER)
-	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-db.sql -v cdb_database_name=${TESTDATABASENAME}
+	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-db.sql \
+		-v cdb_database_name=${TESTDATABASENAME}
 else
 	sudo systemctl stop pgbouncer
 	$(PSQL) -f cdedb/database/cdedb-db.sql -v cdb_database_name=${TESTDATABASENAME}
@@ -204,7 +203,8 @@ ifeq ($(wildcard /CONTAINER),/CONTAINER)
 	# We need to use psql directly as DROP DATABASE and variables are not supported by our helper
 	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-users.sql
 	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb
-	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-db.sql -v cdb_database_name=${TESTDATABASENAME}
+	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-db.sql \
+		-v cdb_database_name=${TESTDATABASENAME}
 else
 	sudo systemctl stop pgbouncer
 	$(PSQL) -f cdedb/database/cdedb-users.sql
@@ -246,6 +246,8 @@ prepare-check:
 ifneq ($(TESTPREPARATION), manual)
 	$(MAKE) i18n-compile
 	$(MAKE) sql-test &> /dev/null
+	# TODO: the log paths should better be split in subdirectories depending on the test thread,
+	#  to not mess up logs from parallel runs
 	sudo rm -f /tmp/test-cdedb* /tmp/cdedb-timing.log /tmp/cdedb-mail-* \
 		|| true
 else
@@ -265,21 +267,22 @@ check-parallel:
 
 # TODO: this way of fulfilling the need of two different names for the same thing is ugly
 check: export CDEDB_TEST=True
-check: export TESTDBNAME=$(TESTDATABASENAME)
-check: export TESTTHREADNR=${TESTTHREADNO}
+check: export CDEDB_TEST_DATABASE=$(TESTDATABASENAME)
+check: export CDEDB_TEST_STORAGE_PATH=${TESTSTORAGEPATH}
 check:
 	$(MAKE) prepare-check
 	$(PYTHONBIN) -m tests.main "${TESTPATTERN}"
 
 single-check: export CDEDB_TEST=True
-single-check: export TESTDBNAME=$(TESTDATABASENAME)
-single-check: export TESTTHREADNR=${TESTTHREADNO}
+single-check: export CDEDB_TEST_DATABASE=$(TESTDATABASENAME)
+single-check: export CDEDB_TEST_STORAGE_PATH=${TESTSTORAGEPATH}
 single-check:
 	$(MAKE) prepare-check
 	$(PYTHONBIN) -m tests.singular "${PATTERNS}"
 
 xss-check: export CDEDB_TEST=True
-xss-check: export TESTDBNAME=$(TESTDATABASENAME)
+xss-check: export CDEDB_TEST_DATABASE=$(TESTDATABASENAME)
+xss-check: export CDEDB_TEST_STORAGE_PATH=${TESTSTORAGEPATH}
 xss-check:
 	$(MAKE) prepare-check &> /dev/null
 	$(MAKE) sample-data-xss &> /dev/null
@@ -313,7 +316,8 @@ VALIDATORCHECKSUM := "c7d8d7c925dbd64fd5270f7b81a56f526e6bbef0 $\
 
 
 .coverage: export CDEDB_TEST=True
-.coverage: export TESTDBNAME=$(TESTDATABASENAME)
+.coverage: export CDEDB_TEST_DATABASE=$(TESTDATABASENAME)
+.coverage: export CDEDB_TEST_STORAGE_PATH=${TESTSTORAGEPATH}
 .coverage: $(wildcard cdedb/*.py) $(wildcard cdedb/database/*.py) \
 		$(wildcard cdedb/frontend/*.py) \
 		$(wildcard cdedb/backend/*.py) $(wildcard tests/*.py)

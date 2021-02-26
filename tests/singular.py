@@ -12,7 +12,6 @@ root = pathlib.Path(__file__).absolute().parent.parent
 
 if __name__ == "__main__":
     check_test_setup()
-    os.environ['CDEDB_TEST_SINGULAR'] = "True"
 
     patterns = sys.argv[1].split()
 
