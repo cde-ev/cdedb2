@@ -135,7 +135,7 @@ TESTFILES := picture.pdf,picture.png,picture.jpg,form.pdf$\
 		,TestAka_partial_export_event.json,statement.csv
 
 storage-test:
-	rm -rf -- ${TESTSTORAGEPATH}
+	rm -rf -- ${TESTSTORAGEPATH}/*
 	mkdir -p ${TESTSTORAGEPATH}/foto/
 	mkdir -p ${TESTSTORAGEPATH}/minor_form/
 	mkdir -p ${TESTSTORAGEPATH}/event_logo/
