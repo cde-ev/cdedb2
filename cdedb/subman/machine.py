@@ -25,9 +25,10 @@ These are be imported in `cdedb:common.py` and should be imported from there.
 
 import enum
 from gettext import gettext as _
-from typing import Any, Dict, Optional, Set
+from typing import Dict, Optional, Set
 
 from .exceptions import SubscriptionError, SubscriptionInfo
+
 
 @enum.unique
 class SubscriptionStates(enum.IntEnum):
@@ -54,6 +55,13 @@ class SubscriptionStates(enum.IntEnum):
                 SubscriptionStates.subscription_override,
                 SubscriptionStates.implicit}
 
+    @classmethod
+    def cleanup_protected_states(cls) -> Set['SubscriptionStates']:
+        sa = SubscriptionActions
+        return {state for state in cls
+                if sa.error_matrix()[sa.cleanup_subscription][state]}
+
+
 @enum.unique
 class SubscriptionPolicy(enum.IntEnum):
     """Regulate (un)subscriptions to mailinglists."""
@@ -71,6 +79,7 @@ class SubscriptionPolicy(enum.IntEnum):
         policy == const.MailinglistInteractionPolicy.implicits_only
         """
         return self == SubscriptionPolicy.implicits_only
+
 
 @enum.unique
 class SubscriptionLogCodes(enum.IntEnum):
@@ -93,6 +102,7 @@ SubscriptionErrorMatrix = Dict["SubscriptionActions",
                                Dict[Optional[SubscriptionStates],
                                     Optional[SubscriptionError]]]
 
+
 @enum.unique
 class SubscriptionActions(enum.IntEnum):
     """All possible actions a subscriber or moderator can take."""
@@ -112,6 +122,8 @@ class SubscriptionActions(enum.IntEnum):
     #: A moderator removing the relation
     #: of an unsubscribed user to the mailinglist.
     reset_unsubscription = 40
+    cleanup_subscription = 50
+    cleanup_implicit = 51
 
     def get_target_state(self) -> Optional[SubscriptionStates]:
         """Get the target state associated with an action."""
@@ -144,6 +156,10 @@ class SubscriptionActions(enum.IntEnum):
                 SubscriptionStates.unsubscribed,
             SubscriptionActions.reset_unsubscription:
                 None,
+            SubscriptionActions.cleanup_subscription:
+                None,
+            SubscriptionActions.cleanup_implicit:
+                None
         }
         return target_state.get(self)
 
@@ -178,6 +194,10 @@ class SubscriptionActions(enum.IntEnum):
                 SubscriptionLogCodes.unsubscribed,
             SubscriptionActions.reset_unsubscription:
                 SubscriptionLogCodes.unsubscription_reset,
+            SubscriptionActions.cleanup_subscription:
+                SubscriptionLogCodes.automatically_removed,
+            SubscriptionActions.cleanup_implicit:
+                SubscriptionLogCodes.automatically_removed,
         }
         return log_code_map[self]
 
@@ -200,6 +220,8 @@ class SubscriptionActions(enum.IntEnum):
                     "User has been blocked. You can use Advanced Management to"
                     " change this.")),
                 ss.pending: error(_("User has pending subscription request.")),
+                ss.implicit: info(_("User already subscribed.")),
+                None: None
             },
             SubscriptionActions.remove_subscriber: {
                 ss.subscribed: None,
@@ -209,6 +231,8 @@ class SubscriptionActions(enum.IntEnum):
                     " can use Advanced Management to change this.")),
                 ss.unsubscription_override: info(_("User already unsubscribed.")),
                 ss.pending: error(_("User has pending subscription request.")),
+                ss.implicit: None,
+                None: info(_("User already unsubscribed.")),
             },
             SubscriptionActions.add_subscription_override: {
                 ss.subscribed: None,
@@ -216,6 +240,8 @@ class SubscriptionActions(enum.IntEnum):
                 ss.subscription_override: info(_("User is already force-subscribed.")),
                 ss.unsubscription_override: None,
                 ss.pending: error(_("User has pending subscription request.")),
+                ss.implicit: None,
+                None: None,
             },
             SubscriptionActions.remove_subscription_override: {
                 ss.subscribed: error(_("User is not force-subscribed.")),
@@ -223,6 +249,8 @@ class SubscriptionActions(enum.IntEnum):
                 ss.subscription_override: None,
                 ss.unsubscription_override: error(_("User is not force-subscribed.")),
                 ss.pending: error(_("User is not force-subscribed.")),
+                ss.implicit: error(_("User is not force-subscribed.")),
+                None: error(_("User is not force-subscribed.")),
             },
             SubscriptionActions.add_unsubscription_override: {
                 ss.subscribed: None,
@@ -230,6 +258,8 @@ class SubscriptionActions(enum.IntEnum):
                 ss.subscription_override: None,
                 ss.unsubscription_override: info(_("User has already been blocked.")),
                 ss.pending: error(_("User has pending subscription request.")),
+                ss.implicit: None,
+                None: None,
             },
             SubscriptionActions.remove_unsubscription_override: {
                 ss.subscribed: error(_("User is not force-unsubscribed.")),
@@ -237,6 +267,8 @@ class SubscriptionActions(enum.IntEnum):
                 ss.subscription_override: error(_("User is not force-unsubscribed.")),
                 ss.unsubscription_override: None,
                 ss.pending: error(_("User is not force-unsubscribed.")),
+                ss.implicit: error(_("User is not force-unsubscribed.")),
+                None: error(_("User is not force-unsubscribed.")),
             },
             SubscriptionActions.subscribe: {
                 ss.subscribed: info(_("You are already subscribed.")),
@@ -245,6 +277,8 @@ class SubscriptionActions(enum.IntEnum):
                 ss.unsubscription_override: error(
                     _("Can not change subscription because you are blocked.")),
                 ss.pending: None,
+                ss.implicit: info(_("You are already subscribed.")),
+                None: None,
             },
             SubscriptionActions.request_subscription: {
                 ss.subscribed: info(_("You are already subscribed.")),
@@ -253,16 +287,20 @@ class SubscriptionActions(enum.IntEnum):
                 ss.unsubscription_override: error(
                     _("Can not request subscription because you are blocked.")),
                 ss.pending: info(_("You already requested subscription")),
+                ss.implicit: info(_("You are already subscribed.")),
+                None: None,
             },
             SubscriptionActions.unsubscribe: {
                 ss.subscribed: None,
                 ss.unsubscribed: info(_("You are already unsubscribed.")),
                 # subscription_override should only block you from being unsubscribed
-                # by the cronjob. A user is still able to unsubscribe manually.
+                # automatically. A user is still able to unsubscribe manually.
                 # (Unless the list is mandatory).
                 ss.subscription_override: None,
                 ss.unsubscription_override: info(_("You are already unsubscribed.")),
                 ss.pending: info(_("You are already unsubscribed.")),
+                ss.implicit: None,
+                None: info(_("You are already unsubscribed.")),
             },
             SubscriptionActions.cancel_request: {
                 ss.subscribed: error(_("No subscription requested.")),
@@ -270,6 +308,8 @@ class SubscriptionActions(enum.IntEnum):
                 ss.subscription_override: error(_("No subscription requested.")),
                 ss.unsubscription_override: error(_("No subscription requested.")),
                 ss.pending: None,
+                ss.implicit: error(_("No subscription requested.")),
+                None: error(_("No subscription requested.")),
             },
             SubscriptionActions.approve_request: {
                 ss.subscribed: error(_("Not a pending subscription request.")),
@@ -279,6 +319,8 @@ class SubscriptionActions(enum.IntEnum):
                 ss.unsubscription_override: error(
                     _("Not a pending subscription request.")),
                 ss.pending: None,
+                ss.implicit: error(_("Not a pending subscription request.")),
+                None: error(_("Not a pending subscription request.")),
             },
             SubscriptionActions.deny_request: {
                 ss.subscribed: error(_("Not a pending subscription request.")),
@@ -288,6 +330,8 @@ class SubscriptionActions(enum.IntEnum):
                 ss.unsubscription_override: error(
                     _("Not a pending subscription request.")),
                 ss.pending: None,
+                ss.implicit: error(_("Not a pending subscription request.")),
+                None: error(_("Not a pending subscription request.")),
             },
             SubscriptionActions.block_request: {
                 ss.subscribed: error(_("Not a pending subscription request.")),
@@ -298,6 +342,8 @@ class SubscriptionActions(enum.IntEnum):
                 ss.unsubscription_override: error(
                     _("Not a pending subscription request.")),
                 ss.pending: None,
+                ss.implicit: error(_("Not a pending subscription request.")),
+                None: error(_("Not a pending subscription request.")),
             },
             SubscriptionActions.reset_unsubscription: {
                 ss.subscribed: error(_("User is not unsubscribed.")),
@@ -307,13 +353,38 @@ class SubscriptionActions(enum.IntEnum):
                     "User has been blocked. You can use Advanced Management to"
                     " change this.")),
                 ss.pending: error(_("User is not unsubscribed.")),
-            }
+                ss.implicit: error(_("User is not unsubscribed.")),
+                None: None,
+            },
+            SubscriptionActions.cleanup_subscription: {
+                ss.subscribed: None,
+                ss.unsubscribed: error(_(
+                    "Unsubscriptions are protected against automatic cleanup.")),
+                ss.subscription_override: error(_(
+                    "Overrides are protected against automatic cleanup.")),
+                ss.unsubscription_override: error(_(
+                    "Overrides are protected against automatic cleanup.")),
+                ss.pending: error(_(
+                    "Pending requests are protected against automatic cleanup.")),
+                ss.implicit: None,
+                None: info(_("Subscription already cleaned up.")),
+            },
+            SubscriptionActions.cleanup_implicit: {
+                ss.subscribed:  error(_(
+                    "Unsubscriptions are protected against automatic implicit cleanup.")),
+                ss.unsubscribed: error(_(
+                    "Unsubscriptions are protected against automatic cleanup.")),
+                ss.subscription_override: error(_(
+                    "Overrides are protected against automatic cleanup.")),
+                ss.unsubscription_override: error(_(
+                    "Overrides are protected against automatic cleanup.")),
+                ss.pending: error(_(
+                    "Pending requests are protected against automatic cleanup.")),
+                ss.implicit: None,
+                None: info(_("Subscription already cleaned up.")),
+            },
         }
 
-        for row in matrix:
-            # Implicit (un-)subscriptions behave identically.
-            matrix[row][ss.implicit] = matrix[row][ss.subscribed]
-            matrix[row][None] = matrix[row][ss.unsubscribed]
         return matrix
 
     @classmethod
@@ -348,3 +419,15 @@ class SubscriptionActions(enum.IntEnum):
     def is_managing(self) -> bool:
         """Whether or not an action requires additional privileges."""
         return self in self.managing_actions()
+
+    @classmethod
+    def automatic_actions(cls) -> Set["SubscriptionActions"]:
+        """All actions that require additional privileges."""
+        return {
+            SubscriptionActions.cleanup_subscription,
+            SubscriptionActions.cleanup_implicit,
+        }
+
+    def is_automatic(self) -> bool:
+        """Whether or not an action requires additional privileges."""
+        return self in self.automatic_actions()

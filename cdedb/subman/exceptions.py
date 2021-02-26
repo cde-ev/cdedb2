@@ -1,5 +1,6 @@
 from typing import Any
 
+
 class SubscriptionError(RuntimeError):
     """
     Exception for signalling that an action trying to change a subscription

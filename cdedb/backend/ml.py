@@ -830,9 +830,11 @@ class MlBackend(AbstractBackend):
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
         # Managing actions can only be done by moderators. Other options always
         # change your own subscription state.
+        if action.is_automatic():
+            raise RuntimeError(n_("Automatic actions should not be done manually."))
         if action.is_managing():
             if not self.may_manage(rs, mailinglist_id, privileged=True):
-                raise PrivilegeError("Not privileged.")
+                raise PrivilegeError(n_("Not privileged."))
             persona_id = affirm(vtypes.ID, persona_id)
         else:
             persona_id = rs.user.persona_id
@@ -1188,13 +1190,10 @@ class MlBackend(AbstractBackend):
         """
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
 
-        # States of current subscriptions we may touch.
-        old_subscriber_states = {const.SubscriptionStates.implicit,
-                                 const.SubscriptionStates.subscribed}
-        # States of current subscriptions we may not touch.
-        protected_states = {const.SubscriptionStates.unsubscribed,
-                            const.SubscriptionStates.unsubscription_override,
-                            const.SubscriptionStates.subscription_override}
+        # States we may not touch.
+        protected_states = const.SubscriptionStates.cleanup_protected_states()
+        # States we may touch: non-special subscriptions.
+        old_subscriber_states = set(const.SubscriptionStates) - protected_states
 
         ret = 1
         with Atomizer(rs):
@@ -1221,18 +1220,16 @@ class MlBackend(AbstractBackend):
             personas = self.core.get_personas(
                 rs, set(old_subscribers) - new_implicits)
             for persona_id in personas:
-                may_subscribe = atype.get_interaction_policy(
+                policy = atype.get_interaction_policy(
                     rs, self.backends, mailinglist=ml, persona_id=persona_id)
                 state = old_subscribers[persona_id]
-                if (state == const.SubscriptionStates.implicit
-                        or not may_subscribe
-                        or may_subscribe.is_implicit()):
+                if subman.is_obsolete(policy=policy, old_state=state, is_implied=False):
                     datum = {
                         'mailinglist_id': mailinglist_id,
                         'persona_id': persona_id,
                     }
                     # Log this to prevent confusion especially for team lists
-                    self.ml_log(rs, const.MlLogCodes.cron_removed,
+                    self.ml_log(rs, const.MlLogCodes.automatically_removed,
                                 mailinglist_id, persona_id=persona_id)
                     delete.append(datum)
 
