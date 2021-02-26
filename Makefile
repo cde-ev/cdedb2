@@ -183,9 +183,7 @@ ifeq ($(wildcard /CONTAINER),/CONTAINER)
 	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-db.sql \
 		-v cdb_database_name=${TESTDATABASENAME}
 else
-	sudo systemctl stop pgbouncer
 	$(PSQL) -f cdedb/database/cdedb-db.sql -v cdb_database_name=${TESTDATABASENAME}
-	sudo systemctl start pgbouncer
 endif
 	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=${TESTDATABASENAME}
 	$(MAKE) sql-test-shallow
