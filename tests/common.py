@@ -54,6 +54,7 @@ from cdedb.query import QueryOperators
 from cdedb.script import setup
 
 _BASICCONF = BasicConfig()
+_SECRETSCONF = SecretsConfig()
 
 ExceptionInfo = Union[
     Tuple[Type[BaseException], BaseException, TracebackType],
@@ -368,8 +369,6 @@ class BasicTest(unittest.TestCase):
 class CdEDBTest(BasicTest):
     """Reset the DB for every test."""
     testfile_dir = pathlib.Path("/tmp/cdedb-store/testfiles")
-    _clean_sample_data: ClassVar[Dict[str, CdEDBObjectMap]]
-    conf: ClassVar[Config]
 
     def setUp(self) -> None:
         # Start the call in a new session, so that a SIGINT does not interrupt this.
@@ -380,7 +379,7 @@ class CdEDBTest(BasicTest):
         with setup(
             persona_id=-1,
             dbuser="cdb",
-            dbpassword="987654321098765432109876543210",
+            dbpassword=_SECRETSCONF["CDB_DATABASE_ROLES"]["cdb"],
             dbname=self.conf["CDB_DATABASE_NAME"],
             check_system_user=False,
         )().conn as conn:
