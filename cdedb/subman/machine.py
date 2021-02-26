@@ -54,6 +54,23 @@ class SubscriptionStates(enum.IntEnum):
                 SubscriptionStates.subscription_override,
                 SubscriptionStates.implicit}
 
+@enum.unique
+class SubscriptionPolicy(enum.IntEnum):
+    """Regulate (un)subscriptions to mailinglists."""
+    #: user may subscribe
+    subscribable = 3
+    #: user may subscribe, but only after approval
+    moderated_opt_in = 4
+    #: user may not subscribe by themselves
+    invitation_only = 5
+    #: only implicit subscribers allowed
+    implicits_only = 6
+
+    def is_implicit(self) -> bool:
+        """Short-hand for
+        policy == const.MailinglistInteractionPolicy.implicits_only
+        """
+        return self == SubscriptionPolicy.implicits_only
 
 @enum.unique
 class SubscriptionLogCodes(enum.IntEnum):
@@ -64,7 +81,8 @@ class SubscriptionLogCodes(enum.IntEnum):
     unsubscribed = 23  #: SubscriptionStates.unsubscribed
     marked_override = 24  #: SubscriptionStates.subscription_override
     marked_blocked = 25  #: SubscriptionStates.unsubscription_override
-    unsubscription_reset = 29  #:
+    unsubscription_reset = 27  #:
+    automatically_removed = 28  #:
     request_approved = 30  #:
     request_denied = 31  #:
     request_cancelled = 32  #:
@@ -72,7 +90,7 @@ class SubscriptionLogCodes(enum.IntEnum):
 
 
 SubscriptionErrorMatrix = Dict["SubscriptionActions",
-                               Dict[Optional["SubscriptionStates"],
+                               Dict[Optional[SubscriptionStates],
                                     Optional[SubscriptionError]]]
 
 @enum.unique

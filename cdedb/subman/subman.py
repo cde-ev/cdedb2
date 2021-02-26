@@ -2,13 +2,12 @@ from gettext import gettext as _
 from typing import Optional, Tuple
 
 from .exceptions import SubscriptionError
-from .machine import SubscriptionActions, SubscriptionLogCodes, SubscriptionStates
-from cdedb.database.constants import (
-    MailinglistInteractionPolicy as SubscriptionPolicy
+from .machine import (
+    SubscriptionActions, SubscriptionLogCodes, SubscriptionPolicy, SubscriptionStates,
 )
 
-def do_transition(action: SubscriptionActions, old_state: Optional[SubscriptionStates]
-                  ) -> Tuple[Optional[SubscriptionStates], SubscriptionLogCodes]:
+def _do_transition(action: SubscriptionActions, old_state: Optional[SubscriptionStates]
+                   ) -> Tuple[Optional[SubscriptionStates], SubscriptionLogCodes]:
     error_matrix = SubscriptionActions.error_matrix()
 
     # TODO: `if exception := error_matrix[action][old_state]`.
@@ -18,7 +17,7 @@ def do_transition(action: SubscriptionActions, old_state: Optional[SubscriptionS
 
     return action.get_target_state(), action.get_log_code()
 
-def check_transition_requirements(*, action: SubscriptionActions,
+def _check_transition_requirements(*, action: SubscriptionActions,
                                   policy: Optional[SubscriptionPolicy],
                                   allow_unsub: bool = True,
                                   is_implied: bool = False) -> None:
@@ -43,3 +42,16 @@ def check_transition_requirements(*, action: SubscriptionActions,
         raise SubscriptionError(_("Can not reset unsubscription."))
     # elif action == SubscriptionActions.reset_subscription and not is_implied:
     #     raise SubscriptionError(_("Can not reset subscription."))
+
+def apply_action(*, action: SubscriptionActions,
+                 policy: Optional[SubscriptionPolicy],
+                 allow_unsub: bool = True,
+                 old_state: Optional[SubscriptionStates],
+                 is_implied: bool = False
+                 ) -> Tuple[Optional[SubscriptionStates], SubscriptionLogCodes]:
+    # 1: Check list-dependent requirements for transition
+    _check_transition_requirements(
+        action=action, policy=policy, allow_unsub=allow_unsub, is_implied=is_implied)
+
+    # 2: Check if current state allows transition
+    return _do_transition(action, old_state)

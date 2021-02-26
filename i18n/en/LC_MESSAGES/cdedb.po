@@ -12793,7 +12793,7 @@ msgid "MlLogCodes.request_blocked"
 msgstr "Request blocked"
 
 #: cdedb/i18n_additional.py:184
-msgid "MlLogCodes.cron_removed"
+msgid "MlLogCodes.automatically_removed"
 msgstr "Automatically unsubscribed"
 
 #: cdedb/i18n_additional.py:185

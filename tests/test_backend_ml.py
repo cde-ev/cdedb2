@@ -1070,7 +1070,7 @@ class TestMlBackend(BackendTest):
         expected_log = {
             'id': 1001,
             'change_note': None,
-            'code': const.MlLogCodes.cron_removed,
+            'code': const.MlLogCodes.automatically_removed,
             'ctime': nearly_now(),
             'mailinglist_id': mailinglist_id,
             'persona_id': 5,

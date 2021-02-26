@@ -201,23 +201,8 @@ _DOMAIN_STR_MAP: Dict[MailinglistDomain, str] = {
 }
 
 
-@enum.unique
-class MailinglistInteractionPolicy(enum.IntEnum):
-    """Regulate (un)subscriptions to mailinglists."""
-    #: user may subscribe
-    subscribable = 3
-    #: user may subscribe, but only after approval
-    moderated_opt_in = 4
-    #: user may not subscribe by themselves
-    invitation_only = 5
-    #: only implicit subscribers allowed
-    implicits_only = 6
+from cdedb.subman.machine import SubscriptionPolicy as MailinglistInteractionPolicy
 
-    def is_implicit(self) -> bool:
-        """Short-hand for
-        policy == const.MailinglistInteractionPolicy.implicits_only
-        """
-        return self == MailinglistInteractionPolicy.implicits_only
 
 
 @enum.unique
@@ -421,9 +406,7 @@ class MlLogCodes(SubscriptionLogCodes, enum.IntEnum):
     moderator_removed = 11  #:
     whitelist_added = 12  #:
     whitelist_removed = 13  #:
-    # For 20s see SubscriptionLogCodes
-    cron_removed = 28  #:
-    # For 30s see SubscriptionLogCodes
+    # For 20s and 30s see SubscriptionLogCodes
     email_trouble = 40  #:
     moderate_accept = 50  #:
     moderate_reject = 51  #:

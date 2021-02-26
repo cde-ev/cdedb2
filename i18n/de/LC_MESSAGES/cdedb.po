@@ -13503,7 +13503,7 @@ msgid "MlLogCodes.request_blocked"
 msgstr "Abonnementantrag geblockt"
 
 #: cdedb/i18n_additional.py:184
-msgid "MlLogCodes.cron_removed"
+msgid "MlLogCodes.automatically_removed"
 msgstr "Automatisch abbestellt"
 
 #: cdedb/i18n_additional.py:185

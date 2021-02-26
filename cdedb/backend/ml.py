@@ -22,7 +22,8 @@ from cdedb.subman import subman
 from cdedb.common import (
     MAILINGLIST_FIELDS, MOD_ALLOWED_FIELDS, PRIVILEGED_MOD_ALLOWED_FIELDS, CdEDBLog,
     CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, PathLike,
-    PrivilegeError, RequestState, implying_realms, make_proxy, mixed_existence_sorter, n_, unwrap,
+    PrivilegeError, RequestState, implying_realms, make_proxy, mixed_existence_sorter,
+    n_, unwrap,
 )
 from cdedb.subman.machine import SubscriptionActions
 from cdedb.database.connection import Atomizer
@@ -840,20 +841,19 @@ class MlBackend(AbstractBackend):
             assert persona_id is not None
             atype = self.get_ml_type(rs, mailinglist_id)
             ml = self.get_mailinglist(rs, mailinglist_id)
-            subman.check_transition_requirements(
-                action=action,
-                policy=self.get_interaction_policy(rs, persona_id, mailinglist=ml),
-                allow_unsub=atype.allow_unsub,
-                is_implied=persona_id in
-                           atype.get_implicit_subscribers(rs, self.backends, ml))
-
-            # 2: Check if current state allows transition
             old_state = self.get_subscription(
                 rs, persona_id, mailinglist_id=mailinglist_id,
                 states=set(const.SubscriptionStates))
-            new_state, code = subman.do_transition(action, old_state)
 
-            # 3: Do the transition
+            new_state, code = subman.apply_action(
+                action=action,
+                policy=self.get_interaction_policy(rs, persona_id, mailinglist=ml),
+                allow_unsub=atype.allow_unsub,
+                old_state=old_state,
+                is_implied=(persona_id
+                            in atype.get_implicit_subscribers(rs, self.backends, ml)))
+
+            # Write the transition to the database
             datum = {
                 'mailinglist_id': mailinglist_id,
                 'persona_id': persona_id,
