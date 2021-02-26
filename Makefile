@@ -41,7 +41,8 @@ endif
 TESTPREPARATION ?= automatic
 TESTTHREADNO ?= 1
 TESTDATABASENAME ?= cdb_test_${TESTTHREADNO}
-TESTSTORAGEPATH ?= /tmp/cdedb-test-storage-${TESTTHREADNO}
+TESTSTORAGEPATH ?= /tmp/cdedb-test-${TESTTHREADNO}-storage
+TESTLOGPATH ?= /tmp/cdedb-test-${TESTTHREADNO}-logs
 I18NDIR ?= ./i18n
 
 doc:
@@ -244,12 +245,11 @@ lint:
 
 prepare-check:
 ifneq ($(TESTPREPARATION), manual)
+	sudo rm -rf ${CDEDB_TEST_LOG_PATH}  /tmp/cdedb-mail-* \
+		|| true
+	mkdir ${CDEDB_TEST_LOG_PATH}
 	$(MAKE) i18n-compile
 	$(MAKE) sql-test &> /dev/null
-	# TODO: the log paths should better be split in subdirectories depending on the test thread,
-	#  to not mess up logs from parallel runs
-	sudo rm -f /tmp/test-cdedb* /tmp/cdedb-timing.log /tmp/cdedb-mail-* \
-		|| true
 else
 	@echo "Omitting test preparation."
 endif
@@ -269,6 +269,7 @@ check-parallel:
 check: export CDEDB_TEST=True
 check: export CDEDB_TEST_DATABASE=$(TESTDATABASENAME)
 check: export CDEDB_TEST_STORAGE_PATH=${TESTSTORAGEPATH}
+check: export CDEDB_TEST_LOG_PATH=${TESTLOGPATH}
 check:
 	$(MAKE) prepare-check
 	$(PYTHONBIN) -m tests.main "${TESTPATTERN}"
@@ -276,6 +277,7 @@ check:
 single-check: export CDEDB_TEST=True
 single-check: export CDEDB_TEST_DATABASE=$(TESTDATABASENAME)
 single-check: export CDEDB_TEST_STORAGE_PATH=${TESTSTORAGEPATH}
+single-check: export CDEDB_TEST_LOG_PATH=${TESTLOGPATH}
 single-check:
 	$(MAKE) prepare-check
 	$(PYTHONBIN) -m tests.singular "${PATTERNS}"
@@ -283,6 +285,7 @@ single-check:
 xss-check: export CDEDB_TEST=True
 xss-check: export CDEDB_TEST_DATABASE=$(TESTDATABASENAME)
 xss-check: export CDEDB_TEST_STORAGE_PATH=${TESTSTORAGEPATH}
+xss-check: export CDEDB_TEST_LOG_PATH=${TESTLOGPATH}
 xss-check:
 	$(MAKE) prepare-check &> /dev/null
 	$(MAKE) sample-data-xss &> /dev/null
@@ -318,6 +321,7 @@ VALIDATORCHECKSUM := "c7d8d7c925dbd64fd5270f7b81a56f526e6bbef0 $\
 .coverage: export CDEDB_TEST=True
 .coverage: export CDEDB_TEST_DATABASE=$(TESTDATABASENAME)
 .coverage: export CDEDB_TEST_STORAGE_PATH=${TESTSTORAGEPATH}
+.coverage: export CDEDB_TEST_LOG_PATH=${TESTLOGPATH}
 .coverage: $(wildcard cdedb/*.py) $(wildcard cdedb/database/*.py) \
 		$(wildcard cdedb/frontend/*.py) \
 		$(wildcard cdedb/backend/*.py) $(wildcard tests/*.py)
