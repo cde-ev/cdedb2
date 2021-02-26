@@ -5,6 +5,7 @@ import csv
 import datetime
 import json
 import re
+import tempfile
 from typing import Sequence
 
 import webtest
@@ -2806,7 +2807,7 @@ etc;anything else""", f['entries_2'].value)
         self.response = save.click(href='/event/event/1/download/nametag\\?runs=0')
         self.assertTrue(self.response.body.startswith(magic_bytes['targz']))
         self.assertLess(1000, len(self.response.body))
-        with open(self.storage_dir / "output.tar.gz", 'wb') as f:
+        with tempfile.TemporaryFile() as f:
             f.write(self.response.body)
         self.response = save.click(href='/event/event/1/download/nametag\\?runs=2')
         self.assertTrue(self.response.body.startswith(magic_bytes['pdf']))
