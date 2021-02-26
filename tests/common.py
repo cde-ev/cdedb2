@@ -30,7 +30,6 @@ from typing import (
 )
 
 import PIL.Image
-import pytz
 import webtest
 import webtest.utils
 
@@ -315,8 +314,8 @@ class MyTextTestResult(unittest.TextTestResult):
 
 class BasicTest(unittest.TestCase):
     """Provide some basic useful test functionalities."""
-    storage_dir = pathlib.Path(os.environ['CDEDB_TEST_STORAGE_PATH'])
-    testfile_dir = storage_dir / "testfiles"
+    storage_dir: ClassVar[pathlib.Path]
+    testfile_dir: ClassVar[pathlib.Path]
     needs_storage_marker = "_needs_storage"
     _clean_sample_data: ClassVar[Dict[str, CdEDBObjectMap]]
     conf: ClassVar[Config]
@@ -326,19 +325,21 @@ class BasicTest(unittest.TestCase):
         # Keep a clean copy of sample data that should not be messed with.
         cls._clean_sample_data = read_sample_data()
         cls.conf = Config()
+        cls.storage_dir = cls.conf['STORAGE_DIR']
+        cls.testfile_dir = cls.storage_dir / "testfiles"
 
     def setUp(self) -> None:
         # Provide a fresh copy of clean sample data.
         self.sample_data = copy.deepcopy(self._clean_sample_data)
 
-        testMethod = getattr(self, self._testMethodName)
-        if getattr(testMethod, self.needs_storage_marker, False):
+        test_method = getattr(self, self._testMethodName)
+        if getattr(test_method, self.needs_storage_marker, False):
             subprocess.run(["make", "storage-test"], stdout=subprocess.DEVNULL,
                            check=True)
 
     def tearDown(self) -> None:
-        testMethod = getattr(self, self._testMethodName)
-        if getattr(testMethod, self.needs_storage_marker, False):
+        test_method = getattr(self, self._testMethodName)
+        if getattr(test_method, self.needs_storage_marker, False):
             shutil.rmtree(self.storage_dir)
 
     def get_sample_data(self, table: str, ids: Iterable[int],

@@ -40,9 +40,10 @@ endif
 # Others
 TESTPREPARATION ?= automatic
 TESTTHREADNO ?= 1
-TESTDATABASENAME ?= cdb_test_${TESTTHREADNO}
-TESTSTORAGEPATH ?= /tmp/cdedb-test-${TESTTHREADNO}-storage
-TESTLOGPATH ?= /tmp/cdedb-test-${TESTTHREADNO}-logs
+TESTDATABASENAME ?= cdb_test_$(TESTTHREADNO)
+TESTTMPDIR ?= /tmp/cdedb-test-$(TESTTHREADNO)/
+TESTSTORAGEPATH ?= $(TESTTMPDIR)/storage
+TESTLOGPATH ?= $(TESTTMPDIR)/logs
 I18NDIR ?= ./i18n
 
 doc:
@@ -245,9 +246,10 @@ lint:
 
 prepare-check:
 ifneq ($(TESTPREPARATION), manual)
-	sudo rm -rf ${CDEDB_TEST_LOG_PATH}  /tmp/cdedb-mail-* \
+	mkdir -p $(TESTTMPDIR)
+	sudo rm -rf $(TESTLOGPATH)  /tmp/cdedb-mail-* \
 		|| true
-	mkdir ${CDEDB_TEST_LOG_PATH}
+	mkdir $(TESTLOGPATH)
 	$(MAKE) i18n-compile
 	$(MAKE) sql-test &> /dev/null
 else
@@ -268,24 +270,21 @@ check-parallel:
 # TODO: this way of fulfilling the need of two different names for the same thing is ugly
 check: export CDEDB_TEST=True
 check: export CDEDB_TEST_DATABASE=$(TESTDATABASENAME)
-check: export CDEDB_TEST_STORAGE_PATH=${TESTSTORAGEPATH}
-check: export CDEDB_TEST_LOG_PATH=${TESTLOGPATH}
+check: export CDEDB_TEST_TMP_DIR=$(TESTTMPDIR)
 check:
 	$(MAKE) prepare-check
 	$(PYTHONBIN) -m tests.main "${TESTPATTERN}"
 
 single-check: export CDEDB_TEST=True
 single-check: export CDEDB_TEST_DATABASE=$(TESTDATABASENAME)
-single-check: export CDEDB_TEST_STORAGE_PATH=${TESTSTORAGEPATH}
-single-check: export CDEDB_TEST_LOG_PATH=${TESTLOGPATH}
+single-check: export CDEDB_TEST_TMP_DIR=$(TESTTMPDIR)
 single-check:
 	$(MAKE) prepare-check
 	$(PYTHONBIN) -m tests.singular "${PATTERNS}"
 
 xss-check: export CDEDB_TEST=True
 xss-check: export CDEDB_TEST_DATABASE=$(TESTDATABASENAME)
-xss-check: export CDEDB_TEST_STORAGE_PATH=${TESTSTORAGEPATH}
-xss-check: export CDEDB_TEST_LOG_PATH=${TESTLOGPATH}
+xss-check: export CDEDB_TEST_TMP_DIR=$(TESTTMPDIR)
 xss-check:
 	$(MAKE) prepare-check &> /dev/null
 	$(MAKE) sample-data-xss &> /dev/null
@@ -320,8 +319,7 @@ VALIDATORCHECKSUM := "c7d8d7c925dbd64fd5270f7b81a56f526e6bbef0 $\
 
 .coverage: export CDEDB_TEST=True
 .coverage: export CDEDB_TEST_DATABASE=$(TESTDATABASENAME)
-.coverage: export CDEDB_TEST_STORAGE_PATH=${TESTSTORAGEPATH}
-.coverage: export CDEDB_TEST_LOG_PATH=${TESTLOGPATH}
+.coverage: export CDEDB_TEST_TMP_DIR=$(TESTTMPDIR)
 .coverage: $(wildcard cdedb/*.py) $(wildcard cdedb/database/*.py) \
 		$(wildcard cdedb/frontend/*.py) \
 		$(wildcard cdedb/backend/*.py) $(wildcard tests/*.py)

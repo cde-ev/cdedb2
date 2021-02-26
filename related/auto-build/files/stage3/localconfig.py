@@ -11,7 +11,7 @@ CDEDB_TEST = os.environ.get('CDEDB_TEST')
 
 # BasicConfig
 
-_LOG_ROOT = (pathlib.Path(os.environ['CDEDB_TEST_LOG_PATH']) if CDEDB_TEST
+_LOG_ROOT = (pathlib.Path(os.environ['CDEDB_TEST_TMP_DIR'], 'logs') if CDEDB_TEST
              else pathlib.Path("/var/log/cdedb"))
 
 LOG_LEVEL = logging.DEBUG
@@ -49,5 +49,5 @@ if CDEDB_TEST:
     DB_PORT = 6432
     CDB_DATABASE_NAME = os.environ['CDEDB_TEST_DATABASE']
     SERVER_NAME_TEMPLATE = "test_{}_server"
-    STORAGE_DIR = pathlib.Path(os.environ['CDEDB_TEST_STORAGE_PATH'])
+    STORAGE_DIR = pathlib.Path(os.environ['CDEDB_TEST_TMP_DIR'], 'storage')
     TIMING_LOG = _LOG_ROOT / "timing.log"
