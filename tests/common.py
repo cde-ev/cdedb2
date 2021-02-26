@@ -746,16 +746,16 @@ def storage(fun: F) -> F:
 
 def execsql(sql: AnyStr) -> None:
     """Execute arbitrary SQL-code on the test database."""
-    path = pathlib.Path("/tmp/test-cdedb-sql-commands.sql")
     psql = ("/cdedb2/bin/execute_sql_script.py",
             "--username", "cdb", "--dbname", os.environ['CDEDB_TEST_DATABASE'])
-    null = subprocess.DEVNULL
-    mode = "w"
+    mode = 'w'
     if isinstance(sql, bytes):
-        mode = "wb"
-    with open(path, mode) as f:
-        f.write(sql)
-    subprocess.check_call(psql + ("--file", str(path)), stdout=null)
+        mode += 'b'
+    with tempfile.TemporaryDirectory() as tmpdir:
+        with open(pathlib.Path(tmpdir) / "cdedb-test.sql", mode=mode) as sql_file:
+            sql_file.write(sql)
+        subprocess.check_call(psql + ("--file", sql_file.name),
+                              stdout=subprocess.DEVNULL)
 
 
 class FrontendTest(BackendTest):
