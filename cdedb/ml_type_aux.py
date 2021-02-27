@@ -596,7 +596,7 @@ class AssemblyOptInMailinglist(AssemblyMailinglist):
 
 class GeneralMandatoryMailinglist(AllUsersImplicitMeta, GeneralMailinglist):
     role_map = OrderedDict([
-        ("persona", SubscriptionPolicy.subscribable)
+        ("ml", SubscriptionPolicy.subscribable)
     ])
     # For mandatory lists, ignore all unsubscriptions.
     allow_unsub = False
