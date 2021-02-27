@@ -8,12 +8,32 @@ their symbolic names provided by this module should be used.
 """
 
 import enum
-from typing import Dict, Set
+from typing import Callable, Dict, Type
 
 
 def n_(x: str) -> str:
     """Clone of :py:func:`cdedb.common.n_` for marking translatable strings."""
     return x
+
+
+def extend_intenum(*source_enums: Type[enum.IntEnum], unique: bool = True
+                   ) -> Callable[[Type[enum.IntEnum]], Type[enum.IntEnum]]:
+    """Decorator to combine multiple `enum.IntEnum`s into one.
+
+    :param unique: If true (default), require values to be unique in the combined enum.
+    """
+    def the_decorator(target_enum: Type[enum.IntEnum]) -> Type[enum.IntEnum]:
+        new_members = {}
+        for enum_ in source_enums + (target_enum,):
+            for member in enum_:
+                new_members[member.name] = member.value
+        new_enum = enum.IntEnum(target_enum.__name__, new_members)  # type: ignore
+        if unique:
+            # `enum.unique` is supposed to be used as a decorator, but does not
+            # actually modify the enum and mypy doesn't like the assingment to a type.
+            enum.unique(new_enum)
+        return new_enum
+    return the_decorator
 
 
 @enum.unique
@@ -391,9 +411,9 @@ class AssemblyLogCodes(enum.IntEnum):
 
 from cdedb.subman.machine import SubscriptionLogCodes
 
-@enum.unique
-class MlLogCodes(SubscriptionLogCodes, enum.IntEnum):
-    # TODO That this weird subclassing mostly works is a bug in Python 3.8
+
+@extend_intenum(SubscriptionLogCodes, unique=True)
+class MlLogCodes(enum.IntEnum):
     """Available log messages for ml.log."""
     list_created = 1  #:
     list_changed = 2  #:
