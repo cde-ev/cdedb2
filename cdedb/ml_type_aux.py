@@ -7,16 +7,15 @@ from typing import (
 
 from typing_extensions import Literal
 
-import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import CdEDBObject, RequestState, User, extract_roles, n_
 from cdedb.database.constants import (
-    MailinglistDomain, MailinglistInteractionPolicy, MailinglistTypes,
-    RegistrationPartStati,
+    MailinglistDomain, MailinglistTypes, RegistrationPartStati,
 )
+from cdedb.subman.machine import SubscriptionPolicy
 from cdedb.query import Query, QueryOperators
 
-MIPol = Union[MailinglistInteractionPolicy, None]
+MIPol = Union[SubscriptionPolicy, None]
 MIPolMap = Dict[int, MIPol]
 TypeMapping = Mapping[str, Type[Any]]
 
@@ -206,7 +205,7 @@ class GeneralMailinglist:
 
     if TYPE_CHECKING:
         # pylint: disable=unsubscriptable-object
-        role_map: OrderedDict[str, MailinglistInteractionPolicy]
+        role_map: OrderedDict[str, SubscriptionPolicy]
     role_map = OrderedDict()
 
     @classmethod
@@ -250,15 +249,15 @@ class GeneralMailinglist:
                 and bool(cls.management_admin_views() & user.admin_views))
 
     @classmethod
-    def get_interaction_policy(cls, rs: RequestState, bc: BackendContainer,
+    def get_subscription_policy(cls, rs: RequestState, bc: BackendContainer,
                                mailinglist: CdEDBObject, persona_id: int,
                                ) -> MIPol:
-        """Singularized wrapper for `get_interaction_policies`."""
-        return cls.get_interaction_policies(
+        """Singularized wrapper for `get_subscription_policies`."""
+        return cls.get_subscription_policies(
             rs, bc, mailinglist, (persona_id,))[persona_id]
 
     @classmethod
-    def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
+    def get_subscription_policies(cls, rs: RequestState, bc: BackendContainer,
                                  mailinglist: CdEDBObject,
                                  persona_ids: Collection[int]
                                  ) -> MIPolMap:
@@ -331,7 +330,7 @@ class MemberMailinglist(CdEMailinglist):
 
 class MemberMandatoryMailinglist(AllMembersImplicitMeta, MemberMailinglist):
     role_map = OrderedDict([
-        ("member", MailinglistInteractionPolicy.subscribable)
+        ("member", SubscriptionPolicy.subscribable)
     ])
     # For mandatory lists, ignore all unsubscriptions.
     allow_unsub = False
@@ -341,25 +340,25 @@ class MemberMandatoryMailinglist(AllMembersImplicitMeta, MemberMailinglist):
 
 class MemberOptOutMailinglist(AllMembersImplicitMeta, MemberMailinglist):
     role_map = OrderedDict([
-        ("member", MailinglistInteractionPolicy.subscribable)
+        ("member", SubscriptionPolicy.subscribable)
     ])
 
 
 class MemberOptInMailinglist(MemberMailinglist):
     role_map = OrderedDict([
-        ("member", MailinglistInteractionPolicy.subscribable)
+        ("member", SubscriptionPolicy.subscribable)
     ])
 
 
 class MemberModeratedOptInMailinglist(MemberMailinglist):
     role_map = OrderedDict([
-        ("member", MailinglistInteractionPolicy.moderated_opt_in)
+        ("member", SubscriptionPolicy.moderated_opt_in)
     ])
 
 
 class MemberInvitationOnlyMailinglist(MemberMailinglist):
     role_map = OrderedDict([
-        ("member", MailinglistInteractionPolicy.invitation_only)
+        ("member", SubscriptionPolicy.invitation_only)
     ])
 
 
@@ -395,7 +394,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
         return basic_privilege and additional_privilege
 
     @classmethod
-    def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
+    def get_subscription_policies(cls, rs: RequestState, bc: BackendContainer,
                                  mailinglist: CdEDBObject,
                                  persona_ids: Collection[int],
                                  ) -> MIPolMap:
@@ -408,15 +407,14 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
 
         # Make event-lists without event link static.
         if mailinglist["event_id"] is None:
-            return {anid: MailinglistInteractionPolicy.invitation_only
-                    for anid in persona_ids}
+            return {anid: SubscriptionPolicy.invitation_only for anid in persona_ids}
 
         ret: MIPolMap = {}
         for persona_id in persona_ids:
             if bc.event.check_registration_status(
                     rs, persona_id, mailinglist['event_id'],
                     mailinglist['registration_stati']):
-                ret[persona_id] = MailinglistInteractionPolicy.subscribable
+                ret[persona_id] = SubscriptionPolicy.subscribable
             else:
                 ret[persona_id] = None
 
@@ -462,7 +460,7 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
     maxsize_default = 8192
 
     @classmethod
-    def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
+    def get_subscription_policies(cls, rs: RequestState, bc: BackendContainer,
                                  mailinglist: CdEDBObject,
                                  persona_ids: Collection[int],
                                  ) -> MIPolMap:
@@ -474,14 +472,13 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
 
         # Make event-lists without event link static.
         if mailinglist["event_id"] is None:
-            return {anid: MailinglistInteractionPolicy.invitation_only
-                    for anid in persona_ids}
+            return {anid: SubscriptionPolicy.invitation_only for anid in persona_ids}
 
         ret: MIPolMap = {}
         event = bc.event.get_event(rs, mailinglist["event_id"])
         for persona_id in persona_ids:
             if persona_id in event["orgas"]:
-                ret[persona_id] = const.MailinglistInteractionPolicy.subscribable
+                ret[persona_id] = SubscriptionPolicy.subscribable
             else:
                 ret[persona_id] = None
         return ret
@@ -522,7 +519,7 @@ class AssemblyAssociatedMailinglist(AssemblyMailinglist):
         return basic_privilege and additional_privilege
 
     @classmethod
-    def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
+    def get_subscription_policies(cls, rs: RequestState, bc: BackendContainer,
                                  mailinglist: CdEDBObject,
                                  persona_ids: Collection[int],
                                  ) -> MIPolMap:
@@ -539,7 +536,7 @@ class AssemblyAssociatedMailinglist(AssemblyMailinglist):
                 rs, persona_id=persona_id,
                 assembly_id=mailinglist["assembly_id"])
             if attending:
-                ret[persona_id] = const.MailinglistInteractionPolicy.subscribable
+                ret[persona_id] = SubscriptionPolicy.subscribable
             else:
                 ret[persona_id] = None
         return ret
@@ -560,7 +557,7 @@ class AssemblyPresiderMailinglist(AssemblyAssociatedMailinglist):
     maxsize_default = 8192
 
     @classmethod
-    def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
+    def get_subscription_policies(cls, rs: RequestState, bc: BackendContainer,
                                  mailinglist: CdEDBObject,
                                  persona_ids: Collection[int],
                                  ) -> MIPolMap:
@@ -574,7 +571,7 @@ class AssemblyPresiderMailinglist(AssemblyAssociatedMailinglist):
         ret: MIPolMap = {}
         for persona_id in persona_ids:
             if persona_id in presiders:
-                ret[persona_id] = MailinglistInteractionPolicy.subscribable
+                ret[persona_id] = SubscriptionPolicy.subscribable
             else:
                 ret[persona_id] = None
         return ret
@@ -593,13 +590,13 @@ class AssemblyPresiderMailinglist(AssemblyAssociatedMailinglist):
 
 class AssemblyOptInMailinglist(AssemblyMailinglist):
     role_map = OrderedDict([
-        ("assembly", MailinglistInteractionPolicy.subscribable)
+        ("assembly", SubscriptionPolicy.subscribable)
     ])
 
 
 class GeneralMandatoryMailinglist(AllUsersImplicitMeta, GeneralMailinglist):
     role_map = OrderedDict([
-        ("persona", MailinglistInteractionPolicy.subscribable)
+        ("persona", SubscriptionPolicy.subscribable)
     ])
     # For mandatory lists, ignore all unsubscriptions.
     allow_unsub = False
@@ -607,19 +604,19 @@ class GeneralMandatoryMailinglist(AllUsersImplicitMeta, GeneralMailinglist):
 
 class GeneralOptInMailinglist(GeneralMailinglist):
     role_map = OrderedDict([
-        ("ml", MailinglistInteractionPolicy.subscribable)
+        ("ml", SubscriptionPolicy.subscribable)
     ])
 
 
 class GeneralModeratedOptInMailinglist(GeneralMailinglist):
     role_map = OrderedDict([
-        ("ml", MailinglistInteractionPolicy.moderated_opt_in)
+        ("ml", SubscriptionPolicy.moderated_opt_in)
     ])
 
 
 class GeneralInvitationOnlyMailinglist(GeneralMailinglist):
     role_map = OrderedDict([
-        ("ml", MailinglistInteractionPolicy.invitation_only)
+        ("ml", SubscriptionPolicy.invitation_only)
     ])
 
 
@@ -628,7 +625,7 @@ class GeneralModeratorMailinglist(GeneralMailinglist):
     allow_unsub = False
 
     @classmethod
-    def get_interaction_policies(cls, rs: RequestState, bc: BackendContainer,
+    def get_subscription_policies(cls, rs: RequestState, bc: BackendContainer,
                                  mailinglist: CdEDBObject,
                                  persona_ids: Collection[int],
                                  ) -> MIPolMap:
@@ -644,7 +641,7 @@ class GeneralModeratorMailinglist(GeneralMailinglist):
 
         for persona_id in persona_ids:
             if persona_id in all_moderators:
-                ret[persona_id] = const.MailinglistInteractionPolicy.subscribable
+                ret[persona_id] = SubscriptionPolicy.subscribable
             else:
                 ret[persona_id] = None
         return ret
@@ -678,8 +675,8 @@ class CdELokalModeratorMailinglist(GeneralModeratorMailinglist):
 
 class SemiPublicMailinglist(GeneralMailinglist):
     role_map = OrderedDict([
-        ("member", MailinglistInteractionPolicy.subscribable),
-        ("ml", MailinglistInteractionPolicy.moderated_opt_in)
+        ("member", SubscriptionPolicy.subscribable),
+        ("ml", SubscriptionPolicy.moderated_opt_in)
     ])
 
 
@@ -689,7 +686,7 @@ class CdeLokalMailinglist(SemiPublicMailinglist):
     relevant_admins = {"cdelokal_admin"}
 
 
-MLTypeLike = Union[const.MailinglistTypes, Type[GeneralMailinglist]]
+MLTypeLike = Union[MailinglistTypes, Type[GeneralMailinglist]]
 MLType = Type[GeneralMailinglist]
 
 

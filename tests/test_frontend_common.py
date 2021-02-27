@@ -130,7 +130,7 @@ class TestFrontendCommon(FrontendTest):
             cdedb.enums.TransactionType,
             cdedb.enums.const.SubscriptionStates,
             cdedb.enums.const.MailinglistDomain,
-            cdedb.enums.const.MailinglistInteractionPolicy,
+            cdedb.enums.SubscriptionPolicy,
             cdedb.enums.SubscriptionActions,
             cdedb.enums.LodgementsSortkeys,
             cdedb.enums.Accounts,

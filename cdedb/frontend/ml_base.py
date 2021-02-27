@@ -354,7 +354,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             assembly['is_visible'] = self.assemblyproxy.may_assemble(
                 rs, assembly_id=assembly['id'])
 
-        interaction_policy = self.mlproxy.get_interaction_policy(
+        subscription_policy = self.mlproxy.get_subscription_policy(
             rs, rs.user.persona_id, mailinglist=ml)
         allow_unsub = self.mlproxy.get_ml_type(rs, mailinglist_id).allow_unsub
         personas = self.coreproxy.get_personas(rs, ml['moderators'])
@@ -365,7 +365,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
         return self.render(rs, "show_mailinglist", {
             'sub_address': sub_address, 'state': state,
-            'interaction_policy': interaction_policy, 'allow_unsub': allow_unsub,
+            'subscription_policy': subscription_policy, 'allow_unsub': allow_unsub,
             'event': event, 'assembly': assembly, 'moderators': moderators})
 
     @access("ml")

@@ -25,7 +25,7 @@ from cdedb.common import (
     PrivilegeError, RequestState, implying_realms, make_proxy, mixed_existence_sorter,
     n_, unwrap,
 )
-from cdedb.subman.machine import SubscriptionActions
+from cdedb.subman.machine import SubscriptionActions, SubscriptionPolicy
 from cdedb.database.connection import Atomizer
 from cdedb.ml_type_aux import MLType, MLTypeLike
 from cdedb.query import Query, QueryOperators
@@ -128,17 +128,17 @@ class MlBackend(AbstractBackend):
         return ret
 
     @overload
-    def get_interaction_policy(self, rs: RequestState, persona_id: int, *,
+    def get_subscription_policy(self, rs: RequestState, persona_id: int, *,
                                mailinglist: CdEDBObject) -> ml_type.MIPol:
         pass
 
     @overload
-    def get_interaction_policy(self, rs: RequestState, persona_id: int, *,
+    def get_subscription_policy(self, rs: RequestState, persona_id: int, *,
                                mailinglist_id: int) -> ml_type.MIPol:
         pass
 
     @access("ml")
-    def get_interaction_policy(self, rs: RequestState, persona_id: int, *,
+    def get_subscription_policy(self, rs: RequestState, persona_id: int, *,
                                mailinglist: CdEDBObject = None,
                                mailinglist_id: int = None) -> ml_type.MIPol:
         """What may the user do with a mailinglist. Be aware, that this does
@@ -164,14 +164,13 @@ class MlBackend(AbstractBackend):
                 or self.may_manage(rs, ml['id'], privileged=True)):
             raise PrivilegeError(n_("Not privileged."))
 
-        return self.get_ml_type(rs, ml["id"]).get_interaction_policy(
+        return self.get_ml_type(rs, ml["id"]).get_subscription_policy(
             rs, self.backends, ml, persona_id)
 
     @access("ml")
     def filter_personas_by_policy(self, rs: RequestState, ml: CdEDBObject,
                                   data: Collection[CdEDBObject],
-                                  allowed_pols: Collection[
-                                      const.MailinglistInteractionPolicy],
+                                  allowed_pols: Collection[SubscriptionPolicy],
                                   ) -> Tuple[CdEDBObject, ...]:
         """Restrict persona sample to eligibles.
 
@@ -185,12 +184,12 @@ class MlBackend(AbstractBackend):
             allowed_pols
         """
         affirm(vtypes.Mailinglist, ml, _allow_readonly=True)
-        affirm_set(const.MailinglistInteractionPolicy, allowed_pols)
+        affirm_set(SubscriptionPolicy, allowed_pols)
 
         # persona_ids are validated inside get_personas
         persona_ids = tuple(e['id'] for e in data)
         atype = ml_type.get_type(ml['ml_type'])
-        persona_policies = atype.get_interaction_policies(
+        persona_policies = atype.get_subscription_policies(
             rs, self.backends, ml, persona_ids)
         return tuple(e for e in data
                      if persona_policies[e['id']] in allowed_pols)
@@ -849,7 +848,7 @@ class MlBackend(AbstractBackend):
 
             new_state, code = subman.apply_action(
                 action=action,
-                policy=self.get_interaction_policy(rs, persona_id, mailinglist=ml),
+                policy=self.get_subscription_policy(rs, persona_id, mailinglist=ml),
                 allow_unsub=atype.allow_unsub,
                 old_state=old_state,
                 is_implied=(persona_id
@@ -1215,12 +1214,12 @@ class MlBackend(AbstractBackend):
 
             # Check whether current subscribers may stay subscribed.
             # This is the case if they are still implicit subscribers of
-            # the list or if `get_interaction_policy` says so.
+            # the list or if `get_subscription_policy` says so.
             delete = []
             personas = self.core.get_personas(
                 rs, set(old_subscribers) - new_implicits)
             for persona_id in personas:
-                policy = atype.get_interaction_policy(
+                policy = atype.get_subscription_policy(
                     rs, self.backends, mailinglist=ml, persona_id=persona_id)
                 state = old_subscribers[persona_id]
                 if subman.is_obsolete(policy=policy, old_state=state, is_implied=False):

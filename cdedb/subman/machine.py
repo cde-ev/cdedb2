@@ -76,7 +76,7 @@ class SubscriptionPolicy(enum.IntEnum):
 
     def is_implicit(self) -> bool:
         """Short-hand for
-        policy == const.MailinglistInteractionPolicy.implicits_only
+        policy == SubscriptionPolicy.implicits_only
         """
         return self == SubscriptionPolicy.implicits_only
 

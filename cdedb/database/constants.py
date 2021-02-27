@@ -201,10 +201,6 @@ _DOMAIN_STR_MAP: Dict[MailinglistDomain, str] = {
 }
 
 
-from cdedb.subman.machine import SubscriptionPolicy as MailinglistInteractionPolicy
-
-
-
 @enum.unique
 class ModerationPolicy(enum.IntEnum):
     """Regulate posting of mail to a list."""

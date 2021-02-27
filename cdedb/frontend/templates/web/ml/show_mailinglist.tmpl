@@ -152,14 +152,14 @@
                         <p><strong>
                             {% trans %}You are not currently subscribed to this mailinglist.{% endtrans %}
                         </strong></p>
-                        {% if interaction_policy == enums['MailinglistInteractionPolicy'].moderated_opt_in %}
+                        {% if subscription_policy == enums['SubscriptionPolicy'].moderated_opt_in %}
                             <form action="{{ cdedblink('ml/request_subscription') }}" method="POST" id="subscribe-mod-form">
                                 {{ util.anti_csrf_token('ml/request_subscription') }}
                                 <div>
                                     {{ util.input_submit(value=gettext("Request subscription"), aclass="btn btn-sm btn-success") }}
                                 </div>
                             </form>
-                        {% elif interaction_policy == enums['MailinglistInteractionPolicy'].subscribable %}
+                        {% elif subscription_policy == enums['SubscriptionPolicy'].subscribable %}
                             <form action="{{ cdedblink('ml/subscribe') }}" method="POST" id="subscribe-no-mod-form">
                                 {{ util.anti_csrf_token('ml/subscribe') }}
                                 <div>

@@ -38,6 +38,7 @@ from cdedb.frontend.common import (
     request_dict_extractor, request_extractor,
 )
 from cdedb.query import QUERY_SPECS, Query, QueryOperators, mangle_query_input
+from cdedb.subman.machine import SubscriptionPolicy
 from cdedb.validation import (
     TypeMapping, _GENESIS_CASE_EXPOSED_FIELDS,
     _PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
@@ -940,7 +941,7 @@ class CoreFrontend(AbstractFrontend):
         # Filter result to get only users allowed to be a subscriber of a list,
         # which potentially are no subscriber yet.
         if mailinglist:
-            pol = const.MailinglistInteractionPolicy
+            pol = SubscriptionPolicy
             allowed_pols = {pol.subscribable, pol.moderated_opt_in, pol.invitation_only}
             data = self.mlproxy.filter_personas_by_policy(
                 rs, mailinglist, data, allowed_pols)
