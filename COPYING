@@ -1,9 +1,13 @@
 Applies to all files in this repository except
-* static/jquery* which is under MIT license by the jQuery Foundation
-* static/selectize* which is under Apache license 2.0 by Brian Reavis
-* everything in the directory related (each having its own license/copyright).
+* static/jquery* which is under MIT license [1]
+* static/selectize* which is under Apache license 2.0 by Brian Reavis [2]
+* static/bootstrap* which is under MIT license [3]
+* static/fontawesome* which is under CC BY 4.0 and SIL OFL 1.1 license [4]
+* static/flags* which is public domain [5]
+* i18n/git-* which is under MIT license by Julien Letessier [6]
+* for everything in the directory related see the README file there
 
-Copyright (C) 2013 CdE Datenbank Team
+Copyright (C) 2013-2021 CdE Datenbank Team
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,3 +21,11 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+[1] https://jquery.com/
+[2] https://selectize.github.io/selectize.js/
+[3] https://getbootstrap.com/
+[4] https://fontawesome.com/
+[5] https://www.famfamfam.com/
+[6] https://github.com/mezis/git-whistles/
+
