@@ -1216,21 +1216,20 @@ class MlBackend(AbstractBackend):
             # This is the case if they are still implicit subscribers of
             # the list or if `get_subscription_policy` says so.
             delete = []
-            personas = self.core.get_personas(
-                rs, set(old_subscribers) - new_implicits)
-            for persona_id in personas:
+            for persona_id in old_subscribers:
                 policy = atype.get_subscription_policy(
                     rs, self.backends, mailinglist=ml, persona_id=persona_id)
                 state = old_subscribers[persona_id]
-                if subman.is_obsolete(policy=policy, old_state=state, is_implied=False):
+                if subman.is_obsolete(policy=policy, old_state=state,
+                                      is_implied=persona_id in new_implicits):
                     datum = {
                         'mailinglist_id': mailinglist_id,
                         'persona_id': persona_id,
                     }
+                    delete.append(datum)
                     # Log this to prevent confusion especially for team lists
                     self.ml_log(rs, const.MlLogCodes.automatically_removed,
                                 mailinglist_id, persona_id=persona_id)
-                    delete.append(datum)
 
             # Remove those who may not stay subscribed.
             if delete:

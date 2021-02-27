@@ -274,6 +274,7 @@ class GeneralMailinglist:
         """
         # TODO check for access to the ml? Needs ml_backend.
         personas = bc.core.get_personas(rs, persona_ids)
+
         ret: MIPolMap = {}
         for persona_id, persona in personas.items():
             roles = extract_roles(persona, introspection_only=True)
