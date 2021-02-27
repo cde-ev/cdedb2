@@ -334,8 +334,8 @@ class BasicTest(unittest.TestCase):
 
         test_method = getattr(self, self._testMethodName)
         if getattr(test_method, self.needs_storage_marker, False):
-            subprocess.run(["make", "storage-test"], stdout=subprocess.DEVNULL,
-                           check=True)
+            subprocess.run(("make", "storage-test"), stdout=subprocess.DEVNULL,
+                           check=True, start_new_session=True)
 
     def tearDown(self) -> None:
         test_method = getattr(self, self._testMethodName)
@@ -390,10 +390,8 @@ class CdEDBTest(BasicTest):
 
     def setUp(self) -> None:
         # Start the call in a new session, so that a SIGINT does not interrupt this.
-        subprocess.check_call(("make", "sql-test-shallow"),
-                              stdout=subprocess.DEVNULL,
-                              stderr=subprocess.DEVNULL,
-                              start_new_session=True)
+        subprocess.run(("make", "sql-test-shallow"), stdout=subprocess.DEVNULL,
+                       stderr=subprocess.DEVNULL, start_new_session=True, check=True)
         super(CdEDBTest, self).setUp()
 
 
@@ -754,8 +752,8 @@ def execsql(sql: AnyStr) -> None:
     with tempfile.TemporaryDirectory() as tmpdir:
         with open(pathlib.Path(tmpdir) / "cdedb-test.sql", mode=mode) as sql_file:
             sql_file.write(sql)
-        subprocess.check_call(psql + ("--file", sql_file.name),
-                              stdout=subprocess.DEVNULL)
+        subprocess.run(psql + ("--file", sql_file.name), stdout=subprocess.DEVNULL,
+                       start_new_session=True, check=True)
 
 
 class FrontendTest(BackendTest):
