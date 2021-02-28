@@ -590,7 +590,8 @@ _SECRECTS_DEFAULTS = {
         "cdb_anonymous": "012345678901234567890123456789",
         "cdb_persona": "abcdefghijklmnopqrstuvwxyzabcd",
         "cdb_member": "zyxwvutsrqponmlkjihgfedcbazyxw",
-        "cdb_admin": "9876543210abcdefghijklmnopqrst"
+        "cdb_admin": "9876543210abcdefghijklmnopqrst",
+        "cdb": "987654321098765432109876543210",  # only used for testsuite
     },
 
     # salting value used for verifying sensitve url parameters
