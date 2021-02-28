@@ -96,6 +96,7 @@ sample-data-dump:
 sample-data-xss:
 	cp -f related/auto-build/files/stage3/localconfig.py cdedb/localconfig.py
 	$(MAKE) storage > /dev/null
+	$(MAKE) storage-test > /dev/null
 	$(MAKE) sql-xss
 
 TESTFOTONAME := e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e6$\
@@ -279,6 +280,7 @@ xss-check:
 	$(MAKE) prepare-check &> /dev/null
 	$(MAKE) sample-data-xss &> /dev/null
 	$(PYTHONBIN) -m bin.escape_fuzzing
+	rm -rf $(TESTSTORAGEPATH)
 
 dump-html: export SCRAP_ENCOUNTERED_PAGES=1 TESTPATTERN=test_frontend
 dump-html:
@@ -314,7 +316,7 @@ VALIDATORCHECKSUM := "c7d8d7c925dbd64fd5270f7b81a56f526e6bbef0 $\
 		$(wildcard cdedb/frontend/*.py) \
 		$(wildcard cdedb/backend/*.py) $(wildcard tests/*.py)
 	$(MAKE) prepare-check
-	$(COVERAGE) run -m tests.main
+	$(COVERAGE) run -m tests.main ""
 
 coverage: .coverage
 	$(COVERAGE) report --include 'cdedb/*' --show-missing
