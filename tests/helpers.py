@@ -1,9 +1,8 @@
-import unittest
-import pathlib
 import os
-
+import pathlib
+import unittest
 from types import TracebackType
-from typing import List, Optional, TextIO, Union, Tuple, Type
+from typing import List, Optional, TextIO, Tuple, Type, Union
 
 ExceptionInfo = Union[
     Tuple[Type[BaseException], BaseException, TracebackType],

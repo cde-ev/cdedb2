@@ -1,13 +1,12 @@
 SHELL := /bin/bash
 
-.PHONY: help doc sample-data sample-data-test sql sql-test sql-test-shallow lint check single-check \
+.PHONY: help doc sample-data sql sql-test sql-test-shallow lint check single-check \
 	.coverage coverage dump-html validate-html i18n-extract i18n-update i18n-compile i18n-refresh
 
 help:
 	@echo "doc -- build documentation"
 	@echo "reload -- re-compile GNU gettext data and trigger WSGI worker reload"
 	@echo "sample-data -- initialize database structures (DESTROYS DATA!)"
-	@echo "sample-data-test -- initialize database structures for test suite"
 	@echo "sql -- initialize postgres (use sample-data instead)"
 	@echo "sql-test -- initialize database structures for test suite"
 	@echo "sql-test-shallow -- reset database structures for test suite"
@@ -38,9 +37,8 @@ endif
 
 # Others
 TESTPREPARATION ?= automatic
-TESTTHREADNO ?= 1
-TESTDATABASENAME ?= cdb_test_$(TESTTHREADNO)
-TESTTMPDIR ?= /tmp/cdedb-test-$(TESTTHREADNO)/
+TESTDATABASENAME ?= $(or ${CDEDB_TEST_DATABASE}, cdb_test)
+TESTTMPDIR ?= ${CDEDB_TEST_TMP_DIR}
 TESTSTORAGEPATH ?= $(TESTTMPDIR)/storage
 TESTLOGPATH ?= $(TESTTMPDIR)/logs
 I18NDIR ?= ./i18n
@@ -95,8 +93,7 @@ sample-data-dump:
 
 sample-data-xss:
 	cp -f related/auto-build/files/stage3/localconfig.py cdedb/localconfig.py
-	$(MAKE) storage > /dev/null
-	$(MAKE) storage-test > /dev/null
+	$(MAKE) storage
 	$(MAKE) sql-xss
 
 TESTFOTONAME := e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e6$\
@@ -249,42 +246,35 @@ ifneq ($(TESTPREPARATION), manual)
 		|| true
 	mkdir $(TESTLOGPATH)
 	$(MAKE) i18n-compile
-	$(MAKE) sql-test &> /dev/null
+	$(MAKE) sql-test
 else
 	@echo "Omitting test preparation."
 endif
 
 check-parallel:
+	# TODO: move this logic into tests/check.py
 	# TODO: using inverse regex arguments possible? Would be helpful for not overlooking some tests
 	# sleeping is necessary here that the i18n-refresh runs at the very beginning to not interfere
-	TESTTHREADNO=2 bin/singlecheck.sh test_backend test_common test_config \
-		test_database test_offline test_script test_session test_validation \
-		test_vote_verification & \
-	sleep 0.5; TESTTHREADNO=4 bin/singlecheck.sh frontend_event frontend_ml \
-		frontend_privacy frontend_parse & \
-	sleep 0.5; TESTTHREADNO=3 bin/singlecheck.sh frontend_application \
-		frontend_assembly frontend_common frontend_core frontend_cde frontend_cron
+	$(PYTHONBIN) -m tests.check --thread_id 2 \
+		test_backend test_common test_config test_database test_offline test_script test_session \
+		test_validation test_vote_verification & \
+	sleep 0.5; \
+	$(PYTHONBIN) -m tests.check --thread_id 4 \
+		frontend_event frontend_ml frontend_privacy frontend_parse & \
+	sleep 0.5; \
+	$(PYTHONBIN) -m tests.check --thread_id 3 \
+		frontend_application frontend_assembly frontend_common frontend_core frontend_cde \
+		frontend_cron
 
-# TODO: this way of fulfilling the need of two different names for the same thing is ugly
-check: export CDEDB_TEST=True
-check: export CDEDB_TEST_DATABASE=$(TESTDATABASENAME)
-check: export CDEDB_TEST_TMP_DIR=$(TESTTMPDIR)
 check:
-	$(MAKE) prepare-check
-	$(PYTHONBIN) -m tests.main "${TESTPATTERNS}"
+	$(PYTHONBIN) -m tests.check $(or $(TESTPATTERNS), )
 
-xss-check: export CDEDB_TEST=True
-xss-check: export CDEDB_TEST_DATABASE=$(TESTDATABASENAME)
-xss-check: export CDEDB_TEST_TMP_DIR=$(TESTTMPDIR)
 xss-check:
-	$(MAKE) prepare-check &> /dev/null
-	$(MAKE) sample-data-xss &> /dev/null
-	$(PYTHONBIN) -m bin.escape_fuzzing
-	rm -rf $(TESTSTORAGEPATH)
+	$(PYTHONBIN) -m tests.check --xss-check
 
-dump-html: export SCRAP_ENCOUNTERED_PAGES=1 TESTPATTERN=test_frontend
+dump-html: export SCRAP_ENCOUNTERED_PAGES=1
 dump-html:
-	$(MAKE) check
+	$(PYTHONBIN) -m tests.check test_frontend
 
 
 validate-html: /opt/validator/vnu-runtime-image/bin/vnu
@@ -309,14 +299,10 @@ VALIDATORCHECKSUM := "c7d8d7c925dbd64fd5270f7b81a56f526e6bbef0 $\
 	sudo chown cdedb:cdedb /opt/validator
 
 
-.coverage: export CDEDB_TEST=True
-.coverage: export CDEDB_TEST_DATABASE=$(TESTDATABASENAME)
-.coverage: export CDEDB_TEST_TMP_DIR=$(TESTTMPDIR)
 .coverage: $(wildcard cdedb/*.py) $(wildcard cdedb/database/*.py) \
 		$(wildcard cdedb/frontend/*.py) \
 		$(wildcard cdedb/backend/*.py) $(wildcard tests/*.py)
-	$(MAKE) prepare-check
-	$(COVERAGE) run -m tests.main ""
+	$(COVERAGE) run -m tests.check
 
 coverage: .coverage
 	$(COVERAGE) report --include 'cdedb/*' --show-missing
