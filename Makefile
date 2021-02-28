@@ -41,6 +41,7 @@ TESTDATABASENAME ?= $(or ${CDEDB_TEST_DATABASE}, cdb_test)
 TESTTMPDIR ?= ${CDEDB_TEST_TMP_DIR}
 TESTSTORAGEPATH ?= $(TESTTMPDIR)/storage
 TESTLOGPATH ?= $(TESTTMPDIR)/logs
+THREADID ?= 1
 I18NDIR ?= ./i18n
 
 doc:
@@ -198,13 +199,11 @@ ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
 endif
 ifeq ($(wildcard /CONTAINER),/CONTAINER)
 	# We need to use psql directly as DROP DATABASE and variables are not supported by our helper
-	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-users.sql
 	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb
 	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-db.sql \
 		-v cdb_database_name=${TESTDATABASENAME}
 else
 	sudo systemctl stop pgbouncer
-	$(PSQL) -f cdedb/database/cdedb-users.sql
 	$(PSQL) -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb
 	$(PSQL) -f cdedb/database/cdedb-db.sql -v cdb_database_name=${TESTDATABASENAME}
 	sudo systemctl start pgbouncer
@@ -267,14 +266,14 @@ check-parallel:
 		frontend_cron
 
 check:
-	$(PYTHONBIN) -m tests.check $(or $(TESTPATTERNS), )
+	$(PYTHONBIN) -m tests.check --thread_id $(THREADID) $(or $(TESTPATTERNS), )
 
 xss-check:
-	$(PYTHONBIN) -m tests.check --xss-check
+	$(PYTHONBIN) -m tests.check --thread_id $(THREADID) --xss-check
 
 dump-html: export SCRAP_ENCOUNTERED_PAGES=1
 dump-html:
-	$(PYTHONBIN) -m tests.check test_frontend
+	$(PYTHONBIN) -m tests.check --thread_id $(THREADID) test_frontend
 
 
 validate-html: /opt/validator/vnu-runtime-image/bin/vnu
@@ -302,7 +301,7 @@ VALIDATORCHECKSUM := "c7d8d7c925dbd64fd5270f7b81a56f526e6bbef0 $\
 .coverage: $(wildcard cdedb/*.py) $(wildcard cdedb/database/*.py) \
 		$(wildcard cdedb/frontend/*.py) \
 		$(wildcard cdedb/backend/*.py) $(wildcard tests/*.py)
-	$(COVERAGE) run -m tests.check
+	$(COVERAGE) run -m tests.check --thread_id $(THREADID)
 
 coverage: .coverage
 	$(COVERAGE) report --include 'cdedb/*' --show-missing
