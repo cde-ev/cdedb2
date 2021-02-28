@@ -5,7 +5,7 @@ import pathlib
 import sys
 import unittest
 
-from tests.common import MyTextTestResult, MyTextTestRunner, check_test_setup
+from tests.helpers import MyTextTestResult, MyTextTestRunner, check_test_setup
 
 # the directory containing the cdedb and tests modules
 root = pathlib.Path(__file__).absolute().parent.parent
