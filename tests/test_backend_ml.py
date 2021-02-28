@@ -50,12 +50,14 @@ class TestMlBackend(BackendTest):
                                    target_persona_id=USER_DICT['hades']['id'])
         self.assertEqual("Target User is not accessible.", str(e.exception))
 
-        with self.assertRaises(ValueError) as e:
-            self.ml.merge_accounts(self.key,
-                                   source_persona_id=janis_id,
-                                   target_persona_id=berta_id)
-        self.assertEqual("Both users are related to the same mailinglists: Witz des Tages",
-                         str(e.exception))
+        code = self.ml.merge_accounts(self.key,
+                                      source_persona_id=janis_id,
+                                      target_persona_id=berta_id)
+        self.assertEqual(code, 0)
+        # TODO it seems like I cannot check this
+        # self.assertIn("Both users are related to the same mailinglists: Witz des Tages",
+        #               self.key.notifications)
+        assert self.core.get_persona(self.key, janis_id)["is_archived"] is False
 
         # remove the blocking subscription of berta
         self.ml._remove_subscription(self.key, {'mailinglist_id': 3, 'persona_id': 2})
