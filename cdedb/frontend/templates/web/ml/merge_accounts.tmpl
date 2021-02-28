@@ -31,7 +31,7 @@
         {% endtrans %}
     </p>
 
-    <form action="{{ cdedblink('ml/merge_accounts') }}" method="POST">
+    <form action="{{ cdedblink('ml/merge_accounts') }}" id="merge-accounts" method="POST">
         {{ util.anti_csrf_token('ml/merge_accounts') }}
         {{ util.form_input_text(name="source_persona_id", label=gettext("Source User"),
                                 placeholder="DB-XXXX-X", anid="input-source-persona") }}

@@ -150,6 +150,67 @@ class TestMlFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Zelda Zeruda-Hime")
 
+    @as_users("nina")
+    def test_merge_accounts(self, user: CdEDBObject) -> None:
+        self.traverse({'description': "Mailinglisten"},
+                      {'description': "Accounts verschmelzen"})
+
+        berta_id = USER_DICT['berta']['DB-ID']
+        janis_id = USER_DICT['janis']['DB-ID']
+
+        # try some failing cases
+        f = self.response.forms['merge-accounts']
+        f['source_persona_id'] = USER_DICT['rowena']['DB-ID']
+        f['target_persona_id'] = berta_id
+        self.submit(f, check_notification=False)
+        msg = "Der Quellnutzer muss ein reiner Mailinglistennutzer und darf kein Admin sein."
+        self.assertValidationError('source_persona_id', msg)
+
+        f = self.response.forms['merge-accounts']
+        f['source_persona_id'] = USER_DICT['nina']['DB-ID']
+        f['target_persona_id'] = berta_id
+        self.submit(f, check_notification=False)
+        msg = "Der Quellnutzer muss ein reiner Mailinglistennutzer und darf kein Admin sein."
+        self.assertValidationError('source_persona_id', msg)
+
+        f = self.response.forms['merge-accounts']
+        f['source_persona_id'] = janis_id
+        f['target_persona_id'] = "DB-100000-4"
+        self.submit(f, check_notification=False)
+        msg = "Dieser Benutzer existiert nicht oder ist archiviert."
+        self.assertValidationError('target_persona_id', msg)
+
+        f = self.response.forms['merge-accounts']
+        f['source_persona_id'] = janis_id
+        f['target_persona_id'] = USER_DICT['hades']['DB-ID']
+        self.submit(f, check_notification=False)
+        msg = "Dieser Benutzer existiert nicht oder ist archiviert."
+        self.assertValidationError('target_persona_id', msg)
+
+        # The next case is possible in principle, but has a blocking mailinglist ...
+        f = self.response.forms['merge-accounts']
+        f['source_persona_id'] = janis_id
+        f['target_persona_id'] = berta_id
+        self.submit(f, check_notification=False)
+        msg = "Beide Benutzer haben einen Bezug zu gleichen Mailinglisten: Witz des Tages"
+        self.assertPresence(msg, div='notifications')
+
+        # ... so we resolve the blocking ...
+        self.traverse({'description': 'Mailinglisten'},
+                      {'description': 'Witz des Tages'},
+                      {'description': 'Erweiterte Verwaltung'})
+        self.assertPresence("Beispiel", div='unsubscriber-list')
+        f = self.response.forms['resetunsubscriberform2']
+        self.submit(f)
+
+        # ... and finally merge the two.
+        self.traverse({'description': "Mailinglisten"},
+                      {'description': "Accounts verschmelzen"})
+        f = self.response.forms['merge-accounts']
+        f['source_persona_id'] = janis_id
+        f['target_persona_id'] = berta_id
+        self.submit(f)
+
     @as_users("anton")
     def test_ml_admin_views(self, user: CdEDBObject) -> None:
         self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, '')
