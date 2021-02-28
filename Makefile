@@ -19,10 +19,9 @@ help:
 	@echo "                 get the @storage decorator)"
 	@echo "lint -- run linters (mainly pylint)"
 	@echo "check -- run test suite"
-	@echo "         (TESTPATTERN specifies files, e.g. 'test_common.py')"
-	@echo "single-check -- run some tests from the test suite"
-	@echo "                (PATTERNS specifies globs to match against the testnames like"
-	@echo "                tests.test_frontend_event.TestEventFrontend.test_create_event)"
+	@echo "         (TESTPATTERNS specifies globs to match against the testnames like '404 500' or "
+	@echo "         tests.test_frontend_event.TestEventFrontend.test_create_event."
+	@echo "         If TESTPATTERNS is empty, run full test suite)"
 	@echo "coverage -- run coverage to determine test suite coverage"
 
 # Binaries
@@ -271,14 +270,7 @@ check: export CDEDB_TEST_DATABASE=$(TESTDATABASENAME)
 check: export CDEDB_TEST_TMP_DIR=$(TESTTMPDIR)
 check:
 	$(MAKE) prepare-check
-	$(PYTHONBIN) -m tests.main "${TESTPATTERN}"
-
-single-check: export CDEDB_TEST=True
-single-check: export CDEDB_TEST_DATABASE=$(TESTDATABASENAME)
-single-check: export CDEDB_TEST_TMP_DIR=$(TESTTMPDIR)
-single-check:
-	$(MAKE) prepare-check
-	$(PYTHONBIN) -m tests.singular "${PATTERNS}"
+	$(PYTHONBIN) -m tests.main "${TESTPATTERNS}"
 
 xss-check: export CDEDB_TEST=True
 xss-check: export CDEDB_TEST_DATABASE=$(TESTDATABASENAME)

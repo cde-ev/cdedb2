@@ -1,21 +1,30 @@
 #!/usr/bin/env python3
 
+import os
+import pathlib
 import sys
 import unittest
 
 from tests.common import MyTextTestResult, MyTextTestRunner, check_test_setup
 
+# the directory containing the cdedb and tests modules
+root = pathlib.Path(__file__).absolute().parent.parent
+
 if __name__ == "__main__":
     check_test_setup()
-    loader = unittest.TestLoader()
+
+    patterns = sys.argv[1].split()
+    if not patterns:
+        # when no/empty pattern given, run full suite
+        patterns = ["*",]
+
+    unittest.defaultTestLoader.testNamePatterns = [
+        pattern if "*" in pattern else f"*{pattern}*" for pattern in patterns]
+    all_tests = unittest.defaultTestLoader.discover('tests', top_level_dir=str(root))
+
     unittest.installHandler()
     testRunner = MyTextTestRunner(
         verbosity=2, resultclass=MyTextTestResult, descriptions=False)
-    suite = unittest.TestSuite()
-    if any(sys.argv[1:]):
-        for arg in sys.argv[1:]:
-            suite.addTests(loader.discover('./tests/', pattern='*{}*.py'.format(arg)))
-    else:
-        suite.addTests(loader.discover('./tests/', pattern='test*.py'))
+    # TODO: differentiate verbosity between auto-parallel run and manual run
 
-    sys.exit(0 if testRunner.run(suite).wasSuccessful() else 1)
+    sys.exit(0 if testRunner.run(all_tests).wasSuccessful() else 1)
