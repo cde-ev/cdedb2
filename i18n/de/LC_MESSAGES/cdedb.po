@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2021-02-21 02:11+0100\n"
+"POT-Creation-Date: 2021-02-28 21:22+0100\n"
 "PO-Revision-Date: 2020-12-06 11:30+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -1458,7 +1458,7 @@ msgstr "Ablehnung kann nur exklusiv gewählt werden."
 msgid "Ballot not yet tallied."
 msgstr "Abstimmung noch nicht ausgezählt."
 
-#: cdedb/frontend/assembly.py:1594 cdedb/validation.py:3821
+#: cdedb/frontend/assembly.py:1594 cdedb/validation.py:3818
 msgid "Mustn’t be the bar shortname."
 msgstr "Darf nicht der Bezeichner der Ablehnungsoption sein."
 
@@ -2205,7 +2205,7 @@ msgid "Only one part id allowed."
 msgstr "Lediglich die Id eines Teils ist zulässig."
 
 #: cdedb/frontend/event.py:465 cdedb/validation.py:584 cdedb/validation.py:735
-#: cdedb/validation.py:839 cdedb/validation.py:3535 cdedb/validation.py:4186
+#: cdedb/validation.py:839 cdedb/validation.py:3532 cdedb/validation.py:4183
 msgid "Must not be empty."
 msgstr "Darf nicht leer sein."
 
@@ -2240,7 +2240,7 @@ msgstr "Teilnehmermailingliste erstellt."
 msgid "Registrations exist, no deletion."
 msgstr "Anmeldungen vorhanden, keine Löschung möglich."
 
-#: cdedb/frontend/event.py:640 cdedb/validation.py:2255
+#: cdedb/frontend/event.py:640 cdedb/validation.py:2252
 msgid "Must be later than begin."
 msgstr "Muss später als Beginn sein."
 
@@ -2253,7 +2253,7 @@ msgstr "Unpassendes Datenfeld für die Warteliste."
 msgid "Registrations exist, no creation."
 msgstr "Anmeldungen vorhanden, kein Erstellen möglich."
 
-#: cdedb/frontend/event.py:738 cdedb/validation.py:2317
+#: cdedb/frontend/event.py:738 cdedb/validation.py:2314
 msgid "Must be less or equal than total Course Choices."
 msgstr "Muss kleiner oder gleich der Gesamtzahl von Kurswahlen sein."
 
@@ -2261,7 +2261,7 @@ msgstr "Muss kleiner oder gleich der Gesamtzahl von Kurswahlen sein."
 msgid "Fee Modifier linked to non-fitting field."
 msgstr "Unpassendes Datenfeld für Beitragsmodifikator."
 
-#: cdedb/frontend/event.py:871 cdedb/validation.py:2202
+#: cdedb/frontend/event.py:871 cdedb/validation.py:2199
 msgid ""
 "Must not have multiple fee modifiers linked to the same field in one event "
 "part."
@@ -2592,11 +2592,11 @@ msgstr "Fragebogen nicht aktiviert."
 msgid "Questionnaire is not enabled yet."
 msgstr "Der Fragebogen ist noch nicht für die Teilnehmer freigeschaltet."
 
-#: cdedb/frontend/event.py:3768 cdedb/validation.py:2913
+#: cdedb/frontend/event.py:3768 cdedb/validation.py:2910
 msgid "Must not duplicate field."
 msgstr "Felder dürfen nicht doppelt auftreten."
 
-#: cdedb/frontend/event.py:3775 cdedb/validation.py:4204
+#: cdedb/frontend/event.py:3775 cdedb/validation.py:4201
 msgid "Invalid field."
 msgstr "Unzulässiges Feld."
 
@@ -2605,7 +2605,7 @@ msgid "Fee modifier field may only be used in registration questionnaire."
 msgstr ""
 "Beitragsmodifikator-Feld kann nur im Anmeldungsfragebogen verwendet werden."
 
-#: cdedb/frontend/event.py:3791 cdedb/validation.py:2906
+#: cdedb/frontend/event.py:3791 cdedb/validation.py:2903
 msgid "Registration questionnaire rows may not be readonly."
 msgstr "Anmeldungs-Fragebogen darf nicht schreibgeschützt sein."
 
@@ -6639,7 +6639,7 @@ msgstr "Kommentar"
 #: cdedb/frontend/templates/web/cde/money_transfers.tmpl:29
 #: cdedb/frontend/templates/web/event/registration_query.tmpl:41
 #: cdedb/frontend/templates/web/generic.tmpl:109
-#: cdedb/frontend/templates/web/generic.tmpl:180
+#: cdedb/frontend/templates/web/generic.tmpl:180 cdedb/i18n_additional.py:372
 msgid "ID"
 msgstr "ID"
 
@@ -14057,6 +14057,756 @@ msgstr "Linksammlung Mitgliederbereich"
 msgid "Discard"
 msgstr "Verwerfen"
 
+msgid "CountryCodes.AF"
+msgstr "Afghanistan"
+
+msgid "CountryCodes.EG"
+msgstr "Ägypten"
+
+msgid "CountryCodes.AX"
+msgstr "Ålandinseln"
+
+msgid "CountryCodes.AL"
+msgstr "Albanien"
+
+msgid "CountryCodes.DZ"
+msgstr "Algerien"
+
+msgid "CountryCodes.AS"
+msgstr "Amerikanisch-Samoa"
+
+msgid "CountryCodes.VI"
+msgstr "Amerikanische Jungferninseln"
+
+msgid "CountryCodes.UM"
+msgstr "Amerikanische Überseeinseln"
+
+msgid "CountryCodes.AD"
+msgstr "Andorra"
+
+msgid "CountryCodes.AO"
+msgstr "Angola"
+
+msgid "CountryCodes.AI"
+msgstr "Anguilla"
+
+msgid "CountryCodes.AQ"
+msgstr "Antarktis"
+
+msgid "CountryCodes.AG"
+msgstr "Antigua und Barbuda"
+
+msgid "CountryCodes.GQ"
+msgstr "Äquatorialguinea"
+
+msgid "CountryCodes.AR"
+msgstr "Argentinien"
+
+msgid "CountryCodes.AM"
+msgstr "Armenien"
+
+msgid "CountryCodes.AW"
+msgstr "Aruba"
+
+msgid "CountryCodes.AZ"
+msgstr "Aserbaidschan"
+
+msgid "CountryCodes.ET"
+msgstr "Äthiopien"
+
+msgid "CountryCodes.AU"
+msgstr "Australien"
+
+msgid "CountryCodes.BS"
+msgstr "Bahamas"
+
+msgid "CountryCodes.BH"
+msgstr "Bahrain"
+
+msgid "CountryCodes.BD"
+msgstr "Bangladesch"
+
+msgid "CountryCodes.BB"
+msgstr "Barbados"
+
+msgid "CountryCodes.BY"
+msgstr "Belarus"
+
+msgid "CountryCodes.BE"
+msgstr "Belgien"
+
+msgid "CountryCodes.BZ"
+msgstr "Belize"
+
+msgid "CountryCodes.BJ"
+msgstr "Benin"
+
+msgid "CountryCodes.BM"
+msgstr "Bermuda"
+
+msgid "CountryCodes.BT"
+msgstr "Bhutan"
+
+msgid "CountryCodes.BO"
+msgstr "Bolivien"
+
+msgid "CountryCodes.BQ"
+msgstr "Bonaire, Sint Eustatius und Saba"
+
+msgid "CountryCodes.BA"
+msgstr "Bosnien und Herzegowina"
+
+msgid "CountryCodes.BW"
+msgstr "Botsuana"
+
+msgid "CountryCodes.BV"
+msgstr "Bouvetinsel"
+
+msgid "CountryCodes.BR"
+msgstr "Brasilien"
+
+msgid "CountryCodes.VG"
+msgstr "Britische Jungferninseln"
+
+msgid "CountryCodes.IO"
+msgstr "Britisches Territorium im Indischen Ozean"
+
+msgid "CountryCodes.BN"
+msgstr "Brunei Darussalam"
+
+msgid "CountryCodes.BG"
+msgstr "Bulgarien"
+
+msgid "CountryCodes.BF"
+msgstr "Burkina Faso"
+
+msgid "CountryCodes.BI"
+msgstr "Burundi"
+
+msgid "CountryCodes.CV"
+msgstr "Cabo Verde"
+
+msgid "CountryCodes.CL"
+msgstr "Chile"
+
+msgid "CountryCodes.CN"
+msgstr "China"
+
+msgid "CountryCodes.CK"
+msgstr "Cookinseln"
+
+msgid "CountryCodes.CR"
+msgstr "Costa Rica"
+
+msgid "CountryCodes.CI"
+msgstr "Côte d’Ivoire"
+
+msgid "CountryCodes.CW"
+msgstr "Curaçao"
+
+msgid "CountryCodes.DK"
+msgstr "Dänemark"
+
+msgid "CountryCodes.DE"
+msgstr "Deutschland"
+
+msgid "CountryCodes.DM"
+msgstr "Dominica"
+
+msgid "CountryCodes.DO"
+msgstr "Dominikanische Republik"
+
+msgid "CountryCodes.DJ"
+msgstr "Dschibuti"
+
+msgid "CountryCodes.EC"
+msgstr "Ecuador"
+
+msgid "CountryCodes.SV"
+msgstr "El Salvador"
+
+msgid "CountryCodes.ER"
+msgstr "Eritrea"
+
+msgid "CountryCodes.EE"
+msgstr "Estland"
+
+msgid "CountryCodes.SZ"
+msgstr "Eswatini"
+
+msgid "CountryCodes.FK"
+msgstr "Falklandinseln"
+
+msgid "CountryCodes.FO"
+msgstr "Färöer"
+
+msgid "CountryCodes.FJ"
+msgstr "Fidschi"
+
+msgid "CountryCodes.FI"
+msgstr "Finnland"
+
+msgid "CountryCodes.FR"
+msgstr "Frankreich"
+
+msgid "CountryCodes.GF"
+msgstr "Französisch-Guayana"
+
+msgid "CountryCodes.PF"
+msgstr "Französisch-Polynesien"
+
+msgid "CountryCodes.TF"
+msgstr "Französische Süd- und Antarktisgebiete"
+
+msgid "CountryCodes.GA"
+msgstr "Gabun"
+
+msgid "CountryCodes.GM"
+msgstr "Gambia"
+
+msgid "CountryCodes.GE"
+msgstr "Georgien"
+
+msgid "CountryCodes.GH"
+msgstr "Ghana"
+
+msgid "CountryCodes.GI"
+msgstr "Gibraltar"
+
+msgid "CountryCodes.GD"
+msgstr "Grenada"
+
+msgid "CountryCodes.GR"
+msgstr "Griechenland"
+
+msgid "CountryCodes.GL"
+msgstr "Grönland"
+
+msgid "CountryCodes.GP"
+msgstr "Guadeloupe"
+
+msgid "CountryCodes.GU"
+msgstr "Guam"
+
+msgid "CountryCodes.GT"
+msgstr "Guatemala"
+
+msgid "CountryCodes.GG"
+msgstr "Guernsey"
+
+msgid "CountryCodes.GN"
+msgstr "Guinea"
+
+msgid "CountryCodes.GW"
+msgstr "Guinea-Bissau"
+
+msgid "CountryCodes.GY"
+msgstr "Guyana"
+
+msgid "CountryCodes.HT"
+msgstr "Haiti"
+
+msgid "CountryCodes.HM"
+msgstr "Heard und McDonaldinseln"
+
+msgid "CountryCodes.HN"
+msgstr "Honduras"
+
+msgid "CountryCodes.IN"
+msgstr "Indien"
+
+msgid "CountryCodes.ID"
+msgstr "Indonesien"
+
+msgid "CountryCodes.IQ"
+msgstr "Irak"
+
+msgid "CountryCodes.IR"
+msgstr "Iran"
+
+msgid "CountryCodes.IE"
+msgstr "Irland"
+
+msgid "CountryCodes.IS"
+msgstr "Island"
+
+msgid "CountryCodes.IM"
+msgstr "Isle of Man"
+
+msgid "CountryCodes.IL"
+msgstr "Israel"
+
+msgid "CountryCodes.IT"
+msgstr "Italien"
+
+msgid "CountryCodes.JM"
+msgstr "Jamaika"
+
+msgid "CountryCodes.JP"
+msgstr "Japan"
+
+msgid "CountryCodes.YE"
+msgstr "Jemen"
+
+msgid "CountryCodes.JE"
+msgstr "Jersey"
+
+msgid "CountryCodes.JO"
+msgstr "Jordanien"
+
+msgid "CountryCodes.KY"
+msgstr "Kaimaninseln"
+
+msgid "CountryCodes.KH"
+msgstr "Kambodscha"
+
+msgid "CountryCodes.CM"
+msgstr "Kamerun"
+
+msgid "CountryCodes.CA"
+msgstr "Kanada"
+
+msgid "CountryCodes.KZ"
+msgstr "Kasachstan"
+
+msgid "CountryCodes.QA"
+msgstr "Katar"
+
+msgid "CountryCodes.KE"
+msgstr "Kenia"
+
+msgid "CountryCodes.KG"
+msgstr "Kirgisistan"
+
+msgid "CountryCodes.KI"
+msgstr "Kiribati"
+
+msgid "CountryCodes.CC"
+msgstr "Kokosinseln"
+
+msgid "CountryCodes.CO"
+msgstr "Kolumbien"
+
+msgid "CountryCodes.KM"
+msgstr "Komoren"
+
+msgid "CountryCodes.CG"
+msgstr "Kongo-Brazzaville"
+
+msgid "CountryCodes.CD"
+msgstr "Kongo-Kinshasa"
+
+msgid "CountryCodes.HR"
+msgstr "Kroatien"
+
+msgid "CountryCodes.CU"
+msgstr "Kuba"
+
+msgid "CountryCodes.KW"
+msgstr "Kuwait"
+
+msgid "CountryCodes.LA"
+msgstr "Laos"
+
+msgid "CountryCodes.LS"
+msgstr "Lesotho"
+
+msgid "CountryCodes.LV"
+msgstr "Lettland"
+
+msgid "CountryCodes.LB"
+msgstr "Libanon"
+
+msgid "CountryCodes.LR"
+msgstr "Liberia"
+
+msgid "CountryCodes.LY"
+msgstr "Libyen"
+
+msgid "CountryCodes.LI"
+msgstr "Liechtenstein"
+
+msgid "CountryCodes.LT"
+msgstr "Litauen"
+
+msgid "CountryCodes.LU"
+msgstr "Luxemburg"
+
+msgid "CountryCodes.MG"
+msgstr "Madagaskar"
+
+msgid "CountryCodes.MW"
+msgstr "Malawi"
+
+msgid "CountryCodes.MY"
+msgstr "Malaysia"
+
+msgid "CountryCodes.MV"
+msgstr "Malediven"
+
+msgid "CountryCodes.ML"
+msgstr "Mali"
+
+msgid "CountryCodes.MT"
+msgstr "Malta"
+
+msgid "CountryCodes.MA"
+msgstr "Marokko"
+
+msgid "CountryCodes.MH"
+msgstr "Marshallinseln"
+
+msgid "CountryCodes.MQ"
+msgstr "Martinique"
+
+msgid "CountryCodes.MR"
+msgstr "Mauretanien"
+
+msgid "CountryCodes.MU"
+msgstr "Mauritius"
+
+msgid "CountryCodes.YT"
+msgstr "Mayotte"
+
+msgid "CountryCodes.MX"
+msgstr "Mexiko"
+
+msgid "CountryCodes.FM"
+msgstr "Mikronesien"
+
+msgid "CountryCodes.MC"
+msgstr "Monaco"
+
+msgid "CountryCodes.MN"
+msgstr "Mongolei"
+
+msgid "CountryCodes.ME"
+msgstr "Montenegro"
+
+msgid "CountryCodes.MS"
+msgstr "Montserrat"
+
+msgid "CountryCodes.MZ"
+msgstr "Mosambik"
+
+msgid "CountryCodes.MM"
+msgstr "Myanmar"
+
+msgid "CountryCodes.NA"
+msgstr "Namibia"
+
+msgid "CountryCodes.NR"
+msgstr "Nauru"
+
+msgid "CountryCodes.NP"
+msgstr "Nepal"
+
+msgid "CountryCodes.NC"
+msgstr "Neukaledonien"
+
+msgid "CountryCodes.NZ"
+msgstr "Neuseeland"
+
+msgid "CountryCodes.NI"
+msgstr "Nicaragua"
+
+msgid "CountryCodes.NL"
+msgstr "Niederlande"
+
+msgid "CountryCodes.NE"
+msgstr "Niger"
+
+msgid "CountryCodes.NG"
+msgstr "Nigeria"
+
+msgid "CountryCodes.NU"
+msgstr "Niue"
+
+msgid "CountryCodes.KP"
+msgstr "Nordkorea"
+
+msgid "CountryCodes.MP"
+msgstr "Nördliche Marianen"
+
+msgid "CountryCodes.MK"
+msgstr "Nordmazedonien"
+
+msgid "CountryCodes.NF"
+msgstr "Norfolkinsel"
+
+msgid "CountryCodes.NO"
+msgstr "Norwegen"
+
+msgid "CountryCodes.OM"
+msgstr "Oman"
+
+msgid "CountryCodes.AT"
+msgstr "Österreich"
+
+msgid "CountryCodes.PK"
+msgstr "Pakistan"
+
+msgid "CountryCodes.PS"
+msgstr "Palästinensische Autonomiegebiete"
+
+msgid "CountryCodes.PW"
+msgstr "Palau"
+
+msgid "CountryCodes.PA"
+msgstr "Panama"
+
+msgid "CountryCodes.PG"
+msgstr "Papua-Neuguinea"
+
+msgid "CountryCodes.PY"
+msgstr "Paraguay"
+
+msgid "CountryCodes.PE"
+msgstr "Peru"
+
+msgid "CountryCodes.PH"
+msgstr "Philippinen"
+
+msgid "CountryCodes.PN"
+msgstr "Pitcairninseln"
+
+msgid "CountryCodes.PL"
+msgstr "Polen"
+
+msgid "CountryCodes.PT"
+msgstr "Portugal"
+
+msgid "CountryCodes.PR"
+msgstr "Puerto Rico"
+
+msgid "CountryCodes.MD"
+msgstr "Republik Moldau"
+
+msgid "CountryCodes.RE"
+msgstr "Réunion"
+
+msgid "CountryCodes.RW"
+msgstr "Ruanda"
+
+msgid "CountryCodes.RO"
+msgstr "Rumänien"
+
+msgid "CountryCodes.RU"
+msgstr "Russland"
+
+msgid "CountryCodes.SB"
+msgstr "Salomonen"
+
+msgid "CountryCodes.ZM"
+msgstr "Sambia"
+
+msgid "CountryCodes.WS"
+msgstr "Samoa"
+
+msgid "CountryCodes.SM"
+msgstr "San Marino"
+
+msgid "CountryCodes.ST"
+msgstr "São Tomé und Príncipe"
+
+msgid "CountryCodes.SA"
+msgstr "Saudi-Arabien"
+
+msgid "CountryCodes.SE"
+msgstr "Schweden"
+
+msgid "CountryCodes.CH"
+msgstr "Schweiz"
+
+msgid "CountryCodes.SN"
+msgstr "Senegal"
+
+msgid "CountryCodes.RS"
+msgstr "Serbien"
+
+msgid "CountryCodes.SC"
+msgstr "Seychellen"
+
+msgid "CountryCodes.SL"
+msgstr "Sierra Leone"
+
+msgid "CountryCodes.ZW"
+msgstr "Simbabwe"
+
+msgid "CountryCodes.SG"
+msgstr "Singapur"
+
+msgid "CountryCodes.SX"
+msgstr "Sint Maarten"
+
+msgid "CountryCodes.SK"
+msgstr "Slowakei"
+
+msgid "CountryCodes.SI"
+msgstr "Slowenien"
+
+msgid "CountryCodes.SO"
+msgstr "Somalia"
+
+msgid "CountryCodes.HK"
+msgstr "Sonderverwaltungsregion Hongkong"
+
+msgid "CountryCodes.MO"
+msgstr "Sonderverwaltungsregion Macau"
+
+msgid "CountryCodes.ES"
+msgstr "Spanien"
+
+msgid "CountryCodes.SJ"
+msgstr "Spitzbergen und Jan Mayen"
+
+msgid "CountryCodes.LK"
+msgstr "Sri Lanka"
+
+msgid "CountryCodes.BL"
+msgstr "St. Barthélemy"
+
+msgid "CountryCodes.SH"
+msgstr "St. Helena"
+
+msgid "CountryCodes.KN"
+msgstr "St. Kitts und Nevis"
+
+msgid "CountryCodes.LC"
+msgstr "St. Lucia"
+
+msgid "CountryCodes.MF"
+msgstr "St. Martin"
+
+msgid "CountryCodes.PM"
+msgstr "St. Pierre und Miquelon"
+
+msgid "CountryCodes.VC"
+msgstr "St. Vincent und die Grenadinen"
+
+msgid "CountryCodes.ZA"
+msgstr "Südafrika"
+
+msgid "CountryCodes.SD"
+msgstr "Sudan"
+
+msgid "CountryCodes.GS"
+msgstr "Südgeorgien und die Südlichen Sandwichinseln"
+
+msgid "CountryCodes.KR"
+msgstr "Südkorea"
+
+msgid "CountryCodes.SS"
+msgstr "Südsudan"
+
+msgid "CountryCodes.SR"
+msgstr "Suriname"
+
+msgid "CountryCodes.SY"
+msgstr "Syrien"
+
+msgid "CountryCodes.TJ"
+msgstr "Tadschikistan"
+
+msgid "CountryCodes.TW"
+msgstr "Taiwan"
+
+msgid "CountryCodes.TZ"
+msgstr "Tansania"
+
+msgid "CountryCodes.TH"
+msgstr "Thailand"
+
+msgid "CountryCodes.TL"
+msgstr "Timor-Leste"
+
+msgid "CountryCodes.TG"
+msgstr "Togo"
+
+msgid "CountryCodes.TK"
+msgstr "Tokelau"
+
+msgid "CountryCodes.TO"
+msgstr "Tonga"
+
+msgid "CountryCodes.TT"
+msgstr "Trinidad und Tobago"
+
+msgid "CountryCodes.TD"
+msgstr "Tschad"
+
+msgid "CountryCodes.CZ"
+msgstr "Tschechien"
+
+msgid "CountryCodes.TN"
+msgstr "Tunesien"
+
+msgid "CountryCodes.TR"
+msgstr "Türkei"
+
+msgid "CountryCodes.TM"
+msgstr "Turkmenistan"
+
+msgid "CountryCodes.TC"
+msgstr "Turks- und Caicosinseln"
+
+msgid "CountryCodes.TV"
+msgstr "Tuvalu"
+
+msgid "CountryCodes.UG"
+msgstr "Uganda"
+
+msgid "CountryCodes.UA"
+msgstr "Ukraine"
+
+msgid "CountryCodes.HU"
+msgstr "Ungarn"
+
+msgid "CountryCodes.UY"
+msgstr "Uruguay"
+
+msgid "CountryCodes.UZ"
+msgstr "Usbekistan"
+
+msgid "CountryCodes.VU"
+msgstr "Vanuatu"
+
+msgid "CountryCodes.VA"
+msgstr "Vatikanstadt"
+
+msgid "CountryCodes.VE"
+msgstr "Venezuela"
+
+msgid "CountryCodes.AE"
+msgstr "Vereinigte Arabische Emirate"
+
+msgid "CountryCodes.US"
+msgstr "Vereinigte Staaten"
+
+msgid "CountryCodes.GB"
+msgstr "Vereinigtes Königreich"
+
+msgid "CountryCodes.VN"
+msgstr "Vietnam"
+
+msgid "CountryCodes.WF"
+msgstr "Wallis und Futuna"
+
+msgid "CountryCodes.CX"
+msgstr "Weihnachtsinsel"
+
+msgid "CountryCodes.EH"
+msgstr "Westsahara"
+
+msgid "CountryCodes.CF"
+msgstr "Zentralafrikanische Republik"
+
+msgid "CountryCodes.CY"
+msgstr "Zypern"
+
+msgid "CountryCodes.HY"
+msgstr "Hyrule"
+
 #: cdedb/ml_subscription_aux.py:169 cdedb/ml_subscription_aux.py:171
 msgid "User already subscribed."
 msgstr "Der Nutzer ist bereits Abonnent."
@@ -14363,7 +15113,7 @@ msgstr "Muss eine valides Datum mit Uhrzeit sein."
 msgid "More than one digit."
 msgstr "Darf nur einstellig sein."
 
-#: cdedb/validation.py:1324 cdedb/validation.py:1755
+#: cdedb/validation.py:1324 cdedb/validation.py:1752
 msgid "Too short."
 msgstr "Zu kurz."
 
@@ -14383,260 +15133,260 @@ msgstr "Ungültiger lokaler Teil."
 msgid "Invalid german postal code."
 msgstr "Ungültige Postleitzahl."
 
-#: cdedb/validation.py:1423
+#: cdedb/validation.py:1420
 msgid "Enter actual country name in English."
 msgstr "Gib den Namen des Landes auf Englisch an."
 
-#: cdedb/validation.py:1471
+#: cdedb/validation.py:1468
 msgid "This realm is not supported for genesis."
 msgstr "Accountanfragen in diesem Bereich sind nicht möglich."
 
-#: cdedb/validation.py:1478
+#: cdedb/validation.py:1475
 msgid "Must specify realm."
 msgstr "Bereich muss angegeben werden."
 
-#: cdedb/validation.py:1542
+#: cdedb/validation.py:1539
 msgid "Not a FileStorage."
 msgstr "Muss ein FileStorage sein."
 
-#: cdedb/validation.py:1545
+#: cdedb/validation.py:1542
 msgid "Empty FileStorage."
 msgstr "Datei darf nicht leer sein."
 
-#: cdedb/validation.py:1566
+#: cdedb/validation.py:1563
 msgid "Only text/csv allowed."
 msgstr "Nur text/csv erlaubt."
 
-#: cdedb/validation.py:1591
+#: cdedb/validation.py:1588
 msgid "Too small."
 msgstr "Zu klein."
 
-#: cdedb/validation.py:1593
+#: cdedb/validation.py:1590
 msgid "Too big."
 msgstr "Zu groß."
 
-#: cdedb/validation.py:1598
+#: cdedb/validation.py:1595
 msgid "Only jpg and png allowed."
 msgstr "Nur jpg und png erlaubt."
 
-#: cdedb/validation.py:1605
+#: cdedb/validation.py:1602
 msgid "Not square enough."
 msgstr "Muss quadratischer sein."
 
-#: cdedb/validation.py:1607
+#: cdedb/validation.py:1604
 msgid "Resolution too small."
 msgstr "Auflösung zu klein."
 
-#: cdedb/validation.py:1634
+#: cdedb/validation.py:1631
 msgid "Filesize too large."
 msgstr "Datei zu groß."
 
-#: cdedb/validation.py:1637
+#: cdedb/validation.py:1634
 msgid "Only pdf allowed."
 msgstr "Nur pdf erlaubt."
 
-#: cdedb/validation.py:1657
+#: cdedb/validation.py:1654
 msgid "Must contain exactly two elements."
 msgstr "Muss genau zwei Elemente enthalten."
 
-#: cdedb/validation.py:1762
+#: cdedb/validation.py:1759
 msgid "Must start with country code."
 msgstr "Muss mit einem Ländercode beginnen."
 
-#: cdedb/validation.py:1766
+#: cdedb/validation.py:1763
 msgid "Must have digits for checksum."
 msgstr "Prüfziffer muss aus Ziffern bestehen."
 
-#: cdedb/validation.py:1770
+#: cdedb/validation.py:1767
 msgid "Invalid character in IBAN."
 msgstr "Ungültiges Zeichen in der IBAN."
 
-#: cdedb/validation.py:1772
+#: cdedb/validation.py:1769
 msgid "Unknown or unsupported Country Code."
 msgstr "Unbekannter oder nicht unterstützter Ländercode."
 
-#: cdedb/validation.py:1777
+#: cdedb/validation.py:1774
 #, python-format
 msgid ""
 "Invalid length %(len)s for Country Code %(code)s. Expexted length %(exp)s."
 msgstr ""
 "Ungültige Länge  %(len)s für Ländercode %(code)s. Erwartete Länge: %(exp)s."
 
-#: cdedb/validation.py:1786
+#: cdedb/validation.py:1783
 msgid "Invalid checksum."
 msgstr "Ungültige Checksumme."
 
-#: cdedb/validation.py:1821
+#: cdedb/validation.py:1818
 msgid "Modification of lastschrift transactions not supported."
 msgstr "Veränderungen von Lastschrifttransaktionen sind nicht möglich."
 
-#: cdedb/validation.py:1879 cdedb/validation.py:1936 cdedb/validation.py:1947
-#: cdedb/validation.py:1953
+#: cdedb/validation.py:1876 cdedb/validation.py:1933 cdedb/validation.py:1944
+#: cdedb/validation.py:1950
 msgid "Too long."
 msgstr "Zu lang."
 
-#: cdedb/validation.py:1882
+#: cdedb/validation.py:1879
 msgid "Invalid constant."
 msgstr "Unzulässiger Wert für Konstante."
 
-#: cdedb/validation.py:1939
+#: cdedb/validation.py:1936
 msgid "Unsupported constant."
 msgstr "Nicht unterstützter Wert für Konstante."
 
-#: cdedb/validation.py:1941
+#: cdedb/validation.py:1938
 msgid "Exactly two lines required."
 msgstr "Genau zwei Zeilen nötig."
 
-#: cdedb/validation.py:1975
+#: cdedb/validation.py:1972
 #, python-format
 msgid "Forbidden characters (%(chars)s)."
 msgstr "Verbotene Zeichen (%(chars)s)."
 
-#: cdedb/validation.py:2126
+#: cdedb/validation.py:2123
 msgid "Must be before or equal to hard limit."
 msgstr "Muss vor dem tatsächlichen Anmeldeschluss liegen."
 
-#: cdedb/validation.py:2133
+#: cdedb/validation.py:2130
 msgid "Must be before hard and soft limit."
 msgstr "Muss vor dem offiziellen und dem tatsächlichen Anmeldeschluss liegen."
 
-#: cdedb/validation.py:2378
+#: cdedb/validation.py:2375
 #, python-format
 msgid "Invalid entry in line %(line)s."
 msgstr "Ungültiger Eintrag in Zeile %(line)s."
 
-#: cdedb/validation.py:2392
+#: cdedb/validation.py:2389
 msgid "Duplicate value."
 msgstr "Doppelter Eintrag."
 
-#: cdedb/validation.py:2536
+#: cdedb/validation.py:2533
 msgid "Must be a superset of active segments."
 msgstr "Muss alle aktiven Segmente enthalten."
 
-#: cdedb/validation.py:2735
+#: cdedb/validation.py:2732
 msgid "Entry not in definition list."
 msgstr "Eintrag nicht in Referenzliste."
 
-#: cdedb/validation.py:2880
+#: cdedb/validation.py:2877
 msgid "Incorrect kind for this part of the questionnaire"
 msgstr "Ungültige Art für diesen Teil des Fragebogens."
 
-#: cdedb/validation.py:2888
+#: cdedb/validation.py:2885
 msgid "Referenced field does not exist."
 msgstr "Verbundenes Feld existiert nicht."
 
-#: cdedb/validation.py:2902
+#: cdedb/validation.py:2899
 msgid "Inappropriate questionnaire usage for fee modifier field."
 msgstr "Unpassende Art von Fragebogen für Beitragsmodifikator-Feld."
 
-#: cdedb/validation.py:2939
+#: cdedb/validation.py:2936
 msgid "Invalid UTF-8 sequence."
 msgstr "Ungültige UTF-8-Sequenz."
 
-#: cdedb/validation.py:2944
+#: cdedb/validation.py:2941
 #, python-format
 msgid "Invalid JSON syntax (line %(line)s, col %(col)s)."
 msgstr "Ungültige JSON-Syntax (Zeile %(line)s, Spalte %(col)s)."
 
-#: cdedb/validation.py:2976
+#: cdedb/validation.py:2973
 msgid "Only full exports are supported."
 msgstr "Nur vollständige Exporte sind unterstützt."
 
-#: cdedb/validation.py:3008 cdedb/validation.py:3145
+#: cdedb/validation.py:3005 cdedb/validation.py:3142
 msgid "Schema version mismatch."
 msgstr "Schemaversion weicht ab."
 
-#: cdedb/validation.py:3082
+#: cdedb/validation.py:3079
 msgid "Only a single event is supported."
 msgstr "Nur eine einzelne Veranstaltung unterstützt."
 
-#: cdedb/validation.py:3085
+#: cdedb/validation.py:3082
 msgid "Wrong event specified."
 msgstr "Falsche Veranstaltung referenziert."
 
-#: cdedb/validation.py:3091
+#: cdedb/validation.py:3088
 msgid "Mismatched event."
 msgstr "Falsche Veranstaltung referenziert."
 
-#: cdedb/validation.py:3123
+#: cdedb/validation.py:3120
 msgid "Only partial exports are supported."
 msgstr "Nur partielle Exporte sind unterstützt."
 
-#: cdedb/validation.py:3541
+#: cdedb/validation.py:3538
 msgid "Must specify mailinglist type to change domain."
 msgstr "Mailinglistentyp muss angegeben werden um Domain zu ändern."
 
-#: cdedb/validation.py:3546
+#: cdedb/validation.py:3543
 msgid "Invalid domain for this mailinglist type."
 msgstr "Ungültige Domain für diesen Mailinglistentyp."
 
-#: cdedb/validation.py:3716
+#: cdedb/validation.py:3713
 msgid "Mustn’t be in the past."
 msgstr "Darf nicht in der Vergangenheit liegen."
 
-#: cdedb/validation.py:3719
+#: cdedb/validation.py:3716
 msgid "Mustn’t be before start of voting period."
 msgstr "Darf nicht vor Abstimmungsbeginn liegen."
 
-#: cdedb/validation.py:3723
+#: cdedb/validation.py:3720
 msgid "Mustn’t be before end of voting period."
 msgstr "Darf nicht vor Abstimmungsende liegen."
 
-#: cdedb/validation.py:3745
+#: cdedb/validation.py:3742
 msgid "Must not specify both absolute and relative quorum."
 msgstr "Darf nicht gleichzeitig absolutes und relatives Quorum angeben."
 
-#: cdedb/validation.py:3755
+#: cdedb/validation.py:3752
 msgid "Relative quorum must be between 0 and 100."
 msgstr "Relatives Quorum muss zwischen 0 und 100 liegen."
 
-#: cdedb/validation.py:3758
+#: cdedb/validation.py:3755
 msgid "Must be specified if quorum is given."
 msgstr "Muss angegeben werden falls das Quorum benutzt wird."
 
-#: cdedb/validation.py:3761
+#: cdedb/validation.py:3758
 msgid "Must specify a quorum if vote extension end is given."
 msgstr ""
 "Ein Quorum muss angegeben werden, wenn eine Verlängerung angegeben ist."
 
-#: cdedb/validation.py:3858
+#: cdedb/validation.py:3855
 msgid "Only one host allowed."
 msgstr "Nur eine Verknüpfung erlaubt."
 
-#: cdedb/validation.py:3860
+#: cdedb/validation.py:3857
 msgid "No host given."
 msgstr "Keine Zugehörigkeit angegeben."
 
-#: cdedb/validation.py:3905
+#: cdedb/validation.py:3902
 msgid "Must specify ballot in order to validate vote."
 msgstr "Um eine Stimme zu validieren muss eine Abstimmung angegeben werden."
 
-#: cdedb/validation.py:3913
+#: cdedb/validation.py:3910
 msgid "Superfluous candidates."
 msgstr "Unerwartete Kandidaten gefunden."
 
-#: cdedb/validation.py:3915
+#: cdedb/validation.py:3912
 msgid "Missing candidates."
 msgstr "Nicht alle Kandidaten vorhanden."
 
-#: cdedb/validation.py:3923
+#: cdedb/validation.py:3920
 msgid "Too many levels."
 msgstr "Zu viele Abstufungen."
 
-#: cdedb/validation.py:3925
+#: cdedb/validation.py:3922
 msgid "Too many votes."
 msgstr "Zu viele Optionen ausgewählt."
 
-#: cdedb/validation.py:3929
+#: cdedb/validation.py:3926
 msgid "Misplaced bar."
 msgstr "Ablehnungsoption an ungültiger Stelle."
 
-#: cdedb/validation.py:3948
+#: cdedb/validation.py:3945
 #, python-format
 msgid "Invalid  regular expression (position %(pos)s)."
 msgstr "Ungültiger regulärer Ausdruck (Position %(pos)s)."
 
-#: cdedb/validation.py:3960
+#: cdedb/validation.py:3957
 #, python-format
 msgid ""
 "Must not contain any forbidden characters (which are %(forbidden_chars)s "
@@ -14645,46 +15395,46 @@ msgstr ""
 "Darf keine verbotenen Zeichen enthalten (diese sind %(forbidden_chars)s) "
 "wohingegen .^$ erlaubt sind."
 
-#: cdedb/validation.py:4027
+#: cdedb/validation.py:4024
 msgid "Invalid operator for this field."
 msgstr "Unzulässiger Operator für dieses Feld."
 
-#: cdedb/validation.py:4073
+#: cdedb/validation.py:4070
 msgid "Two endpoints required."
 msgstr "Zwei Werte für Intervall benötigt."
 
-#: cdedb/validation.py:4107
+#: cdedb/validation.py:4104
 msgid "Selection may not be empty."
 msgstr "Es muss etwas ausgewählt werden."
 
-#: cdedb/validation.py:4154
+#: cdedb/validation.py:4151
 msgid "Not a Query."
 msgstr "Muss eine Query sein."
 
-#: cdedb/validation.py:4163
+#: cdedb/validation.py:4160
 msgid "Must start with “qview_”."
 msgstr "Muss mit „qview_“ beginnen."
 
-#: cdedb/validation.py:4193
+#: cdedb/validation.py:4190
 #, python-format
 msgid "Invalid constraint number %(index)s"
 msgstr "Ungültige Einschränkung bei Index %(index)s."
 
-#: cdedb/validation.py:4217
+#: cdedb/validation.py:4214
 msgid "Invalid operator."
 msgstr "Unzulässiger Operator."
 
-#: cdedb/validation.py:4257
+#: cdedb/validation.py:4254
 #, python-format
 msgid "Invalid ordering condition number %(index)s"
 msgstr "Ungültige Ordnungsrelation bei Index %(index)s."
 
-#: cdedb/validation.py:4287 cdedb/validation.py:4349
+#: cdedb/validation.py:4284 cdedb/validation.py:4346
 #, python-format
 msgid "Invalid input for the enumeration %(enum)s"
 msgstr "Ungültige Eingabe für Enumeration %(enum)s."
 
-#: cdedb/validation.py:4323 cdedb/validation.py:4382
+#: cdedb/validation.py:4320 cdedb/validation.py:4379
 #, python-format
 msgid "Must be a %(type)s."
 msgstr "Muss vom Typ %(type)s sein."
