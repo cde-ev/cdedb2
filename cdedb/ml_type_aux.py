@@ -250,17 +250,17 @@ class GeneralMailinglist:
 
     @classmethod
     def get_subscription_policy(cls, rs: RequestState, bc: BackendContainer,
-                               mailinglist: CdEDBObject, persona_id: int,
-                               ) -> MIPol:
+                                mailinglist: CdEDBObject, persona_id: int,
+                                ) -> MIPol:
         """Singularized wrapper for `get_subscription_policies`."""
         return cls.get_subscription_policies(
             rs, bc, mailinglist, (persona_id,))[persona_id]
 
     @classmethod
     def get_subscription_policies(cls, rs: RequestState, bc: BackendContainer,
-                                 mailinglist: CdEDBObject,
-                                 persona_ids: Collection[int]
-                                 ) -> MIPolMap:
+                                  mailinglist: CdEDBObject,
+                                  persona_ids: Collection[int]
+                                  ) -> MIPolMap:
         """Determine the MIPol of the user or a persona with a mailinglist.
 
         Instead of overriding this, you can set the `role_map` attribute,
@@ -396,9 +396,9 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
 
     @classmethod
     def get_subscription_policies(cls, rs: RequestState, bc: BackendContainer,
-                                 mailinglist: CdEDBObject,
-                                 persona_ids: Collection[int],
-                                 ) -> MIPolMap:
+                                  mailinglist: CdEDBObject,
+                                  persona_ids: Collection[int],
+                                  ) -> MIPolMap:
         """Determine the MIPol of the user or a persona with a mailinglist.
 
         For the `EventOrgaMailinglist` this basically means opt-in for all
@@ -462,9 +462,9 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
 
     @classmethod
     def get_subscription_policies(cls, rs: RequestState, bc: BackendContainer,
-                                 mailinglist: CdEDBObject,
-                                 persona_ids: Collection[int],
-                                 ) -> MIPolMap:
+                                  mailinglist: CdEDBObject,
+                                  persona_ids: Collection[int],
+                                  ) -> MIPolMap:
         """Determine the MIPol of the user or a persona with a mailinglist.
 
         For the `EventOrgaMailinglist` this means opt-out for orgas only.
@@ -521,9 +521,9 @@ class AssemblyAssociatedMailinglist(AssemblyMailinglist):
 
     @classmethod
     def get_subscription_policies(cls, rs: RequestState, bc: BackendContainer,
-                                 mailinglist: CdEDBObject,
-                                 persona_ids: Collection[int],
-                                 ) -> MIPolMap:
+                                  mailinglist: CdEDBObject,
+                                  persona_ids: Collection[int],
+                                  ) -> MIPolMap:
         """Determine the MIPol of the user or a persona with a mailinglist.
 
         For the `AssemblyAssociatedMailinglist` this means opt-out for
@@ -559,9 +559,9 @@ class AssemblyPresiderMailinglist(AssemblyAssociatedMailinglist):
 
     @classmethod
     def get_subscription_policies(cls, rs: RequestState, bc: BackendContainer,
-                                 mailinglist: CdEDBObject,
-                                 persona_ids: Collection[int],
-                                 ) -> MIPolMap:
+                                  mailinglist: CdEDBObject,
+                                  persona_ids: Collection[int],
+                                  ) -> MIPolMap:
         """Determine the MIPol of some personas with a mailinglist.
 
         For the `AssemblyPresiderMailinglist` this means opt-out for presiders only.
@@ -627,9 +627,9 @@ class GeneralModeratorMailinglist(GeneralMailinglist):
 
     @classmethod
     def get_subscription_policies(cls, rs: RequestState, bc: BackendContainer,
-                                 mailinglist: CdEDBObject,
-                                 persona_ids: Collection[int],
-                                 ) -> MIPolMap:
+                                  mailinglist: CdEDBObject,
+                                  persona_ids: Collection[int],
+                                  ) -> MIPolMap:
         """Determine the MIPol of the user or a persona with a mailinglist.
 
         For the `GeneralModeratorMailinglist` this means mandatory for all users who
