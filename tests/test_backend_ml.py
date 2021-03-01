@@ -561,13 +561,13 @@ class TestMlBackend(BackendTest):
         # This tests the unsubscription reset.
         self._change_sub(user['id'], mailinglist_id, SA.unsubscribe,
                          state=SS.unsubscribed)
-        self._change_sub(user['id'], mailinglist_id, SA.reset_unsubscription,
+        self._change_sub(user['id'], mailinglist_id, SA.reset,
                          state=None)
         self._change_sub(user['id'], mailinglist_id, SA.subscribe,
                          state=SS.subscribed)
         self._change_sub(user['id'], mailinglist_id, SA.remove_subscriber,
                          state=SS.unsubscribed)
-        self._change_sub(user['id'], mailinglist_id, SA.reset_unsubscription,
+        self._change_sub(user['id'], mailinglist_id, SA.reset,
                          state=None)
         self._change_sub(user['id'], mailinglist_id, SA.add_subscription_override,
                          state=SS.subscription_override)
@@ -643,7 +643,7 @@ class TestMlBackend(BackendTest):
         # This tests the unsubscription reset.
         self._change_sub(user['id'], mailinglist_id, SA.unsubscribe,
                          state=SS.unsubscribed)
-        self._change_sub(user['id'], mailinglist_id, SA.reset_unsubscription,
+        self._change_sub(user['id'], mailinglist_id, SA.reset,
                          state=None)
         self._change_sub(user['id'], mailinglist_id, SA.remove_subscriber,
                          state=None, kind='info')
@@ -711,8 +711,7 @@ class TestMlBackend(BackendTest):
         mailinglist_id = 2
 
         for persona_id in {17, 27, 32}:
-            self._change_sub(persona_id, mailinglist_id,
-                             SA.reset_unsubscription,
+            self._change_sub(persona_id, mailinglist_id, SA.reset,
                              state=None)
         self.ml.write_subscription_states(self.key, mailinglist_id)
         for persona_id in {17, 27, 32}:

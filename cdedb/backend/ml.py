@@ -850,9 +850,7 @@ class MlBackend(AbstractBackend):
                 action=action,
                 policy=self.get_subscription_policy(rs, persona_id, mailinglist=ml),
                 allow_unsub=atype.allow_unsub,
-                old_state=old_state,
-                is_implied=(persona_id
-                            in atype.get_implicit_subscribers(rs, self.backends, ml)))
+                old_state=old_state)
 
             # Write the transition to the database
             datum = {

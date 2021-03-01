@@ -90,7 +90,7 @@ class SubscriptionLogCodes(enum.IntEnum):
     unsubscribed = 23  #: SubscriptionStates.unsubscribed
     marked_override = 24  #: SubscriptionStates.subscription_override
     marked_blocked = 25  #: SubscriptionStates.unsubscription_override
-    unsubscription_reset = 27  #:
+    reset = 27  #:
     automatically_removed = 28  #:
     request_approved = 30  #:
     request_denied = 31  #:
@@ -121,7 +121,7 @@ class SubscriptionActions(enum.IntEnum):
     remove_unsubscription_override = 32  #: A moderator unblocking a user.
     #: A moderator removing the relation
     #: of an unsubscribed user to the mailinglist.
-    reset_unsubscription = 40
+    reset = 40
     cleanup_subscription = 50
     cleanup_implicit = 51
 
@@ -154,7 +154,7 @@ class SubscriptionActions(enum.IntEnum):
                 SubscriptionStates.subscribed,
             SubscriptionActions.remove_unsubscription_override:
                 SubscriptionStates.unsubscribed,
-            SubscriptionActions.reset_unsubscription:
+            SubscriptionActions.reset:
                 None,
             SubscriptionActions.cleanup_subscription:
                 None,
@@ -192,8 +192,8 @@ class SubscriptionActions(enum.IntEnum):
                 SubscriptionLogCodes.subscribed,
             SubscriptionActions.remove_unsubscription_override:
                 SubscriptionLogCodes.unsubscribed,
-            SubscriptionActions.reset_unsubscription:
-                SubscriptionLogCodes.unsubscription_reset,
+            SubscriptionActions.reset:
+                SubscriptionLogCodes.reset,
             SubscriptionActions.cleanup_subscription:
                 SubscriptionLogCodes.automatically_removed,
             SubscriptionActions.cleanup_implicit:
@@ -311,15 +311,15 @@ class SubscriptionActions(enum.IntEnum):
                 ss.implicit: error(_("Not a pending subscription request.")),
                 None: error(_("Not a pending subscription request.")),
             },
-            SubscriptionActions.reset_unsubscription: {
-                ss.subscribed: error(_("User is not unsubscribed.")),
+            SubscriptionActions.reset: {
+                ss.subscribed: None,
                 ss.unsubscribed: None,
                 ss.subscription_override: error(_(
                     "User is in override state. Remove them before reset.")),
                 ss.unsubscription_override: error(_(
                     "User is in override state. Remove them before reset.")),
                 ss.pending: error(_("User is not unsubscribed.")),
-                ss.implicit: error(_("User is not unsubscribed.")),
+                ss.implicit: None,
                 None: None,
             },
             SubscriptionActions.cleanup_subscription: {
@@ -383,7 +383,7 @@ class SubscriptionActions(enum.IntEnum):
             SubscriptionActions.remove_subscriber,
             SubscriptionActions.remove_subscription_override,
             SubscriptionActions.remove_unsubscription_override,
-            SubscriptionActions.reset_unsubscription,
+            SubscriptionActions.reset,
         }
 
     def is_managing(self) -> bool:

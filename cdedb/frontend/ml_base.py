@@ -910,7 +910,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs.notify("error", n_("User does not exist or is archived."))
             return self.show_subscription_details(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, SubscriptionActions.reset_unsubscription,
+            rs, SubscriptionActions.reset,
             mailinglist_id=mailinglist_id, persona_id=unsubscription_id)
         return self.redirect(rs, "ml/show_subscription_details")
 

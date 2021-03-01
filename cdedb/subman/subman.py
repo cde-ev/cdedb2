@@ -22,8 +22,7 @@ def _do_transition(action: SubscriptionActions, old_state: Optional[Subscription
 
 def _check_transition_requirements(*, action: SubscriptionActions,
                                    policy: Optional[SubscriptionPolicy],
-                                   allow_unsub: bool = True,
-                                   is_implied: bool = False) -> None:
+                                   allow_unsub: bool = True) -> None:
     """Un-inlined code from `do_subscription_action`.
 
     This checks if a user may subscribe via the action triggered
@@ -44,21 +43,16 @@ def _check_transition_requirements(*, action: SubscriptionActions,
     elif (action == SubscriptionActions.request_subscription and
           policy != SubscriptionPolicy.moderated_opt_in):
         raise SubscriptionError(_("Can not request subscription."))
-    elif action == SubscriptionActions.reset_unsubscription and is_implied:
-        raise SubscriptionError(_("Can not reset unsubscription."))
-    # elif action == SubscriptionActions.reset_subscription and not is_implied:
-    #     raise SubscriptionError(_("Can not reset subscription."))
 
 
 def apply_action(*, action: SubscriptionActions,
                  policy: Optional[SubscriptionPolicy],
                  allow_unsub: bool = True,
                  old_state: Optional[SubscriptionStates],
-                 is_implied: bool = False
                  ) -> Tuple[Optional[SubscriptionStates], SubscriptionLogCodes]:
     # 1: Check list-dependent requirements for transition
-    _check_transition_requirements(
-        action=action, policy=policy, allow_unsub=allow_unsub, is_implied=is_implied)
+    _check_transition_requirements(action=action, policy=policy,
+                                   allow_unsub=allow_unsub)
 
     # 2: Check if current state allows transition
     return _do_transition(action, old_state)
