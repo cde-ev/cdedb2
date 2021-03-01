@@ -10,7 +10,7 @@ from .machine import (
 
 def _do_transition(action: SubscriptionActions, old_state: Optional[SubscriptionStates]
                    ) -> Tuple[Optional[SubscriptionStates], SubscriptionLogCodes]:
-    error_matrix = SubscriptionActions.error_matrix()
+    error_matrix = SubscriptionActions.get_error_matrix()
 
     # TODO: `if exception := error_matrix[action][old_state]`.
     exception: Optional[SubscriptionError] = error_matrix[action][old_state]
