@@ -217,8 +217,7 @@ class SubscriptionActions(enum.IntEnum):
                 ss.unsubscribed: None,
                 ss.subscription_override: info(_("User already subscribed.")),
                 ss.unsubscription_override: error(_(
-                    "User has been blocked. You can use Advanced Management to"
-                    " change this.")),
+                    "User has been blocked. Remove override before reset.")),
                 ss.pending: error(_("User has pending subscription request.")),
                 ss.implicit: info(_("User already subscribed.")),
                 None: None
@@ -227,8 +226,7 @@ class SubscriptionActions(enum.IntEnum):
                 ss.subscribed: None,
                 ss.unsubscribed: info(_("User already unsubscribed.")),
                 ss.subscription_override: error(_(
-                    "User cannot be removed, because of moderator override. You"
-                    " can use Advanced Management to change this.")),
+                    "User cannot be removed, Remove override to change this.")),
                 ss.unsubscription_override: info(_("User already unsubscribed.")),
                 ss.pending: error(_("User has pending subscription request.")),
                 ss.implicit: None,
@@ -302,15 +300,6 @@ class SubscriptionActions(enum.IntEnum):
                 ss.implicit: None,
                 None: info(_("You are already unsubscribed.")),
             },
-            SubscriptionActions.cancel_request: {
-                ss.subscribed: error(_("No subscription requested.")),
-                ss.unsubscribed: error(_("No subscription requested.")),
-                ss.subscription_override: error(_("No subscription requested.")),
-                ss.unsubscription_override: error(_("No subscription requested.")),
-                ss.pending: None,
-                ss.implicit: error(_("No subscription requested.")),
-                None: error(_("No subscription requested.")),
-            },
             SubscriptionActions.approve_request: {
                 ss.subscribed: error(_("Not a pending subscription request.")),
                 ss.unsubscribed: error(_("Not a pending subscription request.")),
@@ -322,36 +311,13 @@ class SubscriptionActions(enum.IntEnum):
                 ss.implicit: error(_("Not a pending subscription request.")),
                 None: error(_("Not a pending subscription request.")),
             },
-            SubscriptionActions.deny_request: {
-                ss.subscribed: error(_("Not a pending subscription request.")),
-                ss.unsubscribed: error(_("Not a pending subscription request.")),
-                ss.subscription_override: error(
-                    _("Not a pending subscription request.")),
-                ss.unsubscription_override: error(
-                    _("Not a pending subscription request.")),
-                ss.pending: None,
-                ss.implicit: error(_("Not a pending subscription request.")),
-                None: error(_("Not a pending subscription request.")),
-            },
-            SubscriptionActions.block_request: {
-                ss.subscribed: error(_("Not a pending subscription request.")),
-                ss.unsubscribed: error(
-                    _("Not a pending subscription request.")),
-                ss.subscription_override: error(
-                    _("Not a pending subscription request.")),
-                ss.unsubscription_override: error(
-                    _("Not a pending subscription request.")),
-                ss.pending: None,
-                ss.implicit: error(_("Not a pending subscription request.")),
-                None: error(_("Not a pending subscription request.")),
-            },
             SubscriptionActions.reset_unsubscription: {
                 ss.subscribed: error(_("User is not unsubscribed.")),
                 ss.unsubscribed: None,
-                ss.subscription_override: error(_("User is not unsubscribed.")),
+                ss.subscription_override: error(_(
+                    "User is in override state. Remove them before reset.")),
                 ss.unsubscription_override: error(_(
-                    "User has been blocked. You can use Advanced Management to"
-                    " change this.")),
+                    "User is in override state. Remove them before reset.")),
                 ss.pending: error(_("User is not unsubscribed.")),
                 ss.implicit: error(_("User is not unsubscribed.")),
                 None: None,
@@ -371,7 +337,7 @@ class SubscriptionActions(enum.IntEnum):
             },
             SubscriptionActions.cleanup_implicit: {
                 ss.subscribed:  error(_(
-                    "Unsubscriptions are protected against automatic implicit cleanup.")),
+                    "Subscriptions are protected against automatic implicit cleanup.")),
                 ss.unsubscribed: error(_(
                     "Unsubscriptions are protected against automatic cleanup.")),
                 ss.subscription_override: error(_(
@@ -384,6 +350,10 @@ class SubscriptionActions(enum.IntEnum):
                 None: info(_("Subscription already cleaned up.")),
             },
         }
+
+        matrix[SubscriptionActions.deny_request] = matrix[SubscriptionActions.approve_request]
+        matrix[SubscriptionActions.cancel_request] = matrix[SubscriptionActions.approve_request]
+        matrix[SubscriptionActions.block_request] = matrix[SubscriptionActions.approve_request]
 
         return matrix
 
