@@ -116,7 +116,7 @@ class SubscriptionActions(enum.IntEnum):
     add_subscription_override = 21  #: A moderator adding a fixed subscription.
     add_unsubscription_override = 22  #: A moderator blocking a user.
     remove_subscriber = 30  #: A moderator manually removing a subscribed user.
-    remove_subscription_override = 31  #: A mod removing a fixed subscription.
+    remove_subscription_override = 31  #: A moderator removing a fixed subscription.
     remove_unsubscription_override = 32  #: A moderator unblocking a user.
     #: A moderator removing the relation
     #: of an unsubscribed user to the mailinglist.
@@ -216,7 +216,7 @@ class SubscriptionActions(enum.IntEnum):
                 ss.unsubscribed: None,
                 ss.subscription_override: info(_("User already subscribed.")),
                 ss.unsubscription_override: error(_(
-                    "User has been blocked. Remove override before reset.")),
+                    "User has been blocked. Remove override before subscribe.")),
                 ss.pending: error(_("User has pending subscription request.")),
                 ss.implicit: info(_("User already subscribed.")),
                 None: None
@@ -225,7 +225,7 @@ class SubscriptionActions(enum.IntEnum):
                 ss.subscribed: None,
                 ss.unsubscribed: info(_("User already unsubscribed.")),
                 ss.subscription_override: error(_(
-                    "User cannot be removed, Remove override to change this.")),
+                    "User cannot be removed. Remove override to change this.")),
                 ss.unsubscription_override: info(_("User already unsubscribed.")),
                 ss.pending: error(_("User has pending subscription request.")),
                 ss.implicit: None,
