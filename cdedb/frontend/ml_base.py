@@ -311,9 +311,9 @@ class MlBaseFrontend(AbstractUserFrontend):
             return self.merge_accounts_form(rs)
         code = self.mlproxy.merge_accounts(
             rs, source_persona_id, target_persona_id, clone_addresses)
-        self.notify_return_code(rs, code)
         if not code:
             return self.merge_accounts_form(rs)
+        self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/merge_accounts")
 
     @access("ml")
