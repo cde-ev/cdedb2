@@ -8,32 +8,14 @@ their symbolic names provided by this module should be used.
 """
 
 import enum
-from typing import Callable, Dict, Type
+from typing import Dict
+
+from cdedb.subman.machine import SubscriptionLogCodes
 
 
 def n_(x: str) -> str:
     """Clone of :py:func:`cdedb.common.n_` for marking translatable strings."""
     return x
-
-
-def extend_intenum(*source_enums: Type[enum.IntEnum], unique: bool = True
-                   ) -> Callable[[Type[enum.IntEnum]], Type[enum.IntEnum]]:
-    """Decorator to combine multiple `enum.IntEnum`s into one.
-
-    :param unique: If true (default), require values to be unique in the combined enum.
-    """
-    def the_decorator(target_enum: Type[enum.IntEnum]) -> Type[enum.IntEnum]:
-        new_members = {}
-        for enum_ in source_enums + (target_enum,):
-            for member in enum_:
-                new_members[member.name] = member.value
-        new_enum = enum.IntEnum(target_enum.__name__, new_members)  # type: ignore
-        if unique:
-            # `enum.unique` is supposed to be used as a decorator, but does not
-            # actually modify the enum and mypy doesn't like the assingment to a type.
-            enum.unique(new_enum)
-        return new_enum
-    return the_decorator
 
 
 @enum.unique
@@ -409,10 +391,7 @@ class AssemblyLogCodes(enum.IntEnum):
     attachment_version_changed = 52
 
 
-from cdedb.subman.machine import SubscriptionLogCodes
-
-
-@extend_intenum(SubscriptionLogCodes, unique=True)
+@enum.unique
 class MlLogCodes(enum.IntEnum):
     """Available log messages for ml.log."""
     list_created = 1  #:
@@ -422,8 +401,36 @@ class MlLogCodes(enum.IntEnum):
     moderator_removed = 11  #:
     whitelist_added = 12  #:
     whitelist_removed = 13  #:
-    # For 20s and 30s see SubscriptionLogCodes
+    subscription_requested = 20  #: SubscriptionStates.subscription_requested
+    subscribed = 21  #: SubscriptionStates.subscribed
+    subscription_changed = 22  #: This is now used for address changes.
+    unsubscribed = 23  #: SubscriptionStates.unsubscribed
+    marked_override = 24  #: SubscriptionStates.subscription_override
+    marked_blocked = 25  #: SubscriptionStates.unsubscription_override
+    reset = 27  #:
+    automatically_removed = 28  #:
+    request_approved = 30  #:
+    request_denied = 31  #:
+    request_cancelled = 32  #:
+    request_blocked = 33  #:
     email_trouble = 40  #:
     moderate_accept = 50  #:
     moderate_reject = 51  #:
     moderate_discard = 52  #:
+
+    @classmethod
+    def from_subman(cls, code: SubscriptionLogCodes) -> "MlLogCodes":
+        log_code_map = {
+            SubscriptionLogCodes.subscription_requested: cls.subscription_requested,
+            SubscriptionLogCodes.subscribed: cls.subscribed,
+            SubscriptionLogCodes.unsubscribed: cls.unsubscribed,
+            SubscriptionLogCodes.marked_override: cls.marked_override,
+            SubscriptionLogCodes.marked_blocked: cls.marked_blocked,
+            SubscriptionLogCodes.reset: cls.reset,
+            SubscriptionLogCodes.automatically_removed: cls.automatically_removed,
+            SubscriptionLogCodes.request_approved: cls.request_approved,
+            SubscriptionLogCodes.request_denied: cls.request_denied,
+            SubscriptionLogCodes.request_cancelled: cls.request_cancelled,
+            SubscriptionLogCodes.request_blocked: cls.request_blocked,
+        }
+        return log_code_map[code]

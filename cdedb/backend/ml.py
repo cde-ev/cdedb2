@@ -846,11 +846,12 @@ class MlBackend(AbstractBackend):
                 rs, persona_id, mailinglist_id=mailinglist_id,
                 states=set(const.SubscriptionStates))
 
-            new_state, code = subman.apply_action(
+            new_state, sub_code = subman.apply_action(
                 action=action,
                 policy=self.get_subscription_policy(rs, persona_id, mailinglist=ml),
                 allow_unsub=atype.allow_unsub,
                 old_state=old_state)
+            code = const.MlLogCodes.from_subman(sub_code)
 
             # Write the transition to the database
             datum = {

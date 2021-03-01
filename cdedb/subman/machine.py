@@ -84,18 +84,17 @@ class SubscriptionPolicy(enum.IntEnum):
 @enum.unique
 class SubscriptionLogCodes(enum.IntEnum):
     """Available log codes for action logging."""
+    subscribed = 1  #: SubscriptionStates.subscribed
+    unsubscribed = 2  #: SubscriptionStates.unsubscribed
+    marked_override = 3  #: SubscriptionStates.subscription_override
+    marked_blocked = 4  #: SubscriptionStates.unsubscription_override
+    automatically_removed = 10  #:
     subscription_requested = 20  #: SubscriptionStates.subscription_requested
-    subscribed = 21  #: SubscriptionStates.subscribed
-    subscription_changed = 22  #: This is now used for address changes.
-    unsubscribed = 23  #: SubscriptionStates.unsubscribed
-    marked_override = 24  #: SubscriptionStates.subscription_override
-    marked_blocked = 25  #: SubscriptionStates.unsubscription_override
-    reset = 27  #:
-    automatically_removed = 28  #:
-    request_approved = 30  #:
-    request_denied = 31  #:
-    request_cancelled = 32  #:
-    request_blocked = 33  #:
+    request_approved = 21  #:
+    request_denied = 22  #:
+    request_cancelled = 23  #:
+    request_blocked = 24  #:
+    reset = 30  #:
 
 
 SubscriptionErrorMatrix = Dict["SubscriptionActions",
