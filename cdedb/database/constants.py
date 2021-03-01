@@ -202,6 +202,7 @@ class MailinglistTypes(enum.IntEnum):
     cdelokal = 60
 
 
+@enum.unique
 class MailinglistDomain(enum.IntEnum):
     lists = 1
     aka = 2
