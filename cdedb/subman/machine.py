@@ -160,7 +160,7 @@ class SubscriptionActions(enum.IntEnum):
             SubscriptionActions.cleanup_implicit:
                 None
         }
-        return target_state.get(self)
+        return target_state[self]
 
     def get_log_code(self) -> SubscriptionLogCodes:
         """Get the log code associated with performing an action."""
