@@ -12,7 +12,7 @@ from tests.helpers import MyTextTestResult, MyTextTestRunner, check_test_setup
 
 
 def _prepare_check(thread_id: int = 1) -> None:
-    """Set the stage to run tests."""
+    """Set the stage for running tests."""
     os.environ['CDEDB_TEST'] = "True"
     os.environ['CDEDB_TEST_DATABASE'] = f'cdb_test_{thread_id}'
     os.environ['CDEDB_TEST_TMP_DIR'] = f'/tmp/cdedb-test-{thread_id}'
@@ -64,13 +64,14 @@ if __name__ == '__main__':
     parser.add_argument('testpatterns', default="", nargs="*")
     parser.add_argument('--manual-preparation', action='store_true',
                         help="don't do test preparation")
-    parser.add_argument('--thread_id', type=int, choices=(1, 2, 3, 4),
-                        default=1, metavar="INT",
-                        help="ID of thread to use for run (this is useful if you"
-                             " manually start multiple test suite runs in parallel)")
+    parser.add_argument('--xss-check', '--xss', action='store_true',
+                        help="check for xss vulnerabilities (Note that this ignores most"
+                             " other options, like --threads or -v and -q.)")
     thread_options = parser.add_mutually_exclusive_group()
-    thread_options.add_argument('--xss-check', '--xss', action='store_true',
-                                help="check for xss vulnerabilities")
+    thread_options.add_argument(
+        '--thread_id', type=int, choices=(1, 2, 3, 4), default=1, metavar="INT",
+        help="ID of thread to use for run (this is useful if you manually start"
+             " multiple test suite runs in parallel)")
     thread_options.add_argument('--threads', type=int, choices=(1, 2, 3), default=1,
                                 metavar="NUMBER", help="number of threads to use")
     # TODO: implement verbosity settings -v and -q
