@@ -10,7 +10,7 @@ their symbolic names provided by this module should be used.
 import enum
 from typing import Dict
 
-from cdedb.subman.machine import SubscriptionLogCodes
+from cdedb.subman.machine import SubscriptionLogCodes, SubscriptionStates
 
 
 def n_(x: str) -> str:
@@ -140,7 +140,34 @@ class PrivilegeChangeStati(enum.IntEnum):
     rejected = 10
 
 
-from cdedb.subman.machine import SubscriptionStates
+@enum.unique
+class _CdEDBSubscriptionStates(enum.IntEnum):
+    """Define the possible relations between user and mailinglist.
+
+    This is a reimplementation of the `subman.SubscriptionStates` enum for the sole
+    purpose of the ensuring, that the definition of the enum in that module does not
+    diverge from what is written into our databse.
+    """
+    #: The user is explicitly subscribed.
+    subscribed = 1
+    #: The user is explicitly unsubscribed (usually from an Opt-Out list).
+    unsubscribed = 2
+    #: The user was explicitly added by a moderator.
+    subscription_override = 10
+    #: The user was explicitly removed/blocked by a moderator.
+    unsubscription_override = 11
+    #: The user has requested a subscription to the mailinglist.
+    pending = 20
+    #: The user is subscribed by virtue of being part of some group.
+    implicit = 30
+
+
+_msg = "`subman.SubscriptionStates` differs from local implementation."
+if len(_CdEDBSubscriptionStates) != len(SubscriptionStates):
+    raise RuntimeError(_msg)
+for member, m in zip(_CdEDBSubscriptionStates, SubscriptionStates):
+    if not (member.name == m.name and member.value == m.value):
+        raise RuntimeError(_msg)
 
 
 @enum.unique
