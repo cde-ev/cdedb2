@@ -359,7 +359,12 @@ class SubscriptionActions(enum.IntEnum):
 
     @classmethod
     def unsubscribing_actions(cls) -> Set["SubscriptionActions"]:
-        """All actions that unsubscribe a user from a mailinglist."""
+        """All actions that unsubscribe a user from a mailinglist.
+
+        While cleanup_actions are removing a user from a mailinglist, we do not
+        consider them unsubscribing, since they do not represent active unsubscriptions,
+        but user removals due to outside conditions. For example, a user might no
+        longer belong to a group for which a user is mandatory."""
         return {
             SubscriptionActions.unsubscribe,
             SubscriptionActions.remove_subscriber,
@@ -391,8 +396,12 @@ class SubscriptionActions(enum.IntEnum):
         return self in self.managing_actions()
 
     @classmethod
-    def automatic_actions(cls) -> Set["SubscriptionActions"]:
-        """All actions that require additional privileges."""
+    def cleanup_actions(cls) -> Set["SubscriptionActions"]:
+        """All actions which are part of more involved cleanup procedures.
+
+        These can not be executed via `subman.apply_action`, but should be executed
+        via `do_cleanup` instead, since they need some particularly special checks.
+        """
         return {
             SubscriptionActions.cleanup_subscription,
             SubscriptionActions.cleanup_implicit,
@@ -400,4 +409,4 @@ class SubscriptionActions(enum.IntEnum):
 
     def is_automatic(self) -> bool:
         """Whether or not an action requires additional privileges."""
-        return self in self.automatic_actions()
+        return self in self.cleanup_actions()

@@ -31,10 +31,6 @@ def _check_transition_requirements(*, action: SubscriptionActions,
     if action == SubscriptionActions.add_subscriber and (
             policy is None or policy.is_implicit()):
         raise SubscriptionError(_("User has no means to access this list."))
-    # elif action == SubscriptionActions.cleanup_implicit and not (
-    #        policy is None or policy.is_implicit()):
-    #    raise SubscriptionError(_(
-    #        "User should not be cleaned up since they are allowed subscribers."))
     elif (action == SubscriptionActions.subscribe and
             policy != SubscriptionPolicy.subscribable):
         raise SubscriptionError(_("Can not subscribe."))
@@ -43,6 +39,8 @@ def _check_transition_requirements(*, action: SubscriptionActions,
     elif (action == SubscriptionActions.request_subscription and
           policy != SubscriptionPolicy.moderated_opt_in):
         raise SubscriptionError(_("Can not request subscription."))
+    elif action in SubscriptionActions.cleanup_actions():
+        raise RuntimeError(_("Use do_cleanup to perform cleanup actions."))
 
 
 def apply_action(*, action: SubscriptionActions,
