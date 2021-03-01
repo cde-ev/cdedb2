@@ -73,9 +73,7 @@ class TestMlBackend(BackendTest):
         # assert the merging of subscription states and moderator rights was successfull
         berta_new_mls = self.ml.get_user_subscriptions(self.key, berta_id)
         berta_new_mod = self.ml.moderator_info(self.key, berta_id)
-        merge_dicts(berta_mls, {ml: state for ml, state in janis_mls.items()
-                                if state != SS.implicit})
-        self.assertEqual(berta_new_mls, berta_mls)
+        self.assertEqual(berta_new_mls, {**berta_mls, **janis_mls})
         self.assertEqual(berta_new_mod, berta_mod | janis_mod)
 
         # check the logs
