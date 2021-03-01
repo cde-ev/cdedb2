@@ -51,15 +51,11 @@ class SubscriptionStates(enum.IntEnum):
 
     @classmethod
     def subscribing_states(cls) -> Set['SubscriptionStates']:
-        return {SubscriptionStates.subscribed,
-                SubscriptionStates.subscription_override,
-                SubscriptionStates.implicit}
+        return {cls.subscribed, cls.subscription_override, cls.implicit}
 
     @classmethod
     def cleanup_protected_states(cls) -> Set['SubscriptionStates']:
-        sa = SubscriptionActions
-        return {state for state in cls
-                if sa.get_error_matrix()[sa.cleanup_subscription][state]}
+        return _CLEANUP_PROTECTED_STATES
 
 
 @enum.unique
@@ -75,9 +71,7 @@ class SubscriptionPolicy(enum.IntEnum):
     implicits_only = 6
 
     def is_implicit(self) -> bool:
-        """Short-hand for
-        policy == SubscriptionPolicy.implicits_only
-        """
+        """Short-hand for policy == SubscriptionPolicy.implicits_only"""
         return self == SubscriptionPolicy.implicits_only
 
 
@@ -121,79 +115,11 @@ class SubscriptionActions(enum.IntEnum):
 
     def get_target_state(self) -> Optional[SubscriptionStates]:
         """Get the target state associated with an action."""
-        target_state = {
-            SubscriptionActions.subscribe:
-                SubscriptionStates.subscribed,
-            SubscriptionActions.unsubscribe:
-                SubscriptionStates.unsubscribed,
-            SubscriptionActions.request_subscription:
-                SubscriptionStates.pending,
-            SubscriptionActions.cancel_request:
-                None,
-            SubscriptionActions.approve_request:
-                SubscriptionStates.subscribed,
-            SubscriptionActions.deny_request:
-                None,
-            SubscriptionActions.block_request:
-                SubscriptionStates.unsubscription_override,
-            SubscriptionActions.add_subscriber:
-                SubscriptionStates.subscribed,
-            SubscriptionActions.add_subscription_override:
-                SubscriptionStates.subscription_override,
-            SubscriptionActions.add_unsubscription_override:
-                SubscriptionStates.unsubscription_override,
-            SubscriptionActions.remove_subscriber:
-                SubscriptionStates.unsubscribed,
-            SubscriptionActions.remove_subscription_override:
-                SubscriptionStates.subscribed,
-            SubscriptionActions.remove_unsubscription_override:
-                SubscriptionStates.unsubscribed,
-            SubscriptionActions.reset:
-                None,
-            SubscriptionActions.cleanup_subscription:
-                None,
-            SubscriptionActions.cleanup_implicit:
-                None
-        }
-        return target_state[self]
+        return _ACTION_TARGET_STATE_MAP[self]
 
     def get_log_code(self) -> SubscriptionLogCodes:
         """Get the log code associated with performing an action."""
-        log_code_map = {
-            SubscriptionActions.subscribe:
-                SubscriptionLogCodes.subscribed,
-            SubscriptionActions.unsubscribe:
-                SubscriptionLogCodes.unsubscribed,
-            SubscriptionActions.request_subscription:
-                SubscriptionLogCodes.subscription_requested,
-            SubscriptionActions.cancel_request:
-                SubscriptionLogCodes.request_cancelled,
-            SubscriptionActions.approve_request:
-                SubscriptionLogCodes.request_approved,
-            SubscriptionActions.deny_request:
-                SubscriptionLogCodes.request_denied,
-            SubscriptionActions.block_request:
-                SubscriptionLogCodes.request_blocked,
-            SubscriptionActions.add_subscriber:
-                SubscriptionLogCodes.subscribed,
-            SubscriptionActions.add_subscription_override:
-                SubscriptionLogCodes.marked_override,
-            SubscriptionActions.add_unsubscription_override:
-                SubscriptionLogCodes.marked_blocked,
-            SubscriptionActions.remove_subscriber:
-                SubscriptionLogCodes.unsubscribed,
-            SubscriptionActions.remove_subscription_override:
-                SubscriptionLogCodes.subscribed,
-            SubscriptionActions.remove_unsubscription_override:
-                SubscriptionLogCodes.unsubscribed,
-            SubscriptionActions.reset:
-                SubscriptionLogCodes.reset,
-            SubscriptionActions.cleanup_subscription:
-                SubscriptionLogCodes.automatically_removed,
-            SubscriptionActions.cleanup_implicit:
-                SubscriptionLogCodes.automatically_removed,
-        }
-        return log_code_map[self]
+        return _LOG_CODE_MAP[self]
 
     @staticmethod
     def get_error_matrix() -> "_ActionStateErrorMatrix":
@@ -256,6 +182,51 @@ class SubscriptionActions(enum.IntEnum):
     def is_automatic(self) -> bool:
         """Whether or not an action requires additional privileges."""
         return self in self.cleanup_actions()
+
+
+_ACTION_TARGET_STATE_MAP = {
+    SubscriptionActions.subscribe: SubscriptionStates.subscribed,
+    SubscriptionActions.unsubscribe: SubscriptionStates.unsubscribed,
+    SubscriptionActions.request_subscription: SubscriptionStates.pending,
+    SubscriptionActions.cancel_request: None,
+    SubscriptionActions.approve_request: SubscriptionStates.subscribed,
+    SubscriptionActions.deny_request: None,
+    SubscriptionActions.block_request: SubscriptionStates.unsubscription_override,
+    SubscriptionActions.add_subscriber: SubscriptionStates.subscribed,
+    SubscriptionActions.add_subscription_override:
+        SubscriptionStates.subscription_override,
+    SubscriptionActions.add_unsubscription_override:
+        SubscriptionStates.unsubscription_override,
+    SubscriptionActions.remove_subscriber: SubscriptionStates.unsubscribed,
+    SubscriptionActions.remove_subscription_override: SubscriptionStates.subscribed,
+    SubscriptionActions.remove_unsubscription_override: SubscriptionStates.unsubscribed,
+    SubscriptionActions.reset: None,
+    SubscriptionActions.cleanup_subscription: None,
+    SubscriptionActions.cleanup_implicit: None,
+}
+
+_LOG_CODE_MAP = {
+    SubscriptionActions.subscribe: SubscriptionLogCodes.subscribed,
+    SubscriptionActions.unsubscribe: SubscriptionLogCodes.unsubscribed,
+    SubscriptionActions.request_subscription:
+        SubscriptionLogCodes.subscription_requested,
+    SubscriptionActions.cancel_request: SubscriptionLogCodes.request_cancelled,
+    SubscriptionActions.approve_request: SubscriptionLogCodes.request_approved,
+    SubscriptionActions.deny_request: SubscriptionLogCodes.request_denied,
+    SubscriptionActions.block_request: SubscriptionLogCodes.request_blocked,
+    SubscriptionActions.add_subscriber: SubscriptionLogCodes.subscribed,
+    SubscriptionActions.add_subscription_override: SubscriptionLogCodes.marked_override,
+    SubscriptionActions.add_unsubscription_override:
+        SubscriptionLogCodes.marked_blocked,
+    SubscriptionActions.remove_subscriber: SubscriptionLogCodes.unsubscribed,
+    SubscriptionActions.remove_subscription_override: SubscriptionLogCodes.subscribed,
+    SubscriptionActions.remove_unsubscription_override:
+        SubscriptionLogCodes.unsubscribed,
+    SubscriptionActions.reset: SubscriptionLogCodes.reset,
+    SubscriptionActions.cleanup_subscription:
+        SubscriptionLogCodes.automatically_removed,
+    SubscriptionActions.cleanup_implicit: SubscriptionLogCodes.automatically_removed,
+}
 
 
 _StateErrorMapping = Dict[Optional[SubscriptionStates], Optional[SubscriptionError]]
@@ -436,3 +407,7 @@ _SUBSCRIPTION_ERROR_MATRIX: _ActionStateErrorMatrix = {
     SubscriptionActions.deny_request: _SUBSCRIPTION_REQUEST_ERROR_MAPPING,
     SubscriptionActions.cancel_request: _SUBSCRIPTION_REQUEST_ERROR_MAPPING,
 }
+
+_CLEANUP_PROTECTED_STATES = {state for state in SubscriptionStates
+                             if SubscriptionActions.get_error_matrix()[
+                                 SubscriptionActions.cleanup_subscription][state]}
