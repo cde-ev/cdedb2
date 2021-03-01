@@ -1,13 +1,14 @@
 from typing import Any
 
 
+# TODO: Do we really want to subclass RuntimeError here? It might lead to Eceptions
+#  being caught erroneously.
 class SubscriptionError(RuntimeError):
     """
-    Exception for signalling that an action trying to change a subscription
-    failed.
+    Exception for signalling that an action trying to change a subscription failed.
     """
     def __init__(self, *args: Any, kind: str = "error") -> None:
-        super(SubscriptionError, self).__init__(*args)
+        super().__init__(*args)
         if args:
             self.msg = args[0]
         else:
