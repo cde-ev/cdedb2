@@ -156,7 +156,7 @@
     <h2>{% trans %}Subscribers{% endtrans %} [{{ subscribers|length }}]</h2>
         <p class="text-muted">
             {{ util.make_icon('info-circle') }}
-            {% trans link = util.href(cdedblink('ml/show_subscription_details'), label=gettext("advanced management")) %}
+            {% trans link = util.href(cdedblink('ml/advanced_management'), label=gettext("advanced management")) %}
                 Forced subscribers cannot be unsubscribed; blocked subscribers cannot be subscribed here.
                 Use the {{ link }} site instead. People who are already subscribed are not proposed for adding.
             {% endtrans %}
