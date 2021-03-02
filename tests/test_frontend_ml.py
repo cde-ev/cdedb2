@@ -1046,16 +1046,16 @@ class TestMlFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertIn("alert alert-danger", self.response.text)
         self.assertPresence(
-            "Der Nutzer kann nicht entfernt werden, da er fixiert ist. "
-            "Dies kannst du unter Erweiterte Verwaltung ändern.",
+            "Der Nutzer kann nicht entfernt werden. "
+            "Entferne die Ausnahme, um die zu ändern.",
             div="notifications")
         # try to add a mod unsubscribed user
         f = self.response.forms['addsubscriberform']
         f['subscriber_ids'] = USER_DICT["garcia"]["DB-ID"]
         self.submit(f, check_notification=False)
         self.assertIn("alert alert-danger", self.response.text)
-        self.assertPresence("Der Nutzer wurde geblockt. "
-                            "Dies kannst du unter Erweiterte Verwaltung ändern.",
+        self.assertPresence("Der Nutzer wurde blockiert. "
+                            "Entferne die Ausnahme, bevor du ihn hinzufügst.",
                             div="notifications")
 
     @as_users("berta", "janis")
