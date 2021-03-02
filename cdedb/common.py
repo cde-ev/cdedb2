@@ -2051,7 +2051,7 @@ EVENT_FIELDS = (
     "orga_address", "registration_text", "mail_text",
     "use_additional_questionnaire", "notes", "offline_lock", "is_visible",
     "is_course_list_visible", "is_course_state_visible",
-    "is_participant_list_visible", "courses_in_participant_list",
+    "is_participant_list_visible", "is_course_assignment_visible",
     "is_cancelled", "is_archived", "lodge_field", "camping_mat_field",
     "course_room_field")
 

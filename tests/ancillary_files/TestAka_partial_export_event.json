@@ -641,7 +641,7 @@
         "is_course_list_visible": true,
         "is_course_state_visible": false,
         "is_participant_list_visible": false,
-        "courses_in_participant_list": false,
+        "is_course_assignment_visible": false,
         "is_cancelled": false,
         "is_archived": false,
         "lodge_field": "lodge",

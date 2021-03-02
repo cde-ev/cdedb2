@@ -966,7 +966,7 @@
             "id": 25,
             "course_id": 5,
             "track_id": 1
-        }, 
+        },
         "29": {
             "course_id": 1,
             "id": 29,
@@ -1355,7 +1355,7 @@
             "registration_text": null,
             "mail_text": "Wir verwenden ein neues Kristallkugel-basiertes Kurszuteilungssystem; bis wir das ordentlich ans Laufen gebracht haben, m\u00fcsst ihr leider etwas auf die Teilnehmerliste warten.",
             "is_participant_list_visible": false,
-            "courses_in_participant_list": false,
+            "is_course_assignment_visible": false,
             "is_course_list_visible": true,
             "is_course_state_visible": false,
             "is_cancelled": false,

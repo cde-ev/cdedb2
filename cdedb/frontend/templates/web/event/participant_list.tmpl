@@ -98,9 +98,9 @@
                         <th>{{ display_sorting_header(part_id, "family_name", gettext("Family Name")) }}</th>
                         <th>{{ display_sorting_header(part_id, "email", gettext("Email Address")) }}</th>
                         <th>{{ display_sorting_header(part_id, "address", gettext("Postal Code, City")) }}</th>
-                        {% if parts[part_id]['tracks']|length > 1 and ambience['event']['courses_in_participant_list'] %}
+                        {% if parts[part_id]['tracks']|length > 1 and ambience['event']['is_course_assignment_visible'] %}
                             <th>{{ display_sorting_header(part_id, "course", gettext("Courses")) }}</th>
-                        {% elif parts[part_id]['tracks'] and ambience['event']['courses_in_participant_list'] %}
+                        {% elif parts[part_id]['tracks'] and ambience['event']['is_course_assignment_visible'] %}
                             <th>{{ display_sorting_header(part_id, "course", gettext("Course")) }}</th>
                         {% endif %}
                     </tr>
@@ -124,7 +124,7 @@
                                 {{- ", " + persona['country'] -}}
                             {% endif %}
                         </td>
-                        {% if parts[part_id]['tracks'] and ambience['event']['courses_in_participant_list'] %}
+                        {% if parts[part_id]['tracks'] and ambience['event']['is_course_assignment_visible'] %}
                             <td>{{ list_courses(registrations[registration_id]) }}</td>
                         {% endif %}
                     </tr>
