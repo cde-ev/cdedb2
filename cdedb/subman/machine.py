@@ -62,13 +62,13 @@ class SubscriptionStates(enum.IntEnum):
 class SubscriptionPolicy(enum.IntEnum):
     """Regulate (un)subscriptions to mailinglists."""
     #: user may subscribe
-    subscribable = 3
+    subscribable = 1
     #: user may subscribe, but only after approval
-    moderated_opt_in = 4
+    moderated_opt_in = 2
     #: user may not subscribe by themselves
-    invitation_only = 5
+    invitation_only = 3
     #: only implicit subscribers allowed
-    implicits_only = 6
+    implicits_only = 4
 
     def is_implicit(self) -> bool:
         """Short-hand for policy == SubscriptionPolicy.implicits_only"""
