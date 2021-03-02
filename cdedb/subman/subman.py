@@ -60,7 +60,7 @@ def _do_cleanup(policy: Optional[SubscriptionPolicy],
                 old_state: Optional[SubscriptionStates],
                 is_implied: bool
                 ) -> Tuple[Literal[None],
-                     Literal[SubscriptionLogCodes.automatically_removed]]:
+                           Literal[SubscriptionLogCodes.automatically_removed]]:
     # If user is not allowed as subscriber, remove them
     if policy is None:
         return _do_transition(SubscriptionActions.cleanup_subscription, old_state)  # type: ignore
