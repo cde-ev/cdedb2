@@ -19,7 +19,7 @@
 {% endblock %}
 {% block static_notifications %}
     {{ super() }}
-    {% if ambience['event']['use_additional_questionnaire'] %}
+    {% if ambience['event']['use_additional_questionnaire'] and not ambience['event']['is_archived'] %}
         {% call util.notification('info') %}
             {% trans link=util.href(cdedblink('event/additional_questionnaire_form'), gettext("questionnaire")) %}
             	Please fill in the {{ link }} now.
