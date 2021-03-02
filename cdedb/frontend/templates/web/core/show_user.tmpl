@@ -360,7 +360,7 @@
                         {{ data['address'] }}{% if data['address'] %}<br />{% endif %}
                         {{ data['address_supplement'] }}{% if data['address_supplement'] %}<br />{% endif %}
                         {{ data['postal_code'] }} {{ data['location'] }}{% if data['location'] %}<br />{% endif %}
-                        {{ gettext(data['country']) }}
+                        {{ util.gettext_country(data['country']) }}
                     </dd>
                 </dl>
             {% endif %}
@@ -374,7 +374,7 @@
                         {{ data['address_supplement2'] }}{% if data['address_supplement2'] %}<br />{% endif %}
                         {{ data['postal_code2'] }} {{ data['location2'] }}
                         {% if data['location2'] %}<br />{% endif %}
-                        {{ gettext(data['country2']) }}
+                        {{ util.gettext_country(data['country2']) }}
                     </dd>
                 </dl>
             {% endif %}

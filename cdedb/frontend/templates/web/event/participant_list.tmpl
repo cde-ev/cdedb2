@@ -121,7 +121,7 @@
                             {{ persona['postal_code'] }}
                             {{ persona['location'] -}}
                             {%- if persona['country'] and persona['country'] != DEFAULT_COUNTRY -%}
-                                {{- ", " + gettext(persona['country']) -}}
+                                {{- ", " + util.gettext_country(persona['country']) -}}
                             {% endif %}
                         </td>
                         {% if parts[part_id]['tracks'] and ambience['event']['courses_in_participant_list'] %}
@@ -164,7 +164,7 @@
                             {{ persona['postal_code'] }}
                             {{ persona['location'] -}}
                             {%- if persona['country'] and persona['country'] != DEFAULT_COUNTRY -%}
-                                {{- ", " + gettext(persona['country']) -}}
+                                {{- ", " + util.gettext_country(persona['country']) -}}
                             {% endif %}
                         </td>
                         <td>

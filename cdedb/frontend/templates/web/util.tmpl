@@ -76,7 +76,11 @@
         **{ "aria-hidden": "true" }
     )|xmlattr }}></span>
     {%- if arialabel or title %}<span class="sr-only">{{ arialabel or title }}</span>{% endif %}
-{%- endmacro%}
+{%- endmacro %}
+
+{% macro gettext_country(country) -%}
+    {{ gettext("CountryCodes." + country) }}
+{%- endmacro %}
 
 
 {# ############## #

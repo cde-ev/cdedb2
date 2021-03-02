@@ -66,7 +66,7 @@
         <dt>{% trans %}City{% endtrans %}</dt>
         <dd>{{ persona['postal_code'] }} {{ persona['location'] }}</dd>
         <dt>{% trans %}Country{% endtrans %}</dt>
-        <dd>{{ gettext(persona['country']) }}</dd>
+        <dd>{{ util.gettext_country(persona['country']) }}</dd>
     </dl>
     {% if persona['id'] in ambience['event']['orgas'] %}
     <p class="text-info">

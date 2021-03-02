@@ -1921,7 +1921,7 @@ class TestCoreFrontend(FrontendTest):
         f['country'] = "AQ"
         self.submit(f)
         self.assertPresence("An der Eiche", div='address')
-        self.assertPresence("AQ", div='address')
+        self.assertPresence("Antarktis", div='address')
 
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['genesismodifyform']

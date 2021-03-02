@@ -72,7 +72,8 @@
             <<< personas[registration['persona_id']]['postal_code']|te >>>
             <<< personas[registration['persona_id']]['location']|te >>>
             <<% if personas[registration['persona_id']]['country'] != DEFAULT_COUNTRY -%>>
-                <<<- personas[registration['persona_id']]['country']|te ->>>
+                <<# util.gettext_country is not available here. #>>
+                <<<- gettext("CountryCodes." + personas[registration['persona_id']]['country'])|te ->>>
             <<% endif -%>>
             % Kurse
             <<% for ep_id, ep in parts|keydictsort(EntitySorter.event_part) if ambience['event']['parts']|length > 1 or ambience['event']['tracks']|length > 0 -%>>
