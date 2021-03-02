@@ -29,7 +29,8 @@ class MyTextTestRunner(unittest.TextTestRunner):
         result = super().run(test)
         failed = map(
             lambda error: error[0].id().split()[0],  # split to strip subtest paramters
-            result.errors + result.failures + result.unexpectedSuccesses  # type: ignore
+            (result.errors + result.failures
+             + [(unex_succ, "") for unex_succ in result.unexpectedSuccesses])
         )
         if not result.wasSuccessful():
             print("To rerun failed tests execute the following:", file=self.stream)
