@@ -16,7 +16,6 @@ import os
 import pathlib
 import re
 import subprocess
-import signal
 import sys
 import tempfile
 import time
@@ -30,7 +29,6 @@ from typing import (
 )
 
 import PIL.Image
-import pytz
 import webtest
 import webtest.utils
 
@@ -44,7 +42,7 @@ from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.common import (
     ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, CdEDBObject, CdEDBObjectMap, PathLike,
-    PrivilegeError, RequestState, n_, now, roles_to_db_role, nearly_now
+    PrivilegeError, RequestState, n_, nearly_now, now, roles_to_db_role,
 )
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -53,8 +51,10 @@ from cdedb.frontend.application import Application
 from cdedb.frontend.common import AbstractFrontend
 from cdedb.frontend.cron import CronFrontend
 from cdedb.query import QueryOperators
+from cdedb.script import setup
 
 _BASICCONF = BasicConfig()
+_SECRETSCONF = SecretsConfig()
 
 ExceptionInfo = Union[
     Tuple[Type[BaseException], BaseException, TracebackType],
@@ -63,7 +63,6 @@ ExceptionInfo = Union[
 
 # This is to be used in place of `self.key` for anonymous requests. It makes mypy happy.
 ANONYMOUS = cast(RequestState, None)
-
 
 def check_test_setup() -> None:
     """Raise a RuntimeError if the vm is ill-equipped for performing tests."""
@@ -133,6 +132,7 @@ def read_sample_data(filename: PathLike = "/cdedb2/tests/ancillary_files/"
         ret[table] = data
     return ret
 
+SAMPLE_DATA = read_sample_data()
 
 B = TypeVar("B", bound=AbstractBackend)
 
@@ -316,18 +316,11 @@ class MyTextTestResult(unittest.TextTestResult):
 class BasicTest(unittest.TestCase):
     """Provide some basic useful test functionalities."""
     testfile_dir = pathlib.Path("/tmp/cdedb-store/testfiles")
-    _clean_sample_data: ClassVar[Dict[str, CdEDBObjectMap]]
     conf: ClassVar[Config]
 
     @classmethod
     def setUpClass(cls) -> None:
-        # Keep a clean copy of sample data that should not be messed with.
-        cls._clean_sample_data = read_sample_data()
         cls.conf = Config()
-
-    def setUp(self) -> None:
-        # Provide a fresh copy of clean sample data.
-        self.sample_data = copy.deepcopy(self._clean_sample_data)
 
     def get_sample_data(self, table: str, ids: Iterable[int],
                         keys: Iterable[str]) -> CdEDBObjectMap:
@@ -355,7 +348,7 @@ class BasicTest(unittest.TestCase):
             if keys:
                 r = {}
                 for k in keys:
-                    r[k] = copy.deepcopy(self.sample_data[table][anid][k])
+                    r[k] = copy.deepcopy(SAMPLE_DATA[table][anid][k])
                     if table == 'core.personas':
                         if k == 'balance':
                             r[k] = decimal.Decimal(r[k])
@@ -366,23 +359,40 @@ class BasicTest(unittest.TestCase):
                         r[k] = parse_datetime(r[k])
                 ret[anid] = r
             else:
-                ret[anid] = copy.deepcopy(self.sample_data[table][anid])
+                ret[anid] = copy.deepcopy(SAMPLE_DATA[table][anid])
         return ret
+    
+    def get_sample_datum(self, table: str, id_: int) -> CdEDBObject:
+        return self.get_sample_data(table, [id_], [])[id_]
 
 
 class CdEDBTest(BasicTest):
     """Reset the DB for every test."""
     testfile_dir = pathlib.Path("/tmp/cdedb-store/testfiles")
-    _clean_sample_data: ClassVar[Dict[str, CdEDBObjectMap]]
-    conf: ClassVar[Config]
 
     def setUp(self) -> None:
         # Start the call in a new session, so that a SIGINT does not interrupt this.
-        subprocess.check_call(("make", "sample-data-test-shallow"),
+        subprocess.check_call(("make", "storage-test"),
                               stdout=subprocess.DEVNULL,
                               stderr=subprocess.DEVNULL,
                               start_new_session=True)
-        super(CdEDBTest, self).setUp()
+        with setup(
+            persona_id=-1,
+            dbuser="cdb",
+            dbpassword=_SECRETSCONF["CDB_DATABASE_ROLES"]["cdb"],
+            dbname=self.conf["CDB_DATABASE_NAME"],
+            check_system_user=False,
+        )().conn as conn:
+            conn.set_session(autocommit=True)
+            with conn.cursor() as curr:
+                with open("tests/ancillary_files/clean_data.sql") as f:
+                    sql_input = f.read()
+                curr.execute(sql_input)
+                with open("tests/ancillary_files/sample_data.sql") as f:
+                    sql_input = f.read()
+                curr.execute(sql_input)
+
+        super().setUp()
 
 
 UserIdentifier = Union[CdEDBObject, str, int]
@@ -1434,9 +1444,9 @@ def make_cron_backend_proxy(cron: CronFrontend, backend: B) -> B:
     return cast(B, CronBackendProxy())
 
 
-class CronTest(unittest.TestCase):
-    _all_periodics: Set[str]
-    _run_periodics: Set[str]
+class CronTest(CdEDBTest):
+    _remaining_periodics: Set[str]
+    _remaining_tests: Set[str]
     cron: ClassVar[CronFrontend]
     core: ClassVar[CoreBackend]
     cde: ClassVar[CdEBackend]
@@ -1452,31 +1462,32 @@ class CronTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        super().setUpClass()
         cls.cron = CronFrontend()
         cls.core = make_cron_backend_proxy(cls.cron, cls.cron.core.coreproxy)
         cls.cde = make_cron_backend_proxy(cls.cron, cls.cron.core.cdeproxy)
         cls.event = make_cron_backend_proxy(cls.cron, cls.cron.core.eventproxy)
         cls.assembly = make_cron_backend_proxy(cls.cron, cls.cron.core.assemblyproxy)
         cls.ml = make_cron_backend_proxy(cls.cron, cls.cron.core.mlproxy)
-        cls._all_periodics = {
+        cls._remaining_periodics = {
             job.cron['name']
             for frontend in (cls.cron.core, cls.cron.cde, cls.cron.event,
                              cls.cron.assembly, cls.cron.ml)
             for job in cls.cron.find_periodics(frontend)
         }
-        cls._run_periodics = set()
+        cls._remaining_tests = {x for x in dir(cls) if x.startswith("test_")}
 
     @classmethod
     def tearDownClass(cls) -> None:
-        if (any(job not in cls._run_periodics for job in cls._all_periodics)
-                and not os.environ.get('CDEDB_TEST_SINGULAR')):
+        super().tearDownClass()
+        if not cls._remaining_tests and cls._remaining_periodics:
             raise AssertionError(f"The following cron-periodics never ran:"
-                                 f" {cls._all_periodics - cls._run_periodics}")
+                                 f" {cls._remaining_periodics}")
 
     def setUp(self) -> None:
-        subprocess.check_call(("make", "sql-test-shallow"),
-                              stdout=subprocess.DEVNULL,
-                              stderr=subprocess.DEVNULL)
+        super().setUp()
+
+        self._remaining_tests.remove(self._testMethodName)
         self.stores = []
         self.mails = []
 
@@ -1508,7 +1519,7 @@ class CronTest(unittest.TestCase):
     def execute(self, *args: Any, check_stores: bool = True) -> None:
         if not args:
             raise ValueError("Must specify jobs to run.")
-        self._run_periodics.update(args)
+        self._remaining_periodics.difference_update(args)
         self.cron.execute(args)
         if check_stores:
             expectation = set(args) | {"_base"}

@@ -364,7 +364,6 @@ class TestCron(CronTest):
 
     @unittest.mock.patch("cdedb.frontend.common.CdEMailmanClient")
     def test_mailman_sync(self, client_class: unittest.mock.Mock) -> None:
-        self._run_periodics.add('mailman_sync')
         #
         # Prepare
         #

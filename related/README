@@ -1,5 +1,9 @@
 This directory contains external stuff, on which the CdEDB depends, which is
 not commonly packaged.
 
-The directory auto-build creates code originally developed by Helmut Grohne
-and Klaus Aehlig.
+The directory auto-build contains code originally developed by Helmut Grohne
+and Klaus Aehlig provided under 3-Clause BSD license.
+
+The file schulze1.pdf is authored by Markus Schulze.
+
+All other artifacts are original contributions.

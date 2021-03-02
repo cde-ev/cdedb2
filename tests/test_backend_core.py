@@ -511,7 +511,7 @@ class TestCoreBackend(BackendTest):
 
     @as_users("vera")
     def test_meta_info(self, user: CdEDBObject) -> None:
-        expectation = self.sample_data['core.meta_info'][1]['info']
+        expectation = self.get_sample_datum('core.meta_info', 1)['info']
         self.assertEqual(expectation, self.core.get_meta_info(self.key))
         update = {
             'Finanzvorstand_Name': 'Zelda'
@@ -604,7 +604,7 @@ class TestCoreBackend(BackendTest):
             'id': case_id,
             'case_status': const.GenesisStati.to_review,
             'reviewer': None,
-            'attachment': None,
+            'attachment_hash': None,
             'birth_name': None,
         })
         value = self.core.genesis_get_case(self.key, case_id)
@@ -680,7 +680,7 @@ class TestCoreBackend(BackendTest):
             'mobile': None,
             'postal_code': None,
             'telephone': None,
-            'attachment': None,
+            'attachment_hash': None,
             'birth_name': None,
         })
         value = self.core.genesis_get_case(self.key, case_id)
@@ -745,7 +745,7 @@ class TestCoreBackend(BackendTest):
             'postal_code': "12345",
             'location': "Marcuria",
             'country': "AQ",
-            'attachment': attachment_hash,
+            'attachment_hash': attachment_hash,
         }
         self.assertFalse(self.core.genesis_attachment_usage(
             self.key, attachment_hash))
@@ -1103,8 +1103,8 @@ class TestCoreBackend(BackendTest):
         result = self.core.retrieve_log(self.key)
         self.assertEqual(core_log_expectation, result)
 
-        sample_entries = len(self.sample_data["core.changelog"])
-        changelog_expectation = (sample_entries + 1, (
+        total_entries = self.core.retrieve_changelog_meta(self.key)[0]
+        changelog_expectation = (total_entries, (
             # Committing the changed admin bits.
             {
                 'id': 1001,
@@ -1118,8 +1118,7 @@ class TestCoreBackend(BackendTest):
             },
         ))
         # Set offset to avoid selecting the Init. changelog entries
-        result = self.core.retrieve_changelog_meta(
-            self.key, offset=sample_entries)
+        result = self.core.retrieve_changelog_meta(self.key, offset=total_entries-1)
         self.assertEqual(changelog_expectation, result)
 
     @as_users("anton", "martin")

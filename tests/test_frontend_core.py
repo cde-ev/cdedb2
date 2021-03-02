@@ -177,6 +177,12 @@ class TestCoreFrontend(FrontendTest):
             self.assertIn(line, self.response.text)
 
     @as_users("vera")
+    def test_vcard_cde_admin(self, user: CdEDBObject) -> None:
+        self.admin_view_profile('charly')
+        self.assertTitle("Charly C. Clown")
+        self.traverse({'description': 'VCard'})
+
+    @as_users("vera")
     def test_toggle_admin_views(self, user: CdEDBObject) -> None:
         self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, '')
         # Core Administration
@@ -1136,7 +1142,7 @@ class TestCoreFrontend(FrontendTest):
     @as_users("berta")
     def test_reset_foto(self, user: CdEDBObject) -> None:
         self.traverse({'description': user['display_name']},)
-        foto_hash = self.sample_data['core.personas'][user['id']]['foto']
+        foto_hash = self.get_sample_datum('core.personas', user['id'])['foto']
         self.assertIn(f'foto/{foto_hash}', self.response.text)
         self.traverse({'description': 'Profilbild ändern'})
         f = self.response.forms['resetfotoform']
@@ -1954,6 +1960,12 @@ class TestCoreFrontend(FrontendTest):
             "username": "anton@example.cde",
         })
         self.get('/core/api/resolve', status=403)
+
+    @as_users("janis")
+    def test_markdown_endpoint(self, user: CdEDBObject) -> None:
+        self.post('/core/markdown/parse', {'md_str': '**bold** <script></script>'})
+        expectation = "<p><strong>bold</strong> &lt;script&gt;&lt;/script&gt;</p>"
+        self.assertEqual(expectation, self.response.text)
 
     def test_log(self) -> None:
         user = USER_DICT['vera']

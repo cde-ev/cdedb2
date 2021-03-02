@@ -1776,6 +1776,9 @@ ADMIN_KEYS = {"is_meta_admin", "is_core_admin", "is_cde_admin",
               "is_finance_admin", "is_event_admin", "is_ml_admin",
               "is_assembly_admin", "is_cdelokal_admin"}
 
+#: List of all admin roles who actually have a corresponding realm with a user role.
+REALM_ADMINS = {"core_admin", "cde_admin", "event_admin", "ml_admin", "assembly_admin"}
+
 DB_ROLE_MAPPING: role_map_type = collections.OrderedDict((
     ("meta_admin", "cdb_admin"),
     ("core_admin", "cdb_admin"),
@@ -1925,7 +1928,7 @@ PERSONA_ALL_FIELDS = PERSONA_CDE_FIELDS + ("notes",)
 GENESIS_CASE_FIELDS = (
     "id", "ctime", "username", "given_names", "family_name",
     "gender", "birthday", "telephone", "mobile", "address_supplement",
-    "address", "postal_code", "location", "country", "birth_name", "attachment",
+    "address", "postal_code", "location", "country", "birth_name", "attachment_hash",
     "realm", "notes", "case_status", "reviewer")
 
 # The following dict defines, which additional fields are required for genesis
@@ -1938,7 +1941,7 @@ REALM_SPECIFIC_GENESIS_FIELDS: Dict[Realm, Tuple[str, ...]] = {
               "country"),
     "cde": ("gender", "birthday", "telephone", "mobile",
             "address_supplement", "address", "postal_code", "location",
-            "country", "birth_name", "attachment"),
+            "country", "birth_name", "attachment_hash"),
 }
 
 # This overrides the more general PERSONA_DEFAULTS dict with some realm-specific
@@ -2174,6 +2177,9 @@ EVENT_FIELD_SPEC: Dict[
     'fee_modifier': (
         {const.FieldDatatypes.bool}, {const.FieldAssociations.registration}),
 }
+
+LOG_FIELDS_COMMON = ("codes", "persona_id", "submitted_by", "change_note", "offset",
+                     "length", "time_start", "time_stop")
 
 EPSILON = 10 ** (-6)  #:
 
