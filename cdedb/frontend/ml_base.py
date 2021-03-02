@@ -757,8 +757,8 @@ class MlBaseFrontend(AbstractUserFrontend):
 
         # Use different error pattern if only one action is done
         if len(persona_ids) == 1:
-            self._subscription_action_handler(rs, action,
-                mailinglist_id=mailinglist_id, persona_id=unwrap(persona_ids))
+            self._subscription_action_handler(rs, action, mailinglist_id=mailinglist_id,
+                                              persona_id=unwrap(persona_ids))
             return
         # Iterate over all subscriber_ids
         code = 0
@@ -767,17 +767,16 @@ class MlBaseFrontend(AbstractUserFrontend):
         infos_only = True
         for persona_id in persona_ids:
             try:
-                code += self.mlproxy.do_subscription_action(rs, action,
-                    mailinglist_id=mailinglist_id, persona_id=persona_id)
+                code += self.mlproxy.do_subscription_action(
+                    rs, action, mailinglist_id=mailinglist_id, persona_id=persona_id)
                 infos_only = False
             except SubscriptionError as se:
-                rs.notify(se.multikind, se.msg)
-                if se.multikind != 'info':
+                rs.notify("warning" if se.kind == "error" else se.kind, se.msg)
+                if se.kind != 'info':
                     infos_only = False
             except PrivilegeError:
                 infos_only = False
-                rs.notify("error",
-                          n_("Not privileged to change subscriptions."))
+                rs.notify("error", n_("Not privileged to change subscriptions."))
         if infos_only:
             self.notify_return_code(rs, -1, info=n_("Action had no effect."))
         else:
