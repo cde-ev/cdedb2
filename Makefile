@@ -26,18 +26,19 @@ help:
 	@echo "                tests.test_frontend_event.TestEventFrontend.test_create_event)"
 	@echo "coverage -- run coverage to determine test suite coverage"
 
-# Binaries
+# Executables
 PYTHONBIN ?= python3
 FLAKE8 ?= $(PYTHONBIN) -m flake8
 PYLINT ?= $(PYTHONBIN) -m pylint
 COVERAGE ?= $(PYTHONBIN) -m coverage
 MYPY ?= $(PYTHONBIN) -m mypy
 ifeq ($(wildcard /CONTAINER),/CONTAINER)
+# We need to use psql directly as DROP DATABASE and variables are not supported by our helper
+	PSQL_ADMIN ?= psql postgresql://postgres:passwd@cdb
 	PSQL ?= $(PYTHONBIN) bin/execute_sql_script.py
-	PSQLCDB ?= $(PSQL)
 else
-	PSQL ?= sudo -u postgres psql
-	PSQLCDB ?= sudo -u cdb psql
+	PSQL_ADMIN ?= sudo -u postgres psql
+	PSQL ?= sudo -u cdb psql
 endif
 
 # Others
@@ -170,37 +171,34 @@ endif
 ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
 	$(error Refusing to touch orga instance)
 endif
-ifeq ($(wildcard /CONTAINER),/CONTAINER)
-	# We need to use psql directly as DROP DATABASE and variables are not supported by our helper
-	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-users.sql
-	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb
-	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb_test
-else
+ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl stop pgbouncer
-	$(PSQL) -f cdedb/database/cdedb-users.sql
-	$(PSQL) -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb
-	$(PSQL) -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb_test
+endif
+	$(PSQL_ADMIN) -f cdedb/database/cdedb-users.sql
+	$(PSQL_ADMIN) -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb
+	$(PSQL_ADMIN) -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb_test
+ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl start pgbouncer
 endif
-	$(PSQLCDB) -f cdedb/database/cdedb-tables.sql --dbname=cdb
-	$(PSQLCDB) -f cdedb/database/cdedb-tables.sql --dbname=cdb_test
-	$(PSQLCDB) -f tests/ancillary_files/sample_data.sql --dbname=cdb
-	$(PSQLCDB) -f tests/ancillary_files/sample_data.sql --dbname=cdb_test
+	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=cdb
+	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=cdb_test
+	$(PSQL) -f tests/ancillary_files/sample_data.sql --dbname=cdb
+	$(PSQL) -f tests/ancillary_files/sample_data.sql --dbname=cdb_test
 
 sql-test:
-ifeq ($(wildcard /CONTAINER),/CONTAINER)
-	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb_test
-else
+ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl stop pgbouncer
-	$(PSQL) -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb_test
+endif
+	$(PSQL_ADMIN) -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb_test
+ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl start pgbouncer
 endif
-	$(PSQLCDB) -f cdedb/database/cdedb-tables.sql --dbname=cdb_test
+	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=cdb_test
 	$(MAKE) sql-test-shallow
 
 sql-test-shallow: tests/ancillary_files/sample_data.sql
-	$(PSQLCDB) -f tests/ancillary_files/clean_data.sql --dbname=cdb_test
-	$(PSQLCDB) -f tests/ancillary_files/sample_data.sql --dbname=cdb_test
+	$(PSQL) -f tests/ancillary_files/clean_data.sql --dbname=cdb_test
+	$(PSQL) -f tests/ancillary_files/sample_data.sql --dbname=cdb_test
 
 sql-xss: tests/ancillary_files/sample_data_xss.sql
 ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
@@ -209,22 +207,19 @@ endif
 ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
 	$(error Refusing to touch orga instance)
 endif
-ifeq ($(wildcard /CONTAINER),/CONTAINER)
-	# We need to use psql directly as DROP DATABASE and variables are not supported by our helper
-	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-users.sql
-	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb
-	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb_test
-else
+ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl stop pgbouncer
-	$(PSQL) -f cdedb/database/cdedb-users.sql
-	$(PSQL) -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb
-	$(PSQL) -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb_test
+endif
+	$(PSQL_ADMIN) -f cdedb/database/cdedb-users.sql
+	$(PSQL_ADMIN) -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb
+	$(PSQL_ADMIN) -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb_test
+ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl start pgbouncer
 endif
-	$(PSQLCDB) -f cdedb/database/cdedb-tables.sql --dbname=cdb
-	$(PSQLCDB) -f cdedb/database/cdedb-tables.sql --dbname=cdb_test
-	$(PSQLCDB) -f tests/ancillary_files/sample_data_xss.sql --dbname=cdb
-	$(PSQLCDB) -f tests/ancillary_files/sample_data_xss.sql --dbname=cdb_test
+	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=cdb
+	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=cdb_test
+	$(PSQL) -f tests/ancillary_files/sample_data_xss.sql --dbname=cdb
+	$(PSQL) -f tests/ancillary_files/sample_data_xss.sql --dbname=cdb_test
 
 cron:
 	sudo -u www-data /cdedb2/bin/cron_execute.py
