@@ -19,8 +19,7 @@ functions:
 """
 
 from gettext import gettext as _
-from typing import Optional, Tuple
-from typing_extensions import Literal
+from typing import Optional
 
 from .exceptions import SubscriptionError
 from .machine import SubscriptionActions, SubscriptionPolicy, SubscriptionStates
