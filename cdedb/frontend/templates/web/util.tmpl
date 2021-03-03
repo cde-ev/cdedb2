@@ -79,7 +79,9 @@
 {%- endmacro %}
 
 {% macro gettext_country(country) -%}
-    {{ gettext("CountryCodes." + country) }}
+    {%- if country %}
+        {{ gettext("CountryCodes." + country) }}
+    {% endif %}
 {%- endmacro %}
 
 
