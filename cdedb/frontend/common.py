@@ -1071,7 +1071,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         # here come the always accessible things promised above
         data = {
-            'COUNTRY_CODES': xsorted([(v, rs.gettext(f"CountryCodes.{v}"))
+            'COUNTRY_CODES': xsorted([(v, rs.gettext("CountryCodes.{}".format(v)))
                                       for v in COUNTRY_CODES], key=lambda x: x[1]),
             'ambience': rs.ambience,
             'cdedblink': _cdedblink,
