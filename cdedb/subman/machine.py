@@ -9,7 +9,7 @@ Here, `SubscriptionActions` are the possible actions to transition from one
 but multiple actions might lead to the same target state. An action might be allowed
 from any current state or only from a subset of all states.
 
-Some actions are only avaoilable to moderators. These actions are referred to as
+Some actions are only available to moderators. These actions are referred to as
 "managing actions".
 
 Some actions are meant to be performed automatically somewhat regularly. They are not
@@ -96,7 +96,7 @@ class SubscriptionPolicy(enum.IntEnum):
     #: Only implicit subscribers are allowed. If the user is neither implicit subscriber
     #: nor has subscription override, their subscription will be removed.
     implicits_only = 4
-    #: User is not allowed to be subscribed except by subscription overide.
+    #: User is not allowed to be subscribed except by subscription override.
     none = 5
 
     def is_implicit(self) -> bool:
@@ -153,7 +153,7 @@ class SubscriptionActions(enum.IntEnum):
     def get_target_state(self) -> Optional[SubscriptionStates]:
         """Get the target state associated with an action.
 
-        This is unique for each eaction. If None, a user will have no relation with the
+        This is unique for each action. If None, a user will have no relation with the
         subscription object after the action has been performed.
         """
         action_target_state_map = {
@@ -229,7 +229,7 @@ class SubscriptionActions(enum.IntEnum):
     def cleanup_actions(cls) -> Set["SubscriptionActions"]:
         """All actions which are part of more involved cleanup procedures.
 
-        These cannot be executed via `apply_action`, anc should be executed via
+        These cannot be executed via `apply_action`, and should be executed via
         `do_cleanup` instead.
         """
         return {

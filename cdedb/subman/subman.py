@@ -1,7 +1,7 @@
 """This file provides the central functionality of the subman library.
 
 To manage subscriptions of arbitrary objects, for example mailinglists, journals,
-,notifications, or magazines the logic one would like to use in a non-trivial
+notifications, or magazines the logic one would like to use in a non-trivial
 situation is a bit complicated and does not really depend on precise use case.
 For more general comments see the documentation.
 
@@ -72,7 +72,7 @@ def apply_action(action: SubscriptionActions, *,
     action is allowed to be performed, a series of checks are performed.
 
     :param action: The SubscriptionAction to be performed in the end if all goes well.
-        Determines the target state of the trnsition.
+        Determines the target state of the transition.
     :param policy: The SubscriptionPolicy describing the allowed interactions between
         the affected user and the affected subscription object.
     :param old_state: The current state of the relation between the affected user and
@@ -114,7 +114,7 @@ def _apply_cleanup(policy: SubscriptionPolicy,
                    ) -> None:
     """Analogue of apply_action for cleanup of subscribers.
 
-    This interface is exposed mainly for show to make the transition understandable by
+    This interface is exposed mainly to make the transition understandable by
     analogy to apply_action. Since this is dependant on the fact whether a subscriber
     would be implied as a subscriber of the respective object, it can not be done with
     the exact same formalism as apply_action.
@@ -153,7 +153,7 @@ def is_obsolete(policy: SubscriptionPolicy,
     :param is_implied: Whether the user is currently implied as a subscriber of the
         respective object. Note that the user may still have a current state other than
         implicit, even if they are implied, for example if they opted out of an
-        autmotic subscription.
+        automatic subscription.
     """
     try:
         _apply_cleanup(policy, old_state, is_implied)
