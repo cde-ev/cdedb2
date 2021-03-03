@@ -30,11 +30,15 @@ from .machine import (
 
 def _check_state_requirements(action: SubscriptionActions,
                               old_state: Optional[SubscriptionStates]) -> None:
-    """This checks if an action is allowed to be performed from a certain state.
+    """This checks if the given action is allowed to be performed from the given state.
 
     This check is the heart of the subscription state machine, since it considers the
-    actual state transition. If a state does not allow a transition via a specific
-    action to the actions respective target state, a SubscriptionError is raised"""
+    actual state transition. If the given state does not allow the transition via the
+    given action, a SubscriptionError is raised.
+
+    Keep in mind that different actions may lead to the same target state, but only one
+    of them may be appropriate to use from the current state.
+    """
 
     error_matrix = SubscriptionActions.get_error_matrix()
     # TODO: `if exception := error_matrix[action][old_state]`.
@@ -43,11 +47,12 @@ def _check_state_requirements(action: SubscriptionActions,
         raise exception
 
 
-def _check_policy_requirements(*, action: SubscriptionActions,
+def _check_policy_requirements(action: SubscriptionActions,
                                policy: Optional[SubscriptionPolicy]) -> None:
-    """This checks if the SubscriptionPolicy allows the action to be performed.
+    """This checks if the given action is allowed by the given SubscriptionPolicy.
 
-    The policy may vary depending on the user the respective action is performed on.
+    The policy should depend only on the affected user, not on the performing user.
+
     If the policy does not allow the action, a SubscriptionError is raised.
 
     :param policy: The SubsscriptionPolicy. If not given, the user is not privileged
@@ -64,45 +69,49 @@ def _check_policy_requirements(*, action: SubscriptionActions,
         raise SubscriptionError(_("Can not request subscription."))
 
 
-def apply_action(*, action: SubscriptionActions,
+def apply_action(action: SubscriptionActions, *,
                  policy: Optional[SubscriptionPolicy],
-                 allow_unsub: bool = True,
                  old_state: Optional[SubscriptionStates],
+                 allow_unsub: bool = True,
+                 is_privileged: bool = True,
                  ) -> Tuple[Optional[SubscriptionStates], SubscriptionLogCodes]:
-    """Applies a SubscriptionAction to a SubscriptionState regarding a certain object.
+    """Apply a SubscriptionAction to a SubscriptionState according to a SubscriptionPolicy.
 
-    This is the main interface processing subscription actions to transfer users to a
-    the respective target state. To decide if an action is allowed to be performed,
-    a wide variety of checks are performed. Details are visible in the respective
-    un-inlined functions.
+    This is the main interface for performing subscription actions. To decide if the
+    action is allowed to be performed, a series of checks are performed.
 
     :param action: The SubscriptionAction to be performed in the end if all goes well.
         Determines the target state of the trnsition.
-    :param policy: The SubscriptionPolicy applying to the object for the user an action
-        is performed on.
-    :param allow_unsub: If a subscription of the object is mandatory for the respective
-        user. We recommend only using the policies SubscriptionPolicy.implicits_only and
+    :param policy: The SubscriptionPolicy describing the allowed interactions between
+        the affected user and the affected subscription object.
+    :param old_state: The current state of the relation between the affected user and
+        the affected subscription object.
+    :param allow_unsub: If this is not True, prevent the user from becoming unsubscribed.
+        We recommend only using the policies SubscriptionPolicy.implicits_only and
         None for objects using this feature.
         Warning: This feature is not compatible with users with old_state in
         {SubscriptionStates.unsubscribed, SubscriptionStates.unsubscription_override}
         regarding the respective object.
-    :param old_state: The state the `SubscriptionAction` shall start from.
+    :param is_privileged: If this is not True, disallow managing actions.
     """
-    # 1: Do basic sanity checks this library is used appropriately
+    # 1: Do basic sanity checks this library is used appropriately.
     if action in SubscriptionActions.cleanup_actions():
         raise RuntimeError(_("Use is_obsolete to perform cleanup actions."))
+    # TODO: why? This does not really help us.
     if allow_unsub and old_state in {SubscriptionStates.unsubscribed,
                                      SubscriptionStates.unsubscription_override}:
         raise RuntimeError(_("allow_unsub is incompatible with explicitly unsubscribed"
                              " states."))
 
-    # 2: Check list-dependent requirements for transition
+    # 2: Check list-dependent requirements for transition.
     _check_policy_requirements(action=action, policy=policy)
     if action.is_unsubscribing() and not allow_unsub:
         raise SubscriptionError(_("Can not unsubscribe."))
 
-    # 3: Check if current state allows transition
+    # 3: Check if current state allows transition.
     _check_state_requirements(action, old_state)
+
+    # 4: Return target state and log code associated with the action.
     return action.get_target_state(), action.get_log_code()
 
 

@@ -1,15 +1,33 @@
 """This contains most of the logic required to perform actions on subscriptions.
 
+It is assumed that there are some users with additional privileges (possibly depending
+on the subscription object in question). These privileged users are referred to as
+"moderators".
+
 Here, `SubscriptionActions` are the possible actions to transition from one
-`SubscriptionState` to another. While each SubscriptionAction can usually start at
-several initial state, it always has one unique target state.
+`SubscriptionState` to another. Every action will always lead to the same target state,
+but multiple actions might lead to the same target state. An action might be allowed
+from any current state or only from a subset of all states.
 
-Additionally, every user can have a certain `SubscriptionPolicy` with regard to each
-particular object they could possibly be subscribed to. This determines, fore example,
-if they may be subscribed to an object or may even subscribe themselves.
+Some actions are only avaoilable to moderators. These actions are referred to as
+"managing actions".
 
-Finally, there are `SubscriptionLogCodes` you can use to log the events performed by
-`SubscriptionActions`.
+Some actions are meant to be performed automatically somewhat regularly. They are not
+meant to be performed manually but rather as a reaction to some change of an external
+condition, like a user losing the privilege to subscribe to a certain subscription
+object. These actions are referred to as "cleanup actions".
+
+Every user has a certain `SubscriptionPolicy` that defines their relation to any
+particular object they could possibly be subscribed to. This determines what actions
+they can perform themselves, but also what administrative actions others may perform
+for them.
+
+Finally, every `SubscriptionAction` is mapped to a `SubscriptionLogCode` that can be
+used to keep a log of all performed actions. The log codes are meant to be used in
+combination with the the information who performed an action and on whom.
+For example a user performing `SubscriptionActions.unsubscribe` for themself and a
+moderator using `SubscriptionActions.remove_subscription` on that same user will result
+in the same `SubscriptionLogCode`.
 """
 
 import enum
@@ -21,7 +39,7 @@ from .exceptions import SubscriptionError, SubscriptionInfo
 
 @enum.unique
 class SubscriptionStates(enum.IntEnum):
-    """Define the possible relations between users and subscription objects.
+    """All possible relations between a user and a subscription object.
 
     While some states are part of the core subscription machine and must be expected for
     the library to work properly, others are optional and can be deactivated without
@@ -54,7 +72,8 @@ class SubscriptionStates(enum.IntEnum):
         """Whether a user is actually subscribed.
 
         All complications of the state machine aside, this is what matters in the end:
-        Whether a user is considered to be subscribed or not."""
+        Whether a user is considered to be subscribed or not.
+        """
         return self in self.subscribing_states()
 
     @classmethod
@@ -72,9 +91,8 @@ class SubscriptionStates(enum.IntEnum):
 class SubscriptionPolicy(enum.IntEnum):
     """Define the relation between a *potential* subscriber and a subscription object.
 
-    This tells whether a given user may be subscribed to an object. In addition to
-    the enum members, None is considered a `SubscriptionPolicy` as well and means that
-    a user is not allowed to be subscribed.
+    This tells us what `SubscriptionsActions` may be performed on the user, including
+    whether or not they may be subscribed at all.
     """
     #: User may subscribe themselves,
     subscribable = 1
@@ -86,6 +104,7 @@ class SubscriptionPolicy(enum.IntEnum):
     #: nor has subscription override, their subscription will be removed.
     implicits_only = 4
     #: User is not allowed to be subscribed except by subscription overide.
+    # TODO: replace `None` as a policy with an actual enum member.
     # None
 
     def is_implicit(self) -> bool:
@@ -126,7 +145,7 @@ class SubscriptionLogCodes(enum.IntEnum):
 class SubscriptionActions(enum.IntEnum):
     """All possible actions a subscriber or moderator can take.
 
-    You may choose to make not all of these available to your users or show some only
+    You may choose to make only some of these available to your users or show some only
     under specific conditions.
     """
     subscribe = 1  #: A user subscribing themselves.
@@ -145,12 +164,13 @@ class SubscriptionActions(enum.IntEnum):
     reset = 40  #: A moderator removing the current state of a user.
     cleanup_subscription = 50  #: An automatic cleanup of users being explicitly subscribed.
     cleanup_implicit = 51  #: An automatic cleanup of users being implicitly subscribed.
+    # TODO: Add action for adding an implicit subscriber.
 
     def get_target_state(self) -> Optional[SubscriptionStates]:
         """Get the target state associated with an action.
 
-        This is unique for each eaction. If None, a user has no relation with the
-        object after the action has been performed.
+        This is unique for each eaction. If None, a user will have no relation with the
+        subscription object after the action has been performed.
         """
         action_target_state_map = {
             self.subscribe: SubscriptionStates.subscribed,
@@ -174,6 +194,7 @@ class SubscriptionActions(enum.IntEnum):
 
     def get_log_code(self) -> SubscriptionLogCodes:
         """Get the log code associated with performing an action."""
+        # TODO: remove this from the module. Instead make this a part of `MlLogCodes`.
         log_code_map = {
             self.subscribe: SubscriptionLogCodes.subscribed,
             self.unsubscribe: SubscriptionLogCodes.unsubscribed,
@@ -206,15 +227,14 @@ class SubscriptionActions(enum.IntEnum):
     def unsubscribing_actions(cls) -> Set["SubscriptionActions"]:
         """All actions that unsubscribe a user.
 
-        While cleanup_actions are removing a user from an object, we do not
-        consider them unsubscribing, since they do not represent active unsubscriptions,
-        but user removals due to outside conditions. For example, a user might no
-        longer belong to a group for which a subscription is mandatory.
+        While cleanup actions may remove a user's subscription from an object, they are
+        not considered unsubscribing, because won't be performed manually.
         """
+        # TODO: include cleanup here.
         return {
-            SubscriptionActions.unsubscribe,
-            SubscriptionActions.remove_subscriber,
-            SubscriptionActions.add_unsubscription_override,
+            cls.unsubscribe,
+            cls.remove_subscriber,
+            cls.add_unsubscription_override,
         }
 
     def is_unsubscribing(self) -> bool:
@@ -225,20 +245,19 @@ class SubscriptionActions(enum.IntEnum):
     def managing_actions(cls) -> Set["SubscriptionActions"]:
         """All actions that require additional privileges.
 
-        These should only be made accessible to moderators or administrators of
-        subscriptions.
+        These should only be made accessible to moderators.
         """
         return {
-            SubscriptionActions.approve_request,
-            SubscriptionActions.deny_request,
-            SubscriptionActions.block_request,
-            SubscriptionActions.add_subscriber,
-            SubscriptionActions.add_subscription_override,
-            SubscriptionActions.add_unsubscription_override,
-            SubscriptionActions.remove_subscriber,
-            SubscriptionActions.remove_subscription_override,
-            SubscriptionActions.remove_unsubscription_override,
-            SubscriptionActions.reset,
+            cls.approve_request,
+            cls.deny_request,
+            cls.block_request,
+            cls.add_subscriber,
+            cls.add_subscription_override,
+            cls.add_unsubscription_override,
+            cls.remove_subscriber,
+            cls.remove_subscription_override,
+            cls.remove_unsubscription_override,
+            cls.reset,
         }
 
     def is_managing(self) -> bool:
@@ -249,8 +268,8 @@ class SubscriptionActions(enum.IntEnum):
     def cleanup_actions(cls) -> Set["SubscriptionActions"]:
         """All actions which are part of more involved cleanup procedures.
 
-        These can not be executed via `apply_action`, but should be executed
-        via `do_cleanup` instead, since they need some particularly special checks.
+        These cannot be executed via `apply_action`, anc should be executed via
+        `do_cleanup` instead.
         """
         return {
             SubscriptionActions.cleanup_subscription,
@@ -258,10 +277,12 @@ class SubscriptionActions(enum.IntEnum):
         }
 
     def is_automatic(self) -> bool:
-        """Whether or not an action requires additional privileges."""
+        """Whether or not an action may not be performed manually."""
         return self in self.cleanup_actions()
 
 
+# TODO: make these `Mapping`s, so they are immutable? It might be useful to be able to
+#  alter these.
 _StateErrorMapping = Dict[Optional[SubscriptionStates], Optional[SubscriptionError]]
 _ActionStateErrorMatrix = Dict[SubscriptionActions, _StateErrorMapping]
 
