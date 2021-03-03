@@ -1775,9 +1775,8 @@ msgid "Given method is not callable."
 msgstr "Die fragliche Methode ist nicht aufrufbar."
 
 #: cdedb/frontend/common.py:1074
-#, fuzzy
 msgid "CountryCodes.{}"
-msgstr "Hyrule"
+msgstr ""
 
 #: cdedb/frontend/common.py:1100
 #, python-format
