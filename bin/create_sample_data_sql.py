@@ -94,6 +94,25 @@ def prepare_aux(data: CdEDBObject) -> AuxData:
     )
 
 
+def format_inserts(table_name, table_data, keys, params, aux):
+    ret = []
+    # Create len(data) many row placeholders for len(keys) many values.
+    value_list = ",\n".join(("({})".format(", ".join(("%s",) * len(keys))),)
+                            * len(table_data))
+    query = "INSERT INTO {table} ({keys}) VALUES {value_list};".format(
+        table=table_name, keys=", ".join(keys), value_list=value_list)
+    # noinspection PyProtectedMember
+    params = tuple(aux["core"]._sanitize_db_input(p) for p in params)
+
+    # This is a bit hacky, but it gives us access to a psycopg2.cursor
+    # object so we can let psycopg2 take care of the heavy lifting
+    # regarding correctly inserting the parameters into the SQL query.
+    with aux["rs"].conn as conn:
+        with conn.cursor() as cur:
+            ret.append(cur.mogrify(query, params).decode("utf8"))
+    return ret
+
+
 def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
     commands: List[str] = []
 
@@ -134,20 +153,7 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
                 entry[k] = f(entry)
             params.extend(entry[k] for k in keys)
 
-        # Create len(data) many row placeholders for len(keys) many values.
-        value_list = ",\n".join(("({})".format(", ".join(("%s",) * len(keys))),)
-                                * len(table_data))
-        query = "INSERT INTO {table} ({keys}) VALUES {value_list};".format(
-            table=table, keys=", ".join(keys), value_list=value_list)
-        # noinspection PyProtectedMember
-        params = tuple(aux["core"]._sanitize_db_input(p) for p in params)
-
-        # This is a bit hacky, but it gives us access to a psycopg2.cursor
-        # object so we can let psycopg2 take care of the heavy lifting
-        # regarding correctly inserting the parameters into the SQL query.
-        with aux["rs"].conn as conn:
-            with conn.cursor() as cur:
-                commands.append(cur.mogrify(query, params).decode("utf8"))
+        commands.extend(format_inserts(table, table_data, keys, params, aux))
 
     # Now we update the tables to fix the cyclic references we skipped earlier.
     for table, refs in aux["cyclic_references"].items():
@@ -161,6 +167,132 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
                         with conn.cursor() as cur:
                             commands.append(
                                 cur.mogrify(query, params).decode("utf8"))
+
+    # Insert the ldap infos
+    # This is adapted from
+    # servers/slapd/back-sql/rdbms_depend/pgsql/testdb_metadata.sql
+    # in the openldap sources.
+    #
+    # Currently this just provides a minimal viable example to test the ldap
+    # sql integration. This is just a static data set kind of independent
+    # from the rest of the DB.
+    LDAP_TABLES = {
+        'ldap_organizations': [
+            {
+                'id': 1,
+                'moniker': 'CdE',
+            },
+        ],
+        'ldap_oc_mappings': [
+            {
+                'id': 1,
+                'name': 'inetOrgPerson',
+                'keytbl': 'core.personas',
+                'keycol': 'id',
+                'create_proc': "SELECT 'TODO'",
+                'delete_proc': "SELECT 'TODO'",
+                'expect_return': 0,
+            },
+            {
+                'id': 2,
+                'name': 'organization',
+                'keytbl': 'ldap_organizations',
+                'keycol': 'id',
+                'create_proc': "SELECT 'TODO'",
+                'delete_proc': "SELECT 'TODO'",
+                'expect_return': 0,
+            },
+        ],
+        'ldap_attr_mappings': [
+            {
+                'id': 1,
+                'oc_map_id': 1,
+                'name': 'cn',
+                'sel_expr': 'personas.username',
+                'from_tbls': 'core.personas',
+                'join_where': None,
+                'add_proc': "SELECT 'TODO'",
+                'delete_proc': "SELECT 'TODO'",
+                'param_order': 3,
+                'expect_return': 0,
+            },
+            {
+                'id': 2,
+                'oc_map_id': 1,
+                'name': 'givenName',
+                'sel_expr': 'personas.given_names',
+                'from_tbls': 'core.personas',
+                'join_where': None,
+                'add_proc': 'UPDATE core.personas SET given_names=? WHERE username=?',
+                'delete_proc': "SELECT 'TODO'",
+                'param_order': 3,
+                'expect_return': 0,
+            },
+            {
+                'id': 3,
+                'oc_map_id': 1,
+                'name': 'sn',
+                'sel_expr': 'personas.family_name',
+                'from_tbls': 'core.personas',
+                'join_where': None,
+                'add_proc': 'UPDATE core.personas SET family_name=? WHERE username=?',
+                'delete_proc': "SELECT 'TODO'",
+                'param_order': 3,
+                'expect_return': 0,
+            },
+            {
+                'id': 4,
+                'oc_map_id': 1,
+                'name': 'userPassword',
+                'sel_expr': 'personas.password_hash',
+                'from_tbls': 'core.personas',
+                'join_where': None,
+                'add_proc': "SELECT 'TODO'",
+                'delete_proc': "SELECT 'TODO'",
+                'param_order': 3,
+                'expect_return': 0,
+            },
+            {
+                'id': 5,
+                'oc_map_id': 2,
+                'name': 'o',
+                'sel_expr': 'ldap_organizations.moniker',
+                'from_tbls': 'ldap_organizations',
+                'join_where': None,
+                'add_proc': "SELECT 'TODO'",
+                'delete_proc': "SELECT 'TODO'",
+                'param_order': 3,
+                'expect_return': 0,
+            },
+        ],
+        'ldap_entries': [
+            {
+                'id': 1,
+                'dn': 'dc=cde-ev,dc=de',
+                'oc_map_id': 2,
+                'parent': 0,
+                'keyval': 1,
+            },
+            {
+                'id': 2,
+                'dn': 'cn=anton@example.cde,dc=cde-ev,dc=de',
+                'oc_map_id': 1,
+                'parent': 1,
+                'keyval': 1,
+            },
+        ],
+        'ldap_entry_objclasses': [
+            {
+                'entry_id': 1,
+                'oc_name': 'dcObject',
+            },
+        ],
+    }
+
+    for table, table_data in LDAP_TABLES.items():
+        keys = tuple(set(chain.from_iterable(e.keys() for e in table_data)))
+        params = [entry[key] for entry in table_data for key in keys]
+        commands.extend(format_inserts(table, table_data, keys, params, aux))
 
     # Here we set all sequential ids to start with 1001, so that
     # ids are consistent when running the test suite.

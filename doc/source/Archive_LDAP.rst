@@ -35,10 +35,13 @@ following command::
     isql cdb
 
 We need some additional info inside the SQL database. Here the necessary
-additions to cdedb/database/cdedb-tables.sql (untested)::
+additions to cdedb/database/cdedb-tables.sql::
 
     ---
     --- ldap stuff (in public schema)
+    --- this is taken with minimal modifications from
+    --- servers/slapd/back-sql/rdbms_depend/pgsql/backsql_create.sql
+    --- in the openldap sources
     ---
 
     DROP TABLE IF EXISTS ldap_oc_mappings;
@@ -88,7 +91,7 @@ additions to cdedb/database/cdedb-tables.sql (untested)::
     );
     GRANT ALL ON ldap_entry_objclasses TO cdb_admin;
 
-    -- helper (TODO cleanup)
+    -- Helper table to make relations work (this will probably be replaced)
 
     DROP TABLE IF EXISTS ldap_organizations;
     CREATE TABLE ldap_organizations (
@@ -114,28 +117,178 @@ content of our sql-ldap.ldif::
     olcBackend: {1}sql
 
     # database definitions
-    dn: olcDatabase=sql,cn=config
+    dn: olcDatabase={2}sql,cn=config
     changetype: add
     objectClass: olcDatabaseConfig
     objectClass: olcSqlConfig
-    olcDatabase: sql
     olcSuffix: dc=cde-ev,dc=de
-    olcRootDN: cn=admin,dc=cdedb,dc=virtual
-    olcRootPW: secret
-    # remaining configuration options from slapd.conf without a cn=config equivalent I did find
-    #
-    # dbname		PostgreSQL
-    # dbuser		postgres
-    # dbpasswd	postgres
-    # insentry_stmt	"insert into ldap_entries (id,dn,oc_map_id,parent,keyval) values ((select max(id)+1 from ldap_entries),?,?,?,?)"
-    # upper_func	"upper"
-    # strcast_func	"text"
-    # concat_pattern	"?||?"
-    # has_ldapinfo_dn_ru	no
+    olcAccess: {0}to * by * read
+    #olcRootDN: cn=admin,dc=cde-ev,dc=de
+    #olcRootPW: secret
+    olcDatabase: sql
+    olcDbHost: localhost
+    olcDbName: cdb
+    # the credentials are irrelevant as we use odbc,
+    # but the parameters mustn't be empty
+    olcDbUser: cdb_admin
+    olcDbPass: 9876543210abcdefghijklmnopqrst
+    # SQL-backend configuration options (unused commented out)
+    olcSqlConcatPattern: ?||?
+    # olcSqlSubtreeCond
+    # olcSqlChildrenCond
+    # olcSqlDnMatchCond
+    # olcSqlOcQuery
+    # olcSqlAtQuery
+    # olcSqlInsEntryStmt
+    # olcSqlCreateNeedsSelect
+    olcSqlUpperFunc: upper
+    # olcSqlUpperNeedsCast
+    olcSqlStrcastFunc: text
+    # olcSqlDelEntryStmt
+    # olcSqlRenEntryStmt
+    # olcSqlDelObjclassesStmt
+    olcSqlHasLDAPinfoDnRu: FALSE
+    # olcSqlFailIfNoMapping
+    # olcSqlAllowOrphans
+    # olcSqlBaseObject
+    # olcSqlLayer
+    # olcSqlUseSubtreeShortcut
+    # olcSqlFetchAllAttrs
+    # olcSqlFetchAttrs
+    # olcSqlCheckSchema
+    # olcSqlAliasingKeyword
+    # olcSqlAliasingQuote
+    # olcSqlAutocommit
+    # olcSqlIdQuery
 
 To apply the LDIF configuration file we issue the following command::
 
     ldapmodify -Y EXTERNAL -H ldapi:/// -f /cdedb2/sql-ldap.ldif
+
+Now we insert some sample data to test the LDAP-SQL integration (here in a
+repsesentation as Python dict as used in ``bin/create_sample_data_sql.py``)::
+
+    {
+        'ldap_organizations': [
+            {
+                'id': 1,
+                'moniker': 'CdE',
+            },
+        ],
+        'ldap_oc_mappings': [
+            {
+                'id': 1,
+                'name': 'inetOrgPerson',
+                'keytbl': 'core.personas',
+                'keycol': 'id',
+                'create_proc': "SELECT 'TODO'",
+                'delete_proc': "SELECT 'TODO'",
+                'expect_return': 0,
+            },
+            {
+                'id': 2,
+                'name': 'organization',
+                'keytbl': 'ldap_organizations',
+                'keycol': 'id',
+                'create_proc': "SELECT 'TODO'",
+                'delete_proc': "SELECT 'TODO'",
+                'expect_return': 0,
+            },
+        ],
+        'ldap_attr_mappings': [
+            {
+                'id': 1,
+                'oc_map_id': 1,
+                'name': 'cn',
+                'sel_expr': 'personas.username',
+                'from_tbls': 'core.personas',
+                'join_where': None,
+                'add_proc': "SELECT 'TODO'",
+                'delete_proc': "SELECT 'TODO'",
+                'param_order': 3,
+                'expect_return': 0,
+            },
+            {
+                'id': 2,
+                'oc_map_id': 1,
+                'name': 'givenName',
+                'sel_expr': 'personas.given_names',
+                'from_tbls': 'core.personas',
+                'join_where': None,
+                'add_proc': 'UPDATE core.personas SET given_names=? WHERE username=?',
+                'delete_proc': "SELECT 'TODO'",
+                'param_order': 3,
+                'expect_return': 0,
+            },
+            {
+                'id': 3,
+                'oc_map_id': 1,
+                'name': 'sn',
+                'sel_expr': 'personas.family_name',
+                'from_tbls': 'core.personas',
+                'join_where': None,
+                'add_proc': 'UPDATE core.personas SET family_name=? WHERE username=?',
+                'delete_proc': "SELECT 'TODO'",
+                'param_order': 3,
+                'expect_return': 0,
+            },
+            {
+                'id': 4,
+                'oc_map_id': 1,
+                'name': 'userPassword',
+                'sel_expr': 'personas.password_hash',
+                'from_tbls': 'core.personas',
+                'join_where': None,
+                'add_proc': "SELECT 'TODO'",
+                'delete_proc': "SELECT 'TODO'",
+                'param_order': 3,
+                'expect_return': 0,
+            },
+            {
+                'id': 5,
+                'oc_map_id': 2,
+                'name': 'o',
+                'sel_expr': 'ldap_organizations.moniker',
+                'from_tbls': 'ldap_organizations',
+                'join_where': None,
+                'add_proc': "SELECT 'TODO'",
+                'delete_proc': "SELECT 'TODO'",
+                'param_order': 3,
+                'expect_return': 0,
+            },
+        ],
+        'ldap_entries': [
+            {
+                'id': 1,
+                'dn': 'dc=cde-ev,dc=de',
+                'oc_map_id': 2,
+                'parent': 0,
+                'keyval': 1,
+            },
+            {
+                'id': 2,
+                'dn': 'cn=anton@example.cde,dc=cde-ev,dc=de',
+                'oc_map_id': 1,
+                'parent': 1,
+                'keyval': 1,
+            },
+        ],
+        'ldap_entry_objclasses': [
+            {
+                'entry_id': 1,
+                'oc_name': 'dcObject',
+            },
+        ],
+    }
+
+Now we should be able to retrieve the data from LDAP with the following command::
+
+    slapcat -n 2
+
+However this gives the barely helpful error ``slapcat: database doesn't
+support necessary operations.`` and the debugging invokation ``slapcat -n
+2 -d -1`` also does not reveal more (besides that most things seem to have
+worked).
 
 Troubleshooting
 ---------------
@@ -149,6 +302,14 @@ changetype: modify
 replace: olcLogLevel
 olcLogLevel: -1
 EOF
+
+To drop all LDAP SQL databases the following workaround seems necessary
+(using an LDIF file with a delete instruction errors with ``ldap_delete:
+Server is unwilling to perform (53)``)::
+
+    systemctl stop slapd.service
+    rm /etc/ldap/slapd.d/cn\=config/*Database*sql*
+    systemctl start slapd.service
 
 .. _sec-ldap-references:
 

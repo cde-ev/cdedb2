@@ -1229,3 +1229,66 @@ CREATE INDEX idx_ml_log_mailinglist_id ON ml.log(mailinglist_id);
 GRANT SELECT, INSERT ON ml.log TO cdb_persona;
 GRANT DELETE ON ml.log TO cdb_admin;
 GRANT SELECT, UPDATE ON ml.log_id_seq TO cdb_persona;
+
+---
+--- ldap stuff (in public schema)
+--- this is taken with minimal modifications from
+--- servers/slapd/back-sql/rdbms_depend/pgsql/backsql_create.sql
+--- in the openldap sources
+---
+
+DROP TABLE IF EXISTS ldap_oc_mappings;
+CREATE TABLE ldap_oc_mappings (
+	id bigserial PRIMARY KEY,
+	name varchar(64) NOT NULL,
+	keytbl varchar(64) NOT NULL,
+	keycol varchar(64) NOT NULL,
+	create_proc varchar(255),
+	delete_proc varchar(255),
+	expect_return int NOT NULL
+);
+GRANT ALL ON ldap_oc_mappings TO cdb_admin;
+
+DROP TABLE IF EXISTS ldap_attr_mappings;
+CREATE TABLE ldap_attr_mappings (
+	id bigserial PRIMARY KEY,
+	oc_map_id integer NOT NULL REFERENCES ldap_oc_mappings(id),
+	name varchar(255) NOT NULL,
+	sel_expr varchar(255) NOT NULL,
+	sel_expr_u varchar(255),
+	from_tbls varchar(255) NOT NULL,
+	join_where varchar(255),
+	add_proc varchar(255),
+	delete_proc varchar(255),
+	param_order int NOT NULL,
+	expect_return int NOT NULL
+);
+GRANT ALL ON ldap_attr_mappings TO cdb_admin;
+
+DROP TABLE IF EXISTS ldap_entries;
+CREATE TABLE ldap_entries (
+	id bigserial PRIMARY KEY,
+	dn varchar(255) NOT NULL,
+	oc_map_id integer NOT NULL REFERENCES ldap_oc_mappings(id),
+	parent int NOT NULL,
+	keyval int NOT NULL
+);
+CREATE UNIQUE INDEX idx_ldap_entries_oc_map_id_keyval ON ldap_entries(oc_map_id, keyval);
+CREATE UNIQUE INDEX idx_ldap_entries_dn ON ldap_entries(dn);
+GRANT ALL ON ldap_entries TO cdb_admin;
+
+DROP TABLE IF EXISTS ldap_entry_objclasses;
+CREATE TABLE ldap_entry_objclasses (
+	entry_id integer NOT NULL REFERENCES ldap_entries(id),
+	oc_name varchar(64)
+);
+GRANT ALL ON ldap_entry_objclasses TO cdb_admin;
+
+-- Helper table to make relations work (this will probably be replaced)
+
+DROP TABLE IF EXISTS ldap_organizations;
+CREATE TABLE ldap_organizations (
+	id serial PRIMARY KEY,
+	moniker varchar NOT NULL
+);
+GRANT ALL ON ldap_organizations TO cdb_admin;
