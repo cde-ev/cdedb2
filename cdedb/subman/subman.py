@@ -98,8 +98,8 @@ def apply_action(action: SubscriptionActions, *,
     if action in SubscriptionActions.cleanup_actions():
         raise RuntimeError(_("Use is_obsolete to perform cleanup actions."))
     # TODO: why? This does not really help us.
-    if allow_unsub and old_state in {SubscriptionStates.unsubscribed,
-                                     SubscriptionStates.unsubscription_override}:
+    if not allow_unsub and old_state in {SubscriptionStates.unsubscribed,
+                                         SubscriptionStates.unsubscription_override}:
         raise RuntimeError(_("allow_unsub is incompatible with explicitly unsubscribed"
                              " states."))
 
