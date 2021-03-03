@@ -1208,8 +1208,7 @@ class MlBackend(AbstractBackend):
             old_subscribers = self.get_subscription_states(
                 rs, mailinglist_id, states=old_subscriber_states)
             # This is dependant on mailinglist type
-            new_implicits = atype.get_implicit_subscribers(
-                rs, self.backends, ml)
+            new_implicits = atype.get_implicit_subscribers(rs, self.backends, ml)
 
             # Check whether current subscribers may stay subscribed.
             # This is the case if they are still implicit subscribers of
