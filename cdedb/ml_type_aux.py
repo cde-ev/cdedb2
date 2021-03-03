@@ -15,8 +15,7 @@ from cdedb.database.constants import (
 from cdedb.subman.machine import SubscriptionPolicy
 from cdedb.query import Query, QueryOperators
 
-MIPol = Union[SubscriptionPolicy, None]
-MIPolMap = Dict[int, MIPol]
+SubscriptionPolicyMap = Dict[int, SubscriptionPolicy]
 TypeMapping = Mapping[str, Type[Any]]
 
 
@@ -251,7 +250,7 @@ class GeneralMailinglist:
     @classmethod
     def get_subscription_policy(cls, rs: RequestState, bc: BackendContainer,
                                 mailinglist: CdEDBObject, persona_id: int,
-                                ) -> MIPol:
+                                ) -> SubscriptionPolicy:
         """Singularized wrapper for `get_subscription_policies`."""
         return cls.get_subscription_policies(
             rs, bc, mailinglist, (persona_id,))[persona_id]
@@ -260,7 +259,7 @@ class GeneralMailinglist:
     def get_subscription_policies(cls, rs: RequestState, bc: BackendContainer,
                                   mailinglist: CdEDBObject,
                                   persona_ids: Collection[int]
-                                  ) -> MIPolMap:
+                                  ) -> SubscriptionPolicyMap:
         """Determine the MIPol of the user or a persona with a mailinglist.
 
         Instead of overriding this, you can set the `role_map` attribute,
@@ -275,7 +274,7 @@ class GeneralMailinglist:
         # TODO check for access to the ml? Needs ml_backend.
         personas = bc.core.get_personas(rs, persona_ids)
 
-        ret: MIPolMap = {}
+        ret = {}
         for persona_id, persona in personas.items():
             roles = extract_roles(persona, introspection_only=True)
             for role, pol in cls.role_map.items():
@@ -283,7 +282,7 @@ class GeneralMailinglist:
                     ret[persona_id] = pol
                     break
             else:
-                ret[persona_id] = None
+                ret[persona_id] = SubscriptionPolicy.none
         return ret
 
     @classmethod
@@ -398,7 +397,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
     def get_subscription_policies(cls, rs: RequestState, bc: BackendContainer,
                                   mailinglist: CdEDBObject,
                                   persona_ids: Collection[int],
-                                  ) -> MIPolMap:
+                                  ) -> SubscriptionPolicyMap:
         """Determine the MIPol of the user or a persona with a mailinglist.
 
         For the `EventOrgaMailinglist` this basically means opt-in for all
@@ -410,14 +409,14 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
         if mailinglist["event_id"] is None:
             return {anid: SubscriptionPolicy.invitation_only for anid in persona_ids}
 
-        ret: MIPolMap = {}
+        ret = {}
         for persona_id in persona_ids:
             if bc.event.check_registration_status(
                     rs, persona_id, mailinglist['event_id'],
                     mailinglist['registration_stati']):
                 ret[persona_id] = SubscriptionPolicy.subscribable
             else:
-                ret[persona_id] = None
+                ret[persona_id] = SubscriptionPolicy.none
 
         return ret
 
@@ -464,7 +463,7 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
     def get_subscription_policies(cls, rs: RequestState, bc: BackendContainer,
                                   mailinglist: CdEDBObject,
                                   persona_ids: Collection[int],
-                                  ) -> MIPolMap:
+                                  ) -> SubscriptionPolicyMap:
         """Determine the MIPol of the user or a persona with a mailinglist.
 
         For the `EventOrgaMailinglist` this means opt-out for orgas only.
@@ -475,13 +474,13 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
         if mailinglist["event_id"] is None:
             return {anid: SubscriptionPolicy.invitation_only for anid in persona_ids}
 
-        ret: MIPolMap = {}
+        ret = {}
         event = bc.event.get_event(rs, mailinglist["event_id"])
         for persona_id in persona_ids:
             if persona_id in event["orgas"]:
                 ret[persona_id] = SubscriptionPolicy.subscribable
             else:
-                ret[persona_id] = None
+                ret[persona_id] = SubscriptionPolicy.none
         return ret
 
     @classmethod
@@ -523,7 +522,7 @@ class AssemblyAssociatedMailinglist(AssemblyMailinglist):
     def get_subscription_policies(cls, rs: RequestState, bc: BackendContainer,
                                   mailinglist: CdEDBObject,
                                   persona_ids: Collection[int],
-                                  ) -> MIPolMap:
+                                  ) -> SubscriptionPolicyMap:
         """Determine the MIPol of the user or a persona with a mailinglist.
 
         For the `AssemblyAssociatedMailinglist` this means opt-out for
@@ -531,7 +530,7 @@ class AssemblyAssociatedMailinglist(AssemblyMailinglist):
         """
         check_appropriate_type(mailinglist, cls)
 
-        ret: MIPolMap = {}
+        ret = {}
         for persona_id in persona_ids:
             attending = bc.assembly.check_attendance(
                 rs, persona_id=persona_id,
@@ -539,7 +538,7 @@ class AssemblyAssociatedMailinglist(AssemblyMailinglist):
             if attending:
                 ret[persona_id] = SubscriptionPolicy.subscribable
             else:
-                ret[persona_id] = None
+                ret[persona_id] = SubscriptionPolicy.none
         return ret
 
     @classmethod
@@ -561,7 +560,7 @@ class AssemblyPresiderMailinglist(AssemblyAssociatedMailinglist):
     def get_subscription_policies(cls, rs: RequestState, bc: BackendContainer,
                                   mailinglist: CdEDBObject,
                                   persona_ids: Collection[int],
-                                  ) -> MIPolMap:
+                                  ) -> SubscriptionPolicyMap:
         """Determine the MIPol of some personas with a mailinglist.
 
         For the `AssemblyPresiderMailinglist` this means opt-out for presiders only.
@@ -569,12 +568,12 @@ class AssemblyPresiderMailinglist(AssemblyAssociatedMailinglist):
         check_appropriate_type(mailinglist, cls)
 
         presiders = bc.assembly.list_assembly_presiders(rs, mailinglist["assembly_id"])
-        ret: MIPolMap = {}
+        ret = {}
         for persona_id in persona_ids:
             if persona_id in presiders:
                 ret[persona_id] = SubscriptionPolicy.subscribable
             else:
-                ret[persona_id] = None
+                ret[persona_id] = SubscriptionPolicy.none
         return ret
 
     @classmethod
@@ -629,7 +628,7 @@ class GeneralModeratorMailinglist(GeneralMailinglist):
     def get_subscription_policies(cls, rs: RequestState, bc: BackendContainer,
                                   mailinglist: CdEDBObject,
                                   persona_ids: Collection[int],
-                                  ) -> MIPolMap:
+                                  ) -> SubscriptionPolicyMap:
         """Determine the MIPol of the user or a persona with a mailinglist.
 
         For the `GeneralModeratorMailinglist` this means mandatory for all users who
@@ -637,14 +636,14 @@ class GeneralModeratorMailinglist(GeneralMailinglist):
         """
         check_appropriate_type(mailinglist, cls)
 
-        ret: MIPolMap = {}
+        ret = {}
         all_moderators = cls.get_implicit_subscribers(rs, bc, mailinglist)
 
         for persona_id in persona_ids:
             if persona_id in all_moderators:
                 ret[persona_id] = SubscriptionPolicy.subscribable
             else:
-                ret[persona_id] = None
+                ret[persona_id] = SubscriptionPolicy.none
         return ret
 
     @classmethod

@@ -48,29 +48,23 @@ def _check_state_requirements(action: SubscriptionActions,
 
 
 def _check_policy_requirements(action: SubscriptionActions,
-                               policy: Optional[SubscriptionPolicy]) -> None:
+                               policy: SubscriptionPolicy) -> None:
     """This checks if the given action is allowed by the given SubscriptionPolicy.
 
     The policy should depend only on the affected user, not on the performing user.
 
     If the policy does not allow the action, a SubscriptionError is raised.
-
-    :param policy: The SubsscriptionPolicy. If not given, the user is not privileged
-        to be subscribed to this action.
     """
-    if action == SubscriptionActions.add_subscriber and (
-            policy is None or policy.is_implicit()):
+    if action == SubscriptionActions.add_subscriber and not policy.may_be_added():
         raise SubscriptionError(_("User has no means to access this list."))
-    elif (action == SubscriptionActions.subscribe and
-            policy != SubscriptionPolicy.subscribable):
+    if action == SubscriptionActions.subscribe and not policy.may_subscribe():
         raise SubscriptionError(_("Can not subscribe."))
-    elif (action == SubscriptionActions.request_subscription and
-          policy != SubscriptionPolicy.moderated_opt_in):
+    if action == SubscriptionActions.request_subscription and not policy.may_request():
         raise SubscriptionError(_("Can not request subscription."))
 
 
 def apply_action(action: SubscriptionActions, *,
-                 policy: Optional[SubscriptionPolicy],
+                 policy: SubscriptionPolicy,
                  old_state: Optional[SubscriptionStates],
                  allow_unsub: bool = True,
                  is_privileged: bool = True,
@@ -95,7 +89,7 @@ def apply_action(action: SubscriptionActions, *,
     :param is_privileged: If this is not True, disallow managing actions.
     """
     # 1: Do basic sanity checks this library is used appropriately.
-    if action in SubscriptionActions.cleanup_actions():
+    if action.is_automatic():
         raise RuntimeError(_("Use is_obsolete to perform cleanup actions."))
     # TODO: why? This does not really help us.
     if not allow_unsub and old_state in {SubscriptionStates.unsubscribed,
@@ -107,6 +101,8 @@ def apply_action(action: SubscriptionActions, *,
     _check_policy_requirements(action=action, policy=policy)
     if action.is_unsubscribing() and not allow_unsub:
         raise SubscriptionError(_("Can not unsubscribe."))
+    if action.is_managing() and not is_privileged:
+        raise SubscriptionError(_("Not privileged."))
 
     # 3: Check if current state allows transition.
     _check_state_requirements(action, old_state)
@@ -115,7 +111,7 @@ def apply_action(action: SubscriptionActions, *,
     return action.get_target_state(), action.get_log_code()
 
 
-def _apply_cleanup(policy: Optional[SubscriptionPolicy],
+def _apply_cleanup(policy: SubscriptionPolicy,
                    old_state: Optional[SubscriptionStates],
                    is_implied: bool
                    ) -> Tuple[Literal[None],
@@ -132,8 +128,8 @@ def _apply_cleanup(policy: Optional[SubscriptionPolicy],
 
     Parameters are documented at is_obsolete.
     """
-    # If user is not allowed as subscriber, remove them
-    if policy is None:
+    # If user is not allowed as subscriber, remove them.
+    if policy.is_none():
         _check_state_requirements(SubscriptionActions.cleanup_subscription, old_state)
         return None, SubscriptionLogCodes.automatically_removed
 
@@ -145,7 +141,7 @@ def _apply_cleanup(policy: Optional[SubscriptionPolicy],
     raise SubscriptionError(_("No cleanup necessary."))
 
 
-def is_obsolete(policy: Optional[SubscriptionPolicy],
+def is_obsolete(policy: SubscriptionPolicy,
                 old_state: Optional[SubscriptionStates],
                 is_implied: bool
                 ) -> bool:
@@ -154,11 +150,14 @@ def is_obsolete(policy: Optional[SubscriptionPolicy],
     This can be called as part of an automatic cleanup procedure to check if a
     subscriber should be removed from a subscription object.
 
-    :param policy: The SubscriptionPolicy applying to the object for the user an action
-        is performed on.
-    :param old_state: The current SubscriptionState of the user.
+    :param policy: The SubscriptionPolicy describing the allowed interactions between
+        the affected user and the affected subscription object.
+    :param old_state: The current state of the relation between the affected user and
+        the affected subscription object.
     :param is_implied: Whether the user is currently implied as a subscriber of the
-        respective object.
+        respective object. Note that the user may still have a current state other than
+        implicit, even if they are implied, for example if they opted out of an
+        autmotic subscription.
     """
     try:
         _apply_cleanup(policy, old_state, is_implied)

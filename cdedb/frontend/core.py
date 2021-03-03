@@ -941,10 +941,8 @@ class CoreFrontend(AbstractFrontend):
         # Filter result to get only users allowed to be a subscriber of a list,
         # which potentially are no subscriber yet.
         if mailinglist:
-            pol = SubscriptionPolicy
-            allowed_pols = {pol.subscribable, pol.moderated_opt_in, pol.invitation_only}
             data = self.mlproxy.filter_personas_by_policy(
-                rs, mailinglist, data, allowed_pols)
+                rs, mailinglist, data, SubscriptionPolicy.addable_policies())
 
         # Strip data to contain at maximum `num_preview_personas` results
         if len(data) > num_preview_personas:

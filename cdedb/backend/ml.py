@@ -129,18 +129,18 @@ class MlBackend(AbstractBackend):
 
     @overload
     def get_subscription_policy(self, rs: RequestState, persona_id: int, *,
-                               mailinglist: CdEDBObject) -> ml_type.MIPol:
+                                mailinglist: CdEDBObject) -> SubscriptionPolicy:
         pass
 
     @overload
     def get_subscription_policy(self, rs: RequestState, persona_id: int, *,
-                               mailinglist_id: int) -> ml_type.MIPol:
+                                mailinglist_id: int) -> SubscriptionPolicy:
         pass
 
     @access("ml")
     def get_subscription_policy(self, rs: RequestState, persona_id: int, *,
-                               mailinglist: CdEDBObject = None,
-                               mailinglist_id: int = None) -> ml_type.MIPol:
+                                mailinglist: CdEDBObject = None,
+                                mailinglist_id: int = None) -> SubscriptionPolicy:
         """What may the user do with a mailinglist. Be aware, that this does
         not take unsubscribe overrides into account.
 

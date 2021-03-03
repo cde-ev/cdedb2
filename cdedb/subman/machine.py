@@ -104,12 +104,32 @@ class SubscriptionPolicy(enum.IntEnum):
     #: nor has subscription override, their subscription will be removed.
     implicits_only = 4
     #: User is not allowed to be subscribed except by subscription overide.
-    # TODO: replace `None` as a policy with an actual enum member.
-    # None
+    none = 5
 
     def is_implicit(self) -> bool:
-        """Short-hand for policy == SubscriptionPolicy.implicits_only"""
-        return self == SubscriptionPolicy.implicits_only
+        """Whether or not the user is only allowed to be subscribed implicitly."""
+        return self == self.implicits_only
+
+    def is_none(self) -> bool:
+        """Whether or not the user is not allowed to be subscribed."""
+        return self == self.none
+
+    def may_subscribe(self) -> bool:
+        """Whether or not a user may subscribe by themself."""
+        return self == self.subscribable
+
+    def may_request(self) -> bool:
+        """Whether or not a user may request a subscription."""
+        return self == self.moderated_opt_in
+
+    @classmethod
+    def addable_policies(cls) -> Set["SubscriptionPolicy"]:
+        """Return a list of policies that allow the user to be added."""
+        return {cls.subscribable, cls.moderated_opt_in, cls.invitation_only}
+
+    def may_be_added(self) -> bool:
+        """Whether or not a user may be subscribed by a moderator."""
+        return self in self.addable_policies()
 
 
 @enum.unique
