@@ -8927,7 +8927,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/change_event.tmpl:72
 msgid ""
 "Is displayed initially. Changes to registration are only possible until "
-"then. If left empty, Changes will be possiible indefinitely."
+"then. If left empty, Changes will be possible indefinitely."
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/change_event.tmpl:74
