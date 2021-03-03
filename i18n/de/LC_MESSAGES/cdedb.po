@@ -14316,8 +14316,8 @@ msgid "Subscriptions are protected against automatic implicit cleanup."
 msgstr "Abbonements sind geschützt gegen automatische implizite Säuberungen."
 
 #: cdedb/subman/subman.py:43
-msgid "Use do_cleanup to perform cleanup actions."
-msgstr "Benutze do_cleanup um automatische Säuberungen durchzuführen."
+msgid "Use is_obsolete to perform cleanup actions."
+msgstr "Benutze is_obsolete um automatische Säuberungen durchzuführen."
 
 #: cdedb/subman/subman.py:72
 msgid "No cleanup necessary."
