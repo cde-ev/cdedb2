@@ -23,9 +23,7 @@ from typing import Optional, Tuple
 from typing_extensions import Literal
 
 from .exceptions import SubscriptionError
-from .machine import (
-    SubscriptionActions, SubscriptionLogCodes, SubscriptionPolicy, SubscriptionStates,
-)
+from .machine import SubscriptionActions, SubscriptionPolicy, SubscriptionStates
 
 
 def _check_state_requirements(action: SubscriptionActions,
@@ -68,7 +66,7 @@ def apply_action(action: SubscriptionActions, *,
                  old_state: Optional[SubscriptionStates],
                  allow_unsub: bool = True,
                  is_privileged: bool = True,
-                 ) -> Tuple[Optional[SubscriptionStates], SubscriptionLogCodes]:
+                 ) -> Optional[SubscriptionStates]:
     """Apply a SubscriptionAction to a SubscriptionState according to a SubscriptionPolicy.
 
     This is the main interface for performing subscription actions. To decide if the
@@ -108,14 +106,13 @@ def apply_action(action: SubscriptionActions, *,
     _check_state_requirements(action, old_state)
 
     # 4: Return target state and log code associated with the action.
-    return action.get_target_state(), action.get_log_code()
+    return action.get_target_state()
 
 
 def _apply_cleanup(policy: SubscriptionPolicy,
                    old_state: Optional[SubscriptionStates],
                    is_implied: bool
-                   ) -> Tuple[Literal[None],
-                              Literal[SubscriptionLogCodes.automatically_removed]]:
+                   ) -> None:
     """Analogue of apply_action for cleanup of subscribers.
 
     This interface is exposed mainly for show to make the transition understandable by
@@ -131,12 +128,12 @@ def _apply_cleanup(policy: SubscriptionPolicy,
     # If user is not allowed as subscriber, remove them.
     if policy.is_none():
         _check_state_requirements(SubscriptionActions.cleanup_subscription, old_state)
-        return None, SubscriptionLogCodes.automatically_removed
+        return None
 
     # If user is implicit subscriber and not implied, remove them.
     if not is_implied and policy.is_implicit():
         _check_state_requirements(SubscriptionActions.cleanup_implicit, old_state)
-        return None, SubscriptionLogCodes.automatically_removed
+        return None
 
     raise SubscriptionError(_("No cleanup necessary."))
 

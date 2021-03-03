@@ -21,13 +21,6 @@ Every user has a certain `SubscriptionPolicy` that defines their relation to any
 particular object they could possibly be subscribed to. This determines what actions
 they can perform themselves, but also what administrative actions others may perform
 for them.
-
-Finally, every `SubscriptionAction` is mapped to a `SubscriptionLogCode` that can be
-used to keep a log of all performed actions. The log codes are meant to be used in
-combination with the the information who performed an action and on whom.
-For example a user performing `SubscriptionActions.unsubscribe` for themself and a
-moderator using `SubscriptionActions.remove_subscription` on that same user will result
-in the same `SubscriptionLogCode`.
 """
 
 import enum
@@ -133,35 +126,6 @@ class SubscriptionPolicy(enum.IntEnum):
 
 
 @enum.unique
-class SubscriptionLogCodes(enum.IntEnum):
-    """Available log codes for `SubscriptionAction` logging."""
-    #: most actions leading to `SubscriptionStates.subscribed`
-    subscribed = 1
-    #: all actions leading to `SubscriptionStates.unsubscribed`
-    unsubscribed = 2
-    #: all actions leading to `SubscriptionStates.subscription_override`
-    marked_override = 3
-    #: most actions leading to `SubscriptionStates.unsubscription_override`
-    marked_blocked = 4
-    #: associated with removal via `do_cleanup`
-    automatically_removed = 10
-    #: all actions leading to `SubscriptionStates.subscription_requested`
-    subscription_requested = 20
-    #: log code of `SubscriptionActions.approve_request`,
-    #: leading to`SubscriptionStates.subscribed`
-    request_approved = 21
-    #: log code of `SubscriptionActions.deny_request`
-    request_denied = 22
-    #: log code of `SubscriptionActions.cancel_request`
-    request_cancelled = 23
-    #: log code of `SubscriptionActions.block_request`,
-    #: leading to `SubscriptionStates.unsubscription_override`
-    request_blocked = 24
-    #: log code of `SubscriptionActions.reset`
-    reset = 30
-
-
-@enum.unique
 class SubscriptionActions(enum.IntEnum):
     """All possible actions a subscriber or moderator can take.
 
@@ -211,29 +175,6 @@ class SubscriptionActions(enum.IntEnum):
             self.cleanup_implicit: None,
         }
         return action_target_state_map[self]
-
-    def get_log_code(self) -> SubscriptionLogCodes:
-        """Get the log code associated with performing an action."""
-        # TODO: remove this from the module. Instead make this a part of `MlLogCodes`.
-        log_code_map = {
-            self.subscribe: SubscriptionLogCodes.subscribed,
-            self.unsubscribe: SubscriptionLogCodes.unsubscribed,
-            self.request_subscription: SubscriptionLogCodes.subscription_requested,
-            self.cancel_request: SubscriptionLogCodes.request_cancelled,
-            self.approve_request: SubscriptionLogCodes.request_approved,
-            self.deny_request: SubscriptionLogCodes.request_denied,
-            self.block_request: SubscriptionLogCodes.request_blocked,
-            self.add_subscriber: SubscriptionLogCodes.subscribed,
-            self.add_subscription_override: SubscriptionLogCodes.marked_override,
-            self.add_unsubscription_override: SubscriptionLogCodes.marked_blocked,
-            self.remove_subscriber: SubscriptionLogCodes.unsubscribed,
-            self.remove_subscription_override: SubscriptionLogCodes.subscribed,
-            self.remove_unsubscription_override: SubscriptionLogCodes.unsubscribed,
-            self.reset: SubscriptionLogCodes.reset,
-            self.cleanup_subscription: SubscriptionLogCodes.automatically_removed,
-            self.cleanup_implicit: SubscriptionLogCodes.automatically_removed,
-        }
-        return log_code_map[self]
 
     @staticmethod
     def get_error_matrix() -> "_ActionStateErrorMatrix":

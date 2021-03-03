@@ -465,7 +465,7 @@ class TestMlBackend(BackendTest):
         if kind is None and self.ml.may_manage(self.key, mailinglist_id):
             expected_log = {
                 'change_note': None,
-                'code': const.MlLogCodes.from_subman(action.get_log_code()),
+                'code': const.MlLogCodes.from_subman(action),
                 'ctime': nearly_now(),
                 'mailinglist_id': mailinglist_id,
                 'persona_id': persona_id,
