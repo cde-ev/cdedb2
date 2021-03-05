@@ -1,16 +1,13 @@
 """This contains most of the logic required to perform actions on subscriptions.
 
-It is assumed that there are some users with additional privileges (possibly depending
-on the subscription object in question). These privileged users are referred to as
-"moderators".
-
 Here, `SubscriptionActions` are the possible actions to transition from one
 `SubscriptionState` to another. Every action will always lead to the same target state,
-but multiple actions might lead to the same target state. An action might be allowed
-from any current state or only from a subset of all states.
+but there might be multiple actions leading to the same target state.
+An action might be allowed from any current state or only from a subset of all states.
 
-Some actions are only available to moderators. These actions are referred to as
-"managing actions".
+It is assumed that there are some users with additional privileges (possibly depending
+on the subscription object in question). These privileged users are referred to as
+"moderators". Actions restricted to moderators are referred to as "managing actions".
 
 Some actions are meant to be performed automatically somewhat regularly. They are not
 meant to be performed manually but rather as a reaction to some change of an external
