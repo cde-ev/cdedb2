@@ -259,7 +259,7 @@ class EventFrontend(AbstractUserFrontend):
         """Helper to determine if the current user is registered for the given event.
 
         :param check_participant_list_visible: If True, return None if the participant
-            is not published yet (Independently of the registration state).
+            list is not published yet (Independently of the registration state).
         :returns: The registration if found, else None. In the latter case, rs.notify
             why None was returned.
         """
@@ -395,8 +395,6 @@ class EventFrontend(AbstractUserFrontend):
     @access("event")
     def participant_notes(self, rs: RequestState, event_id: int) -> Response:
         """Display the `participant_notes`, accessible only to participants."""
-        # TODO: outsource this participant-check into a helper (it is nearly copy-pasted
-        #  from participant_list above)
         if not (event_id in rs.user.orga or self.is_admin(rs)):
             if not self._get_registration(rs, event_id):
                 return self.redirect(rs, "event/show_event")
