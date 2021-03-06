@@ -253,6 +253,34 @@ class EventFrontend(AbstractUserFrontend):
             courses = self.eventproxy.get_courses(rs, course_ids.keys())
         return self.render(rs, "course_list", {'courses': courses})
 
+    def _get_registration(self, rs: RequestState, event_id: int,
+                          check_participant_list_visible: bool = False,
+                          ) -> Optional[CdEDBObject]:
+        """Helper to determine if the current user is registered for the given event.
+
+        :param check_participant_list_visible: If True, return None if the participant
+            is not published yet (Independently of the registration state).
+        :returns: The registration if found, else None. In the latter case, rs.notify
+            why None was returned.
+        """
+        reg_list = self.eventproxy.list_registrations(
+            rs, event_id, persona_id=rs.user.persona_id)
+        if not reg_list:
+            rs.notify("warning", n_("Not registered for event."))
+            return None
+        registration_id = unwrap(reg_list.keys())
+        registration = self.eventproxy.get_registration(rs, registration_id)
+        parts = registration['parts']
+        participant = const.RegistrationPartStati.participant
+        if all(parts[part]['status'] != participant for part in parts):
+            rs.notify("warning", n_("No participant of event."))
+            return None
+        if (check_participant_list_visible
+                and not rs.ambience['event']['is_participant_list_visible']):
+            rs.notify("error", n_("Participant list not published yet."))
+            return None
+        return registration
+
     @access("event")
     @REQUESTdata("part_id", "sortkey", "reverse")
     def participant_list(self, rs: RequestState, event_id: int,
@@ -262,22 +290,11 @@ class EventFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.redirect(rs, "event/show_event")
         if not (event_id in rs.user.orga or self.is_admin(rs)):
-            reg_list = self.eventproxy.list_registrations(
-                rs, event_id, persona_id=rs.user.persona_id)
-            if not reg_list:
-                rs.notify("warning", n_("Not registered for event."))
+            registration = self._get_registration(rs, event_id,
+                                                  check_participant_list_visible=True)
+            if not registration:
                 return self.redirect(rs, "event/show_event")
-            registration_id = unwrap(reg_list.keys())
-            registration = self.eventproxy.get_registration(rs, registration_id)
-            parts = registration['parts']
             list_consent = registration['list_consent']
-            participant = const.RegistrationPartStati.participant
-            if all(parts[part]['status'] != participant for part in parts):
-                rs.notify("warning", n_("No participant of event."))
-                return self.redirect(rs, "event/show_event")
-            if not rs.ambience['event']['is_participant_list_visible']:
-                rs.notify("error", n_("Participant list not published yet."))
-                return self.redirect(rs, "event/show_event")
         else:
             list_consent = True
 
@@ -376,22 +393,12 @@ class EventFrontend(AbstractUserFrontend):
         }
 
     @access("event")
-    def show_participant_notes(self, rs: RequestState, event_id: vtypes.ID) -> Response:
+    def participant_notes(self, rs: RequestState, event_id: int) -> Response:
         """Display the `participant_notes`, accessible only to participants."""
         # TODO: outsource this participant-check into a helper (it is nearly copy-pasted
         #  from participant_list above)
         if not (event_id in rs.user.orga or self.is_admin(rs)):
-            reg_list = self.eventproxy.list_registrations(
-                rs, event_id, persona_id=rs.user.persona_id)
-            if not reg_list:
-                rs.notify("warning", n_("Not registered for event."))
-                return self.redirect(rs, "event/show_event")
-            registration_id = unwrap(reg_list.keys())
-            registration = self.eventproxy.get_registration(rs, registration_id)
-            parts = registration['parts']
-            participant = const.RegistrationPartStati.participant
-            if all(parts[part]['status'] != participant for part in parts):
-                rs.notify("warning", n_("No participant of event."))
+            if not self._get_registration(rs, event_id):
                 return self.redirect(rs, "event/show_event")
         return self.render(rs, "participant_notes")
 

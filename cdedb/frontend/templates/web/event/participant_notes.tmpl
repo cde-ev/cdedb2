@@ -7,7 +7,7 @@
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon='chalkboard-teacher') }}
-    {{ util.breadcrumb_link(cdedblink("event/show_participant_notes"), gettext("Participant info"), active=True) }}
+    {{ util.breadcrumb_link(cdedblink("event/participant_notes"), gettext("Participant info"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
