@@ -966,7 +966,7 @@
             "id": 25,
             "course_id": 5,
             "track_id": 1
-        }, 
+        },
         "29": {
             "course_id": 1,
             "id": 29,
@@ -1354,6 +1354,7 @@
             "registration_start": "2000-10-30T00:00:00+00:00",
             "registration_text": null,
             "mail_text": "Wir verwenden ein neues Kristallkugel-basiertes Kurszuteilungssystem; bis wir das ordentlich ans Laufen gebracht haben, m\u00fcsst ihr leider etwas auf die Teilnehmerliste warten.",
+            "participant_notes": "Die Kristallkugel hat gute Dienste geleistet, nicht wahr?",
             "is_participant_list_visible": false,
             "courses_in_participant_list": false,
             "is_course_list_visible": true,

@@ -353,12 +353,13 @@ class TestEventFrontend(FrontendTest):
                       {'description': 'Große Testakademie 2222'})
         everyone = {"Veranstaltungsübersicht", "Übersicht", "Kursliste"}
         not_registered = {"Anmelden"}
-        registered = {"Meine Anmeldung"}
+        registered = {"Meine Anmeldung", "Teilnehmer-Infos"}
         orga = {
-            "Teilnehmerliste",  "Anmeldungen", "Statistik", "Kurse", "Kurseinteilung",
-            "Unterkünfte", "Downloads", "Partieller Import", "Überweisungen eintragen",
-            "Konfiguration", "Veranstaltungsteile", "Datenfelder konfigurieren",
-            "Anmeldung konfigurieren", "Fragebogen konfigurieren", "Log", "Checkin"}
+            "Teilnehmer-Infos", "Teilnehmerliste",  "Anmeldungen", "Statistik", "Kurse",
+            "Kurseinteilung", "Unterkünfte", "Downloads", "Partieller Import",
+            "Überweisungen eintragen", "Konfiguration", "Veranstaltungsteile",
+            "Datenfelder konfigurieren", "Anmeldung konfigurieren",
+            "Fragebogen konfigurieren", "Log", "Checkin"}
 
         # TODO this could be more expanded (event without courses, distinguish
         #  between registered and participant, ...
