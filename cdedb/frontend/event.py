@@ -376,6 +376,26 @@ class EventFrontend(AbstractUserFrontend):
         }
 
     @access("event")
+    def show_participant_notes(self, rs: RequestState, event_id: vtypes.ID) -> Response:
+        """Display the `participant_notes`, accessible only to participants."""
+        # TODO: outsource this participant-check into a helper (it is nearly copy-pasted
+        #  from participant_list above)
+        if not (event_id in rs.user.orga or self.is_admin(rs)):
+            reg_list = self.eventproxy.list_registrations(
+                rs, event_id, persona_id=rs.user.persona_id)
+            if not reg_list:
+                rs.notify("warning", n_("Not registered for event."))
+                return self.redirect(rs, "event/show_event")
+            registration_id = unwrap(reg_list.keys())
+            registration = self.eventproxy.get_registration(rs, registration_id)
+            parts = registration['parts']
+            participant = const.RegistrationPartStati.participant
+            if all(parts[part]['status'] != participant for part in parts):
+                rs.notify("warning", n_("No participant of event."))
+                return self.redirect(rs, "event/show_event")
+        return self.render(rs, "participant_notes")
+
+    @access("event")
     @event_guard()
     def change_event_form(self, rs: RequestState, event_id: int) -> Response:
         """Render form."""

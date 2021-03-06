@@ -102,6 +102,13 @@
                                   nulloption=nbsp, info=gettext("The custom field in which the course’s "
                                   "assigned course room will be saved. It is used for PDF participant lists and "
                                   "nametags. Fieldtype: Text")) }}
+
+        <h4 class="heading-underline">{% trans %}Additional Information for Participants{% endtrans %}</h4>
+        {{ util.form_input_textarea(
+                name="participant_notes", label=gettext("Participant info"), rows="8",
+                info=(util.markdownhint + " " + gettext("This is only for event-internal information. Any public"
+                                                        " information should be placed on the website."))) }}
+
         {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink('event/show_event'), readonly=is_locked) }}
     </form>
     <script nonce="{{ csp_nonce }}">

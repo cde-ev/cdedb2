@@ -2045,15 +2045,13 @@ PAST_EVENT_FIELDS = ("id", "title", "shortname", "institution", "description",
 
 #: Fields of an event organized via the CdEDB
 EVENT_FIELDS = (
-    "id", "title", "institution", "description", "shortname",
-    "registration_start", "registration_soft_limit",
-    "registration_hard_limit", "iban", "nonmember_surcharge",
-    "orga_address", "registration_text", "mail_text",
-    "use_additional_questionnaire", "notes", "offline_lock", "is_visible",
-    "is_course_list_visible", "is_course_state_visible",
-    "is_participant_list_visible", "courses_in_participant_list",
-    "is_cancelled", "is_archived", "lodge_field", "camping_mat_field",
-    "course_room_field")
+    "id", "title", "institution", "description", "shortname", "registration_start",
+    "registration_soft_limit", "registration_hard_limit", "iban", "nonmember_surcharge",
+    "orga_address", "registration_text", "mail_text", "use_additional_questionnaire",
+    "notes", "participant_notes", "offline_lock", "is_visible",
+    "is_course_list_visible", "is_course_state_visible", "is_participant_list_visible",
+    "courses_in_participant_list", "is_cancelled", "is_archived", "lodge_field",
+    "camping_mat_field", "course_room_field")
 
 #: Fields of an event part organized via CdEDB
 EVENT_PART_FIELDS = ("id", "event_id", "title", "shortname", "part_begin",
