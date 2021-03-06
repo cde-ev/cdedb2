@@ -436,26 +436,33 @@ class TestEventFrontend(FrontendTest):
 
         text"""
         f['use_additional_questionnaire'].checked = True
+        f['participant_notes'] = ""
         self.submit(f)
         self.assertTitle("Universale Akademie")
         self.assertNonPresence("30.10.2000")
         self.assertPresence("30.10.2001", div='timeframe-registration')
         # orgas
         self.assertNonPresence("Bertålotta")
-        if user["id"] in {27, 6}:
+        # check visibility and hint text on empty participant_notes
+        self.traverse("Teilnehmer-Infos")
+        self.assertTitle("Universale Akademie – Teilnehmer-Infos")
+        self.assertPresence(
+            "Orgas können über die Konfigurations-Seite hier etwas hinzufügen",
+            div='content')
+        self.traverse("Übersicht")
+        if user in (USER_DICT['ferdinand'], USER_DICT['annika']):
             f = self.response.forms['addorgaform']
             # Try to add an invalid cdedbid.
             f['orga_id'] = "DB-1-1"
             self.submit(f, check_notification=False)
-            self.assertValidationError('orga_id', "Checksumme stimmt nicht.",
-                                       index=-1)
+            self.assertValidationError('orga_id', "Checksumme stimmt nicht.", index=-1)
             # Try to add a non event-user.
-            f['orga_id'] = "DB-10-8"
+            f['orga_id'] = USER_DICT['janis']['DB-ID']
             self.submit(f, check_notification=False)
             self.assertValidationError(
                 'orga_id', "Dieser Nutzer ist kein Veranstaltungsnutzer.", index=-1)
             # Try to add an archived user.
-            f['orga_id'] = "DB-8-6"
+            f['orga_id'] = USER_DICT['hades']['DB-ID']
             self.submit(f, check_notification=False)
             self.assertValidationError(
                 'orga_id', "Dieser Benutzer existiert nicht oder ist archiviert.",
@@ -466,7 +473,7 @@ class TestEventFrontend(FrontendTest):
             self.assertValidationError(
                 'orga_id', "Dieser Benutzer existiert nicht oder ist archiviert.",
                 index=-1)
-            f['orga_id'] = "DB-2-7"
+            f['orga_id'] = USER_DICT['berta']['DB-ID']
             self.submit(f)
             self.assertTitle("Universale Akademie")
             self.assertPresence("Bertålotta", div='manage-orgas')
