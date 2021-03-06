@@ -113,29 +113,28 @@ class TestCoreFrontend(FrontendTest):
     @as_users("annika", "martin", "nina", "vera", "werner")
     def test_sidebar(self, user: CdEDBObject) -> None:
         self.assertTitle("CdE-Datenbank")
-        everyone = ["Index", "Übersicht", "Meine Daten",
-                    "Administratorenübersicht"]
-        genesis = ["Accountanfragen"]
-        core_admin = ["Nutzer verwalten", "Archivsuche", "Änderungen prüfen",
-                      "Account-Log", "Nutzerdaten-Log", "Metadaten"]
-        meta_admin = ["Admin-Änderungen"]
+        everyone = {"Index", "Übersicht", "Meine Daten", "Administratorenübersicht"}
+        genesis = {"Accountanfragen"}
+        core_admin = {"Nutzer verwalten", "Archivsuche", "Änderungen prüfen",
+                      "Account-Log", "Nutzerdaten-Log", "Metadaten"}
+        meta_admin = {"Admin-Änderungen"}
 
         # admin of a realm without genesis cases
         if user == USER_DICT['werner']:
             ins = everyone
-            out = genesis + core_admin + meta_admin
+            out = genesis | core_admin | meta_admin
         # admin of a realm with genesis cases
         elif user in [USER_DICT['annika'], USER_DICT['nina']]:
-            ins = everyone + genesis
-            out = core_admin + meta_admin
+            ins = everyone | genesis
+            out = core_admin | meta_admin
         # core admin
         elif user == USER_DICT['vera']:
-            ins = everyone + genesis + core_admin
+            ins = everyone | genesis | core_admin
             out = meta_admin
         # meta admin
         elif user == USER_DICT['martin']:
-            ins = everyone + meta_admin
-            out = genesis + core_admin
+            ins = everyone | meta_admin
+            out = genesis | core_admin
         else:
             self.fail("Please adjust users for this tests.")
 

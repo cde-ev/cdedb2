@@ -361,7 +361,7 @@ class BasicTest(unittest.TestCase):
             else:
                 ret[anid] = copy.deepcopy(SAMPLE_DATA[table][anid])
         return ret
-    
+
     def get_sample_datum(self, table: str, id_: int) -> CdEDBObject:
         return self.get_sample_data(table, [id_], [])[id_]
 
@@ -1298,7 +1298,7 @@ class FrontendTest(BackendTest):
             log_code_str = self.gettext(str(log_code))  # type: ignore
             self.assertPresence(log_code_str, div=f"{index}-{log_id}")
 
-    def check_sidebar(self, ins: Collection[str], out: Collection[str]) -> None:
+    def check_sidebar(self, ins: Set[str], out: Set[str]) -> None:
         """Helper function to check the (in)visibility of sidebar elements.
 
         Raise an error if an element is in the sidebar and not in ins.
@@ -1313,7 +1313,7 @@ class FrontendTest(BackendTest):
         for nav_point in ins:
             self.assertPresence(nav_point, div='sidebar-navigation')
             present -= {nav_point}
-        for nav_point in out:
+        for nav_point in (out - ins):
             self.assertNonPresence(nav_point, div='sidebar-navigation')
         if present:
             raise AssertionError(

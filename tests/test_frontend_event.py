@@ -56,22 +56,22 @@ class TestEventFrontend(FrontendTest):
     @as_users("annika", "emilia", "martin", "vera", "werner")
     def test_sidebar(self, user: CdEDBObject) -> None:
         self.traverse({'description': 'Veranstaltungen'})
-        everyone = ["Veranstaltungen", "Übersicht"]
-        admin = ["Alle Veranstaltungen", "Log"]
+        everyone = {"Veranstaltungen", "Übersicht"}
+        admin = {"Alle Veranstaltungen", "Log"}
 
         # not event admins (also orgas!)
         if user in [USER_DICT['emilia'], USER_DICT['martin'],
                     USER_DICT['werner']]:
             ins = everyone
-            out = admin + ["Nutzer verwalten"]
+            out = admin | {"Nutzer verwalten"}
         # core admins
         elif user == USER_DICT['vera']:
-            ins = everyone + ["Nutzer verwalten"]
+            ins = everyone | {"Nutzer verwalten"}
             out = admin
         # event admins
         elif user == USER_DICT['annika']:
-            ins = everyone + admin + ["Nutzer verwalten"]
-            out = []
+            ins = everyone | admin | {"Nutzer verwalten"}
+            out = set()
         else:
             self.fail("Please adjust users for this tests.")
 
@@ -338,6 +338,7 @@ class TestEventFrontend(FrontendTest):
         self.submit(f)
         f = self.response.forms['createparticipantlistform']
         self.submit(f)
+
     @as_users("anton")
     def test_create_participant_list(self, user: CdEDBObject) -> None:
         self.traverse({'description': 'Veranstaltungen'},
@@ -350,34 +351,33 @@ class TestEventFrontend(FrontendTest):
     def test_sidebar_one_event(self, user: CdEDBObject) -> None:
         self.traverse({'description': 'Veranstaltungen'},
                       {'description': 'Große Testakademie 2222'})
-        everyone = ["Veranstaltungsübersicht", "Übersicht", "Kursliste"]
-        not_registrated = ["Anmelden"]
-        registrated = ["Meine Anmeldung"]
-        orga = [
-            "Teilnehmerliste",  "Anmeldungen", "Statistik", "Kurse",
-            "Kurseinteilung", "Unterkünfte", "Downloads", "Partieller Import",
-            "Überweisungen eintragen", "Konfiguration", "Veranstaltungsteile",
-            "Datenfelder konfigurieren", "Anmeldung konfigurieren",
-            "Fragebogen konfigurieren", "Log", "Checkin"]
+        everyone = {"Veranstaltungsübersicht", "Übersicht", "Kursliste"}
+        not_registered = {"Anmelden"}
+        registered = {"Meine Anmeldung"}
+        orga = {
+            "Teilnehmerliste",  "Anmeldungen", "Statistik", "Kurse", "Kurseinteilung",
+            "Unterkünfte", "Downloads", "Partieller Import", "Überweisungen eintragen",
+            "Konfiguration", "Veranstaltungsteile", "Datenfelder konfigurieren",
+            "Anmeldung konfigurieren", "Fragebogen konfigurieren", "Log", "Checkin"}
 
         # TODO this could be more expanded (event without courses, distinguish
-        #  between registrated and participant, ...
-        # not registrated, not event admin
+        #  between registered and participant, ...
+        # not registered, not event admin
         if user in [USER_DICT['martin'], USER_DICT['vera'], USER_DICT['werner']]:
-            ins = everyone + not_registrated
-            out = registrated + orga
-        # registrated
+            ins = everyone | not_registered
+            out = registered | orga
+        # registered
         elif user == USER_DICT['emilia']:
-            ins = everyone + registrated
-            out = not_registrated + orga
+            ins = everyone | registered
+            out = not_registered | orga
         # orga
         elif user == USER_DICT['garcia']:
-            ins = everyone + registrated + orga
-            out = not_registrated
-        # event admin (annika is not registrated)
+            ins = everyone | registered | orga
+            out = not_registered
+        # event admin (annika is not registered)
         elif user == USER_DICT['annika']:
-            ins = everyone + not_registrated + orga
-            out = registrated
+            ins = everyone | not_registered | orga
+            out = registered
         else:
             self.fail("Please adjust users for this tests.")
 
