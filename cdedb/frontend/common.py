@@ -147,7 +147,7 @@ class BaseApp(metaclass=abc.ABCMeta):
 
         self.encode_parameter = local_encode
 
-    def cgitb_log(self) -> str:
+    def cgitb_log(self) -> None:
         # noinspection PyBroadException
         try:
             self.logger.error(cgitb.text(sys.exc_info(), context=7))
