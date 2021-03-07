@@ -2,7 +2,6 @@
 
 """Services for the cde realm."""
 
-import cgitb
 import copy
 import csv
 import datetime
@@ -15,7 +14,6 @@ import random
 import re
 import shutil
 import string
-import sys
 import tempfile
 import time
 from collections import OrderedDict, defaultdict
@@ -672,11 +670,7 @@ class CdEFrontend(AbstractUserFrontend):
                 "<<<\n<<<\n<<<\n<<<"))
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
-            # noinspection PyBroadException
-            try:
-                self.logger.error(cgitb.text(sys.exc_info(), context=7))
-            except Exception:
-                pass
+            self.cgitb_log()
             return False, index
         # Send mail after the transaction succeeded
         if sendmail:
@@ -1211,7 +1205,7 @@ class CdEFrontend(AbstractUserFrontend):
                 "<<<\n<<<\n<<<\n<<<"))
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
-            self.logger.error(cgitb.text(sys.exc_info(), context=7))
+            self.cgitb_log()
             return False, index, None
         if sendmail:
             for datum in data:

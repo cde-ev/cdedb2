@@ -2,11 +2,9 @@
 
 """The WSGI-application to tie it all together."""
 
-import cgitb
 import gettext
 import json
 import pathlib
-import sys
 import types
 from typing import Any, Callable, Dict, Optional, Set
 
@@ -236,7 +234,7 @@ class Application(BaseApp):
                     # Do nothing if we fail to handle a notification,
                     # they can be manipulated by the client side, so
                     # we can not assume anything.
-                    pass
+                    self.logger.debug(f"Invalid raw notification '{raw_notifications}'")
             handler = getattr(getattr(self, component), action)
             if request.method not in handler.modi:
                 raise werkzeug.exceptions.MethodNotAllowed(
@@ -319,7 +317,7 @@ class Application(BaseApp):
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
 
-            self.logger.error(cgitb.text(sys.exc_info(), context=7))
+            self.cgitb_log()
 
             # Raise exceptions when in TEST environment to let the test runner
             # catch them.
@@ -328,8 +326,8 @@ class Application(BaseApp):
 
             # debug output if applicable
             if self.conf["CDEDB_DEV"]:
-                return Response(cgitb.html(sys.exc_info(), context=7),
-                                mimetype="text/html", status=500)
+                return self.cgitb_html()
+
             # generic errors
             # TODO add original_error after upgrading to werkzeug 1.0
             return self.make_error_page(
