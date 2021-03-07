@@ -14,7 +14,6 @@ import operator
 import pathlib
 import re
 import shutil
-import sys
 import tempfile
 from collections import Counter, OrderedDict
 from typing import (
