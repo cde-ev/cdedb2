@@ -1313,7 +1313,7 @@ class FrontendTest(BackendTest):
         for nav_point in ins:
             self.assertPresence(nav_point, div='sidebar-navigation')
             present -= {nav_point}
-        for nav_point in (out - ins):
+        for nav_point in out:
             self.assertNonPresence(nav_point, div='sidebar-navigation')
         if present:
             raise AssertionError(

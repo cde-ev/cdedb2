@@ -353,31 +353,31 @@ class TestEventFrontend(FrontendTest):
                       {'description': 'Große Testakademie 2222'})
         everyone = {"Veranstaltungsübersicht", "Übersicht", "Kursliste"}
         not_registered = {"Anmelden"}
-        registered = {"Meine Anmeldung", "Teilnehmer-Infos"}
+        registered = {"Meine Anmeldung"}
+        registered_or_orga = {"Teilnehmer-Infos"}
         orga = {
-            "Teilnehmer-Infos", "Teilnehmerliste",  "Anmeldungen", "Statistik", "Kurse",
-            "Kurseinteilung", "Unterkünfte", "Downloads", "Partieller Import",
-            "Überweisungen eintragen", "Konfiguration", "Veranstaltungsteile",
-            "Datenfelder konfigurieren", "Anmeldung konfigurieren",
-            "Fragebogen konfigurieren", "Log", "Checkin"}
+            "Teilnehmerliste",  "Anmeldungen", "Statistik", "Kurse", "Kurseinteilung",
+            "Unterkünfte", "Downloads", "Partieller Import", "Überweisungen eintragen",
+            "Konfiguration", "Veranstaltungsteile", "Datenfelder konfigurieren",
+            "Anmeldung konfigurieren", "Fragebogen konfigurieren", "Log", "Checkin"}
 
         # TODO this could be more expanded (event without courses, distinguish
         #  between registered and participant, ...
         # not registered, not event admin
         if user in [USER_DICT['martin'], USER_DICT['vera'], USER_DICT['werner']]:
             ins = everyone | not_registered
-            out = registered | orga
+            out = registered | registered_or_orga | orga
         # registered
         elif user == USER_DICT['emilia']:
-            ins = everyone | registered
+            ins = everyone | registered | registered_or_orga
             out = not_registered | orga
         # orga
         elif user == USER_DICT['garcia']:
-            ins = everyone | registered | orga
+            ins = everyone | registered | registered_or_orga | orga
             out = not_registered
         # event admin (annika is not registered)
         elif user == USER_DICT['annika']:
-            ins = everyone | not_registered | orga
+            ins = everyone | not_registered | registered_or_orga | orga
             out = registered
         else:
             self.fail("Please adjust users for this tests.")
