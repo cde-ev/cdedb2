@@ -2,7 +2,6 @@
 
 """Services for the event realm."""
 
-import cgitb
 import collections.abc
 import copy
 import csv
@@ -2241,10 +2240,7 @@ class EventFrontend(AbstractUserFrontend):
                 "<<<\n<<<\n<<<\n<<<"))
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
-            try:
-                self.logger.error(cgitb.text(sys.exc_info(), context=7))
-            except Exception:
-                pass
+            self.cgitb_log()
             return False, index
         if send_notifications:
             persona_ids = tuple(e['persona_id'] for e in data)

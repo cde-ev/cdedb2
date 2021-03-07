@@ -5,7 +5,6 @@
 This expects a period of 15 minutes.
 """
 
-import cgitb
 import gettext
 import inspect
 import pathlib
@@ -115,13 +114,7 @@ class CronFrontend(BaseApp):
                             self.logger.error(banner.format(hook.cron['name']))
                             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
                             self.logger.error("SECOND TRY CGITB")
-                            # noinspection PyBroadException
-                            try:
-                                self.logger.error(cgitb.text(sys.exc_info(),
-                                                             context=7))
-                            except Exception:
-                                pass
-
+                            self.cgitb_log()
                             if self.conf["CDEDB_TEST"]:
                                 raise
                         else:
