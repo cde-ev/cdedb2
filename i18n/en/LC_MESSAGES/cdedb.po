@@ -127,7 +127,8 @@ msgstr ""
 #: cdedb/backend/assembly.py:547 cdedb/backend/ml.py:428
 #: cdedb/frontend/assembly.py:263 cdedb/frontend/assembly.py:434
 #: cdedb/frontend/event.py:1186 cdedb/frontend/ml_base.py:249
-#: cdedb/frontend/ml_base.py:659 cdedb/frontend/ml_base.py:751
+#: cdedb/frontend/ml_base.py:659 cdedb/frontend/ml_base.py:660
+#: cdedb/frontend/ml_base.py:751 cdedb/frontend/ml_base.py:752
 msgid "Some of these users do not exist or are archived."
 msgstr ""
 
@@ -957,7 +958,7 @@ msgid "Cannot remove all moderators."
 msgstr ""
 
 #: cdedb/backend/ml.py:431 cdedb/frontend/ml_base.py:253
-#: cdedb/frontend/ml_base.py:663
+#: cdedb/frontend/ml_base.py:663 cdedb/frontend/ml_base.py:664
 msgid "Some of these users are not ml users."
 msgstr ""
 
@@ -1276,7 +1277,8 @@ msgstr ""
 
 #: cdedb/frontend/assembly.py:273 cdedb/frontend/assembly.py:288
 #: cdedb/frontend/event.py:485 cdedb/frontend/event.py:501
-#: cdedb/frontend/ml_base.py:670 cdedb/frontend/ml_base.py:780
+#: cdedb/frontend/ml_base.py:670 cdedb/frontend/ml_base.py:671
+#: cdedb/frontend/ml_base.py:780 cdedb/frontend/ml_base.py:781
 msgid "Action had no effect."
 msgstr ""
 
@@ -1351,7 +1353,7 @@ msgstr ""
 #: cdedb/frontend/event.py:2683 cdedb/frontend/event.py:2757
 #: cdedb/frontend/event.py:2780 cdedb/frontend/event.py:2805
 #: cdedb/frontend/event.py:2828 cdedb/frontend/event.py:2842
-#: cdedb/frontend/ml_base.py:614
+#: cdedb/frontend/ml_base.py:614 cdedb/frontend/ml_base.py:615
 msgid "Empty File."
 msgstr ""
 
@@ -1431,6 +1433,7 @@ msgid "Ballot not yet tallied."
 msgstr ""
 
 #: cdedb/frontend/assembly.py:1593 cdedb/validation.py:3802
+#: cdedb/validation.py:3837
 msgid "Mustn’t be the bar shortname."
 msgstr ""
 
@@ -2141,7 +2144,8 @@ msgid "Only one part id allowed."
 msgstr ""
 
 #: cdedb/frontend/event.py:456 cdedb/validation.py:588 cdedb/validation.py:739
-#: cdedb/validation.py:843 cdedb/validation.py:3516 cdedb/validation.py:4168
+#: cdedb/validation.py:843 cdedb/validation.py:3516 cdedb/validation.py:3542
+#: cdedb/validation.py:4168 cdedb/validation.py:4204
 msgid "Must not be empty."
 msgstr ""
 
@@ -2177,6 +2181,7 @@ msgid "Registrations exist, no deletion."
 msgstr ""
 
 #: cdedb/frontend/event.py:631 cdedb/validation.py:2247
+#: cdedb/validation.py:2259
 msgid "Must be later than begin."
 msgstr ""
 
@@ -2190,6 +2195,7 @@ msgid "Registrations exist, no creation."
 msgstr ""
 
 #: cdedb/frontend/event.py:729 cdedb/validation.py:2309
+#: cdedb/validation.py:2321
 msgid "Must be less or equal than total Course Choices."
 msgstr ""
 
@@ -2198,6 +2204,7 @@ msgid "Fee Modifier linked to non-fitting field."
 msgstr ""
 
 #: cdedb/frontend/event.py:862 cdedb/validation.py:2194
+#: cdedb/validation.py:2206
 msgid ""
 "Must not have multiple fee modifiers linked to the same field in one event "
 "part."
@@ -2380,6 +2387,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/course_stats.tmpl:71
 #: cdedb/frontend/templates/web/event/create_course.tmpl:32
 #: cdedb/frontend/templates/web/event/participant_list.tmpl:104
+#: cdedb/frontend/templates/web/event/registration_status.tmpl:136
 msgid "Course"
 msgstr ""
 
@@ -2505,10 +2513,12 @@ msgid "Questionnaire is not enabled yet."
 msgstr ""
 
 #: cdedb/frontend/event.py:3755 cdedb/validation.py:2898
+#: cdedb/validation.py:2917
 msgid "Must not duplicate field."
 msgstr ""
 
 #: cdedb/frontend/event.py:3762 cdedb/validation.py:4186
+#: cdedb/validation.py:4222
 msgid "Invalid field."
 msgstr ""
 
@@ -2517,6 +2527,7 @@ msgid "Fee modifier field may only be used in registration questionnaire."
 msgstr ""
 
 #: cdedb/frontend/event.py:3778 cdedb/validation.py:2891
+#: cdedb/validation.py:2910
 msgid "Registration questionnaire rows may not be readonly."
 msgstr ""
 
@@ -2981,38 +2992,43 @@ msgstr ""
 msgid "Not privileged to view log for all these mailinglists."
 msgstr ""
 
-#: cdedb/frontend/ml_base.py:682
+#: cdedb/frontend/ml_base.py:682 cdedb/frontend/ml_base.py:683
 msgid "User is no moderator."
 msgstr ""
 
-#: cdedb/frontend/ml_base.py:688
+#: cdedb/frontend/ml_base.py:688 cdedb/frontend/ml_base.py:689
 msgid "Not allowed to remove yourself as moderator."
 msgstr ""
 
-#: cdedb/frontend/ml_base.py:693
+#: cdedb/frontend/ml_base.py:693 cdedb/frontend/ml_base.py:694
 msgid "Cannot remove last moderator."
 msgstr ""
 
-#: cdedb/frontend/ml_base.py:736 cdedb/frontend/ml_base.py:778
+#: cdedb/frontend/ml_base.py:736 cdedb/frontend/ml_base.py:737
+#: cdedb/frontend/ml_base.py:778 cdedb/frontend/ml_base.py:779
 msgid "Not privileged to change subscriptions."
 msgstr ""
 
-#: cdedb/frontend/ml_base.py:793 cdedb/frontend/ml_base.py:809
-#: cdedb/frontend/ml_base.py:825 cdedb/frontend/ml_base.py:865
-#: cdedb/frontend/ml_base.py:881 cdedb/frontend/ml_base.py:908
-#: cdedb/frontend/ml_base.py:941 cdedb/frontend/ml_base.py:975
+#: cdedb/frontend/ml_base.py:793 cdedb/frontend/ml_base.py:794
+#: cdedb/frontend/ml_base.py:809 cdedb/frontend/ml_base.py:810
+#: cdedb/frontend/ml_base.py:825 cdedb/frontend/ml_base.py:826
+#: cdedb/frontend/ml_base.py:865 cdedb/frontend/ml_base.py:866
+#: cdedb/frontend/ml_base.py:881 cdedb/frontend/ml_base.py:882
+#: cdedb/frontend/ml_base.py:908 cdedb/frontend/ml_base.py:909
+#: cdedb/frontend/ml_base.py:941 cdedb/frontend/ml_base.py:942
+#: cdedb/frontend/ml_base.py:975 cdedb/frontend/ml_base.py:976
 msgid "User does not exist or is archived."
 msgstr ""
 
-#: cdedb/frontend/ml_base.py:1056
+#: cdedb/frontend/ml_base.py:1056 cdedb/frontend/ml_base.py:1057
 msgid "Confirmation email sent."
 msgstr ""
 
-#: cdedb/frontend/ml_base.py:1090
+#: cdedb/frontend/ml_base.py:1090 cdedb/frontend/ml_base.py:1091
 msgid "Not subscribed."
 msgstr ""
 
-#: cdedb/frontend/ml_base.py:1093
+#: cdedb/frontend/ml_base.py:1093 cdedb/frontend/ml_base.py:1094
 msgid "Disallowed to change address."
 msgstr ""
 
@@ -3114,6 +3130,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:85
 #: cdedb/frontend/templates/web/event/registration_query.tmpl:42
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:218
+#: cdedb/frontend/templates/web/event/registration_status.tmpl:230
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:226
 #: cdedb/frontend/templates/web/generic.tmpl:69
 msgid "Notes"
@@ -3935,6 +3952,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/show_event.tmpl:196
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:62
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:114
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:62
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:114
 msgid "ID, name, email"
 msgstr ""
 
@@ -3977,6 +3996,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:265
 #: cdedb/frontend/templates/web/ml/base.tmpl:8
 #: cdedb/frontend/templates/web/ml/base.tmpl:56
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:265
 msgid "Overview"
 msgstr ""
 
@@ -4309,6 +4329,9 @@ msgstr ""
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:163
 #: cdedb/frontend/templates/web/ml/management.tmpl:69
 #: cdedb/frontend/templates/web/ml/management.tmpl:180
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:66
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:118
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:163
 #: cdedb/frontend/templates/web/util.tmpl:648
 #: cdedb/frontend/templates/web/util.tmpl:842
 msgid "Add"
@@ -8455,6 +8478,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/register.tmpl:170
 #: cdedb/frontend/templates/web/event/registration_query.tmpl:48
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:184
+#: cdedb/frontend/templates/web/event/registration_status.tmpl:196
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:182
 msgid "Mixed Lodging"
 msgstr ""
@@ -8465,6 +8489,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:69
 #: cdedb/frontend/templates/web/event/registration_query.tmpl:50
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:196
+#: cdedb/frontend/templates/web/event/registration_status.tmpl:208
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:186
 msgid "Participant List Consent"
 msgstr ""
@@ -8473,6 +8498,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/change_registration.tmpl:102
 #: cdedb/frontend/templates/web/event/change_registrations.tmpl:188
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:144
+#: cdedb/frontend/templates/web/event/registration_status.tmpl:156
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:201
 msgid "Instructor of"
 msgstr ""
@@ -8523,6 +8549,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/amend_registration.tmpl:18
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:166
+#: cdedb/frontend/templates/web/event/registration_status.tmpl:178
 msgid "Change"
 msgstr ""
 
@@ -8552,6 +8579,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/amend_registration.tmpl:54
 #: cdedb/frontend/templates/web/event/register.tmpl:160
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:187
+#: cdedb/frontend/templates/web/event/registration_status.tmpl:199
 msgid "Mixed Lodging not possible."
 msgstr ""
 
@@ -8563,12 +8591,14 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/amend_registration.tmpl:63
 #: cdedb/frontend/templates/web/event/register.tmpl:168
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:190
+#: cdedb/frontend/templates/web/event/registration_status.tmpl:202
 msgid "I agree to mixed lodging."
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/amend_registration.tmpl:64
 #: cdedb/frontend/templates/web/event/register.tmpl:169
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:192
+#: cdedb/frontend/templates/web/event/registration_status.tmpl:204
 msgid "I want to be lodged separated by gender."
 msgstr ""
 
@@ -8617,6 +8647,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/downloads.tmpl:12
 #: cdedb/frontend/templates/web/event/downloads.tmpl:16
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:261
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:261
 msgid "Downloads"
 msgstr ""
 
@@ -8895,6 +8926,10 @@ msgid ""
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/change_event.tmpl:61
+msgid "Show Course Assignment to Patricipants"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/change_event.tmpl:61
 msgid "Show Courses in the Participant List"
 msgstr ""
 
@@ -8903,6 +8938,13 @@ msgid ""
 "If checked, the above mentioned participants list also includes assigned "
 "courses. This option is only usefull, if “Visibility of the Participant "
 "List” is checked."
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/change_event.tmpl:62
+msgid ""
+"If checked, the course assignment is shown to the participants. In "
+"particular, it is shown to each participant on the registration status and "
+"on the Participant List."
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/change_event.tmpl:65
@@ -9068,6 +9110,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/change_registration.tmpl:87
 #: cdedb/frontend/templates/web/event/change_registrations.tmpl:167
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:162
+#: cdedb/frontend/templates/web/event/registration_status.tmpl:174
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:180
 msgid "Registration Data"
 msgstr ""
@@ -10609,16 +10652,27 @@ msgstr ""
 msgid "Course Choices for"
 msgstr ""
 
+#: cdedb/frontend/templates/web/event/registration_status.tmpl:138
+msgid "for"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/registration_status.tmpl:145
+msgid "Assigned to"
+msgstr ""
+
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:148
+#: cdedb/frontend/templates/web/event/registration_status.tmpl:160
 msgid "{}. choice"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:169
+#: cdedb/frontend/templates/web/event/registration_status.tmpl:181
 #, python-format
 msgid "Changes can be made until the registration end(%(date)s)."
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:176
+#: cdedb/frontend/templates/web/event/registration_status.tmpl:188
 msgid ""
 "Registration has ended, therefore no more changes are possible. Please "
 "contact the Orgas per E-Mail, if you need to change something about your "
@@ -10626,6 +10680,7 @@ msgid ""
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:198
+#: cdedb/frontend/templates/web/event/registration_status.tmpl:210
 #, python-format
 msgid ""
 "I %(consent)s agree that my data, including my name, address and my email, "
@@ -10633,6 +10688,7 @@ msgid ""
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:198
+#: cdedb/frontend/templates/web/event/registration_status.tmpl:210
 msgid "do not"
 msgstr ""
 
@@ -11428,6 +11484,7 @@ msgid "Last"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:14
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:14
 #, python-format
 msgid "%(title)s – Advanced Management"
 msgstr ""
@@ -11441,6 +11498,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/ml/management.tmpl:16
 #: cdedb/frontend/templates/web/ml/message_moderation.tmpl:12
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:11
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:20
 #: cdedb/frontend/templates/web/ml/view_ml_log.tmpl:15
 msgid "All Mailinglists"
 msgstr ""
@@ -11448,12 +11506,15 @@ msgstr ""
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:23
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:27
 #: cdedb/frontend/templates/web/ml/base.tmpl:14
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:23
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:27
 msgid "Advanced Management"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:34
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:33
 #: cdedb/frontend/templates/web/ml/management.tmpl:30
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:34
 #, python-format
 msgid "You do not have %(link)s and may not change subscriptions."
 msgstr ""
@@ -11461,73 +11522,89 @@ msgstr ""
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:35
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:34
 #: cdedb/frontend/templates/web/ml/management.tmpl:31
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:35
 msgid "privileged moderator access"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:44
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:44
 msgid "Forced Subscribers"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:47
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:47
 msgid ""
 "Subscribed users who are protected from automatic unsubscription when "
 "loosing their means to acces the list."
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:58
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:58
 msgid "ID of the new forced subscriber"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:85
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:85
 #, python-format
 msgid "Remove %(given_names)s %(family_name)s as forced subscriber"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:96
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:96
 msgid "Blocked Users"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:99
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:99
 msgid ""
 "Users who are blocked from subscribing and requesting subscription. They can "
 "see that they are blocked."
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:110
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:110
 msgid "ID of the new blocked subscriber"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:137
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:137
 #, python-format
 msgid "Remove %(given_names)s %(family_name)s as blocked subscriber"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:148
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:148
 msgid "Whitelist"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:151
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:151
 msgid "Sender addresses that are not moderated."
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:161
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:161
 msgid "Email Address to whitelist"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:184
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:184
 #, python-format
 msgid "Remove %s from Whitelist"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:193
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:193
 msgid "Unsubscribers"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:196
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:196
 msgid "Explicity Unsubscribed State"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:196
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:196
 #, python-format
 msgid ""
 "Users who unsubscribed from this list. They will not be re-added "
@@ -11538,34 +11615,41 @@ msgstr ""
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:196
 #: cdedb/frontend/templates/web/ml/list_mailinglists.tmpl:24
 #: cdedb/frontend/templates/web/ml/moderated_mailinglists.tmpl:16
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:196
 msgid "documentation"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:203
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:203
 msgid ""
 "This should only be used as a cleanup for specific tools like the account "
 "merger."
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:230
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:230
 #, python-format
 msgid "Reset %(given_names)s %(family_name)s explicit unsubscription"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:242
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:242
 #, python-format
 msgid "Subscribe %(given_names)s %(family_name)s"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:249
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:249
 msgid "Explicit unsubscribition has currently no effect."
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:251
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:251
 msgid "User would be implicit subscribed otherwise."
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:270
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:270
 #, python-format
 msgid ""
 "A download csv file of all users associated with this mailinglist (including "
@@ -11573,10 +11657,12 @@ msgid ""
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:270
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:270
 msgid "Summary of subscription states"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:270
+#: cdedb/frontend/templates/web/ml/show_subscription_details.tmpl:270
 msgid "subscription state"
 msgstr ""
 
@@ -13605,352 +13691,359 @@ msgstr ""
 msgid "Must be a valid email local part."
 msgstr ""
 
-#: cdedb/validation.py:1132
+#: cdedb/validation.py:1132 cdedb/validation.py:1137
 msgid "Only one of creation, transition may be specified."
 msgstr ""
 
-#: cdedb/validation.py:1209
+#: cdedb/validation.py:1209 cdedb/validation.py:1214
 msgid "Invalid date string."
 msgstr ""
 
-#: cdedb/validation.py:1222
+#: cdedb/validation.py:1222 cdedb/validation.py:1227
 msgid "Invalid input for date."
 msgstr ""
 
-#: cdedb/validation.py:1229
+#: cdedb/validation.py:1229 cdedb/validation.py:1234
 msgid "Must be a datetime.date."
 msgstr ""
 
-#: cdedb/validation.py:1238
+#: cdedb/validation.py:1238 cdedb/validation.py:1243
 msgid "A birthday must be in the past."
 msgstr "Ein Geburtsdatum muss in der Vergangenheit liegen."
 
-#: cdedb/validation.py:1299
+#: cdedb/validation.py:1299 cdedb/validation.py:1304
 msgid "Invalid input for datetime."
 msgstr ""
 
-#: cdedb/validation.py:1302
+#: cdedb/validation.py:1302 cdedb/validation.py:1307
 msgid "Must be a datetime.datetime."
 msgstr ""
 
-#: cdedb/validation.py:1314
+#: cdedb/validation.py:1314 cdedb/validation.py:1319
 msgid "More than one digit."
 msgstr ""
 
-#: cdedb/validation.py:1327 cdedb/validation.py:1738
+#: cdedb/validation.py:1327 cdedb/validation.py:1332 cdedb/validation.py:1738
+#: cdedb/validation.py:1748
 msgid "Too short."
 msgstr ""
 
-#: cdedb/validation.py:1345 cdedb/validation.py:1370
+#: cdedb/validation.py:1345 cdedb/validation.py:1350 cdedb/validation.py:1370
+#: cdedb/validation.py:1375
 msgid "Invalid international part."
 msgstr ""
 
-#: cdedb/validation.py:1354 cdedb/validation.py:1364
+#: cdedb/validation.py:1354 cdedb/validation.py:1359 cdedb/validation.py:1364
+#: cdedb/validation.py:1369
 msgid "Invalid national part."
 msgstr ""
 
-#: cdedb/validation.py:1361
+#: cdedb/validation.py:1361 cdedb/validation.py:1366
 msgid "Invalid local part."
 msgstr ""
 
-#: cdedb/validation.py:1407
+#: cdedb/validation.py:1407 cdedb/validation.py:1412
 msgid "Invalid german postal code."
 msgstr ""
 
-#: cdedb/validation.py:1456
+#: cdedb/validation.py:1456 cdedb/validation.py:1464
 msgid "This realm is not supported for genesis."
 msgstr ""
 
-#: cdedb/validation.py:1463
+#: cdedb/validation.py:1463 cdedb/validation.py:1471
 msgid "Must specify realm."
 msgstr ""
 
-#: cdedb/validation.py:1526
+#: cdedb/validation.py:1526 cdedb/validation.py:1535
 msgid "Not a FileStorage."
 msgstr ""
 
-#: cdedb/validation.py:1529
+#: cdedb/validation.py:1529 cdedb/validation.py:1538
 msgid "Empty FileStorage."
 msgstr ""
 
-#: cdedb/validation.py:1550
+#: cdedb/validation.py:1550 cdedb/validation.py:1559
 msgid "Only text/csv allowed."
 msgstr ""
 
-#: cdedb/validation.py:1575
+#: cdedb/validation.py:1575 cdedb/validation.py:1584
 msgid "Too small."
 msgstr ""
 
-#: cdedb/validation.py:1577
+#: cdedb/validation.py:1577 cdedb/validation.py:1586
 msgid "Too big."
 msgstr ""
 
-#: cdedb/validation.py:1582
+#: cdedb/validation.py:1582 cdedb/validation.py:1591
 msgid "Only jpg and png allowed."
 msgstr ""
 
-#: cdedb/validation.py:1589
+#: cdedb/validation.py:1589 cdedb/validation.py:1598
 msgid "Not square enough."
 msgstr ""
 
-#: cdedb/validation.py:1591
+#: cdedb/validation.py:1591 cdedb/validation.py:1600
 msgid "Resolution too small."
 msgstr ""
 
-#: cdedb/validation.py:1618
+#: cdedb/validation.py:1618 cdedb/validation.py:1627
 msgid "Filesize too large."
 msgstr ""
 
-#: cdedb/validation.py:1621
+#: cdedb/validation.py:1621 cdedb/validation.py:1630
 msgid "Only pdf allowed."
 msgstr ""
 
-#: cdedb/validation.py:1641
+#: cdedb/validation.py:1641 cdedb/validation.py:1650
 msgid "Must contain exactly two elements."
 msgstr ""
 
-#: cdedb/validation.py:1745
+#: cdedb/validation.py:1745 cdedb/validation.py:1755
 msgid "Must start with country code."
 msgstr ""
 
-#: cdedb/validation.py:1749
+#: cdedb/validation.py:1749 cdedb/validation.py:1759
 msgid "Must have digits for checksum."
 msgstr ""
 
-#: cdedb/validation.py:1753
+#: cdedb/validation.py:1753 cdedb/validation.py:1763
 msgid "Invalid character in IBAN."
 msgstr ""
 
-#: cdedb/validation.py:1755
+#: cdedb/validation.py:1755 cdedb/validation.py:1765
 msgid "Unknown or unsupported Country Code."
 msgstr ""
 
-#: cdedb/validation.py:1760
+#: cdedb/validation.py:1760 cdedb/validation.py:1770
 #, python-format
 msgid ""
 "Invalid length %(len)s for Country Code %(code)s. Expexted length %(exp)s."
 msgstr ""
 
-#: cdedb/validation.py:1769
+#: cdedb/validation.py:1769 cdedb/validation.py:1779
 msgid "Invalid checksum."
 msgstr ""
 
-#: cdedb/validation.py:1804
+#: cdedb/validation.py:1804 cdedb/validation.py:1814
 msgid "Modification of lastschrift transactions not supported."
 msgstr ""
 
-#: cdedb/validation.py:1863 cdedb/validation.py:1922 cdedb/validation.py:1933
-#: cdedb/validation.py:1939
+#: cdedb/validation.py:1863 cdedb/validation.py:1872 cdedb/validation.py:1922
+#: cdedb/validation.py:1929 cdedb/validation.py:1933 cdedb/validation.py:1939
+#: cdedb/validation.py:1940 cdedb/validation.py:1946
 msgid "Too long."
 msgstr ""
 
-#: cdedb/validation.py:1866
+#: cdedb/validation.py:1866 cdedb/validation.py:1875
 msgid "Invalid constant."
 msgstr ""
 
-#: cdedb/validation.py:1925
+#: cdedb/validation.py:1925 cdedb/validation.py:1932
 msgid "Unsupported constant."
 msgstr ""
 
-#: cdedb/validation.py:1927
+#: cdedb/validation.py:1927 cdedb/validation.py:1934
 msgid "Exactly two lines required."
 msgstr ""
 
-#: cdedb/validation.py:1961
+#: cdedb/validation.py:1961 cdedb/validation.py:1968
 #, python-format
 msgid "Forbidden characters (%(chars)s)."
 msgstr ""
 
-#: cdedb/validation.py:2118
+#: cdedb/validation.py:2118 cdedb/validation.py:2130
 msgid "Must be before or equal to hard limit."
 msgstr ""
 
-#: cdedb/validation.py:2125
+#: cdedb/validation.py:2125 cdedb/validation.py:2137
 msgid "Must be before hard and soft limit."
 msgstr ""
 
-#: cdedb/validation.py:2370
+#: cdedb/validation.py:2370 cdedb/validation.py:2382
 #, python-format
 msgid "Invalid entry in line %(line)s."
 msgstr ""
 
-#: cdedb/validation.py:2384
+#: cdedb/validation.py:2384 cdedb/validation.py:2396
 msgid "Duplicate value."
 msgstr ""
 
-#: cdedb/validation.py:2526
+#: cdedb/validation.py:2526 cdedb/validation.py:2540
 msgid "Must be a superset of active segments."
 msgstr ""
 
-#: cdedb/validation.py:2722
+#: cdedb/validation.py:2722 cdedb/validation.py:2739
 msgid "Entry not in definition list."
 msgstr ""
 
-#: cdedb/validation.py:2865
+#: cdedb/validation.py:2865 cdedb/validation.py:2884
 msgid "Incorrect kind for this part of the questionnaire"
 msgstr ""
 
-#: cdedb/validation.py:2873
+#: cdedb/validation.py:2873 cdedb/validation.py:2892
 msgid "Referenced field does not exist."
 msgstr ""
 
-#: cdedb/validation.py:2887
+#: cdedb/validation.py:2887 cdedb/validation.py:2906
 msgid "Inappropriate questionnaire usage for fee modifier field."
 msgstr ""
 
-#: cdedb/validation.py:2924
+#: cdedb/validation.py:2924 cdedb/validation.py:2943
 msgid "Invalid UTF-8 sequence."
 msgstr ""
 
-#: cdedb/validation.py:2929
+#: cdedb/validation.py:2929 cdedb/validation.py:2948
 #, python-format
 msgid "Invalid JSON syntax (line %(line)s, col %(col)s)."
 msgstr ""
 
-#: cdedb/validation.py:2961
+#: cdedb/validation.py:2961 cdedb/validation.py:2980
 msgid "Only full exports are supported."
 msgstr ""
 
-#: cdedb/validation.py:2993 cdedb/validation.py:3130
+#: cdedb/validation.py:2993 cdedb/validation.py:3012 cdedb/validation.py:3130
+#: cdedb/validation.py:3149
 msgid "Schema version mismatch."
 msgstr ""
 
-#: cdedb/validation.py:3067
+#: cdedb/validation.py:3067 cdedb/validation.py:3086
 msgid "Only a single event is supported."
 msgstr ""
 
-#: cdedb/validation.py:3070
+#: cdedb/validation.py:3070 cdedb/validation.py:3089
 msgid "Wrong event specified."
 msgstr ""
 
-#: cdedb/validation.py:3076
+#: cdedb/validation.py:3076 cdedb/validation.py:3095
 msgid "Mismatched event."
 msgstr ""
 
-#: cdedb/validation.py:3108
+#: cdedb/validation.py:3108 cdedb/validation.py:3127
 msgid "Only partial exports are supported."
 msgstr ""
 
-#: cdedb/validation.py:3522
+#: cdedb/validation.py:3522 cdedb/validation.py:3548
 msgid "Must specify mailinglist type to change domain."
 msgstr ""
 
-#: cdedb/validation.py:3527
+#: cdedb/validation.py:3527 cdedb/validation.py:3553
 msgid "Invalid domain for this mailinglist type."
 msgstr ""
 
-#: cdedb/validation.py:3697
+#: cdedb/validation.py:3697 cdedb/validation.py:3732
 msgid "Mustn’t be in the past."
 msgstr ""
 
-#: cdedb/validation.py:3700
+#: cdedb/validation.py:3700 cdedb/validation.py:3735
 msgid "Mustn’t be before start of voting period."
 msgstr ""
 
-#: cdedb/validation.py:3704
+#: cdedb/validation.py:3704 cdedb/validation.py:3739
 msgid "Mustn’t be before end of voting period."
 msgstr ""
 
-#: cdedb/validation.py:3726
+#: cdedb/validation.py:3726 cdedb/validation.py:3761
 msgid "Must not specify both absolute and relative quorum."
 msgstr ""
 
-#: cdedb/validation.py:3736
+#: cdedb/validation.py:3736 cdedb/validation.py:3771
 msgid "Relative quorum must be between 0 and 100."
 msgstr ""
 
-#: cdedb/validation.py:3739
+#: cdedb/validation.py:3739 cdedb/validation.py:3774
 msgid "Must be specified if quorum is given."
 msgstr ""
 
-#: cdedb/validation.py:3742
+#: cdedb/validation.py:3742 cdedb/validation.py:3777
 msgid "Must specify a quorum if vote extension end is given."
 msgstr ""
 
-#: cdedb/validation.py:3838
+#: cdedb/validation.py:3838 cdedb/validation.py:3874
 msgid "Only one host allowed."
 msgstr ""
 
-#: cdedb/validation.py:3840
+#: cdedb/validation.py:3840 cdedb/validation.py:3876
 msgid "No host given."
 msgstr ""
 
-#: cdedb/validation.py:3885
+#: cdedb/validation.py:3885 cdedb/validation.py:3921
 msgid "Must specify ballot in order to validate vote."
 msgstr ""
 
-#: cdedb/validation.py:3893
+#: cdedb/validation.py:3893 cdedb/validation.py:3929
 msgid "Superfluous candidates."
 msgstr ""
 
-#: cdedb/validation.py:3895
+#: cdedb/validation.py:3895 cdedb/validation.py:3931
 msgid "Missing candidates."
 msgstr ""
 
-#: cdedb/validation.py:3903
+#: cdedb/validation.py:3903 cdedb/validation.py:3939
 msgid "Too many levels."
 msgstr ""
 
-#: cdedb/validation.py:3905
+#: cdedb/validation.py:3905 cdedb/validation.py:3941
 msgid "Too many votes."
 msgstr ""
 
-#: cdedb/validation.py:3909
+#: cdedb/validation.py:3909 cdedb/validation.py:3945
 msgid "Misplaced bar."
 msgstr ""
 
-#: cdedb/validation.py:3928
+#: cdedb/validation.py:3928 cdedb/validation.py:3964
 #, python-format
 msgid "Invalid  regular expression (position %(pos)s)."
 msgstr ""
 
-#: cdedb/validation.py:3940
+#: cdedb/validation.py:3940 cdedb/validation.py:3976
 #, python-format
 msgid ""
 "Must not contain any forbidden characters (which are %(forbidden_chars)s "
 "while .^$ are allowed)."
 msgstr ""
 
-#: cdedb/validation.py:4007
+#: cdedb/validation.py:4007 cdedb/validation.py:4043
 msgid "Invalid operator for this field."
 msgstr ""
 
-#: cdedb/validation.py:4055
+#: cdedb/validation.py:4055 cdedb/validation.py:4091
 msgid "Two endpoints required."
 msgstr ""
 
-#: cdedb/validation.py:4089
+#: cdedb/validation.py:4089 cdedb/validation.py:4125
 msgid "Selection may not be empty."
 msgstr ""
 
-#: cdedb/validation.py:4136
+#: cdedb/validation.py:4136 cdedb/validation.py:4172
 msgid "Not a Query."
 msgstr ""
 
-#: cdedb/validation.py:4145
+#: cdedb/validation.py:4145 cdedb/validation.py:4181
 msgid "Must start with “qview_”."
 msgstr ""
 
-#: cdedb/validation.py:4175
+#: cdedb/validation.py:4175 cdedb/validation.py:4211
 #, python-format
 msgid "Invalid constraint number %(index)s"
 msgstr ""
 
-#: cdedb/validation.py:4199
+#: cdedb/validation.py:4199 cdedb/validation.py:4235
 msgid "Invalid operator."
 msgstr ""
 
-#: cdedb/validation.py:4239
+#: cdedb/validation.py:4239 cdedb/validation.py:4275
 #, python-format
 msgid "Invalid ordering condition number %(index)s"
 msgstr ""
 
-#: cdedb/validation.py:4269 cdedb/validation.py:4331
+#: cdedb/validation.py:4269 cdedb/validation.py:4305 cdedb/validation.py:4331
+#: cdedb/validation.py:4367
 #, python-format
 msgid "Invalid input for the enumeration %(enum)s"
 msgstr ""
 
-#: cdedb/validation.py:4305 cdedb/validation.py:4364
+#: cdedb/validation.py:4305 cdedb/validation.py:4341 cdedb/validation.py:4364
+#: cdedb/validation.py:4400
 #, python-format
 msgid "Must be a %(type)s."
 msgstr ""
