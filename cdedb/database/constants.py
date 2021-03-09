@@ -10,7 +10,7 @@ their symbolic names provided by this module should be used.
 import enum
 from typing import Dict
 
-from cdedb.subman.machine import SubscriptionActions, SubscriptionStates
+from cdedb.subman.machine import SubscriptionActions, SubscriptionStates  # pylint: disable=unused-import # noqa
 
 
 def n_(x: str) -> str:
