@@ -101,11 +101,6 @@ sample-data-test-shallow:
 	$(MAKE) storage-test
 	$(MAKE) sql-test-shallow
 
-sample-data-xss:
-	cp -f related/auto-build/files/stage3/localconfig.py cdedb/localconfig.py
-	$(MAKE) storage > /dev/null
-	$(MAKE) sql-xss
-
 TESTFOTONAME := e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e6$\
 		1ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570$\
 		c6589d64f9
@@ -200,27 +195,6 @@ sql-test-shallow: tests/ancillary_files/sample_data.sql
 	$(PSQL) -f tests/ancillary_files/clean_data.sql --dbname=cdb_test
 	$(PSQL) -f tests/ancillary_files/sample_data.sql --dbname=cdb_test
 
-sql-xss: tests/ancillary_files/sample_data_xss.sql
-ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
-	$(error Refusing to touch live instance)
-endif
-ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
-	$(error Refusing to touch orga instance)
-endif
-ifneq ($(wildcard /CONTAINER),/CONTAINER)
-	sudo systemctl stop pgbouncer
-endif
-	$(PSQL_ADMIN) -f cdedb/database/cdedb-users.sql
-	$(PSQL_ADMIN) -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb
-	$(PSQL_ADMIN) -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb_test
-ifneq ($(wildcard /CONTAINER),/CONTAINER)
-	sudo systemctl start pgbouncer
-endif
-	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=cdb
-	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=cdb_test
-	$(PSQL) -f tests/ancillary_files/sample_data_xss.sql --dbname=cdb
-	$(PSQL) -f tests/ancillary_files/sample_data_xss.sql --dbname=cdb_test
-
 cron:
 	sudo -u www-data /cdedb2/bin/cron_execute.py
 
@@ -269,11 +243,29 @@ single-check:
 	$(MAKE) prepare-check
 	$(PYTHONBIN) -m tests.singular "$${PATTERNS}"
 
+# By overriding this variable you can change the database that is used for the xss check.
+XSS_DATABASE_NAME ?= $(or ${CDEDB_XSS_DATABASE_NAME}, cdb_test)
+
+sql-xss: tests/ancillary_files/sample_data_xss.sql
+ifneq ($(wildcard /CONTAINER),/CONTAINER)
+	sudo systemctl stop pgbouncer
+endif
+	$(PSQL_ADMIN) -f cdedb/database/cdedb-db.sql -v cdb_database_name=${XSS_DATABASE_NAME}
+ifneq ($(wildcard /CONTAINER),/CONTAINER)
+	sudo systemctl start pgbouncer
+endif
+	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=${XSS_DATABASE_NAME}
+	$(PSQL) -f tests/ancillary_files/sample_data_xss.sql --dbname=${XSS_DATABASE_NAME}
+
+sample-data-xss:
+	cp -f related/auto-build/files/stage3/localconfig.py cdedb/localconfig.py
+	$(MAKE) storage > /dev/null
+	$(MAKE) sql-xss > /dev/null
+
 xss-check: export CDEDB_TEST=True
 xss-check:
-	$(MAKE) prepare-check &> /dev/null
-	$(MAKE) sample-data-xss &> /dev/null
-	$(PYTHONBIN) -m bin.escape_fuzzing
+	$(MAKE) sample-data-xss
+	$(PYTHONBIN) -m bin.escape_fuzzing --verbose --dbname ${XSS_DATABASE_NAME}
 
 dump-html: export SCRAP_ENCOUNTERED_PAGES=1 TESTPATTERN=test_frontend
 dump-html:

@@ -28,9 +28,11 @@ this script, as follows:
 
    python3 -m bin.escape_fuzzing 2>/dev/null
 """
+import argparse
 import itertools
 import pathlib
 import queue
+import tempfile
 import time
 from typing import NamedTuple, Optional, TYPE_CHECKING
 
@@ -38,12 +40,33 @@ import webtest
 
 from cdedb.config import BasicConfig
 from cdedb.frontend.application import Application
+from tests.common import check_test_setup
 
 _BASICCONF = BasicConfig()
 
 outdir = pathlib.Path('./out')
 
-app = Application()
+parser = argparse.ArgumentParser(
+    description="Insert XSS payload into database, then traverse all sites to make"
+                " sure it is escaped properly.")
+
+parser.add_argument("--dbname", "-d")
+parser.add_argument("--verbose", "-v", action="store_true")
+
+args = parser.parse_args()
+
+
+def setup(dbname: str) -> webtest.TestApp:
+    check_test_setup()
+    config = {"CDB_DATABASE_NAME": dbname}
+    with tempfile.NamedTemporaryFile("w", suffix=".py") as f:
+        for k, v in config.items():
+            f.write(f"{k} = {v!r}\n")
+        f.flush()
+        return Application(f.name)
+
+
+app = setup(args.dbname)
 wt_app = webtest.TestApp(app, extra_environ={
     'REMOTE_ADDR': "127.0.0.0",
     'SERVER_PROTOCOL': "HTTP/1.1",
@@ -108,7 +131,8 @@ while True:
         continue
 
     # Do checks
-    # print(f"Checking {url} ...")
+    if args.verbose:
+        print(f"Checking {url} ...")
     if payload in response.text:
         log_error(f"Found unescaped payload in {url}, reached from {referer}.")
         if outdir.exists():
