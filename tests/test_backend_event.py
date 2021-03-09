@@ -127,7 +127,7 @@ class TestEventBackend(BackendTest):
         data['offline_lock'] = False
         data['is_archived'] = False
         data['is_participant_list_visible'] = False
-        data['courses_in_participant_list'] = False
+        data['is_course_assignment_visible'] = False
         data['is_course_list_visible'] = False
         data['is_course_state_visible'] = False
         data['is_cancelled'] = False

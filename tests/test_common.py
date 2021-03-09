@@ -278,15 +278,6 @@ class TestCommon(BasicTest):
                     unwrap(ncol)  # type: ignore
                 self.assertIn("Can only unwrap collections.", cmt.exception.args[0])
 
-    def test_mypy(self) -> None:
-        try:
-            result = subprocess.run(["make", "mypy"], check=True, capture_output=True)
-        except subprocess.CalledProcessError as cpe:
-            pattern = re.compile(": error: ")
-            count = len(re.findall(pattern, cpe.stdout.decode()))
-            msg = f"There are {count} mypy errors. Run `make mypy` for more details."
-            raise self.failureException(msg) from None
-
     def test_untranslated_strings(self) -> None:
         i18n_path = self.conf["REPOSITORY_PATH"] / 'i18n'
         with tempfile.TemporaryDirectory() as tempdir:

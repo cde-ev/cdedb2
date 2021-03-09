@@ -1341,6 +1341,7 @@ etc;anything else""", f['entries_2'].value)
             "Anmeldung erst mit Überweisung des Teilnehmerbeitrags")
         self.assertPresence("573,99 €")
         self.assertNonPresence("Warteliste")
+        self.assertNonPresence("Eingeteilt in")
         self.assertPresence("α. Planetenretten für Anfänger")
         self.assertPresence("β. Lustigsein für Fortgeschrittene")
         self.assertPresence("Ich stimme zu, dass meine Daten")
@@ -1348,9 +1349,11 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Große Testakademie 2222 – Konfiguration")
         f = self.response.forms['changeeventform']
         f['iban'] = ""
+        f['is_course_assignment_visible'].checked = True
         self.submit(f)
         self.traverse({'href': '/event/event/1/registration/status'})
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
+        self.assertPresence("Eingeteilt in")
         self.assertPresence("separat mitteilen, wie du deinen Teilnahmebeitrag")
 
     def test_register_no_registration_end(self) -> None:
@@ -1735,7 +1738,7 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/1/change'})
         self.assertTitle("Große Testakademie 2222 – Konfiguration")
         f = self.response.forms['changeeventform']
-        f['courses_in_participant_list'].checked = True
+        f['is_course_assignment_visible'].checked = True
         self.submit(f)
 
         self.traverse({'href': 'event/event/1/registration/list'})
@@ -1831,7 +1834,7 @@ etc;anything else""", f['entries_2'].value)
                       {'description': 'Große Testakademie 2222'},
                       {'description': 'Konfiguration'})
         f = self.response.forms['changeeventform']
-        f['courses_in_participant_list'].checked = True
+        f['is_course_assignment_visible'].checked = True
         self.submit(f)
 
         # now, check the sorting
