@@ -46,6 +46,13 @@ steps:
   - make check
   depends_on:
   - cdb # only needs db allowing mypy and lint to run parallel to this
+- name: xss
+  image: cdedb
+  pull: never
+  commands:
+  - make xss-check
+  depends_on:
+  - testsuite
 
 volumes:
 - name: dockersock
