@@ -14437,6 +14437,9 @@ msgstr "Abbonements sind geschützt gegen automatische implizite Säuberungen."
 msgid "Use is_obsolete to perform cleanup actions."
 msgstr "Benutze is_obsolete um automatische Säuberungen durchzuführen."
 
+msgid "allow_unsub is incompatible with explicitly unsubscribed states."
+msgstr "allow_unsub ist inkompatibel mit expliziten Abbestellungen."
+
 #: cdedb/subman/subman.py:72
 msgid "No cleanup necessary."
 msgstr "Keine Säuberung erforderlich."
