@@ -1,1 +1,1 @@
-cdedb/subman/tests/test_basics.py
+../cdedb/subman/tests/test_basics.py
