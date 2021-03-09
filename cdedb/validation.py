@@ -2063,7 +2063,7 @@ EVENT_EXPOSED_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'registration_hard_limit': Optional[datetime.datetime],
     'notes': Optional[str],
     'is_participant_list_visible': bool,
-    'courses_in_participant_list': bool,
+    'is_course_assignment_visible': bool,
     'is_cancelled': bool,
     'iban': Optional[IBAN],
     'nonmember_surcharge': NonNegativeDecimal,
