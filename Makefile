@@ -247,10 +247,7 @@ template-line-length:
 	@echo ""
 	grep -E -R '^.{121,}' cdedb/frontend/templates/ | grep 'tmpl:'
 
-lint:
-	# make template-line-length
-	make flake8
-	make pylint
+lint: flake8 pylint
 
 prepare-check:
 ifneq ($(TESTPREPARATION), manual)
