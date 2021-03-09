@@ -226,25 +226,31 @@ cron:
 
 BANNERLINE := "============================================================$\
 		===================="
-lint:
-	@echo $(BANNERLINE)
-	@echo "Lines too long in templates"
-	@echo $(BANNERLINE)
-	@echo ""
-	grep -E -R '^.{121,}' cdedb/frontend/templates/ | grep 'tmpl:'
-	@echo ""
+flake8:
 	@echo $(BANNERLINE)
 	@echo "All of flake8"
 	@echo $(BANNERLINE)
 	@echo ""
 	$(FLAKE8) cdedb
-	@echo ""
+
+pylint:
 	@echo $(BANNERLINE)
 	@echo "All of pylint"
 	@echo $(BANNERLINE)
 	@echo ""
 	$(PYLINT) cdedb
 
+template-line-length:
+	@echo $(BANNERLINE)
+	@echo "Lines too long in templates"
+	@echo $(BANNERLINE)
+	@echo ""
+	grep -E -R '^.{121,}' cdedb/frontend/templates/ | grep 'tmpl:'
+
+lint:
+	# make template-line-length
+	make flake8
+	make pylint
 
 prepare-check:
 ifneq ($(TESTPREPARATION), manual)
