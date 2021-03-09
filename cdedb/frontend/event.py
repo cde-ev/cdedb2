@@ -251,15 +251,17 @@ class EventFrontend(AbstractUserFrontend):
             courses = self.eventproxy.get_courses(rs, course_ids.keys())
         return self.render(rs, "course_list", {'courses': courses})
 
-    def _get_registration(self, rs: RequestState, event_id: int,
-                          check_participant_list_visible: bool = False,
-                          ) -> Optional[CdEDBObject]:
-        """Helper to determine if the current user is registered for the given event.
+    def _get_participant_registration(self, rs: RequestState, event_id: int,
+                                      ) -> Optional[CdEDBObject]:
+        """Helper to get the current user's registration for the given
+        event, if he is already in participant status (for at least one
+        event part).
 
-        :param check_participant_list_visible: If True, return None if the participant
-            list is not published yet (Independently of the registration state).
-        :returns: The registration if found, else None. In the latter case, rs.notify
-            why None was returned.
+        If no registration exists or the user is no participant, this is
+        notified. This function should be followed by a condition that
+        catches this case and redirects then.
+
+        :returns: The registration if found, else None.
         """
         reg_list = self.eventproxy.list_registrations(
             rs, event_id, persona_id=rs.user.persona_id)
@@ -273,10 +275,6 @@ class EventFrontend(AbstractUserFrontend):
         if all(parts[part]['status'] != participant for part in parts):
             rs.notify("warning", n_("No participant of event."))
             return None
-        if (check_participant_list_visible
-                and not rs.ambience['event']['is_participant_list_visible']):
-            rs.notify("error", n_("Participant list not published yet."))
-            return None
         return registration
 
     @access("event")
@@ -288,8 +286,11 @@ class EventFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.redirect(rs, "event/show_event")
         if not (event_id in rs.user.orga or self.is_admin(rs)):
-            registration = self._get_registration(rs, event_id,
-                                                  check_participant_list_visible=True)
+            registration = self._get_participant_registration(rs, event_id)
+            if (registration
+                    and not rs.ambience['event']['is_participant_list_visible']):
+                registration = None
+                rs.notify("error", n_("Participant list not published yet."))
             if not registration:
                 return self.redirect(rs, "event/show_event")
             list_consent = registration['list_consent']
@@ -393,9 +394,9 @@ class EventFrontend(AbstractUserFrontend):
     @access("event")
     def participant_notes(self, rs: RequestState, event_id: int) -> Response:
         """Display the `participant_notes`, accessible only to participants."""
-        if not (event_id in rs.user.orga or self.is_admin(rs)):
-            if not self._get_registration(rs, event_id):
-                return self.redirect(rs, "event/show_event")
+        if not (event_id in rs.user.orga or self.is_admin(rs)
+                or self._get_participant_registration(rs, event_id)):
+            return self.redirect(rs, "event/show_event")
         return self.render(rs, "participant_notes")
 
     @access("event")
