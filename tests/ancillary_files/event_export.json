@@ -391,7 +391,7 @@
         }
     },
     "EVENT_SCHEMA_VERSION": [
-        14,
+        15,
         1
     ],
     "CDEDB_EXPORT_EVENT_VERSION": 13,
@@ -1355,7 +1355,7 @@
             "registration_text": null,
             "mail_text": "Wir verwenden ein neues Kristallkugel-basiertes Kurszuteilungssystem; bis wir das ordentlich ans Laufen gebracht haben, m\u00fcsst ihr leider etwas auf die Teilnehmerliste warten.",
             "is_participant_list_visible": false,
-            "courses_in_participant_list": false,
+            "is_course_assignment_visible": false,
             "is_course_list_visible": true,
             "is_course_state_visible": false,
             "is_cancelled": false,

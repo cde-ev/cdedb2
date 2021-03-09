@@ -2,7 +2,6 @@
 
 """Services for the cde realm."""
 
-import cgitb
 import copy
 import csv
 import datetime
@@ -15,7 +14,6 @@ import random
 import re
 import shutil
 import string
-import sys
 import tempfile
 import time
 from collections import OrderedDict, defaultdict
@@ -49,8 +47,8 @@ from cdedb.query import (
     QUERY_SPECS, Query, QueryConstraint, QueryOperators, mangle_query_input,
 )
 from cdedb.validation import (
-    _LASTSCHRIFT_COMMON_FIELDS, _PAST_EVENT_FIELDS, _PAST_COURSE_COMMON_FIELDS,
-    _PERSONA_FULL_CDE_CREATION, TypeMapping, filter_none, validate_check,
+    LASTSCHRIFT_COMMON_FIELDS, PAST_EVENT_FIELDS, PAST_COURSE_COMMON_FIELDS,
+    PERSONA_FULL_CDE_CREATION, TypeMapping, filter_none, validate_check,
     validate_check_optional,
 )
 
@@ -376,7 +374,7 @@ class CdEFrontend(AbstractUserFrontend):
         return super().create_user_form(rs)
 
     @access("core_admin", "cde_admin", modi={"POST"})
-    @REQUESTdatadict(*filter_none(_PERSONA_FULL_CDE_CREATION))
+    @REQUESTdatadict(*filter_none(PERSONA_FULL_CDE_CREATION))
     def create_user(self, rs: RequestState, data: CdEDBObject,
                     ignore_warnings: bool = False) -> Response:
         defaults = {
@@ -672,11 +670,7 @@ class CdEFrontend(AbstractUserFrontend):
                 "<<<\n<<<\n<<<\n<<<"))
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
-            # noinspection PyBroadException
-            try:
-                self.logger.error(cgitb.text(sys.exc_info(), context=7))
-            except Exception:
-                pass
+            self.cgitb_log()
             return False, index
         # Send mail after the transaction succeeded
         if sendmail:
@@ -1211,7 +1205,7 @@ class CdEFrontend(AbstractUserFrontend):
                 "<<<\n<<<\n<<<\n<<<"))
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
-            self.logger.error(cgitb.text(sys.exc_info(), context=7))
+            self.cgitb_log()
             return False, index, None
         if sendmail:
             for datum in data:
@@ -1406,7 +1400,7 @@ class CdEFrontend(AbstractUserFrontend):
         return self.render(rs, "lastschrift_change", {'persona': persona})
 
     @access("finance_admin", modi={"POST"})
-    @REQUESTdatadict(*_LASTSCHRIFT_COMMON_FIELDS())
+    @REQUESTdatadict(*LASTSCHRIFT_COMMON_FIELDS)
     def lastschrift_change(self, rs: RequestState, lastschrift_id: int,
                            data: CdEDBObject) -> Response:
         """Modify one permit."""
@@ -1427,7 +1421,7 @@ class CdEFrontend(AbstractUserFrontend):
         return self.render(rs, "lastschrift_create")
 
     @access("finance_admin", modi={"POST"})
-    @REQUESTdatadict(*_LASTSCHRIFT_COMMON_FIELDS())
+    @REQUESTdatadict(*LASTSCHRIFT_COMMON_FIELDS)
     @REQUESTdata('persona_id')
     def lastschrift_create(self, rs: RequestState, persona_id: vtypes.CdedbID,
                            data: CdEDBObject) -> Response:
@@ -2584,7 +2578,7 @@ class CdEFrontend(AbstractUserFrontend):
             'institutions': institutions})
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdatadict(*_PAST_EVENT_FIELDS)
+    @REQUESTdatadict(*PAST_EVENT_FIELDS)
     def change_past_event(self, rs: RequestState, pevent_id: int,
                           data: CdEDBObject) -> Response:
         """Modify a concluded event."""
@@ -2606,7 +2600,7 @@ class CdEFrontend(AbstractUserFrontend):
             'institutions': institutions})
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdatadict(*_PAST_EVENT_FIELDS)
+    @REQUESTdatadict(*PAST_EVENT_FIELDS)
     @REQUESTdata("courses")
     def create_past_event(self, rs: RequestState, courses: Optional[str],
                           data: CdEDBObject) -> Response:
@@ -2667,7 +2661,7 @@ class CdEFrontend(AbstractUserFrontend):
         return self.render(rs, "change_past_course")
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdatadict(*_PAST_COURSE_COMMON_FIELDS())
+    @REQUESTdatadict(*PAST_COURSE_COMMON_FIELDS)
     def change_past_course(self, rs: RequestState, pevent_id: int,
                            pcourse_id: int, data: CdEDBObject) -> Response:
         """Modify a concluded course."""
@@ -2687,7 +2681,7 @@ class CdEFrontend(AbstractUserFrontend):
         return self.render(rs, "create_past_course")
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdatadict(*_PAST_COURSE_COMMON_FIELDS())
+    @REQUESTdatadict(*PAST_COURSE_COMMON_FIELDS)
     def create_past_course(self, rs: RequestState, pevent_id: int,
                            data: CdEDBObject) -> Response:
         """Add new concluded course."""

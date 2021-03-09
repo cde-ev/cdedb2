@@ -5,6 +5,7 @@ overall topic.
 """
 
 import abc
+import cgitb
 import collections
 import collections.abc
 import copy
@@ -32,6 +33,7 @@ import re
 import shutil
 import smtplib
 import subprocess
+import sys
 import tempfile
 import threading
 import typing
@@ -145,6 +147,20 @@ class BaseApp(metaclass=abc.ABCMeta):
                                     param, persona_id, timeout)
 
         self.encode_parameter = local_encode
+
+    def cgitb_log(self) -> None:
+        # noinspection PyBroadException
+        try:
+            self.logger.error(cgitb.text(sys.exc_info(), context=7))
+        except Exception:
+            # cgitb is very invasive when generating the stack trace, which might go
+            # wrong.
+            pass
+
+    @staticmethod
+    def cgitb_html() -> Response:
+        return Response(cgitb.html(sys.exc_info(), context=7),
+                        mimetype="text/html", status=500)
 
     def encode_notification(self, rs: RequestState, ntype: NotificationType,
                             nmessage: str, nparams: CdEDBObject = None) -> str:
