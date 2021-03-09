@@ -633,8 +633,6 @@ CREATE TABLE event.events (
         -- BuB,  JGW, CdE, ...
         institution                  integer NOT NULL REFERENCES past_event.institutions(id),
         description                  varchar,
-        -- only visible to participants
-        participant_notes            varchar,
         --
         -- cut for past_event.events (modulo column tempus)
         --
@@ -649,6 +647,8 @@ CREATE TABLE event.events (
         orga_address                 varchar,
         registration_text            varchar,
         mail_text                    varchar,
+        -- only visible to participants
+        participant_notes            varchar,
         use_additional_questionnaire boolean NOT NULL DEFAULT False,
         notes                        varchar,
         offline_lock                 boolean NOT NULL DEFAULT False,
