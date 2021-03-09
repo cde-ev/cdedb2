@@ -173,13 +173,13 @@ class SubscriptionActions(enum.IntEnum):
         }
         return action_target_state_map[self]
 
-    @staticmethod
-    def get_error_matrix() -> "_ActionStateErrorMatrix":
-        """This defines the logic of which state transitions are legal.
+    def get_error(self, state: Optional[SubscriptionStates]) -> Optional[SubscriptionError]:
+        """Determine whether this action is allowed for the current state.
 
-        SubscriptionErrors defined in this matrix will be raised by `apply_action`.
+        :returns: `None` if the action is allowed, a `SubscriptionError` to be raised
+            otherwise.
         """
-        return _SUBSCRIPTION_ERROR_MATRIX
+        return _SUBSCRIPTION_ERROR_MATRIX[self][state]
 
     @classmethod
     def unsubscribing_actions(cls) -> Set["SubscriptionActions"]:
@@ -420,6 +420,7 @@ _SUBSCRIPTION_ERROR_MATRIX: _ActionStateErrorMatrix = {
     SubscriptionActions.cancel_request: _SUBSCRIPTION_REQUEST_ERROR_MAPPING,
 }
 
-_CLEANUP_PROTECTED_STATES = {state for state in SubscriptionStates
-                             if SubscriptionActions.get_error_matrix()[
-                                 SubscriptionActions.cleanup_subscription][state]}
+_CLEANUP_PROTECTED_STATES = {
+    state for state in SubscriptionStates
+    if SubscriptionActions.cleanup_subscription.get_error(state)
+}

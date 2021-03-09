@@ -37,9 +37,8 @@ def _check_state_requirements(action: SubscriptionActions,
     of them may be appropriate to use from the current state.
     """
 
-    error_matrix = SubscriptionActions.get_error_matrix()
-    # TODO: `if exception := error_matrix[action][old_state]`.
-    exception: Optional[SubscriptionError] = error_matrix[action][old_state]
+    # TODO: `if exception := action.get_error(old_state)`.
+    exception = action.get_error(old_state)
     if exception:
         raise exception
 
