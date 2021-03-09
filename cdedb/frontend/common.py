@@ -1065,13 +1065,17 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             else:
                 raise AttributeError(n_("Given method is not callable."))
 
+        def _format_country_code(code: str) -> str:
+            """Helper to make string hidden to pybabel."""
+            return f'CountryCodes.{code}'
+
         errorsdict: Dict[Optional[str], List[Exception]] = {}
         for key, value in rs.retrieve_validation_errors():
             errorsdict.setdefault(key, []).append(value)
 
         # here come the always accessible things promised above
         data = {
-            'COUNTRY_CODES': xsorted([(v, rs.gettext("CountryCodes.{}".format(v)))
+            'COUNTRY_CODES': xsorted([(v, rs.gettext(_format_country_code(v)))
                                       for v in COUNTRY_CODES], key=lambda x: x[1]),
             'ambience': rs.ambience,
             'cdedblink': _cdedblink,

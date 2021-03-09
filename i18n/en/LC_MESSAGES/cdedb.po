@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2021-03-03 21:22+0100\n"
+"POT-Creation-Date: 2021-03-09 14:32+0100\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -43,7 +43,7 @@ msgstr ""
 #: cdedb/backend/assembly.py:343 cdedb/backend/assembly.py:366
 #: cdedb/backend/assembly.py:1930 cdedb/backend/event.py:67
 #: cdedb/backend/event.py:98 cdedb/backend/past_event.py:568
-#: cdedb/frontend/common.py:1160
+#: cdedb/frontend/common.py:1163
 msgid "No input specified."
 msgstr ""
 
@@ -351,7 +351,7 @@ msgstr ""
 
 #: cdedb/backend/cde.py:451 cdedb/backend/common.py:613
 #: cdedb/frontend/cde.py:635 cdedb/frontend/cde.py:791
-#: cdedb/frontend/common.py:1469
+#: cdedb/frontend/common.py:1472
 msgid "Impossible."
 msgstr ""
 
@@ -696,7 +696,7 @@ msgstr ""
 msgid "Preventing reset of admin."
 msgstr ""
 
-#: cdedb/backend/core.py:2293 cdedb/frontend/common.py:2157
+#: cdedb/backend/core.py:2293 cdedb/frontend/common.py:2160
 msgid "Link expired."
 msgstr ""
 
@@ -730,7 +730,7 @@ msgid "Password too weak."
 msgstr ""
 
 #: cdedb/backend/core.py:2391 cdedb/frontend/cde.py:1258
-#: cdedb/frontend/common.py:1382 cdedb/frontend/event.py:2290
+#: cdedb/frontend/common.py:1385 cdedb/frontend/event.py:2290
 msgid "No input provided."
 msgstr ""
 
@@ -1727,7 +1727,7 @@ msgstr ""
 msgid "*Nothing here yet.*"
 msgstr ""
 
-#: cdedb/frontend/common.py:192 cdedb/frontend/common.py:1260
+#: cdedb/frontend/common.py:192 cdedb/frontend/common.py:1263
 msgid "Failed validation."
 msgstr ""
 
@@ -1739,124 +1739,120 @@ msgstr ""
 msgid "Given method is not callable."
 msgstr ""
 
-#: cdedb/frontend/common.py:1074
-msgid "CountryCodes.{}"
-msgstr ""
-
-#: cdedb/frontend/common.py:1100
+#: cdedb/frontend/common.py:1103
 #, python-format
 msgid "Default values cannot be overridden: %(keys)s"
 msgstr ""
 
-#: cdedb/frontend/common.py:1113
+#: cdedb/frontend/common.py:1116
 #, python-format
 msgid "Requested modus does not exists: %(modus)s"
 msgstr ""
 
-#: cdedb/frontend/common.py:1118
+#: cdedb/frontend/common.py:1121
 #, python-format
 msgid "Template not found: %(file)s"
 msgstr ""
 
-#: cdedb/frontend/common.py:1162
+#: cdedb/frontend/common.py:1165
 msgid "Ambiguous input."
 msgstr ""
 
-#: cdedb/frontend/common.py:1178
+#: cdedb/frontend/common.py:1181
 msgid "Invalid datatype read from file."
 msgstr ""
 
-#: cdedb/frontend/common.py:1185
+#: cdedb/frontend/common.py:1188
 msgid "Invalid input type."
 msgstr ""
 
-#: cdedb/frontend/common.py:1224
+#: cdedb/frontend/common.py:1227
 msgid "Cannot download query result without fields of interest."
 msgstr ""
 
-#: cdedb/frontend/common.py:1239
+#: cdedb/frontend/common.py:1242
 msgid "Unknown download kind {kind}."
 msgstr ""
 
-#: cdedb/frontend/common.py:1262
+#: cdedb/frontend/common.py:1265
 msgid "The database currently undergoes maintenance and is unavailable."
 msgstr ""
 
-#: cdedb/frontend/common.py:1317
+#: cdedb/frontend/common.py:1320
 #, python-format
 msgid "Stored email to hard drive at %(path)s"
 msgstr ""
 
-#: cdedb/frontend/common.py:1448 cdedb/frontend/core.py:1403
+#: cdedb/frontend/common.py:1451 cdedb/frontend/core.py:1403
 #: cdedb/frontend/core.py:2429
 msgid "Change committed."
 msgstr ""
 
-#: cdedb/frontend/common.py:1449 cdedb/frontend/core.py:992
+#: cdedb/frontend/common.py:1452 cdedb/frontend/core.py:992
 #: cdedb/frontend/core.py:1161
 msgid "Change pending."
 msgstr ""
 
-#: cdedb/frontend/common.py:1450
+#: cdedb/frontend/common.py:1453
 msgid "Change failed."
 msgstr ""
 
-#: cdedb/frontend/common.py:1509
+#: cdedb/frontend/common.py:1512
 msgid ""
 "LaTeX compilation failed. Try downloading the source files and compiling "
 "them manually."
 msgstr ""
 
-#: cdedb/frontend/common.py:1780
+#: cdedb/frontend/common.py:1783
 msgid "Inconsistent request."
 msgstr ""
 
-#: cdedb/frontend/common.py:1858
+#: cdedb/frontend/common.py:1861
 msgid "Object {param}={value} not found"
 msgstr ""
 
-#: cdedb/frontend/common.py:1911
+#: cdedb/frontend/common.py:1914
 msgid "You must login."
 msgstr ""
 
-#: cdedb/frontend/common.py:1915
+#: cdedb/frontend/common.py:1918
 msgid "Access denied to {realm}/{endpoint}."
 msgstr ""
 
-#: cdedb/frontend/common.py:2003
+#: cdedb/frontend/common.py:2006
 msgid "Magic URL parameter replacement failed."
 msgstr ""
 
-#: cdedb/frontend/common.py:2159
+#: cdedb/frontend/common.py:2162
 msgid "Link invalid."
 msgstr ""
 
-#: cdedb/frontend/common.py:2229
+#: cdedb/frontend/common.py:2232
 msgid "Invalid argtype {t} found."
 msgstr ""
 
-#: cdedb/frontend/common.py:2342
+#: cdedb/frontend/common.py:2345
 msgid "This page can only be accessed by orgas."
 msgstr ""
 
-#: cdedb/frontend/common.py:2347
+#: cdedb/frontend/common.py:2350
 msgid "This event is locked for offline usage."
 msgstr ""
 
-#: cdedb/frontend/common.py:2379
+#: cdedb/frontend/common.py:2382
 msgid "This page can only be accessed by the mailinglist’s moderators."
 msgstr ""
 
-#: cdedb/frontend/common.py:2384
+#: cdedb/frontend/common.py:2387
 msgid ""
 "You do not have privileged moderator access and may not change subscriptions."
 msgstr ""
 
-#: cdedb/frontend/common.py:2389
+#: cdedb/frontend/common.py:2392
 msgid "This page can only be accessed by appropriate admins."
 msgstr ""
 
-#: cdedb/frontend/common.py:2411
+#: cdedb/frontend/common.py:2414
 msgid ""
 "This page may only be accessed by the assembly's presiders or assembly "
 "admins."
