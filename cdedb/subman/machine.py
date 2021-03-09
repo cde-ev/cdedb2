@@ -22,7 +22,7 @@ for them.
 
 import enum
 from gettext import gettext as _
-from typing import Dict, Optional, Set
+from typing import Mapping, Optional, Set
 
 from .exceptions import SubscriptionError, SubscriptionInfo
 
@@ -241,8 +241,8 @@ class SubscriptionActions(enum.IntEnum):
 
 # TODO: make these `Mapping`s, so they are immutable? It might be useful to be able to
 #  alter these.
-_StateErrorMapping = Dict[Optional[SubscriptionStates], Optional[SubscriptionError]]
-_ActionStateErrorMatrix = Dict[SubscriptionActions, _StateErrorMapping]
+_StateErrorMapping = Mapping[Optional[SubscriptionStates], Optional[SubscriptionError]]
+_ActionStateErrorMatrix = Mapping[SubscriptionActions, _StateErrorMapping]
 
 # Errors are identical for all actions handling a subscription request.
 _SUBSCRIPTION_REQUEST_ERROR_MAPPING: _StateErrorMapping = {
