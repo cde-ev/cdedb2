@@ -259,7 +259,7 @@ endif
 
 sample-data-xss:
 	cp -f related/auto-build/files/stage3/localconfig.py cdedb/localconfig.py
-	$(MAKE) storage > /dev/null
+	$(MAKE) storage-test > /dev/null
 	$(MAKE) sql-xss > /dev/null
 
 xss-check: export CDEDB_TEST=True

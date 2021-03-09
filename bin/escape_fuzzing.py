@@ -58,10 +58,10 @@ args = parser.parse_args()
 
 def setup(dbname: str) -> webtest.TestApp:
     check_test_setup()
-    config = {"CDB_DATABASE_NAME": dbname}
     with tempfile.NamedTemporaryFile("w", suffix=".py") as f:
-        for k, v in config.items():
-            f.write(f"{k} = {v!r}\n")
+        f.write(f"import pathlib\n"
+                f"STORAGE_DIR = pathlib.Path('/tmp/cdedb-store')\n"
+                f"CDB_DATABASE_NAME = '{args.dbname}'")
         f.flush()
         return Application(f.name)
 
