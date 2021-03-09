@@ -82,6 +82,9 @@ class SubscriptionActions(enum.IntEnum):
     remove_subscriber = 30  #: A moderator manually removing a subscribed user.
     remove_subscription_override = 31  #: A mod removing a fixed subscription.
     remove_unsubscription_override = 32  #: A moderator unblocking a user.
+    #: A moderator removing the relation
+    #: of an unsubscribed user to the mailinglist.
+    reset_unsubscription = 40
 
     def get_target_state(self) -> Optional[SubscriptionStates]:
         """Get the target state associated with an action."""
@@ -111,7 +114,9 @@ class SubscriptionActions(enum.IntEnum):
             SubscriptionActions.remove_subscription_override:
                 SubscriptionStates.subscribed,
             SubscriptionActions.remove_unsubscription_override:
-                SubscriptionStates.unsubscribed
+                SubscriptionStates.unsubscribed,
+            SubscriptionActions.reset_unsubscription:
+                None,
         }
         return target_state.get(self)
 
@@ -144,6 +149,8 @@ class SubscriptionActions(enum.IntEnum):
                 MlLogCodes.subscribed,
             SubscriptionActions.remove_unsubscription_override:
                 MlLogCodes.unsubscribed,
+            SubscriptionActions.reset_unsubscription:
+                MlLogCodes.unsubscription_reset,
         }
         return log_code_map[self]
 
@@ -240,15 +247,19 @@ class SubscriptionActions(enum.IntEnum):
             SubscriptionActions.approve_request: {
                 ss.subscribed: error(n_("Not a pending subscription request.")),
                 ss.unsubscribed: error(n_("Not a pending subscription request.")),
-                ss.subscription_override: error(n_("Not a pending subscription request.")),
-                ss.unsubscription_override: error(n_("Not a pending subscription request.")),
+                ss.subscription_override: error(
+                    n_("Not a pending subscription request.")),
+                ss.unsubscription_override: error(
+                    n_("Not a pending subscription request.")),
                 ss.pending: None,
             },
             SubscriptionActions.deny_request: {
                 ss.subscribed: error(n_("Not a pending subscription request.")),
                 ss.unsubscribed: error(n_("Not a pending subscription request.")),
-                ss.subscription_override: error(n_("Not a pending subscription request.")),
-                ss.unsubscription_override: error(n_("Not a pending subscription request.")),
+                ss.subscription_override: error(
+                    n_("Not a pending subscription request.")),
+                ss.unsubscription_override: error(
+                    n_("Not a pending subscription request.")),
                 ss.pending: None,
             },
             SubscriptionActions.block_request: {
@@ -261,9 +272,18 @@ class SubscriptionActions(enum.IntEnum):
                     n_("Not a pending subscription request.")),
                 ss.pending: None,
             },
+            SubscriptionActions.reset_unsubscription: {
+                ss.subscribed: error(n_("User is not unsubscribed.")),
+                ss.unsubscribed: None,
+                ss.subscription_override: error(n_("User is not unsubscribed.")),
+                ss.unsubscription_override: error(n_(
+                    "User has been blocked. You can use Advanced Management to"
+                    " change this.")),
+                ss.pending: error(n_("User is not unsubscribed.")),
+            }
         }
 
-        for row in matrix.keys():
+        for row in matrix:
             # Implicit (un-)subscriptions behave identically.
             matrix[row][ss.implicit] = matrix[row][ss.subscribed]
             matrix[row][None] = matrix[row][ss.unsubscribed]
@@ -294,10 +314,10 @@ class SubscriptionActions(enum.IntEnum):
             SubscriptionActions.add_unsubscription_override,
             SubscriptionActions.remove_subscriber,
             SubscriptionActions.remove_subscription_override,
-            SubscriptionActions.remove_unsubscription_override
+            SubscriptionActions.remove_unsubscription_override,
+            SubscriptionActions.reset_unsubscription,
         }
 
     def is_managing(self) -> bool:
         """Whether or not an action requires additional privileges."""
         return self in self.managing_actions()
-

@@ -208,7 +208,7 @@ class TestMlFrontend(FrontendTest):
     @as_users("berta", "emilia", "annika", "nina")
     def test_hide_admin_notes(self, user: CdEDBObject) -> None:
         # CdElokal Hogwarts
-        ml_data = self.sample_data['ml.mailinglists'][65]
+        ml_data = self.get_sample_datum('ml.mailinglists', 65)
         self.traverse({'description': 'Mailinglisten'},
                       {'description': ml_data['title']})
         # Make sure that admin notes exist.
@@ -398,8 +398,8 @@ class TestMlFrontend(FrontendTest):
                       {'href': '/ml/mailinglist/4'},
                       {'href': '/ml/mailinglist/4/management'})
         self.assertTitle("Klatsch und Tratsch – Verwaltung")
-        self.assertNonPresence("Inga Iota", div="moderator_list")
-        self.assertNonPresence("Anton Armin A. Administrator", div="moderator_list")
+        self.assertNonPresence("Inga Iota", div="moderator-list")
+        self.assertNonPresence("Anton Armin A. Administrator", div="moderator-list")
         f = self.response.forms['addmoderatorform']
         # Check that you cannot add non-existing or archived moderators.
         errormsg = "Einige dieser Nutzer existieren nicht oder sind archiviert."
@@ -415,13 +415,13 @@ class TestMlFrontend(FrontendTest):
         f['moderators'] = "DB-9-4, DB-1-9"
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch – Verwaltung")
-        self.assertPresence("Inga Iota", div="moderator_list")
+        self.assertPresence("Inga Iota", div="moderator-list")
         self.assertPresence("Anton Armin A. Administrator",
-                            div="moderator_list")
+                            div="moderator-list")
         f = self.response.forms['removemoderatorform9']
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch – Verwaltung")
-        self.assertNonPresence("Inga Iota", div="moderator_list")
+        self.assertNonPresence("Inga Iota", div="moderator-list")
         self.assertNotIn("removesubscriberform9", self.response.forms)
         f = self.response.forms['addsubscriberform']
         f['subscriber_ids'] = "DB-9-4"
@@ -501,19 +501,64 @@ class TestMlFrontend(FrontendTest):
         f = self.response.forms['removemodsubscriberform9']
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch – Erweiterte Verwaltung")
-        self.assertNonPresence("Inga Iota")
+        self.assertNonPresence("Inga Iota", div="modsubscriber-list")
+        # Inga is now in SubscriptionState 'subscribed'
+        # self.assertPresence("Inga Iota", div="unsubscriber-list")
 
         self.assertPresence("Emilia E. Eventis")
         f = self.response.forms['removemodunsubscriberform5']
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch – Erweiterte Verwaltung")
-        self.assertNonPresence("Emilia E. Eventis")
+        self.assertNonPresence("Emilia E. Eventis", div="modunsubscriber-list")
+        self.assertPresence("Emilia E. Eventis", div="unsubscriber-list")
 
         self.assertPresence("zelda@example.cde")
         f = self.response.forms['removewhitelistform1']
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch – Erweiterte Verwaltung")
         self.assertNonPresence("zelda@example.cde")
+
+    @as_users("nina")
+    def test_remove_unsubscriptions(self, user: CdEDBObject) -> None:
+        self.traverse({'description': 'Mailinglisten'},
+                      {'description': 'Werbung'},
+                      {'description': 'Erweiterte Verwaltung'})
+        self.assertTitle("Werbung – Erweiterte Verwaltung")
+        self.assertPresence("Annika", div='unsubscriber-list')
+        self.assertPresence("Ferdinand", div='unsubscriber-list')
+
+        # remove Annikas unsubscription
+        f = self.response.forms['resetunsubscriberform27']
+        assert 'addsubscriberform27' not in self.response.forms
+        self.submit(f)
+        self.assertNonPresence("Annika", div='unsubscriber-list')
+
+        # re-add Ferdinand, he got implicit subscribing rights
+        f = self.response.forms['addsubscriberform6']
+        assert 'resetunsubscriberform6' not in self.response.forms
+        self.submit(f)
+        self.assertNonPresence("Ferdinand", div='unsubscriber-list')
+
+        # check that Ferdinand was subscribed, while Annikas relation was removed
+        self.assertNonPresence('Annika')
+        self.traverse({'description': 'Verwaltung'})
+        self.assertTitle("Werbung – Verwaltung")
+        self.assertNonPresence("Annika")
+        self.assertPresence("Ferdinand", div="subscriber-list")
+
+    @as_users("janis")
+    def test_not_remove_unsubscriptions(self, user: CdEDBObject) -> None:
+        self.traverse({'description': 'Mailinglisten'},
+                      {'description': 'Werbung'},
+                      {'description': 'Erweiterte Verwaltung'})
+        self.assertTitle("Werbung – Erweiterte Verwaltung")
+        self.assertPresence("Annika", div='unsubscriber-list')
+        self.assertPresence("Ferdinand", div='unsubscriber-list')
+
+        assert 'resetunsubscriberform27' not in self.response.forms
+        assert 'addsubscriberform27' not in self.response.forms
+        assert 'addsubscriberform6' not in self.response.forms
+        assert 'resetunsubscriberform6' not in self.response.forms
 
     # TODO add a presider as moderator and use him too in this test
     @as_users("nina")
@@ -739,10 +784,10 @@ class TestMlFrontend(FrontendTest):
                 assembly_types.union(event_types)
             )}
         event_id = 1
-        event_title = self.sample_data['event.events'][event_id]['title']
+        event_title = self.get_sample_datum('event.events', event_id)['title']
         assembly_id = 1
-        assembly_title = self.sample_data[
-            'assembly.assemblies'][assembly_id]['title']
+        assembly_title = self.get_sample_datum(
+            'assembly.assemblies', assembly_id)['title']
 
         self.traverse({'description': 'Mailinglisten'},
                       {'description': 'Alle Mailinglisten'},
@@ -1035,7 +1080,7 @@ class TestMlFrontend(FrontendTest):
                       {"description": "CdE-Party 2050 Teilnehmer"},
                       {"description": "Konfiguration"})
 
-        old_ml = self.sample_data['ml.mailinglists'][60]
+        old_ml = self.get_sample_datum('ml.mailinglists', 60)
         f = self.response.forms['changelistform']
 
         # these properties are not allowed to be changed by moderators
@@ -1082,31 +1127,92 @@ class TestMlFrontend(FrontendTest):
         self.assertEqual("1111", f['maxsize'].value)
 
     @as_users("janis")
-    @prepsql("INSERT INTO ml.moderators (mailinglist_id, persona_id) VALUES (5, 10)")
+    # add Janis as unprivileged moderator
+    @prepsql("INSERT INTO ml.moderators (mailinglist_id, persona_id) VALUES (9, 10)")
+    # add someone (Charly) in unsubscription override state
+    @prepsql(f"INSERT INTO ml.subscription_states"
+             f" (mailinglist_id, persona_id, subscription_state)"
+             f" VALUES (9, 3, {const.SubscriptionStates.unsubscription_override.value})")
+    # add someone (Daniel) in subscription override state
+    @prepsql(f"INSERT INTO ml.subscription_states"
+             f" (mailinglist_id, persona_id, subscription_state)"
+             f" VALUES (9, 4, {const.SubscriptionStates.subscription_override.value})")
+    # add someone (Ferdinand) in unsubscription state (no implicit subscribing right)
+    @prepsql(f"INSERT INTO ml.subscription_states"
+             f" (mailinglist_id, persona_id, subscription_state)"
+             f" VALUES (9, 6, {const.SubscriptionStates.unsubscribed.value})")
+    # add someone (Werner) in request subscription state
+    @prepsql(f"INSERT INTO ml.subscription_states"
+             f" (mailinglist_id, persona_id, subscription_state)"
+             f" VALUES (9, 23, {const.SubscriptionStates.pending.value})")
     def test_non_privileged_moderator(self, user: CdEDBObject) -> None:
         self.traverse({"description": "Mailinglisten"},
-                      {"description": "Sozialistischer Kampfbrief"},
-                      {"description": "Erweiterte Verwaltung"})
+                      {"description": "Teilnehmer-Liste"},
+                      {"description": "Verwaltung"})
         self.assertPresence("Du hast keinen Zugriff als Privilegierter Moderator",
                             div="static-notifications")
-        # they can neither add nor remove subscriptions.
+
+        # he can neither add nor remove subscriptions ...
+        self.assertNotIn('addsubscriberform', self.response.forms)
+        self.assertPresence("Anton", div='subscriber-list')
+        self.assertNotIn('removesubscriberform1', self.response.forms)
+
+        self.assertPresence("Werner", div='pending-list')
+        self.assertNotIn('blockrequestform23', self.response.forms)
+        self.assertNotIn('denyrequestform23', self.response.forms)
+        self.assertNotIn('approverequestform23', self.response.forms)
+
+        # ... but he can add and remove moderators
+        f = self.response.forms['addmoderatorform']
+        f['moderators'] = USER_DICT['berta']['DB-ID']
+        self.submit(f)
+        self.assertPresence("Bertålotta", div='moderator-list')
+        self.assertPresence("Garcia", div='moderator-list')
+        f = self.response.forms['removemoderatorform7']
+        self.submit(f)
+        self.assertNonPresence("Garcia", div='moderator-list')
+
+        self.traverse({"description": "Erweiterte Verwaltung"})
+        self.assertPresence("Du hast keinen Zugriff als Privilegierter Moderator",
+                            div="static-notifications")
+
+        # he can neither add nor remove subscriptions ...
         self.assertNotIn('addmodsubscriberform', self.response.forms)
-        self.assertNotIn('removemodsubscriberform100', self.response.forms)
+        self.assertPresence("Daniel", div='modsubscriber-list')
+        self.assertNotIn('removemodsubscriberform4', self.response.forms)
+
+        self.assertNotIn('addmodunsubscriberform', self.response.forms)
+        self.assertPresence("Charly", div='modunsubscriber-list')
+        self.assertNotIn('removemodsubscriberform3', self.response.forms)
+
+        self.assertPresence("Ferdinand", div='unsubscriber-list')
+        self.assertNotIn('resetunsubscriberform6', self.response.forms)
+        # Emilia is already unsubscribed, but has implicit subscription rights
+        self.assertPresence("Emilia", div="unsubscriber-list")
+        self.assertNotIn('addsubscriberform5', self.response.forms)
+
+        # ... but he can add and remove whitelist entries
+        f = self.response.forms['addwhitelistform']
+        f['email'] = "testmail@example.cde"
+        self.submit(f)
+        self.assertPresence("testmail@example.cde", div='whitelist')
+        f = self.response.forms['removewhitelistform1']
+        self.submit(f)
 
     @as_users("inga")
     def test_cdelokal_admin(self, user: CdEDBObject) -> None:
         self.traverse({"description": "Mailinglisten"},
                       {"description": "Hogwarts"})
-        admin_note = self.sample_data['ml.mailinglists'][65]['notes']
+        admin_note = self.get_sample_datum('ml.mailinglists', 65)['notes']
         self.assertPresence(admin_note, div="adminnotes")
         self.traverse({"description": "Verwaltung"})
         f = self.response.forms['addmoderatorform']
         f['moderators'] = user['DB-ID']
         self.submit(f)
-        self.assertPresence(user['given_names'], div="moderator_list")
+        self.assertPresence(user['given_names'], div="moderator-list")
         f = self.response.forms[f"removemoderatorform{user['id']}"]
         self.submit(f)
-        self.assertNonPresence(user['given_names'], div="moderator_list")
+        self.assertNonPresence(user['given_names'], div="moderator-list")
         self.traverse({"description": "Konfiguration"})
         f = self.response.forms['changelistform']
         new_notes = "Free Butterbeer for everyone!"
@@ -1133,7 +1239,7 @@ class TestMlFrontend(FrontendTest):
         f['moderators'] = moderator["DB-ID"]
         self.submit(f)
         self.assertTitle("Little Whinging")
-        self.assertPresence(moderator['given_names'], div="moderator_list")
+        self.assertPresence(moderator['given_names'], div="moderator-list")
 
     @as_users("anton")
     def test_1342(self, user: CdEDBObject) -> None:

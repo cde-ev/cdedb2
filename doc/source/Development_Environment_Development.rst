@@ -24,47 +24,57 @@ working with test data.
     synchronous_commit = off
     full_page_writes = off
 
+.. _configuring_i18n:
 
 Configuring
 -----------
 
-In the `/cdedb2/i18n/` directory in the VM there are two helper scripts for git,
-that are enabled by default: `git-diff-filter-po.sh` and `git-merge-po.sh`.
+In the ``i18n`` directory in the repository there are two helper scripts for git:
+``git-diff-filter-po.sh`` and ``git-merge-po.sh``.
 
-The first one is used when executing ``git diff`` on `.po` and `.pot` files.
-It removes all lines starting with ``#`` before comparing the files, because
-these lines contain line numbers of every string usage and those numbers are
-prone to change.
+These scripts are enabled by default on the VM image.
+As the Docker container however only mounts the local repository
+you will have to configure these manually.
+To enable these scripts add the following to the ``.git/config`` file::
 
-If you want to disable this, remove the following lines from your
-``.git/config`` file::
+    [diff "podiff"]
+        textconv = i18n/git-diff-filter-po.sh
+    [merge "pomerge"]
+        name = Gettext merge driver
+        driver = i18n/get-merge-po.sh %O %A %B
 
-	[diff "podiff"]
-		textconv = i18n/git-diff-filter-po.sh
+The first one is used when executing ``git diff`` on `.po` files.
+It removes all lines starting with ``#:`` before comparing the files,
+because they contain line numbers of every string usage
+and those numbers are prone to change.
 
-and the following lines from your ``.git/info/attributes`` file::
+If you want to disable this temporarily you can run ``git diff --no-textconv``.
+If you however want to disable this permanently
+you can remove the following lines from your ``.git/config`` file::
 
-	*.po diff=podiff
-	*.pot diff=podiff
+    [diff "podiff"]
+        textconv = i18n/git-diff-filter-po.sh
 
-Or you can run ``git diff --no-textconv`` to temporarily disable this.
+or add the following line to your ``.git/info/attributes`` file::
+
+    *.po diff
 
 
-The second one is a three-way merge driver for `.po` and `.pot` files, hopefully
-making merging of these files easier. The merge will fail if there are duplicate
-msgids in either of the files to be merged.
+The second one is a three-way merge driver for ``.po`` and ``.pot`` files,
+hopefully making merging of these files easier.
+If the merge fails you will have to look for ``#-#-#-#-#`` as conflict markers
+instead of the usual ``>>>>>>>``, ``=======`` and ``<<<<<<<`` git normally uses.
 
-If you want to disable this, remove the following lines from your
-``.git/config`` file::
+If you want to disable this,
+remove the following lines from your ``.git/config`` file::
 
-	[merge "pomerge"]
-		name = Gettext merge driver
-		driver = i18n/get-merge-po.sh %O %A %B
+    [merge "pomerge"]
+        name = Gettext merge driver
+        driver = i18n/get-merge-po.sh %O %A %B
 
-and the following lines from your ``.git/info/attributes`` file::
+or add the following line from your ``.git/info/attributes`` file::
 
-	*.po merge=pemerge
-	*.pot merge=pomerge
+    *.po merge
 
 Sample dev setup
 ----------------
@@ -73,14 +83,14 @@ Here is a description of my setup hopefully aiding new devs in
 setup. This is by no means a mandatory setup. First an overview of the
 directory structure::
 
-  /home/markus/DB/
-  ├── cdedb2/
-  │   └── ...
-  ├── vm-repo/
-  │   └── ...
-  ├── image.qcow2
-  ├── run-vm.sh
-  └── ssh-vm.sh
+    /home/markus/DB/
+    ├── cdedb2/
+    │   └── ...
+    ├── vm-repo/
+    │   └── ...
+    ├── image.qcow2
+    ├── run-vm.sh
+    └── ssh-vm.sh
 
 Everything lives inside the directory ``/home/markus/DB/`` where
 ``cdedb2/`` is a clone of the git repository. Most development happens

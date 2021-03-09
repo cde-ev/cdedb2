@@ -20,7 +20,7 @@
         {{ util.breadcrumb_link(cdedblink("ml/list_mailinglists"), gettext("All Mailinglists")) }}
     {% endif %}
     {{ util.breadcrumb_link(cdedblink("ml/show_mailinglist"), ambience['mailinglist']['title'], icon="envelope") }}
-    {{ util.breadcrumb_link(cdedblink("ml/show_subscription_details"), gettext("Advanced Management"), active=True) }}
+    {{ util.breadcrumb_link(cdedblink("ml/advanced_management"), gettext("Advanced Management"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
@@ -70,7 +70,7 @@
             </form>
             {% endif %}
 
-            <ul id="modsubscriber-list">
+            <ul class="slim" id="modsubscriber-list">
                 {% for subscription_override, persona in subscription_overrides.items() %} {# This is already sorted. #}
                     <li class="hide-hover-container clearfix-after">
                         {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
@@ -122,7 +122,7 @@
             </form>
             {% endif %}
 
-            <ul id="modunsubscriber-list">
+            <ul class="slim" id="modunsubscriber-list">
                 {% for unsubscription_override, persona in unsubscription_overrides.items() %} {# This is already sorted. #}
                     <li class="hide-hover-container clearfix-after">
                         {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
@@ -145,7 +145,7 @@
         </div>
     </div>
 
-    <h2>{% trans %}Whitelist{% endtrans %} [{{ ambience['mailinglist']['whitelist']|length }}]</h2>
+    <h2 class="mosp">{% trans %}Whitelist{% endtrans %} [{{ ambience['mailinglist']['whitelist']|length }}]</h2>
         <p class="text-muted">
             {{ util.make_icon('info-circle') }}
             {% trans %}
@@ -160,30 +160,102 @@
             {{ util.input_text(name="email", type="email", placeholder="mail@example.com",
                                arialabel=gettext("Email Address to whitelist")) }}
             <div class="input-group-btn">
-                {{ util.input_submit(value=gettext("Add Entry"), aclass="btn btn-success") }}
+                {{ util.input_submit(value=gettext("Add"), aclass="btn btn-success") }}
             </div>
         </div>
         {{ util.output_errors('email', wrapper=True) }}
     </form>
-    <div class="row">
-        <div class="col-md-6">
-            <ul id="whitelist">
-                {% for email in ambience['mailinglist']['whitelist']|sort %}
-                    <li class="hide-hover-container clearfix-after">
-                        {{ email }}
-                        <form action="{{ cdedblink('ml/remove_whitelist') }}"
-                            method="POST"
-                            id="removewhitelistform{{ loop.index }}"
-                            class="hide-hover display-inline">
-                            {{ util.anti_csrf_token('ml/remove_whitelist') }}
-                            {{ util.input_hidden(name="email", value=email) }}
-                            {{ util.input_submit(value="", aclass="btn btn-xs btn-danger list-button-float", icon="minus",
-                                    title=gettext("Remove %s from Whitelist")|format(email)) }}
-                        </form>
-                    </li>
-                {% endfor %}
-            </ul>
-        </div>
+    <div class="row" id="whitelist">
+        {% set whitelist = ambience['mailinglist']['whitelist'] %}
+        {% set col_width = 6 if whitelist|length > 5 else 12 %}
+        {% for list in whitelist | sort | slice(2 if whitelist|length > 5 else 1) %}
+            <div class="col-sm-{{ col_width }}">
+                <ul class="nosp slim">
+                    {% for email in list %} {# This is already sorted. #}
+                        <li class="hide-hover-container clearfix-after">
+                            {{ email }}
+                            <form action="{{ cdedblink('ml/remove_whitelist') }}"
+                                method="POST"
+                                id="removewhitelistform{{ loop.index }}"
+                                class="hide-hover display-inline">
+                                {{ util.anti_csrf_token('ml/remove_whitelist') }}
+                                {{ util.input_hidden(name="email", value=email) }}
+                                {{ util.input_submit(value="", aclass="btn btn-xs btn-danger list-button-float", icon="minus",
+                                        title=gettext("Remove %s from Whitelist")|format(email)) }}
+                            </form>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endfor %}
+    </div>
+
+    <h2 class="mosp">{% trans %}Unsubscribers{% endtrans %} [{{ all_unsubscriptions|length }}]</h2>
+        <p class="text-muted {% if "ml_mgmt" in user.admin_views %}nosp{% endif %}">
+            {{ util.make_icon('info-circle') }}
+            {% trans link=util.href(docurl("Realm_Mailinglist_Management", anchor='explicitly-unsubscribed'), gettext("documentation"), title=gettext("Explicity Unsubscribed State")) %}
+                Users who unsubscribed from this list. They will not be re-added automatically, but may be able to subscribe manually. Consult the {{ link }} for more details.
+            {% endtrans %}
+        </p>
+        {% if "ml_mgmt" in user.admin_views %}
+            <p class="text-danger">
+                {{ util.make_icon('exclamation-triangle') }}
+                {% trans %}
+                    This should only be used as a cleanup for specific tools like the account merger.
+                {% endtrans %}
+            </p>
+        {% endif %}
+
+
+    <div class="row" id="unsubscriber-list">
+        {% set col_width = 4 if all_unsubscriptions|length > 10 else (6 if all_unsubscriptions|length > 5 else 12) %}
+        {% for list in all_unsubscriptions | slice(3 if all_unsubscriptions|length > 10 else (2 if all_unsubscriptions|length > 5 else 1)) %}
+            <div class="col-sm-{{ col_width }}">
+                <ul class="nosp slim">
+                    {% for unsubscription in list %} {# This is already sorted. #}
+                        <li class="hide-hover-container clearfix-after">
+                            {# Since they are unsubscribed, giving a mailinglist as context does not make sense. #}
+                            {{ util.persona_anchor(all_unsubscriptions[unsubscription],
+                                                   readonly=False if "ml_mgmt" in user.admin_views else True,
+                                                   aclass='text-muted' if unsubscription in redundant_unsubscriptions else '') }}
+                            {% if "ml_mgmt" in user.admin_views %}
+                                {% if unsubscription in redundant_unsubscriptions %}
+                                    <form action="{{ cdedblink('ml/reset_unsubscription') }}"
+                                          method="POST" style="display: inline;"
+                                          id="resetunsubscriberform{{ unsubscription }}"
+                                          class="hide-hover display-inline">
+                                        {{ util.anti_csrf_token('ml/reset_unsubscription') }}
+                                        {{ util.input_hidden(name="unsubscription_id", value=unsubscription) }}
+                                        {{ util.input_submit(value='', aclass="btn btn-xs btn-danger list-button-float", icon="trash-alt",
+                                                title=gettext("Reset %(given_names)s %(family_name)s explicit unsubscription")|format(
+                                                    given_names=all_unsubscriptions[unsubscription]['given_names'],
+                                                    family_name=all_unsubscriptions[unsubscription]['family_name'])) }}
+                                    </form>
+                                {% else %}
+                                    <form action="{{ cdedblink('ml/readd_subscriber') }}"
+                                          method="POST" style="display: inline;"
+                                          id="addsubscriberform{{ unsubscription }}"
+                                          class="hide-hover display-inline">
+                                        {{ util.anti_csrf_token('ml/readd_subscriber') }}
+                                        {{ util.input_hidden(name="subscriber_id", value=unsubscription) }}
+                                        {{ util.input_submit(value='', aclass="btn btn-xs btn-success list-button-float", icon="plus",
+                                                title=gettext("Subscribe %(given_names)s %(family_name)s")|format(
+                                                    given_names=all_unsubscriptions[unsubscription]['given_names'],
+                                                    family_name=all_unsubscriptions[unsubscription]['family_name'])) }}
+                                    </form>
+                                {% endif %}
+                            {% else %}
+                                {% if unsubscription in redundant_unsubscriptions %}
+                                    {{ util.make_icon('broom', aclass="list-button-float", title=gettext("Explicit unsubscribition has currently no effect.")) }}
+                                {% else %}
+                                    {{ util.make_icon('bell-slash', aclass="list-button-float", title=gettext("User would be implicit subscribed otherwise.")) }}
+                                {% endif %}
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endfor %}
     </div>
 
     {% call util.bootstrap_panel(title=gettext("Downloads"), icon="file-download", aclass="panel-default mosp") %}

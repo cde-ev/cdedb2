@@ -5,13 +5,12 @@
 import collections
 import copy
 import datetime
-import decimal
 import itertools
 import operator
 import pathlib
 import quopri
 import tempfile
-from typing import Any, Collection, Dict, List, Optional, Set, Tuple, Union, cast
+from typing import Any, Collection, Dict, List, Optional, Set, Tuple
 
 import magic
 import qrcode
@@ -23,26 +22,26 @@ from werkzeug import Response
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    ADMIN_KEYS, ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, REALM_INHERITANCE,
-    REALM_SPECIFIC_GENESIS_FIELDS, ArchiveError, CdEDBObject, DefaultReturnCode,
-    EntitySorter, PathLike, PrivilegeError, Realm, RequestState, extract_roles,
-    get_persona_fields_by_realm, implied_realms, merge_dicts, n_, now, pairwise, unwrap,
-    xsorted,
+    ADMIN_KEYS, ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, LOG_FIELDS_COMMON,
+    REALM_ADMINS, REALM_INHERITANCE, REALM_SPECIFIC_GENESIS_FIELDS, ArchiveError,
+    CdEDBObject, DefaultReturnCode, EntitySorter, PrivilegeError, Realm,
+    RequestState, extract_roles, get_persona_fields_by_realm, implied_realms,
+    merge_dicts, n_, now, pairwise, unwrap, xsorted,
 )
 
-from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
 from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, access, basic_redirect,
     calculate_db_logparams, calculate_loglinks, check_validation as check,
     check_validation_optional as check_optional, date_filter, enum_entries_filter,
-    make_membership_fee_reference, periodic, querytoparams_filter,
+    make_membership_fee_reference, markdown_parse_safe, periodic, querytoparams_filter,
     request_dict_extractor, request_extractor,
 )
 from cdedb.query import QUERY_SPECS, Query, QueryOperators, mangle_query_input
 from cdedb.validation import (
-    TypeMapping, _PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
-    _PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS, validate_check,
+    TypeMapping, GENESIS_CASE_EXPOSED_FIELDS,
+    PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
+    PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS, validate_check,
 )
 from cdedb.validationtypes import CdedbID
 
@@ -351,7 +350,15 @@ class CoreFrontend(AbstractFrontend):
             expires=now() + datetime.timedelta(days=10 * 365))
         return response
 
-    @access("member")
+    @access("ml", modi={"POST"}, check_anti_csrf=False)
+    @REQUESTdata("md_str")
+    def markdown_parse(self, rs: RequestState, md_str: str) -> Response:
+        if rs.has_validation_errors():
+            return Response("", mimetype='text/plain')
+        html_str = markdown_parse_safe(md_str)
+        return Response(html_str, mimetype='text/plain')
+
+    @access("searchable", "cde_admin")
     @REQUESTdata("#confirm_id")
     def download_vcard(self, rs: RequestState, persona_id: int, confirm_id: int
                        ) -> Response:
@@ -362,7 +369,7 @@ class CoreFrontend(AbstractFrontend):
         return self.send_file(rs, data=vcard, mimetype='text/vcard',
                               filename='vcard.vcf')
 
-    @access("member")
+    @access("searchable", "cde_admin")
     @REQUESTdata("#confirm_id")
     def qr_vcard(self, rs: RequestState, persona_id: int, confirm_id: int) -> Response:
         if persona_id != confirm_id or rs.has_validation_errors():
@@ -393,11 +400,14 @@ class CoreFrontend(AbstractFrontend):
 
         :return: The serialized vCard (as in a vcf file)
         """
-        if 'member' not in rs.user.roles:
-            raise werkzeug.exceptions.Forbidden(n_("Not a member."))
+        if not {'searchable', 'cde_admin'} & rs.user.roles:
+            raise werkzeug.exceptions.Forbidden(n_("No cde access to profile."))
 
-        if not self.coreproxy.verify_persona(rs, persona_id, required_roles=['member']):
-            raise werkzeug.exceptions.Forbidden(n_("Viewed persona is no member."))
+        if (not self.coreproxy.verify_persona(rs, persona_id,
+                                              required_roles=['searchable'])
+                and "cde_admin" not in rs.user.roles):
+            raise werkzeug.exceptions.Forbidden(n_(
+                "Access to non-searchable member data."))
 
         persona = self.coreproxy.get_cde_user(rs, persona_id)
 
@@ -411,7 +421,8 @@ class CoreFrontend(AbstractFrontend):
             prefix=persona['title'] or '',
             suffix=persona['name_supplement'] or '')
         vcard.add('FN')
-        vcard.fn.value = f"{persona['given_names'] or ''} {persona['family_name'] or ''}"
+        vcard.fn.value = " ".join(
+            filter(None, (persona['given_names'], persona['family_name'])))
         vcard.add('NICKNAME')
         vcard.nickname.value = persona['display_name'] or ''
 
@@ -528,7 +539,8 @@ class CoreFrontend(AbstractFrontend):
                     access_levels.add(realm)
         # Members see other members (modulo quota)
         if "searchable" in rs.user.roles and quote_me:
-            if (not rs.ambience['persona']['is_searchable']
+            if (not (rs.ambience['persona']['is_member'] and
+                     rs.ambience['persona']['is_searchable'])
                     and "cde_admin" not in access_levels):
                 raise werkzeug.exceptions.Forbidden(n_(
                     "Access to non-searchable member data."))
@@ -592,7 +604,7 @@ class CoreFrontend(AbstractFrontend):
             if "core" in access_levels and "member" in roles:
                 user_lastschrift = self.cdeproxy.list_lastschrift(
                     rs, persona_ids=(persona_id,), active=True)
-                data['has_lastschrift'] = len(user_lastschrift) > 0
+                data['has_lastschrift'] = bool(user_lastschrift)
         if is_relative_or_meta_admin and is_relative_or_meta_admin_view:
             # This is a bit involved to not contaminate the data dict
             # with keys which are not applicable to the requested persona
@@ -604,8 +616,7 @@ class CoreFrontend(AbstractFrontend):
         data['show_vcard'] = "cde" in access_levels and "cde" in roles
 
         # Cull unwanted data
-        if (not ('is_cde_realm' in data and data['is_cde_realm'])
-                 and 'foto' in data):
+        if (not ('is_cde_realm' in data and data['is_cde_realm']) and 'foto' in data):
             del data['foto']
         # relative admins, core admins and the user himself got "core"
         if "core" not in access_levels:
@@ -633,6 +644,7 @@ class CoreFrontend(AbstractFrontend):
         quoteable = (not quote_me
                      and "cde" not in access_levels
                      and "searchable" in rs.user.roles
+                     and rs.ambience['persona']['is_member']
                      and rs.ambience['persona']['is_searchable'])
 
         meta_info = self.coreproxy.get_meta_info(rs)
@@ -644,8 +656,7 @@ class CoreFrontend(AbstractFrontend):
             'quoteable': quoteable, 'access_mode': access_mode,
         })
 
-    @access("core_admin", "cde_admin", "event_admin", "ml_admin",
-            "assembly_admin")
+    @access(*REALM_ADMINS)
     def show_history(self, rs: RequestState, persona_id: int) -> Response:
         """Display user history."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
@@ -756,7 +767,7 @@ class CoreFrontend(AbstractFrontend):
         result = self.coreproxy.submit_general_query(rs, query)
         if len(result) == 1:
             return self.redirect_show_user(rs, result[0]["id"])
-        elif len(result) > 0:
+        elif result:
             # TODO make this accessible
             pass
         query = Query(
@@ -769,7 +780,7 @@ class CoreFrontend(AbstractFrontend):
         result = self.coreproxy.submit_general_query(rs, query)
         if len(result) == 1:
             return self.redirect_show_user(rs, result[0]["id"])
-        elif len(result) > 0:
+        elif result:
             params = querytoparams_filter(query)
             rs.values.update(params)
             return self.user_search(rs, is_search=True, download=None,
@@ -1031,8 +1042,8 @@ class CoreFrontend(AbstractFrontend):
         elif is_search:
             # mangle the input, so we can prefill the form
             query_input = mangle_query_input(rs, spec)
-            query = check(rs, vtypes.QueryInput,
-                query_input, "query", spec=spec, allow_empty=False)
+            query = check(rs, vtypes.QueryInput, query_input, "query",
+                          spec=spec, allow_empty=False)
         events = self.pasteventproxy.list_past_events(rs)
         choices = {
             'pevent_id': collections.OrderedDict(
@@ -1087,8 +1098,8 @@ class CoreFrontend(AbstractFrontend):
         query_input = mangle_query_input(rs, spec)
         query: Optional[Query] = None
         if is_search:
-            query = check(rs, vtypes.QueryInput,
-                query_input, "query", spec=spec, allow_empty=False)
+            query = check(rs, vtypes.QueryInput, query_input, "query",
+                          spec=spec, allow_empty=False)
         events = self.pasteventproxy.list_past_events(rs)
         choices = {
             'pevent_id': collections.OrderedDict(
@@ -1129,8 +1140,7 @@ class CoreFrontend(AbstractFrontend):
                 ret |= {realm} | implied_realms(realm)
         return ret
 
-    @access("core_admin", "cde_admin", "event_admin", "ml_admin",
-            "assembly_admin")
+    @access(*REALM_ADMINS)
     def admin_change_user_form(self, rs: RequestState, persona_id: int
                                ) -> Response:
         """Render form."""
@@ -1155,8 +1165,7 @@ class CoreFrontend(AbstractFrontend):
             'shown_fields': shown_fields,
         })
 
-    @access("core_admin", "cde_admin", "event_admin", "ml_admin",
-            "assembly_admin", modi={"POST"})
+    @access(*REALM_ADMINS, modi={"POST"})
     @REQUESTdata("generation", "change_note", "ignore_warnings")
     def admin_change_user(self, rs: RequestState, persona_id: int,
                           generation: int, change_note: Optional[str],
@@ -1473,10 +1482,7 @@ class CoreFrontend(AbstractFrontend):
         return self.render(rs, "promote_user")
 
     @access("core_admin", modi={"POST"})
-    @REQUESTdatadict(
-        "title", "name_supplement", "birthday", "gender", "free_form",
-        "telephone", "mobile", "address", "address_supplement", "postal_code",
-        "location", "country", "trial_member")
+    @REQUESTdatadict(*CDE_TRANSITION_FIELDS)
     @REQUESTdata("target_realm")
     def promote_user(self, rs: RequestState, persona_id: int,
                      target_realm: vtypes.Realm, data: CdEDBObject) -> Response:
@@ -1489,14 +1495,14 @@ class CoreFrontend(AbstractFrontend):
         merge_dicts(data, persona)
         # Specific fixes by target realm
         if target_realm == "cde":
-            reference = CDE_TRANSITION_FIELDS()
+            reference = {**CDE_TRANSITION_FIELDS}
             for key in ('trial_member', 'decided_search', 'bub_search'):
                 if data[key] is None:
                     data[key] = False
             if data['paper_expuls'] is None:
                 data['paper_expuls'] = True
         elif target_realm == "event":
-            reference = EVENT_TRANSITION_FIELDS()
+            reference = {**EVENT_TRANSITION_FIELDS}
         else:
             reference = {}
         for key in tuple(data.keys()):
@@ -1788,8 +1794,7 @@ class CoreFrontend(AbstractFrontend):
             rs.notify("success", n_("Email sent."))
         return self.redirect(rs, "core/index")
 
-    @access("core_admin", "meta_admin", "cde_admin", "event_admin", "ml_admin",
-            "assembly_admin", modi={"POST"})
+    @access(*REALM_ADMINS, modi={"POST"})
     def admin_send_password_reset_link(self, rs: RequestState, persona_id: int,
                                        internal: bool = False) -> Response:
         """Generate a password reset email for an arbitrary persona.
@@ -1952,8 +1957,7 @@ class CoreFrontend(AbstractFrontend):
                          {'new_username': new_username})
             return self.redirect(rs, "core/index")
 
-    @access("core_admin", "cde_admin", "event_admin", "ml_admin",
-            "assembly_admin")
+    @access(*REALM_ADMINS)
     def admin_username_change_form(self, rs: RequestState, persona_id: int
                                    ) -> Response:
         """Render form."""
@@ -1965,8 +1969,7 @@ class CoreFrontend(AbstractFrontend):
         data = self.coreproxy.get_persona(rs, persona_id)
         return self.render(rs, "admin_username_change", {'data': data})
 
-    @access("core_admin", "cde_admin", "event_admin", "ml_admin",
-            "assembly_admin", modi={"POST"})
+    @access(*REALM_ADMINS, modi={"POST"})
     @REQUESTdata("new_username")
     def admin_username_change(self, rs: RequestState, persona_id: int,
                               new_username: Optional[vtypes.Email]) -> Response:
@@ -1984,8 +1987,7 @@ class CoreFrontend(AbstractFrontend):
         else:
             return self.redirect_show_user(rs, persona_id)
 
-    @access("core_admin", "cde_admin", "event_admin", "ml_admin",
-            "assembly_admin", modi={"POST"})
+    @access(*REALM_ADMINS, modi={"POST"})
     @REQUESTdata("activity")
     def toggle_activity(self, rs: RequestState, persona_id: int, activity: bool
                         ) -> Response:
@@ -2027,15 +2029,11 @@ class CoreFrontend(AbstractFrontend):
         })
 
     @access("anonymous", modi={"POST"})
-    @REQUESTdatadict(
-        "notes", "realm", "username", "given_names", "family_name", "gender",
-        "birthday", "telephone", "mobile", "address_supplement", "address",
-        "postal_code", "location", "country", "birth_name")
+    @REQUESTdatadict(*GENESIS_CASE_EXPOSED_FIELDS)
     @REQUESTfile("attachment")
-    @REQUESTdata("attachment_hash", "attachment_filename", "ignore_warnings")
+    @REQUESTdata("attachment_filename", "ignore_warnings")
     def genesis_request(self, rs: RequestState, data: CdEDBObject,
                         attachment: Optional[werkzeug.FileStorage],
-                        attachment_hash: Optional[str],
                         attachment_filename: str = None,
                         ignore_warnings: bool = False) -> Response:
         """Voice the desire to become a persona.
@@ -2045,25 +2043,21 @@ class CoreFrontend(AbstractFrontend):
         attachment_data = None
         if attachment:
             attachment_filename = attachment.filename
-            attachment_data = check(
-                rs, vtypes.PDFFile, attachment, 'attachment')
-        attachment_base_path = self.conf["STORAGE_DIR"] / 'genesis_attachment'
+            attachment_data = check(rs, vtypes.PDFFile, attachment, 'attachment')
         if attachment_data:
             myhash = self.coreproxy.genesis_set_attachment(rs, attachment_data)
-            data['attachment'] = myhash
+            data['attachment_hash'] = myhash
             rs.values['attachment_hash'] = myhash
             rs.values['attachment_filename'] = attachment_filename
-        elif attachment_hash:
+        elif data['attachment_hash']:
             attachment_stored = self.coreproxy.genesis_check_attachment(
-                rs, attachment_hash)
+                rs, data['attachment_hash'])
             if not attachment_stored:
-                data['attachment'] = None
+                data['attachment_hash'] = None
                 e = ("attachment", ValueError(n_(
                     "It seems like you took too long and "
                     "your previous upload was deleted.")))
                 rs.append_validation_error(e)
-            else:
-                data['attachment'] = attachment_hash
         data = check(rs, vtypes.GenesisCase, data, creation=True,
                      _ignore_warnings=ignore_warnings)
         if rs.has_validation_errors():
@@ -2210,9 +2204,6 @@ class CoreFrontend(AbstractFrontend):
         for genesis_case_id in delete:
             count += self.coreproxy.delete_genesis_case(rs, genesis_case_id)
 
-        genesis_attachment_path: pathlib.Path = (
-                self.conf["STORAGE_DIR"] / "genesis_attachment")
-
         attachment_count = self.coreproxy.genesis_forget_attachments(rs)
 
         if count or attachment_count:
@@ -2224,11 +2215,11 @@ class CoreFrontend(AbstractFrontend):
     @access("core_admin", *("{}_admin".format(realm)
                             for realm, fields in
                             REALM_SPECIFIC_GENESIS_FIELDS.items()
-                            if "attachment" in fields))
-    def genesis_get_attachment(self, rs: RequestState, attachment: str
+                            if "attachment_hash" in fields))
+    def genesis_get_attachment(self, rs: RequestState, attachment_hash: str
                                ) -> Response:
         """Retrieve attachment for genesis case."""
-        path = self.conf["STORAGE_DIR"] / 'genesis_attachment' / attachment
+        path = self.conf["STORAGE_DIR"] / 'genesis_attachment' / attachment_hash
         mimetype = magic.from_file(str(path), mime=True)
         return self.send_file(rs, path=path, mimetype=mimetype)
 
@@ -2236,7 +2227,7 @@ class CoreFrontend(AbstractFrontend):
                             for realm in REALM_SPECIFIC_GENESIS_FIELDS))
     def genesis_list_cases(self, rs: RequestState) -> Response:
         """Compile a list of genesis cases to review."""
-        realms = [realm for realm in REALM_SPECIFIC_GENESIS_FIELDS.keys()
+        realms = [realm for realm in REALM_SPECIFIC_GENESIS_FIELDS
                   if {"{}_admin".format(realm), 'core_admin'} & rs.user.roles]
         data = self.coreproxy.genesis_list_cases(
             rs, stati=(const.GenesisStati.to_review,), realms=realms)
@@ -2284,16 +2275,15 @@ class CoreFrontend(AbstractFrontend):
     @access("core_admin", *("{}_admin".format(realm)
                             for realm in REALM_SPECIFIC_GENESIS_FIELDS),
             modi={"POST"})
-    @REQUESTdatadict(
-        "notes", "realm", "username", "given_names", "family_name", "gender",
-        "birthday", "telephone", "mobile", "address_supplement", "address",
-        "postal_code", "location", "country", "birth_name")
+    @REQUESTdatadict(*GENESIS_CASE_EXPOSED_FIELDS)
     @REQUESTdata("ignore_warnings")
     def genesis_modify(self, rs: RequestState, genesis_case_id: int,
                        data: CdEDBObject, ignore_warnings: bool = False
                        ) -> Response:
         """Edit a case to fix potential issues before creation."""
         data['id'] = genesis_case_id
+        # In contrast to the genesis_request, the attachment can not be changed here.
+        del data['attachment_hash']
         data = check(
             rs, vtypes.GenesisCase, data, _ignore_warnings=ignore_warnings)
         if rs.has_validation_errors():
@@ -2488,8 +2478,7 @@ class CoreFrontend(AbstractFrontend):
         return self.redirect_show_user(rs, persona_id)
 
     @access("core_admin")
-    @REQUESTdata("codes", "submitted_by", "reviewed_by", "persona_id",
-                 "change_note", "offset", "length", "time_start", "time_stop")
+    @REQUESTdata(*LOG_FIELDS_COMMON, "reviewed_by")
     def view_changelog_meta(self, rs: RequestState,
                             codes: Collection[const.MemberChangeStati],
                             offset: Optional[int],
@@ -2526,8 +2515,7 @@ class CoreFrontend(AbstractFrontend):
             'personas': personas, 'loglinks': loglinks})
 
     @access("core_admin")
-    @REQUESTdata("codes", "persona_id", "submitted_by", "change_note", "offset",
-                 "length", "time_start", "time_stop")
+    @REQUESTdata(*LOG_FIELDS_COMMON)
     def view_log(self, rs: RequestState, codes: Collection[const.CoreLogCodes],
                  offset: Optional[int], length: Optional[vtypes.PositiveInt],
                  persona_id: Optional[CdedbID], submitted_by: Optional[CdedbID],

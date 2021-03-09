@@ -18,11 +18,10 @@ import pathlib
 import re
 import string
 import sys
-from secrets import choice
 from typing import (
-    Generic, NamedTuple, TYPE_CHECKING, AbstractSet, Any, Callable, Collection, Container, Dict, Generator,
-    Iterable, KeysView, List, Mapping, MutableMapping, MutableSequence, Optional,
-    Sequence, Set, Tuple, Type, TypeVar, Union, cast, overload
+    Generic, TYPE_CHECKING, Any, Callable, Collection, Container, Dict, Generator,
+    Iterable, KeysView, List, Mapping, MutableMapping, Optional, Set, Tuple, Type,
+    TypeVar, Union, cast, overload
 )
 
 import icu
@@ -39,7 +38,7 @@ from cdedb.database.connection import IrradiatedConnection
 # here. All other uses should import them from here and not their
 # original source which is basically just uninlined code.
 # noinspection PyUnresolvedReferences
-from cdedb.ml_subscription_aux import (
+from cdedb.ml_subscription_aux import (  # pylint: disable=unused-import; # noqa
     SubscriptionActions, SubscriptionError, SubscriptionInfo,
 )
 
@@ -160,11 +159,9 @@ class RequestState:
         """
         :param mapadapter: URL generator (specific for this request)
         :param requestargs: verbatim copy of the arguments contained in the URL
-        :type values: {str: object}
         :param values: Parameter values extracted via :py:func:`REQUESTdata`
           and :py:func:`REQUESTdatadict` decorators, which allows automatically
           filling forms in.
-        :type lang: str
         :param lang: language code for i18n, currently only 'de' and 'en' are
             valid.
         :param coders: Functions for encoding and decoding parameters primed
@@ -276,8 +273,6 @@ class RequestState:
 
         This does not cause the validation tracking to register a
         successful check.
-
-        :rtype: [(str, Exception)]
         """
         return self._errors
 
@@ -447,18 +442,27 @@ def now() -> datetime.datetime:
     return datetime.datetime.now(pytz.utc)
 
 
+_NEARLY_DELTA_DEFAULT = datetime.timedelta(minutes=10)
+
+
 class NearlyNow(datetime.datetime):
     """This is something, that equals an automatically generated timestamp.
 
     Since automatically generated timestamp are not totally predictible,
     we use this to avoid nasty work arounds.
     """
+    _delta: datetime.timedelta
+
+    def __new__(cls, *args: Any, delta: datetime.timedelta = _NEARLY_DELTA_DEFAULT,  # pylint: disable=arguments-differ
+                **kwargs: Any) -> "NearlyNow":
+        self = super().__new__(cls, *args, **kwargs)
+        self._delta = delta
+        return self
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, datetime.datetime):
             delta = self - other
-            return (datetime.timedelta(minutes=10) > delta
-                    > datetime.timedelta(minutes=-10))
+            return self._delta > delta > -1 * self._delta
         return False
 
     def __ne__(self, other: Any) -> bool:
@@ -470,12 +474,12 @@ class NearlyNow(datetime.datetime):
         return ret
 
 
-def nearly_now() -> NearlyNow:
+def nearly_now(delta: datetime.timedelta = _NEARLY_DELTA_DEFAULT) -> NearlyNow:
     """Create a NearlyNow."""
     now = datetime.datetime.now(pytz.utc)
     return NearlyNow(
         year=now.year, month=now.month, day=now.day, hour=now.hour,
-        minute=now.minute, second=now.second, tzinfo=pytz.utc)
+        minute=now.minute, second=now.second, tzinfo=pytz.utc, delta=delta)
 
 
 class QuotaException(werkzeug.exceptions.TooManyRequests):
@@ -485,7 +489,6 @@ class QuotaException(werkzeug.exceptions.TooManyRequests):
     :py:mod:`cdedb.frontend.application`. We use a custom class so that
     we can distinguish it from other exceptions.
     """
-    pass
 
 
 class PrivilegeError(RuntimeError):
@@ -497,7 +500,6 @@ class PrivilegeError(RuntimeError):
     error. In some cases the frontend may catch and handle the exception
     instead of preventing it in the first place.
     """
-    pass
 
 
 class ArchiveError(RuntimeError):
@@ -505,7 +507,6 @@ class ArchiveError(RuntimeError):
     Exception for signalling an exact error when archiving a persona
     goes awry.
     """
-    pass
 
 
 class PartialImportError(RuntimeError):
@@ -513,12 +514,10 @@ class PartialImportError(RuntimeError):
 
     Making this an exception rolls back the database transaction.
     """
-    pass
 
 
 class ValidationWarning(Exception):
     """Exception which should be suppressable by the user."""
-    pass
 
 
 def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,
@@ -772,6 +771,7 @@ def int_to_words(num: int, lang: str) -> str:
 
 class CustomJSONEncoder(json.JSONEncoder):
     """Custom JSON encoder to handle the types that occur for us."""
+    # pylint: disable=method-hidden,arguments-differ
 
     @overload
     def default(self, obj: Union[datetime.date, datetime.datetime,
@@ -835,7 +835,7 @@ def _schulze_winners(d: Mapping[Tuple[str, str], int],
             if i == j:
                 continue
             for k in candidates:
-                if i == k or j == k:
+                if k in {i, j}:
                     continue
                 p[(j, k)] = max(p[(j, k)], min(p[(j, i)], p[(i, k)]))
     # Second determine winners
@@ -1042,17 +1042,12 @@ class AgeClasses(enum.IntEnum):
     u14 = 4  #: less than 14 years old
 
     def is_minor(self) -> bool:
-        """Checks whether a legal guardian is required.
-
-        :rtype: bool
-        """
+        """Checks whether a legal guardian is required."""
         return self in {AgeClasses.u14, AgeClasses.u16, AgeClasses.u18}
 
     def may_mix(self) -> bool:
         """Whether persons of this age may be legally accomodated in a mixed
         lodging together with the opposite gender.
-
-        :rtype: bool
         """
         return self in {AgeClasses.full, AgeClasses.u18}
 
@@ -1144,10 +1139,13 @@ def infinite_enum(aclass: T) -> T:
 
 E = TypeVar("E", bound=enum.IntEnum)
 
-#: Storage facility for infinite enums with associated data, see
-#: :py:func:`infinite_enum`
+
 @functools.total_ordering
 class InfiniteEnum(Generic[E]):
+    """Storage facility for infinite enums with associated data
+
+    Also see :py:func:`infinite_enum`"""
+
     # noinspection PyShadowingBuiltins
     def __init__(self, enum: E, int_: int):
         self.enum = enum
@@ -1263,10 +1261,8 @@ class TransactionType(enum.IntEnum):
                         }
 
     def old(self) -> str:
-        """
-        Return a string representation compatible with the old excel style.
-
-        :rtype: str
+        """Return a string representation compatible with the old excel
+        style.
         """
         if self == TransactionType.MembershipFee:
             return "Mitgliedsbeitrag"
@@ -1308,6 +1304,21 @@ class TransactionType(enum.IntEnum):
             return to_string[self.name]
         else:
             return repr(self)
+
+
+class SemesterSteps(enum.Enum):
+    billing = 1
+    archival_notification = 2
+    ejection = 10
+    automated_archival = 11
+    balance = 20
+    advance = 30
+    error = 100
+
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, str):
+            return self.name == other  # pylint: disable=comparison-with-callable
+        return super().__eq__(other)
 
 
 def mixed_existence_sorter(iterable: Union[Collection[int], KeysView[int]]
@@ -1377,7 +1388,9 @@ def asciificator(s: str) -> str:
     for char in s:
         if char in umlaut_map:
             ret += umlaut_map[char]
-        elif char in (string.ascii_letters + string.digits + " /-?:().,+"):
+        elif char in (  # pylint: disable=superfluous-parens
+            string.ascii_letters + string.digits + " /-?:().,+"
+        ):
             ret += char
         else:
             ret += ' '
@@ -1402,7 +1415,6 @@ def diacritic_patterns(s: str, two_way_replace: bool = False) -> str:
       This can be used to search for occurences of names stored
       in the db within input, that may not contain proper diacritics
       (e.g. it may be constrained to ASCII).
-    :rtype: str or None
     """
     if s is None:
         raise ValueError(f"Cannot apply diacritic patterns to {s!r}.")
@@ -1764,6 +1776,9 @@ ADMIN_KEYS = {"is_meta_admin", "is_core_admin", "is_cde_admin",
               "is_finance_admin", "is_event_admin", "is_ml_admin",
               "is_assembly_admin", "is_cdelokal_admin"}
 
+#: List of all admin roles who actually have a corresponding realm with a user role.
+REALM_ADMINS = {"core_admin", "cde_admin", "event_admin", "ml_admin", "assembly_admin"}
+
 DB_ROLE_MAPPING: role_map_type = collections.OrderedDict((
     ("meta_admin", "cdb_admin"),
     ("core_admin", "cdb_admin"),
@@ -1798,9 +1813,8 @@ def roles_to_db_role(roles: Set[Role]) -> str:
     for role in DB_ROLE_MAPPING:
         if role in roles:
             return DB_ROLE_MAPPING[role]
-    else:
-        # TODO default to "cdb_anonymous"?
-        raise RuntimeError(n_("Could not determine any db role."))
+
+    raise RuntimeError(n_("Could not determine any db role."))
 
 
 ADMIN_VIEWS_COOKIE_NAME = "enabled_admin_views"
@@ -1814,7 +1828,8 @@ ALL_ADMIN_VIEWS: Set[AdminView] = {
     "event_user", "event_mgmt", "event_orga", "ml_mgmt_event", "ml_mod_event",
     "ml_user", "ml_mgmt", "ml_mod",
     "ml_mgmt_cdelokal", "ml_mod_cdelokal",
-    "assembly_user", "assembly_mgmt", "assembly_presider", "ml_mgmt_assembly", "ml_mod_assembly",
+    "assembly_user", "assembly_mgmt", "assembly_presider",
+    "ml_mgmt_assembly", "ml_mod_assembly",
     "genesis"}
 
 ALL_MOD_ADMIN_VIEWS: Set[AdminView] = {
@@ -1865,7 +1880,7 @@ CDEDB_EXPORT_EVENT_VERSION = 13
 #: If the partial export and import are unaffected the minor version may be
 #: incremented.
 #: If you increment this, it must be incremented in make_offline_vm.py as well.
-EVENT_SCHEMA_VERSION = (14, 1)
+EVENT_SCHEMA_VERSION = (15, 1)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3
@@ -1913,7 +1928,7 @@ PERSONA_ALL_FIELDS = PERSONA_CDE_FIELDS + ("notes",)
 GENESIS_CASE_FIELDS = (
     "id", "ctime", "username", "given_names", "family_name",
     "gender", "birthday", "telephone", "mobile", "address_supplement",
-    "address", "postal_code", "location", "country", "birth_name", "attachment",
+    "address", "postal_code", "location", "country", "birth_name", "attachment_hash",
     "realm", "notes", "case_status", "reviewer")
 
 # The following dict defines, which additional fields are required for genesis
@@ -1926,7 +1941,7 @@ REALM_SPECIFIC_GENESIS_FIELDS: Dict[Realm, Tuple[str, ...]] = {
               "country"),
     "cde": ("gender", "birthday", "telephone", "mobile",
             "address_supplement", "address", "postal_code", "location",
-            "country", "birth_name", "attachment"),
+            "country", "birth_name", "attachment_hash"),
 }
 
 # This overrides the more general PERSONA_DEFAULTS dict with some realm-specific
@@ -2036,7 +2051,7 @@ EVENT_FIELDS = (
     "orga_address", "registration_text", "mail_text",
     "use_additional_questionnaire", "notes", "offline_lock", "is_visible",
     "is_course_list_visible", "is_course_state_visible",
-    "is_participant_list_visible", "courses_in_participant_list",
+    "is_participant_list_visible", "is_course_assignment_visible",
     "is_cancelled", "is_archived", "lodge_field", "camping_mat_field",
     "course_room_field")
 
@@ -2133,6 +2148,8 @@ ORG_PERIOD_FIELDS = (
     "id", "billing_state", "billing_done", "billing_count",
     "ejection_state", "ejection_done", "ejection_count", "ejection_balance",
     "balance_state", "balance_done", "balance_trialmembers", "balance_total",
+    "archival_notification_state", "archival_notification_count",
+    "archival_notification_done", "archival_state", "archival_count", "archival_done",
     "semester_done")
 
 #: Fielsd of an expuls
@@ -2153,11 +2170,16 @@ LASTSCHRIFT_TRANSACTION_FIELDS = (
 EVENT_FIELD_SPEC: Dict[
     str, Tuple[Set[const.FieldDatatypes], Set[const.FieldAssociations]]] = {
     'lodge': ({const.FieldDatatypes.str}, {const.FieldAssociations.registration}),
-    'camping_mat': ({const.FieldDatatypes.bool}, {const.FieldAssociations.registration}),
+    'camping_mat': (
+        {const.FieldDatatypes.bool}, {const.FieldAssociations.registration}),
     'course_room': ({const.FieldDatatypes.str}, {const.FieldAssociations.course}),
     'waitlist': ({const.FieldDatatypes.int}, {const.FieldAssociations.registration}),
-    'fee_modifier': ({const.FieldDatatypes.bool}, {const.FieldAssociations.registration}),
+    'fee_modifier': (
+        {const.FieldDatatypes.bool}, {const.FieldAssociations.registration}),
 }
+
+LOG_FIELDS_COMMON = ("codes", "persona_id", "submitted_by", "change_note", "offset",
+                     "length", "time_start", "time_stop")
 
 EPSILON = 10 ** (-6)  #:
 

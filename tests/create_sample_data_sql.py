@@ -1,26 +1,30 @@
 import argparse
 import json
 from itertools import chain
-from typing import Any, Callable, Dict, List, Tuple, Type
+from typing import Any, Callable, Dict, List, Set, Tuple, Type
 
 from typing_extensions import TypedDict
 
 from cdedb.backend.common import PsycoJson
 from cdedb.backend.core import CoreBackend
-from cdedb.script import MockRequestState, setup
+from cdedb.common import RequestState, CdEDBObject
+from cdedb.script import setup
 
 
 class AuxData(TypedDict):
-    rs: MockRequestState
+    rs: RequestState
     core: Type[CoreBackend]
     PsycoJson: Type[PsycoJson]
     seq_id_tables: List[str]
     cyclic_references: Dict[str, Tuple[str, ...]]
-    constant_replacements: Dict[str, Any]
+    constant_replacements: CdEDBObject
     entry_replacements: Dict[str, Dict[str, Callable[..., Any]]]
+    xss_payload: str
+    xss_field_excludes: Set[str]
+    xss_table_excludes: Set[str]
 
 
-def prepare_aux(data: Dict[str, Any]) -> AuxData:
+def prepare_aux(data: CdEDBObject) -> AuxData:
     # Note that we do not care about the actual backend but rather about
     # the methds inherited from `AbstractBackend`.
     rs_maker = setup(1, "nobody", "nobody", dbname="nobody")
@@ -63,17 +67,37 @@ def prepare_aux(data: Dict[str, Any]) -> AuxData:
             },
     }
 
+    # For xss checking insert a payload into all string fields except excluded ones.
+    xss_payload = "<script>abcdef</script>"
+    xss_field_excludes = {
+        "username", "password_hash", "birthday", "telephone", "mobile", "balance",
+        "ctime", "atime", "dtime", "foto", "amount", "iban", "granted_at", "revoked_at",
+        "issued_at", "processed_at", "tally", "total", "delta", "shortname", "tempus",
+        "registration_start", "registration_soft_limit", "registration_hard_limit",
+        "nonmember_surcharge", "part_begin", "part_end", "fee", "field_name",
+        "amount_paid", "amount_owed", "payment", "presider_address", "signup_end",
+        "vote_begin", "vote_end", "vote_extension_end", "secret", "vote", "salt",
+        "hash", "filename", "file_hash", "address", "local_part", "new_balance",
+        "modifier_name",
+    }
+    xss_table_excludes = {
+        "cde.org_period", "cde.expuls_period",
+    }
+
     return AuxData(
         rs=rs, core=core,
         PsycoJson=PsycoJson,
         seq_id_tables=seq_id_tables,
         cyclic_references=cyclic_references,
         constant_replacements=constant_replacements,
-        entry_replacements=entry_replacements
+        entry_replacements=entry_replacements,
+        xss_payload=xss_payload,
+        xss_field_excludes=xss_field_excludes,
+        xss_table_excludes=xss_table_excludes,
     )
 
 
-def build_commands(data: Dict[str, Any], aux: AuxData) -> List[str]:
+def build_commands(data: CdEDBObject, aux: AuxData, xss: bool = False) -> List[str]:
     commands: List[str] = []
 
     # Start off by resetting the sequential ids to 1.
@@ -105,6 +129,10 @@ def build_commands(data: Dict[str, Any], aux: AuxData) -> List[str]:
                     entry[k] = None
                 if isinstance(entry[k], dict):
                     entry[k] = aux["PsycoJson"](entry[k])
+                elif isinstance(entry[k], str) and xss:
+                    if (table not in aux["xss_table_excludes"]
+                            and k not in aux['xss_field_excludes']):
+                        entry[k] = entry[k] + aux["xss_payload"]
             for k, f in aux["entry_replacements"].get(table, {}).items():
                 entry[k] = f(entry)
             params.extend(entry[k] for k in keys)
@@ -162,6 +190,7 @@ def main() -> None:
         default="/cdedb2/tests/ancillary_files/sample_data.json")
     parser.add_argument(
         "-o", "--outfile", default="/tmp/sample_data.sql")
+    parser.add_argument("-x", "--xss", action="store_true")
     args = parser.parse_args()
 
     with open(args.infile) as f:
@@ -169,8 +198,8 @@ def main() -> None:
 
     assert isinstance(data, dict)
     aux = prepare_aux(data)
-    commands = build_commands(data, aux)
-    
+    commands = build_commands(data, aux, args.xss)
+
     with open(args.outfile, "w") as f:
         for cmd in commands:
             print(cmd, file=f)

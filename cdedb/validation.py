@@ -28,13 +28,13 @@ and raise a ``ValidationSummary`` when encountering errors.
 Each exception summary contains a list of errors
 which store the ``argname`` of the validator where the error occured
 as well as an explanation of what exactly is wrong.
-A ``ValidationError`` may also store a third argument.
+A ``ValueError`` may also store a third argument.
 This optional argument should be a ``Mapping[str, Any]``
 describing substitutions of the error string to be done by i18n.
 
 The parameter ``_convert`` is present in many validators
 and is usually passed along from the original caller to every validation inside
-as part of the keyword arugments.
+as part of the keyword arguments.
 If ``True``, validators may try to convert the value into the appropriate type.
 For instance ``_int`` will try to convert the input into an int
 which would be useful for string inputs especially.
@@ -57,7 +57,8 @@ import re
 import string
 from enum import Enum
 from typing import (
-    Callable, Dict, Sequence, Set, Tuple, Type, TypeVar, cast, get_type_hints, overload,
+    Callable, Iterable, Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar,
+    Union, cast, get_type_hints, overload,
 )
 
 import magic
@@ -74,6 +75,7 @@ from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, EPSILON, EVENT_SCHEMA_VERSION, INFINITE_ENUM_MAGIC_NUMBER,
     REALM_SPECIFIC_GENESIS_FIELDS, CdEDBObjectMap, Error, InfiniteEnum,
     ValidationWarning, asciificator, compute_checkdigit, extract_roles, n_, now,
+    xsorted,
 )
 from cdedb.config import BasicConfig
 from cdedb.database.constants import FieldAssociations, FieldDatatypes
@@ -85,7 +87,7 @@ from cdedb.query import (
 from cdedb.validationdata import (
     FREQUENCY_LISTS, GERMAN_PHONE_CODES, GERMAN_POSTAL_CODES, IBAN_LENGTHS, ITU_CODES,
 )
-from cdedb.validationtypes import *
+from cdedb.validationtypes import *  # pylint: disable=wildcard-import,unused-wildcard-import; # noqa
 
 _BASICCONF = BasicConfig()
 NoneType = type(None)
@@ -101,9 +103,6 @@ TypeMapping = Mapping[str, Type[Any]]
 
 class ValidationSummary(ValueError, Sequence[Exception]):
     args: Tuple[Exception, ...]
-
-    def __init__(self, *errors: Exception):
-        super().__init__(*errors)
 
     def __len__(self) -> int:
         return len(self.args)
@@ -133,7 +132,7 @@ class ValidatorStorage(Dict[Type[Any], Callable[..., Any]]):
     def __getitem__(self, type_: Type[T]) -> Callable[..., T]:
         # TODO replace with get_origin etc in Python 3.8
         if hasattr(type_, "__origin__"):
-            if (type_.__origin__ is Union):  # type: ignore
+            if type_.__origin__ is Union:  # type: ignore
                 inner_type, none_type = type_.__args__  # type: ignore
                 if none_type is not NoneType:
                     raise KeyError("Complex unions not supported")
@@ -144,11 +143,6 @@ class ValidatorStorage(Dict[Type[Any], Callable[..., Any]]):
                 return make_list_validator(inner_type)  # type: ignore
             # TODO more container types like tuple
         return super().__getitem__(type_)
-
-    # def __missing__(self, type_: Type[T]) -> Callable[..., T]:
-    #     if callable(type_):
-    #         return type_
-    #     raise NotImplementedError(type_)
 
 
 _ALL_TYPED = ValidatorStorage()
@@ -177,7 +171,7 @@ def validate_is(type_: Type[T], value: Any, **kwargs: Any) -> bool:
     try:
         _ALL_TYPED[type_](value, **kwargs)
         return True
-    except ValidationSummary as errs:
+    except ValidationSummary:
         return False
 
 
@@ -186,15 +180,15 @@ def validate_is_optional(type_: Type[T], value: Any, **kwargs: Any) -> Optional[
 
 
 def validate_check(
-    type: Type[T], value: Any, **kwargs: Any
+    type_: Type[T], value: Any, **kwargs: Any
 ) -> Tuple[Optional[T], List[Error]]:
     try:
-        val = _ALL_TYPED[type](value, **kwargs)
+        val = _ALL_TYPED[type_](value, **kwargs)
         return val, []
     except ValidationSummary as errs:
         old_format = [(e.args[0], e.__class__(*e.args[1:])) for e in errs]
         _LOGGER.debug(
-            f"{old_format} for '{str(type)}'"
+            f"{old_format} for '{str(type_)}'"
             f" with input {value}, {kwargs}."
         )
         return None, old_format
@@ -219,7 +213,7 @@ def _allow_None(fun: Callable[..., T]) -> Callable[..., Optional[T]]:
         else:
             try:
                 return fun(val, *args, **kwargs)
-            except ValidationSummary as errs:  # we need to catch everything
+            except ValidationSummary:  # we need to catch everything
                 if kwargs.get('_convert', True) and not val:
                     return None
                 else:
@@ -351,12 +345,12 @@ def _augment_dict_validator(
 
 
 def escaped_split(string: str, delim: str, escape: str = '\\') -> List[str]:
-    """Helper function for anvanced list splitting.
+    """Helper function for advanced list splitting.
 
     Split the list at every delimiter, except if it is escaped (and
     allow the escape char to be escaped itself).
 
-    Basend on http://stackoverflow.com/a/18092547
+    Based on http://stackoverflow.com/a/18092547
     """
     ret = []
     current = ''
@@ -376,9 +370,14 @@ def escaped_split(string: str, delim: str, escape: str = '\\') -> List[str]:
     return ret
 
 
+def filter_none(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Helper function to remove NoneType values from dictionaies."""
+    return {k: v for k, v in data.items() if v is not NoneType}
+
 #
 # Below is the real stuff
 #
+
 
 @_add_typed_validator
 def _None(
@@ -393,7 +392,6 @@ def _None(
             val = None
     if val is not None:
         raise ValidationSummary(ValueError(argname, n_("Must be empty.")))
-    return None
 
 
 @_add_typed_validator
@@ -413,7 +411,7 @@ def _int(
     val: Any, argname: str = None, *, _convert: bool = True, **kwargs: Any
 ) -> int:
     if _convert:
-        if isinstance(val, str) or isinstance(val, bool):
+        if isinstance(val, (str, bool)):
             try:
                 val = int(val)
             except ValueError as e:
@@ -848,7 +846,7 @@ def _list_of(
 
 
 class ListValidator(Protocol[T]):
-    def __call__(val: Any, argname: str = None, **kargs: Any) -> List[T]:
+    def __call__(self, val: Any, argname: str = None, **kargs: Any) -> List[T]:
         ...
 
 
@@ -955,7 +953,7 @@ def _email_local_part(
     return EmailLocalPart(val)
 
 
-_PERSONA_TYPE_FIELDS = {
+PERSONA_TYPE_FIELDS: TypeMapping = {
     'is_cde_realm': bool,
     'is_event_realm': bool,
     'is_ml_realm': bool,
@@ -965,17 +963,9 @@ _PERSONA_TYPE_FIELDS = {
     'is_active': bool,
 }
 
-
-def _PERSONA_BASE_CREATION() -> Mapping[str, Any]: return {
+PERSONA_BASE_CREATION: Mapping[str, Any] = {
     'username': Email,
     'notes': Optional[str],
-    'is_cde_realm': bool,
-    'is_event_realm': bool,
-    'is_ml_realm': bool,
-    'is_assembly_realm': bool,
-    'is_member': bool,
-    'is_searchable': bool,
-    'is_active': bool,
     'display_name': str,
     'given_names': str,
     'family_name': str,
@@ -1009,8 +999,7 @@ def _PERSONA_BASE_CREATION() -> Mapping[str, Any]: return {
     'paper_expuls': NoneType,
 }
 
-
-def _PERSONA_CDE_CREATION() -> Mapping[str, Any]: return {
+PERSONA_CDE_CREATION: Mapping[str, Any] = {
     'title': Optional[str],
     'name_supplement': Optional[str],
     'gender': const.Genders,
@@ -1041,8 +1030,7 @@ def _PERSONA_CDE_CREATION() -> Mapping[str, Any]: return {
     'paper_expuls': bool,
 }
 
-
-def _PERSONA_EVENT_CREATION() -> Mapping[str, Any]: return {
+PERSONA_EVENT_CREATION: Mapping[str, Any] = {
     'title': Optional[str],
     'name_supplement': Optional[str],
     'gender': const.Genders,
@@ -1056,8 +1044,16 @@ def _PERSONA_EVENT_CREATION() -> Mapping[str, Any]: return {
     'country': Optional[str],
 }
 
+PERSONA_FULL_ML_CREATION = {**PERSONA_BASE_CREATION}
 
-def _PERSONA_COMMON_FIELDS() -> Mapping[str, Any]: return {
+PERSONA_FULL_ASSEMBLY_CREATION = {**PERSONA_BASE_CREATION}
+
+PERSONA_FULL_EVENT_CREATION = {**PERSONA_BASE_CREATION, **PERSONA_EVENT_CREATION}
+
+PERSONA_FULL_CDE_CREATION = {**PERSONA_BASE_CREATION, **PERSONA_CDE_CREATION,
+                             'is_member': bool, 'is_searchable': bool}
+
+PERSONA_COMMON_FIELDS: Mapping[str, Any] = {
     'username': Email,
     'notes': Optional[str],
     'is_meta_admin': bool,
@@ -1137,7 +1133,7 @@ def _persona(
 
     if creation:
         temp = _examine_dictionary_fields(
-            val, _PERSONA_TYPE_FIELDS, {}, allow_superfluous=True, **kwargs)
+            val, PERSONA_TYPE_FIELDS, {}, allow_superfluous=True, **kwargs)
         temp.update({
             'is_meta_admin': False,
             'is_archived': False,
@@ -1151,16 +1147,17 @@ def _persona(
         })
         roles = extract_roles(temp)
         optional_fields: TypeMapping = {}
-        mandatory_fields = {**_PERSONA_BASE_CREATION()}
+        mandatory_fields: Dict[str, Any] = {**PERSONA_TYPE_FIELDS,
+                                            **PERSONA_BASE_CREATION}
         if "cde" in roles:
-            mandatory_fields.update(_PERSONA_CDE_CREATION())
+            mandatory_fields.update(PERSONA_CDE_CREATION)
         if "event" in roles:
-            mandatory_fields.update(_PERSONA_EVENT_CREATION())
+            mandatory_fields.update(PERSONA_EVENT_CREATION)
         # ml and assembly define no custom fields
     elif transition:
         realm_checks: Mapping[str, Mapping[str, Any]] = {
-            'is_cde_realm': _PERSONA_CDE_CREATION(),
-            'is_event_realm': _PERSONA_EVENT_CREATION(),
+            'is_cde_realm': PERSONA_CDE_CREATION,
+            'is_event_realm': PERSONA_EVENT_CREATION,
             'is_ml_realm': {},
             'is_assembly_realm': {},
         }
@@ -1171,7 +1168,7 @@ def _persona(
         optional_fields = {key: bool for key in realm_checks}
     else:
         mandatory_fields = {'id': ID}
-        optional_fields = _PERSONA_COMMON_FIELDS()
+        optional_fields = PERSONA_COMMON_FIELDS
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
 
@@ -1324,7 +1321,7 @@ def _phone(
 ) -> Phone:
     val = _printable_ascii(val, argname, **kwargs)
     orig = val.strip()
-    val = ''.join(c for c in val if c in '+1234567890')
+    val = ''.join(c for c in val if c in '+1234567890')  # pylint: disable=not-an-iterable; # noqa
 
     if len(val) < 7:
         raise ValidationSummary(ValueError(argname, n_("Too short.")))
@@ -1379,7 +1376,7 @@ def _phone(
         try:
             national = rest[:rest.index(sep)]
             local = rest[rest.index(sep) + len(sep):]
-            if not len(national) or not len(local):
+            if not national or not local:
                 raise ValidationSummary()  # TODO more specific?
             retval += " ({}) {}".format(national, local)
         except ValueError:
@@ -1411,7 +1408,7 @@ def _german_postal_code(
     return GermanPostalCode(val)
 
 
-def _GENESIS_CASE_COMMON_FIELDS() -> Mapping[str, Any]: return {
+GENESIS_CASE_COMMON_FIELDS: TypeMapping = {
     'username': Email,
     'given_names': str,
     'family_name': str,
@@ -1419,14 +1416,12 @@ def _GENESIS_CASE_COMMON_FIELDS() -> Mapping[str, Any]: return {
     'notes': str,
 }
 
-
-def _GENESIS_CASE_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
+GENESIS_CASE_OPTIONAL_FIELDS: TypeMapping = {
     'case_status': const.GenesisStati,
     'reviewer': ID,
 }
 
-
-def _GENESIS_CASE_ADDITIONAL_FIELDS() -> Mapping[str, Any]: return {
+GENESIS_CASE_ADDITIONAL_FIELDS: Mapping[str, Any] = {
     'gender': const.Genders,
     'birthday': Birthday,
     'telephone': Optional[Phone],
@@ -1437,8 +1432,11 @@ def _GENESIS_CASE_ADDITIONAL_FIELDS() -> Mapping[str, Any]: return {
     'location': str,
     'country': Optional[str],
     'birth_name': Optional[str],
-    'attachment': str,
+    'attachment_hash': str,
 }
+
+GENESIS_CASE_EXPOSED_FIELDS = {**GENESIS_CASE_COMMON_FIELDS,
+                               **GENESIS_CASE_ADDITIONAL_FIELDS}
 
 
 @_add_typed_validator
@@ -1459,19 +1457,19 @@ def _genesis_case(
                 "This realm is not supported for genesis.")))
         else:
             additional_fields = {
-                k: v for k, v in _GENESIS_CASE_ADDITIONAL_FIELDS().items()
+                k: v for k, v in GENESIS_CASE_ADDITIONAL_FIELDS.items()
                 if k in REALM_SPECIFIC_GENESIS_FIELDS[val['realm']]}
     else:
         raise ValidationSummary(ValueError(n_("Must specify realm.")))
 
     if creation:
-        mandatory_fields = dict(_GENESIS_CASE_COMMON_FIELDS(),
+        mandatory_fields = dict(GENESIS_CASE_COMMON_FIELDS,
                                 **additional_fields)
         optional_fields: TypeMapping = {}
     else:
         mandatory_fields = {'id': ID}
-        optional_fields = dict(_GENESIS_CASE_COMMON_FIELDS(),
-                               **_GENESIS_CASE_OPTIONAL_FIELDS(),
+        optional_fields = dict(GENESIS_CASE_COMMON_FIELDS,
+                               **GENESIS_CASE_OPTIONAL_FIELDS,
                                **additional_fields)
 
     # allow_superflous=True will result in superfluous keys being removed.
@@ -1486,15 +1484,14 @@ def _genesis_case(
     return GenesisCase(val)
 
 
-def _PRIVILEGE_CHANGE_COMMON_FIELDS() -> Mapping[str, Any]: return {
+PRIVILEGE_CHANGE_COMMON_FIELDS: TypeMapping = {
     'persona_id': ID,
     'submitted_by': ID,
     'status': const.PrivilegeChangeStati,
     'notes': str,
 }
 
-
-def _PRIVILEGE_CHANGE_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
+PRIVILEGE_CHANGE_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'is_meta_admin': Optional[bool],
     'is_core_admin': Optional[bool],
     'is_cde_admin': Optional[bool],
@@ -1514,8 +1511,8 @@ def _privilege_change(
     val = _mapping(val, argname, **kwargs)
 
     val = _examine_dictionary_fields(
-        val, _PRIVILEGE_CHANGE_COMMON_FIELDS(),
-        _PRIVILEGE_CHANGE_OPTIONAL_FIELDS(), **kwargs)
+        val, PRIVILEGE_CHANGE_COMMON_FIELDS,
+        PRIVILEGE_CHANGE_OPTIONAL_FIELDS, **kwargs)
 
     return PrivilegeChange(val)
 
@@ -1654,18 +1651,23 @@ def _period(
     val = _mapping(val, argname, **kwargs)
 
     # TODO make these public?
-    optional_fields: TypeMapping = {
-        'billing_state': Optional[ID],  # type: ignore
-        'billing_done': datetime.datetime,
-        'billing_count': NonNegativeInt,
-        'ejection_state': Optional[ID],  # type: ignore
-        'ejection_done': datetime.datetime,
-        'ejection_count': NonNegativeInt,
-        'ejection_balance': NonNegativeDecimal,
-        'balance_state': Optional[ID],  # type: ignore
-        'balance_done': datetime.datetime,
-        'balance_trialmembers': NonNegativeInt,
-        'balance_total': NonNegativeLargeDecimal,
+    prefix_map = {
+        'billing': ('state', 'done', 'count'),
+        'ejection': ('state', 'done', 'count', 'balance'),
+        'balance': ('state', 'done', 'trialmembers', 'total'),
+        'archival_notification': ('state', 'done', 'count'),
+        'archival': ('state', 'done', 'count'),
+    }
+    type_map: TypeMapping = {
+        'state': Optional[ID],  # type: ignore
+        'done': datetime.datetime, 'count': NonNegativeInt,
+        'trialmembers': NonNegativeInt, 'total': NonNegativeDecimal,
+        'balance': NonNegativeDecimal,
+    }
+
+    optional_fields = {
+        f"{pre}_{suf}": type_map[suf]
+        for pre, suffixes in prefix_map.items() for suf in suffixes
     }
 
     return Period(_examine_dictionary_fields(
@@ -1688,7 +1690,7 @@ def _expuls(
         val, {'id': ID}, optional_fields, **kwargs))
 
 
-def _LASTSCHRIFT_COMMON_FIELDS() -> Mapping[str, Any]: return {
+LASTSCHRIFT_COMMON_FIELDS: Mapping[str, Any] = {
     'amount': PositiveDecimal,
     'iban': IBAN,
     'account_owner': Optional[str],
@@ -1696,8 +1698,7 @@ def _LASTSCHRIFT_COMMON_FIELDS() -> Mapping[str, Any]: return {
     'notes': Optional[str],
 }
 
-
-def _LASTSCHRIFT_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
+LASTSCHRIFT_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'granted_at': datetime.datetime,
     'revoked_at': Optional[datetime.datetime],
 }
@@ -1714,12 +1715,12 @@ def _lastschrift(
     """
     val = _mapping(val, argname, **kwargs)
     if creation:
-        mandatory_fields = dict(_LASTSCHRIFT_COMMON_FIELDS(), persona_id=ID)
-        optional_fields = _LASTSCHRIFT_OPTIONAL_FIELDS()
+        mandatory_fields = dict(LASTSCHRIFT_COMMON_FIELDS, persona_id=ID)
+        optional_fields = {**LASTSCHRIFT_OPTIONAL_FIELDS}
     else:
         mandatory_fields = {'id': ID}
-        optional_fields = dict(_LASTSCHRIFT_COMMON_FIELDS(),
-                               **_LASTSCHRIFT_OPTIONAL_FIELDS())
+        optional_fields = {**LASTSCHRIFT_COMMON_FIELDS,
+                           **LASTSCHRIFT_OPTIONAL_FIELDS}
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
     return Lastschrift(val)
@@ -1773,7 +1774,7 @@ def _iban(
     return IBAN(val)
 
 
-def _LASTSCHRIFT_TRANSACTION_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
+LASTSCHRIFT_TRANSACTION_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'amount': PositiveDecimal,
     'status': const.LastschriftTransactionStati,
     'issued_at': datetime.datetime,
@@ -1798,7 +1799,7 @@ def _lastschrift_transaction(
             'lastschrift_id': ID,
             'period_id': ID,
         }
-        optional_fields = _LASTSCHRIFT_TRANSACTION_OPTIONAL_FIELDS()
+        optional_fields = {**LASTSCHRIFT_TRANSACTION_OPTIONAL_FIELDS}
     else:
         raise ValidationSummary(ValueError(argname, n_(
             "Modification of lastschrift transactions not supported.")))
@@ -1806,7 +1807,7 @@ def _lastschrift_transaction(
         val, mandatory_fields, optional_fields, **kwargs))
 
 
-_SEPA_TRANSACTIONS_FIELDS = {
+SEPA_TRANSACTIONS_FIELDS: TypeMapping = {
     'issued_at': datetime.datetime,
     'lastschrift_id': ID,
     'period_id': ID,
@@ -1819,7 +1820,8 @@ _SEPA_TRANSACTIONS_FIELDS = {
     'subject': str,
     'type': str,
 }
-_SEPA_TRANSACTIONS_LIMITS = {
+
+SEPA_TRANSACTIONS_LIMITS: Mapping[str, int] = {
     'account_owner': 70,
     'subject': 140,
     'mandate_reference': 35,
@@ -1834,7 +1836,7 @@ def _sepa_transactions(
 ) -> SepaTransactions:
     val = _iterable(val, argname, **kwargs)
 
-    mandatory_fields = _SEPA_TRANSACTIONS_FIELDS
+    mandatory_fields = {**SEPA_TRANSACTIONS_FIELDS}
     ret = []
     errs = ValidationSummary()
 
@@ -1852,12 +1854,12 @@ def _sepa_transactions(
             errs.extend(e)
             continue
 
-        for attribute, validator in _SEPA_TRANSACTIONS_FIELDS.items():
-            if validator == _str:
+        for attribute, validator in SEPA_TRANSACTIONS_FIELDS.items():
+            if validator is _str:
                 entry[attribute] = asciificator(entry[attribute])
-            if attribute in _SEPA_TRANSACTIONS_LIMITS:
+            if attribute in SEPA_TRANSACTIONS_LIMITS:
                 if len(entry[attribute]
-                       ) > _SEPA_TRANSACTIONS_LIMITS[attribute]:
+                       ) > SEPA_TRANSACTIONS_LIMITS[attribute]:
                     errs.append(ValueError(attribute, n_("Too long.")))
 
         if entry['type'] not in ("OOFF", "FRST", "RCUR"):
@@ -1872,7 +1874,7 @@ def _sepa_transactions(
     return SepaTransactions(ret)
 
 
-_SEPA_META_FIELDS = {
+SEPA_META_FIELDS: TypeMapping = {
     'message_id': str,
     'total_sum': PositiveDecimal,
     'partial_sums': Mapping,
@@ -1880,14 +1882,16 @@ _SEPA_META_FIELDS = {
     'sender': Mapping,
     'payment_date': datetime.date,
 }
-_SEPA_SENDER_FIELDS = {
+
+SEPA_SENDER_FIELDS: TypeMapping = {
     'name': str,
     'address': Iterable,
     'country': str,
     'iban': IBAN,
     'glaeubigerid': str,
 }
-_SEPA_META_LIMITS = {
+
+SEPA_META_LIMITS: Mapping[str, int] = {
     'message_id': 35,
     # 'name': 70, easier to check by hand
     # 'address': 70, has to be checked by hand
@@ -1901,20 +1905,20 @@ def _sepa_meta(
 ) -> SepaMeta:
     val = _mapping(val, argname, **kwargs)
 
-    mandatory_fields = _SEPA_META_FIELDS
+    mandatory_fields = {**SEPA_META_FIELDS}
     val = _examine_dictionary_fields(
         val, mandatory_fields, {}, **kwargs)
 
-    mandatory_fields = _SEPA_SENDER_FIELDS
+    mandatory_fields = {**SEPA_SENDER_FIELDS}
     val['sender'] = _examine_dictionary_fields(
         val['sender'], mandatory_fields, {}, **kwargs)
 
     errs = ValidationSummary()
-    for attribute, validator in _SEPA_META_FIELDS.items():
+    for attribute, validator in SEPA_META_FIELDS.items():
         if validator == str:
             val[attribute] = asciificator(val[attribute])
-        if attribute in _SEPA_META_LIMITS:
-            if len(val[attribute]) > _SEPA_META_LIMITS[attribute]:
+        if attribute in SEPA_META_LIMITS:
+            if len(val[attribute]) > SEPA_META_LIMITS[attribute]:
                 errs.append(ValueError(attribute, n_("Too long.")))
 
     if val['sender']['country'] != "DE":
@@ -1928,8 +1932,8 @@ def _sepa_meta(
         if len(line) > 70:
             errs.append(ValueError('address', n_("Too long.")))
 
-    for attribute, validator in _SEPA_SENDER_FIELDS.items():
-        if validator == _str:
+    for attribute, validator in SEPA_SENDER_FIELDS.items():
+        if validator is _str:
             val['sender'][attribute] = asciificator(val['sender'][attribute])
     if len(val['sender']['name']) > 70:
         errs.append(ValueError('name', n_("Too long.")))
@@ -1949,8 +1953,10 @@ def _safe_str(
     val = _str(val, argname, **kwargs)
     errs = ValidationSummary()
 
-    forbidden_chars = "".join(sorted({c for c in val if not (c.isalnum() or c.isspace()
-                                                             or c in allowed_chars)}))
+    forbidden_chars = "".join(xsorted({
+        c for c in val  # pylint: disable=not-an-iterable
+        if not (c.isalnum() or c.isspace() or c in allowed_chars)
+    }))
     if forbidden_chars:
         errs.append(ValueError(argname, n_(
             "Forbidden characters (%(chars)s)."), {'chars': forbidden_chars}))
@@ -1976,7 +1982,7 @@ def _meta_info(
     return MetaInfo(val)
 
 
-def _INSTITUTION_COMMON_FIELDS() -> Mapping[str, Any]: return {
+INSTITUTION_COMMON_FIELDS: TypeMapping = {
     'title': str,
     'shortname': str,
 }
@@ -1990,21 +1996,20 @@ def _institution(
     """
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
-    :rtype: (dict or None, [(str or None, exception)])
     """
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        mandatory_fields = _INSTITUTION_COMMON_FIELDS()
+        mandatory_fields = {**INSTITUTION_COMMON_FIELDS}
         optional_fields: TypeMapping = {}
     else:
         mandatory_fields = {'id': ID}
-        optional_fields = _INSTITUTION_COMMON_FIELDS()
+        optional_fields = {**INSTITUTION_COMMON_FIELDS}
     return Institution(_examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs))
 
 
-def _PAST_EVENT_COMMON_FIELDS() -> Mapping[str, Any]: return {
+PAST_EVENT_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'shortname': str,
     'institution': ID,
@@ -2012,10 +2017,12 @@ def _PAST_EVENT_COMMON_FIELDS() -> Mapping[str, Any]: return {
     'description': Optional[str],
 }
 
-
-def _PAST_EVENT_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
+PAST_EVENT_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'notes': Optional[str],
 }
+
+
+PAST_EVENT_FIELDS = {**PAST_EVENT_COMMON_FIELDS, **PAST_EVENT_OPTIONAL_FIELDS}
 
 
 @_add_typed_validator
@@ -2030,26 +2037,23 @@ def _past_event(
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        mandatory_fields = _PAST_EVENT_COMMON_FIELDS()
-        optional_fields = _PAST_EVENT_OPTIONAL_FIELDS()
+        mandatory_fields = {**PAST_EVENT_COMMON_FIELDS}
+        optional_fields = {**PAST_EVENT_OPTIONAL_FIELDS}
     else:
         mandatory_fields = {'id': ID}
-        optional_fields = dict(_PAST_EVENT_COMMON_FIELDS(),
-                               **_PAST_EVENT_OPTIONAL_FIELDS())
+        optional_fields = {**PAST_EVENT_COMMON_FIELDS, **PAST_EVENT_OPTIONAL_FIELDS}
     return PastEvent(_examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs))
 
 
-def _EVENT_COMMON_FIELDS() -> Mapping[str, Any]: return {
+EVENT_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'institution': ID,
     'description': Optional[str],
     'shortname': Identifier,
 }
 
-
-def _EVENT_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
-    'offline_lock': bool,
+EVENT_EXPOSED_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'is_visible': bool,
     'is_course_list_visible': bool,
     'is_course_state_visible': bool,
@@ -2059,21 +2063,29 @@ def _EVENT_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
     'registration_hard_limit': Optional[datetime.datetime],
     'notes': Optional[str],
     'is_participant_list_visible': bool,
-    'courses_in_participant_list': bool,
+    'is_course_assignment_visible': bool,
     'is_cancelled': bool,
-    'is_archived': bool,
     'iban': Optional[IBAN],
     'nonmember_surcharge': NonNegativeDecimal,
-    'orgas': Iterable,
     'mail_text': Optional[str],
-    'parts': Mapping,
-    'fields': Mapping,
-    'fee_modifiers': Mapping,
     'registration_text': Optional[str],
     'orga_address': Optional[Email],
     'lodge_field': Optional[ID],
     'camping_mat_field': Optional[ID],
     'course_room_field': Optional[ID],
+}
+
+EVENT_EXPOSED_FIELDS = {**EVENT_COMMON_FIELDS, **EVENT_EXPOSED_OPTIONAL_FIELDS}
+
+
+EVENT_OPTIONAL_FIELDS: Mapping[str, Any] = {
+    **EVENT_EXPOSED_OPTIONAL_FIELDS,
+    'offline_lock': bool,
+    'is_archived': bool,
+    'orgas': Iterable,
+    'parts': Mapping,
+    'fields': Mapping,
+    'fee_modifiers': Mapping,
 }
 
 
@@ -2089,12 +2101,11 @@ def _event(
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        mandatory_fields = _EVENT_COMMON_FIELDS()
-        optional_fields = _EVENT_OPTIONAL_FIELDS()
+        mandatory_fields = {**EVENT_COMMON_FIELDS}
+        optional_fields = {**EVENT_OPTIONAL_FIELDS}
     else:
         mandatory_fields = {'id': ID}
-        optional_fields = dict(_EVENT_COMMON_FIELDS(),
-                               **_EVENT_OPTIONAL_FIELDS())
+        optional_fields = {**EVENT_COMMON_FIELDS, **EVENT_OPTIONAL_FIELDS}
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
 
@@ -2196,7 +2207,7 @@ def _event(
     return Event(val)
 
 
-_EVENT_PART_COMMON_FIELDS: TypeMapping = {
+EVENT_PART_COMMON_FIELDS: TypeMapping = {
     'title': str,
     'shortname': str,
     'part_begin': datetime.date,
@@ -2222,11 +2233,11 @@ def _event_part(
     optional_fields: TypeMapping
 
     if creation:
-        mandatory_fields = _EVENT_PART_COMMON_FIELDS
+        mandatory_fields = {**EVENT_PART_COMMON_FIELDS}
         optional_fields = {}
     else:
         mandatory_fields = {}
-        optional_fields = _EVENT_PART_COMMON_FIELDS
+        optional_fields = {**EVENT_PART_COMMON_FIELDS}
 
     val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
 
@@ -2263,7 +2274,7 @@ def _event_part(
     return EventPart(val)
 
 
-_EVENT_TRACK_COMMON_FIELDS = {
+EVENT_TRACK_COMMON_FIELDS: TypeMapping = {
     'title': str,
     'shortname': str,
     'num_choices': NonNegativeInt,
@@ -2284,11 +2295,11 @@ def _event_track(
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        mandatory_fields = _EVENT_TRACK_COMMON_FIELDS
+        mandatory_fields = {**EVENT_TRACK_COMMON_FIELDS}
         optional_fields: TypeMapping = {}
     else:
         mandatory_fields = {}
-        optional_fields = _EVENT_TRACK_COMMON_FIELDS
+        optional_fields = {**EVENT_TRACK_COMMON_FIELDS}
 
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
@@ -2411,7 +2422,7 @@ def _event_fee_modifier(
     return EventFeeModifier(val)
 
 
-def _PAST_COURSE_COMMON_FIELDS() -> Mapping[str, Any]: return {
+PAST_COURSE_COMMON_FIELDS: Mapping[str, Any] = {
     'nr': str,
     'title': str,
     'description': Optional[str],
@@ -2432,19 +2443,19 @@ def _past_course(
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        mandatory_fields = dict(_PAST_COURSE_COMMON_FIELDS(), pevent_id=ID)
+        mandatory_fields = dict(PAST_COURSE_COMMON_FIELDS, pevent_id=ID)
         optional_fields: TypeMapping = {}
     else:
         # no pevent_id, since the associated event should be fixed
         mandatory_fields = {'id': ID}
-        optional_fields = _PAST_COURSE_COMMON_FIELDS()
+        optional_fields = {**PAST_COURSE_COMMON_FIELDS}
 
     val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
 
     return PastCourse(val)
 
 
-def _COURSE_COMMON_FIELDS() -> Mapping[str, Any]: return {
+COURSE_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'description': Optional[str],
     'nr': str,
@@ -2455,8 +2466,7 @@ def _COURSE_COMMON_FIELDS() -> Mapping[str, Any]: return {
     'notes': Optional[str],
 }
 
-
-_COURSE_OPTIONAL_FIELDS = {
+COURSE_OPTIONAL_FIELDS: TypeMapping = {
     'segments': Iterable,
     'active_segments': Iterable,
     'fields': Mapping,
@@ -2477,14 +2487,13 @@ def _course(
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        mandatory_fields = dict(_COURSE_COMMON_FIELDS(), event_id=ID)
-        optional_fields = _COURSE_OPTIONAL_FIELDS
+        mandatory_fields = dict(COURSE_COMMON_FIELDS, event_id=ID)
+        optional_fields = {**COURSE_OPTIONAL_FIELDS}
         # TODO make dict(field, ...) vs {**fields, ...} consistent
     else:
         # no event_id, since the associated event should be fixed
         mandatory_fields = {'id': ID}
-        optional_fields = dict(_COURSE_COMMON_FIELDS(),
-                               **_COURSE_OPTIONAL_FIELDS)
+        optional_fields = {**COURSE_COMMON_FIELDS, **COURSE_OPTIONAL_FIELDS}
 
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
@@ -2524,7 +2533,7 @@ def _course(
     return Course(val)
 
 
-def _REGISTRATION_COMMON_FIELDS() -> Mapping[str, Any]: return {
+REGISTRATION_COMMON_FIELDS: Mapping[str, Any] = {
     'mixed_lodging': bool,
     'list_consent': bool,
     'notes': Optional[str],
@@ -2532,8 +2541,7 @@ def _REGISTRATION_COMMON_FIELDS() -> Mapping[str, Any]: return {
     'tracks': Mapping,
 }
 
-
-def _REGISTRATION_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
+REGISTRATION_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'parental_agreement': bool,
     'real_persona_id': Optional[ID],
     'orga_notes': Optional[str],
@@ -2558,15 +2566,13 @@ def _registration(
 
     if creation:
         # creation does not allow fields for sake of simplicity
-        mandatory_fields = dict(_REGISTRATION_COMMON_FIELDS(),
+        mandatory_fields = dict(REGISTRATION_COMMON_FIELDS,
                                 persona_id=ID, event_id=ID)
-        optional_fields = _REGISTRATION_OPTIONAL_FIELDS()
+        optional_fields = {**REGISTRATION_OPTIONAL_FIELDS}
     else:
         # no event_id/persona_id, since associations should be fixed
         mandatory_fields = {'id': ID}
-        optional_fields = dict(
-            _REGISTRATION_COMMON_FIELDS(),
-            **_REGISTRATION_OPTIONAL_FIELDS())
+        optional_fields = {**REGISTRATION_COMMON_FIELDS, **REGISTRATION_OPTIONAL_FIELDS}
 
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
@@ -2690,7 +2696,7 @@ def _event_associated_fields(
         if field['association'] == association:
             dt = _ALL_TYPED[const.FieldDatatypes](
                 field['kind'], field['field_name'], **kwargs)
-            datatypes[field['field_name']] = cast(Type[Any], eval(
+            datatypes[field['field_name']] = cast(Type[Any], eval(  # pylint: disable=eval-used # noqa
                 f"Optional[{dt.name}]",
                 {
                     'Optional': Optional,
@@ -2720,7 +2726,7 @@ def _event_associated_fields(
     return EventAssociatedFields(val)
 
 
-def _LODGEMENT_GROUP_FIELDS() -> Mapping[str, Any]: return {
+LODGEMENT_GROUP_FIELDS: TypeMapping = {
     'title': str,
 }
 
@@ -2738,18 +2744,18 @@ def _lodgement_group(
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        mandatory_fields = dict(_LODGEMENT_GROUP_FIELDS(), event_id=ID)
+        mandatory_fields = dict(LODGEMENT_GROUP_FIELDS, event_id=ID)
         optional_fields: TypeMapping = {}
     else:
         # no event_id, since the associated event should be fixed.
         mandatory_fields = {'id': ID}
-        optional_fields = _LODGEMENT_GROUP_FIELDS()
+        optional_fields = {**LODGEMENT_GROUP_FIELDS}
 
     return LodgementGroup(_examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs))
 
 
-def _LODGEMENT_COMMON_FIELDS() -> Mapping[str, Any]: return {
+LODGEMENT_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'regular_capacity': NonNegativeInt,
     'camping_mat_capacity': NonNegativeInt,
@@ -2757,8 +2763,7 @@ def _LODGEMENT_COMMON_FIELDS() -> Mapping[str, Any]: return {
     'group_id': Optional[ID],
 }
 
-
-_LODGEMENT_OPTIONAL_FIELDS = {
+LODGEMENT_OPTIONAL_FIELDS: TypeMapping = {
     'fields': Mapping,
 }
 
@@ -2776,13 +2781,12 @@ def _lodgement(
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        mandatory_fields = dict(_LODGEMENT_COMMON_FIELDS(), event_id=ID)
-        optional_fields = _LODGEMENT_OPTIONAL_FIELDS
+        mandatory_fields = dict(LODGEMENT_COMMON_FIELDS, event_id=ID)
+        optional_fields = {**LODGEMENT_OPTIONAL_FIELDS}
     else:
         # no event_id, since the associated event should be fixed
         mandatory_fields = {'id': ID}
-        optional_fields = dict(_LODGEMENT_COMMON_FIELDS(),
-                               **_LODGEMENT_OPTIONAL_FIELDS)
+        optional_fields = {**LODGEMENT_COMMON_FIELDS, **LODGEMENT_OPTIONAL_FIELDS}
 
     # the check of fields is delegated to _event_associated_fields
     return Lodgement(_examine_dictionary_fields(
@@ -2795,16 +2799,13 @@ def _lodgement(
 def _by_field_datatype(
     val: Any, argname: str = None, *, kind: FieldDatatypes, **kwargs: Any
 ) -> ByFieldDatatype:
-    """
-    :type kind: FieldDatatypes or int
-    """
     kind = FieldDatatypes(kind)
     # using Any seems fine, otherwise this would need a big Union
     val: Any = _ALL_TYPED[
         Optional[VALIDATOR_LOOKUP[kind.name]]  # type: ignore
     ](val, argname, **kwargs)
 
-    if kind == FieldDatatypes.date or kind == FieldDatatypes.datetime:
+    if kind in {FieldDatatypes.date, FieldDatatypes.datetime}:
         val = val.isoformat()
     else:
         val = str(val)
@@ -2820,9 +2821,6 @@ def _questionnaire(
     argname: str = "questionnaire",
     **kwargs: Any
 ) -> Questionnaire:
-    """
-    :type field_definitions: Dict[int, Dict]
-    """
 
     val = _mapping(val, argname, **kwargs)
 
@@ -2915,9 +2913,6 @@ def _json(
 
     This is a bit different from many other validatiors in that it is not
     idempotent.
-
-    :rtype: (dict or None, [(str or None, exception)])
-
     """
     if not _convert:
         raise RuntimeError("This is a conversion by definition.")
@@ -3071,8 +3066,7 @@ def _serialized_event(
     if len(val['event.events']) != 1:
         errs.append(ValueError('event.events', n_(
             "Only a single event is supported.")))
-    if (len(val['event.events'])
-            and val['id'] != val['event.events'][val['id']]['id']):
+    if val['event.events'] and val['id'] != val['event.events'][val['id']]['id']:
         errs.append(ValueError('event.events', n_("Wrong event specified.")))
 
     for k, v in val.items():
@@ -3171,7 +3165,7 @@ def _serialized_partial_event(
     return SerializedPartialEvent(val)
 
 
-def _PARTIAL_COURSE_COMMON_FIELDS() -> Mapping[str, Any]: return {
+PARTIAL_COURSE_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'description': Optional[str],
     'nr': Optional[str],
@@ -3182,8 +3176,7 @@ def _PARTIAL_COURSE_COMMON_FIELDS() -> Mapping[str, Any]: return {
     'notes': Optional[str],
 }
 
-
-_PARTIAL_COURSE_OPTIONAL_FIELDS = {
+PARTIAL_COURSE_OPTIONAL_FIELDS: TypeMapping = {
     'segments': Mapping,
     'fields': Mapping,
 }
@@ -3201,12 +3194,12 @@ def _partial_course(
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        mandatory_fields = _PARTIAL_COURSE_COMMON_FIELDS()
-        optional_fields = _PARTIAL_COURSE_OPTIONAL_FIELDS
+        mandatory_fields = {**PARTIAL_COURSE_COMMON_FIELDS}
+        optional_fields = {**PARTIAL_COURSE_OPTIONAL_FIELDS}
     else:
         mandatory_fields = {}
-        optional_fields = dict(_PARTIAL_COURSE_COMMON_FIELDS(),
-                               **_PARTIAL_COURSE_OPTIONAL_FIELDS)
+        optional_fields = {**PARTIAL_COURSE_COMMON_FIELDS,
+                           **PARTIAL_COURSE_OPTIONAL_FIELDS}
 
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
@@ -3232,7 +3225,7 @@ def _partial_course(
     return PartialCourse(val)
 
 
-def _PARTIAL_LODGEMENT_GROUP_FIELDS() -> Mapping[str, Any]: return {
+PARTIAL_LODGEMENT_GROUP_FIELDS: TypeMapping = {
     'title': str,
 }
 
@@ -3250,17 +3243,17 @@ def _partial_lodgement_group(
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        mandatory_fields = _PARTIAL_LODGEMENT_GROUP_FIELDS()
+        mandatory_fields = {**PARTIAL_LODGEMENT_GROUP_FIELDS}
         optional_fields: TypeMapping = {}
     else:
         mandatory_fields = {}
-        optional_fields = _PARTIAL_LODGEMENT_GROUP_FIELDS()
+        optional_fields = {**PARTIAL_LODGEMENT_GROUP_FIELDS}
 
     return PartialLodgementGroup(_examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs))
 
 
-def _PARTIAL_LODGEMENT_COMMON_FIELDS() -> Mapping[str, Any]: return {
+PARTIAL_LODGEMENT_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'regular_capacity': NonNegativeInt,
     'camping_mat_capacity': NonNegativeInt,
@@ -3268,8 +3261,7 @@ def _PARTIAL_LODGEMENT_COMMON_FIELDS() -> Mapping[str, Any]: return {
     'group_id': Optional[PartialImportID],
 }
 
-
-_PARTIAL_LODGEMENT_OPTIONAL_FIELDS = {
+PARTIAL_LODGEMENT_OPTIONAL_FIELDS: TypeMapping = {
     'fields': Mapping,
 }
 
@@ -3286,19 +3278,19 @@ def _partial_lodgement(
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        mandatory_fields = _PARTIAL_LODGEMENT_COMMON_FIELDS()
-        optional_fields = _PARTIAL_LODGEMENT_OPTIONAL_FIELDS
+        mandatory_fields = {**PARTIAL_LODGEMENT_COMMON_FIELDS}
+        optional_fields = {**PARTIAL_LODGEMENT_OPTIONAL_FIELDS}
     else:
         mandatory_fields = {}
-        optional_fields = dict(_PARTIAL_LODGEMENT_COMMON_FIELDS(),
-                               **_PARTIAL_LODGEMENT_OPTIONAL_FIELDS)
+        optional_fields = {**PARTIAL_LODGEMENT_COMMON_FIELDS,
+                           **PARTIAL_LODGEMENT_OPTIONAL_FIELDS}
 
     # the check of fields is delegated to _event_associated_fields
     return PartialLodgement(_examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs))
 
 
-def _PARTIAL_REGISTRATION_COMMON_FIELDS() -> Mapping[str, Any]: return {
+PARTIAL_REGISTRATION_COMMON_FIELDS: Mapping[str, Any] = {
     'mixed_lodging': bool,
     'list_consent': bool,
     'notes': Optional[str],
@@ -3306,8 +3298,7 @@ def _PARTIAL_REGISTRATION_COMMON_FIELDS() -> Mapping[str, Any]: return {
     'tracks': Mapping,
 }
 
-
-def _PARTIAL_REGISTRATION_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
+PARTIAL_REGISTRATION_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'parental_agreement': Optional[bool],
     'orga_notes': Optional[str],
     'payment': Optional[datetime.date],
@@ -3334,15 +3325,13 @@ def _partial_registration(
 
     if creation:
         # creation does not allow fields for sake of simplicity
-        mandatory_fields = dict(_PARTIAL_REGISTRATION_COMMON_FIELDS(),
-                                persona_id=ID)
-        optional_fields = _PARTIAL_REGISTRATION_OPTIONAL_FIELDS()
+        mandatory_fields = dict(PARTIAL_REGISTRATION_COMMON_FIELDS, persona_id=ID)
+        optional_fields = {**PARTIAL_REGISTRATION_OPTIONAL_FIELDS}
     else:
         # no event_id/persona_id, since associations should be fixed
         mandatory_fields = {}
-        optional_fields = dict(
-            _PARTIAL_REGISTRATION_COMMON_FIELDS(),
-            **_PARTIAL_REGISTRATION_OPTIONAL_FIELDS())
+        optional_fields = {**PARTIAL_REGISTRATION_COMMON_FIELDS,
+                           **PARTIAL_REGISTRATION_OPTIONAL_FIELDS}
 
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
@@ -3442,7 +3431,7 @@ def _partial_registration_track(
     return PartialRegistrationTrack(val)
 
 
-def _MAILINGLIST_COMMON_FIELDS() -> Mapping[str, Any]: return {
+MAILINGLIST_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'local_part': EmailLocalPart,
     'domain': const.MailinglistDomain,
@@ -3456,15 +3445,16 @@ def _MAILINGLIST_COMMON_FIELDS() -> Mapping[str, Any]: return {
     'notes': Optional[str],
 }
 
-
-def _MAILINGLIST_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
+MAILINGLIST_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'assembly_id': NoneType,
     'event_id': NoneType,
     'registration_stati': EmptyList,
 }
 
+ALL_MAILINGLIST_FIELDS = (MAILINGLIST_COMMON_FIELDS.keys() |
+                          ml_type.ADDITIONAL_TYPE_FIELDS.items())
 
-_MAILINGLIST_READONLY_FIELDS = {
+MAILINGLIST_READONLY_FIELDS = {
     'address',
     'domain_str',
     'ml_type_class',
@@ -3494,8 +3484,8 @@ def _mailinglist(
         atype.mandatory_validation_fields)
     optional_validation_fields.update(  # type: ignore
         atype.optional_validation_fields)
-    mandatory_fields = dict(_MAILINGLIST_COMMON_FIELDS())
-    optional_fields = dict(_MAILINGLIST_OPTIONAL_FIELDS())
+    mandatory_fields = {**MAILINGLIST_COMMON_FIELDS}
+    optional_fields = {**MAILINGLIST_OPTIONAL_FIELDS}
 
     # iterable_fields = []
     for source, target in ((mandatory_validation_fields, mandatory_fields),
@@ -3505,7 +3495,7 @@ def _mailinglist(
     # Optionally remove readonly attributes, take care to keep the original.
     if _allow_readonly:
         val = dict(copy.deepcopy(val))
-        for key in _MAILINGLIST_READONLY_FIELDS:
+        for key in MAILINGLIST_READONLY_FIELDS:
             if key in val:
                 del val[key]
 
@@ -3520,7 +3510,7 @@ def _mailinglist(
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
 
-    if val and "moderators" in val and len(val["moderators"]) == 0:
+    if val and "moderators" in val and not val["moderators"]:
         # TODO is this legitimate (postpone after other errors?)
         raise ValidationSummary(ValueError(
             "moderators", n_("Must not be empty.")))
@@ -3543,18 +3533,16 @@ def _mailinglist(
     return Mailinglist(val)
 
 
-_SUBSCRIPTION_ID_FIELDS: TypeMapping = {
+SUBSCRIPTION_ID_FIELDS: TypeMapping = {
     'mailinglist_id': ID,
     'persona_id': ID,
 }
 
-
-def _SUBSCRIPTION_STATE_FIELDS() -> Mapping[str, Any]: return {
+SUBSCRIPTION_STATE_FIELDS: TypeMapping = {
     'subscription_state': const.SubscriptionStates,
 }
 
-
-_SUBSCRIPTION_ADDRESS_FIELDS = {
+SUBSCRIPTION_ADDRESS_FIELDS: TypeMapping = {
     'address': Email,
 }
 
@@ -3567,7 +3555,7 @@ def _subscription_identifier(
 
     # TODO why is deepcopy mandatory?
     # TODO maybe make signature of examine dict to take a non-mutable mapping?
-    mandatory_fields = {**_SUBSCRIPTION_ID_FIELDS}
+    mandatory_fields = {**SUBSCRIPTION_ID_FIELDS}
 
     return SubscriptionIdentifier(_examine_dictionary_fields(
         val, mandatory_fields, **kwargs))
@@ -3581,8 +3569,8 @@ def _subscription_state(
 
     # TODO instead of deepcopy simply do not mutate mandatory_fields
     # TODO or use function returning the dict everywhere instead
-    mandatory_fields = {**_SUBSCRIPTION_ID_FIELDS}
-    mandatory_fields.update(_SUBSCRIPTION_STATE_FIELDS())
+    mandatory_fields = {**SUBSCRIPTION_ID_FIELDS}
+    mandatory_fields.update(SUBSCRIPTION_STATE_FIELDS)
 
     return SubscriptionState(_examine_dictionary_fields(
         val, mandatory_fields, **kwargs))
@@ -3594,14 +3582,14 @@ def _subscription_address(
 ) -> SubscriptionAddress:
     val = _mapping(val, argname, **kwargs)
 
-    mandatory_fields = {**_SUBSCRIPTION_ID_FIELDS}
-    mandatory_fields.update(_SUBSCRIPTION_ADDRESS_FIELDS)
+    mandatory_fields = {**SUBSCRIPTION_ID_FIELDS}
+    mandatory_fields.update(SUBSCRIPTION_ADDRESS_FIELDS)
 
     return SubscriptionAddress(_examine_dictionary_fields(
         val, mandatory_fields, **kwargs))
 
 
-def _ASSEMBLY_COMMON_FIELDS() -> Mapping[str, Any]: return {
+ASSEMBLY_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'shortname': Identifier,
     'description': Optional[str],
@@ -3609,8 +3597,7 @@ def _ASSEMBLY_COMMON_FIELDS() -> Mapping[str, Any]: return {
     'notes': Optional[str],
 }
 
-
-def _ASSEMBLY_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
+ASSEMBLY_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'is_active': bool,
     'presider_address': Optional[Email],
     'presiders': Iterable
@@ -3629,12 +3616,11 @@ def _assembly(
     val = dict(_mapping(val, argname, **kwargs))
 
     if creation:
-        mandatory_fields = _ASSEMBLY_COMMON_FIELDS()
-        optional_fields = _ASSEMBLY_OPTIONAL_FIELDS()
+        mandatory_fields = {**ASSEMBLY_COMMON_FIELDS}
+        optional_fields = {**ASSEMBLY_OPTIONAL_FIELDS}
     else:
         mandatory_fields = {'id': ID}
-        optional_fields = dict(_ASSEMBLY_COMMON_FIELDS(),
-                               **_ASSEMBLY_OPTIONAL_FIELDS())
+        optional_fields = {**ASSEMBLY_COMMON_FIELDS, **ASSEMBLY_OPTIONAL_FIELDS}
 
     errs = ValidationSummary()
 
@@ -3656,7 +3642,7 @@ def _assembly(
         val, mandatory_fields, optional_fields, **kwargs))
 
 
-def _BALLOT_COMMON_FIELDS() -> Mapping[str, Any]: return {
+BALLOT_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'description': Optional[str],
     'vote_begin': datetime.datetime,
@@ -3664,14 +3650,19 @@ def _BALLOT_COMMON_FIELDS() -> Mapping[str, Any]: return {
     'notes': Optional[str],
 }
 
-
-def _BALLOT_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
-    'extended': Optional[bool],
+BALLOT_EXPOSED_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'vote_extension_end': Optional[datetime.datetime],
     'abs_quorum': int,
     'rel_quorum': int,
     'votes': Optional[PositiveInt],
     'use_bar': bool,
+}
+
+BALLOT_EXPOSED_FIELDS = {**BALLOT_COMMON_FIELDS, **BALLOT_EXPOSED_OPTIONAL_FIELDS}
+
+BALLOT_OPTIONAL_FIELDS: Mapping[str, Any] = {
+    **BALLOT_EXPOSED_OPTIONAL_FIELDS,
+    'extended': Optional[bool],
     'is_tallied': bool,
     'candidates': Mapping
 }
@@ -3689,12 +3680,11 @@ def _ballot(
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        mandatory_fields = dict(_BALLOT_COMMON_FIELDS(), assembly_id=ID)
-        optional_fields = _BALLOT_OPTIONAL_FIELDS()
+        mandatory_fields = dict(BALLOT_COMMON_FIELDS, assembly_id=ID)
+        optional_fields = {**BALLOT_OPTIONAL_FIELDS}
     else:
         mandatory_fields = {'id': ID}
-        optional_fields = dict(_BALLOT_COMMON_FIELDS(),
-                               **_BALLOT_OPTIONAL_FIELDS())
+        optional_fields = {**BALLOT_COMMON_FIELDS, **BALLOT_OPTIONAL_FIELDS}
 
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
@@ -3739,9 +3729,7 @@ def _ballot(
             ValueError('rel_quorum', msg),
         ])
 
-    quorum = None
-    if 'abs_quorum' in val:
-        quorum = val['abs_quorum']
+    quorum = val.get('abs_quorum')
     if 'rel_quorum' in val and not quorum:
         quorum = val['rel_quorum']
         if not 0 <= quorum <= 100:
@@ -3782,7 +3770,7 @@ def _ballot(
     return Ballot(val)
 
 
-_BALLOT_CANDIDATE_COMMON_FIELDS = {
+BALLOT_CANDIDATE_COMMON_FIELDS: TypeMapping = {
     'title': str,
     'shortname': Identifier,
 }
@@ -3800,11 +3788,11 @@ def _ballot_candidate(
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        mandatory_fields = _BALLOT_CANDIDATE_COMMON_FIELDS
+        mandatory_fields = {**BALLOT_CANDIDATE_COMMON_FIELDS}
         optional_fields: TypeMapping = {}
     else:
         mandatory_fields = {'id': ID}
-        optional_fields = _BALLOT_CANDIDATE_COMMON_FIELDS
+        optional_fields = {**BALLOT_CANDIDATE_COMMON_FIELDS}
 
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
@@ -3816,13 +3804,12 @@ def _ballot_candidate(
     return BallotCandidate(val)
 
 
-def _ASSEMBLY_ATTACHMENT_FIELDS() -> Mapping[str, Any]: return {
+ASSEMBLY_ATTACHMENT_FIELDS: Mapping[str, Any] = {
     'assembly_id': Optional[ID],
     'ballot_id': Optional[ID],
 }
 
-
-def _ASSEMBLY_ATTACHMENT_VERSION_FIELDS() -> Mapping[str, Any]: return {
+ASSEMBLY_ATTACHMENT_VERSION_FIELDS: Mapping[str, Any] = {
     'title': str,
     'authors': Optional[str],
     'filename': str,
@@ -3837,10 +3824,10 @@ def _assembly_attachment(
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        mandatory_fields = _ASSEMBLY_ATTACHMENT_VERSION_FIELDS()
-        optional_fields = _ASSEMBLY_ATTACHMENT_FIELDS()
+        mandatory_fields = {**ASSEMBLY_ATTACHMENT_VERSION_FIELDS}
+        optional_fields = {**ASSEMBLY_ATTACHMENT_FIELDS}
     else:
-        mandatory_fields = dict(_ASSEMBLY_ATTACHMENT_FIELDS(), id=ID)
+        mandatory_fields = dict(ASSEMBLY_ATTACHMENT_FIELDS, id=ID)
         optional_fields = {}
 
     val = _examine_dictionary_fields(
@@ -3866,12 +3853,12 @@ def _assembly_attachment_version(
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        mandatory_fields = dict(_ASSEMBLY_ATTACHMENT_VERSION_FIELDS(),
+        mandatory_fields = dict(ASSEMBLY_ATTACHMENT_VERSION_FIELDS,
                                 attachment_id=ID)
         optional_fields: TypeMapping = {}
     else:
         mandatory_fields = {'attachment_id': ID, 'version': ID}
-        optional_fields = _ASSEMBLY_ATTACHMENT_VERSION_FIELDS()
+        optional_fields = {**ASSEMBLY_ATTACHMENT_VERSION_FIELDS}
 
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
@@ -3908,7 +3895,7 @@ def _vote(
         errs.append(KeyError(argname, n_("Missing candidates.")))
     if errs:
         raise errs
-    if ballot['votes'] and '>' in val:
+    if ballot['votes'] and '>' in val:  # pylint: disable=unsupported-membership-test
         # ordinary voting has more constraints
         # if no strictly greater we have a valid abstention
         groups = val.split('>')
@@ -3952,7 +3939,7 @@ def _non_regex(
     forbidden_chars = r'\*+?{}()[]|'
     msg = n_("Must not contain any forbidden characters"
              " (which are %(forbidden_chars)s while .^$ are allowed).")
-    if any(char in val for char in forbidden_chars):
+    if any(char in val for char in forbidden_chars):  # pylint: disable=unsupported-membership-test; # noqa
         raise ValidationSummary(
             ValueError(argname, msg, {"forbidden_chars": forbidden_chars}))
     return NonRegex(val)
@@ -4033,6 +4020,8 @@ def _query_input(
 
         if operator in MULTI_VALUE_OPERATORS:
             values = escaped_split(value, separator, escape)
+            # filter out empty strings
+            values = filter(None, values)
             value = []
             for v in values:
                 # Validate every single value
@@ -4237,7 +4226,7 @@ def _query(
     # order
     for idx, entry in enumerate(val.order):
         try:
-            # TODO use generic tuple here once implemented 
+            # TODO use generic tuple here once implemented
             entry = _ALL_TYPED[Iterable](  # type: ignore
                 entry, 'order', **{**kwargs, '_convert': False})
         except ValidationSummary as e:

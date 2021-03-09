@@ -2,6 +2,10 @@ kind: pipeline
 type: docker
 name: default
 
+workspace:
+  base: /cdedb2
+  path: .
+
 steps:
 - name: build images
   image: docker:20.10
@@ -22,24 +26,20 @@ steps:
   image: cdedb
   pull: never # do not try to pull image from docker hub
   commands:
-  - make lint # this will never fail but still yields useful output
+  - make lint
 - name: cdb # is used as the hostname for the container
   image: cdepostgres
   pull: never # do not try to pull image from docker hub
   detach: true # detach to keep running for the following steps
   environment:
     POSTGRES_PASSWORD: passwd
+  volumes:
+  - name: database
+    path: /var/lib/postgresql/data
 - name: testsuite
   image: cdedb
   pull: never # do not try to pull image from docker hub
-  # merge into master before testing
-  # this does not rerun when master updates so not too useful currently
-  # clone:
-  # - git switch "$DRONE_TARGET_BRANCH"
-  # - git merge "$DRONE_SOURCE_BRANCH"
   commands:
-  - cp -r /drone/src/. /cdedb2 # the dot also copies hidden files
-  - cd /cdedb2
   - sleep 5 # wait for db to come online
   - make i18n-compile # required for sample-data target
   - make sample-data # this creates the sql schema and copies the localconfig.py
@@ -51,6 +51,9 @@ volumes:
 - name: dockersock
   host:
     path: /var/run/docker.sock
+- name: database
+  temp:
+    medium: memory
 
 trigger:
   branch:

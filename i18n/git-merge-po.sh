@@ -2,8 +2,9 @@
 #
 # Three-way merge driver for PO files
 #
-# It uses the gettext utils (msgcat, msggrep, msgmerge, msguniq) to correctly process the .po and .pot files. These
-# tools are typically contained in the `gettext` package of Linux distributions.
+# It uses the gettext utils (msgcat, msggrep, msgmerge, msguniq) to correctly process
+# the .po and .pot files. These tools are typically contained in the `gettext` package
+# of Linux distributions.
 #
 # To set this up, add the following to your .git/config file:
 #
@@ -11,17 +12,11 @@
 #     name = Gettext merge driver
 #     driver = i18n/get-merge-po.sh %O %A %B
 #
-# Then add the following line to your .git/info/attributes file:
-#
-#  *.po merge=pomerge
-#  *.pot merge=pomerge
-#
-# Attention: This driver may silently drop duplicate messages in one of the po files to be merged. Even if these
-# duplicate definitions are in the block of commented, old message definitions at the end of the file. So, make sure to
-# delete all duplicte message defintions before trying to merge branches.
+# It is recommended to delete all duplicte message defintions before trying to
+# merge branches.
 #
 # Taken from https://github.com/mezis/git-whistles/blob/master/libexec/git-merge-po.sh
-# and adapted to remove obsolete strings.
+# and adapted to remove obsolete strings and sort by file.
 #
 set -e
 IFS=
@@ -88,9 +83,9 @@ echo "Using custom PO merge driver (`show_file ${LOCAL}`; $TEMP)"
 sed -e '/^$/q' < $LOCAL > ${TEMP}.header
 
 # clean input files
-msguniq --force-po -o ${TEMP}.base   --unique ${BASE}
-msguniq --force-po -o ${TEMP}.local  --unique ${LOCAL}
-msguniq --force-po -o ${TEMP}.remote --unique ${REMOTE}
+msguniq --force-po -o ${TEMP}.base ${BASE}
+msguniq --force-po -o ${TEMP}.local ${LOCAL}
+msguniq --force-po -o ${TEMP}.remote ${REMOTE}
 
 # messages changed on local
 extract_changes ${TEMP}.local ${TEMP}.base > ${TEMP}.local-changes
@@ -103,30 +98,20 @@ m_msgcat -o - ${TEMP}.base ${TEMP}.local ${TEMP}.remote \
   | grep_conflicts -v \
   > ${TEMP}.unchanged
 
-# messages changed on both local and remote (conflicts)
-m_msgcat -o - ${TEMP}.remote-changes ${TEMP}.local-changes \
-  | grep_conflicts \
-  > ${TEMP}.conflicts
-
-# messages changed on local, not on remote; and vice-versa
-m_msgcat -o ${TEMP}.local-only  --unique ${TEMP}.local-changes  ${TEMP}.conflicts
-m_msgcat -o ${TEMP}.remote-only --unique ${TEMP}.remote-changes ${TEMP}.conflicts
-
 # the big merge
-m_msgcat -o ${TEMP}.merge1 ${TEMP}.unchanged ${TEMP}.conflicts ${TEMP}.local-only ${TEMP}.remote-only
+m_msgcat -o ${TEMP}.merge1 ${TEMP}.unchanged ${TEMP}.local-changes ${TEMP}.remote-changes
 
 # create a template to filter messages actually needed (those on local and remote)
+# and remove messages that became obsolete
 m_msgcat -o - ${TEMP}.local ${TEMP}.remote \
-  | m_msgmerge -o ${TEMP}.merge2 ${TEMP}.merge1 -
+  | m_msgmerge -o - ${TEMP}.merge1 - \
+  | msgattrib --no-obsolete -o ${TEMP}.merge2 -
 
 # final merge, adds saved header
-m_msgcat -o ${TEMP}.merge3 --use-first ${TEMP}.header ${TEMP}.merge2
-
-# remove obsolete strings
-msgattrib --no-obsolete -o ${TEMP}.merge4 ${TEMP}.merge3
+m_msgcat --sort-by-file -o ${TEMP}.merge3 --use-first ${TEMP}.header ${TEMP}.merge2
 
 # produce output file (overwrites input LOCAL file)
-cat ${TEMP}.merge4 > $OUTPUT
+cat ${TEMP}.merge3 > $OUTPUT
 
 # check for conflicts
 if grep -q '#-#-#-#-#' $OUTPUT ; then

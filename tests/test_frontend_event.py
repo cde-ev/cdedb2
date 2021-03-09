@@ -286,7 +286,7 @@ class TestEventFrontend(FrontendTest):
         self.assertNotIn("quickregistrationform", self.response.forms)
         self.assertNotIn("changeminorformform", self.response.forms)
         self.assertNotIn("lockform", self.response.forms)
-        self.assertNotIn("createorgalistform", self.response.forms)
+        self.assertNotIn("createparticipantlistform", self.response.forms)
 
     @as_users("annika", "garcia")
     def test_show_event_orga(self, user: CdEDBObject) -> None:
@@ -303,9 +303,11 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("Kristallkugel-basiertes Kurszuteilungssystem",
                             div='mail-text')
 
-        self.assertIn("quickregistrationform", self.response.forms)
-        self.assertIn("changeminorformform", self.response.forms)
-        self.assertIn("lockform", self.response.forms)
+        self.assertIn('quickregistrationform', self.response.forms)
+        self.assertIn('changeminorformform', self.response.forms)
+        self.assertIn('lockform', self.response.forms)
+        if not self.is_user(user, 'annika'):  # annika is also admin
+            self.assertNotIn('createparticipantlistform', self.response.forms)
 
     @as_users("berta", "garcia")
     def test_show_event_noadmin(self, user: CdEDBObject) -> None:
@@ -313,7 +315,7 @@ class TestEventFrontend(FrontendTest):
                       {'description': 'Große Testakademie 2222'})
         self.assertTitle("Große Testakademie 2222")
 
-        self.assertNotIn("createorgalistform", self.response.forms)
+        self.assertNotIn("createparticipantlistform", self.response.forms)
         self.assertNotIn("addorgaform", self.response.forms)
         self.assertNotIn("removeorgaform7", self.response.forms)
 
@@ -323,11 +325,19 @@ class TestEventFrontend(FrontendTest):
                       {'description': 'Große Testakademie 2222'})
         self.assertTitle("Große Testakademie 2222")
 
-        # TODO This should be fixed with introducing of relative admins
-        # self.assertIn("createorgalistform", self.response.forms)
-        self.assertIn("addorgaform", self.response.forms)
-        self.assertIn("removeorgaform7", self.response.forms)
-
+        self.assertNotIn('createorgalistform', self.response.forms)
+        f = self.response.forms[f"removeorgaform{ USER_DICT['garcia']['id'] }"]
+        self.submit(f)
+        f = self.response.forms['createparticipantlistform']
+        self.assertIn('disabled', f.fields['submitform'][0].attrs)
+        self.submit(f, check_notification=False)
+        self.assertPresence("Mailingliste kann nur mit Orgas erstellt werden.",
+                            div='notifications')
+        f = self.response.forms['addorgaform']
+        f['orga_id'] = USER_DICT['garcia']['DB-ID']
+        self.submit(f)
+        f = self.response.forms['createparticipantlistform']
+        self.submit(f)
     @as_users("anton")
     def test_create_participant_list(self, user: CdEDBObject) -> None:
         self.traverse({'description': 'Veranstaltungen'},
@@ -1331,6 +1341,7 @@ etc;anything else""", f['entries_2'].value)
             "Anmeldung erst mit Überweisung des Teilnehmerbeitrags")
         self.assertPresence("573,99 €")
         self.assertNonPresence("Warteliste")
+        self.assertNonPresence("Eingeteilt in")
         self.assertPresence("α. Planetenretten für Anfänger")
         self.assertPresence("β. Lustigsein für Fortgeschrittene")
         self.assertPresence("Ich stimme zu, dass meine Daten")
@@ -1338,9 +1349,11 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Große Testakademie 2222 – Konfiguration")
         f = self.response.forms['changeeventform']
         f['iban'] = ""
+        f['is_course_assignment_visible'].checked = True
         self.submit(f)
         self.traverse({'href': '/event/event/1/registration/status'})
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
+        self.assertPresence("Eingeteilt in")
         self.assertPresence("separat mitteilen, wie du deinen Teilnahmebeitrag")
 
     def test_register_no_registration_end(self) -> None:
@@ -1725,7 +1738,7 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/1/change'})
         self.assertTitle("Große Testakademie 2222 – Konfiguration")
         f = self.response.forms['changeeventform']
-        f['courses_in_participant_list'].checked = True
+        f['is_course_assignment_visible'].checked = True
         self.submit(f)
 
         self.traverse({'href': 'event/event/1/registration/list'})
@@ -1821,7 +1834,7 @@ etc;anything else""", f['entries_2'].value)
                       {'description': 'Große Testakademie 2222'},
                       {'description': 'Konfiguration'})
         f = self.response.forms['changeeventform']
-        f['courses_in_participant_list'].checked = True
+        f['is_course_assignment_visible'].checked = True
         self.submit(f)
 
         # now, check the sorting

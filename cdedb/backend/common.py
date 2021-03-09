@@ -72,7 +72,7 @@ def singularize(function: Callable[..., Union[T, Mapping[Any, T]]],
         directly. If this is false, the output is assumed to be a dict with the
         singular param as a key.
     """
-
+    # pylint: disable=used-before-assignment
     @functools.wraps(function)
     def singularized(self: AbstractBackend, rs: RequestState, *args: Any,
                      **kwargs: Any) -> T:
@@ -227,7 +227,6 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         actual_realms = self.core.get_realms_multi(rs, ids)
         if any(not x >= realms for x in actual_realms.values()):
             raise ValueError(n_("Wrong realm for personas."))
-        return
 
     @classmethod
     @abc.abstractmethod
@@ -521,10 +520,12 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                 # the following should be used with operators which are allowed
                 # for str as well as for other types
                 sql_param_str = "lower({0})"
-                caser = lambda x: x.lower()
+
+                def caser(x: str) -> str: return x.lower()
             else:
                 sql_param_str = "{0}"
-                caser = lambda x: x
+
+                def caser(x: str) -> str: return x
             columns = field.split(',')
             # Treat containsall and friends special since they want to find
             # each value in any column, without caring that the columns are

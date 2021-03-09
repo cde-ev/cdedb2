@@ -100,8 +100,8 @@
     </dl>
 
     <div style="margin-bottom: 8px;">
-        {% if ambience['genesis_case']['attachment'] %}
-            {{ util.href(cdedblink("core/genesis_get_attachment", {'attachment': ambience['genesis_case']['attachment']}),
+        {% if ambience['genesis_case']['attachment_hash'] %}
+            {{ util.href(cdedblink("core/genesis_get_attachment", {'attachment_hash': ambience['genesis_case']['attachment_hash']}),
                         gettext("Download Attachment"), aclass="btn btn-info", icon="download") }}
         {% endif %}
     </div>

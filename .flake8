@@ -1,2 +1,14 @@
 [flake8]
 max-line-length = 88
+extend-ignore =
+    W503  # line break before binop, mutually exclusive to W503
+    F811  # redefinition, false-positves due to @overload
+    F405  # validation.py uses wildcard import for all types
+    E122  # these and the following should be dropped after a run of autopep8
+    E127
+    E128
+    E131
+    E252
+    E501
+    E731
+# per-file-ignores = validation.py:F405  # new in 3.7.0

@@ -107,19 +107,14 @@ class Query:
                  constraints: Collection[QueryConstraint],
                  order: Collection[QueryOrder], name: str = None):
         """
-        :type scope: str
         :param scope: target of FROM clause; key for :py:data:`QUERY_VIEWS`.
             We would like to use SQL views for this, but they are not flexible
             enough.
-        :type fields_of_interest: [str]
         :param fields_of_interest: column names to be SELECTed.
-        :type spec: {str: str}
         :param spec: Keys are field names and values are validator names. See
             :py:const:`QUERY_SPECS`.
-        :type constraints: [(str, QueryOperators, object)]
         :param constraints: clauses for WHERE, they are concatenated with AND
             and each comma in the first component causes an OR
-        :type order: [(str, bool)]
         :param order: First components are the column names to be used for
             ORDER BY and the second component toggles ascending sorting order.
         """
@@ -182,7 +177,9 @@ class Query:
 #:           the schema part does not survive querying and needs to be stripped
 #:           before output.
 if TYPE_CHECKING:
-    QUERY_SPECS: Dict[str, collections.OrderedDict[str, str]]
+    QUERY_SPECS: Dict[
+        str, collections.OrderedDict[str, str]  # pylint: disable=unsubscriptable-object
+    ]
 QUERY_SPECS = {
     "qview_cde_member":
         collections.OrderedDict([
@@ -519,13 +516,9 @@ def mangle_query_input(rs: RequestState, spec: Dict[str, str],
     This has to be careful to treat checkboxes and selects correctly
     (which are partly handled by an absence of data).
 
-    :type rs: :py:class:`cdedb.common.RequestState`
-    :type spec: {str: str}
     :param spec: one of :py:data:`QUERY_SPECS`
-    :type defaults: {str: str}
     :param defaults: Default values which appear like they have been submitted,
       if nothing has been submitted for this paramater.
-    :rtype: {str: str}
     :returns: The raw data associated to the query described by the spec
         extracted from the request data saved in the request state.
     """

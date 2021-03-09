@@ -159,6 +159,17 @@ class TestPastEventBackend(BackendTest):
                          self.pastevent.list_participants(self.key, pevent_id=1))
 
     @as_users("vera")
+    def test_participant_consistency(self, user: CdEDBObject) -> None:
+        # See issue #1458
+        participants = self.pastevent.list_participants(self.key, pevent_id=1)
+        self.assertIn((3, None), participants)
+        self.pastevent.add_participant(self.key, pevent_id=1, pcourse_id=2,
+                                       persona_id=3)
+        participants = self.pastevent.list_participants(self.key, pevent_id=1)
+        self.assertNotIn((3, None), participants)
+        self.assertIn((3, 2), participants)
+
+    @as_users("vera")
     def test_past_log(self, user: CdEDBObject) -> None:
         # first generate some data
         data = {
