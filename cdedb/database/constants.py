@@ -10,7 +10,7 @@ their symbolic names provided by this module should be used.
 import enum
 from typing import Dict
 
-from cdedb.subman.machine import SubscriptionActions, SubscriptionStates  # pylint: disable=unused-import # noqa
+from cdedb.subman.machine import SubscriptionAction, SubscriptionState  # pylint: disable=unused-import # noqa
 
 
 def n_(x: str) -> str:
@@ -399,12 +399,12 @@ class MlLogCodes(enum.IntEnum):
     moderator_removed = 11  #:
     whitelist_added = 12  #:
     whitelist_removed = 13  #:
-    subscription_requested = 20  #: SubscriptionStates.subscription_requested
-    subscribed = 21  #: SubscriptionStates.subscribed
+    subscription_requested = 20  #: SubscriptionState.subscription_requested
+    subscribed = 21  #: SubscriptionState.subscribed
     subscription_changed = 22  #: This is now used for address changes.
-    unsubscribed = 23  #: SubscriptionStates.unsubscribed
-    marked_override = 24  #: SubscriptionStates.subscription_override
-    marked_blocked = 25  #: SubscriptionStates.unsubscription_override
+    unsubscribed = 23  #: SubscriptionState.unsubscribed
+    marked_override = 24  #: SubscriptionState.subscription_override
+    marked_blocked = 25  #: SubscriptionState.unsubscription_override
     reset = 27  #:
     automatically_removed = 28  #:
     request_approved = 30  #:
@@ -417,23 +417,23 @@ class MlLogCodes(enum.IntEnum):
     moderate_discard = 52  #:
 
     @classmethod
-    def from_subman(cls, action: SubscriptionActions) -> "MlLogCodes":
+    def from_subman(cls, action: SubscriptionAction) -> "MlLogCodes":
         log_code_map = {
-            SubscriptionActions.subscribe: cls.subscribed,
-            SubscriptionActions.unsubscribe: cls.unsubscribed,
-            SubscriptionActions.request_subscription: cls.subscription_requested,
-            SubscriptionActions.cancel_request: cls.request_cancelled,
-            SubscriptionActions.approve_request: cls.request_approved,
-            SubscriptionActions.deny_request: cls.request_denied,
-            SubscriptionActions.block_request: cls.request_blocked,
-            SubscriptionActions.add_subscriber: cls.subscribed,
-            SubscriptionActions.add_subscription_override: cls.marked_override,
-            SubscriptionActions.add_unsubscription_override: cls.marked_blocked,
-            SubscriptionActions.remove_subscriber: cls.unsubscribed,
-            SubscriptionActions.remove_subscription_override: cls.subscribed,
-            SubscriptionActions.remove_unsubscription_override: cls.unsubscribed,
-            SubscriptionActions.reset: cls.reset,
-            SubscriptionActions.cleanup_subscription: cls.automatically_removed,
-            SubscriptionActions.cleanup_implicit: cls.automatically_removed,
+            SubscriptionAction.subscribe: cls.subscribed,
+            SubscriptionAction.unsubscribe: cls.unsubscribed,
+            SubscriptionAction.request_subscription: cls.subscription_requested,
+            SubscriptionAction.cancel_request: cls.request_cancelled,
+            SubscriptionAction.approve_request: cls.request_approved,
+            SubscriptionAction.deny_request: cls.request_denied,
+            SubscriptionAction.block_request: cls.request_blocked,
+            SubscriptionAction.add_subscriber: cls.subscribed,
+            SubscriptionAction.add_subscription_override: cls.marked_override,
+            SubscriptionAction.add_unsubscription_override: cls.marked_blocked,
+            SubscriptionAction.remove_subscriber: cls.unsubscribed,
+            SubscriptionAction.remove_subscription_override: cls.subscribed,
+            SubscriptionAction.remove_unsubscription_override: cls.unsubscribed,
+            SubscriptionAction.reset: cls.reset,
+            SubscriptionAction.cleanup_subscription: cls.automatically_removed,
+            SubscriptionAction.cleanup_implicit: cls.automatically_removed,
         }
         return log_code_map[action]

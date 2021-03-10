@@ -1281,9 +1281,9 @@ class CoreBackend(AbstractBackend):
             WHERE persona_id = %s AND subscription_state = ANY(%s)
                 AND mailinglists.is_active = True"""
             states = {
-                const.SubscriptionStates.subscribed,
-                const.SubscriptionStates.subscription_override,
-                const.SubscriptionStates.pending,
+                const.SubscriptionState.subscribed,
+                const.SubscriptionState.subscription_override,
+                const.SubscriptionState.pending,
             }
             if self.query_all(rs, query, (persona_id, states)):
                 return False

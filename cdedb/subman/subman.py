@@ -6,7 +6,7 @@ situation is a bit complicated and does not really depend on precise use case.
 For more general comments see the documentation.
 
 Specifically, you require the following functions from this library:
-* `apply_action` to apply arbitrary `SubscriptionActions` manually
+* `apply_action` to apply an arbitrary `SubscriptionAction` manually
 * `is_obsolete` to cleanup outdated subscriptions from your database
 
 To fully use the power of this library, you additionally need to implement two further
@@ -22,11 +22,11 @@ from gettext import gettext as _
 from typing import Optional
 
 from .exceptions import SubscriptionError
-from .machine import SubscriptionActions, SubscriptionPolicy, SubscriptionStates
+from .machine import SubscriptionAction, SubscriptionPolicy, SubscriptionState
 
 
-def _check_state_requirements(action: SubscriptionActions,
-                              old_state: Optional[SubscriptionStates]) -> None:
+def _check_state_requirements(action: SubscriptionAction,
+                              old_state: Optional[SubscriptionState]) -> None:
     """This checks if the given action is allowed to be performed from the given state.
 
     This check is the heart of the subscription state machine, since it considers the
@@ -43,7 +43,7 @@ def _check_state_requirements(action: SubscriptionActions,
         raise exception
 
 
-def _check_policy_requirements(action: SubscriptionActions,
+def _check_policy_requirements(action: SubscriptionAction,
                                policy: SubscriptionPolicy) -> None:
     """This checks if the given action is allowed by the given SubscriptionPolicy.
 
@@ -51,20 +51,20 @@ def _check_policy_requirements(action: SubscriptionActions,
 
     If the policy does not allow the action, a SubscriptionError is raised.
     """
-    if action == SubscriptionActions.add_subscriber and not policy.may_be_added():
+    if action == SubscriptionAction.add_subscriber and not policy.may_be_added():
         raise SubscriptionError(_("User has no means to access this list."))
-    if action == SubscriptionActions.subscribe and not policy.may_subscribe():
+    if action == SubscriptionAction.subscribe and not policy.may_subscribe():
         raise SubscriptionError(_("Can not subscribe."))
-    if action == SubscriptionActions.request_subscription and not policy.may_request():
+    if action == SubscriptionAction.request_subscription and not policy.may_request():
         raise SubscriptionError(_("Can not request subscription."))
 
 
-def apply_action(action: SubscriptionActions, *,
+def apply_action(action: SubscriptionAction, *,
                  policy: SubscriptionPolicy,
-                 old_state: Optional[SubscriptionStates],
+                 old_state: Optional[SubscriptionState],
                  allow_unsub: bool = True,
                  is_privileged: bool = True,
-                 ) -> Optional[SubscriptionStates]:
+                 ) -> Optional[SubscriptionState]:
     """Apply a SubscriptionAction to a SubscriptionState according to a SubscriptionPolicy.
 
     This is the main interface for performing subscription actions. To decide if the
@@ -80,15 +80,15 @@ def apply_action(action: SubscriptionActions, *,
         We recommend only using the policies SubscriptionPolicy.implicits_only and
         None for objects using this feature.
         Warning: This feature is not compatible with users with old_state in
-        {SubscriptionStates.unsubscribed, SubscriptionStates.unsubscription_override}
+        {SubscriptionState.unsubscribed, SubscriptionState.unsubscription_override}
         regarding the respective object.
     :param is_privileged: If this is not True, disallow managing actions.
     """
     # 1: Do basic sanity checks this library is used appropriately.
     if action.is_automatic():
         raise RuntimeError(_("Use is_obsolete to perform cleanup actions."))
-    if not allow_unsub and old_state in {SubscriptionStates.unsubscribed,
-                                         SubscriptionStates.unsubscription_override}:
+    if not allow_unsub and old_state in {SubscriptionState.unsubscribed,
+                                         SubscriptionState.unsubscription_override}:
         raise RuntimeError(_("allow_unsub is incompatible with explicitly unsubscribed"
                              " states."))
 
@@ -107,7 +107,7 @@ def apply_action(action: SubscriptionActions, *,
 
 
 def _apply_cleanup(policy: SubscriptionPolicy,
-                   old_state: Optional[SubscriptionStates],
+                   old_state: Optional[SubscriptionState],
                    is_implied: bool
                    ) -> None:
     """Analogue of apply_action for cleanup of subscribers.
@@ -118,25 +118,25 @@ def _apply_cleanup(policy: SubscriptionPolicy,
     the exact same formalism as apply_action.
 
     This is guaranteed to only touch states not in
-    SubscriptionStates.cleanup_protected_states().
+    SubscriptionState.cleanup_protected_states().
 
     Parameters are documented at is_obsolete.
     """
     # If user is not allowed as subscriber, remove them.
     if policy.is_none():
-        _check_state_requirements(SubscriptionActions.cleanup_subscription, old_state)
+        _check_state_requirements(SubscriptionAction.cleanup_subscription, old_state)
         return None
 
     # If user is implicit subscriber and not implied, remove them.
     if not is_implied and policy.is_implicit():
-        _check_state_requirements(SubscriptionActions.cleanup_implicit, old_state)
+        _check_state_requirements(SubscriptionAction.cleanup_implicit, old_state)
         return None
 
     raise SubscriptionError(_("No cleanup necessary."))
 
 
 def is_obsolete(policy: SubscriptionPolicy,
-                old_state: Optional[SubscriptionStates],
+                old_state: Optional[SubscriptionState],
                 is_implied: bool
                 ) -> bool:
     """Returns whether a subscriber should be cleaned up from an object.

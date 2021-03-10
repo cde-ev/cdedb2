@@ -137,7 +137,7 @@ class CoreFrontend(AbstractFrontend):
             moderator_info = self.mlproxy.moderator_info(rs, rs.user.persona_id)
             if moderator_info:
                 moderator = self.mlproxy.get_mailinglists(rs, moderator_info)
-                sub_request = const.SubscriptionStates.pending
+                sub_request = const.SubscriptionState.pending
                 mailman = self.get_mailman()
                 for mailinglist_id, mailinglist in moderator.items():
                     requests = self.mlproxy.get_subscription_states(
@@ -574,8 +574,8 @@ class CoreFrontend(AbstractFrontend):
             # Admins who are also moderators can not disable this admin view
             if is_admin and not is_moderator:
                 access_mode.add("moderator")
-            relevant_stati = [s for s in const.SubscriptionStates
-                              if s != const.SubscriptionStates.unsubscribed]
+            relevant_stati = [s for s in const.SubscriptionState
+                              if s != const.SubscriptionState.unsubscribed]
             if is_moderator or ml_type.has_moderator_view(rs.user):
                 subscriptions = self.mlproxy.get_subscription_states(
                     rs, ml_id, states=relevant_stati)

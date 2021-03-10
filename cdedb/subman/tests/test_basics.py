@@ -1,7 +1,7 @@
 import enum
 import unittest
 
-from cdedb.subman import SubscriptionStates
+from cdedb.subman import SubscriptionState
 
 
 class BackwardsCompatibilityTest(unittest.TestCase):
@@ -9,9 +9,9 @@ class BackwardsCompatibilityTest(unittest.TestCase):
 
     def test_subscription_state_enum(self) -> None:
         """Make sure the name-value pairs of the `SubcsriptionState` enum remain consistent."""
-        self.assertTrue(issubclass(SubscriptionStates, enum.IntEnum))
+        self.assertTrue(issubclass(SubscriptionState, enum.IntEnum))
         try:
-            enum.unique(SubscriptionStates)
+            enum.unique(SubscriptionState)
         except ValueError:
             self.fail("Enum contains duplicate values.")
         expectation = {
@@ -22,7 +22,7 @@ class BackwardsCompatibilityTest(unittest.TestCase):
             "pending": 20,
             "implicit": 30,
         }
-        name_value_map = {member.name: member.value for member in SubscriptionStates}
+        name_value_map = {member.name: member.value for member in SubscriptionState}
         self.assertEqual(expectation, name_value_map)
 
 

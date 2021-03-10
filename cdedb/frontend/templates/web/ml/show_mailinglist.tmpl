@@ -136,7 +136,7 @@
                         </p>
                     {% endif %}
                 {% else %}
-                    {% if state == enums['SubscriptionStates'].pending %}
+                    {% if state == enums['SubscriptionState'].pending %}
                         <p><strong>
                             {% trans %}
                                 Your subscription request is currently pending review by a moderator.
@@ -148,7 +148,7 @@
                             {{ util.input_submit(value=gettext("Cancel request"), aclass="btn btn-sm btn-danger",
                                     icon="times-circle") }}
                         </form>
-                    {% elif state != enums['SubscriptionStates'].unsubscription_override %}
+                    {% elif state != enums['SubscriptionState'].unsubscription_override %}
                         <p><strong>
                             {% trans %}You are not currently subscribed to this mailinglist.{% endtrans %}
                         </strong></p>

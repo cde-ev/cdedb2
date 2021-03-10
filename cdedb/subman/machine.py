@@ -1,6 +1,6 @@
 """This contains most of the logic required to perform actions on subscriptions.
 
-Here, `SubscriptionActions` are the possible actions to transition from one
+Here, `SubscriptionAction`s are the possible actions to transition from one
 `SubscriptionState` to another. Every action will always lead to the same target state,
 but there might be multiple actions leading to the same target state.
 An action might be allowed from any current state or only from a subset of all states.
@@ -28,7 +28,7 @@ from .exceptions import SubscriptionError, SubscriptionInfo
 
 
 @enum.unique
-class SubscriptionStates(enum.IntEnum):
+class SubscriptionState(enum.IntEnum):
     """All possible relations between a user and a subscription object.
 
     While some states are part of the core subscription machine and must be expected for
@@ -67,12 +67,12 @@ class SubscriptionStates(enum.IntEnum):
         return self in self.subscribing_states()
 
     @classmethod
-    def subscribing_states(cls) -> Set['SubscriptionStates']:
+    def subscribing_states(cls) -> Set['SubscriptionState']:
         """List of states which are considered subscribing."""
         return {cls.subscribed, cls.subscription_override, cls.implicit}
 
     @classmethod
-    def cleanup_protected_states(cls) -> Set['SubscriptionStates']:
+    def cleanup_protected_states(cls) -> Set['SubscriptionState']:
         """List of states which are not touched by `_do_cleanup`."""
         return _CLEANUP_PROTECTED_STATES
 
@@ -123,7 +123,7 @@ class SubscriptionPolicy(enum.IntEnum):
 
 
 @enum.unique
-class SubscriptionActions(enum.IntEnum):
+class SubscriptionAction(enum.IntEnum):
     """All possible actions a subscriber or moderator can take.
 
     You may choose to make only some of these available to your users or show some only
@@ -147,33 +147,33 @@ class SubscriptionActions(enum.IntEnum):
     cleanup_implicit = 51  #: An automatic cleanup of users being implicitly subscribed.
     # TODO: Add action for adding an implicit subscriber.
 
-    def get_target_state(self) -> Optional[SubscriptionStates]:
+    def get_target_state(self) -> Optional[SubscriptionState]:
         """Get the target state associated with an action.
 
         This is unique for each action. If None, a user will have no relation with the
         subscription object after the action has been performed.
         """
         action_target_state_map = {
-            self.subscribe: SubscriptionStates.subscribed,
-            self.unsubscribe: SubscriptionStates.unsubscribed,
-            self.request_subscription: SubscriptionStates.pending,
+            self.subscribe: SubscriptionState.subscribed,
+            self.unsubscribe: SubscriptionState.unsubscribed,
+            self.request_subscription: SubscriptionState.pending,
             self.cancel_request: None,
-            self.approve_request: SubscriptionStates.subscribed,
+            self.approve_request: SubscriptionState.subscribed,
             self.deny_request: None,
-            self.block_request: SubscriptionStates.unsubscription_override,
-            self.add_subscriber: SubscriptionStates.subscribed,
-            self.add_subscription_override: SubscriptionStates.subscription_override,
-            self.add_unsubscription_override: SubscriptionStates.unsubscription_override,
-            self.remove_subscriber: SubscriptionStates.unsubscribed,
-            self.remove_subscription_override: SubscriptionStates.subscribed,
-            self.remove_unsubscription_override: SubscriptionStates.unsubscribed,
+            self.block_request: SubscriptionState.unsubscription_override,
+            self.add_subscriber: SubscriptionState.subscribed,
+            self.add_subscription_override: SubscriptionState.subscription_override,
+            self.add_unsubscription_override: SubscriptionState.unsubscription_override,
+            self.remove_subscriber: SubscriptionState.unsubscribed,
+            self.remove_subscription_override: SubscriptionState.subscribed,
+            self.remove_unsubscription_override: SubscriptionState.unsubscribed,
             self.reset: None,
             self.cleanup_subscription: None,
             self.cleanup_implicit: None,
         }
         return action_target_state_map[self]
 
-    def get_error(self, state: Optional[SubscriptionStates]) -> Optional[SubscriptionError]:
+    def get_error(self, state: Optional[SubscriptionState]) -> Optional[SubscriptionError]:
         """Determine whether this action is allowed for the current state.
 
         :returns: `None` if the action is allowed, a `SubscriptionError` to be raised
@@ -182,7 +182,7 @@ class SubscriptionActions(enum.IntEnum):
         return _SUBSCRIPTION_ERROR_MATRIX[self][state]
 
     @classmethod
-    def unsubscribing_actions(cls) -> Set["SubscriptionActions"]:
+    def unsubscribing_actions(cls) -> Set["SubscriptionAction"]:
         """All actions that unsubscribe a user.
 
         While cleanup actions may remove a user's subscription from an object, they are
@@ -200,7 +200,7 @@ class SubscriptionActions(enum.IntEnum):
         return self in self.unsubscribing_actions()
 
     @classmethod
-    def managing_actions(cls) -> Set["SubscriptionActions"]:
+    def managing_actions(cls) -> Set["SubscriptionAction"]:
         """All actions that require additional privileges.
 
         These should only be made accessible to moderators.
@@ -223,15 +223,15 @@ class SubscriptionActions(enum.IntEnum):
         return self in self.managing_actions()
 
     @classmethod
-    def cleanup_actions(cls) -> Set["SubscriptionActions"]:
+    def cleanup_actions(cls) -> Set["SubscriptionAction"]:
         """All actions which are part of more involved cleanup procedures.
 
         These cannot be executed via `apply_action`, and should be executed via
         `do_cleanup` instead.
         """
         return {
-            SubscriptionActions.cleanup_subscription,
-            SubscriptionActions.cleanup_implicit,
+            SubscriptionAction.cleanup_subscription,
+            SubscriptionAction.cleanup_implicit,
         }
 
     def is_automatic(self) -> bool:
@@ -241,186 +241,186 @@ class SubscriptionActions(enum.IntEnum):
 
 # TODO: make these `Mapping`s, so they are immutable? It might be useful to be able to
 #  alter these.
-_StateErrorMapping = Mapping[Optional[SubscriptionStates], Optional[SubscriptionError]]
-_ActionStateErrorMatrix = Mapping[SubscriptionActions, _StateErrorMapping]
+_StateErrorMapping = Mapping[Optional[SubscriptionState], Optional[SubscriptionError]]
+_ActionStateErrorMatrix = Mapping[SubscriptionAction, _StateErrorMapping]
 
 # Errors are identical for all actions handling a subscription request.
 _SUBSCRIPTION_REQUEST_ERROR_MAPPING: _StateErrorMapping = {
-    SubscriptionStates.subscribed: SubscriptionError(_(
+    SubscriptionState.subscribed: SubscriptionError(_(
         "Not a pending subscription request.")),
-    SubscriptionStates.unsubscribed: SubscriptionError(_(
+    SubscriptionState.unsubscribed: SubscriptionError(_(
         "Not a pending subscription request.")),
-    SubscriptionStates.subscription_override: SubscriptionError(_(
+    SubscriptionState.subscription_override: SubscriptionError(_(
         "Not a pending subscription request.")),
-    SubscriptionStates.unsubscription_override: SubscriptionError(_(
+    SubscriptionState.unsubscription_override: SubscriptionError(_(
         "Not a pending subscription request.")),
-    SubscriptionStates.pending: None,
-    SubscriptionStates.implicit: SubscriptionError(_(
+    SubscriptionState.pending: None,
+    SubscriptionState.implicit: SubscriptionError(_(
         "Not a pending subscription request.")),
     None: SubscriptionError(_("Not a pending subscription request.")),
 }
 _SUBSCRIPTION_ERROR_MATRIX: _ActionStateErrorMatrix = {
-    SubscriptionActions.add_subscriber: {
-        SubscriptionStates.subscribed: SubscriptionInfo(_("User already subscribed.")),
-        SubscriptionStates.unsubscribed: None,
-        SubscriptionStates.subscription_override: SubscriptionInfo(_(
+    SubscriptionAction.add_subscriber: {
+        SubscriptionState.subscribed: SubscriptionInfo(_("User already subscribed.")),
+        SubscriptionState.unsubscribed: None,
+        SubscriptionState.subscription_override: SubscriptionInfo(_(
             "User already subscribed.")),
-        SubscriptionStates.unsubscription_override: SubscriptionError(_(
+        SubscriptionState.unsubscription_override: SubscriptionError(_(
             "User has been blocked. Remove override before subscribe.")),
-        SubscriptionStates.pending: SubscriptionError(_(
+        SubscriptionState.pending: SubscriptionError(_(
             "User has pending subscription request.")),
-        SubscriptionStates.implicit: SubscriptionInfo(_("User already subscribed.")),
+        SubscriptionState.implicit: SubscriptionInfo(_("User already subscribed.")),
         None: None
     },
-    SubscriptionActions.remove_subscriber: {
-        SubscriptionStates.subscribed: None,
-        SubscriptionStates.unsubscribed: SubscriptionInfo(_(
+    SubscriptionAction.remove_subscriber: {
+        SubscriptionState.subscribed: None,
+        SubscriptionState.unsubscribed: SubscriptionInfo(_(
             "User already unsubscribed.")),
-        SubscriptionStates.subscription_override: SubscriptionError(_(
+        SubscriptionState.subscription_override: SubscriptionError(_(
             "User cannot be removed. Remove override to change this.")),
-        SubscriptionStates.unsubscription_override: SubscriptionInfo(_(
+        SubscriptionState.unsubscription_override: SubscriptionInfo(_(
             "User already unsubscribed.")),
-        SubscriptionStates.pending: SubscriptionError(_(
+        SubscriptionState.pending: SubscriptionError(_(
             "User has pending subscription request.")),
-        SubscriptionStates.implicit: None,
+        SubscriptionState.implicit: None,
         None: SubscriptionInfo(_("User already unsubscribed.")),
     },
-    SubscriptionActions.add_subscription_override: {
-        SubscriptionStates.subscribed: None,
-        SubscriptionStates.unsubscribed: None,
-        SubscriptionStates.subscription_override: SubscriptionInfo(_(
+    SubscriptionAction.add_subscription_override: {
+        SubscriptionState.subscribed: None,
+        SubscriptionState.unsubscribed: None,
+        SubscriptionState.subscription_override: SubscriptionInfo(_(
             "User is already force-subscribed.")),
-        SubscriptionStates.unsubscription_override: None,
-        SubscriptionStates.pending: SubscriptionError(_(
+        SubscriptionState.unsubscription_override: None,
+        SubscriptionState.pending: SubscriptionError(_(
             "User has pending subscription request.")),
-        SubscriptionStates.implicit: None,
+        SubscriptionState.implicit: None,
         None: None,
     },
-    SubscriptionActions.remove_subscription_override: {
-        SubscriptionStates.subscribed: SubscriptionError(_(
+    SubscriptionAction.remove_subscription_override: {
+        SubscriptionState.subscribed: SubscriptionError(_(
             "User is not force-subscribed.")),
-        SubscriptionStates.unsubscribed: SubscriptionError(_(
+        SubscriptionState.unsubscribed: SubscriptionError(_(
             "User is not force-subscribed.")),
-        SubscriptionStates.subscription_override: None,
-        SubscriptionStates.unsubscription_override: SubscriptionError(_(
+        SubscriptionState.subscription_override: None,
+        SubscriptionState.unsubscription_override: SubscriptionError(_(
             "User is not force-subscribed.")),
-        SubscriptionStates.pending: SubscriptionError(_(
+        SubscriptionState.pending: SubscriptionError(_(
             "User is not force-subscribed.")),
-        SubscriptionStates.implicit: SubscriptionError(_(
+        SubscriptionState.implicit: SubscriptionError(_(
             "User is not force-subscribed.")),
         None: SubscriptionError(_("User is not force-subscribed.")),
     },
-    SubscriptionActions.add_unsubscription_override: {
-        SubscriptionStates.subscribed: None,
-        SubscriptionStates.unsubscribed: None,
-        SubscriptionStates.subscription_override: None,
-        SubscriptionStates.unsubscription_override: SubscriptionInfo(_(
+    SubscriptionAction.add_unsubscription_override: {
+        SubscriptionState.subscribed: None,
+        SubscriptionState.unsubscribed: None,
+        SubscriptionState.subscription_override: None,
+        SubscriptionState.unsubscription_override: SubscriptionInfo(_(
             "User has already been blocked.")),
-        SubscriptionStates.pending: SubscriptionError(_(
+        SubscriptionState.pending: SubscriptionError(_(
             "User has pending subscription request.")),
-        SubscriptionStates.implicit: None,
+        SubscriptionState.implicit: None,
         None: None,
     },
-    SubscriptionActions.remove_unsubscription_override: {
-        SubscriptionStates.subscribed: SubscriptionError(_(
+    SubscriptionAction.remove_unsubscription_override: {
+        SubscriptionState.subscribed: SubscriptionError(_(
             "User is not force-unsubscribed.")),
-        SubscriptionStates.unsubscribed: SubscriptionError(_(
+        SubscriptionState.unsubscribed: SubscriptionError(_(
             "User is not force-unsubscribed.")),
-        SubscriptionStates.subscription_override: SubscriptionError(_(
+        SubscriptionState.subscription_override: SubscriptionError(_(
             "User is not force-unsubscribed.")),
-        SubscriptionStates.unsubscription_override: None,
-        SubscriptionStates.pending: SubscriptionError(_(
+        SubscriptionState.unsubscription_override: None,
+        SubscriptionState.pending: SubscriptionError(_(
             "User is not force-unsubscribed.")),
-        SubscriptionStates.implicit: SubscriptionError(_(
+        SubscriptionState.implicit: SubscriptionError(_(
             "User is not force-unsubscribed.")),
         None: SubscriptionError(_("User is not force-unsubscribed.")),
     },
-    SubscriptionActions.subscribe: {
-        SubscriptionStates.subscribed: SubscriptionInfo(_(
+    SubscriptionAction.subscribe: {
+        SubscriptionState.subscribed: SubscriptionInfo(_(
             "You are already subscribed.")),
-        SubscriptionStates.unsubscribed: None,
-        SubscriptionStates.subscription_override: SubscriptionInfo(_(
+        SubscriptionState.unsubscribed: None,
+        SubscriptionState.subscription_override: SubscriptionInfo(_(
             "You are already subscribed.")),
-        SubscriptionStates.unsubscription_override: SubscriptionError(
+        SubscriptionState.unsubscription_override: SubscriptionError(
             _("Can not change subscription because you are blocked.")),
-        SubscriptionStates.pending: None,
-        SubscriptionStates.implicit: SubscriptionInfo(_("You are already subscribed.")),
+        SubscriptionState.pending: None,
+        SubscriptionState.implicit: SubscriptionInfo(_("You are already subscribed.")),
         None: None,
     },
-    SubscriptionActions.request_subscription: {
-        SubscriptionStates.subscribed: SubscriptionInfo(_(
+    SubscriptionAction.request_subscription: {
+        SubscriptionState.subscribed: SubscriptionInfo(_(
             "You are already subscribed.")),
-        SubscriptionStates.unsubscribed: None,
-        SubscriptionStates.subscription_override: SubscriptionInfo(_(
+        SubscriptionState.unsubscribed: None,
+        SubscriptionState.subscription_override: SubscriptionInfo(_(
             "You are already subscribed.")),
-        SubscriptionStates.unsubscription_override: SubscriptionError(_(
+        SubscriptionState.unsubscription_override: SubscriptionError(_(
             "Can not request subscription because you are blocked.")),
-        SubscriptionStates.pending: SubscriptionInfo(_(
+        SubscriptionState.pending: SubscriptionInfo(_(
             "You already requested subscription")),
-        SubscriptionStates.implicit: SubscriptionInfo(_(
+        SubscriptionState.implicit: SubscriptionInfo(_(
             "You are already subscribed.")),
         None: None,
     },
-    SubscriptionActions.unsubscribe: {
-        SubscriptionStates.subscribed: None,
-        SubscriptionStates.unsubscribed: SubscriptionInfo(_(
+    SubscriptionAction.unsubscribe: {
+        SubscriptionState.subscribed: None,
+        SubscriptionState.unsubscribed: SubscriptionInfo(_(
             "You are already unsubscribed.")),
         # subscription_override should only block you from being unsubscribed
         # automatically. A user is still able to unsubscribe manually.
         # (Unless the list is mandatory).
-        SubscriptionStates.subscription_override: None,
-        SubscriptionStates.unsubscription_override: SubscriptionInfo(_(
+        SubscriptionState.subscription_override: None,
+        SubscriptionState.unsubscription_override: SubscriptionInfo(_(
             "You are already unsubscribed.")),
-        SubscriptionStates.pending: SubscriptionInfo(_(
+        SubscriptionState.pending: SubscriptionInfo(_(
             "You are already unsubscribed.")),
-        SubscriptionStates.implicit: None,
+        SubscriptionState.implicit: None,
         None: SubscriptionInfo(_("You are already unsubscribed.")),
     },
-    SubscriptionActions.reset: {
-        SubscriptionStates.subscribed: None,
-        SubscriptionStates.unsubscribed: None,
-        SubscriptionStates.subscription_override: SubscriptionError(_(
+    SubscriptionAction.reset: {
+        SubscriptionState.subscribed: None,
+        SubscriptionState.unsubscribed: None,
+        SubscriptionState.subscription_override: SubscriptionError(_(
             "User is in override state. Remove them before reset.")),
-        SubscriptionStates.unsubscription_override: SubscriptionError(_(
+        SubscriptionState.unsubscription_override: SubscriptionError(_(
             "User is in override state. Remove them before reset.")),
-        SubscriptionStates.pending: SubscriptionError(_("User is not unsubscribed.")),
-        SubscriptionStates.implicit: None,
+        SubscriptionState.pending: SubscriptionError(_("User is not unsubscribed.")),
+        SubscriptionState.implicit: None,
         None: None,
     },
-    SubscriptionActions.cleanup_subscription: {
-        SubscriptionStates.subscribed: None,
-        SubscriptionStates.unsubscribed: SubscriptionError(_(
+    SubscriptionAction.cleanup_subscription: {
+        SubscriptionState.subscribed: None,
+        SubscriptionState.unsubscribed: SubscriptionError(_(
             "Unsubscriptions are protected against automatic cleanup.")),
-        SubscriptionStates.subscription_override: SubscriptionError(_(
+        SubscriptionState.subscription_override: SubscriptionError(_(
             "Overrides are protected against automatic cleanup.")),
-        SubscriptionStates.unsubscription_override: SubscriptionError(_(
+        SubscriptionState.unsubscription_override: SubscriptionError(_(
             "Overrides are protected against automatic cleanup.")),
-        SubscriptionStates.pending: SubscriptionError(_(
+        SubscriptionState.pending: SubscriptionError(_(
             "Pending requests are protected against automatic cleanup.")),
-        SubscriptionStates.implicit: None,
+        SubscriptionState.implicit: None,
         None: SubscriptionInfo(_("Subscription already cleaned up.")),
     },
-    SubscriptionActions.cleanup_implicit: {
-        SubscriptionStates.subscribed: SubscriptionError(_(
+    SubscriptionAction.cleanup_implicit: {
+        SubscriptionState.subscribed: SubscriptionError(_(
             "Subscriptions are protected against automatic implicit cleanup.")),
-        SubscriptionStates.unsubscribed: SubscriptionError(_(
+        SubscriptionState.unsubscribed: SubscriptionError(_(
             "Unsubscriptions are protected against automatic cleanup.")),
-        SubscriptionStates.subscription_override: SubscriptionError(_(
+        SubscriptionState.subscription_override: SubscriptionError(_(
             "Overrides are protected against automatic cleanup.")),
-        SubscriptionStates.unsubscription_override: SubscriptionError(_(
+        SubscriptionState.unsubscription_override: SubscriptionError(_(
             "Overrides are protected against automatic cleanup.")),
-        SubscriptionStates.pending: SubscriptionError(_(
+        SubscriptionState.pending: SubscriptionError(_(
             "Pending requests are protected against automatic cleanup.")),
-        SubscriptionStates.implicit: None,
+        SubscriptionState.implicit: None,
         None: SubscriptionInfo(_("Subscription already cleaned up.")),
     },
-    SubscriptionActions.approve_request: _SUBSCRIPTION_REQUEST_ERROR_MAPPING,
-    SubscriptionActions.block_request: _SUBSCRIPTION_REQUEST_ERROR_MAPPING,
-    SubscriptionActions.deny_request: _SUBSCRIPTION_REQUEST_ERROR_MAPPING,
-    SubscriptionActions.cancel_request: _SUBSCRIPTION_REQUEST_ERROR_MAPPING,
+    SubscriptionAction.approve_request: _SUBSCRIPTION_REQUEST_ERROR_MAPPING,
+    SubscriptionAction.block_request: _SUBSCRIPTION_REQUEST_ERROR_MAPPING,
+    SubscriptionAction.deny_request: _SUBSCRIPTION_REQUEST_ERROR_MAPPING,
+    SubscriptionAction.cancel_request: _SUBSCRIPTION_REQUEST_ERROR_MAPPING,
 }
 
 _CLEANUP_PROTECTED_STATES = {
-    state for state in SubscriptionStates
-    if SubscriptionActions.cleanup_subscription.get_error(state)
+    state for state in SubscriptionState
+    if SubscriptionAction.cleanup_subscription.get_error(state)
 }
