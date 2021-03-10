@@ -129,7 +129,7 @@
         {{ util.form_input_file(name="statement_file", label=gettext("Statement"), horizontal=False, accept="text/csv,.csv",
                 info=gettext("Directly paste the Bank Statement from Bank für Sozialwirtschaft here.")) }}
 
-        {{ util.form_input_submit(value=gettext("Parse"), horizontal=False) }}
+        {{ util.form_input_submit(label=gettext("Parse"), horizontal=False) }}
     </form>
 
     {% if data %}
@@ -176,7 +176,7 @@
             {% endfor %}
             <div id="submit-container">
             {{ util.form_input_checkbox(name="ignore_warnings", label=gettext("Ignore Warnings"), horizontal=False) }}
-            {{ util.form_input_submit(name="validate", value=gettext("Validate"), horizontal=False) }}
+            {{ util.form_input_submit(name="validate", label=gettext("Validate"), horizontal=False) }}
             {% if not params["has_error"] %}
                 <button type="submit" name="gnucash" value="gnucash" class="btn btn-primary">
                     {{ util.make_icon('download') }} {% trans %}GnuCash Download{% endtrans %}

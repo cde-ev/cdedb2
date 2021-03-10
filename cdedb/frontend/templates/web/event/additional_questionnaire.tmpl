@@ -52,7 +52,7 @@
             {{ util.print_questionnaire_entry(entry) }}
         {% endfor %}
         {% if not preview %}
-            {{ util.form_input_submit(value="Abschicken", cancellink=cdedblink("event/registration_status"),
+            {{ util.form_input_submit(label="Abschicken", cancellink=cdedblink("event/registration_status"),
                                       readonly=is_locked or ambience['event']['is_archived']) }}
         {% endif %}
     {% if preview %}

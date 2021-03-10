@@ -69,7 +69,7 @@
         {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="7", info=util.markdownhint) }}
 
 
-        {{ util.form_input_submit(value=gettext("Create User"), cancellink=cdedblink("{}/user_search".format(realm))) }}
+        {{ util.form_input_submit(label=gettext("Create User"), cancellink=cdedblink("{}/user_search".format(realm))) }}
     </form>
     <script nonce="{{ csp_nonce }}">
         $('#newuserform').cdedbProtectChanges();

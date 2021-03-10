@@ -43,7 +43,7 @@
                         small=True) }}
                 {{ util.form_input_checkboxes(name="target_realm", entries=myentries, label=gettext("Target Realm"),
                         radio=True, small=True) }}
-                {{ util.form_input_submit(value=gettext("Confirm"), small=True) }}
+                {{ util.form_input_submit(label=gettext("Confirm"), small=True) }}
             </form>
 
         {% else %}
@@ -94,7 +94,7 @@
                     {{ util.form_input_textarea(name="free_form", label=gettext("Miscellaneous"), rows="5",
                                                 info=util.markdownhint) }}
                 {% endif %}
-                {{ util.form_input_submit(value=gettext("Add Realm"),
+                {{ util.form_input_submit(label=gettext("Add Realm"),
                         cancellink=show_user_link(user, ambience['persona']['id'])) }}
             </form>
         {% endif %}

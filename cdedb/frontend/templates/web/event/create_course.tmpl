@@ -57,7 +57,7 @@
                                         "is activated in the configuration. Course instructors will be visible to "
                                         "event users.")) }}
 
-        {{ util.form_input_submit(value=gettext("Add"), cancellink=cdedblink('event/course_stats')) }}
+        {{ util.form_input_submit(label=gettext("Add"), cancellink=cdedblink('event/course_stats')) }}
     </form>
     <script nonce="{{ csp_nonce }}">
         $('#createcourseform').cdedbProtectChanges();

@@ -35,6 +35,6 @@
                                     info=(util.markdownhint + " "
                                           + gettext("Link to photo gallery (e.g. <https://user:pwd@example.cde>) with "
                                                     "http authentification information encoded")|escape)) }}
-        {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink("cde/show_past_event")) }}
+        {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("cde/show_past_event")) }}
     </form>
 {% endblock %}

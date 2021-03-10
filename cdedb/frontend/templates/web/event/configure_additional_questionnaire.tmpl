@@ -53,7 +53,7 @@
                 </button>
             </p>
         </div>
-        {{ util.input_submit(value=gettext("Save"), readonly=is_locked) }}
+        {{ util.input_submit(label=gettext("Save"), readonly=is_locked) }}
     </form>
     <script type="text/javascript" nonce="{{ csp_nonce }}">
         (function() {

@@ -17,6 +17,6 @@
         {{ util.form_input_static(label=gettext("User"), value=(data['given_names'] +" "+ data['family_name'])) }}
         {{ util.form_input_static(label=gettext("Old Email Address"), value=data['username']) }}
         {{ util.form_input_text(name="new_username", label=gettext("New Email Address"), type="email") }}
-        {{ util.form_input_submit(value=gettext("Edit Email Address"), cancellink=show_user_link(user, values['persona_id'])) }}
+        {{ util.form_input_submit(label=gettext("Edit Email Address"), cancellink=show_user_link(user, values['persona_id'])) }}
     </form>
 {% endblock %}

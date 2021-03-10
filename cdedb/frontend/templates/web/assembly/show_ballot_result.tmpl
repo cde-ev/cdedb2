@@ -206,7 +206,7 @@
                     </label></span>
                     {{ util.input_text(name="secret", anid="input-secret") }}
                     <div class="input-group-btn">
-                        {{ util.input_submit(value=gettext("Show Vote"), aclass="btn btn-success", icon="lock") }}
+                        {{ util.input_submit(label=gettext("Show Vote"), aclass="btn btn-success", icon="lock") }}
                     </div>
                 </div>
                 {{ util.output_errors('secret', wrapper=True) }}

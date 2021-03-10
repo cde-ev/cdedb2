@@ -519,7 +519,7 @@
     {%- endcall %}
 {%- endmacro %}
 
-{% macro input_submit(value="Save", name="submitform", anid=none, aclass='btn btn-primary', icon="check",
+{% macro input_submit(label="Save", value="True", name="submitform", anid=none, aclass='btn btn-primary', icon="check",
         readonly=False, title=none, ariahidden=false) %}
     <button{{ dict(
         type="submit",
@@ -527,23 +527,23 @@
         id=anid,
         class=aclass,
         title=title,
-        value="True",
+        value=value,
         disabled="disabled" if readonly,
         **{ "aria-hidden": "true" if ariahidden }
     )|xmlattr }}>
         {{ make_icon(icon) if icon }}
-        {{ value }}
+        {{ label }}
     </button>
 {%- endmacro %}
 
-{% macro form_input_submit(value="Save", name="submitform", readonly=False, anid=none,
+{% macro form_input_submit(label="Save", value="True", name="submitform", readonly=False, anid=none,
         aclass='btn btn-primary', icon="check", cancellink='', cancelvalue="Cancel",
         small=False, horizontal=True, differentiate_warnings=False, title=none) %}
     <div class="form-group mosp">
         <div{% if horizontal %} class="
             {{ "col-sm-offset-2 col-sm-10" if small else "col-sm-offset-4 col-sm-8" }}
         "{% endif %}>
-            {{- input_submit(gettext(value), name, anid, aclass, icon, readonly, title) }}
+            {{- input_submit(gettext(label), value, name, anid, aclass, icon, readonly, title) }}
             {% if differentiate_warnings and has_warnings() %}
                 {{ input_submit(gettext("Ignore Warnings"), name="ignore_warnings", anid=anid, aclass=aclass, icon=icon, readonly=readonly) }}
             {% endif %}
