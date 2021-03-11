@@ -11,7 +11,7 @@ from cdedb.common import (
     CdEDBObject, PERSONA_CDE_FIELDS, PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS,
     ArchiveError, PrivilegeError, RequestState, get_hash, merge_dicts, now, nearly_now
 )
-from cdedb.validation import _PERSONA_CDE_CREATION
+from cdedb.validation import PERSONA_CDE_CREATION
 from tests.common import (
     ANONYMOUS, BackendTest, USER_DICT, as_users, create_mock_image, prepsql,
 )
@@ -451,7 +451,7 @@ class TestCoreBackend(BackendTest):
             'is_assembly_realm': True,
         }
         persona = self.core.get_total_persona(self.key, persona_id)
-        reference = _PERSONA_CDE_CREATION()
+        reference = {**PERSONA_CDE_CREATION}
         for key in tuple(persona):
             if key not in reference and key != 'id':
                 del persona[key]
@@ -511,7 +511,7 @@ class TestCoreBackend(BackendTest):
 
     @as_users("vera")
     def test_meta_info(self, user: CdEDBObject) -> None:
-        expectation = self.sample_data['core.meta_info'][1]['info']
+        expectation = self.get_sample_datum('core.meta_info', 1)['info']
         self.assertEqual(expectation, self.core.get_meta_info(self.key))
         update = {
             'Finanzvorstand_Name': 'Zelda'
@@ -1103,8 +1103,8 @@ class TestCoreBackend(BackendTest):
         result = self.core.retrieve_log(self.key)
         self.assertEqual(core_log_expectation, result)
 
-        sample_entries = len(self.sample_data["core.changelog"])
-        changelog_expectation = (sample_entries + 1, (
+        total_entries = self.core.retrieve_changelog_meta(self.key)[0]
+        changelog_expectation = (total_entries, (
             # Committing the changed admin bits.
             {
                 'id': 1001,
@@ -1118,8 +1118,7 @@ class TestCoreBackend(BackendTest):
             },
         ))
         # Set offset to avoid selecting the Init. changelog entries
-        result = self.core.retrieve_changelog_meta(
-            self.key, offset=sample_entries)
+        result = self.core.retrieve_changelog_meta(self.key, offset=total_entries-1)
         self.assertEqual(changelog_expectation, result)
 
     @as_users("anton", "martin")

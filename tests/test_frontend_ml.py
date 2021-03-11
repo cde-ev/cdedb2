@@ -269,7 +269,7 @@ class TestMlFrontend(FrontendTest):
     @as_users("berta", "emilia", "annika", "nina")
     def test_hide_admin_notes(self, user: CdEDBObject) -> None:
         # CdElokal Hogwarts
-        ml_data = self.sample_data['ml.mailinglists'][65]
+        ml_data = self.get_sample_datum('ml.mailinglists', 65)
         self.traverse({'description': 'Mailinglisten'},
                       {'description': ml_data['title']})
         # Make sure that admin notes exist.
@@ -845,10 +845,10 @@ class TestMlFrontend(FrontendTest):
                 assembly_types.union(event_types)
             )}
         event_id = 1
-        event_title = self.sample_data['event.events'][event_id]['title']
+        event_title = self.get_sample_datum('event.events', event_id)['title']
         assembly_id = 1
-        assembly_title = self.sample_data[
-            'assembly.assemblies'][assembly_id]['title']
+        assembly_title = self.get_sample_datum(
+            'assembly.assemblies', assembly_id)['title']
 
         self.traverse({'description': 'Mailinglisten'},
                       {'description': 'Alle Mailinglisten'},
@@ -1141,7 +1141,7 @@ class TestMlFrontend(FrontendTest):
                       {"description": "CdE-Party 2050 Teilnehmer"},
                       {"description": "Konfiguration"})
 
-        old_ml = self.sample_data['ml.mailinglists'][60]
+        old_ml = self.get_sample_datum('ml.mailinglists', 60)
         f = self.response.forms['changelistform']
 
         # these properties are not allowed to be changed by moderators
@@ -1264,7 +1264,7 @@ class TestMlFrontend(FrontendTest):
     def test_cdelokal_admin(self, user: CdEDBObject) -> None:
         self.traverse({"description": "Mailinglisten"},
                       {"description": "Hogwarts"})
-        admin_note = self.sample_data['ml.mailinglists'][65]['notes']
+        admin_note = self.get_sample_datum('ml.mailinglists', 65)['notes']
         self.assertPresence(admin_note, div="adminnotes")
         self.traverse({"description": "Verwaltung"})
         f = self.response.forms['addmoderatorform']

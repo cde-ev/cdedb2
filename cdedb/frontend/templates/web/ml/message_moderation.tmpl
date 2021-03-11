@@ -53,7 +53,7 @@
                                 {% for action, coloring, icon in (('accept', 'success', 'check'),
                                                                   ('reject', 'warning', 'reply'),
                                                                   ('discard', 'danger', 'trash-alt')) %}
-                                    <button type="sumbit" name="action" value="{{ action }}"
+                                    <button type="submit" name="action" value="{{ action }}"
                                             class="{{ ("btn btn-xs btn-" + coloring) }}">
                                         {{ util.make_icon(icon) if icon }}
                                         {{ gettext(action.capitalize()) }}

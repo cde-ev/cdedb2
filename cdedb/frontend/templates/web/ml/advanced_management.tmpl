@@ -20,7 +20,7 @@
         {{ util.breadcrumb_link(cdedblink("ml/list_mailinglists"), gettext("All Mailinglists")) }}
     {% endif %}
     {{ util.breadcrumb_link(cdedblink("ml/show_mailinglist"), ambience['mailinglist']['title'], icon="envelope") }}
-    {{ util.breadcrumb_link(cdedblink("ml/show_subscription_details"), gettext("Advanced Management"), active=True) }}
+    {{ util.breadcrumb_link(cdedblink("ml/advanced_management"), gettext("Advanced Management"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">

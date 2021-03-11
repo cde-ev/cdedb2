@@ -1880,7 +1880,7 @@ CDEDB_EXPORT_EVENT_VERSION = 13
 #: If the partial export and import are unaffected the minor version may be
 #: incremented.
 #: If you increment this, it must be incremented in make_offline_vm.py as well.
-EVENT_SCHEMA_VERSION = (14, 1)
+EVENT_SCHEMA_VERSION = (15, 1)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3
@@ -2051,7 +2051,7 @@ EVENT_FIELDS = (
     "orga_address", "registration_text", "mail_text",
     "use_additional_questionnaire", "notes", "offline_lock", "is_visible",
     "is_course_list_visible", "is_course_state_visible",
-    "is_participant_list_visible", "courses_in_participant_list",
+    "is_participant_list_visible", "is_course_assignment_visible",
     "is_cancelled", "is_archived", "lodge_field", "camping_mat_field",
     "course_room_field")
 

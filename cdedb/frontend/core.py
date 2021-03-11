@@ -39,9 +39,9 @@ from cdedb.frontend.common import (
 )
 from cdedb.query import QUERY_SPECS, Query, QueryOperators, mangle_query_input
 from cdedb.validation import (
-    TypeMapping, _GENESIS_CASE_EXPOSED_FIELDS,
-    _PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
-    _PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS, validate_check,
+    TypeMapping, GENESIS_CASE_EXPOSED_FIELDS,
+    PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
+    PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS, validate_check,
 )
 from cdedb.validationtypes import CdedbID
 
@@ -1492,7 +1492,7 @@ class CoreFrontend(AbstractFrontend):
         return self.render(rs, "promote_user")
 
     @access("core_admin", modi={"POST"})
-    @REQUESTdatadict(*CDE_TRANSITION_FIELDS())
+    @REQUESTdatadict(*CDE_TRANSITION_FIELDS)
     @REQUESTdata("target_realm")
     def promote_user(self, rs: RequestState, persona_id: int,
                      target_realm: vtypes.Realm, data: CdEDBObject) -> Response:
@@ -1505,14 +1505,14 @@ class CoreFrontend(AbstractFrontend):
         merge_dicts(data, persona)
         # Specific fixes by target realm
         if target_realm == "cde":
-            reference = CDE_TRANSITION_FIELDS()
+            reference = {**CDE_TRANSITION_FIELDS}
             for key in ('trial_member', 'decided_search', 'bub_search'):
                 if data[key] is None:
                     data[key] = False
             if data['paper_expuls'] is None:
                 data['paper_expuls'] = True
         elif target_realm == "event":
-            reference = EVENT_TRANSITION_FIELDS()
+            reference = {**EVENT_TRANSITION_FIELDS}
         else:
             reference = {}
         for key in tuple(data.keys()):
@@ -2039,7 +2039,7 @@ class CoreFrontend(AbstractFrontend):
         })
 
     @access("anonymous", modi={"POST"})
-    @REQUESTdatadict(*_GENESIS_CASE_EXPOSED_FIELDS)
+    @REQUESTdatadict(*GENESIS_CASE_EXPOSED_FIELDS)
     @REQUESTfile("attachment")
     @REQUESTdata("attachment_filename", "ignore_warnings")
     def genesis_request(self, rs: RequestState, data: CdEDBObject,
@@ -2285,7 +2285,7 @@ class CoreFrontend(AbstractFrontend):
     @access("core_admin", *("{}_admin".format(realm)
                             for realm in REALM_SPECIFIC_GENESIS_FIELDS),
             modi={"POST"})
-    @REQUESTdatadict(*_GENESIS_CASE_EXPOSED_FIELDS)
+    @REQUESTdatadict(*GENESIS_CASE_EXPOSED_FIELDS)
     @REQUESTdata("ignore_warnings")
     def genesis_modify(self, rs: RequestState, genesis_case_id: int,
                        data: CdEDBObject, ignore_warnings: bool = False

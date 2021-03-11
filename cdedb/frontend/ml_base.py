@@ -29,7 +29,7 @@ from cdedb.ml_type_aux import (
 )
 from cdedb.query import QUERY_SPECS, Query, mangle_query_input
 from cdedb.validation import (
-    ALL_MAILINGLIST_FIELDS, _PERSONA_FULL_ML_CREATION, filter_none
+    ALL_MAILINGLIST_FIELDS, PERSONA_FULL_ML_CREATION, filter_none
 )
 
 
@@ -91,7 +91,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         return super().create_user_form(rs)
 
     @access("core_admin", "ml_admin", modi={"POST"})
-    @REQUESTdatadict(*filter_none(_PERSONA_FULL_ML_CREATION))
+    @REQUESTdatadict(*filter_none(PERSONA_FULL_ML_CREATION))
     def create_user(self, rs: RequestState, data: Dict[str, Any],
                     ignore_warnings: bool = False) -> Response:
         defaults = {
@@ -612,8 +612,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("ml")
     @mailinglist_guard()
-    def show_subscription_details(self, rs: RequestState,
-                                  mailinglist_id: int) -> Response:
+    def advanced_management(self, rs: RequestState, mailinglist_id: int) -> Response:
         """Render form."""
         subscription_overrides = self.mlproxy.get_subscription_states(
             rs, mailinglist_id,
@@ -643,7 +642,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                 all_unsubscriptions,
                 key=lambda anid: EntitySorter.persona(personas[anid])))
         privileged = self.mlproxy.may_manage(rs, mailinglist_id, privileged=True)
-        return self.render(rs, "show_subscription_details", {
+        return self.render(rs, "advanced_management", {
             'subscription_overrides': subscription_overrides,
             'unsubscription_overrides': unsubscription_overrides,
             'all_unsubscriptions': all_unsubscriptions,
@@ -750,12 +749,12 @@ class MlBaseFrontend(AbstractUserFrontend):
                       email: vtypes.Email) -> Response:
         """Allow address to write to the list."""
         if rs.has_validation_errors():
-            return self.show_subscription_details(rs, mailinglist_id)
+            return self.advanced_management(rs, mailinglist_id)
 
         whitelist = set(rs.ambience['mailinglist']['whitelist']) | {email}
         code = self.mlproxy.set_whitelist(rs, mailinglist_id, whitelist)
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "ml/show_subscription_details")
+        return self.redirect(rs, "ml/advanced_management")
 
     @access("ml", modi={"POST"})
     @mailinglist_guard()
@@ -764,12 +763,12 @@ class MlBaseFrontend(AbstractUserFrontend):
                          email: vtypes.Email) -> Response:
         """Withdraw privilege of writing to list."""
         if rs.has_validation_errors():
-            return self.show_subscription_details(rs, mailinglist_id)
+            return self.advanced_management(rs, mailinglist_id)
 
         whitelist = set(rs.ambience['mailinglist']['whitelist']) - {email}
         code = self.mlproxy.set_whitelist(rs, mailinglist_id, whitelist)
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "ml/show_subscription_details")
+        return self.redirect(rs, "ml/advanced_management")
 
     def _subscription_action_handler(self, rs: RequestState,
                                      action: SubscriptionActions,
@@ -907,14 +906,14 @@ class MlBaseFrontend(AbstractUserFrontend):
         unnecessarily confused, since we can not imagine a real use case for them here.
         """
         if rs.has_validation_errors():
-            return self.show_subscription_details(rs, mailinglist_id)
+            return self.advanced_management(rs, mailinglist_id)
         if not self.coreproxy.verify_id(rs, subscriber_id, is_archived=False):
             rs.notify("error", n_("User does not exist or is archived."))
-            return self.show_subscription_details(rs, mailinglist_id)
+            return self.advanced_management(rs, mailinglist_id)
         self._subscription_action_handler(
             rs, SubscriptionActions.add_subscriber,
             mailinglist_id=mailinglist_id, persona_id=subscriber_id)
-        return self.redirect(rs, "ml/show_subscription_details")
+        return self.redirect(rs, "ml/advanced_management")
 
     @access("ml", modi={"POST"})
     @mailinglist_guard(requires_privilege=True)
@@ -950,14 +949,14 @@ class MlBaseFrontend(AbstractUserFrontend):
         unnecessarily confused, since we can not imagine a real use case for them here.
         """
         if rs.has_validation_errors():
-            return self.show_subscription_details(rs, mailinglist_id)
+            return self.advanced_management(rs, mailinglist_id)
         if not self.coreproxy.verify_id(rs, unsubscription_id, is_archived=False):
             rs.notify("error", n_("User does not exist or is archived."))
-            return self.show_subscription_details(rs, mailinglist_id)
+            return self.advanced_management(rs, mailinglist_id)
         self._subscription_action_handler(
             rs, SubscriptionActions.reset_unsubscription,
             mailinglist_id=mailinglist_id, persona_id=unsubscription_id)
-        return self.redirect(rs, "ml/show_subscription_details")
+        return self.redirect(rs, "ml/advanced_management")
 
     @access("ml", modi={"POST"})
     @mailinglist_guard(requires_privilege=True)
@@ -966,14 +965,14 @@ class MlBaseFrontend(AbstractUserFrontend):
                                    modsubscriber_ids: vtypes.CdedbIDList) -> Response:
         """Administratively subscribe somebody with moderator override."""
         if rs.has_validation_errors():
-            return self.show_subscription_details(rs, mailinglist_id)
+            return self.advanced_management(rs, mailinglist_id)
         self._subscription_multi_action_handler(
             rs, 'modsubscriber_ids', SubscriptionActions.add_subscription_override,
             mailinglist_id=mailinglist_id, persona_ids=modsubscriber_ids)
         if rs.has_validation_errors():
-            return self.show_subscription_details(rs, mailinglist_id)
+            return self.advanced_management(rs, mailinglist_id)
         else:
-            return self.redirect(rs, "ml/show_subscription_details")
+            return self.redirect(rs, "ml/advanced_management")
 
     @access("ml", modi={"POST"})
     @mailinglist_guard(requires_privilege=True)
@@ -983,14 +982,14 @@ class MlBaseFrontend(AbstractUserFrontend):
                                      modsubscriber_id: vtypes.ID) -> Response:
         """Administratively remove somebody with moderator override."""
         if rs.has_validation_errors():
-            return self.show_subscription_details(rs, mailinglist_id)
+            return self.advanced_management(rs, mailinglist_id)
         if not self.coreproxy.verify_id(rs, modsubscriber_id, is_archived=False):
             rs.notify("error", n_("User does not exist or is archived."))
-            return self.show_subscription_details(rs, mailinglist_id)
+            return self.advanced_management(rs, mailinglist_id)
         self._subscription_action_handler(
             rs, SubscriptionActions.remove_subscription_override,
             mailinglist_id=mailinglist_id, persona_id=modsubscriber_id)
-        return self.redirect(rs, "ml/show_subscription_details")
+        return self.redirect(rs, "ml/advanced_management")
 
     @access("ml", modi={"POST"})
     @mailinglist_guard(requires_privilege=True)
@@ -1000,14 +999,14 @@ class MlBaseFrontend(AbstractUserFrontend):
                                      ) -> Response:
         """Administratively block somebody."""
         if rs.has_validation_errors():
-            return self.show_subscription_details(rs, mailinglist_id)
+            return self.advanced_management(rs, mailinglist_id)
         self._subscription_multi_action_handler(
             rs, 'modunsubscriber_ids', SubscriptionActions.add_unsubscription_override,
             mailinglist_id=mailinglist_id, persona_ids=modunsubscriber_ids)
         if rs.has_validation_errors():
-            return self.show_subscription_details(rs, mailinglist_id)
+            return self.advanced_management(rs, mailinglist_id)
         else:
-            return self.redirect(rs, "ml/show_subscription_details")
+            return self.redirect(rs, "ml/advanced_management")
 
     @access("ml", modi={"POST"})
     @mailinglist_guard(requires_privilege=True)
@@ -1017,14 +1016,14 @@ class MlBaseFrontend(AbstractUserFrontend):
                                        modunsubscriber_id: vtypes.ID) -> Response:
         """Administratively remove block."""
         if rs.has_validation_errors():
-            return self.show_subscription_details(rs, mailinglist_id)
+            return self.advanced_management(rs, mailinglist_id)
         if not self.coreproxy.verify_id(rs, modunsubscriber_id, is_archived=False):
             rs.notify("error", n_("User does not exist or is archived."))
-            return self.show_subscription_details(rs, mailinglist_id)
+            return self.advanced_management(rs, mailinglist_id)
         self._subscription_action_handler(
             rs, SubscriptionActions.remove_unsubscription_override,
             mailinglist_id=mailinglist_id, persona_id=modunsubscriber_id)
-        return self.redirect(rs, "ml/show_subscription_details")
+        return self.redirect(rs, "ml/advanced_management")
 
     @access("ml", modi={"POST"})
     def subscribe(self, rs: RequestState, mailinglist_id: int) -> Response:

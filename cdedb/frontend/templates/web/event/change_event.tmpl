@@ -58,10 +58,10 @@
         {{ util.form_input_checkbox(name="is_participant_list_visible", label=gettext("Visibility of the Participant List"),
                                 info=gettext("If checked, a participant list containg name, email, postal code and city is "
                                 "shown to all participants.")) }}
-        {{ util.form_input_checkbox(name="courses_in_participant_list", label=gettext("Show Courses in the Participant List"),
-                                info=gettext("If checked, the above mentioned participants list also includes "
-                                "assigned courses. This option is only usefull, if “Visibility of the Participant "
-                                "List” is checked.")) }}
+        {{ util.form_input_checkbox(name="is_course_assignment_visible", label=gettext("Visibility of Course Assignment"),
+                                info=gettext("If checked, the course assignment is shown to the participants. "
+                                "In particular, it is shown to each participant on the registration status and on the "
+                                "Participant List.")) }}
         {{ util.form_input_checkbox(name="is_cancelled", label=gettext("Cancellation of the event"),
                                 info=gettext("If checked, the event is shown as cancelled. This can be undone and has no "
                                 "further effects. Do not do this without consulting the chairmen of the CdE.")) }}

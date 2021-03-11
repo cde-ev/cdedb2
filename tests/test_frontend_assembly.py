@@ -1016,8 +1016,9 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
     @as_users("anton")
     def test_ballot_result_page(self, user: CdEDBObject) -> None:
         for ballot_id in self.CANONICAL_BALLOTS:
-            ballot = self.sample_data['assembly.ballots'][ballot_id]
-            assembly = self.sample_data['assembly.assemblies'][ballot['assembly_id']]
+            ballot = self.get_sample_datum('assembly.ballots', ballot_id)
+            assembly = self.get_sample_datum(
+                'assembly.assemblies', ballot['assembly_id'])
             self.get(f'/assembly/assembly/{assembly["id"]}/ballot/{ballot_id}/result')
             # redirect in case of tallying, extending etc
             self.follow()
