@@ -34,7 +34,7 @@ import pathlib
 import queue
 import tempfile
 import time
-from typing import List, NamedTuple, Optional, TYPE_CHECKING
+from typing import List, NamedTuple, Optional, Set, TYPE_CHECKING
 
 import webtest
 
@@ -59,8 +59,8 @@ DOUBLE_ESCAPE = "&amp;lt;"
 IGNORE_URL_PARAMS = {'confirm_id'}
 
 # Keep track of runtime data.
-visited_urls = set()
-posted_urls = set()
+visited_urls: Set[str] = set()
+posted_urls: Set[str] = set()
 
 
 def setup(dbname: str, storage_dir: str) -> webtest.TestApp:
