@@ -18,7 +18,14 @@
         </small>
     </h1>
 {% endblock %}
+{% block static_notifications %}
+    {{ super() }}
+    {% if not ambience['event']['participant_info'] %}
+        {% call util.notification('info') %}
+            {% trans %}Orgas can create something here via the configuration page.{% endtrans %}
+        {% endcall %}
+    {% endif %}
+{% endblock %}
 {% block content %}
-    {{ (ambience['event']['participant_info']
-        or gettext("_Orgas can create something here via the Configuration page._"))|md }}
+    {{ ambience['event']['participant_info']|md }}
 {% endblock %}
