@@ -436,14 +436,14 @@ class TestEventFrontend(FrontendTest):
 
         text"""
         f['use_additional_questionnaire'].checked = True
-        f['participant_notes'] = ""
+        f['participant_info'] = ""
         self.submit(f)
         self.assertTitle("Universale Akademie")
         self.assertNonPresence("30.10.2000")
         self.assertPresence("30.10.2001", div='timeframe-registration')
         # orgas
         self.assertNonPresence("Bertålotta")
-        # check visibility and hint text on empty participant_notes
+        # check visibility and hint text on empty participant_info
         self.traverse("Teilnehmer-Infos")
         self.assertTitle("Universale Akademie – Teilnehmer-Infos")
         self.assertPresence(

@@ -1,4 +1,4 @@
-{% set sidenav_active = 'participant_notes' %}
+{% set sidenav_active = 'participant_info' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
@@ -7,7 +7,7 @@
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon='chalkboard-teacher') }}
-    {{ util.breadcrumb_link(cdedblink("event/participant_notes"), gettext("Participant info"), active=True) }}
+    {{ util.breadcrumb_link(cdedblink("event/participant_info"), gettext("Participant info"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
@@ -19,6 +19,6 @@
     </h1>
 {% endblock %}
 {% block content %}
-    {{ (ambience['event']['participant_notes']
+    {{ (ambience['event']['participant_info']
         or gettext("_Orgas can create something here via the Configuration page._"))|md }}
 {% endblock %}

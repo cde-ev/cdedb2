@@ -105,7 +105,7 @@
 
         <h4 class="heading-underline">{% trans %}Additional information for participants{% endtrans %}</h4>
         {{ util.form_input_textarea(
-                name="participant_notes", label=gettext("Participant info"), rows="8",
+                name="participant_info", label=gettext("Participant info"), rows="8",
                 info=(util.markdownhint + " " + gettext("This is only for event-internal information. Any public"
                                                         " information should be placed on the website."))) }}
 

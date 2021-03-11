@@ -55,7 +55,7 @@ class TestEventBackend(BackendTest):
             'nonmember_surcharge': decimal.Decimal("6.66"),
             'registration_text': None,
             'mail_text': None,
-            'participant_notes': """Welcome to our
+            'participant_info': """Welcome to our
 
             **new**
             and

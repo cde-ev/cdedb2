@@ -24,10 +24,10 @@
                     readonly=is_locked, aclass="list-group-item", icon="sign-in-alt",
                     active=(sidenav_active == 'event_register')) }}
         {% endif %}
-        {% if (is_participant and data['participant_notes']) or data['id'] in user.orga or 'event_orga' in user.admin_views %}
-            {{ util.href(cdedblink("event/participant_notes", {"event_id": data['id']}),
+        {% if (is_participant and data['participant_info']) or data['id'] in user.orga or 'event_orga' in user.admin_views %}
+            {{ util.href(cdedblink("event/participant_info", {"event_id": data['id']}),
                          gettext("Participant info"), aclass='list-group-item', icon='info',
-                         active=(sidenav_active == 'participant_notes')) }}
+                         active=(sidenav_active == 'participant_info')) }}
         {% endif %}
         {% if (data['is_participant_list_visible'] and is_participant) or data['id'] in user.orga or 'event_orga' in user.admin_views %}
             {{ util.href(cdedblink("event/participant_list", {"event_id": data['id']}), gettext("Participant list"),

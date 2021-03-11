@@ -392,12 +392,12 @@ class EventFrontend(AbstractUserFrontend):
         }
 
     @access("event")
-    def participant_notes(self, rs: RequestState, event_id: int) -> Response:
-        """Display the `participant_notes`, accessible only to participants."""
+    def participant_info(self, rs: RequestState, event_id: int) -> Response:
+        """Display the `participant_info`, accessible only to participants."""
         if not (event_id in rs.user.orga or self.is_admin(rs)
                 or self._get_participant_registration(rs, event_id)):
             return self.redirect(rs, "event/show_event")
-        return self.render(rs, "participant_notes")
+        return self.render(rs, "participant_info")
 
     @access("event")
     @event_guard()

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2021-03-09 17:08+0000\n"
+"POT-Creation-Date: 2021-03-11 13:52+0000\n"
 "PO-Revision-Date: 2020-12-06 11:30+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -4036,7 +4036,7 @@ msgstr "Versammlung anlegen"
 #: cdedb/frontend/templates/web/event/change_event.tmpl:14
 #: cdedb/frontend/templates/web/event/change_event.tmpl:18
 #: cdedb/frontend/templates/web/event/change_event.tmpl:19
-#: cdedb/frontend/templates/web/event/participant_notes.tmpl:16
+#: cdedb/frontend/templates/web/event/participant_info.tmpl:16
 #: cdedb/frontend/templates/web/ml/base.tmpl:22
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:20
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:24
@@ -9072,8 +9072,8 @@ msgstr "Kursliste"
 
 #: cdedb/frontend/templates/web/event/base.tmpl:29
 #: cdedb/frontend/templates/web/event/change_event.tmpl:108
-#: cdedb/frontend/templates/web/event/participant_notes.tmpl:5
-#: cdedb/frontend/templates/web/event/participant_notes.tmpl:10
+#: cdedb/frontend/templates/web/event/participant_info.tmpl:5
+#: cdedb/frontend/templates/web/event/participant_info.tmpl:10
 msgid "Participant info"
 msgstr "Teilnehmer-Infos"
 
@@ -9565,7 +9565,7 @@ msgstr ""
 "wird für PDF-Teilnehmerlisten und -Namensschilder verwendet. Feldtyp: Text"
 
 #: cdedb/frontend/templates/web/event/change_event.tmpl:106
-#: cdedb/frontend/templates/web/event/participant_notes.tmpl:14
+#: cdedb/frontend/templates/web/event/participant_info.tmpl:14
 msgid "Additional information for participants"
 msgstr "Zusätzliche Informationen für Teilnehmer"
 
@@ -11001,6 +11001,10 @@ msgstr ""
 msgid "Apply changes"
 msgstr "Änderungen anwenden"
 
+#: cdedb/frontend/templates/web/event/participant_info.tmpl:23
+msgid "_Orgas can create something here via the Configuration page._"
+msgstr "_Orgas können über die Konfigurations-Seite hier etwas hinzufügen._"
+
 #: cdedb/frontend/templates/web/event/participant_list.tmpl:5
 #, python-format
 msgid "Participant List %(title)s"
@@ -11035,10 +11039,6 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/participant_list.tmpl:204
 msgid "There are no participants yet."
 msgstr "Bisher gibt es keine Teilnehmer."
-
-#: cdedb/frontend/templates/web/event/participant_notes.tmpl:23
-msgid "_Orgas can create something here via the Configuration page._"
-msgstr "_Orgas können über die Konfigurations-Seite hier etwas hinzufügen._"
 
 #: cdedb/frontend/templates/web/event/register.tmpl:7
 #, python-format
