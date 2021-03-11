@@ -25,11 +25,11 @@
     </h1>
 {% endblock %}
 {% block static_notifications %}
-    {% if not privileged %}
+    {% if restricted %}
         {% call util.notification('info') %}
-            {% trans link = util.href(docurl("Handbuch_Moderator", anchor="privilegierte-moderatoren"),
-                                      gettext("privileged moderator access"))|s %}
-                You do not have %(link)s and may not change subscriptions.
+            {% trans link = util.href(docurl("Handbuch_Moderator", anchor="eingeschränkte-moderatoren"),
+                                      gettext("restricted moderator access"))|s %}
+                You only have %(link)s and may not change subscriptions.
             {% endtrans %}
         {% endcall %}
     {% endif %}
@@ -110,7 +110,7 @@
                     {% for request, persona in requests.items() %} {# This is already sorted. #}
                         <li class="hide-hover-container clearfix-after">
                             {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
-                            {% if privileged %}
+                            {% if not restricted %}
                             <div class="nowrap display-inline">
                                 {# TODO consider merging endpoints and use a single form - would enable usage of btn-group #}
                                 <form action="{{ cdedblink('ml/approve_request') }}"
@@ -161,7 +161,7 @@
                 Use the {{ link }} site instead. People who are already subscribed are not proposed for adding.
             {% endtrans %}
         </p>
-    {% if privileged %}
+    {% if not restricted %}
     <form action="{{ cdedblink('ml/add_subscribers') }}" method="POST"
           id="addsubscriberform" class="p">
         {{ util.anti_csrf_token('ml/add_subscribers') }}
@@ -193,7 +193,7 @@
                         <li class="hide-hover-container clearfix-after">
                             {{ util.persona_anchor(subscribers[subscriber], ml_id=ambience['mailinglist']['id']) }}
                             {% if subscriber in explicits %}({{ explicits[subscriber] }}){% endif %}
-                            {% if privileged %}
+                            {% if not restricted %}
                                 <form action="{{ cdedblink('ml/remove_subscriber') }}"
                                       method="POST"
                                       id="removesubscriberform{{ subscriber }}"

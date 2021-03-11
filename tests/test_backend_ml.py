@@ -334,7 +334,7 @@ class TestMlBackend(BackendTest):
         expectation.update(mod_mdata)
         self.assertLess(0, self.ml.set_mailinglist(self.key, mod_mdata))
 
-        # ... but only privileged moderators (here: orgas) may change these.
+        # ... but only full moderators (here: orgas) may change these.
         if user == USER_DICT['janis']:
             with self.assertRaises(PrivilegeError):
                 self.ml.set_mailinglist(self.key, privileged_mod_mdata)

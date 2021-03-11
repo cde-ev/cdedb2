@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2021-03-10 02:27+0100\n"
+"POT-Creation-Date: 2021-03-11 02:08+0100\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -36,7 +36,7 @@ msgstr ""
 
 #: cdedb/backend/assembly.py:295 cdedb/backend/cde.py:1078
 #: cdedb/backend/core.py:2871 cdedb/backend/event.py:918
-#: cdedb/backend/ml.py:305 cdedb/backend/past_event.py:788
+#: cdedb/backend/ml.py:303 cdedb/backend/past_event.py:788
 msgid "Bad scope."
 msgstr ""
 
@@ -87,10 +87,10 @@ msgstr ""
 #: cdedb/backend/event.py:3555 cdedb/backend/event.py:3648
 #: cdedb/backend/event.py:3679 cdedb/backend/event.py:3703
 #: cdedb/backend/event.py:3852 cdedb/backend/event.py:3935
-#: cdedb/backend/event.py:4115 cdedb/backend/ml.py:163 cdedb/backend/ml.py:276
-#: cdedb/backend/ml.py:473 cdedb/backend/ml.py:645 cdedb/backend/ml.py:691
-#: cdedb/backend/ml.py:919 cdedb/backend/ml.py:945 cdedb/backend/ml.py:976
-#: cdedb/backend/ml.py:1053 cdedb/backend/ml.py:1119 cdedb/backend/ml.py:1237
+#: cdedb/backend/event.py:4115 cdedb/backend/ml.py:161 cdedb/backend/ml.py:274
+#: cdedb/backend/ml.py:471 cdedb/backend/ml.py:642 cdedb/backend/ml.py:688
+#: cdedb/backend/ml.py:917 cdedb/backend/ml.py:943 cdedb/backend/ml.py:974
+#: cdedb/backend/ml.py:1051 cdedb/backend/ml.py:1117
 #: cdedb/frontend/assembly.py:202 cdedb/frontend/assembly.py:607
 #: cdedb/frontend/assembly.py:688 cdedb/frontend/assembly.py:745
 #: cdedb/frontend/assembly.py:765 cdedb/frontend/assembly.py:1094
@@ -124,10 +124,10 @@ msgstr ""
 msgid "Cannot alter assembly presiders after assembly has been concluded."
 msgstr ""
 
-#: cdedb/backend/assembly.py:547 cdedb/backend/ml.py:428
+#: cdedb/backend/assembly.py:547 cdedb/backend/ml.py:426
 #: cdedb/frontend/assembly.py:263 cdedb/frontend/assembly.py:434
 #: cdedb/frontend/event.py:1184 cdedb/frontend/ml_base.py:249
-#: cdedb/frontend/ml_base.py:659 cdedb/frontend/ml_base.py:751
+#: cdedb/frontend/ml_base.py:662 cdedb/frontend/ml_base.py:754
 msgid "Some of these users do not exist or are archived."
 msgstr ""
 
@@ -153,7 +153,7 @@ msgstr ""
 #: cdedb/backend/event.py:2418 cdedb/backend/event.py:3105
 #: cdedb/backend/event.py:3136 cdedb/backend/event.py:3377
 #: cdedb/backend/event.py:3406 cdedb/backend/event.py:3564
-#: cdedb/backend/event.py:3588 cdedb/backend/ml.py:698 cdedb/backend/ml.py:734
+#: cdedb/backend/event.py:3588 cdedb/backend/ml.py:695 cdedb/backend/ml.py:731
 #: cdedb/backend/past_event.py:340 cdedb/backend/past_event.py:371
 #: cdedb/backend/past_event.py:470
 #, python-format
@@ -952,49 +952,53 @@ msgstr ""
 msgid "Different mailinglists specified."
 msgstr ""
 
-#: cdedb/backend/ml.py:423
+#: cdedb/backend/ml.py:421
 msgid "Cannot remove all moderators."
 msgstr ""
 
-#: cdedb/backend/ml.py:431 cdedb/frontend/ml_base.py:253
-#: cdedb/frontend/ml_base.py:663
+#: cdedb/backend/ml.py:429 cdedb/frontend/ml_base.py:253
+#: cdedb/frontend/ml_base.py:666
 msgid "Some of these users are not ml users."
 msgstr ""
 
-#: cdedb/backend/ml.py:549
+#: cdedb/backend/ml.py:547
 msgid "Need to be moderator or admin to change mailinglist."
 msgstr ""
 
-#: cdedb/backend/ml.py:552
+#: cdedb/backend/ml.py:550
 msgid "Need to be admin to change this."
 msgstr ""
 
-#: cdedb/backend/ml.py:554
-msgid "Need to be privileged moderator to change this."
+#: cdedb/backend/ml.py:552
+msgid "Restricted moderators are not allowed to change this."
 msgstr ""
 
-#: cdedb/backend/ml.py:624
+#: cdedb/backend/ml.py:621
 msgid "Non-unique mailinglist name"
 msgstr ""
 
-#: cdedb/backend/ml.py:892
+#: cdedb/backend/ml.py:890
 msgid "User has no means to access this list."
 msgstr ""
 
-#: cdedb/backend/ml.py:896
+#: cdedb/backend/ml.py:894
 msgid "Can not subscribe."
 msgstr ""
 
-#: cdedb/backend/ml.py:899
+#: cdedb/backend/ml.py:897
 msgid "Can not unsubscribe."
 msgstr ""
 
-#: cdedb/backend/ml.py:902
+#: cdedb/backend/ml.py:900
 msgid "Can not request subscription."
 msgstr ""
 
-#: cdedb/backend/ml.py:905
+#: cdedb/backend/ml.py:903
 msgid "Can not reset unsubscription."
+msgstr ""
+
+#: cdedb/backend/ml.py:1235
+msgid "Moderator access has been restricted."
 msgstr ""
 
 #: cdedb/backend/past_event.py:187
@@ -1276,7 +1280,7 @@ msgstr ""
 
 #: cdedb/frontend/assembly.py:273 cdedb/frontend/assembly.py:288
 #: cdedb/frontend/event.py:483 cdedb/frontend/event.py:499
-#: cdedb/frontend/ml_base.py:670 cdedb/frontend/ml_base.py:780
+#: cdedb/frontend/ml_base.py:673 cdedb/frontend/ml_base.py:783
 msgid "Action had no effect."
 msgstr ""
 
@@ -1323,7 +1327,7 @@ msgstr ""
 #: cdedb/frontend/core.py:2440 cdedb/frontend/core.py:2473
 #: cdedb/frontend/event.py:1375 cdedb/frontend/event.py:4197
 #: cdedb/frontend/event.py:4813 cdedb/frontend/event.py:6183
-#: cdedb/frontend/event.py:6215 cdedb/frontend/ml_base.py:488
+#: cdedb/frontend/event.py:6215 cdedb/frontend/ml_base.py:489
 msgid "Must be checked."
 msgstr ""
 
@@ -1351,7 +1355,7 @@ msgstr ""
 #: cdedb/frontend/event.py:2678 cdedb/frontend/event.py:2752
 #: cdedb/frontend/event.py:2775 cdedb/frontend/event.py:2800
 #: cdedb/frontend/event.py:2823 cdedb/frontend/event.py:2837
-#: cdedb/frontend/ml_base.py:614
+#: cdedb/frontend/ml_base.py:617
 msgid "Empty File."
 msgstr ""
 
@@ -1845,7 +1849,7 @@ msgstr ""
 
 #: cdedb/frontend/common.py:2396
 msgid ""
-"You do not have privileged moderator access and may not change subscriptions."
+"You only have restricted moderator access and may not change subscriptions."
 msgstr ""
 
 #: cdedb/frontend/common.py:2401
@@ -2982,38 +2986,38 @@ msgstr ""
 msgid "Not privileged to view log for all these mailinglists."
 msgstr ""
 
-#: cdedb/frontend/ml_base.py:682
+#: cdedb/frontend/ml_base.py:685
 msgid "User is no moderator."
 msgstr ""
 
-#: cdedb/frontend/ml_base.py:688
+#: cdedb/frontend/ml_base.py:691
 msgid "Not allowed to remove yourself as moderator."
 msgstr ""
 
-#: cdedb/frontend/ml_base.py:693
+#: cdedb/frontend/ml_base.py:696
 msgid "Cannot remove last moderator."
 msgstr ""
 
-#: cdedb/frontend/ml_base.py:736 cdedb/frontend/ml_base.py:778
+#: cdedb/frontend/ml_base.py:739 cdedb/frontend/ml_base.py:781
 msgid "Not privileged to change subscriptions."
 msgstr ""
 
-#: cdedb/frontend/ml_base.py:793 cdedb/frontend/ml_base.py:809
-#: cdedb/frontend/ml_base.py:825 cdedb/frontend/ml_base.py:865
-#: cdedb/frontend/ml_base.py:881 cdedb/frontend/ml_base.py:908
-#: cdedb/frontend/ml_base.py:941 cdedb/frontend/ml_base.py:975
+#: cdedb/frontend/ml_base.py:796 cdedb/frontend/ml_base.py:812
+#: cdedb/frontend/ml_base.py:828 cdedb/frontend/ml_base.py:868
+#: cdedb/frontend/ml_base.py:884 cdedb/frontend/ml_base.py:911
+#: cdedb/frontend/ml_base.py:944 cdedb/frontend/ml_base.py:978
 msgid "User does not exist or is archived."
 msgstr ""
 
-#: cdedb/frontend/ml_base.py:1056
+#: cdedb/frontend/ml_base.py:1059
 msgid "Confirmation email sent."
 msgstr ""
 
-#: cdedb/frontend/ml_base.py:1090
+#: cdedb/frontend/ml_base.py:1093
 msgid "Not subscribed."
 msgstr ""
 
-#: cdedb/frontend/ml_base.py:1093
+#: cdedb/frontend/ml_base.py:1096
 msgid "Disallowed to change address."
 msgstr ""
 
@@ -11456,13 +11460,13 @@ msgstr ""
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:33
 #: cdedb/frontend/templates/web/ml/management.tmpl:30
 #, python-format
-msgid "You do not have %(link)s and may not change subscriptions."
+msgid "You only have %(link)s and may not change subscriptions."
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:35
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:34
 #: cdedb/frontend/templates/web/ml/management.tmpl:31
-msgid "privileged moderator access"
+msgid "restricted moderator access"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:44
@@ -13427,15 +13431,15 @@ msgstr ""
 msgid "Cannot determine full address for %(input)s."
 msgstr ""
 
-#: cdedb/ml_type_aux.py:436 cdedb/ml_type_aux.py:500
+#: cdedb/ml_type_aux.py:437 cdedb/ml_type_aux.py:501
 msgid "No implicit subscribers possible for legacy event list."
 msgstr ""
 
-#: cdedb/ml_type_aux.py:707
+#: cdedb/ml_type_aux.py:708
 msgid "Cannot determine ml_type from {}"
 msgstr ""
 
-#: cdedb/ml_type_aux.py:721
+#: cdedb/ml_type_aux.py:722
 #, python-format
 msgid "%(ml_type)s is not an appropriate type for this mailinglist."
 msgstr ""

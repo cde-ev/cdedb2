@@ -881,7 +881,7 @@ class CoreFrontend(AbstractFrontend):
                     "Must provide id of the associated mailinglist to use this kind."))
             # In this case, the return value depends on the respective mailinglist.
             mailinglist = self.mlproxy.get_mailinglist(rs, aux)
-            if not self.mlproxy.may_manage(rs, aux, privileged=True):
+            if not self.mlproxy.may_manage(rs, aux, allow_restricted=False):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append(
                 ("is_ml_realm", QueryOperators.equal, True))
