@@ -2,7 +2,7 @@
     "CDEDB_EXPORT_EVENT_VERSION": 13,
     "EVENT_SCHEMA_VERSION": [
         15,
-        1
+        2
     ],
     "kind": "partial",
     "id": 1,

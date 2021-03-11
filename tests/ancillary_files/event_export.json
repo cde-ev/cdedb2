@@ -392,7 +392,7 @@
     },
     "EVENT_SCHEMA_VERSION": [
         15,
-        1
+        2
     ],
     "CDEDB_EXPORT_EVENT_VERSION": 13,
     "event.registration_parts": {

@@ -648,7 +648,7 @@ CREATE TABLE event.events (
         orga_address                 varchar,
         registration_text            varchar,
         mail_text                    varchar,
-        -- the nex one is only visible to participants
+        -- the next one is only visible to participants
         participant_info            varchar,
         use_additional_questionnaire boolean NOT NULL DEFAULT False,
         -- orga remarks
