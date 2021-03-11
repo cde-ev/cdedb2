@@ -180,7 +180,7 @@
             {% if not params["has_error"] %}
                 {{ util.input_submit(label=gettext("GnuCash Download"), value="gnucash", name="gnucash", icon='download') }}
                 {% for account in params["accounts"]|sort %}
-                    {{ util.input_submit(label=gettext("Excel Download"), value=account, name="excel", icon='download') }}
+                    {{ util.input_submit(label=(gettext("Excel Download") + " " + account), value=account, name="excel", icon='download') }}
                 {% endfor %}
                 {% if params["memberships"] %}
                     {{ util.input_submit(label=gettext("Download Membership Fees"), value="membership",
