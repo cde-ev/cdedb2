@@ -1243,12 +1243,12 @@ etc;anything else""", f['entries_2'].value)
     def test_register(self, user: CdEDBObject) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'})
-        # check error message for unregistered users
+        # check participant info page for unregistered users
         participant_info_url = '/event/event/1/notes'
         self.get(participant_info_url)
         self.follow()
         self.assertTitle("Große Testakademie 2222")
-        self.assertPresence("Nicht für Veranstaltung angemeldet", div='notifications')
+        self.assertPresence("Kein Teilnehmer der Veranstaltung.", div='notifications')
 
         # now, start registration testing
         surcharge = "Da Du kein CdE-Mitglied bist, musst du einen zusätzlichen Beitrag"
