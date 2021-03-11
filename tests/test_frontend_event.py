@@ -447,7 +447,8 @@ class TestEventFrontend(FrontendTest):
         self.traverse("Teilnehmer-Infos")
         self.assertTitle("Universale Akademie – Teilnehmer-Infos")
         self.assertPresence(
-            "Orgas können über die Konfigurations-Seite hier etwas hinzufügen")
+            "Orgas können über die Konfigurations-Seite hier etwas hinzufügen",
+            div='static-notifications')
         self.traverse("Übersicht")
         if user in (USER_DICT['ferdinand'], USER_DICT['annika']):
             f = self.response.forms['addorgaform']
