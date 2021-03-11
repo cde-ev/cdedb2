@@ -473,6 +473,7 @@ CREATE TABLE cde.lastschrift (
         -- validity
         granted_at              timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
         revoked_at              timestamp WITH TIME ZONE DEFAULT NULL,
+        -- administrative comments
         notes                   varchar
 );
 CREATE INDEX idx_lastschrift_persona_id ON cde.lastschrift(persona_id);
@@ -565,7 +566,7 @@ CREATE TABLE past_event.events (
         --
         -- Note, that this is not present in event.events.
         tempus                  date NOT NULL,
-        -- Information only visible to participants.
+        -- Information only visible to participants. (TODO rename)
         notes                   varchar
 );
 GRANT SELECT (id, title, shortname, tempus) ON past_event.events TO cdb_persona;
@@ -650,6 +651,7 @@ CREATE TABLE event.events (
         -- the nex one is only visible to participants
         participant_info            varchar,
         use_additional_questionnaire boolean NOT NULL DEFAULT False,
+        -- orga remarks
         notes                        varchar,
         offline_lock                 boolean NOT NULL DEFAULT False,
         is_visible                   boolean NOT NULL DEFAULT False, -- this is purely cosmetical
@@ -760,6 +762,7 @@ CREATE TABLE event.courses (
         instructors             varchar,
         min_size                integer,
         max_size                integer,
+        -- orga remarks
         notes                   varchar,
         -- additional data, customized by each orga team
         fields                  jsonb NOT NULL DEFAULT '{}'::jsonb
@@ -808,6 +811,7 @@ CREATE TABLE event.lodgements (
         regular_capacity        integer NOT NULL,
         -- number of people which can be accommodated with reduced comfort
         camping_mat_capacity    integer NOT NULL DEFAULT 0,
+        -- orga remarks
         notes                   varchar,
         group_id                integer REFERENCES event.lodgement_groups(id),
         -- additional data, customized by each orga team
@@ -828,7 +832,9 @@ CREATE TABLE event.registrations (
         real_persona_id         integer DEFAULT NULL,
         event_id                integer NOT NULL REFERENCES event.events(id),
 
+        -- participant freeform info
         notes                   varchar,
+        -- orga remarks
         orga_notes              varchar DEFAULT NULL,
         payment                 date DEFAULT NULL,
         amount_paid             numeric(8, 2) NOT NULL DEFAULT 0,
@@ -941,6 +947,7 @@ CREATE TABLE assembly.assemblies (
         -- concluded assemblies get deactivated and all related secrets are
         -- purged
         is_active               boolean NOT NULL DEFAULT True,
+        -- administrative comments
         notes                   varchar
 );
 GRANT SELECT ON assembly.assemblies TO cdb_persona;
@@ -999,6 +1006,7 @@ CREATE TABLE assembly.ballots (
         votes                   integer DEFAULT NULL,
         -- True after creation of the result summary file
         is_tallied              boolean NOT NULL DEFAULT False,
+        -- administrative comments
         notes                   varchar
 );
 CREATE INDEX idx_ballots_assembly_id ON assembly.ballots(assembly_id);
@@ -1131,6 +1139,7 @@ CREATE TABLE ml.mailinglists (
         -- in kB
         maxsize                 integer,
         is_active               boolean NOT NULL,
+        -- administrative comments
         notes                   varchar,
         -- Define a list X as gateway for this list, that is everybody
         -- subscribed to X may subscribe to this list (only useful with a

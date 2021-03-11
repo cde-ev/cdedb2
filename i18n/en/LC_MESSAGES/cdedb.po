@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2021-03-11 13:52+0000\n"
+"POT-Creation-Date: 2021-03-11 15:33+0000\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -3533,8 +3533,10 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:85
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:176
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:96
 msgid ""
-"<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>"
+"<a href='https://en.wikipedia.org/w/index.php?curid=680729'>Schulze method</"
+"a>"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:85
@@ -4555,12 +4557,6 @@ msgid ""
 "We allow you to verify every voting which has taken place in the CdEDB. For "
 "this, we offer you a download JSON file containing every information about a "
 "tallied ballot which is stored in the DB."
-msgstr ""
-
-#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:96
-msgid ""
-"<a href='https://en.wikipedia.org/w/index.php?"
-"title=Schulze_method&oldid=904460701'>Schulze method</a>"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:96
