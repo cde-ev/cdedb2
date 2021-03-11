@@ -64,6 +64,7 @@ posted_urls = set()
 
 
 def setup(dbname: str, storage_dir: str) -> webtest.TestApp:
+    """Prepare the application."""
     check_test_setup()
     with tempfile.NamedTemporaryFile("w", suffix=".py") as f:
         f.write(f"import pathlib\n"
@@ -74,14 +75,14 @@ def setup(dbname: str, storage_dir: str) -> webtest.TestApp:
 
 
 def main() -> int:
-    outdir = pathlib.Path('./out')
-
+    """Iterate over all visible page links and check them for the xss payload."""
     parser = argparse.ArgumentParser(
         description="Insert XSS payload into database, then traverse all sites to make"
                     " sure it is escaped properly.")
 
     parser.add_argument("--dbname", "-d")
     parser.add_argument("--storage-dir", "-s", default="/tmp/cdedb-store")
+    parser.add_argument("--outdir", "-o", default="./out")
     parser.add_argument("--verbose", "-v", action="store_true")
 
     args = parser.parse_args()
@@ -91,6 +92,10 @@ def main() -> int:
         'REMOTE_ADDR': "127.0.0.0",
         'SERVER_PROTOCOL': "HTTP/1.1",
         'wsgi.url_scheme': 'https'})
+    outdir = pathlib.Path(args.outdir)
+    if not outdir.exists():
+        print(f"Target directory {outdir!r} doesn't exist."
+              f" Nothing will be written to file.")
 
     # Exclude some forms which do some undesired behaviour
     posted_urls.clear()
@@ -129,6 +134,7 @@ def main() -> int:
 
 
 def write_next_file(outdir: pathlib.Path, data: bytes) -> None:
+    """Write data to the next available numbered file in the target directory."""
     if outdir.exists():
         outfile = outdir / str(len(list(outdir.iterdir())))
         with open(outfile, "wb") as f:
@@ -137,6 +143,11 @@ def write_next_file(outdir: pathlib.Path, data: bytes) -> None:
 
 def check(response_data: ResponseData, *, outdir: pathlib.Path, verbose: bool = False
           ) -> CheckReturn:
+    """Check a single response for presence of the payload and double escaped data.
+
+    :returns: Two lists, with the first containing error strings, and the second new
+        response data to check later.
+    """
     ret = CheckReturn([], [])
 
     def log_error(s: str) -> None:
