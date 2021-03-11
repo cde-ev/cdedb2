@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2021-03-11 20:59+0000\n"
+"POT-Creation-Date: 2021-03-11 21:08+0000\n"
 "PO-Revision-Date: 2020-12-06 11:30+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -4039,8 +4039,6 @@ msgstr "Versammlung anlegen"
 #: cdedb/frontend/templates/web/event/base.tmpl:62
 #: cdedb/frontend/templates/web/event/change_event.tmpl:14
 #: cdedb/frontend/templates/web/event/change_event.tmpl:18
-#: cdedb/frontend/templates/web/event/change_event.tmpl:19
-#: cdedb/frontend/templates/web/event/participant_info.tmpl:16
 #: cdedb/frontend/templates/web/ml/base.tmpl:22
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:20
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:24
@@ -6667,8 +6665,10 @@ msgstr "Transaktionstyp"
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:21
 #: cdedb/frontend/templates/web/event/base.tmpl:112
 #: cdedb/frontend/templates/web/event/change_course.tmpl:23
+#: cdedb/frontend/templates/web/event/change_event.tmpl:19
 #: cdedb/frontend/templates/web/event/manage_attendees.tmpl:23
 #: cdedb/frontend/templates/web/event/manage_inhabitants.tmpl:23
+#: cdedb/frontend/templates/web/event/participant_info.tmpl:16
 #: cdedb/frontend/templates/web/event/reorder_questionnaire.tmpl:42
 #: cdedb/frontend/templates/web/logging.tmpl:103
 #: cdedb/frontend/templates/web/logging.tmpl:106
