@@ -244,7 +244,7 @@ single-check:
 	$(PYTHONBIN) -m tests.singular "$${PATTERNS}"
 
 # By overriding this variable you can change the database that is used for the xss check.
-XSS_DATABASE_NAME ?= $(or ${CDEDB_XSS_DATABASE_NAME}, cdb_test)
+XSS_DATABASE_NAME ?= cdb_test
 
 sql-xss: tests/ancillary_files/sample_data_xss.sql
 ifneq ($(wildcard /CONTAINER),/CONTAINER)
