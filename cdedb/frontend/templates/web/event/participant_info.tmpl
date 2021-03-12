@@ -22,7 +22,10 @@
     {{ super() }}
     {% if not ambience['event']['participant_info'] %}
         {% call util.notification('info') %}
-            {% trans %}Orgas can create something here via the configuration page.{% endtrans %}
+            {% trans %}
+                This page is currently not visible to participants.
+                To change that, orgas can create something here via the configuration page.
+            {% endtrans %}
         {% endcall %}
     {% endif %}
 {% endblock %}

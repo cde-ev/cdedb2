@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2021-03-11 21:08+0000\n"
+"POT-Creation-Date: 2021-03-12 08:08+0000\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -10396,7 +10396,9 @@ msgid "Apply changes"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/participant_info.tmpl:25
-msgid "Orgas can create something here via the configuration page."
+msgid ""
+"This page is currently not visible to participants. To change that, orgas "
+"can create something here via the configuration page."
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/participant_list.tmpl:5

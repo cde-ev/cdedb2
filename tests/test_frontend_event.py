@@ -447,7 +447,8 @@ class TestEventFrontend(FrontendTest):
         self.traverse("Teilnehmer-Infos")
         self.assertTitle("Universale Akademie – Teilnehmer-Infos")
         self.assertPresence(
-            "Orgas können über die Konfigurations-Seite hier etwas hinzufügen",
+            "Diese Seite ist momentan für Teilnehmer nicht sichtbar. Um das zu ändern, "
+            "können Orgas über die Konfigurations-Seite hier etwas hinzufügen.",
             div='static-notifications')
         self.traverse("Übersicht")
         if user in (USER_DICT['ferdinand'], USER_DICT['annika']):
