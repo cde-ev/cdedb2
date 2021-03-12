@@ -211,8 +211,7 @@ def make_backend_shim(backend: B, internal: bool = False) -> B:
                 getattr(attr, "internal", False) and not internal,
                 not callable(attr)
             ]):
-                raise PrivilegeError(
-                    n_("Attribute %(name)s not public"), {"name": name})
+                raise PrivilegeError(f"Attribute {name} not public")
 
             @functools.wraps(attr)
             def wrapper(key: Optional[str], *args: Any, **kwargs: Any) -> Any:

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2021-03-10 02:27+0100\n"
+"POT-Creation-Date: 2021-03-12 08:50+0000\n"
 "PO-Revision-Date: 2020-12-06 11:30+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -1064,7 +1064,7 @@ msgstr "Mehr Adminprivilegien benötigt."
 msgid "Invalid notification type %(t)s found."
 msgstr "Unzulässiger Notifikationstyp %(t)s gefunden."
 
-#: cdedb/common.py:330 tests/common.py:215
+#: cdedb/common.py:330
 #, python-format
 msgid "Attribute %(name)s not public"
 msgstr "Attribut %(name)s ist nicht öffentlich"
@@ -3652,7 +3652,8 @@ msgid ""
 "<a href='https://en.wikipedia.org/w/index.php?curid=680729'>Schulze method</"
 "a>"
 msgstr ""
-"<a href='https://de.wikipedia.org/w/index.php?curid=900369'>Schulze-Methode</a>"
+"<a href='https://de.wikipedia.org/w/index.php?curid=900369'>Schulze-Methode</"
+"a>"
 
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:85
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:176
