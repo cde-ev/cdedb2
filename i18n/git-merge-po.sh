@@ -20,19 +20,6 @@
 #
 set -e
 IFS=
-# failure handler
-on_error() (
-  parent_lineno="$1"
-  message="$3"
-  code="$2"
-  if [ -n "$message" ] ; then
-    echo "Error on or near line ${parent_lineno}: ${message}; Code ${code}"
-  else
-    echo "Error on or near line ${parent_lineno}; Code ${code}"
-  fi
-  exit 255
-)
-trap 'on_error ${LINENO} $?' ERR
 
 # given a file, find the path that matches its contents
 show_file() {
