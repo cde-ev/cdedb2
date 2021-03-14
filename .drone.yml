@@ -55,7 +55,7 @@ steps:
   commands:
   - make mypy
   depends_on:
-  - undo merge
+  - build images
   when:
     status:
     - failure
@@ -66,7 +66,7 @@ steps:
   commands:
   - make lint
   depends_on:
-  - undo merge
+  - build images
   when:
     status:
     - failure
@@ -81,7 +81,7 @@ steps:
   - name: database
     path: /var/lib/postgresql/data
   depends_on:
-  - undo merge
+  - build images
   when:
     status:
     - failure
