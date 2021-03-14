@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 #
 # Three-way merge driver for PO files
 #
@@ -21,17 +21,17 @@
 set -e
 IFS=
 # failure handler
-on_error() {
-  local parent_lineno="$1"
-  local message="$3"
-  local code="$2"
-  if [[ -n "$message" ]] ; then
+on_error() (
+  parent_lineno="$1"
+  message="$3"
+  code="$2"
+  if [ -n "$message" ] ; then
     echo "Error on or near line ${parent_lineno}: ${message}; Code ${code}"
   else
     echo "Error on or near line ${parent_lineno}; Code ${code}"
   fi
   exit 255
-}
+)
 trap 'on_error ${LINENO} $?' ERR
 
 # given a file, find the path that matches its contents
@@ -41,29 +41,29 @@ show_file() {
 }
 
 # wraps msgmerge with default options
-function m_msgmerge() {
-  msgmerge --force-po --quiet --no-fuzzy-matching $@
+m_msgmerge() {
+  msgmerge --force-po --quiet --no-fuzzy-matching "$@"
 }
 
 # wraps msgcat with default options
-function m_msgcat() {
-  msgcat --force-po $@
+m_msgcat() {
+  msgcat --force-po "$@"
 }
 
 
 # removes the "graveyard strings" from the input
-function strip_graveyard() {
+strip_graveyard() {
   sed -e '/^#~/d'
 }
 
 # select messages with a conflict marker
 # pass -v to inverse selection
-function grep_conflicts() {
-  msggrep $@ --msgstr -F -e '#-#-#-#-#' -
+grep_conflicts() {
+  msggrep "$@" --msgstr -F -e '#-#-#-#-#' -
 }
 
 # select messages from $1 that are also in $2 but whose contents have changed
-function extract_changes() {
+extract_changes() {
   msgcat -o - $1 $2 \
     | grep_conflicts \
     | m_msgmerge -o - $1 - \
