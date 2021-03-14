@@ -27,52 +27,52 @@ steps:
   - git merge $DRONE_COMMIT
 - name: undo merge
   image: docker:20.10-git
-  commands:
-  - git merge --abort
-  - git checkout $DRONE_COMMIT
   depends_on:
   - clone
   when:
     status:
     - failure
+  commands:
+  - git merge --abort
+  - git checkout $DRONE_COMMIT
 - name: build images
   image: docker:20.10-git
   volumes:
   - name: dockersock
     path: /var/run/docker.sock
-  commands:
-  # we do not tag a version as this would create many images
-  # which would not be cleared from docker cache
-  - docker build --file related/docker/Dockerfile-postgres --tag cdepostgres .
-  - docker build --file related/docker/Dockerfile-cdedb --tag cdedb .
   depends_on:
   - undo merge
   when:
     status:
     - failure
     - success
+  commands:
+  # we do not tag a version as this would create many images
+  # which would not be cleared from docker cache
+  - docker build --file related/docker/Dockerfile-postgres --tag cdepostgres .
+  - docker build --file related/docker/Dockerfile-cdedb --tag cdedb .
 - name: mypy
   image: cdedb
   pull: never # do not try to pull image from docker hub
-  commands:
-  - make mypy
   depends_on:
   - build images
   when:
     status:
     - failure
     - success
+  commands:
+  - make mypy
 - name: lint
   image: cdedb
   pull: never # do not try to pull image from docker hub
-  commands:
-  - make lint
   depends_on:
   - build images
   when:
     status:
     - failure
     - success
+  commands:
+  - make lint
 - name: cdb # is used as the hostname for the container
   image: cdepostgres
   pull: never # do not try to pull image from docker hub
@@ -91,17 +91,17 @@ steps:
 - name: testsuite
   image: cdedb
   pull: never # do not try to pull image from docker hub
-  commands:
-  - sleep 5 # wait for db to come online
-  - make i18n-compile # required for sample-data target
-  - make sample-data # this creates the sql schema and copies the localconfig.py
-  - make check
   depends_on:
   - cdb # only needs db allowing mypy and lint to run parallel to this
   when:
     status:
     - failure
     - success
+  commands:
+  - sleep 5 # wait for db to come online
+  - make i18n-compile # required for sample-data target
+  - make sample-data # this creates the sql schema and copies the localconfig.py
+  - make check
 
 volumes:
 - name: dockersock
