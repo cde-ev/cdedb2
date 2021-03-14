@@ -85,7 +85,8 @@ from cdedb.query import (
     QueryOrder,
 )
 from cdedb.validationdata import (
-    FREQUENCY_LISTS, GERMAN_PHONE_CODES, GERMAN_POSTAL_CODES, IBAN_LENGTHS, ITU_CODES,
+    COUNTRY_CODES, FREQUENCY_LISTS, GERMAN_PHONE_CODES, GERMAN_POSTAL_CODES,
+    IBAN_LENGTHS, ITU_CODES,
 )
 from cdedb.validationtypes import *  # pylint: disable=wildcard-import,unused-wildcard-import; # noqa
 
@@ -1010,13 +1011,13 @@ PERSONA_CDE_CREATION: Mapping[str, Any] = {
     'address': Optional[str],
     'postal_code': Optional[PrintableASCII],
     'location': Optional[str],
-    'country': Optional[str],
+    'country': Optional[Country],
     'birth_name': Optional[str],
     'address_supplement2': Optional[str],
     'address2': Optional[str],
     'postal_code2': Optional[PrintableASCII],
     'location2': Optional[str],
-    'country2': Optional[str],
+    'country2': Optional[Country],
     'weblink': Optional[str],
     'specialisation': Optional[str],
     'affiliation': Optional[str],
@@ -1041,7 +1042,7 @@ PERSONA_EVENT_CREATION: Mapping[str, Any] = {
     'address': Optional[str],
     'postal_code': Optional[PrintableASCII],
     'location': Optional[str],
-    'country': Optional[str],
+    'country': Optional[Country],
 }
 
 PERSONA_FULL_ML_CREATION = {**PERSONA_BASE_CREATION}
@@ -1085,13 +1086,13 @@ PERSONA_COMMON_FIELDS: Mapping[str, Any] = {
     'address': Optional[str],
     'postal_code': Optional[PrintableASCII],
     'location': Optional[str],
-    'country': Optional[str],
+    'country': Optional[Country],
     'birth_name': Optional[str],
     'address_supplement2': Optional[str],
     'address2': Optional[str],
     'postal_code2': Optional[PrintableASCII],
     'location2': Optional[str],
-    'country2': Optional[str],
+    'country2': Optional[Country],
     'weblink': Optional[str],
     'specialisation': Optional[str],
     'affiliation': Optional[str],
@@ -1401,11 +1402,27 @@ def _german_postal_code(
     val = _printable_ascii(
         val, argname, _ignore_warnings=_ignore_warnings, **kwargs)
     val = val.strip()
-    if not aux or aux.strip() == "Deutschland":
+    if not aux or aux.strip() == "DE":
         if val not in GERMAN_POSTAL_CODES and not _ignore_warnings:
             raise ValidationSummary(
                 ValidationWarning(argname, n_("Invalid german postal code.")))
     return GermanPostalCode(val)
+
+
+@_add_typed_validator
+def _country(
+    val: Any, argname: str = None, *, _ignore_warnings: bool = False,
+    _convert: bool = True, **kwargs: Any
+) -> Country:
+    if _convert and not val:
+        # TODO Use self.conf["DEFAULT_COUNTRY"] here
+        val = "DE"
+    val = _ALL_TYPED[str](val, argname, _ignore_warnings=_ignore_warnings, **kwargs)
+    if _convert:
+        val = val.strip()
+    if val not in COUNTRY_CODES:
+        raise ValidationSummary(argname, n_("Enter actual country name in English."))
+    return Country(val)
 
 
 GENESIS_CASE_COMMON_FIELDS: TypeMapping = {
@@ -1430,7 +1447,7 @@ GENESIS_CASE_ADDITIONAL_FIELDS: Mapping[str, Any] = {
     'address': str,
     'postal_code': Optional[PrintableASCII],
     'location': str,
-    'country': Optional[str],
+    'country': Optional[Country],
     'birth_name': Optional[str],
     'attachment_hash': str,
 }

@@ -469,7 +469,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
         f['location2'] = "Hyrule"
-        f['country2'] = "Arcadia"
+        f['country2'] = "AR"
         f['specialisation'] = "Okarinas"
         self.submit(f)
         self.assertTitle("{} {}".format(user['given_names'], user['family_name']))
@@ -1542,6 +1542,7 @@ class TestCoreFrontend(FrontendTest):
         f['address'] = "Auf dem Hügel"
         f['postal_code'] = "ABC-123"
         f['location'] = "Überall"
+        f['country'] = "DE"
         self.assertNonPresence("Warnungen ignorieren")
         self.submit(f, check_notification=False)
         self.assertPresence("Ungültige Postleitzahl")
@@ -1589,7 +1590,7 @@ class TestCoreFrontend(FrontendTest):
     EVENT_GENESIS_DATA.update({
         'realm': "event", 'gender': const.Genders.female.value,
         'birthday': "1987-06-05", 'address': "An der Eiche", 'postal_code': "12345",
-        'location': "Marcuria", 'country': "Arkadien"
+        'location': "Marcuria", 'country': "AQ"
     })
 
     CDE_GENESIS_DATA = EVENT_GENESIS_DATA.copy()
@@ -1879,11 +1880,11 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesisform']
         for field, entry in self.EVENT_GENESIS_DATA.items():
             f[field] = entry
-        f['country'] = ""
+        f['country'] = "DE"
         f['postal_code'] = "Z-12345"
         self.submit(f, check_notification=False)
         self.assertPresence("Ungültige Postleitzahl.")
-        f['country'] = "Arkadien"
+        f['country'] = "AQ"
         self.submit(f)
 
     def test_genesis_birthday(self) -> None:
@@ -1931,10 +1932,10 @@ class TestCoreFrontend(FrontendTest):
         f['address'] = "An der Eiche"
         f['postal_code'] = "12345"
         f['location'] = "Marcuria"
-        f['country'] = "Arkadien"
+        f['country'] = "AQ"
         self.submit(f)
         self.assertPresence("An der Eiche", div='address')
-        self.assertPresence("Arkadien", div='address')
+        self.assertPresence("Antarktis", div='address')
 
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['genesismodifyform']

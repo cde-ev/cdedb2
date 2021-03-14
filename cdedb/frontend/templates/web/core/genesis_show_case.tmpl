@@ -94,7 +94,7 @@
                 {{ ambience['genesis_case']['address'] }}{% if ambience['genesis_case']['address'] %}<br />{% endif %}
                 {{ ambience['genesis_case']['address_supplement'] }}{% if ambience['genesis_case']['address_supplement'] %}<br />{% endif %}
                 {{ ambience['genesis_case']['postal_code'] }} {{ ambience['genesis_case']['location'] }}{% if ambience['genesis_case']['location'] %}<br />{% endif %}
-                {{ ambience['genesis_case']['country'] }}
+                {{ util.gettext_country(ambience['genesis_case']['country']) }}
             </dd>
         {% endif %}
     </dl>

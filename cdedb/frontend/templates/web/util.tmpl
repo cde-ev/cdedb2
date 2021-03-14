@@ -76,7 +76,13 @@
         **{ "aria-hidden": "true" }
     )|xmlattr }}></span>
     {%- if arialabel or title %}<span class="sr-only">{{ arialabel or title }}</span>{% endif %}
-{%- endmacro%}
+{%- endmacro %}
+
+{% macro gettext_country(country) -%}
+    {%- if country %}
+        {{ gettext("CountryCodes." + country) }}
+    {% endif %}
+{%- endmacro %}
 
 
 {# ############## #
@@ -474,14 +480,14 @@
         **{ 'aria-label': arialabel }
     )|xmlattr }} {{ attributes }}>
         {%- if nulloption is not none %}
-            <option value=""{% if values.get(name, defaultvalue) == none %} selected{% endif %}>
+            <option value=""{% if values.get(name, defaultvalue) == none %} selected="selected"{% endif %}>
                 {{- nulloption -}}
             </option>
         {%- endif %}
         {% set entries = entries|sort(attribute=1) if sort else entries %}
         {%- for value, label in entries %}
             <option value="{{ value }}"
-              {%- if values.get(name, defaultvalue)|string == value|string %} selected{% endif %}>
+                    {%- if values.get(name, defaultvalue)|string == value|string %} selected="selected"{% endif %}>
                 {{- label -}}
             </option>
         {%- endfor %}

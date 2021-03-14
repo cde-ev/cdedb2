@@ -73,7 +73,7 @@ def changelog_template(**kwargs: Any) -> str:
         'change_note': 'Radical change.',
         'code': const.MemberChangeStati.pending.value,
         'country': None,
-        'country2': 'Further Away',
+        'country2': 'US',
         'ctime': now(),
         'decided_search': True,
         'display_name': 'Zelda',

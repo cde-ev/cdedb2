@@ -308,6 +308,8 @@ _DEFAULTS = {
     "NUM_PREVIEW_PERSONAS": 3,
     #: Default amount of lines shown in logs shown in the frontend
     "DEFAULT_LOG_LENGTH": 50,
+    #: Default country code to be used
+    "DEFAULT_COUNTRY": "DE",
     # Available languages
     "I18N_LANGUAGES": ("de", "en"),
 
