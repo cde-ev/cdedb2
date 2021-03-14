@@ -6,7 +6,6 @@ workspace:
   base: /cdedb2
   path: .
 
-
 clone:
   disable: true
 
@@ -14,16 +13,17 @@ steps:
 - name: clone
   image: docker:20.10-git
   volumes:
-    - name: dockersock
-      path: /var/run/docker.sock
+  - name: dockersock
+    path: /var/run/docker.sock
   commands:
   - git clone $DRONE_GIT_HTTP_URL .
   - git fetch origin $DRONE_TARGET_BRANCH
   - git checkout $DRONE_TARGET_BRANCH
-  # make use of our custom merge driver
+  # make use of our custom po file merge driver
+  - apk add --no-cache bash gettext
   - echo '[merge "pomerge"]' >> ./.git/config
-  - echo '        name = Gettext merge driver' >> ./.git/config
-  - echo '        driver = i18n/git-merge-po.sh %O %A %B' >> ./.git/config
+  - echo '    name = Gettext merge driver' >> ./.git/config
+  - echo '    driver = i18n/git-merge-po.sh %O %A %B' >> ./.git/config
   - git fetch origin $DRONE_COMMIT_REF
   - git merge $DRONE_COMMIT
 - name: build images
@@ -37,21 +37,21 @@ steps:
   - docker build --file related/docker/Dockerfile-postgres --tag cdepostgres .
   - docker build --file related/docker/Dockerfile-cdedb --tag cdedb .
   depends_on:
-    - clone
+  - clone
 - name: mypy
   image: cdedb
   pull: never # do not try to pull image from docker hub
   commands:
   - make mypy
   depends_on:
-    - clone
+  - clone
 - name: lint
   image: cdedb
   pull: never # do not try to pull image from docker hub
   commands:
   - make lint
   depends_on:
-    - clone
+  - clone
 - name: cdb # is used as the hostname for the container
   image: cdepostgres
   pull: never # do not try to pull image from docker hub
@@ -62,7 +62,7 @@ steps:
   - name: database
     path: /var/lib/postgresql/data
   depends_on:
-    - clone
+  - clone
 - name: testsuite
   image: cdedb
   pull: never # do not try to pull image from docker hub

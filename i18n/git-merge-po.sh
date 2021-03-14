@@ -75,7 +75,9 @@ BASE=$1
 LOCAL=$2
 REMOTE=$3
 OUTPUT=$LOCAL
-TEMP=`mktemp /tmp/merge-po.XXXX`
+TEMP=$(mktemp)
+# the custom tempfile naming whyever does not work in our CI
+# TEMP=`mktemp /tmp/merge-po.XXXX`
 
 echo "Using custom PO merge driver (`show_file ${LOCAL}`; $TEMP)"
 
