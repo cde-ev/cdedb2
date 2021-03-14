@@ -93,7 +93,7 @@
                 {% endtrans %}
             </div>
             <p class="nosp">
-                {{ util.input_submit(value=gettext("Go!"), icon="search") }}
+                {{ util.input_submit(label=gettext("Go!"), icon="search") }}
                 {{ util.href(cdedblink("event/course_choices",{}), gettext("Show all participants"), icon="times-circle",
                              aclass="btn btn-default") }}
             </p>
@@ -127,7 +127,7 @@
                             util.input_select(name="assign_course_id", anid="input-course_id", entries=course_entries,
                                               nulloption=nbsp, arialabel=gettext("Assign to Course"))),
                         tracks=tracks,
-                        submit='<div class="col-md-2">%s</div>'|s|format(util.input_submit(value=gettext("Go!"))) -%}
+                        submit='<div class="col-md-2">%s</div>'|s|format(util.input_submit(label=gettext("Go!"))) -%}
                 	{{ assign }} {{ participants }} {{ course }} {{ tracks }} {{ submit }}
                 {% endtrans %}
                 <script nonce="{{ csp_nonce }}">

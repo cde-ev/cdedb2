@@ -19,7 +19,7 @@
         <form action="{{ cdedblink('ml/create_mailinglist_form') }}" method="GET" id="selectmltypeform"
               class="form-horizontal">
             {{ util.form_input_select(name="ml_type", label=gettext("Mailinglist Type"), entries=available_types|enum_entries(processing=gettext)) }}
-            {{ util.form_input_submit(value=gettext("Continue"), cancellink=cdedblink("ml/index"), icon="pen") }}
+            {{ util.form_input_submit(label=gettext("Continue"), cancellink=cdedblink("ml/index"), icon="pen") }}
         </form>
     {% else %}
     <script nonce="{{ csp_nonce }}">
@@ -110,7 +110,7 @@
                     "Other attachment policy can be changed by the Admin-Team.")) }}
         {{ util.form_input_text(name="maxsize", label=gettext("max. message size (in kB)"), type="number",
                                 defaultvalue=maxsize_default) }}
-        {{ util.form_input_submit(value=gettext("Create"), cancellink=cdedblink('ml/index')) }}
+        {{ util.form_input_submit(label=gettext("Create"), cancellink=cdedblink('ml/index')) }}
     </form>
     {% endif %}
 {% endblock %}

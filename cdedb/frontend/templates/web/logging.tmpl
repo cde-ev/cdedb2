@@ -123,7 +123,7 @@
             {{ util.form_input_text('offset', label=gettext("Offset"), type='number', small=True) }}
             {{ util.form_input_from_to(
                 'time_start', 'time_stop', label=gettext("Timestamp"), type='datetime-local', small=True) }}
-            {{ util.form_input_submit(value=gettext("Apply"), small=True) }}
+            {{ util.form_input_submit(label=gettext("Apply"), small=True) }}
         </form>
     {% endcall %}
 {% endmacro %}

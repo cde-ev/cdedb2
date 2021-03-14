@@ -1672,6 +1672,31 @@ GERMAN_POSTAL_CODES = {
     "99974", "99976", "99986", "99988", "99991", "99994", "99996", "99998",
 }
 
+#: source `https://github.com/umpirsky/country-list/blob/master/data/en/country.csv`
+#:
+#: County codes according to ISO 3166-1.
+COUNTRY_CODES = [
+    "HY",
+    "AF", "AX", "AL", "DZ", "AS", "AD", "AO", "AI", "AQ", "AG", "AR", "AM", "AW", "AT",
+    "AZ", "BS", "BH", "BD", "BB", "BY", "BE", "BZ", "BJ", "BM", "BT", "BO", "BW", "BV",
+    "BR", "IO", "VG", "BN", "BG", "BF", "BI", "KH", "CM", "CA", "CV", "KY", "CF", "TD",
+    "CL", "CN", "CX", "CC", "CO", "KM", "CG", "CD", "CK", "CR", "HR", "CU", "CW", "CY",
+    "CZ", "DK", "DJ", "DM", "DO", "EC", "EG", "SV", "GQ", "EE", "SZ", "ET", "FK", "FO",
+    "FJ", "FI", "FR", "GF", "PF", "TF", "GA", "GM", "DE", "GH", "GI", "GR", "GL", "GD",
+    "GP", "GU", "GT", "GG", "GN", "GW", "GY", "HM", "HN", "HK", "HU", "IS", "IN", "ID",
+    "IR", "IQ", "IE", "IM", "IL", "IT", "JP", "JE", "JO", "KZ", "KE", "KI", "KW", "KG",
+    "LA", "LV", "LB", "LS", "LR", "LI", "LT", "LU", "MO", "MG", "MW", "MY", "MV", "ML",
+    "MT", "MH", "MQ", "MR", "YT", "MX", "FM", "MD", "MC", "MN", "ME", "MS", "MA", "MZ",
+    "MM", "NA", "NR", "NL", "NC", "NZ", "NI", "NE", "NG", "NU", "NF", "KP", "MK", "MP",
+    "NO", "OM", "PW", "PS", "PA", "PG", "PY", "PE", "PH", "PN", "PL", "PT", "PR", "QA",
+    "RE", "RU", "RW", "WS", "SM", "ST", "SA", "SN", "RS", "SC", "SL", "SG", "SX", "SK",
+    "SB", "SO", "ZA", "GS", "KR", "SS", "ES", "LK", "BL", "SH", "KN", "LC", "MF", "VC",
+    "SD", "SR", "SJ", "SE", "CH", "SY", "TW", "TJ", "TZ", "TH", "TL", "TG", "TO", "TT",
+    "TN", "TR", "TM", "TC", "TV", "UM", "VI", "UG", "UA", "AE", "GB", "UY", "UZ", "VU",
+    "VA", "VE", "VN", "WF", "EH", "YE", "ZM", "ZW",
+]
+
+# source:
 # IBANs have different lengths depending on the country.
 #
 # We only include Country Codes of Countries that fully support SEPA,

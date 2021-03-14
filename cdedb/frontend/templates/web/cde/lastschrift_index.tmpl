@@ -181,9 +181,9 @@
             </script>
 
             {% trans %}All selected:{% endtrans %}
-            {{ util.input_submit(value=gettext("Success"), name='success', aclass="btn btn-success") }}
-            {{ util.input_submit(value=gettext("Failed"), name='failure', aclass="btn btn-danger", icon="exclamation-circle") }}
-            {{ util.input_submit(value=gettext("Cancelled"), name='cancelled', aclass="btn btn-warning", icon="times-circle",
+            {{ util.input_submit(label=gettext("Success"), name='success', aclass="btn btn-success") }}
+            {{ util.input_submit(label=gettext("Failed"), name='failure', aclass="btn btn-danger", icon="exclamation-circle") }}
+            {{ util.input_submit(label=gettext("Cancelled"), name='cancelled', aclass="btn btn-warning", icon="times-circle",
                     anid="finalization-cancel") }}
         </form>
     {% else %}
