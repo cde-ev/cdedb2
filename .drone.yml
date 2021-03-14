@@ -24,8 +24,21 @@ steps:
   - echo '[merge "pomerge"]' >> ./.git/config
   - echo '    name = Gettext merge driver' >> ./.git/config
   - echo '    driver = i18n/git-merge-po.sh %O %A %B' >> ./.git/config
-  - git fetch origin $DRONE_COMMIT_REF
+  - git fetch origin $DRONE_COMMIT
   - git merge $DRONE_COMMIT
+- name: undo merge
+  image: docker:20.10-git
+  volumes:
+  - name: dockersock
+    path: /var/run/docker.sock
+  commands:
+  - git merge --abort
+  - git checkout $DRONE_COMMIT
+  depends_on:
+  - clone
+  when:
+    status:
+    - failure
 - name: build images
   image: docker:20.10-git
   volumes:
@@ -37,21 +50,33 @@ steps:
   - docker build --file related/docker/Dockerfile-postgres --tag cdepostgres .
   - docker build --file related/docker/Dockerfile-cdedb --tag cdedb .
   depends_on:
-  - clone
+  - undo merge
+  when:
+    status:
+    - failure
+    - success
 - name: mypy
   image: cdedb
   pull: never # do not try to pull image from docker hub
   commands:
   - make mypy
   depends_on:
-  - clone
+  - undo merge
+  when:
+    status:
+    - failure
+    - success
 - name: lint
   image: cdedb
   pull: never # do not try to pull image from docker hub
   commands:
   - make lint
   depends_on:
-  - clone
+  - undo merge
+  when:
+    status:
+    - failure
+    - success
 - name: cdb # is used as the hostname for the container
   image: cdepostgres
   pull: never # do not try to pull image from docker hub
@@ -62,7 +87,11 @@ steps:
   - name: database
     path: /var/lib/postgresql/data
   depends_on:
-  - clone
+  - undo merge
+  when:
+    status:
+    - failure
+    - success
 - name: testsuite
   image: cdedb
   pull: never # do not try to pull image from docker hub
@@ -73,6 +102,10 @@ steps:
   - make check
   depends_on:
   - cdb # only needs db allowing mypy and lint to run parallel to this
+  when:
+    status:
+    - failure
+    - success
 
 volumes:
 - name: dockersock
