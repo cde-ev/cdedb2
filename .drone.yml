@@ -17,13 +17,13 @@ steps:
     path: /var/run/docker.sock
   commands:
   - git clone $DRONE_GIT_HTTP_URL .
-  - git fetch origin $DRONE_TARGET_BRANCH
-  - git checkout $DRONE_TARGET_BRANCH
   # make use of our custom po file merge driver
   - apk add --no-cache gettext
   - echo '[merge "pomerge"]' >> ./.git/config
   - echo '    name = Gettext merge driver' >> ./.git/config
   - echo '    driver = i18n/git-merge-po.sh %O %A %B' >> ./.git/config
+  - git fetch origin $DRONE_TARGET_BRANCH
+  - git checkout $DRONE_TARGET_BRANCH
   - git fetch origin $DRONE_COMMIT
   - git merge $DRONE_COMMIT
 - name: undo merge
