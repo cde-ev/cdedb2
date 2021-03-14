@@ -157,6 +157,7 @@ class TestEventFrontend(FrontendTest):
             "notes": "some talk",
         }
         f = self.response.forms['newuserform']
+        self.assertEqual(f['country'].value, self.conf["DEFAULT_COUNTRY"])
         for key, value in data.items():
             f.set(key, value)
         self.submit(f)

@@ -832,6 +832,7 @@ class TestCdEFrontend(FrontendTest):
             "notes": "some talk",
         }
         f = self.response.forms['newuserform']
+        self.assertEqual(f['country'].value, self.conf["DEFAULT_COUNTRY"])
         self.assertIsNone(
             self.response.lxml.get_element_by_id('input_checkbox_is_searchable').value)
         self.assertFalse(
