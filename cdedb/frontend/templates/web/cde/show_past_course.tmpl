@@ -65,7 +65,7 @@
                             </div>
                         </div>
                         <div class="col-sm-3">
-                            {{ util.input_submit(value=gettext("Add"), aclass="btn btn-primary btn-sm") }}
+                            {{ util.input_submit(label=gettext("Add"), aclass="btn btn-primary btn-sm") }}
                         </div>
                     </div>
                 </form>
@@ -91,7 +91,7 @@
                             {{ util.input_hidden(name="pcourse_id", value=values['pcourse_id']) }}
                             {{ util.input_hidden(name="course_page", value=True) }}
                             {{ util.input_submit(title=gettext("Remove"), icon="minus", aclass="btn btn-xs btn-danger list-button-float",
-                                    value="") }}
+                                    label="") }}
                         </form>
                     {% endif %}
                 </li>
@@ -131,7 +131,7 @@
                         <form action="{{ cdedblink('cde/delete_past_course') }}" method="POST"
                                 id="deletecourseform" style="display: inline;">
                             {{ util.anti_csrf_token('cde/delete_past_course') }}
-                            {{ util.input_submit(value=gettext("Delete Course"), icon="trash-alt", aclass="btn btn-danger") }}
+                            {{ util.input_submit(label=gettext("Delete Course"), icon="trash-alt", aclass="btn btn-danger") }}
                             {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?"), readonly=is_locked) }}
                         </form>
                     </div>

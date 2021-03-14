@@ -98,6 +98,6 @@
             {{ util.form_input_textarea(name="free_form", label=gettext("Miscellaneous"), rows="5",
                                         info=util.markdownhint) }}
         {% endif %}
-        {{ util.form_input_submit(value=gettext("Save"), cancellink=show_user_link(user, user.persona_id), differentiate_warnings=True) }}
+        {{ util.form_input_submit(label=gettext("Save"), cancellink=show_user_link(user, user.persona_id), differentiate_warnings=True) }}
     </form>
 {% endblock %}

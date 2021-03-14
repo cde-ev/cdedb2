@@ -82,7 +82,7 @@
                     <form action="{{ cdedblink("core/logout_all") }}" method="POST" id="logoutallform"
                           class="display-inline">
                         {{ util.anti_csrf_token('core/logout_all') }}
-                        {{ util.input_submit(value=gettext("Logout Everywhere"), title=gettext("Logout Everywhere"),
+                        {{ util.input_submit(label=gettext("Logout Everywhere"), title=gettext("Logout Everywhere"),
                                              icon="power-off", aclass="btn btn-danger btn-sm mosp") }}
                     </form>
                     {{ util.href(docurl('Realm_Core_Privacy'), gettext("Who can see my data?"),aclass="btn btn-info btn-sm pull-right mosp", icon="question-circle") }}
@@ -471,7 +471,7 @@ Mitglied.</pre>
                                     <form action="{{ cdedblink('core/admin_send_password_reset_link') }}"
                                           method="POST" id="sendpasswordresetform" style="display: inline;">
                                         {{ util.anti_csrf_token('core/admin_send_password_reset_link') }}
-                                        {{ util.input_submit(value=gettext("Send Password Reset Link"), icon="paper-plane",
+                                        {{ util.input_submit(label=gettext("Send Password Reset Link"), icon="paper-plane",
                                                 aclass="btn btn-sm btn-warning") }}
                                     </form>
                                 {% endif %}
@@ -496,14 +496,14 @@ Mitglied.</pre>
                                     <form action="{{ cdedblink('core/toggle_activity', {'activity': False}) }}"
                                           method="POST" id="activitytoggleform" style="display: inline;">
                                         {{ util.anti_csrf_token('core/toggle_activity') }}
-                                        {{ util.input_submit(value=gettext("Deactivate Account"), icon="ban",
+                                        {{ util.input_submit(label=gettext("Deactivate Account"), icon="ban",
                                                 aclass="btn btn-danger btn-sm") }}
                                     </form>
                                 {% else %}
                                     <form action="{{ cdedblink('core/toggle_activity', {'activity': True}) }}"
                                           method="POST" id="activitytoggleform" style="display: inline;">
                                         {{ util.anti_csrf_token('core/toggle_activity') }}
-                                        {{ util.input_submit(value=gettext("Reactivate Account"), icon="check-circle",
+                                        {{ util.input_submit(label=gettext("Reactivate Account"), icon="check-circle",
                                                 aclass="btn btn-success btn-sm") }}
                                     </form>
                                 {% endif %}
@@ -537,7 +537,7 @@ Mitglied.</pre>
                                     {{ util.anti_csrf_token('core/archive_persona') }}
 
                                     <div class="form-group">
-                                        {{ util.input_submit(value=gettext("Archive Account"), icon="eraser",
+                                        {{ util.input_submit(label=gettext("Archive Account"), icon="eraser",
                                                 aclass="btn btn-danger btn-sm", readonly=data['is_meta_admin'],
                                                 title=gettext("Cannot archive meta admins.") if data['is_meta_admin'] else "") }}
                                         {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
@@ -570,7 +570,7 @@ Mitglied.</pre>
                                       id="invalidatepasswordform">
                                     {{ util.anti_csrf_token('core/invalidate_password') }}
                                     <div class="form-group">
-                                        {{ util.input_submit(value=gettext("Invalidate Password"), icon="lock",
+                                        {{ util.input_submit(label=gettext("Invalidate Password"), icon="lock",
                                                 aclass="btn btn-warning btn-sm") }}
                                     </div>
                                     {{ util.form_input_text(name="confirm_username", small=True,
@@ -603,7 +603,7 @@ Mitglied.</pre>
                                 <form action="{{ cdedblink('core/dearchive_persona') }}" method="POST"
                                       id="dearchivepersonaform" style="display: inline;">
                                     {{ util.anti_csrf_token('core/dearchive_persona') }}
-                                    {{ util.input_submit(value=gettext("Restore Account"), icon="file-upload",
+                                    {{ util.input_submit(label=gettext("Restore Account"), icon="file-upload",
                                                          aclass="btn btn-success btn-sm") }}
                                 </form>
                             </div>
@@ -622,7 +622,7 @@ Mitglied.</pre>
                                 <form action="{{ cdedblink('core/purge_persona') }}" method="POST"
                                  id="purgepersonaform" style="display: inline;">
                                     {{ util.anti_csrf_token('core/purge_persona') }}
-                                    {{ util.input_submit(value=gettext("Delete Account"), icon="fire",
+                                    {{ util.input_submit(label=gettext("Delete Account"), icon="fire",
                                             aclass="btn btn-danger btn-sm") }}
                                     {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
                                 </form>

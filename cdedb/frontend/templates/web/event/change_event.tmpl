@@ -102,7 +102,7 @@
                                   nulloption=nbsp, info=gettext("The custom field in which the course’s "
                                   "assigned course room will be saved. It is used for PDF participant lists and "
                                   "nametags. Fieldtype: Text")) }}
-        {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink('event/show_event'), readonly=is_locked) }}
+        {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink('event/show_event'), readonly=is_locked) }}
     </form>
     <script nonce="{{ csp_nonce }}">
         $('#changeeventform').cdedbProtectChanges();

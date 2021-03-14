@@ -294,7 +294,7 @@
                 </button>
             </p>
         {% endif %}
-        {{ util.input_submit(value=gettext("Save"), readonly=is_locked) }}
+        {{ util.input_submit(label=gettext("Save"), readonly=is_locked) }}
     </form>
     <script nonce="{{ csp_nonce }}">
         function initialize_track_dynrow() {

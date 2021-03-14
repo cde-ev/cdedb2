@@ -52,12 +52,12 @@
         <form action="{{ cdedblink('core/decide_privilege_change') }}" method="POST" id="ackprivilegechangeform" style="display: inline;">
             {{ util.anti_csrf_token('core/decide_privilege_change') }}
             {{ util.input_hidden(name="ack", value="True") }}
-            {{ util.input_submit(value=gettext("Confirm Privilege Change"), aclass="btn btn-success") }}
+            {{ util.input_submit(label=gettext("Confirm Privilege Change"), aclass="btn btn-success") }}
         </form>
     {% endif %}
     <form action="{{ cdedblink('core/decide_privilege_change') }}" method="POST" id="nackprivilegechangeform" style="display: inline;">
         {{ util.anti_csrf_token('core/decide_privilege_change') }}
         {{ util.input_hidden(name="ack", value="False") }}
-        {{ util.input_submit(value=gettext("Reject Privilege Change"), aclass="btn btn-danger", icon="ban") }}
+        {{ util.input_submit(label=gettext("Reject Privilege Change"), aclass="btn btn-danger", icon="ban") }}
     </form>
 {% endblock %}

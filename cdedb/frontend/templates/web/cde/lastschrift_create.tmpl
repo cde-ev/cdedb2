@@ -59,9 +59,9 @@
         {{ util.form_input_textarea(name="account_address", label=gettext("Account holder’s address (if different)")) }}
         {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="5", info=util.markdownhint) }}
         {% if ambience['persona'] %}
-            {{ util.form_input_submit(value=gettext("Create"), cancellink=cdedblink('cde/lastschrift_show')) }}
+            {{ util.form_input_submit(label=gettext("Create"), cancellink=cdedblink('cde/lastschrift_show')) }}
         {% else %}
-            {{ util.form_input_submit(value=gettext("Create"), cancellink=cdedblink('cde/lastschrift_index')) }}
+            {{ util.form_input_submit(label=gettext("Create"), cancellink=cdedblink('cde/lastschrift_index')) }}
         {% endif %}
     </form>
 {% endblock %}

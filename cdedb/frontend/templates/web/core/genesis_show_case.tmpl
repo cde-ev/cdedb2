@@ -112,14 +112,13 @@
              id="genesiseventapprovalform" style="display: inline;">
                 {{ util.anti_csrf_token('core/genesis_decide') }}
                 {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].approved.value) }}
-                {{ util.input_submit(value=gettext("Approve"), aclass="btn btn-success") }}
+                {{ util.input_submit(label=gettext("Approve"), aclass="btn btn-success") }}
             </form>
             <form action="{{ cdedblink('core/genesis_decide') }}" method="POST"
              id="genesiseventrejectionform" class="rejection-form" style="display: inline;">
                 {{ util.anti_csrf_token('core/genesis_decide') }}
                 {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].rejected.value) }}
-                {{ util.input_submit(icon="ban", value=gettext("Reject"),
-                                     aclass="btn btn-danger") }}
+                {{ util.input_submit(label=gettext("Reject"), icon="ban", aclass="btn btn-danger") }}
             </form>
             {{ util.href(cdedblink('core/genesis_modify_form'), gettext("Edit"),
                 aclass="btn btn-warning", icon="pen") }}
