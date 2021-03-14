@@ -1414,9 +1414,6 @@ def _country(
     val: Any, argname: str = None, *, _ignore_warnings: bool = False,
     _convert: bool = True, **kwargs: Any
 ) -> Country:
-    if _convert and not val:
-        # TODO Use self.conf["DEFAULT_COUNTRY"] here
-        val = "DE"
     val = _ALL_TYPED[str](val, argname, _ignore_warnings=_ignore_warnings, **kwargs)
     if _convert:
         val = val.strip()
