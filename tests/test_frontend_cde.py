@@ -823,12 +823,12 @@ class TestCdEFrontend(FrontendTest):
             "address_supplement": "on the left",
             "postal_code": "12345",
             "location": "Lynna",
-            "country": "Hyrule",
+            "country": "HY",
             "address2": "Ligusterweg 4",
             "address_supplement2": "Im Schrank unter der Treppe",
             "postal_code2": "00AA",
             "location2": "Little Whinging",
-            "country2": "United Kingdom",
+            "country2": "GB",
             "notes": "some talk",
         }
         f = self.response.forms['newuserform']

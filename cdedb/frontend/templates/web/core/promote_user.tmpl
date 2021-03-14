@@ -43,7 +43,7 @@
                         small=True) }}
                 {{ util.form_input_checkboxes(name="target_realm", entries=myentries, label=gettext("Target Realm"),
                         radio=True, small=True) }}
-                {{ util.form_input_submit(value=gettext("Confirm"), small=True) }}
+                {{ util.form_input_submit(label=gettext("Confirm"), small=True) }}
             </form>
 
         {% else %}
@@ -87,14 +87,15 @@
                     {{ util.form_input_text(name="address_supplement", label=gettext("Address Supplement")) }}
                     {{ util.form_input_text(name="postal_code", label=gettext("Zipcode")) }}
                     {{ util.form_input_text(name="location", label=gettext("City")) }}
-                    {{ util.form_input_text(name="country", label=gettext("Country")) }}
+                    {{ util.form_input_select(name="country", label=gettext("Country"), entries=COUNTRY_CODES,
+                                              defaultvalue="{{ DEFAULT_COUNTRY }}") }}
                 {% endif %}
                 {% if not p['is_cde_realm'] and values['target_realm'] == 'cde'  %}
                     {{ util.form_input_checkbox(name="trial_member", label=gettext("Grant Trialmembership")) }}
                     {{ util.form_input_textarea(name="free_form", label=gettext("Miscellaneous"), rows="5",
                                                 info=util.markdownhint) }}
                 {% endif %}
-                {{ util.form_input_submit(value=gettext("Add Realm"),
+                {{ util.form_input_submit(label=gettext("Add Realm"),
                         cancellink=show_user_link(user, ambience['persona']['id'])) }}
             </form>
         {% endif %}

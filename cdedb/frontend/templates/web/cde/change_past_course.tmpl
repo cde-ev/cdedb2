@@ -31,6 +31,6 @@
         {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]")) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
                                     info=util.markdownhint) }}
-        {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink("cde/show_past_course")) }}
+        {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("cde/show_past_course")) }}
     </form>
 {% endblock %}

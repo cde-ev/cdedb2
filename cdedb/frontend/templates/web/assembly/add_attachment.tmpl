@@ -61,7 +61,7 @@
         {{ util.form_input_text(name="authors", label=gettext("Authors")) }}
         {{ util.form_input_text(name="filename", label=gettext("Filename"), info=gettext("Leave empty for current filename.")) }}
         {{ util.form_input_file(name="attachment", accept="application/pdf", info=gettext("Only PDFs allowed.")) }}
-        {{ util.form_input_submit(value=gettext("Upload"), cancellink=(
+        {{ util.form_input_submit(label=gettext("Upload"), cancellink=(
             cdedblink('assembly/show_attachment') if attachment else (
                 cdedblink('assembly/show_ballot') if ambience['ballot']
                     else cdedblink('assembly/show_assembly')))) }}

@@ -153,7 +153,7 @@ class TestEventFrontend(FrontendTest):
             "address_supplement": "on the left",
             "postal_code": "12345",
             "location": "Lynna",
-            "country": "Hyrule",
+            "country": "HY",
             "notes": "some talk",
         }
         f = self.response.forms['newuserform']

@@ -109,7 +109,7 @@
                 info=(util.markdownhint + " " + gettext("This is only for event-internal information. Any public"
                                                         " information should be placed on the website."))) }}
 
-        {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink('event/show_event'), readonly=is_locked) }}
+        {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink('event/show_event'), readonly=is_locked) }}
     </form>
     <script nonce="{{ csp_nonce }}">
         $('#changeeventform').cdedbProtectChanges();
