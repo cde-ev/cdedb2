@@ -12,9 +12,6 @@ clone:
 steps:
 - name: clone
   image: docker:20.10-git
-  volumes:
-  - name: dockersock
-    path: /var/run/docker.sock
   commands:
   - git clone $DRONE_GIT_HTTP_URL .
   # make use of our custom po file merge driver
@@ -28,9 +25,6 @@ steps:
   - git merge $DRONE_COMMIT
 - name: undo merge
   image: docker:20.10-git
-  volumes:
-  - name: dockersock
-    path: /var/run/docker.sock
   commands:
   - git merge --abort
   - git checkout $DRONE_COMMIT
