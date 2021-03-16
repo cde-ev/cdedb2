@@ -165,21 +165,21 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
     @as_users("annika", "martin", "vera", "werner", "anton")
     def test_sidebar(self, user: CdEDBObject) -> None:
         self.traverse({'description': 'Versammlungen'})
-        everyone = ["Versammlungen", "Übersicht"]
+        everyone = {"Versammlungen", "Übersicht"}
 
         # not assembly admins
         if user['id'] in {USER_DICT["annika"]['id'], USER_DICT["martin"]['id'],
                           USER_DICT["werner"]['id']}:
             ins = everyone
-            out = ["Nutzer verwalten", "Log"]
+            out = {"Nutzer verwalten", "Log"}
         # core admins
         elif user['id'] == USER_DICT["vera"]['id']:
-            ins = everyone + ["Nutzer verwalten"]
-            out = ["Log"]
+            ins = everyone | {"Nutzer verwalten"}
+            out = {"Log"}
         # assembly admins
         elif user['id'] == USER_DICT["anton"]['id']:
-            ins = everyone + ["Nutzer verwalten", "Log"]
-            out = []
+            ins = everyone | {"Nutzer verwalten", "Log"}
+            out = set()
         else:
             self.fail("Please adjust users for this tests.")
 
@@ -340,9 +340,9 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self.traverse({'description': 'Versammlungen'})
 
         self.traverse({'description': 'Internationaler Kongress'})
-        attendee = ["Versammlungs-Übersicht", "Übersicht", "Teilnehmer",
-                    "Abstimmungen", "Zusammenfassung", "Datei-Übersicht"]
-        admin = ["Konfiguration", "Log"]
+        attendee = {"Versammlungs-Übersicht", "Übersicht", "Teilnehmer",
+                    "Abstimmungen", "Zusammenfassung", "Datei-Übersicht"}
+        admin = {"Konfiguration", "Log"}
 
         # not assembly admins
         if user in [USER_DICT['annika'], USER_DICT['martin'], USER_DICT['vera']]:
@@ -350,8 +350,8 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             out = admin
         # assembly admin
         elif user == USER_DICT['werner']:
-            ins = attendee + admin
-            out = []
+            ins = attendee | admin
+            out = set()
         else:
             self.fail("Please adjust users for this tests.")
 
