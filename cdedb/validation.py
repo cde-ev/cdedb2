@@ -1414,7 +1414,8 @@ def _country(
     val: Any, argname: str = None, *, _ignore_warnings: bool = False,
     _convert: bool = True, **kwargs: Any
 ) -> Country:
-    val = _ALL_TYPED[str](val, argname, _ignore_warnings=_ignore_warnings, **kwargs)
+    val = _ALL_TYPED[str](val, argname, _ignore_warnings=_ignore_warnings,
+                          _convert=_convert, **kwargs)
     if _convert:
         val = val.strip()
     if val not in COUNTRY_CODES:

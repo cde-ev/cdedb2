@@ -461,7 +461,11 @@ class CdEFrontend(AbstractUserFrontend):
             'paper_expuls': True,
             'bub_search': False,
             'decided_search': False,
-            'notes': None})
+            'notes': None,
+            'country2': self.conf["DEFAULT_COUNTRY"],
+        })
+        if not persona.get('country', "").strip():
+            persona['country'] = self.conf["DEFAULT_COUNTRY"]
         merge_dicts(persona, PERSONA_DEFAULTS)
         persona, problems = validate_check(
             vtypes.Persona, persona, argname="persona", creation=True)
