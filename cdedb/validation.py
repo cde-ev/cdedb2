@@ -1403,9 +1403,11 @@ def _german_postal_code(
         val, argname, _ignore_warnings=_ignore_warnings, **kwargs)
     val = val.strip()
     if not aux or aux.strip() == "DE":
+        msg = n_("Invalid german postal code.")
+        if not (len(val) == 5 and val.isdigit()):
+            raise ValidationSummary(ValueError(argname, msg))
         if val not in GERMAN_POSTAL_CODES and not _ignore_warnings:
-            raise ValidationSummary(
-                ValidationWarning(argname, n_("Invalid german postal code.")))
+            raise ValidationSummary(ValidationWarning(argname, msg))
     return GermanPostalCode(val)
 
 
