@@ -2122,7 +2122,7 @@ RESTRICTED_MOD_ALLOWED_FIELDS = {
 FULL_MOD_REQUIRING_FIELDS = {
     'registration_stati'}
 
-#: Fields of a mailinglist which may be changed by privileged moderators
+#: Fields of a mailinglist which may be changed by (full) moderators
 MOD_ALLOWED_FIELDS = RESTRICTED_MOD_ALLOWED_FIELDS | FULL_MOD_REQUIRING_FIELDS
 
 #: Fields of an assembly

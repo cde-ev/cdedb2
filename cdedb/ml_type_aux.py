@@ -383,8 +383,8 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
                                 ) -> bool:
         """Check if the user is a restricted moderator.
 
-        For EventAssociatedMailinglists, this all moderators except the orgas
-        of the event.
+        For EventAssociatedMailinglists, this are all moderators except for the orgas
+        of the event and event admins.
         """
         check_appropriate_type(mailinglist, cls)
 
@@ -491,7 +491,7 @@ class EventOrgaMailinglist(EventAssociatedMeta, EventMailinglist):
     @classmethod
     def get_implicit_subscribers(cls, rs: RequestState, bc: BackendContainer,
                                  mailinglist: CdEDBObject) -> Set[int]:
-        """Get a list of personas that should be on this mailinglist.
+        """Get a list of people that should be on this mailinglist.
 
         For the `EventOrgaMailinglist` this means the event's orgas.
         """
@@ -512,7 +512,7 @@ class AssemblyAssociatedMailinglist(AssemblyMailinglist):
     def is_restricted_moderator(cls, rs: RequestState, bc: BackendContainer,
                                 mailinglist: CdEDBObject
                                 ) -> bool:
-        """Check if a moderator is privileged.
+        """Check if the user is a restricted moderator.
 
         For AssemblyAssociatedMailinglists this is the case if the moderator may
         interact with the associated assembly.
