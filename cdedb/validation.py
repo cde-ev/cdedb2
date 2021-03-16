@@ -1418,7 +1418,8 @@ def _country(
     if _convert:
         val = val.strip()
     if val not in COUNTRY_CODES:
-        raise ValidationSummary(argname, n_("Enter actual country name in English."))
+        raise ValidationSummary(
+            ValueError(argname, n_("Enter actual country name in English.")))
     return Country(val)
 
 
