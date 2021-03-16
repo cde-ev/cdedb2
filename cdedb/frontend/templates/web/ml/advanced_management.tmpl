@@ -63,7 +63,7 @@
                         );
                     </script>
                     <div class="input-group-btn">
-                        {{ util.input_submit(value=gettext("Add"), aclass="btn btn-success") }}
+                        {{ util.input_submit(label=gettext("Add"), aclass="btn btn-success") }}
                     </div>
                 </div>
                 {{ util.output_errors('modsubscriber_ids', wrapper=True) }}
@@ -81,7 +81,7 @@
                                   class="hide-hover display-inline">
                                 {{ util.anti_csrf_token('ml/remove_subscription_override') }}
                                 {{ util.input_hidden(name="modsubscriber_id", value=subscription_override) }}
-                                {{ util.input_submit(value='', aclass="btn btn-xs btn-danger list-button-float", icon="minus",
+                                {{ util.input_submit(label='', aclass="btn btn-xs btn-danger list-button-float", icon="minus",
                                         title=gettext("Remove %(given_names)s %(family_name)s as forced subscriber")|format(
                                             given_names=persona['given_names'],
                                             family_name=persona['family_name'])) }}
@@ -115,7 +115,7 @@
                         );
                     </script>
                     <div class="input-group-btn">
-                        {{ util.input_submit(value=gettext("Add"), aclass="btn btn-success") }}
+                        {{ util.input_submit(label=gettext("Add"), aclass="btn btn-success") }}
                     </div>
                 </div>
                 {{ util.output_errors('modunsubscriber_ids', wrapper=True) }}
@@ -133,7 +133,7 @@
                                   class="hide-hover display-inline">
                                 {{ util.anti_csrf_token('ml/remove_unsubscription_override') }}
                                 {{ util.input_hidden(name="modunsubscriber_id", value=unsubscription_override) }}
-                                {{ util.input_submit(value='', aclass="btn btn-xs btn-danger list-button-float", icon="minus",
+                                {{ util.input_submit(label='', aclass="btn btn-xs btn-danger list-button-float", icon="minus",
                                         title=gettext("Remove %(given_names)s %(family_name)s as blocked subscriber")|format(
                                             given_names=persona['given_names'],
                                             family_name=persona['family_name'])) }}
@@ -160,7 +160,7 @@
             {{ util.input_text(name="email", type="email", placeholder="mail@example.com",
                                arialabel=gettext("Email Address to whitelist")) }}
             <div class="input-group-btn">
-                {{ util.input_submit(value=gettext("Add"), aclass="btn btn-success") }}
+                {{ util.input_submit(label=gettext("Add"), aclass="btn btn-success") }}
             </div>
         </div>
         {{ util.output_errors('email', wrapper=True) }}
@@ -180,7 +180,7 @@
                                 class="hide-hover display-inline">
                                 {{ util.anti_csrf_token('ml/remove_whitelist') }}
                                 {{ util.input_hidden(name="email", value=email) }}
-                                {{ util.input_submit(value="", aclass="btn btn-xs btn-danger list-button-float", icon="minus",
+                                {{ util.input_submit(label="", aclass="btn btn-xs btn-danger list-button-float", icon="minus",
                                         title=gettext("Remove %s from Whitelist")|format(email)) }}
                             </form>
                         </li>
@@ -226,7 +226,7 @@
                                           class="hide-hover display-inline">
                                         {{ util.anti_csrf_token('ml/reset_unsubscription') }}
                                         {{ util.input_hidden(name="unsubscription_id", value=unsubscription) }}
-                                        {{ util.input_submit(value='', aclass="btn btn-xs btn-danger list-button-float", icon="trash-alt",
+                                        {{ util.input_submit(label='', aclass="btn btn-xs btn-danger list-button-float", icon="trash-alt",
                                                 title=gettext("Reset %(given_names)s %(family_name)s explicit unsubscription")|format(
                                                     given_names=all_unsubscriptions[unsubscription]['given_names'],
                                                     family_name=all_unsubscriptions[unsubscription]['family_name'])) }}
@@ -238,7 +238,7 @@
                                           class="hide-hover display-inline">
                                         {{ util.anti_csrf_token('ml/readd_subscriber') }}
                                         {{ util.input_hidden(name="subscriber_id", value=unsubscription) }}
-                                        {{ util.input_submit(value='', aclass="btn btn-xs btn-success list-button-float", icon="plus",
+                                        {{ util.input_submit(label='', aclass="btn btn-xs btn-success list-button-float", icon="plus",
                                                 title=gettext("Subscribe %(given_names)s %(family_name)s")|format(
                                                     given_names=all_unsubscriptions[unsubscription]['given_names'],
                                                     family_name=all_unsubscriptions[unsubscription]['family_name'])) }}

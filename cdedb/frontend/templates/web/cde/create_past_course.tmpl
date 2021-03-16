@@ -32,6 +32,6 @@
         {{ util.form_input_static(aclass='text-info', icon='info-circle',
                           value=gettext("Warning: The new Course will be immediately visible to all CdE members "
                                         "viewing this past event.")) }}
-        {{ util.form_input_submit(value=gettext("Create"), cancellink=cdedblink("cde/show_past_event")) }}
+        {{ util.form_input_submit(label=gettext("Create"), cancellink=cdedblink("cde/show_past_event")) }}
     </form>
 {% endblock %}

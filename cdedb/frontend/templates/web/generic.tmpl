@@ -44,7 +44,8 @@
             {{ util.form_input_text(name="address_supplement", label=gettext("Address Supplement")) }}
             {{ util.form_input_text(name="postal_code", label=gettext("Zipcode")) }}
             {{ util.form_input_text(name="location", label=gettext("City")) }}
-            {{ util.form_input_text(name="country", label=gettext("Country")) }}
+            {{ util.form_input_select(name="country", label=gettext("Country"), entries=COUNTRY_CODES,
+                                      defaultvalue=DEFAULT_COUNTRY) }}
         {% endif %}
         {% if realm == "cde" %}
             <h4 class="heading-underline">{% trans %}Second Address{% endtrans %}</h4>
@@ -52,7 +53,8 @@
             {{ util.form_input_text(name="address_supplement2", label=gettext("Address Supplement")) }}
             {{ util.form_input_text(name="postal_code2", label=gettext("Zipcode")) }}
             {{ util.form_input_text(name="location2", label=gettext("City")) }}
-            {{ util.form_input_text(name="country2", label=gettext("Country")) }}
+            {{ util.form_input_select(name="country2", label=gettext("Country"), entries=COUNTRY_CODES,
+                                      defaultvalue=DEFAULT_COUNTRY) }}
         {% endif %}
 
         <h4 class="heading-underline">{% trans %}Account & Membership{% endtrans %}</h4>
@@ -69,7 +71,7 @@
         {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="7", info=util.markdownhint) }}
 
 
-        {{ util.form_input_submit(value=gettext("Create User"), cancellink=cdedblink("{}/user_search".format(realm))) }}
+        {{ util.form_input_submit(label=gettext("Create User"), cancellink=cdedblink("{}/user_search".format(realm))) }}
     </form>
     <script nonce="{{ csp_nonce }}">
         $('#newuserform').cdedbProtectChanges();
@@ -411,15 +413,12 @@
                 </div>
 
                 <p class="pull-right nosp">
-                    <button type="submit" class="btn btn-primary">
-                        {{ util.make_icon('search') }} {% trans %}Search{% endtrans %}</button>
+                    {{ util.input_submit(label=gettext("Search"), icon="search") }}
                     <span class="btn-group">
-                        <button type="submit" class="btn btn-default" name="download" value="csv">
-                            {{ util.make_icon('download') }} {% trans %}CSV file{% endtrans %}
-                        </button>
-                        <button type="submit" class="btn btn-default" name="download" value="json">
-                            {{ util.make_icon('download') }} {% trans %}JSON file{% endtrans %}
-                        </button>
+                        {{ util.input_submit(label=gettext("CSV file"), value="csv", name="download", icon="download",
+                            aclass="btn btn-default") }}
+                        {{ util.input_submit(label=gettext("JSON file"), value="json", name="download", icon="download",
+                            aclass="btn btn-default") }}
                     </span>
                 </p>
                 {{ util.output_errors('query', wrapper=True) }}

@@ -47,7 +47,7 @@
                 <form action="{{ cdedblink("assembly/ballot_start_voting") }}" method="POST"
                       id="startvotingform" style="display: inline;">
                     {{ util.anti_csrf_token("assembly/ballot_start_voting") }}
-                    {{ util.input_submit(value=gettext("Start Voting"), aclass="btn btn-sm btn-success",
+                    {{ util.input_submit(label=gettext("Start Voting"), aclass="btn btn-sm btn-success",
                             icon="check-square") }}
                 </form>
             {% endif %}

@@ -22,7 +22,7 @@ from cdedb.common import (
     MAILINGLIST_FIELDS, MOD_ALLOWED_FIELDS, RESTRICTED_MOD_ALLOWED_FIELDS, CdEDBLog,
     CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, PathLike,
     PrivilegeError, RequestState, SubscriptionActions, SubscriptionError,
-    implying_realms, make_proxy, mixed_existence_sorter, n_, unwrap,
+    implying_realms, make_proxy, mixed_existence_sorter, n_, unwrap, ADMIN_KEYS,
 )
 from cdedb.database.connection import Atomizer
 from cdedb.ml_type_aux import MLType, MLTypeLike
@@ -407,12 +407,11 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def set_moderators(self, rs: RequestState, mailinglist_id: int,
-                       moderators: Collection[int]) -> DefaultReturnCode:
+                       moderators: Collection[int], change_note: Optional[str] = None
+                       ) -> DefaultReturnCode:
         """Set moderators of a mailinglist.
 
         A complete set must be passed, which will superseed the current set.
-
-        Contrary to `set_mailinglist` this may be used by moderators.
         """
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
         moderators = affirm_set(vtypes.ID, moderators)
@@ -443,15 +442,15 @@ class MlBackend(AbstractBackend):
                         'mailinglist_id': mailinglist_id,
                     }
                     ret *= self.sql_insert(rs, "ml.moderators", new_mod)
-                    self.ml_log(rs, const.MlLogCodes.moderator_added,
-                                mailinglist_id, persona_id=anid)
+                    self.ml_log(rs, const.MlLogCodes.moderator_added, mailinglist_id,
+                                persona_id=anid, change_note=change_note)
             if deleted:
                 query = ("DELETE FROM ml.moderators"
                          " WHERE persona_id = ANY(%s) AND mailinglist_id = %s")
                 ret *= self.query_exec(rs, query, (deleted, mailinglist_id))
                 for anid in mixed_existence_sorter(deleted):
-                    self.ml_log(rs, const.MlLogCodes.moderator_removed,
-                                mailinglist_id, persona_id=anid)
+                    self.ml_log(rs, const.MlLogCodes.moderator_removed, mailinglist_id,
+                                persona_id=anid, change_note=change_note)
         return ret
 
     @access("ml")
@@ -864,8 +863,7 @@ class MlBackend(AbstractBackend):
                 del datum['subscription_state']
                 ret = self._remove_subscription(rs, datum)
             if ret and code:
-                self.ml_log(
-                    rs, code, datum['mailinglist_id'], datum['persona_id'])
+                self.ml_log(rs, code, datum['mailinglist_id'], datum['persona_id'])
 
             return ret
 
@@ -1095,6 +1093,7 @@ class MlBackend(AbstractBackend):
         subscribers (or a subset given via `persona_ids`) to email addresses.
         If they have expicitly specified a subscription address that one is
         returned, otherwise the username is returned.
+        # TODO this must not happen
         If a subscriber has neither a username nor a explicit subscription
         address then for that subscriber None is returned.
 
@@ -1305,6 +1304,125 @@ class MlBackend(AbstractBackend):
         query = "SELECT COUNT(*) AS num FROM ml.mailinglists WHERE address = %s"
         data = self.query_one(rs, query, (address,))
         return bool(unwrap(data))
+
+    @access("ml_admin")
+    def merge_accounts(self, rs: RequestState,
+                       source_persona_id: vtypes.ID,
+                       target_persona_id: vtypes.ID,
+                       clone_addresses: bool = True) -> DefaultReturnCode:
+        """Merge an ml_only account into another persona.
+
+        This takes the source_persona, mirrors all subscription states and moderator
+        privileges to the target_persona, and archives the source_persona at last.
+
+        Make sure that the two users are not related to the same mailinglist. Otherwise,
+        this function will abort.
+
+        :param source_persona_id: user from which will be merged
+        :param target_persona_id: user into which will be merged
+        :param clone_addresses: if true, use the address (explicit set or username) of
+            the source when subscribing the target to a mailinglist
+        """
+        source_persona_id = affirm(vtypes.ID, source_persona_id)
+        target_persona_id = affirm(vtypes.ID, target_persona_id)
+
+        SS = const.SubscriptionStates
+        SA = SubscriptionActions
+
+        # TODO add is_implicit method to SubscriptionStates and use it here
+        non_implicit_states = {state for state in SS if state != SS.implicit}
+
+        state_to_log: Dict[const.SubscriptionStates, const.MlLogCodes] = {
+            SS.subscribed: SA.add_subscriber.get_log_code(),
+            SS.unsubscribed: SA.remove_subscriber.get_log_code(),
+            SS.subscription_override: SA.add_subscription_override.get_log_code(),
+            SS.unsubscription_override: SA.add_unsubscription_override.get_log_code(),
+            SS.pending: SA.request_subscription.get_log_code(),
+            # we ignore implicit subscriptions
+            # SS.implicit: None,
+        }
+
+        with Atomizer(rs):
+            # check the source user is ml_only, no admin and not archived
+            source = self.core.get_ml_user(rs, source_persona_id)
+            if any(source[admin_bit] for admin_bit in ADMIN_KEYS):
+                raise ValueError(n_("Source User is admin and can not be merged."))
+            if not self.core.verify_persona(rs, source_persona_id, allowed_roles={'ml'}):
+                raise ValueError(n_("Source persona must be a ml-only user."))
+            if source['is_archived']:
+                raise ValueError(n_("Source User is not accessible."))
+
+            # check the target user is a valid persona and not archived
+            target = self.core.get_ml_user(rs, target_persona_id)
+            if not self.core.verify_persona(rs, target_persona_id, required_roles={'ml'}):
+                raise ValueError(n_("Target User is no valid ml user."))
+            if target['is_archived']:
+                raise ValueError(n_("Target User is not accessible."))
+            if source_persona_id == target_persona_id:
+                raise ValueError(n_("Can not merge user into himself."))
+
+            # retrieve all mailinglists they are subscribed to
+            # TODO restrict to active mailinglists?
+            source_subscriptions = self.get_user_subscriptions(
+                rs, source_persona_id, states=non_implicit_states)
+            target_subscriptions = self.get_user_subscriptions(rs, target_persona_id)
+
+            # retrieve all mailinglists moderated by the source
+            source_moderates = self.moderator_info(rs, source_persona_id)
+
+            ml_overlap = set(source_subscriptions) & set(target_subscriptions)
+            if ml_overlap:
+                ml_titles = [e['title']
+                             for e in self.get_mailinglists(rs, ml_overlap).values()]
+                msg = n_("Both users are related to the same mailinglists: %(mls)s")
+                rs.notify("error", msg, {'mls': ", ".join(ml_titles)})
+                return 0
+
+            code = 1
+            msg = f"Nutzer {source_persona_id} ist in diesem Account aufgegangen."
+
+            for ml_id, state in source_subscriptions.items():
+                # state=None is only possible, if we handle a set of mailinglists
+                # to get_subscription_states
+                assert state is not None
+
+                if clone_addresses:
+                    address = self.get_subscription_address(
+                        rs, ml_id, explicits_only=False, persona_id=source_persona_id)
+                    # get_subscription_address returns only None if explicits_only=True
+                    assert address is not None
+
+                # set the target to the subscription state of the source
+                datum = {
+                    'mailinglist_id': ml_id,
+                    'persona_id': target_persona_id,
+                    'subscription_state': state,
+                }
+                code *= self._set_subscription(rs, datum)
+                self.ml_log(
+                    rs, state_to_log[state], datum['mailinglist_id'],
+                    datum['persona_id'], change_note=msg)
+
+                # set the subscribing address of the target to the address of the source
+                if clone_addresses:
+                    assert address is not None
+                    code *= self.set_subscription_address(
+                        rs, ml_id, persona_id=target_persona_id, email=address)
+
+            mls = self.get_mailinglists(rs, source_moderates)
+            for ml_id in source_moderates:
+                current_moderators: Set[int] = mls[ml_id]["moderators"]
+                new_moderators = current_moderators | {target_persona_id}
+                # we do not mind if both users are currently moderator of a mailinglist
+                code *= abs(self.set_moderators(
+                    rs, ml_id, new_moderators, change_note=msg))
+
+            # at last, archive the source user
+            # this will delete all subscriptions and remove all moderator rights
+            msg = f"Dieser Account ist in Nutzer {target_persona_id} aufgegangen."
+            code *= self.core.archive_persona(rs, persona_id=source_persona_id, note=msg)
+
+        return code
 
     @access("ml")
     def log_moderation(self, rs: RequestState, code: const.MlLogCodes,

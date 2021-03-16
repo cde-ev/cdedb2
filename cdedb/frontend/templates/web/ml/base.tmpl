@@ -32,6 +32,7 @@
 {% block breadcrumb %}
     {{ util.breadcrumb_link(cdedblink("ml/index"), gettext("Mailinglists")) }}
 {% endblock %}
+
 {% block navigation %}
     {% if ambience['mailinglist'] %}
         <p>
@@ -69,8 +70,14 @@
                 {{ util.href(cdedblink("ml/moderated_mailinglists"), gettext("Moderated Mailinglists"), icon="list",
                              aclass="list-group-item", active=(sidenav_active == 'ml_moderated')) }}
             {% endif %}
-
         </div>
+        {# This functionality is only available for true mailinglist admins. #}
+        {% if 'ml_user' in user.admin_views and 'ml_admin' in user.roles %}
+            <div class="list-group tear-down">
+                {{ util.href(cdedblink("ml/merge_accounts_form"), gettext("Merge Accounts"),
+                        icon="user-friends", aclass="list-group-item", active=(sidenav_active == 'ml_merger')) }}
+            </div>
+        {% endif %}
         {% if user.moderator or user.admin_views.intersection(ALL_MGMT_ADMIN_VIEWS) or 'ml_user' in user.admin_views %}
             <div class="list-group tear-down">
                 {% if 'ml_user' in user.admin_views %}

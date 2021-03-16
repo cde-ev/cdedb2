@@ -19,6 +19,6 @@
         {{ util.input_hidden(name="new_username") }}
         {{ util.form_input_text(name="password", type="password", label=gettext("Password"),
                                 attributes='autocomplete="current-password"'|s) }}
-        {{ util.form_input_submit(value=gettext("Confirm")) }}
+        {{ util.form_input_submit(label=gettext("Confirm")) }}
     </form>
 {% endblock %}

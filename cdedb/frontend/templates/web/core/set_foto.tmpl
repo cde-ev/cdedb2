@@ -34,7 +34,7 @@
                     {{ util.anti_csrf_token('core/set_foto') }}
                     {{ util.input_hidden(name="delete", value=True) }}
                     <div class="form-group">
-                        {{ util.input_submit(value=gettext("Delete Picture"), aclass="btn btn-danger", icon="trash-alt") }}
+                        {{ util.input_submit(label=gettext("Delete Picture"), aclass="btn btn-danger", icon="trash-alt") }}
                     </div>
                 </form>
             </div>
@@ -60,7 +60,7 @@
                     <div class="input-group">
                         {{ util.input_file(name="foto", accept="image/*", arialabel=gettext("Picture-File")) }}
                         <div class="input-group-btn">
-                            {{ util.input_submit(value=gettext("Upload")) }}
+                            {{ util.input_submit(label=gettext("Upload")) }}
                         </div>
                     </div>
                     {{ util.output_errors('foto') }}

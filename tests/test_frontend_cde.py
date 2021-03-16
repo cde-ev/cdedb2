@@ -823,15 +823,16 @@ class TestCdEFrontend(FrontendTest):
             "address_supplement": "on the left",
             "postal_code": "12345",
             "location": "Lynna",
-            "country": "Hyrule",
+            "country": "HY",
             "address2": "Ligusterweg 4",
             "address_supplement2": "Im Schrank unter der Treppe",
             "postal_code2": "00AA",
             "location2": "Little Whinging",
-            "country2": "United Kingdom",
+            "country2": "GB",
             "notes": "some talk",
         }
         f = self.response.forms['newuserform']
+        self.assertEqual(f['country'].value, self.conf["DEFAULT_COUNTRY"])
         self.assertIsNone(
             self.response.lxml.get_element_by_id('input_checkbox_is_searchable').value)
         self.assertFalse(

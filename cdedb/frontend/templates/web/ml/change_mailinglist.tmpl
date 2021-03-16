@@ -126,6 +126,6 @@
                     "This setting currently has no effect. By default, mailinglists accept PDF attachments only. "
                     "Other attachment policy can be changed by the Admin-Team.")) }}
         {{ util.form_input_text(name="maxsize", label=gettext("max. message size (in kB)"), type="number") }}
-        {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink('ml/show_mailinglist')) }}
+        {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink('ml/show_mailinglist')) }}
     </form>
 {% endblock %}
