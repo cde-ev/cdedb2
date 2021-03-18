@@ -102,36 +102,36 @@ class TestCdEFrontend(FrontendTest):
     @as_users("annika", "berta", "charly", "farin", "martin", "vera", "werner")
     def test_sidebar(self, user: CdEDBObject) -> None:
         self.traverse({'description': 'Mitglieder'})
-        everyone = ["Mitglieder", "Übersicht"]
-        past_event = ["Verg. Veranstaltungen"]
-        member = ["Sonstiges", "Datenschutzerklärung", "Kurssuche"]
-        searchable = ["CdE-Mitglied suchen"]
-        cde_admin = ["Nutzer verwalten", "Organisationen verwalten",
-                     "Mitglieder-Statistik", "Verg.-Veranstaltungen-Log"]
-        finance_admin = [
+        everyone = {"Mitglieder", "Übersicht"}
+        past_event = {"Verg. Veranstaltungen"}
+        member = {"Sonstiges", "Datenschutzerklärung", "Kurssuche"}
+        searchable = {"CdE-Mitglied suchen"}
+        cde_admin = {"Nutzer verwalten", "Organisationen verwalten",
+                     "Mitglieder-Statistik", "Verg.-Veranstaltungen-Log"}
+        finance_admin = {
             "Einzugsermächtigungen", "Kontoauszug parsen", "Finanz-Log",
-            "Überweisungen eintragen", "Semesterverwaltung", "CdE-Log"]
+            "Überweisungen eintragen", "Semesterverwaltung", "CdE-Log"}
 
         # non-members
         if user in [USER_DICT['annika'], USER_DICT['werner'], USER_DICT['martin']]:
             ins = everyone
-            out = past_event + member + searchable + cde_admin + finance_admin
+            out = past_event | member | searchable | cde_admin | finance_admin
         # searchable member
         elif user == USER_DICT['berta']:
-            ins = everyone + past_event + member + searchable
-            out = cde_admin + finance_admin
+            ins = everyone | past_event | member | searchable
+            out = cde_admin | finance_admin
         # not-searchable member
         elif user == USER_DICT['charly']:
-            ins = everyone + past_event + member
-            out = searchable + cde_admin + finance_admin
+            ins = everyone | past_event | member
+            out = searchable | cde_admin | finance_admin
         # cde but not finance admin (vera is no member)
         elif user == USER_DICT['vera']:
-            ins = everyone + past_event + cde_admin
-            out = member + searchable + finance_admin
+            ins = everyone | past_event | cde_admin
+            out = member | searchable | finance_admin
         # cde and finance admin (farin is no member)
         elif user == USER_DICT['farin']:
-            ins = everyone + past_event + cde_admin + finance_admin
-            out = member + searchable
+            ins = everyone | past_event | cde_admin | finance_admin
+            out = member | searchable
         else:
             self.fail("Please adjust users for this tests.")
 
@@ -823,15 +823,16 @@ class TestCdEFrontend(FrontendTest):
             "address_supplement": "on the left",
             "postal_code": "12345",
             "location": "Lynna",
-            "country": "Hyrule",
+            "country": "HY",
             "address2": "Ligusterweg 4",
             "address_supplement2": "Im Schrank unter der Treppe",
             "postal_code2": "00AA",
             "location2": "Little Whinging",
-            "country2": "United Kingdom",
+            "country2": "GB",
             "notes": "some talk",
         }
         f = self.response.forms['newuserform']
+        self.assertEqual(f['country'].value, self.conf["DEFAULT_COUNTRY"])
         self.assertIsNone(
             self.response.lxml.get_element_by_id('input_checkbox_is_searchable').value)
         self.assertFalse(

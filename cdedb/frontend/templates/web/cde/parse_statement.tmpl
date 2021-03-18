@@ -129,7 +129,7 @@
         {{ util.form_input_file(name="statement_file", label=gettext("Statement"), horizontal=False, accept="text/csv,.csv",
                 info=gettext("Directly paste the Bank Statement from Bank für Sozialwirtschaft here.")) }}
 
-        {{ util.form_input_submit(value=gettext("Parse"), horizontal=False) }}
+        {{ util.form_input_submit(label=gettext("Parse"), horizontal=False) }}
     </form>
 
     {% if data %}
@@ -176,25 +176,19 @@
             {% endfor %}
             <div id="submit-container">
             {{ util.form_input_checkbox(name="ignore_warnings", label=gettext("Ignore Warnings"), horizontal=False) }}
-            {{ util.form_input_submit(name="validate", value=gettext("Validate"), horizontal=False) }}
+            {{ util.form_input_submit(name="validate", label=gettext("Validate"), horizontal=False) }}
             {% if not params["has_error"] %}
-                <button type="submit" name="gnucash" value="gnucash" class="btn btn-primary">
-                    {{ util.make_icon('download') }} {% trans %}GnuCash Download{% endtrans %}
-                </button>
+                {{ util.input_submit(label=gettext("GnuCash Download"), value="gnucash", name="gnucash", icon='download') }}
                 {% for account in params["accounts"]|sort %}
-                    <button type="submit" name="excel" value="{{ account }}" class="btn btn-primary">
-                        {{ util.make_icon('download') }} {% trans %}Excel Download ({{ account }}){% endtrans %}
-                    </button>
+                    {{ util.input_submit(label=(gettext("Excel Download") + " " + account), value=account, name="excel", icon='download') }}
                 {% endfor %}
                 {% if params["memberships"] %}
-                    <button type="submit" name="membership" value="membership" class="btn btn-primary">
-                        {{ util.make_icon('download') }} {% trans %}Download Membership Fees{% endtrans %}
-                    </button>
+                    {{ util.input_submit(label=gettext("Download Membership Fees"), value="membership",
+                        name="membership", icon='download') }}
                 {% endif %}
                 {% for event_id in params["events"] %}
-                    <button type="submit" name="event" value="{{ event_id }}" class="btn btn-primary">
-                        {{ util.make_icon('download') }} {% trans shortname=events[event_id]['shortname'] %}Download {{ shortname }}{% endtrans %}
-                    </button>
+                    {{ util.input_submit(label=gettext("%(shortname)s participants")|format(shortname=events[event_id]['shortname']),
+                        value=event_id, name="event", icon='download') }}
                 {% endfor %}
             {% endif %}
             </div>

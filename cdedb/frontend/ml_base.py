@@ -271,6 +271,52 @@ class MlBaseFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/show_mailinglist", {
             'mailinglist_id': new_id})
 
+    @access("ml_admin")
+    def merge_accounts_form(self, rs: RequestState) -> Response:
+        """Render form."""
+        return self.render(rs, "merge_accounts")
+
+    @access("ml_admin", modi={"POST"})
+    @REQUESTdata("source_persona_id", "target_persona_id", "clone_addresses")
+    def merge_accounts(self, rs: RequestState,
+                       source_persona_id: vtypes.CdedbID,
+                       target_persona_id: vtypes.CdedbID,
+                       clone_addresses: bool) -> Response:
+        """Merge a ml only user (source) into an other user (target).
+
+        This mirrors the subscription states and moderator privileges of the source
+        to the target.
+
+        Make sure that the two users are not related to the same mailinglist. Otherwise,
+        this function will abort.
+        """
+        if rs.has_validation_errors():
+            return self.merge_accounts_form(rs)
+        if not self.coreproxy.verify_id(rs, source_persona_id, is_archived=False):
+            rs.append_validation_error(
+                ("source_persona_id", ValueError(n_(
+                    "User does not exist or is archived."))))
+        if not self.coreproxy.verify_id(rs, target_persona_id, is_archived=False):
+            rs.append_validation_error(
+                ("target_persona_id", ValueError(n_(
+                    "User does not exist or is archived."))))
+        if not self.coreproxy.verify_persona(rs, source_persona_id, allowed_roles={"ml"}):
+            rs.append_validation_error(
+                ("source_persona_id", ValueError(n_(
+                    "Source persona must be a ml-only user and no admin."))))
+        if source_persona_id == target_persona_id:
+            rs.append_validation_error(
+                ("target_persona_id", ValueError(n_(
+                    "Can not merge user into himself."))))
+        if rs.has_validation_errors():
+            return self.merge_accounts_form(rs)
+        code = self.mlproxy.merge_accounts(
+            rs, source_persona_id, target_persona_id, clone_addresses)
+        if not code:
+            return self.merge_accounts_form(rs)
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "ml/merge_accounts")
+
     @access("ml")
     @REQUESTdata(*LOG_FIELDS_COMMON, "mailinglist_id")
     def view_log(self, rs: RequestState, codes: Collection[const.MlLogCodes],

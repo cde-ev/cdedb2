@@ -39,6 +39,7 @@
      * @param placeholder If given, this string is used as placeholder in the selectize.js control
      */
     $.fn.cdedbSearchPerson = function(url,exclude,freeform,multi,placeholder) {
+        exclude ??= [];
         $(this).selectize({
             'placeholder' : placeholder || '',
             'valueField' : 'cdedb_id',

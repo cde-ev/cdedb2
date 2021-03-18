@@ -47,14 +47,14 @@
                                 {{ util.anti_csrf_token('core/genesis_decide') }}
                                 {{ util.input_hidden(name="genesis_case_id", value=genesis_case_id) }}
                                 {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].approved.value) }}
-                                {{ util.input_submit(value=gettext("Approve"), aclass="btn btn-sm btn-success") }}
+                                {{ util.input_submit(label=gettext("Approve"), aclass="btn btn-sm btn-success") }}
                             </form>
                             <form action="{{ cdedblink('core/genesis_decide', {'genesis_case_id': genesis_case_id}) }}" method="POST"
                              id="genesismlrejectionform{{ loop.index }}" class="rejection-form" style="display: inline;">
                                 {{ util.anti_csrf_token('core/genesis_decide') }}
                                 {{ util.input_hidden(name="genesis_case_id", value=genesis_case_id) }}
                                 {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].rejected.value) }}
-                                {{ util.input_submit(icon="times-circle", value=gettext("Reject"),
+                                {{ util.input_submit(label=gettext("Reject"), icon="times-circle",
                                     aclass="btn btn-sm btn-danger") }}
                             </form>
                         {% endif %}

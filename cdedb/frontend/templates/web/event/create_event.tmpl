@@ -59,7 +59,7 @@
         {{ util.form_input_checkbox(name="create_orga_list", label=gettext("Create Orga Mailinglist")) }}
         {{ util.form_input_checkbox(name="create_participant_list", label=gettext("Create Participant Mailinglist")) }}
 
-        {{ util.form_input_submit(value=gettext("Create"), cancellink=cdedblink("event/list_events")) }}
+        {{ util.form_input_submit(label=gettext("Create"), cancellink=cdedblink("event/list_events")) }}
     </form>
     <script nonce="{{ csp_nonce }}">
         $('#createeventform').cdedbProtectChanges();

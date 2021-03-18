@@ -3,7 +3,6 @@
 import csv
 import re
 import unittest.mock
-from typing import List
 
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
@@ -37,43 +36,41 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'description': 'Mailinglisten'})
         # Users with no administrated and no moderated mailinglists:
         if user['id'] in {USER_DICT['martin']['id']}:
-            ins = ["Übersicht"]
-            out = ["Alle Mailinglisten", "Moderierte Mailinglisten",
-                   "Aktive Mailinglisten", "Nutzer verwalten", "Log"]
+            ins = {"Übersicht"}
+            out = {"Alle Mailinglisten", "Moderierte Mailinglisten",
+                   "Aktive Mailinglisten", "Nutzer verwalten", "Log"}
         # Users with core admin privileges for some mailinglists:
         elif user['id'] in {USER_DICT['vera']['id']}:
-            ins = ["Aktive Mailinglisten", "Administrierte Mailinglisten",
-                   "Log", "Nutzer verwalten"]
-            out = ["Übersicht", "Alle Mailinglisten",
-                   "Moderierte Mailinglisten"]
+            ins = {"Aktive Mailinglisten", "Administrierte Mailinglisten", "Log",
+                   "Nutzer verwalten"}
+            out = {"Übersicht", "Alle Mailinglisten", "Moderierte Mailinglisten"}
         # Users with relative admin privileges for some mailinglists:
         elif user['id'] in {USER_DICT['viktor']['id']}:
-            ins = ["Aktive Mailinglisten", "Administrierte Mailinglisten",
-                   "Log"]
-            out = ["Übersicht", "Alle Mailinglisten",
-                   "Moderierte Mailinglisten", "Nutzer verwalten"]
+            ins = {"Aktive Mailinglisten", "Administrierte Mailinglisten", "Log"}
+            out = {"Übersicht", "Alle Mailinglisten", "Moderierte Mailinglisten",
+                   "Nutzer verwalten"}
         # Users with moderated mailinglists and relative admin privileges
         # for some mailinglists:
         elif user['id'] in {USER_DICT['annika']['id']}:
-            ins = ["Aktive Mailinglisten", "Administrierte Mailinglisten",
-                   "Moderierte Mailinglisten", "Log"]
-            out = ["Übersicht", "Alle Mailinglisten",
-                   "Nutzer verwalten"]
+            ins = {"Aktive Mailinglisten", "Administrierte Mailinglisten",
+                   "Moderierte Mailinglisten", "Log"}
+            out = {"Übersicht", "Alle Mailinglisten", "Nutzer verwalten"}
         # Users with moderated mailinglists, but no admin privileges.
         elif user['id'] in {USER_DICT['berta']['id']}:
-            ins = ["Aktive Mailinglisten", "Moderierte Mailinglisten", "Log"]
-            out = ["Übersicht", "Administrierte Mailinglisten",
-                   "Alle Mailinglisten", "Nutzer verwalten"]
+            ins = {"Aktive Mailinglisten", "Moderierte Mailinglisten", "Log"}
+            out = {"Übersicht", "Administrierte Mailinglisten", "Alle Mailinglisten",
+                   "Nutzer verwalten"}
         # Users with full ml-admin privileges.
         elif user['id'] in {USER_DICT['nina']['id']}:
-            ins = ["Aktive Mailinglisten", "Alle Mailinglisten",
-                   "Nutzer verwalten", "Log"]
-            out = ["Übersicht", "Moderierte Mailinglisten"]
-        # Users with moderated mailinglisrs with full ml-admin privileges.
+            ins = {"Aktive Mailinglisten", "Alle Mailinglisten",
+                   "Accounts verschmelzen", "Nutzer verwalten", "Log"}
+            out = {"Übersicht", "Moderierte Mailinglisten"}
+        # Users with moderated mailinglists with full ml-admin privileges.
         elif user['id'] in {USER_DICT['anton']['id']}:
-            ins = ["Aktive Mailinglisten", "Alle Mailinglisten",
-                   "Moderierte Mailinglisten", "Nutzer verwalten", "Log"]
-            out = ["Übersicht"]
+            ins = {"Aktive Mailinglisten", "Alle Mailinglisten",
+                   "Accounts verschmelzen", "Moderierte Mailinglisten",
+                   "Nutzer verwalten", "Log"}
+            out = {"Übersicht"}
         else:
             self.fail("Please adjust users for this tests.")
 
@@ -150,6 +147,67 @@ class TestMlFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Zelda Zeruda-Hime")
 
+    @as_users("nina")
+    def test_merge_accounts(self, user: CdEDBObject) -> None:
+        self.traverse({'description': "Mailinglisten"},
+                      {'description': "Accounts verschmelzen"})
+
+        berta_id = USER_DICT['berta']['DB-ID']
+        janis_id = USER_DICT['janis']['DB-ID']
+
+        # try some failing cases
+        f = self.response.forms['merge-accounts']
+        f['source_persona_id'] = USER_DICT['rowena']['DB-ID']
+        f['target_persona_id'] = berta_id
+        self.submit(f, check_notification=False)
+        msg = "Der Quellnutzer muss ein reiner Mailinglistennutzer und darf kein Admin sein."
+        self.assertValidationError('source_persona_id', msg)
+
+        f = self.response.forms['merge-accounts']
+        f['source_persona_id'] = USER_DICT['nina']['DB-ID']
+        f['target_persona_id'] = berta_id
+        self.submit(f, check_notification=False)
+        msg = "Der Quellnutzer muss ein reiner Mailinglistennutzer und darf kein Admin sein."
+        self.assertValidationError('source_persona_id', msg)
+
+        f = self.response.forms['merge-accounts']
+        f['source_persona_id'] = janis_id
+        f['target_persona_id'] = "DB-100000-4"
+        self.submit(f, check_notification=False)
+        msg = "Dieser Benutzer existiert nicht oder ist archiviert."
+        self.assertValidationError('target_persona_id', msg)
+
+        f = self.response.forms['merge-accounts']
+        f['source_persona_id'] = janis_id
+        f['target_persona_id'] = USER_DICT['hades']['DB-ID']
+        self.submit(f, check_notification=False)
+        msg = "Dieser Benutzer existiert nicht oder ist archiviert."
+        self.assertValidationError('target_persona_id', msg)
+
+        # The next case is possible in principle, but has a blocking mailinglist ...
+        f = self.response.forms['merge-accounts']
+        f['source_persona_id'] = janis_id
+        f['target_persona_id'] = berta_id
+        self.submit(f, check_notification=False)
+        msg = "Beide Benutzer haben einen Bezug zu gleichen Mailinglisten: Witz des Tages"
+        self.assertPresence(msg, div='notifications')
+
+        # ... so we resolve the blocking ...
+        self.traverse({'description': 'Mailinglisten'},
+                      {'description': 'Witz des Tages'},
+                      {'description': 'Erweiterte Verwaltung'})
+        self.assertPresence("Beispiel", div='unsubscriber-list')
+        f = self.response.forms['resetunsubscriberform2']
+        self.submit(f)
+
+        # ... and finally merge the two.
+        self.traverse({'description': "Mailinglisten"},
+                      {'description': "Accounts verschmelzen"})
+        f = self.response.forms['merge-accounts']
+        f['source_persona_id'] = janis_id
+        f['target_persona_id'] = berta_id
+        self.submit(f)
+
     @as_users("anton")
     def test_ml_admin_views(self, user: CdEDBObject) -> None:
         self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, '')
@@ -224,23 +282,20 @@ class TestMlFrontend(FrontendTest):
     def test_sidebar_one_mailinglist(self, user: CdEDBObject) -> None:
         self.traverse({'description': 'Mailinglisten'},
                       {'description': 'Feriendorf Bau'})
-        everyone = ["Mailinglisten-Übersicht", "Übersicht"]
-        moderator = ["Verwaltung", "Erweiterte Verwaltung", "Konfiguration",
-                     "Nachrichtenmoderation", "Log"]
+        everyone = {"Mailinglisten-Übersicht", "Übersicht"}
+        moderator = {"Verwaltung", "Erweiterte Verwaltung", "Konfiguration",
+                     "Nachrichtenmoderation", "Log"}
 
         # Moderators:
-        out: List[str]
+        out = set()
         if user['id'] in {USER_DICT['berta']['id']}:
-            ins = everyone + moderator
-            out = []
+            ins = everyone | moderator
         # Relative admins that are not also moderators:
         elif user['id'] in {USER_DICT['vera']['id']}:
-            ins = everyone + moderator
-            out = []
+            ins = everyone | moderator
         # Absolute admins that are not also moderators:
         elif user['id'] in {USER_DICT['anton']['id'], USER_DICT['nina']['id']}:
-            ins = everyone + moderator
-            out = []
+            ins = everyone | moderator
         # Other users:
         elif user['id'] in {USER_DICT['annika']['id'],
                             USER_DICT['martin']['id'],

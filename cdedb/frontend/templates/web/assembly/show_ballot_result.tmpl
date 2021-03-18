@@ -93,7 +93,7 @@
             {% endtrans %}
         </p>
         <p>
-            {% trans name=gettext("<code>Result Verification</code>")|s, method=gettext("<a href='https://en.wikipedia.org/w/index.php?title=Schulze_method&oldid=904460701'>Schulze method</a>")|s %}
+            {% trans name=gettext("<code>Result Verification</code>")|s, method=gettext("<a href='https://en.wikipedia.org/w/index.php?curid=680729'>Schulze method</a>")|s %}
                 With our provided {{ name }} Script, you can check that the result displayed in the DB is
                 actually correct. To obtain the result from the votes, we apply the {{ method }} internally.
             {% endtrans %}
@@ -206,7 +206,7 @@
                     </label></span>
                     {{ util.input_text(name="secret", anid="input-secret") }}
                     <div class="input-group-btn">
-                        {{ util.input_submit(value=gettext("Show Vote"), aclass="btn btn-success", icon="lock") }}
+                        {{ util.input_submit(label=gettext("Show Vote"), aclass="btn btn-success", icon="lock") }}
                     </div>
                 </div>
                 {{ util.output_errors('secret', wrapper=True) }}
