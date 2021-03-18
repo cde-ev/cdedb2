@@ -143,7 +143,8 @@ class SubscriptionAction(enum.IntEnum):
     remove_subscription_override = 31  #: A moderator removing a fixed subscription.
     remove_unsubscription_override = 32  #: A moderator unblocking a user.
     reset = 40  #: A moderator removing the current state of a user.
-    cleanup_subscription = 50  #: An automatic cleanup of users being explicitly subscribed.
+    #: An automatic cleanup of users being subscribed (explicitly or implicitly).
+    cleanup_subscription = 50
     cleanup_implicit = 51  #: An automatic cleanup of users being implicitly subscribed.
     # TODO: Add action for adding an implicit subscriber.
 
