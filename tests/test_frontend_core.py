@@ -1514,7 +1514,7 @@ class TestCoreFrontend(FrontendTest):
         self.admin_view_profile("vera")
         self.traverse({'description': 'Bearbeiten \\(normal\\)'})
         f = self.response.forms['changedataform']
-        f['postal_code'] = "ABC-123"
+        f['postal_code'] = "11111"
         self.assertNonPresence("Warnungen ignorieren")
         self.submit(f, check_notification=False)
         self.assertPresence("Ungültige Postleitzahl")
@@ -1539,7 +1539,8 @@ class TestCoreFrontend(FrontendTest):
         f['notes'] = "for testing"
         f['birthday'] = "2000-01-01"
         f['address'] = "Auf dem Hügel"
-        f['postal_code'] = "ABC-123"
+        # invalid postal code according to validationdata
+        f['postal_code'] = "11111"
         f['location'] = "Überall"
         f['country'] = "DE"
         self.assertNonPresence("Warnungen ignorieren")

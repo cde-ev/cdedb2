@@ -1403,9 +1403,11 @@ def _german_postal_code(
         val, argname, _ignore_warnings=_ignore_warnings, **kwargs)
     val = val.strip()
     if not aux or aux.strip() == "DE":
+        msg = n_("Invalid german postal code.")
+        if not (len(val) == 5 and val.isdigit()):
+            raise ValidationSummary(ValueError(argname, msg))
         if val not in GERMAN_POSTAL_CODES and not _ignore_warnings:
-            raise ValidationSummary(
-                ValidationWarning(argname, n_("Invalid german postal code.")))
+            raise ValidationSummary(ValidationWarning(argname, msg))
     return GermanPostalCode(val)
 
 
@@ -1414,14 +1416,13 @@ def _country(
     val: Any, argname: str = None, *, _ignore_warnings: bool = False,
     _convert: bool = True, **kwargs: Any
 ) -> Country:
-    if _convert and not val:
-        # TODO Use self.conf["DEFAULT_COUNTRY"] here
-        val = "DE"
-    val = _ALL_TYPED[str](val, argname, _ignore_warnings=_ignore_warnings, **kwargs)
+    val = _ALL_TYPED[str](val, argname, _ignore_warnings=_ignore_warnings,
+                          _convert=_convert, **kwargs)
     if _convert:
         val = val.strip()
     if val not in COUNTRY_CODES:
-        raise ValidationSummary(argname, n_("Enter actual country name in English."))
+        raise ValidationSummary(
+            ValueError(argname, n_("Enter actual country name in English.")))
     return Country(val)
 
 
