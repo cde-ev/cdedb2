@@ -136,7 +136,7 @@
                         </p>
                     {% endif %}
                 {% else %}
-                    {% if state == enums['SubscriptionStates'].pending %}
+                    {% if state == enums['SubscriptionState'].pending %}
                         <p><strong>
                             {% trans %}
                                 Your subscription request is currently pending review by a moderator.
@@ -148,18 +148,18 @@
                             {{ util.input_submit(label=gettext("Cancel request"), aclass="btn btn-sm btn-danger",
                                     icon="times-circle") }}
                         </form>
-                    {% elif state != enums['SubscriptionStates'].unsubscription_override %}
+                    {% elif state != enums['SubscriptionState'].unsubscription_override %}
                         <p><strong>
                             {% trans %}You are not currently subscribed to this mailinglist.{% endtrans %}
                         </strong></p>
-                        {% if interaction_policy == enums['MailinglistInteractionPolicy'].moderated_opt_in %}
+                        {% if subscription_policy == enums['SubscriptionPolicy'].moderated_opt_in %}
                             <form action="{{ cdedblink('ml/request_subscription') }}" method="POST" id="subscribe-mod-form">
                                 {{ util.anti_csrf_token('ml/request_subscription') }}
                                 <div>
                                     {{ util.input_submit(label=gettext("Request subscription"), aclass="btn btn-sm btn-success") }}
                                 </div>
                             </form>
-                        {% elif interaction_policy == enums['MailinglistInteractionPolicy'].subscribable %}
+                        {% elif subscription_policy == enums['SubscriptionPolicy'].subscribable %}
                             <form action="{{ cdedblink('ml/subscribe') }}" method="POST" id="subscribe-no-mod-form">
                                 {{ util.anti_csrf_token('ml/subscribe') }}
                                 <div>

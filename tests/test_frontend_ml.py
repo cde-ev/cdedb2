@@ -1101,16 +1101,16 @@ class TestMlFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertIn("alert alert-danger", self.response.text)
         self.assertPresence(
-            "Der Nutzer kann nicht entfernt werden, da er fixiert ist. "
-            "Dies kannst du unter Erweiterte Verwaltung ändern.",
+            "Der Nutzer kann nicht entfernt werden. "
+            "Entferne die Ausnahme, um die zu ändern.",
             div="notifications")
         # try to add a mod unsubscribed user
         f = self.response.forms['addsubscriberform']
         f['subscriber_ids'] = USER_DICT["garcia"]["DB-ID"]
         self.submit(f, check_notification=False)
         self.assertIn("alert alert-danger", self.response.text)
-        self.assertPresence("Der Nutzer wurde geblockt. "
-                            "Dies kannst du unter Erweiterte Verwaltung ändern.",
+        self.assertPresence("Der Nutzer wurde blockiert. "
+                            "Entferne die Ausnahme, bevor du ihn hinzufügst.",
                             div="notifications")
 
     @as_users("berta", "janis")
@@ -1187,19 +1187,19 @@ class TestMlFrontend(FrontendTest):
     # add someone (Charly) in unsubscription override state
     @prepsql(f"INSERT INTO ml.subscription_states"
              f" (mailinglist_id, persona_id, subscription_state)"
-             f" VALUES (9, 3, {const.SubscriptionStates.unsubscription_override.value})")
+             f" VALUES (9, 3, {const.SubscriptionState.unsubscription_override.value})")
     # add someone (Daniel) in subscription override state
     @prepsql(f"INSERT INTO ml.subscription_states"
              f" (mailinglist_id, persona_id, subscription_state)"
-             f" VALUES (9, 4, {const.SubscriptionStates.subscription_override.value})")
+             f" VALUES (9, 4, {const.SubscriptionState.subscription_override.value})")
     # add someone (Ferdinand) in unsubscription state (no implicit subscribing right)
     @prepsql(f"INSERT INTO ml.subscription_states"
              f" (mailinglist_id, persona_id, subscription_state)"
-             f" VALUES (9, 6, {const.SubscriptionStates.unsubscribed.value})")
+             f" VALUES (9, 6, {const.SubscriptionState.unsubscribed.value})")
     # add someone (Werner) in request subscription state
     @prepsql(f"INSERT INTO ml.subscription_states"
              f" (mailinglist_id, persona_id, subscription_state)"
-             f" VALUES (9, 23, {const.SubscriptionStates.pending.value})")
+             f" VALUES (9, 23, {const.SubscriptionState.pending.value})")
     def test_non_privileged_moderator(self, user: CdEDBObject) -> None:
         self.traverse({"description": "Mailinglisten"},
                       {"description": "Teilnehmer-Liste"},

@@ -34,14 +34,6 @@ import werkzeug.routing
 import cdedb.database.constants as const
 from cdedb.database.connection import IrradiatedConnection
 
-# The following imports are only for re-export. They are not used
-# here. All other uses should import them from here and not their
-# original source which is basically just uninlined code.
-# noinspection PyUnresolvedReferences
-from cdedb.ml_subscription_aux import (  # pylint: disable=unused-import; # noqa
-    SubscriptionActions, SubscriptionError, SubscriptionInfo,
-)
-
 _LOGGER = logging.getLogger(__name__)
 
 # Global unified collator to be used when sorting.

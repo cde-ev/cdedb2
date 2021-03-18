@@ -178,7 +178,7 @@ The original message as received by Mailman is attached.
     def mailman_sync_list_subs(self, rs: RequestState, mailman: Client,
                                db_list: CdEDBObject,
                                mm_list: MailingList) -> None:
-        subscribing_states = const.SubscriptionStates.subscribing_states()
+        subscribing_states = const.SubscriptionState.subscribing_states()
         persona_ids = set(self.mlproxy.get_subscription_states(
             rs, db_list['id'], states=subscribing_states))
         db_addresses = self.mlproxy.get_subscription_addresses(
