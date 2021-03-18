@@ -2087,6 +2087,7 @@ EVENT_EXPOSED_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'mail_text': Optional[str],
     'registration_text': Optional[str],
     'orga_address': Optional[Email],
+    'participant_info': Optional[str],
     'lodge_field': Optional[ID],
     'camping_mat_field': Optional[ID],
     'course_room_field': Optional[ID],
@@ -3556,7 +3557,7 @@ SUBSCRIPTION_ID_FIELDS: TypeMapping = {
 }
 
 SUBSCRIPTION_STATE_FIELDS: TypeMapping = {
-    'subscription_state': const.SubscriptionStates,
+    'subscription_state': const.SubscriptionState,
 }
 
 SUBSCRIPTION_ADDRESS_FIELDS: TypeMapping = {

@@ -13,12 +13,12 @@ showing the actual internal states.
     :figclass: align-center
 
     This graphic was created using `Draw.io <https://draw.io>`_.
-    To edit it, upload the SubscriptionStates.png file there.
+    To edit it, upload the SubscriptionState.png file there.
 
 We are using a total of seven distinct states, which allow a consistent and
 useful subscription management, even if the mailinglist configuration changes.
 
-Transitions between these states are modeled by ``SubscriptionActions``, which
+Every transition between these states is modeled by a corresponding ``SubscriptionAction``, which
 are shown as arrows in the graph. While most subscription actions act on multiple
 states, there is always a unique target state associated with each action.
 Analogously, every subscription action has a specific log code, which may however
@@ -33,7 +33,7 @@ lists using the management interface.
 
 To maintain the correct states, we use a cron job running every 15 minutes to
 take care of automatic state transitions on all active mailinglists.
-This actually does not make use of the ``SubscriptionActions`` enum, but makes use of
+This actually does not make use of the ``SubscriptionAction`` enum, but makes use of
 its own internal state transitioning logic. In contrast to user induced changes,
 we only log unsubscriptions done by the cronjob, while new subscriptions are
 not logged. This is done to simplify reversing unwanted unsubscriptions manually.

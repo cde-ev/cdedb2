@@ -3,7 +3,6 @@
 import csv
 import re
 import unittest.mock
-from typing import List
 
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
@@ -37,43 +36,41 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'description': 'Mailinglisten'})
         # Users with no administrated and no moderated mailinglists:
         if user['id'] in {USER_DICT['martin']['id']}:
-            ins = ["Übersicht"]
-            out = ["Alle Mailinglisten", "Moderierte Mailinglisten",
-                   "Aktive Mailinglisten", "Nutzer verwalten", "Log"]
+            ins = {"Übersicht"}
+            out = {"Alle Mailinglisten", "Moderierte Mailinglisten",
+                   "Aktive Mailinglisten", "Nutzer verwalten", "Log"}
         # Users with core admin privileges for some mailinglists:
         elif user['id'] in {USER_DICT['vera']['id']}:
-            ins = ["Aktive Mailinglisten", "Administrierte Mailinglisten",
-                   "Log", "Nutzer verwalten"]
-            out = ["Übersicht", "Alle Mailinglisten",
-                   "Moderierte Mailinglisten"]
+            ins = {"Aktive Mailinglisten", "Administrierte Mailinglisten", "Log",
+                   "Nutzer verwalten"}
+            out = {"Übersicht", "Alle Mailinglisten", "Moderierte Mailinglisten"}
         # Users with relative admin privileges for some mailinglists:
         elif user['id'] in {USER_DICT['viktor']['id']}:
-            ins = ["Aktive Mailinglisten", "Administrierte Mailinglisten",
-                   "Log"]
-            out = ["Übersicht", "Alle Mailinglisten",
-                   "Moderierte Mailinglisten", "Nutzer verwalten"]
+            ins = {"Aktive Mailinglisten", "Administrierte Mailinglisten", "Log"}
+            out = {"Übersicht", "Alle Mailinglisten", "Moderierte Mailinglisten",
+                   "Nutzer verwalten"}
         # Users with moderated mailinglists and relative admin privileges
         # for some mailinglists:
         elif user['id'] in {USER_DICT['annika']['id']}:
-            ins = ["Aktive Mailinglisten", "Administrierte Mailinglisten",
-                   "Moderierte Mailinglisten", "Log"]
-            out = ["Übersicht", "Alle Mailinglisten",
-                   "Nutzer verwalten"]
+            ins = {"Aktive Mailinglisten", "Administrierte Mailinglisten",
+                   "Moderierte Mailinglisten", "Log"}
+            out = {"Übersicht", "Alle Mailinglisten", "Nutzer verwalten"}
         # Users with moderated mailinglists, but no admin privileges.
         elif user['id'] in {USER_DICT['berta']['id']}:
-            ins = ["Aktive Mailinglisten", "Moderierte Mailinglisten", "Log"]
-            out = ["Übersicht", "Administrierte Mailinglisten",
-                   "Alle Mailinglisten", "Nutzer verwalten"]
+            ins = {"Aktive Mailinglisten", "Moderierte Mailinglisten", "Log"}
+            out = {"Übersicht", "Administrierte Mailinglisten", "Alle Mailinglisten",
+                   "Nutzer verwalten"}
         # Users with full ml-admin privileges.
         elif user['id'] in {USER_DICT['nina']['id']}:
-            ins = ["Aktive Mailinglisten", "Alle Mailinglisten", "Accounts verschmelzen",
-                   "Nutzer verwalten", "Log"]
-            out = ["Übersicht", "Moderierte Mailinglisten"]
+            ins = {"Aktive Mailinglisten", "Alle Mailinglisten",
+                   "Accounts verschmelzen", "Nutzer verwalten", "Log"}
+            out = {"Übersicht", "Moderierte Mailinglisten"}
         # Users with moderated mailinglists with full ml-admin privileges.
         elif user['id'] in {USER_DICT['anton']['id']}:
-            ins = ["Aktive Mailinglisten", "Alle Mailinglisten", "Accounts verschmelzen",
-                   "Moderierte Mailinglisten", "Nutzer verwalten", "Log"]
-            out = ["Übersicht"]
+            ins = {"Aktive Mailinglisten", "Alle Mailinglisten",
+                   "Accounts verschmelzen", "Moderierte Mailinglisten",
+                   "Nutzer verwalten", "Log"}
+            out = {"Übersicht"}
         else:
             self.fail("Please adjust users for this tests.")
 
@@ -285,23 +282,20 @@ class TestMlFrontend(FrontendTest):
     def test_sidebar_one_mailinglist(self, user: CdEDBObject) -> None:
         self.traverse({'description': 'Mailinglisten'},
                       {'description': 'Feriendorf Bau'})
-        everyone = ["Mailinglisten-Übersicht", "Übersicht"]
-        moderator = ["Verwaltung", "Erweiterte Verwaltung", "Konfiguration",
-                     "Nachrichtenmoderation", "Log"]
+        everyone = {"Mailinglisten-Übersicht", "Übersicht"}
+        moderator = {"Verwaltung", "Erweiterte Verwaltung", "Konfiguration",
+                     "Nachrichtenmoderation", "Log"}
 
         # Moderators:
-        out: List[str]
+        out = set()
         if user['id'] in {USER_DICT['berta']['id']}:
-            ins = everyone + moderator
-            out = []
+            ins = everyone | moderator
         # Relative admins that are not also moderators:
         elif user['id'] in {USER_DICT['vera']['id']}:
-            ins = everyone + moderator
-            out = []
+            ins = everyone | moderator
         # Absolute admins that are not also moderators:
         elif user['id'] in {USER_DICT['anton']['id'], USER_DICT['nina']['id']}:
-            ins = everyone + moderator
-            out = []
+            ins = everyone | moderator
         # Other users:
         elif user['id'] in {USER_DICT['annika']['id'],
                             USER_DICT['martin']['id'],
@@ -1107,16 +1101,16 @@ class TestMlFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertIn("alert alert-danger", self.response.text)
         self.assertPresence(
-            "Der Nutzer kann nicht entfernt werden, da er fixiert ist. "
-            "Dies kannst du unter Erweiterte Verwaltung ändern.",
+            "Der Nutzer kann nicht entfernt werden. "
+            "Entferne die Ausnahme, um die zu ändern.",
             div="notifications")
         # try to add a mod unsubscribed user
         f = self.response.forms['addsubscriberform']
         f['subscriber_ids'] = USER_DICT["garcia"]["DB-ID"]
         self.submit(f, check_notification=False)
         self.assertIn("alert alert-danger", self.response.text)
-        self.assertPresence("Der Nutzer wurde geblockt. "
-                            "Dies kannst du unter Erweiterte Verwaltung ändern.",
+        self.assertPresence("Der Nutzer wurde blockiert. "
+                            "Entferne die Ausnahme, bevor du ihn hinzufügst.",
                             div="notifications")
 
     @as_users("berta", "janis")
@@ -1193,19 +1187,19 @@ class TestMlFrontend(FrontendTest):
     # add someone (Charly) in unsubscription override state
     @prepsql(f"INSERT INTO ml.subscription_states"
              f" (mailinglist_id, persona_id, subscription_state)"
-             f" VALUES (9, 3, {const.SubscriptionStates.unsubscription_override.value})")
+             f" VALUES (9, 3, {const.SubscriptionState.unsubscription_override.value})")
     # add someone (Daniel) in subscription override state
     @prepsql(f"INSERT INTO ml.subscription_states"
              f" (mailinglist_id, persona_id, subscription_state)"
-             f" VALUES (9, 4, {const.SubscriptionStates.subscription_override.value})")
+             f" VALUES (9, 4, {const.SubscriptionState.subscription_override.value})")
     # add someone (Ferdinand) in unsubscription state (no implicit subscribing right)
     @prepsql(f"INSERT INTO ml.subscription_states"
              f" (mailinglist_id, persona_id, subscription_state)"
-             f" VALUES (9, 6, {const.SubscriptionStates.unsubscribed.value})")
+             f" VALUES (9, 6, {const.SubscriptionState.unsubscribed.value})")
     # add someone (Werner) in request subscription state
     @prepsql(f"INSERT INTO ml.subscription_states"
              f" (mailinglist_id, persona_id, subscription_state)"
-             f" VALUES (9, 23, {const.SubscriptionStates.pending.value})")
+             f" VALUES (9, 23, {const.SubscriptionState.pending.value})")
     def test_non_privileged_moderator(self, user: CdEDBObject) -> None:
         self.traverse({"description": "Mailinglisten"},
                       {"description": "Teilnehmer-Liste"},
