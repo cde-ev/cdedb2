@@ -1206,7 +1206,7 @@ class TestMlFrontend(FrontendTest):
     @prepsql(f"INSERT INTO ml.subscription_states"
              f" (mailinglist_id, persona_id, subscription_state)"
              f" VALUES (9, 23, {const.SubscriptionStates.pending.value})")
-    def test_non_privileged_moderator(self, user: CdEDBObject) -> None:
+    def test_restricted_moderator(self, user: CdEDBObject) -> None:
         self.traverse({"description": "Mailinglisten"},
                       {"description": "Teilnehmer-Liste"},
                       {"description": "Verwaltung"})

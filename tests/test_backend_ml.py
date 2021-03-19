@@ -416,7 +416,7 @@ class TestMlBackend(BackendTest):
             },
         ]
 
-        mod_mdata = {
+        restricted_mod_mdata = {
             'id': mailinglist_id,
             'ml_type': const.MailinglistTypes.event_associated,
             'description': "Nice one",
@@ -427,7 +427,7 @@ class TestMlBackend(BackendTest):
             'maxsize': 101,
         }
 
-        privileged_mod_mdata = {
+        full_mod_mdata = {
             'id': mailinglist_id,
             'ml_type': const.MailinglistTypes.event_associated,
             'registration_stati': [const.RegistrationPartStati.applied],
@@ -445,17 +445,16 @@ class TestMlBackend(BackendTest):
                     self.ml.set_mailinglist(self.key, data)
 
         # every moderator may change these attributes ...
-        expectation.update(mod_mdata)
-        self.assertLess(0, self.ml.set_mailinglist(self.key, mod_mdata))
+        expectation.update(restricted_mod_mdata)
+        self.assertLess(0, self.ml.set_mailinglist(self.key, restricted_mod_mdata))
 
         # ... but only full moderators (here: orgas) may change these.
         if user == USER_DICT['janis']:
             with self.assertRaises(PrivilegeError):
-                self.ml.set_mailinglist(self.key, privileged_mod_mdata)
+                self.ml.set_mailinglist(self.key, full_mod_mdata)
         else:
-            expectation.update(privileged_mod_mdata)
-            self.assertLess(0, self.ml.set_mailinglist(self.key,
-                                                       privileged_mod_mdata))
+            expectation.update(full_mod_mdata)
+            self.assertLess(0, self.ml.set_mailinglist(self.key,full_mod_mdata))
 
         if user in [USER_DICT['nina']]:
             # adjust address form changed local part
