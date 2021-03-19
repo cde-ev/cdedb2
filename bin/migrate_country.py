@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from cdedb.script import make_backend, setup, Script, CoreBackend
 from cdedb.validationdata import COUNTRY_CODES
@@ -564,7 +564,7 @@ error: Dict[int, str] = {}
 # Execution
 
 with Script(rs, dry_run=DRY_RUN):
-    persona_id = -1
+    persona_id: Optional[int] = -1
     while True:
         persona_id = core.next_persona(
             rs, persona_id=persona_id, is_member=None, is_archived=False)
