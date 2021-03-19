@@ -3111,6 +3111,7 @@ etc;anything else""", f['entries_2'].value)
 
     @as_users("garcia")
     def test_checkin(self, user: CdEDBObject) -> None:
+        # multi-part
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/checkin'})
@@ -3119,6 +3120,17 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.assertTitle("Checkin (Große Testakademie 2222)")
         self.assertNotIn('checkinform2', self.response.forms)
+        # single-part
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/3/show'},
+                      {'href': '/event/event/3/checkin'})
+        self.assertTitle("Checkin (CyberTestAkademie)")
+        self.assertPresence("Daniel D. Dino")
+        self.assertPresence("Olaf Olafson")
+        f = self.response.forms['checkinform7']
+        self.submit(f)
+        self.assertTitle("Checkin (CyberTestAkademie)")
+        self.assertNotIn('checkinform7', self.response.forms)
 
     @as_users("garcia")
     def test_checkin_concurrent_modification(self, user: CdEDBObject) -> None:
