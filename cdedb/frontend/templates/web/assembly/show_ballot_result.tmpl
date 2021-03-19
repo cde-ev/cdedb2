@@ -123,14 +123,16 @@
         <p>
             {% if ambience['assembly']['presider_address'] %}
                 {% trans presider=util.href(util.mailto(ambience['assembly']['presider_address']), ambience['assembly']['presider_address']),
-                         tally=util.href(util.mailto(BALLOT_TALLY_ADDRESS), BALLOT_TALLY_ADDRESS) %}
-                    After a ballot has been tallied, the generated result file and its hash
-                    will be sent to {{ tally }} and {{ presider }}.
+                         tally=util.href(util.mailto(BALLOT_TALLY_ADDRESS), BALLOT_TALLY_ADDRESS),
+                         subscribe=util.href(BALLOT_TALLY_MAILINGLIST_URL, gettext("subscribe")) %}
+                    After a ballot has been tallied, the generated result file and its hash will be sent to
+                    {{ presider }} and {{ tally }}. To the latter mailinglist, everyone can {{ subscribe }}.
                 {% endtrans %}
             {% else %}
-                {% trans tally=util.href(util.mailto(BALLOT_TALLY_ADDRESS), BALLOT_TALLY_ADDRESS) %}
+                {% trans tally=util.href(util.mailto(BALLOT_TALLY_ADDRESS), BALLOT_TALLY_ADDRESS),
+                         subscribe=util.href(BALLOT_TALLY_MAILINGLIST_URL, gettext("subscribe")) %}
                     After a ballot has been tallied, the generated result file and its hash
-                    will be sent to {{ tally }}.
+                    will be sent to {{ tally }}. To this mailinglist, everyone can {{ subscribe }}.
                 {% endtrans %}
             {% endif %}
         </p>
