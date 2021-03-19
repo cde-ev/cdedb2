@@ -564,9 +564,11 @@ error: Dict[int, str] = {}
 # Execution
 
 with Script(rs, dry_run=DRY_RUN):
-    persona_id = core.next_persona(
-        rs, persona_id=-1, is_member=None, is_archived=False)
+    persona_id = -1
     while persona_id:
+        persona_id = core.next_persona(
+            rs, persona_id=persona_id, is_member=None, is_archived=False)
+
         persona = core.get_total_persona(rs, persona_id)
         if not persona['is_event_realm']:
             continue
@@ -607,9 +609,6 @@ with Script(rs, dry_run=DRY_RUN):
 
         core.change_persona(rs, update, may_wait=False,
                             change_note="Land auf Ländercode umgestellt.")
-
-        persona_id = core.next_persona(
-            rs, persona_id=persona_id, is_member=None, is_archived=False)
 
     if error:
         print(f"{len(error)} country rewrites failed. Aborting")
