@@ -67,7 +67,7 @@ the changes were successful and maybe a recap of the changes. ::
 
     mailinglist_id = 1
     ml_data = {...}
-    relevant_states = {const.SubscriptionStates.implicit}
+    relevant_states = {const.SubscriptionState.implicit}
     successes = set()
     errors = {}
     infos = {}
@@ -78,7 +78,7 @@ the changes were successful and maybe a recap of the changes. ::
         for persona_id in subscribers:
             try:
                 code = ml.do_subscription_action(
-                    rs(persona_id), const.SubscriptionActions.subscribe,
+                    rs(persona_id), const.SubscriptionAction.subscribe,
                     new_ml_id)
             except SubscriptionInfo as e:
                 infos[persona_id] = e

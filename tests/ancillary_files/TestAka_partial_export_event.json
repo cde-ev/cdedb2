@@ -2,7 +2,7 @@
     "CDEDB_EXPORT_EVENT_VERSION": 13,
     "EVENT_SCHEMA_VERSION": [
         15,
-        1
+        2
     ],
     "kind": "partial",
     "id": 1,
@@ -634,6 +634,7 @@
         "orga_address": "aka@example.cde",
         "registration_text": null,
         "mail_text": "Wir verwenden ein neues Kristallkugel-basiertes Kurszuteilungssystem; bis wir das ordentlich ans Laufen gebracht haben, m\u00fcsst ihr leider etwas auf die Teilnehmerliste warten.",
+        "participant_info": "Die Kristallkugel hat gute Dienste geleistet, nicht wahr?",
         "use_additional_questionnaire": false,
         "notes": "Todoliste ... just kidding ;)",
         "offline_lock": false,

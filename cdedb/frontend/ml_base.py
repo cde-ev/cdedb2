@@ -15,9 +15,10 @@ import cdedb.validationtypes as vtypes
 from cdedb.common import (
     LOG_FIELDS_COMMON, FULL_MOD_REQUIRING_FIELDS, MOD_ALLOWED_FIELDS,
     RESTRICTED_MOD_ALLOWED_FIELDS, CdEDBObject, CdEDBObjectMap, EntitySorter, PathLike,
-    PrivilegeError, RequestState, SubscriptionActions, SubscriptionError, merge_dicts,
-    n_, now, unwrap,
+    PrivilegeError, RequestState, merge_dicts, n_, now, unwrap,
 )
+from cdedb.subman.exceptions import SubscriptionError
+from cdedb.subman.machine import SubscriptionAction
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, calculate_db_logparams, calculate_loglinks,
     cdedbid_filter as cdedbid, check_validation as check, csv_output,
@@ -48,7 +49,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         """Render start page."""
         mailinglists = self.mlproxy.list_mailinglists(rs)
         mailinglist_infos = self.mlproxy.get_mailinglists(rs, mailinglists)
-        sub_states = const.SubscriptionStates.subscribing_states()
+        sub_states = const.SubscriptionState.subscribing_states()
         subscriptions = self.mlproxy.get_user_subscriptions(
             rs, rs.user.persona_id, states=sub_states)
         grouped: Dict[MailinglistGroup, CdEDBObjectMap]
@@ -157,7 +158,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         information. Querying mailinglists you have no access to will lead to
         a privilege error."""
         mailinglist_infos = self.mlproxy.get_mailinglists(rs, mailinglists)
-        sub_states = const.SubscriptionStates.subscribing_states()
+        sub_states = const.SubscriptionState.subscribing_states()
         subscriptions = self.mlproxy.get_user_subscriptions(
             rs, rs.user.persona_id, states=sub_states)
         grouped: Dict[MailinglistGroup, CdEDBObjectMap]
@@ -399,7 +400,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             assembly['is_visible'] = self.assemblyproxy.may_assemble(
                 rs, assembly_id=assembly['id'])
 
-        interaction_policy = self.mlproxy.get_interaction_policy(
+        subscription_policy = self.mlproxy.get_subscription_policy(
             rs, rs.user.persona_id, mailinglist=ml)
         allow_unsub = self.mlproxy.get_ml_type(rs, mailinglist_id).allow_unsub
         personas = self.coreproxy.get_personas(rs, ml['moderators'])
@@ -410,7 +411,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
         return self.render(rs, "show_mailinglist", {
             'sub_address': sub_address, 'state': state,
-            'interaction_policy': interaction_policy, 'allow_unsub': allow_unsub,
+            'subscription_policy': subscription_policy, 'allow_unsub': allow_unsub,
             'event': event, 'assembly': assembly, 'moderators': moderators})
 
     @access("ml")
@@ -583,14 +584,14 @@ class MlBaseFrontend(AbstractUserFrontend):
     @mailinglist_guard()
     def management(self, rs: RequestState, mailinglist_id: int) -> Response:
         """Render form."""
-        sub_states = const.SubscriptionStates.subscribing_states()
+        sub_states = const.SubscriptionState.subscribing_states()
         subscribers = self.mlproxy.get_subscription_states(
             rs, mailinglist_id, states=sub_states)
         explicits = self.mlproxy.get_subscription_addresses(
             rs, mailinglist_id, explicits_only=True)
         explicits = {k: v for (k, v) in explicits.items() if v is not None}
         requests = self.mlproxy.get_subscription_states(
-            rs, mailinglist_id, states=(const.SubscriptionStates.pending,))
+            rs, mailinglist_id, states=(const.SubscriptionState.pending,))
         persona_ids = (set(rs.ambience['mailinglist']['moderators'])
                        | set(subscribers.keys()) | set(requests))
         personas = self.coreproxy.get_personas(rs, persona_ids)
@@ -618,12 +619,12 @@ class MlBaseFrontend(AbstractUserFrontend):
         """Render form."""
         subscription_overrides = self.mlproxy.get_subscription_states(
             rs, mailinglist_id,
-            states=(const.SubscriptionStates.subscription_override,))
+            states=(const.SubscriptionState.subscription_override,))
         unsubscription_overrides = self.mlproxy.get_subscription_states(
             rs, mailinglist_id,
-            states=(const.SubscriptionStates.unsubscription_override,))
+            states=(const.SubscriptionState.unsubscription_override,))
         all_unsubscriptions = self.mlproxy.get_subscription_states(
-            rs, mailinglist_id, states=(const.SubscriptionStates.unsubscribed,))
+            rs, mailinglist_id, states=(const.SubscriptionState.unsubscribed,))
         redundant_unsubscriptions = self.mlproxy.get_redundant_unsubscriptions(
             rs, mailinglist_id)
         persona_ids = (set(rs.ambience['mailinglist']['moderators'])
@@ -774,7 +775,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/advanced_management")
 
     def _subscription_action_handler(self, rs: RequestState,
-                                     action: SubscriptionActions,
+                                     action: SubscriptionAction,
                                      **kwargs: Any) -> None:
         """Un-inlined code from all single subscription action initiating endpoints."""
         try:
@@ -788,7 +789,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     def _subscription_multi_action_handler(self, rs: RequestState,
                                            field: str,
-                                           action: SubscriptionActions,
+                                           action: SubscriptionAction,
                                            mailinglist_id: int,
                                            persona_ids: Collection[int]) -> None:
         """Un-inlined code from all multi subscription action initiating endpoints.
@@ -804,8 +805,8 @@ class MlBaseFrontend(AbstractUserFrontend):
 
         # Use different error pattern if only one action is done
         if len(persona_ids) == 1:
-            self._subscription_action_handler(rs, action,
-                mailinglist_id=mailinglist_id, persona_id=unwrap(persona_ids))
+            self._subscription_action_handler(rs, action, mailinglist_id=mailinglist_id,
+                                              persona_id=unwrap(persona_ids))
             return
         # Iterate over all subscriber_ids
         code = 0
@@ -814,17 +815,16 @@ class MlBaseFrontend(AbstractUserFrontend):
         infos_only = True
         for persona_id in persona_ids:
             try:
-                code += self.mlproxy.do_subscription_action(rs, action,
-                    mailinglist_id=mailinglist_id, persona_id=persona_id)
+                code += self.mlproxy.do_subscription_action(
+                    rs, action, mailinglist_id=mailinglist_id, persona_id=persona_id)
                 infos_only = False
             except SubscriptionError as se:
-                rs.notify(se.multikind, se.msg)
-                if se.multikind != 'info':
+                rs.notify("warning" if se.kind == "error" else se.kind, se.msg)
+                if se.kind != 'info':
                     infos_only = False
             except PrivilegeError:
                 infos_only = False
-                rs.notify("error",
-                          n_("Not privileged to change subscriptions."))
+                rs.notify("error", n_("Not privileged to change subscriptions."))
         if infos_only:
             self.notify_return_code(rs, -1, info=n_("Action had no effect."))
         else:
@@ -842,7 +842,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs.notify("error", n_("User does not exist or is archived."))
             return self.management(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, SubscriptionActions.approve_request,
+            rs, SubscriptionAction.approve_request,
             mailinglist_id=mailinglist_id, persona_id=persona_id)
         return self.redirect(rs, "ml/management")
 
@@ -858,7 +858,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs.notify("error", n_("User does not exist or is archived."))
             return self.management(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, SubscriptionActions.deny_request,
+            rs, SubscriptionAction.deny_request,
             mailinglist_id=mailinglist_id, persona_id=persona_id)
         return self.redirect(rs, "ml/management")
 
@@ -874,7 +874,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs.notify("error", n_("User does not exist or is archived."))
             return self.management(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, SubscriptionActions.block_request,
+            rs, SubscriptionAction.block_request,
             mailinglist_id=mailinglist_id, persona_id=persona_id)
         return self.redirect(rs, "ml/management")
 
@@ -887,7 +887,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
         self._subscription_multi_action_handler(
-            rs, 'subscriber_ids', SubscriptionActions.add_subscriber,
+            rs, 'subscriber_ids', SubscriptionAction.add_subscriber,
             mailinglist_id=mailinglist_id, persona_ids=subscriber_ids)
         if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
@@ -914,7 +914,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs.notify("error", n_("User does not exist or is archived."))
             return self.advanced_management(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, SubscriptionActions.add_subscriber,
+            rs, SubscriptionAction.add_subscriber,
             mailinglist_id=mailinglist_id, persona_id=subscriber_id)
         return self.redirect(rs, "ml/advanced_management")
 
@@ -930,7 +930,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs.notify("error", n_("User does not exist or is archived."))
             return self.management(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, SubscriptionActions.remove_subscriber,
+            rs, SubscriptionAction.remove_subscriber,
             mailinglist_id=mailinglist_id, persona_id=subscriber_id)
         return self.redirect(rs, "ml/management")
 
@@ -957,7 +957,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs.notify("error", n_("User does not exist or is archived."))
             return self.advanced_management(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, SubscriptionActions.reset_unsubscription,
+            rs, SubscriptionAction.reset,
             mailinglist_id=mailinglist_id, persona_id=unsubscription_id)
         return self.redirect(rs, "ml/advanced_management")
 
@@ -970,7 +970,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.advanced_management(rs, mailinglist_id)
         self._subscription_multi_action_handler(
-            rs, 'modsubscriber_ids', SubscriptionActions.add_subscription_override,
+            rs, 'modsubscriber_ids', SubscriptionAction.add_subscription_override,
             mailinglist_id=mailinglist_id, persona_ids=modsubscriber_ids)
         if rs.has_validation_errors():
             return self.advanced_management(rs, mailinglist_id)
@@ -990,7 +990,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs.notify("error", n_("User does not exist or is archived."))
             return self.advanced_management(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, SubscriptionActions.remove_subscription_override,
+            rs, SubscriptionAction.remove_subscription_override,
             mailinglist_id=mailinglist_id, persona_id=modsubscriber_id)
         return self.redirect(rs, "ml/advanced_management")
 
@@ -1004,7 +1004,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.advanced_management(rs, mailinglist_id)
         self._subscription_multi_action_handler(
-            rs, 'modunsubscriber_ids', SubscriptionActions.add_unsubscription_override,
+            rs, 'modunsubscriber_ids', SubscriptionAction.add_unsubscription_override,
             mailinglist_id=mailinglist_id, persona_ids=modunsubscriber_ids)
         if rs.has_validation_errors():
             return self.advanced_management(rs, mailinglist_id)
@@ -1024,7 +1024,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs.notify("error", n_("User does not exist or is archived."))
             return self.advanced_management(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, SubscriptionActions.remove_unsubscription_override,
+            rs, SubscriptionAction.remove_unsubscription_override,
             mailinglist_id=mailinglist_id, persona_id=modunsubscriber_id)
         return self.redirect(rs, "ml/advanced_management")
 
@@ -1034,7 +1034,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.show_mailinglist(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, SubscriptionActions.subscribe,
+            rs, SubscriptionAction.subscribe,
             mailinglist_id=mailinglist_id)
         return self.redirect(rs, "ml/show_mailinglist")
 
@@ -1044,7 +1044,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.show_mailinglist(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, SubscriptionActions.request_subscription,
+            rs, SubscriptionAction.request_subscription,
             mailinglist_id=mailinglist_id)
         return self.redirect(rs, "ml/show_mailinglist")
 
@@ -1054,7 +1054,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.show_mailinglist(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, SubscriptionActions.unsubscribe,
+            rs, SubscriptionAction.unsubscribe,
             mailinglist_id=mailinglist_id)
         return self.redirect(rs, "ml/show_mailinglist")
 
@@ -1064,7 +1064,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.show_mailinglist(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, SubscriptionActions.cancel_request,
+            rs, SubscriptionAction.cancel_request,
             mailinglist_id=mailinglist_id)
         return self.redirect(rs, "ml/show_mailinglist")
 
@@ -1151,7 +1151,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         current = now().timestamp()
         for ml_id in ml_ids:
             requests = self.mlproxy.get_subscription_states(
-                rs, ml_id, states=(const.SubscriptionStates.pending,))
+                rs, ml_id, states=(const.SubscriptionState.pending,))
             requests = list(requests)  # convert from dict which breaks JSON
 
             ml_store = store.get(str(ml_id))

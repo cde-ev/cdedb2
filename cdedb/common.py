@@ -34,14 +34,6 @@ import werkzeug.routing
 import cdedb.database.constants as const
 from cdedb.database.connection import IrradiatedConnection
 
-# The following imports are only for re-export. They are not used
-# here. All other uses should import them from here and not their
-# original source which is basically just uninlined code.
-# noinspection PyUnresolvedReferences
-from cdedb.ml_subscription_aux import (  # pylint: disable=unused-import; # noqa
-    SubscriptionActions, SubscriptionError, SubscriptionInfo,
-)
-
 _LOGGER = logging.getLogger(__name__)
 
 # Global unified collator to be used when sorting.
@@ -1880,7 +1872,7 @@ CDEDB_EXPORT_EVENT_VERSION = 13
 #: If the partial export and import are unaffected the minor version may be
 #: incremented.
 #: If you increment this, it must be incremented in make_offline_vm.py as well.
-EVENT_SCHEMA_VERSION = (15, 1)
+EVENT_SCHEMA_VERSION = (15, 2)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3
@@ -2045,15 +2037,13 @@ PAST_EVENT_FIELDS = ("id", "title", "shortname", "institution", "description",
 
 #: Fields of an event organized via the CdEDB
 EVENT_FIELDS = (
-    "id", "title", "institution", "description", "shortname",
-    "registration_start", "registration_soft_limit",
-    "registration_hard_limit", "iban", "nonmember_surcharge",
-    "orga_address", "registration_text", "mail_text",
-    "use_additional_questionnaire", "notes", "offline_lock", "is_visible",
-    "is_course_list_visible", "is_course_state_visible",
-    "is_participant_list_visible", "is_course_assignment_visible",
-    "is_cancelled", "is_archived", "lodge_field", "camping_mat_field",
-    "course_room_field")
+    "id", "title", "institution", "description", "shortname", "registration_start",
+    "registration_soft_limit", "registration_hard_limit", "iban", "nonmember_surcharge",
+    "orga_address", "registration_text", "mail_text", "use_additional_questionnaire",
+    "notes", "participant_info", "offline_lock", "is_visible",
+    "is_course_list_visible", "is_course_state_visible", "is_participant_list_visible",
+    "is_course_assignment_visible", "is_cancelled", "is_archived", "lodge_field",
+    "camping_mat_field", "course_room_field")
 
 #: Fields of an event part organized via CdEDB
 EVENT_PART_FIELDS = ("id", "event_id", "title", "shortname", "part_begin",

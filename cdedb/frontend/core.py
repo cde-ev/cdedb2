@@ -38,6 +38,7 @@ from cdedb.frontend.common import (
     request_dict_extractor, request_extractor,
 )
 from cdedb.query import QUERY_SPECS, Query, QueryOperators, mangle_query_input
+from cdedb.subman.machine import SubscriptionPolicy
 from cdedb.validation import (
     TypeMapping, GENESIS_CASE_EXPOSED_FIELDS,
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
@@ -136,7 +137,7 @@ class CoreFrontend(AbstractFrontend):
             moderator_info = self.mlproxy.moderator_info(rs, rs.user.persona_id)
             if moderator_info:
                 moderator = self.mlproxy.get_mailinglists(rs, moderator_info)
-                sub_request = const.SubscriptionStates.pending
+                sub_request = const.SubscriptionState.pending
                 mailman = self.get_mailman()
                 for mailinglist_id, mailinglist in moderator.items():
                     requests = self.mlproxy.get_subscription_states(
@@ -573,8 +574,8 @@ class CoreFrontend(AbstractFrontend):
             # Admins who are also moderators can not disable this admin view
             if is_admin and not is_moderator:
                 access_mode.add("moderator")
-            relevant_stati = [s for s in const.SubscriptionStates
-                              if s != const.SubscriptionStates.unsubscribed]
+            relevant_stati = [s for s in const.SubscriptionState
+                              if s != const.SubscriptionState.unsubscribed]
             if is_moderator or ml_type.has_moderator_view(rs.user):
                 subscriptions = self.mlproxy.get_subscription_states(
                     rs, ml_id, states=relevant_stati)
@@ -949,10 +950,8 @@ class CoreFrontend(AbstractFrontend):
         # Filter result to get only users allowed to be a subscriber of a list,
         # which potentially are no subscriber yet.
         if mailinglist:
-            pol = const.MailinglistInteractionPolicy
-            allowed_pols = {pol.subscribable, pol.moderated_opt_in, pol.invitation_only}
             data = self.mlproxy.filter_personas_by_policy(
-                rs, mailinglist, data, allowed_pols)
+                rs, mailinglist, data, SubscriptionPolicy.addable_policies())
 
         # Strip data to contain at maximum `num_preview_personas` results
         if len(data) > num_preview_personas:

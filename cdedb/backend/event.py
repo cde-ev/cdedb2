@@ -2463,7 +2463,6 @@ class EventBackend(AbstractBackend):
             raise PrivilegeError(n_("Not privileged."))
         return ret
 
-    @internal
     @access("persona")
     def check_registration_status(
             self, rs: RequestState, persona_id: int, event_id: int,

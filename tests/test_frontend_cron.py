@@ -133,7 +133,7 @@ def cron_template(**kwargs: Any) -> str:
 
 def subscription_request_template(**kwargs: Any) -> Any:
     defaults: SQL_DATA = {
-        'subscription_state': const.SubscriptionStates.pending
+        'subscription_state': const.SubscriptionState.pending
     }
     data = {**defaults, **kwargs}
     return format_insert_sql("ml.subscription_states", data)
@@ -251,7 +251,7 @@ class TestCron(CronTest):
                          [mail.template for mail in self.mails])
 
     @prepsql("DELETE FROM ml.subscription_states WHERE subscription_state = "
-             "{};".format(const.SubscriptionStates.pending))
+             "{};".format(const.SubscriptionState.pending))
     def test_subscription_request_remind_empty(self) -> None:
         self.execute('subscription_request_remind')
         self.assertEqual([], [mail.template for mail in self.mails])

@@ -1,0 +1,34 @@
+{% set sidenav_active = 'participant_info' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block title %}
+    {{ ambience['event']['title'] }} – {% trans %}Participant info{% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon='chalkboard-teacher') }}
+    {{ util.breadcrumb_link(cdedblink("event/participant_info"), gettext("Participant info"), active=True) }}
+{% endblock %}
+{% block heading %}
+    <h1 class="title">
+        {% trans %}Additional information for participants{% endtrans %}
+        <small>
+            {{- util.make_icon('chalkboard-teacher', arialabel=gettext("Event")) }}
+            {{ ambience['event']['title'] -}}
+        </small>
+    </h1>
+{% endblock %}
+{% block static_notifications %}
+    {{ super() }}
+    {% if not ambience['event']['participant_info'] %}
+        {% call util.notification('info') %}
+            {% trans %}
+                This page is currently not visible to participants.
+                To change that, orgas can create something here via the configuration page.
+            {% endtrans %}
+        {% endcall %}
+    {% endif %}
+{% endblock %}
+{% block content %}
+    {{ ambience['event']['participant_info']|md }}
+{% endblock %}
