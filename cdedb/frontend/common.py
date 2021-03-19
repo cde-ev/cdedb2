@@ -1112,6 +1112,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'show_user_link': _show_user_link,
             'user': rs.user,
             'values': rs.values,
+            'unwrap': unwrap,
         }
 
         # check that default values are not overridden
