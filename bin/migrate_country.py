@@ -525,15 +525,20 @@ specials_to_code = {
     "Berlin": "DE",
     "D": "DE",
     "Deutschlad": "DE",
+    "Deutschland (DE)": "DE",
     "Deutschland (DEU)": "DE",
     "Deutschland, Nordrhein-Westfalen": "DE",
     "Dutschland": "DE",
     "GER": "DE",
+    "GERMANY": "DE",
+    "Germaný": "DE",
+    "Brandenburg": "DE",
     "Hessen": "DE",
     "Niedersachsen": "DE",
     "Nordrhein-Westfalen": "DE",
     "Nordrhein-Westfalen / Deutschland": "DE",
     "NRW": "DE",
+    "Sachsen": "DE",
 
     # Other countries
     "Tschechische Republik": "CZ",
@@ -549,6 +554,8 @@ specials_to_code = {
     "Scotland": "GB",
     "UK": "GB",
     "USA": "US",
+    "Slowakia": "SK",
+    "Malaysien": "MY",
 }
 
 all_to_code = {
