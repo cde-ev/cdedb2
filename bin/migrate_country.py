@@ -565,9 +565,12 @@ error: Dict[int, str] = {}
 
 with Script(rs, dry_run=DRY_RUN):
     persona_id = -1
-    while persona_id:
+    while True:
         persona_id = core.next_persona(
             rs, persona_id=persona_id, is_member=None, is_archived=False)
+
+        if not persona_id:
+            break
 
         persona = core.get_total_persona(rs, persona_id)
         if not persona['is_event_realm']:
