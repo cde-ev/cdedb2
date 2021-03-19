@@ -544,10 +544,10 @@ specials_to_code = {
     "Polska": "PL",
     "România": "RO",
     "Slovensko": "SK",
-    "Great Britain": "UK",
-    "Großbritannien": "UK",
-    "Schottland": "UK",
-    "Scotland": "UK",
+    "Great Britain": "GB",
+    "Großbritannien": "GB",
+    "Schottland": "GB",
+    "Scotland": "GB",
     "USA": "US",
 }
 
@@ -568,20 +568,47 @@ with Script(rs, dry_run=DRY_RUN):
         rs, persona_id=-1, is_member=None, is_archived=False)
     while persona_id:
         persona = core.get_total_persona(rs, persona_id)
-        if not persona['is_event_realm'] or persona['country'] in COUNTRY_CODES:
+        if not persona['is_event_realm']:
             continue
+
+        update = {
+            'id': persona_id,
+        }
+
+        if persona['country'] in COUNTRY_CODES:
+            pass
         elif not persona['country']:
-            persona['country'] = "DE"
+            update['country'] = "DE"
         elif persona['country'] not in COUNTRY_CODES:
             persona['country'] = persona['country'].strip()
             if persona['country'] in all_to_code:
-                persona['country'] = all_to_code[persona['country']]
+                update['country'] = all_to_code[persona['country']]
             else:
                 error[persona_id] = persona['country']
-                print(f"Failed for {persona_id} with country {persona['country']}.")
+                print(f"Failed for {persona_id}"
+                      " with country {persona['country']}.")
 
-        core.set_persona(rs, persona, may_wait=False,
-                         change_note="Land auf Ländercode umgestellt.")
+        if persona['is_cde_realm']:
+            if persona['country2'] in COUNTRY_CODES:
+                pass
+            elif not persona['country2']:
+                update['country2'] = "DE"
+            elif persona['country2'] not in COUNTRY_CODES:
+                persona['country2'] = persona['country2'].strip()
+                if persona['country2'] in all_to_code:
+                    update['country2'] = all_to_code[persona['country2']]
+                else:
+                    error[persona_id] = persona['country2']
+                    print(f"Failed for {persona_id}"
+                          " with country2 {persona['country2']}.")
+
+        if len(update) <= 1:
+            continue
+
+        print(update)
+
+        core.change_persona(rs, update, may_wait=False,
+                            change_note="Land auf Ländercode umgestellt.")
 
         persona_id = core.next_persona(
             rs, persona_id=persona_id, is_member=None, is_archived=False)
