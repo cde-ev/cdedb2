@@ -547,6 +547,7 @@ specials_to_code = {
     "Großbritannien": "GB",
     "Schottland": "GB",
     "Scotland": "GB",
+    "UK": "GB",
     "USA": "US",
 }
 
