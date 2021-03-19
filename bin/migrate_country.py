@@ -585,7 +585,7 @@ with Script(rs, dry_run=DRY_RUN):
             else:
                 error[persona_id] = persona['country']
                 print(f"Failed for {persona_id}"
-                      " with country {persona['country']}.")
+                      f" with country {persona['country']}.")
 
         if persona['is_cde_realm']:
             if persona['country2'] in COUNTRY_CODES:
@@ -599,7 +599,7 @@ with Script(rs, dry_run=DRY_RUN):
                 else:
                     error[persona_id] = persona['country2']
                     print(f"Failed for {persona_id}"
-                          " with country2 {persona['country2']}.")
+                          f" with country2 {persona['country2']}.")
 
         if len(update) <= 1:
             continue
