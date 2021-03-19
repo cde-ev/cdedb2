@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-from typing import Dict
+from typing import Any, Dict
 
-from cdedb.common import ArchiveError
 from cdedb.script import make_backend, setup, Script, CoreBackend
 from cdedb.validationdata import COUNTRY_CODES
 
@@ -571,7 +570,7 @@ with Script(rs, dry_run=DRY_RUN):
         if not persona['is_event_realm']:
             continue
 
-        update = {
+        update: Dict[str, Any] = {
             'id': persona_id,
         }
 
