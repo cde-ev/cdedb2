@@ -578,7 +578,7 @@ with Script(rs, dry_run=DRY_RUN):
             pass
         elif not persona['country']:
             update['country'] = "DE"
-        elif persona['country'] not in COUNTRY_CODES:
+        else:
             persona['country'] = persona['country'].strip()
             if persona['country'] in all_to_code:
                 update['country'] = all_to_code[persona['country']]
@@ -592,7 +592,7 @@ with Script(rs, dry_run=DRY_RUN):
                 pass
             elif not persona['country2']:
                 update['country2'] = "DE"
-            elif persona['country2'] not in COUNTRY_CODES:
+            else:
                 persona['country2'] = persona['country2'].strip()
                 if persona['country2'] in all_to_code:
                     update['country2'] = all_to_code[persona['country2']]
@@ -603,8 +603,6 @@ with Script(rs, dry_run=DRY_RUN):
 
         if len(update) <= 1:
             continue
-
-        print(update)
 
         core.change_persona(rs, update, may_wait=False,
                             change_note="Land auf Ländercode umgestellt.")
