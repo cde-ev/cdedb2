@@ -31,7 +31,7 @@
                                   entries=institutions|keydictsort(EntitySorter.institution)|dict_entries('id', 'title')) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5", info=util.markdownhint) }}
         {{ util.form_input_text(name="tempus", type="date", label=gettext("Cutoff date")) }}
-        {{ util.form_input_textarea(name="notes", label=gettext("Photo gallery"), rows="3",
+        {{ util.form_input_textarea(name="participant_info", label=gettext("Photo gallery"), rows="3",
                                     info=(util.markdownhint + " "
                                           + gettext("Link to photo gallery (e.g. <https://user:pwd@example.cde>) with "
                                                     "http authentification information encoded")|escape)) }}
