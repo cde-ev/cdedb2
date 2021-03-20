@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2021-03-18 11:38+0100\n"
+"POT-Creation-Date: 2021-03-20 14:58+0000\n"
 "PO-Revision-Date: 2020-12-06 11:30+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -1083,7 +1083,7 @@ msgstr "Mehr Adminprivilegien benötigt."
 msgid "Invalid notification type %(t)s found."
 msgstr "Unzulässiger Notifikationstyp %(t)s gefunden."
 
-#: cdedb/common.py:322 tests/common.py:215
+#: cdedb/common.py:322
 #, python-format
 msgid "Attribute %(name)s not public"
 msgstr "Attribut %(name)s ist nicht öffentlich"
@@ -7800,7 +7800,7 @@ msgid ""
 "Please upload a participation certificate from your DSA, DJA, etc. here."
 msgstr "Bitte lade hier eine Teilnahmeurkunde von deiner DSA, DJA, etc. hoch."
 
-#: cdedb/frontend/templates/web/core/genesis_request.tmpl:112
+#: cdedb/frontend/templates/web/core/genesis_request.tmpl:114
 msgid "Confirm Request"
 msgstr "Anfrage abschicken"
 
@@ -15096,109 +15096,109 @@ msgstr "Kann aus {} keinen ml_type bestimmen"
 msgid "%(ml_type)s is not an appropriate type for this mailinglist."
 msgstr "%(ml_type)s ist kein geeigneter Typ für diese Mailingliste."
 
-#: cdedb/subman/machine.py:249 cdedb/subman/machine.py:251
-#: cdedb/subman/machine.py:253 cdedb/subman/machine.py:255
-#: cdedb/subman/machine.py:258 cdedb/subman/machine.py:260
+#: cdedb/subman/machine.py:250 cdedb/subman/machine.py:252
+#: cdedb/subman/machine.py:254 cdedb/subman/machine.py:256
+#: cdedb/subman/machine.py:259 cdedb/subman/machine.py:261
 msgid "Not a pending subscription request."
 msgstr "Keine Abonnement-Anfrage."
 
-#: cdedb/subman/machine.py:264 cdedb/subman/machine.py:266
-#: cdedb/subman/machine.py:272
+#: cdedb/subman/machine.py:265 cdedb/subman/machine.py:267
+#: cdedb/subman/machine.py:273
 msgid "User already subscribed."
 msgstr "Der Nutzer ist bereits Abonnent."
 
-#: cdedb/subman/machine.py:268
+#: cdedb/subman/machine.py:269
 msgid "User has been blocked. Remove override before subscribe."
 msgstr ""
 "Der Nutzer wurde blockiert. Entferne die Ausnahme, bevor du ihn hinzufügst."
 
-#: cdedb/subman/machine.py:270 cdedb/subman/machine.py:283
-#: cdedb/subman/machine.py:294 cdedb/subman/machine.py:319
+#: cdedb/subman/machine.py:271 cdedb/subman/machine.py:284
+#: cdedb/subman/machine.py:295 cdedb/subman/machine.py:320
 msgid "User has pending subscription request."
 msgstr "Der Nutzer hat bereits eine Abonnement-Anfrage gestellt."
 
-#: cdedb/subman/machine.py:277 cdedb/subman/machine.py:281
-#: cdedb/subman/machine.py:286
+#: cdedb/subman/machine.py:278 cdedb/subman/machine.py:282
+#: cdedb/subman/machine.py:287
 msgid "User already unsubscribed."
 msgstr "Der Nutzer hat die Liste bereits deabonniert."
 
-#: cdedb/subman/machine.py:279
+#: cdedb/subman/machine.py:280
 msgid "User cannot be removed. Remove override to change this."
 msgstr ""
 "Der Nutzer kann nicht entfernt werden. Entferne die Ausnahme, um die zu "
 "ändern."
 
-#: cdedb/subman/machine.py:291
+#: cdedb/subman/machine.py:292
 msgid "User is already force-subscribed."
 msgstr "Nutzer ist bereits fixierter Abonnent"
 
-#: cdedb/subman/machine.py:300 cdedb/subman/machine.py:302
-#: cdedb/subman/machine.py:305 cdedb/subman/machine.py:307
-#: cdedb/subman/machine.py:309 cdedb/subman/machine.py:311
+#: cdedb/subman/machine.py:301 cdedb/subman/machine.py:303
+#: cdedb/subman/machine.py:306 cdedb/subman/machine.py:308
+#: cdedb/subman/machine.py:310 cdedb/subman/machine.py:312
 msgid "User is not force-subscribed."
 msgstr "Nutzer ist kein fixierter Abonnent."
 
-#: cdedb/subman/machine.py:317
+#: cdedb/subman/machine.py:318
 msgid "User has already been blocked."
 msgstr "Nutzer ist bereits gebloockt."
 
-#: cdedb/subman/machine.py:325 cdedb/subman/machine.py:327
-#: cdedb/subman/machine.py:329 cdedb/subman/machine.py:332
-#: cdedb/subman/machine.py:334 cdedb/subman/machine.py:336
+#: cdedb/subman/machine.py:326 cdedb/subman/machine.py:328
+#: cdedb/subman/machine.py:330 cdedb/subman/machine.py:333
+#: cdedb/subman/machine.py:335 cdedb/subman/machine.py:337
 msgid "User is not force-unsubscribed."
 msgstr "Nutzer ist nicht geblockt."
 
-#: cdedb/subman/machine.py:339 cdedb/subman/machine.py:342
-#: cdedb/subman/machine.py:347 cdedb/subman/machine.py:351
-#: cdedb/subman/machine.py:354 cdedb/subman/machine.py:360
+#: cdedb/subman/machine.py:340 cdedb/subman/machine.py:343
+#: cdedb/subman/machine.py:348 cdedb/subman/machine.py:352
+#: cdedb/subman/machine.py:355 cdedb/subman/machine.py:361
 msgid "You are already subscribed."
 msgstr "Du bist bereits Abonnent."
 
-#: cdedb/subman/machine.py:345
+#: cdedb/subman/machine.py:346
 msgid "Can not change subscription because you are blocked."
 msgstr "Keine Abonnement-Änderung möglich, da Du geblockt bist."
 
-#: cdedb/subman/machine.py:356
+#: cdedb/subman/machine.py:357
 msgid "Can not request subscription because you are blocked."
 msgstr "Keine Abonnement-Anfrage möglich, da Du geblockt bist."
 
-#: cdedb/subman/machine.py:358
+#: cdedb/subman/machine.py:359
 msgid "You already requested subscription"
 msgstr "Es existiert bereits eine Abonnement-Anfrage."
 
-#: cdedb/subman/machine.py:366 cdedb/subman/machine.py:372
-#: cdedb/subman/machine.py:374 cdedb/subman/machine.py:377
+#: cdedb/subman/machine.py:367 cdedb/subman/machine.py:373
+#: cdedb/subman/machine.py:375 cdedb/subman/machine.py:378
 msgid "You are already unsubscribed."
 msgstr "Du bist gar kein Abonnent."
 
-#: cdedb/subman/machine.py:382 cdedb/subman/machine.py:384
+#: cdedb/subman/machine.py:383 cdedb/subman/machine.py:385
 msgid "User is in override state. Remove them before reset."
 msgstr ""
 "Der Nutzer ist eine Ausnahme oder blockiert. Entferne diese, bevor du ihn "
 "zurücksetzt."
 
-#: cdedb/subman/machine.py:386
+#: cdedb/subman/machine.py:387
 msgid "User is not unsubscribed."
 msgstr "Nutzer hat nicht abbestellt."
 
-#: cdedb/subman/machine.py:392 cdedb/subman/machine.py:406
+#: cdedb/subman/machine.py:393 cdedb/subman/machine.py:407
 msgid "Unsubscriptions are protected against automatic cleanup."
 msgstr "Abbestellungen sind gegen automatische Säuberungen geschützt."
 
-#: cdedb/subman/machine.py:394 cdedb/subman/machine.py:396
-#: cdedb/subman/machine.py:408 cdedb/subman/machine.py:410
+#: cdedb/subman/machine.py:395 cdedb/subman/machine.py:397
+#: cdedb/subman/machine.py:409 cdedb/subman/machine.py:411
 msgid "Overrides are protected against automatic cleanup."
 msgstr "Ausnahmen sind gegen automatische Säuberungen geschützt."
 
-#: cdedb/subman/machine.py:398 cdedb/subman/machine.py:412
+#: cdedb/subman/machine.py:399 cdedb/subman/machine.py:413
 msgid "Pending requests are protected against automatic cleanup."
 msgstr "Abbonementanfragen sind gegen automatische Säuberungen geschützt."
 
-#: cdedb/subman/machine.py:401 cdedb/subman/machine.py:415
+#: cdedb/subman/machine.py:402 cdedb/subman/machine.py:416
 msgid "Subscription already cleaned up."
 msgstr "Abbonement ist bereits gesäubert."
 
-#: cdedb/subman/machine.py:404
+#: cdedb/subman/machine.py:405
 msgid "Subscriptions are protected against automatic implicit cleanup."
 msgstr "Abbonements sind geschützt gegen automatische implizite Säuberungen."
 
