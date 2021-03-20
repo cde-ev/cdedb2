@@ -69,6 +69,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
                           'email': email if success else "",
                           'cookie': message if success else "",
                           'meta_info': meta_info,
+                          'management': self.conf['MANAGEMENT_ADDRESS'],
                           })
 
             self.notify_return_code(rs, new_id, success=n_("User created."))
