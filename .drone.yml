@@ -79,6 +79,7 @@ steps:
   - testsuite
   commands:
   # let the pipeline fail if merge caused conflicts
+  - apk add --no-cache gettext
   - git checkout $DRONE_TARGET_BRANCH
   - git merge $DRONE_COMMIT
 
