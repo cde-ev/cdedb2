@@ -2036,7 +2036,7 @@ PAST_EVENT_COMMON_FIELDS: Mapping[str, Any] = {
 }
 
 PAST_EVENT_OPTIONAL_FIELDS: Mapping[str, Any] = {
-    'notes': Optional[str],
+    'participant_info': Optional[str],
 }
 
 
