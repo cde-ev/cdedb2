@@ -2033,7 +2033,7 @@ INSTITUTION_FIELDS = ("id", "title", "shortname")
 
 #: Fields of a concluded event
 PAST_EVENT_FIELDS = ("id", "title", "shortname", "institution", "description",
-                     "tempus", "notes")
+                     "tempus", "participant_info")
 
 #: Fields of an event organized via the CdEDB
 EVENT_FIELDS = (

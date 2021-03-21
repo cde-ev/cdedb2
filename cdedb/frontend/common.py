@@ -942,6 +942,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 lambda roles: roles & ({'core_admin'} | set(
                     "{}_admin".format(realm)
                     for realm in REALM_SPECIFIC_GENESIS_FIELDS)),
+            'unwrap': unwrap,
         })
         self.jinja_env_tex = self.jinja_env.overlay(
             autoescape=False,
@@ -1112,7 +1113,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'show_user_link': _show_user_link,
             'user': rs.user,
             'values': rs.values,
-            'unwrap': unwrap,
         }
 
         # check that default values are not overridden

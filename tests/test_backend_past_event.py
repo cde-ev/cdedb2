@@ -47,7 +47,7 @@ class TestPastEventBackend(BackendTest):
 
             on more lines.""",
             'tempus': datetime.date(2000, 1, 1),
-            'notes': None,
+            'participant_info': None,
         }
         new_id = self.pastevent.create_past_event(self.key, data)
         data['id'] = new_id
@@ -290,7 +290,7 @@ class TestPastEventBackend(BackendTest):
             'title': 'Große Testakademie 2222 (Warmup)',
             'shortname': "TestAka (Wu)",
             'tempus': datetime.date(2003, 2, 2),
-            'notes': None, }
+            'participant_info': None, }
         self.assertEqual(expectation, pevent_data[0])
         expectation = {
             'description': 'Everybody come!',
@@ -299,7 +299,7 @@ class TestPastEventBackend(BackendTest):
             'title': 'Große Testakademie 2222 (Erste Hälfte)',
             'shortname': "TestAka (1.H.)",
             'tempus': datetime.date(2003, 11, 1),
-            'notes': None, }
+            'participant_info': None, }
         self.assertEqual(expectation, pevent_data[1])
         expectation = {
             'description': 'Everybody come!',
@@ -308,7 +308,7 @@ class TestPastEventBackend(BackendTest):
             'title': 'Große Testakademie 2222 (Zweite Hälfte)',
             'shortname': "TestAka (2.H.)",
             'tempus': datetime.date(2003, 11, 11),
-            'notes': None, }
+            'participant_info': None, }
         self.assertEqual(expectation, pevent_data[2])
         self.assertEqual(
             set(),
