@@ -169,9 +169,8 @@ class CdEFrontend(AbstractUserFrontend):
         be redirected.
         """
         data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
-        return self.render(rs, "consent_decision", {
-            'decided_search': data['decided_search'],
-            'verwaltung': self.conf["MANAGEMENT_ADDRESS"]})
+        return self.render(rs, "consent_decision",
+                           {'decided_search': data['decided_search']})
 
     @access("member", modi={"POST"})
     @REQUESTdata("ack")
@@ -698,7 +697,6 @@ class CdEFrontend(AbstractUserFrontend):
                                   'email': email if success else "",
                                   'cookie': message if success else "",
                                   'meta_info': meta_info,
-                                  'management': self.conf['MANAGEMENT_ADDRESS'],
                                   })
         return True, count
 
@@ -1221,8 +1219,7 @@ class CdEFrontend(AbstractUserFrontend):
                               },
                              {'persona': persona,
                               'address': make_postal_address(persona),
-                              'new_balance': persona['balance'],
-                              'management': self.conf['MANAGEMENT_ADDRESS']})
+                              'new_balance': persona['balance']})
         return True, count, memberships_gained
 
     @access("finance_admin", modi={"POST"})
@@ -1682,8 +1679,7 @@ class CdEFrontend(AbstractUserFrontend):
             self.do_mail(rs, "sepa_pre-notification",
                          {'To': (persona['username'],),
                           'Subject': subject},
-                         {'data': data,
-                          'management': self.conf['MANAGEMENT_ADDRESS']})
+                         {'data': data})
         rs.notify("success",
                   n_("%(num)s Direct Debits issued. Notification mails sent."),
                   {'num': len(transaction_ids)})
@@ -1901,8 +1897,7 @@ class CdEFrontend(AbstractUserFrontend):
 
         meta_info = self.coreproxy.get_meta_info(rs)
         tex = self.fill_template(rs, "tex", "lastschrift_subscription_form",
-                                 {'meta_info': meta_info, 'data': data,
-                                  'management': self.conf['MANAGEMENT_ADDRESS']})
+                                 {'meta_info': meta_info, 'data': data})
         errormsg = n_("Form could not be created. Please refrain from using "
                       "special characters if possible.")
         pdf = self.serve_latex_document(
@@ -2043,8 +2038,7 @@ class CdEFrontend(AbstractUserFrontend):
                  'address': address,
                  'transaction_subject': transaction_subject,
                  'addresscheck': addresscheck,
-                 'meta_info': meta_info,
-                 'management': self.conf['MANAGEMENT_ADDRESS']})
+                 'meta_info': meta_info})
             return not testrun
 
         def send_archival_notification(rrs: RequestState, rs: None = None) -> bool:
@@ -2081,7 +2075,6 @@ class CdEFrontend(AbstractUserFrontend):
                      'Subject': "Bevorstehende Löschung Deines"
                                 " CdE-Datenbank-Accounts"},
                     {'persona': persona,
-                     'management': self.conf["MANAGEMENT_ADDRESS"],
                      'fee': self.conf["MEMBERSHIP_FEE"],
                      'meta_info': meta_info})
             return not testrun
@@ -2137,8 +2130,7 @@ class CdEFrontend(AbstractUserFrontend):
                     {'persona': persona,
                      'fee': self.conf["MEMBERSHIP_FEE"],
                      'transaction_subject': transaction_subject,
-                     'meta_info': meta_info,
-                     'management': self.conf['MANAGEMENT_ADDRESS']})
+                     'meta_info': meta_info})
             return True
 
         def automated_archival(rrs: RequestState, rs: None = None) -> bool:
@@ -2320,8 +2312,7 @@ class CdEFrontend(AbstractUserFrontend):
                 rrs, "addresscheck",
                 {'To': (persona['username'],),
                  'Subject': "Adressabfrage für den exPuls"},
-                {'persona': persona, 'address': address,
-                 'management': self.conf['MANAGEMENT_ADDRESS']})
+                {'persona': persona, 'address': address})
             return not testrun
 
         if skip:

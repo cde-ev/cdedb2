@@ -943,6 +943,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     "{}_admin".format(realm)
                     for realm in REALM_SPECIFIC_GENESIS_FIELDS)),
             'unwrap': unwrap,
+            'MANAGEMENT_ADDRESS': self.conf['MANAGEMENT_ADDRESS'],
         })
         self.jinja_env_tex = self.jinja_env.overlay(
             autoescape=False,

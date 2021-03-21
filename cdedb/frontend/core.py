@@ -1537,7 +1537,6 @@ class CoreFrontend(AbstractFrontend):
                           'email': "",
                           'cookie': "",
                           'meta_info': meta_info,
-                          'management': self.conf['MANAGEMENT_ADDRESS'],
                           })
         return self.redirect_show_user(rs, persona_id)
 
@@ -1799,7 +1798,6 @@ class CoreFrontend(AbstractFrontend):
             self.do_mail(
                 rs, "admin_no_reset_password",
                 {'To': (email,), 'Subject': "Passwort zurücksetzen"},
-                {'management': self.conf['MANAGEMENT_ADDRESS']},
             )
             msg = "Sent password reset denial mail to admin {} for IP {}."
             self.logger.info(msg.format(email, rs.request.remote_addr))
@@ -1966,8 +1964,7 @@ class CoreFrontend(AbstractFrontend):
             self.do_mail(rs, "username_change_info",
                          {'To': (rs.user.username,),
                           'Subject': "Deine E-Mail-Adresse wurde geändert"},
-                         {'new_username': new_username,
-                          'management': self.conf['MANAGEMENT_ADDRESS']})
+                         {'new_username': new_username})
             return self.redirect(rs, "core/index")
 
     @access(*REALM_ADMINS)
@@ -2369,7 +2366,7 @@ class CoreFrontend(AbstractFrontend):
                 rs, "genesis_declined",
                 {'To': (case['username'],),
                  'Subject': "CdEDB Accountanfrage abgelehnt"},
-                {'management': self.conf['MANAGEMENT_ADDRESS']})
+            )
             rs.notify("info", n_("Case rejected."))
         return self.redirect(rs, "core/genesis_list_cases")
 
