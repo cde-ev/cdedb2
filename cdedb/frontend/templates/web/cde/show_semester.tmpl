@@ -148,7 +148,8 @@
                             <p>
                                 {% trans date=period['balance_done']|datetime(lang=lang),
                                      count=period['balance_trialmembers'],
-                                     total=period['balance_total']|money(lang=lang) %}
+                                     total=period['balance_total']|money(lang=lang),
+                                     state=period['balance_state'] %}
                                     Done up until {{ state }}.
                                     {{ count }} trial meberships have been ended so far.
                                     A total of {{ total }} has been deducted so far.
