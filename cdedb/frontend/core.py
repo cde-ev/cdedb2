@@ -2022,7 +2022,8 @@ class CoreFrontend(AbstractFrontend):
 
     @access("anonymous")
     @REQUESTdata("realm")
-    def genesis_request_form(self, rs: RequestState, realm: str) -> Response:
+    def genesis_request_form(self, rs: RequestState, realm: Optional[str] = None
+                             ) -> Response:
         """Render form."""
         rs.ignore_validation_errors()
         allowed_genders = set(x for x in const.Genders

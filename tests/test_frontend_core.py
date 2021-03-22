@@ -3,7 +3,7 @@
 import copy
 import re
 import urllib.parse
-from typing import Dict
+from typing import Dict, Optional
 
 import webtest
 
@@ -1567,9 +1567,12 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesiseventapprovalform']
         self.submit(f)
 
-    def _genesis_request(self, data: CdEDBObject) -> None:
-        self.get('/')
-        self.traverse({'description': 'Account anfordern'})
+    def _genesis_request(self, data: CdEDBObject, realm: Optional[str] = None) -> None:
+        if realm:
+            self.get('/core/genesis/request?realm=' + realm)
+        else:
+            self.get('/')
+            self.traverse({'description': 'Account anfordern'})
         self.assertTitle("Account anfordern")
         f = self.response.forms['genesisform']
         for field, entry in data.items():
@@ -1581,10 +1584,10 @@ class TestCoreFrontend(FrontendTest):
         self.get(link)
         self.follow()
 
-    ML_GENESIS_DATA: CdEDBObject = {
+    ML_GENESIS_DATA_NO_REALM: CdEDBObject = {
         'given_names': "Zelda", 'family_name': "Zeruda-Hime",
-        'username': "zelda@example.cde", 'notes': "Gimme!", 'realm': "ml"
-    }
+        'username': "zelda@example.cde", 'notes': "Gimme!"}
+    ML_GENESIS_DATA: CdEDBObject = {**ML_GENESIS_DATA_NO_REALM, 'realm': "ml"}
 
     EVENT_GENESIS_DATA = ML_GENESIS_DATA.copy()
     EVENT_GENESIS_DATA.update({
@@ -1669,7 +1672,7 @@ class TestCoreFrontend(FrontendTest):
 
     def test_genesis_ml(self) -> None:
         user = USER_DICT['vera']
-        self._genesis_request(self.ML_GENESIS_DATA)
+        self._genesis_request(self.ML_GENESIS_DATA_NO_REALM, realm='ml')
         self.login(user)
         self.traverse({'description': 'Accountanfrage'})
         self.assertTitle("Accountanfragen")
