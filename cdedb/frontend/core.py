@@ -2021,8 +2021,10 @@ class CoreFrontend(AbstractFrontend):
         return self.redirect_show_user(rs, persona_id)
 
     @access("anonymous")
-    def genesis_request_form(self, rs: RequestState) -> Response:
+    @REQUESTdata("realm")
+    def genesis_request_form(self, rs: RequestState, realm: str) -> Response:
         """Render form."""
+        rs.ignore_validation_errors()
         allowed_genders = set(x for x in const.Genders
                               if x != const.Genders.not_specified)
         realm_options = [(option.realm, rs.gettext(option.name))
