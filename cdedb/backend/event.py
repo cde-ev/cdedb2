@@ -306,15 +306,16 @@ class EventBackend(AbstractBackend):
             )
             if lodge_field_columns:
                 lodge_field_columns += ", "
-            lodge_view = """SELECT
+            lodgement_view = f"""SELECT
                 {lodge_field_columns}
-                title, notes, id
+                title, notes, id, group_id
             FROM
                 event.lodgements
             WHERE
-                event_id = {event_id}""".format(
-                event_id=event_id, lodge_field_columns=lodge_field_columns)
-
+                event_id = {event_id}"""
+            lodgement_group_view = (f"SELECT title, id"
+                                    f" FROM event.lodgement_groups"
+                                    f" WHERE event_id = {event_id}")
             # The template for registration part and lodgement information.
             part_table = lambda part_id: \
                 f"""LEFT OUTER JOIN (
@@ -326,9 +327,14 @@ class EventBackend(AbstractBackend):
                         part_id = {part_id}
                 ) AS part{part_id} ON reg.id = part{part_id}.registration_id
                 LEFT OUTER JOIN (
-                    {lodge_view}
+                    {lodgement_view}
                 ) AS lodgement{part_id}
-                ON part{part_id}.lodgement_id = lodgement{part_id}.id"""
+                ON part{part_id}.lodgement_id = lodgement{part_id}.id
+                LEFT OUTER JOIN (
+                    {lodgement_group_view}
+                ) AS lodgement_group{part_id}
+                ON lodgement{part_id}.group_id = lodgement_group{part_id}.id
+                """
 
             part_tables = " ".join(
                 part_table(part['id'])
