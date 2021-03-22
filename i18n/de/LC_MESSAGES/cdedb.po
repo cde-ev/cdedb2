@@ -4855,7 +4855,7 @@ msgstr ""
 msgid "subscribe"
 msgstr "abonnieren"
 
-# python-format
+#, python-format
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:132
 #, python-format
 msgid ""
