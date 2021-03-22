@@ -2855,6 +2855,24 @@ msgstr "Bel. Teil: Isomattenschläfer"
 msgid "any part: lodgement"
 msgstr "Bel. Teil: Unterkunft"
 
+msgid "lodgement group"
+msgstr "Unterkunftsgruppe"
+
+msgid "lodgement group ID"
+msgstr "Unterkunftgruppen-ID"
+
+msgid "lodgement group title"
+msgstr "Unterkunftsgruppen-Bezeichnung"
+
+msgid "any part: lodgement group"
+msgstr "Bel. Teil: Unterkunftsgruppe"
+
+msgid "any part: lodgement group ID"
+msgstr "Bel. Teil: Unterkunftgruppen-ID"
+
+msgid "any part: lodgement group title"
+msgstr "Bel. Teil: Unterkunftsgruppen-Bezeichnung"
+
 #: cdedb/frontend/event.py:5474
 msgid "any part: lodgement ID"
 msgstr "Bel. Teil: Unterkunfts-ID"
@@ -2959,7 +2977,7 @@ msgstr "Unterkunftsnotizen"
 
 #: cdedb/frontend/event.py:5772
 msgid "Lodgement Group ID"
-msgstr "Unterkunftsgrupp: ID"
+msgstr "Unterkunftsgruppe: ID"
 
 #: cdedb/frontend/event.py:5773
 #: cdedb/frontend/templates/web/event/change_lodgement.tmpl:31
