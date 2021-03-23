@@ -1797,7 +1797,8 @@ class CoreFrontend(AbstractFrontend):
         if admin_exception:
             self.do_mail(
                 rs, "admin_no_reset_password",
-                {'To': (email,), 'Subject': "Passwort zurücksetzen"})
+                {'To': (email,), 'Subject': "Passwort zurücksetzen"},
+            )
             msg = "Sent password reset denial mail to admin {} for IP {}."
             self.logger.info(msg.format(email, rs.request.remote_addr))
             rs.notify("success", n_("Email sent."))
@@ -2021,8 +2022,11 @@ class CoreFrontend(AbstractFrontend):
         return self.redirect_show_user(rs, persona_id)
 
     @access("anonymous")
-    def genesis_request_form(self, rs: RequestState) -> Response:
+    @REQUESTdata("realm")
+    def genesis_request_form(self, rs: RequestState, realm: Optional[str] = None
+                             ) -> Response:
         """Render form."""
+        rs.ignore_validation_errors()
         allowed_genders = set(x for x in const.Genders
                               if x != const.Genders.not_specified)
         realm_options = [(option.realm, rs.gettext(option.name))
@@ -2365,7 +2369,7 @@ class CoreFrontend(AbstractFrontend):
                 rs, "genesis_declined",
                 {'To': (case['username'],),
                  'Subject': "CdEDB Accountanfrage abgelehnt"},
-                {})
+            )
             rs.notify("info", n_("Case rejected."))
         return self.redirect(rs, "core/genesis_list_cases")
 

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-from typing import Dict
+from typing import Any, Dict, Optional
 
-from cdedb.common import ArchiveError
 from cdedb.script import make_backend, setup, Script, CoreBackend
 from cdedb.validationdata import COUNTRY_CODES
 
@@ -526,15 +525,20 @@ specials_to_code = {
     "Berlin": "DE",
     "D": "DE",
     "Deutschlad": "DE",
+    "Deutschland (DE)": "DE",
     "Deutschland (DEU)": "DE",
     "Deutschland, Nordrhein-Westfalen": "DE",
     "Dutschland": "DE",
     "GER": "DE",
+    "GERMANY": "DE",
+    "Germaný": "DE",
+    "Brandenburg": "DE",
     "Hessen": "DE",
     "Niedersachsen": "DE",
     "Nordrhein-Westfalen": "DE",
     "Nordrhein-Westfalen / Deutschland": "DE",
     "NRW": "DE",
+    "Sachsen": "DE",
 
     # Other countries
     "Tschechische Republik": "CZ",
@@ -544,11 +548,14 @@ specials_to_code = {
     "Polska": "PL",
     "România": "RO",
     "Slovensko": "SK",
-    "Great Britain": "UK",
-    "Großbritannien": "UK",
-    "Schottland": "UK",
-    "Scotland": "UK",
+    "Great Britain": "GB",
+    "Großbritannien": "GB",
+    "Schottland": "GB",
+    "Scotland": "GB",
+    "UK": "GB",
     "USA": "US",
+    "Slowakia": "SK",
+    "Malaysien": "MY",
 }
 
 all_to_code = {
@@ -564,27 +571,54 @@ error: Dict[int, str] = {}
 # Execution
 
 with Script(rs, dry_run=DRY_RUN):
-    persona_id = core.next_persona(
-        rs, persona_id=-1, is_member=None, is_archived=False)
-    while persona_id:
-        persona = core.get_total_persona(rs, persona_id)
-        if not persona['is_event_realm'] or persona['country'] in COUNTRY_CODES:
-            continue
-        elif not persona['country']:
-            persona['country'] = "DE"
-        elif persona['country'] not in COUNTRY_CODES:
-            persona['country'] = persona['country'].strip()
-            if persona['country'] in all_to_code:
-                persona['country'] = all_to_code[persona['country']]
-            else:
-                error[persona_id] = persona['country']
-                print(f"Failed for {persona_id} with country {persona['country']}.")
-
-        core.set_persona(rs, persona, may_wait=False,
-                         change_note="Land auf Ländercode umgestellt.")
-
+    persona_id: Optional[int] = -1
+    while True:
         persona_id = core.next_persona(
             rs, persona_id=persona_id, is_member=None, is_archived=False)
+
+        if not persona_id:
+            break
+
+        persona = core.get_total_persona(rs, persona_id)
+        if not persona['is_event_realm']:
+            continue
+
+        update: Dict[str, Any] = {
+            'id': persona_id,
+        }
+
+        if persona['country'] in COUNTRY_CODES:
+            pass
+        elif not persona['country']:
+            update['country'] = "DE"
+        else:
+            persona['country'] = persona['country'].strip()
+            if persona['country'] in all_to_code:
+                update['country'] = all_to_code[persona['country']]
+            else:
+                error[persona_id] = persona['country']
+                print(f"Failed for {persona_id}"
+                      f" with country {persona['country']}.")
+
+        if persona['is_cde_realm']:
+            if persona['country2'] in COUNTRY_CODES:
+                pass
+            elif not persona['country2']:
+                update['country2'] = "DE"
+            else:
+                persona['country2'] = persona['country2'].strip()
+                if persona['country2'] in all_to_code:
+                    update['country2'] = all_to_code[persona['country2']]
+                else:
+                    error[persona_id] = persona['country2']
+                    print(f"Failed for {persona_id}"
+                          f" with country2 {persona['country2']}.")
+
+        if len(update) <= 1:
+            continue
+
+        core.change_persona(rs, update, may_wait=False,
+                            change_note="Land auf Ländercode umgestellt.")
 
     if error:
         print(f"{len(error)} country rewrites failed. Aborting")

@@ -169,9 +169,8 @@ class CdEFrontend(AbstractUserFrontend):
         be redirected.
         """
         data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
-        return self.render(rs, "consent_decision", {
-            'decided_search': data['decided_search'],
-            'verwaltung': self.conf["MANAGEMENT_ADDRESS"]})
+        return self.render(rs, "consent_decision",
+                           {'decided_search': data['decided_search']})
 
     @access("member", modi={"POST"})
     @REQUESTdata("ack")
@@ -2076,7 +2075,6 @@ class CdEFrontend(AbstractUserFrontend):
                      'Subject': "Bevorstehende Löschung Deines"
                                 " CdE-Datenbank-Accounts"},
                     {'persona': persona,
-                     'management': self.conf["MANAGEMENT_ADDRESS"],
                      'fee': self.conf["MEMBERSHIP_FEE"],
                      'meta_info': meta_info})
             return not testrun

@@ -58,3 +58,4 @@ volumes:
 trigger:
   branch:
   - master
+  - stable

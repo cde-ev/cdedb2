@@ -2028,7 +2028,7 @@ class TestCdEFrontend(FrontendTest):
         f['title'] = "Link Academy"
         f['institution'] = 2
         f['description'] = "Ganz ohne Minderjährige."
-        f['notes'] = "<https://zelda:hyrule@link.cde>"
+        f['participant_info'] = "<https://zelda:hyrule@link.cde>"
         self.submit(f)
         self.assertTitle("Link Academy")
         self.assertPresence("Disco des Ehemaligen", div='institution')
@@ -2047,7 +2047,7 @@ class TestCdEFrontend(FrontendTest):
         f['shortname'] = "link"
         f['institution'] = 2
         f['description'] = "Ganz ohne Minderjährige."
-        f['notes'] = "<https://zelda:hyrule@link.cde>"
+        f['participant_info'] = "<https://zelda:hyrule@link.cde>"
         f['tempus'] = "1.1.2000"
         self.submit(f)
         self.assertTitle("Link Academy II")
@@ -2238,7 +2238,7 @@ class TestCdEFrontend(FrontendTest):
         f['shortname'] = "Arrr"
         f['institution'] = 2
         f['description'] = "Alle Mann an Deck!"
-        f['notes'] = "<https://piraten:schiff@ahoi.cde>"
+        f['participant_info'] = "<https://piraten:schiff@ahoi.cde>"
         f['tempus'] = "1.1.2000"
         self.submit(f)
         logs.append((1003, const.PastEventLogCodes.event_created))
