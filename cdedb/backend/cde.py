@@ -929,48 +929,45 @@ class CdEBackend(AbstractBackend):
                 n_("num_members"), n_("num_searchable"), n_("num_ex_members")))
         }
 
-        def query_stats(params: Dict[str, str]) -> None:
+        def query_stats(params: Dict[str, str]) -> OrderedDict:
             query = ("SELECT COUNT(*) AS num, {select} AS datum"
                      " FROM core.personas"
                      " WHERE is_member = True AND {condition} IS NOT NULL"
                      " GROUP BY datum ORDER BY {order}")
             data = self.query_all(rs, query.format(**params), ())
-            ret[params["name"]] = OrderedDict(
-                (e['datum'], e['num']) for e in data)
+            return OrderedDict((e['datum'], e['num']) for e in data)
 
         # Members by country.
         params = {
-            "name": n_("members_by_country"),
-            "select": "COALESCE(country, 'DE')",
+            "select": "country",
             "condition": "location",
             "order": "num DESC, datum ASC",
         }
-        query_stats(params)
+        ret[n_("members_by_country")] = query_stats(params)
         # Members by PLZ.
         params = {
-            "name": n_("members_by_plz"),
             "select": "postal_code",
             "condition": "postal_code",
             "order": "num DESC, datum ASC",
         }
         # We don't want the PLZ stats for now. See #380.
-        # query_stats(params)
+        # ret[n_("members_by_plz")] = query_stats(params)
         # Members by city.
         params = {
-            "name": n_("members_by_city"),
             "select": "location",
             "condition": "location",
             "order": "num DESC, datum ASC",
         }
-        query_stats(params)
+        # We want to cutoff the list due to privacy and readability concerns.
+        ret[n_("members_by_city")] = OrderedDict(
+            (k, v) for k, v in query_stats(params).items() if v >= 10)
         # Members by birthday.
         params = {
-            "name": n_("members_by_birthday"),
             "select": "EXTRACT(year FROM birthday)::integer",
             "condition": "birthday",
             "order": "datum ASC",
         }
-        query_stats(params)
+        ret[n_("members_by_birthday")] = query_stats(params)
         # Members by first event.
         query = """SELECT
             COUNT(*) AS num, EXTRACT(year FROM min_tempus.t)::integer AS datum

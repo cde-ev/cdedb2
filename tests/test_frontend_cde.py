@@ -2205,9 +2205,37 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("PfingstAkademie 2014")
         self.assertNonPresence("Garcia")
 
-    @as_users("farin")
+    @as_users("farin", "inga")
     def test_member_stats(self, user: CdEDBObject) -> None:
         self.traverse("Mitglieder", "Mitglieder-Statistik")
+        self.assertPresence("Mitglieder", div="cde-simple-stats")
+        self.assertPresence("davon suchbar", div="cde-simple-stats")
+        self.assertPresence("Inaktive Mitglieder", div="cde-simple-stats")
+        self.assertPresence("Mitglieder nach Land",
+                            div="complex-stats-members_by_country")
+        self.assertPresence("Deutschland",
+                            div="complex-stats-members_by_country")
+        self.assertPresence("Japan",
+                            div="complex-stats-members_by_country")
+        self.assertNonPresence("DE")
+        self.assertNonPresence("JP")
+        self.assertPresence("Mitglieder nach Stadt",
+                            div="complex-stats-members_by_city")
+        self.assertNonPresence("Burokratia")
+        self.assertNonPresence("Liliput")
+        self.assertPresence("Mitglieder nach Geburtsjahr",
+                            div="complex-stats-members_by_birthday")
+        self.assertPresence("1991", div="complex-stats-members_by_birthday")
+        self.assertPresence("2222", div="complex-stats-members_by_birthday")
+        self.assertNonPresence("2014", div="complex-stats-members_by_birthday")
+        self.assertPresence("Mitglieder nach erster Akademieteilnahme",
+                            div="complex-stats-members_by_first_event")
+        self.assertPresence("2014", div="complex-stats-members_by_first_event")
+        self.assertNonPresence("2010", div="complex-stats-members_by_first_event")
+        self.assertPresence("Verschiedene Akademie-Teilnehmer nach Jahr",
+                            div="complex-stats-unique_participants_per_year")
+        self.assertPresence("2010", div="complex-stats-unique_participants_per_year")
+        self.assertPresence("2014", div="complex-stats-unique_participants_per_year")
 
     @as_users("vera")
     def test_past_log(self, user: CdEDBObject) -> None:
