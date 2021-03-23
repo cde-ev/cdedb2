@@ -1797,7 +1797,8 @@ class CoreFrontend(AbstractFrontend):
         if admin_exception:
             self.do_mail(
                 rs, "admin_no_reset_password",
-                {'To': (email,), 'Subject': "Passwort zurücksetzen"})
+                {'To': (email,), 'Subject': "Passwort zurücksetzen"},
+            )
             msg = "Sent password reset denial mail to admin {} for IP {}."
             self.logger.info(msg.format(email, rs.request.remote_addr))
             rs.notify("success", n_("Email sent."))
@@ -2368,7 +2369,7 @@ class CoreFrontend(AbstractFrontend):
                 rs, "genesis_declined",
                 {'To': (case['username'],),
                  'Subject': "CdEDB Accountanfrage abgelehnt"},
-                {})
+            )
             rs.notify("info", n_("Case rejected."))
         return self.redirect(rs, "core/genesis_list_cases")
 
