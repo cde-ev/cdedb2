@@ -346,6 +346,8 @@ _DEFAULTS = {
 
     # email for ballot tallies
     "BALLOT_TALLY_ADDRESS": "wahlbekanntmachung@lists.cde-ev.de",
+    # mailinglist for ballot tallies
+    "BALLOT_TALLY_MAILINGLIST_URL": "https://db.cde-ev.de/db/ml/mailinglist/91/show",
 
     # mailman REST API host
     "MAILMAN_HOST": "localhost:8001",

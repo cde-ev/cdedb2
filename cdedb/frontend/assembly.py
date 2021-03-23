@@ -1233,6 +1233,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             'result_hash': result_hash, 'secret': secret, **vote_dict,
             'vote_counts': vote_counts, 'MAGIC_ABSTAIN': MAGIC_ABSTAIN,
             'BALLOT_TALLY_ADDRESS': self.conf["BALLOT_TALLY_ADDRESS"],
+            'BALLOT_TALLY_MAILINGLIST_URL': self.conf["BALLOT_TALLY_MAILINGLIST_URL"],
             'prev_ballot': prev_ballot, 'next_ballot': next_ballot,
             'candidates': candidates})
 
