@@ -3454,7 +3454,7 @@
             "institution": 1,
             "description": "Great event!",
             "tempus": "2014-05-25",
-            "notes": "Mediensammlung\n:    <https://pa14:secret@example.cde/pa14/>"
+            "participant_info": "Mediensammlung\n:    <https://pa14:secret@example.cde/pa14/>"
         },
         {
             "id": 2,
@@ -3463,7 +3463,7 @@
             "institution": 2,
             "description": null,
             "tempus": "2019-07-26",
-            "notes": null
+            "participant_info": null
         },
         {
             "id": 3,
@@ -3472,7 +3472,7 @@
             "institution": 1,
             "description": null,
             "tempus": "2010-12-31",
-            "notes": null
+            "participant_info": null
         },
         {
             "id": 4,
@@ -3481,7 +3481,7 @@
             "institution": 1,
             "description": null,
             "tempus": "2020-06-01",
-            "notes": null
+            "participant_info": null
         }
     ],
     "past_event.courses": [

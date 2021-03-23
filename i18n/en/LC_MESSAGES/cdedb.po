@@ -43,7 +43,7 @@ msgstr ""
 #: cdedb/backend/assembly.py:343 cdedb/backend/assembly.py:366
 #: cdedb/backend/assembly.py:1930 cdedb/backend/event.py:67
 #: cdedb/backend/event.py:98 cdedb/backend/past_event.py:568
-#: cdedb/frontend/common.py:1182
+#: cdedb/frontend/common.py:1181 cdedb/frontend/common.py:1182
 msgid "No input specified."
 msgstr ""
 
@@ -95,16 +95,18 @@ msgstr ""
 #: cdedb/frontend/assembly.py:607 cdedb/frontend/assembly.py:688
 #: cdedb/frontend/assembly.py:745 cdedb/frontend/assembly.py:765
 #: cdedb/frontend/assembly.py:1094 cdedb/frontend/assembly.py:1162
-#: cdedb/frontend/assembly.py:1419 cdedb/frontend/assembly.py:1516
-#: cdedb/frontend/assembly.py:1572 cdedb/frontend/core.py:842
-#: cdedb/frontend/core.py:845 cdedb/frontend/core.py:850
-#: cdedb/frontend/core.py:856 cdedb/frontend/core.py:864
-#: cdedb/frontend/core.py:870 cdedb/frontend/core.py:878
-#: cdedb/frontend/core.py:883 cdedb/frontend/core.py:895
-#: cdedb/frontend/core.py:1650 cdedb/frontend/core.py:1664
-#: cdedb/frontend/core.py:2258 cdedb/frontend/core.py:2272
-#: cdedb/frontend/core.py:2304 cdedb/frontend/core.py:2328
-#: cdedb/frontend/event.py:6285 cdedb/subman/subman.py:100
+#: cdedb/frontend/assembly.py:1418 cdedb/frontend/assembly.py:1419
+#: cdedb/frontend/assembly.py:1515 cdedb/frontend/assembly.py:1516
+#: cdedb/frontend/assembly.py:1571 cdedb/frontend/assembly.py:1572
+#: cdedb/frontend/core.py:842 cdedb/frontend/core.py:845
+#: cdedb/frontend/core.py:850 cdedb/frontend/core.py:856
+#: cdedb/frontend/core.py:864 cdedb/frontend/core.py:870
+#: cdedb/frontend/core.py:878 cdedb/frontend/core.py:883
+#: cdedb/frontend/core.py:895 cdedb/frontend/core.py:1650
+#: cdedb/frontend/core.py:1664 cdedb/frontend/core.py:2258
+#: cdedb/frontend/core.py:2272 cdedb/frontend/core.py:2304
+#: cdedb/frontend/core.py:2328 cdedb/frontend/event.py:6285
+#: cdedb/subman/subman.py:100
 msgid "Not privileged."
 msgstr ""
 
@@ -138,7 +140,7 @@ msgid "Some of these users are not assembly users."
 msgstr ""
 
 #: cdedb/backend/assembly.py:686 cdedb/frontend/assembly.py:483
-#: cdedb/frontend/assembly.py:1496
+#: cdedb/frontend/assembly.py:1495 cdedb/frontend/assembly.py:1496
 msgid "Unable to remove active ballot."
 msgstr ""
 
@@ -172,7 +174,8 @@ msgstr ""
 msgid "Must have privileged access to change ballot."
 msgstr ""
 
-#: cdedb/backend/assembly.py:841 cdedb/frontend/assembly.py:1443
+#: cdedb/backend/assembly.py:841 cdedb/frontend/assembly.py:1442
+#: cdedb/frontend/assembly.py:1443
 msgid "Unable to modify active ballot."
 msgstr ""
 
@@ -352,7 +355,7 @@ msgstr ""
 
 #: cdedb/backend/cde.py:451 cdedb/backend/common.py:613
 #: cdedb/frontend/cde.py:637 cdedb/frontend/cde.py:789
-#: cdedb/frontend/common.py:1491
+#: cdedb/frontend/common.py:1490 cdedb/frontend/common.py:1491
 msgid "Impossible."
 msgstr ""
 
@@ -701,7 +704,8 @@ msgstr ""
 msgid "Preventing reset of admin."
 msgstr ""
 
-#: cdedb/backend/core.py:2304 cdedb/frontend/common.py:2179
+#: cdedb/backend/core.py:2304 cdedb/frontend/common.py:2178
+#: cdedb/frontend/common.py:2179
 msgid "Link expired."
 msgstr ""
 
@@ -735,7 +739,8 @@ msgid "Password too weak."
 msgstr ""
 
 #: cdedb/backend/core.py:2402 cdedb/frontend/cde.py:1256
-#: cdedb/frontend/common.py:1404 cdedb/frontend/event.py:2294
+#: cdedb/frontend/common.py:1403 cdedb/frontend/common.py:1404
+#: cdedb/frontend/event.py:2294
 msgid "No input provided."
 msgstr ""
 
@@ -1181,55 +1186,55 @@ msgstr "Waitlist"
 msgid "50_query_dokuteam_courselist"
 msgstr "Dokuteam Courselist"
 
-#: cdedb/config.py:480
+#: cdedb/config.py:478 cdedb/config.py:480
 msgid "00_query_cde_user_all"
 msgstr "All Users"
 
-#: cdedb/config.py:486
+#: cdedb/config.py:484 cdedb/config.py:486
 msgid "02_query_cde_members"
 msgstr "All Members"
 
-#: cdedb/config.py:492
+#: cdedb/config.py:490 cdedb/config.py:492
 msgid "10_query_cde_user_trial_members"
 msgstr "Trial-Members"
 
-#: cdedb/config.py:498
+#: cdedb/config.py:496 cdedb/config.py:498
 msgid "20_query_cde_user_expuls"
 msgstr "Address Export exPuls"
 
-#: cdedb/config.py:508
+#: cdedb/config.py:506 cdedb/config.py:508
 msgid "00_query_archived_persona_all"
 msgstr "All archived users"
 
-#: cdedb/config.py:517
+#: cdedb/config.py:515 cdedb/config.py:517
 msgid "00_query_event_user_all"
 msgstr "All Users"
 
-#: cdedb/config.py:523
+#: cdedb/config.py:521 cdedb/config.py:523
 msgid "10_query_event_user_minors"
 msgstr "Minors"
 
-#: cdedb/config.py:533
+#: cdedb/config.py:531 cdedb/config.py:533
 msgid "00_query_core_user_all"
 msgstr "All Users"
 
-#: cdedb/config.py:539
+#: cdedb/config.py:537 cdedb/config.py:539
 msgid "10_query_core_any_admin"
 msgstr "All Admins"
 
-#: cdedb/config.py:551
+#: cdedb/config.py:549 cdedb/config.py:551
 msgid "00_query_assembly_user_all"
 msgstr "All Users"
 
-#: cdedb/config.py:557
+#: cdedb/config.py:555 cdedb/config.py:557
 msgid "02_query_assembly_user_admin"
 msgstr "Admins"
 
-#: cdedb/config.py:566
+#: cdedb/config.py:564 cdedb/config.py:566
 msgid "00_query_ml_user_all"
 msgstr "All Users"
 
-#: cdedb/config.py:572
+#: cdedb/config.py:570 cdedb/config.py:572
 msgid "02_query_ml_user_admin"
 msgstr "Admins"
 
@@ -1337,12 +1342,13 @@ msgid "Assembly created."
 msgstr ""
 
 #: cdedb/frontend/assembly.py:478 cdedb/frontend/assembly.py:635
-#: cdedb/frontend/assembly.py:1036 cdedb/frontend/assembly.py:1491
-#: cdedb/frontend/cde.py:2651 cdedb/frontend/cde.py:2711
-#: cdedb/frontend/core.py:2448 cdedb/frontend/core.py:2481
-#: cdedb/frontend/event.py:1384 cdedb/frontend/event.py:4206
-#: cdedb/frontend/event.py:4822 cdedb/frontend/event.py:6192
-#: cdedb/frontend/event.py:6224 cdedb/frontend/ml_base.py:535
+#: cdedb/frontend/assembly.py:1036 cdedb/frontend/assembly.py:1490
+#: cdedb/frontend/assembly.py:1491 cdedb/frontend/cde.py:2651
+#: cdedb/frontend/cde.py:2711 cdedb/frontend/core.py:2448
+#: cdedb/frontend/core.py:2481 cdedb/frontend/event.py:1384
+#: cdedb/frontend/event.py:4206 cdedb/frontend/event.py:4822
+#: cdedb/frontend/event.py:6192 cdedb/frontend/event.py:6224
+#: cdedb/frontend/ml_base.py:535
 msgid "Must be checked."
 msgstr ""
 
@@ -1416,6 +1422,7 @@ msgstr ""
 
 #: cdedb/frontend/assembly.py:1205
 #: cdedb/frontend/templates/web/assembly/list_ballots.tmpl:43
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:162
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:164
 msgid "Abstained"
 msgstr ""
@@ -1429,31 +1436,32 @@ msgstr ""
 msgid "Rejection limit"
 msgstr ""
 
-#: cdedb/frontend/assembly.py:1260
+#: cdedb/frontend/assembly.py:1259 cdedb/frontend/assembly.py:1260
 msgid "Entered invalid secret"
 msgstr ""
 
-#: cdedb/frontend/assembly.py:1471
+#: cdedb/frontend/assembly.py:1470 cdedb/frontend/assembly.py:1471
 msgid "Force starting a ballot is only possible in dev mode."
 msgstr ""
 
-#: cdedb/frontend/assembly.py:1527
+#: cdedb/frontend/assembly.py:1526 cdedb/frontend/assembly.py:1527
 msgid "Option not available."
 msgstr ""
 
-#: cdedb/frontend/assembly.py:1536
+#: cdedb/frontend/assembly.py:1535 cdedb/frontend/assembly.py:1536
 msgid "Rejection is exclusive."
 msgstr ""
 
-#: cdedb/frontend/assembly.py:1575
+#: cdedb/frontend/assembly.py:1574 cdedb/frontend/assembly.py:1575
 msgid "Ballot not yet tallied."
 msgstr ""
 
-#: cdedb/frontend/assembly.py:1594 cdedb/validation.py:3821
+#: cdedb/frontend/assembly.py:1593 cdedb/frontend/assembly.py:1594
+#: cdedb/validation.py:3821
 msgid "Mustn’t be the bar shortname."
 msgstr ""
 
-#: cdedb/frontend/assembly.py:1599
+#: cdedb/frontend/assembly.py:1598 cdedb/frontend/assembly.py:1599
 msgid "Duplicate shortname."
 msgstr ""
 
@@ -1746,132 +1754,134 @@ msgstr ""
 msgid "*Nothing here yet.*"
 msgstr ""
 
-#: cdedb/frontend/common.py:209 cdedb/frontend/common.py:1282
+#: cdedb/frontend/common.py:208 cdedb/frontend/common.py:209
+#: cdedb/frontend/common.py:1281 cdedb/frontend/common.py:1282
 msgid "Failed validation."
 msgstr ""
 
-#: cdedb/frontend/common.py:1022 cdedb/frontend/common.py:1032
+#: cdedb/frontend/common.py:1020 cdedb/frontend/common.py:1022
+#: cdedb/frontend/common.py:1030 cdedb/frontend/common.py:1032
 msgid "Must not be used in web templates."
 msgstr ""
 
-#: cdedb/frontend/common.py:1084
+#: cdedb/frontend/common.py:1082 cdedb/frontend/common.py:1084
 msgid "Given method is not callable."
 msgstr ""
 
-#: cdedb/frontend/common.py:1122
+#: cdedb/frontend/common.py:1121 cdedb/frontend/common.py:1122
 #, python-format
 msgid "Default values cannot be overridden: %(keys)s"
 msgstr ""
 
-#: cdedb/frontend/common.py:1135
+#: cdedb/frontend/common.py:1134 cdedb/frontend/common.py:1135
 #, python-format
 msgid "Requested modus does not exists: %(modus)s"
 msgstr ""
 
-#: cdedb/frontend/common.py:1140
+#: cdedb/frontend/common.py:1139 cdedb/frontend/common.py:1140
 #, python-format
 msgid "Template not found: %(file)s"
 msgstr ""
 
-#: cdedb/frontend/common.py:1184
+#: cdedb/frontend/common.py:1183 cdedb/frontend/common.py:1184
 msgid "Ambiguous input."
 msgstr ""
 
-#: cdedb/frontend/common.py:1200
+#: cdedb/frontend/common.py:1199 cdedb/frontend/common.py:1200
 msgid "Invalid datatype read from file."
 msgstr ""
 
-#: cdedb/frontend/common.py:1207
+#: cdedb/frontend/common.py:1206 cdedb/frontend/common.py:1207
 msgid "Invalid input type."
 msgstr ""
 
-#: cdedb/frontend/common.py:1246
+#: cdedb/frontend/common.py:1245 cdedb/frontend/common.py:1246
 msgid "Cannot download query result without fields of interest."
 msgstr ""
 
-#: cdedb/frontend/common.py:1261
+#: cdedb/frontend/common.py:1260 cdedb/frontend/common.py:1261
 msgid "Unknown download kind {kind}."
 msgstr ""
 
-#: cdedb/frontend/common.py:1284
+#: cdedb/frontend/common.py:1283 cdedb/frontend/common.py:1284
 msgid "The database currently undergoes maintenance and is unavailable."
 msgstr ""
 
-#: cdedb/frontend/common.py:1339
+#: cdedb/frontend/common.py:1338 cdedb/frontend/common.py:1339
 #, python-format
 msgid "Stored email to hard drive at %(path)s"
 msgstr ""
 
-#: cdedb/frontend/common.py:1470 cdedb/frontend/core.py:1411
-#: cdedb/frontend/core.py:2437
+#: cdedb/frontend/common.py:1469 cdedb/frontend/common.py:1470
+#: cdedb/frontend/core.py:1411 cdedb/frontend/core.py:2437
 msgid "Change committed."
 msgstr ""
 
-#: cdedb/frontend/common.py:1471 cdedb/frontend/core.py:1000
-#: cdedb/frontend/core.py:1169
+#: cdedb/frontend/common.py:1470 cdedb/frontend/common.py:1471
+#: cdedb/frontend/core.py:1000 cdedb/frontend/core.py:1169
 msgid "Change pending."
 msgstr ""
 
-#: cdedb/frontend/common.py:1472
+#: cdedb/frontend/common.py:1471 cdedb/frontend/common.py:1472
 msgid "Change failed."
 msgstr ""
 
-#: cdedb/frontend/common.py:1531
+#: cdedb/frontend/common.py:1530 cdedb/frontend/common.py:1531
 msgid ""
 "LaTeX compilation failed. Try downloading the source files and compiling "
 "them manually."
 msgstr ""
 
-#: cdedb/frontend/common.py:1802
+#: cdedb/frontend/common.py:1801 cdedb/frontend/common.py:1802
 msgid "Inconsistent request."
 msgstr ""
 
-#: cdedb/frontend/common.py:1880
+#: cdedb/frontend/common.py:1879 cdedb/frontend/common.py:1880
 msgid "Object {param}={value} not found"
 msgstr ""
 
-#: cdedb/frontend/common.py:1933
+#: cdedb/frontend/common.py:1932 cdedb/frontend/common.py:1933
 msgid "You must login."
 msgstr ""
 
-#: cdedb/frontend/common.py:1937
+#: cdedb/frontend/common.py:1936 cdedb/frontend/common.py:1937
 msgid "Access denied to {realm}/{endpoint}."
 msgstr ""
 
-#: cdedb/frontend/common.py:2025
+#: cdedb/frontend/common.py:2024 cdedb/frontend/common.py:2025
 msgid "Magic URL parameter replacement failed."
 msgstr ""
 
-#: cdedb/frontend/common.py:2181
+#: cdedb/frontend/common.py:2180 cdedb/frontend/common.py:2181
 msgid "Link invalid."
 msgstr ""
 
-#: cdedb/frontend/common.py:2251
+#: cdedb/frontend/common.py:2250 cdedb/frontend/common.py:2251
 msgid "Invalid argtype {t} found."
 msgstr ""
 
-#: cdedb/frontend/common.py:2364
+#: cdedb/frontend/common.py:2363 cdedb/frontend/common.py:2364
 msgid "This page can only be accessed by orgas."
 msgstr ""
 
-#: cdedb/frontend/common.py:2369
+#: cdedb/frontend/common.py:2368 cdedb/frontend/common.py:2369
 msgid "This event is locked for offline usage."
 msgstr ""
 
-#: cdedb/frontend/common.py:2401
+#: cdedb/frontend/common.py:2400 cdedb/frontend/common.py:2401
 msgid "This page can only be accessed by the mailinglist’s moderators."
 msgstr ""
 
-#: cdedb/frontend/common.py:2406
+#: cdedb/frontend/common.py:2405 cdedb/frontend/common.py:2406
 msgid ""
 "You do not have privileged moderator access and may not change subscriptions."
 msgstr ""
 
-#: cdedb/frontend/common.py:2411
+#: cdedb/frontend/common.py:2410 cdedb/frontend/common.py:2411
 msgid "This page can only be accessed by appropriate admins."
 msgstr ""
 
-#: cdedb/frontend/common.py:2433
+#: cdedb/frontend/common.py:2432 cdedb/frontend/common.py:2433
 msgid ""
 "This page may only be accessed by the assembly's presiders or assembly "
 "admins."
@@ -4640,9 +4650,23 @@ msgid ""
 "can %(subscribe)s."
 msgstr ""
 
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:125
+#, python-format
+msgid ""
+"After a ballot has been tallied, the generated result file and its hash will "
+"be sent to %(tally)s and %(presider)s."
+msgstr ""
+
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:127
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:133
 msgid "subscribe"
+msgstr ""
+
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:131
+#, python-format
+msgid ""
+"After a ballot has been tallied, the generated result file and its hash will "
+"be sent to %(tally)s."
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:132
@@ -4652,6 +4676,7 @@ msgid ""
 "be sent to %(tally)s. To this mailinglist, everyone can %(subscribe)s."
 msgstr ""
 
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:138
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:140
 #, python-format
 msgid ""
@@ -4661,68 +4686,83 @@ msgid ""
 "%(algorithm)s hash by yourself."
 msgstr ""
 
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:148
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:150
 msgid "Votes"
 msgstr ""
 
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:153
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:155
 msgid "Vote_[[on a voting paper]]"
 msgstr "Vote"
 
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:154
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:156
 #: cdedb/frontend/templates/web/event/stats.tmpl:52
 #: cdedb/frontend/templates/web/event/stats.tmpl:102
 msgid "Count"
 msgstr ""
 
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:176
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:178
 msgid "Your Vote"
 msgstr ""
 
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:180
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:182
 msgid "You are not participating in this assembly."
 msgstr ""
 
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:182
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:184
 msgid "You did not vote."
 msgstr ""
 
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:185
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:187
 msgid "You abstained."
 msgstr ""
 
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:187
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:189
 msgid "You voted against all candidates."
 msgstr ""
 
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:190
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:192
 msgid "You voted for the following candidates:"
 msgstr ""
 
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:192
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:194
 msgid "You voted in the following preference:"
 msgstr ""
 
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:198
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:200
 msgid ""
 "The assembly concluded. The votes of specific users can no longer be "
 "extracted from the database in any way."
 msgstr ""
 
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:199
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:201
 msgid ""
 "To show your vote, enter the secret you were sent when registering for the "
 "assembly."
 msgstr ""
 
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:205
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:207
 msgid "Secret"
 msgstr ""
 
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:209
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:211
 msgid "Show Vote"
 msgstr ""
 
+#: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:218
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:220
 msgid "Voters"
 msgstr ""
