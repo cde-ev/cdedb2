@@ -2103,17 +2103,17 @@ MAILINGLIST_FIELDS = (
     "subject_prefix", "maxsize", "is_active", "event_id", "registration_stati",
     "assembly_id")
 
-#: Fields of a mailinglist which may be changed by moderators
-MOD_ALLOWED_FIELDS = {
+#: Fields of a mailinglist which may be changed by all moderators, even restricted ones
+RESTRICTED_MOD_ALLOWED_FIELDS = {
     "description", "mod_policy", "notes", "attachment_policy", "subject_prefix",
     "maxsize"}
 
-#: Fields of a mailinglist which require privileged moderator access to be changed
-PRIVILEGE_MOD_REQUIRING_FIELDS = {
+#: Fields of a mailinglist which require full moderator access to be changed
+FULL_MOD_REQUIRING_FIELDS = {
     'registration_stati'}
 
-#: Fields of a mailinglist which may be changed by privileged moderators
-PRIVILEGED_MOD_ALLOWED_FIELDS = MOD_ALLOWED_FIELDS | PRIVILEGE_MOD_REQUIRING_FIELDS
+#: Fields of a mailinglist which may be changed by (full) moderators
+MOD_ALLOWED_FIELDS = RESTRICTED_MOD_ALLOWED_FIELDS | FULL_MOD_REQUIRING_FIELDS
 
 #: Fields of an assembly
 ASSEMBLY_FIELDS = ("id", "title", "shortname", "description", "presider_address",

@@ -2,12 +2,12 @@
 {% extends "web/ml/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}
-    {% if privileged %}
+    {% if not restricted %}
         {{ util.cdedb_script('cdedb_searchpersona.js') }}
         {{ util.cdedb_script('cdedb_helper.js') }}
     {% endif %}
 {% endblock %}
-{% if privileged %}
+{% if not restricted %}
     {% set jshint='strong' %}
 {% endif %}
 {% block title %}
@@ -29,11 +29,11 @@
     </h1>
 {% endblock %}
 {% block static_notifications %}
-    {% if not privileged %}
+    {% if restricted %}
         {% call util.notification('info') %}
-            {% trans link = util.href(docurl("Handbuch_Moderator", anchor="privilegierte-moderatoren"),
-                                      gettext("privileged moderator access"))|s %}
-                You do not have %(link)s and may not change subscriptions.
+            {% trans link = util.href(docurl("Handbuch_Moderator", anchor="eingeschränkte-moderatoren"),
+                                      gettext("restricted moderator access"))|s %}
+                You only have %(link)s and may not change subscriptions.
             {% endtrans %}
         {% endcall %}
     {% endif %}
@@ -48,7 +48,7 @@
                         Subscribed users who are protected from automatic unsubscription when loosing their means to acces the list.
                     {% endtrans %}
                 </p>
-            {% if privileged %}
+            {% if not restricted %}
             <form action="{{ cdedblink('ml/add_subscription_overrides') }}" method="POST"
                   id="addmodsubscriberform" class="p">
                 {{ util.anti_csrf_token('ml/add_subscription_overrides') }}
@@ -74,7 +74,7 @@
                 {% for subscription_override, persona in subscription_overrides.items() %} {# This is already sorted. #}
                     <li class="hide-hover-container clearfix-after">
                         {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
-                        {% if privileged %}
+                        {% if not restricted %}
                             <form action="{{ cdedblink('ml/remove_subscription_override') }}"
                                   method="POST"
                                   id="removemodsubscriberform{{ subscription_override }}"
@@ -100,7 +100,7 @@
                         Users who are blocked from subscribing and requesting subscription. They can see that they are blocked.
                     {% endtrans %}
                 </p>
-            {% if privileged %}
+            {% if not restricted %}
             <form action="{{ cdedblink('ml/add_unsubscription_overrides') }}" method="POST"
                   id="addmodunsubscriberform" class="p">
                 {{ util.anti_csrf_token('ml/add_unsubscription_overrides') }}
@@ -126,7 +126,7 @@
                 {% for unsubscription_override, persona in unsubscription_overrides.items() %} {# This is already sorted. #}
                     <li class="hide-hover-container clearfix-after">
                         {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
-                        {% if privileged %}
+                        {% if not restricted %}
                             <form action="{{ cdedblink('ml/remove_unsubscription_override') }}"
                                   method="POST" style="display: inline;"
                                   id="removemodunsubscriberform{{ unsubscription_override }}"

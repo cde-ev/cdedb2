@@ -13,8 +13,8 @@ from werkzeug import Response
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    LOG_FIELDS_COMMON, MOD_ALLOWED_FIELDS, PRIVILEGE_MOD_REQUIRING_FIELDS,
-    PRIVILEGED_MOD_ALLOWED_FIELDS, CdEDBObject, CdEDBObjectMap, EntitySorter, PathLike,
+    LOG_FIELDS_COMMON, FULL_MOD_REQUIRING_FIELDS, MOD_ALLOWED_FIELDS,
+    RESTRICTED_MOD_ALLOWED_FIELDS, CdEDBObject, CdEDBObjectMap, EntitySorter, PathLike,
     PrivilegeError, RequestState, merge_dicts, n_, now, unwrap,
 )
 from cdedb.subman.exceptions import SubscriptionError
@@ -437,17 +437,18 @@ class MlBaseFrontend(AbstractUserFrontend):
         else:
             assembly_entries = []
         merge_dicts(rs.values, rs.ambience['mailinglist'])
-        # privileged is only set if there are actually fields,
-        # requiring privileged access
-        privileged = (self.mlproxy.may_manage(rs, mailinglist_id, privileged=True)
-                      or not (additional_fields  # pylint: disable=superfluous-parens
-                              & PRIVILEGE_MOD_REQUIRING_FIELDS))
+        # restricted is only set if there are actually fields to which access is
+        # restricted
+        has_restricted_fields = additional_fields & FULL_MOD_REQUIRING_FIELDS
+        restricted = (not self.mlproxy.may_manage(rs, mailinglist_id,
+                                                  allow_restricted=False)
+                      and has_restricted_fields)
         return self.render(rs, "change_mailinglist", {
             'event_entries': event_entries,
             'assembly_entries': assembly_entries,
             'available_domains': available_domains,
             'additional_fields': additional_fields,
-            'privileged': privileged,
+            'restricted': restricted,
         })
 
     @access("ml", modi={"POST"})
@@ -461,10 +462,10 @@ class MlBaseFrontend(AbstractUserFrontend):
         if self.mlproxy.is_relevant_admin(rs, mailinglist_id=mailinglist_id):
             # admins may change everything except ml_type which got its own site
             allowed = set(data) - {'ml_type'}
-        elif self.mlproxy.is_moderator(rs, mailinglist_id, privileged=True):
-            allowed = PRIVILEGED_MOD_ALLOWED_FIELDS
-        else:
+        elif self.mlproxy.is_moderator(rs, mailinglist_id, allow_restricted=False):
             allowed = MOD_ALLOWED_FIELDS
+        else:
+            allowed = RESTRICTED_MOD_ALLOWED_FIELDS
 
         # we discard every entry of not allowed fields silently
         for key in set(data) - allowed:
@@ -605,11 +606,12 @@ class MlBaseFrontend(AbstractUserFrontend):
         requests = collections.OrderedDict(
             (anid, personas[anid]) for anid in sorted(
             requests, key=lambda anid: EntitySorter.persona(personas[anid])))
-        privileged = self.mlproxy.may_manage(rs, mailinglist_id, privileged=True)
+        restricted = not self.mlproxy.may_manage(rs, mailinglist_id,
+                                                 allow_restricted=False)
         return self.render(rs, "management", {
             'subscribers': subscribers, 'requests': requests,
             'moderators': moderators, 'explicits': explicits,
-            'privileged': privileged})
+            'restricted': restricted})
 
     @access("ml")
     @mailinglist_guard()
@@ -642,13 +644,14 @@ class MlBaseFrontend(AbstractUserFrontend):
             (anid, personas[anid]) for anid in sorted(
                 all_unsubscriptions,
                 key=lambda anid: EntitySorter.persona(personas[anid])))
-        privileged = self.mlproxy.may_manage(rs, mailinglist_id, privileged=True)
+        restricted = not self.mlproxy.may_manage(rs, mailinglist_id,
+                                                 allow_restricted=False)
         return self.render(rs, "advanced_management", {
             'subscription_overrides': subscription_overrides,
             'unsubscription_overrides': unsubscription_overrides,
             'all_unsubscriptions': all_unsubscriptions,
             'redundant_unsubscriptions': redundant_unsubscriptions,
-            'privileged': privileged})
+            'restricted': restricted})
 
     @access("ml")
     @mailinglist_guard()

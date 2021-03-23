@@ -2402,9 +2402,9 @@ def mailinglist_guard(argname: str = "mailinglist_id",
                         "This page can only be accessed by the mailinglist’s "
                         "moderators."))
                 if requires_privilege and not obj.mlproxy.may_manage(
-                        rs, mailinglist_id=arg, privileged=True):
+                        rs, mailinglist_id=arg, allow_restricted=False):
                     raise werkzeug.exceptions.Forbidden(rs.gettext(
-                        "You do not have privileged moderator access and may not"
+                        "You only have restricted moderator access and may not"
                         " change subscriptions."))
             else:
                 if not obj.mlproxy.is_relevant_admin(rs, **{argname: arg}):

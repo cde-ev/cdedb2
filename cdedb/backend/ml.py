@@ -20,7 +20,7 @@ from cdedb.backend.common import (
 from cdedb.backend.event import EventBackend
 from cdedb.subman import subman
 from cdedb.common import (
-    MAILINGLIST_FIELDS, MOD_ALLOWED_FIELDS, PRIVILEGED_MOD_ALLOWED_FIELDS, CdEDBLog,
+    MAILINGLIST_FIELDS, MOD_ALLOWED_FIELDS, RESTRICTED_MOD_ALLOWED_FIELDS, CdEDBLog,
     CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, PathLike,
     PrivilegeError, RequestState, implying_realms, make_proxy, mixed_existence_sorter,
     n_, unwrap, ADMIN_KEYS,
@@ -87,42 +87,39 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def is_moderator(self, rs: RequestState, ml_id: int,
-                     privileged: bool = False) -> bool:
+                     allow_restricted: bool = True) -> bool:
         """Check for moderator privileges as specified in the ml.moderators
         table.
 
-        :param privileged: Whether or not to check if the moderator is in the
-            pool of privileged moderators. Delegated to
-            `MailinglistType.is_privileged_moderator`.
+        :param allow_restricted: Whether or not to allow restricted moderators to
+            perform this action. Delegated to `MailinglistType.is_restricted_moderator`.
         """
         ml_id = affirm(vtypes.ID, ml_id)
 
         is_moderator = ml_id in rs.user.moderator
-        if privileged:
+        if not allow_restricted:
             atype = self.get_ml_type(rs, ml_id)
             ml = self.get_mailinglist(rs, ml_id)
-            is_privileged = atype.is_privileged_moderator(rs, self.backends, ml)
-            is_moderator = is_moderator and is_privileged
+            is_restricted = atype.is_restricted_moderator(rs, self.backends, ml)
+            is_moderator = is_moderator and not is_restricted
 
         return is_moderator
 
     @access("ml")
     def may_manage(self, rs: RequestState, mailinglist_id: int,
-                   privileged: bool = False) -> bool:
+                   allow_restricted: bool = True) -> bool:
         """Check whether a user is allowed to manage a given mailinglist.
 
-        :param privileged: See `MlBackend.is_moderator`.
+        :param allow_restricted: See `MlBackend.is_moderator`.
         """
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
 
-        return (self.is_moderator(rs, mailinglist_id, privileged=privileged)
+        return (self.is_moderator(rs, mailinglist_id, allow_restricted=allow_restricted)
                 or self.is_relevant_admin(rs, mailinglist_id=mailinglist_id))
 
     @access("ml")
-    def get_available_types(self, rs: RequestState,
-                            ) -> Set[const.MailinglistTypes]:
-        """Get a list of MailinglistTypes, the user is allowed to manage.
-        """
+    def get_available_types(self, rs: RequestState) -> Set[const.MailinglistTypes]:
+        """Get a list of MailinglistTypes the user is allowed to manage."""
         ret = {enum_member for enum_member, atype in ml_type.TYPE_MAP.items()
                if atype.is_relevant_admin(rs.user)}
         return ret
@@ -161,7 +158,7 @@ class MlBackend(AbstractBackend):
                   affirm(vtypes.Mailinglist, mailinglist, _allow_readonly=True))
 
         if not (rs.user.persona_id == persona_id
-                or self.may_manage(rs, ml['id'], privileged=True)):
+                or self.may_manage(rs, ml['id'], allow_restricted=False)):
             raise PrivilegeError(n_("Not privileged."))
 
         return self.get_ml_type(rs, ml["id"]).get_subscription_policy(
@@ -541,18 +538,18 @@ class MlBackend(AbstractBackend):
                        if k not in current or v != current[k]}
             is_admin = self.is_relevant_admin(rs, mailinglist=current)
             is_moderator = self.is_moderator(rs, current['id'])
-            is_privileged_mod = self.is_moderator(rs, current['id'],
-                                                  privileged=True)
+            is_restricted = not self.is_moderator(rs, current['id'],
+                                                  allow_restricted=False)
             # determinate if changes are permitted
             if not is_admin:
                 if not is_moderator:
                     raise PrivilegeError(n_(
                         "Need to be moderator or admin to change mailinglist."))
-                if not changed <= PRIVILEGED_MOD_ALLOWED_FIELDS:
+                if not changed <= MOD_ALLOWED_FIELDS:
                     raise PrivilegeError(n_("Need to be admin to change this."))
-                if not (changed <= MOD_ALLOWED_FIELDS or is_privileged_mod):
+                if not changed <= RESTRICTED_MOD_ALLOWED_FIELDS and is_restricted:
                     raise PrivilegeError(n_(
-                        "Need to be privileged moderator to change this."))
+                        "Restricted moderators are not allowed to change this."))
 
             mdata = {k: v for k, v in data.items() if k in MAILINGLIST_FIELDS}
             if len(mdata) > 1:
@@ -581,9 +578,9 @@ class MlBackend(AbstractBackend):
                     rs, data['id'], old_type=current['ml_type'],
                     new_type=data['ml_type'])
 
-            # only privileged moderators and admins can make subscription state
+            # only full moderators and admins can make subscription state
             # related changes.
-            if is_admin or is_privileged_mod:
+            if is_admin or not is_restricted:
                 ret *= self.write_subscription_states(rs, data['id'])
         return ret
 
@@ -597,8 +594,7 @@ class MlBackend(AbstractBackend):
         data = affirm(vtypes.Mailinglist, data, creation=True)
         data['address'] = self.validate_address(rs, data)
         if not self.is_relevant_admin(rs, mailinglist=data):
-            raise PrivilegeError("Not privileged to create mailinglist of this "
-                                 "type.")
+            raise PrivilegeError("Not privileged to create mailinglist of this type.")
         with Atomizer(rs):
             mdata = {k: v for k, v in data.items() if k in MAILINGLIST_FIELDS}
             new_id = self.sql_insert(rs, "ml.mailinglists", mdata)
@@ -751,7 +747,8 @@ class MlBackend(AbstractBackend):
         data = affirm_array(vtypes.SubscriptionState, data)
 
         if not all(datum['persona_id'] == rs.user.persona_id
-                   or self.may_manage(rs, datum['mailinglist_id'], privileged=True)
+                   or self.may_manage(rs, datum['mailinglist_id'],
+                                      allow_restricted=False)
                    for datum in data):
             raise PrivilegeError("Not privileged.")
 
@@ -831,7 +828,7 @@ class MlBackend(AbstractBackend):
         if action.is_automatic():
             raise RuntimeError(n_("Automatic actions should not be done manually."))
         if action.is_managing():
-            if not self.may_manage(rs, mailinglist_id, privileged=True):
+            if not self.may_manage(rs, mailinglist_id, allow_restricted=False):
                 raise PrivilegeError(n_("Not privileged."))
             persona_id = affirm(vtypes.ID, persona_id)
         else:
@@ -981,7 +978,7 @@ class MlBackend(AbstractBackend):
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
 
         # shortcut if the user is not privileged to change subscription states of the ml
-        if not self.may_manage(rs, mailinglist_id, privileged=True):
+        if not self.may_manage(rs, mailinglist_id, allow_restricted=False):
             return set()
 
         atype = self.get_ml_type(rs, mailinglist_id)
@@ -1196,8 +1193,8 @@ class MlBackend(AbstractBackend):
         with Atomizer(rs):
             ml = self.get_mailinglist(rs, mailinglist_id)
             atype = self.get_ml_type(rs, mailinglist_id)
-            if not self.may_manage(rs, mailinglist_id, privileged=True):
-                raise PrivilegeError(n_("Not privileged."))
+            if not self.may_manage(rs, mailinglist_id, allow_restricted=False):
+                raise PrivilegeError(n_("Moderator access has been restricted."))
 
             # Only run write_subscription_states if the mailinglist is active and has
             # periodic cleanup enabled.

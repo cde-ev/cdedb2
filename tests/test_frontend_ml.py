@@ -1143,7 +1143,7 @@ class TestMlFrontend(FrontendTest):
         f['local_part'].force_value("partyparty")
         f['event_id'].force_value(1)
         f['is_active'].force_value(False)
-        # these properties can be changed by privileged moderators
+        # these properties can be changed by full moderators only
         f['registration_stati'] = [const.RegistrationPartStati.guest.value]
         # these properties can be changed by every moderator
         f['description'] = "Wir machen Party!"
@@ -1182,7 +1182,7 @@ class TestMlFrontend(FrontendTest):
         self.assertEqual("1111", f['maxsize'].value)
 
     @as_users("janis")
-    # add Janis as unprivileged moderator
+    # add Janis as restricted moderator
     @prepsql("INSERT INTO ml.moderators (mailinglist_id, persona_id) VALUES (9, 10)")
     # add someone (Charly) in unsubscription override state
     @prepsql(f"INSERT INTO ml.subscription_states"
@@ -1200,11 +1200,11 @@ class TestMlFrontend(FrontendTest):
     @prepsql(f"INSERT INTO ml.subscription_states"
              f" (mailinglist_id, persona_id, subscription_state)"
              f" VALUES (9, 23, {const.SubscriptionState.pending.value})")
-    def test_non_privileged_moderator(self, user: CdEDBObject) -> None:
+    def test_restricted_moderator(self, user: CdEDBObject) -> None:
         self.traverse({"description": "Mailinglisten"},
                       {"description": "Teilnehmer-Liste"},
                       {"description": "Verwaltung"})
-        self.assertPresence("Du hast keinen Zugriff als Privilegierter Moderator",
+        self.assertPresence("Du hast nur eingeschränkten Moderator-Zugriff",
                             div="static-notifications")
 
         # he can neither add nor remove subscriptions ...
@@ -1228,7 +1228,7 @@ class TestMlFrontend(FrontendTest):
         self.assertNonPresence("Garcia", div='moderator-list')
 
         self.traverse({"description": "Erweiterte Verwaltung"})
-        self.assertPresence("Du hast keinen Zugriff als Privilegierter Moderator",
+        self.assertPresence("Du hast nur eingeschränkten Moderator-Zugriff",
                             div="static-notifications")
 
         # he can neither add nor remove subscriptions ...

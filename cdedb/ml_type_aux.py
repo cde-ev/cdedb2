@@ -117,10 +117,10 @@ class GeneralMailinglist:
         return bool((cls.viewer_roles | {"ml_admin"}) & rs.user.roles)
 
     @classmethod
-    def is_privileged_moderator(cls, rs: RequestState, bc: BackendContainer,
+    def is_restricted_moderator(cls, rs: RequestState, bc: BackendContainer,
                                 mailinglist: CdEDBObject
                                 ) -> bool:
-        """Check if the user is a privileged moderator.
+        """Check if the user is a restricted moderator.
 
         Everyone with ml realm may be moderator of any mailinglist. But for some
         lists, you must have additional privileges to make subscription-state
@@ -130,11 +130,11 @@ class GeneralMailinglist:
             * Changing subscription states as a moderator.
             * Changing properties of a ml influencing implicit subscribers.
 
-        Per default, every moderator is privileged.
+        Per default, no moderator is restricted.
 
         This returns a filter which allows the caller to check ids as desired.
         """
-        return mailinglist['id'] in rs.user.moderator
+        return False
 
     relevant_admins: Set[str] = set()
 
@@ -396,21 +396,22 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
     }
 
     @classmethod
-    def is_privileged_moderator(cls, rs: RequestState, bc: BackendContainer,
+    def is_restricted_moderator(cls, rs: RequestState, bc: BackendContainer,
                                 mailinglist: CdEDBObject
                                 ) -> bool:
-        """Check if the user is a privileged moderator.
+        """Check if the user is a restricted moderator.
 
-        For EventAssociatedMailinglists, this are the orgas of the event.
+        For EventAssociatedMailinglists, this are all moderators except for the orgas
+        of the event and event admins.
         """
         check_appropriate_type(mailinglist, cls)
 
-        basic_privilege = super().is_privileged_moderator(rs, bc, mailinglist)
+        basic_restriction = super().is_restricted_moderator(rs, bc, mailinglist)
         if mailinglist['event_id'] is None:
-            return basic_privilege
-        additional_privilege = (mailinglist['event_id'] in rs.user.orga
-                                or "event_admin" in rs.user.roles)
-        return basic_privilege and additional_privilege
+            return basic_restriction
+        additional_restriction = (mailinglist['event_id'] not in rs.user.orga
+                                  and "event_admin" not in rs.user.roles)
+        return basic_restriction or additional_restriction
 
     @classmethod
     def get_subscription_policies(cls, rs: RequestState, bc: BackendContainer,
@@ -505,7 +506,7 @@ class EventOrgaMailinglist(EventAssociatedMeta, ImplicitsSubscribableMeta,
     @classmethod
     def get_implicit_subscribers(cls, rs: RequestState, bc: BackendContainer,
                                  mailinglist: CdEDBObject) -> Set[int]:
-        """Get a list of personas that should be on this mailinglist.
+        """Get a list of people that should be on this mailinglist.
 
         For the `EventOrgaMailinglist` this means the event's orgas.
         """
@@ -522,20 +523,20 @@ class AssemblyAssociatedMailinglist(ImplicitsSubscribableMeta, AssemblyMailingli
     mandatory_validation_fields = {"assembly_id": vtypes.ID}
 
     @classmethod
-    def is_privileged_moderator(cls, rs: RequestState, bc: BackendContainer,
+    def is_restricted_moderator(cls, rs: RequestState, bc: BackendContainer,
                                 mailinglist: CdEDBObject
                                 ) -> bool:
-        """Check if a moderator is privileged.
+        """Check if the user is a restricted moderator.
 
         For AssemblyAssociatedMailinglists this is the case if the moderator may
         interact with the associated assembly.
         """
         check_appropriate_type(mailinglist, cls)
 
-        basic_privilege = super().is_privileged_moderator(rs, bc, mailinglist)
-        additional_privilege = bc.assembly.may_assemble(
+        basic_restriction = super().is_restricted_moderator(rs, bc, mailinglist)
+        additional_restriction = not bc.assembly.may_assemble(
             rs, assembly_id=mailinglist['assembly_id'])
-        return basic_privilege and additional_privilege
+        return basic_restriction or additional_restriction
 
     @classmethod
     def get_implicit_subscribers(cls, rs: RequestState, bc: BackendContainer,
