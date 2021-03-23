@@ -103,11 +103,12 @@ class TestCdEFrontend(FrontendTest):
     def test_sidebar(self, user: CdEDBObject) -> None:
         self.traverse({'description': 'Mitglieder'})
         everyone = {"Mitglieder", "Übersicht"}
-        past_event = {"Verg. Veranstaltungen"}
-        member = {"Sonstiges", "Datenschutzerklärung", "Kurssuche"}
+        past_event = {"Verg. Veranstaltungen", "Kurssuche"}
+        member = {"Sonstiges", "Datenschutzerklärung"}
         searchable = {"CdE-Mitglied suchen"}
+        cde_admin_or_member = {"Mitglieder-Statistik"}
         cde_admin = {"Nutzer verwalten", "Organisationen verwalten",
-                     "Mitglieder-Statistik", "Verg.-Veranstaltungen-Log"}
+                     "Verg.-Veranstaltungen-Log"}
         finance_admin = {
             "Einzugsermächtigungen", "Kontoauszug parsen", "Finanz-Log",
             "Überweisungen eintragen", "Semesterverwaltung", "CdE-Log"}
@@ -118,19 +119,19 @@ class TestCdEFrontend(FrontendTest):
             out = past_event | member | searchable | cde_admin | finance_admin
         # searchable member
         elif user == USER_DICT['berta']:
-            ins = everyone | past_event | member | searchable
+            ins = everyone | past_event | member | cde_admin_or_member | searchable
             out = cde_admin | finance_admin
         # not-searchable member
         elif user == USER_DICT['charly']:
-            ins = everyone | past_event | member
+            ins = everyone | past_event | member | cde_admin_or_member
             out = searchable | cde_admin | finance_admin
         # cde but not finance admin (vera is no member)
         elif user == USER_DICT['vera']:
-            ins = everyone | past_event | cde_admin
+            ins = everyone | past_event | cde_admin_or_member | cde_admin
             out = member | searchable | finance_admin
         # cde and finance admin (farin is no member)
         elif user == USER_DICT['farin']:
-            ins = everyone | past_event | cde_admin | finance_admin
+            ins = everyone | past_event | cde_admin_or_member | cde_admin | finance_admin
             out = member | searchable
         else:
             self.fail("Please adjust users for this tests.")
@@ -553,7 +554,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Bertålotta Beispiel")
         self.assertNonPresence("weiblich")
 
-    @as_users("inga")
+    @as_users("inga", "farin")
     def test_past_course_search(self, user: CdEDBObject) -> None:
         # by description
         self.traverse({'description': 'Mitglieder'},

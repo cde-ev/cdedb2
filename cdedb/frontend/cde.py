@@ -281,7 +281,7 @@ class CdEFrontend(AbstractUserFrontend):
             'cutoff': cutoff, 'count': count,
         })
 
-    @access("member")
+    @access("member", "cde_admin")
     @REQUESTdata("is_search")
     def past_course_search(self, rs: RequestState, is_search: bool) -> Response:
         """Search for past courses."""
