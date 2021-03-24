@@ -527,8 +527,6 @@ Mitglied.</pre>
                             </p>
                         </div>
                     </div>
-
-                {% if "core_user" in user.admin_views %}
                     <div class="row">
                         <div class="col-sm-4">
                             <div class="p">
@@ -563,6 +561,8 @@ Mitglied.</pre>
                             </p>
                         </div>
                     </div>
+
+                {% if "core_user" in user.admin_views %}
                     <div class="row">
                         <div class="col-sm-4">
                             <div class="p">
@@ -596,7 +596,6 @@ Mitglied.</pre>
                 {% endif %}
 
             {% else %} {# user is archived #}
-                {% if "core_admin" in user.roles %}
                     <div class="row">
                         <div class="col-sm-4">
                             <div class="p">
@@ -616,6 +615,8 @@ Mitglied.</pre>
                             </p>
                         </div>
                     </div>
+
+                {% if "core_admin" in user.roles %}
                     <div class="row">
                         <div class="col-sm-4">
                             <div class="p">

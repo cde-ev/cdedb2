@@ -525,17 +525,6 @@ class TestPrivacyFrontend(FrontendTest):
         # TODO maybe add all above tests as subtests?
         self.skipTest("Test not yet implemented.")
 
-    @as_users("ferdinand", "martin", "paul")
-    def test_profile_of_archived_user(self, user: CdEDBObject) -> None:
-        inspected = USER_DICT['hades']
-
-        # they should be visible to core admins only ...
-        if user == USER_DICT['paul']:
-            self.get(self.show_user_link(inspected['id']))
-        # ... not for any other admin type
-        elif user in [USER_DICT['ferdinand'], USER_DICT['martin']]:
-            self.get(self.show_user_link(inspected['id']), status="403 FORBIDDEN")
-
     @as_users("annika", "berta", "farin", "martin", "nina", "quintus", "paul",
               "viktor")
     def test_user_search(self, user: CdEDBObject) -> None:

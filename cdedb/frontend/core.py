@@ -496,10 +496,6 @@ class CoreFrontend(AbstractFrontend):
         assert rs.user.persona_id is not None
         if (persona_id != confirm_id or rs.has_validation_errors()) and not internal:
             return self.index(rs)
-        if (rs.ambience['persona']['is_archived']
-                and "core_admin" not in rs.user.roles):
-            raise werkzeug.exceptions.Forbidden(
-                n_("Only admins may view archived datasets."))
 
         is_relative_admin = self.coreproxy.is_relative_admin(rs, persona_id)
         is_relative_or_meta_admin = self.coreproxy.is_relative_admin(
@@ -509,6 +505,11 @@ class CoreFrontend(AbstractFrontend):
             rs, persona_id)
         is_relative_or_meta_admin_view = self.coreproxy.is_relative_admin_view(
             rs, persona_id, allow_meta_admin=True)
+
+        if (rs.ambience['persona']['is_archived']
+                and not is_relative_admin):
+            raise werkzeug.exceptions.Forbidden(
+                n_("Only admins may view archived datasets."))
 
         all_access_levels = {
             "persona", "ml", "assembly", "event", "cde", "core", "meta",
@@ -2442,7 +2443,7 @@ class CoreFrontend(AbstractFrontend):
         self.notify_return_code(rs, code, success=message)
         return self.redirect(rs, "core/list_pending_changes")
 
-    @access("core_admin", "cde_admin", modi={"POST"})
+    @access(*REALM_ADMINS, modi={"POST"})
     @REQUESTdata("ack_delete", "note")
     def archive_persona(self, rs: RequestState, persona_id: int,
                         ack_delete: bool, note: str) -> Response:
@@ -2465,7 +2466,7 @@ class CoreFrontend(AbstractFrontend):
         self.notify_return_code(rs, code)
         return self.redirect_show_user(rs, persona_id)
 
-    @access("core_admin", "cde_admin", modi={"POST"})
+    @access(*REALM_ADMINS, modi={"POST"})
     def dearchive_persona(self, rs: RequestState, persona_id: int) -> Response:
         """Reinstate a persona from the attic."""
         if rs.has_validation_errors():

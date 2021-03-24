@@ -1532,7 +1532,7 @@ class CoreBackend(AbstractBackend):
             #
             return ret
 
-    @access("core_admin")
+    @access(*REALM_ADMINS)
     def dearchive_persona(self, rs: RequestState,
                           persona_id: int) -> DefaultReturnCode:
         """Return a persona from the attic to activity.
