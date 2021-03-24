@@ -1552,9 +1552,8 @@ class CoreBackend(AbstractBackend):
             self.core_log(rs, const.CoreLogCodes.persona_dearchived, persona_id)
             return code
 
-    @access("core_admin", "cde_admin")
-    def purge_persona(self, rs: RequestState,
-                      persona_id: int) -> DefaultReturnCode:
+    @access("core_admin")
+    def purge_persona(self, rs: RequestState, persona_id: int) -> DefaultReturnCode:
         """Delete all infos about this persona.
 
         It has to be archived beforehand. Thus we do not have to

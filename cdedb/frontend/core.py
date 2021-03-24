@@ -2476,7 +2476,7 @@ class CoreFrontend(AbstractFrontend):
         self.notify_return_code(rs, code)
         return self.redirect_show_user(rs, persona_id)
 
-    @access("core_admin", "cde_admin", modi={"POST"})
+    @access("core_admin", modi={"POST"})
     @REQUESTdata("ack_delete")
     def purge_persona(self, rs: RequestState, persona_id: int, ack_delete: bool
                       ) -> Response:
