@@ -713,7 +713,7 @@ class CoreBackend(AbstractBackend):
                      or "finance" not in allow_specials)):
             # Allow setting balance to 0 or None during archival.
             if not ((data["balance"] is None or data["balance"] == 0)
-                    and "archive" in allow_specials):
+                    and {"archive", "finance"} & set(allow_specials)):
                 raise PrivilegeError(n_("Modification of balance prevented."))
         if "username" in data and "username" not in allow_specials:
             raise PrivilegeError(n_("Modification of email address prevented."))
