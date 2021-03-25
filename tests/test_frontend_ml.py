@@ -130,22 +130,8 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("Jalapeño")
 
     @as_users("nina", "vera")
-    def test_create_user(self, user: CdEDBObject) -> None:
-        self.traverse({'href': '/ml/$'}, {'href': '/ml/search/user'},
-                      {'href': '/ml/user/create'})
-        self.assertTitle("Neuen Mailinglistennutzer anlegen")
-        data = {
-            "username": 'zelda@example.cde',
-            "given_names": "Zelda",
-            "family_name": "Zeruda-Hime",
-            "display_name": 'Zelda',
-            "notes": "some fancy talk",
-        }
-        f = self.response.forms['newuserform']
-        for key, value in data.items():
-            f.set(key, value)
-        self.submit(f)
-        self.assertTitle("Zelda Zeruda-Hime")
+    def test_create_archive_user(self, user: CdEDBObject) -> None:
+        self.check_create_archive_user('ml')
 
     @as_users("nina")
     def test_merge_accounts(self, user: CdEDBObject) -> None:

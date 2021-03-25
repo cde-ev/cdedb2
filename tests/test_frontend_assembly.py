@@ -224,7 +224,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.submit(f)
         self.assertPresence('Nein', div='account-active')
 
-    @as_users("ferdinand", "vera")
+    @as_users("paul", "viktor")
     def test_user_search(self, user: CdEDBObject) -> None:
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Nutzer verwalten'})
@@ -240,24 +240,9 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence("Ergebnis [1]", div="query-results")
         self.assertPresence("Karabatschi", div="result-container")
 
-    @as_users("ferdinand", "vera")
-    def test_create_user(self, user: CdEDBObject) -> None:
-        self.traverse({'description': 'Versammlungen'},
-                      {'description': 'Nutzer verwalten'},
-                      {'description': 'Nutzer anlegen'})
-        self.assertTitle("Neuen Versammlungsnutzer anlegen")
-        data = {
-            "username": 'zelda@example.cde',
-            "given_names": "Zelda",
-            "family_name": "Zeruda-Hime",
-            "display_name": 'Zelda',
-            "notes": "some fancy talk",
-        }
-        f = self.response.forms['newuserform']
-        for key, value in data.items():
-            f.set(key, value)
-        self.submit(f)
-        self.assertTitle("Zelda Zeruda-Hime")
+    @as_users("paul", "viktor")
+    def test_create_archive_user(self, user: CdEDBObject) -> None:
+        self.check_create_archive_user('assembly')
 
     @as_users("anton")
     def test_assembly_admin_views(self, user: CdEDBObject) -> None:

@@ -132,19 +132,11 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("Ergebnis [2]", div='query-results')
         self.assertPresence("Hohle Gasse 13", div='query-result')
 
-    @as_users("annika", "ferdinand", "vera")
-    def test_create_user(self, user: CdEDBObject) -> None:
-        self.traverse({'description': 'Veranstaltunge'},
-                      {'description': 'Nutzer verwalten'},
-                      {'description': 'Nutzer anlegen'})
-        self.assertTitle("Neuen Veranstaltungsnutzer anlegen")
+    @as_users("annika", "paul")
+    def test_create_archive_user(self, user: CdEDBObject) -> None:
         data = {
-            "username": 'zelda@example.cde',
             "title": "Dr.",
-            "given_names": "Zelda",
-            "family_name": "Zeruda-Hime",
             "name_supplement": 'von und zu',
-            "display_name": 'Zelda',
             "birthday": "1987-06-05",
             "gender": "1",
             "telephone": "030456790",
@@ -154,15 +146,8 @@ class TestEventFrontend(FrontendTest):
             "postal_code": "12345",
             "location": "Lynna",
             "country": "HY",
-            "notes": "some talk",
         }
-        f = self.response.forms['newuserform']
-        self.assertEqual(f['country'].value, self.conf["DEFAULT_COUNTRY"])
-        for key, value in data.items():
-            f.set(key, value)
-        self.submit(f)
-        self.assertTitle("Zelda Zeruda-Hime")
-        self.assertPresence("12345", div='address')
+        self.check_create_archive_user("event", data)
 
     @as_users("anton")
     def test_event_admin_views(self, user: CdEDBObject) -> None:

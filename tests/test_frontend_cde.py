@@ -18,6 +18,37 @@ from tests.common import (
 )
 
 
+PERSONA_TEMPLATE = {
+        "username": 'zelda@example.cde',
+        "title": "Dr.",
+        "given_names": "Zelda",
+        "family_name": "Zeruda-Hime",
+        "name_supplement": 'von und zu',
+        "display_name": 'Zelda',
+        "birthday": "1987-06-05",
+        "specialisation": "oehm",
+        "affiliation": "Hogwarts",
+        "timeline": "tja",
+        "interests": "hmmmm",
+        "free_form": "jaaah",
+        "gender": "1",
+        "telephone": "030456790",
+        "mobile": "01602047",
+        "weblink": "www.zzz.cc",
+        "address": "Street 7",
+        "address_supplement": "on the left",
+        "postal_code": "12345",
+        "location": "Lynna",
+        "country": "HY",
+        "address2": "Ligusterweg 4",
+        "address_supplement2": "Im Schrank unter der Treppe",
+        "postal_code2": "00AA",
+        "location2": "Little Whinging",
+        "country2": "GB",
+        "notes": "some talk",
+    }
+
+
 class TestCdEFrontend(FrontendTest):
     @as_users("vera", "berta")
     def test_index(self, user: CdEDBObject) -> None:
@@ -631,7 +662,7 @@ class TestCdEFrontend(FrontendTest):
             self.assertValidationError("qval_" + field,
                                        "Darf keine verbotenen Zeichen enthalten")
 
-    @as_users("vera")
+    @as_users("paul", "quintus")
     def test_user_search(self, user: CdEDBObject) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Nutzer verwalten'})
@@ -796,41 +827,13 @@ class TestCdEFrontend(FrontendTest):
             "Mehrere aktive Einzugsermächtigungen sind unzulässig.",
             div="notifications")
 
-    @as_users("vera")
+    @as_users("paul", "quintus")
     def test_create_user(self, user: CdEDBObject) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Nutzer verwalten'},
                       {'description': 'Nutzer anlegen'})
         self.assertTitle("Neues Mitglied anlegen")
-        data = {
-            "username": 'zelda@example.cde',
-            "title": "Dr.",
-            "given_names": "Zelda",
-            "family_name": "Zeruda-Hime",
-            "name_supplement": 'von und zu',
-            "display_name": 'Zelda',
-            "birthday": "1987-06-05",
-            "specialisation": "oehm",
-            "affiliation": "Hogwarts",
-            "timeline": "tja",
-            "interests": "hmmmm",
-            "free_form": "jaaah",
-            "gender": "1",
-            "telephone": "030456790",
-            "mobile": "01602047",
-            "weblink": "www.zzz.cc",
-            "address": "Street 7",
-            "address_supplement": "on the left",
-            "postal_code": "12345",
-            "location": "Lynna",
-            "country": "HY",
-            "address2": "Ligusterweg 4",
-            "address_supplement2": "Im Schrank unter der Treppe",
-            "postal_code2": "00AA",
-            "location2": "Little Whinging",
-            "country2": "GB",
-            "notes": "some talk",
-        }
+        data = PERSONA_TEMPLATE.copy()
         f = self.response.forms['newuserform']
         self.assertEqual(f['country'].value, self.conf["DEFAULT_COUNTRY"])
         self.assertIsNone(
@@ -873,6 +876,10 @@ class TestCdEFrontend(FrontendTest):
         data['password'] = new_password
         self.login(data)
         self.assertLogin(data['display_name'])
+
+    @as_users("paul", "quintus")
+    def test_create_archive_user(self, user: CdEDBObject) -> None:
+        self.check_create_archive_user('cde', PERSONA_TEMPLATE.copy())
 
     @as_users("farin")
     def test_lastschrift_index(self, user: CdEDBObject) -> None:
