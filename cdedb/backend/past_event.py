@@ -774,7 +774,7 @@ class PastEventBackend(AbstractBackend):
                                 for part_id in xsorted(event['parts']))
         return new_ids, None
 
-    @access("member")
+    @access("member", "cde_admin")
     def submit_general_query(self, rs: RequestState,
                              query: Query) -> Tuple[CdEDBObject, ...]:
         """Realm specific wrapper around
