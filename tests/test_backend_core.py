@@ -945,7 +945,7 @@ class TestCoreBackend(BackendTest):
         expectation['notes'] = 'Beispielhaft, Besser, Baum.'
         self.assertEqual(expectation, self.core.get_total_persona(self.key, 2))
 
-    @as_users("paulchen", "quintus")
+    @as_users("paul", "quintus")
     def test_archive(self, user: CdEDBObject) -> None:
         persona_id = 3
         data = self.core.get_total_persona(self.key, persona_id)

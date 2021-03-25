@@ -1403,6 +1403,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                             default_qview: str,
                             submit_general_query: Callable[[RequestState, Query],
                                                   Tuple[CdEDBObject, ...]],
+                            *,
+                            endpoint: str="user_search",
                             choices: Dict[str, collections.OrderedDict] = None,  # type: ignore
                             query: Query = None
                             ) -> werkzeug.Response:
@@ -1415,6 +1417,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             query or just to display the search form.
         :param qview: which query view to user see `QUERY_VIEWS` in `cdedb.query`.
         :param default_qview: the default query list of which "dummy" query view to use
+        :param endpoint: Name of the template family to use to render search. To be
+            changed for archived user searches.
         :param choices: ???
         :param submit_general_query: The backend query function to use to retrieve the
             data in the end. Different backends apply different filters depending on
@@ -1445,10 +1449,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             if download:
                 return self.send_query_download(
                     rs, result, fields=query.fields_of_interest, kind=download,
-                    filename="user_search_result", substitutions=params['choices'])
+                    filename=endpoint + "_result", substitutions=params['choices'])
         else:
             rs.values['is_search'] = False
-        return self.render(rs, "user_search", params)
+        return self.render(rs, endpoint, params)
 
     @staticmethod
     def _create_attachment(attachment: Attachment) -> MIMENonMultipart:

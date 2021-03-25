@@ -1045,7 +1045,7 @@ class CoreFrontend(AbstractFrontend):
         }
         return self.generic_user_search(
             rs, download, is_search, 'qview_core_user', 'qview_core_user',
-            self.coreproxy.submit_general_query, choices, query)
+            self.coreproxy.submit_general_query, choices=choices, query=query)
 
     @access("core_admin")
     def create_user_form(self, rs: RequestState) -> Response:
@@ -1085,7 +1085,8 @@ class CoreFrontend(AbstractFrontend):
         }
         return self.generic_user_search(
             rs, download, is_search, 'qview_archived_persona', 'qview_archived_persona',
-            self.eventproxy.submit_general_query, choices)
+            self.eventproxy.submit_general_query, choices=choices,
+            endpoint="archived_user_search")
 
     @staticmethod
     def admin_bits(rs: RequestState) -> Set[Realm]:

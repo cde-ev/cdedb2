@@ -167,7 +167,7 @@ class EventFrontend(AbstractUserFrontend):
         }
         return self.generic_user_search(
             rs, download, is_search, 'qview_event_user', 'qview_event_user',
-            self.eventproxy.submit_general_query, choices)
+            self.eventproxy.submit_general_query, choices=choices)
 
     @access("anonymous")
     def list_events(self, rs: RequestState) -> Response:
