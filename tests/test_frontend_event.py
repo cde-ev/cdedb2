@@ -63,14 +63,14 @@ class TestEventFrontend(FrontendTest):
         if user in [USER_DICT['emilia'], USER_DICT['martin'],
                     USER_DICT['werner']]:
             ins = everyone
-            out = admin | {"Nutzer verwalten"}
+            out = admin | {"Nutzer verwalten", "Archivsuche"}
         # core admins
         elif user == USER_DICT['vera']:
-            ins = everyone | {"Nutzer verwalten"}
+            ins = everyone | {"Nutzer verwalten", "Archivsuche"}
             out = admin
         # event admins
         elif user == USER_DICT['annika']:
-            ins = everyone | admin | {"Nutzer verwalten"}
+            ins = everyone | admin | {"Nutzer verwalten", "Archivsuche"}
             out = set()
         else:
             self.fail("Please adjust users for this tests.")

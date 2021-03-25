@@ -101,6 +101,21 @@ class AssemblyFrontend(AbstractUserFrontend):
             rs, download, is_search, 'qview_persona', 'qview_assembly_user',
             self.assemblyproxy.submit_general_query)
 
+    @access("core_admin", "assembly_admin")
+    @REQUESTdata("download", "is_search")
+    def archived_user_search(self, rs: RequestState, download: Optional[str],
+                             is_search: bool) -> Response:
+        """Perform search.
+
+        Archived users are somewhat special since they are not visible
+        otherwise.
+        """
+        return self.generic_user_search(
+            rs, download, is_search,
+            'qview_archived_persona', 'qview_archived_persona',
+            self.assemblyproxy.submit_general_query,
+            endpoint="archived_user_search")
+
     @access("assembly_admin")
     @REQUESTdata(*LOG_FIELDS_COMMON, "assembly_id")
     def view_log(self, rs: RequestState,

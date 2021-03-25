@@ -112,6 +112,21 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs, download, is_search, 'qview_persona', 'qview_ml_user',
             self.mlproxy.submit_general_query)
 
+    @access("core_admin", "ml_admin")
+    @REQUESTdata("download", "is_search")
+    def archived_user_search(self, rs: RequestState, download: Optional[str],
+                             is_search: bool) -> Response:
+        """Perform search.
+
+        Archived users are somewhat special since they are not visible
+        otherwise.
+        """
+        return self.generic_user_search(
+            rs, download, is_search,
+            'qview_archived_persona', 'qview_archived_persona',
+            self.mlproxy.submit_general_query,
+            endpoint="archived_user_search")
+
     @access("ml")
     def list_mailinglists(self, rs: RequestState) -> Response:
         """Show all mailinglists you can administrate.

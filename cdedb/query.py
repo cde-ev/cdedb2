@@ -249,7 +249,7 @@ QUERY_SPECS = {
             ("lastschrift.active_lastschrift", "bool"),
             ("lastschrift.amount", "float"),
         ]),
-    "qview_archived_persona":
+    "qview_archived_core_user":
         collections.OrderedDict([
             ("personas.id", "id"),
             ("given_names", "str"),
@@ -259,6 +259,30 @@ QUERY_SPECS = {
             ("gender", "int"),
             ("birthday", "date"),
             ("pevent_id", "id"),
+            ("notes", "str"),
+            ("is_ml_realm", "bool"),
+            ("is_event_realm", "bool"),
+            ("is_assembly_realm", "bool"),
+            ("is_cde_realm", "bool"),
+        ]),
+    "qview_archived_past_event_user":
+        collections.OrderedDict([
+            ("personas.id", "id"),
+            ("given_names", "str"),
+            ("family_name", "str"),
+            ("display_name", "str"),
+            ("birth_name", "str"),
+            ("gender", "int"),
+            ("birthday", "date"),
+            ("pevent_id", "id"),
+            ("notes", "str"),
+        ]),
+    "qview_archived_persona":
+        collections.OrderedDict([
+            ("personas.id", "id"),
+            ("given_names", "str"),
+            ("family_name", "str"),
+            ("display_name", "str"),
             ("notes", "str"),
         ]),
     "qview_past_event_user":
@@ -482,10 +506,15 @@ QUERY_VIEWS = {
         "LEFT OUTER JOIN past_event.participants",
         "ON personas.id = participants.persona_id"),
     "qview_persona": "core.personas",
-    "qview_archived_persona": glue(
+    "qview_archived_core_user": glue(
         "core.personas",
         "LEFT OUTER JOIN past_event.participants",
         "ON personas.id = participants.persona_id"),
+    "qview_archived_past_event_user": glue(
+        "core.personas",
+        "LEFT OUTER JOIN past_event.participants",
+        "ON personas.id = participants.persona_id"),
+    "qview_archived_persona": "core.personas",
 }
 
 #: This is the primary key for the query and allows access to the
@@ -503,7 +532,9 @@ QUERY_PRIMARIES = {
     "qview_pevent_course": "courses.id",
     "qview_core_user": "personas.id",
     "qview_persona": "id",
-    "qview_archived_persona": "personas.id",
+    "qview_archived_core_user": "personas.id",
+    "qview_archived_past_event_user": "personas.id",
+    "qview_archived_persona": "id",
 }
 
 

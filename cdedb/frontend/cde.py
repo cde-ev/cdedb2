@@ -342,6 +342,30 @@ class CdEFrontend(AbstractUserFrontend):
             self.cdeproxy.submit_general_query, choices=choices)
 
     @access("core_admin", "cde_admin")
+    @REQUESTdata("download", "is_search")
+    def archived_user_search(self, rs: RequestState, download: Optional[str],
+                             is_search: bool) -> Response:
+        """Perform search.
+
+        Archived users are somewhat special since they are not visible
+        otherwise.
+        """
+        events = self.pasteventproxy.list_past_events(rs)
+        choices = {
+            'pevent_id': OrderedDict(
+                xsorted(events.items(), key=operator.itemgetter(1))),
+            'gender': OrderedDict(
+                enum_entries_filter(
+                    const.Genders,
+                    rs.gettext if download is None else rs.default_gettext))
+        }
+        return self.generic_user_search(
+            rs, download, is_search,
+            'qview_archived_past_event_user', 'qview_archived_persona',
+            self.cdeproxy.submit_general_query, choices=choices,
+            endpoint="archived_user_search")
+
+    @access("core_admin", "cde_admin")
     def create_user_form(self, rs: RequestState) -> Response:
         defaults = {
             'is_member': True,

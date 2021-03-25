@@ -171,14 +171,14 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         if user['id'] in {USER_DICT["annika"]['id'], USER_DICT["martin"]['id'],
                           USER_DICT["werner"]['id']}:
             ins = everyone
-            out = {"Nutzer verwalten", "Log"}
+            out = {"Nutzer verwalten", "Archivsuche", "Log"}
         # core admins
         elif user['id'] == USER_DICT["vera"]['id']:
-            ins = everyone | {"Nutzer verwalten"}
+            ins = everyone | {"Nutzer verwalten", "Archivsuche"}
             out = {"Log"}
         # assembly admins
         elif user['id'] == USER_DICT["anton"]['id']:
-            ins = everyone | {"Nutzer verwalten", "Log"}
+            ins = everyone | {"Nutzer verwalten", "Archivsuche", "Log"}
             out = set()
         else:
             self.fail("Please adjust users for this tests.")

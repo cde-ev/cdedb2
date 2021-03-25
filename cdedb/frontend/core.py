@@ -1084,7 +1084,8 @@ class CoreFrontend(AbstractFrontend):
                     rs.gettext if download is None else rs.default_gettext))
         }
         return self.generic_user_search(
-            rs, download, is_search, 'qview_archived_persona', 'qview_archived_persona',
+            rs, download, is_search,
+            'qview_archived_core_user', 'qview_archived_persona',
             self.coreproxy.submit_general_query, choices=choices,
             endpoint="archived_user_search")
 

@@ -106,7 +106,7 @@ class TestCdEFrontend(FrontendTest):
         past_event = {"Verg. Veranstaltungen"}
         member = {"Sonstiges", "Datenschutzerklärung", "Kurssuche"}
         searchable = {"CdE-Mitglied suchen"}
-        cde_admin = {"Nutzer verwalten", "Organisationen verwalten",
+        cde_admin = {"Nutzer verwalten", "Archivsuche", "Organisationen verwalten",
                      "Mitglieder-Statistik", "Verg.-Veranstaltungen-Log"}
         finance_admin = {
             "Einzugsermächtigungen", "Kontoauszug parsen", "Finanz-Log",

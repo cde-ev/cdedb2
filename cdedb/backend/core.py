@@ -2869,13 +2869,9 @@ class CoreBackend(AbstractBackend):
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.
         """
         query = affirm(Query, query)
-        if query.scope == "qview_core_user":
+        if query.scope in {"qview_core_user", "qview_archived_core_user"}:
             query.constraints.append(("is_archived", QueryOperators.equal,
-                                      False))
-            query.spec["is_archived"] = "bool"
-        elif query.scope == "qview_archived_persona":
-            query.constraints.append(("is_archived", QueryOperators.equal,
-                                      True))
+                                      query.scope == "qview_archived_core_user"))
             query.spec["is_archived"] = "bool"
         else:
             raise RuntimeError(n_("Bad scope."))

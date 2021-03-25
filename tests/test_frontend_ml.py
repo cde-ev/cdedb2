@@ -38,38 +38,38 @@ class TestMlFrontend(FrontendTest):
         if user['id'] in {USER_DICT['martin']['id']}:
             ins = {"Übersicht"}
             out = {"Alle Mailinglisten", "Moderierte Mailinglisten",
-                   "Aktive Mailinglisten", "Nutzer verwalten", "Log"}
+                   "Aktive Mailinglisten", "Nutzer verwalten", "Archivsuche", "Log"}
         # Users with core admin privileges for some mailinglists:
         elif user['id'] in {USER_DICT['vera']['id']}:
             ins = {"Aktive Mailinglisten", "Administrierte Mailinglisten", "Log",
-                   "Nutzer verwalten"}
+                   "Nutzer verwalten", "Archivsuche"}
             out = {"Übersicht", "Alle Mailinglisten", "Moderierte Mailinglisten"}
         # Users with relative admin privileges for some mailinglists:
         elif user['id'] in {USER_DICT['viktor']['id']}:
             ins = {"Aktive Mailinglisten", "Administrierte Mailinglisten", "Log"}
             out = {"Übersicht", "Alle Mailinglisten", "Moderierte Mailinglisten",
-                   "Nutzer verwalten"}
+                   "Nutzer verwalten", "Archivsuche"}
         # Users with moderated mailinglists and relative admin privileges
         # for some mailinglists:
         elif user['id'] in {USER_DICT['annika']['id']}:
             ins = {"Aktive Mailinglisten", "Administrierte Mailinglisten",
                    "Moderierte Mailinglisten", "Log"}
-            out = {"Übersicht", "Alle Mailinglisten", "Nutzer verwalten"}
+            out = {"Übersicht", "Alle Mailinglisten", "Nutzer verwalten", "Archivsuche"}
         # Users with moderated mailinglists, but no admin privileges.
         elif user['id'] in {USER_DICT['berta']['id']}:
             ins = {"Aktive Mailinglisten", "Moderierte Mailinglisten", "Log"}
             out = {"Übersicht", "Administrierte Mailinglisten", "Alle Mailinglisten",
-                   "Nutzer verwalten"}
+                   "Nutzer verwalten", "Archivsuche"}
         # Users with full ml-admin privileges.
         elif user['id'] in {USER_DICT['nina']['id']}:
             ins = {"Aktive Mailinglisten", "Alle Mailinglisten",
-                   "Accounts verschmelzen", "Nutzer verwalten", "Log"}
+                   "Accounts verschmelzen", "Nutzer verwalten", "Archivsuche", "Log"}
             out = {"Übersicht", "Moderierte Mailinglisten"}
         # Users with moderated mailinglists with full ml-admin privileges.
         elif user['id'] in {USER_DICT['anton']['id']}:
             ins = {"Aktive Mailinglisten", "Alle Mailinglisten",
                    "Accounts verschmelzen", "Moderierte Mailinglisten",
-                   "Nutzer verwalten", "Log"}
+                   "Nutzer verwalten", "Archivsuche", "Log"}
             out = {"Übersicht"}
         else:
             self.fail("Please adjust users for this tests.")

@@ -1039,25 +1039,20 @@ class CdEBackend(AbstractBackend):
         if query.scope == "qview_cde_member":
             if self.core.check_quota(rs, num=1):
                 raise QuotaException(n_("Too many queries."))
-            query.constraints.append(
-                ("is_cde_realm", QueryOperators.equal, True))
-            query.constraints.append(
-                ("is_member", QueryOperators.equal, True))
-            query.constraints.append(
-                ("is_searchable", QueryOperators.equal, True))
-            query.constraints.append(
-                ("is_archived", QueryOperators.equal, False))
+            query.constraints.append(("is_cde_realm", QueryOperators.equal, True))
+            query.constraints.append(("is_member", QueryOperators.equal, True))
+            query.constraints.append(("is_searchable", QueryOperators.equal, True))
+            query.constraints.append(("is_archived", QueryOperators.equal, False))
             query.spec['is_cde_realm'] = "bool"
             query.spec['is_member'] = "bool"
             query.spec['is_searchable'] = "bool"
             query.spec["is_archived"] = "bool"
-        elif query.scope == "qview_cde_user":
-            if not self.is_admin(rs):
+        elif query.scope in {"qview_cde_user", "qview_archived_past_event_user"}:
+            if not {'core_admin', 'cde_admin'} & rs.user.roles:
                 raise PrivilegeError(n_("Admin only."))
-            query.constraints.append(
-                ("is_cde_realm", QueryOperators.equal, True))
-            query.constraints.append(
-                ("is_archived", QueryOperators.equal, False))
+            query.constraints.append(("is_cde_realm", QueryOperators.equal, True))
+            query.constraints.append(("is_archived", QueryOperators.equal,
+                                      query.scope == "qview_archived_past_event_user"))
             query.spec['is_cde_realm'] = "bool"
             query.spec["is_archived"] = "bool"
             # Exclude users of any higher realm (implying event)
@@ -1068,10 +1063,8 @@ class CdEBackend(AbstractBackend):
         elif query.scope == "qview_past_event_user":
             if not self.is_admin(rs):
                 raise PrivilegeError(n_("Admin only."))
-            query.constraints.append(
-                ("is_event_realm", QueryOperators.equal, True))
-            query.constraints.append(
-                ("is_archived", QueryOperators.equal, False))
+            query.constraints.append(("is_event_realm", QueryOperators.equal, True))
+            query.constraints.append(("is_archived", QueryOperators.equal, False))
             query.spec['is_event_realm'] = "bool"
             query.spec["is_archived"] = "bool"
         else:
