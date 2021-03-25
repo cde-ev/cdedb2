@@ -87,9 +87,7 @@ from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.devsamples import HELD_MESSAGE_SAMPLE
 from cdedb.enums import ENUMS_DICT
-from cdedb.query import (
-    QUERY_SPECS, Query,mangle_query_input,
-)
+from cdedb.query import QUERY_SPECS, Query, mangle_query_input
 from cdedb.validationdata import COUNTRY_CODES
 
 _LOGGER = logging.getLogger(__name__)

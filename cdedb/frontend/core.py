@@ -37,7 +37,7 @@ from cdedb.frontend.common import (
     make_membership_fee_reference, markdown_parse_safe, periodic, querytoparams_filter,
     request_dict_extractor, request_extractor,
 )
-from cdedb.query import QUERY_SPECS, Query, QueryOperators, mangle_query_input
+from cdedb.query import QUERY_SPECS, Query, QueryOperators
 from cdedb.subman.machine import SubscriptionPolicy
 from cdedb.validation import (
     TypeMapping, GENESIS_CASE_EXPOSED_FIELDS,

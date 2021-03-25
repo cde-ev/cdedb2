@@ -3,7 +3,6 @@
 """Services for the assembly realm."""
 
 import collections
-import copy
 import datetime
 import io
 import json
@@ -28,7 +27,6 @@ from cdedb.frontend.common import (
     periodic, process_dynamic_input, request_extractor,
 )
 from cdedb.frontend.uncommon import AbstractUserFrontend
-from cdedb.query import QUERY_SPECS, Query, mangle_query_input
 from cdedb.validation import (
     ASSEMBLY_COMMON_FIELDS, BALLOT_EXPOSED_FIELDS, PERSONA_FULL_ASSEMBLY_CREATION,
     filter_none,

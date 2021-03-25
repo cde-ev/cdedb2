@@ -3,7 +3,6 @@
 """Base class providing fundamental ml services."""
 
 import collections
-import copy
 from datetime import datetime
 from typing import Any, Collection, Dict, Optional, Set
 
@@ -28,7 +27,6 @@ from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.ml_type_aux import (
     ADDITIONAL_TYPE_FIELDS, TYPE_MAP, MailinglistGroup, get_type
 )
-from cdedb.query import QUERY_SPECS, Query, mangle_query_input
 from cdedb.validation import (
     ALL_MAILINGLIST_FIELDS, PERSONA_FULL_ML_CREATION, filter_none
 )
