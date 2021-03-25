@@ -930,46 +930,43 @@ class CdEBackend(AbstractBackend):
         }
 
         # TODO: improve this type annotation with a new mypy version.
-        def query_stats(params: Dict[str, str]) -> OrderedDict:  # type: ignore
-            params.setdefault("limit", "0")
-            query = ("SELECT COUNT(*) AS num, {select} AS datum"
-                     " FROM core.personas"
-                     " WHERE is_member = True AND {condition} IS NOT NULL"
-                     " GROUP BY datum HAVING COUNT(*) > {limit} ORDER BY {order}")
-            data = self.query_all(rs, query.format(**params), ())
+        def query_stats(select: str, condition: str, order: str, limit: int = 0
+                        ) -> OrderedDict:  # type: ignore
+            query = (f"SELECT COUNT(*) AS num, {select} AS datum"
+                     f" FROM core.personas"
+                     f" WHERE is_member = True AND {condition} IS NOT NULL"
+                     f" GROUP BY datum HAVING COUNT(*) > {limit} ORDER BY {order}")
+            data = self.query_all(rs, query, ())
             return OrderedDict((e['datum'], e['num']) for e in data)
 
         # Members by country.
-        params = {
-            "select": "country",
-            "condition": "location",
-            "order": "num DESC, datum ASC",
-        }
-        ret[n_("members_by_country")] = query_stats(params)
+        ret[n_("members_by_country")] = query_stats(
+            select="country",
+            condition="location",
+            order="num DESC, datum ASC")
+
         # Members by PLZ.
-        params = {
-            "select": "postal_code",
-            "condition": "postal_code",
-            "order": "num DESC, datum ASC",
-        }
         # We don't want the PLZ stats for now. See #380.
-        # ret[n_("members_by_plz")] = query_stats(params)
+        # ret[n_("members_by_plz")] = query_stats(
+        #   select="postal_code",
+        #   condition="postal_code",
+        #   order="num DESC, datum ASC")
+
         # Members by city.
-        params = {
-            "select": "location",
-            "condition": "location",
-            "order": "num DESC, datum ASC",
-            "limit": "9"
-        }
         # We want to cutoff the list due to privacy and readability concerns.
-        ret[n_("members_by_city")] = query_stats(params)
+        ret[n_("members_by_city")] = query_stats(
+            select="location",
+            condition="location",
+            order="num DESC, datum ASC",
+            limit=9)
+
         # Members by birthday.
-        params = {
-            "select": "EXTRACT(year FROM birthday)::integer",
-            "condition": "birthday",
-            "order": "datum ASC",
-        }
-        ret[n_("members_by_birthday")] = query_stats(params)
+        ret[n_("members_by_birthday")] = query_stats(
+            select="EXTRACT(year FROM birthday)::integer",
+            condition="birthday",
+            order="datum ASC"
+        )
+
         # Members by first event.
         query = """SELECT
             COUNT(*) AS num, EXTRACT(year FROM min_tempus.t)::integer AS datum
