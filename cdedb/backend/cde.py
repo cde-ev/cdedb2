@@ -9,7 +9,7 @@ members are also possible.
 import datetime
 import decimal
 from collections import OrderedDict
-from typing import Any, Collection, Dict, List, Optional, Union, Tuple
+from typing import Any, Collection, Dict, List, Optional, Tuple
 
 from typing_extensions import Protocol
 
