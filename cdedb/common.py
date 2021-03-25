@@ -539,7 +539,7 @@ def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,
             return tuple(map(collate, sortkey))
         return sortkey
 
-    return sorted(iterable, key=lambda x: collate(key(x)),
+    return sorted(iterable, key=lambda x: collate(key(x)),  # pylint: disable=bad-builtin
                   reverse=reverse)
 
 
