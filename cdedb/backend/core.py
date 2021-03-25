@@ -713,7 +713,8 @@ class CoreBackend(AbstractBackend):
                      or "finance" not in allow_specials)):
             # Allow setting balance to 0 or None during archival.
             if not ((data["balance"] is None or data["balance"] == 0)
-                    and {"archive", "finance"} & set(allow_specials)):
+                    and REALM_ADMINS & rs.user.roles
+                    and {"archive", "membership"} & set(allow_specials)):
                 raise PrivilegeError(n_("Modification of balance prevented."))
         if "username" in data and "username" not in allow_specials:
             raise PrivilegeError(n_("Modification of email address prevented."))
@@ -1137,7 +1138,7 @@ class CoreBackend(AbstractBackend):
             ret = self.set_persona(
                 rs, update, may_wait=False,
                 change_note="Mitgliedschaftsstatus geändert.",
-                allow_specials=("membership", "finance"))
+                allow_specials=("membership",))
             self.finance_log(rs, code, persona_id, delta, new_balance)
             return ret
 
