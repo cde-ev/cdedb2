@@ -27,24 +27,36 @@
     <hr>
     <div id="cde-complex-stats">
         {% for view, view_stats in stats.items() if view != 'simple_stats' %}
-            <table class="table table-hover table-condensed" id="complex-stats-{{ view }}">
-                <thead>
-                    <tr>
-                        <td></td>
-                        <td>{{ gettext(view) }}</td>
-                    </tr>
-                </thead>
-                {% for datum, num in view_stats.items() %}
-                    <tr>
-                        <td>
-                            {{ datum }}
-                        </td>
-                        <td id="complex-stats-{{ view }}-{{ datum }}">
-                            {{ num }}
-                        </td>
-                    </tr>
-                {% endfor %}
-            </table>
+            {% if view == "members_by_country" %}
+                {{ stat_table(view, view_stats, util.gettext_country) }}
+            {% else %}
+                {{ stat_table(view, view_stats) }}
+            {% endif %}
         {% endfor %}
     </div>
 {% endblock %}
+
+{% macro stat_table(view, view_stats, processing="") %}
+    <table class="table table-hover table-condensed" id="complex-stats-{{ view }}">
+        <thead>
+            <tr>
+                <td></td>
+                <td>{{ gettext(view) }}</td>
+            </tr>
+        </thead>
+        {% for datum, num in view_stats.items() %}
+            <tr>
+                <td>
+                    {% if processing %}
+                        {{ processing(datum) }}
+                    {% else %}
+                        {{ datum }}
+                    {% endif %}
+                </td>
+                <td id="complex-stats-{{ view }}-{{ datum }}">
+                    {{ num }}
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+{% endmacro %}
