@@ -35,13 +35,13 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("aka@example.cde", div="orga-address")
         self.assertPresence("Erste Hälfte", div="timeframe-parts")
         self.assertNonPresence("Everybody come!")
-        self.assertPresence("für eingeloggte Veranstaltungs-Nutzer sichtbar",
+        self.assertPresence("für eingeloggte Veranstaltungsnutzer sichtbar",
                             div='static-notifications')
 
         self.traverse({'description': 'Kursliste'})
         self.assertPresence("α. Planetenretten für Anfänger", div='list-courses')
         self.assertPresence("Wir werden die Bäume drücken.", div='list-courses')
-        msg = ("Die Kursleiter sind nur für eingeloggte Veranstaltungs-Nutzer "
+        msg = ("Die Kursleiter sind nur für eingeloggte Veranstaltungsnutzer "
                "sichtbar.")
         self.assertPresence(msg, div="instructors-not-visible")
         self.assertNonPresence("Bernd Lucke")
@@ -120,7 +120,7 @@ class TestEventFrontend(FrontendTest):
     def test_user_search(self, user: CdEDBObject) -> None:
         self.traverse({'description': 'Veranstaltunge'},
                       {'description': 'Nutzer verwalten'})
-        self.assertTitle("Veranstaltungs-Nutzerverwaltung")
+        self.assertTitle("Veranstaltungsnutzerverwaltung")
         f = self.response.forms['queryform']
         f['qop_username'] = QueryOperators.match.value
         f['qval_username'] = 'a@'
@@ -128,7 +128,7 @@ class TestEventFrontend(FrontendTest):
             if field and field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
-        self.assertTitle("Veranstaltungs-Nutzerverwaltung")
+        self.assertTitle("Veranstaltungsnutzerverwaltung")
         self.assertPresence("Ergebnis [2]", div='query-results')
         self.assertPresence("Hohle Gasse 13", div='query-result')
 
@@ -250,7 +250,7 @@ class TestEventFrontend(FrontendTest):
                             "Zweite Hälfte: 11.11.2222 – 30.11.2222",
                             div='timeframe-parts')
         self.assertPresence("Everybody come!", div='description')
-        self.assertNonPresence("für eingeloggte Veranstaltungs-Nutzer sichtbar",
+        self.assertNonPresence("für eingeloggte Veranstaltungsnutzer sichtbar",
                                div='notifications')
         self.assertPresence("30.10.2000, 01:00:00 – 30.10.2200, 01:00:00 ",
                             div='timeframe-registration')

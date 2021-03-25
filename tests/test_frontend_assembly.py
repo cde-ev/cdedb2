@@ -228,7 +228,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
     def test_user_search(self, user: CdEDBObject) -> None:
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Nutzer verwalten'})
-        self.assertTitle("Versammlungs-Nutzerverwaltung")
+        self.assertTitle("Versammlungsnutzerverwaltung")
         f = self.response.forms['queryform']
         f['qop_username'] = QueryOperators.match.value
         f['qval_username'] = 'f@'
@@ -236,7 +236,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             if field and field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
-        self.assertTitle("Versammlungs-Nutzerverwaltung")
+        self.assertTitle("Versammlungsnutzerverwaltung")
         self.assertPresence("Ergebnis [1]", div="query-results")
         self.assertPresence("Karabatschi", div="result-container")
 

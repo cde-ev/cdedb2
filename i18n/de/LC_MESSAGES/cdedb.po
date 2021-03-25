@@ -9105,7 +9105,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/archived_user_search.tmpl:17
 msgid "This search will only show archived pure event users."
-msgstr "Diese Suche findet nur archivierte reine Veranstaltungs-Nutzer."
+msgstr "Diese Suche findet nur archivierte reine Veranstaltungsnutzer."
 
 #: cdedb/frontend/templates/web/event/base.tmpl:12
 #: cdedb/frontend/templates/web/event/course_list.tmpl:15

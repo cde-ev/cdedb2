@@ -571,21 +571,21 @@ class TestPrivacyFrontend(FrontendTest):
 
         if user['id'] in core | event:
             self.get('/event/search/user')
-            self.assertTitle("Veranstaltungs-Nutzerverwaltung")
+            self.assertTitle("Veranstaltungsnutzerverwaltung")
         else:
             self.get('/event/search/user', status="403 FORBIDDEN")
             self.assertTitle("403: Forbidden")
 
         if user['id'] in core | ml:
             self.get('/ml/search/user')
-            self.assertTitle("Mailinglisten-Nutzerverwaltung")
+            self.assertTitle("Mailinglistennutzerverwaltung")
         else:
             self.get('/ml/search/user', status="403 FORBIDDEN")
             self.assertTitle("403: Forbidden")
 
         if user['id'] in core | assembly:
             self.get('/assembly/search/user')
-            self.assertTitle("Versammlungs-Nutzerverwaltung")
+            self.assertTitle("Versammlungsnutzerverwaltung")
         else:
             self.get('/assembly/search/user', status="403 FORBIDDEN")
             self.assertTitle("403: Forbidden")

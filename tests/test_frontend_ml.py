@@ -117,7 +117,7 @@ class TestMlFrontend(FrontendTest):
     @as_users("nina", "vera")
     def test_user_search(self, user: CdEDBObject) -> None:
         self.traverse({'href': '/ml/$'}, {'href': '/ml/search/user'})
-        self.assertTitle("Mailinglisten-Nutzerverwaltung")
+        self.assertTitle("Mailinglistennutzerverwaltung")
         f = self.response.forms['queryform']
         f['qop_username'] = QueryOperators.match.value
         f['qval_username'] = 's@'
@@ -125,7 +125,7 @@ class TestMlFrontend(FrontendTest):
             if field and field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
-        self.assertTitle("Mailinglisten-Nutzerverwaltung")
+        self.assertTitle("Mailinglistennutzerverwaltung")
         self.assertPresence("Ergebnis [1]")
         self.assertPresence("Jalapeño")
 
