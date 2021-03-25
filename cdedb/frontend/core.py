@@ -1085,7 +1085,7 @@ class CoreFrontend(AbstractFrontend):
         }
         return self.generic_user_search(
             rs, download, is_search, 'qview_archived_persona', 'qview_archived_persona',
-            self.eventproxy.submit_general_query, choices=choices,
+            self.coreproxy.submit_general_query, choices=choices,
             endpoint="archived_user_search")
 
     @staticmethod

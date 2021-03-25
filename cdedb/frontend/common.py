@@ -1402,7 +1402,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                             submit_general_query: Callable[[RequestState, Query],
                                                   Tuple[CdEDBObject, ...]],
                             *,
-                            endpoint: str="user_search",
+                            endpoint: str = "user_search",
                             choices: Dict[str, collections.OrderedDict] = None,  # type: ignore
                             query: Query = None
                             ) -> werkzeug.Response:
