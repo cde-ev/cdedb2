@@ -1033,48 +1033,19 @@ class CoreFrontend(AbstractFrontend):
     @REQUESTdata("download", "is_search")
     def user_search(self, rs: RequestState, download: Optional[str],
                     is_search: bool, query: Query = None) -> Response:
-        """Perform search.
-
-        The parameter ``download`` signals whether the output should be a
-        file. It can either be "csv" or "json" for a corresponding
-        file. Otherwise an ordinary HTML-page is served.
-
-        is_search signals whether the page was requested by an actual
-        query or just to display the search form.
-
-        If the parameter query is specified this query is executed
-        instead. This is meant for calling this function
-        programmatically.
-        """
-        spec = copy.deepcopy(QUERY_SPECS['qview_core_user'])
-        if query:
-            query = check(rs, vtypes.Query, query, "query")
-        elif is_search:
-            # mangle the input, so we can prefill the form
-            query_input = mangle_query_input(rs, spec)
-            query = check(rs, vtypes.QueryInput, query_input, "query",
-                          spec=spec, allow_empty=False)
+        """Perform search."""
         events = self.pasteventproxy.list_past_events(rs)
         choices = {
             'pevent_id': collections.OrderedDict(
-                xsorted(events.items(), key=operator.itemgetter(0)))}
-        choices_lists = {k: list(v.items()) for k, v in choices.items()}
-        default_queries = self.conf["DEFAULT_QUERIES"]['qview_core_user']
-        params = {
-            'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
-            'default_queries': default_queries, 'query': query}
-        # Tricky logic: In case of no validation errors we perform a query
-        if not rs.has_validation_errors() and is_search and query:
-            query.scope = "qview_core_user"
-            result = self.coreproxy.submit_general_query(rs, query)
-            params['result'] = result
-            if download:
-                return self.send_query_download(
-                    rs, result, fields=query.fields_of_interest, kind=download,
-                    filename="user_search_result", substitutions=choices)
-        else:
-            rs.values['is_search'] = is_search = False
-        return self.render(rs, "user_search", params)
+                sorted(events.items(), key=operator.itemgetter(0))),
+            'gender': collections.OrderedDict(
+                enum_entries_filter(
+                    const.Genders,
+                    rs.gettext if download is None else rs.default_gettext))
+        }
+        return self.generic_user_search(
+            rs, download, is_search, 'qview_core_user', 'qview_core_user',
+            self.coreproxy.submit_general_query, choices, query)
 
     @access("core_admin")
     def create_user_form(self, rs: RequestState) -> Response:
@@ -1103,38 +1074,18 @@ class CoreFrontend(AbstractFrontend):
         Archived users are somewhat special since they are not visible
         otherwise.
         """
-        spec = copy.deepcopy(QUERY_SPECS['qview_archived_persona'])
-        # mangle the input, so we can prefill the form
-        query_input = mangle_query_input(rs, spec)
-        query: Optional[Query] = None
-        if is_search:
-            query = check(rs, vtypes.QueryInput, query_input, "query",
-                          spec=spec, allow_empty=False)
         events = self.pasteventproxy.list_past_events(rs)
         choices = {
             'pevent_id': collections.OrderedDict(
-                xsorted(events.items(), key=operator.itemgetter(0))),
+                sorted(events.items(), key=operator.itemgetter(0))),
             'gender': collections.OrderedDict(
-                enum_entries_filter(const.Genders, rs.gettext))
+                enum_entries_filter(
+                    const.Genders,
+                    rs.gettext if download is None else rs.default_gettext))
         }
-        choices_lists = {k: list(v.items()) for k, v in choices.items()}
-        default_queries = self.conf["DEFAULT_QUERIES"]['qview_archived_persona']
-        params = {
-            'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
-            'default_queries': default_queries, 'query': query}
-        # Tricky logic: In case of no validation errors we perform a query
-        if not rs.has_validation_errors() and is_search and query:
-            query.scope = "qview_archived_persona"
-            result = self.coreproxy.submit_general_query(rs, query)
-            params['result'] = result
-            if download:
-                return self.send_query_download(
-                    rs, result, fields=query.fields_of_interest, kind=download,
-                    filename="archived_user_search_result",
-                    substitutions=choices)
-        else:
-            rs.values['is_search'] = is_search = False
-        return self.render(rs, "archived_user_search", params)
+        return self.generic_user_search(
+            rs, download, is_search, 'qview_archived_persona', 'qview_archived_persona',
+            self.eventproxy.submit_general_query, choices)
 
     @staticmethod
     def admin_bits(rs: RequestState) -> Set[Realm]:
