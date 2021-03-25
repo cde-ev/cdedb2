@@ -930,8 +930,8 @@ class CdEBackend(AbstractBackend):
         }
 
         # TODO: improve this type annotation with a new mypy version.
-        def query_stats(params: Dict[str, Union[str, int]]) -> OrderedDict:
-            params.setdefault("limit", 0)
+        def query_stats(params: Dict[str, str]) -> OrderedDict:  # type: ignore
+            params.setdefault("limit", "0")
             query = ("SELECT COUNT(*) AS num, {select} AS datum"
                      " FROM core.personas"
                      " WHERE is_member = True AND {condition} IS NOT NULL"
@@ -959,7 +959,7 @@ class CdEBackend(AbstractBackend):
             "select": "location",
             "condition": "location",
             "order": "num DESC, datum ASC",
-            "limit": 9
+            "limit": "9"
         }
         # We want to cutoff the list due to privacy and readability concerns.
         ret[n_("members_by_city")] = query_stats(params)
