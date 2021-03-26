@@ -1289,8 +1289,8 @@ class MlBackend(AbstractBackend):
         SA = SubscriptionAction
         log = const.MlLogCodes
 
-        # TODO add is_implicit method to SubscriptionStates and use it here
-        non_implicit_states = {state for state in SS if state != SS.implicit}
+        non_implicit_states = {state for state in SS
+                               if state not in {SS.implicit, SS.none}}
 
         state_to_log: Dict[const.SubscriptionState, const.MlLogCodes] = {
             SS.subscribed: log.from_subman(SA.add_subscriber),
