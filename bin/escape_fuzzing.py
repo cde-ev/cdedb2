@@ -34,29 +34,18 @@ import pathlib
 import queue
 import tempfile
 import time
-from typing import List, NamedTuple, Optional, Set, TYPE_CHECKING
+from typing import Collection, List, NamedTuple, Optional, Set, TYPE_CHECKING
 
 import webtest
 
 from cdedb.frontend.application import Application
 from tests.common import check_test_setup
 
-# Custorm type definitions.
+# Custom type definitions.
 ResponseData = NamedTuple("ResponseData", [("response", webtest.TestResponse),
                                            ("url", str), ("referer", Optional[str])])
 CheckReturn = NamedTuple("CheckReturn", [("errors", List[str]),
                                          ("queue", List[ResponseData])])
-
-###################
-# Some constants. #
-###################
-
-# The injected payload to check for.
-XSS_PAYLOAD = "<script>abcdef</script>"
-# Evidence of the payload being excaped twice.
-DOUBLE_ESCAPE = "&amp;lt;"
-# URL parameters to ignore when checking for unique urls.
-IGNORE_URL_PARAMS = {'confirm_id'}
 
 # Keep track of runtime data.
 visited_urls: Set[str] = set()
@@ -80,10 +69,16 @@ def main() -> int:
         description="Insert XSS payload into database, then traverse all sites to make"
                     " sure it is escaped properly.")
 
-    parser.add_argument("--dbname", "-d")
-    parser.add_argument("--storage-dir", "-s", default="/tmp/cdedb-store")
-    parser.add_argument("--outdir", "-o", default="./out")
-    parser.add_argument("--verbose", "-v", action="store_true")
+    general = parser.add_argument_group("General options")
+    general.add_argument("--dbname", "-d")
+    general.add_argument("--storage-dir", "-s", default="/tmp/cdedb-store")
+    general.add_argument("--outdir", "-o", default="./out")
+
+    config = parser.add_argument_group("Ccnfiguration")
+    config.add_argument("--verbose", "-v", action="store_true")
+    config.add_argument("--payload", "-p", default="<script>abcdef</script>")
+    config.add_argument("--secondary", "-sp", nargs='*',
+                        default=["&amp;lt;", "&amp;gt;"])
 
     args = parser.parse_args()
 
@@ -124,7 +119,8 @@ def main() -> int:
             response_data = response_queue.get(False)
         except queue.Empty:
             break
-        e, q = check(response_data, outdir=outdir, verbose=args.verbose)
+        e, q = check(response_data, outdir=outdir, verbose=args.verbose,
+                     payload=args.payload, secondary_payloads=args.secondary)
         errors.extend(e)
         for rd in q:
             response_queue.put(rd)
@@ -133,20 +129,32 @@ def main() -> int:
     return len(errors)
 
 
-def write_next_file(outdir: pathlib.Path, data: bytes) -> None:
+def write_next_file(outdir: Optional[pathlib.Path], data: bytes) -> None:
     """Write data to the next available numbered file in the target directory."""
-    if outdir.exists():
+    if outdir and outdir.exists():
         outfile = outdir / str(len(list(outdir.iterdir())))
         with open(outfile, "wb") as f:
             f.write(data)
 
 
-def check(response_data: ResponseData, *, outdir: pathlib.Path, verbose: bool = False
-          ) -> CheckReturn:
-    """Check a single response for presence of the payload and double escaped data.
+def check(response_data: ResponseData, *, payload: str,
+          secondary_payloads: Collection[str] = (), outdir: pathlib.Path = None,
+          verbose: bool = False) -> CheckReturn:
+    """Check a single response for presence of the payload.
 
-    :returns: Two lists, with the first containing error strings, and the second new
-        response data to check later.
+    :param payload: The payload that we try to inject everywhere we can. For optimal
+        coverage, you should prepare the database beforehand in such a way, that the
+        same payload has already been injecetd into every possible column.
+    :param secondary_payloads: If given, also check that all these strings are not
+        present anywhere, but do not try to inject this. This is useful to check that
+        the injected payload is excaped only once.
+    :param outdir: If given, write encountered errors into subsequent files inside this
+        directory.
+    :param verbose: If True, print encountered errors to console.
+
+    :returns: A tuple of two lists, with the first containing string represantations
+        of encountered errors error strings and the second containing new response data
+        to check later.
     """
     ret = CheckReturn([], [])
 
@@ -171,12 +179,13 @@ def check(response_data: ResponseData, *, outdir: pathlib.Path, verbose: bool = 
     # Do checks
     if verbose:
         print(f"Checking {url} ...")
-    if XSS_PAYLOAD in response.text:
+    if payload in response.text:
         log_error(f"Found unescaped payload in {url}, reached from {referer}.")
         write_next_file(outdir, response.body)
-    if DOUBLE_ESCAPE in response.text:
-        log_error(f"Found double escaped '<' in {url}, reached from {referer}")
-        write_next_file(outdir, response.body)
+    for secondary_payload in secondary_payloads:
+        if secondary_payload in response.text:
+            log_error(f"Found secondary payload in {url}, reached from {referer}")
+            write_next_file(outdir, response.body)
 
     # Follow all links to unvisited page urls
     for link_element in response.html.find_all('a'):
@@ -198,7 +207,7 @@ def check(response_data: ResponseData, *, outdir: pathlib.Path, verbose: bool = 
         else:
             unique_target = tmp[0] + "?" + "&".join(
                 p for p in tmp[1].split('&')
-                if p.split('=')[0] not in IGNORE_URL_PARAMS)
+                if p.split('=')[0] not in {'confirm_id'})
 
         if not target or unique_target in visited_urls:
             continue
@@ -231,7 +240,7 @@ def check(response_data: ResponseData, *, outdir: pathlib.Path, verbose: bool = 
             if isinstance(field, (webtest.forms.Checkbox, webtest.forms.Radio,
                                   webtest.forms.File)):
                 continue
-            field.force_value(XSS_PAYLOAD)
+            field.force_value(payload)
         try:
             new_response = form.submit()
             new_response = new_response.maybe_follow()

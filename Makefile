@@ -245,6 +245,7 @@ single-check:
 
 # By overriding this variable you can change the database that is used for the xss check.
 XSS_DATABASE_NAME ?= cdb_test
+XSS_PAYLOAD ?= <script>abcdef</script>
 
 sql-xss: tests/ancillary_files/sample_data_xss.sql
 ifneq ($(wildcard /CONTAINER),/CONTAINER)
@@ -265,7 +266,8 @@ sample-data-xss:
 xss-check: export CDEDB_TEST=True
 xss-check:
 	$(MAKE) sample-data-xss
-	$(PYTHONBIN) -m bin.escape_fuzzing --verbose --dbname ${XSS_DATABASE_NAME}
+	$(PYTHONBIN) -m bin.escape_fuzzing --verbose --dbname ${XSS_DATABASE_NAME} \
+		--payload "${XSS_PAYLOAD}"
 
 dump-html: export SCRAP_ENCOUNTERED_PAGES=1 TESTPATTERN=test_frontend
 dump-html:
@@ -325,7 +327,7 @@ tests/ancillary_files/sample_data_xss.sql: tests/ancillary_files/sample_data.jso
 			tests/create_sample_data_sql.py \
 			-i tests/ancillary_files/sample_data.json \
 			-o "$${SQLTEMPFILE}" \
-			--xss \
+			--xss "${XSS_PAYLOAD}" \
 		&& cp "$${SQLTEMPFILE}" tests/ancillary_files/sample_data_xss.sql \
 		&& sudo -u www-data rm "$${SQLTEMPFILE}"
 
