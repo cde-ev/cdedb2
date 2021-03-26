@@ -30,7 +30,7 @@
 
         {{ util.input_hidden(name="wants") }}
 
-        {{ util.form_input_submit(value=gettext("Login"), small=True) }}
+        {{ util.form_input_submit(label=gettext("Login"), small=True) }}
     </form>
     {% if not CDEDB_OFFLINE_DEPLOYMENT %}
         <p>

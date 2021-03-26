@@ -64,7 +64,7 @@
             {{ util.form_input_static(aclass='text-info', icon='info-circle',
                                       value=gettext("Warning: All changes will be immediately "
                                                     "visible to all CdE-Members and Assembly-Participants.")) }}
-            {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink("assembly/show_assembly")) }}
+            {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("assembly/show_assembly")) }}
         {% else %}
             {{ util.form_input_text(name="presider_ids", label=gettext("Presiders"), anid="input-presider_ids") }}
             <script nonce="{{ csp_nonce }}">
@@ -80,7 +80,7 @@
             {{ util.form_input_static(aclass='text-info', icon='info-circle',
                                       value=gettext("Warning: The Assembly will be immediately "
                                                     "visible to all CdE-Members.")) }}
-            {{ util.form_input_submit(value=gettext("Create"), cancellink=cdedblink('assembly/index')) }}
+            {{ util.form_input_submit(label=gettext("Create"), cancellink=cdedblink('assembly/index')) }}
         {% endif %}
     </form>
 

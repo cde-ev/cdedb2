@@ -73,7 +73,7 @@
                             <div class="checkbox">
                                 {{ util.input_checkbox("addresscheck", label=gettext("Include Address-Check")) }}
                             </div>
-                            {{ util.input_submit(value=gettext("Send Mails"), icon="paper-plane") }}
+                            {{ util.input_submit(label=gettext("Send Mails"), icon="paper-plane") }}
                         </form>
                     {% else %}
                         <span class="text-success">
@@ -116,7 +116,7 @@
                         {% endif %}
                         <form action="{{ cdedblink('cde/semester_eject') }}" method="POST" id="ejectform">
                             {{ util.anti_csrf_token('cde/semester_eject') }}
-                            {{ util.input_submit(value=gettext("Remove inactive Members")) }}
+                            {{ util.input_submit(label=gettext("Remove inactive Members")) }}
                         </form>
                     {% elif current_period_step == "billing" %}
                         <span class="text-muted">{% trans %}To be done later.{% endtrans %}</span>
@@ -148,7 +148,8 @@
                             <p>
                                 {% trans date=period['balance_done']|datetime(lang=lang),
                                      count=period['balance_trialmembers'],
-                                     total=period['balance_total']|money(lang=lang) %}
+                                     total=period['balance_total']|money(lang=lang),
+                                     state=period['balance_state'] %}
                                     Done up until {{ state }}.
                                     {{ count }} trial meberships have been ended so far.
                                     A total of {{ total }} has been deducted so far.
@@ -164,7 +165,7 @@
                         {% endif %}
                         <form action="{{ cdedblink('cde/semester_balance_update') }}" method="POST" id="balanceform">
                             {{ util.anti_csrf_token('cde/semester_balance_update') }}
-                            {{ util.input_submit(value=gettext("Update Balances")) }}
+                            {{ util.input_submit(label=gettext("Update Balances")) }}
                         </form>
                     {% else %}
                         <span class="text-success">
@@ -195,7 +196,7 @@
                     {% if current_period_step == "advance" %}
                         <form action="{{ cdedblink('cde/semester_advance') }}" method="POST" id="proceedform">
                             {{ util.anti_csrf_token('cde/semester_advance') }}
-                            {{ util.input_submit(value=gettext("Next Semester")) }}
+                            {{ util.input_submit(label=gettext("Next Semester")) }}
                         </form>
                     {% else %}
                         <span class="text-muted">{% trans %}To be done later.{% endtrans %}</span>
@@ -285,14 +286,14 @@
                                 {{ util.input_checkbox("testrun", label=gettext("Only one Test-Mail")) }}
                             </div>
                             <div class="form-group">
-                            {{ util.input_submit(value=gettext("Send Mails"), icon="paper-plane") }}
+                            {{ util.input_submit(label=gettext("Send Mails"), icon="paper-plane") }}
                             </div>
                         </form>
                         <form action="{{ cdedblink('cde/expuls_addresscheck') }}" method="POST"
                           id="noaddresscheckform">
                             {{ util.anti_csrf_token('cde/expuls_addresscheck') }}
                             {{ util.input_hidden("skip", value=True) }}
-                            {{ util.input_submit(value=gettext("Mark as done"), aclass="btn btn-warning",
+                            {{ util.input_submit(label=gettext("Mark as done"), aclass="btn btn-warning",
                                     icon="check-square") }}
                         </form>
                     {% endif %}
@@ -308,7 +309,7 @@
                     {% if expuls['addresscheck_done'] %}
                         <form action="{{ cdedblink('cde/expuls_advance') }}" method="POST" id="proceedexpulsform">
                             {{ util.anti_csrf_token('cde/expuls_advance') }}
-                            {{ util.input_submit(value=gettext("Next exPuls")) }}
+                            {{ util.input_submit(label=gettext("Next exPuls")) }}
                         </form>
                     {% else %}
                         <span class="text-muted">{% trans %}To be done later.{% endtrans %}</span>

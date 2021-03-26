@@ -57,10 +57,10 @@
     <div id="description">
         {{ ambience['pevent']['description']|md }}
     </div>
-    {% if ambience['pevent']['description'] and ambience['pevent']['notes']%}
+    {% if ambience['pevent']['description'] and ambience['pevent']['participant_info']%}
     <hr />
     {% endif %}
-    {% if ambience['pevent']['notes'] and ("past_event" in user.admin_views or is_participant) %}
+    {% if ambience['pevent']['participant_info'] and ("past_event" in user.admin_views or is_participant) %}
         {% if "past_event" in user.admin_views and not is_participant %}
             <p class="text-info" id="gallery-admin-info">{{ util.make_icon('info-circle') }}
                 {% trans %}
@@ -69,7 +69,7 @@
                 {% endtrans %}
             </p>
         {% endif %}
-       <div id="gallery-link">{{ ambience['pevent']['notes']|md }}</div>
+       <div id="gallery-link">{{ ambience['pevent']['participant_info']|md }}</div>
     {% endif %}
     {% if courses or "past_event" in user.admin_views %}
         <h2>{% trans %}Courses{% endtrans %}</h2>
@@ -122,7 +122,7 @@
                             </div>
                         </div>
                         <div class="col-sm-3">
-                            {{ util.input_submit(value=gettext("Add"), aclass="btn btn-primary btn-sm") }}
+                            {{ util.input_submit(label=gettext("Add"), aclass="btn btn-primary btn-sm") }}
                         </div>
                     </div>
                 </form>
@@ -162,7 +162,7 @@
                             {{ util.input_hidden(name="persona_id", value=anid) }}
                             {{ util.input_hidden(name="course_page", value=False) }}
                             {{ util.input_submit(title=gettext("Remove"), icon="minus", aclass="btn btn-xs btn-danger list-button-float",
-                                    value="") }}
+                                    label="") }}
                         </form>
                     {% endif %}
                 </li>
@@ -200,7 +200,7 @@
                         <form action="{{ cdedblink('cde/delete_past_event') }}" method="POST"
                                 id="deletepasteventform" style="display: inline;">
                             {{ util.anti_csrf_token('cde/delete_past_event') }}
-                            {{ util.input_submit(value=gettext("Delete Event"), icon="trash-alt", aclass="btn btn-danger") }}
+                            {{ util.input_submit(label=gettext("Delete Event"), icon="trash-alt", aclass="btn btn-danger") }}
                             {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?"), readonly=is_locked) }}
                         </form>
                     </div>

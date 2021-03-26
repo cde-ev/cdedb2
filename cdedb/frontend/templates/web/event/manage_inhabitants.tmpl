@@ -79,7 +79,7 @@
                 $('.del-box').cdedbRemoveParticipantButton('{{ gettext("Remove Inhabitant") }}');
             </script>
         </div>
-        {{ util.input_submit(value=gettext("Save")) }}&emsp;
+        {{ util.input_submit(label=gettext("Save")) }}&emsp;
         {{ util.href(cdedblink('event/show_lodgement'), gettext("Cancel"), icon='times-circle', aclass="btn btn-default") }}
     </form>
 {% endblock %}

@@ -169,9 +169,8 @@ class CdEFrontend(AbstractUserFrontend):
         be redirected.
         """
         data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
-        return self.render(rs, "consent_decision", {
-            'decided_search': data['decided_search'],
-            'verwaltung': self.conf["MANAGEMENT_ADDRESS"]})
+        return self.render(rs, "consent_decision",
+                           {'decided_search': data['decided_search']})
 
     @access("member", modi={"POST"})
     @REQUESTdata("ack")
@@ -198,7 +197,7 @@ class CdEFrontend(AbstractUserFrontend):
             return self.redirect(rs, "core/index")
         return self.redirect(rs, "cde/index")
 
-    @access("cde_admin")
+    @access("cde_admin", "member")
     def member_stats(self, rs: RequestState) -> Response:
         """Display stats about our members."""
         stats = self.cdeproxy.get_member_stats(rs)
@@ -282,7 +281,7 @@ class CdEFrontend(AbstractUserFrontend):
             'cutoff': cutoff, 'count': count,
         })
 
-    @access("member")
+    @access("member", "cde_admin")
     @REQUESTdata("is_search")
     def past_course_search(self, rs: RequestState, is_search: bool) -> Response:
         """Search for past courses."""
@@ -461,7 +460,11 @@ class CdEFrontend(AbstractUserFrontend):
             'paper_expuls': True,
             'bub_search': False,
             'decided_search': False,
-            'notes': None})
+            'notes': None,
+            'country2': self.conf["DEFAULT_COUNTRY"],
+        })
+        if not persona.get('country', "").strip():
+            persona['country'] = self.conf["DEFAULT_COUNTRY"]
         merge_dicts(persona, PERSONA_DEFAULTS)
         persona, problems = validate_check(
             vtypes.Persona, persona, argname="persona", creation=True)
@@ -2072,7 +2075,6 @@ class CdEFrontend(AbstractUserFrontend):
                      'Subject': "Bevorstehende Löschung Deines"
                                 " CdE-Datenbank-Accounts"},
                     {'persona': persona,
-                     'management': self.conf["MANAGEMENT_ADDRESS"],
                      'fee': self.conf["MEMBERSHIP_FEE"],
                      'meta_info': meta_info})
             return not testrun

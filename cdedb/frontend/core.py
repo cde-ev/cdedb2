@@ -38,6 +38,7 @@ from cdedb.frontend.common import (
     request_dict_extractor, request_extractor,
 )
 from cdedb.query import QUERY_SPECS, Query, QueryOperators, mangle_query_input
+from cdedb.subman.machine import SubscriptionPolicy
 from cdedb.validation import (
     TypeMapping, GENESIS_CASE_EXPOSED_FIELDS,
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
@@ -136,7 +137,7 @@ class CoreFrontend(AbstractFrontend):
             moderator_info = self.mlproxy.moderator_info(rs, rs.user.persona_id)
             if moderator_info:
                 moderator = self.mlproxy.get_mailinglists(rs, moderator_info)
-                sub_request = const.SubscriptionStates.pending
+                sub_request = const.SubscriptionState.pending
                 mailman = self.get_mailman()
                 for mailinglist_id, mailinglist in moderator.items():
                     requests = self.mlproxy.get_subscription_states(
@@ -573,8 +574,8 @@ class CoreFrontend(AbstractFrontend):
             # Admins who are also moderators can not disable this admin view
             if is_admin and not is_moderator:
                 access_mode.add("moderator")
-            relevant_stati = [s for s in const.SubscriptionStates
-                              if s != const.SubscriptionStates.unsubscribed]
+            relevant_stati = [s for s in const.SubscriptionState
+                              if s != const.SubscriptionState.unsubscribed]
             if is_moderator or ml_type.has_moderator_view(rs.user):
                 subscriptions = self.mlproxy.get_subscription_states(
                     rs, ml_id, states=relevant_stati)
@@ -813,6 +814,8 @@ class CoreFrontend(AbstractFrontend):
           assembly_admin or presider. Needed for external_signup.
         - ``assembly_user``: Search for an assembly user as assembly_admin or presider
         - ``ml_user``: Search for a mailinglist user as ml_admin or moderator
+        - ``pure_ml_user``: Search for an assembly only user as ml_admin.
+          Needed for the account merger.
         - ``ml_subscriber``: Search for a mailinglist user for subscription purposes.
           Needed for add_subscriber action only.
         - ``event_user``: Search an event user as event_admin or orga
@@ -875,13 +878,20 @@ class CoreFrontend(AbstractFrontend):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append(
                 ("is_ml_realm", QueryOperators.equal, True))
+        elif kind == "pure_ml_user":
+            if "ml_admin" not in rs.user.roles:
+                raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+            search_additions.extend((
+                ("is_ml_realm", QueryOperators.equal, True),
+                ("is_assembly_realm", QueryOperators.equal, False),
+                ("is_event_realm", QueryOperators.equal, False)))
         elif kind == "ml_subscriber":
             if aux is None:
                 raise werkzeug.exceptions.BadRequest(n_(
                     "Must provide id of the associated mailinglist to use this kind."))
             # In this case, the return value depends on the respective mailinglist.
             mailinglist = self.mlproxy.get_mailinglist(rs, aux)
-            if not self.mlproxy.may_manage(rs, aux, privileged=True):
+            if not self.mlproxy.may_manage(rs, aux, allow_restricted=False):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append(
                 ("is_ml_realm", QueryOperators.equal, True))
@@ -940,10 +950,8 @@ class CoreFrontend(AbstractFrontend):
         # Filter result to get only users allowed to be a subscriber of a list,
         # which potentially are no subscriber yet.
         if mailinglist:
-            pol = const.MailinglistInteractionPolicy
-            allowed_pols = {pol.subscribable, pol.moderated_opt_in, pol.invitation_only}
             data = self.mlproxy.filter_personas_by_policy(
-                rs, mailinglist, data, allowed_pols)
+                rs, mailinglist, data, SubscriptionPolicy.addable_policies())
 
         # Strip data to contain at maximum `num_preview_personas` results
         if len(data) > num_preview_personas:
@@ -1789,7 +1797,8 @@ class CoreFrontend(AbstractFrontend):
         if admin_exception:
             self.do_mail(
                 rs, "admin_no_reset_password",
-                {'To': (email,), 'Subject': "Passwort zurücksetzen"})
+                {'To': (email,), 'Subject': "Passwort zurücksetzen"},
+            )
             msg = "Sent password reset denial mail to admin {} for IP {}."
             self.logger.info(msg.format(email, rs.request.remote_addr))
             rs.notify("success", n_("Email sent."))
@@ -2013,8 +2022,11 @@ class CoreFrontend(AbstractFrontend):
         return self.redirect_show_user(rs, persona_id)
 
     @access("anonymous")
-    def genesis_request_form(self, rs: RequestState) -> Response:
+    @REQUESTdata("realm")
+    def genesis_request_form(self, rs: RequestState, realm: Optional[str] = None
+                             ) -> Response:
         """Render form."""
+        rs.ignore_validation_errors()
         allowed_genders = set(x for x in const.Genders
                               if x != const.Genders.not_specified)
         realm_options = [(option.realm, rs.gettext(option.name))
@@ -2357,7 +2369,7 @@ class CoreFrontend(AbstractFrontend):
                 rs, "genesis_declined",
                 {'To': (case['username'],),
                  'Subject': "CdEDB Accountanfrage abgelehnt"},
-                {})
+            )
             rs.notify("info", n_("Case rejected."))
         return self.redirect(rs, "core/genesis_list_cases")
 

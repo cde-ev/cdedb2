@@ -64,7 +64,7 @@ i18n-refresh:
 i18n-extract:
 	pybabel extract --msgid-bugs-address="cdedb@lists.cde-ev.de" \
 		--mapping=./babel.cfg --keywords="rs.gettext rs.ngettext n_" \
-		--output=$(I18NDIR)/cdedb.pot --input-dirs=.
+		--output=$(I18NDIR)/cdedb.pot --input-dirs="bin,cdedb"
 
 i18n-update:
 	msgmerge --lang=de --update $(I18NDIR)/de/LC_MESSAGES/cdedb.po $(I18NDIR)/cdedb.pot

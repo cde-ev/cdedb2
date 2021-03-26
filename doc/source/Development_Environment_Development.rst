@@ -63,7 +63,7 @@ or add the following line to your ``.git/info/attributes`` file::
 The second one is a three-way merge driver for ``.po`` and ``.pot`` files,
 hopefully making merging of these files easier.
 If the merge fails you will have to look for ``#-#-#-#-#`` as conflict markers
-instead of the usual ``>>>>>>>``, ``=======`` and ``<<<<<<<`` git normally uses.
+instead of the usual git conflict markers.
 
 If you want to disable this,
 remove the following lines from your ``.git/config`` file::

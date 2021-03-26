@@ -86,6 +86,7 @@ from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.devsamples import HELD_MESSAGE_SAMPLE
 from cdedb.enums import ENUMS_DICT
+from cdedb.validationdata import COUNTRY_CODES
 
 _LOGGER = logging.getLogger(__name__)
 _BASICCONF = BasicConfig()
@@ -933,6 +934,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'ANTI_CSRF_TOKEN_PAYLOAD': ANTI_CSRF_TOKEN_PAYLOAD,
             'GIT_COMMIT': self.conf["GIT_COMMIT"],
             'I18N_LANGUAGES': self.conf["I18N_LANGUAGES"],
+            'DEFAULT_COUNTRY': self.conf["DEFAULT_COUNTRY"],
             'ALL_MOD_ADMIN_VIEWS': ALL_MOD_ADMIN_VIEWS,
             'ALL_MGMT_ADMIN_VIEWS': ALL_MGMT_ADMIN_VIEWS,
             'EntitySorter': EntitySorter,
@@ -940,6 +942,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 lambda roles: roles & ({'core_admin'} | set(
                     "{}_admin".format(realm)
                     for realm in REALM_SPECIFIC_GENESIS_FIELDS)),
+            'unwrap': unwrap,
+            'MANAGEMENT_ADDRESS': self.conf['MANAGEMENT_ADDRESS'],
         })
         self.jinja_env_tex = self.jinja_env.overlay(
             autoescape=False,
@@ -1079,12 +1083,18 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             else:
                 raise AttributeError(n_("Given method is not callable."))
 
+        def _format_country_code(code: str) -> str:
+            """Helper to make string hidden to pybabel."""
+            return f'CountryCodes.{code}'
+
         errorsdict: Dict[Optional[str], List[Exception]] = {}
         for key, value in rs.retrieve_validation_errors():
             errorsdict.setdefault(key, []).append(value)
 
         # here come the always accessible things promised above
         data = {
+            'COUNTRY_CODES': xsorted([(v, rs.gettext(_format_country_code(v)))
+                                      for v in COUNTRY_CODES], key=lambda x: x[1]),
             'ambience': rs.ambience,
             'cdedblink': _cdedblink,
             'doclink': _doclink,
@@ -2392,9 +2402,9 @@ def mailinglist_guard(argname: str = "mailinglist_id",
                         "This page can only be accessed by the mailinglist’s "
                         "moderators."))
                 if requires_privilege and not obj.mlproxy.may_manage(
-                        rs, mailinglist_id=arg, privileged=True):
+                        rs, mailinglist_id=arg, allow_restricted=False):
                     raise werkzeug.exceptions.Forbidden(rs.gettext(
-                        "You do not have privileged moderator access and may not"
+                        "You only have restricted moderator access and may not"
                         " change subscriptions."))
             else:
                 if not obj.mlproxy.is_relevant_admin(rs, **{argname: arg}):

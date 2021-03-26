@@ -33,9 +33,9 @@
                             {{ personas[registration['persona_id']]['given_names'] }}
                             {{ personas[registration['persona_id']]['family_name'] }}
                         </span>
-                    {% if registration['age'].is_minor() %}
-                        {{ gettext(registration['age']|string) }}
-                    {% endif %}
+                        {% if registration['age'].is_minor() %}
+                            {{ gettext(registration['age']|string) }}
+                        {% endif %}
                         {% if ambience['event']['parts']|length > 1 %}
                             <br />
                             <span class="small text-muted">
@@ -49,7 +49,7 @@
                                     {% if not loop.last %} • {% endif %}
                                 {% endfor %}
                             </span>
-                        {% elif (registration['parts']|dictsort())[0]['status'] == enums['RegistrationPartStati'].guest.value %}
+                        {% elif unwrap(registration['parts'])['status'] == enums['RegistrationPartStati'].guest.value %}
                             ({{ gettext(enums['RegistrationPartStati'].guest|string) }})
                         {% endif %}
                     </div>
@@ -81,7 +81,7 @@
                               style="display: inline;" class="checkinform">
                             {{ util.anti_csrf_token('event/checkin') }}
                             {{ util.input_hidden(name="registration_id", value=registration_id) }}
-                            {{ util.input_submit(value=gettext("Checkin"), aclass="btn btn-primary btn-sm",
+                            {{ util.input_submit(label=gettext("Checkin"), aclass="btn btn-primary btn-sm",
                                                  readonly=is_locked) }}
                         </form>
                     </div>

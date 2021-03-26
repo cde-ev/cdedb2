@@ -211,8 +211,7 @@ def make_backend_shim(backend: B, internal: bool = False) -> B:
                 getattr(attr, "internal", False) and not internal,
                 not callable(attr)
             ]):
-                raise PrivilegeError(
-                    n_("Attribute %(name)s not public"), {"name": name})
+                raise PrivilegeError(f"Attribute {name} not public")
 
             @functools.wraps(attr)
             def wrapper(key: Optional[str], *args: Any, **kwargs: Any) -> Any:
@@ -361,7 +360,7 @@ class BasicTest(unittest.TestCase):
             else:
                 ret[anid] = copy.deepcopy(SAMPLE_DATA[table][anid])
         return ret
-    
+
     def get_sample_datum(self, table: str, id_: int) -> CdEDBObject:
         return self.get_sample_data(table, [id_], [])[id_]
 
@@ -1298,10 +1297,11 @@ class FrontendTest(BackendTest):
             log_code_str = self.gettext(str(log_code))  # type: ignore
             self.assertPresence(log_code_str, div=f"{index}-{log_id}")
 
-    def check_sidebar(self, ins: Collection[str], out: Collection[str]) -> None:
+    def check_sidebar(self, ins: Set[str], out: Set[str]) -> None:
         """Helper function to check the (in)visibility of sidebar elements.
 
-        Raise an error if an element is in the sidebar and not in ins.
+        Raise an error if an element is in the sidebar and not in ins or
+        if an element is in the sidebar and in out.
 
         :param ins: elements which are in the sidebar
         :param out: elements which are not in the sidebar

@@ -85,7 +85,8 @@ from cdedb.query import (
     QueryOrder,
 )
 from cdedb.validationdata import (
-    FREQUENCY_LISTS, GERMAN_PHONE_CODES, GERMAN_POSTAL_CODES, IBAN_LENGTHS, ITU_CODES,
+    COUNTRY_CODES, FREQUENCY_LISTS, GERMAN_PHONE_CODES, GERMAN_POSTAL_CODES,
+    IBAN_LENGTHS, ITU_CODES,
 )
 from cdedb.validationtypes import *  # pylint: disable=wildcard-import,unused-wildcard-import; # noqa
 
@@ -1010,13 +1011,13 @@ PERSONA_CDE_CREATION: Mapping[str, Any] = {
     'address': Optional[str],
     'postal_code': Optional[PrintableASCII],
     'location': Optional[str],
-    'country': Optional[str],
+    'country': Optional[Country],
     'birth_name': Optional[str],
     'address_supplement2': Optional[str],
     'address2': Optional[str],
     'postal_code2': Optional[PrintableASCII],
     'location2': Optional[str],
-    'country2': Optional[str],
+    'country2': Optional[Country],
     'weblink': Optional[str],
     'specialisation': Optional[str],
     'affiliation': Optional[str],
@@ -1041,7 +1042,7 @@ PERSONA_EVENT_CREATION: Mapping[str, Any] = {
     'address': Optional[str],
     'postal_code': Optional[PrintableASCII],
     'location': Optional[str],
-    'country': Optional[str],
+    'country': Optional[Country],
 }
 
 PERSONA_FULL_ML_CREATION = {**PERSONA_BASE_CREATION}
@@ -1085,13 +1086,13 @@ PERSONA_COMMON_FIELDS: Mapping[str, Any] = {
     'address': Optional[str],
     'postal_code': Optional[PrintableASCII],
     'location': Optional[str],
-    'country': Optional[str],
+    'country': Optional[Country],
     'birth_name': Optional[str],
     'address_supplement2': Optional[str],
     'address2': Optional[str],
     'postal_code2': Optional[PrintableASCII],
     'location2': Optional[str],
-    'country2': Optional[str],
+    'country2': Optional[Country],
     'weblink': Optional[str],
     'specialisation': Optional[str],
     'affiliation': Optional[str],
@@ -1401,11 +1402,28 @@ def _german_postal_code(
     val = _printable_ascii(
         val, argname, _ignore_warnings=_ignore_warnings, **kwargs)
     val = val.strip()
-    if not aux or aux.strip() == "Deutschland":
+    if not aux or aux.strip() == "DE":
+        msg = n_("Invalid german postal code.")
+        if not (len(val) == 5 and val.isdigit()):
+            raise ValidationSummary(ValueError(argname, msg))
         if val not in GERMAN_POSTAL_CODES and not _ignore_warnings:
-            raise ValidationSummary(
-                ValidationWarning(argname, n_("Invalid german postal code.")))
+            raise ValidationSummary(ValidationWarning(argname, msg))
     return GermanPostalCode(val)
+
+
+@_add_typed_validator
+def _country(
+    val: Any, argname: str = None, *, _ignore_warnings: bool = False,
+    _convert: bool = True, **kwargs: Any
+) -> Country:
+    val = _ALL_TYPED[str](val, argname, _ignore_warnings=_ignore_warnings,
+                          _convert=_convert, **kwargs)
+    if _convert:
+        val = val.strip()
+    if val not in COUNTRY_CODES:
+        raise ValidationSummary(
+            ValueError(argname, n_("Enter actual country name in English.")))
+    return Country(val)
 
 
 GENESIS_CASE_COMMON_FIELDS: TypeMapping = {
@@ -1430,7 +1448,7 @@ GENESIS_CASE_ADDITIONAL_FIELDS: Mapping[str, Any] = {
     'address': str,
     'postal_code': Optional[PrintableASCII],
     'location': str,
-    'country': Optional[str],
+    'country': Optional[Country],
     'birth_name': Optional[str],
     'attachment_hash': str,
 }
@@ -2018,7 +2036,7 @@ PAST_EVENT_COMMON_FIELDS: Mapping[str, Any] = {
 }
 
 PAST_EVENT_OPTIONAL_FIELDS: Mapping[str, Any] = {
-    'notes': Optional[str],
+    'participant_info': Optional[str],
 }
 
 
@@ -2070,6 +2088,7 @@ EVENT_EXPOSED_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'mail_text': Optional[str],
     'registration_text': Optional[str],
     'orga_address': Optional[Email],
+    'participant_info': Optional[str],
     'lodge_field': Optional[ID],
     'camping_mat_field': Optional[ID],
     'course_room_field': Optional[ID],
@@ -3539,7 +3558,7 @@ SUBSCRIPTION_ID_FIELDS: TypeMapping = {
 }
 
 SUBSCRIPTION_STATE_FIELDS: TypeMapping = {
-    'subscription_state': const.SubscriptionStates,
+    'subscription_state': const.SubscriptionState,
 }
 
 SUBSCRIPTION_ADDRESS_FIELDS: TypeMapping = {

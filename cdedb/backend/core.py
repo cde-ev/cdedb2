@@ -26,14 +26,14 @@ from cdedb.backend.common import (
     affirm_validation_typed_optional as affirm_optional, internal, singularize,
 )
 from cdedb.common import (
-    ADMIN_KEYS, GENESIS_CASE_FIELDS, GENESIS_REALM_OVERRIDE, PERSONA_ALL_FIELDS,
-    PERSONA_ASSEMBLY_FIELDS, PERSONA_CDE_FIELDS, PERSONA_CORE_FIELDS, PERSONA_DEFAULTS,
-    PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS, PERSONA_STATUS_FIELDS,
-    PRIVILEGE_CHANGE_FIELDS, REALM_ADMINS, ArchiveError, CdEDBLog, CdEDBObject,
-    CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, Error, PathLike,
-    PrivilegeError, PsycoJson, QuotaException, Realm, RequestState, Role, User,
-    decode_parameter, encode_parameter, extract_realms, extract_roles, get_hash, glue,
-    implied_realms, merge_dicts, n_, now, privilege_tier, unwrap, xsorted,
+    ADMIN_KEYS, ALL_ROLES, GENESIS_CASE_FIELDS, GENESIS_REALM_OVERRIDE,
+    PERSONA_ALL_FIELDS, PERSONA_ASSEMBLY_FIELDS, PERSONA_CDE_FIELDS,
+    PERSONA_CORE_FIELDS, PERSONA_DEFAULTS, PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS,
+    PERSONA_STATUS_FIELDS, PRIVILEGE_CHANGE_FIELDS, REALM_ADMINS, ArchiveError,
+    CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, Error,
+    PathLike, PrivilegeError, PsycoJson, QuotaException, Realm, RequestState, Role,
+    User, decode_parameter, encode_parameter, extract_realms, extract_roles, get_hash,
+    glue, implied_realms, merge_dicts, n_, now, privilege_tier, unwrap, xsorted
 )
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -704,10 +704,10 @@ class CoreBackend(AbstractBackend):
         if (current['decided_search'] and not data.get("is_searchable", True)
                 and (not ({"cde_admin", "core_admin"} & rs.user.roles))):
             raise PrivilegeError(n_("Hiding prevented."))
-        if ("is_archived" in data
-                and ("core_admin" not in rs.user.roles
-                     or "archive" not in allow_specials)):
-            raise PrivilegeError(n_("Archive modification prevented."))
+        if "is_archived" in data:
+            if (not self.is_relative_admin(rs, data['id'], allow_meta_admin=False)
+                    or "archive" not in allow_specials):
+                raise PrivilegeError(n_("Archive modification prevented."))
         if ("balance" in data
                 and ("cde_admin" not in rs.user.roles
                      or "finance" not in allow_specials)):
@@ -1281,16 +1281,16 @@ class CoreBackend(AbstractBackend):
             WHERE persona_id = %s AND subscription_state = ANY(%s)
                 AND mailinglists.is_active = True"""
             states = {
-                const.SubscriptionStates.subscribed,
-                const.SubscriptionStates.subscription_override,
-                const.SubscriptionStates.pending,
+                const.SubscriptionState.subscribed,
+                const.SubscriptionState.subscription_override,
+                const.SubscriptionState.pending,
             }
             if self.query_all(rs, query, (persona_id, states)):
                 return False
 
         return True
 
-    @access("core_admin", "cde_admin")
+    @access(*REALM_ADMINS)
     def archive_persona(self, rs: RequestState, persona_id: int,
                         note: str) -> DefaultReturnCode:
         """Move a persona to the attic.
@@ -1323,6 +1323,9 @@ class CoreBackend(AbstractBackend):
             #
             # 1. Do some sanity checks.
             #
+            if not self.is_relative_admin(rs, persona_id, allow_meta_admin=False):
+                raise ArchiveError(n_("You are not allowed to archive this user."))
+
             if persona['is_archived']:
                 return 0
 
@@ -2146,24 +2149,32 @@ class CoreBackend(AbstractBackend):
     @access("persona")
     def verify_personas(self, rs: RequestState, persona_ids: Collection[int],
                         required_roles: Collection[Role] = None,
+                        allowed_roles: Collection[Role] = None,
                         introspection_only: bool = True) -> bool:
         """Check whether certain ids map to actual (active) personas.
 
         Note that this will return True for an empty set of ids.
 
-        :param required_roles: If given check that all personas have
-          these roles.
+        :param required_roles: If given, check that all personas have these roles.
+        :param allowed_roles: If given, check that all personas roles are a subset of
+            these.
         """
         persona_ids = affirm_set(vtypes.ID, persona_ids)
         required_roles = required_roles or tuple()
         required_roles = affirm_set(str, required_roles)
+        allowed_roles = allowed_roles or ALL_ROLES
+        allowed_roles = affirm_set(str, allowed_roles)
+        # add always allowed roles for personas
+        allowed_roles |= {"persona", "anonymous"}
         roles = self.get_roles_multi(rs, persona_ids, introspection_only)
-        return len(roles) == len(persona_ids) and all(
-            value >= required_roles for value in roles.values())
+        return (len(roles) == len(persona_ids)
+            and all(value >= required_roles for value in roles.values())
+            and all(allowed_roles >= value for value in roles.values()))
 
     class _VerifyPersonaProtocol(Protocol):
         def __call__(self, rs: RequestState, anid: int,
                      required_roles: Collection[Role] = None,
+                     allowed_roles: Collection[Role] = None,
                      introspection_only: bool = True) -> bool: ...
     verify_persona: _VerifyPersonaProtocol = singularize(
         verify_personas, "persona_ids", "persona_id", passthrough=True)

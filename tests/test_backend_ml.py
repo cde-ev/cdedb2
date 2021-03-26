@@ -5,10 +5,11 @@ from typing import Collection, Set, Optional, cast
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
 from cdedb.common import (
-    CdEDBObject, PrivilegeError, RequestState, SubscriptionActions as SA,
-    SubscriptionError, nearly_now
+    CdEDBObject, PrivilegeError, RequestState, nearly_now, merge_dicts,
 )
-from cdedb.database.constants import SubscriptionStates as SS
+from cdedb.database.constants import SubscriptionState as SS
+from cdedb.subman.exceptions import SubscriptionError
+from cdedb.subman.machine import SubscriptionAction as SA
 from tests.common import USER_DICT, BackendTest, as_users, prepsql
 
 
@@ -25,6 +26,120 @@ class TestMlBackend(BackendTest):
         self.core.change_persona(self.key, setter)
         new_data = self.core.get_ml_user(self.key, user['id'])
         self.assertEqual(data, new_data)
+
+    @as_users("anton")
+    def test_merge_accounts(self, user: CdEDBObject) -> None:
+        berta_id = USER_DICT['berta']['id']
+        janis_id = USER_DICT['janis']['id']
+
+        # try some failing cases
+        with self.assertRaises(ValueError) as e:
+            self.ml.merge_accounts(self.key,
+                                   source_persona_id=USER_DICT['rowena']['id'],
+                                   target_persona_id=berta_id)
+        self.assertEqual("Source persona must be a ml-only user.", str(e.exception))
+
+        with self.assertRaises(ValueError) as e:
+            self.ml.merge_accounts(self.key,
+                                   source_persona_id=USER_DICT['nina']['id'],
+                                   target_persona_id=berta_id)
+        self.assertEqual("Source User is admin and can not be merged.", str(e.exception))
+
+        with self.assertRaises(ValueError) as e:
+            self.ml.merge_accounts(self.key,
+                                   source_persona_id=janis_id,
+                                   target_persona_id=USER_DICT['hades']['id'])
+        self.assertEqual("Target User is not accessible.", str(e.exception))
+
+        code = self.ml.merge_accounts(self.key,
+                                      source_persona_id=janis_id,
+                                      target_persona_id=berta_id)
+        self.assertEqual(code, 0)
+        # TODO it seems like I cannot check this
+        # self.assertIn("Both users are related to the same mailinglists: Witz des Tages",
+        #               self.key.notifications)
+        assert self.core.get_persona(self.key, janis_id)["is_archived"] is False
+
+        # remove the blocking subscription of berta
+        self.ml._remove_subscription(self.key, {'mailinglist_id': 3, 'persona_id': 2})
+        berta_mls = self.ml.get_user_subscriptions(self.key, berta_id)
+        berta_mod = self.ml.moderator_info(self.key, berta_id)
+        janis_mls = self.ml.get_user_subscriptions(self.key, janis_id)
+        janis_mod = self.ml.moderator_info(self.key, janis_id)
+        code = self.ml.merge_accounts(self.key,
+                                      source_persona_id=janis_id,
+                                      target_persona_id=berta_id)
+        self.assertLess(0, code)
+
+        # assert the merging of subscription states and moderator rights was successfull
+        berta_new_mls = self.ml.get_user_subscriptions(self.key, berta_id)
+        berta_new_mod = self.ml.moderator_info(self.key, berta_id)
+        self.assertEqual(berta_new_mls, {**berta_mls, **janis_mls})
+        self.assertEqual(berta_new_mod, berta_mod | janis_mod)
+
+        # check the logs
+        expectation = (8, (
+            {'change_note': 'Nutzer 10 ist in diesem Account aufgegangen.',
+             'code': const.MlLogCodes.subscribed,
+             'ctime': nearly_now(),
+             'id': 1001,
+             'mailinglist_id': 3,
+             'persona_id': 2,
+             'submitted_by': 1},
+            {'change_note': 'janis-spam@example.cde',
+             'code': const.MlLogCodes.subscription_changed,
+             'ctime': nearly_now(),
+             'id': 1002,
+             'mailinglist_id': 3,
+             'persona_id': 2,
+             'submitted_by': 1},
+            {'change_note': 'Nutzer 10 ist in diesem Account aufgegangen.',
+             'code': const.MlLogCodes.subscribed,
+             'ctime': nearly_now(),
+             'id': 1003,
+             'mailinglist_id': 64,
+             'persona_id': 2,
+             'submitted_by': 1},
+            {'change_note': 'janis@example.cde',
+             'code': const.MlLogCodes.subscription_changed,
+             'ctime': nearly_now(),
+             'id': 1004,
+             'mailinglist_id': 64,
+             'persona_id': 2,
+             'submitted_by': 1},
+            {'change_note': 'Nutzer 10 ist in diesem Account aufgegangen.',
+             'code': const.MlLogCodes.subscribed,
+             'ctime': nearly_now(),
+             'id': 1005,
+             'mailinglist_id': 65,
+             'persona_id': 2,
+             'submitted_by': 1},
+            {'change_note': 'janis@example.cde',
+             'code': const.MlLogCodes.subscription_changed,
+             'ctime': nearly_now(),
+             'id': 1006,
+             'mailinglist_id': 65,
+             'persona_id': 2,
+             'submitted_by': 1},
+            {'change_note': 'Nutzer 10 ist in diesem Account aufgegangen.',
+             'code': const.MlLogCodes.moderator_added,
+             'ctime': nearly_now(),
+             'id': 1007,
+             'mailinglist_id': 2,
+             'persona_id': 2,
+             'submitted_by': 1},
+            {'change_note': 'Nutzer 10 ist in diesem Account aufgegangen.',
+             'code': const.MlLogCodes.moderator_added,
+             'ctime': nearly_now(),
+             'id': 1008,
+             'mailinglist_id': 63,
+             'persona_id': 2,
+             'submitted_by': 1}))
+        self.assertEqual(expectation, self.ml.retrieve_log(self.key))
+
+        # assure janis is archived
+        janis = self.core.get_persona(self.key, janis_id)
+        self.assertTrue(janis['is_archived'])
 
     @as_users("nina")
     def test_entity_mailinglist(self, user: CdEDBObject) -> None:
@@ -302,7 +417,7 @@ class TestMlBackend(BackendTest):
             },
         ]
 
-        mod_mdata = {
+        restricted_mod_mdata = {
             'id': mailinglist_id,
             'ml_type': const.MailinglistTypes.event_associated,
             'description': "Nice one",
@@ -313,7 +428,7 @@ class TestMlBackend(BackendTest):
             'maxsize': 101,
         }
 
-        privileged_mod_mdata = {
+        full_mod_mdata = {
             'id': mailinglist_id,
             'ml_type': const.MailinglistTypes.event_associated,
             'registration_stati': [const.RegistrationPartStati.applied],
@@ -331,17 +446,16 @@ class TestMlBackend(BackendTest):
                     self.ml.set_mailinglist(self.key, data)
 
         # every moderator may change these attributes ...
-        expectation.update(mod_mdata)
-        self.assertLess(0, self.ml.set_mailinglist(self.key, mod_mdata))
+        expectation.update(restricted_mod_mdata)
+        self.assertLess(0, self.ml.set_mailinglist(self.key, restricted_mod_mdata))
 
-        # ... but only privileged moderators (here: orgas) may change these.
+        # ... but only full moderators (here: orgas) may change these.
         if user == USER_DICT['janis']:
             with self.assertRaises(PrivilegeError):
-                self.ml.set_mailinglist(self.key, privileged_mod_mdata)
+                self.ml.set_mailinglist(self.key, full_mod_mdata)
         else:
-            expectation.update(privileged_mod_mdata)
-            self.assertLess(0, self.ml.set_mailinglist(self.key,
-                                                       privileged_mod_mdata))
+            expectation.update(full_mod_mdata)
+            self.assertLess(0, self.ml.set_mailinglist(self.key,full_mod_mdata))
 
         if user in [USER_DICT['nina']]:
             # adjust address form changed local part
@@ -464,7 +578,7 @@ class TestMlBackend(BackendTest):
         if kind is None and self.ml.may_manage(self.key, mailinglist_id):
             expected_log = {
                 'change_note': None,
-                'code': action.get_log_code(),
+                'code': const.MlLogCodes.from_subman(action),
                 'ctime': nearly_now(),
                 'mailinglist_id': mailinglist_id,
                 'persona_id': persona_id,
@@ -560,13 +674,13 @@ class TestMlBackend(BackendTest):
         # This tests the unsubscription reset.
         self._change_sub(user['id'], mailinglist_id, SA.unsubscribe,
                          state=SS.unsubscribed)
-        self._change_sub(user['id'], mailinglist_id, SA.reset_unsubscription,
+        self._change_sub(user['id'], mailinglist_id, SA.reset,
                          state=None)
         self._change_sub(user['id'], mailinglist_id, SA.subscribe,
                          state=SS.subscribed)
         self._change_sub(user['id'], mailinglist_id, SA.remove_subscriber,
                          state=SS.unsubscribed)
-        self._change_sub(user['id'], mailinglist_id, SA.reset_unsubscription,
+        self._change_sub(user['id'], mailinglist_id, SA.reset,
                          state=None)
         self._change_sub(user['id'], mailinglist_id, SA.add_subscription_override,
                          state=SS.subscription_override)
@@ -642,7 +756,7 @@ class TestMlBackend(BackendTest):
         # This tests the unsubscription reset.
         self._change_sub(user['id'], mailinglist_id, SA.unsubscribe,
                          state=SS.unsubscribed)
-        self._change_sub(user['id'], mailinglist_id, SA.reset_unsubscription,
+        self._change_sub(user['id'], mailinglist_id, SA.reset,
                          state=None)
         self._change_sub(user['id'], mailinglist_id, SA.remove_subscriber,
                          state=None, kind='info')
@@ -710,8 +824,7 @@ class TestMlBackend(BackendTest):
         mailinglist_id = 2
 
         for persona_id in {17, 27, 32}:
-            self._change_sub(persona_id, mailinglist_id,
-                             SA.reset_unsubscription,
+            self._change_sub(persona_id, mailinglist_id, SA.reset,
                              state=None)
         self.ml.write_subscription_states(self.key, mailinglist_id)
         for persona_id in {17, 27, 32}:
@@ -1069,7 +1182,7 @@ class TestMlBackend(BackendTest):
         expected_log = {
             'id': 1001,
             'change_note': None,
-            'code': const.MlLogCodes.cron_removed,
+            'code': const.MlLogCodes.automatically_removed,
             'ctime': nearly_now(),
             'mailinglist_id': mailinglist_id,
             'persona_id': 5,

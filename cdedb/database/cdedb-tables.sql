@@ -566,8 +566,8 @@ CREATE TABLE past_event.events (
         --
         -- Note, that this is not present in event.events.
         tempus                  date NOT NULL,
-        -- Information only visible to participants. (TODO rename)
-        notes                   varchar
+        -- Information only visible to participants.
+        participant_info        varchar
 );
 GRANT SELECT (id, title, shortname, tempus) ON past_event.events TO cdb_persona;
 GRANT SELECT ON past_event.events to cdb_member;
@@ -648,6 +648,8 @@ CREATE TABLE event.events (
         orga_address                 varchar,
         registration_text            varchar,
         mail_text                    varchar,
+        -- the next one is only visible to participants
+        participant_info            varchar,
         use_additional_questionnaire boolean NOT NULL DEFAULT False,
         -- orga remarks
         notes                        varchar,
