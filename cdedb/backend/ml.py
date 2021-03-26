@@ -856,11 +856,11 @@ class MlBackend(AbstractBackend):
                 'subscription_state': new_state,
             }
 
-            if new_state is not None:
-                ret = self._set_subscription(rs, datum)
-            else:
+            if new_state == const.SubscriptionState.none:
                 del datum['subscription_state']
                 ret = self._remove_subscription(rs, datum)
+            else:
+                ret = self._set_subscription(rs, datum)
             if ret and code:
                 self.ml_log(rs, code, datum['mailinglist_id'], datum['persona_id'])
 
@@ -994,7 +994,7 @@ class MlBackend(AbstractBackend):
     def get_user_subscriptions(
             self, rs: RequestState, persona_id: Optional[int],
             mailinglist_ids: Collection[int] = None, states: SubStates = None,
-    ) -> Dict[int, Optional[const.SubscriptionState]]:
+    ) -> Dict[int, const.SubscriptionState]:
         """Returns a list of mailinglists the persona is related to.
 
         :param persona_id: If not given, default to `rs.user.persona_id`.
@@ -1032,11 +1032,10 @@ class MlBackend(AbstractBackend):
 
         data = self.query_all(rs, query, params)
 
-        ret: Dict[int, Optional[const.SubscriptionState]]
-        ret = {ml_id: None for ml_id in mailinglist_ids}
+        ret: Dict[int, const.SubscriptionState]
+        ret = {ml_id: const.SubscriptionState.none for ml_id in mailinglist_ids}
         ret.update({
-            e["mailinglist_id"]:
-                const.SubscriptionState(e["subscription_state"])
+            e["mailinglist_id"]: const.SubscriptionState(e["subscription_state"])
             for e in data})
 
         return ret
@@ -1045,7 +1044,7 @@ class MlBackend(AbstractBackend):
         def __call__(self, rs: RequestState,
                      persona_id: Optional[int], *, mailinglist_id: int,
                      states: SubStates = None
-                     ) -> Optional[const.SubscriptionState]: ...
+                     ) -> const.SubscriptionState: ...
     get_subscription: _GetSubscriptionProtocol = singularize(
         get_user_subscriptions, "mailinglist_ids", "mailinglist_id")
 

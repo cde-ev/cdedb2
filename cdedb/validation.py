@@ -3580,6 +3580,7 @@ def _subscription_identifier(
         val, mandatory_fields, **kwargs))
 
 
+# TODO: The return type shadows the name of the enum…
 @_add_typed_validator
 def _subscription_state(
     val: Any, argname: str = "subscription state", **kwargs: Any
