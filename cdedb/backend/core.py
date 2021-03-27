@@ -711,7 +711,7 @@ class CoreBackend(AbstractBackend):
         if ("balance" in data
                 and ("cde_admin" not in rs.user.roles
                      or "finance" not in allow_specials)):
-            # Allow setting balance to 0 or None during archival.
+            # Allow setting balance to 0 or None during archival or membership change.
             if not ((data["balance"] is None or data["balance"] == 0)
                     and REALM_ADMINS & rs.user.roles
                     and {"archive", "membership"} & set(allow_specials)):

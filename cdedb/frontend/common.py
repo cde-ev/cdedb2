@@ -1417,7 +1417,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :param default_qview: the default query list of which "dummy" query view to use
         :param endpoint: Name of the template family to use to render search. To be
             changed for archived user searches.
-        :param choices: ???
+        :param choices: Mapping of replacements of primary keys by human-readable
+            strings for select fields in the javascript query form.
         :param submit_general_query: The backend query function to use to retrieve the
             data in the end. Different backends apply different filters depending on
             `query.scope`, usually filtering out users with higher realms.
