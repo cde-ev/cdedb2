@@ -31,6 +31,9 @@ from cdedb.ml_type_aux import MLType, MLTypeLike
 from cdedb.query import Query, QueryOperators
 
 SubStates = Collection[const.SubscriptionState]
+# Set of states to be saved into the database.
+# Can semantically be considered `Collection[DatabaseSubscriptionState]`.
+DatabaseStates = set(const.SubscriptionState) - {const.SubscriptionState.none}
 
 
 class MlBackend(AbstractBackend):
@@ -571,7 +574,7 @@ class MlBackend(AbstractBackend):
                              "WHERE mailinglist_id = %s "
                              "AND subscription_state = ANY(%s)")
                     # noinspection PyTypeChecker
-                    params = (data['id'], set(const.SubscriptionState) -
+                    params = (data['id'], DatabaseStates -
                               const.SubscriptionState.subscribing_states())
                     self.query_exec(rs, query, params)
                 ret *= self._ml_type_transition(
@@ -744,7 +747,7 @@ class MlBackend(AbstractBackend):
 
         :returns: Number of affected rows.
         """
-        data = affirm_array(vtypes.SubscriptionState, data)
+        data = affirm_array(vtypes.SubscriptionDataset, data)
 
         if not all(datum['persona_id'] == rs.user.persona_id
                    or self.may_manage(rs, datum['mailinglist_id'],
@@ -838,9 +841,8 @@ class MlBackend(AbstractBackend):
             assert persona_id is not None
             atype = self.get_ml_type(rs, mailinglist_id)
             ml = self.get_mailinglist(rs, mailinglist_id)
-            old_state = self.get_subscription(
-                rs, persona_id, mailinglist_id=mailinglist_id,
-                states=set(const.SubscriptionState))
+            old_state = self.get_subscription(rs, persona_id,
+                                              mailinglist_id=mailinglist_id)
 
             new_state = subman.apply_action(
                 action=action,
@@ -921,10 +923,11 @@ class MlBackend(AbstractBackend):
     @access("ml")
     def get_many_subscription_states(
             self, rs: RequestState, mailinglist_ids: Collection[int],
-            states: Optional[SubStates] = None,
-    ) -> Dict[int, Dict[int, const.SubscriptionState]]:
+            states: SubStates = None,
+    ) -> Dict[int, Dict[int, vtypes.DatabaseSubscriptionState]]:
         """Get all users related to a given mailinglist and their sub state.
 
+        :param states: Defaults to DatabseStates
         :return: Dict mapping mailinglist ids to a dict mapping persona_ids to
             their subscription state for the respective mailinglist for the
             given mailinglists.
@@ -932,7 +935,8 @@ class MlBackend(AbstractBackend):
         """
         mailinglist_ids = affirm_set(vtypes.ID, mailinglist_ids)
         states = states or set()
-        states = affirm_array(const.SubscriptionState, states)
+        # We are more restrictive here than in the signature
+        states = affirm_array(vtypes.DatabaseSubscriptionState, states)
 
         if not all(self.may_manage(rs, ml_id) for ml_id in mailinglist_ids):
             raise PrivilegeError(n_("Not privileged."))
@@ -952,10 +956,12 @@ class MlBackend(AbstractBackend):
 
         data = self.query_all(rs, query, params)
 
-        ret: Dict[int, Dict[int, const.SubscriptionState]]
+        ret: Dict[int, Dict[int, vtypes.DatabaseSubscriptionState]]
         ret = {ml_id: {} for ml_id in mailinglist_ids}
         for e in data:
-            state = const.SubscriptionState(e["subscription_state"])
+            # This needs to be done for enum casting to work properly.
+            state = vtypes.DatabaseSubscriptionState(
+                const.SubscriptionState(e["subscription_state"]))
             ret[e["mailinglist_id"]][e["persona_id"]] = state
 
         return ret
@@ -963,7 +969,7 @@ class MlBackend(AbstractBackend):
     class _GetSubScriptionStatesProtocol(Protocol):
         def __call__(self, rs: RequestState, mailinglist_id: int,
                      states: SubStates = None
-                     ) -> Dict[int, const.SubscriptionState]: ...
+                     ) -> Dict[int, vtypes.DatabaseSubscriptionState]: ...
     get_subscription_states: _GetSubScriptionStatesProtocol = singularize(
         get_many_subscription_states, "mailinglist_ids", "mailinglist_id")
 
@@ -999,6 +1005,7 @@ class MlBackend(AbstractBackend):
 
         :param persona_id: If not given, default to `rs.user.persona_id`.
         :param states: If given only relations with these states are returned.
+            Defaults to DatabaseStates.
         :param mailinglist_ids: If given only relations to these mailinglists
             are returned.
         :return: A mapping of mailinglist ids to the persona's subscription
@@ -1006,7 +1013,8 @@ class MlBackend(AbstractBackend):
         """
         persona_id = affirm(vtypes.ID, persona_id or rs.user.persona_id)
         states = states or set()
-        states = affirm_set(const.SubscriptionState, states)
+        # We are more restrictive here than in the signature
+        states = affirm_set(vtypes.DatabaseSubscriptionState, states)
         mailinglist_ids = affirm_set(vtypes.ID, mailinglist_ids or set())
         if (not self.is_admin(rs) and rs.user.persona_id != persona_id
                 and (not mailinglist_ids
@@ -1184,9 +1192,10 @@ class MlBackend(AbstractBackend):
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
 
         # States we may not touch.
-        protected_states = const.SubscriptionState.cleanup_protected_states()
+        protected_states = (DatabaseStates &
+                            const.SubscriptionState.cleanup_protected_states())
         # States we may touch: non-special subscriptions.
-        old_subscriber_states = set(const.SubscriptionState) - protected_states
+        old_subscriber_states = DatabaseStates - protected_states
 
         ret = 1
         with Atomizer(rs):
