@@ -65,6 +65,7 @@ from typing_extensions import Literal, Protocol
 import cdedb.database.constants as const
 import cdedb.query as query_mod
 import cdedb.validation as validate
+import cdedb.validationtypes as vtypes
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.common import AbstractBackend
@@ -74,12 +75,12 @@ from cdedb.backend.ml import MlBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.common import (
     ALL_MGMT_ADMIN_VIEWS, ALL_MOD_ADMIN_VIEWS, ANTI_CSRF_TOKEN_NAME,
-    ANTI_CSRF_TOKEN_PAYLOAD, REALM_SPECIFIC_GENESIS_FIELDS, CdEDBMultiDict, CdEDBObject,
-    CustomJSONEncoder, EntitySorter, Error, Notification, NotificationType, PathLike,
-    PrivilegeError, RequestState, Role, User, ValidationWarning, _tdelta, asciificator,
-    compute_checkdigit, decode_parameter, encode_parameter, glue, json_serialize,
-    make_proxy, make_root_logger, merge_dicts, n_, now, roles_to_db_role, unwrap,
-    xsorted,
+    ANTI_CSRF_TOKEN_PAYLOAD, REALM_SPECIFIC_GENESIS_FIELDS, PERSONA_DEFAULTS,
+    CdEDBMultiDict, CdEDBObject, CustomJSONEncoder, EntitySorter, Error, Notification,
+    NotificationType, PathLike, PrivilegeError, RequestState, Role, User,
+    ValidationWarning, _tdelta, asciificator, compute_checkdigit, decode_parameter,
+    encode_parameter, glue, json_serialize, make_proxy, make_root_logger, merge_dicts,
+    n_, now, roles_to_db_role, unwrap, xsorted,
 )
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -1645,6 +1646,66 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     filename=pdf_file)
             else:
                 return None
+
+
+class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
+    """Base class for all frontends which have their own user realm.
+
+    This is basically every frontend with exception of 'core'.
+    """
+
+    @classmethod
+    @abc.abstractmethod
+    def is_admin(cls, rs: RequestState) -> bool:
+        return super().is_admin(rs)
+
+    # @access("realm_admin")
+    @abc.abstractmethod
+    def create_user_form(self, rs: RequestState) -> werkzeug.Response:
+        """Render form."""
+        return self.render(rs, "create_user")
+
+    # @access("realm_admin", modi={"POST"})
+    # @REQUESTdatadict(...)
+    @abc.abstractmethod
+    def create_user(self, rs: RequestState, data: CdEDBObject,
+                    ignore_warnings: bool = False) -> werkzeug.Response:
+        """Create new user account."""
+        merge_dicts(data, PERSONA_DEFAULTS)
+        data = check_validation(
+            rs, vtypes.Persona, data, creation=True, _ignore_warnings=ignore_warnings)
+        if data:
+            exists = self.coreproxy.verify_existence(rs, data['username'])
+            if exists:
+                rs.extend_validation_errors(
+                    (("username",
+                      ValueError("User with this E-Mail exists already.")),))
+        if rs.has_validation_errors() or not data:
+            return self.create_user_form(rs)
+        new_id = self.coreproxy.create_persona(
+            rs, data, ignore_warnings=ignore_warnings)
+        if new_id:
+            success, message = self.coreproxy.make_reset_cookie(rs, data[
+                'username'])
+            email = self.encode_parameter(
+                "core/do_password_reset_form", "email", data['username'],
+                persona_id=None, timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
+            meta_info = self.coreproxy.get_meta_info(rs)
+            self.do_mail(rs, "welcome",
+                         {'To': (data['username'],),
+                          'Subject': "CdEDB Account erstellt",
+                          },
+                         {'data': data,
+                          'fee': self.conf["MEMBERSHIP_FEE"],
+                          'email': email if success else "",
+                          'cookie': message if success else "",
+                          'meta_info': meta_info,
+                          })
+
+            self.notify_return_code(rs, new_id, success=n_("User created."))
+            return self.redirect_show_user(rs, new_id)
+        else:
+            return self.create_user_form(rs)
 
 
 class CdEMailmanClient(mailmanclient.Client):

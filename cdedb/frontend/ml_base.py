@@ -20,11 +20,10 @@ from cdedb.common import (
 from cdedb.subman.exceptions import SubscriptionError
 from cdedb.subman.machine import SubscriptionAction
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, access, calculate_db_logparams, calculate_loglinks,
-    cdedbid_filter as cdedbid, check_validation as check, csv_output,
-    keydictsort_filter, mailinglist_guard, periodic,
+    AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access, calculate_db_logparams,
+    calculate_loglinks, cdedbid_filter as cdedbid, check_validation as check,
+    csv_output, keydictsort_filter, mailinglist_guard, periodic,
 )
-from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.ml_type_aux import (
     ADDITIONAL_TYPE_FIELDS, TYPE_MAP, MailinglistGroup, get_type
 )
