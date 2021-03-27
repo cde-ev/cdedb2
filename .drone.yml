@@ -77,6 +77,10 @@ steps:
   pull: never # do not try to pull image from docker hub
   depends_on:
   - testsuite
+  when:
+    status:
+    - failure
+    - success
   commands:
   # let the pipeline fail if merge caused conflicts
   - apk add --no-cache gettext
