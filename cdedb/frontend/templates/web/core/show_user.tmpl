@@ -96,6 +96,8 @@
     {% endif %}
 
     {% if 'foto' in data or data['show_vcard'] %}
+        {# prevent floating of the above buttons beside the photo, which looks ugly (esp. on mobile) #}
+        <div style="clear: both"></div>
         <div class="pull-right-responsive text-right-responsive">
             {# Profile photo/avatar #}
             {% if 'foto' in data %}
