@@ -15,7 +15,7 @@ import cdedb.validationtypes as vtypes
 from cdedb.common import (
     LOG_FIELDS_COMMON, FULL_MOD_REQUIRING_FIELDS, MOD_ALLOWED_FIELDS,
     RESTRICTED_MOD_ALLOWED_FIELDS, CdEDBObject, CdEDBObjectMap, EntitySorter, PathLike,
-    PrivilegeError, RequestState, merge_dicts, n_, now, unwrap,
+    PrivilegeError, RequestState, merge_dicts, n_, now, unwrap, xsorted,
 )
 from cdedb.subman.exceptions import SubscriptionError
 from cdedb.subman.machine import SubscriptionAction
@@ -404,7 +404,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         allow_unsub = self.mlproxy.get_ml_type(rs, mailinglist_id).allow_unsub
         personas = self.coreproxy.get_personas(rs, ml['moderators'])
         moderators = collections.OrderedDict(
-            (anid, personas[anid]) for anid in sorted(
+            (anid, personas[anid]) for anid in xsorted(
                 personas,
                 key=lambda anid: EntitySorter.persona(personas[anid])))
 
@@ -595,15 +595,15 @@ class MlBaseFrontend(AbstractUserFrontend):
                        | set(subscribers.keys()) | set(requests))
         personas = self.coreproxy.get_personas(rs, persona_ids)
         subscribers = collections.OrderedDict(
-            (anid, personas[anid]) for anid in sorted(
+            (anid, personas[anid]) for anid in xsorted(
                 subscribers,
                 key=lambda anid: EntitySorter.persona(personas[anid])))
         moderators = collections.OrderedDict(
-            (anid, personas[anid]) for anid in sorted(
+            (anid, personas[anid]) for anid in xsorted(
                 rs.ambience['mailinglist']['moderators'],
                 key=lambda anid: EntitySorter.persona(personas[anid])))
         requests = collections.OrderedDict(
-            (anid, personas[anid]) for anid in sorted(
+            (anid, personas[anid]) for anid in xsorted(
             requests, key=lambda anid: EntitySorter.persona(personas[anid])))
         restricted = not self.mlproxy.may_manage(rs, mailinglist_id,
                                                  allow_restricted=False)
@@ -632,15 +632,15 @@ class MlBaseFrontend(AbstractUserFrontend):
                        | set(all_unsubscriptions.keys()))
         personas = self.coreproxy.get_personas(rs, persona_ids)
         subscription_overrides = collections.OrderedDict(
-            (anid, personas[anid]) for anid in sorted(
+            (anid, personas[anid]) for anid in xsorted(
                 subscription_overrides,
                 key=lambda anid: EntitySorter.persona(personas[anid])))
         unsubscription_overrides = collections.OrderedDict(
-            (anid, personas[anid]) for anid in sorted(
+            (anid, personas[anid]) for anid in xsorted(
                 unsubscription_overrides,
                 key=lambda anid: EntitySorter.persona(personas[anid])))
         all_unsubscriptions = collections.OrderedDict(
-            (anid, personas[anid]) for anid in sorted(
+            (anid, personas[anid]) for anid in xsorted(
                 all_unsubscriptions,
                 key=lambda anid: EntitySorter.persona(personas[anid])))
         restricted = not self.mlproxy.may_manage(rs, mailinglist_id,
@@ -685,7 +685,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             output.append(pair)
 
         csv_data = csv_output(
-            sorted(output, key=lambda e: EntitySorter.persona(
+            xsorted(output, key=lambda e: EntitySorter.persona(
                 personas[int(e["db_id"][3:-2])])),
             columns)
         return self.send_csv_file(

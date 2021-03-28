@@ -238,7 +238,7 @@ pylint:
 	@echo "All of pylint"
 	@echo $(BANNERLINE)
 	@echo ""
-	$(PYLINT) cdedb
+	$(PYLINT) cdedb --load-plugins=pylint.extensions.bad_builtin
 
 template-line-length:
 	@echo $(BANNERLINE)

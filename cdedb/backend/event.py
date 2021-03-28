@@ -3620,7 +3620,7 @@ class EventBackend(AbstractBackend):
             # noinspection PyArgumentList
             row['kind'] = const.QuestionnaireUsages(row['kind'])
         ret = {
-            k: sorted([e for e in d if e['kind'] == k], key=lambda x: x['pos'])
+            k: xsorted([e for e in d if e['kind'] == k], key=lambda x: x['pos'])
             for k in kinds or const.QuestionnaireUsages
         }
         return ret
