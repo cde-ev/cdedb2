@@ -367,8 +367,7 @@
                 </dl>
             {% endif %}
 
-            {% if (data['address2'] or data['address_supplement2'] or data['postal_code2']
-                    or data['location2'] or data['country2']) %}
+            {% if (data['address2'] or data['address_supplement2'] or data['postal_code2'] or data['location2']) %}
                 <dl class="dl-horizontal">
                     <dt>{% trans %}Second Address{% endtrans %}</dt>
                     <dd id="address2">
