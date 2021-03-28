@@ -2963,7 +2963,7 @@ msgstr "Unterkunftsnotizen"
 
 #: cdedb/frontend/event.py:5775
 msgid "Lodgement Group ID"
-msgstr "Unterkunftsgrupp: ID"
+msgstr "Unterkunftsgruppe: ID"
 
 #: cdedb/frontend/event.py:5776
 #: cdedb/frontend/templates/web/event/change_lodgement.tmpl:31
