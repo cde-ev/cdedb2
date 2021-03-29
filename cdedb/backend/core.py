@@ -1789,7 +1789,7 @@ class CoreBackend(AbstractBackend):
         if ids is not None:
             ids = affirm_set(vtypes.ID, ids or set()) - {rs.user.persona_id}
             num = len(ids)
-            access_hash = get_hash(str(sorted(ids)).encode())
+            access_hash = get_hash(str(xsorted(ids)).encode())
         else:
             num = affirm(vtypes.NonNegativeInt, num or 0)
 

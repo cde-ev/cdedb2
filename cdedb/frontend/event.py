@@ -38,13 +38,13 @@ from cdedb.common import (
 )
 from cdedb.database.connection import Atomizer
 from cdedb.frontend.common import (
-    CustomCSVDialect, RequestConstraint, REQUESTdata, REQUESTdatadict, REQUESTfile,
-    access, calculate_db_logparams, calculate_loglinks, cdedbid_filter, cdedburl,
-    check_validation as check, check_validation_optional as check_optional,
-    enum_entries_filter, event_guard, keydictsort_filter, make_event_fee_reference,
-    process_dynamic_input, querytoparams_filter, request_extractor, safe_filter,
+    AbstractUserFrontend, CustomCSVDialect, RequestConstraint, REQUESTdata,
+    REQUESTdatadict, REQUESTfile, access, calculate_db_logparams, calculate_loglinks,
+    cdedbid_filter, cdedburl, check_validation as check,
+    check_validation_optional as check_optional, enum_entries_filter, event_guard,
+    keydictsort_filter, make_event_fee_reference, process_dynamic_input,
+    querytoparams_filter, request_extractor, safe_filter,
 )
-from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import (
     QUERY_SPECS, Query, QueryConstraint, QueryOperators, mangle_query_input,
 )
@@ -158,9 +158,9 @@ class EventFrontend(AbstractUserFrontend):
         """Perform search."""
         events = self.pasteventproxy.list_past_events(rs)
         choices = {
-            'pevent_id': collections.OrderedDict(
+            'pevent_id': OrderedDict(
                 xsorted(events.items(), key=operator.itemgetter(1))),
-            'gender': collections.OrderedDict(
+            'gender': OrderedDict(
                 enum_entries_filter(
                     const.Genders,
                     rs.gettext if download is None else rs.default_gettext))
@@ -180,9 +180,9 @@ class EventFrontend(AbstractUserFrontend):
         """
         events = self.pasteventproxy.list_past_events(rs)
         choices = {
-            'pevent_id': collections.OrderedDict(
+            'pevent_id': OrderedDict(
                 xsorted(events.items(), key=operator.itemgetter(1))),
-            'gender': collections.OrderedDict(
+            'gender': OrderedDict(
                 enum_entries_filter(
                     const.Genders,
                     rs.gettext if download is None else rs.default_gettext))
@@ -2800,11 +2800,14 @@ class EventFrontend(AbstractUserFrontend):
         courses = self.eventproxy.get_courses(rs, course_ids)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        lodgement_group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
+        lodgement_groups = self.eventproxy.get_lodgement_groups(rs, lodgement_group_ids)
 
         spec = self.make_registration_query_spec(rs.ambience['event'])
         fields_of_interest = list(spec.keys())
         choices, _ = self.make_registration_query_aux(
-            rs, rs.ambience['event'], courses, lodgements, fixed_gettext=True)
+            rs, rs.ambience['event'], courses, lodgements, lodgement_groups,
+            fixed_gettext=True)
         query = Query('qview_registration', spec, fields_of_interest, [], [])
         result = self.eventproxy.submit_general_query(
             rs, query, event_id=event_id)
@@ -5111,8 +5114,9 @@ class EventFrontend(AbstractUserFrontend):
                                                 EntitySorter.event_part):
             spec["part{0}.status".format(part_id)] = "int"
             spec["part{0}.is_camping_mat".format(part_id)] = "bool"
-            spec["part{0}.lodgement_id".format(part_id)] = "int"
+            spec["part{0}.lodgement_id".format(part_id)] = "id"
             spec["lodgement{0}.id".format(part_id)] = "id"
+            spec["lodgement{0}.group_id".format(part_id)] = "id"
             spec["lodgement{0}.title".format(part_id)] = "str"
             spec["lodgement{0}.notes".format(part_id)] = "str"
             for f in xsorted(event['fields'].values(),
@@ -5121,6 +5125,8 @@ class EventFrontend(AbstractUserFrontend):
                     temp = "lodgement{0}.xfield_{1}"
                     kind = const.FieldDatatypes(f['kind']).name
                     spec[temp.format(part_id, f['field_name'])] = kind
+            spec["lodgement_group{0}.id".format(part_id)] = "id"
+            spec["lodgement_group{0}.title".format(part_id)] = "str"
             ordered_tracks = keydictsort_filter(
                 part['tracks'], EntitySorter.course_track)
             for track_id, track in ordered_tracks:
@@ -5152,12 +5158,18 @@ class EventFrontend(AbstractUserFrontend):
             spec[",".join("part{0}.is_camping_mat".format(part_id)
                           for part_id in event['parts'])] = "bool"
             spec[",".join("part{0}.lodgement_id".format(part_id)
-                          for part_id in event['parts'])] = "int"
+                          for part_id in event['parts'])] = "id"
             spec[",".join("lodgement{0}.id".format(part_id)
+                          for part_id in event['parts'])] = "id"
+            spec[",".join("lodgement{0}.group_id".format(part_id)
                           for part_id in event['parts'])] = "id"
             spec[",".join("lodgement{0}.title".format(part_id)
                           for part_id in event['parts'])] = "str"
             spec[",".join("lodgement{0}.notes".format(part_id)
+                          for part_id in event['parts'])] = "str"
+            spec[",".join("lodgement_group{0}.id".format(part_id)
+                          for part_id in event['parts'])] = "id"
+            spec[",".join("lodgement_group{0}.title".format(part_id)
                           for part_id in event['parts'])] = "str"
             for f in xsorted(event['fields'].values(),
                              key=EntitySorter.event_field):
@@ -5210,6 +5222,7 @@ class EventFrontend(AbstractUserFrontend):
     def make_registration_query_aux(rs: RequestState, event: CdEDBObject,
                                     courses: CdEDBObjectMap,
                                     lodgements: CdEDBObjectMap,
+                                    lodgement_groups: CdEDBObjectMap,
                                     fixed_gettext: bool = False
                                     ) -> Tuple[Dict[str, Dict[int, str]],
                                                Dict[str, str]]:
@@ -5236,6 +5249,11 @@ class EventFrontend(AbstractUserFrontend):
             (l_id, lodge_identifier(l))
             for l_id, l in keydictsort_filter(lodgements,
                                               EntitySorter.lodgement))
+        lodgement_group_identifier = lambda g: g["title"]
+        lodgement_group_choices = OrderedDict(
+            (g_id, lodgement_group_identifier(g))
+            for g_id, g in keydictsort_filter(lodgement_groups,
+                                              EntitySorter.lodgement_group))
         # First we construct the choices
         choices: Dict[str, Dict[int, str]] = {
             # Genders enum
@@ -5267,6 +5285,7 @@ class EventFrontend(AbstractUserFrontend):
                 "part{0}.status".format(part_id): reg_part_stati_choices,
                 # Lodgement choices for the JS selector
                 "part{0}.lodgement_id".format(part_id): lodgement_choices,
+                "lodgement{0}.group_id".format(part_id): lodgement_group_choices,
             })
             if not fixed_gettext:
                 # Lodgement fields value -> description
@@ -5300,6 +5319,10 @@ class EventFrontend(AbstractUserFrontend):
                 # RegistrationPartStati enum
                 ",".join("part{0}.status".format(part_id)
                          for part_id in event['parts']): reg_part_stati_choices,
+                ",".join("part{0}.lodgement_id".format(part_id)
+                         for part_id in event['parts']): lodgement_choices,
+                ",".join("lodgement{0}.group_id".format(part_id)
+                         for part_id in event['parts']): lodgement_group_choices,
             })
         if len(tracks) > 1:
             choices[",".join(f"course_choices{track_id}.rank{i}"
@@ -5449,10 +5472,16 @@ class EventFrontend(AbstractUserFrontend):
                     prefix + gettext("lodgement"),
                 "lodgement{0}.id".format(part_id):
                     prefix + gettext("lodgement ID"),
+                "lodgement{0}.group_id".format(part_id):
+                    prefix + gettext("lodgement group"),
                 "lodgement{0}.title".format(part_id):
                     prefix + gettext("lodgement title"),
                 "lodgement{0}.notes".format(part_id):
                     prefix + gettext("lodgement notes"),
+                "lodgement_group{0}.id".format(part_id):
+                    prefix + gettext("lodgement group ID"),
+                "lodgement_group{0}.title".format(part_id):
+                    prefix + gettext("lodgement group title"),
             })
             key = "lodgement{0}.xfield_{1}"
             titles.update({
@@ -5475,12 +5504,21 @@ class EventFrontend(AbstractUserFrontend):
                 ",".join("lodgement{0}.id".format(part_id)
                          for part_id in event['parts']):
                     gettext("any part: lodgement ID"),
+                ",".join("lodgement{0}.group_id".format(part_id)
+                         for part_id in event['parts']):
+                    gettext("any part: lodgement group"),
                 ",".join("lodgement{0}.title".format(part_id)
                          for part_id in event['parts']):
                     gettext("any part: lodgement title"),
                 ",".join("lodgement{0}.notes".format(part_id)
                          for part_id in event['parts']):
                     gettext("any part: lodgement notes"),
+                ",".join("lodgement_group{0}.id".format(part_id)
+                         for part_id in event['parts']):
+                    gettext("any part: lodgement group ID"),
+                ",".join("lodgement_group{0}.title".format(part_id)
+                         for part_id in event['parts']):
+                    gettext("any part: lodgement group title"),
             })
             key = "lodgement{0}.xfield_{1}"
             titles.update({
@@ -5514,8 +5552,10 @@ class EventFrontend(AbstractUserFrontend):
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        lodgement_group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
+        lodgement_groups = self.eventproxy.get_lodgement_groups(rs, lodgement_group_ids)
         choices, titles = self.make_registration_query_aux(
-            rs, rs.ambience['event'], courses, lodgements,
+            rs, rs.ambience['event'], courses, lodgements, lodgement_groups,
             fixed_gettext=download is not None)
         choices_lists = {k: list(v.items()) for k, v in choices.items()}
         has_registrations = self.eventproxy.has_registrations(rs, event_id)

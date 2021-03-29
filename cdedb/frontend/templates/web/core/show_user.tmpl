@@ -96,6 +96,8 @@
     {% endif %}
 
     {% if 'foto' in data or data['show_vcard'] %}
+        {# prevent floating of the above buttons beside the photo, which looks ugly (esp. on mobile) #}
+        <div style="clear: both"></div>
         <div class="pull-right-responsive text-right-responsive">
             {# Profile photo/avatar #}
             {% if 'foto' in data %}
@@ -365,8 +367,7 @@
                 </dl>
             {% endif %}
 
-            {% if (data['address2'] or data['address_supplement2'] or data['postal_code2']
-                    or data['location2'] or data['country2']) %}
+            {% if (data['address2'] or data['address_supplement2'] or data['postal_code2'] or data['location2']) %}
                 <dl class="dl-horizontal">
                     <dt>{% trans %}Second Address{% endtrans %}</dt>
                     <dd id="address2">
