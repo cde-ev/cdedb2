@@ -26,7 +26,6 @@ from cdedb.frontend.common import (
     assembly_guard, calculate_db_logparams, calculate_loglinks, cdedburl,
     check_validation as check, periodic, process_dynamic_input, request_extractor,
 )
-from cdedb.query import QUERY_SPECS, Query, mangle_query_input
 from cdedb.validation import (
     ASSEMBLY_COMMON_FIELDS, BALLOT_EXPOSED_FIELDS, PERSONA_FULL_ASSEMBLY_CREATION,
     filter_none,
