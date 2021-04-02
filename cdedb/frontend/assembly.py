@@ -3,7 +3,6 @@
 """Services for the assembly realm."""
 
 import collections
-import copy
 import datetime
 import io
 import json
@@ -27,7 +26,6 @@ from cdedb.frontend.common import (
     assembly_guard, calculate_db_logparams, calculate_loglinks, cdedburl,
     check_validation as check, periodic, process_dynamic_input, request_extractor,
 )
-from cdedb.query import QUERY_SPECS, Query, mangle_query_input
 from cdedb.validation import (
     ASSEMBLY_COMMON_FIELDS, BALLOT_EXPOSED_FIELDS, PERSONA_FULL_ASSEMBLY_CREATION,
     filter_none,
@@ -98,29 +96,24 @@ class AssemblyFrontend(AbstractUserFrontend):
     def user_search(self, rs: RequestState, download: Optional[str],
                     is_search: bool) -> Response:
         """Perform search."""
-        spec = copy.deepcopy(QUERY_SPECS['qview_persona'])
-        # mangle the input, so we can prefill the form
-        query_input = mangle_query_input(rs, spec)
-        query: Optional[Query] = None
-        if is_search:
-            query = check(rs, vtypes.QueryInput, query_input, "query",
-                          spec=spec, allow_empty=False)
-        default_queries = self.conf["DEFAULT_QUERIES"]['qview_assembly_user']
-        params = {
-            'spec': spec, 'default_queries': default_queries, 'choices': {},
-            'choices_lists': {}, 'query': query}
-        # Tricky logic: In case of no validation errors we perform a query
-        if not rs.has_validation_errors() and is_search and query:
-            query.scope = "qview_persona"
-            result = self.assemblyproxy.submit_general_query(rs, query)
-            params['result'] = result
-            if download:
-                return self.send_query_download(
-                    rs, result, fields=query.fields_of_interest, kind=download,
-                    filename="user_search_result")
-        else:
-            rs.values['is_search'] = is_search = False
-        return self.render(rs, "user_search", params)
+        return self.generic_user_search(
+            rs, download, is_search, 'qview_persona', 'qview_assembly_user',
+            self.assemblyproxy.submit_general_query)
+
+    @access("core_admin", "assembly_admin")
+    @REQUESTdata("download", "is_search")
+    def archived_user_search(self, rs: RequestState, download: Optional[str],
+                             is_search: bool) -> Response:
+        """Perform search.
+
+        Archived users are somewhat special since they are not visible
+        otherwise.
+        """
+        return self.generic_user_search(
+            rs, download, is_search,
+            'qview_archived_persona', 'qview_archived_persona',
+            self.assemblyproxy.submit_general_query,
+            endpoint="archived_user_search")
 
     @access("assembly_admin")
     @REQUESTdata(*LOG_FIELDS_COMMON, "assembly_id")

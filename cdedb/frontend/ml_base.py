@@ -3,7 +3,6 @@
 """Base class providing fundamental ml services."""
 
 import collections
-import copy
 from datetime import datetime
 from typing import Any, Collection, Dict, Optional, Set
 
@@ -27,7 +26,6 @@ from cdedb.frontend.common import (
 from cdedb.ml_type_aux import (
     ADDITIONAL_TYPE_FIELDS, TYPE_MAP, MailinglistGroup, get_type
 )
-from cdedb.query import QUERY_SPECS, Query, mangle_query_input
 from cdedb.validation import (
     ALL_MAILINGLIST_FIELDS, PERSONA_FULL_ML_CREATION, filter_none
 )
@@ -109,29 +107,24 @@ class MlBaseFrontend(AbstractUserFrontend):
     def user_search(self, rs: RequestState, download: Optional[str],
                     is_search: bool) -> Response:
         """Perform search."""
-        spec = copy.deepcopy(QUERY_SPECS['qview_persona'])
-        # mangle the input, so we can prefill the form
-        query_input = mangle_query_input(rs, spec)
-        query: Optional[Query] = None
-        if is_search:
-            query = check(rs, vtypes.QueryInput,
-                query_input, "query", spec=spec, allow_empty=False)
-        default_queries = self.conf["DEFAULT_QUERIES"]['qview_ml_user']
-        params = {
-            'spec': spec, 'default_queries': default_queries, 'choices': {},
-            'choices_lists': {}, 'query': query}
-        # Tricky logic: In case of no validation errors we perform a query
-        if not rs.has_validation_errors() and is_search and query:
-            query.scope = "qview_persona"
-            result = self.mlproxy.submit_general_query(rs, query)
-            params['result'] = result
-            if download:
-                return self.send_query_download(
-                    rs, result, fields=query.fields_of_interest, kind=download,
-                    filename="user_search_result")
-        else:
-            rs.values['is_search'] = False
-        return self.render(rs, "user_search", params)
+        return self.generic_user_search(
+            rs, download, is_search, 'qview_persona', 'qview_ml_user',
+            self.mlproxy.submit_general_query)
+
+    @access("core_admin", "ml_admin")
+    @REQUESTdata("download", "is_search")
+    def archived_user_search(self, rs: RequestState, download: Optional[str],
+                             is_search: bool) -> Response:
+        """Perform search.
+
+        Archived users are somewhat special since they are not visible
+        otherwise.
+        """
+        return self.generic_user_search(
+            rs, download, is_search,
+            'qview_archived_persona', 'qview_archived_persona',
+            self.mlproxy.submit_general_query,
+            endpoint="archived_user_search")
 
     @access("ml")
     def list_mailinglists(self, rs: RequestState) -> Response:

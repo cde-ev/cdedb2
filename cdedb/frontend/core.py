@@ -37,7 +37,7 @@ from cdedb.frontend.common import (
     make_membership_fee_reference, markdown_parse_safe, periodic, querytoparams_filter,
     request_dict_extractor, request_extractor,
 )
-from cdedb.query import QUERY_SPECS, Query, QueryOperators, mangle_query_input
+from cdedb.query import QUERY_SPECS, Query, QueryOperators
 from cdedb.subman.machine import SubscriptionPolicy
 from cdedb.validation import (
     TypeMapping, GENESIS_CASE_EXPOSED_FIELDS,
@@ -496,10 +496,6 @@ class CoreFrontend(AbstractFrontend):
         assert rs.user.persona_id is not None
         if (persona_id != confirm_id or rs.has_validation_errors()) and not internal:
             return self.index(rs)
-        if (rs.ambience['persona']['is_archived']
-                and "core_admin" not in rs.user.roles):
-            raise werkzeug.exceptions.Forbidden(
-                n_("Only admins may view archived datasets."))
 
         is_relative_admin = self.coreproxy.is_relative_admin(rs, persona_id)
         is_relative_or_meta_admin = self.coreproxy.is_relative_admin(
@@ -509,6 +505,11 @@ class CoreFrontend(AbstractFrontend):
             rs, persona_id)
         is_relative_or_meta_admin_view = self.coreproxy.is_relative_admin_view(
             rs, persona_id, allow_meta_admin=True)
+
+        if (rs.ambience['persona']['is_archived']
+                and not is_relative_admin):
+            raise werkzeug.exceptions.Forbidden(
+                n_("Only admins may view archived datasets."))
 
         all_access_levels = {
             "persona", "ml", "assembly", "event", "cde", "core", "meta",
@@ -1032,48 +1033,19 @@ class CoreFrontend(AbstractFrontend):
     @REQUESTdata("download", "is_search")
     def user_search(self, rs: RequestState, download: Optional[str],
                     is_search: bool, query: Query = None) -> Response:
-        """Perform search.
-
-        The parameter ``download`` signals whether the output should be a
-        file. It can either be "csv" or "json" for a corresponding
-        file. Otherwise an ordinary HTML-page is served.
-
-        is_search signals whether the page was requested by an actual
-        query or just to display the search form.
-
-        If the parameter query is specified this query is executed
-        instead. This is meant for calling this function
-        programmatically.
-        """
-        spec = copy.deepcopy(QUERY_SPECS['qview_core_user'])
-        if query:
-            query = check(rs, vtypes.Query, query, "query")
-        elif is_search:
-            # mangle the input, so we can prefill the form
-            query_input = mangle_query_input(rs, spec)
-            query = check(rs, vtypes.QueryInput, query_input, "query",
-                          spec=spec, allow_empty=False)
+        """Perform search."""
         events = self.pasteventproxy.list_past_events(rs)
         choices = {
             'pevent_id': collections.OrderedDict(
-                xsorted(events.items(), key=operator.itemgetter(0)))}
-        choices_lists = {k: list(v.items()) for k, v in choices.items()}
-        default_queries = self.conf["DEFAULT_QUERIES"]['qview_core_user']
-        params = {
-            'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
-            'default_queries': default_queries, 'query': query}
-        # Tricky logic: In case of no validation errors we perform a query
-        if not rs.has_validation_errors() and is_search and query:
-            query.scope = "qview_core_user"
-            result = self.coreproxy.submit_general_query(rs, query)
-            params['result'] = result
-            if download:
-                return self.send_query_download(
-                    rs, result, fields=query.fields_of_interest, kind=download,
-                    filename="user_search_result", substitutions=choices)
-        else:
-            rs.values['is_search'] = is_search = False
-        return self.render(rs, "user_search", params)
+                xsorted(events.items(), key=operator.itemgetter(1))),
+            'gender': collections.OrderedDict(
+                enum_entries_filter(
+                    const.Genders,
+                    rs.gettext if download is None else rs.default_gettext))
+        }
+        return self.generic_user_search(
+            rs, download, is_search, 'qview_core_user', 'qview_core_user',
+            self.coreproxy.submit_general_query, choices=choices, query=query)
 
     @access("core_admin")
     def create_user_form(self, rs: RequestState) -> Response:
@@ -1102,38 +1074,20 @@ class CoreFrontend(AbstractFrontend):
         Archived users are somewhat special since they are not visible
         otherwise.
         """
-        spec = copy.deepcopy(QUERY_SPECS['qview_archived_persona'])
-        # mangle the input, so we can prefill the form
-        query_input = mangle_query_input(rs, spec)
-        query: Optional[Query] = None
-        if is_search:
-            query = check(rs, vtypes.QueryInput, query_input, "query",
-                          spec=spec, allow_empty=False)
         events = self.pasteventproxy.list_past_events(rs)
         choices = {
             'pevent_id': collections.OrderedDict(
-                xsorted(events.items(), key=operator.itemgetter(0))),
+                xsorted(events.items(), key=operator.itemgetter(1))),
             'gender': collections.OrderedDict(
-                enum_entries_filter(const.Genders, rs.gettext))
+                enum_entries_filter(
+                    const.Genders,
+                    rs.gettext if download is None else rs.default_gettext))
         }
-        choices_lists = {k: list(v.items()) for k, v in choices.items()}
-        default_queries = self.conf["DEFAULT_QUERIES"]['qview_archived_persona']
-        params = {
-            'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
-            'default_queries': default_queries, 'query': query}
-        # Tricky logic: In case of no validation errors we perform a query
-        if not rs.has_validation_errors() and is_search and query:
-            query.scope = "qview_archived_persona"
-            result = self.coreproxy.submit_general_query(rs, query)
-            params['result'] = result
-            if download:
-                return self.send_query_download(
-                    rs, result, fields=query.fields_of_interest, kind=download,
-                    filename="archived_user_search_result",
-                    substitutions=choices)
-        else:
-            rs.values['is_search'] = is_search = False
-        return self.render(rs, "archived_user_search", params)
+        return self.generic_user_search(
+            rs, download, is_search,
+            'qview_archived_core_user', 'qview_archived_persona',
+            self.coreproxy.submit_general_query, choices=choices,
+            endpoint="archived_user_search")
 
     @staticmethod
     def admin_bits(rs: RequestState) -> Set[Realm]:
@@ -2442,7 +2396,7 @@ class CoreFrontend(AbstractFrontend):
         self.notify_return_code(rs, code, success=message)
         return self.redirect(rs, "core/list_pending_changes")
 
-    @access("core_admin", "cde_admin", modi={"POST"})
+    @access(*REALM_ADMINS, modi={"POST"})
     @REQUESTdata("ack_delete", "note")
     def archive_persona(self, rs: RequestState, persona_id: int,
                         ack_delete: bool, note: str) -> Response:
@@ -2465,7 +2419,7 @@ class CoreFrontend(AbstractFrontend):
         self.notify_return_code(rs, code)
         return self.redirect_show_user(rs, persona_id)
 
-    @access("core_admin", "cde_admin", modi={"POST"})
+    @access(*REALM_ADMINS, modi={"POST"})
     def dearchive_persona(self, rs: RequestState, persona_id: int) -> Response:
         """Reinstate a persona from the attic."""
         if rs.has_validation_errors():
@@ -2475,7 +2429,7 @@ class CoreFrontend(AbstractFrontend):
         self.notify_return_code(rs, code)
         return self.redirect_show_user(rs, persona_id)
 
-    @access("core_admin", "cde_admin", modi={"POST"})
+    @access("core_admin", modi={"POST"})
     @REQUESTdata("ack_delete")
     def purge_persona(self, rs: RequestState, persona_id: int, ack_delete: bool
                       ) -> Response:

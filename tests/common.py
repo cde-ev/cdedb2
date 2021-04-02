@@ -42,7 +42,7 @@ from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.common import (
     ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, CdEDBObject, CdEDBObjectMap, PathLike,
-    PrivilegeError, RequestState, n_, nearly_now, now, roles_to_db_role,
+    PrivilegeError, RequestState, n_, nearly_now, now, roles_to_db_role, merge_dicts,
 )
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -1073,12 +1073,15 @@ class FrontendTest(BackendTest):
         else:
             self.assertIn(s.strip(), normalized)
 
-    def assertNonPresence(self, s: str, *, div: str = "content",
+    def assertNonPresence(self, s: Optional[str], *, div: str = "content",
                           check_div: bool = True) -> None:
         """Assert that a string is not present in the element with the given id.
 
         :param check_div: If True, this assertion fails if the div is not found.
         """
+        if s is None:
+            # Allow short-circuiting via dict.get()
+            return
         if self.response.content_type == "text/plain":
             self.assertNotIn(s.strip(), self.response.text)
         else:
@@ -1318,6 +1321,73 @@ class FrontendTest(BackendTest):
         if present:
             raise AssertionError(
                 f"Unexpected sidebar elements '{present}' found.")
+
+    def check_create_archive_user(self, realm: str, data: CdEDBObject = None) -> None:
+        """Basic check for the user creation and archival functionality of each realm.
+
+        :param data: realm-dependent data to use for the persona to be created
+        """
+        if data is None:
+            data = {}
+
+        def _check_deleted_data() -> None:
+            assert data is not None
+            self.assertNonPresence(data['username'])
+            self.assertNonPresence(data.get('location'))
+            self.assertNonPresence(data.get('address'))
+            self.assertNonPresence(data.get('postal_code'))
+            self.assertNonPresence(data.get('telephone'))
+            self.assertNonPresence(data.get('country'))
+
+        self.traverse({'href': '/' + realm + '/$'},
+                      {'href': '/search/user'},
+                      {'href': '/user/create'})
+        merge_dicts(data, {
+            "username": 'zelda@example.cde',
+            "given_names": "Zelda",
+            "family_name": "Zeruda-Hime",
+            "display_name": 'Zelda',
+            "notes": "some fancy talk",
+        })
+        f = self.response.forms['newuserform']
+        if f.get('country', default=None):
+            self.assertEqual(f['country'].value, self.conf["DEFAULT_COUNTRY"])
+        for key, value in data.items():
+            f.set(key, value)
+        self.submit(f)
+        self.assertTitle("Zelda Zeruda-Hime")
+        for key, value in data.items():
+            if key not in {'birthday', 'telephone', 'mobile', 'country', 'country2'}:
+                # Omitt values with heavy formatting in the frontend here
+                self.assertPresence(value)
+        # Now test archival
+        # 1. Archive user
+        f = self.response.forms['archivepersonaform']
+        f['ack_delete'].checked = True
+        f['note'] = "Archived for testing."
+        self.submit(f)
+        self.assertTitle("Zelda Zeruda-Hime")
+        self.assertPresence("Der Benutzer ist archiviert.", div='archived')
+        _check_deleted_data()
+        # 2. Find user via archived search
+        self.traverse({'href': '/' + realm + '/$'})
+        self.traverse({'description': 'Archivsuche'})
+        self.assertTitle("Archivsuche")
+        f = self.response.forms['queryform']
+        f['qop_given_names'] = QueryOperators.match.value
+        f['qval_given_names'] = 'Zelda'
+        self.submit(f)
+        self.assertTitle("Archivsuche")
+        self.assertPresence("Ergebnis [1]", div='query-results')
+        self.assertPresence("Zeruda", div='query-result')
+        self.traverse({'description': 'Profil', 'href': '/core/persona/1001/show'})
+        # 3: Dearchive user
+        self.assertTitle("Zelda Zeruda-Hime")
+        self.assertPresence("Der Benutzer ist archiviert.", div='archived')
+        f = self.response.forms['dearchivepersonaform']
+        self.submit(f)
+        self.assertTitle("Zelda Zeruda-Hime")
+        _check_deleted_data()
 
     def _click_admin_view_button(self, label: Union[str, Pattern[str]],
                                  current_state: bool = None) -> None:

@@ -8,32 +8,9 @@
     {% trans %}Event-User Management{% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
-{{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/user_search"), gettext("Manage Users"), active="True") }}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/user_search"), gettext("Manage Users"), active="True") }}
 {% endblock %}
 {% block content %}
-    {# TODO use macro generic.user_search() here, after moving the specific TITLES to some more generic place #}
-    <div class="row">
-        <div class="col-md-4">
-            <div class="p button-par">
-                {{ util.href(cdedblink("event/create_user"), gettext("Create User"), icon="plus",
-                             aclass="btn btn-success btn-sm") }}
-            </div>
-            <p class="text-muted">{{ util.make_icon('info-circle') }}
-                {% trans %}
-                    This User Search will only find Event-Users.
-                {% endtrans %}
-            </p>
-        </div>
-        <div class="col-md-8">
-            {{ generic.place_default_queries("event/user_search", default_queries) }}
-        </div>
-    </div>
-
-    {{ generic.user_search_mask("event", ("pevent_id", "pcourse_id")) }}
-
-    {% if values['is_search'] %}
-        <h3 id="query-results">{% trans %}Result{% endtrans %} [{{ result|length }}]</h3>
-        {{ generic.user_search_result(result, "event") }}
-    {% endif %}
+    {{ generic.user_search('event', info=gettext("This search will only show pure event users.")) }}
 {% endblock %}

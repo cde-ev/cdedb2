@@ -87,6 +87,7 @@ from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.devsamples import HELD_MESSAGE_SAMPLE
 from cdedb.enums import ENUMS_DICT
+from cdedb.query import QUERY_SPECS, Query, mangle_query_input
 from cdedb.validationdata import COUNTRY_CODES
 
 _LOGGER = logging.getLogger(__name__)
@@ -1392,6 +1393,65 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             domain=self.conf["MAIL_DOMAIN"])
         msg["Date"] = email.utils.format_datetime(now())
         return msg
+
+    def generic_user_search(self, rs: RequestState,
+                            download: Optional[str],
+                            is_search: bool,
+                            qview: str,
+                            default_qview: str,
+                            submit_general_query: Callable[[RequestState, Query],
+                                                  Tuple[CdEDBObject, ...]],
+                            *,
+                            endpoint: str = "user_search",
+                            choices: Dict[str, collections.OrderedDict] = None,  # type: ignore
+                            query: Query = None
+                            ) -> werkzeug.Response:
+        """Perform user search.
+
+        :param download: signals whether the output should be a file. It can either
+            be "csv" or "json" for a corresponding file. Otherwise an ordinary HTML page
+            is served.
+        :param is_search: signals whether the page was requested by an actual
+            query or just to display the search form.
+        :param qview: which query view to user see `QUERY_VIEWS` in `cdedb.query`.
+        :param default_qview: the default query list of which "dummy" query view to use
+        :param endpoint: Name of the template family to use to render search. To be
+            changed for archived user searches.
+        :param choices: Mapping of replacements of primary keys by human-readable
+            strings for select fields in the javascript query form.
+        :param submit_general_query: The backend query function to use to retrieve the
+            data in the end. Different backends apply different filters depending on
+            `query.scope`, usually filtering out users with higher realms.
+        :param query: if this is specified the query is executed instead. This is meant
+            for calling this function programmatically.
+        """
+        spec = copy.deepcopy(QUERY_SPECS[qview])
+        if query:
+            query = check_validation(rs, vtypes.Query, query, "query")
+        elif is_search:
+            # mangle the input, so we can prefill the form
+            query_input = mangle_query_input(rs, spec)
+            query = check_validation(rs, vtypes.QueryInput, query_input, "query",
+                                     spec=spec, allow_empty=False)
+        default_queries = self.conf["DEFAULT_QUERIES"][default_qview]
+        if not choices:
+            choices = {}
+        choices_lists = {k: list(v.items()) for k, v in choices.items()}
+        params = {
+            'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
+            'default_queries': default_queries, 'query': query}
+        # Tricky logic: In case of no validation errors we perform a query
+        if not rs.has_validation_errors() and is_search and query:
+            query.scope = qview
+            result = submit_general_query(rs, query)
+            params['result'] = result
+            if download:
+                return self.send_query_download(
+                    rs, result, fields=query.fields_of_interest, kind=download,
+                    filename=endpoint + "_result", substitutions=params['choices'])
+        else:
+            rs.values['is_search'] = False
+        return self.render(rs, endpoint, params)
 
     @staticmethod
     def _create_attachment(attachment: Attachment) -> MIMENonMultipart:
