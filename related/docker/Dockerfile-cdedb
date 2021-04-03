@@ -69,7 +69,8 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     flake8 \
     isort \
     pylint3 \
-    python3-coverage \
+    \
+    && apt-get install --yes python3-coverage \
     \
     && rm -rf /var/lib/apt/lists/* \
     \
