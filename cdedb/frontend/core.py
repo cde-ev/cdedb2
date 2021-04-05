@@ -1612,7 +1612,8 @@ class CoreFrontend(AbstractFrontend):
     @REQUESTfile("foto")
     @REQUESTdata("delete")
     def set_foto(self, rs: RequestState, persona_id: int,
-                 foto: werkzeug.FileStorage, delete: bool) -> Response:
+                 foto: werkzeug.datastructures.FileStorage,
+                 delete: bool) -> Response:
         """Set profile picture."""
         if rs.user.persona_id != persona_id and not self.is_admin(rs):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
@@ -2000,7 +2001,7 @@ class CoreFrontend(AbstractFrontend):
     @REQUESTfile("attachment")
     @REQUESTdata("attachment_filename", "ignore_warnings")
     def genesis_request(self, rs: RequestState, data: CdEDBObject,
-                        attachment: Optional[werkzeug.FileStorage],
+                        attachment: Optional[werkzeug.datastructures.FileStorage],
                         attachment_filename: str = None,
                         ignore_warnings: bool = False) -> Response:
         """Voice the desire to become a persona.

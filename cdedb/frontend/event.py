@@ -452,7 +452,7 @@ class EventFrontend(AbstractUserFrontend):
     @REQUESTfile("minor_form")
     @REQUESTdata("delete")
     def change_minor_form(self, rs: RequestState, event_id: int,
-                          minor_form: werkzeug.FileStorage, delete: bool
+                          minor_form: werkzeug.datastructures.FileStorage, delete: bool
                           ) -> Response:
         """Replace the form for parental agreement for minors.
 
@@ -2275,7 +2275,7 @@ class EventFrontend(AbstractUserFrontend):
     @REQUESTdata("force", "fee_data", "checksum", "send_notifications", "full_payment")
     def batch_fees(self, rs: RequestState, event_id: int, force: bool,
                    fee_data: Optional[str],
-                   fee_data_file: Optional[werkzeug.FileStorage],
+                   fee_data_file: Optional[werkzeug.datastructures.FileStorage],
                    checksum: Optional[str], send_notifications: bool,
                    full_payment: bool) -> Response:
         """Allow orgas to add lots paid of participant fee at once."""
@@ -2890,7 +2890,7 @@ class EventFrontend(AbstractUserFrontend):
     @REQUESTfile("json_file")
     @REQUESTdata("partial_import_data", "token")
     def partial_import(self, rs: RequestState, event_id: int,
-                       json_file: Optional[werkzeug.FileStorage],
+                       json_file: Optional[werkzeug.datastructures.FileStorage],
                        partial_import_data: Optional[str], token: Optional[str]
                        ) -> Response:
         """Further steps of partial import process
@@ -6195,7 +6195,7 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard()
     @REQUESTfile("json")
     def unlock_event(self, rs: RequestState, event_id: int,
-                     json: werkzeug.FileStorage) -> Response:
+                     json: werkzeug.datastructures.FileStorage) -> Response:
         """Unlock an event after offline usage and incorporate the offline
         changes."""
         data = check(rs, vtypes.SerializedEventUpload, json)
