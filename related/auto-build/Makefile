@@ -20,7 +20,7 @@ QEMUOPTIONS ?= -m 1G -enable-kvm -net nic,model=virtio -net user,hostfwd=tcp:127
 
 QEMUCACHING ?= writethrough
 
-DEBVERSION = 10.8.0
+DEBVERSION = bullseye-DI-alpha3
 NETINSTISO = debian-${DEBVERSION}-amd64-netinst.iso
 
 DISTINFO_DATA?= ${AWK} -v alg=$$algo -v file=$${file} \
@@ -51,11 +51,13 @@ showconf:
 	@echo "admin:    |  fullimage vdiimage clean mrproper"
 
 
+# TODO Use normal path again once bullseye is released:
+# https://cdimage.debian.org/cdimage/release/${DEBVERSION}/amd64/iso-cd/${NETINSTISO}
 fetch: ${WORKDIR}/.done_fetch
 ${WORKDIR}/.done_fetch:
 	[ -d ${WORKDIR} ] || (mkdir -p ${WORKDIR} && chmod 755 ${WORKDIR})
 	[ -d ${DISTDIR} ] || (mkdir -p ${DISTDIR} && chmod 755 ${DISTDIR})
-	[ -f ${DISTDIR}/${NETINSTISO} ] || (cd ${DISTDIR} && ${FETCH} https://cdimage.debian.org/cdimage/release/${DEBVERSION}/amd64/iso-cd/${NETINSTISO})
+	[ -f ${DISTDIR}/${NETINSTISO} ] || (cd ${DISTDIR} && ${FETCH} https://cdimage.debian.org/cdimage/bullseye_di_alpha3/amd64/iso-cd/${NETINSTISO})
 	touch $@
 
 checksum:${WORKDIR}/.done_checksum
@@ -162,6 +164,7 @@ ${WORKDIR}/.done_stage3cd:${WORKDIR}/.done_checksum files/stage3-install ${FILES
 	cp files/stage3-install ${WORKDIR}/stage3cd/cdedb-install
 	chmod 755 ${WORKDIR}/stage3cd/cdedb-install
 	cp files/call-cdedbinstall ${WORKDIR}/stage3cd/init
+	cp files/stage3/* ${WORKDIR}/stage3cd/
 	${MKISOFS} -R -o ${WORKDIR}/stage3cd.iso ${WORKDIR}/stage3cd
 	touch $@
 
@@ -197,6 +200,7 @@ ${WORKDIR}/.done_stagevdicd:${WORKDIR}/.done_checksum files/stage3-install ${FIL
 	cp files/stage3-install ${WORKDIR}/stagevdicd/cdedb-install
 	chmod 755 ${WORKDIR}/stagevdicd/cdedb-install
 	cp files/call-cdedbinstall ${WORKDIR}/stagevdicd/init
+	cp files/stage3/* ${WORKDIR}/stagevdicd/
 	touch ${WORKDIR}/stagevdicd/vdi
 	${MKISOFS} -R -o ${WORKDIR}/stagevdicd.iso ${WORKDIR}/stagevdicd
 	touch $@
