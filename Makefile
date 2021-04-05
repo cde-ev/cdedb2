@@ -323,7 +323,7 @@ tests/ancillary_files/sample_data.sql: tests/ancillary_files/sample_data.json \
 			tests/create_sample_data_sql.py \
 			-i tests/ancillary_files/sample_data.json \
 			-o "$${SQLTEMPFILE}" \
-		&& sudo rm -f /tmp/cdedb*log
+		&& sudo rm -f /tmp/cdedb*log \
 		&& cp "$${SQLTEMPFILE}" tests/ancillary_files/sample_data.sql \
 		&& sudo -u www-data rm "$${SQLTEMPFILE}"
 
@@ -337,7 +337,7 @@ tests/ancillary_files/sample_data_xss.sql: tests/ancillary_files/sample_data.jso
 			-i tests/ancillary_files/sample_data.json \
 			-o "$${SQLTEMPFILE}" \
 			--xss \
-		&& sudo rm -f /tmp/cdedb*log
+		&& sudo rm -f /tmp/cdedb*log \
 		&& cp "$${SQLTEMPFILE}" tests/ancillary_files/sample_data_xss.sql \
 		&& sudo -u www-data rm "$${SQLTEMPFILE}"
 
