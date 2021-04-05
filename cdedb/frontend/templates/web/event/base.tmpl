@@ -24,6 +24,11 @@
                     readonly=is_locked, aclass="list-group-item", icon="sign-in-alt",
                     active=(sidenav_active == 'event_register')) }}
         {% endif %}
+        {% if (is_participant and data['participant_info']) or data['id'] in user.orga or 'event_orga' in user.admin_views %}
+            {{ util.href(cdedblink("event/participant_info", {"event_id": data['id']}),
+                         gettext("Participant info"), aclass='list-group-item', icon='info',
+                         active=(sidenav_active == 'participant_info')) }}
+        {% endif %}
         {% if (data['is_participant_list_visible'] and is_participant) or data['id'] in user.orga or 'event_orga' in user.admin_views %}
             {{ util.href(cdedblink("event/participant_list", {"event_id": data['id']}), gettext("Participant list"),
                          aclass="list-group-item", icon="users", active=(sidenav_active == 'event_participant_list')) }}
@@ -125,6 +130,8 @@
                 {% if 'event_user' in user.admin_views %}
                         {{ util.href(cdedblink("event/user_search"), gettext("Manage Users"),
                                      aclass="list-group-item", icon="users", active=(sidenav_active == 'event_users')) }}
+                        {{ util.href(cdedblink("event/archived_user_search"), gettext("Search Archived Users"),
+                                     aclass="list-group-item", icon="inbox", active=(sidenav_active=='event_manage_archive')) }}
                 {% endif %}
                 {% if 'event_mgmt' in user.admin_views %}
                         {{ util.href(cdedblink("event/view_log"), gettext("Log"), aclass="list-group-item", icon="far fa-list-alt",

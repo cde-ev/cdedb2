@@ -19,7 +19,7 @@
 {% endblock %}
 {% block static_notifications %}
     {{ super() }}
-    {% if ambience['event']['use_additional_questionnaire'] %}
+    {% if ambience['event']['use_additional_questionnaire'] and not ambience['event']['is_archived'] %}
         {% call util.notification('info') %}
             {% trans link=util.href(cdedblink('event/additional_questionnaire_form'), gettext("questionnaire")) %}
             	Please fill in the {{ link }} now.
@@ -133,13 +133,25 @@
         {% set reg_track = registration['tracks'][track_id] %}
         {% if enums['RegistrationPartStati'](registration['parts'][track['part_id']]['status']).is_involved() %}
             <h4>
-                {% trans %}Course Choices for{% endtrans %}
+                {% trans %}Course{% endtrans %}
                 {% if ambience['event']['tracks']|length > 1 %}
+                    {% trans %}for{% endtrans %}
                     {{ track['title'] }}
                 {% endif %}
             </h4>
 
             <dl class="dl-horizontal">
+                {% if ambience['event']['is_course_assignment_visible'] %}
+                    <dt>{% trans %}Assigned to{% endtrans %}</dt>
+                    <dd>
+                        {% if reg_track['course_id'] %}
+                            {{ courses[reg_track['course_id']]['nr'] }}.
+                            {{ courses[reg_track['course_id']]['title'] }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </dd>
+                {% endif %}
                 {% if reg_track['course_instructor'] %}
                     <dt>{% trans %}Instructor of{% endtrans %}</dt>
                     <dd><em>{{ courses[reg_track['course_instructor']]['title'] }}</em>.</dd>

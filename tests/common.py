@@ -42,7 +42,7 @@ from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.common import (
     ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, CdEDBObject, CdEDBObjectMap, PathLike,
-    PrivilegeError, RequestState, n_, now, roles_to_db_role, nearly_now
+    PrivilegeError, RequestState, n_, nearly_now, now, roles_to_db_role, merge_dicts,
 )
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -51,8 +51,10 @@ from cdedb.frontend.application import Application
 from cdedb.frontend.common import AbstractFrontend
 from cdedb.frontend.cron import CronFrontend
 from cdedb.query import QueryOperators
+from cdedb.script import setup
 
 _BASICCONF = BasicConfig()
+_SECRETSCONF = SecretsConfig()
 
 # This is to be used in place of `self.key` for anonymous requests. It makes mypy happy.
 ANONYMOUS = cast(RequestState, None)
@@ -116,6 +118,7 @@ def read_sample_data(filename: PathLike = "/cdedb2/tests/ancillary_files/"
         ret[table] = data
     return ret
 
+SAMPLE_DATA = read_sample_data()
 
 B = TypeVar("B", bound=AbstractBackend)
 
@@ -194,8 +197,7 @@ def make_backend_shim(backend: B, internal: bool = False) -> B:
                 getattr(attr, "internal", False) and not internal,
                 not callable(attr)
             ]):
-                raise PrivilegeError(
-                    n_("Attribute %(name)s not public"), {"name": name})
+                raise PrivilegeError(f"Attribute {name} not public")
 
             @functools.wraps(attr)
             def wrapper(key: Optional[str], *args: Any, **kwargs: Any) -> Any:
@@ -215,21 +217,15 @@ class BasicTest(unittest.TestCase):
     storage_dir: ClassVar[pathlib.Path]
     testfile_dir: ClassVar[pathlib.Path]
     needs_storage_marker = "_needs_storage"
-    _clean_sample_data: ClassVar[Dict[str, CdEDBObjectMap]]
     conf: ClassVar[Config]
 
     @classmethod
     def setUpClass(cls) -> None:
-        # Keep a clean copy of sample data that should not be messed with.
-        cls._clean_sample_data = read_sample_data()
         cls.conf = Config()
         cls.storage_dir = cls.conf['STORAGE_DIR']
         cls.testfile_dir = cls.storage_dir / "testfiles"
 
     def setUp(self) -> None:
-        # Provide a fresh copy of clean sample data.
-        self.sample_data = copy.deepcopy(self._clean_sample_data)
-
         test_method = getattr(self, self._testMethodName)
         if getattr(test_method, self.needs_storage_marker, False):
             subprocess.run(("make", "storage-test"), stdout=subprocess.DEVNULL,
@@ -266,7 +262,7 @@ class BasicTest(unittest.TestCase):
             if keys:
                 r = {}
                 for k in keys:
-                    r[k] = copy.deepcopy(self.sample_data[table][anid][k])
+                    r[k] = copy.deepcopy(SAMPLE_DATA[table][anid][k])
                     if table == 'core.personas':
                         if k == 'balance':
                             r[k] = decimal.Decimal(r[k])
@@ -277,20 +273,35 @@ class BasicTest(unittest.TestCase):
                         r[k] = parse_datetime(r[k])
                 ret[anid] = r
             else:
-                ret[anid] = copy.deepcopy(self.sample_data[table][anid])
+                ret[anid] = copy.deepcopy(SAMPLE_DATA[table][anid])
         return ret
+
+    def get_sample_datum(self, table: str, id_: int) -> CdEDBObject:
+        return self.get_sample_data(table, [id_], [])[id_]
 
 
 class CdEDBTest(BasicTest):
     """Reset the DB for every test."""
-    _clean_sample_data: ClassVar[Dict[str, CdEDBObjectMap]]
-    conf: ClassVar[Config]
+    testfile_dir = pathlib.Path("/tmp/cdedb-store/testfiles")
 
     def setUp(self) -> None:
-        # Start the call in a new session, so that a SIGINT does not interrupt this.
-        subprocess.run(("make", "sql-test-shallow"), stdout=subprocess.DEVNULL,
-                       stderr=subprocess.DEVNULL, start_new_session=True, check=True)
-        super(CdEDBTest, self).setUp()
+        with setup(
+            persona_id=-1,
+            dbuser="cdb",
+            dbpassword=_SECRETSCONF["CDB_DATABASE_ROLES"]["cdb"],
+            dbname=self.conf["CDB_DATABASE_NAME"],
+            check_system_user=False,
+        )().conn as conn:
+            conn.set_session(autocommit=True)
+            with conn.cursor() as curr:
+                with open("tests/ancillary_files/clean_data.sql") as f:
+                    sql_input = f.read()
+                curr.execute(sql_input)
+                with open("tests/ancillary_files/sample_data.sql") as f:
+                    sql_input = f.read()
+                curr.execute(sql_input)
+
+        super().setUp()
 
 
 UserIdentifier = Union[CdEDBObject, str, int]
@@ -979,12 +990,15 @@ class FrontendTest(BackendTest):
         else:
             self.assertIn(s.strip(), normalized)
 
-    def assertNonPresence(self, s: str, *, div: str = "content",
+    def assertNonPresence(self, s: Optional[str], *, div: str = "content",
                           check_div: bool = True) -> None:
         """Assert that a string is not present in the element with the given id.
 
         :param check_div: If True, this assertion fails if the div is not found.
         """
+        if s is None:
+            # Allow short-circuiting via dict.get()
+            return
         if self.response.content_type == "text/plain":
             self.assertNotIn(s.strip(), self.response.text)
         else:
@@ -1203,10 +1217,11 @@ class FrontendTest(BackendTest):
             log_code_str = self.gettext(str(log_code))  # type: ignore
             self.assertPresence(log_code_str, div=f"{index}-{log_id}")
 
-    def check_sidebar(self, ins: Collection[str], out: Collection[str]) -> None:
+    def check_sidebar(self, ins: Set[str], out: Set[str]) -> None:
         """Helper function to check the (in)visibility of sidebar elements.
 
-        Raise an error if an element is in the sidebar and not in ins.
+        Raise an error if an element is in the sidebar and not in ins or
+        if an element is in the sidebar and in out.
 
         :param ins: elements which are in the sidebar
         :param out: elements which are not in the sidebar
@@ -1223,6 +1238,73 @@ class FrontendTest(BackendTest):
         if present:
             raise AssertionError(
                 f"Unexpected sidebar elements '{present}' found.")
+
+    def check_create_archive_user(self, realm: str, data: CdEDBObject = None) -> None:
+        """Basic check for the user creation and archival functionality of each realm.
+
+        :param data: realm-dependent data to use for the persona to be created
+        """
+        if data is None:
+            data = {}
+
+        def _check_deleted_data() -> None:
+            assert data is not None
+            self.assertNonPresence(data['username'])
+            self.assertNonPresence(data.get('location'))
+            self.assertNonPresence(data.get('address'))
+            self.assertNonPresence(data.get('postal_code'))
+            self.assertNonPresence(data.get('telephone'))
+            self.assertNonPresence(data.get('country'))
+
+        self.traverse({'href': '/' + realm + '/$'},
+                      {'href': '/search/user'},
+                      {'href': '/user/create'})
+        merge_dicts(data, {
+            "username": 'zelda@example.cde',
+            "given_names": "Zelda",
+            "family_name": "Zeruda-Hime",
+            "display_name": 'Zelda',
+            "notes": "some fancy talk",
+        })
+        f = self.response.forms['newuserform']
+        if f.get('country', default=None):
+            self.assertEqual(f['country'].value, self.conf["DEFAULT_COUNTRY"])
+        for key, value in data.items():
+            f.set(key, value)
+        self.submit(f)
+        self.assertTitle("Zelda Zeruda-Hime")
+        for key, value in data.items():
+            if key not in {'birthday', 'telephone', 'mobile', 'country', 'country2'}:
+                # Omitt values with heavy formatting in the frontend here
+                self.assertPresence(value)
+        # Now test archival
+        # 1. Archive user
+        f = self.response.forms['archivepersonaform']
+        f['ack_delete'].checked = True
+        f['note'] = "Archived for testing."
+        self.submit(f)
+        self.assertTitle("Zelda Zeruda-Hime")
+        self.assertPresence("Der Benutzer ist archiviert.", div='archived')
+        _check_deleted_data()
+        # 2. Find user via archived search
+        self.traverse({'href': '/' + realm + '/$'})
+        self.traverse({'description': 'Archivsuche'})
+        self.assertTitle("Archivsuche")
+        f = self.response.forms['queryform']
+        f['qop_given_names'] = QueryOperators.match.value
+        f['qval_given_names'] = 'Zelda'
+        self.submit(f)
+        self.assertTitle("Archivsuche")
+        self.assertPresence("Ergebnis [1]", div='query-results')
+        self.assertPresence("Zeruda", div='query-result')
+        self.traverse({'description': 'Profil', 'href': '/core/persona/1001/show'})
+        # 3: Dearchive user
+        self.assertTitle("Zelda Zeruda-Hime")
+        self.assertPresence("Der Benutzer ist archiviert.", div='archived')
+        f = self.response.forms['dearchivepersonaform']
+        self.submit(f)
+        self.assertTitle("Zelda Zeruda-Hime")
+        _check_deleted_data()
 
     def _click_admin_view_button(self, label: Union[str, Pattern[str]],
                                  current_state: bool = None) -> None:

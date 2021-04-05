@@ -165,21 +165,21 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
     @as_users("annika", "martin", "vera", "werner", "anton")
     def test_sidebar(self, user: CdEDBObject) -> None:
         self.traverse({'description': 'Versammlungen'})
-        everyone = ["Versammlungen", "Übersicht"]
+        everyone = {"Versammlungen", "Übersicht"}
 
         # not assembly admins
         if user['id'] in {USER_DICT["annika"]['id'], USER_DICT["martin"]['id'],
                           USER_DICT["werner"]['id']}:
             ins = everyone
-            out = ["Nutzer verwalten", "Log"]
+            out = {"Nutzer verwalten", "Archivsuche", "Log"}
         # core admins
         elif user['id'] == USER_DICT["vera"]['id']:
-            ins = everyone + ["Nutzer verwalten"]
-            out = ["Log"]
+            ins = everyone | {"Nutzer verwalten", "Archivsuche"}
+            out = {"Log"}
         # assembly admins
         elif user['id'] == USER_DICT["anton"]['id']:
-            ins = everyone + ["Nutzer verwalten", "Log"]
-            out = []
+            ins = everyone | {"Nutzer verwalten", "Archivsuche", "Log"}
+            out = set()
         else:
             self.fail("Please adjust users for this tests.")
 
@@ -224,11 +224,11 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.submit(f)
         self.assertPresence('Nein', div='account-active')
 
-    @as_users("ferdinand", "vera")
+    @as_users("paul", "viktor")
     def test_user_search(self, user: CdEDBObject) -> None:
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Nutzer verwalten'})
-        self.assertTitle("Versammlungs-Nutzerverwaltung")
+        self.assertTitle("Versammlungsnutzerverwaltung")
         f = self.response.forms['queryform']
         f['qop_username'] = QueryOperators.match.value
         f['qval_username'] = 'f@'
@@ -236,28 +236,13 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             if field and field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
-        self.assertTitle("Versammlungs-Nutzerverwaltung")
+        self.assertTitle("Versammlungsnutzerverwaltung")
         self.assertPresence("Ergebnis [1]", div="query-results")
         self.assertPresence("Karabatschi", div="result-container")
 
-    @as_users("ferdinand", "vera")
-    def test_create_user(self, user: CdEDBObject) -> None:
-        self.traverse({'description': 'Versammlungen'},
-                      {'description': 'Nutzer verwalten'},
-                      {'description': 'Nutzer anlegen'})
-        self.assertTitle("Neuen Versammlungsnutzer anlegen")
-        data = {
-            "username": 'zelda@example.cde',
-            "given_names": "Zelda",
-            "family_name": "Zeruda-Hime",
-            "display_name": 'Zelda',
-            "notes": "some fancy talk",
-        }
-        f = self.response.forms['newuserform']
-        for key, value in data.items():
-            f.set(key, value)
-        self.submit(f)
-        self.assertTitle("Zelda Zeruda-Hime")
+    @as_users("paul", "viktor")
+    def test_create_archive_user(self, user: CdEDBObject) -> None:
+        self.check_create_archive_user('assembly')
 
     @storage
     @as_users("anton")
@@ -341,9 +326,9 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self.traverse({'description': 'Versammlungen'})
 
         self.traverse({'description': 'Internationaler Kongress'})
-        attendee = ["Versammlungs-Übersicht", "Übersicht", "Teilnehmer",
-                    "Abstimmungen", "Zusammenfassung", "Datei-Übersicht"]
-        admin = ["Konfiguration", "Log"]
+        attendee = {"Versammlungs-Übersicht", "Übersicht", "Teilnehmer",
+                    "Abstimmungen", "Zusammenfassung", "Datei-Übersicht"}
+        admin = {"Konfiguration", "Log"}
 
         # not assembly admins
         if user in [USER_DICT['annika'], USER_DICT['martin'], USER_DICT['vera']]:
@@ -351,8 +336,8 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             out = admin
         # assembly admin
         elif user == USER_DICT['werner']:
-            ins = attendee + admin
-            out = []
+            ins = attendee | admin
+            out = set()
         else:
             self.fail("Please adjust users for this tests.")
 
@@ -1032,8 +1017,9 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
     @as_users("anton")
     def test_ballot_result_page(self, user: CdEDBObject) -> None:
         for ballot_id in self.CANONICAL_BALLOTS:
-            ballot = self.sample_data['assembly.ballots'][ballot_id]
-            assembly = self.sample_data['assembly.assemblies'][ballot['assembly_id']]
+            ballot = self.get_sample_datum('assembly.ballots', ballot_id)
+            assembly = self.get_sample_datum(
+                'assembly.assemblies', ballot['assembly_id'])
             self.get(f'/assembly/assembly/{assembly["id"]}/ballot/{ballot_id}/result')
             # redirect in case of tallying, extending etc
             self.follow()

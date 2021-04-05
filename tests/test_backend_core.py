@@ -11,7 +11,7 @@ from cdedb.common import (
     CdEDBObject, PERSONA_CDE_FIELDS, PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS,
     ArchiveError, PrivilegeError, RequestState, get_hash, merge_dicts, now, nearly_now
 )
-from cdedb.validation import _PERSONA_CDE_CREATION
+from cdedb.validation import PERSONA_CDE_CREATION
 from tests.common import (
     ANONYMOUS, BackendTest, USER_DICT, as_users, create_mock_image, prepsql, storage,
 )
@@ -307,7 +307,7 @@ class TestCoreBackend(BackendTest):
             'address': "An der Eiche",
             'postal_code': "12345",
             'location': "Marcuria",
-            'country': "Arkadien",
+            'country': "AQ",
             'birth_name': None,
             'address_supplement2': None,
             'address2': None,
@@ -361,7 +361,7 @@ class TestCoreBackend(BackendTest):
             'address': "An der Eiche",
             'postal_code': "12345",
             'location': "Marcuria",
-            'country': "Arkadien",
+            'country': "AQ",
         })
         new_id = self.core.create_persona(self.key, data)
         data["id"] = new_id
@@ -423,7 +423,7 @@ class TestCoreBackend(BackendTest):
             'address': "An der Eiche",
             'postal_code': "12345",
             'location': "Marcuria",
-            'country': "Arkadien",
+            'country': "AQ",
         })
         new_id = self.core.create_persona(self.key, data)
         data["id"] = new_id
@@ -453,7 +453,7 @@ class TestCoreBackend(BackendTest):
             'is_assembly_realm': True,
         }
         persona = self.core.get_total_persona(self.key, persona_id)
-        reference = _PERSONA_CDE_CREATION()
+        reference = {**PERSONA_CDE_CREATION}
         for key in tuple(persona):
             if key not in reference and key != 'id':
                 del persona[key]
@@ -513,7 +513,7 @@ class TestCoreBackend(BackendTest):
 
     @as_users("vera")
     def test_meta_info(self, user: CdEDBObject) -> None:
-        expectation = self.sample_data['core.meta_info'][1]['info']
+        expectation = self.get_sample_datum('core.meta_info', 1)['info']
         self.assertEqual(expectation, self.core.get_meta_info(self.key))
         update = {
             'Finanzvorstand_Name': 'Zelda'
@@ -593,7 +593,7 @@ class TestCoreBackend(BackendTest):
             'address': "An der Eiche",
             'postal_code': "12345",
             'location': "Marcuria",
-            'country': "Arkadien",
+            'country': "AQ",
         }
         case_id = self.core.genesis_request(ANONYMOUS, data)
         self.assertGreater(case_id, 0)
@@ -746,7 +746,7 @@ class TestCoreBackend(BackendTest):
             'address': "An der Eiche",
             'postal_code': "12345",
             'location': "Marcuria",
-            'country': "Arkadien",
+            'country': "AQ",
             'attachment_hash': attachment_hash,
         }
         self.assertFalse(self.core.genesis_attachment_usage(
@@ -912,7 +912,7 @@ class TestCoreBackend(BackendTest):
             'address': 'Im Garten 77',
             'address_supplement': 'bei Spielmanns',
             'birthday': datetime.date(1981, 2, 11),
-            'country': None,
+            'country': "DE",
             'gender': 1,
             'location': 'Utopia',
             'mobile': '0163/123456789',
@@ -929,7 +929,7 @@ class TestCoreBackend(BackendTest):
             'balance': decimal.Decimal('12.50'),
             'birth_name': 'Gemeinser',
             'bub_search': True,
-            'country2': 'Far Away',
+            'country2': 'GB',
             'decided_search': True,
             'foto': 'e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbe'
                     'c03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9',
@@ -948,7 +948,7 @@ class TestCoreBackend(BackendTest):
         expectation['notes'] = 'Beispielhaft, Besser, Baum.'
         self.assertEqual(expectation, self.core.get_total_persona(self.key, 2))
 
-    @as_users("vera")
+    @as_users("paul", "quintus")
     def test_archive(self, user: CdEDBObject) -> None:
         persona_id = 3
         data = self.core.get_total_persona(self.key, persona_id)
@@ -1106,8 +1106,8 @@ class TestCoreBackend(BackendTest):
         result = self.core.retrieve_log(self.key)
         self.assertEqual(core_log_expectation, result)
 
-        sample_entries = len(self.sample_data["core.changelog"])
-        changelog_expectation = (sample_entries + 1, (
+        total_entries = self.core.retrieve_changelog_meta(self.key)[0]
+        changelog_expectation = (total_entries, (
             # Committing the changed admin bits.
             {
                 'id': 1001,
@@ -1121,8 +1121,7 @@ class TestCoreBackend(BackendTest):
             },
         ))
         # Set offset to avoid selecting the Init. changelog entries
-        result = self.core.retrieve_changelog_meta(
-            self.key, offset=sample_entries)
+        result = self.core.retrieve_changelog_meta(self.key, offset=total_entries-1)
         self.assertEqual(changelog_expectation, result)
 
     @as_users("anton", "martin")

@@ -34,14 +34,6 @@ import werkzeug.routing
 import cdedb.database.constants as const
 from cdedb.database.connection import IrradiatedConnection
 
-# The following imports are only for re-export. They are not used
-# here. All other uses should import them from here and not their
-# original source which is basically just uninlined code.
-# noinspection PyUnresolvedReferences
-from cdedb.ml_subscription_aux import (  # pylint: disable=unused-import; # noqa
-    SubscriptionActions, SubscriptionError, SubscriptionInfo,
-)
-
 _LOGGER = logging.getLogger(__name__)
 
 # Global unified collator to be used when sorting.
@@ -547,7 +539,7 @@ def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,
             return tuple(map(collate, sortkey))
         return sortkey
 
-    return sorted(iterable, key=lambda x: collate(key(x)),
+    return sorted(iterable, key=lambda x: collate(key(x)),  # pylint: disable=bad-builtin
                   reverse=reverse)
 
 
@@ -1880,7 +1872,7 @@ CDEDB_EXPORT_EVENT_VERSION = 13
 #: If the partial export and import are unaffected the minor version may be
 #: incremented.
 #: If you increment this, it must be incremented in make_offline_vm.py as well.
-EVENT_SCHEMA_VERSION = (14, 1)
+EVENT_SCHEMA_VERSION = (15, 2)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3
@@ -2041,19 +2033,17 @@ INSTITUTION_FIELDS = ("id", "title", "shortname")
 
 #: Fields of a concluded event
 PAST_EVENT_FIELDS = ("id", "title", "shortname", "institution", "description",
-                     "tempus", "notes")
+                     "tempus", "participant_info")
 
 #: Fields of an event organized via the CdEDB
 EVENT_FIELDS = (
-    "id", "title", "institution", "description", "shortname",
-    "registration_start", "registration_soft_limit",
-    "registration_hard_limit", "iban", "nonmember_surcharge",
-    "orga_address", "registration_text", "mail_text",
-    "use_additional_questionnaire", "notes", "offline_lock", "is_visible",
-    "is_course_list_visible", "is_course_state_visible",
-    "is_participant_list_visible", "courses_in_participant_list",
-    "is_cancelled", "is_archived", "lodge_field", "camping_mat_field",
-    "course_room_field")
+    "id", "title", "institution", "description", "shortname", "registration_start",
+    "registration_soft_limit", "registration_hard_limit", "iban", "nonmember_surcharge",
+    "orga_address", "registration_text", "mail_text", "use_additional_questionnaire",
+    "notes", "participant_info", "offline_lock", "is_visible",
+    "is_course_list_visible", "is_course_state_visible", "is_participant_list_visible",
+    "is_course_assignment_visible", "is_cancelled", "is_archived", "lodge_field",
+    "camping_mat_field", "course_room_field")
 
 #: Fields of an event part organized via CdEDB
 EVENT_PART_FIELDS = ("id", "event_id", "title", "shortname", "part_begin",
@@ -2113,17 +2103,17 @@ MAILINGLIST_FIELDS = (
     "subject_prefix", "maxsize", "is_active", "event_id", "registration_stati",
     "assembly_id")
 
-#: Fields of a mailinglist which may be changed by moderators
-MOD_ALLOWED_FIELDS = {
+#: Fields of a mailinglist which may be changed by all moderators, even restricted ones
+RESTRICTED_MOD_ALLOWED_FIELDS = {
     "description", "mod_policy", "notes", "attachment_policy", "subject_prefix",
     "maxsize"}
 
-#: Fields of a mailinglist which require privileged moderator access to be changed
-PRIVILEGE_MOD_REQUIRING_FIELDS = {
+#: Fields of a mailinglist which require full moderator access to be changed
+FULL_MOD_REQUIRING_FIELDS = {
     'registration_stati'}
 
-#: Fields of a mailinglist which may be changed by privileged moderators
-PRIVILEGED_MOD_ALLOWED_FIELDS = MOD_ALLOWED_FIELDS | PRIVILEGE_MOD_REQUIRING_FIELDS
+#: Fields of a mailinglist which may be changed by (full) moderators
+MOD_ALLOWED_FIELDS = RESTRICTED_MOD_ALLOWED_FIELDS | FULL_MOD_REQUIRING_FIELDS
 
 #: Fields of an assembly
 ASSEMBLY_FIELDS = ("id", "title", "shortname", "description", "presider_address",

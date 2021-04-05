@@ -26,14 +26,14 @@ from cdedb.backend.common import (
     affirm_validation_typed_optional as affirm_optional, internal, singularize,
 )
 from cdedb.common import (
-    ADMIN_KEYS, GENESIS_CASE_FIELDS, GENESIS_REALM_OVERRIDE, PERSONA_ALL_FIELDS,
-    PERSONA_ASSEMBLY_FIELDS, PERSONA_CDE_FIELDS, PERSONA_CORE_FIELDS, PERSONA_DEFAULTS,
-    PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS, PERSONA_STATUS_FIELDS,
-    PRIVILEGE_CHANGE_FIELDS, REALM_ADMINS, ArchiveError, CdEDBLog, CdEDBObject,
-    CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, Error, PathLike,
-    PrivilegeError, PsycoJson, QuotaException, Realm, RequestState, Role, User,
-    decode_parameter, encode_parameter, extract_realms, extract_roles, get_hash, glue,
-    implied_realms, merge_dicts, n_, now, privilege_tier, unwrap, xsorted,
+    ADMIN_KEYS, ALL_ROLES, GENESIS_CASE_FIELDS, GENESIS_REALM_OVERRIDE,
+    PERSONA_ALL_FIELDS, PERSONA_ASSEMBLY_FIELDS, PERSONA_CDE_FIELDS,
+    PERSONA_CORE_FIELDS, PERSONA_DEFAULTS, PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS,
+    PERSONA_STATUS_FIELDS, PRIVILEGE_CHANGE_FIELDS, REALM_ADMINS, ArchiveError,
+    CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, Error,
+    PathLike, PrivilegeError, PsycoJson, QuotaException, Realm, RequestState, Role,
+    User, decode_parameter, encode_parameter, extract_realms, extract_roles, get_hash,
+    glue, implied_realms, merge_dicts, n_, now, privilege_tier, unwrap, xsorted
 )
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -704,16 +704,17 @@ class CoreBackend(AbstractBackend):
         if (current['decided_search'] and not data.get("is_searchable", True)
                 and (not ({"cde_admin", "core_admin"} & rs.user.roles))):
             raise PrivilegeError(n_("Hiding prevented."))
-        if ("is_archived" in data
-                and ("core_admin" not in rs.user.roles
-                     or "archive" not in allow_specials)):
-            raise PrivilegeError(n_("Archive modification prevented."))
+        if "is_archived" in data:
+            if (not self.is_relative_admin(rs, data['id'], allow_meta_admin=False)
+                    or "archive" not in allow_specials):
+                raise PrivilegeError(n_("Archive modification prevented."))
         if ("balance" in data
                 and ("cde_admin" not in rs.user.roles
                      or "finance" not in allow_specials)):
-            # Allow setting balance to 0 or None during archival.
+            # Allow setting balance to 0 or None during archival or membership change.
             if not ((data["balance"] is None or data["balance"] == 0)
-                    and "archive" in allow_specials):
+                    and REALM_ADMINS & rs.user.roles
+                    and {"archive", "membership"} & set(allow_specials)):
                 raise PrivilegeError(n_("Modification of balance prevented."))
         if "username" in data and "username" not in allow_specials:
             raise PrivilegeError(n_("Modification of email address prevented."))
@@ -1137,7 +1138,7 @@ class CoreBackend(AbstractBackend):
             ret = self.set_persona(
                 rs, update, may_wait=False,
                 change_note="Mitgliedschaftsstatus geändert.",
-                allow_specials=("membership", "finance"))
+                allow_specials=("membership",))
             self.finance_log(rs, code, persona_id, delta, new_balance)
             return ret
 
@@ -1281,16 +1282,16 @@ class CoreBackend(AbstractBackend):
             WHERE persona_id = %s AND subscription_state = ANY(%s)
                 AND mailinglists.is_active = True"""
             states = {
-                const.SubscriptionStates.subscribed,
-                const.SubscriptionStates.subscription_override,
-                const.SubscriptionStates.pending,
+                const.SubscriptionState.subscribed,
+                const.SubscriptionState.subscription_override,
+                const.SubscriptionState.pending,
             }
             if self.query_all(rs, query, (persona_id, states)):
                 return False
 
         return True
 
-    @access("core_admin", "cde_admin")
+    @access(*REALM_ADMINS)
     def archive_persona(self, rs: RequestState, persona_id: int,
                         note: str) -> DefaultReturnCode:
         """Move a persona to the attic.
@@ -1323,6 +1324,9 @@ class CoreBackend(AbstractBackend):
             #
             # 1. Do some sanity checks.
             #
+            if not self.is_relative_admin(rs, persona_id, allow_meta_admin=False):
+                raise ArchiveError(n_("You are not allowed to archive this user."))
+
             if persona['is_archived']:
                 return 0
 
@@ -1529,7 +1533,7 @@ class CoreBackend(AbstractBackend):
             #
             return ret
 
-    @access("core_admin")
+    @access(*REALM_ADMINS)
     def dearchive_persona(self, rs: RequestState,
                           persona_id: int) -> DefaultReturnCode:
         """Return a persona from the attic to activity.
@@ -1549,9 +1553,8 @@ class CoreBackend(AbstractBackend):
             self.core_log(rs, const.CoreLogCodes.persona_dearchived, persona_id)
             return code
 
-    @access("core_admin", "cde_admin")
-    def purge_persona(self, rs: RequestState,
-                      persona_id: int) -> DefaultReturnCode:
+    @access("core_admin")
+    def purge_persona(self, rs: RequestState, persona_id: int) -> DefaultReturnCode:
         """Delete all infos about this persona.
 
         It has to be archived beforehand. Thus we do not have to
@@ -1786,7 +1789,7 @@ class CoreBackend(AbstractBackend):
         if ids is not None:
             ids = affirm_set(vtypes.ID, ids or set()) - {rs.user.persona_id}
             num = len(ids)
-            access_hash = get_hash(str(sorted(ids)).encode())
+            access_hash = get_hash(str(xsorted(ids)).encode())
         else:
             num = affirm(vtypes.NonNegativeInt, num or 0)
 
@@ -2146,24 +2149,32 @@ class CoreBackend(AbstractBackend):
     @access("persona")
     def verify_personas(self, rs: RequestState, persona_ids: Collection[int],
                         required_roles: Collection[Role] = None,
+                        allowed_roles: Collection[Role] = None,
                         introspection_only: bool = True) -> bool:
         """Check whether certain ids map to actual (active) personas.
 
         Note that this will return True for an empty set of ids.
 
-        :param required_roles: If given check that all personas have
-          these roles.
+        :param required_roles: If given, check that all personas have these roles.
+        :param allowed_roles: If given, check that all personas roles are a subset of
+            these.
         """
         persona_ids = affirm_set(vtypes.ID, persona_ids)
         required_roles = required_roles or tuple()
         required_roles = affirm_set(str, required_roles)
+        allowed_roles = allowed_roles or ALL_ROLES
+        allowed_roles = affirm_set(str, allowed_roles)
+        # add always allowed roles for personas
+        allowed_roles |= {"persona", "anonymous"}
         roles = self.get_roles_multi(rs, persona_ids, introspection_only)
-        return len(roles) == len(persona_ids) and all(
-            value >= required_roles for value in roles.values())
+        return (len(roles) == len(persona_ids)
+            and all(value >= required_roles for value in roles.values())
+            and all(allowed_roles >= value for value in roles.values()))
 
     class _VerifyPersonaProtocol(Protocol):
         def __call__(self, rs: RequestState, anid: int,
                      required_roles: Collection[Role] = None,
+                     allowed_roles: Collection[Role] = None,
                      introspection_only: bool = True) -> bool: ...
     verify_persona: _VerifyPersonaProtocol = singularize(
         verify_personas, "persona_ids", "persona_id", passthrough=True)
@@ -2859,13 +2870,9 @@ class CoreBackend(AbstractBackend):
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.
         """
         query = affirm(Query, query)
-        if query.scope == "qview_core_user":
+        if query.scope in {"qview_core_user", "qview_archived_core_user"}:
             query.constraints.append(("is_archived", QueryOperators.equal,
-                                      False))
-            query.spec["is_archived"] = "bool"
-        elif query.scope == "qview_archived_persona":
-            query.constraints.append(("is_archived", QueryOperators.equal,
-                                      True))
+                                      query.scope == "qview_archived_core_user"))
             query.spec["is_archived"] = "bool"
         else:
             raise RuntimeError(n_("Bad scope."))

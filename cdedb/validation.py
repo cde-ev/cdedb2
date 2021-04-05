@@ -57,7 +57,7 @@ import re
 import string
 from enum import Enum
 from typing import (
-    Callable, Dict, Iterable, Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar,
+    Callable, Iterable, Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar,
     Union, cast, get_type_hints, overload,
 )
 
@@ -85,7 +85,8 @@ from cdedb.query import (
     QueryOrder,
 )
 from cdedb.validationdata import (
-    FREQUENCY_LISTS, GERMAN_PHONE_CODES, GERMAN_POSTAL_CODES, IBAN_LENGTHS, ITU_CODES,
+    COUNTRY_CODES, FREQUENCY_LISTS, GERMAN_PHONE_CODES, GERMAN_POSTAL_CODES,
+    IBAN_LENGTHS, ITU_CODES,
 )
 from cdedb.validationtypes import *  # pylint: disable=wildcard-import,unused-wildcard-import; # noqa
 
@@ -953,7 +954,7 @@ def _email_local_part(
     return EmailLocalPart(val)
 
 
-_PERSONA_TYPE_FIELDS = {
+PERSONA_TYPE_FIELDS: TypeMapping = {
     'is_cde_realm': bool,
     'is_event_realm': bool,
     'is_ml_realm': bool,
@@ -963,8 +964,7 @@ _PERSONA_TYPE_FIELDS = {
     'is_active': bool,
 }
 
-
-def _PERSONA_BASE_CREATION() -> Mapping[str, Any]: return {
+PERSONA_BASE_CREATION: Mapping[str, Any] = {
     'username': Email,
     'notes': Optional[str],
     'display_name': str,
@@ -1000,8 +1000,7 @@ def _PERSONA_BASE_CREATION() -> Mapping[str, Any]: return {
     'paper_expuls': NoneType,
 }
 
-
-def _PERSONA_CDE_CREATION() -> Mapping[str, Any]: return {
+PERSONA_CDE_CREATION: Mapping[str, Any] = {
     'title': Optional[str],
     'name_supplement': Optional[str],
     'gender': const.Genders,
@@ -1012,13 +1011,13 @@ def _PERSONA_CDE_CREATION() -> Mapping[str, Any]: return {
     'address': Optional[str],
     'postal_code': Optional[PrintableASCII],
     'location': Optional[str],
-    'country': Optional[str],
+    'country': Optional[Country],
     'birth_name': Optional[str],
     'address_supplement2': Optional[str],
     'address2': Optional[str],
     'postal_code2': Optional[PrintableASCII],
     'location2': Optional[str],
-    'country2': Optional[str],
+    'country2': Optional[Country],
     'weblink': Optional[str],
     'specialisation': Optional[str],
     'affiliation': Optional[str],
@@ -1032,8 +1031,7 @@ def _PERSONA_CDE_CREATION() -> Mapping[str, Any]: return {
     'paper_expuls': bool,
 }
 
-
-def _PERSONA_EVENT_CREATION() -> Mapping[str, Any]: return {
+PERSONA_EVENT_CREATION: Mapping[str, Any] = {
     'title': Optional[str],
     'name_supplement': Optional[str],
     'gender': const.Genders,
@@ -1044,21 +1042,19 @@ def _PERSONA_EVENT_CREATION() -> Mapping[str, Any]: return {
     'address': Optional[str],
     'postal_code': Optional[PrintableASCII],
     'location': Optional[str],
-    'country': Optional[str],
+    'country': Optional[Country],
 }
 
+PERSONA_FULL_ML_CREATION = {**PERSONA_BASE_CREATION}
 
-_PERSONA_FULL_ML_CREATION = {**_PERSONA_BASE_CREATION()}
+PERSONA_FULL_ASSEMBLY_CREATION = {**PERSONA_BASE_CREATION}
 
-_PERSONA_FULL_ASSEMBLY_CREATION = {**_PERSONA_BASE_CREATION()}
+PERSONA_FULL_EVENT_CREATION = {**PERSONA_BASE_CREATION, **PERSONA_EVENT_CREATION}
 
-_PERSONA_FULL_EVENT_CREATION = {**_PERSONA_BASE_CREATION(), **_PERSONA_EVENT_CREATION()}
+PERSONA_FULL_CDE_CREATION = {**PERSONA_BASE_CREATION, **PERSONA_CDE_CREATION,
+                             'is_member': bool, 'is_searchable': bool}
 
-_PERSONA_FULL_CDE_CREATION = {**_PERSONA_BASE_CREATION(), **_PERSONA_CDE_CREATION(),
-                              'is_member': bool, 'is_searchable': bool}
-
-
-def _PERSONA_COMMON_FIELDS() -> Mapping[str, Any]: return {
+PERSONA_COMMON_FIELDS: Mapping[str, Any] = {
     'username': Email,
     'notes': Optional[str],
     'is_meta_admin': bool,
@@ -1090,13 +1086,13 @@ def _PERSONA_COMMON_FIELDS() -> Mapping[str, Any]: return {
     'address': Optional[str],
     'postal_code': Optional[PrintableASCII],
     'location': Optional[str],
-    'country': Optional[str],
+    'country': Optional[Country],
     'birth_name': Optional[str],
     'address_supplement2': Optional[str],
     'address2': Optional[str],
     'postal_code2': Optional[PrintableASCII],
     'location2': Optional[str],
-    'country2': Optional[str],
+    'country2': Optional[Country],
     'weblink': Optional[str],
     'specialisation': Optional[str],
     'affiliation': Optional[str],
@@ -1138,7 +1134,7 @@ def _persona(
 
     if creation:
         temp = _examine_dictionary_fields(
-            val, _PERSONA_TYPE_FIELDS, {}, allow_superfluous=True, **kwargs)
+            val, PERSONA_TYPE_FIELDS, {}, allow_superfluous=True, **kwargs)
         temp.update({
             'is_meta_admin': False,
             'is_archived': False,
@@ -1152,17 +1148,17 @@ def _persona(
         })
         roles = extract_roles(temp)
         optional_fields: TypeMapping = {}
-        mandatory_fields: Dict[str, Any] = {**_PERSONA_TYPE_FIELDS,
-                                             **_PERSONA_BASE_CREATION()}
+        mandatory_fields: Dict[str, Any] = {**PERSONA_TYPE_FIELDS,
+                                            **PERSONA_BASE_CREATION}
         if "cde" in roles:
-            mandatory_fields.update(_PERSONA_CDE_CREATION())
+            mandatory_fields.update(PERSONA_CDE_CREATION)
         if "event" in roles:
-            mandatory_fields.update(_PERSONA_EVENT_CREATION())
+            mandatory_fields.update(PERSONA_EVENT_CREATION)
         # ml and assembly define no custom fields
     elif transition:
         realm_checks: Mapping[str, Mapping[str, Any]] = {
-            'is_cde_realm': _PERSONA_CDE_CREATION(),
-            'is_event_realm': _PERSONA_EVENT_CREATION(),
+            'is_cde_realm': PERSONA_CDE_CREATION,
+            'is_event_realm': PERSONA_EVENT_CREATION,
             'is_ml_realm': {},
             'is_assembly_realm': {},
         }
@@ -1173,7 +1169,7 @@ def _persona(
         optional_fields = {key: bool for key in realm_checks}
     else:
         mandatory_fields = {'id': ID}
-        optional_fields = _PERSONA_COMMON_FIELDS()
+        optional_fields = PERSONA_COMMON_FIELDS
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
 
@@ -1406,14 +1402,31 @@ def _german_postal_code(
     val = _printable_ascii(
         val, argname, _ignore_warnings=_ignore_warnings, **kwargs)
     val = val.strip()
-    if not aux or aux.strip() == "Deutschland":
+    if not aux or aux.strip() == "DE":
+        msg = n_("Invalid german postal code.")
+        if not (len(val) == 5 and val.isdigit()):
+            raise ValidationSummary(ValueError(argname, msg))
         if val not in GERMAN_POSTAL_CODES and not _ignore_warnings:
-            raise ValidationSummary(
-                ValidationWarning(argname, n_("Invalid german postal code.")))
+            raise ValidationSummary(ValidationWarning(argname, msg))
     return GermanPostalCode(val)
 
 
-def _GENESIS_CASE_COMMON_FIELDS() -> Mapping[str, Any]: return {
+@_add_typed_validator
+def _country(
+    val: Any, argname: str = None, *, _ignore_warnings: bool = False,
+    _convert: bool = True, **kwargs: Any
+) -> Country:
+    val = _ALL_TYPED[str](val, argname, _ignore_warnings=_ignore_warnings,
+                          _convert=_convert, **kwargs)
+    if _convert:
+        val = val.strip()
+    if val not in COUNTRY_CODES:
+        raise ValidationSummary(
+            ValueError(argname, n_("Enter actual country name in English.")))
+    return Country(val)
+
+
+GENESIS_CASE_COMMON_FIELDS: TypeMapping = {
     'username': Email,
     'given_names': str,
     'family_name': str,
@@ -1421,14 +1434,12 @@ def _GENESIS_CASE_COMMON_FIELDS() -> Mapping[str, Any]: return {
     'notes': str,
 }
 
-
-def _GENESIS_CASE_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
+GENESIS_CASE_OPTIONAL_FIELDS: TypeMapping = {
     'case_status': const.GenesisStati,
     'reviewer': ID,
 }
 
-
-def _GENESIS_CASE_ADDITIONAL_FIELDS() -> Mapping[str, Any]: return {
+GENESIS_CASE_ADDITIONAL_FIELDS: Mapping[str, Any] = {
     'gender': const.Genders,
     'birthday': Birthday,
     'telephone': Optional[Phone],
@@ -1437,14 +1448,13 @@ def _GENESIS_CASE_ADDITIONAL_FIELDS() -> Mapping[str, Any]: return {
     'address': str,
     'postal_code': Optional[PrintableASCII],
     'location': str,
-    'country': Optional[str],
+    'country': Optional[Country],
     'birth_name': Optional[str],
     'attachment_hash': str,
 }
 
-
-_GENESIS_CASE_EXPOSED_FIELDS = {**_GENESIS_CASE_COMMON_FIELDS(),
-                                **_GENESIS_CASE_ADDITIONAL_FIELDS()}
+GENESIS_CASE_EXPOSED_FIELDS = {**GENESIS_CASE_COMMON_FIELDS,
+                               **GENESIS_CASE_ADDITIONAL_FIELDS}
 
 
 @_add_typed_validator
@@ -1465,19 +1475,19 @@ def _genesis_case(
                 "This realm is not supported for genesis.")))
         else:
             additional_fields = {
-                k: v for k, v in _GENESIS_CASE_ADDITIONAL_FIELDS().items()
+                k: v for k, v in GENESIS_CASE_ADDITIONAL_FIELDS.items()
                 if k in REALM_SPECIFIC_GENESIS_FIELDS[val['realm']]}
     else:
         raise ValidationSummary(ValueError(n_("Must specify realm.")))
 
     if creation:
-        mandatory_fields = dict(_GENESIS_CASE_COMMON_FIELDS(),
+        mandatory_fields = dict(GENESIS_CASE_COMMON_FIELDS,
                                 **additional_fields)
         optional_fields: TypeMapping = {}
     else:
         mandatory_fields = {'id': ID}
-        optional_fields = dict(_GENESIS_CASE_COMMON_FIELDS(),
-                               **_GENESIS_CASE_OPTIONAL_FIELDS(),
+        optional_fields = dict(GENESIS_CASE_COMMON_FIELDS,
+                               **GENESIS_CASE_OPTIONAL_FIELDS,
                                **additional_fields)
 
     # allow_superflous=True will result in superfluous keys being removed.
@@ -1492,15 +1502,14 @@ def _genesis_case(
     return GenesisCase(val)
 
 
-def _PRIVILEGE_CHANGE_COMMON_FIELDS() -> Mapping[str, Any]: return {
+PRIVILEGE_CHANGE_COMMON_FIELDS: TypeMapping = {
     'persona_id': ID,
     'submitted_by': ID,
     'status': const.PrivilegeChangeStati,
     'notes': str,
 }
 
-
-def _PRIVILEGE_CHANGE_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
+PRIVILEGE_CHANGE_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'is_meta_admin': Optional[bool],
     'is_core_admin': Optional[bool],
     'is_cde_admin': Optional[bool],
@@ -1520,8 +1529,8 @@ def _privilege_change(
     val = _mapping(val, argname, **kwargs)
 
     val = _examine_dictionary_fields(
-        val, _PRIVILEGE_CHANGE_COMMON_FIELDS(),
-        _PRIVILEGE_CHANGE_OPTIONAL_FIELDS(), **kwargs)
+        val, PRIVILEGE_CHANGE_COMMON_FIELDS,
+        PRIVILEGE_CHANGE_OPTIONAL_FIELDS, **kwargs)
 
     return PrivilegeChange(val)
 
@@ -1699,7 +1708,7 @@ def _expuls(
         val, {'id': ID}, optional_fields, **kwargs))
 
 
-def _LASTSCHRIFT_COMMON_FIELDS() -> Mapping[str, Any]: return {
+LASTSCHRIFT_COMMON_FIELDS: Mapping[str, Any] = {
     'amount': PositiveDecimal,
     'iban': IBAN,
     'account_owner': Optional[str],
@@ -1707,8 +1716,7 @@ def _LASTSCHRIFT_COMMON_FIELDS() -> Mapping[str, Any]: return {
     'notes': Optional[str],
 }
 
-
-def _LASTSCHRIFT_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
+LASTSCHRIFT_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'granted_at': datetime.datetime,
     'revoked_at': Optional[datetime.datetime],
 }
@@ -1725,12 +1733,12 @@ def _lastschrift(
     """
     val = _mapping(val, argname, **kwargs)
     if creation:
-        mandatory_fields = dict(_LASTSCHRIFT_COMMON_FIELDS(), persona_id=ID)
-        optional_fields = _LASTSCHRIFT_OPTIONAL_FIELDS()
+        mandatory_fields = dict(LASTSCHRIFT_COMMON_FIELDS, persona_id=ID)
+        optional_fields = {**LASTSCHRIFT_OPTIONAL_FIELDS}
     else:
         mandatory_fields = {'id': ID}
-        optional_fields = dict(_LASTSCHRIFT_COMMON_FIELDS(),
-                               **_LASTSCHRIFT_OPTIONAL_FIELDS())
+        optional_fields = {**LASTSCHRIFT_COMMON_FIELDS,
+                           **LASTSCHRIFT_OPTIONAL_FIELDS}
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
     return Lastschrift(val)
@@ -1784,7 +1792,7 @@ def _iban(
     return IBAN(val)
 
 
-def _LASTSCHRIFT_TRANSACTION_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
+LASTSCHRIFT_TRANSACTION_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'amount': PositiveDecimal,
     'status': const.LastschriftTransactionStati,
     'issued_at': datetime.datetime,
@@ -1809,7 +1817,7 @@ def _lastschrift_transaction(
             'lastschrift_id': ID,
             'period_id': ID,
         }
-        optional_fields = _LASTSCHRIFT_TRANSACTION_OPTIONAL_FIELDS()
+        optional_fields = {**LASTSCHRIFT_TRANSACTION_OPTIONAL_FIELDS}
     else:
         raise ValidationSummary(ValueError(argname, n_(
             "Modification of lastschrift transactions not supported.")))
@@ -1817,7 +1825,7 @@ def _lastschrift_transaction(
         val, mandatory_fields, optional_fields, **kwargs))
 
 
-_SEPA_TRANSACTIONS_FIELDS = {
+SEPA_TRANSACTIONS_FIELDS: TypeMapping = {
     'issued_at': datetime.datetime,
     'lastschrift_id': ID,
     'period_id': ID,
@@ -1830,7 +1838,8 @@ _SEPA_TRANSACTIONS_FIELDS = {
     'subject': str,
     'type': str,
 }
-_SEPA_TRANSACTIONS_LIMITS = {
+
+SEPA_TRANSACTIONS_LIMITS: Mapping[str, int] = {
     'account_owner': 70,
     'subject': 140,
     'mandate_reference': 35,
@@ -1845,7 +1854,7 @@ def _sepa_transactions(
 ) -> SepaTransactions:
     val = _iterable(val, argname, **kwargs)
 
-    mandatory_fields = _SEPA_TRANSACTIONS_FIELDS
+    mandatory_fields = {**SEPA_TRANSACTIONS_FIELDS}
     ret = []
     errs = ValidationSummary()
 
@@ -1863,12 +1872,12 @@ def _sepa_transactions(
             errs.extend(e)
             continue
 
-        for attribute, validator in _SEPA_TRANSACTIONS_FIELDS.items():
+        for attribute, validator in SEPA_TRANSACTIONS_FIELDS.items():
             if validator is _str:
                 entry[attribute] = asciificator(entry[attribute])
-            if attribute in _SEPA_TRANSACTIONS_LIMITS:
+            if attribute in SEPA_TRANSACTIONS_LIMITS:
                 if len(entry[attribute]
-                       ) > _SEPA_TRANSACTIONS_LIMITS[attribute]:
+                       ) > SEPA_TRANSACTIONS_LIMITS[attribute]:
                     errs.append(ValueError(attribute, n_("Too long.")))
 
         if entry['type'] not in ("OOFF", "FRST", "RCUR"):
@@ -1883,7 +1892,7 @@ def _sepa_transactions(
     return SepaTransactions(ret)
 
 
-_SEPA_META_FIELDS = {
+SEPA_META_FIELDS: TypeMapping = {
     'message_id': str,
     'total_sum': PositiveDecimal,
     'partial_sums': Mapping,
@@ -1891,14 +1900,16 @@ _SEPA_META_FIELDS = {
     'sender': Mapping,
     'payment_date': datetime.date,
 }
-_SEPA_SENDER_FIELDS = {
+
+SEPA_SENDER_FIELDS: TypeMapping = {
     'name': str,
     'address': Iterable,
     'country': str,
     'iban': IBAN,
     'glaeubigerid': str,
 }
-_SEPA_META_LIMITS = {
+
+SEPA_META_LIMITS: Mapping[str, int] = {
     'message_id': 35,
     # 'name': 70, easier to check by hand
     # 'address': 70, has to be checked by hand
@@ -1912,20 +1923,20 @@ def _sepa_meta(
 ) -> SepaMeta:
     val = _mapping(val, argname, **kwargs)
 
-    mandatory_fields = _SEPA_META_FIELDS
+    mandatory_fields = {**SEPA_META_FIELDS}
     val = _examine_dictionary_fields(
         val, mandatory_fields, {}, **kwargs)
 
-    mandatory_fields = _SEPA_SENDER_FIELDS
+    mandatory_fields = {**SEPA_SENDER_FIELDS}
     val['sender'] = _examine_dictionary_fields(
         val['sender'], mandatory_fields, {}, **kwargs)
 
     errs = ValidationSummary()
-    for attribute, validator in _SEPA_META_FIELDS.items():
+    for attribute, validator in SEPA_META_FIELDS.items():
         if validator == str:
             val[attribute] = asciificator(val[attribute])
-        if attribute in _SEPA_META_LIMITS:
-            if len(val[attribute]) > _SEPA_META_LIMITS[attribute]:
+        if attribute in SEPA_META_LIMITS:
+            if len(val[attribute]) > SEPA_META_LIMITS[attribute]:
                 errs.append(ValueError(attribute, n_("Too long.")))
 
     if val['sender']['country'] != "DE":
@@ -1939,7 +1950,7 @@ def _sepa_meta(
         if len(line) > 70:
             errs.append(ValueError('address', n_("Too long.")))
 
-    for attribute, validator in _SEPA_SENDER_FIELDS.items():
+    for attribute, validator in SEPA_SENDER_FIELDS.items():
         if validator is _str:
             val['sender'][attribute] = asciificator(val['sender'][attribute])
     if len(val['sender']['name']) > 70:
@@ -1989,7 +2000,7 @@ def _meta_info(
     return MetaInfo(val)
 
 
-def _INSTITUTION_COMMON_FIELDS() -> Mapping[str, Any]: return {
+INSTITUTION_COMMON_FIELDS: TypeMapping = {
     'title': str,
     'shortname': str,
 }
@@ -2007,16 +2018,16 @@ def _institution(
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        mandatory_fields = _INSTITUTION_COMMON_FIELDS()
+        mandatory_fields = {**INSTITUTION_COMMON_FIELDS}
         optional_fields: TypeMapping = {}
     else:
         mandatory_fields = {'id': ID}
-        optional_fields = _INSTITUTION_COMMON_FIELDS()
+        optional_fields = {**INSTITUTION_COMMON_FIELDS}
     return Institution(_examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs))
 
 
-def _PAST_EVENT_COMMON_FIELDS() -> Mapping[str, Any]: return {
+PAST_EVENT_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'shortname': str,
     'institution': ID,
@@ -2024,13 +2035,12 @@ def _PAST_EVENT_COMMON_FIELDS() -> Mapping[str, Any]: return {
     'description': Optional[str],
 }
 
-
-def _PAST_EVENT_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
-    'notes': Optional[str],
+PAST_EVENT_OPTIONAL_FIELDS: Mapping[str, Any] = {
+    'participant_info': Optional[str],
 }
 
 
-_PAST_EVENT_FIELDS = {**_PAST_EVENT_COMMON_FIELDS(), **_PAST_EVENT_OPTIONAL_FIELDS()}
+PAST_EVENT_FIELDS = {**PAST_EVENT_COMMON_FIELDS, **PAST_EVENT_OPTIONAL_FIELDS}
 
 
 @_add_typed_validator
@@ -2045,25 +2055,23 @@ def _past_event(
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        mandatory_fields = _PAST_EVENT_COMMON_FIELDS()
-        optional_fields = _PAST_EVENT_OPTIONAL_FIELDS()
+        mandatory_fields = {**PAST_EVENT_COMMON_FIELDS}
+        optional_fields = {**PAST_EVENT_OPTIONAL_FIELDS}
     else:
         mandatory_fields = {'id': ID}
-        optional_fields = dict(_PAST_EVENT_COMMON_FIELDS(),
-                               **_PAST_EVENT_OPTIONAL_FIELDS())
+        optional_fields = {**PAST_EVENT_COMMON_FIELDS, **PAST_EVENT_OPTIONAL_FIELDS}
     return PastEvent(_examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs))
 
 
-def _EVENT_COMMON_FIELDS() -> Mapping[str, Any]: return {
+EVENT_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'institution': ID,
     'description': Optional[str],
     'shortname': Identifier,
 }
 
-
-def _EVENT_EXPOSED_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
+EVENT_EXPOSED_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'is_visible': bool,
     'is_course_list_visible': bool,
     'is_course_state_visible': bool,
@@ -2073,24 +2081,24 @@ def _EVENT_EXPOSED_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
     'registration_hard_limit': Optional[datetime.datetime],
     'notes': Optional[str],
     'is_participant_list_visible': bool,
-    'courses_in_participant_list': bool,
+    'is_course_assignment_visible': bool,
     'is_cancelled': bool,
     'iban': Optional[IBAN],
     'nonmember_surcharge': NonNegativeDecimal,
     'mail_text': Optional[str],
     'registration_text': Optional[str],
     'orga_address': Optional[Email],
+    'participant_info': Optional[str],
     'lodge_field': Optional[ID],
     'camping_mat_field': Optional[ID],
     'course_room_field': Optional[ID],
 }
 
+EVENT_EXPOSED_FIELDS = {**EVENT_COMMON_FIELDS, **EVENT_EXPOSED_OPTIONAL_FIELDS}
 
-_EVENT_EXPOSED_FIELDS = {**_EVENT_COMMON_FIELDS(), **_EVENT_EXPOSED_OPTIONAL_FIELDS()}
 
-
-def _EVENT_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
-    **_EVENT_EXPOSED_OPTIONAL_FIELDS(),
+EVENT_OPTIONAL_FIELDS: Mapping[str, Any] = {
+    **EVENT_EXPOSED_OPTIONAL_FIELDS,
     'offline_lock': bool,
     'is_archived': bool,
     'orgas': Iterable,
@@ -2112,12 +2120,11 @@ def _event(
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        mandatory_fields = _EVENT_COMMON_FIELDS()
-        optional_fields = _EVENT_OPTIONAL_FIELDS()
+        mandatory_fields = {**EVENT_COMMON_FIELDS}
+        optional_fields = {**EVENT_OPTIONAL_FIELDS}
     else:
         mandatory_fields = {'id': ID}
-        optional_fields = dict(_EVENT_COMMON_FIELDS(),
-                               **_EVENT_OPTIONAL_FIELDS())
+        optional_fields = {**EVENT_COMMON_FIELDS, **EVENT_OPTIONAL_FIELDS}
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
 
@@ -2219,7 +2226,7 @@ def _event(
     return Event(val)
 
 
-_EVENT_PART_COMMON_FIELDS: TypeMapping = {
+EVENT_PART_COMMON_FIELDS: TypeMapping = {
     'title': str,
     'shortname': str,
     'part_begin': datetime.date,
@@ -2245,11 +2252,11 @@ def _event_part(
     optional_fields: TypeMapping
 
     if creation:
-        mandatory_fields = _EVENT_PART_COMMON_FIELDS
+        mandatory_fields = {**EVENT_PART_COMMON_FIELDS}
         optional_fields = {}
     else:
         mandatory_fields = {}
-        optional_fields = _EVENT_PART_COMMON_FIELDS
+        optional_fields = {**EVENT_PART_COMMON_FIELDS}
 
     val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
 
@@ -2286,7 +2293,7 @@ def _event_part(
     return EventPart(val)
 
 
-_EVENT_TRACK_COMMON_FIELDS = {
+EVENT_TRACK_COMMON_FIELDS: TypeMapping = {
     'title': str,
     'shortname': str,
     'num_choices': NonNegativeInt,
@@ -2307,11 +2314,11 @@ def _event_track(
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        mandatory_fields = _EVENT_TRACK_COMMON_FIELDS
+        mandatory_fields = {**EVENT_TRACK_COMMON_FIELDS}
         optional_fields: TypeMapping = {}
     else:
         mandatory_fields = {}
-        optional_fields = _EVENT_TRACK_COMMON_FIELDS
+        optional_fields = {**EVENT_TRACK_COMMON_FIELDS}
 
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
@@ -2434,7 +2441,7 @@ def _event_fee_modifier(
     return EventFeeModifier(val)
 
 
-def _PAST_COURSE_COMMON_FIELDS() -> Mapping[str, Any]: return {
+PAST_COURSE_COMMON_FIELDS: Mapping[str, Any] = {
     'nr': str,
     'title': str,
     'description': Optional[str],
@@ -2455,19 +2462,19 @@ def _past_course(
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        mandatory_fields = dict(_PAST_COURSE_COMMON_FIELDS(), pevent_id=ID)
+        mandatory_fields = dict(PAST_COURSE_COMMON_FIELDS, pevent_id=ID)
         optional_fields: TypeMapping = {}
     else:
         # no pevent_id, since the associated event should be fixed
         mandatory_fields = {'id': ID}
-        optional_fields = _PAST_COURSE_COMMON_FIELDS()
+        optional_fields = {**PAST_COURSE_COMMON_FIELDS}
 
     val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
 
     return PastCourse(val)
 
 
-def _COURSE_COMMON_FIELDS() -> Mapping[str, Any]: return {
+COURSE_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'description': Optional[str],
     'nr': str,
@@ -2478,8 +2485,7 @@ def _COURSE_COMMON_FIELDS() -> Mapping[str, Any]: return {
     'notes': Optional[str],
 }
 
-
-_COURSE_OPTIONAL_FIELDS = {
+COURSE_OPTIONAL_FIELDS: TypeMapping = {
     'segments': Iterable,
     'active_segments': Iterable,
     'fields': Mapping,
@@ -2500,14 +2506,13 @@ def _course(
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        mandatory_fields = dict(_COURSE_COMMON_FIELDS(), event_id=ID)
-        optional_fields = _COURSE_OPTIONAL_FIELDS
+        mandatory_fields = dict(COURSE_COMMON_FIELDS, event_id=ID)
+        optional_fields = {**COURSE_OPTIONAL_FIELDS}
         # TODO make dict(field, ...) vs {**fields, ...} consistent
     else:
         # no event_id, since the associated event should be fixed
         mandatory_fields = {'id': ID}
-        optional_fields = dict(_COURSE_COMMON_FIELDS(),
-                               **_COURSE_OPTIONAL_FIELDS)
+        optional_fields = {**COURSE_COMMON_FIELDS, **COURSE_OPTIONAL_FIELDS}
 
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
@@ -2547,7 +2552,7 @@ def _course(
     return Course(val)
 
 
-def _REGISTRATION_COMMON_FIELDS() -> Mapping[str, Any]: return {
+REGISTRATION_COMMON_FIELDS: Mapping[str, Any] = {
     'mixed_lodging': bool,
     'list_consent': bool,
     'notes': Optional[str],
@@ -2555,8 +2560,7 @@ def _REGISTRATION_COMMON_FIELDS() -> Mapping[str, Any]: return {
     'tracks': Mapping,
 }
 
-
-def _REGISTRATION_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
+REGISTRATION_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'parental_agreement': bool,
     'real_persona_id': Optional[ID],
     'orga_notes': Optional[str],
@@ -2581,15 +2585,13 @@ def _registration(
 
     if creation:
         # creation does not allow fields for sake of simplicity
-        mandatory_fields = dict(_REGISTRATION_COMMON_FIELDS(),
+        mandatory_fields = dict(REGISTRATION_COMMON_FIELDS,
                                 persona_id=ID, event_id=ID)
-        optional_fields = _REGISTRATION_OPTIONAL_FIELDS()
+        optional_fields = {**REGISTRATION_OPTIONAL_FIELDS}
     else:
         # no event_id/persona_id, since associations should be fixed
         mandatory_fields = {'id': ID}
-        optional_fields = dict(
-            _REGISTRATION_COMMON_FIELDS(),
-            **_REGISTRATION_OPTIONAL_FIELDS())
+        optional_fields = {**REGISTRATION_COMMON_FIELDS, **REGISTRATION_OPTIONAL_FIELDS}
 
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
@@ -2743,7 +2745,7 @@ def _event_associated_fields(
     return EventAssociatedFields(val)
 
 
-def _LODGEMENT_GROUP_FIELDS() -> Mapping[str, Any]: return {
+LODGEMENT_GROUP_FIELDS: TypeMapping = {
     'title': str,
 }
 
@@ -2761,18 +2763,18 @@ def _lodgement_group(
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        mandatory_fields = dict(_LODGEMENT_GROUP_FIELDS(), event_id=ID)
+        mandatory_fields = dict(LODGEMENT_GROUP_FIELDS, event_id=ID)
         optional_fields: TypeMapping = {}
     else:
         # no event_id, since the associated event should be fixed.
         mandatory_fields = {'id': ID}
-        optional_fields = _LODGEMENT_GROUP_FIELDS()
+        optional_fields = {**LODGEMENT_GROUP_FIELDS}
 
     return LodgementGroup(_examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs))
 
 
-def _LODGEMENT_COMMON_FIELDS() -> Mapping[str, Any]: return {
+LODGEMENT_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'regular_capacity': NonNegativeInt,
     'camping_mat_capacity': NonNegativeInt,
@@ -2780,8 +2782,7 @@ def _LODGEMENT_COMMON_FIELDS() -> Mapping[str, Any]: return {
     'group_id': Optional[ID],
 }
 
-
-_LODGEMENT_OPTIONAL_FIELDS = {
+LODGEMENT_OPTIONAL_FIELDS: TypeMapping = {
     'fields': Mapping,
 }
 
@@ -2799,13 +2800,12 @@ def _lodgement(
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        mandatory_fields = dict(_LODGEMENT_COMMON_FIELDS(), event_id=ID)
-        optional_fields = _LODGEMENT_OPTIONAL_FIELDS
+        mandatory_fields = dict(LODGEMENT_COMMON_FIELDS, event_id=ID)
+        optional_fields = {**LODGEMENT_OPTIONAL_FIELDS}
     else:
         # no event_id, since the associated event should be fixed
         mandatory_fields = {'id': ID}
-        optional_fields = dict(_LODGEMENT_COMMON_FIELDS(),
-                               **_LODGEMENT_OPTIONAL_FIELDS)
+        optional_fields = {**LODGEMENT_COMMON_FIELDS, **LODGEMENT_OPTIONAL_FIELDS}
 
     # the check of fields is delegated to _event_associated_fields
     return Lodgement(_examine_dictionary_fields(
@@ -3184,7 +3184,7 @@ def _serialized_partial_event(
     return SerializedPartialEvent(val)
 
 
-def _PARTIAL_COURSE_COMMON_FIELDS() -> Mapping[str, Any]: return {
+PARTIAL_COURSE_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'description': Optional[str],
     'nr': Optional[str],
@@ -3195,8 +3195,7 @@ def _PARTIAL_COURSE_COMMON_FIELDS() -> Mapping[str, Any]: return {
     'notes': Optional[str],
 }
 
-
-_PARTIAL_COURSE_OPTIONAL_FIELDS = {
+PARTIAL_COURSE_OPTIONAL_FIELDS: TypeMapping = {
     'segments': Mapping,
     'fields': Mapping,
 }
@@ -3214,12 +3213,12 @@ def _partial_course(
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        mandatory_fields = _PARTIAL_COURSE_COMMON_FIELDS()
-        optional_fields = _PARTIAL_COURSE_OPTIONAL_FIELDS
+        mandatory_fields = {**PARTIAL_COURSE_COMMON_FIELDS}
+        optional_fields = {**PARTIAL_COURSE_OPTIONAL_FIELDS}
     else:
         mandatory_fields = {}
-        optional_fields = dict(_PARTIAL_COURSE_COMMON_FIELDS(),
-                               **_PARTIAL_COURSE_OPTIONAL_FIELDS)
+        optional_fields = {**PARTIAL_COURSE_COMMON_FIELDS,
+                           **PARTIAL_COURSE_OPTIONAL_FIELDS}
 
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
@@ -3245,7 +3244,7 @@ def _partial_course(
     return PartialCourse(val)
 
 
-def _PARTIAL_LODGEMENT_GROUP_FIELDS() -> Mapping[str, Any]: return {
+PARTIAL_LODGEMENT_GROUP_FIELDS: TypeMapping = {
     'title': str,
 }
 
@@ -3263,17 +3262,17 @@ def _partial_lodgement_group(
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        mandatory_fields = _PARTIAL_LODGEMENT_GROUP_FIELDS()
+        mandatory_fields = {**PARTIAL_LODGEMENT_GROUP_FIELDS}
         optional_fields: TypeMapping = {}
     else:
         mandatory_fields = {}
-        optional_fields = _PARTIAL_LODGEMENT_GROUP_FIELDS()
+        optional_fields = {**PARTIAL_LODGEMENT_GROUP_FIELDS}
 
     return PartialLodgementGroup(_examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs))
 
 
-def _PARTIAL_LODGEMENT_COMMON_FIELDS() -> Mapping[str, Any]: return {
+PARTIAL_LODGEMENT_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'regular_capacity': NonNegativeInt,
     'camping_mat_capacity': NonNegativeInt,
@@ -3281,8 +3280,7 @@ def _PARTIAL_LODGEMENT_COMMON_FIELDS() -> Mapping[str, Any]: return {
     'group_id': Optional[PartialImportID],
 }
 
-
-_PARTIAL_LODGEMENT_OPTIONAL_FIELDS = {
+PARTIAL_LODGEMENT_OPTIONAL_FIELDS: TypeMapping = {
     'fields': Mapping,
 }
 
@@ -3299,19 +3297,19 @@ def _partial_lodgement(
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        mandatory_fields = _PARTIAL_LODGEMENT_COMMON_FIELDS()
-        optional_fields = _PARTIAL_LODGEMENT_OPTIONAL_FIELDS
+        mandatory_fields = {**PARTIAL_LODGEMENT_COMMON_FIELDS}
+        optional_fields = {**PARTIAL_LODGEMENT_OPTIONAL_FIELDS}
     else:
         mandatory_fields = {}
-        optional_fields = dict(_PARTIAL_LODGEMENT_COMMON_FIELDS(),
-                               **_PARTIAL_LODGEMENT_OPTIONAL_FIELDS)
+        optional_fields = {**PARTIAL_LODGEMENT_COMMON_FIELDS,
+                           **PARTIAL_LODGEMENT_OPTIONAL_FIELDS}
 
     # the check of fields is delegated to _event_associated_fields
     return PartialLodgement(_examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs))
 
 
-def _PARTIAL_REGISTRATION_COMMON_FIELDS() -> Mapping[str, Any]: return {
+PARTIAL_REGISTRATION_COMMON_FIELDS: Mapping[str, Any] = {
     'mixed_lodging': bool,
     'list_consent': bool,
     'notes': Optional[str],
@@ -3319,8 +3317,7 @@ def _PARTIAL_REGISTRATION_COMMON_FIELDS() -> Mapping[str, Any]: return {
     'tracks': Mapping,
 }
 
-
-def _PARTIAL_REGISTRATION_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
+PARTIAL_REGISTRATION_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'parental_agreement': Optional[bool],
     'orga_notes': Optional[str],
     'payment': Optional[datetime.date],
@@ -3347,15 +3344,13 @@ def _partial_registration(
 
     if creation:
         # creation does not allow fields for sake of simplicity
-        mandatory_fields = dict(_PARTIAL_REGISTRATION_COMMON_FIELDS(),
-                                persona_id=ID)
-        optional_fields = _PARTIAL_REGISTRATION_OPTIONAL_FIELDS()
+        mandatory_fields = dict(PARTIAL_REGISTRATION_COMMON_FIELDS, persona_id=ID)
+        optional_fields = {**PARTIAL_REGISTRATION_OPTIONAL_FIELDS}
     else:
         # no event_id/persona_id, since associations should be fixed
         mandatory_fields = {}
-        optional_fields = dict(
-            _PARTIAL_REGISTRATION_COMMON_FIELDS(),
-            **_PARTIAL_REGISTRATION_OPTIONAL_FIELDS())
+        optional_fields = {**PARTIAL_REGISTRATION_COMMON_FIELDS,
+                           **PARTIAL_REGISTRATION_OPTIONAL_FIELDS}
 
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
@@ -3455,7 +3450,7 @@ def _partial_registration_track(
     return PartialRegistrationTrack(val)
 
 
-def _MAILINGLIST_COMMON_FIELDS() -> Mapping[str, Any]: return {
+MAILINGLIST_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'local_part': EmailLocalPart,
     'domain': const.MailinglistDomain,
@@ -3469,18 +3464,16 @@ def _MAILINGLIST_COMMON_FIELDS() -> Mapping[str, Any]: return {
     'notes': Optional[str],
 }
 
-
-def _MAILINGLIST_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
+MAILINGLIST_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'assembly_id': NoneType,
     'event_id': NoneType,
     'registration_stati': EmptyList,
 }
 
-
-ALL_MAILINGLIST_FIELDS = (_MAILINGLIST_COMMON_FIELDS().keys() |
+ALL_MAILINGLIST_FIELDS = (MAILINGLIST_COMMON_FIELDS.keys() |
                           ml_type.ADDITIONAL_TYPE_FIELDS.items())
 
-_MAILINGLIST_READONLY_FIELDS = {
+MAILINGLIST_READONLY_FIELDS = {
     'address',
     'domain_str',
     'ml_type_class',
@@ -3510,8 +3503,8 @@ def _mailinglist(
         atype.mandatory_validation_fields)
     optional_validation_fields.update(  # type: ignore
         atype.optional_validation_fields)
-    mandatory_fields = dict(_MAILINGLIST_COMMON_FIELDS())
-    optional_fields = dict(_MAILINGLIST_OPTIONAL_FIELDS())
+    mandatory_fields = {**MAILINGLIST_COMMON_FIELDS}
+    optional_fields = {**MAILINGLIST_OPTIONAL_FIELDS}
 
     # iterable_fields = []
     for source, target in ((mandatory_validation_fields, mandatory_fields),
@@ -3521,7 +3514,7 @@ def _mailinglist(
     # Optionally remove readonly attributes, take care to keep the original.
     if _allow_readonly:
         val = dict(copy.deepcopy(val))
-        for key in _MAILINGLIST_READONLY_FIELDS:
+        for key in MAILINGLIST_READONLY_FIELDS:
             if key in val:
                 del val[key]
 
@@ -3559,18 +3552,16 @@ def _mailinglist(
     return Mailinglist(val)
 
 
-_SUBSCRIPTION_ID_FIELDS: TypeMapping = {
+SUBSCRIPTION_ID_FIELDS: TypeMapping = {
     'mailinglist_id': ID,
     'persona_id': ID,
 }
 
-
-def _SUBSCRIPTION_STATE_FIELDS() -> Mapping[str, Any]: return {
-    'subscription_state': const.SubscriptionStates,
+SUBSCRIPTION_STATE_FIELDS: TypeMapping = {
+    'subscription_state': const.SubscriptionState,
 }
 
-
-_SUBSCRIPTION_ADDRESS_FIELDS = {
+SUBSCRIPTION_ADDRESS_FIELDS: TypeMapping = {
     'address': Email,
 }
 
@@ -3583,7 +3574,7 @@ def _subscription_identifier(
 
     # TODO why is deepcopy mandatory?
     # TODO maybe make signature of examine dict to take a non-mutable mapping?
-    mandatory_fields = {**_SUBSCRIPTION_ID_FIELDS}
+    mandatory_fields = {**SUBSCRIPTION_ID_FIELDS}
 
     return SubscriptionIdentifier(_examine_dictionary_fields(
         val, mandatory_fields, **kwargs))
@@ -3597,8 +3588,8 @@ def _subscription_state(
 
     # TODO instead of deepcopy simply do not mutate mandatory_fields
     # TODO or use function returning the dict everywhere instead
-    mandatory_fields = {**_SUBSCRIPTION_ID_FIELDS}
-    mandatory_fields.update(_SUBSCRIPTION_STATE_FIELDS())
+    mandatory_fields = {**SUBSCRIPTION_ID_FIELDS}
+    mandatory_fields.update(SUBSCRIPTION_STATE_FIELDS)
 
     return SubscriptionState(_examine_dictionary_fields(
         val, mandatory_fields, **kwargs))
@@ -3610,14 +3601,14 @@ def _subscription_address(
 ) -> SubscriptionAddress:
     val = _mapping(val, argname, **kwargs)
 
-    mandatory_fields = {**_SUBSCRIPTION_ID_FIELDS}
-    mandatory_fields.update(_SUBSCRIPTION_ADDRESS_FIELDS)
+    mandatory_fields = {**SUBSCRIPTION_ID_FIELDS}
+    mandatory_fields.update(SUBSCRIPTION_ADDRESS_FIELDS)
 
     return SubscriptionAddress(_examine_dictionary_fields(
         val, mandatory_fields, **kwargs))
 
 
-def _ASSEMBLY_COMMON_FIELDS() -> Mapping[str, Any]: return {
+ASSEMBLY_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'shortname': Identifier,
     'description': Optional[str],
@@ -3625,8 +3616,7 @@ def _ASSEMBLY_COMMON_FIELDS() -> Mapping[str, Any]: return {
     'notes': Optional[str],
 }
 
-
-def _ASSEMBLY_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
+ASSEMBLY_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'is_active': bool,
     'presider_address': Optional[Email],
     'presiders': Iterable
@@ -3645,12 +3635,11 @@ def _assembly(
     val = dict(_mapping(val, argname, **kwargs))
 
     if creation:
-        mandatory_fields = _ASSEMBLY_COMMON_FIELDS()
-        optional_fields = _ASSEMBLY_OPTIONAL_FIELDS()
+        mandatory_fields = {**ASSEMBLY_COMMON_FIELDS}
+        optional_fields = {**ASSEMBLY_OPTIONAL_FIELDS}
     else:
         mandatory_fields = {'id': ID}
-        optional_fields = dict(_ASSEMBLY_COMMON_FIELDS(),
-                               **_ASSEMBLY_OPTIONAL_FIELDS())
+        optional_fields = {**ASSEMBLY_COMMON_FIELDS, **ASSEMBLY_OPTIONAL_FIELDS}
 
     errs = ValidationSummary()
 
@@ -3672,7 +3661,7 @@ def _assembly(
         val, mandatory_fields, optional_fields, **kwargs))
 
 
-def _BALLOT_COMMON_FIELDS() -> Mapping[str, Any]: return {
+BALLOT_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'description': Optional[str],
     'vote_begin': datetime.datetime,
@@ -3680,8 +3669,7 @@ def _BALLOT_COMMON_FIELDS() -> Mapping[str, Any]: return {
     'notes': Optional[str],
 }
 
-
-def _BALLOT_EXPOSED_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
+BALLOT_EXPOSED_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'vote_extension_end': Optional[datetime.datetime],
     'abs_quorum': int,
     'rel_quorum': int,
@@ -3689,13 +3677,10 @@ def _BALLOT_EXPOSED_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
     'use_bar': bool,
 }
 
+BALLOT_EXPOSED_FIELDS = {**BALLOT_COMMON_FIELDS, **BALLOT_EXPOSED_OPTIONAL_FIELDS}
 
-_BALLOT_EXPOSED_FIELDS = {**_BALLOT_COMMON_FIELDS(),
-                          **_BALLOT_EXPOSED_OPTIONAL_FIELDS()}
-
-
-def _BALLOT_OPTIONAL_FIELDS() -> Mapping[str, Any]: return {
-    **_BALLOT_EXPOSED_OPTIONAL_FIELDS(),
+BALLOT_OPTIONAL_FIELDS: Mapping[str, Any] = {
+    **BALLOT_EXPOSED_OPTIONAL_FIELDS,
     'extended': Optional[bool],
     'is_tallied': bool,
     'candidates': Mapping
@@ -3714,12 +3699,11 @@ def _ballot(
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        mandatory_fields = dict(_BALLOT_COMMON_FIELDS(), assembly_id=ID)
-        optional_fields = _BALLOT_OPTIONAL_FIELDS()
+        mandatory_fields = dict(BALLOT_COMMON_FIELDS, assembly_id=ID)
+        optional_fields = {**BALLOT_OPTIONAL_FIELDS}
     else:
         mandatory_fields = {'id': ID}
-        optional_fields = dict(_BALLOT_COMMON_FIELDS(),
-                               **_BALLOT_OPTIONAL_FIELDS())
+        optional_fields = {**BALLOT_COMMON_FIELDS, **BALLOT_OPTIONAL_FIELDS}
 
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
@@ -3805,7 +3789,7 @@ def _ballot(
     return Ballot(val)
 
 
-_BALLOT_CANDIDATE_COMMON_FIELDS = {
+BALLOT_CANDIDATE_COMMON_FIELDS: TypeMapping = {
     'title': str,
     'shortname': Identifier,
 }
@@ -3823,11 +3807,11 @@ def _ballot_candidate(
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        mandatory_fields = _BALLOT_CANDIDATE_COMMON_FIELDS
+        mandatory_fields = {**BALLOT_CANDIDATE_COMMON_FIELDS}
         optional_fields: TypeMapping = {}
     else:
         mandatory_fields = {'id': ID}
-        optional_fields = _BALLOT_CANDIDATE_COMMON_FIELDS
+        optional_fields = {**BALLOT_CANDIDATE_COMMON_FIELDS}
 
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
@@ -3839,13 +3823,12 @@ def _ballot_candidate(
     return BallotCandidate(val)
 
 
-def _ASSEMBLY_ATTACHMENT_FIELDS() -> Mapping[str, Any]: return {
+ASSEMBLY_ATTACHMENT_FIELDS: Mapping[str, Any] = {
     'assembly_id': Optional[ID],
     'ballot_id': Optional[ID],
 }
 
-
-def _ASSEMBLY_ATTACHMENT_VERSION_FIELDS() -> Mapping[str, Any]: return {
+ASSEMBLY_ATTACHMENT_VERSION_FIELDS: Mapping[str, Any] = {
     'title': str,
     'authors': Optional[str],
     'filename': str,
@@ -3860,10 +3843,10 @@ def _assembly_attachment(
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        mandatory_fields = _ASSEMBLY_ATTACHMENT_VERSION_FIELDS()
-        optional_fields = _ASSEMBLY_ATTACHMENT_FIELDS()
+        mandatory_fields = {**ASSEMBLY_ATTACHMENT_VERSION_FIELDS}
+        optional_fields = {**ASSEMBLY_ATTACHMENT_FIELDS}
     else:
-        mandatory_fields = dict(_ASSEMBLY_ATTACHMENT_FIELDS(), id=ID)
+        mandatory_fields = dict(ASSEMBLY_ATTACHMENT_FIELDS, id=ID)
         optional_fields = {}
 
     val = _examine_dictionary_fields(
@@ -3889,12 +3872,12 @@ def _assembly_attachment_version(
     val = _mapping(val, argname, **kwargs)
 
     if creation:
-        mandatory_fields = dict(_ASSEMBLY_ATTACHMENT_VERSION_FIELDS(),
+        mandatory_fields = dict(ASSEMBLY_ATTACHMENT_VERSION_FIELDS,
                                 attachment_id=ID)
         optional_fields: TypeMapping = {}
     else:
         mandatory_fields = {'attachment_id': ID, 'version': ID}
-        optional_fields = _ASSEMBLY_ATTACHMENT_VERSION_FIELDS()
+        optional_fields = {**ASSEMBLY_ATTACHMENT_VERSION_FIELDS}
 
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)

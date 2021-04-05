@@ -3,7 +3,6 @@
 """Services for the assembly realm."""
 
 import collections
-import copy
 import datetime
 import io
 import json
@@ -23,14 +22,12 @@ from cdedb.common import (
     schulze_evaluate, unwrap, xsorted,
 )
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, REQUESTfile, access, assembly_guard,
-    calculate_db_logparams, calculate_loglinks, cdedburl, check_validation as check,
-    periodic, process_dynamic_input, request_extractor,
+    REQUESTdata, REQUESTdatadict, REQUESTfile, AbstractUserFrontend, access,
+    assembly_guard, calculate_db_logparams, calculate_loglinks, cdedburl,
+    check_validation as check, periodic, process_dynamic_input, request_extractor,
 )
-from cdedb.frontend.uncommon import AbstractUserFrontend
-from cdedb.query import QUERY_SPECS, Query, mangle_query_input
 from cdedb.validation import (
-    _ASSEMBLY_COMMON_FIELDS, _BALLOT_EXPOSED_FIELDS, _PERSONA_FULL_ASSEMBLY_CREATION,
+    ASSEMBLY_COMMON_FIELDS, BALLOT_EXPOSED_FIELDS, PERSONA_FULL_ASSEMBLY_CREATION,
     filter_none,
 )
 from cdedb.validationtypes import CdedbID, Email
@@ -81,7 +78,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         return super().create_user_form(rs)
 
     @access("core_admin", "assembly_admin", modi={"POST"})
-    @REQUESTdatadict(*filter_none(_PERSONA_FULL_ASSEMBLY_CREATION))
+    @REQUESTdatadict(*filter_none(PERSONA_FULL_ASSEMBLY_CREATION))
     def create_user(self, rs: RequestState, data: CdEDBObject,
                     ignore_warnings: bool = False) -> Response:
         defaults = {
@@ -99,29 +96,24 @@ class AssemblyFrontend(AbstractUserFrontend):
     def user_search(self, rs: RequestState, download: Optional[str],
                     is_search: bool) -> Response:
         """Perform search."""
-        spec = copy.deepcopy(QUERY_SPECS['qview_persona'])
-        # mangle the input, so we can prefill the form
-        query_input = mangle_query_input(rs, spec)
-        query: Optional[Query] = None
-        if is_search:
-            query = check(rs, vtypes.QueryInput, query_input, "query",
-                          spec=spec, allow_empty=False)
-        default_queries = self.conf["DEFAULT_QUERIES"]['qview_assembly_user']
-        params = {
-            'spec': spec, 'default_queries': default_queries, 'choices': {},
-            'choices_lists': {}, 'query': query}
-        # Tricky logic: In case of no validation errors we perform a query
-        if not rs.has_validation_errors() and is_search and query:
-            query.scope = "qview_persona"
-            result = self.assemblyproxy.submit_general_query(rs, query)
-            params['result'] = result
-            if download:
-                return self.send_query_download(
-                    rs, result, fields=query.fields_of_interest, kind=download,
-                    filename="user_search_result")
-        else:
-            rs.values['is_search'] = is_search = False
-        return self.render(rs, "user_search", params)
+        return self.generic_user_search(
+            rs, download, is_search, 'qview_persona', 'qview_assembly_user',
+            self.assemblyproxy.submit_general_query)
+
+    @access("core_admin", "assembly_admin")
+    @REQUESTdata("download", "is_search")
+    def archived_user_search(self, rs: RequestState, download: Optional[str],
+                             is_search: bool) -> Response:
+        """Perform search.
+
+        Archived users are somewhat special since they are not visible
+        otherwise.
+        """
+        return self.generic_user_search(
+            rs, download, is_search,
+            'qview_archived_persona', 'qview_archived_persona',
+            self.assemblyproxy.submit_general_query,
+            endpoint="archived_user_search")
 
     @access("assembly_admin")
     @REQUESTdata(*LOG_FIELDS_COMMON, "assembly_id")
@@ -301,7 +293,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     @access("assembly", modi={"POST"})
     @assembly_guard
-    @REQUESTdatadict(*_ASSEMBLY_COMMON_FIELDS())
+    @REQUESTdatadict(*ASSEMBLY_COMMON_FIELDS)
     @REQUESTdata("presider_address")
     def change_assembly(self, rs: RequestState, assembly_id: int,
                         presider_address: Optional[str], data: Dict[str, Any]
@@ -397,7 +389,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         return self.redirect(rs, "assembly/show_assembly")
 
     @access("assembly_admin", modi={"POST"})
-    @REQUESTdatadict(*_ASSEMBLY_COMMON_FIELDS())
+    @REQUESTdatadict(*ASSEMBLY_COMMON_FIELDS)
     @REQUESTdata("presider_ids", "create_attendee_list", "create_presider_list",
                  "presider_address")
     def create_assembly(self, rs: RequestState, presider_ids: vtypes.CdedbIDList,
@@ -721,7 +713,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     @access("assembly", modi={"POST"})
     @assembly_guard
-    @REQUESTdatadict(*_BALLOT_EXPOSED_FIELDS)
+    @REQUESTdatadict(*BALLOT_EXPOSED_FIELDS)
     def create_ballot(self, rs: RequestState, assembly_id: int,
                       data: Dict[str, Any]) -> Response:
         """Make a new ballot."""
@@ -1233,6 +1225,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             'result_hash': result_hash, 'secret': secret, **vote_dict,
             'vote_counts': vote_counts, 'MAGIC_ABSTAIN': MAGIC_ABSTAIN,
             'BALLOT_TALLY_ADDRESS': self.conf["BALLOT_TALLY_ADDRESS"],
+            'BALLOT_TALLY_MAILINGLIST_URL': self.conf["BALLOT_TALLY_MAILINGLIST_URL"],
             'prev_ballot': prev_ballot, 'next_ballot': next_ballot,
             'candidates': candidates})
 
@@ -1446,7 +1439,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     @access("assembly", modi={"POST"})
     @assembly_guard
-    @REQUESTdatadict(*_BALLOT_EXPOSED_FIELDS)
+    @REQUESTdatadict(*BALLOT_EXPOSED_FIELDS)
     def change_ballot(self, rs: RequestState, assembly_id: int,
                       ballot_id: int, data: Dict[str, Any]) -> Response:
         """Modify a ballot."""

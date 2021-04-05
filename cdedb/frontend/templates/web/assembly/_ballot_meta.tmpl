@@ -8,7 +8,7 @@
                      <form action="{{ cdedblink('assembly/delete_ballot') }}" method="POST" id="deleteballotform"
                            style="display: inline;">
                          {{ util.anti_csrf_token('assembly/delete_ballot') }}
-                         {{ util.input_submit(value=gettext("Delete"), icon="trash-alt", aclass="btn btn-danger") }}
+                         {{ util.input_submit(label=gettext("Delete"), icon="trash-alt", aclass="btn btn-danger") }}
                          {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
                      </form>
                      <script nonce="{{ csp_nonce }}">

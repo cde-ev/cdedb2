@@ -11,7 +11,7 @@
             {% if data['id'] in user.moderator or ambience['mailinglist']['ml_type_class'].has_moderator_view(user) %}
                 {{ util.href(cdedblink("ml/management", {'mailinglist_id': data['id']}), gettext("Management"),
                         aclass="list-group-item", icon="list", active=(sidenav_active == 'ml_manage')) }}
-                {{ util.href(cdedblink("ml/show_subscription_details", {'mailinglist_id': data['id']}), gettext("Advanced Management"),
+                {{ util.href(cdedblink("ml/advanced_management", {'mailinglist_id': data['id']}), gettext("Advanced Management"),
                         aclass="list-group-item", icon="wrench", active=(sidenav_active == 'ml_details')) }}
                 {{ util.href(cdedblink("ml/message_moderation", {'mailinglist_id': data['id']}), gettext("Message Moderation"),
                         aclass="list-group-item", icon="envelope", active=(sidenav_active == 'ml_moderation')) }}
@@ -32,6 +32,7 @@
 {% block breadcrumb %}
     {{ util.breadcrumb_link(cdedblink("ml/index"), gettext("Mailinglists")) }}
 {% endblock %}
+
 {% block navigation %}
     {% if ambience['mailinglist'] %}
         <p>
@@ -69,13 +70,21 @@
                 {{ util.href(cdedblink("ml/moderated_mailinglists"), gettext("Moderated Mailinglists"), icon="list",
                              aclass="list-group-item", active=(sidenav_active == 'ml_moderated')) }}
             {% endif %}
-
         </div>
+        {# This functionality is only available for true mailinglist admins. #}
+        {% if 'ml_user' in user.admin_views and 'ml_admin' in user.roles %}
+            <div class="list-group tear-down">
+                {{ util.href(cdedblink("ml/merge_accounts_form"), gettext("Merge Accounts"),
+                        icon="user-friends", aclass="list-group-item", active=(sidenav_active == 'ml_merger')) }}
+            </div>
+        {% endif %}
         {% if user.moderator or user.admin_views.intersection(ALL_MGMT_ADMIN_VIEWS) or 'ml_user' in user.admin_views %}
             <div class="list-group tear-down">
                 {% if 'ml_user' in user.admin_views %}
                     {{ util.href(cdedblink("ml/user_search"), gettext("Manage Users"),
                             icon="users", aclass="list-group-item", active=(sidenav_active == 'ml_users')) }}
+                    {{ util.href(cdedblink("ml/archived_user_search"), gettext("Search Archived Users"), aclass="list-group-item",
+                                 icon="inbox", active=(sidenav_active=='ml_manage_archive')) }}
                 {% endif %}
                 {% if user.moderator or user.admin_views.intersection(ALL_MGMT_ADMIN_VIEWS) %}
                     {{ util.href(cdedblink("ml/view_log"), gettext("Log"), icon="far fa-list-alt", aclass="list-group-item",

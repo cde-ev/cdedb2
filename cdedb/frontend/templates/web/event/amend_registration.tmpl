@@ -77,7 +77,7 @@
         {% endif %}
 
         {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="5", readonly=readonly) }}
-        {{ util.form_input_submit(value=gettext("Save"), readonly=readonly,
+        {{ util.form_input_submit(label=gettext("Save"), readonly=readonly,
                                   cancellink=cdedblink("event/registration_status")) }}
     </form>
     <script nonce="{{ csp_nonce }}">

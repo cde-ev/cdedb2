@@ -5,6 +5,7 @@ DISTDIR ?= distfiles
 WORKDIR ?= work
 IMAGEDIR ?= images
 PORT ?= $(shell git --no-pager log -1 --format='%H')
+# DEPLOYMENT_KEY_PATH has to be provided
 
 FETCH ?= wget
 AR ?= ar
@@ -19,7 +20,7 @@ QEMUOPTIONS ?= -m 1G -enable-kvm -net nic,model=virtio -net user,hostfwd=tcp:127
 
 QEMUCACHING ?= writethrough
 
-DEBVERSION = 10.7.0
+DEBVERSION = 10.8.0
 NETINSTISO = debian-${DEBVERSION}-amd64-netinst.iso
 
 DISTINFO_DATA?= ${AWK} -v alg=$$algo -v file=$${file} \
@@ -128,6 +129,11 @@ ${WORKDIR}/.done_stage2cd:${WORKDIR}/.done_checksum files/stage2-install
 	cp files/call-cdedbinstall ${WORKDIR}/stage2cd/init
 	cp files/stage2/* ${WORKDIR}/stage2cd/
 	cp ../../doc/source/motd.txt ${WORKDIR}/stage2cd/
+ifndef DEPLOYMENT_KEY_PATH
+	$(error Must provide deployment key (i.e. ssh key for user with access to Gitea))
+endif
+	cp "${DEPLOYMENT_KEY_PATH}" ${WORKDIR}/stage2cd/ssh_user_rsa_key
+	cp "${DEPLOYMENT_KEY_PATH}.pub" ${WORKDIR}/stage2cd/ssh_user_rsa_key.pub
 	chmod 755 ${WORKDIR}/stage2cd/init
 	chmod u+x bin/*/*
 	PATH=$$PATH:./bin/`uname`; \

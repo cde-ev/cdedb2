@@ -672,10 +672,9 @@ class PastEventBackend(AbstractBackend):
         pevent = {k: v for k, v in event.items()
                   if k in PAST_EVENT_FIELDS}
         pevent['tempus'] = part['part_begin']
-        # The event field 'notes' has nothing to do with the past event
-        # field 'notes' -- the first is for orgas and the second for
-        # participants
-        pevent['notes'] = None
+        # The event field 'participant_info' usually contains information
+        # no longer relevant, so we do not keep it here
+        pevent['participant_info'] = None
         if len(event['parts']) > 1:
             # Add part designation in case of events with multiple parts
             pevent['title'] += " ({})".format(part['title'])
@@ -775,7 +774,7 @@ class PastEventBackend(AbstractBackend):
                                 for part_id in xsorted(event['parts']))
         return new_ids, None
 
-    @access("member")
+    @access("member", "cde_admin")
     def submit_general_query(self, rs: RequestState,
                              query: Query) -> Tuple[CdEDBObject, ...]:
         """Realm specific wrapper around

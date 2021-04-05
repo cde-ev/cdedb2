@@ -2,7 +2,6 @@
 
 """Services for the cde realm."""
 
-import cgitb
 import copy
 import csv
 import datetime
@@ -15,7 +14,6 @@ import random
 import re
 import shutil
 import string
-import sys
 import tempfile
 import time
 from collections import OrderedDict, defaultdict
@@ -38,19 +36,18 @@ from cdedb.common import (
 )
 from cdedb.database.connection import Atomizer
 from cdedb.frontend.common import (
-    CustomCSVDialect, REQUESTdata, REQUESTdatadict, REQUESTfile, Worker,
-    access, calculate_db_logparams, calculate_loglinks, cdedbid_filter,
+    AbstractUserFrontend, CustomCSVDialect, REQUESTdata, REQUESTdatadict, REQUESTfile,
+    Worker, access, calculate_db_logparams, calculate_loglinks, cdedbid_filter,
     check_validation as check, check_validation_optional as check_optional, csv_output,
     enum_entries_filter, make_membership_fee_reference, make_postal_address,
     money_filter, periodic, process_dynamic_input, request_extractor,
 )
-from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import (
     QUERY_SPECS, Query, QueryConstraint, QueryOperators, mangle_query_input,
 )
 from cdedb.validation import (
-    _LASTSCHRIFT_COMMON_FIELDS, _PAST_EVENT_FIELDS, _PAST_COURSE_COMMON_FIELDS,
-    _PERSONA_FULL_CDE_CREATION, TypeMapping, filter_none, validate_check,
+    LASTSCHRIFT_COMMON_FIELDS, PAST_EVENT_FIELDS, PAST_COURSE_COMMON_FIELDS,
+    PERSONA_FULL_CDE_CREATION, TypeMapping, filter_none, validate_check,
     validate_check_optional,
 )
 
@@ -171,9 +168,8 @@ class CdEFrontend(AbstractUserFrontend):
         be redirected.
         """
         data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
-        return self.render(rs, "consent_decision", {
-            'decided_search': data['decided_search'],
-            'verwaltung': self.conf["MANAGEMENT_ADDRESS"]})
+        return self.render(rs, "consent_decision",
+                           {'decided_search': data['decided_search']})
 
     @access("member", modi={"POST"})
     @REQUESTdata("ack")
@@ -200,7 +196,7 @@ class CdEFrontend(AbstractUserFrontend):
             return self.redirect(rs, "core/index")
         return self.redirect(rs, "cde/index")
 
-    @access("cde_admin")
+    @access("cde_admin", "member")
     def member_stats(self, rs: RequestState) -> Response:
         """Display stats about our members."""
         stats = self.cdeproxy.get_member_stats(rs)
@@ -284,7 +280,7 @@ class CdEFrontend(AbstractUserFrontend):
             'cutoff': cutoff, 'count': count,
         })
 
-    @access("member")
+    @access("member", "cde_admin")
     @REQUESTdata("is_search")
     def past_course_search(self, rs: RequestState, is_search: bool) -> Response:
         """Search for past courses."""
@@ -331,13 +327,6 @@ class CdEFrontend(AbstractUserFrontend):
     def user_search(self, rs: RequestState, download: Optional[str], is_search: bool
                     ) -> Response:
         """Perform search."""
-        spec = copy.deepcopy(QUERY_SPECS['qview_cde_user'])
-        # mangle the input, so we can prefill the form
-        query_input = mangle_query_input(rs, spec)
-        query: Optional[Query] = None
-        if is_search:
-            query = check(rs, vtypes.QueryInput, query_input, "query",
-                          spec=spec, allow_empty=False)
         events = self.pasteventproxy.list_past_events(rs)
         choices = {
             'pevent_id': OrderedDict(
@@ -347,23 +336,33 @@ class CdEFrontend(AbstractUserFrontend):
                     const.Genders,
                     rs.gettext if download is None else rs.default_gettext))
         }
-        choices_lists = {k: list(v.items()) for k, v in choices.items()}
-        default_queries = self.conf["DEFAULT_QUERIES"]['qview_cde_user']
-        params = {
-            'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
-            'default_queries': default_queries, 'query': query}
-        # Tricky logic: In case of no validation errors we perform a query
-        if not rs.has_validation_errors() and is_search and query:
-            query.scope = "qview_cde_user"
-            result = self.cdeproxy.submit_general_query(rs, query)
-            params['result'] = result
-            if download:
-                return self.send_query_download(
-                    rs, result, fields=query.fields_of_interest, kind=download,
-                    filename="user_search_result")
-        else:
-            rs.values['is_search'] = is_search = False
-        return self.render(rs, "user_search", params)
+        return self.generic_user_search(
+            rs, download, is_search, 'qview_cde_user', 'qview_cde_user',
+            self.cdeproxy.submit_general_query, choices=choices)
+
+    @access("core_admin", "cde_admin")
+    @REQUESTdata("download", "is_search")
+    def archived_user_search(self, rs: RequestState, download: Optional[str],
+                             is_search: bool) -> Response:
+        """Perform search.
+
+        Archived users are somewhat special since they are not visible
+        otherwise.
+        """
+        events = self.pasteventproxy.list_past_events(rs)
+        choices = {
+            'pevent_id': OrderedDict(
+                xsorted(events.items(), key=operator.itemgetter(1))),
+            'gender': OrderedDict(
+                enum_entries_filter(
+                    const.Genders,
+                    rs.gettext if download is None else rs.default_gettext))
+        }
+        return self.generic_user_search(
+            rs, download, is_search,
+            'qview_archived_past_event_user', 'qview_archived_persona',
+            self.cdeproxy.submit_general_query, choices=choices,
+            endpoint="archived_user_search")
 
     @access("core_admin", "cde_admin")
     def create_user_form(self, rs: RequestState) -> Response:
@@ -376,7 +375,7 @@ class CdEFrontend(AbstractUserFrontend):
         return super().create_user_form(rs)
 
     @access("core_admin", "cde_admin", modi={"POST"})
-    @REQUESTdatadict(*filter_none(_PERSONA_FULL_CDE_CREATION))
+    @REQUESTdatadict(*filter_none(PERSONA_FULL_CDE_CREATION))
     def create_user(self, rs: RequestState, data: CdEDBObject,
                     ignore_warnings: bool = False) -> Response:
         defaults = {
@@ -463,7 +462,11 @@ class CdEFrontend(AbstractUserFrontend):
             'paper_expuls': True,
             'bub_search': False,
             'decided_search': False,
-            'notes': None})
+            'notes': None,
+            'country2': self.conf["DEFAULT_COUNTRY"],
+        })
+        if not persona.get('country', "").strip():
+            persona['country'] = self.conf["DEFAULT_COUNTRY"]
         merge_dicts(persona, PERSONA_DEFAULTS)
         persona, problems = validate_check(
             vtypes.Persona, persona, argname="persona", creation=True)
@@ -672,11 +675,7 @@ class CdEFrontend(AbstractUserFrontend):
                 "<<<\n<<<\n<<<\n<<<"))
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
-            # noinspection PyBroadException
-            try:
-                self.logger.error(cgitb.text(sys.exc_info(), context=7))
-            except Exception:
-                pass
+            self.cgitb_log()
             return False, index
         # Send mail after the transaction succeeded
         if sendmail:
@@ -1211,7 +1210,7 @@ class CdEFrontend(AbstractUserFrontend):
                 "<<<\n<<<\n<<<\n<<<"))
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
-            self.logger.error(cgitb.text(sys.exc_info(), context=7))
+            self.cgitb_log()
             return False, index, None
         if sendmail:
             for datum in data:
@@ -1406,7 +1405,7 @@ class CdEFrontend(AbstractUserFrontend):
         return self.render(rs, "lastschrift_change", {'persona': persona})
 
     @access("finance_admin", modi={"POST"})
-    @REQUESTdatadict(*_LASTSCHRIFT_COMMON_FIELDS())
+    @REQUESTdatadict(*LASTSCHRIFT_COMMON_FIELDS)
     def lastschrift_change(self, rs: RequestState, lastschrift_id: int,
                            data: CdEDBObject) -> Response:
         """Modify one permit."""
@@ -1427,7 +1426,7 @@ class CdEFrontend(AbstractUserFrontend):
         return self.render(rs, "lastschrift_create")
 
     @access("finance_admin", modi={"POST"})
-    @REQUESTdatadict(*_LASTSCHRIFT_COMMON_FIELDS())
+    @REQUESTdatadict(*LASTSCHRIFT_COMMON_FIELDS)
     @REQUESTdata('persona_id')
     def lastschrift_create(self, rs: RequestState, persona_id: vtypes.CdedbID,
                            data: CdEDBObject) -> Response:
@@ -2078,7 +2077,6 @@ class CdEFrontend(AbstractUserFrontend):
                      'Subject': "Bevorstehende Löschung Deines"
                                 " CdE-Datenbank-Accounts"},
                     {'persona': persona,
-                     'management': self.conf["MANAGEMENT_ADDRESS"],
                      'fee': self.conf["MEMBERSHIP_FEE"],
                      'meta_info': meta_info})
             return not testrun
@@ -2584,7 +2582,7 @@ class CdEFrontend(AbstractUserFrontend):
             'institutions': institutions})
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdatadict(*_PAST_EVENT_FIELDS)
+    @REQUESTdatadict(*PAST_EVENT_FIELDS)
     def change_past_event(self, rs: RequestState, pevent_id: int,
                           data: CdEDBObject) -> Response:
         """Modify a concluded event."""
@@ -2606,7 +2604,7 @@ class CdEFrontend(AbstractUserFrontend):
             'institutions': institutions})
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdatadict(*_PAST_EVENT_FIELDS)
+    @REQUESTdatadict(*PAST_EVENT_FIELDS)
     @REQUESTdata("courses")
     def create_past_event(self, rs: RequestState, courses: Optional[str],
                           data: CdEDBObject) -> Response:
@@ -2667,7 +2665,7 @@ class CdEFrontend(AbstractUserFrontend):
         return self.render(rs, "change_past_course")
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdatadict(*_PAST_COURSE_COMMON_FIELDS())
+    @REQUESTdatadict(*PAST_COURSE_COMMON_FIELDS)
     def change_past_course(self, rs: RequestState, pevent_id: int,
                            pcourse_id: int, data: CdEDBObject) -> Response:
         """Modify a concluded course."""
@@ -2687,7 +2685,7 @@ class CdEFrontend(AbstractUserFrontend):
         return self.render(rs, "create_past_course")
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdatadict(*_PAST_COURSE_COMMON_FIELDS())
+    @REQUESTdatadict(*PAST_COURSE_COMMON_FIELDS)
     def create_past_course(self, rs: RequestState, pevent_id: int,
                            data: CdEDBObject) -> Response:
         """Add new concluded course."""

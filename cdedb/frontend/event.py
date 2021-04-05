@@ -2,7 +2,6 @@
 
 """Services for the event realm."""
 
-import cgitb
 import collections.abc
 import copy
 import csv
@@ -15,7 +14,6 @@ import operator
 import pathlib
 import re
 import shutil
-import sys
 import tempfile
 from collections import Counter, OrderedDict
 from typing import (
@@ -40,19 +38,19 @@ from cdedb.common import (
 )
 from cdedb.database.connection import Atomizer
 from cdedb.frontend.common import (
-    CustomCSVDialect, RequestConstraint, REQUESTdata, REQUESTdatadict, REQUESTfile,
-    access, calculate_db_logparams, calculate_loglinks, cdedbid_filter, cdedburl,
-    check_validation as check, check_validation_optional as check_optional,
-    enum_entries_filter, event_guard, keydictsort_filter, make_event_fee_reference,
-    process_dynamic_input, querytoparams_filter, request_extractor, safe_filter,
+    AbstractUserFrontend, CustomCSVDialect, RequestConstraint, REQUESTdata,
+    REQUESTdatadict, REQUESTfile, access, calculate_db_logparams, calculate_loglinks,
+    cdedbid_filter, cdedburl, check_validation as check,
+    check_validation_optional as check_optional, enum_entries_filter, event_guard,
+    keydictsort_filter, make_event_fee_reference, process_dynamic_input,
+    querytoparams_filter, request_extractor, safe_filter,
 )
-from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import (
     QUERY_SPECS, Query, QueryConstraint, QueryOperators, mangle_query_input,
 )
 from cdedb.validation import (
-    _COURSE_COMMON_FIELDS, _EVENT_EXPOSED_FIELDS, _LODGEMENT_COMMON_FIELDS,
-    _PERSONA_FULL_EVENT_CREATION, TypeMapping, filter_none, validate_check,
+    COURSE_COMMON_FIELDS, EVENT_EXPOSED_FIELDS, LODGEMENT_COMMON_FIELDS,
+    PERSONA_FULL_EVENT_CREATION, TypeMapping, filter_none, validate_check,
 )
 from cdedb.validationtypes import VALIDATOR_LOOKUP
 
@@ -140,7 +138,7 @@ class EventFrontend(AbstractUserFrontend):
         return super().create_user_form(rs)
 
     @access("core_admin", "event_admin", modi={"POST"})
-    @REQUESTdatadict(*filter_none(_PERSONA_FULL_EVENT_CREATION))
+    @REQUESTdatadict(*filter_none(PERSONA_FULL_EVENT_CREATION))
     def create_user(self, rs: RequestState, data: CdEDBObject,
                     ignore_warnings: bool = False) -> Response:
         defaults = {
@@ -158,39 +156,42 @@ class EventFrontend(AbstractUserFrontend):
     def user_search(self, rs: RequestState, download: Optional[str],
                     is_search: bool) -> Response:
         """Perform search."""
-        spec = copy.deepcopy(QUERY_SPECS['qview_event_user'])
-        # mangle the input, so we can prefill the form
-        query_input = mangle_query_input(rs, spec)
-        query: Optional[Query] = None
-        if is_search:
-            query = check(rs, vtypes.QueryInput,
-                query_input, "query", spec=spec, allow_empty=False)
         events = self.pasteventproxy.list_past_events(rs)
         choices = {
             'pevent_id': OrderedDict(
-                sorted(events.items(), key=operator.itemgetter(0))),
+                xsorted(events.items(), key=operator.itemgetter(1))),
             'gender': OrderedDict(
                 enum_entries_filter(
                     const.Genders,
                     rs.gettext if download is None else rs.default_gettext))
         }
-        choices_lists = {k: list(v.items()) for k, v in choices.items()}
-        default_queries = self.conf["DEFAULT_QUERIES"]['qview_event_user']
-        params = {
-            'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
-            'default_queries': default_queries, 'query': query}
-        # Tricky logic: In case of no validation errors we perform a query
-        if not rs.has_validation_errors() and is_search and query:
-            query.scope = "qview_event_user"
-            result = self.eventproxy.submit_general_query(rs, query)
-            params['result'] = result
-            if download:
-                return self.send_query_download(
-                    rs, result, fields=query.fields_of_interest, kind=download,
-                    filename="user_search_result")
-        else:
-            rs.values['is_search'] = is_search = False
-        return self.render(rs, "user_search", params)
+        return self.generic_user_search(
+            rs, download, is_search, 'qview_event_user', 'qview_event_user',
+            self.eventproxy.submit_general_query, choices=choices)
+
+    @access("core_admin", "event_admin")
+    @REQUESTdata("download", "is_search")
+    def archived_user_search(self, rs: RequestState, download: Optional[str],
+                             is_search: bool) -> Response:
+        """Perform search.
+
+        Archived users are somewhat special since they are not visible
+        otherwise.
+        """
+        events = self.pasteventproxy.list_past_events(rs)
+        choices = {
+            'pevent_id': OrderedDict(
+                xsorted(events.items(), key=operator.itemgetter(1))),
+            'gender': OrderedDict(
+                enum_entries_filter(
+                    const.Genders,
+                    rs.gettext if download is None else rs.default_gettext))
+        }
+        return self.generic_user_search(
+            rs, download, is_search,
+            'qview_archived_past_event_user', 'qview_archived_persona',
+            self.eventproxy.submit_general_query, choices=choices,
+            endpoint="archived_user_search")
 
     @access("anonymous")
     def list_events(self, rs: RequestState) -> Response:
@@ -262,22 +263,19 @@ class EventFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.redirect(rs, "event/show_event")
         if not (event_id in rs.user.orga or self.is_admin(rs)):
-            reg_list = self.eventproxy.list_registrations(
-                rs, event_id, persona_id=rs.user.persona_id)
-            if not reg_list:
-                rs.notify("warning", n_("Not registered for event."))
-                return self.redirect(rs, "event/show_event")
-            registration_id = unwrap(reg_list.keys())
-            registration = self.eventproxy.get_registration(rs, registration_id)
-            parts = registration['parts']
-            list_consent = registration['list_consent']
-            participant = const.RegistrationPartStati.participant
-            if all(parts[part]['status'] != participant for part in parts):
-                rs.notify("warning", n_("No participant of event."))
+            assert rs.user.persona_id is not None
+            if not self.eventproxy.check_registration_status(
+                    rs, rs.user.persona_id, event_id,
+                    {const.RegistrationPartStati.participant}):
+                rs.notify('warning', n_("No participant of event."))
                 return self.redirect(rs, "event/show_event")
             if not rs.ambience['event']['is_participant_list_visible']:
                 rs.notify("error", n_("Participant list not published yet."))
                 return self.redirect(rs, "event/show_event")
+            reg_list = self.eventproxy.list_registrations(rs, event_id,
+                                                          rs.user.persona_id)
+            registration = self.eventproxy.get_registration(rs, unwrap(reg_list.keys()))
+            list_consent = registration['list_consent']
         else:
             list_consent = True
 
@@ -376,6 +374,18 @@ class EventFrontend(AbstractUserFrontend):
         }
 
     @access("event")
+    def participant_info(self, rs: RequestState, event_id: int) -> Response:
+        """Display the `participant_info`, accessible only to participants."""
+        if not (event_id in rs.user.orga or self.is_admin(rs)):
+            assert rs.user.persona_id is not None
+            if not self.eventproxy.check_registration_status(
+                    rs, rs.user.persona_id, event_id,
+                    {const.RegistrationPartStati.participant}):
+                rs.notify('warning', n_("No participant of event."))
+                return self.redirect(rs, "event/show_event")
+        return self.render(rs, "participant_info")
+
+    @access("event")
     @event_guard()
     def change_event_form(self, rs: RequestState, event_id: int) -> Response:
         """Render form."""
@@ -409,7 +419,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdatadict(*_EVENT_EXPOSED_FIELDS)
+    @REQUESTdatadict(*EVENT_EXPOSED_FIELDS)
     def change_event(self, rs: RequestState, event_id: int, data: CdEDBObject
                      ) -> Response:
         """Modify an event organized via DB."""
@@ -1152,7 +1162,7 @@ class EventFrontend(AbstractUserFrontend):
     @access("event_admin", modi={"POST"})
     @REQUESTdata("part_begin", "part_end", "orga_ids", "create_track",
                  "create_orga_list", "create_participant_list")
-    @REQUESTdatadict(*_EVENT_EXPOSED_FIELDS)
+    @REQUESTdatadict(*EVENT_EXPOSED_FIELDS)
     def create_event(self, rs: RequestState, part_begin: datetime.date,
                      part_end: datetime.date, orga_ids: vtypes.CdedbIDList,
                      create_track: bool, create_orga_list: bool,
@@ -1298,7 +1308,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdatadict(*_COURSE_COMMON_FIELDS())
+    @REQUESTdatadict(*COURSE_COMMON_FIELDS)
     @REQUESTdata("segments", "active_segments")
     def change_course(self, rs: RequestState, event_id: int, course_id: int,
                       segments: Collection[int],
@@ -1340,7 +1350,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdatadict(*_COURSE_COMMON_FIELDS())
+    @REQUESTdatadict(*COURSE_COMMON_FIELDS)
     @REQUESTdata("segments")
     def create_course(self, rs: RequestState, event_id: int,
                       segments: Collection[int], data: CdEDBObject) -> Response:
@@ -2241,10 +2251,7 @@ class EventFrontend(AbstractUserFrontend):
                 "<<<\n<<<\n<<<\n<<<"))
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
-            try:
-                self.logger.error(cgitb.text(sys.exc_info(), context=7))
-            except Exception:
-                pass
+            self.cgitb_log()
             return False, index
         if send_notifications:
             persona_ids = tuple(e['persona_id'] for e in data)
@@ -2793,11 +2800,14 @@ class EventFrontend(AbstractUserFrontend):
         courses = self.eventproxy.get_courses(rs, course_ids)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        lodgement_group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
+        lodgement_groups = self.eventproxy.get_lodgement_groups(rs, lodgement_group_ids)
 
         spec = self.make_registration_query_spec(rs.ambience['event'])
         fields_of_interest = list(spec.keys())
         choices, _ = self.make_registration_query_aux(
-            rs, rs.ambience['event'], courses, lodgements, fixed_gettext=True)
+            rs, rs.ambience['event'], courses, lodgements, lodgement_groups,
+            fixed_gettext=True)
         query = Query('qview_registration', spec, fields_of_interest, [], [])
         result = self.eventproxy.submit_general_query(
             rs, query, event_id=event_id)
@@ -4742,7 +4752,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdatadict(*_LODGEMENT_COMMON_FIELDS())
+    @REQUESTdatadict(*LODGEMENT_COMMON_FIELDS)
     def create_lodgement(self, rs: RequestState, event_id: int,
                          data: CdEDBObject) -> Response:
         """Add a new lodgement."""
@@ -4781,7 +4791,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdatadict(*_LODGEMENT_COMMON_FIELDS())
+    @REQUESTdatadict(*LODGEMENT_COMMON_FIELDS)
     def change_lodgement(self, rs: RequestState, event_id: int,
                          lodgement_id: int, data: CdEDBObject) -> Response:
         """Alter the attributes of a lodgement.
@@ -5104,8 +5114,9 @@ class EventFrontend(AbstractUserFrontend):
                                                 EntitySorter.event_part):
             spec["part{0}.status".format(part_id)] = "int"
             spec["part{0}.is_camping_mat".format(part_id)] = "bool"
-            spec["part{0}.lodgement_id".format(part_id)] = "int"
+            spec["part{0}.lodgement_id".format(part_id)] = "id"
             spec["lodgement{0}.id".format(part_id)] = "id"
+            spec["lodgement{0}.group_id".format(part_id)] = "id"
             spec["lodgement{0}.title".format(part_id)] = "str"
             spec["lodgement{0}.notes".format(part_id)] = "str"
             for f in xsorted(event['fields'].values(),
@@ -5114,6 +5125,8 @@ class EventFrontend(AbstractUserFrontend):
                     temp = "lodgement{0}.xfield_{1}"
                     kind = const.FieldDatatypes(f['kind']).name
                     spec[temp.format(part_id, f['field_name'])] = kind
+            spec["lodgement_group{0}.id".format(part_id)] = "id"
+            spec["lodgement_group{0}.title".format(part_id)] = "str"
             ordered_tracks = keydictsort_filter(
                 part['tracks'], EntitySorter.course_track)
             for track_id, track in ordered_tracks:
@@ -5145,12 +5158,18 @@ class EventFrontend(AbstractUserFrontend):
             spec[",".join("part{0}.is_camping_mat".format(part_id)
                           for part_id in event['parts'])] = "bool"
             spec[",".join("part{0}.lodgement_id".format(part_id)
-                          for part_id in event['parts'])] = "int"
+                          for part_id in event['parts'])] = "id"
             spec[",".join("lodgement{0}.id".format(part_id)
+                          for part_id in event['parts'])] = "id"
+            spec[",".join("lodgement{0}.group_id".format(part_id)
                           for part_id in event['parts'])] = "id"
             spec[",".join("lodgement{0}.title".format(part_id)
                           for part_id in event['parts'])] = "str"
             spec[",".join("lodgement{0}.notes".format(part_id)
+                          for part_id in event['parts'])] = "str"
+            spec[",".join("lodgement_group{0}.id".format(part_id)
+                          for part_id in event['parts'])] = "id"
+            spec[",".join("lodgement_group{0}.title".format(part_id)
                           for part_id in event['parts'])] = "str"
             for f in xsorted(event['fields'].values(),
                              key=EntitySorter.event_field):
@@ -5203,6 +5222,7 @@ class EventFrontend(AbstractUserFrontend):
     def make_registration_query_aux(rs: RequestState, event: CdEDBObject,
                                     courses: CdEDBObjectMap,
                                     lodgements: CdEDBObjectMap,
+                                    lodgement_groups: CdEDBObjectMap,
                                     fixed_gettext: bool = False
                                     ) -> Tuple[Dict[str, Dict[int, str]],
                                                Dict[str, str]]:
@@ -5229,6 +5249,11 @@ class EventFrontend(AbstractUserFrontend):
             (l_id, lodge_identifier(l))
             for l_id, l in keydictsort_filter(lodgements,
                                               EntitySorter.lodgement))
+        lodgement_group_identifier = lambda g: g["title"]
+        lodgement_group_choices = OrderedDict(
+            (g_id, lodgement_group_identifier(g))
+            for g_id, g in keydictsort_filter(lodgement_groups,
+                                              EntitySorter.lodgement_group))
         # First we construct the choices
         choices: Dict[str, Dict[int, str]] = {
             # Genders enum
@@ -5260,6 +5285,7 @@ class EventFrontend(AbstractUserFrontend):
                 "part{0}.status".format(part_id): reg_part_stati_choices,
                 # Lodgement choices for the JS selector
                 "part{0}.lodgement_id".format(part_id): lodgement_choices,
+                "lodgement{0}.group_id".format(part_id): lodgement_group_choices,
             })
             if not fixed_gettext:
                 # Lodgement fields value -> description
@@ -5293,6 +5319,10 @@ class EventFrontend(AbstractUserFrontend):
                 # RegistrationPartStati enum
                 ",".join("part{0}.status".format(part_id)
                          for part_id in event['parts']): reg_part_stati_choices,
+                ",".join("part{0}.lodgement_id".format(part_id)
+                         for part_id in event['parts']): lodgement_choices,
+                ",".join("lodgement{0}.group_id".format(part_id)
+                         for part_id in event['parts']): lodgement_group_choices,
             })
         if len(tracks) > 1:
             choices[",".join(f"course_choices{track_id}.rank{i}"
@@ -5442,10 +5472,16 @@ class EventFrontend(AbstractUserFrontend):
                     prefix + gettext("lodgement"),
                 "lodgement{0}.id".format(part_id):
                     prefix + gettext("lodgement ID"),
+                "lodgement{0}.group_id".format(part_id):
+                    prefix + gettext("lodgement group"),
                 "lodgement{0}.title".format(part_id):
                     prefix + gettext("lodgement title"),
                 "lodgement{0}.notes".format(part_id):
                     prefix + gettext("lodgement notes"),
+                "lodgement_group{0}.id".format(part_id):
+                    prefix + gettext("lodgement group ID"),
+                "lodgement_group{0}.title".format(part_id):
+                    prefix + gettext("lodgement group title"),
             })
             key = "lodgement{0}.xfield_{1}"
             titles.update({
@@ -5468,12 +5504,21 @@ class EventFrontend(AbstractUserFrontend):
                 ",".join("lodgement{0}.id".format(part_id)
                          for part_id in event['parts']):
                     gettext("any part: lodgement ID"),
+                ",".join("lodgement{0}.group_id".format(part_id)
+                         for part_id in event['parts']):
+                    gettext("any part: lodgement group"),
                 ",".join("lodgement{0}.title".format(part_id)
                          for part_id in event['parts']):
                     gettext("any part: lodgement title"),
                 ",".join("lodgement{0}.notes".format(part_id)
                          for part_id in event['parts']):
                     gettext("any part: lodgement notes"),
+                ",".join("lodgement_group{0}.id".format(part_id)
+                         for part_id in event['parts']):
+                    gettext("any part: lodgement group ID"),
+                ",".join("lodgement_group{0}.title".format(part_id)
+                         for part_id in event['parts']):
+                    gettext("any part: lodgement group title"),
             })
             key = "lodgement{0}.xfield_{1}"
             titles.update({
@@ -5507,8 +5552,10 @@ class EventFrontend(AbstractUserFrontend):
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        lodgement_group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
+        lodgement_groups = self.eventproxy.get_lodgement_groups(rs, lodgement_group_ids)
         choices, titles = self.make_registration_query_aux(
-            rs, rs.ambience['event'], courses, lodgements,
+            rs, rs.ambience['event'], courses, lodgements, lodgement_groups,
             fixed_gettext=download is not None)
         choices_lists = {k: list(v.items()) for k, v in choices.items()}
         has_registrations = self.eventproxy.has_registrations(rs, event_id)

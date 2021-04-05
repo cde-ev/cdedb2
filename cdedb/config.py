@@ -308,6 +308,8 @@ _DEFAULTS = {
     "NUM_PREVIEW_PERSONAS": 3,
     #: Default amount of lines shown in logs shown in the frontend
     "DEFAULT_LOG_LENGTH": 50,
+    #: Default country code to be used
+    "DEFAULT_COUNTRY": "DE",
     # Available languages
     "I18N_LANGUAGES": ("de", "en"),
 
@@ -344,6 +346,8 @@ _DEFAULTS = {
 
     # email for ballot tallies
     "BALLOT_TALLY_ADDRESS": "wahlbekanntmachung@lists.cde-ev.de",
+    # mailinglist for ballot tallies
+    "BALLOT_TALLY_MAILINGLIST_URL": "https://db.cde-ev.de/db/ml/mailinglist/91/show",
 
     # mailman REST API host
     "MAILMAN_HOST": "localhost:8001",
@@ -590,7 +594,8 @@ _SECRECTS_DEFAULTS = {
         "cdb_anonymous": "012345678901234567890123456789",
         "cdb_persona": "abcdefghijklmnopqrstuvwxyzabcd",
         "cdb_member": "zyxwvutsrqponmlkjihgfedcbazyxw",
-        "cdb_admin": "9876543210abcdefghijklmnopqrst"
+        "cdb_admin": "9876543210abcdefghijklmnopqrst",
+        "cdb": "987654321098765432109876543210",  # only used for testsuite
     },
 
     # salting value used for verifying sensitve url parameters

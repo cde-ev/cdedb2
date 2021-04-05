@@ -18,6 +18,37 @@ from tests.common import (
 )
 
 
+PERSONA_TEMPLATE = {
+        "username": 'zelda@example.cde',
+        "title": "Dr.",
+        "given_names": "Zelda",
+        "family_name": "Zeruda-Hime",
+        "name_supplement": 'von und zu',
+        "display_name": 'Zelda',
+        "birthday": "1987-06-05",
+        "specialisation": "oehm",
+        "affiliation": "Hogwarts",
+        "timeline": "tja",
+        "interests": "hmmmm",
+        "free_form": "jaaah",
+        "gender": "1",
+        "telephone": "030456790",
+        "mobile": "01602047",
+        "weblink": "www.zzz.cc",
+        "address": "Street 7",
+        "address_supplement": "on the left",
+        "postal_code": "12345",
+        "location": "Lynna",
+        "country": "HY",
+        "address2": "Ligusterweg 4",
+        "address_supplement2": "Im Schrank unter der Treppe",
+        "postal_code2": "00AA",
+        "location2": "Little Whinging",
+        "country2": "GB",
+        "notes": "some talk",
+    }
+
+
 class TestCdEFrontend(FrontendTest):
     @as_users("vera", "berta")
     def test_index(self, user: CdEDBObject) -> None:
@@ -102,36 +133,37 @@ class TestCdEFrontend(FrontendTest):
     @as_users("annika", "berta", "charly", "farin", "martin", "vera", "werner")
     def test_sidebar(self, user: CdEDBObject) -> None:
         self.traverse({'description': 'Mitglieder'})
-        everyone = ["Mitglieder", "Übersicht"]
-        past_event = ["Verg. Veranstaltungen"]
-        member = ["Sonstiges", "Datenschutzerklärung", "Kurssuche"]
-        searchable = ["CdE-Mitglied suchen"]
-        cde_admin = ["Nutzer verwalten", "Organisationen verwalten",
-                     "Mitglieder-Statistik", "Verg.-Veranstaltungen-Log"]
-        finance_admin = [
+        everyone = {"Mitglieder", "Übersicht"}
+        past_event = {"Verg. Veranstaltungen", "Kurssuche"}
+        member = {"Sonstiges", "Datenschutzerklärung"}
+        searchable = {"CdE-Mitglied suchen"}
+        cde_admin_or_member = {"Mitglieder-Statistik"}
+        cde_admin = {"Nutzer verwalten", "Archivsuche", "Organisationen verwalten",
+                     "Verg.-Veranstaltungen-Log"}
+        finance_admin = {
             "Einzugsermächtigungen", "Kontoauszug parsen", "Finanz-Log",
-            "Überweisungen eintragen", "Semesterverwaltung", "CdE-Log"]
+            "Überweisungen eintragen", "Semesterverwaltung", "CdE-Log"}
 
         # non-members
         if user in [USER_DICT['annika'], USER_DICT['werner'], USER_DICT['martin']]:
             ins = everyone
-            out = past_event + member + searchable + cde_admin + finance_admin
+            out = past_event | member | searchable | cde_admin | finance_admin
         # searchable member
         elif user == USER_DICT['berta']:
-            ins = everyone + past_event + member + searchable
-            out = cde_admin + finance_admin
+            ins = everyone | past_event | member | cde_admin_or_member | searchable
+            out = cde_admin | finance_admin
         # not-searchable member
         elif user == USER_DICT['charly']:
-            ins = everyone + past_event + member
-            out = searchable + cde_admin + finance_admin
+            ins = everyone | past_event | member | cde_admin_or_member
+            out = searchable | cde_admin | finance_admin
         # cde but not finance admin (vera is no member)
         elif user == USER_DICT['vera']:
-            ins = everyone + past_event + cde_admin
-            out = member + searchable + finance_admin
+            ins = everyone | past_event | cde_admin_or_member | cde_admin
+            out = member | searchable | finance_admin
         # cde and finance admin (farin is no member)
         elif user == USER_DICT['farin']:
-            ins = everyone + past_event + cde_admin + finance_admin
-            out = member + searchable
+            ins = everyone | past_event | cde_admin_or_member | cde_admin | finance_admin
+            out = member | searchable
         else:
             self.fail("Please adjust users for this tests.")
 
@@ -553,7 +585,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Bertålotta Beispiel")
         self.assertNonPresence("weiblich")
 
-    @as_users("inga")
+    @as_users("inga", "farin")
     def test_past_course_search(self, user: CdEDBObject) -> None:
         # by description
         self.traverse({'description': 'Mitglieder'},
@@ -631,7 +663,7 @@ class TestCdEFrontend(FrontendTest):
             self.assertValidationError("qval_" + field,
                                        "Darf keine verbotenen Zeichen enthalten")
 
-    @as_users("vera")
+    @as_users("paul", "quintus")
     def test_user_search(self, user: CdEDBObject) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Nutzer verwalten'})
@@ -796,42 +828,15 @@ class TestCdEFrontend(FrontendTest):
             "Mehrere aktive Einzugsermächtigungen sind unzulässig.",
             div="notifications")
 
-    @as_users("vera")
+    @as_users("paul", "quintus")
     def test_create_user(self, user: CdEDBObject) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Nutzer verwalten'},
                       {'description': 'Nutzer anlegen'})
         self.assertTitle("Neues Mitglied anlegen")
-        data = {
-            "username": 'zelda@example.cde',
-            "title": "Dr.",
-            "given_names": "Zelda",
-            "family_name": "Zeruda-Hime",
-            "name_supplement": 'von und zu',
-            "display_name": 'Zelda',
-            "birthday": "1987-06-05",
-            "specialisation": "oehm",
-            "affiliation": "Hogwarts",
-            "timeline": "tja",
-            "interests": "hmmmm",
-            "free_form": "jaaah",
-            "gender": "1",
-            "telephone": "030456790",
-            "mobile": "01602047",
-            "weblink": "www.zzz.cc",
-            "address": "Street 7",
-            "address_supplement": "on the left",
-            "postal_code": "12345",
-            "location": "Lynna",
-            "country": "Hyrule",
-            "address2": "Ligusterweg 4",
-            "address_supplement2": "Im Schrank unter der Treppe",
-            "postal_code2": "00AA",
-            "location2": "Little Whinging",
-            "country2": "United Kingdom",
-            "notes": "some talk",
-        }
+        data = PERSONA_TEMPLATE.copy()
         f = self.response.forms['newuserform']
+        self.assertEqual(f['country'].value, self.conf["DEFAULT_COUNTRY"])
         self.assertIsNone(
             self.response.lxml.get_element_by_id('input_checkbox_is_searchable').value)
         self.assertFalse(
@@ -872,6 +877,10 @@ class TestCdEFrontend(FrontendTest):
         data['password'] = new_password
         self.login(data)
         self.assertLogin(data['display_name'])
+
+    @as_users("paul", "quintus")
+    def test_create_archive_user(self, user: CdEDBObject) -> None:
+        self.check_create_archive_user('cde', PERSONA_TEMPLATE.copy())
 
     @as_users("farin")
     def test_lastschrift_index(self, user: CdEDBObject) -> None:
@@ -2032,7 +2041,7 @@ class TestCdEFrontend(FrontendTest):
         f['title'] = "Link Academy"
         f['institution'] = 2
         f['description'] = "Ganz ohne Minderjährige."
-        f['notes'] = "<https://zelda:hyrule@link.cde>"
+        f['participant_info'] = "<https://zelda:hyrule@link.cde>"
         self.submit(f)
         self.assertTitle("Link Academy")
         self.assertPresence("Disco des Ehemaligen", div='institution')
@@ -2051,7 +2060,7 @@ class TestCdEFrontend(FrontendTest):
         f['shortname'] = "link"
         f['institution'] = 2
         f['description'] = "Ganz ohne Minderjährige."
-        f['notes'] = "<https://zelda:hyrule@link.cde>"
+        f['participant_info'] = "<https://zelda:hyrule@link.cde>"
         f['tempus'] = "1.1.2000"
         self.submit(f)
         self.assertTitle("Link Academy II")
@@ -2209,9 +2218,37 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("PfingstAkademie 2014")
         self.assertNonPresence("Garcia")
 
-    @as_users("farin")
+    @as_users("farin", "inga")
     def test_member_stats(self, user: CdEDBObject) -> None:
         self.traverse("Mitglieder", "Mitglieder-Statistik")
+        self.assertPresence("Mitglieder", div="cde-simple-stats")
+        self.assertPresence("davon suchbar", div="cde-simple-stats")
+        self.assertPresence("Inaktive Mitglieder", div="cde-simple-stats")
+        self.assertPresence("Mitglieder nach Land",
+                            div="complex-stats-members_by_country")
+        self.assertPresence("Deutschland",
+                            div="complex-stats-members_by_country")
+        self.assertPresence("Japan",
+                            div="complex-stats-members_by_country")
+        self.assertNonPresence("DE")
+        self.assertNonPresence("JP")
+        self.assertPresence("Mitglieder nach Stadt",
+                            div="complex-stats-members_by_city")
+        self.assertNonPresence("Burokratia")
+        self.assertNonPresence("Liliput")
+        self.assertPresence("Mitglieder nach Geburtsjahr",
+                            div="complex-stats-members_by_birthday")
+        self.assertPresence("1991", div="complex-stats-members_by_birthday")
+        self.assertPresence("2222", div="complex-stats-members_by_birthday")
+        self.assertNonPresence("2014", div="complex-stats-members_by_birthday")
+        self.assertPresence("Mitglieder nach erster Akademieteilnahme",
+                            div="complex-stats-members_by_first_event")
+        self.assertPresence("2014", div="complex-stats-members_by_first_event")
+        self.assertNonPresence("2010", div="complex-stats-members_by_first_event")
+        self.assertPresence("Verschiedene Akademie-Teilnehmer nach Jahr",
+                            div="complex-stats-unique_participants_per_year")
+        self.assertPresence("2010", div="complex-stats-unique_participants_per_year")
+        self.assertPresence("2014", div="complex-stats-unique_participants_per_year")
 
     @as_users("vera")
     def test_past_log(self, user: CdEDBObject) -> None:
@@ -2242,7 +2279,7 @@ class TestCdEFrontend(FrontendTest):
         f['shortname'] = "Arrr"
         f['institution'] = 2
         f['description'] = "Alle Mann an Deck!"
-        f['notes'] = "<https://piraten:schiff@ahoi.cde>"
+        f['participant_info'] = "<https://piraten:schiff@ahoi.cde>"
         f['tempus'] = "1.1.2000"
         self.submit(f)
         logs.append((1003, const.PastEventLogCodes.event_created))

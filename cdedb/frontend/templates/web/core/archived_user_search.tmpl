@@ -10,16 +10,9 @@
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
-{{ super() }}
-{{ util.breadcrumb_link(cdedblink("core/archived_user_search"), gettext("Search Archived Users"), active="True") }}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("core/archived_user_search"), gettext("Search Archived Users"), active="True") }}
 {% endblock %}
 {% block content %}
-    {{ generic.place_default_queries("core/archived_user_search", default_queries) }}
-
-    {{ generic.user_search_mask("archived", ("pevent_id",)) }}
-
-    {% if values['is_search'] %}
-        <h3 id="query-results">{% trans %}Result{% endtrans %} [{{ result|length }}]</h3>
-        {{ generic.user_search_result(result, "archived") }}
-    {% endif %}
+    {{ generic.archived_user_search("core") }}
 {% endblock %}

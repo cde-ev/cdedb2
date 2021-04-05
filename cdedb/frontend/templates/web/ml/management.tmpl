@@ -25,11 +25,11 @@
     </h1>
 {% endblock %}
 {% block static_notifications %}
-    {% if not privileged %}
+    {% if restricted %}
         {% call util.notification('info') %}
-            {% trans link = util.href(docurl("Handbuch_Moderator", anchor="privilegierte-moderatoren"),
-                                      gettext("privileged moderator access"))|s %}
-                You do not have %(link)s and may not change subscriptions.
+            {% trans link = util.href(docurl("Handbuch_Moderator", anchor="eingeschränkte-moderatoren"),
+                                      gettext("restricted moderator access"))|s %}
+                You only have %(link)s and may not change subscriptions.
             {% endtrans %}
         {% endcall %}
     {% endif %}
@@ -66,7 +66,7 @@
                         );
                     </script>
                     <div class="input-group-btn">
-                        {{ util.input_submit(value=gettext("Add"), aclass="btn btn-success") }}
+                        {{ util.input_submit(label=gettext("Add"), aclass="btn btn-success") }}
                     </div>
                 </div>
                 {{ util.output_errors('moderators', wrapper=True) }}
@@ -83,13 +83,13 @@
                                   class="hide-hover display-inline">
                                 {{ util.anti_csrf_token('ml/remove_moderator') }}
                                 {{ util.input_hidden(name="moderator_id", value=moderator) }}
-                                {{ util.input_submit(value='', aclass="btn btn-xs btn-danger list-button-float", icon="minus",
+                                {{ util.input_submit(label='', aclass="btn btn-xs btn-danger list-button-float", icon="minus",
                                         title=gettext("Remove %(given_names)s %(family_name)s as moderator")|format(
                                             given_names=persona['given_names'],
                                             family_name=persona['family_name'])) }}
                             </form>
                         {% else %}
-                            {{ util.input_submit(value="", aclass="btn btn-xs btn-danger list-button-float dummy", icon="minus", ariahidden=True) }}
+                            {{ util.input_submit(label="", aclass="btn btn-xs btn-danger list-button-float dummy", icon="minus", ariahidden=True) }}
                         {% endif %}
                     </li>
                 {% endfor %}
@@ -110,7 +110,7 @@
                     {% for request, persona in requests.items() %} {# This is already sorted. #}
                         <li class="hide-hover-container clearfix-after">
                             {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
-                            {% if privileged %}
+                            {% if not restricted %}
                             <div class="nowrap display-inline">
                                 {# TODO consider merging endpoints and use a single form - would enable usage of btn-group #}
                                 <form action="{{ cdedblink('ml/approve_request') }}"
@@ -156,12 +156,12 @@
     <h2>{% trans %}Subscribers{% endtrans %} [{{ subscribers|length }}]</h2>
         <p class="text-muted">
             {{ util.make_icon('info-circle') }}
-            {% trans link = util.href(cdedblink('ml/show_subscription_details'), label=gettext("advanced management")) %}
+            {% trans link = util.href(cdedblink('ml/advanced_management'), label=gettext("advanced management")) %}
                 Forced subscribers cannot be unsubscribed; blocked subscribers cannot be subscribed here.
                 Use the {{ link }} site instead. People who are already subscribed are not proposed for adding.
             {% endtrans %}
         </p>
-    {% if privileged %}
+    {% if not restricted %}
     <form action="{{ cdedblink('ml/add_subscribers') }}" method="POST"
           id="addsubscriberform" class="p">
         {{ util.anti_csrf_token('ml/add_subscribers') }}
@@ -177,7 +177,7 @@
                 );
             </script>
             <div class="input-group-btn">
-                {{ util.input_submit(value=gettext("Add"), aclass="btn btn-success") }}
+                {{ util.input_submit(label=gettext("Add"), aclass="btn btn-success") }}
             </div>
         </div>
         {{ util.output_errors('subscriber_ids', wrapper=True) }}
@@ -193,14 +193,14 @@
                         <li class="hide-hover-container clearfix-after">
                             {{ util.persona_anchor(subscribers[subscriber], ml_id=ambience['mailinglist']['id']) }}
                             {% if subscriber in explicits %}({{ explicits[subscriber] }}){% endif %}
-                            {% if privileged %}
+                            {% if not restricted %}
                                 <form action="{{ cdedblink('ml/remove_subscriber') }}"
                                       method="POST"
                                       id="removesubscriberform{{ subscriber }}"
                                       class="hide-hover display-inline">
                                     {{ util.anti_csrf_token('ml/remove_subscriber') }}
                                     {{ util.input_hidden(name="subscriber_id", value=subscriber) }}
-                                    {{ util.input_submit(value="", icon="minus", aclass="btn btn-xs btn-danger list-button-float",
+                                    {{ util.input_submit(label="", icon="minus", aclass="btn btn-xs btn-danger list-button-float",
                                             title=gettext("Remove %(given_names)s %(family_name)s as subscriber")|format(
                                                 given_names=subscribers[subscriber]['given_names'],
                                                 family_name=subscribers[subscriber]['family_name'])) }}

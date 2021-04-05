@@ -929,48 +929,44 @@ class CdEBackend(AbstractBackend):
                 n_("num_members"), n_("num_searchable"), n_("num_ex_members")))
         }
 
-        def query_stats(params: Dict[str, str]) -> None:
-            query = ("SELECT COUNT(*) AS num, {select} AS datum"
-                     " FROM core.personas"
-                     " WHERE is_member = True AND {condition} IS NOT NULL"
-                     " GROUP BY datum ORDER BY {order}")
-            data = self.query_all(rs, query.format(**params), ())
-            ret[params["name"]] = OrderedDict(
-                (e['datum'], e['num']) for e in data)
+        # TODO: improve this type annotation with a new mypy version.
+        def query_stats(select: str, condition: str, order: str, limit: int = 0
+                        ) -> OrderedDict:  # type: ignore
+            query = (f"SELECT COUNT(*) AS num, {select} AS datum"
+                     f" FROM core.personas"
+                     f" WHERE is_member = True AND {condition} IS NOT NULL"
+                     f" GROUP BY datum HAVING COUNT(*) > {limit} ORDER BY {order}")
+            data = self.query_all(rs, query, ())
+            return OrderedDict((e['datum'], e['num']) for e in data)
 
         # Members by country.
-        params = {
-            "name": n_("members_by_country"),
-            "select": "COALESCE(country, 'Deutschland')",
-            "condition": "location",
-            "order": "num DESC, datum ASC",
-        }
-        query_stats(params)
+        ret[n_("members_by_country")] = query_stats(
+            select="country",
+            condition="location",
+            order="num DESC, datum ASC")
+
         # Members by PLZ.
-        params = {
-            "name": n_("members_by_plz"),
-            "select": "postal_code",
-            "condition": "postal_code",
-            "order": "num DESC, datum ASC",
-        }
         # We don't want the PLZ stats for now. See #380.
-        # query_stats(params)
+        # ret[n_("members_by_plz")] = query_stats(
+        #   select="postal_code",
+        #   condition="postal_code",
+        #   order="num DESC, datum ASC")
+
         # Members by city.
-        params = {
-            "name": n_("members_by_city"),
-            "select": "location",
-            "condition": "location",
-            "order": "num DESC, datum ASC",
-        }
-        query_stats(params)
+        # We want to cutoff the list due to privacy and readability concerns.
+        ret[n_("members_by_city")] = query_stats(
+            select="location",
+            condition="location",
+            order="num DESC, datum ASC",
+            limit=9)
+
         # Members by birthday.
-        params = {
-            "name": n_("members_by_birthday"),
-            "select": "EXTRACT(year FROM birthday)::integer",
-            "condition": "birthday",
-            "order": "datum ASC",
-        }
-        query_stats(params)
+        ret[n_("members_by_birthday")] = query_stats(
+            select="EXTRACT(year FROM birthday)::integer",
+            condition="birthday",
+            order="datum ASC"
+        )
+
         # Members by first event.
         query = """SELECT
             COUNT(*) AS num, EXTRACT(year FROM min_tempus.t)::integer AS datum
@@ -1039,25 +1035,20 @@ class CdEBackend(AbstractBackend):
         if query.scope == "qview_cde_member":
             if self.core.check_quota(rs, num=1):
                 raise QuotaException(n_("Too many queries."))
-            query.constraints.append(
-                ("is_cde_realm", QueryOperators.equal, True))
-            query.constraints.append(
-                ("is_member", QueryOperators.equal, True))
-            query.constraints.append(
-                ("is_searchable", QueryOperators.equal, True))
-            query.constraints.append(
-                ("is_archived", QueryOperators.equal, False))
+            query.constraints.append(("is_cde_realm", QueryOperators.equal, True))
+            query.constraints.append(("is_member", QueryOperators.equal, True))
+            query.constraints.append(("is_searchable", QueryOperators.equal, True))
+            query.constraints.append(("is_archived", QueryOperators.equal, False))
             query.spec['is_cde_realm'] = "bool"
             query.spec['is_member'] = "bool"
             query.spec['is_searchable'] = "bool"
             query.spec["is_archived"] = "bool"
-        elif query.scope == "qview_cde_user":
-            if not self.is_admin(rs):
+        elif query.scope in {"qview_cde_user", "qview_archived_past_event_user"}:
+            if not {'core_admin', 'cde_admin'} & rs.user.roles:
                 raise PrivilegeError(n_("Admin only."))
-            query.constraints.append(
-                ("is_cde_realm", QueryOperators.equal, True))
-            query.constraints.append(
-                ("is_archived", QueryOperators.equal, False))
+            query.constraints.append(("is_cde_realm", QueryOperators.equal, True))
+            query.constraints.append(("is_archived", QueryOperators.equal,
+                                      query.scope == "qview_archived_past_event_user"))
             query.spec['is_cde_realm'] = "bool"
             query.spec["is_archived"] = "bool"
             # Exclude users of any higher realm (implying event)
@@ -1068,10 +1059,8 @@ class CdEBackend(AbstractBackend):
         elif query.scope == "qview_past_event_user":
             if not self.is_admin(rs):
                 raise PrivilegeError(n_("Admin only."))
-            query.constraints.append(
-                ("is_event_realm", QueryOperators.equal, True))
-            query.constraints.append(
-                ("is_archived", QueryOperators.equal, False))
+            query.constraints.append(("is_event_realm", QueryOperators.equal, True))
+            query.constraints.append(("is_archived", QueryOperators.equal, False))
             query.spec['is_event_realm'] = "bool"
             query.spec["is_archived"] = "bool"
         else:

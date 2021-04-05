@@ -278,12 +278,12 @@ class AssemblyBackend(AbstractBackend):
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
         """
         query = affirm(Query, query)
-        if query.scope == "qview_persona":
+        if query.scope in {"qview_persona", "qview_archived_persona"}:
             # Include only un-archived assembly-users
             query.constraints.append(("is_assembly_realm", QueryOperators.equal,
                                       True))
             query.constraints.append(("is_archived", QueryOperators.equal,
-                                      False))
+                                      query.scope == "qview_archived_persona"))
             query.spec["is_assembly_realm"] = "bool"
             query.spec["is_archived"] = "bool"
             # Exclude users of any higher realm (implying event)

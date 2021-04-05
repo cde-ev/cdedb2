@@ -23,16 +23,19 @@ help:
 	@echo "         If TESTPATTERNS is empty, run full test suite)"
 	@echo "coverage -- run coverage to determine test suite coverage"
 
-# Binaries
+# Executables
 PYTHONBIN ?= python3
 FLAKE8 ?= $(PYTHONBIN) -m flake8
 PYLINT ?= $(PYTHONBIN) -m pylint
 COVERAGE ?= $(PYTHONBIN) -m coverage
 MYPY ?= $(PYTHONBIN) -m mypy
 ifeq ($(wildcard /CONTAINER),/CONTAINER)
+# We need to use psql directly as DROP DATABASE and variables are not supported by our helper
+	PSQL_ADMIN ?= psql postgresql://postgres:passwd@cdb
 	PSQL ?= $(PYTHONBIN) bin/execute_sql_script.py
 else
-	PSQL ?= sudo -u postgres psql
+	PSQL_ADMIN ?= sudo -u postgres psql
+	PSQL ?= sudo -u cdb psql
 endif
 
 # Others
@@ -63,7 +66,7 @@ i18n-refresh:
 i18n-extract:
 	pybabel extract --msgid-bugs-address="cdedb@lists.cde-ev.de" \
 		--mapping=./babel.cfg --keywords="rs.gettext rs.ngettext n_" \
-		--output=$(I18NDIR)/cdedb.pot --input-dirs=.
+		--output=$(I18NDIR)/cdedb.pot --input-dirs="bin,cdedb"
 
 i18n-update:
 	msgmerge --lang=de --update $(I18NDIR)/de/LC_MESSAGES/cdedb.po $(I18NDIR)/cdedb.pot
@@ -158,17 +161,13 @@ endif
 ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
 	$(error Refusing to touch orga instance)
 endif
-ifeq ($(wildcard /CONTAINER),/CONTAINER)
-	# We need to use psql directly as DROP DATABASE and variables are not supported by our helper
-	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-users.sql
-	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb
-	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-db.sql \
-		-v cdb_database_name=${TESTDATABASENAME}
-else
+ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl stop pgbouncer
-	$(PSQL) -f cdedb/database/cdedb-users.sql
-	$(PSQL) -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb
-	$(PSQL) -f cdedb/database/cdedb-db.sql -v cdb_database_name=${TESTDATABASENAME}
+endif
+	$(PSQL_ADMIN) -f cdedb/database/cdedb-users.sql
+	$(PSQL_ADMIN) -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb
+	$(PSQL_ADMIN) -f cdedb/database/cdedb-db.sql -v cdb_database_name=${TESTDATABASENAME}
+ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl start pgbouncer
 endif
 	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=cdb
@@ -177,12 +176,11 @@ endif
 	$(PSQL) -f tests/ancillary_files/sample_data.sql --dbname=${TESTDATABASENAME}
 
 sql-test:
-ifeq ($(wildcard /CONTAINER),/CONTAINER)
-	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-db.sql \
-		-v cdb_database_name=${TESTDATABASENAME}
-else
+ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl stop pgbouncer
-	$(PSQL) -f cdedb/database/cdedb-db.sql -v cdb_database_name=${TESTDATABASENAME}
+endif
+	$(PSQL_ADMIN) -f cdedb/database/cdedb-db.sql -v cdb_database_name=${TESTDATABASENAME}
+ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl start pgbouncer
 endif
 	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=${TESTDATABASENAME}
@@ -199,15 +197,13 @@ endif
 ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
 	$(error Refusing to touch orga instance)
 endif
-ifeq ($(wildcard /CONTAINER),/CONTAINER)
-	# We need to use psql directly as DROP DATABASE and variables are not supported by our helper
-	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb
-	psql postgresql://postgres:passwd@cdb -f cdedb/database/cdedb-db.sql \
-		-v cdb_database_name=${TESTDATABASENAME}
-else
+ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl stop pgbouncer
-	$(PSQL) -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb
-	$(PSQL) -f cdedb/database/cdedb-db.sql -v cdb_database_name=${TESTDATABASENAME}
+endif
+	$(PSQL_ADMIN) -f cdedb/database/cdedb-users.sql
+	$(PSQL_ADMIN) -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb
+	$(PSQL_ADMIN) -f cdedb/database/cdedb-db.sql -v cdb_database_name=${TESTDATABASENAME}
+ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl start pgbouncer
 endif
 	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=cdb
@@ -220,25 +216,28 @@ cron:
 
 BANNERLINE := "============================================================$\
 		===================="
-lint:
-	@echo $(BANNERLINE)
-	@echo "Lines too long in templates"
-	@echo $(BANNERLINE)
-	@echo ""
-	grep -E -R '^.{121,}' cdedb/frontend/templates/ | grep 'tmpl:'
-	@echo ""
+flake8:
 	@echo $(BANNERLINE)
 	@echo "All of flake8"
 	@echo $(BANNERLINE)
 	@echo ""
 	$(FLAKE8) cdedb
-	@echo ""
+
+pylint:
 	@echo $(BANNERLINE)
 	@echo "All of pylint"
 	@echo $(BANNERLINE)
 	@echo ""
-	$(PYLINT) cdedb
+	$(PYLINT) cdedb --load-plugins=pylint.extensions.bad_builtin
 
+template-line-length:
+	@echo $(BANNERLINE)
+	@echo "Lines too long in templates"
+	@echo $(BANNERLINE)
+	@echo ""
+	grep -E -R '^.{121,}' cdedb/frontend/templates/ | grep 'tmpl:'
+
+lint: flake8 pylint
 
 prepare-check:
 ifneq ($(TESTPREPARATION), manual)
