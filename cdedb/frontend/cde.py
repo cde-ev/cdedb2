@@ -22,7 +22,8 @@ from typing import Collection, Dict, List, Optional, Sequence, Set, Tuple, cast
 import dateutil.easter
 import psycopg2.extensions
 import werkzeug.exceptions
-from werkzeug import FileStorage, Response
+from werkzeug import Response
+from werkzeug.datastructures import FileStorage
 
 import cdedb.database.constants as const
 import cdedb.frontend.parse_statement as parse
