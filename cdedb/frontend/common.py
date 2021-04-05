@@ -2833,7 +2833,7 @@ def calculate_loglinks(rs: RequestState, total: int,
 
     # Create values sets for the necessary links.
     def new_md() -> CdEDBMultiDict:
-        return werkzeug.MultiDict(rs.values)
+        return werkzeug.datastructures.MultiDict(rs.values)
     loglinks = {
         "first": new_md(),
         "previous": new_md(),
