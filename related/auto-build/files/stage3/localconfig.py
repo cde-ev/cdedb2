@@ -46,7 +46,7 @@ WORKER_LOG = _LOG_ROOT / "frontend-worker.log"
 MAILMAN_LOG = _LOG_ROOT / "frontend-mailman.log"
 
 if CDEDB_TEST:
-    DB_PORT = 5432
+    DB_PORT = 6432
     CDB_DATABASE_NAME = os.environ['CDEDB_TEST_DATABASE']
     SERVER_NAME_TEMPLATE = "test_{}_server"
     STORAGE_DIR = pathlib.Path(os.environ['CDEDB_TEST_TMP_DIR'], 'storage')
