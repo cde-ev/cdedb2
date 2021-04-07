@@ -924,7 +924,7 @@ class MlBackend(AbstractBackend):
     def get_many_subscription_states(
             self, rs: RequestState, mailinglist_ids: Collection[int],
             states: SubStates = None,
-    ) -> Dict[int, Dict[int, vtypes.DatabaseSubscriptionState]]:
+    ) -> Dict[int, Dict[int, const.SubscriptionState]]:
         """Get all users related to a given mailinglist and their sub state.
 
         :param states: Defaults to DatabseStates
@@ -956,12 +956,10 @@ class MlBackend(AbstractBackend):
 
         data = self.query_all(rs, query, params)
 
-        ret: Dict[int, Dict[int, vtypes.DatabaseSubscriptionState]]
+        ret: Dict[int, Dict[int, const.SubscriptionState]]
         ret = {ml_id: {} for ml_id in mailinglist_ids}
         for e in data:
-            # This needs to be done for enum casting to work properly.
-            state = vtypes.DatabaseSubscriptionState(
-                const.SubscriptionState(e["subscription_state"]))
+            state = const.SubscriptionState(e["subscription_state"])
             ret[e["mailinglist_id"]][e["persona_id"]] = state
 
         return ret
@@ -969,7 +967,7 @@ class MlBackend(AbstractBackend):
     class _GetSubScriptionStatesProtocol(Protocol):
         def __call__(self, rs: RequestState, mailinglist_id: int,
                      states: SubStates = None
-                     ) -> Dict[int, vtypes.DatabaseSubscriptionState]: ...
+                     ) -> Dict[int, const.SubscriptionState]: ...
     get_subscription_states: _GetSubScriptionStatesProtocol = singularize(
         get_many_subscription_states, "mailinglist_ids", "mailinglist_id")
 
