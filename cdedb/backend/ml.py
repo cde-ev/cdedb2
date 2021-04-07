@@ -4,6 +4,7 @@
 event and assembly realm in the form of specific mailing lists.
 """
 from datetime import datetime
+import itertools
 from typing import Any, Collection, Dict, List, Optional, Set, Tuple, cast, overload
 
 from typing_extensions import Protocol
@@ -747,28 +748,38 @@ class MlBackend(AbstractBackend):
 
         :returns: Number of affected rows.
         """
-        data = affirm_array(vtypes.SubscriptionDataset, data)
-
-        if not all(datum['persona_id'] == rs.user.persona_id
-                   or self.may_manage(rs, datum['mailinglist_id'],
-                                      allow_restricted=False)
-                   for datum in data):
-            raise PrivilegeError("Not privileged.")
+        set_data = []
+        remove_data = []
+        for datum in data:
+            datum = affirm(vtypes.SubscriptionDataset, datum)
+            if datum['subscription_state'] == const.SubscriptionState.none:
+                del datum['subscription_state']
+                remove_data.append(datum)
+            else:
+                set_data.append(datum)
 
         num = 0
         with Atomizer(rs):
-            keys = ("subscription_state", "mailinglist_id", "persona_id")
-            placeholders = ", ".join(("(%s, %s, %s)",) * len(data))
-            query = f"""INSERT INTO ml.subscription_states ({", ".join(keys)})
-                VALUES {placeholders}
-                ON CONFLICT (mailinglist_id, persona_id) DO UPDATE SET
-                subscription_state = EXCLUDED.subscription_state"""
+            if remove_data:
+                num += self._remove_subscriptions(rs, remove_data)
 
-            params: List[Any] = []
-            for datum in data:
-                params.extend(datum[key] for key in keys)
+            if set_data:
+                if not all(datum['persona_id'] == rs.user.persona_id
+                           or self.may_manage(rs, datum['mailinglist_id'],
+                                              allow_restricted=False)
+                           for datum in set_data):
+                    raise PrivilegeError("Not privileged.")
 
-            num += self.query_exec(rs, query, params)
+                keys = ("subscription_state", "mailinglist_id", "persona_id")
+                placeholders = ", ".join(("(%s, %s, %s)",) * len(set_data))
+                query = f"""INSERT INTO ml.subscription_states ({", ".join(keys)})
+                    VALUES {placeholders}
+                    ON CONFLICT (mailinglist_id, persona_id) DO UPDATE SET
+                    subscription_state = EXCLUDED.subscription_state"""
+
+                params = itertools.chain.from_iterable(
+                    (datum[key] for key in keys) for datum in set_data)
+                num += self.query_exec(rs, query, params)
 
         return num
 
@@ -858,11 +869,7 @@ class MlBackend(AbstractBackend):
                 'subscription_state': new_state,
             }
 
-            if new_state == const.SubscriptionState.none:
-                del datum['subscription_state']
-                ret = self._remove_subscription(rs, datum)
-            else:
-                ret = self._set_subscription(rs, datum)
+            ret = self._set_subscription(rs, datum)
             if ret and code:
                 self.ml_log(rs, code, datum['mailinglist_id'], datum['persona_id'])
 

@@ -3558,7 +3558,7 @@ SUBSCRIPTION_ID_FIELDS: TypeMapping = {
 }
 
 SUBSCRIPTION_STATE_FIELDS: TypeMapping = {
-    'subscription_state': DatabaseSubscriptionState,
+    'subscription_state': const.SubscriptionState,
 }
 
 SUBSCRIPTION_ADDRESS_FIELDS: TypeMapping = {

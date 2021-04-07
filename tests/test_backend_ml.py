@@ -1241,6 +1241,29 @@ class TestMlBackend(BackendTest):
         result = self.ml.get_subscription_states(self.key, mailinglist_id)
         self.assertEqual(result, expectation)
 
+        removes = [3, 9, 14]
+        data = [
+            {
+                'mailinglist_id': mailinglist_id,
+                'persona_id': persona_id,
+                'subscription_state': const.SubscriptionState.none,
+            }
+            for persona_id in removes
+        ]
+        self.ml._set_subscriptions(self.key, data)
+        self.ml.write_subscription_states(self.key, mailinglist_id)
+
+        expectation = {
+            1: SS.implicit,
+            2: SS.implicit,
+            9: SS.implicit,
+            11: SS.implicit,
+            23: SS.implicit,
+            100: SS.subscription_override,
+        }
+        result = self.ml.get_subscription_states(self.key, mailinglist_id)
+        self.assertEqual(result, expectation)
+
     @as_users("nina")
     def test_change_sub_policy(self, user: CdEDBObject) -> None:
         mdata = {
