@@ -21,6 +21,7 @@ class SubmanTest(unittest.TestCase):
             "unsubscription_override": 11,
             "pending": 20,
             "implicit": 30,
+            "none": 40,
         }
         name_value_map = {member.name: member.value for member in SubscriptionState}
         self.assertEqual(expectation, name_value_map)
