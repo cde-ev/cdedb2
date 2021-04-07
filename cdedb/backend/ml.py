@@ -777,8 +777,8 @@ class MlBackend(AbstractBackend):
                     ON CONFLICT (mailinglist_id, persona_id) DO UPDATE SET
                     subscription_state = EXCLUDED.subscription_state"""
 
-                params = itertools.chain.from_iterable(
-                    (datum[key] for key in keys) for datum in set_data)
+                params = tuple(itertools.chain.from_iterable(
+                    (datum[key] for key in keys) for datum in set_data))
                 num += self.query_exec(rs, query, params)
 
         return num
