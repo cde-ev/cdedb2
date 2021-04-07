@@ -1233,9 +1233,12 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Hades Hell")
         self.assertPresence("Der Benutzer ist archiviert.", div='archived')
 
-    @as_users("vera")
+    @as_users("paul", "quintus")
     def test_archive_user(self, user: CdEDBObject) -> None:
-        self.admin_view_profile('charly')
+        if user['id'] == USER_DICT["paul"]['id']:
+            self.admin_view_profile('charly')
+        else:
+            self.realm_admin_view_profile('charly', realm='cde')
         self.assertTitle("Charly C. Clown")
         self.assertNonPresence("Der Benutzer ist archiviert.")
         self.assertPresence("Zirkusstadt", div='address')

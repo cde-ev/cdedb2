@@ -83,6 +83,8 @@
                 {% if 'ml_user' in user.admin_views %}
                     {{ util.href(cdedblink("ml/user_search"), gettext("Manage Users"),
                             icon="users", aclass="list-group-item", active=(sidenav_active == 'ml_users')) }}
+                    {{ util.href(cdedblink("ml/archived_user_search"), gettext("Search Archived Users"), aclass="list-group-item",
+                                 icon="inbox", active=(sidenav_active=='ml_manage_archive')) }}
                 {% endif %}
                 {% if user.moderator or user.admin_views.intersection(ALL_MGMT_ADMIN_VIEWS) %}
                     {{ util.href(cdedblink("ml/view_log"), gettext("Log"), icon="far fa-list-alt", aclass="list-group-item",

@@ -222,6 +222,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                      endpoint="member_search"),
                 rule("/user", methods=_GET,
                      endpoint="user_search"),
+                rule("/archiveduser", methods=_GET,
+                     endpoint="archived_user_search"),
                 rule("/course", methods=_GET,
                      endpoint="past_course_search"),)),
             rule("/i25p", methods=_GET,
@@ -332,8 +334,11 @@ CDEDB_PATHS = werkzeug.routing.Map((
         sub('/event', (
             rule("/", methods=_GET,
                  endpoint="index"),
-            rule("/search/user", methods=_GET,
-                 endpoint="user_search"),
+            sub('/search', (
+                rule("/user", methods=_GET,
+                     endpoint="user_search"),
+                rule("/archiveduser", methods=_GET,
+                     endpoint="archived_user_search"),)),
             rule("/registration/select", methods=_GET,
                  endpoint="select_registration"),
             rule("/user/create", methods=_GET,
@@ -548,8 +553,11 @@ CDEDB_PATHS = werkzeug.routing.Map((
         sub('/assembly', (
             rule("/", methods=_GET,
                  endpoint="index"),
-            rule("/search/user", methods=_GET,
-                 endpoint="user_search"),
+            sub('/search', (
+                rule("/user", methods=_GET,
+                     endpoint="user_search"),
+                rule("/archiveduser", methods=_GET,
+                     endpoint="archived_user_search"),)),
             rule("/user/create", methods=_GET,
                  endpoint="create_user_form"),
             rule("/user/create", methods=_POST,
@@ -690,8 +698,11 @@ CDEDB_PATHS = werkzeug.routing.Map((
         sub('/ml', (
             rule("/", methods=_GET,
                  endpoint="index"),
-            rule("/search/user", methods=_GET,
-                 endpoint="user_search"),
+            sub('/search', (
+                rule("/user", methods=_GET,
+                     endpoint="user_search"),
+                rule("/archiveduser", methods=_GET,
+                     endpoint="archived_user_search"),)),
             rule("/user/create", methods=_GET,
                  endpoint="create_user_form"),
             rule("/user/create", methods=_POST,

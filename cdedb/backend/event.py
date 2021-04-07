@@ -306,15 +306,16 @@ class EventBackend(AbstractBackend):
             )
             if lodge_field_columns:
                 lodge_field_columns += ", "
-            lodge_view = """SELECT
+            lodgement_view = f"""SELECT
                 {lodge_field_columns}
-                title, notes, id
+                title, notes, id, group_id
             FROM
                 event.lodgements
             WHERE
-                event_id = {event_id}""".format(
-                event_id=event_id, lodge_field_columns=lodge_field_columns)
-
+                event_id = {event_id}"""
+            lodgement_group_view = (f"SELECT title, id"
+                                    f" FROM event.lodgement_groups"
+                                    f" WHERE event_id = {event_id}")
             # The template for registration part and lodgement information.
             part_table = lambda part_id: \
                 f"""LEFT OUTER JOIN (
@@ -326,9 +327,14 @@ class EventBackend(AbstractBackend):
                         part_id = {part_id}
                 ) AS part{part_id} ON reg.id = part{part_id}.registration_id
                 LEFT OUTER JOIN (
-                    {lodge_view}
+                    {lodgement_view}
                 ) AS lodgement{part_id}
-                ON part{part_id}.lodgement_id = lodgement{part_id}.id"""
+                ON part{part_id}.lodgement_id = lodgement{part_id}.id
+                LEFT OUTER JOIN (
+                    {lodgement_group_view}
+                ) AS lodgement_group{part_id}
+                ON lodgement{part_id}.group_id = lodgement_group{part_id}.id
+                """
 
             part_tables = " ".join(
                 part_table(part['id'])
@@ -475,14 +481,14 @@ class EventBackend(AbstractBackend):
             query.constraints.append(("event_id", QueryOperators.equal,
                                       event_id))
             query.spec['event_id'] = "id"
-        elif query.scope == "qview_event_user":
+        elif query.scope in {"qview_event_user", "qview_archived_past_event_user"}:
             if not self.is_admin(rs) and "core_admin" not in rs.user.roles:
                 raise PrivilegeError(n_("Admin only."))
             # Include only un-archived event-users
             query.constraints.append(("is_event_realm", QueryOperators.equal,
                                       True))
             query.constraints.append(("is_archived", QueryOperators.equal,
-                                      False))
+                                      query.scope == "qview_archived_past_event_user"))
             query.spec["is_event_realm"] = "bool"
             query.spec["is_archived"] = "bool"
             # Exclude users of any higher realm (implying event)
@@ -3614,7 +3620,7 @@ class EventBackend(AbstractBackend):
             # noinspection PyArgumentList
             row['kind'] = const.QuestionnaireUsages(row['kind'])
         ret = {
-            k: sorted([e for e in d if e['kind'] == k], key=lambda x: x['pos'])
+            k: xsorted([e for e in d if e['kind'] == k], key=lambda x: x['pos'])
             for k in kinds or const.QuestionnaireUsages
         }
         return ret

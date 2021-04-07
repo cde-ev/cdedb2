@@ -1581,7 +1581,8 @@ def _profilepic(
     Limit file size, resolution and ratio.
 
     :param file_storage: If `True` expect the input to be a
-        `werkzeug.FileStorage`, otherwise expect a `bytes` object.
+        `werkzeug.datastructures.FileStorage`, otherwise expect a `bytes`
+        object.
     """
     if file_storage:
         val = _input_file(val, argname, **kwargs)
@@ -1624,7 +1625,8 @@ def _pdffile(
     Limit the maximum file size.
 
     :param file_storage: If `True` expect the input to be a
-        `werkzeug.FileStorage`, otherwise expect a `bytes` object.
+        `werkzeug.datastructures.FileStorage`, otherwise expect a `bytes`
+        object.
     """
     if file_storage:
         val = _input_file(val, argname, **kwargs)

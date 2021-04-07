@@ -212,7 +212,7 @@ pylint:
 	@echo "All of pylint"
 	@echo $(BANNERLINE)
 	@echo ""
-	$(PYLINT) cdedb
+	$(PYLINT) cdedb --load-plugins=pylint.extensions.bad_builtin
 
 template-line-length:
 	@echo $(BANNERLINE)
@@ -312,10 +312,12 @@ tests/ancillary_files/sample_data.sql: tests/ancillary_files/sample_data.json \
 		tests/create_sample_data_sql.py cdedb/database/cdedb-tables.sql
 	SQLTEMPFILE=`sudo -u www-data mktemp` \
 		&& sudo -u www-data chmod +r "$${SQLTEMPFILE}" \
+		&& sudo rm -f /tmp/cdedb*log \
 		&& sudo -u www-data $(PYTHONBIN) \
 			tests/create_sample_data_sql.py \
 			-i tests/ancillary_files/sample_data.json \
 			-o "$${SQLTEMPFILE}" \
+		&& sudo rm -f /tmp/cdedb*log \
 		&& cp "$${SQLTEMPFILE}" tests/ancillary_files/sample_data.sql \
 		&& sudo -u www-data rm "$${SQLTEMPFILE}"
 
@@ -323,11 +325,13 @@ tests/ancillary_files/sample_data_xss.sql: tests/ancillary_files/sample_data.jso
 		tests/create_sample_data_sql.py cdedb/database/cdedb-tables.sql
 	SQLTEMPFILE=`sudo -u www-data mktemp` \
 		&& sudo -u www-data chmod +r "$${SQLTEMPFILE}" \
+		&& sudo rm -f /tmp/cdedb*log \
 		&& sudo -u www-data $(PYTHONBIN) \
 			tests/create_sample_data_sql.py \
 			-i tests/ancillary_files/sample_data.json \
 			-o "$${SQLTEMPFILE}" \
 			--xss "${XSS_PAYLOAD}" \
+		&& sudo rm -f /tmp/cdedb*log \
 		&& cp "$${SQLTEMPFILE}" tests/ancillary_files/sample_data_xss.sql \
 		&& sudo -u www-data rm "$${SQLTEMPFILE}"
 

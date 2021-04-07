@@ -35,13 +35,13 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("aka@example.cde", div="orga-address")
         self.assertPresence("Erste Hälfte", div="timeframe-parts")
         self.assertNonPresence("Everybody come!")
-        self.assertPresence("für eingeloggte Veranstaltungs-Nutzer sichtbar",
+        self.assertPresence("für eingeloggte Veranstaltungsnutzer sichtbar",
                             div='static-notifications')
 
         self.traverse({'description': 'Kursliste'})
         self.assertPresence("α. Planetenretten für Anfänger", div='list-courses')
         self.assertPresence("Wir werden die Bäume drücken.", div='list-courses')
-        msg = ("Die Kursleiter sind nur für eingeloggte Veranstaltungs-Nutzer "
+        msg = ("Die Kursleiter sind nur für eingeloggte Veranstaltungsnutzer "
                "sichtbar.")
         self.assertPresence(msg, div="instructors-not-visible")
         self.assertNonPresence("Bernd Lucke")
@@ -63,14 +63,14 @@ class TestEventFrontend(FrontendTest):
         if user in [USER_DICT['emilia'], USER_DICT['martin'],
                     USER_DICT['werner']]:
             ins = everyone
-            out = admin | {"Nutzer verwalten"}
+            out = admin | {"Nutzer verwalten", "Archivsuche"}
         # core admins
         elif user == USER_DICT['vera']:
-            ins = everyone | {"Nutzer verwalten"}
+            ins = everyone | {"Nutzer verwalten", "Archivsuche"}
             out = admin
         # event admins
         elif user == USER_DICT['annika']:
-            ins = everyone | admin | {"Nutzer verwalten"}
+            ins = everyone | admin | {"Nutzer verwalten", "Archivsuche"}
             out = set()
         else:
             self.fail("Please adjust users for this tests.")
@@ -120,7 +120,7 @@ class TestEventFrontend(FrontendTest):
     def test_user_search(self, user: CdEDBObject) -> None:
         self.traverse({'description': 'Veranstaltunge'},
                       {'description': 'Nutzer verwalten'})
-        self.assertTitle("Veranstaltungs-Nutzerverwaltung")
+        self.assertTitle("Veranstaltungsnutzerverwaltung")
         f = self.response.forms['queryform']
         f['qop_username'] = QueryOperators.match.value
         f['qval_username'] = 'a@'
@@ -128,23 +128,15 @@ class TestEventFrontend(FrontendTest):
             if field and field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
-        self.assertTitle("Veranstaltungs-Nutzerverwaltung")
+        self.assertTitle("Veranstaltungsnutzerverwaltung")
         self.assertPresence("Ergebnis [2]", div='query-results')
         self.assertPresence("Hohle Gasse 13", div='query-result')
 
-    @as_users("annika", "ferdinand", "vera")
-    def test_create_user(self, user: CdEDBObject) -> None:
-        self.traverse({'description': 'Veranstaltunge'},
-                      {'description': 'Nutzer verwalten'},
-                      {'description': 'Nutzer anlegen'})
-        self.assertTitle("Neuen Veranstaltungsnutzer anlegen")
+    @as_users("annika", "paul")
+    def test_create_archive_user(self, user: CdEDBObject) -> None:
         data = {
-            "username": 'zelda@example.cde',
             "title": "Dr.",
-            "given_names": "Zelda",
-            "family_name": "Zeruda-Hime",
             "name_supplement": 'von und zu',
-            "display_name": 'Zelda',
             "birthday": "1987-06-05",
             "gender": "1",
             "telephone": "030456790",
@@ -154,15 +146,8 @@ class TestEventFrontend(FrontendTest):
             "postal_code": "12345",
             "location": "Lynna",
             "country": "HY",
-            "notes": "some talk",
         }
-        f = self.response.forms['newuserform']
-        self.assertEqual(f['country'].value, self.conf["DEFAULT_COUNTRY"])
-        for key, value in data.items():
-            f.set(key, value)
-        self.submit(f)
-        self.assertTitle("Zelda Zeruda-Hime")
-        self.assertPresence("12345", div='address')
+        self.check_create_archive_user("event", data)
 
     @as_users("anton")
     def test_event_admin_views(self, user: CdEDBObject) -> None:
@@ -265,7 +250,7 @@ class TestEventFrontend(FrontendTest):
                             "Zweite Hälfte: 11.11.2222 – 30.11.2222",
                             div='timeframe-parts')
         self.assertPresence("Everybody come!", div='description')
-        self.assertNonPresence("für eingeloggte Veranstaltungs-Nutzer sichtbar",
+        self.assertNonPresence("für eingeloggte Veranstaltungsnutzer sichtbar",
                                div='notifications')
         self.assertPresence("30.10.2000, 01:00:00 – 30.10.2200, 01:00:00 ",
                             div='timeframe-registration')
