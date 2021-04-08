@@ -19,7 +19,7 @@ from cdedb.backend.common import (
     internal, singularize,
 )
 from cdedb.backend.event import EventBackend
-from cdedb.subman import subman
+import cdedb.subman as subman
 from cdedb.common import (
     MAILINGLIST_FIELDS, MOD_ALLOWED_FIELDS, RESTRICTED_MOD_ALLOWED_FIELDS, CdEDBLog,
     CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, PathLike,
@@ -48,6 +48,8 @@ class MlBackend(AbstractBackend):
         self.assembly = make_proxy(AssemblyBackend(configpath), internal=True)
         self.backends = ml_type.BackendContainer(
             core=self.core, event=self.event, assembly=self.assembly)
+        self.subman = subman.SubscriptionManager(
+            unwritten_states=(const.SubscriptionState.none,))
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:
@@ -856,7 +858,7 @@ class MlBackend(AbstractBackend):
             old_state = self.get_subscription(rs, persona_id,
                                               mailinglist_id=mailinglist_id)
 
-            new_state = subman.apply_action(
+            new_state = self.subman.apply_action(
                 action=action,
                 policy=self.get_subscription_policy(rs, persona_id, mailinglist=ml),
                 allow_unsub=atype.allow_unsub,
@@ -1228,8 +1230,8 @@ class MlBackend(AbstractBackend):
                 policy = atype.get_subscription_policy(
                     rs, self.backends, mailinglist=ml, persona_id=persona_id)
                 state = old_subscribers[persona_id]
-                if subman.is_obsolete(policy=policy, old_state=state,
-                                      is_implied=persona_id in new_implicits):
+                if self.subman.is_obsolete(policy=policy, old_state=state,
+                                           is_implied=persona_id in new_implicits):
                     datum = {
                         'mailinglist_id': mailinglist_id,
                         'persona_id': persona_id,
