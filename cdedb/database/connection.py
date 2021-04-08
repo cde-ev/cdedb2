@@ -10,14 +10,13 @@ This should be the only module which makes subsistantial use of psycopg.
 
 import logging
 from types import TracebackType
-from typing import Any, cast, Collection, Mapping, NoReturn, Optional, Type
-from typing_extensions import Protocol, Literal
+from typing import Any, Collection, Mapping, NoReturn, Optional, Type
 
 import psycopg2
-import psycopg2.extras
 import psycopg2.extensions
-
+import psycopg2.extras
 from psycopg2.extensions import ISOLATION_LEVEL_SERIALIZABLE as SERIALIZABLE
+from typing_extensions import Literal, Protocol
 
 # We cannot import cdedb.config here.
 # from cdedb.config import SecretsConfig
@@ -53,15 +52,21 @@ def _create_connection(dbname: str, dbuser: str, password: str, port: int,
     :param isolation_level: Isolation level of database connection, a
         constant coming from :py:mod:`psycopg2.extensions`. This should be used
         very sparingly!
-    :type isolation_level: int
-    :rtype: :py:class:`IrradiatedConnection`
     :returns: open database connection
     """
-    conn = psycopg2.connect(
-        "dbname={} user={} password={} port={}".format(
-            dbname, dbuser, password, port),
-        connection_factory=IrradiatedConnection,
-        cursor_factory=psycopg2.extras.RealDictCursor)
+    connection_parameters = {
+            "dbname": dbname,
+            "user": dbuser,
+            "password": password,
+            "connection_factory": IrradiatedConnection,
+            "cursor_factory": psycopg2.extras.RealDictCursor
+    }
+    try:  # TODO simply check if inside docker first
+        conn = psycopg2.connect(**connection_parameters, port=port)
+    except psycopg2.OperationalError as e:  # Docker uses 5432/tcp instead of sockets
+        if "Passwort-Authentifizierung" in e.args[0]:
+            raise  # fail fast if wrong password is the problem - necessary for tests
+        conn = psycopg2.connect(**connection_parameters, host="cdb", port=5432)
     conn.set_client_encoding("UTF8")
     conn.set_session(isolation_level)
     _LOGGER.debug("Created connection to {} as {}".format(dbname, dbuser))
@@ -84,19 +89,16 @@ def connection_pool_factory(dbname: str, roles: Collection[Role],
     The first implementation of this interface was a caching connection
     factory, which used crazy amounts of resources.
 
-    :type dbname: str
     :param roles: roles for which database connections shall be available
-    :type roles: [str]
     :param secrets: container for db passwords
-    :type secrets: :py:class:`cdedb.config.SecretsConfig`
-    :type port: int
     :param isolation_level: Isolation level of database connection, a
         constant coming from :py:mod:`psycopg2.extensions`. This should be used
         very sparingly!
-    :type isolation_level: int
     :returns: dict-like object with semantics {str :
                 :py:class:`IrradiatedConnection`}
     """
+    # local variable to prevent closure over secrets
+    db_passwords = secrets["CDB_DATABASE_ROLES"]
 
     class InstantConnectionPool(Mapping[Role, "IrradiatedConnection"]):
         """Dict-like for providing database connections."""
@@ -109,8 +111,7 @@ def connection_pool_factory(dbname: str, roles: Collection[Role],
                 raise ValueError(n_("role %(role)s not available"),
                                  {'role': role})
             return _create_connection(
-                dbname, role, secrets["CDB_DATABASE_ROLES"][role], port,
-                isolation_level)
+                dbname, role, db_passwords[role], port, isolation_level)
 
         def __delitem__(self, key: Any) -> NoReturn:
             raise NotImplementedError(n_("Not available for instant pool"))

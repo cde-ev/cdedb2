@@ -45,7 +45,7 @@
         <dt>{% trans %}Mailinglist Address{% endtrans %}</dt>
         <dd>{{ util.href(util.mailto(ambience['mailinglist']['address']), ambience['mailinglist']['address']) }}</dd>
         <dt>{% trans %}Moderators{% endtrans %}</dt>
-        <dd id="moderator_list">
+        <dd id="moderator-list">
             {% for moderator, persona in moderators.items() %} {# This is already sorted. #}
                 {{ util.persona_anchor(persona) }}{% if not loop.last %},{% endif %}
             {% endfor %}
@@ -82,21 +82,21 @@
                             {% endif %}
                         </dd>
                     </dl>
-                    {% if interaction_policy != enums['MailinglistInteractionPolicy'].mandatory %}
+                    {% if allow_unsub %}
                         <div class="p">
                             {% if sub_address %}
                                 <form action="{{ cdedblink('ml/change_address') }}" method="POST"
                                       id="resetaddressform" style="display: inline;">
                                     {{ util.anti_csrf_token('ml/change_address') }}
                                     {{ util.input_hidden(name="email", value="") }}
-                                    {{ util.input_submit(value=gettext("Reset email address"), icon="share-square",
+                                    {{ util.input_submit(label=gettext("Reset email address"), icon="share-square",
                                         aclass="btn btn-warning btn-sm") }}
                                 </form>
                             {% endif %}
                             <form action="{{ cdedblink('ml/unsubscribe') }}" method="POST"
                                   id="unsubscribeform" style="display: inline;">
                                 {{ util.anti_csrf_token('ml/unsubscribe') }}
-                                {{ util.input_submit(value=gettext("Unsubscribe"), aclass="btn btn-danger btn-sm",
+                                {{ util.input_submit(label=gettext("Unsubscribe"), aclass="btn btn-danger btn-sm",
                                                      icon="times-circle") }}
                             </form>
                         </div>
@@ -119,7 +119,7 @@
                                 {{ util.input_text(name="email", type="email", placeholder="new-address@example.com",
                                         anid="input-new-adress", arialabel=gettext("New Email Address")) }}
                                 <div class="input-group-btn">
-                                    {{ util.input_submit(value=gettext("Change E-Mail")) }}
+                                    {{ util.input_submit(label=gettext("Change E-Mail")) }}
                                 </div>
                             </div>
                             {{ util.output_errors('email') }}
@@ -136,7 +136,7 @@
                         </p>
                     {% endif %}
                 {% else %}
-                    {% if state == enums['SubscriptionStates'].pending %}
+                    {% if state == enums['SubscriptionState'].pending %}
                         <p><strong>
                             {% trans %}
                                 Your subscription request is currently pending review by a moderator.
@@ -145,25 +145,25 @@
                         <form action="{{ cdedblink('ml/cancel_subscription') }}" method="POST"
                                 id="cancel-request-form">
                             {{ util.anti_csrf_token('ml/cancel_subscription') }}
-                            {{ util.input_submit(value=gettext("Cancel request"), aclass="btn btn-sm btn-danger",
+                            {{ util.input_submit(label=gettext("Cancel request"), aclass="btn btn-sm btn-danger",
                                     icon="times-circle") }}
                         </form>
-                    {% elif state != enums['SubscriptionStates'].unsubscription_override %}
+                    {% elif state != enums['SubscriptionState'].unsubscription_override %}
                         <p><strong>
                             {% trans %}You are not currently subscribed to this mailinglist.{% endtrans %}
                         </strong></p>
-                        {% if interaction_policy == enums['MailinglistInteractionPolicy'].moderated_opt_in %}
+                        {% if subscription_policy == enums['SubscriptionPolicy'].moderated_opt_in %}
                             <form action="{{ cdedblink('ml/request_subscription') }}" method="POST" id="subscribe-mod-form">
                                 {{ util.anti_csrf_token('ml/request_subscription') }}
                                 <div>
-                                    {{ util.input_submit(value=gettext("Request subscription"), aclass="btn btn-sm btn-success") }}
+                                    {{ util.input_submit(label=gettext("Request subscription"), aclass="btn btn-sm btn-success") }}
                                 </div>
                             </form>
-                        {% elif interaction_policy in (enums['MailinglistInteractionPolicy'].opt_in, enums['MailinglistInteractionPolicy'].opt_out) %}
+                        {% elif subscription_policy == enums['SubscriptionPolicy'].subscribable %}
                             <form action="{{ cdedblink('ml/subscribe') }}" method="POST" id="subscribe-no-mod-form">
                                 {{ util.anti_csrf_token('ml/subscribe') }}
                                 <div>
-                                    {{ util.input_submit(value=gettext("Subscribe"), aclass="btn btn-sm btn-success") }}
+                                    {{ util.input_submit(label=gettext("Subscribe"), aclass="btn btn-sm btn-success") }}
                                 </div>
                             </form>
                         {% endif %}
@@ -186,7 +186,7 @@
                         <form action="{{ cdedblink('ml/delete_mailinglist') }}" method="POST" id="deletemlform"
                             class="display-inline">
                             {{ util.anti_csrf_token('ml/delete_mailinglist') }}
-                            {{ util.input_submit(value=gettext("Delete"), readonly=is_locked,
+                            {{ util.input_submit(label=gettext("Delete"), readonly=is_locked,
                                                  aclass="btn btn-danger", icon="trash-alt") }}
                             {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
                         </form>

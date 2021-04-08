@@ -27,7 +27,7 @@
     {{ persona['family_name'] }}
     {{ persona['name_supplement'] }}
 {% endmacro %}
-{% macro form_input_optional(name='', label='', anid='', info='') %}
+{% macro form_input_optional(name='', label='', anid=none, info='') %}
     <div class="form-group {% if name in errors %}has-error{% endif %}">
         {% if label %}
             <label{% if anid %} for="{{ anid }}"{% endif %} class="col-sm-4 control-label">
@@ -205,7 +205,7 @@
             {% endfor %}
         {% endif %}
 
-        {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink("event/registration_query")) }}
+        {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("event/registration_query")) }}
     </form>
     <script nonce="{{ csp_nonce }}">
         /**

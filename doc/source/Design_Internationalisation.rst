@@ -1,2 +1,0 @@
-Internationalisation (i18n)
-===========================

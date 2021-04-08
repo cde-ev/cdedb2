@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
-from cdedb.script import setup, make_backend
-from cdedb.database.connection import Atomizer
-from cdedb.ml_type_aux import get_type, get_full_address
 import cdedb.database.constants as const
+from cdedb.database.connection import Atomizer
+from cdedb.ml_type_aux import get_full_address, get_type
+from cdedb.script import make_backend, setup
+
 # Configuration
 
 rs = setup(persona_id=1, dbuser="cdb",

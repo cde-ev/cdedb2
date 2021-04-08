@@ -6,36 +6,38 @@ variant for external participants.
 
 import collections
 import copy
-import decimal
 import datetime
+import decimal
 from pathlib import Path
-
 from typing import (
-    Dict, Set, Collection, Callable, Tuple, Optional, List, Sequence, Any,
-    Mapping, Iterable
+    Any, Callable, Collection, Dict, Iterable, List, Mapping, Optional, Sequence, Set,
+    Tuple,
 )
+
 from typing_extensions import Protocol
 
+import cdedb.database.constants as const
+import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
-    access, affirm_validation as affirm, AbstractBackend, Silencer,
-    affirm_set_validation as affirm_set, singularize, PYTHON_TO_SQL_MAP,
-    cast_fields, internal,
+    PYTHON_TO_SQL_MAP, AbstractBackend, Silencer, access,
+    affirm_set_validation as affirm_set, affirm_validation_typed as affirm,
+    affirm_validation_typed_optional as affirm_optional, cast_fields, internal,
+    singularize,
 )
 from cdedb.common import (
-    n_, glue, PrivilegeError, EVENT_PART_FIELDS, EVENT_FIELDS, COURSE_FIELDS,
-    REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS, LODGEMENT_GROUP_FIELDS,
-    LODGEMENT_FIELDS, COURSE_SEGMENT_FIELDS, unwrap, now,
-    PERSONA_EVENT_FIELDS, CourseFilterPositions, FIELD_DEFINITION_FIELDS,
-    COURSE_TRACK_FIELDS, REGISTRATION_TRACK_FIELDS, PsycoJson, implying_realms,
-    json_serialize, PartialImportError, CDEDB_EXPORT_EVENT_VERSION,
-    mixed_existence_sorter, FEE_MODIFIER_FIELDS, QUESTIONNAIRE_ROW_FIELDS,
-    xsorted, RequestState, CdEDBObject, CdEDBObjectMap, CdEDBLog,
-    DefaultReturnCode, DeletionBlockers, InfiniteEnum, get_hash, PathLike,
-    EVENT_SCHEMA_VERSION, CdEDBOptionalMap, EVENT_FIELD_SPEC
+    CDEDB_EXPORT_EVENT_VERSION, COURSE_FIELDS, COURSE_SEGMENT_FIELDS,
+    COURSE_TRACK_FIELDS, EVENT_FIELD_SPEC, EVENT_FIELDS, EVENT_PART_FIELDS,
+    EVENT_SCHEMA_VERSION, FEE_MODIFIER_FIELDS, FIELD_DEFINITION_FIELDS,
+    LODGEMENT_FIELDS, LODGEMENT_GROUP_FIELDS, PERSONA_EVENT_FIELDS,
+    QUESTIONNAIRE_ROW_FIELDS, REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS,
+    REGISTRATION_TRACK_FIELDS, CdEDBLog, CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap,
+    CourseFilterPositions, DefaultReturnCode, DeletionBlockers, InfiniteEnum,
+    PartialImportError, PathLike, PrivilegeError, PsycoJson, RequestState, get_hash,
+    glue, implying_realms, json_serialize, mixed_existence_sorter, n_, now, unwrap,
+    xsorted,
 )
 from cdedb.database.connection import Atomizer
-from cdedb.query import QueryOperators, Query
-import cdedb.database.constants as const
+from cdedb.query import Query, QueryOperators
 from cdedb.validation import parse_date, parse_datetime
 
 
@@ -84,10 +86,10 @@ class EventBackend(AbstractBackend):
         if event_id is not None and course_id is not None:
             raise ValueError(n_("Too many inputs specified."))
         elif event_id is not None:
-            anid = affirm("id", event_id)
+            anid = affirm(vtypes.ID, event_id)
             query = "SELECT offline_lock FROM event.events WHERE id = %s"
         elif course_id is not None:
-            anid = affirm("id", course_id)
+            anid = affirm(vtypes.ID, course_id)
             query = glue(
                 "SELECT offline_lock FROM event.events AS e",
                 "LEFT OUTER JOIN event.courses AS c ON c.event_id = e.id",
@@ -117,7 +119,7 @@ class EventBackend(AbstractBackend):
     def orga_infos(self, rs: RequestState, persona_ids: Collection[int]
                    ) -> Dict[int, Set[int]]:
         """List events organized by specific personas."""
-        persona_ids = affirm_set("id", persona_ids)
+        persona_ids = affirm_set(vtypes.ID, persona_ids)
         data = self.sql_select(rs, "event.orgas", ("persona_id", "event_id"),
                                persona_ids, entity_key="persona_id")
         ret = {}
@@ -131,17 +133,21 @@ class EventBackend(AbstractBackend):
 
     def event_log(self, rs: RequestState, code: const.EventLogCodes,
                   event_id: Optional[int], persona_id: int = None,
-                  change_note: str = None) -> DefaultReturnCode:
+                  change_note: str = None, atomized: bool = True) -> DefaultReturnCode:
         """Make an entry in the log.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
 
-        :param persona_id: ID of affected user
-        :param change_note: Infos not conveyed by other columns.
+        :param atomized: Whether this function should enforce an atomized context
+            to be present.
         """
         if rs.is_quiet:
             return 0
+        # To ensure logging is done if and only if the corresponding action happened,
+        # we require atomization by default.
+        if atomized:
+            self.affirm_atomized_context(rs)
         data = {
             "code": code,
             "event_id": event_id,
@@ -164,13 +170,13 @@ class EventBackend(AbstractBackend):
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        event_id = affirm("id_or_None", event_id)
+        event_id = affirm_optional(vtypes.ID, event_id)
         if (not (event_id and self.is_orga(rs, event_id=event_id))
                 and not self.is_admin(rs)):
             raise PrivilegeError(n_("Not privileged."))
         event_ids = [event_id] if event_id else None
         return self.generic_retrieve_log(
-            rs, "enum_eventlogcodes", "event", "event.log", codes=codes,
+            rs, const.EventLogCodes, "event", "event.log", codes=codes,
             entity_ids=event_ids, offset=offset, length=length,
             persona_id=persona_id, submitted_by=submitted_by,
             change_note=change_note, time_start=time_start,
@@ -220,7 +226,7 @@ class EventBackend(AbstractBackend):
 
         :returns: Mapping of course ids to titles.
         """
-        event_id = affirm("id", event_id)
+        event_id = affirm(vtypes.ID, event_id)
         data = self.sql_select(rs, "event.courses", ("id", "title"),
                                (event_id,), entity_key="event_id")
         return {e['id']: e['title'] for e in data}
@@ -233,10 +239,10 @@ class EventBackend(AbstractBackend):
 
         :param event_id: For registration queries, specify the event.
         """
-        query = affirm("query", query)
+        query = affirm(Query, query)
         view = None
         if query.scope == "qview_registration":
-            event_id = affirm("id", event_id)
+            event_id = affirm(vtypes.ID, event_id)
             assert event_id is not None
             # ml_admins are allowed to do this to be able to manage
             # subscribers of event mailinglists.
@@ -300,15 +306,16 @@ class EventBackend(AbstractBackend):
             )
             if lodge_field_columns:
                 lodge_field_columns += ", "
-            lodge_view = """SELECT
+            lodgement_view = f"""SELECT
                 {lodge_field_columns}
-                title, notes, id
+                title, notes, id, group_id
             FROM
                 event.lodgements
             WHERE
-                event_id = {event_id}""".format(
-                event_id=event_id, lodge_field_columns=lodge_field_columns)
-
+                event_id = {event_id}"""
+            lodgement_group_view = (f"SELECT title, id"
+                                    f" FROM event.lodgement_groups"
+                                    f" WHERE event_id = {event_id}")
             # The template for registration part and lodgement information.
             part_table = lambda part_id: \
                 f"""LEFT OUTER JOIN (
@@ -320,9 +327,14 @@ class EventBackend(AbstractBackend):
                         part_id = {part_id}
                 ) AS part{part_id} ON reg.id = part{part_id}.registration_id
                 LEFT OUTER JOIN (
-                    {lodge_view}
+                    {lodgement_view}
                 ) AS lodgement{part_id}
-                ON part{part_id}.lodgement_id = lodgement{part_id}.id"""
+                ON part{part_id}.lodgement_id = lodgement{part_id}.id
+                LEFT OUTER JOIN (
+                    {lodgement_group_view}
+                ) AS lodgement_group{part_id}
+                ON lodgement{part_id}.group_id = lodgement_group{part_id}.id
+                """
 
             part_tables = " ".join(
                 part_table(part['id'])
@@ -462,21 +474,21 @@ class EventBackend(AbstractBackend):
                                       event_id))
             query.spec['event_id'] = "id"
         elif query.scope == "qview_quick_registration":
-            event_id = affirm("id", event_id)
+            event_id = affirm(vtypes.ID, event_id)
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)):
                 raise PrivilegeError(n_("Not privileged."))
             query.constraints.append(("event_id", QueryOperators.equal,
                                       event_id))
             query.spec['event_id'] = "id"
-        elif query.scope == "qview_event_user":
+        elif query.scope in {"qview_event_user", "qview_archived_past_event_user"}:
             if not self.is_admin(rs) and "core_admin" not in rs.user.roles:
                 raise PrivilegeError(n_("Admin only."))
             # Include only un-archived event-users
             query.constraints.append(("is_event_realm", QueryOperators.equal,
                                       True))
             query.constraints.append(("is_archived", QueryOperators.equal,
-                                      False))
+                                      query.scope == "qview_archived_past_event_user"))
             query.spec["is_event_realm"] = "bool"
             query.spec["is_archived"] = "bool"
             # Exclude users of any higher realm (implying event)
@@ -485,7 +497,7 @@ class EventBackend(AbstractBackend):
                     ("is_{}_realm".format(realm), QueryOperators.equal, False))
                 query.spec["is_{}_realm".format(realm)] = "bool"
         elif query.scope == "qview_event_course":
-            event_id = affirm("id", event_id)
+            event_id = affirm(vtypes.ID, event_id)
             assert event_id is not None
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)):
@@ -704,7 +716,7 @@ class EventBackend(AbstractBackend):
                 ("event_id", QueryOperators.equal, event_id))
             query.spec['event_id'] = "id"
         elif query.scope == "qview_event_lodgement":
-            event_id = affirm("id", event_id)
+            event_id = affirm(vtypes.ID, event_id)
             assert event_id is not None
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)):
@@ -934,7 +946,7 @@ class EventBackend(AbstractBackend):
         * end,
         * is_open.
         """
-        event_ids = affirm_set("id", event_ids)
+        event_ids = affirm_set(vtypes.ID, event_ids)
         with Atomizer(rs):
             data = self.sql_select(rs, "event.events", EVENT_FIELDS, event_ids)
             ret = {e['id']: e for e in data}
@@ -1001,10 +1013,7 @@ class EventBackend(AbstractBackend):
         Helper function to retrieve the custom field definitions of an event.
         This is required by multiple backend functions.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type event_id: int
         :return: A dict mapping each event id to the dict of its fields
-        :rtype: {int: {str: object}}
         """
         data = self.sql_select(
             rs, "event.field_definitions", FIELD_DEFINITION_FIELDS,
@@ -1025,7 +1034,7 @@ class EventBackend(AbstractBackend):
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
         """
-        track_id = affirm("id", track_id)
+        track_id = affirm(vtypes.ID, track_id)
         blockers = {}
 
         course_segments = self.sql_select(
@@ -1058,11 +1067,11 @@ class EventBackend(AbstractBackend):
         :param cascade: Specify which deletion blockers to cascadingly
             remove or ignore. If None or empty, cascade none.
         """
-        track_id = affirm("id", track_id)
+        track_id = affirm(vtypes.ID, track_id)
         blockers = self._delete_course_track_blockers(rs, track_id)
         if not cascade:
             cascade = set()
-        cascade = affirm_set("str", cascade)
+        cascade = affirm_set(str, cascade)
         cascade = cascade & blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
@@ -1116,12 +1125,12 @@ class EventBackend(AbstractBackend):
         ret = 1
         if not data:
             return ret
-        # implicit Atomizer by caller
+        # implicit atomized context.
         self.affirm_atomized_context(rs)
-        current = self.sql_select(
-            rs, "event.course_tracks", COURSE_TRACK_FIELDS, (part_id,),
-            entity_key="part_id")
-        current = {e['id']: e for e in current}
+        current = self.sql_select(rs, "event.course_tracks", COURSE_TRACK_FIELDS,
+                                  (part_id,), entity_key="part_id")
+        current = {e['id']: {k: v for k, v in e.items()if k not in {'id', 'part_id'}}
+                   for e in current}
         existing = set(current)
         if not (existing >= {x for x in data if x > 0}):
             raise ValueError(n_("Non-existing tracks specified."))
@@ -1161,9 +1170,8 @@ class EventBackend(AbstractBackend):
                     **track_data
                 }
                 ret *= self.sql_update(rs, "event.course_tracks", update)
-                self.event_log(
-                    rs, const.EventLogCodes.track_updated, event_id,
-                    change_note=track_data['title'])
+                self.event_log(rs, const.EventLogCodes.track_updated, event_id,
+                               change_note=track_data['title'])
 
         # deleted
         if deleted:
@@ -1254,7 +1262,7 @@ class EventBackend(AbstractBackend):
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
         """
-        part_id = affirm("id", part_id)
+        part_id = affirm(vtypes.ID, part_id)
         blockers = {}
 
         fee_modifiers = self.sql_select(
@@ -1288,11 +1296,11 @@ class EventBackend(AbstractBackend):
         :param cascade: Specify which deletion blockers to cascadingly
             remove or ignore. If None or empty, cascade none.
         """
-        part_id = affirm("id", part_id)
+        part_id = affirm(vtypes.ID, part_id)
         blockers = self._delete_event_part_blockers(rs, part_id)
         if not cascade:
             cascade = set()
-        cascade = affirm_set("str", cascade) & blockers.keys()
+        cascade = affirm_set(str, cascade) & blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
                              {
@@ -1351,7 +1359,7 @@ class EventBackend(AbstractBackend):
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
         """
-        field_id = affirm("id", field_id)
+        field_id = affirm(vtypes.ID, field_id)
         blockers = {}
 
         fee_modifiers = self.sql_select(
@@ -1407,11 +1415,11 @@ class EventBackend(AbstractBackend):
             remove or ignore. If None or empty, cascade none.
 
         """
-        field_id = affirm("id", field_id)
+        field_id = affirm(vtypes.ID, field_id)
         blockers = self._delete_event_field_blockers(rs, field_id)
         if not cascade:
             cascade = set()
-        cascade = affirm_set("str", cascade)
+        cascade = affirm_set(str, cascade)
         cascade = cascade & blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
@@ -1483,8 +1491,9 @@ class EventBackend(AbstractBackend):
         """Change or remove an event's minor form.
 
         Return 1 on successful change, -1 on successful deletion, 0 otherwise."""
-        event_id = affirm("id", event_id)
-        minor_form = affirm("pdffile_or_None", minor_form, file_storage=False)
+        event_id = affirm(vtypes.ID, event_id)
+        minor_form = affirm_optional(
+            vtypes.PDFFile, minor_form, file_storage=False)
         if not (self.is_orga(rs, event_id=event_id) or self.is_admin(rs)):
             raise PrivilegeError(n_("Must be orga or admin to change the"
                                     " minor form."))
@@ -1492,15 +1501,20 @@ class EventBackend(AbstractBackend):
         if minor_form is None:
             if path.exists():
                 path.unlink()
-                self.event_log(rs, const.EventLogCodes.minor_form_removed,
-                               event_id)
+                # Since this is not acting on our database, do not demand an atomized
+                # context.
+                self.event_log(rs, const.EventLogCodes.minor_form_removed, event_id,
+                               atomized=False)
                 return -1
             else:
                 return 0
         else:
             with open(path, "wb") as f:
                 f.write(minor_form)
-            self.event_log(rs, const.EventLogCodes.minor_form_updated, event_id)
+            # Since this is not acting on our database, do not demand an atomized
+            # context.
+            self.event_log(rs, const.EventLogCodes.minor_form_updated, event_id,
+                           atomized=False)
             return 1
 
     @access("event")
@@ -1509,7 +1523,7 @@ class EventBackend(AbstractBackend):
         """Retrieve the minor form for an event.
 
         Returns None if no minor form exists for the given event."""
-        event_id = affirm("id", event_id)
+        event_id = affirm(vtypes.ID, event_id)
         # TODO accesscheck?
         path = self.minor_form_dir / str(event_id)
         ret = None
@@ -1522,7 +1536,7 @@ class EventBackend(AbstractBackend):
     @access("event")
     def set_event_archived(self, rs: RequestState, data: CdEDBObject) -> None:
         """Wrapper around ``set_event()`` for archiving an event.
-        
+
         This exists to emit the correct log message. It delegates
         everything else (like validation) to the wrapped method.
         """
@@ -1545,8 +1559,8 @@ class EventBackend(AbstractBackend):
         A complete set of orga IDs needs to be passed, since this will
         overwrite the current set.
         """
-        event_id = affirm("id", event_id)
-        ids = affirm_set("id", ids)
+        event_id = affirm(vtypes.ID, event_id)
+        ids = affirm_set(vtypes.ID, ids)
         if not self.core.verify_ids(rs, ids, is_archived=False):
             raise ValueError(n_(
                 "Some of these orgas do not exist or are archived."))
@@ -1615,7 +1629,7 @@ class EventBackend(AbstractBackend):
           e.g. trying to create a field with a `field_name` that already
           exists for this event. See Issue #1140.
         """
-        data = affirm("event", data)
+        data = affirm(vtypes.Event, data)
         if not self.is_orga(rs, event_id=data['id']) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=data['id'])
@@ -1712,8 +1726,9 @@ class EventBackend(AbstractBackend):
                         rs, const.EventLogCodes.part_created, data['id'],
                         change_note=new_part['title'])
                 current = self.sql_select(
-                    rs, "event.event_parts", ("id", "title"), updated | deleted)
-                titles = {e['id']: e['title'] for e in current}
+                    rs, "event.event_parts", EVENT_PART_FIELDS, updated | deleted)
+                current_data = {e['id']: {k: v for k, v in e.items()
+                                          if k not in {'event_id'}} for e in current}
                 for x in mixed_existence_sorter(updated):
                     update = copy.deepcopy(parts[x])
                     update['id'] = x
@@ -1731,11 +1746,11 @@ class EventBackend(AbstractBackend):
                                 or field['association'] not in legal_assocs):
                             raise ValueError(n_("Unfit field for %(field)s"),
                                              {'field': 'waitlist_field'})
-                    ret *= self.sql_update(rs, "event.event_parts", update)
                     ret *= self._set_tracks(rs, data['id'], x, tracks)
-                    self.event_log(
-                        rs, const.EventLogCodes.part_changed, data['id'],
-                        change_note=titles[x])
+                    if current_data[x] != update:
+                        ret *= self.sql_update(rs, "event.event_parts", update)
+                        self.event_log(rs, const.EventLogCodes.part_changed, data['id'],
+                                       change_note=current_data[x]['title'])
                 if deleted:
                     for x in mixed_existence_sorter(deleted):
                         # Implicitly delete fee modifiers and course tracks.
@@ -1775,6 +1790,9 @@ class EventBackend(AbstractBackend):
                 for x in mixed_existence_sorter(updated):
                     update = copy.deepcopy(fields[x])
                     update['id'] = x
+                    if field_data[x]['entries'] is not None:
+                        field_data[x]['entries'] = [
+                            tuple(e) for e in field_data[x]['entries']]
                     if all(field_data[x][k] == update[k] for k in update):
                         continue
                     if self.sql_select_one(
@@ -1783,12 +1801,10 @@ class EventBackend(AbstractBackend):
                         raise ValueError(n_(
                             "Cannot change field that is "
                             "associated with a fee modifier."))
-                    if ('kind' in update
-                            and update['kind'] != field_data[x]['kind']):
-                        self._cast_field_values(rs, field_data[x],
-                                                update['kind'])
-                    ret *= self.sql_update(rs, "event.field_definitions",
-                                           update)
+                    kind = field_data[x]['kind']
+                    if update.get('kind', kind) != kind:
+                        self._cast_field_values(rs, field_data[x], update['kind'])
+                    ret *= self.sql_update(rs, "event.field_definitions", update)
                     self.event_log(
                         rs, const.EventLogCodes.field_updated, data['id'],
                         change_note=field_data[x]['field_name'])
@@ -1829,7 +1845,8 @@ class EventBackend(AbstractBackend):
                 current = self.sql_select(
                     rs, "event.fee_modifiers", FEE_MODIFIER_FIELDS, part_ids,
                     entity_key="part_id")
-                existing = {e['id'] for e in current}
+                current_data = {e['id']: e for e in current}
+                existing = set(current_data)
                 if not (existing >= {x for x in fee_modifiers if x > 0}):
                     raise ValueError(n_("Non-existing fee modifier specified."))
                 new = {x for x in fee_modifiers if x < 0}
@@ -1837,7 +1854,6 @@ class EventBackend(AbstractBackend):
                            if x > 0 and fee_modifiers[x] is not None}
                 deleted = {x for x in fee_modifiers
                            if x > 0 and fee_modifiers[x] is None}
-                fee_modifier_data = {e['id']: e for e in current}
                 elc = const.EventLogCodes
                 for x in mixed_existence_sorter(new):
                     ret *= self.sql_insert(
@@ -1846,18 +1862,18 @@ class EventBackend(AbstractBackend):
                         rs, elc.fee_modifier_created, data['id'],
                         change_note=fee_modifiers[x]['modifier_name'])
                 for x in mixed_existence_sorter(updated):
-                    ret *= self.sql_update(
-                        rs, "event.fee_modifiers", fee_modifiers[x])
-                    self.event_log(
-                        rs, elc.fee_modifier_changed, data['id'],
-                        change_note=fee_modifier_data[x]['modifier_name'])
+                    if fee_modifiers[x] != current_data[x]:
+                        ret *= self.sql_update(
+                            rs, "event.fee_modifiers", fee_modifiers[x])
+                        self.event_log(
+                            rs, elc.fee_modifier_changed, data['id'],
+                            change_note=current_data[x]['modifier_name'])
                 if deleted:
                     ret *= self.sql_delete(rs, "event.fee_modifiers", deleted)
                     for x in mixed_existence_sorter(deleted):
-                        modifier_name = fee_modifier_data[x]['modifier_name']
                         self.event_log(
                             rs, elc.fee_modifier_deleted,
-                            data['id'], change_note=modifier_name)
+                            data['id'], change_note=current_data[x]['modifier_name'])
 
         return ret
 
@@ -1865,7 +1881,7 @@ class EventBackend(AbstractBackend):
     def create_event(self, rs: RequestState,
                      data: CdEDBObject) -> DefaultReturnCode:
         """Make a new event organized via DB."""
-        data = affirm("event", data, creation=True)
+        data = affirm(vtypes.Event, data, creation=True)
         if 'parts' not in data:
             raise ValueError(n_("At least one event part required."))
         with Atomizer(rs):
@@ -1908,7 +1924,7 @@ class EventBackend(AbstractBackend):
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
         """
-        event_id = affirm("id", event_id)
+        event_id = affirm(vtypes.ID, event_id)
         blockers = {}
 
         field_definitions = self.sql_select(
@@ -1980,11 +1996,11 @@ class EventBackend(AbstractBackend):
         :param cascade: Specify which deletion blockers to cascadingly
             remove or ignore. If None or empty, cascade none.
         """
-        event_id = affirm("id", event_id)
+        event_id = affirm(vtypes.ID, event_id)
         blockers = self.delete_event_blockers(rs, event_id)
         if not cascade:
             cascade = set()
-        cascade = affirm_set("str", cascade)
+        cascade = affirm_set(str, cascade)
         cascade = cascade & blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
@@ -2028,7 +2044,7 @@ class EventBackend(AbstractBackend):
                         rs, "event.questionnaire_rows",
                         blockers["questionnaire"])
                 if "field_definitions" in cascade:
-                    deletor = {
+                    deletor: CdEDBObject = {
                         'id': event_id,
                         'course_room_field': None,
                         'lodge_field': None,
@@ -2075,7 +2091,7 @@ class EventBackend(AbstractBackend):
         They must be associated to the same event. This contains additional
         information on the parts in which the course takes place.
         """
-        course_ids = affirm_set("id", course_ids)
+        course_ids = affirm_set(vtypes.ID, course_ids)
         with Atomizer(rs):
             data = self.sql_select(rs, "event.courses", COURSE_FIELDS, course_ids)
             if not data:
@@ -2118,7 +2134,7 @@ class EventBackend(AbstractBackend):
         list of active tracks. This has to be a subset of the segments of
         the course.
         """
-        data = affirm("course", data)
+        data = affirm(vtypes.Course, data)
         if not self.is_orga(rs, course_id=data['id']) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, course_id=data['id'])
@@ -2138,7 +2154,7 @@ class EventBackend(AbstractBackend):
                 # delayed validation since we need additional info
                 event_fields = self._get_event_fields(rs, current['event_id'])
                 fdata = affirm(
-                    "event_associated_fields", data['fields'],
+                    vtypes.EventAssociatedFields, data['fields'],
                     fields=event_fields,
                     association=const.FieldAssociations.course)
 
@@ -2222,13 +2238,13 @@ class EventBackend(AbstractBackend):
     def create_course(self, rs: RequestState,
                       data: CdEDBObject) -> DefaultReturnCode:
         """Make a new course organized via DB."""
-        data = affirm("course", data, creation=True)
+        data = affirm(vtypes.Course, data, creation=True)
         # direct validation since we already have an event_id
         event_fields = self._get_event_fields(rs, data['event_id'])
         fdata = data.get('fields') or {}
         fdata = affirm(
-            "event_associated_fields", fdata, fields=event_fields,
-            association=const.FieldAssociations.course)
+            vtypes.EventAssociatedFields, fdata,
+            fields=event_fields, association=const.FieldAssociations.course)
         data['fields'] = PsycoJson(fdata)
         if (not self.is_orga(rs, event_id=data['event_id'])
                 and not self.is_admin(rs)):
@@ -2252,8 +2268,8 @@ class EventBackend(AbstractBackend):
                 if 'active_segments' in data:
                     pdata['active_segments'] = data['active_segments']
                 self.set_course(rs, pdata)
-        self.event_log(rs, const.EventLogCodes.course_created,
-                       data['event_id'], change_note=data['title'])
+            self.event_log(rs, const.EventLogCodes.course_created,
+                           data['event_id'], change_note=data['title'])
         return new_id
 
     @access("event")
@@ -2273,7 +2289,7 @@ class EventBackend(AbstractBackend):
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
         """
-        course_id = affirm("id", course_id)
+        course_id = affirm(vtypes.ID, course_id)
         blockers = {}
 
         attendees = self.sql_select(
@@ -2310,7 +2326,7 @@ class EventBackend(AbstractBackend):
         :param cascade: Specify which deletion blockers to cascadingly remove
             or ignore. If None or empty, cascade none.
         """
-        course_id = affirm("id", course_id)
+        course_id = affirm(vtypes.ID, course_id)
         if (not self.is_orga(rs, course_id=course_id)
                 and not self.is_admin(rs)):
             raise PrivilegeError(n_("Not privileged."))
@@ -2319,7 +2335,7 @@ class EventBackend(AbstractBackend):
         blockers = self.delete_course_blockers(rs, course_id)
         if not cascade:
             cascade = set()
-        cascade = affirm_set("str", cascade)
+        cascade = affirm_set(str, cascade)
         cascade = cascade & blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
@@ -2420,8 +2436,8 @@ class EventBackend(AbstractBackend):
         :param persona_id: If passed restrict to registrations by this persona.
         :returns: Mapping of registration ids to persona_ids.
         """
-        event_id = affirm("id", event_id)
-        persona_id = affirm("id_or_None", persona_id)
+        event_id = affirm(vtypes.ID, event_id)
+        persona_id = affirm_optional(vtypes.ID, persona_id)
         query = "SELECT id, persona_id FROM event.registrations"
         conditions = ["event_id = %s"]
         params: List[Any] = [event_id]
@@ -2453,7 +2469,6 @@ class EventBackend(AbstractBackend):
             raise PrivilegeError(n_("Not privileged."))
         return ret
 
-    @internal
     @access("persona")
     def check_registration_status(
             self, rs: RequestState, persona_id: int, event_id: int,
@@ -2466,8 +2481,8 @@ class EventBackend(AbstractBackend):
         A user may do this for themselves, an orga for their event and an
         event or ml admin for every user.
         """
-        event_id = affirm("id", event_id)
-        stati = affirm_set("enum_registrationpartstati", stati)
+        event_id = affirm(vtypes.ID, event_id)
+        stati = affirm_set(const.RegistrationPartStati, stati)
 
         # First, rule out people who can not participate at any event.
         if (persona_id == rs.user.persona_id and
@@ -2493,7 +2508,7 @@ class EventBackend(AbstractBackend):
     def get_registration_map(self, rs: RequestState, event_ids: Collection[int]
                              ) -> Dict[Tuple[int, int], int]:
         """Retrieve a map of personas to their registrations."""
-        event_ids = affirm_set("id", event_ids)
+        event_ids = affirm_set(vtypes.ID, event_ids)
         if (not all(self.is_orga(rs, event_id=anid) for anid in event_ids) and
                 not self.is_admin(rs)):
             raise PrivilegeError(n_("Not privileged."))
@@ -2515,11 +2530,11 @@ class EventBackend(AbstractBackend):
         :returns: Part id maping to None, if no waitlist ordering is defined
             or a list of registration ids otherwise.
         """
-        event_id = affirm("id", event_id)
-        part_ids = affirm_set("id", part_ids, allow_None=True)
+        event_id = affirm(vtypes.ID, event_id)
+        part_ids = affirm_set(vtypes.ID, part_ids or set())
         with Atomizer(rs):
             event = self.get_event(rs, event_id)
-            if part_ids is None:
+            if not part_ids:
                 part_ids = event['parts'].keys()
             elif not part_ids <= event['parts'].keys():
                 raise ValueError(n_("Unknown part for the given event."))
@@ -2544,7 +2559,7 @@ class EventBackend(AbstractBackend):
                 data = self.query_all(rs, query, (part_id, waitlist))
                 ret[part_id] = xsorted(
                     (reg['id'] for reg in data), key=lambda r_id:
-                    (fields_by_id[r_id].get(field['field_name'], 0), r_id))
+                    (fields_by_id[r_id].get(field['field_name'], 0), r_id))  # pylint: disable=cell-var-from-loop; # noqa
             return ret
 
     @access("event")
@@ -2590,7 +2605,7 @@ class EventBackend(AbstractBackend):
     @access("event")
     def registrations_by_course(
             self, rs: RequestState, event_id: int, course_id: int = None,
-            track_id: int = None, position: InfiniteEnum = None,
+            track_id: int = None, position: InfiniteEnum[CourseFilterPositions] = None,
             reg_ids: Collection[int] = None,
             reg_states: Collection[const.RegistrationPartStati] =
             (const.RegistrationPartStati.participant,)) -> Dict[int, int]:
@@ -2601,14 +2616,13 @@ class EventBackend(AbstractBackend):
         :param position: A :py:class:`cdedb.common.CourseFilterPositions`
         :param reg_ids: List of registration states (in any part) to filter for
         """
-        event_id = affirm("id", event_id)
-        track_id = affirm("id_or_None", track_id)
-        course_id = affirm("id_or_None", course_id)
-        position = affirm("infinite_enum_coursefilterpositions_or_None",
-                          position)
+        event_id = affirm(vtypes.ID, event_id)
+        track_id = affirm_optional(vtypes.ID, track_id)
+        course_id = affirm_optional(vtypes.ID, course_id)
+        position = affirm_optional(InfiniteEnum[CourseFilterPositions], position)
         reg_ids = reg_ids or set()
-        reg_ids = affirm_set("id", reg_ids)
-        reg_states = affirm_set("enum_registrationpartstati", reg_states)
+        reg_ids = affirm_set(vtypes.ID, reg_ids)
+        reg_states = affirm_set(const.RegistrationPartStati, reg_states)
         if (not self.is_admin(rs)
                 and not self.is_orga(rs, event_id=event_id)):
             raise PrivilegeError(n_("Not privileged."))
@@ -2688,7 +2702,7 @@ class EventBackend(AbstractBackend):
         ml_admins are allowed to do this to be able to manage
         subscribers of event mailinglists.
         """
-        registration_ids = affirm_set("id", registration_ids)
+        registration_ids = affirm_set(vtypes.ID, registration_ids)
         with Atomizer(rs):
             # Check associations.
             associated = self.sql_select(rs, "event.registrations",
@@ -2765,7 +2779,7 @@ class EventBackend(AbstractBackend):
     @access("event")
     def has_registrations(self, rs: RequestState, event_id: int) -> bool:
         """Determine whether there exist registrations for an event."""
-        event_id = affirm("id", event_id)
+        event_id = affirm(vtypes.ID, event_id)
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
         with Atomizer(rs):
@@ -2861,7 +2875,7 @@ class EventBackend(AbstractBackend):
           'choices' key is handled separately and if present replaces
           the current list of course choices.
         """
-        data = affirm("registration", data)
+        data = affirm(vtypes.Registration, data)
         with Atomizer(rs):
             # Retrieve some basic data about the registration.
             current = self._get_registration_info(rs, reg_id=data['id'])
@@ -2887,7 +2901,7 @@ class EventBackend(AbstractBackend):
             if 'fields' in data:
                 # delayed validation since we need additional info
                 fdata = affirm(
-                    "event_associated_fields", data['fields'],
+                    vtypes.EventAssociatedFields, data['fields'],
                     fields=event['fields'],
                     association=const.FieldAssociations.registration)
 
@@ -2924,8 +2938,7 @@ class EventBackend(AbstractBackend):
                     raise NotImplementedError(n_("This is not useful."))
             if 'tracks' in data:
                 tracks = data['tracks']
-                all_tracks = set(event['tracks'])
-                if not (all_tracks >= set(tracks)):
+                if not set(tracks).issubset(event['tracks']):
                     raise ValueError(n_("Non-existing tracks specified."))
                 existing = {e['track_id']: e['id'] for e in self.sql_select(
                     rs, "event.registration_tracks", ("id", "track_id"),
@@ -2977,11 +2990,11 @@ class EventBackend(AbstractBackend):
         and may not contain a value for 'fields', which is initialized
         to a default value.
         """
-        data = affirm("registration", data, creation=True)
+        data = affirm(vtypes.Registration, data, creation=True)
         event = self.get_event(rs, data['event_id'])
         fdata = data.get('fields') or {}
         fdata = affirm(
-            "event_associated_fields", fdata, fields=event['fields'],
+            vtypes.EventAssociatedFields, fdata, fields=event['fields'],
             association=const.FieldAssociations.registration)
         if (data['persona_id'] != rs.user.persona_id
                 and not self.is_orga(rs, event_id=data['event_id'])
@@ -3030,9 +3043,9 @@ class EventBackend(AbstractBackend):
                 new_track['registration_id'] = new_id
                 new_track['track_id'] = track_id
                 self.sql_insert(rs, "event.registration_tracks", new_track)
-        self.event_log(
-            rs, const.EventLogCodes.registration_created, data['event_id'],
-            persona_id=data['persona_id'])
+            self.event_log(
+                rs, const.EventLogCodes.registration_created, data['event_id'],
+                persona_id=data['persona_id'])
         return new_id
 
     @access("event")
@@ -3049,7 +3062,7 @@ class EventBackend(AbstractBackend):
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
         """
-        registration_id = affirm("id", registration_id)
+        registration_id = affirm(vtypes.ID, registration_id)
         blockers = {}
 
         reg_parts = self.sql_select(
@@ -3081,7 +3094,7 @@ class EventBackend(AbstractBackend):
         :param cascade: Specify which deletion blockers to cascadingly remove
             or ignore. If None or empty, cascade none.
         """
-        registration_id = affirm("id", registration_id)
+        registration_id = affirm(vtypes.ID, registration_id)
         reg = self.get_registration(rs, registration_id)
         if (not self.is_orga(rs, event_id=reg['event_id'])
                 and not self.is_admin(rs)):
@@ -3091,7 +3104,7 @@ class EventBackend(AbstractBackend):
         blockers = self.delete_registration_blockers(rs, registration_id)
         if not cascade:
             cascade = set()
-        cascade = affirm_set("str", cascade)
+        cascade = affirm_set(str, cascade)
         cascade = cascade & blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
@@ -3182,7 +3195,7 @@ class EventBackend(AbstractBackend):
 
         The caller must have priviliged acces to that event.
         """
-        registration_ids = affirm_set("id", registration_ids)
+        registration_ids = affirm_set(vtypes.ID, registration_ids)
 
         with Atomizer(rs):
             associated = self.sql_select(rs, "event.registrations",
@@ -3230,7 +3243,7 @@ class EventBackend(AbstractBackend):
 
         :returns: True if limit has not been reached.
         """
-        event_id = affirm("id", event_id)
+        event_id = affirm(vtypes.ID, event_id)
         if (not self.is_orga(rs, event_id=event_id)
                 and not self.is_admin(rs)):
             raise PrivilegeError(n_("Not privileged."))
@@ -3253,7 +3266,7 @@ class EventBackend(AbstractBackend):
 
         :returns: dict mapping ids to names
         """
-        event_id = affirm("id", event_id)
+        event_id = affirm(vtypes.ID, event_id)
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
         data = self.sql_select(rs, "event.lodgement_groups", ("id", "title"),
@@ -3267,7 +3280,7 @@ class EventBackend(AbstractBackend):
 
         All have to be from the same event.
         """
-        group_ids = affirm_set("id", group_ids)
+        group_ids = affirm_set(vtypes.ID, group_ids)
         with Atomizer(rs):
             data = self.sql_select(
                 rs, "event.lodgement_groups", LODGEMENT_GROUP_FIELDS, group_ids)
@@ -3292,7 +3305,7 @@ class EventBackend(AbstractBackend):
     def set_lodgement_group(self, rs: RequestState,
                             data: CdEDBObject) -> DefaultReturnCode:
         """Update some keys of a lodgement group."""
-        data = affirm("lodgement_group", data)
+        data = affirm(vtypes.LodgementGroup, data)
         ret = 1
         with Atomizer(rs):
             current = unwrap(self.get_lodgement_groups(rs, (data['id'],)))
@@ -3314,7 +3327,7 @@ class EventBackend(AbstractBackend):
     def create_lodgement_group(self, rs: RequestState,
                                data: CdEDBObject) -> DefaultReturnCode:
         """Make a new lodgement group."""
-        data = affirm("lodgement_group", data, creation=True)
+        data = affirm(vtypes.LodgementGroup, data, creation=True)
 
         if (not self.is_orga(rs, event_id=data['event_id'])
                 and not self.is_admin(rs)):
@@ -3339,7 +3352,7 @@ class EventBackend(AbstractBackend):
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
         """
-        group_id = affirm("id", group_id)
+        group_id = affirm(vtypes.ID, group_id)
         blockers = {}
 
         lodgements = self.sql_select(
@@ -3359,11 +3372,11 @@ class EventBackend(AbstractBackend):
         :param cascade: Specify which deletion blockers to cascadingly
             remove or ignore. If None or empty, cascade none.
         """
-        group_id = affirm("id", group_id)
+        group_id = affirm(vtypes.ID, group_id)
         blockers = self.delete_lodgement_group_blockers(rs, group_id)
         if not cascade:
             cascade = set()
-        cascade = affirm_set("str", cascade)
+        cascade = affirm_set(str, cascade)
         cascade = cascade & blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
@@ -3405,7 +3418,7 @@ class EventBackend(AbstractBackend):
 
         :returns: dict mapping ids to names
         """
-        event_id = affirm("id", event_id)
+        event_id = affirm(vtypes.ID, event_id)
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
         data = self.sql_select(rs, "event.lodgements", ("id", "title"),
@@ -3419,7 +3432,7 @@ class EventBackend(AbstractBackend):
 
         All have to be from the same event.
         """
-        lodgement_ids = affirm_set("id", lodgement_ids)
+        lodgement_ids = affirm_set(vtypes.ID, lodgement_ids)
         with Atomizer(rs):
             data = self.sql_select(rs, "event.lodgements", LODGEMENT_FIELDS,
                                    lodgement_ids)
@@ -3447,7 +3460,7 @@ class EventBackend(AbstractBackend):
     @access("event")
     def set_lodgement(self, rs: RequestState, data: CdEDBObject) -> DefaultReturnCode:
         """Update some keys of a lodgement."""
-        data = affirm("lodgement", data)
+        data = affirm(vtypes.Lodgement, data)
         with Atomizer(rs):
             current = self.sql_select_one(
                 rs, "event.lodgements", ("event_id", "title"), data['id'])
@@ -3469,7 +3482,7 @@ class EventBackend(AbstractBackend):
                 # delayed validation since we need more info
                 event_fields = self._get_event_fields(rs, event_id)
                 fdata = affirm(
-                    "event_associated_fields", data['fields'],
+                    vtypes.EventAssociatedFields, data['fields'],
                     fields=event_fields,
                     association=const.FieldAssociations.lodgement)
 
@@ -3488,12 +3501,12 @@ class EventBackend(AbstractBackend):
     def create_lodgement(self, rs: RequestState,
                          data: CdEDBObject) -> DefaultReturnCode:
         """Make a new lodgement."""
-        data = affirm("lodgement", data, creation=True)
+        data = affirm(vtypes.Lodgement, data, creation=True)
         # direct validation since we already have an event_id
         event_fields = self._get_event_fields(rs, data['event_id'])
         fdata = data.get('fields') or {}
         fdata = affirm(
-            "event_associated_fields", fdata, fields=event_fields,
+            vtypes.EventAssociatedFields, fdata, fields=event_fields,
             association=const.FieldAssociations.lodgement)
         data['fields'] = PsycoJson(fdata)
         if (not self.is_orga(rs, event_id=data['event_id'])
@@ -3520,7 +3533,7 @@ class EventBackend(AbstractBackend):
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
         """
-        lodgement_id = affirm("id", lodgement_id)
+        lodgement_id = affirm(vtypes.ID, lodgement_id)
         blockers = {}
 
         inhabitants = self.sql_select(
@@ -3539,7 +3552,7 @@ class EventBackend(AbstractBackend):
         :param cascade: Specify which deletion blockers to cascadingly
             remove or ignore. If None or empty, cascade none.
         """
-        lodgement_id = affirm("id", lodgement_id)
+        lodgement_id = affirm(vtypes.ID, lodgement_id)
         lodgement = self.get_lodgement(rs, lodgement_id)
         event_id = lodgement["event_id"]
         if (not self.is_orga(rs, event_id=event_id)
@@ -3550,7 +3563,7 @@ class EventBackend(AbstractBackend):
         blockers = self.delete_lodgement_blockers(rs, lodgement_id)
         if not cascade:
             cascade = set()
-        cascade = affirm_set("str", cascade)
+        cascade = affirm_set(str, cascade)
         cascade = cascade & blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
@@ -3591,9 +3604,9 @@ class EventBackend(AbstractBackend):
         Rows are seperated by kind. Specifying a kinds will get you only rows
         of those kinds, otherwise you get them all.
         """
-        event_id = affirm("id", event_id)
+        event_id = affirm(vtypes.ID, event_id)
         kinds = kinds or []
-        affirm_set("enum_questionnaireusages", kinds)
+        affirm_set(const.QuestionnaireUsages, kinds)
         query = "SELECT {fields} FROM event.questionnaire_rows".format(
             fields=", ".join(QUESTIONNAIRE_ROW_FIELDS))
         constraints = ["event_id = %s"]
@@ -3607,7 +3620,7 @@ class EventBackend(AbstractBackend):
             # noinspection PyArgumentList
             row['kind'] = const.QuestionnaireUsages(row['kind'])
         ret = {
-            k: sorted([e for e in d if e['kind'] == k], key=lambda x: x['pos'])
+            k: xsorted([e for e in d if e['kind'] == k], key=lambda x: x['pos'])
             for k in kinds or const.QuestionnaireUsages
         }
         return ret
@@ -3623,16 +3636,17 @@ class EventBackend(AbstractBackend):
 
         To delete all questionnaire rows, you can specify data as None.
         """
-        event_id = affirm("id", event_id)
+        event_id = affirm(vtypes.ID, event_id)
         event = self.get_event(rs, event_id)
         if data is not None:
             current = self.get_questionnaire(rs, event_id)
             current.update(data)
-            for k, v in current.items():
+            for v in current.values():
                 for e in v:
                     if 'pos' in e:
                         del e['pos']
-            data = affirm("questionnaire", current,
+            # FIXME what is the correct type here?
+            data = affirm(vtypes.Questionnaire, current,  # type: ignore
                           field_definitions=event['fields'],
                           fee_modifiers=event['fee_modifiers'])
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
@@ -3665,7 +3679,7 @@ class EventBackend(AbstractBackend):
     @access("event")
     def lock_event(self, rs: RequestState, event_id: int) -> DefaultReturnCode:
         """Lock an event for offline usage."""
-        event_id = affirm("id", event_id)
+        event_id = affirm(vtypes.ID, event_id)
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=event_id)
@@ -3675,8 +3689,9 @@ class EventBackend(AbstractBackend):
             'id': event_id,
             'offline_lock': not self.conf["CDEDB_OFFLINE_DEPLOYMENT"],
         }
-        ret = self.sql_update(rs, "event.events", update)
-        self.event_log(rs, const.EventLogCodes.event_locked, event_id)
+        with Atomizer(rs):
+            ret = self.sql_update(rs, "event.events", update)
+            self.event_log(rs, const.EventLogCodes.event_locked, event_id)
         return ret
 
     @access("event")
@@ -3688,7 +3703,7 @@ class EventBackend(AbstractBackend):
 
         :returns: dict holding all data of the exported event
         """
-        event_id = affirm("id", event_id)
+        event_id = affirm(vtypes.ID, event_id)
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
 
@@ -3837,7 +3852,7 @@ class EventBackend(AbstractBackend):
 
         This is a combined action so that we stay consistent.
         """
-        data = affirm("serialized_event", data)
+        data = affirm(vtypes.SerializedEvent, data)
         if not self.is_orga(rs, event_id=data['id']) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
         if self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
@@ -3915,7 +3930,7 @@ class EventBackend(AbstractBackend):
         This provides a consumer-friendly package of event data which can
         later on be reintegrated with the partial import facility.
         """
-        event_id = affirm("id", event_id)
+        event_id = affirm(vtypes.ID, event_id)
         access_ok = (
             (self.conf["CDEDB_OFFLINE_DEPLOYMENT"]  # this grants access for
              and "droid_quick_partial_export" in rs.user.roles)  # the droid
@@ -4099,8 +4114,8 @@ class EventBackend(AbstractBackend):
           transaction token describes the change and can be submitted to
           guarantee a certain effect.
         """
-        data = affirm("serialized_partial_event", data)
-        dryrun = affirm("bool", dryrun)
+        data = affirm(vtypes.SerializedPartialEvent, data)
+        dryrun = affirm(bool, dryrun)
         if not self.is_orga(rs, event_id=data['id']) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=data['id'])
@@ -4295,9 +4310,11 @@ class EventBackend(AbstractBackend):
             cmap: IDMap = {}
             cdelta: CdEDBOptionalMap = {}
             cprevious: CdEDBOptionalMap = {}
-            check_seg = lambda track_id, delta, original: (
-                 (track_id in delta and delta[track_id] is not None)
-                 or (track_id not in delta and track_id in original))
+
+            def check_seg(track_id, delta, original) -> bool:  # type: ignore
+                return ((track_id in delta and delta[track_id] is not None)
+                        or (track_id not in delta and track_id in original))
+
             for course_id in mes(data.get('courses', {}).keys()):
                 new_course = data['courses'][course_id]
                 current = all_current_data['courses'].get(course_id)

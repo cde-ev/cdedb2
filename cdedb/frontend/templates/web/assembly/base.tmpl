@@ -56,6 +56,8 @@
                 {% if 'assembly_user' in user.admin_views %}
                     {{ util.href(cdedblink("assembly/user_search"), gettext("Manage Users"), icon="users",
                                  aclass="list-group-item", active=(sidenav_active == 'assembly_users')) }}
+                    {{ util.href(cdedblink("assembly/archived_user_search"), gettext("Search Archived Users"), aclass="list-group-item",
+                                 icon="inbox", active=(sidenav_active=='assembly_manage_archive')) }}
                 {% endif %}
                 {% if 'assembly_mgmt' in user.admin_views %}
                     {{ util.href(cdedblink("assembly/view_log"), gettext("Log"), icon="far fa-list-alt",

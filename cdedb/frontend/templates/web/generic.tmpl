@@ -7,7 +7,7 @@
       class="form-horizontal">
         {{ util.anti_csrf_token('{}/create_user'.format(realm)) }}
         <h4 class="heading-underline">{{ gettext("Personal Information") }}</h4>
-        {{ util.form_input_text(name="title", label=gettext("Title")) }}
+        {{ util.form_input_text(name="title", label=gettext("Title_[[of a persona]]")) }}
         {{ util.form_input_text(name="given_names", label=gettext("Given Names")) }}
         {{ util.form_input_text(name="family_name", label=gettext("Family Name")) }}
         {% if realm == "cde" %}
@@ -35,7 +35,7 @@
             {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone"), type="tel") }}
         {% endif %}
         {% if realm == "cde" %}
-            {{ util.form_input_text(name="weblink", label=gettext("WWW")) }}
+            {{ util.form_input_text(name="weblink", label=gettext("WWW"), info=util.markdownhint) }}
         {% endif %}
 
         {% if realm in ("cde", "event") %}
@@ -44,7 +44,8 @@
             {{ util.form_input_text(name="address_supplement", label=gettext("Address Supplement")) }}
             {{ util.form_input_text(name="postal_code", label=gettext("Zipcode")) }}
             {{ util.form_input_text(name="location", label=gettext("City")) }}
-            {{ util.form_input_text(name="country", label=gettext("Country")) }}
+            {{ util.form_input_select(name="country", label=gettext("Country"), entries=COUNTRY_CODES,
+                                      defaultvalue=DEFAULT_COUNTRY) }}
         {% endif %}
         {% if realm == "cde" %}
             <h4 class="heading-underline">{% trans %}Second Address{% endtrans %}</h4>
@@ -52,7 +53,8 @@
             {{ util.form_input_text(name="address_supplement2", label=gettext("Address Supplement")) }}
             {{ util.form_input_text(name="postal_code2", label=gettext("Zipcode")) }}
             {{ util.form_input_text(name="location2", label=gettext("City")) }}
-            {{ util.form_input_text(name="country2", label=gettext("Country")) }}
+            {{ util.form_input_select(name="country2", label=gettext("Country"), entries=COUNTRY_CODES,
+                                      defaultvalue=DEFAULT_COUNTRY) }}
         {% endif %}
 
         <h4 class="heading-underline">{% trans %}Account & Membership{% endtrans %}</h4>
@@ -69,7 +71,7 @@
         {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="7", info=util.markdownhint) }}
 
 
-        {{ util.form_input_submit(value=gettext("Create User"), cancellink=cdedblink("{}/user_search".format(realm))) }}
+        {{ util.form_input_submit(label=gettext("Create User"), cancellink=cdedblink("{}/user_search".format(realm))) }}
     </form>
     <script nonce="{{ csp_nonce }}">
         $('#newuserform').cdedbProtectChanges();
@@ -80,8 +82,12 @@
     <div class="row">
         <div class="col-md-4">
             <div class="p button-par">
-                {{ util.href(cdedblink("{}/create_user".format(realm)), gettext("Create User"),
+                {{ util.href(cdedblink("{}/create_user_form".format(realm)), gettext("Create User"),
                         icon="plus", aclass="btn btn-success btn-sm") }}
+                {% if realm == 'cde' %}
+                    {{ util.href(cdedblink('cde/batch_admission'), gettext("Batch Admission"), icon="file-import",
+                             aclass="btn btn-default btn-sm") }}
+                {% endif %}
             </div>
             {% if info %}
                 <p class="text-muted">{{ util.make_icon('info-circle') }} {{ info }}</p>
@@ -92,16 +98,36 @@
         </div>
     </div>
 
-    {{ user_search_mask(realm) }}
+    {{ user_search_mask(realm, archived=False, selection_blacklist=("pevent_id",)) }}
 
     {% if values['is_search'] %}
         <h3 id="query-results">{% trans %}Result{% endtrans %} [{{ result|length }}]</h3>
-        {{ user_search_result(result, realm) }}
+        {{ user_search_result(result) }}
+    {% endif %}
+{% endmacro %}
+
+{% macro archived_user_search(realm, info="") %}
+    <div class="row">
+        <div class="col-md-4">
+            {% if info %}
+                <p class="text-muted">{{ util.make_icon('info-circle') }} {{ info }}</p>
+            {% endif %}
+        </div>
+        <div class="col-md-8">
+            {{ place_default_queries("{}/archived_user_search".format(realm), default_queries) }}
+        </div>
+    </div>
+
+    {{ user_search_mask(realm, archived=True, selection_blacklist=("pevent_id",)) }}
+
+    {% if values['is_search'] %}
+        <h3 id="query-results">{% trans %}Result{% endtrans %} [{{ result|length }}]</h3>
+        {{ user_search_result(result) }}
     {% endif %}
 {% endmacro %}
 
 
-{% macro user_search_mask(realm, selection_blacklist=[]) %}
+{% macro user_search_mask(realm, archived=False, selection_blacklist=[]) %}
     {% with TITLES = {
         "fulltext": gettext("Fulltext"),
         "personas.id": gettext("ID"),
@@ -111,7 +137,7 @@
         "birth_name": gettext("Birth Name"),
         "given_names": gettext("Given Names"),
         "display_name": gettext("First Given Name"),
-        "title": gettext("Title"),
+        "title": gettext("Title_[[of a persona]]"),
         "name_supplement": gettext("Name Affix"),
         "gender": gettext("Gender"),
         "birthday": gettext("Birthday"),
@@ -160,8 +186,8 @@
         'lastschrift.amount': gettext("Lastschrift Amount"),
     } %}
 
-            {% if realm == "archived" %}
-                {% set target=cdedblink('core/archived_user_search') %}
+            {% if archived %}
+                {% set target=cdedblink('{}/archived_user_search'.format(realm)) %}
             {% else %}
                 {% set target=cdedblink('{}/user_search'.format(realm)) %}
             {% endif %}
@@ -171,7 +197,7 @@
     {% endwith %}
 {% endmacro %}
 
-{% macro user_search_result(result, realm) %}
+{% macro user_search_result(result) %}
     {# warning: titles will not be escaped! #}
     {% with TITLES = {
         "fulltext": gettext("Fulltext"),
@@ -182,7 +208,7 @@
         "birth_name": gettext("Birth Name"),
         "given_names": gettext("Given Names"),
         "display_name": gettext("First Given Name"),
-        "title": gettext("Title"),
+        "title": gettext("Title_[[of a persona]]"),
         "name_supplement": gettext("Name Affix"),
         "gender": gettext("Gender"),
         "birthday": gettext("Birthday"),
@@ -411,15 +437,12 @@
                 </div>
 
                 <p class="pull-right nosp">
-                    <button type="submit" class="btn btn-primary">
-                        {{ util.make_icon('search') }} {% trans %}Search{% endtrans %}</button>
+                    {{ util.input_submit(label=gettext("Search"), icon="search") }}
                     <span class="btn-group">
-                        <button type="submit" class="btn btn-default" name="download" value="csv">
-                            {{ util.make_icon('download') }} {% trans %}CSV file{% endtrans %}
-                        </button>
-                        <button type="submit" class="btn btn-default" name="download" value="json">
-                            {{ util.make_icon('download') }} {% trans %}JSON file{% endtrans %}
-                        </button>
+                        {{ util.input_submit(label=gettext("CSV file"), value="csv", name="download", icon="download",
+                            aclass="btn btn-default") }}
+                        {{ util.input_submit(label=gettext("JSON file"), value="json", name="download", icon="download",
+                            aclass="btn btn-default") }}
                     </span>
                 </p>
                 {{ util.output_errors('query', wrapper=True) }}

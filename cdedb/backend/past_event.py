@@ -5,24 +5,25 @@ concluded events.
 """
 
 import datetime
+from typing import Any, Collection, Dict, List, Optional, Set, Tuple, Union
 
-from typing import (
-    Collection, Dict, Optional, Tuple, Union, List, Set, Any
-)
 from typing_extensions import Protocol
 
+import cdedb.database.constants as const
+import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
-    access, affirm_validation as affirm, Silencer, AbstractBackend,
-    affirm_set_validation as affirm_set, singularize)
+    AbstractBackend, Silencer, access, affirm_set_validation as affirm_set,
+    affirm_validation_typed as affirm,
+    affirm_validation_typed_optional as affirm_optional, singularize,
+)
 from cdedb.backend.event import EventBackend
 from cdedb.common import (
-    n_, glue, PAST_EVENT_FIELDS, PAST_COURSE_FIELDS, PrivilegeError,
-    unwrap, now, make_proxy, INSTITUTION_FIELDS, xsorted, PathLike,
-    RequestState, CdEDBObject, CdEDBObjectMap, CdEDBLog, DefaultReturnCode,
-    DeletionBlockers, Error
+    INSTITUTION_FIELDS, PAST_COURSE_FIELDS, PAST_EVENT_FIELDS, CdEDBLog, CdEDBObject,
+    CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, Error, PathLike,
+    PrivilegeError, RequestState, glue, make_proxy, n_, now, unwrap, xsorted,
 )
 from cdedb.database.connection import Atomizer
-import cdedb.database.constants as const
+from cdedb.query import Query
 
 
 class PastEventBackend(AbstractBackend):
@@ -48,7 +49,7 @@ class PastEventBackend(AbstractBackend):
 
         :returns: First keys are the ids, second are the pevent_ids.
         """
-        persona_ids = affirm_set("id", persona_ids)
+        persona_ids = affirm_set(vtypes.ID, persona_ids)
         query = glue(
             "SELECT p.persona_id, e.id, e.title, e.tempus, p.is_orga",
             "FROM past_event.participants AS p",
@@ -89,6 +90,9 @@ class PastEventBackend(AbstractBackend):
         """
         if rs.is_quiet:
             return 0
+        # To ensure logging is done if and only if the corresponding action happened,
+        # we require atomization here.
+        self.affirm_atomized_context(rs)
         data = {
             "code": code,
             "pevent_id": pevent_id,
@@ -111,10 +115,10 @@ class PastEventBackend(AbstractBackend):
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
         """
-        pevent_id = affirm("id_or_None", pevent_id)
+        pevent_id = affirm_optional(vtypes.ID, pevent_id)
         pevent_ids = [pevent_id] if pevent_id else None
         return self.generic_retrieve_log(
-            rs, "enum_pasteventlogcodes", "pevent", "past_event.log",
+            rs, const.PastEventLogCodes, "pevent", "past_event.log",
             codes=codes, entity_ids=pevent_ids, offset=offset, length=length,
             persona_id=persona_id, submitted_by=submitted_by,
             change_note=change_note, time_start=time_start,
@@ -134,7 +138,7 @@ class PastEventBackend(AbstractBackend):
     def get_institutions(self, rs: RequestState, institution_ids: Collection[int]
                          ) -> CdEDBObjectMap:
         """Retrieve data for some institutions."""
-        institution_ids = affirm_set("id", institution_ids)
+        institution_ids = affirm_set(vtypes.ID, institution_ids)
         data = self.sql_select(rs, "past_event.institutions",
                                INSTITUTION_FIELDS, institution_ids)
         return {e['id']: e for e in data}
@@ -148,21 +152,23 @@ class PastEventBackend(AbstractBackend):
     def set_institution(self, rs: RequestState, data: CdEDBObject
                         ) -> DefaultReturnCode:
         """Update some keys of an institution."""
-        data = affirm("institution", data)
-        ret = self.sql_update(rs, "past_event.institutions", data)
-        current = unwrap(self.get_institutions(rs, (data['id'],)))
-        self.past_event_log(rs, const.PastEventLogCodes.institution_changed,
-                            pevent_id=None, change_note=current['title'])
+        data = affirm(vtypes.Institution, data)
+        with Atomizer(rs):
+            ret = self.sql_update(rs, "past_event.institutions", data)
+            current = unwrap(self.get_institutions(rs, (data['id'],)))
+            self.past_event_log(rs, const.PastEventLogCodes.institution_changed,
+                                pevent_id=None, change_note=current['title'])
         return ret
 
     @access("cde_admin", "event_admin")
     def create_institution(self, rs: RequestState, data: CdEDBObject
                            ) -> DefaultReturnCode:
         """Make a new institution."""
-        data = affirm("institution", data, creation=True)
-        ret = self.sql_insert(rs, "past_event.institutions", data)
-        self.past_event_log(rs, const.PastEventLogCodes.institution_created,
-                            pevent_id=None, change_note=data['title'])
+        data = affirm(vtypes.Institution, data, creation=True)
+        with Atomizer(rs):
+            ret = self.sql_insert(rs, "past_event.institutions", data)
+            self.past_event_log(rs, const.PastEventLogCodes.institution_created,
+                                pevent_id=None, change_note=data['title'])
         return ret
 
     # TODO: rework deletion interface
@@ -175,8 +181,8 @@ class PastEventBackend(AbstractBackend):
 
         :param cascade: Must be False.
         """
-        institution_id = affirm("id", institution_id)
-        cascade = affirm("bool", cascade)
+        institution_id = affirm(vtypes.ID, institution_id)
+        cascade = affirm(bool, cascade)
         if cascade:
             raise NotImplementedError(n_("Not available."))
 
@@ -213,7 +219,7 @@ class PastEventBackend(AbstractBackend):
         SELECT
             events.id AS pevent_id, tempus, institutions.id AS institution_id,
             institutions.shortname AS institution_shortname,
-            COALESCE(course_count, 0) AS courses, 
+            COALESCE(course_count, 0) AS courses,
             COALESCE(participant_count, 0) AS participants
         FROM (
             past_event.events
@@ -230,7 +236,7 @@ class PastEventBackend(AbstractBackend):
             LEFT OUTER JOIN (
                 SELECT
                     pevent_id, COUNT(*) AS participant_count
-                    -- We have to do a subquery, as PSQL does not support 
+                    -- We have to do a subquery, as PSQL does not support
                     -- counting of more than one distinct column.
                 FROM (
                     SELECT DISTINCT
@@ -250,7 +256,7 @@ class PastEventBackend(AbstractBackend):
     def get_past_events(self, rs: RequestState, pevent_ids: Collection[int]
                         ) -> CdEDBObjectMap:
         """Retrieve data for some concluded events."""
-        pevent_ids = affirm_set("id", pevent_ids)
+        pevent_ids = affirm_set(vtypes.ID, pevent_ids)
         data = self.sql_select(rs, "past_event.events", PAST_EVENT_FIELDS,
                                pevent_ids)
         return {e['id']: e for e in data}
@@ -264,19 +270,20 @@ class PastEventBackend(AbstractBackend):
     def set_past_event(self, rs: RequestState, data: CdEDBObject
                        ) -> DefaultReturnCode:
         """Update some keys of a concluded event."""
-        data = affirm("past_event", data)
-        ret = self.sql_update(rs, "past_event.events", data)
-        self.past_event_log(rs, const.PastEventLogCodes.event_changed,
-                            data['id'])
+        data = affirm(vtypes.PastEvent, data)
+        with Atomizer(rs):
+            ret = self.sql_update(rs, "past_event.events", data)
+            self.past_event_log(rs, const.PastEventLogCodes.event_changed, data['id'])
         return ret
 
     @access("cde_admin", "event_admin")
     def create_past_event(self, rs: RequestState, data: CdEDBObject
                           ) -> DefaultReturnCode:
         """Make a new concluded event."""
-        data = affirm("past_event", data, creation=True)
-        ret = self.sql_insert(rs, "past_event.events", data)
-        self.past_event_log(rs, const.PastEventLogCodes.event_created, ret)
+        data = affirm(vtypes.PastEvent, data, creation=True)
+        with Atomizer(rs):
+            ret = self.sql_insert(rs, "past_event.events", data)
+            self.past_event_log(rs, const.PastEventLogCodes.event_created, ret)
         return ret
 
     @access("cde_admin")
@@ -294,7 +301,7 @@ class PastEventBackend(AbstractBackend):
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
         """
-        pevent_id = affirm("id", pevent_id)
+        pevent_id = affirm(vtypes.ID, pevent_id)
         blockers = {}
 
         participants = self.sql_select(rs, "past_event.participants", ("id",),
@@ -323,11 +330,11 @@ class PastEventBackend(AbstractBackend):
             remove or ignore. If None or empty, cascade none.
         """
 
-        pevent_id = affirm("id", pevent_id)
+        pevent_id = affirm(vtypes.ID, pevent_id)
         blockers = self.delete_past_event_blockers(rs, pevent_id)
         if not cascade:
             cascade = set()
-        cascade = affirm_set("str", cascade)
+        cascade = affirm_set(str, cascade)
         cascade = cascade & blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
@@ -372,7 +379,7 @@ class PastEventBackend(AbstractBackend):
 
         :returns: Mapping of course ids to titles.
         """
-        pevent_id = affirm("id", pevent_id)
+        pevent_id = affirm(vtypes.ID, pevent_id)
         data = self.sql_select(rs, "past_event.courses", ("id", "title"),
                                (pevent_id,), entity_key="pevent_id")
         return {e['id']: e['title'] for e in data}
@@ -384,7 +391,7 @@ class PastEventBackend(AbstractBackend):
 
         They do not need to be associated to the same event.
         """
-        pcourse_ids = affirm_set("id", pcourse_ids)
+        pcourse_ids = affirm_set(vtypes.ID, pcourse_ids)
         data = self.sql_select(
             rs, "past_event.courses", PAST_COURSE_FIELDS, pcourse_ids)
         return {e['id']: e for e in data}
@@ -398,27 +405,28 @@ class PastEventBackend(AbstractBackend):
     def set_past_course(self, rs: RequestState, data: CdEDBObject
                         ) -> DefaultReturnCode:
         """Update some keys of a concluded course."""
-        data = affirm("past_course", data)
-        current = self.sql_select_one(rs, "past_event.courses",
-                                      ("title", "pevent_id"), data['id'])
-        # TODO do more checking here?
-        if current is None:
-            raise ValueError(n_("Referenced past course does not exist."))
-        ret = self.sql_update(rs, "past_event.courses", data)
-        current.update(data)
-        self.past_event_log(
-            rs, const.PastEventLogCodes.course_changed, current['pevent_id'],
-            change_note=current['title'])
+        data = affirm(vtypes.PastCourse, data)
+        with Atomizer(rs):
+            current = self.sql_select_one(rs, "past_event.courses",
+                                          ("title", "pevent_id"), data['id'])
+            # TODO do more checking here?
+            if current is None:
+                raise ValueError(n_("Referenced past course does not exist."))
+            ret = self.sql_update(rs, "past_event.courses", data)
+            current.update(data)
+            self.past_event_log(rs, const.PastEventLogCodes.course_changed,
+                                current['pevent_id'], change_note=current['title'])
         return ret
 
     @access("cde_admin", "event_admin")
     def create_past_course(self, rs: RequestState, data: CdEDBObject
                            ) -> DefaultReturnCode:
         """Make a new concluded course."""
-        data = affirm("past_course", data, creation=True)
-        ret = self.sql_insert(rs, "past_event.courses", data)
-        self.past_event_log(rs, const.PastEventLogCodes.course_created,
-                            data['pevent_id'], change_note=data['title'])
+        data = affirm(vtypes.PastCourse, data, creation=True)
+        with Atomizer(rs):
+            ret = self.sql_insert(rs, "past_event.courses", data)
+            self.past_event_log(rs, const.PastEventLogCodes.course_created,
+                                data['pevent_id'], change_note=data['title'])
         return ret
 
     @access("cde_admin")
@@ -433,7 +441,7 @@ class PastEventBackend(AbstractBackend):
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
         """
-        pcourse_id = affirm("id", pcourse_id)
+        pcourse_id = affirm(vtypes.ID, pcourse_id)
         blockers = {}
 
         participants = self.sql_select(rs, "past_event.participants", ("id",),
@@ -452,11 +460,11 @@ class PastEventBackend(AbstractBackend):
         :param cascade: Specify which deletion blockers to cascadingly
             remove or ignore. If None or empty, cascade none.
         """
-        pcourse_id = affirm("id", pcourse_id)
+        pcourse_id = affirm(vtypes.ID, pcourse_id)
         blockers = self.delete_past_course_blockers(rs, pcourse_id)
         if not cascade:
             cascade = set()
-        cascade = affirm_set("str", cascade)
+        cascade = affirm_set(str, cascade)
         cascade = cascade & blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
@@ -485,7 +493,7 @@ class PastEventBackend(AbstractBackend):
     @access("cde_admin", "event_admin")
     def add_participant(self, rs: RequestState, pevent_id: int,
                         pcourse_id: Optional[int], persona_id: int,
-                        is_instructor: bool, is_orga: bool
+                        is_instructor: bool = False, is_orga: bool = False
                         ) -> DefaultReturnCode:
         """Add a participant to a concluded event.
 
@@ -495,15 +503,24 @@ class PastEventBackend(AbstractBackend):
         :param pcourse_id: If None the persona participated in the event, but
           not in a course (this should be common for orgas).
         """
-        data = {'persona_id': affirm("id", persona_id),
-                'pevent_id': affirm("id", pevent_id),
-                'pcourse_id': affirm("id_or_None", pcourse_id),
-                'is_instructor': affirm("bool", is_instructor),
-                'is_orga': affirm("bool", is_orga)}
-        ret = self.sql_insert(rs, "past_event.participants", data)
-        self.past_event_log(
-            rs, const.PastEventLogCodes.participant_added, pevent_id,
-            persona_id=persona_id)
+        data = {'persona_id': affirm(vtypes.ID, persona_id),
+                'pevent_id': affirm(vtypes.ID, pevent_id),
+                'pcourse_id': affirm_optional(vtypes.ID, pcourse_id),
+                'is_instructor': affirm(bool, is_instructor),
+                'is_orga': affirm(bool, is_orga)}
+        with Atomizer(rs):
+            # Check that participant is no pure pevent participant if they are
+            # course participant as well.
+            if self._check_pure_event_participation(rs, persona_id, pevent_id):
+                if pcourse_id:
+                    self.remove_participant(rs, pevent_id, pcourse_id=None,
+                                            persona_id=persona_id)
+                else:
+                    rs.notify("error", n_("User is already pure event participant."))
+                    return 0
+            ret = self.sql_insert(rs, "past_event.participants", data)
+            self.past_event_log(rs, const.PastEventLogCodes.participant_added,
+                                pevent_id, persona_id=persona_id)
         return ret
 
     @access("cde_admin", "event_admin")
@@ -516,16 +533,16 @@ class PastEventBackend(AbstractBackend):
         participated multiple times (for example in different courses) we
         are able to delete an exact instance.
         """
-        pevent_id = affirm("id", pevent_id)
-        pcourse_id = affirm("id_or_None", pcourse_id)
-        persona_id = affirm("id", persona_id)
+        pevent_id = affirm(vtypes.ID, pevent_id)
+        pcourse_id = affirm_optional(vtypes.ID, pcourse_id)
+        persona_id = affirm(vtypes.ID, persona_id)
         query = glue("DELETE FROM past_event.participants WHERE pevent_id = %s",
                      "AND persona_id = %s AND pcourse_id {} %s")
         query = query.format("IS" if pcourse_id is None else "=")
-        ret = self.query_exec(rs, query, (pevent_id, persona_id, pcourse_id))
-        self.past_event_log(
-            rs, const.PastEventLogCodes.participant_removed, pevent_id,
-            persona_id=persona_id)
+        with Atomizer(rs):
+            ret = self.query_exec(rs, query, (pevent_id, persona_id, pcourse_id))
+            self.past_event_log(rs, const.PastEventLogCodes.participant_removed,
+                                pevent_id, persona_id=persona_id)
         return ret
 
     @access("cde", "event")
@@ -542,10 +559,10 @@ class PastEventBackend(AbstractBackend):
         if pevent_id is not None and pcourse_id is not None:
             raise ValueError(n_("Too many inputs specified."))
         elif pevent_id is not None:
-            anid = affirm("id", pevent_id)
+            anid = affirm(vtypes.ID, pevent_id)
             entity_key = "pevent_id"
         elif pcourse_id is not None:
-            anid = affirm("id", pcourse_id)
+            anid = affirm(vtypes.ID, pcourse_id)
             entity_key = "pcourse_id"
         else:  # pevent_id is None and pcourse_id is None:
             raise ValueError(n_("No input specified."))
@@ -557,6 +574,13 @@ class PastEventBackend(AbstractBackend):
         return {(e['persona_id'], e['pcourse_id']): e
                 for e in data}
 
+    def _check_pure_event_participation(self, rs: RequestState, persona_id: int,
+                                        pevent_id: int) -> bool:
+        """Return if user participates at an event without any course."""
+        query = ("SELECT persona_id FROM past_event.participants"
+                 " WHERE persona_id = %s AND pevent_id = %s AND pcourse_id IS null")
+        return bool(self.query_one(rs, query, (persona_id, pevent_id)))
+
     @access("cde_admin", "event_admin")
     def find_past_event(self, rs: RequestState, shortname: str
                         ) -> Tuple[Optional[int], List[Error], List[Error]]:
@@ -565,12 +589,9 @@ class PastEventBackend(AbstractBackend):
         This is mainly for batch admission, where we want to
         automatically resolve past events to their ids.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type shortname: str
-        :rtype: (int or None, [exception])
         :returns: The id of the past event or None if there were errors.
         """
-        shortname = affirm("str_or_None", shortname)
+        shortname = affirm_optional(str, shortname)
         if not shortname:
             return None, [], [("pevent_id",
                                ValueError(n_("No input supplied.")))]
@@ -585,19 +606,17 @@ class PastEventBackend(AbstractBackend):
         warnings: List[Error] = []
         # retry with less restrictive conditions until we find something or
         # give up
-        if len(ret) == 0:
-            ret = self.query_all(rs, query,
-                                 (shortname, shortname, datetime.date.min))
-        if len(ret) == 0:
+        if not ret:
+            ret = self.query_all(rs, query, (shortname, shortname, datetime.date.min))
+        if not ret:
             warnings.append(("pevent_id", ValueError(n_("Only fuzzy match."))))
             ret = self.query_all(rs, query2, (shortname, 0.5, reference))
-        if len(ret) == 0:
+        if not ret:
             ret = self.query_all(rs, query2, (shortname, 0.5, datetime.date.min))
-        if len(ret) == 0:
+        if not ret:
             return None, [], [("pevent_id", ValueError(n_("No event found.")))]
         elif len(ret) > 1:
-            return None, warnings, [("pevent_id",
-                                     ValueError(n_("Ambiguous event.")))]
+            return None, warnings, [("pevent_id", ValueError(n_("Ambiguous event.")))]
         else:
             return unwrap(unwrap(ret)), warnings, []
 
@@ -612,11 +631,11 @@ class PastEventBackend(AbstractBackend):
         :param pevent_id: Restrict to courses of this past event.
         :returns: The id of the past course or None if there were errors.
         """
-        phrase = affirm("str_or_None", phrase)
+        phrase = affirm_optional(str, phrase)
         if not phrase:
             return None, [], [("pcourse_id",
                                ValueError(n_("No input supplied.")))]
-        pevent_id = affirm("id", pevent_id)
+        pevent_id = affirm(vtypes.ID, pevent_id)
         query = "SELECT id FROM past_event.courses WHERE pevent_id = %s"
         q1 = query + " AND nr = %s"
         q2 = query + " AND title ~* %s"
@@ -626,13 +645,13 @@ class PastEventBackend(AbstractBackend):
         warnings: List[Error] = []
         # retry with less restrictive conditions until we find something or
         # give up
-        if len(ret) == 0:
+        if not ret:
             warnings.append(("pcourse_id", ValueError(n_("Only title match."))))
             ret = self.query_all(rs, q2, params)
-        if len(ret) == 0:
+        if not ret:
             warnings.append(("pcourse_id", ValueError(n_("Only fuzzy match."))))
             ret = self.query_all(rs, q3, params + (0.5,))
-        if len(ret) == 0:
+        if not ret:
             return None, [], [
                 ("pcourse_id", ValueError(n_("No course found.")))]
         elif len(ret) > 1:
@@ -653,10 +672,9 @@ class PastEventBackend(AbstractBackend):
         pevent = {k: v for k, v in event.items()
                   if k in PAST_EVENT_FIELDS}
         pevent['tempus'] = part['part_begin']
-        # The event field 'notes' has nothing to do with the past event
-        # field 'notes' -- the first is for orgas and the second for
-        # participants
-        pevent['notes'] = None
+        # The event field 'participant_info' usually contains information
+        # no longer relevant, so we do not keep it here
+        pevent['participant_info'] = None
         if len(event['parts']) > 1:
             # Add part designation in case of events with multiple parts
             pevent['title'] += " ({})".format(part['title'])
@@ -685,7 +703,7 @@ class PastEventBackend(AbstractBackend):
             if reg['parts'][part_id]['status'] != participant_status:
                 continue
             is_orga = reg['persona_id'] in event['orgas']
-            for track_id, track in part['tracks'].items():
+            for track_id in part['tracks']:
                 rtrack = reg['tracks'][track_id]
                 is_instructor = False
                 if rtrack['course_id']:
@@ -733,12 +751,11 @@ class PastEventBackend(AbstractBackend):
         semantically the event parts mostly behave like separate events
         which happen to take place consecutively.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
         :returns: The first entry are the ids of the new past events or None
           if there were complications or create_past_events is False.
           If there were complications, the second entry is an error message.
         """
-        event_id = affirm("id", event_id)
+        event_id = affirm(vtypes.ID, event_id)
         if ("cde_admin" not in rs.user.roles
                 or "event_admin" not in rs.user.roles):
             raise PrivilegeError(n_("Needs both admin privileges."))
@@ -756,3 +773,16 @@ class PastEventBackend(AbstractBackend):
                 new_ids = tuple(self.archive_one_part(rs, event, part_id)
                                 for part_id in xsorted(event['parts']))
         return new_ids, None
+
+    @access("member", "cde_admin")
+    def submit_general_query(self, rs: RequestState,
+                             query: Query) -> Tuple[CdEDBObject, ...]:
+        """Realm specific wrapper around
+        :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
+        """
+        query = affirm(Query, query)
+        if query.scope == "qview_pevent_course":
+            pass
+        else:
+            raise RuntimeError(n_("Bad scope."))
+        return self.general_query(rs, query)

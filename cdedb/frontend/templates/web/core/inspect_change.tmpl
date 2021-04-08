@@ -49,7 +49,7 @@
     </script>
     <div class="diff-view" id="diff-view">
         <h4 class="heading-underline">{% trans %}Personal Information{% endtrans %}</h4>
-        {{ show_diff('title', gettext("Title"), True) }}
+        {{ show_diff('title', gettext("Title_[[of a persona]]"), True) }}
         {{ show_diff('given_names', gettext("Given Names"), True) }}
         {{ show_diff('family_name', gettext("Family Name"), True) }}
         {{ show_diff('name_supplement', gettext("Name Affix"), True) }}
@@ -102,13 +102,13 @@
             {{ util.anti_csrf_token('core/resolve_change') }}
             {{ util.input_hidden(name="ack", value="True") }}
             {{ util.input_hidden(name="generation", value=pending['generation']) }}
-            {{ util.input_submit(value=gettext("Confirm Changes"), aclass="btn btn-success") }}
+            {{ util.input_submit(label=gettext("Confirm Changes"), aclass="btn btn-success") }}
         </form>
         <form action="{{ cdedblink('core/resolve_change') }}" method="POST" id="nackchangeform" style="display: inline;">
             {{ util.anti_csrf_token('core/resolve_change') }}
             {{ util.input_hidden(name="ack", value="False") }}
             {{ util.input_hidden(name="generation", value=pending['generation']) }}
-            {{ util.input_submit(value=gettext("Reject Changes"), aclass="btn btn-danger", icon="ban") }}
+            {{ util.input_submit(label=gettext("Reject Changes"), aclass="btn btn-danger", icon="ban") }}
         </form>
         {{ util.href(cdedblink('core/admin_change_user_form'), gettext("Edit Changes"), icon="pen", aclass="btn btn-warning") }}
         &emsp; {{ util.href(cdedblink('core/list_pending_changes'), gettext("Cancel"), icon="times-circle", aclass="btn btn-default") }}

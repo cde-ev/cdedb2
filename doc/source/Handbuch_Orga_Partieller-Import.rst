@@ -92,7 +92,7 @@ Hinweise
 --------
 
 * Ein server-seitig nur schwer abzufangender Fehler ist, wenn eine
-  Import-Datei, die die Erstellung von Einträgen enthält mehrfach
+  Import-Datei, die die Erstellung von Einträgen enthält, mehrfach
   hochgeladen wird. Dies wird versucht zu detektieren, kann aber nicht mit
   Sicherheit abgefangen werden.
 
@@ -109,6 +109,10 @@ Hinweise
 
   Außerdem ist es bei der Erstellung einer Anmeldungen erforderlich die
   zugehörige Person mit dem Attribut ``persona_id`` anzugeben.
+* Sowohl Export als auch Import verwenden für einige Felder wie das
+  Geschlecht der Teilnehmer oder den Teilnahmestatus Ganzzahlen, um
+  verschiedene Werte darzustellen. Wie diese Ganzzahlen auf die
+  entsprechenden Werte abbilden, ist unter :doc:`API_Constants` zu finden.
 
 .. _handbuch-partieller-import-versionierung:
 
@@ -145,7 +149,7 @@ aus jeder der Kategorien Kurs, Unterkunft und Anmeldung. Außerdem wird eine
 neue Unterkunftgruppe angelegt. Die verwendeten
 nutzerdefinierten Felder müssen vorher definiert sein.
 
-.. literalinclude:: ../../test/ancillary_files/partial_event_import.json
+.. literalinclude:: ../../tests/ancillary_files/partial_event_import.json
     :language: json
 
 Changelog
@@ -155,8 +159,11 @@ Hier sind die Änderungen gelistet, die in den jeweiligen Inkrementierungen der
 Export-Version neu eingeführt wurden. Für jede Version ist angegeben, ob die
 Version für den partiellen Import strikt abwärtskompatibel sind oder nicht.
 
+* Version (15, 2): Hinzufügen des Feldes ``participant_info`` für die Teilnehmer-Infos.
+* Version (15, 1): Umbenennung von ``courses_in_participant_list`` zu
+  ``is_course_assignment_visible``.
 * Version (14, 1): Umbenennung von ``moniker``. Infolge dessen wurden zwei
-  Spalten des ``event`` Schemas umbenannt.
+  Spalten des ``event``-Schemas umbenannt.
 * Version (13, 2): Hinzufügen einer Feldreferenz pro Part, in dem ein Datenfeld
   zum Verwalten einer Warteliste hinterlegt werden kann.
 * Version (13, 1): Umstellung von CDEDB_EXPORT_EVENT_VERSION auf

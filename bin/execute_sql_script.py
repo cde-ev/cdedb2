@@ -1,11 +1,24 @@
 #!/usr/bin/env python3
 
+"""This script tries to mimic the psql interface.
+
+It only implements a small subset of possible commands.
+Supported: passing a script file, passing a command strings.
+Unsupported: psql variables, interactive input, any output.
+
+The script tries to connect to postgres via psycopg.
+Host and port are automatically choosen like in the cdedb app itself.
+"""
+
 import argparse
 from pathlib import Path
+from typing import Union
 
 from cdedb.script import setup
 
-def execute_script(file: Path, *, dbuser: str, dbpassword: str, dbname: str):
+
+def execute_script(sql_input: Union[Path, str], *, dbuser: str, dbpassword: str,
+                   dbname: str) -> None:
     with setup(
         persona_id=-1,
         dbuser=dbuser,
@@ -16,24 +29,33 @@ def execute_script(file: Path, *, dbuser: str, dbpassword: str, dbname: str):
         conn.set_session(autocommit=True)
 
         with conn.cursor() as curr:
-            with file.open() as f:
-                curr.execute(f.read())
+            if isinstance(sql_input, Path):
+                with sql_input.open() as f:
+                    sql_input = f.read()
 
+            curr.execute(sql_input)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Execute a sql script")
+    parser = argparse.ArgumentParser(
+        description="Execute a sql script", allow_abbrev=False, epilog=__doc__)
 
-    parser.add_argument("--dbuser", default="cdb")
-    parser.add_argument("--dbpassword", default="987654321098765432109876543210")
-    parser.add_argument("--dbname", default="cdb")
-    parser.add_argument("file", type=Path)
+    general = parser.add_argument_group("General options")
+    general.add_argument("--dbname", "-d", default="cdb")
+    group = general.add_mutually_exclusive_group(required=True)
+    group.add_argument("--file", "-f", type=Path)
+    group.add_argument("--command", "-c")
+
+    connection = parser.add_argument_group("Connection options")
+    connection.add_argument("--username", "-U", default="cdb")
+    connection.add_argument(
+        "--dbpassword", default="987654321098765432109876543210")
 
     args = parser.parse_args()
 
     execute_script(
-        args.file,
-        dbuser=args.dbuser,
+        args.file or args.command,
+        dbuser=args.username,
         dbpassword=args.dbpassword,
-        dbname=args.dbname
+        dbname=args.dbname,
     )

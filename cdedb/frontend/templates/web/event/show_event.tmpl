@@ -15,17 +15,20 @@
     {{ ambience['event']['title'] }}
 {% endblock %}
 {% block breadcrumb %}
-{{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher", active=True) }}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher", active=True) }}
+{% endblock %}
+{% block static_notifications %}
+    {{ super() }}
+    {% if "event" not in user.roles %}
+        {% call util.notification('info', id='instructors-not-visible') %}
+            {% trans %}More detailed information about the event is visible to logged in event users.{% endtrans %}
+        {% endcall %}
+    {% endif %}
 {% endblock %}
 {% block content %}
     {% if "event" in user.roles %}
         <div id="description">{{ ambience['event']['description']|md }}</div>
-    {% else %}
-        <div class="alert alert-info" role="alert" id="instructors-not-visible">
-            {{ util.make_icon('info-circle') }}
-            {% trans %}More detailed information about the event is visible to logged in event users.{% endtrans %}
-        </div>
     {% endif %}
 
     <dl class="dl-horizontal">
@@ -83,7 +86,9 @@
             <dt>{% trans %}Orgas{% endtrans %}</dt>
             <dd id="orgas">
                 {% for anid, entry in orgas.items() %} {# This is already sorted. #}
-                    {{util.persona_anchor(entry) }}{% if not loop.last %},{% endif %}
+                    {{ util.persona_anchor(entry) }}{% if not loop.last %},{% endif %}
+                {% else %}
+                    {% trans %}None{% endtrans %}
                 {% endfor %}
             </dd>
         {% endif %}
@@ -170,7 +175,7 @@
                                     id="removeorgaform{{ anid }}" class="hide-hover display-inline">
                                 {{ util.anti_csrf_token('event/remove_orga') }}
                                 {{ util.input_hidden(name="orga_id", value=anid) }}
-                                {{ util.input_submit(value="", readonly=is_locked, title=gettext("Remove Orga"),
+                                {{ util.input_submit(label="", readonly=is_locked, title=gettext("Remove Orga"),
                                                      icon='minus', aclass='btn btn-xs btn-danger list-button-float') }}
                             </form>
                         </li>
@@ -192,7 +197,7 @@
                             );
                         </script>
                         <div class="input-group-btn">
-                            {{ util.input_submit(value=gettext("Add"), readonly=is_locked, aclass='btn btn-success') }}
+                            {{ util.input_submit(label=gettext("Add"), readonly=is_locked, aclass='btn btn-success') }}
                         </div>
                     </div>
                     {% endcall %}
@@ -214,7 +219,7 @@
                                 id="removeminorformform">
                                 {{ util.anti_csrf_token("event/change_minor_form") }}
                                 {{ util.input_hidden(name="delete", value=True) }}
-                                {{ util.input_submit(value=gettext("Remove Minor Form"), readonly=is_locked,
+                                {{ util.input_submit(label=gettext("Remove Minor Form"), readonly=is_locked,
                                                      icon="trash-alt", aclass='btn btn-danger') }}
                                 {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
                             </form>
@@ -236,7 +241,7 @@
                             {{ util.input_file(name="minor_form", accept="application/pdf",
                                                arialabel=gettext("PDF of the new Minor Form")) }}
                             <div class="input-group-btn">
-                                {{ util.input_submit(value=gettext("Upload"), readonly=is_locked, icon='arrow-circle-up') }}
+                                {{ util.input_submit(label=gettext("Upload"), readonly=is_locked, icon='arrow-circle-up') }}
                             </div>
                         </div>
                         {{ util.output_errors('minor_form') }}
@@ -255,7 +260,7 @@
                             {{ util.href(cdedblink('event/download_export'), gettext("JSON file"), icon='download', aclass='btn btn-primary') }}
                         {% else %}
                             <form action="{{ cdedblink('event/download_export') }}" method="GET" id="fullexportform" class="display-inline">
-                                {{ util.input_submit(value=gettext("JSON file"), icon='download') }}
+                                {{ util.input_submit(label=gettext("JSON file"), icon='download') }}
                                 {{ util.input_checkbox(name="agree_unlocked_download", label=gettext("Are you sure to download a full export before locking?")) }}
                             </form>
                         {% endif %}
@@ -282,7 +287,7 @@
                                     {{ util.input_file(name="json", accept="text/json",
                                                        arialabel=gettext("Export of the Offline-DB")) }}
                                     <div class="input-group-btn">
-                                        {{ util.input_submit(value=gettext("Unlock"), icon='cloud-upload-alt',
+                                        {{ util.input_submit(label=gettext("Unlock"), icon='cloud-upload-alt',
                                                              aclass='btn btn-success') }}
                                     </div>
                                 </div>
@@ -299,7 +304,7 @@
                         <div class="p">
                             <form action="{{ cdedblink('event/lock_event') }}" method="POST" id="lockform">
                                 {{ util.anti_csrf_token('event/lock_event') }}
-                                {{ util.input_submit(value=gettext("Lock"), icon='lock', aclass="btn btn-danger") }}
+                                {{ util.input_submit(label=gettext("Lock"), icon='lock', aclass="btn btn-danger") }}
                             </form>
                         </div>
                         <p class="text-muted">
@@ -336,8 +341,11 @@
                                     style="display: inline;">
                                 {{ util.anti_csrf_token('event/create_event_mailinglist') }}
                                 {{ util.input_hidden("orgalist", value=True) }}
-                                {{ util.input_submit(value=gettext("Create Orga-Mailinglist"),
-                                                     aclass="btn btn-success", icon="plus") }}
+                                {{ util.input_submit(
+                                        label=gettext("Create orga mailinglist"), aclass="btn btn-success",
+                                        icon="plus", readonly=not orgas,
+                                        title=("" if orgas
+                                               else gettext("Must have orgas in order to create a mailinglist."))) }}
                             </form>
                         </div>
                     </div>
@@ -358,8 +366,11 @@
                                     style="display: inline;">
                                 {{ util.anti_csrf_token('event/create_event_mailinglist') }}
                                 {{ util.input_hidden("orgalist", value=False) }}
-                                {{ util.input_submit(value=gettext("Create Participant-Mailinglist"),
-                                                     aclass="btn btn-success", icon="plus") }}
+                                {{ util.input_submit(
+                                        label=gettext("Create participant mailinglist"),
+                                        aclass="btn btn-success", icon="plus", readonly=not orgas,
+                                        title=("" if orgas
+                                               else gettext("Must have orgas in order to create a mailinglist."))) }}
                             </form>
                         </div>
                     </div>
@@ -379,7 +390,7 @@
                             <form action="{{ cdedblink('event/archive_event') }}" method="POST" id="archiveeventform"
                                     style="display: inline;">
                                 {{ util.anti_csrf_token('event/archive_event') }}
-                                {{ util.input_submit(value=gettext("Archive"), readonly=(is_locked or ambience['event']['end'] >= now().date()),
+                                {{ util.input_submit(label=gettext("Archive"), readonly=(is_locked or ambience['event']['end'] >= now().date()),
                                                      aclass="btn btn-danger", icon="folder",
                                                      title=gettext("Event is not concluded yet.") if ambience['event']['end'] >= now().date() else "") }}
                                 {{ util.input_checkbox(name="create_past_event", readonly=(is_locked or ambience['event']['end'] >= now().date()),
@@ -408,7 +419,7 @@
                         <form action="{{ cdedblink('event/delete_event') }}" method="POST" id="deleteeventform"
                               style="display: inline;">
                             {{ util.anti_csrf_token('event/delete_event') }}
-                            {{ util.input_submit(value=gettext("Delete"), readonly=(is_locked or ambience['event']['end'] >= now().date()),
+                            {{ util.input_submit(label=gettext("Delete"), readonly=(is_locked or ambience['event']['end'] >= now().date()),
                                                  aclass="btn btn-danger", icon="trash-alt",
                                                  title=gettext("Event is not concluded yet.") if ambience['event']['end'] >= now().date() else "") }}
                             {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}

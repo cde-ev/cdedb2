@@ -28,7 +28,7 @@
     <form action="{{ cdedblink('event/lodgement_group_summary') }}" method="POST" id="lodgementgroupsummaryform">
         {{ util.anti_csrf_token('event/lodgement_group_summary') }}
         {{ util.dynamic_row_table("Lodgement Group", columns, lodgement_groups, is_referenced, sortkey=EntitySorter.lodgement_group) }}
-        {{ util.input_submit(value=gettext("Save")) }}
+        {{ util.input_submit(label=gettext("Save")) }}
     </form>
 
     <script nonce="{{ csp_nonce }}">

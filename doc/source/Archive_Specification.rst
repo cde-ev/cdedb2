@@ -10,37 +10,35 @@ can ask questions in case of confusion.
 Core realm
 ----------
 
-* Explicit log out. (Sonja Kupfer, Jost Migenda)
+* Explicit log out.
 * Try to be smart about the equality of @googlemail.com and
-  @gmail.com. Note: This is probably infeasible. (Cornelia May)
+  @gmail.com. Note: This is probably infeasible.
 * Allow single-sign-on. This probably means putting the account information
-  (currently residing in the SQL-table core.personas) into an LDAP. (Dominik
-  Brodowski)
+  (currently residing in the SQL-table core.personas) into an LDAP.
 
 CdE realm
 ---------
 
-* Implement quota statistics, to monitor accesses. (Markus Oehme)
+* Implement quota statistics, to monitor accesses.
 * Keep a trail of all changes to the member database and require approval
-  for sensitive changes (that is to names and birth dates). (Markus Oehme,
-  David Lorch)
-* Implement a choice to allow BuB to view one's data. (Volker Brandt)
+  for sensitive changes (that is to names and birth dates).
+* Implement a choice to allow BuB to view one's data.
 * Implement trial membership. This is granted to everybody who participated
   in an official academy for the first time and lasts for one
-  semester. (David Lorch)
+  semester.
 * Make addresses of Vorstand in templates configurable via web
-  interface. (Jost Migenda)
+  interface.
 
 ML realm
 --------
 
 * Integrate special cases in a sane manner. That is CdE-all and
-  Aktivenforum. (Markus Oehme)
+  Aktivenforum.
 
 Assembly realm
 --------------
 
-* Implement Condorcet voting. (Markus Oehme)
+* Implement Condorcet voting.
 
 Event realm
 -----------
@@ -48,28 +46,25 @@ Event realm
 * Allow flexible queries with powerful sorting on participants. Example:
   List all participants who chose a specific course sorted by
   first/second/third choice. Note: This may need reformulation to be
-  feasible. (Sonja Kupfer)
+  feasible.
 * Make email generation configurable. Example: Does the registration of a
-  new participant for an event cause an email to the orgas? (Cornelia
-  May)
-* Implement split events. (Jost Migenda)
+  new participant for an event cause an email to the orgas?
+* Implement split events.
 * Store information for which course a participant is instructor (not only,
-  that the participant is a course instructor). (Gabriel Guckenbiehl)
+  that the participant is a course instructor).
 * Implement academy configuration in a sane manner. The legacy
   implementation is quite a mess with multiple configuration files for the
   same thing. Best case would be an online configurable variant (note: this
-  is hard). (David Lorch)
+  is hard).
 * Allow query for participants coming from the same academy as a given
   participant. This is relevant for distribution of participants into
-  rooms. (David Lorch)
+  rooms.
 * Archive academies after some time. Keep course descriptions and general
-  information available, but delete superflous remainder. (David Lorch)
+  information available, but delete superflous remainder.
 * Implement polling the course instructors for account information. This
-  should allow easy interaction with the scripts of the accountant. (David
-  Lorch)
+  should allow easy interaction with the scripts of the accountant.
 * Allow sorting of lists by different criteria (given name, family name,
-  etc.). Provide filters for minors (e.g. for name tag creation). (Gabriel
-  Guckenbiehl)
+  etc.). Provide filters for minors (e.g. for name tag creation).
 
 General thoughts
 ----------------
@@ -77,20 +72,20 @@ General thoughts
 * If there are numerical identifiers to be processed by a human, provide
   something more meaninful if sensible. Example: In the event organization,
   instead of only listing course numbers, provide short titles of the
-  courses. (Simone Rupp)
+  courses.
 * No session information in the URL, thus making it possible to share
-  links. (Sonja Kupfer)
+  links.
 * User visible documentation where necessary. Antiexample: In the legacy
   event organization, you can select operators (=, >=, IS, ...) for queries
-  which are not intuitive and not documented. (Sonja Kupfer)
-* Make layout/CSS similar to homepage. (Cornelia May)
-* Have finer grained privileges. (David Lorch)
+  which are not intuitive and not documented.
+* Make layout/CSS similar to homepage.
+* Have finer grained privileges.
 * Some datamining would be cool. Examples may be questions like: age
   distribution/occupation of academy participants; time/academy distribution
-  until leaving the CdE. (David Lorch)
+  until leaving the CdE.
 * Allow archiving of accounts for the purpose of data economy. Retain only
   names, date of birth, email address, visited events and delete all
-  other fields. (David Lorch)
+  other fields.
 
 Verwaltung
 ----------

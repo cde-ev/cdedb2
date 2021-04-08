@@ -1,0 +1,56 @@
+{% set sidenav_active='ml_merger' %}
+{% set jshint='weak' %}
+{% extends "web/ml/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_searchpersona.js') }}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+{% endblock %}
+
+{% block title %}
+    {% trans %}Merge Accounts{% endtrans %}
+{% endblock %}
+
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("ml/merge_accounts_form"), gettext("Merge Accounts"), active=True) }}
+{% endblock %}
+
+{% block content %}
+    <p>
+        {% trans %}
+            This merges an user with only mailinglist (and core) realm ("Source User") into another
+            user ("Target User"). After the merging was successfully, the source user will be archived.
+        {% endtrans %}
+    </p>
+    <p>
+        {% trans %}
+            Note that both users are not allowed to have an explicit relationship to the same mailinglist.
+            You may be able to fix this by removing one of them manually.
+        {% endtrans %}
+    </p>
+
+    <form action="{{ cdedblink('ml/merge_accounts') }}" id="merge-accounts" method="POST">
+        {{ util.anti_csrf_token('ml/merge_accounts') }}
+        {{ util.form_input_text(name="source_persona_id", label=gettext("Source User"),
+                                placeholder="DB-XXXX-X", anid="input-source-persona") }}
+        <script nonce="{{ csp_nonce }}">
+            $('#input-source-persona').cdedbSearchPerson(
+                '{{ (cdedblink('core/select_persona')|e) + ('?kind=pure_ml_user&phrase=%s'|s) }}', [],
+                false, false, '{{ gettext("CdEDB-ID, Name or E-Mail") }}'
+            );
+        </script>
+        {{ util.form_input_text(name="target_persona_id", label=gettext("Target User"),
+                                placeholder="DB-XXXX-X", anid="input-target-persona") }}
+        <script nonce="{{ csp_nonce }}">
+            $('#input-target-persona').cdedbSearchPerson(
+                '{{ (cdedblink('core/select_persona')|e) + ('?kind=ml_user&phrase=%s'|s) }}', [],
+                false, false, '{{ gettext("CdEDB-ID, Name or E-Mail") }}'
+            );
+        </script>
+        {{ util.form_input_checkbox(name="clone_addresses", label=gettext("Use sources email address"),
+                                    defaultvalue="True") }}
+        {{ util.form_input_submit(value=gettext("Merge"), aclass="btn btn-success") }}
+    </form>
+{% endblock %}

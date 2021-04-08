@@ -1,11 +1,8 @@
 -- This file creates the database. This needs the postgres user, while
 -- cdedb-tables will need the cdb user as acting agent.
 
--- This also sets up the global state for each database (extensions,
--- collation, ...). Note that this is not reset during the normal test suite
--- operations, which should (almost) never be a problem. Unfortunately the
--- requirement of utilizing the postgres user is at odds with the docker
--- architecture.
+-- This also sets up the global state for each database
+-- i.e. extensions, collations etc.
 
 DROP DATABASE IF EXISTS :cdb_database_name;
 CREATE DATABASE :cdb_database_name WITH OWNER = cdb TEMPLATE = template0 ENCODING = 'UTF8';

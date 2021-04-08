@@ -128,7 +128,7 @@
             <button type="button" class="btn btn-success softhide pull-right" id="drow-addbutton">
                 {{ util.make_icon('plus') }} {% trans %}Add Field{% endtrans %}
             </button>
-            {{ util.input_submit(value=gettext("Save"), readonly=is_locked) }}
+            {{ util.input_submit(label=gettext("Save"), readonly=is_locked) }}
         </p>
     </form>
     <script nonce="{{ csp_nonce }}">

@@ -18,7 +18,7 @@
         {{ util.anti_csrf_token('event/create_event') }}
 
         <h4 class="heading-underline">{% trans %}Event Meta Data{% endtrans %}</h4>
-        {{ util.form_input_text(name="title", label=gettext("Title")) }}
+        {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]")) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
                                     info=util.markdownhint) }}
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
@@ -59,7 +59,7 @@
         {{ util.form_input_checkbox(name="create_orga_list", label=gettext("Create Orga Mailinglist")) }}
         {{ util.form_input_checkbox(name="create_participant_list", label=gettext("Create Participant Mailinglist")) }}
 
-        {{ util.form_input_submit(value=gettext("Create"), cancellink=cdedblink("event/list_events")) }}
+        {{ util.form_input_submit(label=gettext("Create"), cancellink=cdedblink("event/list_events")) }}
     </form>
     <script nonce="{{ csp_nonce }}">
         $('#createeventform').cdedbProtectChanges();

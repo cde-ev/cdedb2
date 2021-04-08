@@ -61,19 +61,16 @@
     {{ util.href(show_user_link(user, persona['id'], quote_me=not is_admin, event_id=ambience['event']['id']), display) }}
 {% endmacro %}
 
+{% block static_notifications %}
+    {{ super() }}
+    {% if not ambience['event']['is_participant_list_visible'] %}
+        {% call util.notification('info') %}
+            {% trans %}The Participant List is currently only visible to Orgas and Admins.{% endtrans %}
+        {% endcall %}
+    {% endif %}
+{% endblock %}
 
 {% block content %}
-    {% if not ambience['event']['is_participant_list_visible'] %}
-        <div class="alert alert-info" role="alert">
-            {{ util.make_icon('info-circle') }}
-            <strong>{% trans %}Caution!{% endtrans %}</strong>
-            <span class="notificationMessage">
-                {% trans %}The Participant List is currently only visible to Orgas and Admins.{% endtrans %}
-            </span>
-        </div>
-    {% endif %}
-
-
     {% if registrations and list_consent %}
         {% if ambience['event']['parts']|length > 1 %}
             <nav>
@@ -101,9 +98,9 @@
                         <th>{{ display_sorting_header(part_id, "family_name", gettext("Family Name")) }}</th>
                         <th>{{ display_sorting_header(part_id, "email", gettext("Email Address")) }}</th>
                         <th>{{ display_sorting_header(part_id, "address", gettext("Postal Code, City")) }}</th>
-                        {% if parts[part_id]['tracks']|length > 1 and ambience['event']['courses_in_participant_list'] %}
+                        {% if parts[part_id]['tracks']|length > 1 and ambience['event']['is_course_assignment_visible'] %}
                             <th>{{ display_sorting_header(part_id, "course", gettext("Courses")) }}</th>
-                        {% elif parts[part_id]['tracks'] and ambience['event']['courses_in_participant_list'] %}
+                        {% elif parts[part_id]['tracks'] and ambience['event']['is_course_assignment_visible'] %}
                             <th>{{ display_sorting_header(part_id, "course", gettext("Course")) }}</th>
                         {% endif %}
                     </tr>
@@ -123,11 +120,11 @@
                         <td>
                             {{ persona['postal_code'] }}
                             {{ persona['location'] -}}
-                            {%- if persona['country'] and persona['country'] != "Deutschland" -%}
-                                {{- ", " + persona['country'] -}}
+                            {%- if persona['country'] and persona['country'] != DEFAULT_COUNTRY -%}
+                                {{- ", " + util.gettext_country(persona['country']) -}}
                             {% endif %}
                         </td>
-                        {% if parts[part_id]['tracks'] and ambience['event']['courses_in_participant_list'] %}
+                        {% if parts[part_id]['tracks'] and ambience['event']['is_course_assignment_visible'] %}
                             <td>{{ list_courses(registrations[registration_id]) }}</td>
                         {% endif %}
                     </tr>
@@ -166,8 +163,8 @@
                         <td>
                             {{ persona['postal_code'] }}
                             {{ persona['location'] -}}
-                            {%- if persona['country'] and persona['country'] != "Deutschland" -%}
-                                {{- ", " + persona['country'] -}}
+                            {%- if persona['country'] and persona['country'] != DEFAULT_COUNTRY -%}
+                                {{- ", " + util.gettext_country(persona['country']) -}}
                             {% endif %}
                         </td>
                         <td>
@@ -194,19 +191,14 @@
             {% trans count=registrations|length %}There are {{ count }} participants in total.{% endtrans %}
         </p>
 
-
     {% elif not list_consent %}
-        <div class="alert alert-info" role="alert">
+        <p class="text-info">
             {{ util.make_icon('info-circle') }}
-            <strong>{% trans %}Caution!{% endtrans %}</strong>
-            <span class="notificationMessage">
-                {% trans %}
-                    You can not access the Participant List as you have not agreed to have your own data
-                    sent to other participants before the event.
-                {% endtrans %}
-            </span>
-        </div>
-
+            {% trans %}
+                You can not access the Participant List as you have not agreed to have your own data
+                sent to other participants before the event.
+            {% endtrans %}
+        </p>
 
     {% else %}
         {% trans %}There are no participants yet.{% endtrans %}

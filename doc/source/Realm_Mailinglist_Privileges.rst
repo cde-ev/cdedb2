@@ -22,12 +22,12 @@ Relevant Admins
     This grants all privileges with regard to a specific mailinglist. ml
     admins are relevant admins for all mailinglists.
 
-Privileged Moderators
+Restricted Moderators
     We start with the problem description. Due to the
     fact that the mailinglist machinery consumes data from other realms, the
     actor causing an action sometimes needs additional access rights in these
-    other realms. A moderator can be privileged in certain constellations by
-    having external (i.e. not ml) access rights.
+    other realms. A moderator can be restricted in certain constellations by
+    missing external (i.e. not ml) access rights.
 
     Main case is the manipulation of implicit mailinglists where the
     generation of the subscriber list needs additional access. For example,
@@ -41,7 +41,7 @@ Privileged Moderators
     this subsriber is privileged to access that list. See also
     :doc:`Realm_Mailinglist_Management` for more information.
 
-    However, unprivileged moderators can still moderate their mailinglists and
+    However, restricted moderators can still moderate their mailinglists and
     modify its whitelist and moderators, as well as most of its configuration.
 
     Currently, we have the following cases:

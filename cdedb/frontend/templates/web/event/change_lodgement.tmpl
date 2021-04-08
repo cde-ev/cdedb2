@@ -25,7 +25,7 @@
     <form action="{{ cdedblink('event/change_lodgement') }}" method="POST" id="changelodgementform"
           class="form-horizontal">
         {{ util.anti_csrf_token('event/change_lodgement') }}
-        {{ util.form_input_text(name="title", label=gettext("Title")) }}
+        {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]")) }}
         {{ util.form_input_text(name="regular_capacity", label=gettext("Regular Capacity")) }}
         {{ util.form_input_text(name="camping_mat_capacity", label=gettext("Camping Mat Capacity")) }}
         {{ util.form_input_select(name="group_id", entries=groups.items(), label=gettext("Lodgement Group"),
@@ -39,7 +39,7 @@
         {% else %}
             <p class="text-muted">{% trans %}No custom fields for lodgements available.{% endtrans %}</p>
         {% endfor %}
-        {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink("event/show_lodgement")) }}
+        {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("event/show_lodgement")) }}
     </form>
     <script nonce="{{ csp_nonce }}">
         $('#changelodgementform').cdedbProtectChanges();

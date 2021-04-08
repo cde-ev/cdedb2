@@ -1,6 +1,5 @@
 {% set sidenav_active='partial_import' %}
 {% extends "web/event/base.tmpl" %}
-{% set jshint='weak' %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
     {% trans title=ambience['event']['title'] %}
@@ -14,7 +13,7 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans %}Partial Import{% endtrans -%}
+        {% trans %}Partial Import{% endtrans %}
         <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
@@ -80,7 +79,7 @@
     "notes": gettext("Notes"),
     }) %}
 {% do lodgement_titles.update({
-    "title": gettext("Title"),
+    "title": gettext("Title_[[name of an entity]]"),
     "regular_capacity": gettext("Regular Capacity"),
     "camping_mat_capacity": gettext("Camping Mat Capacity"),
     "notes": gettext("Notes"),
@@ -96,40 +95,6 @@
     </p>
 
     <h2>{% trans %}Summary of Changes{% endtrans %}</h2>
-    <div id="duplication-warnings">
-        {% if summary['deleted_registration_ids']|length > summary['real_deleted_registration_ids']|length %}
-             <div class="alert alert-warning">
-                {{ util.make_icon('exclamation-circle') }}<strong>{% trans %}Warning!{% endtrans %}</strong>
-                {% trans %}There were double registration deletions. Did you already import this file?{% endtrans %}
-            </div>
-        {% endif %}
-        {% if summary['deleted_course_ids']|length > summary['real_deleted_course_ids']|length %}
-            <div class="alert alert-warning">
-                {{ util.make_icon('exclamation-circle') }}<strong>{% trans %}Warning!{% endtrans %}</strong>
-                {% trans %}There were double course deletions. Did you already import this file?{% endtrans %}
-            </div>
-        {% endif %}
-        {% if summary['deleted_lodgement_ids']|length > summary['real_deleted_lodgement_ids']|length %}
-            <div class="alert alert-warning">
-                {{ util.make_icon('exclamation-circle') }}<strong>{% trans %}Warning!{% endtrans %}</strong>
-                {% trans %}There were double lodgement deletions. Did you already import this file?{% endtrans %}
-            </div>
-        {% endif %}
-        {% if suspicious_courses %}
-            <div class="alert alert-warning">
-                {{ util.make_icon('exclamation-circle') }}<strong>{% trans %}Warning!{% endtrans %}</strong>
-                {% trans %}There were hints at double course creations. Did you already import this file?{% endtrans %}
-            </div>
-        {% endif %}
-        {% if suspicious_lodgements %}
-            <div class="alert alert-warning">
-                {{ util.make_icon('exclamation-circle') }}<strong>{% trans %}Warning!{% endtrans %}</strong>
-                {% trans %}
-                    There were hints at double lodgement creations. Did you already import this file?
-                {% endtrans %}
-            </div>
-        {% endif %}
-    </div>
     {% if summary['changed_registrations'] or summary['new_registration_ids'] or summary['deleted_registration_ids'] %}
         <h3>{% trans %}Registrations{% endtrans %}</h3>
         <!-- Changed registrations -->
@@ -446,7 +411,7 @@
         {{ util.anti_csrf_token('event/partial_import') }}
         {{ util.input_hidden(name='token') }}
         {{ util.input_hidden(name='partial_import_data') }}
-        {{ util.form_input_submit(value=gettext('Apply changes'), cancellink=cdedblink('event/partial_import_form'),
+        {{ util.form_input_submit(label=gettext('Apply changes'), cancellink=cdedblink('event/partial_import_form'),
                                   horizontal=False) }}
     </form>
 

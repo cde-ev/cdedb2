@@ -39,7 +39,7 @@
         <div class="row">
             {{ util.form_input_textarea(name="notes", label=gettext("Notes"), small=True) }}
         </div>
-        {{ util.form_input_submit(value=gettext("Confirm"), cancellink=show_user_link(user, ambience['persona']['id']),
+        {{ util.form_input_submit(label=gettext("Confirm"), cancellink=show_user_link(user, ambience['persona']['id']),
                 small=True) }}
     </form>
 {% endblock %}

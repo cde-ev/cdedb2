@@ -8,7 +8,11 @@
 *.pyo
 
 # auto-generated test data
-test/ancillary_files/sample_data.sql
+tests/ancillary_files/sample_data.sql
+tests/ancillary_files/sample_data_xss.sql
+
+# HTML coverage reports
+htmlcov/
 
 # generated documentation files
 doc/build/**
@@ -36,3 +40,4 @@ related/auto-build/work/**
 i18n/cdedb.pot
 i18n/*/LC_MESSAGES/cdedb.mo
 i18n/*/LC_MESSAGES/cdedb.spellcheck
+messages.mo

@@ -46,7 +46,7 @@
             <form action="{{ cdedblink('cde/lastschrift_revoke', {'lastschrift_id': active_permit}) }}"
                 method="POST" id="revokeform" style="display: inline;">
                 {{ util.anti_csrf_token('cde/lastschrift_revoke') }}
-                {{ util.input_submit(value=gettext("Revoke Direct Debit Authorization"), icon="times-circle",
+                {{ util.input_submit(label=gettext("Revoke Direct Debit Authorization"), icon="times-circle",
                     aclass="btn btn-sm btn-danger") }}
             </form>
 	    </div>
@@ -106,21 +106,21 @@
                     id="downloadsepapainform" style="display: inline;">
                     {{ util.anti_csrf_token('cde/lastschrift_download_sepapain') }}
                     {{ util.input_hidden(name="lastschrift_id", value=active_permit) }}
-                    {{ util.input_submit(value=gettext("Create SEPA-PAIN-file"), icon="download",
+                    {{ util.input_submit(label=gettext("Create SEPA-PAIN-file"), icon="download",
                                          aclass="btn btn-sm btn-primary") }}
                 </form>
                 <form action="{{ cdedblink('cde/lastschrift_generate_transactions') }}" method="POST"
                     id="generatetransactionform" style="display: inline;">
                     {{ util.anti_csrf_token('cde/lastschrift_generate_transactions') }}
                     {{ util.input_hidden(name="lastschrift_id", value=active_permit) }}
-                    {{ util.input_submit(value=gettext("Perform Direct Debit"), icon="play",
+                    {{ util.input_submit(label=gettext("Perform Direct Debit"), icon="play",
                                          aclass="btn btn-sm btn-primary") }}
                 </form>
                 <form action="{{ cdedblink('cde/lastschrift_skip', {'lastschrift_id': active_permit}) }}"
                     method="POST" id="skiptransactionform" style="display: inline;">
                     {{ util.anti_csrf_token('cde/lastschrift_skip') }}
                     {{ util.input_hidden(name="persona_id", value=values['persona_id']) }}
-                    {{ util.input_submit(value=gettext("Skip Direct Debit"), icon="step-forward",
+                    {{ util.input_submit(label=gettext("Skip Direct Debit"), icon="step-forward",
                                          aclass="btn btn-sm btn-warning") }}
                 </form>
             </div>
@@ -147,7 +147,7 @@
                     <td>{{ transaction['period_id'] }}</td>
                     <td>{{ gettext(transaction['status']|enum(enums['LastschriftTransactionStati'])) }}</td>
                     <td>{{ transaction['amount'] }}€</td>
-                    <td>{{ transaction['tally'] }}€</td>
+                    <td>{{ transaction['tally'] }}{% if transaction['tally'] is not none %}€{% endif %}</td>
                     <td>{{ util.persona_anchor(personas[transaction['submitted_by']]) }}</td>
                     <td class="button-par">
                         {% if transaction['status'] == enums['LastschriftTransactionStati'].issued %}
@@ -161,7 +161,7 @@
                                     {{ util.input_hidden(name="transaction_id", value=transaction_id) }}
                                     {{ util.input_hidden(name="status",
                                                          value=enums['LastschriftTransactionStati'].success.value) }}
-                                    {{ util.input_submit(value=gettext("Success"), aclass="btn btn-xs btn-success", icon="check") }}
+                                    {{ util.input_submit(label=gettext("Success"), aclass="btn btn-xs btn-success", icon="check") }}
                                 </form>
                                 <form action="{{ cdedblink('cde/lastschrift_finalize_transaction',
                                                {'lastschrift_id': transaction['lastschrift_id'],
@@ -171,7 +171,7 @@
                                     {{ util.anti_csrf_token('cde/lastschrift_finalize_transaction') }}
                                     {{ util.input_hidden(name="transaction_id", value=transaction_id) }}
                                     {{ util.input_hidden(name="status", value=enums['LastschriftTransactionStati'].failure.value) }}
-                                    {{ util.input_submit(value=gettext("Failed"), aclass="btn btn-xs btn-danger", icon="exclamation-circle") }}
+                                    {{ util.input_submit(label=gettext("Failed"), aclass="btn btn-xs btn-danger", icon="exclamation-circle") }}
                                 </form>
                                 <form action="{{ cdedblink('cde/lastschrift_finalize_transaction',
                                                {'lastschrift_id': transaction['lastschrift_id'],
@@ -181,8 +181,17 @@
                                     {{ util.input_hidden(name="transaction_id", value=transaction_id) }}
                                     {{ util.input_hidden(name="status",
                                                          value=enums['LastschriftTransactionStati'].cancelled.value) }}
-                                    {{ util.input_submit(value=gettext("Cancelled"), aclass="btn btn-xs btn-warning", icon="times-circle") }}
+                                    {{ util.input_submit(label=gettext("Cancelled"), aclass="btn btn-xs btn-warning", icon="times-circle") }}
                                 </form>
+                                {% if not active_permit %}
+                                    <br />
+                                    <b class="text-danger">
+                                        {{ util.make_icon('exclamation-triangle') }}
+                                        {% trans %}
+                                            This transaction needs to be cancelled!
+                                        {% endtrans %}
+                                    </b>
+                                {% endif %}
                             {% endif %}
                         {% elif transaction['status'] == enums['LastschriftTransactionStati'].success %}
                             {% if "finance" in user.admin_views %}
@@ -191,7 +200,7 @@
                                                             'transaction_id': transaction_id}) }}"
                                     method="GET" id="receiptform{{ transaction_id }}"
                                     class="rollback-form">
-                                    {{ util.input_submit(value=gettext("Donation receipt"), aclass="btn btn-xs btn-default",
+                                    {{ util.input_submit(label=gettext("Donation receipt"), aclass="btn btn-xs btn-default",
                                                          icon='download') }}
                                 </form>
                                 <form action="{{ cdedblink('cde/lastschrift_rollback_transaction',
@@ -200,7 +209,7 @@
                                     method="POST" id="transactionrollbackform{{ transaction_id }}">
                                     {{ util.anti_csrf_token('cde/lastschrift_rollback_transaction') }}
                                     {{ util.input_hidden(name="persona_id", value=values['persona_id']) }}
-                                    {{ util.input_submit(value=gettext("Reverse"), aclass="btn btn-xs btn-warning",
+                                    {{ util.input_submit(label=gettext("Reverse"), aclass="btn btn-xs btn-warning",
                                                          icon='exchange-alt') }}
                                 </form>
                             {% endif %}
