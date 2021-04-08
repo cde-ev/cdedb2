@@ -347,13 +347,6 @@ I18N_STRINGS = (
     n_("cde_misc"),
 
     #
-    # hidden strings, see ml/message_moderation.tmpl
-    #
-    n_("Accept"),
-    n_("Reject"),
-    n_("Discard"),
-
-    #
     # country codes, see validationdata.py
     #
     n_("CountryCodes.HY"),

@@ -919,6 +919,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             finalize=sanitize_None, autoescape=True, auto_reload=self.conf["CDEDB_DEV"])
         self.jinja_env.filters.update(JINJA_FILTERS)
         self.jinja_env.globals.update({
+            'n_': n_,
             'now': now,
             'nbsp': "\u00A0",
             'query_mod': query_mod,
