@@ -925,10 +925,10 @@ class TestMlFrontend(FrontendTest):
                       {'href': '/ml/mailinglist/4'},
                       {'href': '/ml/mailinglist/4/management'},)
         self.assertTitle("Klatsch und Tratsch – Verwaltung")
-        f = self.response.forms['approverequestform9']
-        self.submit(f)
+        f = self.response.forms['handlerequestform9']
+        self.submit(f, button='action', value='accept')
         self.assertTitle("Klatsch und Tratsch – Verwaltung")
-        self.assertNotIn('approverequestform9', self.response.forms)
+        self.assertNotIn('handlerequestform9', self.response.forms)
         self.logout()
         self.login(USER_DICT['inga'])
         self.traverse({'href': '/ml/$'},
