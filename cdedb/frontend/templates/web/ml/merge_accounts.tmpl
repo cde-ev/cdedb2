@@ -51,6 +51,6 @@
         </script>
         {{ util.form_input_checkbox(name="clone_addresses", label=gettext("Use sources email address"),
                                     defaultvalue="True") }}
-        {{ util.form_input_submit(value=gettext("Merge"), aclass="btn btn-success") }}
+        {{ util.form_input_submit(label=gettext("Merge"), aclass="btn btn-success") }}
     </form>
 {% endblock %}

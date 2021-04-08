@@ -119,7 +119,7 @@
                                       class="hide-hover display-inline">
                                     {{ util.anti_csrf_token('ml/approve_request') }}
                                     {{ util.input_hidden(name="persona_id", value=request) }}
-                                    {{ util.input_submit(icon="check", value=gettext("Accept"),
+                                    {{ util.input_submit(icon="check", label=gettext("Accept"),
                                         aclass="btn btn-xs btn-success list-button-float") }}
                                 </form>
                                 <form action="{{ cdedblink('ml/deny_request') }}"
@@ -128,7 +128,7 @@
                                       class="hide-hover display-inline">
                                     {{ util.anti_csrf_token('ml/deny_request') }}
                                     {{ util.input_hidden(name="persona_id", value=request) }}
-                                    {{ util.input_submit(icon="times-circle", value=gettext("Reject"),
+                                    {{ util.input_submit(icon="times-circle", label=gettext("Reject"),
                                         aclass="btn btn-xs btn-danger list-button-float") }}
                                 </form>
                                 <form action="{{ cdedblink('ml/block_request') }}"
@@ -137,7 +137,7 @@
                                       class="hide-hover display-inline">
                                     {{ util.anti_csrf_token('ml/block_request') }}
                                     {{ util.input_hidden(name="persona_id", value=request) }}
-                                    {{ util.input_submit(icon="ban", value=gettext("Block"),
+                                    {{ util.input_submit(icon="ban", label=gettext("Block"),
                                         aclass="btn btn-xs btn-danger list-button-float") }}
                                 </form>
                             </div>
