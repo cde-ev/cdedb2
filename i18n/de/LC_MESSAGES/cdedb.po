@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2021-04-07 17:52+0200\n"
+"POT-Creation-Date: 2021-04-09 02:15+0200\n"
 "PO-Revision-Date: 2020-12-06 11:30+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -36,7 +36,7 @@ msgstr "Keine Zugriffsrechte auf Veranstaltungs-Log."
 
 #: cdedb/backend/assembly.py:295 cdedb/backend/cde.py:1074
 #: cdedb/backend/core.py:2882 cdedb/backend/event.py:918
-#: cdedb/backend/ml.py:306 cdedb/backend/past_event.py:787
+#: cdedb/backend/ml.py:307 cdedb/backend/past_event.py:787
 msgid "Bad scope."
 msgstr "Unzulässiger Bereich."
 
@@ -87,10 +87,10 @@ msgstr "Nicht berechtigt auf Veranstaltungstabellen zuzugreifen"
 #: cdedb/backend/event.py:3554 cdedb/backend/event.py:3647
 #: cdedb/backend/event.py:3678 cdedb/backend/event.py:3702
 #: cdedb/backend/event.py:3851 cdedb/backend/event.py:3934
-#: cdedb/backend/event.py:4114 cdedb/backend/ml.py:165 cdedb/backend/ml.py:277
-#: cdedb/backend/ml.py:473 cdedb/backend/ml.py:644 cdedb/backend/ml.py:690
-#: cdedb/backend/ml.py:835 cdedb/backend/ml.py:883 cdedb/backend/ml.py:909
-#: cdedb/backend/ml.py:942 cdedb/backend/ml.py:1021 cdedb/backend/ml.py:1087
+#: cdedb/backend/event.py:4114 cdedb/backend/ml.py:166 cdedb/backend/ml.py:278
+#: cdedb/backend/ml.py:474 cdedb/backend/ml.py:645 cdedb/backend/ml.py:691
+#: cdedb/backend/ml.py:847 cdedb/backend/ml.py:891 cdedb/backend/ml.py:917
+#: cdedb/backend/ml.py:950 cdedb/backend/ml.py:1029 cdedb/backend/ml.py:1095
 #: cdedb/frontend/assembly.py:202 cdedb/frontend/assembly.py:607
 #: cdedb/frontend/assembly.py:688 cdedb/frontend/assembly.py:745
 #: cdedb/frontend/assembly.py:765 cdedb/frontend/assembly.py:1094
@@ -127,7 +127,7 @@ msgstr ""
 "Die Versammlungsleitung kann nicht modifiziert werden, nachdem die "
 "Versammlung beendet wurde."
 
-#: cdedb/backend/assembly.py:547 cdedb/backend/ml.py:428
+#: cdedb/backend/assembly.py:547 cdedb/backend/ml.py:429
 #: cdedb/frontend/assembly.py:263 cdedb/frontend/assembly.py:434
 #: cdedb/frontend/event.py:1193 cdedb/frontend/ml_base.py:250
 #: cdedb/frontend/ml_base.py:709 cdedb/frontend/ml_base.py:801
@@ -156,7 +156,7 @@ msgstr "Eine aktive Abstimmung kann nicht gelöscht werden."
 #: cdedb/backend/event.py:2418 cdedb/backend/event.py:3104
 #: cdedb/backend/event.py:3135 cdedb/backend/event.py:3376
 #: cdedb/backend/event.py:3405 cdedb/backend/event.py:3563
-#: cdedb/backend/event.py:3587 cdedb/backend/ml.py:697 cdedb/backend/ml.py:733
+#: cdedb/backend/event.py:3587 cdedb/backend/ml.py:698 cdedb/backend/ml.py:734
 #: cdedb/backend/past_event.py:340 cdedb/backend/past_event.py:371
 #: cdedb/backend/past_event.py:470
 #, python-format
@@ -960,76 +960,76 @@ msgstr "Nicht alle Accounts zurückübertragen."
 msgid "Referential integrity of lodgement groups violated."
 msgstr "Referentielle Integrität der Unterkunftgruppen wurde verletzt."
 
-#: cdedb/backend/ml.py:61
+#: cdedb/backend/ml.py:62
 msgid "Unknown mailinglist_id."
 msgstr "Nicht-existente Mailingliste."
 
-#: cdedb/backend/ml.py:82
+#: cdedb/backend/ml.py:83
 msgid "No mailinglist specified."
 msgstr "Keine Mailingliste angegeben."
 
-#: cdedb/backend/ml.py:87
+#: cdedb/backend/ml.py:88
 msgid "Different mailinglists specified."
 msgstr "Unterschiedliche Mailinglisten angegeben."
 
-#: cdedb/backend/ml.py:423
+#: cdedb/backend/ml.py:424
 msgid "Cannot remove all moderators."
 msgstr "Es können nicht sämtliche Moderatoren entfernt werden."
 
-#: cdedb/backend/ml.py:431 cdedb/frontend/ml_base.py:254
+#: cdedb/backend/ml.py:432 cdedb/frontend/ml_base.py:254
 #: cdedb/frontend/ml_base.py:713
 msgid "Some of these users are not ml users."
 msgstr "Einige dieser Nutzer sind keine Mailinglistenutzer."
 
-#: cdedb/backend/ml.py:549
+#: cdedb/backend/ml.py:550
 msgid "Need to be moderator or admin to change mailinglist."
 msgstr "Um eine Mailingliste zu ändern muss man Moderator oder Admin sein."
 
-#: cdedb/backend/ml.py:552
+#: cdedb/backend/ml.py:553
 msgid "Need to be admin to change this."
 msgstr "Um das zu ändern muss man Admin sein.Nur Admins dürfen das ändern."
 
-#: cdedb/backend/ml.py:554
+#: cdedb/backend/ml.py:555
 msgid "Restricted moderators are not allowed to change this."
 msgstr "Eingeschränkte Moderatoren können dies nicht ändern."
 
-#: cdedb/backend/ml.py:623
+#: cdedb/backend/ml.py:624
 msgid "Non-unique mailinglist name"
 msgstr "Uneindeutige Mailadresse"
 
-#: cdedb/backend/ml.py:832
+#: cdedb/backend/ml.py:844
 msgid "Automatic actions should not be done manually."
 msgstr "Autmatische Aktionen dürfen nicht manuell getätigt werden."
 
-#: cdedb/backend/ml.py:1203
+#: cdedb/backend/ml.py:1211
 msgid "Moderator access has been restricted."
 msgstr "Moderatorzugriff ist eingeschränkt."
 
-#: cdedb/backend/ml.py:1316
+#: cdedb/backend/ml.py:1324
 msgid "Source User is admin and can not be merged."
 msgstr "Der Quellnutzer ist Admin und kann daher nicht verschmolzen werden."
 
-#: cdedb/backend/ml.py:1318
+#: cdedb/backend/ml.py:1326
 msgid "Source persona must be a ml-only user."
 msgstr "Der Quellnutzer muss ein reiner Mailinglistennutzer sein."
 
-#: cdedb/backend/ml.py:1320
+#: cdedb/backend/ml.py:1328
 msgid "Source User is not accessible."
 msgstr "Quellnutzer ist nicht aufrufbar."
 
-#: cdedb/backend/ml.py:1325
+#: cdedb/backend/ml.py:1333
 msgid "Target User is no valid ml user."
 msgstr "Der Zielnutzer ist kein Mailinglisten Nutzer."
 
-#: cdedb/backend/ml.py:1327
+#: cdedb/backend/ml.py:1335
 msgid "Target User is not accessible."
 msgstr "Zielnutzer ist nicht aufrufbar."
 
-#: cdedb/backend/ml.py:1329 cdedb/frontend/ml_base.py:309
+#: cdedb/backend/ml.py:1337 cdedb/frontend/ml_base.py:309
 msgid "Can not merge user into himself."
 msgstr "Nutzer kann nicht mit sich selbst verschmolzen werden."
 
-#: cdedb/backend/ml.py:1344
+#: cdedb/backend/ml.py:1352
 #, python-format
 msgid "Both users are related to the same mailinglists: %(mls)s"
 msgstr "Beide Benutzer haben einen Bezug zu gleichen Mailinglisten: %(mls)s"
