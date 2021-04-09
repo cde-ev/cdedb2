@@ -761,6 +761,7 @@ class MlBackend(AbstractBackend):
         num = 0
         with Atomizer(rs):
             if remove_data:
+                # Privileges for removal are checked separately inside.
                 num += self._remove_subscriptions(rs, remove_data)
 
             if set_data:
@@ -800,16 +801,16 @@ class MlBackend(AbstractBackend):
         """
         data = affirm_array(vtypes.SubscriptionIdentifier, data)
 
-        if not all(datum['persona_id'] == rs.user.persona_id
-                   or self.may_manage(rs, datum['mailinglist_id'])
-                   for datum in data):
-            raise PrivilegeError("Not privileged.")
-
         with Atomizer(rs):
+            if not all(datum['persona_id'] == rs.user.persona_id
+                       or self.may_manage(rs, datum['mailinglist_id'])
+                       for datum in data):
+                raise PrivilegeError("Not privileged.")
+
             # noinspection SqlWithoutWhere
             query = "DELETE FROM ml.subscription_states"
             phrase = "mailinglist_id = %s AND persona_id = %s"
-            query = query + " WHERE " + " OR ".join([phrase] * len(data))
+            query = query + " WHERE " + " OR ".join((phrase,) * len(data))
             params: List[Any] = []
             for datum in data:
                 params.extend((datum['mailinglist_id'], datum['persona_id']))
