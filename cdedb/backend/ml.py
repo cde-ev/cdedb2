@@ -32,9 +32,6 @@ from cdedb.ml_type_aux import MLType, MLTypeLike
 from cdedb.query import Query, QueryOperators
 
 SubStates = Collection[const.SubscriptionState]
-# Set of states to be saved into the database.
-# Can semantically be considered `Collection[DatabaseSubscriptionState]`.
-DatabaseStates = set(const.SubscriptionState) - {const.SubscriptionState.none}
 
 
 class MlBackend(AbstractBackend):
@@ -577,7 +574,7 @@ class MlBackend(AbstractBackend):
                              "WHERE mailinglist_id = %s "
                              "AND subscription_state = ANY(%s)")
                     # noinspection PyTypeChecker
-                    params = (data['id'], DatabaseStates -
+                    params = (data['id'], self.subman.written_states -
                               const.SubscriptionState.subscribing_states())
                     self.query_exec(rs, query, params)
                 ret *= self._ml_type_transition(
@@ -1013,7 +1010,8 @@ class MlBackend(AbstractBackend):
 
         :param persona_id: If not given, default to `rs.user.persona_id`.
         :param states: If given only relations with these states are returned.
-            Defaults to DatabaseStates.
+            Note that `SubscriptionState.none` is never written to the database and
+            thus cannot be retrieved.
         :param mailinglist_ids: If given only relations to these mailinglists
             are returned.
         :return: A mapping of mailinglist ids to the persona's subscription
