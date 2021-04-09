@@ -19,19 +19,73 @@ functions:
 """
 
 from gettext import gettext as _
-from typing import Optional, Collection
+from typing import AbstractSet, Collection, Mapping, Optional
 
 from .exceptions import SubscriptionError
-from .machine import SubscriptionAction, SubscriptionPolicy, SubscriptionState
+from .machine import (
+    SubscriptionAction, SubscriptionPolicy, SubscriptionState, ActionStateErrorMatrix,
+    ACTION_TARGET_STATE_MAP, SUBSCRIPTION_ERROR_MATRIX,
+)
+
+
+StateColl = Collection[SubscriptionState]
+StateSet = AbstractSet[SubscriptionState]
+ActionMap = Mapping[SubscriptionAction, SubscriptionState]
 
 
 class SubscriptionManager:
-    def __init__(self, *, unwritten_states: Optional[Collection[SubscriptionState]] = None):
-        # TODO docstring
-        self.unwritten_states = set(unwritten_states or ())
+    def __init__(
+        self, *,
+        error_matrix: ActionStateErrorMatrix = SUBSCRIPTION_ERROR_MATRIX,
+        action_target_state_map: ActionMap = ACTION_TARGET_STATE_MAP,
+        unwritten_states: Optional[StateColl] = None,
+        cleanup_protected_states: Optional[StateColl] = None,
+    ) -> None:
+        """
+        Create an instance of a `SubscriptionManager`.
 
-    @staticmethod
-    def _check_state_requirements(action: SubscriptionAction,
+        :param error_matrix: You may provide an alternative matrix defining the
+            relations between actions and states.
+        :param action_target_state_map: You may provide an alternative mapping from
+            action to target states.
+        :param unwritten_states: Provide this if you want to keep track of a subset of
+            all `SubscriptionState`s, that should not be written to your database.
+        :param cleanup_protected_states: Provide a subset of all `SubscriptionState`s,
+            that should not be automatically cleaned up. Defaults to all states that
+            would raise an error if `SubscriptionAction.cleanup_subscription` would be
+            pplied to it.
+        """
+        self.error_matrix = error_matrix
+        self.action_target_state_map = action_target_state_map
+        self.unwritten_states: StateSet = set(unwritten_states or ())
+        if cleanup_protected_states is None:
+            cleanup_protected_states = {
+                state for state in SubscriptionState
+                if self.get_error(SubscriptionAction.cleanup_subscription, state)}
+        self.cleanup_protected_states: StateSet = set(cleanup_protected_states)
+
+    def get_error(self,
+                  action: SubscriptionAction,
+                  state: SubscriptionState,
+                  ) -> Optional[SubscriptionError]:
+        """Determine whether the given action is allowed for the given state.
+
+        :returns: `None` if the action is allowed, a `SubscriptionError` to be raised
+            otherwiese.
+        """
+        return self.error_matrix[action][state]
+
+    def get_target_state(self,
+                         action: SubscriptionAction,
+                         ) -> SubscriptionState:
+        """Determine the target state associated with the given action.
+
+        Each action may only ever have one assotiated target state.
+        """
+        return self.action_target_state_map[action]
+
+    def _check_state_requirements(self,
+                                  action: SubscriptionAction,
                                   old_state: SubscriptionState) -> None:
         """This checks if the given action is allowed to be performed from the given state.
 
@@ -43,10 +97,18 @@ class SubscriptionManager:
         of them may be appropriate to use from the current state.
         """
 
-        # TODO: `if exception := action.get_error(old_state)`.
-        exception = action.get_error(old_state)
+        # TODO: `if exception := self.get_error(action, old_state)`.
+        exception = self.get_error(action, old_state)
         if exception:
             raise exception
+
+    @property
+    def written_states(self) -> StateSet:
+        """Return all states that should be written.
+
+        I.e. the complement of `self.unwritten_states`.
+        """
+        return set(SubscriptionState) - self.unwritten_states
 
     @staticmethod
     def _check_policy_requirements(action: SubscriptionAction,
@@ -108,7 +170,7 @@ class SubscriptionManager:
         self._check_state_requirements(action, old_state)
 
         # 4: Return target state and log code associated with the action.
-        return action.get_target_state()
+        return self.get_target_state(action)
 
     def _apply_cleanup(self,
                        policy: SubscriptionPolicy,
@@ -138,7 +200,6 @@ class SubscriptionManager:
             return None
 
         raise SubscriptionError(_("No cleanup necessary."))
-
 
     def is_obsolete(self,
                     policy: SubscriptionPolicy,

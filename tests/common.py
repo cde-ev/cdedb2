@@ -206,6 +206,9 @@ def make_backend_shim(backend: B, internal: bool = False) -> B:
 
         def __getattr__(self, name: str) -> Callable[..., Any]:
             attr = getattr(backend, name)
+            # Special case for the `subman.SubscriptionManager`.
+            if name == "subman":
+                return attr
             if any([
                 not getattr(attr, "access", False),
                 getattr(attr, "internal", False) and not internal,

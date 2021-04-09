@@ -549,7 +549,7 @@ class TestMlBackend(BackendTest):
                 self.key, action, mailinglist_id=mailinglist_id,
                 persona_id=persona_id)
             self.assertEqual(result, 1)
-            action_state = action.get_target_state()
+            action_state = self.ml.subman.get_target_state(action)
         else:
             with self.assertRaises(SubscriptionError) as cm:
                 self.ml.do_subscription_action(

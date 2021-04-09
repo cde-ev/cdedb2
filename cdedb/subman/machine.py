@@ -76,11 +76,6 @@ class SubscriptionState(enum.IntEnum):
         """List of states which are considered subscribing."""
         return {cls.subscribed, cls.subscription_override, cls.implicit}
 
-    @classmethod
-    def cleanup_protected_states(cls) -> Set['SubscriptionState']:
-        """List of states which are not touched by `_do_cleanup`."""
-        return _CLEANUP_PROTECTED_STATES
-
 
 @enum.unique
 class SubscriptionPolicy(enum.IntEnum):
@@ -153,40 +148,6 @@ class SubscriptionAction(enum.IntEnum):
     cleanup_implicit = 51  #: An automatic cleanup of users being implicitly subscribed.
     # TODO: Add action for adding an implicit subscriber.
 
-    def get_target_state(self) -> SubscriptionState:
-        """Get the target state associated with an action.
-
-        This is unique for each action. If None, a user will have no relation with the
-        subscription object after the action has been performed.
-        """
-        action_target_state_map = {
-            self.subscribe: SubscriptionState.subscribed,
-            self.unsubscribe: SubscriptionState.unsubscribed,
-            self.request_subscription: SubscriptionState.pending,
-            self.cancel_request: SubscriptionState.none,
-            self.approve_request: SubscriptionState.subscribed,
-            self.deny_request: SubscriptionState.none,
-            self.block_request: SubscriptionState.unsubscription_override,
-            self.add_subscriber: SubscriptionState.subscribed,
-            self.add_subscription_override: SubscriptionState.subscription_override,
-            self.add_unsubscription_override: SubscriptionState.unsubscription_override,
-            self.remove_subscriber: SubscriptionState.unsubscribed,
-            self.remove_subscription_override: SubscriptionState.subscribed,
-            self.remove_unsubscription_override: SubscriptionState.unsubscribed,
-            self.reset: SubscriptionState.none,
-            self.cleanup_subscription: SubscriptionState.none,
-            self.cleanup_implicit: SubscriptionState.none,
-        }
-        return action_target_state_map[self]
-
-    def get_error(self, state: SubscriptionState) -> Optional[SubscriptionError]:
-        """Determine whether this action is allowed for the current state.
-
-        :returns: `None` if the action is allowed, a `SubscriptionError` to be raised
-            otherwise.
-        """
-        return _SUBSCRIPTION_ERROR_MATRIX[self][state]
-
     @classmethod
     def unsubscribing_actions(cls) -> Set["SubscriptionAction"]:
         """All actions that unsubscribe a user.
@@ -245,10 +206,26 @@ class SubscriptionAction(enum.IntEnum):
         return self in self.cleanup_actions()
 
 
-# TODO: make these `Mapping`s, so they are immutable? It might be useful to be able to
-#  alter these.
+ACTION_TARGET_STATE_MAP = {
+    SubscriptionAction.subscribe: SubscriptionState.subscribed,
+    SubscriptionAction.unsubscribe: SubscriptionState.unsubscribed,
+    SubscriptionAction.request_subscription: SubscriptionState.pending,
+    SubscriptionAction.cancel_request: SubscriptionState.none,
+    SubscriptionAction.approve_request: SubscriptionState.subscribed,
+    SubscriptionAction.deny_request: SubscriptionState.none,
+    SubscriptionAction.block_request: SubscriptionState.unsubscription_override,
+    SubscriptionAction.add_subscriber: SubscriptionState.subscribed,
+    SubscriptionAction.add_subscription_override: SubscriptionState.subscription_override,
+    SubscriptionAction.add_unsubscription_override: SubscriptionState.unsubscription_override,
+    SubscriptionAction.remove_subscriber: SubscriptionState.unsubscribed,
+    SubscriptionAction.remove_subscription_override: SubscriptionState.subscribed,
+    SubscriptionAction.remove_unsubscription_override: SubscriptionState.unsubscribed,
+    SubscriptionAction.reset: SubscriptionState.none,
+    SubscriptionAction.cleanup_subscription: SubscriptionState.none,
+    SubscriptionAction.cleanup_implicit: SubscriptionState.none,
+}
 _StateErrorMapping = Mapping[SubscriptionState, Optional[SubscriptionError]]
-_ActionStateErrorMatrix = Mapping[SubscriptionAction, _StateErrorMapping]
+ActionStateErrorMatrix = Mapping[SubscriptionAction, _StateErrorMapping]
 
 # Errors are identical for all actions handling a subscription request.
 _SUBSCRIPTION_REQUEST_ERROR_MAPPING: _StateErrorMapping = {
@@ -265,7 +242,7 @@ _SUBSCRIPTION_REQUEST_ERROR_MAPPING: _StateErrorMapping = {
         "Not a pending subscription request.")),
     SubscriptionState.none: SubscriptionError(_("Not a pending subscription request.")),
 }
-_SUBSCRIPTION_ERROR_MATRIX: _ActionStateErrorMatrix = {
+SUBSCRIPTION_ERROR_MATRIX: ActionStateErrorMatrix = {
     SubscriptionAction.add_subscriber: {
         SubscriptionState.subscribed: SubscriptionInfo(_("User already subscribed.")),
         SubscriptionState.unsubscribed: None,
@@ -424,9 +401,4 @@ _SUBSCRIPTION_ERROR_MATRIX: _ActionStateErrorMatrix = {
     SubscriptionAction.block_request: _SUBSCRIPTION_REQUEST_ERROR_MAPPING,
     SubscriptionAction.deny_request: _SUBSCRIPTION_REQUEST_ERROR_MAPPING,
     SubscriptionAction.cancel_request: _SUBSCRIPTION_REQUEST_ERROR_MAPPING,
-}
-
-_CLEANUP_PROTECTED_STATES = {
-    state for state in SubscriptionState
-    if SubscriptionAction.cleanup_subscription.get_error(state)
 }

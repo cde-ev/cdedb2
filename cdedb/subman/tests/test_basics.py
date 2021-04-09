@@ -1,7 +1,8 @@
 import enum
+import itertools
 import unittest
 
-from cdedb.subman import SubscriptionState
+from cdedb.subman import SubscriptionState, SubscriptionManager
 
 
 class SubmanTest(unittest.TestCase):
@@ -24,16 +25,25 @@ class SubmanTest(unittest.TestCase):
             "none": 40,
         }
         name_value_map = {member.name: member.value for member in SubscriptionState}
-        self.assertEqual(expectation, name_value_map)
+        self.assertEqual(name_value_map, expectation)
 
     def test_cleanup_protection(self) -> None:
-        """Make sure cleanup protection evaluates as expected."""
-        self.assertEqual(SubscriptionState.cleanup_protected_states(),
-                         {SubscriptionState.unsubscribed,
-                          SubscriptionState.none,
-                          SubscriptionState.subscription_override,
-                          SubscriptionState.unsubscription_override,
-                          SubscriptionState.pending})
+        """Make sure the default cleanup protection evaluates as expected."""
+        subman = SubscriptionManager()
+        expectation = {SubscriptionState.unsubscribed,
+                       SubscriptionState.none,
+                       SubscriptionState.subscription_override,
+                       SubscriptionState.unsubscription_override,
+                       SubscriptionState.pending}
+        self.assertEqual(subman.cleanup_protected_states, expectation)
+
+    def test_written_states(self) -> None:
+        state_set = set(SubscriptionState)
+        for n in range(len(state_set)):
+            for unwritten in itertools.combinations(state_set, n + 1):
+                subman = SubscriptionManager(unwritten_states=unwritten)
+                self.assertEqual(subman.unwritten_states, set(unwritten))
+                self.assertEqual(subman.written_states, state_set.difference(unwritten))
 
 
 if __name__ == "__main__":

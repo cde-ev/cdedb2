@@ -1200,10 +1200,11 @@ class MlBackend(AbstractBackend):
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
 
         # States we may not touch.
-        protected_states = (DatabaseStates &
-                            const.SubscriptionState.cleanup_protected_states())
+        protected_states = (self.subman.written_states
+                            & self.subman.cleanup_protected_states)
         # States we may touch: non-special subscriptions.
-        old_subscriber_states = DatabaseStates - protected_states
+        old_subscriber_states = (self.subman.written_states
+                                 - self.subman.cleanup_protected_states)
 
         ret = 1
         with Atomizer(rs):
