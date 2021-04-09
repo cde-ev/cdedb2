@@ -72,11 +72,22 @@ steps:
   - make i18n-compile # required for sample-data target
   - make sample-data # this creates the sql schema and copies the localconfig.py
   - make check
+- name: xss
+  image: cdedb
+  pull: never
+  commands:
+    - make xss-check
+  depends_on:
+    - testsuite # wait for the testsuite to be finished, because we use the same database.
 - name: check for merge conflicts
   image: docker:20.10-git
   pull: never # do not try to pull image from docker hub
   depends_on:
   - testsuite
+  when:
+    status:
+    - failure
+    - success
   commands:
   # let the pipeline fail if merge caused conflicts
   - apk add --no-cache gettext

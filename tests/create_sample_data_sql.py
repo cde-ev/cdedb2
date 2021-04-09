@@ -19,7 +19,6 @@ class AuxData(TypedDict):
     cyclic_references: Dict[str, Tuple[str, ...]]
     constant_replacements: CdEDBObject
     entry_replacements: Dict[str, Dict[str, Callable[..., Any]]]
-    xss_payload: str
     xss_field_excludes: Set[str]
     xss_table_excludes: Set[str]
 
@@ -68,7 +67,6 @@ def prepare_aux(data: CdEDBObject) -> AuxData:
     }
 
     # For xss checking insert a payload into all string fields except excluded ones.
-    xss_payload = "<script>abcdef</script>"
     xss_field_excludes = {
         "username", "password_hash", "birthday", "telephone", "mobile", "balance",
         "ctime", "atime", "dtime", "foto", "amount", "iban", "granted_at", "revoked_at",
@@ -91,13 +89,12 @@ def prepare_aux(data: CdEDBObject) -> AuxData:
         cyclic_references=cyclic_references,
         constant_replacements=constant_replacements,
         entry_replacements=entry_replacements,
-        xss_payload=xss_payload,
         xss_field_excludes=xss_field_excludes,
         xss_table_excludes=xss_table_excludes,
     )
 
 
-def build_commands(data: CdEDBObject, aux: AuxData, xss: bool = False) -> List[str]:
+def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
     commands: List[str] = []
 
     # Start off by resetting the sequential ids to 1.
@@ -132,7 +129,7 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: bool = False) -> List[s
                 elif isinstance(entry[k], str) and xss:
                     if (table not in aux["xss_table_excludes"]
                             and k not in aux['xss_field_excludes']):
-                        entry[k] = entry[k] + aux["xss_payload"]
+                        entry[k] = entry[k] + xss
             for k, f in aux["entry_replacements"].get(table, {}).items():
                 entry[k] = f(entry)
             params.extend(entry[k] for k in keys)
@@ -190,7 +187,7 @@ def main() -> None:
         default="/cdedb2/tests/ancillary_files/sample_data.json")
     parser.add_argument(
         "-o", "--outfile", default="/tmp/sample_data.sql")
-    parser.add_argument("-x", "--xss", action="store_true")
+    parser.add_argument("-x", "--xss", default="")
     args = parser.parse_args()
 
     with open(args.infile) as f:

@@ -47,9 +47,9 @@ COLLATOR = icu.Collator.createInstance(icu.Locale(LOCALE))
 # Pseudo objects like assembly, event, course, event part, etc.
 CdEDBObject = Dict[str, Any]
 if TYPE_CHECKING:
-    CdEDBMultiDict = werkzeug.MultiDict[str, Any]
+    CdEDBMultiDict = werkzeug.datastructures.MultiDict[str, Any]
 else:
-    CdEDBMultiDict = werkzeug.MultiDict
+    CdEDBMultiDict = werkzeug.datastructures.MultiDict
 
 # Map of pseudo objects, indexed by their id, as returned by
 # `get_events`, event["parts"], etc.
@@ -175,7 +175,7 @@ class RequestState:
         self._errors = list(errors)
         if not isinstance(values, werkzeug.datastructures.MultiDict):
             values = werkzeug.datastructures.MultiDict(values)
-        self.values = values or werkzeug.MultiDict()
+        self.values = values or werkzeug.datastructures.MultiDict()
         self.lang = lang
         self.gettext = gettext
         self.ngettext = ngettext
@@ -400,7 +400,7 @@ def merge_dicts(targetdict: Union[MutableMapping[T, S], CdEDBMultiDict],
             if key not in targetdict:
                 if (isinstance(adict[key], collections.abc.Sequence)
                         and not isinstance(adict[key], str)
-                        and isinstance(targetdict, werkzeug.MultiDict)):
+                        and isinstance(targetdict, werkzeug.datastructures.MultiDict)):
                     targetdict.setlist(key, adict[key])
                 else:
                     targetdict[key] = adict[key]
@@ -539,7 +539,7 @@ def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,
             return tuple(map(collate, sortkey))
         return sortkey
 
-    return sorted(iterable, key=lambda x: collate(key(x)),
+    return sorted(iterable, key=lambda x: collate(key(x)),  # pylint: disable=bad-builtin
                   reverse=reverse)
 
 

@@ -65,6 +65,7 @@ from typing_extensions import Literal, Protocol
 import cdedb.database.constants as const
 import cdedb.query as query_mod
 import cdedb.validation as validate
+import cdedb.validationtypes as vtypes
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.common import AbstractBackend
@@ -74,18 +75,19 @@ from cdedb.backend.ml import MlBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.common import (
     ALL_MGMT_ADMIN_VIEWS, ALL_MOD_ADMIN_VIEWS, ANTI_CSRF_TOKEN_NAME,
-    ANTI_CSRF_TOKEN_PAYLOAD, REALM_SPECIFIC_GENESIS_FIELDS, CdEDBMultiDict, CdEDBObject,
-    CustomJSONEncoder, EntitySorter, Error, Notification, NotificationType, PathLike,
-    PrivilegeError, RequestState, Role, User, ValidationWarning, _tdelta, asciificator,
-    compute_checkdigit, decode_parameter, encode_parameter, glue, json_serialize,
-    make_proxy, make_root_logger, merge_dicts, n_, now, roles_to_db_role, unwrap,
-    xsorted,
+    ANTI_CSRF_TOKEN_PAYLOAD, REALM_SPECIFIC_GENESIS_FIELDS, PERSONA_DEFAULTS,
+    CdEDBMultiDict, CdEDBObject, CustomJSONEncoder, EntitySorter, Error, Notification,
+    NotificationType, PathLike, PrivilegeError, RequestState, Role, User,
+    ValidationWarning, _tdelta, asciificator, compute_checkdigit, decode_parameter,
+    encode_parameter, glue, json_serialize, make_proxy, make_root_logger, merge_dicts,
+    n_, now, roles_to_db_role, unwrap, xsorted,
 )
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.devsamples import HELD_MESSAGE_SAMPLE
 from cdedb.enums import ENUMS_DICT
+from cdedb.query import QUERY_SPECS, Query, mangle_query_input
 from cdedb.validationdata import COUNTRY_CODES
 
 _LOGGER = logging.getLogger(__name__)
@@ -1392,6 +1394,65 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         msg["Date"] = email.utils.format_datetime(now())
         return msg
 
+    def generic_user_search(self, rs: RequestState,
+                            download: Optional[str],
+                            is_search: bool,
+                            qview: str,
+                            default_qview: str,
+                            submit_general_query: Callable[[RequestState, Query],
+                                                  Tuple[CdEDBObject, ...]],
+                            *,
+                            endpoint: str = "user_search",
+                            choices: Dict[str, collections.OrderedDict] = None,  # type: ignore
+                            query: Query = None
+                            ) -> werkzeug.Response:
+        """Perform user search.
+
+        :param download: signals whether the output should be a file. It can either
+            be "csv" or "json" for a corresponding file. Otherwise an ordinary HTML page
+            is served.
+        :param is_search: signals whether the page was requested by an actual
+            query or just to display the search form.
+        :param qview: which query view to user see `QUERY_VIEWS` in `cdedb.query`.
+        :param default_qview: the default query list of which "dummy" query view to use
+        :param endpoint: Name of the template family to use to render search. To be
+            changed for archived user searches.
+        :param choices: Mapping of replacements of primary keys by human-readable
+            strings for select fields in the javascript query form.
+        :param submit_general_query: The backend query function to use to retrieve the
+            data in the end. Different backends apply different filters depending on
+            `query.scope`, usually filtering out users with higher realms.
+        :param query: if this is specified the query is executed instead. This is meant
+            for calling this function programmatically.
+        """
+        spec = copy.deepcopy(QUERY_SPECS[qview])
+        if query:
+            query = check_validation(rs, vtypes.Query, query, "query")
+        elif is_search:
+            # mangle the input, so we can prefill the form
+            query_input = mangle_query_input(rs, spec)
+            query = check_validation(rs, vtypes.QueryInput, query_input, "query",
+                                     spec=spec, allow_empty=False)
+        default_queries = self.conf["DEFAULT_QUERIES"][default_qview]
+        if not choices:
+            choices = {}
+        choices_lists = {k: list(v.items()) for k, v in choices.items()}
+        params = {
+            'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
+            'default_queries': default_queries, 'query': query}
+        # Tricky logic: In case of no validation errors we perform a query
+        if not rs.has_validation_errors() and is_search and query:
+            query.scope = qview
+            result = submit_general_query(rs, query)
+            params['result'] = result
+            if download:
+                return self.send_query_download(
+                    rs, result, fields=query.fields_of_interest, kind=download,
+                    filename=endpoint + "_result", substitutions=params['choices'])
+        else:
+            rs.values['is_search'] = False
+        return self.render(rs, endpoint, params)
+
     @staticmethod
     def _create_attachment(attachment: Attachment) -> MIMENonMultipart:
         """Helper instantiating an attachment via the email module.
@@ -1645,6 +1706,66 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     filename=pdf_file)
             else:
                 return None
+
+
+class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
+    """Base class for all frontends which have their own user realm.
+
+    This is basically every frontend with exception of 'core'.
+    """
+
+    @classmethod
+    @abc.abstractmethod
+    def is_admin(cls, rs: RequestState) -> bool:
+        return super().is_admin(rs)
+
+    # @access("realm_admin")
+    @abc.abstractmethod
+    def create_user_form(self, rs: RequestState) -> werkzeug.Response:
+        """Render form."""
+        return self.render(rs, "create_user")
+
+    # @access("realm_admin", modi={"POST"})
+    # @REQUESTdatadict(...)
+    @abc.abstractmethod
+    def create_user(self, rs: RequestState, data: CdEDBObject,
+                    ignore_warnings: bool = False) -> werkzeug.Response:
+        """Create new user account."""
+        merge_dicts(data, PERSONA_DEFAULTS)
+        data = check_validation(
+            rs, vtypes.Persona, data, creation=True, _ignore_warnings=ignore_warnings)
+        if data:
+            exists = self.coreproxy.verify_existence(rs, data['username'])
+            if exists:
+                rs.extend_validation_errors(
+                    (("username",
+                      ValueError("User with this E-Mail exists already.")),))
+        if rs.has_validation_errors() or not data:
+            return self.create_user_form(rs)
+        new_id = self.coreproxy.create_persona(
+            rs, data, ignore_warnings=ignore_warnings)
+        if new_id:
+            success, message = self.coreproxy.make_reset_cookie(rs, data[
+                'username'])
+            email = self.encode_parameter(
+                "core/do_password_reset_form", "email", data['username'],
+                persona_id=None, timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
+            meta_info = self.coreproxy.get_meta_info(rs)
+            self.do_mail(rs, "welcome",
+                         {'To': (data['username'],),
+                          'Subject': "CdEDB Account erstellt",
+                          },
+                         {'data': data,
+                          'fee': self.conf["MEMBERSHIP_FEE"],
+                          'email': email if success else "",
+                          'cookie': message if success else "",
+                          'meta_info': meta_info,
+                          })
+
+            self.notify_return_code(rs, new_id, success=n_("User created."))
+            return self.redirect_show_user(rs, new_id)
+        else:
+            return self.create_user_form(rs)
 
 
 class CdEMailmanClient(mailmanclient.Client):
@@ -2712,7 +2833,7 @@ def calculate_loglinks(rs: RequestState, total: int,
 
     # Create values sets for the necessary links.
     def new_md() -> CdEDBMultiDict:
-        return werkzeug.MultiDict(rs.values)
+        return werkzeug.datastructures.MultiDict(rs.values)
     loglinks = {
         "first": new_md(),
         "previous": new_md(),

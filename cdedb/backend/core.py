@@ -711,9 +711,10 @@ class CoreBackend(AbstractBackend):
         if ("balance" in data
                 and ("cde_admin" not in rs.user.roles
                      or "finance" not in allow_specials)):
-            # Allow setting balance to 0 or None during archival.
+            # Allow setting balance to 0 or None during archival or membership change.
             if not ((data["balance"] is None or data["balance"] == 0)
-                    and "archive" in allow_specials):
+                    and REALM_ADMINS & rs.user.roles
+                    and {"archive", "membership"} & set(allow_specials)):
                 raise PrivilegeError(n_("Modification of balance prevented."))
         if "username" in data and "username" not in allow_specials:
             raise PrivilegeError(n_("Modification of email address prevented."))
@@ -1137,7 +1138,7 @@ class CoreBackend(AbstractBackend):
             ret = self.set_persona(
                 rs, update, may_wait=False,
                 change_note="Mitgliedschaftsstatus geändert.",
-                allow_specials=("membership", "finance"))
+                allow_specials=("membership",))
             self.finance_log(rs, code, persona_id, delta, new_balance)
             return ret
 
@@ -1532,7 +1533,7 @@ class CoreBackend(AbstractBackend):
             #
             return ret
 
-    @access("core_admin")
+    @access(*REALM_ADMINS)
     def dearchive_persona(self, rs: RequestState,
                           persona_id: int) -> DefaultReturnCode:
         """Return a persona from the attic to activity.
@@ -1552,9 +1553,8 @@ class CoreBackend(AbstractBackend):
             self.core_log(rs, const.CoreLogCodes.persona_dearchived, persona_id)
             return code
 
-    @access("core_admin", "cde_admin")
-    def purge_persona(self, rs: RequestState,
-                      persona_id: int) -> DefaultReturnCode:
+    @access("core_admin")
+    def purge_persona(self, rs: RequestState, persona_id: int) -> DefaultReturnCode:
         """Delete all infos about this persona.
 
         It has to be archived beforehand. Thus we do not have to
@@ -1789,7 +1789,7 @@ class CoreBackend(AbstractBackend):
         if ids is not None:
             ids = affirm_set(vtypes.ID, ids or set()) - {rs.user.persona_id}
             num = len(ids)
-            access_hash = get_hash(str(sorted(ids)).encode())
+            access_hash = get_hash(str(xsorted(ids)).encode())
         else:
             num = affirm(vtypes.NonNegativeInt, num or 0)
 
@@ -2870,13 +2870,9 @@ class CoreBackend(AbstractBackend):
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.
         """
         query = affirm(Query, query)
-        if query.scope == "qview_core_user":
+        if query.scope in {"qview_core_user", "qview_archived_core_user"}:
             query.constraints.append(("is_archived", QueryOperators.equal,
-                                      False))
-            query.spec["is_archived"] = "bool"
-        elif query.scope == "qview_archived_persona":
-            query.constraints.append(("is_archived", QueryOperators.equal,
-                                      True))
+                                      query.scope == "qview_archived_core_user"))
             query.spec["is_archived"] = "bool"
         else:
             raise RuntimeError(n_("Bad scope."))

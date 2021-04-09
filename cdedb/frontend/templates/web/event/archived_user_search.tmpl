@@ -1,5 +1,5 @@
-{% set sidenav_active='core_manage_archive' %}
-{% extends "web/core/base.tmpl" %}
+{% set sidenav_active='event_manage_archive' %}
+{% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/generic.tmpl" as generic with context %}
 {% set jshint='strong' %}
@@ -11,8 +11,8 @@
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("core/archived_user_search"), gettext("Search Archived Users"), active="True") }}
+    {{ util.breadcrumb_link(cdedblink("event/archived_user_search"), gettext("Search Archived Users"), active="True") }}
 {% endblock %}
 {% block content %}
-    {{ generic.archived_user_search("core") }}
+    {{ generic.archived_user_search("event", info=gettext("This search will only show archived pure event users.")) }}
 {% endblock %}

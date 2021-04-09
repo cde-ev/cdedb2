@@ -82,8 +82,12 @@
     <div class="row">
         <div class="col-md-4">
             <div class="p button-par">
-                {{ util.href(cdedblink("{}/create_user".format(realm)), gettext("Create User"),
+                {{ util.href(cdedblink("{}/create_user_form".format(realm)), gettext("Create User"),
                         icon="plus", aclass="btn btn-success btn-sm") }}
+                {% if realm == 'cde' %}
+                    {{ util.href(cdedblink('cde/batch_admission'), gettext("Batch Admission"), icon="file-import",
+                             aclass="btn btn-default btn-sm") }}
+                {% endif %}
             </div>
             {% if info %}
                 <p class="text-muted">{{ util.make_icon('info-circle') }} {{ info }}</p>
@@ -94,16 +98,36 @@
         </div>
     </div>
 
-    {{ user_search_mask(realm) }}
+    {{ user_search_mask(realm, archived=False, selection_blacklist=("pevent_id",)) }}
 
     {% if values['is_search'] %}
         <h3 id="query-results">{% trans %}Result{% endtrans %} [{{ result|length }}]</h3>
-        {{ user_search_result(result, realm) }}
+        {{ user_search_result(result) }}
+    {% endif %}
+{% endmacro %}
+
+{% macro archived_user_search(realm, info="") %}
+    <div class="row">
+        <div class="col-md-4">
+            {% if info %}
+                <p class="text-muted">{{ util.make_icon('info-circle') }} {{ info }}</p>
+            {% endif %}
+        </div>
+        <div class="col-md-8">
+            {{ place_default_queries("{}/archived_user_search".format(realm), default_queries) }}
+        </div>
+    </div>
+
+    {{ user_search_mask(realm, archived=True, selection_blacklist=("pevent_id",)) }}
+
+    {% if values['is_search'] %}
+        <h3 id="query-results">{% trans %}Result{% endtrans %} [{{ result|length }}]</h3>
+        {{ user_search_result(result) }}
     {% endif %}
 {% endmacro %}
 
 
-{% macro user_search_mask(realm, selection_blacklist=[]) %}
+{% macro user_search_mask(realm, archived=False, selection_blacklist=[]) %}
     {% with TITLES = {
         "fulltext": gettext("Fulltext"),
         "personas.id": gettext("ID"),
@@ -162,8 +186,8 @@
         'lastschrift.amount': gettext("Lastschrift Amount"),
     } %}
 
-            {% if realm == "archived" %}
-                {% set target=cdedblink('core/archived_user_search') %}
+            {% if archived %}
+                {% set target=cdedblink('{}/archived_user_search'.format(realm)) %}
             {% else %}
                 {% set target=cdedblink('{}/user_search'.format(realm)) %}
             {% endif %}
@@ -173,7 +197,7 @@
     {% endwith %}
 {% endmacro %}
 
-{% macro user_search_result(result, realm) %}
+{% macro user_search_result(result) %}
     {# warning: titles will not be escaped! #}
     {% with TITLES = {
         "fulltext": gettext("Fulltext"),
