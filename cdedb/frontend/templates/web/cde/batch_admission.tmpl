@@ -111,8 +111,11 @@
                             <div class="p">
                                 {#- jinja does not support list comprehension ... #}
                                 {%- set myentries = [] %}
-                                {%- for resolution in enums['LineResolutions']
-                                        if dataset['doppelgangers'] or not resolution.is_modification() %}
+                                {%- for resolution in enums['LineResolutions'] if dataset['doppelgangers'] or not resolution.is_modification() %}
+                                    {# We map None -> LineResolutions.none later in the frontend #}
+                                    {% if resolution == enums['LineResolutions'].none %}
+                                        {% continue %}
+                                    {% endif %}
                                     {%- do myentries.append((resolution.value, gettext(resolution|string))) %}
                                 {%- endfor %}
                                 {{ util.input_select("resolution{}".format(dataset['lineno'] - 1), myentries,

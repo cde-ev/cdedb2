@@ -433,10 +433,10 @@ class CdEFrontend(AbstractUserFrontend):
         warnings: List[Error] = []
         problems: List[Error]
         if datum['old_hash'] and datum['old_hash'] != datum['new_hash']:
-            # remove resolution in case of a change
-            datum['resolution'] = None
+            # reset resolution in case of a change
+            datum['resolution'] = LineResolutions.none
             resolution_key = f"resolution{datum['lineno'] - 1}"
-            rs.values[resolution_key] = None
+            rs.values[resolution_key] = LineResolutions.none
             warnings.append((resolution_key, ValueError(n_("Entry changed."))))
         persona = copy.deepcopy(datum['raw'])
         # Adapt input of gender from old convention (this is the format
@@ -498,9 +498,7 @@ class CdEFrontend(AbstractUserFrontend):
             doppelgangers = self.coreproxy.find_doppelgangers(rs, temp)
         if doppelgangers:
             warnings.append(("persona", ValueError(n_("Doppelgangers found."))))
-        if (datum['resolution'] is not None and
-                (bool(datum['doppelganger_id'])
-                 != datum['resolution'].is_modification())):
+        if bool(datum['doppelganger_id']) != datum['resolution'].is_modification():
             problems.append(
                 ("doppelganger",
                  RuntimeError(
@@ -750,6 +748,8 @@ class CdEFrontend(AbstractUserFrontend):
         for raw_entry in reader:
             dataset: CdEDBObject = {'raw': raw_entry}
             params: TypeMapping = {
+                # since we dont know the line numbers on the first submit, we have to
+                # cast the None -> LineResolutions.none after extraction
                 f"resolution{lineno}": Optional[LineResolutions],  # type: ignore
                 f"doppelganger_id{lineno}": Optional[vtypes.ID],  # type: ignore
                 f"hash{lineno}": Optional[str],  # type: ignore
@@ -757,6 +757,9 @@ class CdEFrontend(AbstractUserFrontend):
                 f"is_instructor{lineno}": Optional[bool],  # type: ignore
             }
             tmp = request_extractor(rs, params)
+            if tmp[f"resolution{lineno}"] is None:
+                tmp[f"resolution{lineno}"] = LineResolutions.none
+
             dataset['resolution'] = tmp[f"resolution{lineno}"]
             dataset['doppelganger_id'] = tmp[f"doppelganger_id{lineno}"]
             dataset['is_orga'] = tmp[f"is_orga{lineno}"]
@@ -786,7 +789,7 @@ class CdEFrontend(AbstractUserFrontend):
             else:
                 raise RuntimeError(n_("Impossible."))
         for dataset in data:
-            if (dataset['resolution'] is None
+            if (dataset['resolution'] == LineResolutions.none
                     and not dataset['doppelgangers']
                     and not dataset['problems']
                     and not dataset['old_hash']):
@@ -800,7 +803,7 @@ class CdEFrontend(AbstractUserFrontend):
             rs.append_validation_error(
                 ("membership", ValueError(n_("Only member admission supported."))))
         open_issues = any(
-            e['resolution'] is None
+            e['resolution'] == LineResolutions.none
             or (e['problems'] and e['resolution'] != LineResolutions.skip)
             for e in data)
         if rs.has_validation_errors() or not data or open_issues:

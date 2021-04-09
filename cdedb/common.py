@@ -1079,6 +1079,7 @@ def determine_age_class(birth: datetime.date, reference: datetime.date
 class LineResolutions(enum.IntEnum):
     """Possible actions during batch admission
     """
+    none = 0  #: No resolution was chosen.
     create = 1  #: Create a new account with this data.
     skip = 2  #: Do nothing with this line.
     renew_trial = 3  #: Renew the trial membership of an existing account.
