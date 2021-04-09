@@ -26,7 +26,7 @@ from .machine import SubscriptionAction, SubscriptionPolicy, SubscriptionState
 
 
 def _check_state_requirements(action: SubscriptionAction,
-                              old_state: Optional[SubscriptionState]) -> None:
+                              old_state: SubscriptionState) -> None:
     """This checks if the given action is allowed to be performed from the given state.
 
     This check is the heart of the subscription state machine, since it considers the
@@ -61,7 +61,7 @@ def _check_policy_requirements(action: SubscriptionAction,
 
 def apply_action(action: SubscriptionAction, *,
                  policy: SubscriptionPolicy,
-                 old_state: Optional[SubscriptionState],
+                 old_state: SubscriptionState,
                  allow_unsub: bool = True,
                  is_privileged: bool = True,
                  ) -> Optional[SubscriptionState]:
@@ -107,7 +107,7 @@ def apply_action(action: SubscriptionAction, *,
 
 
 def _apply_cleanup(policy: SubscriptionPolicy,
-                   old_state: Optional[SubscriptionState],
+                   old_state: SubscriptionState,
                    is_implied: bool
                    ) -> None:
     """Analogue of apply_action for cleanup of subscribers.
@@ -136,7 +136,7 @@ def _apply_cleanup(policy: SubscriptionPolicy,
 
 
 def is_obsolete(policy: SubscriptionPolicy,
-                old_state: Optional[SubscriptionState],
+                old_state: SubscriptionState,
                 is_implied: bool
                 ) -> bool:
     """Returns whether a subscriber should be cleaned up from an object.
