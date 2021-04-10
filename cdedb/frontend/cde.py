@@ -410,7 +410,7 @@ class CdEFrontend(AbstractUserFrontend):
         data = data or []
         csvfields = csvfields or tuple()
         pevents = self.pasteventproxy.list_past_events(rs)
-        pevent_ids = {d['pevent_id'] for d in data if d['pevent_id']}
+        pevent_ids = {d['pevent_id'] for d in data if d.get('pevent_id')}
         pcourses = {
             pevent_id: self.pasteventproxy.list_past_courses(rs, pevent_id)
             for pevent_id in pevent_ids}
@@ -432,6 +432,16 @@ class CdEFrontend(AbstractUserFrontend):
         """
         warnings: List[Error] = []
         problems: List[Error]
+
+        # short-circuit if additional fields like the resolution are error prone
+        problems = [
+            (field, error)
+            for error_field, error in rs.retrieve_validation_errors() for field in datum
+            if error_field == f"{field}{datum['lineno']-1}"]
+        if problems:
+            datum['problems'] = problems
+            return datum
+
         if datum['old_hash'] and datum['old_hash'] != datum['new_hash']:
             # reset resolution in case of a change
             datum['resolution'] = LineResolutions.none
@@ -770,6 +780,10 @@ class CdEFrontend(AbstractUserFrontend):
             lineno += 1
             dataset['lineno'] = lineno
             data.append(self.examine_for_admission(rs, dataset))
+
+        if rs.has_validation_errors():
+            return self.batch_admission_form(rs, data=data, csvfields=fields)
+
         for ds1, ds2 in itertools.combinations(data, 2):
             similarity = self.similarity_score(ds1, ds2)
             if similarity == "high":
