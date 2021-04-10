@@ -437,7 +437,7 @@ class CdEFrontend(AbstractUserFrontend):
         problems = [
             (field, error)
             for error_field, error in rs.retrieve_validation_errors() for field in datum
-            if error_field == f"{field}{datum['lineno']-1}"]
+            if error_field == f"{field}{datum['lineno']}"]
         if problems:
             datum['problems'] = problems
             return datum
@@ -445,7 +445,7 @@ class CdEFrontend(AbstractUserFrontend):
         if datum['old_hash'] and datum['old_hash'] != datum['new_hash']:
             # reset resolution in case of a change
             datum['resolution'] = LineResolutions.none
-            rs.values[f"resolution{datum['lineno'] - 1}"] = LineResolutions.none
+            rs.values[f"resolution{datum['lineno']}"] = LineResolutions.none
             warnings.append(("resolution", ValueError(n_("Entry changed."))))
         persona = copy.deepcopy(datum['raw'])
         # Adapt input of gender from old convention (this is the format
@@ -658,7 +658,7 @@ class CdEFrontend(AbstractUserFrontend):
         try:
             with Atomizer(rs):
                 count = 0
-                for index, datum in enumerate(data):
+                for index, datum in enumerate(data, start=1):
                     count += self._perform_one_batch_admission(
                         rs, datum, trial_membership, consent)
         except psycopg2.extensions.TransactionRollbackError:
@@ -754,8 +754,10 @@ class CdEFrontend(AbstractUserFrontend):
         reader = csv.DictReader(
             accountlines, fieldnames=fields, dialect=CustomCSVDialect())
         data = []
+        # we start the line numbers at one to avoid some confusion with the template
         lineno = 0
         for raw_entry in reader:
+            lineno += 1
             dataset: CdEDBObject = {'raw': raw_entry}
             params: TypeMapping = {
                 # since we dont know the line numbers on the first submit, we have to
@@ -775,9 +777,8 @@ class CdEFrontend(AbstractUserFrontend):
             dataset['is_orga'] = tmp[f"is_orga{lineno}"]
             dataset['is_instructor'] = tmp[f"is_instructor{lineno}"]
             dataset['old_hash'] = tmp[f"hash{lineno}"]
-            dataset['new_hash'] = get_hash(accountlines[lineno].encode())
+            dataset['new_hash'] = get_hash(accountlines[lineno - 1].encode())
             rs.values[f"hash{lineno}"] = dataset['new_hash']
-            lineno += 1
             dataset['lineno'] = lineno
             data.append(self.examine_for_admission(rs, dataset))
 
@@ -810,7 +811,7 @@ class CdEFrontend(AbstractUserFrontend):
                     and not dataset['old_hash']):
                 # automatically select resolution if this is an easy case
                 dataset['resolution'] = LineResolutions.create
-                rs.values[f"resolution{dataset['lineno'] - 1}"] = LineResolutions.create.value
+                rs.values[f"resolution{dataset['lineno']}"] = LineResolutions.create.value
 
         if lineno != len(accountlines):
             rs.append_validation_error(
@@ -839,7 +840,7 @@ class CdEFrontend(AbstractUserFrontend):
                 rs.notify("warning", n_("DB serialization error."))
             else:
                 rs.notify("error", n_("Unexpected error on line %(num)s."),
-                          {'num': num + 1})
+                          {'num': num})
             return self.batch_admission_form(rs, data=data, csvfields=fields)
 
     @access("finance_admin")
