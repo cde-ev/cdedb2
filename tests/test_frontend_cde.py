@@ -1222,22 +1222,22 @@ class TestCdEFrontend(FrontendTest):
         for ex, out in zip(expectation, output):
             for piece in ex:
                 self.assertTrue(re.search(piece, out))
-        for i in range(15):
-            if i in (1, 7):
+        for i in range(1, 16):
+            if i in (2, 8):
                 exp = '1'
             else:
                 exp = ''
             self.assertEqual(exp, f['resolution{}'.format(i)].value)
         inputdata = f['accounts'].value
-        f['resolution0'] = 2
-        f['resolution2'] = 2
+        f['resolution1'] = 2
         f['resolution3'] = 2
-        f['resolution4'] = 5
-        f['doppelganger_id4'] = '2'
-        f['resolution5'] = 4
-        f['doppelganger_id5'] = '4'
-        f['resolution6'] = 5
-        f['doppelganger_id6'] = '5'
+        f['resolution4'] = 2
+        f['resolution5'] = 5
+        f['doppelganger_id5'] = '2'
+        f['resolution6'] = 4
+        f['doppelganger_id6'] = '4'
+        f['resolution7'] = 5
+        f['doppelganger_id7'] = '5'
         inputdata = inputdata.replace("pa99", "pa14")
         inputdata = inputdata.replace(
             "Doomed course from hell", "Swish -- und alles ist gut")
@@ -1246,10 +1246,10 @@ class TestCdEFrontend(FrontendTest):
         inputdata = inputdata.replace("fPingst", "Pfingst")
         inputdata = inputdata.replace("wSish", "Swish")
         inputdata = inputdata.replace(wandering_birthday, unproblematic_birthday)
-        f['resolution12'] = 2
         f['resolution13'] = 2
-        f['resolution15'] = 5
-        f['doppelganger_id15'] = '10'
+        f['resolution14'] = 2
+        f['resolution16'] = 5
+        f['doppelganger_id16'] = '10'
         f['accounts'] = inputdata
         self.submit(f, check_notification=False)
 
@@ -1315,21 +1315,21 @@ class TestCdEFrontend(FrontendTest):
         inputdata = inputdata.replace('"1a";"Beispiel";"Bertålotta"',
                                       '"Ω";"Beispiel";"Bertålotta"')
         f['accounts'] = inputdata
-        f['resolution4'] = 5
-        f['doppelganger_id4'] = '2'
-        f['resolution6'] = 1
-        f['resolution8'] = 1
+        f['resolution5'] = 5
+        f['doppelganger_id5'] = '2'
+        f['resolution7'] = 1
         f['resolution9'] = 1
         f['resolution10'] = 1
         f['resolution11'] = 1
-        f['resolution14'] = 1
+        f['resolution12'] = 1
+        f['resolution15'] = 1
         self.submit(f, check_notification=False)
 
         # third round
         self.assertPresence("Erneut validieren")
         self.assertNonPresence("Anlegen")
         f = self.response.forms['admissionform']
-        self.assertEqual('', f['resolution4'].value)
+        self.assertEqual('', f['resolution5'].value)
         content = self.get_content()
         _, content = content.split(" Zeile 1:")
         output = []
@@ -1378,9 +1378,9 @@ class TestCdEFrontend(FrontendTest):
         for nonex, out in zip(nonexpectation, output):
             for piece in nonex:
                 self.assertFalse(re.search(piece, out))
-        f['resolution4'] = 5
-        f['doppelganger_id4'] = '2'
-        f['resolution6'] = 5
+        f['resolution5'] = 5
+        f['doppelganger_id5'] = '2'
+        f['resolution7'] = 5
         self.assertEqual('', f['finalized'].value)
         self.submit(f, check_notification=False)
 
@@ -1388,7 +1388,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Anlegen")
         self.assertNonPresence("Erneut validieren")
         f = self.response.forms['admissionform']
-        self.assertEqual('5', f['resolution4'].value)
+        self.assertEqual('5', f['resolution5'].value)
         self.assertEqual('True', f['finalized'].value)
         self.submit(f, check_notification=False)
         self.assertPresence("7 Accounts erstellt.", div="notifications")
