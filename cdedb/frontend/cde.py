@@ -484,8 +484,7 @@ class CdEFrontend(AbstractUserFrontend):
             problems.extend([('birthday', ValueError(
                 n_("Persona is younger than 10 years.")))])
 
-        pevent_id, w, p = self.pasteventproxy.find_past_event(
-            rs, datum['raw']['event'])
+        pevent_id, w, p = self.pasteventproxy.find_past_event(rs, datum['raw']['event'])
         warnings.extend(w)
         problems.extend(p)
         pcourse_id = None
@@ -496,6 +495,7 @@ class CdEFrontend(AbstractUserFrontend):
             problems.extend(p)
         else:
             warnings.append(("course", ValueError(n_("No course available."))))
+
         doppelgangers: CdEDBObjectMap = {}
         if persona:
             if (datum['resolution'] == LineResolutions.create
@@ -510,8 +510,7 @@ class CdEFrontend(AbstractUserFrontend):
         if bool(datum['doppelganger_id']) != datum['resolution'].is_modification():
             problems.append(
                 ("doppelganger",
-                 RuntimeError(
-                     n_("Doppelganger choice doesn’t fit resolution."))))
+                 RuntimeError(n_("Doppelganger choice doesn’t fit resolution."))))
         if datum['doppelganger_id']:
             if datum['doppelganger_id'] not in doppelgangers:
                 problems.append(
@@ -543,6 +542,7 @@ class CdEFrontend(AbstractUserFrontend):
             if (datum['doppelganger_id'], pcourse_id) in existing:
                 problems.append(
                     ("pevent_id", KeyError(n_("Participation already recorded."))))
+
         datum.update({
             'persona': persona,
             'pevent_id': pevent_id,
@@ -801,6 +801,7 @@ class CdEFrontend(AbstractUserFrontend):
                 pass
             else:
                 raise RuntimeError(n_("Impossible."))
+
         for dataset in data:
             if (dataset['resolution'] == LineResolutions.none
                     and not dataset['doppelgangers']
@@ -809,6 +810,7 @@ class CdEFrontend(AbstractUserFrontend):
                 # automatically select resolution if this is an easy case
                 dataset['resolution'] = LineResolutions.create
                 rs.values[f"resolution{dataset['lineno'] - 1}"] = LineResolutions.create.value
+
         if lineno != len(accountlines):
             rs.append_validation_error(
                 ("accounts", ValueError(n_("Lines didn’t match up."))))

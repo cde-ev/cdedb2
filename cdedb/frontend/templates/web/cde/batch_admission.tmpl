@@ -9,6 +9,7 @@
 {{ util.breadcrumb_link(cdedblink("cde/user_search"), gettext("Manage Users")) }}
 {{ util.breadcrumb_link(cdedblink("cde/batch_admission_form"), gettext("Batch Admission"), active=True) }}
 {% endblock %}
+
 {% macro ba_submit_button() %}
     {% if values['finalized'] %}
         {{ util.form_input_submit(label=gettext("Create"), horizontal=False) }}
@@ -20,6 +21,7 @@
         {% endif %}
     {% endif %}
 {% endmacro %}
+
 {% block content %}
     <form action="{{ cdedblink('cde/batch_admission') }}" method="POST" id="admissionform">
         {{ util.anti_csrf_token('cde/batch_admission') }}
