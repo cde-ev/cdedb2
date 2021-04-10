@@ -585,15 +585,16 @@ class CdEFrontend(AbstractUserFrontend):
             if not current['is_cde_realm']:
                 # Promote to cde realm dependent on current realm
                 promotion: CdEDBObject = {
-                    'is_{}_realm'.format(realm): True
-                    for realm in ('cde', 'event', 'assembly', 'ml')}
-                promotion.update({
+                    'is_cde_realm': True,
+                    'is_event_realm': True,
+                    'is_assembly_realm': True,
+                    'is_ml_realm': True,
                     'decided_search': False,
                     'trial_member': False,
                     'paper_expuls': True,
                     'bub_search': False,
                     'id': persona_id,
-                })
+                }
                 empty_fields = (
                     'address_supplement2', 'address2', 'postal_code2',
                     'location2', 'country2', 'weblink', 'specialisation',
