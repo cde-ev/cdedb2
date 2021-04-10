@@ -445,9 +445,8 @@ class CdEFrontend(AbstractUserFrontend):
         if datum['old_hash'] and datum['old_hash'] != datum['new_hash']:
             # reset resolution in case of a change
             datum['resolution'] = LineResolutions.none
-            resolution_key = f"resolution{datum['lineno'] - 1}"
-            rs.values[resolution_key] = LineResolutions.none
-            warnings.append((resolution_key, ValueError(n_("Entry changed."))))
+            rs.values[f"resolution{datum['lineno'] - 1}"] = LineResolutions.none
+            warnings.append(("resolution", ValueError(n_("Entry changed."))))
         persona = copy.deepcopy(datum['raw'])
         # Adapt input of gender from old convention (this is the format
         # used by external processes, i.e. BuB)
