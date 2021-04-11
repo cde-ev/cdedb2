@@ -69,7 +69,12 @@
                         {% trans lineno=dataset['lineno'] %}Line {{ lineno }}{% endtrans -%}
                     </span>:
                     {{ dataset['raw']['given_names'] }} {{ dataset['raw']['family_name'] }}
-                    &lt;{{ dataset['raw']['username'] }}&gt; {% trans %}born{% endtrans %} {{ dataset['raw']['birthday'] }}
+                    {% if dataset['raw']['username'] %}
+                        &lt;{{ dataset['raw']['username'] }}&gt;
+                    {% endif %}
+                    {% if dataset['raw']['birthday'] %}
+                        {% trans %}born{% endtrans %} {{ dataset['raw']['birthday'] }}
+                    {% endif %}
                     {% if dataset['pevent_id'] %}
                         ({{ pevents[dataset['pevent_id']] }}
                         {%- if dataset['pcourse_id'] -%}
@@ -78,6 +83,7 @@
                         )
                     {% endif %}
                 </strong>
+
                 <div class="batch-line-body">
                     {% if dataset['problems'] or dataset['warnings'] %}
                         <ul class="list-unstyled">
@@ -107,6 +113,7 @@
                             {% endfor %}
                         </ul>
                     {% endif %}
+
                     <div class="row">
                         <div class="col-md-6">
                             <label>{% trans %}Action{% endtrans %}</label>
@@ -141,9 +148,9 @@
                                     {#- jinja does not support list comprehension ... #}
                                     {%- set myentries = [('', '–')] %}
                                     {%- for key, value in dataset['doppelgangers']|keydictsort(EntitySorter.persona) %}
-                                        {%- with description = "{} {} ({}) <{}> ({} {}), {}{}".format(
+                                        {%- with description = "{} {} {} <{}> ({} {}), {}{}".format(
                                                 value['given_names'], value['family_name'],
-                                                value['birth_name'] or value['family_name'],
+                                                "(" + value['birth_name'] + ")" if value['birth_name'] else "",
                                                 value['username'], gettext("born"),
                                                 value['birthday']|date(lang=lang) or "–", key|cdedbid,
                                                 '' if value['is_member'] else gettext(" (not a Member)")) %}

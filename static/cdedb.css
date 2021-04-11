@@ -184,7 +184,8 @@ h4.heading-underline, h5.heading-underline, h6.heading-underline {
     padding: 10px;
 }
 
-.checkbox input[type="checkbox"],.radio input[type="radio"] {
+.checkbox input[type="checkbox"], .checkbox, input[type="checkbox"],
+.radio input[type="radio"], .radio, input[type="radio"] {
     vertical-align: middle;
     position: relative;
     bottom: 3.5px;
@@ -714,7 +715,7 @@ tr.drow-delete>td, tr.drow-delete1>td {
 /* Batch import */
 .batch-line-body {
     padding-left: 20px;
-    margin-bottom: 20px;
+    margin-bottom: 30px;
     border-left: solid 4px #ddd;
 }
 
