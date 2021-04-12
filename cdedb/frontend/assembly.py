@@ -798,7 +798,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     # ballot_id and attachment_id come semantically after asssembly_id,
     # but are optional, so need to be at the end.
     def add_attachment(self, rs: RequestState, assembly_id: int,
-                       attachment: werkzeug.FileStorage,
+                       attachment: werkzeug.datastructures.FileStorage,
                        title: str, filename: Optional[vtypes.Identifier],
                        authors: Optional[str], ballot_id: int = None,
                        attachment_id: int = None) -> Response:

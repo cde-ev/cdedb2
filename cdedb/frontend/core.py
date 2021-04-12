@@ -576,7 +576,8 @@ class CoreFrontend(AbstractFrontend):
             if is_admin and not is_moderator:
                 access_mode.add("moderator")
             relevant_stati = [s for s in const.SubscriptionState
-                              if s != const.SubscriptionState.unsubscribed]
+                              if s not in {const.SubscriptionState.unsubscribed,
+                                           const.SubscriptionState.none}]
             if is_moderator or ml_type.has_moderator_view(rs.user):
                 subscriptions = self.mlproxy.get_subscription_states(
                     rs, ml_id, states=relevant_stati)
@@ -1612,7 +1613,8 @@ class CoreFrontend(AbstractFrontend):
     @REQUESTfile("foto")
     @REQUESTdata("delete")
     def set_foto(self, rs: RequestState, persona_id: int,
-                 foto: werkzeug.FileStorage, delete: bool) -> Response:
+                 foto: werkzeug.datastructures.FileStorage,
+                 delete: bool) -> Response:
         """Set profile picture."""
         if rs.user.persona_id != persona_id and not self.is_admin(rs):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
@@ -2000,7 +2002,7 @@ class CoreFrontend(AbstractFrontend):
     @REQUESTfile("attachment")
     @REQUESTdata("attachment_filename", "ignore_warnings")
     def genesis_request(self, rs: RequestState, data: CdEDBObject,
-                        attachment: Optional[werkzeug.FileStorage],
+                        attachment: Optional[werkzeug.datastructures.FileStorage],
                         attachment_filename: str = None,
                         ignore_warnings: bool = False) -> Response:
         """Voice the desire to become a persona.

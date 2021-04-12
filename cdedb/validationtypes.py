@@ -3,6 +3,7 @@ import decimal
 from typing import Any, Dict, List, NewType as _NewType, Type
 
 from cdedb.common import CdEDBObject
+from cdedb.subman import SubscriptionState
 from cdedb.query import Query
 
 # SIMPLE/PRIMITIVE/ATOMIC TYPES
@@ -104,8 +105,9 @@ PartialRegistrationPart = _NewType("PartialRegistrationPart", CdEDBObject)
 PartialRegistrationTrack = _NewType("PartialRegistrationTrack", CdEDBObject)
 
 Mailinglist = _NewType("Mailinglist", CdEDBObject)
+DatabaseSubscriptionState = _NewType("DatabaseSubscriptionState", SubscriptionState)
 SubscriptionIdentifier = _NewType("SubscriptionIdentifier", CdEDBObject)
-SubscriptionState = _NewType("SubscriptionState", CdEDBObject)
+SubscriptionDataset = _NewType("SubscriptionDataset", CdEDBObject)
 SubscriptionAddress = _NewType("SubscriptionAddress", CdEDBObject)
 Assembly = _NewType("Assembly", CdEDBObject)
 Ballot = _NewType("Ballot", CdEDBObject)

@@ -29,18 +29,19 @@ echo ""
 echo "Getting the system up to date..."
 echo "--------------------------------------------"
 cat > /etc/apt/sources.list <<EOF
-deb http://ftp.de.debian.org/debian buster main contrib non-free
-deb-src http://ftp.de.debian.org/debian buster main contrib non-free
+deb http://ftp.de.debian.org/debian bullseye main contrib non-free
+deb-src http://ftp.de.debian.org/debian bullseye main contrib non-free
 
-deb http://security.debian.org/ buster/updates main contrib non-free
-deb-src http://security.debian.org/ buster/updates main contrib non-free
+# TODO reenable once released
+#deb http://security.debian.org/ bullseye/updates main contrib non-free
+#deb-src http://security.debian.org/ bullseye/updates main contrib non-free
 
-deb http://ftp.de.debian.org/debian buster-updates main contrib non-free
-deb-src http://ftp.de.debian.org/debian buster-updates main contrib non-free
+deb http://ftp.de.debian.org/debian bullseye-updates main contrib non-free
+deb-src http://ftp.de.debian.org/debian bullseye-updates main contrib non-free
 
 # wait till these actually exist
-# deb http://ftp.de.debian.org/debian buster-backports main contrib non-free
-# deb-src http://ftp.de.debian.org/debian buster-backports main contrib non-free
+# deb http://ftp.de.debian.org/debian bullseye-backports main contrib non-free
+# deb-src http://ftp.de.debian.org/debian bullseye-backports main contrib non-free
 EOF
 
 sleep 3
