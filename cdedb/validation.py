@@ -3583,9 +3583,9 @@ def _subscription_identifier(
 
 
 @_add_typed_validator
-def _subscription_state(
-    val: Any, argname: str = "subscription state", **kwargs: Any
-) -> SubscriptionState:
+def _subscription_dataset(
+    val: Any, argname: str = "subscription_dataset", **kwargs: Any
+) -> SubscriptionDataset:
     val = _mapping(val, argname, **kwargs)
 
     # TODO instead of deepcopy simply do not mutate mandatory_fields
@@ -3593,7 +3593,7 @@ def _subscription_state(
     mandatory_fields = {**SUBSCRIPTION_ID_FIELDS}
     mandatory_fields.update(SUBSCRIPTION_STATE_FIELDS)
 
-    return SubscriptionState(_examine_dictionary_fields(
+    return SubscriptionDataset(_examine_dictionary_fields(
         val, mandatory_fields, **kwargs))
 
 
@@ -4335,6 +4335,18 @@ def _enum_validator_maker(
 
 for oneenum in ALL_ENUMS:
     _enum_validator_maker(oneenum)
+
+
+@_add_typed_validator
+def _db_subscription_state(
+    val: Any, argname: str = None, **kwargs: Any
+) -> DatabaseSubscriptionState:
+    """Validates whether a subscription state is written into the database."""
+    val = _ALL_TYPED[const.SubscriptionState](val, argname, **kwargs)
+    if val == const.SubscriptionState.none:
+        raise ValidationSummary(ValueError(argname,
+            n_("SubscriptionState.none is not written into the database.")))
+    return DatabaseSubscriptionState(val)
 
 
 def _infinite_enum_validator_maker(anenum: Type[E], name: str = None) -> None:
