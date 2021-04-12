@@ -12836,7 +12836,7 @@ msgid ""
 msgstr ""
 "Nutzer, die diese Liste abbestellt haben. Sie werden nicht wieder "
 "automatisch hinzugefügt, können die Liste aber eventuell manuell abonnieren. "
-"Unter %(link)s findest du weitere Details."
+"In der %(link)s findest du weitere Details."
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:196
 #: cdedb/frontend/templates/web/ml/list_mailinglists.tmpl:24
