@@ -833,7 +833,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             'reject': SubscriptionAction.deny_request,
             'block': SubscriptionAction.block_request
         }
-        if rs.has_validation_errors() or action not in action_map.keys():
+        if rs.has_validation_errors() or action not in action_map:
             return self.management(rs, mailinglist_id)
         if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):
             rs.notify("error", n_("User does not exist or is archived."))
