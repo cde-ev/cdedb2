@@ -118,11 +118,12 @@
                                     {{ util.anti_csrf_token('ml/handle_request') }}
                                     {{ util.input_hidden(name="persona_id", value=request) }}
                                 <div class="btn-group">
-                                    {% for action, icon, coloring in ((n_('Accept'), 'check', 'success'),
-                                                                      (n_('Reject'), 'times-circle', 'danger'),
-                                                                      (n_('Block'), 'ban', 'danger')) %}
-                                        {{ util.input_submit(name="action", value=action.lower(), label=gettext(action),
-                                            icon=icon, aclass="btn btn-xs btn-" + coloring) }}
+                                    {% for action, label, icon, coloring in (
+                                            ('accept', gettext('Accept'), 'check', 'success'),
+                                            ('reject', gettext('Reject'), 'times-circle', 'danger'),
+                                            ('block', gettext('Block'), 'ban', 'danger')) %}
+                                        {{ util.input_submit(label=label, value=action, name="action", icon=icon,
+                                                             aclass="btn btn-xs btn-" + coloring) }}
                                     {% endfor %}
                                 </div>
                             </form>

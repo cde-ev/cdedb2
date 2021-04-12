@@ -50,11 +50,12 @@
                             {{ util.anti_csrf_token('ml/message_moderation') }}
                             {{ util.input_hidden(name="request_id", value=email.request_id) }}
                             <div class="pull-right">
-                                {% for action, coloring, icon in ((n_('Accept'), 'success', 'check'),
-                                                                  (n_('Reject'), 'warning', 'reply'),
-                                                                  (n_('Discard'), 'danger', 'trash-alt')) %}
-                                    {{ util.input_submit(label=gettext(action), value=action.lower(),
-                                        name="action", icon=icon, aclass=("btn btn-xs btn-" + coloring)) }}
+                                {% for action, label, icon, coloring in (
+                                        ('accept', gettext('Accept'), 'check', 'success'),
+                                        ('reject', gettext('Reject'), 'reply', 'warning'),
+                                        ('discard', gettext('Discard'), 'trash-alt', 'danger')) %}
+                                    {{ util.input_submit(label=label, icon=icon, value=action,name="action",
+                                                         aclass=("btn btn-xs btn-" + coloring)) }}
                                 {% endfor %}
                             </div>
                         </form>
