@@ -87,7 +87,7 @@
                           value=gettext("Warning: The description will be publicly visible, once courselist visibility "
                                         "is activated in the configuration. Course instructors will be visible to "
                                         "event users.")) }}
-        {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink("event/show_course")) }}
+        {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("event/show_course")) }}
     </form>
     <script nonce="{{ csp_nonce }}">
         $('#changecourseform').cdedbProtectChanges();

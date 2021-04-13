@@ -11,12 +11,12 @@
 {% endblock %}
 {% macro ba_submit_button() %}
     {% if values['finalized'] %}
-        {{ util.form_input_submit(value=gettext("Create"), horizontal=False) }}
+        {{ util.form_input_submit(label=gettext("Create"), horizontal=False) }}
     {% else %}
         {% if data %}
-            {{ util.form_input_submit(value=gettext("Validate Again"), horizontal=False) }}
+            {{ util.form_input_submit(label=gettext("Validate Again"), horizontal=False) }}
         {% else %}
-            {{ util.form_input_submit(value=gettext("Validate"), horizontal=False) }}
+            {{ util.form_input_submit(label=gettext("Validate"), horizontal=False) }}
         {% endif %}
     {% endif %}
 {% endmacro %}

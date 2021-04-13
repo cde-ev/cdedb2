@@ -228,10 +228,12 @@ class AssemblyBackend(AbstractBackend):
           :py:class:`cdedb.database.constants.AssemblyLogCodes`.
         :param persona_id: ID of affected user (like who was subscribed).
         :param change_note: Infos not conveyed by other columns.
-        :returns: default return code
         """
         if rs.is_quiet:
             return 0
+        # To ensure logging is done if and only if the corresponding action happened,
+        # we require atomization here.
+        self.affirm_atomized_context(rs)
         # do not use sql_insert since it throws an error for selecting the id
         query = ("INSERT INTO assembly.log (code, assembly_id, submitted_by,"
                  " persona_id, change_note) VALUES (%s, %s, %s, %s, %s)")
@@ -276,12 +278,12 @@ class AssemblyBackend(AbstractBackend):
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
         """
         query = affirm(Query, query)
-        if query.scope == "qview_persona":
+        if query.scope in {"qview_persona", "qview_archived_persona"}:
             # Include only un-archived assembly-users
             query.constraints.append(("is_assembly_realm", QueryOperators.equal,
                                       True))
             query.constraints.append(("is_archived", QueryOperators.equal,
-                                      False))
+                                      query.scope == "qview_archived_persona"))
             query.spec["is_assembly_realm"] = "bool"
             query.spec["is_archived"] = "bool"
             # Exclude users of any higher realm (implying event)
@@ -337,7 +339,7 @@ class AssemblyBackend(AbstractBackend):
             attachment_ids = {affirm(vtypes.ID, attachment_id)}
         ret = self.get_assembly_ids(
             rs, ballot_ids=ballot_ids, attachment_ids=attachment_ids)
-        if len(ret) == 0:
+        if not ret:
             raise ValueError(n_("No input specified."))
         if len(ret) > 1:
             raise ValueError(n_(
@@ -810,7 +812,7 @@ class AssemblyBackend(AbstractBackend):
     get_ballot: _GetBallotProtocol = singularize(get_ballots, "ballot_ids", "ballot_id")
 
     @access("assembly")
-    def set_ballot(self, rs: RequestState, data: CdEDBObject) -> int:
+    def set_ballot(self, rs: RequestState, data: CdEDBObject) -> DefaultReturnCode:
         """Update some keys of ballot.
 
         If the key 'candidates' is present, the associated dict mapping the
@@ -827,8 +829,6 @@ class AssemblyBackend(AbstractBackend):
 
         .. note:: It is forbidden to modify a ballot after voting has
           started.
-
-        :returns: default return code
         """
         data = affirm(vtypes.Ballot, data)
         ret = 1
@@ -928,8 +928,8 @@ class AssemblyBackend(AbstractBackend):
                 'vote_begin': begin,
             }
             self.set_ballot(rs, update)
-        self.assembly_log(rs, const.AssemblyLogCodes.ballot_created,
-                          data['assembly_id'], change_note=data['title'])
+            self.assembly_log(rs, const.AssemblyLogCodes.ballot_created,
+                              data['assembly_id'], change_note=data['title'])
         return new_id
 
     @access("assembly")
@@ -1172,7 +1172,6 @@ class AssemblyBackend(AbstractBackend):
 
         :param secret: The secret of this user. May be None to signal that the
           stored secret should be used.
-        :returns: default return code
         """
         ballot_id = affirm(vtypes.ID, ballot_id)
         secret = affirm_optional(vtypes.PrintableASCII, secret)
@@ -1359,8 +1358,7 @@ class AssemblyBackend(AbstractBackend):
                 x['shortname'] for x in ballot['candidates'].values())
             if ballot['use_bar'] or ballot['votes']:
                 shortnames += (ASSEMBLY_BAR_SHORTNAME,)
-            condensed, detailed = schulze_evaluate([e['vote'] for e in votes],
-                                                   shortnames)
+            condensed, _ = schulze_evaluate([e['vote'] for e in votes], shortnames)
             update = {
                 'id': ballot_id,
                 'is_tallied': True,
@@ -1387,7 +1385,7 @@ class AssemblyBackend(AbstractBackend):
             voter_names = list(f"{e['given_names']} {e['family_name']}"
                                for e in xsorted(voters.values(),
                                                 key=EntitySorter.persona))
-            vote_list = xsorted(votes, key=lambda v: json_serialize(v))
+            vote_list = xsorted(votes, key=json_serialize)
             result = {
                 "assembly": assembly['title'],
                 "ballot": ballot['title'],
@@ -1440,7 +1438,8 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly_admin")
     def conclude_assembly(self, rs: RequestState, assembly_id: int,
-                          cascade: Set[str] = None) -> int:
+                          cascade: Set[str] = None
+                          ) -> DefaultReturnCode:
         """Do housekeeping after an assembly has ended.
 
         This mainly purges the secrets which are no longer required for
@@ -1448,7 +1447,6 @@ class AssemblyBackend(AbstractBackend):
 
         :param cascade: Specify which conclusion blockers to cascadingly
             remove or ignore. If None or empty, cascade none.
-        :returns: default return code
         """
         assembly_id = affirm(vtypes.ID, assembly_id)
         blockers = self.conclude_assembly_blockers(rs, assembly_id)
@@ -1599,8 +1597,10 @@ class AssemblyBackend(AbstractBackend):
             if not assembly['is_active']:
                 raise ValueError(locked_msg)
             new_id = self.sql_insert(rs, "assembly.attachments", attachment)
-            version = {k: v for k, v in data.items()
-                            if k in ASSEMBLY_ATTACHMENT_VERSION_FIELDS}
+            version = {
+                k: v for k, v in data.items()
+                if k in ASSEMBLY_ATTACHMENT_VERSION_FIELDS
+            }
             version['version'] = 1
             version['attachment_id'] = new_id
             version['file_hash'] = get_hash(content)
@@ -1932,8 +1932,7 @@ class AssemblyBackend(AbstractBackend):
             raise ValueError(n_("Too many inputs specified."))
         assembly_id = affirm_optional(vtypes.ID, assembly_id)
         ballot_id = affirm_optional(vtypes.ID, ballot_id)
-        if not self.may_access(rs, assembly_id=assembly_id,
-                                 ballot_id=ballot_id):
+        if not self.may_access(rs, assembly_id=assembly_id, ballot_id=ballot_id):
             raise PrivilegeError(n_("Not privileged."))
 
         key = None

@@ -14,9 +14,13 @@
                 {{ util.href(cdedblink("cde/member_search"), gettext("CdE-Member Search"), aclass="list-group-item", icon="search",
                         active=(sidenav_active=='cde_member_search')) }}
             {% endif %}
-            {% if 'member' in user.roles %}
+            {% if "member" in user.roles %}
                 {{ util.href(cdedblink("cde/consent_decision_form"), gettext("Privacy Policy"),
                              aclass="list-group-item", icon="check-square", active=(sidenav_active=='cde_consent_decision')) }}
+            {% endif %}
+            {% if "member" in user.roles or "cde_user" in user.admin_views %}
+                {{ util.href(cdedblink("cde/member_stats"), gettext("Member Stats"), aclass="list-group-item",
+                             icon="chart-bar", active=(sidenav_active=='cde_member_stats')) }}
             {% endif %}
         </div>
 
@@ -25,6 +29,8 @@
                 {% if "cde_user" in user.admin_views %}
                     {{ util.href(cdedblink("cde/user_search"), gettext("Manage Users"), aclass="list-group-item", icon="users",
                             active=(sidenav_active=='cde_manage_users')) }}
+                    {{ util.href(cdedblink("cde/archived_user_search"), gettext("Search Archived Users"), aclass="list-group-item",
+                            icon="inbox", active=(sidenav_active=='cde_manage_archive')) }}
                 {% endif %}
                 {% if "finance" in user.admin_views %}
                     {{ util.href(cdedblink("cde/lastschrift_index"), gettext("Direct Debit Authorizations"), aclass="list-group-item",
@@ -47,7 +53,7 @@
             <div class="list-group tear-down">
                 {{ util.href(cdedblink("cde/list_past_events"), gettext("Past Events"), icon="calendar-alt",
                         aclass="list-group-item", active=(sidenav_active=='cde_past_events')) }}
-                {% if "member" in user.roles %}
+                {% if "member" in user.roles or "past_event" in user.admin_views %}
                     {{ util.href(cdedblink("cde/past_course_search"), gettext("Course Search"), icon="search",
                                  aclass="list-group-item", active=(sidenav_active=='cde_past_course_search')) }}
                 {% endif %}

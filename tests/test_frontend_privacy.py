@@ -356,6 +356,17 @@ class TestPrivacyFrontend(FrontendTest):
             self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
                                    check_div=False)
 
+    @as_users("inga")
+    def test_ex_profile_as_member(self, user: CdEDBObject) -> None:
+        # See #1821
+        inspected = USER_DICT['martin']
+        self.get(self.show_user_link(inspected['id']))
+        # members got first an un-quoted view on a profile, showing the basics
+        found = self._profile_base_view(inspected)
+        # The username must not be visible, although "Email" occurs as field
+        self.assertNonPresence(inspected['username'])
+        self.assertNonPresence("Gesamtes Profil anzeigen")
+
     @as_users("garcia")
     def test_profile_as_orga(self, user: CdEDBObject) -> None:
         # orgas get a closer view on users associated to their event
@@ -514,17 +525,6 @@ class TestPrivacyFrontend(FrontendTest):
         # TODO maybe add all above tests as subtests?
         self.skipTest("Test not yet implemented.")
 
-    @as_users("ferdinand", "martin", "paul")
-    def test_profile_of_archived_user(self, user: CdEDBObject) -> None:
-        inspected = USER_DICT['hades']
-
-        # they should be visible to core admins only ...
-        if user == USER_DICT['paul']:
-            self.get(self.show_user_link(inspected['id']))
-        # ... not for any other admin type
-        elif user in [USER_DICT['ferdinand'], USER_DICT['martin']]:
-            self.get(self.show_user_link(inspected['id']), status="403 FORBIDDEN")
-
     @as_users("annika", "berta", "farin", "martin", "nina", "quintus", "paul",
               "viktor")
     def test_user_search(self, user: CdEDBObject) -> None:
@@ -571,21 +571,21 @@ class TestPrivacyFrontend(FrontendTest):
 
         if user['id'] in core | event:
             self.get('/event/search/user')
-            self.assertTitle("Veranstaltungs-Nutzerverwaltung")
+            self.assertTitle("Veranstaltungsnutzerverwaltung")
         else:
             self.get('/event/search/user', status="403 FORBIDDEN")
             self.assertTitle("403: Forbidden")
 
         if user['id'] in core | ml:
             self.get('/ml/search/user')
-            self.assertTitle("Mailinglisten-Nutzerverwaltung")
+            self.assertTitle("Mailinglistennutzerverwaltung")
         else:
             self.get('/ml/search/user', status="403 FORBIDDEN")
             self.assertTitle("403: Forbidden")
 
         if user['id'] in core | assembly:
             self.get('/assembly/search/user')
-            self.assertTitle("Versammlungs-Nutzerverwaltung")
+            self.assertTitle("Versammlungsnutzerverwaltung")
         else:
             self.get('/assembly/search/user', status="403 FORBIDDEN")
             self.assertTitle("403: Forbidden")

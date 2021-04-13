@@ -36,6 +36,8 @@ def default_settings(mlist):
         mlist.pass_types = ['multipart', 'text/plain', 'application/pdf']
     if mlist.pass_extensions != ['pdf']:
         mlist.pass_extensions = ['pdf']
+    if mlist.digests_enabled != False:
+        mlist.digests_enabled = False
 
 
 def lax_settings(mlist):

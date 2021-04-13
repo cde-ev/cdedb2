@@ -36,7 +36,7 @@ _repopath = _currentpath.parent
 try:
     _git_commit = subprocess.check_output(
         ("git", "rev-parse", "HEAD"), cwd=str(_repopath)).decode().strip()
-except FileNotFoundError: # only catch git executable not found
+except FileNotFoundError:  # only catch git executable not found
     with pathlib.Path(_repopath, '.git/HEAD').open() as head:
         _git_commit = head.read().strip()
 
@@ -74,9 +74,7 @@ def generate_event_registration_default_queries(
 
     :param gettext: The translation function for the current locale.
     :param event: The Event for which to generate the queries
-    :type event:
     :param spec: The Query Spec, dynamically generated for the event
-    :type spec:
     :return: Dict of default queries
     """
     default_sort = (("persona.family_name", True),
@@ -310,6 +308,8 @@ _DEFAULTS = {
     "NUM_PREVIEW_PERSONAS": 3,
     #: Default amount of lines shown in logs shown in the frontend
     "DEFAULT_LOG_LENGTH": 50,
+    #: Default country code to be used
+    "DEFAULT_COUNTRY": "DE",
     # Available languages
     "I18N_LANGUAGES": ("de", "en"),
 
@@ -346,6 +346,8 @@ _DEFAULTS = {
 
     # email for ballot tallies
     "BALLOT_TALLY_ADDRESS": "wahlbekanntmachung@lists.cde-ev.de",
+    # mailinglist for ballot tallies
+    "BALLOT_TALLY_MAILINGLIST_URL": "https://db.cde-ev.de/db/ml/mailinglist/91/show",
 
     # mailman REST API host
     "MAILMAN_HOST": "localhost:8001",
@@ -378,6 +380,9 @@ _DEFAULTS = {
 
     # log
     "CORE_BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend-core.log"),
+
+    # amount of time after which an inactive account may be archived.
+    "AUTOMATED_ARCHIVAL_CUTOFF": datetime.timedelta(days=365*2),
 
     #
     # Session stuff
@@ -473,6 +478,12 @@ _DEFAULTS = {
     "DEFAULT_QUERIES": {
         "qview_cde_user": {
             n_("00_query_cde_user_all"): Query(
+                "qview_cde_user", QUERY_SPECS['qview_cde_user'],
+                ("personas.id", "given_names", "family_name"),
+                (),
+                (("family_name", True), ("given_names", True),
+                 ("personas.id", True))),
+            n_("02_query_cde_members"): Query(
                 "qview_cde_user", QUERY_SPECS['qview_cde_user'],
                 ("personas.id", "given_names", "family_name"),
                 (("is_member", QueryOperators.equal, True),),
@@ -583,7 +594,8 @@ _SECRECTS_DEFAULTS = {
         "cdb_anonymous": "012345678901234567890123456789",
         "cdb_persona": "abcdefghijklmnopqrstuvwxyzabcd",
         "cdb_member": "zyxwvutsrqponmlkjihgfedcbazyxw",
-        "cdb_admin": "9876543210abcdefghijklmnopqrst"
+        "cdb_admin": "9876543210abcdefghijklmnopqrst",
+        "cdb": "987654321098765432109876543210",  # only used for testsuite
     },
 
     # salting value used for verifying sensitve url parameters
@@ -601,9 +613,6 @@ _SECRECTS_DEFAULTS = {
 
     # fixed tokens for API access
     "API_TOKENS": {
-        # for mailing list software
-        "rklist": "c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3",
-
         # resolve API for CyberAka
         "resolve": "a1o2e3u4i5d6h7t8n9s0",
 

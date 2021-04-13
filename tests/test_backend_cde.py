@@ -12,7 +12,7 @@ from cdedb.common import (
     QuotaException, CdEDBLog
 )
 from cdedb.query import QUERY_SPECS, Query, QueryOperators
-from tests.common import USER_DICT, BackendTest, as_users
+from tests.common import USER_DICT, BackendTest, as_users, nearly_now
 
 
 class TestCdEBackend(BackendTest):
@@ -118,7 +118,7 @@ class TestCdEBackend(BackendTest):
             order=(("family_name,birth_name", True),),)
         result = self.cde.submit_general_query(self.key, query)
         self.assertEqual(
-            {2, 6, 9, 12, 15, 100}, {e['id'] for e in result})
+            {6, 9, 12, 15, 100}, {e['id'] for e in result})
 
     @as_users("vera")
     def test_user_search(self, user: CdEDBObject) -> None:
@@ -399,6 +399,73 @@ class TestCdEBackend(BackendTest):
         new_id = self.cde.create_lastschrift(self.key, newdata)
         self.assertLess(0, new_id)
         self.assertLess(0, self.cde.lastschrift_skip(self.key, new_id))
+
+    @as_users("anton", "farin")
+    def test_semester(self, user: CdEDBObject) -> None:
+        period_id = self.cde.current_period(self.key)
+        period = self.cde.get_period(self.key, period_id)
+        for k, v in period.items():
+            if k == "id":
+                self.assertEqual(v, period_id)
+            elif k == "semester_start":
+                self.assertEqual(v, nearly_now())
+            else:
+                self.assertFalse(v)
+
+        self.assertTrue(self.cde.may_start_semester_bill(self.key))
+        self.assertFalse(self.cde.may_start_semester_ejection(self.key))
+        self.assertFalse(self.cde.may_start_semester_balance_update(self.key))
+        self.assertFalse(self.cde.may_advance_semester(self.key))
+
+        if self.is_user(user, "anton"):
+            self.cde.finish_semester_bill(self.key)
+        elif self.is_user(user, "farin"):
+            self.cde.finish_archival_notification(self.key)
+        else:
+            self.fail("Invalid user configuration for this test.")
+        self.assertTrue(self.cde.may_start_semester_bill(self.key))
+        self.assertFalse(self.cde.may_start_semester_ejection(self.key))
+        self.assertFalse(self.cde.may_start_semester_balance_update(self.key))
+        self.assertFalse(self.cde.may_advance_semester(self.key))
+
+        if self.is_user(user, "anton"):
+            self.cde.finish_archival_notification(self.key)
+        elif self.is_user(user, "farin"):
+            self.cde.finish_semester_bill(self.key)
+        self.assertFalse(self.cde.may_start_semester_bill(self.key))
+        self.assertTrue(self.cde.may_start_semester_ejection(self.key))
+        self.assertFalse(self.cde.may_start_semester_balance_update(self.key))
+        self.assertFalse(self.cde.may_advance_semester(self.key))
+
+        if self.is_user(user, "anton"):
+            self.cde.finish_semester_ejection(self.key)
+        elif self.is_user(user, "farin"):
+            self.cde.finish_automated_archival(self.key)
+        self.assertFalse(self.cde.may_start_semester_bill(self.key))
+        self.assertTrue(self.cde.may_start_semester_ejection(self.key))
+        self.assertFalse(self.cde.may_start_semester_balance_update(self.key))
+        self.assertFalse(self.cde.may_advance_semester(self.key))
+
+        if self.is_user(user, "anton"):
+            self.cde.finish_automated_archival(self.key)
+        elif self.is_user(user, "farin"):
+            self.cde.finish_semester_ejection(self.key)
+        self.assertFalse(self.cde.may_start_semester_bill(self.key))
+        self.assertFalse(self.cde.may_start_semester_ejection(self.key))
+        self.assertTrue(self.cde.may_start_semester_balance_update(self.key))
+        self.assertFalse(self.cde.may_advance_semester(self.key))
+
+        self.cde.finish_semester_balance_update(self.key)
+        self.assertFalse(self.cde.may_start_semester_bill(self.key))
+        self.assertFalse(self.cde.may_start_semester_ejection(self.key))
+        self.assertFalse(self.cde.may_start_semester_balance_update(self.key))
+        self.assertTrue(self.cde.may_advance_semester(self.key))
+
+        self.cde.advance_semester(self.key)
+        self.assertTrue(self.cde.may_start_semester_bill(self.key))
+        self.assertFalse(self.cde.may_start_semester_ejection(self.key))
+        self.assertFalse(self.cde.may_start_semester_balance_update(self.key))
+        self.assertFalse(self.cde.may_advance_semester(self.key))
 
     @as_users("vera")
     def test_cde_log(self, user: CdEDBObject) -> None:

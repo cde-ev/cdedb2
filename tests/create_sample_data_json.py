@@ -1,100 +1,116 @@
+import argparse
 import datetime
 import json
+import re
 
-from cdedb.common import CustomJSONEncoder
+from typing import Any, Dict, List
+
+from cdedb.common import CustomJSONEncoder, nearly_now, RequestState
 from cdedb.script import make_backend, setup
-from tests.common import nearly_now
+from cdedb.backend.core import CoreBackend
 
-rs = setup(1, "cdb_admin", "9876543210abcdefghijklmnopqrst")()
+# per default, we sort entries in a table by their id. Here we can specify any arbitrary
+# columns which should be used as sorting key for the table.
+sort_table_by = {
+    "ml.subscription_states": ["mailinglist_id", "persona_id"],
+    "ml.whitelist": ["mailinglist_id"],
+    "ml.moderators": ["mailinglist_id", "persona_id"],
+    "assembly.presiders": ["assembly_id", "persona_id"],
+    "assembly.attendees": ["assembly_id", "persona_id"],
+    "assembly.voter_register": ["ballot_id"],
+    "assembly.votes": ["ballot_id", "vote"],
+}
 
-core = make_backend("core", proxy=False)
+# mark some tables which shall not be filled with information extracted from the
+# database.
+ignored_tables = {
+    "core.sessions",
+    "core.quota",
+}
 
-# The following code was initially used to generate the list below.
-# However to preserve referential integrity, the order of the tables had to
-# be slightly adjusted, so we cannot keep the dynamic list of table.
+# mark some columns which shall not be filled with information extracted from the
+# database, meanly because they will be filled at runtime in create_sample_data_sql.py
+ignored_columns = {
+    "core.personas": {"fulltext"},
+}
 
-# query = "SELECT schemaname, tablename " \
-#         "FROM pg_catalog.pg_tables " \
-#         "WHERE schemaname != 'pg_catalog' " \
-#         "AND schemaname != 'information_schema'"
-# params = tuple()
-#
-# table_data = core.query_all(rs, query, params)
-#
-# tables = []
-# for table in table_data:
-#     tables.append(table["schemaname"] + "." + table["tablename"])
-#
-# # pprint(tables)
+# mark some columns which shall not be filled with information extracted from the
+# database, because they can be filled by sql automatically.
+implicit_columns = {
+    "core.log": {"id"},
+    "cde.finance_log": {"id"},
+    "cde.log": {"id"},
+    "past_event.participants": {"id"},
+    "past_event.log": {"id"},
+    "event.log": {"id"},
+    "assembly.presiders": {"id"},
+    "assembly.attendees": {"id"},
+    "assembly.voter_register": {"id"},
+    "assembly.votes": {"id"},
+    "assembly.log": {"id"},
+    "ml.subscription_states": {"id"},
+    "ml.subscription_addresses": {"id"},
+    "ml.whitelist": {"id"},
+    "ml.moderators": {"id"},
+    "ml.log": {"id"},
+}
 
-tables = [
-    'core.meta_info',
-    'core.cron_store',
-    'core.personas',
-    'core.changelog',
-    'core.privilege_changes',
-    'core.genesis_cases',
-    'core.sessions',
-    'core.quota',
-    'core.log',
-    'cde.org_period',
-    'cde.expuls_period',
-    'cde.lastschrift',
-    'cde.lastschrift_transactions',
-    'cde.finance_log',
-    'cde.log',
-    'past_event.institutions',
-    'past_event.events',
-    'past_event.courses',
-    'past_event.participants',
-    'past_event.log',
-    'event.events',
-    'event.orgas',
-    'event.field_definitions',
-    'event.questionnaire_rows',
-    'event.event_parts',
-    'event.course_tracks',
-    'event.courses',
-    'event.course_segments',
-    'event.lodgement_groups',
-    'event.lodgements',
-    'event.registrations',
-    'event.registration_parts',
-    'event.registration_tracks',
-    'event.course_choices',
-    'event.log',
-    'assembly.assemblies',
-    'assembly.attendees',
-    'assembly.ballots',
-    'assembly.candidates',
-    'assembly.attachments',
-    'assembly.votes',
-    'assembly.voter_register',
-    'assembly.log',
-    'ml.mailinglists',
-    'ml.moderators',
-    'ml.whitelist',
-    'ml.subscription_states',
-    'ml.subscription_addresses',
-    'ml.log',
-]
 
-query = "SELECT table_schema, table_name, column_name " \
-        "FROM information_schema.columns WHERE data_type = %s"
-params = ("jsonb",)
-data = core.query_all(rs, query, params)
+def dump_sql_data(rs: RequestState, core: CoreBackend
+                  ) -> Dict[str, List[Dict[str, Any]]]:
+    # extract the tables to be created from the database tables
+    with open("/cdedb2/cdedb/database/cdedb-tables.sql", "r") as f:
+        tables = [table.group('name')
+                  for table in re.finditer(r'CREATE TABLE\s(?P<name>\w+\.\w+)', f.read())]
 
-full_sample_data = {}
+    # take care that the order is preserved
+    full_sample_data = dict()
+    reference_frame = nearly_now(delta=datetime.timedelta(days=30))
 
-for table in tables:
-    entities = core.query_all(rs, f"SELECT * FROM {table} ORDER BY id", ())
-    print(f"{query:60} ==> {len(entities):3}", "" if entities else "!")
-    for entity in entities:
-        for field, value in entity.items():
-            if isinstance(value, datetime.datetime) and value == nearly_now():
-                entity[field] = "---now---"
-    full_sample_data[table] = entities
+    for table in tables:
+        order = ", ".join(sort_table_by.get(table, []) + ['id'])
+        query = f"SELECT * FROM {table} ORDER BY {order}"
+        entities = core.query_all(rs, query, ())
+        if table in ignored_tables:
+            entities = tuple()
+        print(f"{query:100} ==> {len(entities):3}", "" if entities else "!")
+        sorted_entities = list()
+        for entity in entities:
+            # take care that the order is preserved
+            sorted_entity: Dict[str, Any] = dict()
+            for field, value in entity.items():
+                if field in implicit_columns.get(table, {}):
+                    pass
+                elif field in ignored_columns.get(table, {}):
+                    sorted_entity[field] = None
+                elif isinstance(value, datetime.datetime) and value == reference_frame:
+                    sorted_entity[field] = "---now---"
+                else:
+                    sorted_entity[field] = value
+            sorted_entities.append(sorted_entity)
 
-with open("/cdedb2/sample_data.json", "w") as f:
-    json.dump(full_sample_data, f, cls=CustomJSONEncoder,
-              indent=4, ensure_ascii=False)
+        full_sample_data[table] = sorted_entities
+
+    return full_sample_data
+
+
+def main() -> None:
+    # Import output file location from commandline.
+    parser = argparse.ArgumentParser(
+        description="Generate a JSON-file from the current state of the database.")
+    parser.add_argument(
+        "-o", "--outfile", default="/tmp/sample_data.json")
+    args = parser.parse_args()
+
+    # Setup rs
+    rs = setup(1, "cdb_admin", "9876543210abcdefghijklmnopqrst")()
+    core = make_backend("core", proxy=False)
+
+    data = dump_sql_data(rs, core)
+
+    with open(args.outfile, "w") as f:
+        json.dump(data, f, cls=CustomJSONEncoder, indent=4, ensure_ascii=False)
+
+
+if __name__ == '__main__':
+    main()

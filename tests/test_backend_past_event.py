@@ -5,8 +5,8 @@ import datetime
 import pytz
 
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, xsorted
-from tests.common import BackendTest, as_users, nearly_now
+from cdedb.common import CdEDBObject, xsorted, nearly_now
+from tests.common import BackendTest, as_users
 
 
 class TestPastEventBackend(BackendTest):
@@ -47,7 +47,7 @@ class TestPastEventBackend(BackendTest):
 
             on more lines.""",
             'tempus': datetime.date(2000, 1, 1),
-            'notes': None,
+            'participant_info': None,
         }
         new_id = self.pastevent.create_past_event(self.key, data)
         data['id'] = new_id
@@ -157,6 +157,17 @@ class TestPastEventBackend(BackendTest):
         del expectation[(5, 1)]
         self.assertEqual(expectation,
                          self.pastevent.list_participants(self.key, pevent_id=1))
+
+    @as_users("vera")
+    def test_participant_consistency(self, user: CdEDBObject) -> None:
+        # See issue #1458
+        participants = self.pastevent.list_participants(self.key, pevent_id=1)
+        self.assertIn((3, None), participants)
+        self.pastevent.add_participant(self.key, pevent_id=1, pcourse_id=2,
+                                       persona_id=3)
+        participants = self.pastevent.list_participants(self.key, pevent_id=1)
+        self.assertNotIn((3, None), participants)
+        self.assertIn((3, 2), participants)
 
     @as_users("vera")
     def test_past_log(self, user: CdEDBObject) -> None:
@@ -279,7 +290,7 @@ class TestPastEventBackend(BackendTest):
             'title': 'Große Testakademie 2222 (Warmup)',
             'shortname': "TestAka (Wu)",
             'tempus': datetime.date(2003, 2, 2),
-            'notes': None, }
+            'participant_info': None, }
         self.assertEqual(expectation, pevent_data[0])
         expectation = {
             'description': 'Everybody come!',
@@ -288,7 +299,7 @@ class TestPastEventBackend(BackendTest):
             'title': 'Große Testakademie 2222 (Erste Hälfte)',
             'shortname': "TestAka (1.H.)",
             'tempus': datetime.date(2003, 11, 1),
-            'notes': None, }
+            'participant_info': None, }
         self.assertEqual(expectation, pevent_data[1])
         expectation = {
             'description': 'Everybody come!',
@@ -297,7 +308,7 @@ class TestPastEventBackend(BackendTest):
             'title': 'Große Testakademie 2222 (Zweite Hälfte)',
             'shortname': "TestAka (2.H.)",
             'tempus': datetime.date(2003, 11, 11),
-            'notes': None, }
+            'participant_info': None, }
         self.assertEqual(expectation, pevent_data[2])
         self.assertEqual(
             set(),

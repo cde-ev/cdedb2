@@ -10,7 +10,7 @@ This should be the only module which makes subsistantial use of psycopg.
 
 import logging
 from types import TracebackType
-from typing import Any, Collection, Mapping, NoReturn, Optional, Type, cast
+from typing import Any, Collection, Mapping, NoReturn, Optional, Type
 
 import psycopg2
 import psycopg2.extensions
@@ -52,8 +52,6 @@ def _create_connection(dbname: str, dbuser: str, password: str, port: int,
     :param isolation_level: Isolation level of database connection, a
         constant coming from :py:mod:`psycopg2.extensions`. This should be used
         very sparingly!
-    :type isolation_level: int
-    :rtype: :py:class:`IrradiatedConnection`
     :returns: open database connection
     """
     connection_parameters = {
@@ -63,11 +61,11 @@ def _create_connection(dbname: str, dbuser: str, password: str, port: int,
             "connection_factory": IrradiatedConnection,
             "cursor_factory": psycopg2.extras.RealDictCursor
     }
-    try: # TODO simply check if inside docker first
+    try:  # TODO simply check if inside docker first
         conn = psycopg2.connect(**connection_parameters, port=port)
-    except psycopg2.OperationalError as e: # Docker uses 5432/tcp instead of sockets
+    except psycopg2.OperationalError as e:  # Docker uses 5432/tcp instead of sockets
         if "Passwort-Authentifizierung" in e.args[0]:
-            raise # fail fast if wrong password is the problem
+            raise  # fail fast if wrong password is the problem - necessary for tests
         conn = psycopg2.connect(**connection_parameters, host="cdb", port=5432)
     conn.set_client_encoding("UTF8")
     conn.set_session(isolation_level)
@@ -91,16 +89,11 @@ def connection_pool_factory(dbname: str, roles: Collection[Role],
     The first implementation of this interface was a caching connection
     factory, which used crazy amounts of resources.
 
-    :type dbname: str
     :param roles: roles for which database connections shall be available
-    :type roles: [str]
     :param secrets: container for db passwords
-    :type secrets: :py:class:`cdedb.config.SecretsConfig`
-    :type port: int
     :param isolation_level: Isolation level of database connection, a
         constant coming from :py:mod:`psycopg2.extensions`. This should be used
         very sparingly!
-    :type isolation_level: int
     :returns: dict-like object with semantics {str :
                 :py:class:`IrradiatedConnection`}
     """

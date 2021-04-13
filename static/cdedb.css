@@ -240,10 +240,10 @@ h1.nosp,h2.nosp,h3.nosp,h4.nosp,h5.nosp {
     margin-top: 0;
 }
 h2.mosp {
-    margin-top: 40px;
+    margin-top: 30px;
 }
 h3.mosp {
-    margin-top: 30px;
+    margin-top: 24px;
 }
 label.nosp {
     margin-bottom: 0;
@@ -539,10 +539,21 @@ p.textbox {
     text-decoration: none;
 }
 
+code.result {
+    color: #0f0f0f;
+    background-color: #f5f5f5;
+}
+
 pre.result {
     display: inline-block;
     margin-bottom: 4px;
+    color: #0f0f0f;
+    background-color: #f5f5f5;
+}
+
+span.result-separator, code.result-separator {
     color: #c7254e;
+    background-color: #f5f5f5;
 }
 
 /* query form */
@@ -1050,6 +1061,9 @@ span.color-legend {
 }
 .clickable {
     cursor: pointer;
+}
+.dummy {
+    visibility: hidden;
 }
 ul.styleless {
     list-style: none;

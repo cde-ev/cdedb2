@@ -7,9 +7,10 @@ correct numeric values. The raw values should never be used, instead
 their symbolic names provided by this module should be used.
 """
 
-import datetime
 import enum
-from typing import Any, Dict, Set, Type
+from typing import Dict
+
+from cdedb.subman.machine import SubscriptionAction, SubscriptionState  # pylint: disable=unused-import # noqa
 
 
 def n_(x: str) -> str:
@@ -88,17 +89,6 @@ class FieldDatatypes(enum.IntEnum):
     date = 5  #:
     datetime = 6  #:
 
-    def to_type(self) -> Type[Any]:
-        type_associations = {
-            FieldDatatypes.str: str,
-            FieldDatatypes.bool: bool,
-            FieldDatatypes.int: int,
-            FieldDatatypes.float: float,
-            FieldDatatypes.date: datetime.date,
-            FieldDatatypes.datetime: datetime.datetime,
-        }
-        return type_associations[self]
-
 
 @enum.unique
 class QuestionnaireUsages(enum.IntEnum):
@@ -151,32 +141,6 @@ class PrivilegeChangeStati(enum.IntEnum):
 
 
 @enum.unique
-class SubscriptionStates(enum.IntEnum):
-    """Define the possible relations between user and mailinglist."""
-    #: The user is explicitly subscribed.
-    subscribed = 1
-    #: The user is explicitly unsubscribed (usually from an Opt-Out list).
-    unsubscribed = 2
-    #: The user was explicitly added by a moderator.
-    subscription_override = 10
-    #: The user was explicitly removed/blocked by a moderator.
-    unsubscription_override = 11
-    #: The user has requested a subscription to the mailinglist.
-    pending = 20
-    #: The user is subscribed by virtue of being part of some group.
-    implicit = 30
-
-    def is_subscribed(self) -> bool:
-        return self in self.subscribing_states()
-
-    @classmethod
-    def subscribing_states(cls) -> Set['SubscriptionStates']:
-        return {SubscriptionStates.subscribed,
-                SubscriptionStates.subscription_override,
-                SubscriptionStates.implicit}
-
-
-@enum.unique
 class MailinglistTypes(enum.IntEnum):
     member_mandatory = 1
     member_opt_out = 2
@@ -197,13 +161,18 @@ class MailinglistTypes(enum.IntEnum):
     assembly_opt_in = 31
     assembly_presider = 32
 
+    general_mandatory = 38
     general_opt_in = 40
+
+    general_moderators = 45
+    cdelokal_moderators = 46
 
     semi_public = 50
 
     cdelokal = 60
 
 
+@enum.unique
 class MailinglistDomain(enum.IntEnum):
     lists = 1
     aka = 2
@@ -221,10 +190,6 @@ class MailinglistDomain(enum.IntEnum):
             raise NotImplementedError(n_("This domain is not supported."))
         return _DOMAIN_STR_MAP[self]
 
-    @classmethod
-    def mailman_domains(cls) -> Set['MailinglistDomain']:
-        return {cls.lists, cls.aka, cls.general, cls.cdelokal, cls.testmail}
-
 
 # Instead of importing this, call str() on a MailinglistDomain.
 _DOMAIN_STR_MAP: Dict[MailinglistDomain, str] = {
@@ -234,25 +199,6 @@ _DOMAIN_STR_MAP: Dict[MailinglistDomain, str] = {
     MailinglistDomain.cdelokal: "cdelokal.cde-ev.de",
     MailinglistDomain.testmail: "testmail.cde-ev.de",
 }
-
-
-@enum.unique
-class MailinglistInteractionPolicy(enum.IntEnum):
-    """Regulate (un)subscriptions to mailinglists."""
-    #: user may subscribe
-    subscribable = 3
-    #: user may subscribe, but only after approval
-    moderated_opt_in = 4
-    #: user may not subscribe by themselves
-    invitation_only = 5
-    #: only implicit subscribers allowed
-    implicits_only = 6
-
-    def is_implicit(self) -> bool:
-        """Short-hand for
-        policy == const.MailinglistInteractionPolicy.implicits_only
-        """
-        return self == MailinglistInteractionPolicy.implicits_only
 
 
 @enum.unique
@@ -299,6 +245,9 @@ class CoreLogCodes(enum.IntEnum):
     """Available log messages core.log."""
     persona_creation = 1  #:
     persona_change = 2  #:
+    persona_archived = 3  #:
+    persona_dearchived = 4  #:
+    persona_purged = 5  #:
     password_change = 10  #:
     password_reset_cookie = 11  #:
     password_reset = 12  #:
@@ -313,6 +262,7 @@ class CoreLogCodes(enum.IntEnum):
     privilege_change_rejected = 32  #:
     realm_change = 40  #:
     username_change = 50  #:
+    quota_violation = 60  #:
 
 
 @enum.unique
@@ -326,6 +276,8 @@ class CdeLogCodes(enum.IntEnum):
     expuls_addresscheck = 20
     expuls_addresscheck_skipped = 21
     expuls_advance = 2
+    automated_archival_notification_done = 30
+    automated_archival_done = 31
 
 
 @enum.unique
@@ -447,13 +399,14 @@ class MlLogCodes(enum.IntEnum):
     moderator_removed = 11  #:
     whitelist_added = 12  #:
     whitelist_removed = 13  #:
-    subscription_requested = 20  #: SubscriptionStates.subscription_requested
-    subscribed = 21  #: SubscriptionStates.subscribed
+    subscription_requested = 20  #: SubscriptionState.subscription_requested
+    subscribed = 21  #: SubscriptionState.subscribed
     subscription_changed = 22  #: This is now used for address changes.
-    unsubscribed = 23  #: SubscriptionStates.unsubscribed
-    marked_override = 24  #: SubscriptionStates.subscription_override
-    marked_blocked = 25  #: SubscriptionStates.unsubscription_override
-    cron_removed = 28  #:
+    unsubscribed = 23  #: SubscriptionState.unsubscribed
+    marked_override = 24  #: SubscriptionState.subscription_override
+    marked_blocked = 25  #: SubscriptionState.unsubscription_override
+    reset = 27  #:
+    automatically_removed = 28  #:
     request_approved = 30  #:
     request_denied = 31  #:
     request_cancelled = 32  #:
@@ -462,3 +415,25 @@ class MlLogCodes(enum.IntEnum):
     moderate_accept = 50  #:
     moderate_reject = 51  #:
     moderate_discard = 52  #:
+
+    @classmethod
+    def from_subman(cls, action: SubscriptionAction) -> "MlLogCodes":
+        log_code_map = {
+            SubscriptionAction.subscribe: cls.subscribed,
+            SubscriptionAction.unsubscribe: cls.unsubscribed,
+            SubscriptionAction.request_subscription: cls.subscription_requested,
+            SubscriptionAction.cancel_request: cls.request_cancelled,
+            SubscriptionAction.approve_request: cls.request_approved,
+            SubscriptionAction.deny_request: cls.request_denied,
+            SubscriptionAction.block_request: cls.request_blocked,
+            SubscriptionAction.add_subscriber: cls.subscribed,
+            SubscriptionAction.add_subscription_override: cls.marked_override,
+            SubscriptionAction.add_unsubscription_override: cls.marked_blocked,
+            SubscriptionAction.remove_subscriber: cls.unsubscribed,
+            SubscriptionAction.remove_subscription_override: cls.subscribed,
+            SubscriptionAction.remove_unsubscription_override: cls.unsubscribed,
+            SubscriptionAction.reset: cls.reset,
+            SubscriptionAction.cleanup_subscription: cls.automatically_removed,
+            SubscriptionAction.cleanup_implicit: cls.automatically_removed,
+        }
+        return log_code_map[action]

@@ -31,9 +31,6 @@ def template_url(name: str) -> str:
 
     The handling of templates in mailman is a bit tricky involving a
     separate URI for each template which we construct here.
-
-    :type name: str
-    :rtype: str
     """
     return "https://db.cde-ev.de/mailman_templates/{}".format(name)
 
@@ -60,7 +57,10 @@ class MailmanMixin(MlBaseFrontend):
             'convert_html_to_plaintext': True,
             'dmarc_mitigate_action': 'wrap_message',
             'dmarc_mitigate_unconditionally': False,
-            'dmarc_wrapped_message_text': 'Nachricht wegen DMARC eingepackt.',
+            'dmarc_wrapped_message_text': (
+                "Diese Nachricht wurde mit modifizierter Senderadresse weitergeleitet,"
+                " da die DMARC-Sicherheitsrichtlinien des initialen Mailproviders"
+                " mit Maillinglisten inkompatibel sind."),
             'administrivia': True,
             'member_roster_visibility': 'moderators',
             'advertised': True,
@@ -178,7 +178,7 @@ The original message as received by Mailman is attached.
     def mailman_sync_list_subs(self, rs: RequestState, mailman: Client,
                                db_list: CdEDBObject,
                                mm_list: MailingList) -> None:
-        subscribing_states = const.SubscriptionStates.subscribing_states()
+        subscribing_states = const.SubscriptionState.subscribing_states()
         persona_ids = set(self.mlproxy.get_subscription_states(
             rs, db_list['id'], states=subscribing_states))
         db_addresses = self.mlproxy.get_subscription_addresses(
@@ -283,8 +283,8 @@ The original message as received by Mailman is attached.
         mailman = self.get_mailman()
         # noinspection PyBroadException
         try:
-            _ = mailman.system  # cause the client to connect
-        except Exception as e:  # sadly this throws many different exceptions
+            _ = mailman.system  # cause the client to connect # noqa
+        except Exception:  # sadly this throws many different exceptions
             self.logger.exception("Mailman client connection failed!")
             return store
         db_lists = self.mlproxy.get_mailinglists(

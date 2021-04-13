@@ -25,6 +25,14 @@
         <div class="p">
             {{ util.href(cdedblink("ml/create_mailinglist_form"), gettext("Create Mailinglist"), icon="plus",
                     aclass="btn btn-sm btn-success") }}
+            {% if "ml_admin" in user.roles %}
+                <form action="{{ cdedblink("ml/manually_write_subscription_states") }}" method="POST"
+                      id="writesubscriptionstates" style="display: inline;">
+                    {{ util.anti_csrf_token("ml/manually_write_subscription_states") }}
+                    {{ util.input_submit(label=gettext("Write Subscription States"), aclass="btn btn-sm btn-success",
+                            icon="sync-alt") }}
+                </form>
+            {% endif %}
         </div>
     {% endif %}
     <p>

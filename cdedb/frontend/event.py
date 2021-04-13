@@ -2,7 +2,6 @@
 
 """Services for the event realm."""
 
-import cgitb
 import collections.abc
 import copy
 import csv
@@ -15,11 +14,10 @@ import operator
 import pathlib
 import re
 import shutil
-import sys
 import tempfile
 from collections import Counter, OrderedDict
 from typing import (
-    Any, Callable, Collection, Dict, List, Mapping, NamedTuple, Optional, Sequence, Set,
+    Any, Callable, Collection, Dict, List, Mapping, NamedTuple, Optional, Set,
     Tuple, Union, cast,
 )
 
@@ -31,26 +29,30 @@ import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    DEFAULT_NUM_COURSE_CHOICES, EVENT_FIELD_SPEC, AgeClasses, CdEDBObject,
-    CdEDBObjectMap, CdEDBOptionalMap, CourseChoiceToolActions, CourseFilterPositions,
-    DefaultReturnCode, EntitySorter, Error, InfiniteEnum, KeyFunction,
-    LodgementsSortkeys, PartialImportError, RequestState, Sortkey, asciificator,
-    deduct_years, determine_age_class, diacritic_patterns, get_hash, glue,
+    DEFAULT_NUM_COURSE_CHOICES, EVENT_FIELD_SPEC, LOG_FIELDS_COMMON, AgeClasses,
+    CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap, CourseChoiceToolActions,
+    CourseFilterPositions, DefaultReturnCode, EntitySorter, Error, InfiniteEnum,
+    KeyFunction, LodgementsSortkeys, PartialImportError, RequestState, Sortkey,
+    asciificator, deduct_years, determine_age_class, diacritic_patterns, get_hash, glue,
     json_serialize, merge_dicts, mixed_existence_sorter, n_, now, unwrap, xsorted,
 )
 from cdedb.database.connection import Atomizer
 from cdedb.frontend.common import (
-    CustomCSVDialect, RequestConstraint, REQUESTdata, REQUESTdatadict, REQUESTfile,
-    access, calculate_db_logparams, calculate_loglinks, cdedbid_filter, cdedburl,
-    check_validation as check, check_validation_optional as check_optional,
-    enum_entries_filter, event_guard, keydictsort_filter, make_event_fee_reference,
-    process_dynamic_input, querytoparams_filter, request_extractor, safe_filter,
+    AbstractUserFrontend, CustomCSVDialect, RequestConstraint, REQUESTdata,
+    REQUESTdatadict, REQUESTfile, access, calculate_db_logparams, calculate_loglinks,
+    cdedbid_filter, cdedburl, check_validation as check,
+    check_validation_optional as check_optional, enum_entries_filter, event_guard,
+    keydictsort_filter, make_event_fee_reference, process_dynamic_input,
+    querytoparams_filter, request_extractor, safe_filter,
 )
-from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import (
     QUERY_SPECS, Query, QueryConstraint, QueryOperators, mangle_query_input,
 )
-from cdedb.validation import TypeMapping, validate_check
+from cdedb.validation import (
+    COURSE_COMMON_FIELDS, EVENT_EXPOSED_FIELDS, LODGEMENT_COMMON_FIELDS,
+    PERSONA_FULL_EVENT_CREATION, TypeMapping, filter_none, validate_check,
+)
+from cdedb.validationtypes import VALIDATOR_LOOKUP
 
 LodgementProblem = NamedTuple(
     "LodgementProblem", [("description", str), ("lodgement_id", int),
@@ -136,11 +138,7 @@ class EventFrontend(AbstractUserFrontend):
         return super().create_user_form(rs)
 
     @access("core_admin", "event_admin", modi={"POST"})
-    @REQUESTdatadict(
-        "title", "given_names", "family_name", "name_supplement",
-        "display_name", "gender", "birthday", "username", "telephone",
-        "mobile", "address", "address_supplement", "postal_code",
-        "location", "country", "notes")
+    @REQUESTdatadict(*filter_none(PERSONA_FULL_EVENT_CREATION))
     def create_user(self, rs: RequestState, data: CdEDBObject,
                     ignore_warnings: bool = False) -> Response:
         defaults = {
@@ -158,39 +156,42 @@ class EventFrontend(AbstractUserFrontend):
     def user_search(self, rs: RequestState, download: Optional[str],
                     is_search: bool) -> Response:
         """Perform search."""
-        spec = copy.deepcopy(QUERY_SPECS['qview_event_user'])
-        # mangle the input, so we can prefill the form
-        query_input = mangle_query_input(rs, spec)
-        query: Optional[Query] = None
-        if is_search:
-            query = check(rs, vtypes.QueryInput,
-                query_input, "query", spec=spec, allow_empty=False)
         events = self.pasteventproxy.list_past_events(rs)
         choices = {
             'pevent_id': OrderedDict(
-                sorted(events.items(), key=operator.itemgetter(0))),
+                xsorted(events.items(), key=operator.itemgetter(1))),
             'gender': OrderedDict(
                 enum_entries_filter(
                     const.Genders,
                     rs.gettext if download is None else rs.default_gettext))
         }
-        choices_lists = {k: list(v.items()) for k, v in choices.items()}
-        default_queries = self.conf["DEFAULT_QUERIES"]['qview_event_user']
-        params = {
-            'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
-            'default_queries': default_queries, 'query': query}
-        # Tricky logic: In case of no validation errors we perform a query
-        if not rs.has_validation_errors() and is_search and query:
-            query.scope = "qview_event_user"
-            result = self.eventproxy.submit_general_query(rs, query)
-            params['result'] = result
-            if download:
-                return self.send_query_download(
-                    rs, result, fields=query.fields_of_interest, kind=download,
-                    filename="user_search_result")
-        else:
-            rs.values['is_search'] = is_search = False
-        return self.render(rs, "user_search", params)
+        return self.generic_user_search(
+            rs, download, is_search, 'qview_event_user', 'qview_event_user',
+            self.eventproxy.submit_general_query, choices=choices)
+
+    @access("core_admin", "event_admin")
+    @REQUESTdata("download", "is_search")
+    def archived_user_search(self, rs: RequestState, download: Optional[str],
+                             is_search: bool) -> Response:
+        """Perform search.
+
+        Archived users are somewhat special since they are not visible
+        otherwise.
+        """
+        events = self.pasteventproxy.list_past_events(rs)
+        choices = {
+            'pevent_id': OrderedDict(
+                xsorted(events.items(), key=operator.itemgetter(1))),
+            'gender': OrderedDict(
+                enum_entries_filter(
+                    const.Genders,
+                    rs.gettext if download is None else rs.default_gettext))
+        }
+        return self.generic_user_search(
+            rs, download, is_search,
+            'qview_archived_past_event_user', 'qview_archived_persona',
+            self.eventproxy.submit_general_query, choices=choices,
+            endpoint="archived_user_search")
 
     @access("anonymous")
     def list_events(self, rs: RequestState) -> Response:
@@ -201,7 +202,21 @@ class EventFrontend(AbstractUserFrontend):
             for event in events.values():
                 regs = self.eventproxy.list_registrations(rs, event['id'])
                 event['registrations'] = len(regs)
-        return self.render(rs, "list_events", {'events': events})
+
+        def querylink(event_id: int) -> str:
+            query = Query(
+                "qview_registration",
+                self.make_registration_query_spec(events[event_id]),
+                ("persona.given_names", "persona.family_name"),
+                (),
+                (("persona.family_name", True), ("persona.given_names", True)))
+            params = querytoparams_filter(query)
+            params['is_search'] = True
+            params['event_id'] = event_id
+            return cdedburl(rs, 'event/registration_query', params)
+
+        return self.render(rs, "list_events",
+                           {'events': events, 'querylink': querylink})
 
     @access("anonymous")
     def show_event(self, rs: RequestState, event_id: int) -> Response:
@@ -248,22 +263,19 @@ class EventFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.redirect(rs, "event/show_event")
         if not (event_id in rs.user.orga or self.is_admin(rs)):
-            reg_list = self.eventproxy.list_registrations(
-                rs, event_id, persona_id=rs.user.persona_id)
-            if not reg_list:
-                rs.notify("warning", n_("Not registered for event."))
-                return self.redirect(rs, "event/show_event")
-            registration_id = unwrap(reg_list.keys())
-            registration = self.eventproxy.get_registration(rs, registration_id)
-            parts = registration['parts']
-            list_consent = registration['list_consent']
-            participant = const.RegistrationPartStati.participant
-            if all(parts[part]['status'] != participant for part in parts):
-                rs.notify("warning", n_("No participant of event."))
+            assert rs.user.persona_id is not None
+            if not self.eventproxy.check_registration_status(
+                    rs, rs.user.persona_id, event_id,
+                    {const.RegistrationPartStati.participant}):
+                rs.notify('warning', n_("No participant of event."))
                 return self.redirect(rs, "event/show_event")
             if not rs.ambience['event']['is_participant_list_visible']:
                 rs.notify("error", n_("Participant list not published yet."))
                 return self.redirect(rs, "event/show_event")
+            reg_list = self.eventproxy.list_registrations(rs, event_id,
+                                                          rs.user.persona_id)
+            registration = self.eventproxy.get_registration(rs, unwrap(reg_list.keys()))
+            list_consent = registration['list_consent']
         else:
             list_consent = True
 
@@ -362,6 +374,18 @@ class EventFrontend(AbstractUserFrontend):
         }
 
     @access("event")
+    def participant_info(self, rs: RequestState, event_id: int) -> Response:
+        """Display the `participant_info`, accessible only to participants."""
+        if not (event_id in rs.user.orga or self.is_admin(rs)):
+            assert rs.user.persona_id is not None
+            if not self.eventproxy.check_registration_status(
+                    rs, rs.user.persona_id, event_id,
+                    {const.RegistrationPartStati.participant}):
+                rs.notify('warning', n_("No participant of event."))
+                return self.redirect(rs, "event/show_event")
+        return self.render(rs, "participant_info")
+
+    @access("event")
     @event_guard()
     def change_event_form(self, rs: RequestState, event_id: int) -> Response:
         """Render form."""
@@ -395,15 +419,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdatadict(
-        "title", "institution", "description", "shortname",
-        "registration_start", "registration_soft_limit",
-        "registration_hard_limit", "iban", "orga_address", "registration_text",
-        "mail_text", "use_additional_questionnaire", "notes", "lodge_field",
-        "camping_mat_field", "is_visible", "is_course_list_visible",
-        "is_course_state_visible", "is_participant_list_visible",
-        "courses_in_participant_list", "is_cancelled", "course_room_field",
-        "nonmember_surcharge")
+    @REQUESTdatadict(*EVENT_EXPOSED_FIELDS)
     def change_event(self, rs: RequestState, event_id: int, data: CdEDBObject
                      ) -> Response:
         """Modify an event organized via DB."""
@@ -436,7 +452,7 @@ class EventFrontend(AbstractUserFrontend):
     @REQUESTfile("minor_form")
     @REQUESTdata("delete")
     def change_minor_form(self, rs: RequestState, event_id: int,
-                          minor_form: werkzeug.FileStorage, delete: bool
+                          minor_form: werkzeug.datastructures.FileStorage, delete: bool
                           ) -> Response:
         """Replace the form for parental agreement for minors.
 
@@ -501,6 +517,10 @@ class EventFrontend(AbstractUserFrontend):
                                  orgalist: bool = False) -> Response:
         """Create a default mailinglist for the event."""
         if rs.has_validation_errors():
+            return self.redirect(rs, "event/show_event")
+        if not rs.ambience['event']['orgas']:
+            rs.notify('error',
+                      n_("Must have orgas in order to create a mailinglist."))
             return self.redirect(rs, "event/show_event")
 
         ml_data = self._get_mailinglist_setter(rs.ambience['event'], orgalist)
@@ -589,10 +609,6 @@ class EventFrontend(AbstractUserFrontend):
 
         Since this covers a variable number of rows, we cannot do this
         statically. This takes care of validation too.
-
-        :type rs: :py:class:`FrontendRequestState`
-        :type has_registrations: bool
-        :rtype: {int: {str: object}}
         """
         parts = rs.ambience['event']['parts']
         fee_modifiers = rs.ambience['event']['fee_modifiers']
@@ -716,8 +732,8 @@ class EventFrontend(AbstractUserFrontend):
         )))
 
         # noinspection PyRedundantParentheses
-        def track_constraint_maker(part_id: int, track_id: int
-                                   ) -> RequestConstraint:
+        def track_constraint_maker(part_id: int, track_id: int) -> RequestConstraint:
+            # pylint: disable=redefined-builtin
             min = "track_min_choices_{}_{}".format(part_id, track_id)
             num = "track_num_choices_{}_{}".format(part_id, track_id)
             msg = n_("Must be less or equal than total Course Choices.")
@@ -965,7 +981,7 @@ class EventFrontend(AbstractUserFrontend):
         referenced = set()
         fee_modifiers = set()
         full_questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
-        for k, v in full_questionnaire.items():
+        for v in full_questionnaire.values():
             for row in v:
                 if row['field_id']:
                     referenced.add(row['field_id'])
@@ -978,7 +994,7 @@ class EventFrontend(AbstractUserFrontend):
         for mod in rs.ambience['event']['fee_modifiers'].values():
             referenced.add(mod['field_id'])
             fee_modifiers.add(mod['field_id'])
-        for part_id, part in rs.ambience['event']['parts'].items():
+        for part in rs.ambience['event']['parts'].values():
             if part['waitlist_field']:
                 referenced.add(part['waitlist_field'])
         return self.render(rs, "field_summary", {
@@ -997,6 +1013,7 @@ class EventFrontend(AbstractUserFrontend):
         deletes = {field_id for field_id in fields
                    if delete_flags['delete_{}'.format(field_id)]}
         ret: CdEDBOptionalMap = {}
+
         def params_a(anid: int) -> TypeMapping:
             return {
                 f"kind_{anid}": const.FieldDatatypes,
@@ -1019,6 +1036,7 @@ class EventFrontend(AbstractUserFrontend):
         for field_id in deletes:
             ret[field_id] = None
         marker = 1
+
         def params_b(anid: int) -> TypeMapping:
             return {
                 f"field_name_-{anid}": str,
@@ -1144,9 +1162,7 @@ class EventFrontend(AbstractUserFrontend):
     @access("event_admin", modi={"POST"})
     @REQUESTdata("part_begin", "part_end", "orga_ids", "create_track",
                  "create_orga_list", "create_participant_list")
-    @REQUESTdatadict(
-        "title", "institution", "description", "shortname",
-        "iban", "nonmember_surcharge", "notes")
+    @REQUESTdatadict(*EVENT_EXPOSED_FIELDS)
     def create_event(self, rs: RequestState, part_begin: datetime.date,
                      part_end: datetime.date, orga_ids: vtypes.CdedbIDList,
                      create_track: bool, create_orga_list: bool,
@@ -1247,8 +1263,7 @@ class EventFrontend(AbstractUserFrontend):
             registrations = {
                 k: v
                 for k, v in all_registrations.items()
-                if any(track['course_id'] == course_id
-                       or track['course_instructor'] == course_id
+                if any(course_id in {track['course_id'], track['course_instructor']}
                        for track in v['tracks'].values())
             }
             personas = self.coreproxy.get_personas(
@@ -1293,8 +1308,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdatadict("title", "description", "nr", "shortname", "instructors",
-                     "max_size", "min_size", "notes")
+    @REQUESTdatadict(*COURSE_COMMON_FIELDS)
     @REQUESTdata("segments", "active_segments")
     def change_course(self, rs: RequestState, event_id: int, course_id: int,
                       segments: Collection[int],
@@ -1306,7 +1320,7 @@ class EventFrontend(AbstractUserFrontend):
         data['active_segments'] = active_segments
         field_params: TypeMapping = {
             f"fields.{field['field_name']}": Optional[  # type: ignore
-                const.FieldDatatypes(field['kind']).to_type()]
+                VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]
             for field in rs.ambience['event']['fields'].values()
             if field['association'] == const.FieldAssociations.course
         }
@@ -1336,8 +1350,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdatadict("title", "description", "nr", "shortname", "instructors",
-                     "max_size", "min_size", "notes")
+    @REQUESTdatadict(*COURSE_COMMON_FIELDS)
     @REQUESTdata("segments")
     def create_course(self, rs: RequestState, event_id: int,
                       segments: Collection[int], data: CdEDBObject) -> Response:
@@ -1346,7 +1359,7 @@ class EventFrontend(AbstractUserFrontend):
         data['segments'] = segments
         field_params: TypeMapping = {
             f"fields.{field['field_name']}": Optional[  # type: ignore
-                const.FieldDatatypes(field['kind']).to_type()]
+                VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]
             for field in rs.ambience['event']['fields'].values()
             if field['association'] == const.FieldAssociations.course
         }
@@ -1831,8 +1844,8 @@ class EventFrontend(AbstractUserFrontend):
         course_infos = {}
         reg_part = lambda registration, track_id: \
             registration['parts'][tracks[track_id]['part_id']]
-        for course_id, course in courses.items():
-            for track_id in tracks:
+        for course_id, course in courses.items():  # pylint: disable=redefined-argument-from-local
+            for track_id in tracks:  # pylint: disable=redefined-argument-from-local
                 assigned = sum(
                     1 for reg in all_regs.values()
                     if reg_part(reg, track_id)['status'] == stati.participant
@@ -2113,13 +2126,8 @@ class EventFrontend(AbstractUserFrontend):
 
         We test for fitness of the data itself.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type datum: {str: object}
-        :type expected_fees: {int: decimal.Decimal}
-        :type full_payment: bool
         :param full_payment: If True, only write the payment date if the fee
             was paid in full.
-        :rtype: {str: object}
         :returns: The processed input datum.
         """
         event = rs.ambience['event']
@@ -2207,9 +2215,6 @@ class EventFrontend(AbstractUserFrontend):
                   ) -> Tuple[bool, Optional[int]]:
         """Book all paid fees.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type data: [{str: object}]
-        :rtype: bool, int
         :returns: Success information and
 
           * for positive outcome the number of recorded transfers
@@ -2246,10 +2251,7 @@ class EventFrontend(AbstractUserFrontend):
                 "<<<\n<<<\n<<<\n<<<"))
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
-            try:
-                self.logger.error(cgitb.text(sys.exc_info(), context=7))
-            except Exception:
-                pass
+            self.cgitb_log()
             return False, index
         if send_notifications:
             persona_ids = tuple(e['persona_id'] for e in data)
@@ -2273,7 +2275,7 @@ class EventFrontend(AbstractUserFrontend):
     @REQUESTdata("force", "fee_data", "checksum", "send_notifications", "full_payment")
     def batch_fees(self, rs: RequestState, event_id: int, force: bool,
                    fee_data: Optional[str],
-                   fee_data_file: Optional[werkzeug.FileStorage],
+                   fee_data_file: Optional[werkzeug.datastructures.FileStorage],
                    checksum: Optional[str], send_notifications: bool,
                    full_payment: bool) -> Response:
         """Allow orgas to add lots paid of participant fee at once."""
@@ -2798,11 +2800,14 @@ class EventFrontend(AbstractUserFrontend):
         courses = self.eventproxy.get_courses(rs, course_ids)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        lodgement_group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
+        lodgement_groups = self.eventproxy.get_lodgement_groups(rs, lodgement_group_ids)
 
         spec = self.make_registration_query_spec(rs.ambience['event'])
         fields_of_interest = list(spec.keys())
         choices, _ = self.make_registration_query_aux(
-            rs, rs.ambience['event'], courses, lodgements, fixed_gettext=True)
+            rs, rs.ambience['event'], courses, lodgements, lodgement_groups,
+            fixed_gettext=True)
         query = Query('qview_registration', spec, fields_of_interest, [], [])
         result = self.eventproxy.submit_general_query(
             rs, query, event_id=event_id)
@@ -2885,7 +2890,7 @@ class EventFrontend(AbstractUserFrontend):
     @REQUESTfile("json_file")
     @REQUESTdata("partial_import_data", "token")
     def partial_import(self, rs: RequestState, event_id: int,
-                       json_file: Optional[werkzeug.FileStorage],
+                       json_file: Optional[werkzeug.datastructures.FileStorage],
                        partial_import_data: Optional[str], token: Optional[str]
                        ) -> Response:
         """Further steps of partial import process
@@ -3322,7 +3327,8 @@ class EventFrontend(AbstractUserFrontend):
 
         f = lambda entry: rs.ambience['event']['fields'][entry['field_id']]
         params: TypeMapping = {
-            f(entry)['field_name']: const.FieldDatatypes(f(entry)['kind']).to_type()
+            f(entry)['field_name']: VALIDATOR_LOOKUP[
+                const.FieldDatatypes(f(entry)['kind']).name]
             for entry in reg_questionnaire
             if entry['field_id'] and not entry['readonly']
         }
@@ -3697,7 +3703,7 @@ class EventFrontend(AbstractUserFrontend):
         f = lambda entry: rs.ambience['event']['fields'][entry['field_id']]
         params: TypeMapping = {
             f(entry)['field_name']: Optional[  # type: ignore
-                const.FieldDatatypes(f(entry)['kind']).to_type()]
+                VALIDATOR_LOOKUP[const.FieldDatatypes(f(entry)['kind']).name]]
             for entry in add_questionnaire
             if entry['field_id'] and not entry['readonly']
         }
@@ -3727,7 +3733,6 @@ class EventFrontend(AbstractUserFrontend):
         :param num: number of rows to expect
         :param reg_fields: Available fields
         :param kind: For which kind of questionnaire are these rows?
-        :rtype: [{str: object}]
         """
         del_flags = request_extractor(rs, {f"delete_{i}": bool for i in range(num)})
         deletes = {i for i in range(num) if del_flags['delete_{}'.format(i)]}
@@ -3826,9 +3831,6 @@ class EventFrontend(AbstractUserFrontend):
         ``proxy.set_questionnaire(proxy.get_questionnaire())`` fails since
         the retrieval method provides additional information which not
         settable and thus filtered by this method.
-
-        :type row: {str: object}
-        :rtype: {str: object}
         """
         whitelist = ('field_id', 'title', 'info', 'input_size', 'readonly',
                      'default_value', 'kind')
@@ -3990,20 +3992,13 @@ class EventFrontend(AbstractUserFrontend):
         values to extract depends on the event. This puts less restrictions
         on the input (like not requiring different course choices).
 
-        :type rs: :py:class:`FrontendRequestState`
-        :type event: {str: object}
         :param do_fields: Process custom fields of the registration(s)
-        :type do_fields: bool
         :param check_enabled: Check if the "enable" checkboxes, corresponding
                               to the fields are set. This is required for the
                               multiedit page.
-        :type check_enabled: bool
         :param skip: A list of field names to be entirely skipped
-        :type skip: [str]
         :param do_real_persona_id: Process the `real_persona_id` field. Should
                                    only be done when CDEDB_OFFLINE_DEPLOYMENT
-        :type do_real_persona_id: bool
-        :rtype: {str: object}
         :returns: registration data set
         """
 
@@ -4049,7 +4044,7 @@ class EventFrontend(AbstractUserFrontend):
             })
         field_params: TypeMapping = {
             f"fields.{field['field_name']}": Optional[  # type: ignore
-                const.FieldDatatypes(field['kind']).to_type()]
+                VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]
             for field in event['fields'].values()
             if field['association'] == const.FieldAssociations.registration
         }
@@ -4218,8 +4213,6 @@ class EventFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.show_registration(rs, event_id, registration_id)
 
-        blockers = self.eventproxy.delete_registration_blockers(
-            rs, registration_id)
         # maybe exclude some blockers
         code = self.eventproxy.delete_registration(
             rs, registration_id, {"registration_parts", "registration_tracks",
@@ -4294,7 +4287,7 @@ class EventFrontend(AbstractUserFrontend):
                        if key in r['fields']}
             # If none of the registration has a value for this field yet, we
             # consider them equal
-            if len(present) == 0:
+            if not present:
                 reg_values['enable_fields.{}'.format(key)] = True
             # If all registrations have a value, we have to compare them
             elif len(present) == len(registrations):
@@ -4422,12 +4415,6 @@ class EventFrontend(AbstractUserFrontend):
         """Un-inlined code to examine the current lodgements of an event for
         spots with room for improvement.
 
-        :type event: {str: object}
-        :type lodgements: {int: {str: object}}
-        :type registrations: {int: {str: object}}
-        :type personas: {int: {str: object}}
-        :type inhabitants: {(int, int): [int]}
-        :rtype: [(str, int, int, [int], int)]
         :returns: problems as five-tuples of (problem description, lodgement
           id, part id, affected registrations, severeness).
         """
@@ -4568,7 +4555,7 @@ class EventFrontend(AbstractUserFrontend):
             problems_here = [p for p in problems
                              if p[1] == lodgement_id and p[2] == part_id]
             problems_condensed[(lodgement_id, part_id)] = (
-                max(p[4] for p in problems_here) if len(problems_here) else 0,
+                max(p[4] for p in problems_here) if problems_here else 0,
                 "; ".join(rs.gettext(p[0]) for p in problems_here),)
 
         # Calculate groups
@@ -4645,7 +4632,7 @@ class EventFrontend(AbstractUserFrontend):
                 (lodgement_id, lodgement)
                 for lodgement_id, lodgement
                 in xsorted(lodgements.items(), reverse=reverse,
-                           key=lambda e: sort_lodgement(e, group_id))
+                           key=lambda e: sort_lodgement(e, group_id))  # pylint: disable=cell-var-from-loop
                 if lodgement['group_id'] == group_id
             ]))
             for group_id, group
@@ -4765,15 +4752,14 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdatadict("title", "regular_capacity", "camping_mat_capacity",
-                     "group_id", "notes")
+    @REQUESTdatadict(*LODGEMENT_COMMON_FIELDS)
     def create_lodgement(self, rs: RequestState, event_id: int,
                          data: CdEDBObject) -> Response:
         """Add a new lodgement."""
         data['event_id'] = event_id
         field_params: TypeMapping = {
             f"fields.{field['field_name']}": Optional[  # type: ignore
-                const.FieldDatatypes(field['kind']).to_type()]
+                VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]
             for field in rs.ambience['event']['fields'].values()
             if field['association'] == const.FieldAssociations.lodgement
         }
@@ -4805,8 +4791,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdatadict("title", "regular_capacity", "camping_mat_capacity",
-                     "notes", "group_id")
+    @REQUESTdatadict(*LODGEMENT_COMMON_FIELDS)
     def change_lodgement(self, rs: RequestState, event_id: int,
                          lodgement_id: int, data: CdEDBObject) -> Response:
         """Alter the attributes of a lodgement.
@@ -4816,7 +4801,7 @@ class EventFrontend(AbstractUserFrontend):
         data['id'] = lodgement_id
         field_params: TypeMapping = {
             f"fields.{field['field_name']}": Optional[  # type: ignore
-                const.FieldDatatypes(field['kind']).to_type()]
+                VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]
             for field in rs.ambience['event']['fields'].values()
             if field['association'] == const.FieldAssociations.lodgement
         }
@@ -4972,7 +4957,7 @@ class EventFrontend(AbstractUserFrontend):
                 changed_inhabitant = (
                         reg_id in current_inhabitants[part_id]
                         and data.get(f"camping_mat_capacity_{part_id}_{reg_id}",
-                                     False)!= is_camping_mat)
+                                     False) != is_camping_mat)
                 if new_inhabitant or deleted_inhabitant:
                     new_reg['parts'][part_id] = {
                         'lodgement_id': (
@@ -5129,8 +5114,9 @@ class EventFrontend(AbstractUserFrontend):
                                                 EntitySorter.event_part):
             spec["part{0}.status".format(part_id)] = "int"
             spec["part{0}.is_camping_mat".format(part_id)] = "bool"
-            spec["part{0}.lodgement_id".format(part_id)] = "int"
+            spec["part{0}.lodgement_id".format(part_id)] = "id"
             spec["lodgement{0}.id".format(part_id)] = "id"
+            spec["lodgement{0}.group_id".format(part_id)] = "id"
             spec["lodgement{0}.title".format(part_id)] = "str"
             spec["lodgement{0}.notes".format(part_id)] = "str"
             for f in xsorted(event['fields'].values(),
@@ -5139,6 +5125,8 @@ class EventFrontend(AbstractUserFrontend):
                     temp = "lodgement{0}.xfield_{1}"
                     kind = const.FieldDatatypes(f['kind']).name
                     spec[temp.format(part_id, f['field_name'])] = kind
+            spec["lodgement_group{0}.id".format(part_id)] = "id"
+            spec["lodgement_group{0}.title".format(part_id)] = "str"
             ordered_tracks = keydictsort_filter(
                 part['tracks'], EntitySorter.course_track)
             for track_id, track in ordered_tracks:
@@ -5170,12 +5158,18 @@ class EventFrontend(AbstractUserFrontend):
             spec[",".join("part{0}.is_camping_mat".format(part_id)
                           for part_id in event['parts'])] = "bool"
             spec[",".join("part{0}.lodgement_id".format(part_id)
-                          for part_id in event['parts'])] = "int"
+                          for part_id in event['parts'])] = "id"
             spec[",".join("lodgement{0}.id".format(part_id)
+                          for part_id in event['parts'])] = "id"
+            spec[",".join("lodgement{0}.group_id".format(part_id)
                           for part_id in event['parts'])] = "id"
             spec[",".join("lodgement{0}.title".format(part_id)
                           for part_id in event['parts'])] = "str"
             spec[",".join("lodgement{0}.notes".format(part_id)
+                          for part_id in event['parts'])] = "str"
+            spec[",".join("lodgement_group{0}.id".format(part_id)
+                          for part_id in event['parts'])] = "id"
+            spec[",".join("lodgement_group{0}.title".format(part_id)
                           for part_id in event['parts'])] = "str"
             for f in xsorted(event['fields'].values(),
                              key=EntitySorter.event_field):
@@ -5228,6 +5222,7 @@ class EventFrontend(AbstractUserFrontend):
     def make_registration_query_aux(rs: RequestState, event: CdEDBObject,
                                     courses: CdEDBObjectMap,
                                     lodgements: CdEDBObjectMap,
+                                    lodgement_groups: CdEDBObjectMap,
                                     fixed_gettext: bool = False
                                     ) -> Tuple[Dict[str, Dict[int, str]],
                                                Dict[str, str]]:
@@ -5254,6 +5249,11 @@ class EventFrontend(AbstractUserFrontend):
             (l_id, lodge_identifier(l))
             for l_id, l in keydictsort_filter(lodgements,
                                               EntitySorter.lodgement))
+        lodgement_group_identifier = lambda g: g["title"]
+        lodgement_group_choices = OrderedDict(
+            (g_id, lodgement_group_identifier(g))
+            for g_id, g in keydictsort_filter(lodgement_groups,
+                                              EntitySorter.lodgement_group))
         # First we construct the choices
         choices: Dict[str, Dict[int, str]] = {
             # Genders enum
@@ -5285,6 +5285,7 @@ class EventFrontend(AbstractUserFrontend):
                 "part{0}.status".format(part_id): reg_part_stati_choices,
                 # Lodgement choices for the JS selector
                 "part{0}.lodgement_id".format(part_id): lodgement_choices,
+                "lodgement{0}.group_id".format(part_id): lodgement_group_choices,
             })
             if not fixed_gettext:
                 # Lodgement fields value -> description
@@ -5312,12 +5313,16 @@ class EventFrontend(AbstractUserFrontend):
                     for field in course_fields.values():
                         key = f"{temp}{track_id}.xfield_{field['field_name']}"
                         if field['entries']:
-                            choices[key]= OrderedDict(field['entries'])
+                            choices[key] = OrderedDict(field['entries'])
         if len(event['parts']) > 1:
             choices.update({
                 # RegistrationPartStati enum
                 ",".join("part{0}.status".format(part_id)
                          for part_id in event['parts']): reg_part_stati_choices,
+                ",".join("part{0}.lodgement_id".format(part_id)
+                         for part_id in event['parts']): lodgement_choices,
+                ",".join("lodgement{0}.group_id".format(part_id)
+                         for part_id in event['parts']): lodgement_group_choices,
             })
         if len(tracks) > 1:
             choices[",".join(f"course_choices{track_id}.rank{i}"
@@ -5467,10 +5472,16 @@ class EventFrontend(AbstractUserFrontend):
                     prefix + gettext("lodgement"),
                 "lodgement{0}.id".format(part_id):
                     prefix + gettext("lodgement ID"),
+                "lodgement{0}.group_id".format(part_id):
+                    prefix + gettext("lodgement group"),
                 "lodgement{0}.title".format(part_id):
                     prefix + gettext("lodgement title"),
                 "lodgement{0}.notes".format(part_id):
                     prefix + gettext("lodgement notes"),
+                "lodgement_group{0}.id".format(part_id):
+                    prefix + gettext("lodgement group ID"),
+                "lodgement_group{0}.title".format(part_id):
+                    prefix + gettext("lodgement group title"),
             })
             key = "lodgement{0}.xfield_{1}"
             titles.update({
@@ -5493,12 +5504,21 @@ class EventFrontend(AbstractUserFrontend):
                 ",".join("lodgement{0}.id".format(part_id)
                          for part_id in event['parts']):
                     gettext("any part: lodgement ID"),
+                ",".join("lodgement{0}.group_id".format(part_id)
+                         for part_id in event['parts']):
+                    gettext("any part: lodgement group"),
                 ",".join("lodgement{0}.title".format(part_id)
                          for part_id in event['parts']):
                     gettext("any part: lodgement title"),
                 ",".join("lodgement{0}.notes".format(part_id)
                          for part_id in event['parts']):
                     gettext("any part: lodgement notes"),
+                ",".join("lodgement_group{0}.id".format(part_id)
+                         for part_id in event['parts']):
+                    gettext("any part: lodgement group ID"),
+                ",".join("lodgement_group{0}.title".format(part_id)
+                         for part_id in event['parts']):
+                    gettext("any part: lodgement group title"),
             })
             key = "lodgement{0}.xfield_{1}"
             titles.update({
@@ -5532,8 +5552,10 @@ class EventFrontend(AbstractUserFrontend):
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        lodgement_group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
+        lodgement_groups = self.eventproxy.get_lodgement_groups(rs, lodgement_group_ids)
         choices, titles = self.make_registration_query_aux(
-            rs, rs.ambience['event'], courses, lodgements,
+            rs, rs.ambience['event'], courses, lodgements, lodgement_groups,
             fixed_gettext=download is not None)
         choices_lists = {k: list(v.items()) for k, v in choices.items()}
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
@@ -5604,13 +5626,7 @@ class EventFrontend(AbstractUserFrontend):
         """
 
         tracks = event['tracks']
-
-        if fixed_gettext:
-            gettext = rs.default_gettext
-            enum_gettext = lambda x: x.name
-        else:
-            gettext = rs.gettext
-            enum_gettext = rs.gettext
+        gettext = rs.default_gettext if fixed_gettext else rs.gettext
 
         # Construct choices.
         course_identifier = lambda c: "{}. {}".format(c["nr"], c["shortname"])
@@ -5758,14 +5774,9 @@ class EventFrontend(AbstractUserFrontend):
             function. True means static, False means localized.
         :returns: Choices for select inputs and titles for columns.
         """
-        parts = event['parts']
 
-        if fixed_gettext:
-            gettext = rs.default_gettext
-            enum_gettext = lambda x: x.name
-        else:
-            gettext = rs.gettext
-            enum_gettext = rs.gettext
+        parts = event['parts']
+        gettext = rs.default_gettext if fixed_gettext else rs.gettext
 
         # Construct choices.
         lodgement_choices = OrderedDict(
@@ -6104,13 +6115,13 @@ class EventFrontend(AbstractUserFrontend):
         if ids is None:
             ids = cast(vtypes.IntCSVList, [])
 
-        entities, ordered_ids, _, field = self.field_set_aux(
+        entities, _, _, field = self.field_set_aux(
             rs, event_id, field_id, ids, kind)
         assert field is not None  # to make mypy happy
 
         data_params: TypeMapping = {
             f"input{anid}": Optional[  # type: ignore
-                const.FieldDatatypes(field['kind']).to_type()]
+                VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]
             for anid in entities
         }
         data = request_extractor(rs, data_params)
@@ -6184,7 +6195,7 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard()
     @REQUESTfile("json")
     def unlock_event(self, rs: RequestState, event_id: int,
-                     json: werkzeug.FileStorage) -> Response:
+                     json: werkzeug.datastructures.FileStorage) -> Response:
         """Unlock an event after offline usage and incorporate the offline
         changes."""
         data = check(rs, vtypes.SerializedEventUpload, json)
@@ -6448,7 +6459,7 @@ class EventFrontend(AbstractUserFrontend):
         if len(result) == 1:
             return self.redirect(rs, "event/show_registration",
                                  {'registration_id': result[0]['id']})
-        elif len(result) > 0:
+        elif result:
             # TODO make this accessible
             pass
         base_query = Query(
@@ -6475,7 +6486,7 @@ class EventFrontend(AbstractUserFrontend):
             if len(result) == 1:
                 return self.redirect(rs, "event/show_registration",
                                      {'registration_id': result[0]['id']})
-            elif len(result) > 0:
+            elif result:
                 params = querytoparams_filter(query)
                 return self.redirect(rs, "event/registration_query",
                                      params)
@@ -6483,8 +6494,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.show_event(rs, event_id)
 
     @access("event_admin")
-    @REQUESTdata("codes", "event_id", "persona_id", "submitted_by",
-                 "change_note", "offset", "length", "time_start", "time_stop")
+    @REQUESTdata(*LOG_FIELDS_COMMON, "event_id")
     def view_log(self, rs: RequestState, codes: Collection[const.EventLogCodes],
                  event_id: Optional[vtypes.ID], offset: Optional[int],
                  length: Optional[vtypes.PositiveInt],
@@ -6518,13 +6528,12 @@ class EventFrontend(AbstractUserFrontend):
         loglinks = calculate_loglinks(rs, total, offset, length)
         return self.render(rs, "view_log", {
             'log': log, 'total': total, 'length': _length,
-            'personas': personas, 'events': events,'all_events': all_events,
+            'personas': personas, 'events': events, 'all_events': all_events,
             'registration_map': registration_map, 'loglinks': loglinks})
 
     @access("event")
     @event_guard()
-    @REQUESTdata("codes", "persona_id", "submitted_by", "change_note", "offset",
-                 "length", "time_start", "time_stop")
+    @REQUESTdata(*LOG_FIELDS_COMMON)
     def view_event_log(self, rs: RequestState,
                        codes: Collection[const.EventLogCodes],
                        event_id: int, offset: Optional[int],

@@ -3,7 +3,7 @@
 import copy
 import re
 import urllib.parse
-from typing import Dict
+from typing import Dict, Optional
 
 import webtest
 
@@ -113,29 +113,28 @@ class TestCoreFrontend(FrontendTest):
     @as_users("annika", "martin", "nina", "vera", "werner")
     def test_sidebar(self, user: CdEDBObject) -> None:
         self.assertTitle("CdE-Datenbank")
-        everyone = ["Index", "Übersicht", "Meine Daten",
-                    "Administratorenübersicht"]
-        genesis = ["Accountanfragen"]
-        core_admin = ["Nutzer verwalten", "Archivsuche", "Änderungen prüfen",
-                      "Account-Log", "Nutzerdaten-Log", "Metadaten"]
-        meta_admin = ["Admin-Änderungen"]
+        everyone = {"Index", "Übersicht", "Meine Daten", "Administratorenübersicht"}
+        genesis = {"Accountanfragen"}
+        core_admin = {"Nutzer verwalten", "Archivsuche", "Änderungen prüfen",
+                      "Account-Log", "Nutzerdaten-Log", "Metadaten"}
+        meta_admin = {"Admin-Änderungen"}
 
         # admin of a realm without genesis cases
         if user == USER_DICT['werner']:
             ins = everyone
-            out = genesis + core_admin + meta_admin
+            out = genesis | core_admin | meta_admin
         # admin of a realm with genesis cases
         elif user in [USER_DICT['annika'], USER_DICT['nina']]:
-            ins = everyone + genesis
-            out = core_admin + meta_admin
+            ins = everyone | genesis
+            out = core_admin | meta_admin
         # core admin
         elif user == USER_DICT['vera']:
-            ins = everyone + genesis + core_admin
+            ins = everyone | genesis | core_admin
             out = meta_admin
         # meta admin
         elif user == USER_DICT['martin']:
-            ins = everyone + meta_admin
-            out = genesis + core_admin
+            ins = everyone | meta_admin
+            out = genesis | core_admin
         else:
             self.fail("Please adjust users for this tests.")
 
@@ -175,6 +174,12 @@ class TestCoreFrontend(FrontendTest):
                  "END:VCARD"]
         for line in vcard:
             self.assertIn(line, self.response.text)
+
+    @as_users("vera")
+    def test_vcard_cde_admin(self, user: CdEDBObject) -> None:
+        self.admin_view_profile('charly')
+        self.assertTitle("Charly C. Clown")
+        self.traverse({'description': 'VCard'})
 
     @as_users("vera")
     def test_toggle_admin_views(self, user: CdEDBObject) -> None:
@@ -278,6 +283,10 @@ class TestCoreFrontend(FrontendTest):
         expectation = (1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 13, 14)
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
+        self.get('/core/persona/select?kind=pure_ml_user&phrase=@exam')
+        expectation = (10, 14)
+        reality = tuple(e['id'] for e in self.response.json['personas'])
+        self.assertEqual(expectation, reality)
         self.get('/core/persona/select?kind=event_user&phrase=bert')
         expectation = (2,)
         reality = tuple(e['id'] for e in self.response.json['personas'])
@@ -311,6 +320,10 @@ class TestCoreFrontend(FrontendTest):
             self.assertTitle('403: Forbidden')
         if user['display_name'] in {"Martin", "Rowena"}:
             self.get('/core/persona/select?kind=ml_user&phrase=@exam',
+                     status=403)
+            self.assertTitle('403: Forbidden')
+        if user['display_name'] != "Nina":
+            self.get('/core/persona/select?kind=pure_ml_user&phrase=@exam',
                      status=403)
             self.assertTitle('403: Forbidden')
         if user['display_name'] not in {"Annika", "Bertå"}:
@@ -455,7 +468,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
         f['location2'] = "Hyrule"
-        f['country2'] = "Arcadia"
+        f['country2'] = "AR"
         f['specialisation'] = "Okarinas"
         self.submit(f)
         self.assertTitle("{} {}".format(user['given_names'], user['family_name']))
@@ -1136,7 +1149,7 @@ class TestCoreFrontend(FrontendTest):
     @as_users("berta")
     def test_reset_foto(self, user: CdEDBObject) -> None:
         self.traverse({'description': user['display_name']},)
-        foto_hash = self.sample_data['core.personas'][user['id']]['foto']
+        foto_hash = self.get_sample_datum('core.personas', user['id'])['foto']
         self.assertIn(f'foto/{foto_hash}', self.response.text)
         self.traverse({'description': 'Profilbild ändern'})
         f = self.response.forms['resetfotoform']
@@ -1220,9 +1233,12 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Hades Hell")
         self.assertPresence("Der Benutzer ist archiviert.", div='archived')
 
-    @as_users("vera")
+    @as_users("paul", "quintus")
     def test_archive_user(self, user: CdEDBObject) -> None:
-        self.admin_view_profile('charly')
+        if user['id'] == USER_DICT["paul"]['id']:
+            self.admin_view_profile('charly')
+        else:
+            self.realm_admin_view_profile('charly', realm='cde')
         self.assertTitle("Charly C. Clown")
         self.assertNonPresence("Der Benutzer ist archiviert.")
         self.assertPresence("Zirkusstadt", div='address')
@@ -1501,7 +1517,7 @@ class TestCoreFrontend(FrontendTest):
         self.admin_view_profile("vera")
         self.traverse({'description': 'Bearbeiten \\(normal\\)'})
         f = self.response.forms['changedataform']
-        f['postal_code'] = "ABC-123"
+        f['postal_code'] = "11111"
         self.assertNonPresence("Warnungen ignorieren")
         self.submit(f, check_notification=False)
         self.assertPresence("Ungültige Postleitzahl")
@@ -1526,8 +1542,10 @@ class TestCoreFrontend(FrontendTest):
         f['notes'] = "for testing"
         f['birthday'] = "2000-01-01"
         f['address'] = "Auf dem Hügel"
-        f['postal_code'] = "ABC-123"
+        # invalid postal code according to validationdata
+        f['postal_code'] = "11111"
         f['location'] = "Überall"
+        f['country'] = "DE"
         self.assertNonPresence("Warnungen ignorieren")
         self.submit(f, check_notification=False)
         self.assertPresence("Ungültige Postleitzahl")
@@ -1552,9 +1570,12 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesiseventapprovalform']
         self.submit(f)
 
-    def _genesis_request(self, data: CdEDBObject) -> None:
-        self.get('/')
-        self.traverse({'description': 'Account anfordern'})
+    def _genesis_request(self, data: CdEDBObject, realm: Optional[str] = None) -> None:
+        if realm:
+            self.get('/core/genesis/request?realm=' + realm)
+        else:
+            self.get('/')
+            self.traverse({'description': 'Account anfordern'})
         self.assertTitle("Account anfordern")
         f = self.response.forms['genesisform']
         for field, entry in data.items():
@@ -1566,16 +1587,16 @@ class TestCoreFrontend(FrontendTest):
         self.get(link)
         self.follow()
 
-    ML_GENESIS_DATA: CdEDBObject = {
+    ML_GENESIS_DATA_NO_REALM: CdEDBObject = {
         'given_names': "Zelda", 'family_name': "Zeruda-Hime",
-        'username': "zelda@example.cde", 'notes': "Gimme!", 'realm': "ml"
-    }
+        'username': "zelda@example.cde", 'notes': "Gimme!"}
+    ML_GENESIS_DATA: CdEDBObject = {**ML_GENESIS_DATA_NO_REALM, 'realm': "ml"}
 
     EVENT_GENESIS_DATA = ML_GENESIS_DATA.copy()
     EVENT_GENESIS_DATA.update({
         'realm': "event", 'gender': const.Genders.female.value,
         'birthday': "1987-06-05", 'address': "An der Eiche", 'postal_code': "12345",
-        'location': "Marcuria", 'country': "Arkadien"
+        'location': "Marcuria", 'country': "AQ"
     })
 
     CDE_GENESIS_DATA = EVENT_GENESIS_DATA.copy()
@@ -1654,7 +1675,7 @@ class TestCoreFrontend(FrontendTest):
 
     def test_genesis_ml(self) -> None:
         user = USER_DICT['vera']
-        self._genesis_request(self.ML_GENESIS_DATA)
+        self._genesis_request(self.ML_GENESIS_DATA_NO_REALM, realm='ml')
         self.login(user)
         self.traverse({'description': 'Accountanfrage'})
         self.assertTitle("Accountanfragen")
@@ -1865,11 +1886,11 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesisform']
         for field, entry in self.EVENT_GENESIS_DATA.items():
             f[field] = entry
-        f['country'] = ""
+        f['country'] = "DE"
         f['postal_code'] = "Z-12345"
         self.submit(f, check_notification=False)
         self.assertPresence("Ungültige Postleitzahl.")
-        f['country'] = "Arkadien"
+        f['country'] = "AQ"
         self.submit(f)
 
     def test_genesis_birthday(self) -> None:
@@ -1917,10 +1938,10 @@ class TestCoreFrontend(FrontendTest):
         f['address'] = "An der Eiche"
         f['postal_code'] = "12345"
         f['location'] = "Marcuria"
-        f['country'] = "Arkadien"
+        f['country'] = "AQ"
         self.submit(f)
         self.assertPresence("An der Eiche", div='address')
-        self.assertPresence("Arkadien", div='address')
+        self.assertPresence("Antarktis", div='address')
 
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['genesismodifyform']
@@ -1953,6 +1974,12 @@ class TestCoreFrontend(FrontendTest):
             "username": "anton@example.cde",
         })
         self.get('/core/api/resolve', status=403)
+
+    @as_users("janis")
+    def test_markdown_endpoint(self, user: CdEDBObject) -> None:
+        self.post('/core/markdown/parse', {'md_str': '**bold** <script></script>'})
+        expectation = "<p><strong>bold</strong> &lt;script&gt;&lt;/script&gt;</p>"
+        self.assertEqual(expectation, self.response.text)
 
     def test_log(self) -> None:
         user = USER_DICT['vera']

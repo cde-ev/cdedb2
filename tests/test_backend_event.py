@@ -14,10 +14,10 @@ import cdedb.database.constants as const
 from cdedb.backend.common import cast_fields
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, InfiniteEnum, PartialImportError, PrivilegeError,
-    CourseFilterPositions,
+    CourseFilterPositions, nearly_now
 )
 from cdedb.query import QUERY_SPECS, Query, QueryOperators
-from tests.common import USER_DICT, BackendTest, as_users, json_keys_to_int, nearly_now
+from tests.common import USER_DICT, BackendTest, as_users, json_keys_to_int
 
 
 class TestEventBackend(BackendTest):
@@ -55,6 +55,13 @@ class TestEventBackend(BackendTest):
             'nonmember_surcharge': decimal.Decimal("6.66"),
             'registration_text': None,
             'mail_text': None,
+            'participant_info': """Welcome to our
+
+            **new**
+            and
+            _fancy_
+
+            academy! :)""",
             'use_additional_questionnaire': False,
             'notes': None,
             'orgas': {2, 7},
@@ -127,7 +134,7 @@ class TestEventBackend(BackendTest):
         data['offline_lock'] = False
         data['is_archived'] = False
         data['is_participant_list_visible'] = False
-        data['courses_in_participant_list'] = False
+        data['is_course_assignment_visible'] = False
         data['is_course_list_visible'] = False
         data['is_course_state_visible'] = False
         data['is_cancelled'] = False
@@ -331,7 +338,7 @@ class TestEventBackend(BackendTest):
         new_lodgement = {
             'regular_capacity': 42,
             'event_id': new_id,
-            'title': 'Hyrule',
+            'title': 'HY',
             'notes': "Notizen",
             'camping_mat_capacity': 11,
             'group_id': new_group_id,
@@ -598,6 +605,7 @@ class TestEventBackend(BackendTest):
         self.event.set_registration(self.key, update_registration)
         data = self.event.get_registration(self.key, reg_id)
         expectation = {
+            'anzahl_GROSSBUCHSTABEN': 4,
             'arrival': datetime.datetime(2222, 11, 9, 8, 55, 44, tzinfo=pytz.utc),
             'lodge': 'Die üblichen Verdächtigen :)',
             'is_child': False,
@@ -788,6 +796,7 @@ class TestEventBackend(BackendTest):
             'checkin': None,
             'event_id': 1,
             'fields': {
+                'anzahl_GROSSBUCHSTABEN': 3,
                 'brings_balls': True,
                 'transportation': 'pedes',
                 'is_child': False,
@@ -948,6 +957,7 @@ class TestEventBackend(BackendTest):
                 'checkin': None,
                 'event_id': 1,
                 'fields': {
+                    'anzahl_GROSSBUCHSTABEN': 4,
                     'lodge': 'Die üblichen Verdächtigen :)',
                     'is_child': False,
                 },
@@ -997,6 +1007,7 @@ class TestEventBackend(BackendTest):
                 'checkin': None,
                 'event_id': 1,
                 'fields': {
+                    'anzahl_GROSSBUCHSTABEN': 3,
                     'brings_balls': True,
                     'transportation': 'pedes',
                     'is_child': False,
@@ -1047,6 +1058,7 @@ class TestEventBackend(BackendTest):
                 'checkin': None,
                 'event_id': 1,
                 'fields': {
+                    'anzahl_GROSSBUCHSTABEN': 2,
                     'brings_balls': False,
                     'may_reserve': True,
                     'transportation': 'etc',
@@ -1295,7 +1307,7 @@ class TestEventBackend(BackendTest):
         new_lodgement: CdEDBObject = {
             'regular_capacity': 42,
             'event_id': 1,
-            'title': 'Hyrule',
+            'title': 'HY',
             'notes': "Notizen",
             'camping_mat_capacity': 11,
             'group_id': new_group_id,
@@ -1358,7 +1370,7 @@ class TestEventBackend(BackendTest):
         new = {
             'regular_capacity': 42,
             'event_id': 1,
-            'title': 'Hyrule',
+            'title': 'HY',
             'notes': "Notizen",
             'camping_mat_capacity': 11,
             'group_id': None,
@@ -1381,7 +1393,7 @@ class TestEventBackend(BackendTest):
             2: 'Kalte Kammer',
             3: 'Kellerverlies',
             4: 'Einzelzelle',
-            new_id: 'Hyrule',
+            new_id: 'HY',
         }
         self.assertEqual(expectation_list,
                          self.event.list_lodgements(self.key, event_id))
@@ -3211,7 +3223,7 @@ class TestEventBackend(BackendTest):
         new = {
             'regular_capacity': 42,
             'event_id': 1,
-            'title': 'Hyrule',
+            'title': 'HY',
             'notes': "Notizen",
             'camping_mat_capacity': 11,
             'group_id': None,
@@ -3463,21 +3475,21 @@ class TestEventBackend(BackendTest):
              'persona_id': 9,
              'submitted_by': user['id']},
             {'id': 1028,
-             'change_note': 'Hyrule',
+             'change_note': 'HY',
              'code': 26,
              'ctime': nearly_now(),
              'event_id': 1,
              'persona_id': None,
              'submitted_by': user['id']},
             {'id': 1029,
-             'change_note': 'Hyrule',
+             'change_note': 'HY',
              'code': 25,
              'ctime': nearly_now(),
              'event_id': 1,
              'persona_id': None,
              'submitted_by': user['id']},
             {'id': 1030,
-             'change_note': 'Hyrule',
+             'change_note': 'HY',
              'code': 27,
              'ctime': nearly_now(),
              'event_id': 1,

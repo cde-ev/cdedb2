@@ -2,11 +2,9 @@
 
 """The WSGI-application to tie it all together."""
 
-import cgitb
 import gettext
 import json
 import pathlib
-import sys
 import types
 from typing import Any, Callable, Dict, Optional, Set
 
@@ -18,6 +16,7 @@ import werkzeug.routing
 import werkzeug.wrappers
 
 from cdedb.backend.assembly import AssemblyBackend
+from cdedb.backend.core import CoreBackend
 from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.session import SessionBackend
@@ -47,6 +46,7 @@ class Application(BaseApp):
 
     def __init__(self, configpath: PathLike = None) -> None:
         super().__init__(configpath)
+        self.coreproxy = make_proxy(CoreBackend(configpath))
         self.eventproxy = make_proxy(EventBackend(configpath))
         self.mlproxy = make_proxy(MlBackend(configpath))
         self.assemblyproxy = make_proxy(AssemblyBackend(configpath))
@@ -157,9 +157,7 @@ class Application(BaseApp):
         user = User()
         try:
             sessionkey = request.cookies.get("sessionkey")
-            # TODO remove ml script key backwards compatibility code
-            apitoken = (request.headers.get("X-CdEDB-API-Token")
-                        or request.headers.get("MLSCRIPTKEY"))
+            apitoken = request.headers.get("X-CdEDB-API-Token")
             urls = self.urlmap.bind_to_environ(request.environ)
 
             if apitoken:
@@ -192,7 +190,7 @@ class Application(BaseApp):
                     fake_rs.user = user
                     notifications = json.dumps([
                         self.encode_notification(fake_rs,  # type: ignore
-                                                    "error", n_("Session expired."))])
+                                                 "error", n_("Session expired."))])
                     ret.set_cookie("displaynote", notifications)
                     return ret
 
@@ -236,7 +234,7 @@ class Application(BaseApp):
                     # Do nothing if we fail to handle a notification,
                     # they can be manipulated by the client side, so
                     # we can not assume anything.
-                    pass
+                    self.logger.debug(f"Invalid raw notification '{raw_notifications}'")
             handler = getattr(getattr(self, component), action)
             if request.method not in handler.modi:
                 raise werkzeug.exceptions.MethodNotAllowed(
@@ -281,21 +279,25 @@ class Application(BaseApp):
             try:
                 ret = handler(rs, **args)
                 if rs.validation_appraised is False:
-                    raise RuntimeError("Input validation forgotten.")
+                    raise RuntimeError(f"Input validation forgotten: {handler}")
                 return ret
+            except QuotaException as e:
+                # Handle this earlier, since it needs database access.
+                # Beware that this means that quota violations will only be logged if
+                # they happen through the frontend.
+                self.coreproxy.log_quota_violation(rs)
+                return self.make_error_page(
+                    e, request, user,
+                    n_("You reached the internal limit for user profile views. "
+                       "This is a privacy feature to prevent users from cloning "
+                       "the address database. Unfortunatetly, this may also yield "
+                       "some false positive restrictions. Your limit will be "
+                       "reset in the next days."))
             finally:
                 # noinspection PyProtectedMember
                 rs._conn.commit()
                 # noinspection PyProtectedMember
                 rs._conn.close()
-        except QuotaException as e:
-            return self.make_error_page(
-                e, request, user,
-                n_("You reached the internal limit for user profile views. "
-                   "This is a privacy feature to prevent users from cloning "
-                   "the address database. Unfortunatetly, this may also yield "
-                   "some false positive restrictions. Your limit will be "
-                   "reset in the next days."))
         except werkzeug.routing.RequestRedirect as e:
             return e.get_response(request.environ)
         except werkzeug.exceptions.HTTPException as e:
@@ -314,8 +316,8 @@ class Application(BaseApp):
                 "<<<\n<<<\n<<<\n<<<").format(request.url))
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
-            
-            self.logger.error(cgitb.text(sys.exc_info(), context=7))
+
+            self.cgitb_log()
 
             # Raise exceptions when in TEST environment to let the test runner
             # catch them.
@@ -324,8 +326,8 @@ class Application(BaseApp):
 
             # debug output if applicable
             if self.conf["CDEDB_DEV"]:
-                return Response(cgitb.html(sys.exc_info(), context=7),
-                                mimetype="text/html", status=500)
+                return self.cgitb_html()
+
             # generic errors
             # TODO add original_error after upgrading to werkzeug 1.0
             return self.make_error_page(

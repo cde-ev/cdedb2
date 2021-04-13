@@ -16,7 +16,6 @@ import os
 import pathlib
 import re
 import subprocess
-import signal
 import sys
 import tempfile
 import time
@@ -30,7 +29,6 @@ from typing import (
 )
 
 import PIL.Image
-import pytz
 import webtest
 import webtest.utils
 
@@ -44,7 +42,7 @@ from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.common import (
     ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, CdEDBObject, CdEDBObjectMap, PathLike,
-    PrivilegeError, RequestState, n_, now, roles_to_db_role,
+    PrivilegeError, RequestState, n_, nearly_now, now, roles_to_db_role, merge_dicts,
 )
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -53,8 +51,10 @@ from cdedb.frontend.application import Application
 from cdedb.frontend.common import AbstractFrontend
 from cdedb.frontend.cron import CronFrontend
 from cdedb.query import QueryOperators
+from cdedb.script import setup
 
 _BASICCONF = BasicConfig()
+_SECRETSCONF = SecretsConfig()
 
 ExceptionInfo = Union[
     Tuple[Type[BaseException], BaseException, TracebackType],
@@ -64,7 +64,6 @@ ExceptionInfo = Union[
 # This is to be used in place of `self.key` for anonymous requests. It makes mypy happy.
 ANONYMOUS = cast(RequestState, None)
 
-
 def check_test_setup() -> None:
     """Raise a RuntimeError if the vm is ill-equipped for performing tests."""
     if pathlib.Path("/OFFLINEVM").exists():
@@ -73,29 +72,6 @@ def check_test_setup() -> None:
         raise RuntimeError("Cannot run tests in Production-VM.")
     if not os.environ.get('CDEDB_TEST'):
         raise RuntimeError("Not configured for test (CDEDB_TEST unset).")
-
-
-class NearlyNow(datetime.datetime):
-    """This is something, that equals an automatically generated timestamp.
-
-    Since automatically generated timestamp are not totally predictible,
-    we use this to avoid nasty work arounds.
-    """
-
-    def __eq__(self, other: Any) -> bool:
-        if isinstance(other, datetime.datetime):
-            delta = self - other
-            return (datetime.timedelta(minutes=10) > delta
-                    > datetime.timedelta(minutes=-10))
-        return False
-
-    def __ne__(self, other: Any) -> bool:
-        return not self.__eq__(other)
-
-    @classmethod
-    def from_datetime(cls, datetime: datetime.datetime) -> "NearlyNow":
-        ret = cls.fromisoformat(datetime.isoformat())
-        return ret
 
 
 def create_mock_image(file_type: str = "png") -> bytes:
@@ -108,14 +84,6 @@ def create_mock_image(file_type: str = "png") -> bytes:
     image.save(afile, file_type)
     afile.seek(0)
     return afile.read()
-
-
-def nearly_now() -> NearlyNow:
-    """Create a NearlyNow."""
-    now = datetime.datetime.now(pytz.utc)
-    return NearlyNow(
-        year=now.year, month=now.month, day=now.day, hour=now.hour,
-        minute=now.minute, second=now.second, tzinfo=pytz.utc)
 
 
 T = TypeVar("T")
@@ -164,6 +132,7 @@ def read_sample_data(filename: PathLike = "/cdedb2/tests/ancillary_files/"
         ret[table] = data
     return ret
 
+SAMPLE_DATA = read_sample_data()
 
 B = TypeVar("B", bound=AbstractBackend)
 
@@ -242,8 +211,7 @@ def make_backend_shim(backend: B, internal: bool = False) -> B:
                 getattr(attr, "internal", False) and not internal,
                 not callable(attr)
             ]):
-                raise PrivilegeError(
-                    n_("Attribute %(name)s not public"), {"name": name})
+                raise PrivilegeError(f"Attribute {name} not public")
 
             @functools.wraps(attr)
             def wrapper(key: Optional[str], *args: Any, **kwargs: Any) -> Any:
@@ -347,18 +315,11 @@ class MyTextTestResult(unittest.TextTestResult):
 class BasicTest(unittest.TestCase):
     """Provide some basic useful test functionalities."""
     testfile_dir = pathlib.Path("/tmp/cdedb-store/testfiles")
-    _clean_sample_data: ClassVar[Dict[str, CdEDBObjectMap]]
     conf: ClassVar[Config]
 
     @classmethod
     def setUpClass(cls) -> None:
-        # Keep a clean copy of sample data that should not be messed with.
-        cls._clean_sample_data = read_sample_data()
         cls.conf = Config()
-
-    def setUp(self) -> None:
-        # Provide a fresh copy of clean sample data.
-        self.sample_data = copy.deepcopy(self._clean_sample_data)
 
     def get_sample_data(self, table: str, ids: Iterable[int],
                         keys: Iterable[str]) -> CdEDBObjectMap:
@@ -386,7 +347,7 @@ class BasicTest(unittest.TestCase):
             if keys:
                 r = {}
                 for k in keys:
-                    r[k] = copy.deepcopy(self.sample_data[table][anid][k])
+                    r[k] = copy.deepcopy(SAMPLE_DATA[table][anid][k])
                     if table == 'core.personas':
                         if k == 'balance':
                             r[k] = decimal.Decimal(r[k])
@@ -397,23 +358,40 @@ class BasicTest(unittest.TestCase):
                         r[k] = parse_datetime(r[k])
                 ret[anid] = r
             else:
-                ret[anid] = copy.deepcopy(self.sample_data[table][anid])
+                ret[anid] = copy.deepcopy(SAMPLE_DATA[table][anid])
         return ret
+
+    def get_sample_datum(self, table: str, id_: int) -> CdEDBObject:
+        return self.get_sample_data(table, [id_], [])[id_]
 
 
 class CdEDBTest(BasicTest):
     """Reset the DB for every test."""
     testfile_dir = pathlib.Path("/tmp/cdedb-store/testfiles")
-    _clean_sample_data: ClassVar[Dict[str, CdEDBObjectMap]]
-    conf: ClassVar[Config]
 
     def setUp(self) -> None:
         # Start the call in a new session, so that a SIGINT does not interrupt this.
-        subprocess.check_call(("make", "sample-data-test-shallow"),
+        subprocess.check_call(("make", "storage-test"),
                               stdout=subprocess.DEVNULL,
                               stderr=subprocess.DEVNULL,
                               start_new_session=True)
-        super(CdEDBTest, self).setUp()
+        with setup(
+            persona_id=-1,
+            dbuser="cdb",
+            dbpassword=_SECRETSCONF["CDB_DATABASE_ROLES"]["cdb"],
+            dbname=self.conf["CDB_DATABASE_NAME"],
+            check_system_user=False,
+        )().conn as conn:
+            conn.set_session(autocommit=True)
+            with conn.cursor() as curr:
+                with open("tests/ancillary_files/clean_data.sql") as f:
+                    sql_input = f.read()
+                curr.execute(sql_input)
+                with open("tests/ancillary_files/sample_data.sql") as f:
+                    sql_input = f.read()
+                curr.execute(sql_input)
+
+        super().setUp()
 
 
 UserIdentifier = Union[CdEDBObject, str, int]
@@ -457,6 +435,11 @@ class BackendTest(CdEDBTest):
         self.key = cast(RequestState, self.core.login(
             ANONYMOUS, user['username'], user['password'], ip))
         return self.key  # type: ignore
+
+    @staticmethod
+    def is_user(user: UserIdentifier, identifier: UserIdentifier) -> bool:
+        # TODO: go through all tests and make use of this
+        return get_user(user)["id"] == get_user(identifier)["id"]
 
     @staticmethod
     def initialize_raw_backend(backendcls: Type[SessionBackend]
@@ -1090,12 +1073,15 @@ class FrontendTest(BackendTest):
         else:
             self.assertIn(s.strip(), normalized)
 
-    def assertNonPresence(self, s: str, *, div: str = "content",
+    def assertNonPresence(self, s: Optional[str], *, div: str = "content",
                           check_div: bool = True) -> None:
         """Assert that a string is not present in the element with the given id.
 
         :param check_div: If True, this assertion fails if the div is not found.
         """
+        if s is None:
+            # Allow short-circuiting via dict.get()
+            return
         if self.response.content_type == "text/plain":
             self.assertNotIn(s.strip(), self.response.text)
         else:
@@ -1314,10 +1300,11 @@ class FrontendTest(BackendTest):
             log_code_str = self.gettext(str(log_code))  # type: ignore
             self.assertPresence(log_code_str, div=f"{index}-{log_id}")
 
-    def check_sidebar(self, ins: Collection[str], out: Collection[str]) -> None:
+    def check_sidebar(self, ins: Set[str], out: Set[str]) -> None:
         """Helper function to check the (in)visibility of sidebar elements.
 
-        Raise an error if an element is in the sidebar and not in ins.
+        Raise an error if an element is in the sidebar and not in ins or
+        if an element is in the sidebar and in out.
 
         :param ins: elements which are in the sidebar
         :param out: elements which are not in the sidebar
@@ -1334,6 +1321,73 @@ class FrontendTest(BackendTest):
         if present:
             raise AssertionError(
                 f"Unexpected sidebar elements '{present}' found.")
+
+    def check_create_archive_user(self, realm: str, data: CdEDBObject = None) -> None:
+        """Basic check for the user creation and archival functionality of each realm.
+
+        :param data: realm-dependent data to use for the persona to be created
+        """
+        if data is None:
+            data = {}
+
+        def _check_deleted_data() -> None:
+            assert data is not None
+            self.assertNonPresence(data['username'])
+            self.assertNonPresence(data.get('location'))
+            self.assertNonPresence(data.get('address'))
+            self.assertNonPresence(data.get('postal_code'))
+            self.assertNonPresence(data.get('telephone'))
+            self.assertNonPresence(data.get('country'))
+
+        self.traverse({'href': '/' + realm + '/$'},
+                      {'href': '/search/user'},
+                      {'href': '/user/create'})
+        merge_dicts(data, {
+            "username": 'zelda@example.cde',
+            "given_names": "Zelda",
+            "family_name": "Zeruda-Hime",
+            "display_name": 'Zelda',
+            "notes": "some fancy talk",
+        })
+        f = self.response.forms['newuserform']
+        if f.get('country', default=None):
+            self.assertEqual(f['country'].value, self.conf["DEFAULT_COUNTRY"])
+        for key, value in data.items():
+            f.set(key, value)
+        self.submit(f)
+        self.assertTitle("Zelda Zeruda-Hime")
+        for key, value in data.items():
+            if key not in {'birthday', 'telephone', 'mobile', 'country', 'country2'}:
+                # Omitt values with heavy formatting in the frontend here
+                self.assertPresence(value)
+        # Now test archival
+        # 1. Archive user
+        f = self.response.forms['archivepersonaform']
+        f['ack_delete'].checked = True
+        f['note'] = "Archived for testing."
+        self.submit(f)
+        self.assertTitle("Zelda Zeruda-Hime")
+        self.assertPresence("Der Benutzer ist archiviert.", div='archived')
+        _check_deleted_data()
+        # 2. Find user via archived search
+        self.traverse({'href': '/' + realm + '/$'})
+        self.traverse({'description': 'Archivsuche'})
+        self.assertTitle("Archivsuche")
+        f = self.response.forms['queryform']
+        f['qop_given_names'] = QueryOperators.match.value
+        f['qval_given_names'] = 'Zelda'
+        self.submit(f)
+        self.assertTitle("Archivsuche")
+        self.assertPresence("Ergebnis [1]", div='query-results')
+        self.assertPresence("Zeruda", div='query-result')
+        self.traverse({'description': 'Profil', 'href': '/core/persona/1001/show'})
+        # 3: Dearchive user
+        self.assertTitle("Zelda Zeruda-Hime")
+        self.assertPresence("Der Benutzer ist archiviert.", div='archived')
+        f = self.response.forms['dearchivepersonaform']
+        self.submit(f)
+        self.assertTitle("Zelda Zeruda-Hime")
+        _check_deleted_data()
 
     def _click_admin_view_button(self, label: Union[str, Pattern[str]],
                                  current_state: bool = None) -> None:
@@ -1460,9 +1514,9 @@ def make_cron_backend_proxy(cron: CronFrontend, backend: B) -> B:
     return cast(B, CronBackendProxy())
 
 
-class CronTest(unittest.TestCase):
-    _all_periodics: Set[str]
-    _run_periodics: Set[str]
+class CronTest(CdEDBTest):
+    _remaining_periodics: Set[str]
+    _remaining_tests: Set[str]
     cron: ClassVar[CronFrontend]
     core: ClassVar[CoreBackend]
     cde: ClassVar[CdEBackend]
@@ -1478,31 +1532,32 @@ class CronTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        super().setUpClass()
         cls.cron = CronFrontend()
         cls.core = make_cron_backend_proxy(cls.cron, cls.cron.core.coreproxy)
         cls.cde = make_cron_backend_proxy(cls.cron, cls.cron.core.cdeproxy)
         cls.event = make_cron_backend_proxy(cls.cron, cls.cron.core.eventproxy)
         cls.assembly = make_cron_backend_proxy(cls.cron, cls.cron.core.assemblyproxy)
         cls.ml = make_cron_backend_proxy(cls.cron, cls.cron.core.mlproxy)
-        cls._all_periodics = {
+        cls._remaining_periodics = {
             job.cron['name']
             for frontend in (cls.cron.core, cls.cron.cde, cls.cron.event,
                              cls.cron.assembly, cls.cron.ml)
             for job in cls.cron.find_periodics(frontend)
         }
-        cls._run_periodics = set()
+        cls._remaining_tests = {x for x in dir(cls) if x.startswith("test_")}
 
     @classmethod
     def tearDownClass(cls) -> None:
-        if (any(job not in cls._run_periodics for job in cls._all_periodics)
-                and not os.environ.get('CDEDB_TEST_SINGULAR')):
+        super().tearDownClass()
+        if not cls._remaining_tests and cls._remaining_periodics:
             raise AssertionError(f"The following cron-periodics never ran:"
-                                 f" {cls._all_periodics - cls._run_periodics}")
+                                 f" {cls._remaining_periodics}")
 
     def setUp(self) -> None:
-        subprocess.check_call(("make", "sql-test-shallow"),
-                              stdout=subprocess.DEVNULL,
-                              stderr=subprocess.DEVNULL)
+        super().setUp()
+
+        self._remaining_tests.remove(self._testMethodName)
         self.stores = []
         self.mails = []
 
@@ -1534,7 +1589,7 @@ class CronTest(unittest.TestCase):
     def execute(self, *args: Any, check_stores: bool = True) -> None:
         if not args:
             raise ValueError("Must specify jobs to run.")
-        self._run_periodics.update(args)
+        self._remaining_periodics.difference_update(args)
         self.cron.execute(args)
         if check_stores:
             expectation = set(args) | {"_base"}

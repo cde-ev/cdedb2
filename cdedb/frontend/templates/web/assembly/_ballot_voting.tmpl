@@ -31,7 +31,7 @@
             </div>
 
         {% endif %}
-        {{ util.form_input_submit(value=gettext("Vote_[[to vote in a ballot]]"), small=True) }}
+        {{ util.form_input_submit(label=gettext("Vote_[[to vote in a ballot]]"), small=True) }}
     </form>
     <script nonce="{{ csp_nonce }}">
         {% if ambience['ballot']['votes'] > 1 %}
@@ -50,7 +50,7 @@
                         style="display: inline;">
                     {{ util.anti_csrf_token('assembly/vote') }}
                     {{ util.input_hidden(name="vote", value="special: abstain") }}
-                    {{ util.input_submit(value=gettext("Abstain"), icon="square") }}
+                    {{ util.input_submit(label=gettext("Abstain"), icon="square") }}
                 </form>
             </div>
         </div>
@@ -66,6 +66,7 @@
         {% for candidate_id, candidate in ambience['ballot']['candidates']|keydictsort(EntitySorter.candidates) %}
             <li>
                 {{ candidate['title'] }}
+                {# We show the candidates shortnames on purpose even before the vote starts, so mistakes have a better chance to be noticed #}
                 {% if attends %}
                     <span class="label label-primary"><span class="sr-only">{% trans %}Short: {% endtrans %}</span>
                         {{ candidate['shortname'] }}
@@ -81,7 +82,7 @@
 {% macro show_manual_for_text_preferential_voting() -%}
     {% call util.bootstrap_panel(title=gettext("Help for voting"), icon='info-circle', aclass='panel-default panel-condensed mosp') %}
         <p>
-            {% trans link=gettext("<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>")|s %}
+            {% trans link=gettext("<a href='https://en.wikipedia.org/w/index.php?curid=680729'>Schulze method</a>")|s %}
                 This vote is a preferential vote. You can arrange the candidates in the field above
                 according to your personal preference. The preferences of all participants will be
                 evaluated using the {{ link }}, to determine the option with the most votes.
@@ -172,7 +173,7 @@
 {% macro show_manual_for_js_preferential_voting() -%}
     {% call util.bootstrap_panel(title=gettext("Help for voting"), icon='info-circle', aclass='panel-default panel-condensed mosp') %}
         <p>
-            {% trans link=gettext("<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>")|s %}
+            {% trans link=gettext("<a href='https://en.wikipedia.org/w/index.php?curid=680729'>Schulze method</a>")|s %}
                 This vote is a preferential vote. You can arrange the candidates in the field above
                 according to your personal preference. The preferences of all participants will be
                 evaluated using the {{ link }}, to determine the option with the most votes.
@@ -244,7 +245,7 @@
                 {{ util.anti_csrf_token('assembly/vote') }}
                 {{ util.form_input_text(name="vote", label=gettext("Preferencelist"), small=True,
                                         anid='input-preferencelist') }}
-                {{ util.form_input_submit(value=gettext("Vote_[[to vote in a ballot]]"), small=True) }}
+                {{ util.form_input_submit(label=gettext("Vote_[[to vote in a ballot]]"), small=True) }}
             </form>
             <script nonce="{{ csp_nonce }}">
                 $('#voteform').cdedbProtectChanges();
@@ -322,7 +323,7 @@
     <form action="{{ cdedblink('assembly/edit_candidates') }}" method="POST" id="candidatessummaryform">
         {{ util.anti_csrf_token('assembly/edit_candidates') }}
         {{ util.dynamic_row_table(gettext("Candidates"), columns, ambience['ballot']['candidates'], sortkey=EntitySorter.candidate) }}
-        {{ util.input_submit(value=gettext("Save")) }}
+        {{ util.input_submit(label=gettext("Save")) }}
     </form>
 
     <script nonce="{{ csp_nonce }}">

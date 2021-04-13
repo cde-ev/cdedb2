@@ -1,0 +1,108 @@
+kind: pipeline
+type: docker
+name: default
+
+workspace:
+  base: /cdedb2
+  path: .
+
+clone:
+  disable: true
+
+steps:
+- name: clone
+  image: docker:20.10-git
+  commands:
+  - git clone $DRONE_GIT_HTTP_URL .
+  # make use of our custom po file merge driver
+  - apk add --no-cache gettext
+  - |
+    echo '''[merge "pomerge"]
+        name = Gettext merge driver
+        driver = i18n/git-merge-po.sh %O %A %B
+    ''' >> ./.git/config
+  - git fetch origin $DRONE_TARGET_BRANCH
+  - git checkout $DRONE_TARGET_BRANCH
+  - git fetch origin $DRONE_COMMIT
+  - git merge $DRONE_COMMIT || (git merge --abort && git checkout $DRONE_COMMIT)
+- name: build images
+  image: docker:20.10
+  volumes:
+  - name: dockersock
+    path: /var/run/docker.sock
+  depends_on:
+  - clone
+  commands:
+  # we do not tag a version as this would create many images
+  # which would not be cleared from docker cache
+  - docker build --file related/docker/Dockerfile-postgres --tag cdepostgres .
+  - docker build --file related/docker/Dockerfile-cdedb --tag cdedb .
+- name: mypy
+  image: cdedb
+  pull: never # do not try to pull image from docker hub
+  depends_on:
+  - build images
+  commands:
+  - make mypy
+- name: lint
+  image: cdedb
+  pull: never # do not try to pull image from docker hub
+  depends_on:
+  - build images
+  commands:
+  - make lint
+- name: cdb # is used as the hostname for the container
+  image: cdepostgres
+  pull: never # do not try to pull image from docker hub
+  detach: true # detach to keep running for the following steps
+  environment:
+    POSTGRES_PASSWORD: passwd
+  volumes:
+  - name: database
+    path: /var/lib/postgresql/data
+  depends_on:
+  - build images
+- name: testsuite
+  image: cdedb
+  pull: never # do not try to pull image from docker hub
+  depends_on:
+  - cdb # only needs db allowing mypy and lint to run parallel to this
+  commands:
+  - sleep 5 # wait for db to come online
+  - make i18n-compile # required for sample-data target
+  - make sample-data # this creates the sql schema and copies the localconfig.py
+  - make check
+- name: xss
+  image: cdedb
+  pull: never
+  commands:
+    - make xss-check
+  depends_on:
+    - testsuite # wait for the testsuite to be finished, because we use the same database.
+- name: check for merge conflicts
+  image: docker:20.10-git
+  pull: never # do not try to pull image from docker hub
+  depends_on:
+  - testsuite
+  when:
+    status:
+    - failure
+    - success
+  commands:
+  # let the pipeline fail if merge caused conflicts
+  - apk add --no-cache gettext
+  - git checkout $DRONE_TARGET_BRANCH
+  - git merge $DRONE_COMMIT
+
+volumes:
+- name: dockersock
+  host:
+    path: /var/run/docker.sock
+- name: database
+  temp:
+    medium: memory
+
+trigger:
+  branch:
+  - master
+  - stable

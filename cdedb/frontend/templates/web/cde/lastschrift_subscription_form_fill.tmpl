@@ -25,7 +25,7 @@
             {{ util.form_input_text(name="db_id", label=gettext("CdEDB-ID"), defaultvalue=persona["id"]|cdedbid) }}
             {{ util.form_input_text(name="username", label=gettext("E-Mail"), defaultvalue=persona['username']) }}
             {{ util.input_hidden("not_minor", value=not_minor) }}
-            
+
             <h4 class="heading-underline">{% trans %}Address (of account holder){% endtrans %}</h4>
             {{ util.form_input_text(name="address_supplement", label=gettext("Address Supplement"),
                                     defaultvalue=persona["address_supplement"]) }}
@@ -57,6 +57,6 @@
         {{ util.form_input_text(name="iban", label=gettext("IBAN"), type="iban") }}
         {{ util.form_input_text(name="account_owner", label=gettext("Account holder (if different)")) }}
 
-        {{ util.form_input_submit(value=gettext("Confirm"), cancellink=cdedblink("cde/index")) }}
+        {{ util.form_input_submit(label=gettext("Confirm"), cancellink=cdedblink("cde/index")) }}
     </form>
 {% endblock %}

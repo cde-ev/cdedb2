@@ -129,9 +129,9 @@
                 {{ util.make_icon('info-circle') }}
                 {% trans %}If the input changed, the validation results will be displayed again.{% endtrans %}
             </p>
-            {{ util.form_input_submit(value=gettext("Confirm"), horizontal=False) }}
+            {{ util.form_input_submit(label=gettext("Confirm"), horizontal=False) }}
         {% else %}
-            {{ util.form_input_submit(value=gettext("Validate"), horizontal=False) }}
+            {{ util.form_input_submit(label=gettext("Validate"), horizontal=False) }}
         {% endif %}
     </form>
 {% endblock %}

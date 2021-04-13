@@ -117,7 +117,7 @@
             {% endfor %}
         {% endif %}
 
-        {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink("event/show_registration")) }}
+        {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("event/show_registration")) }}
     </form>
     <script nonce="{{ csp_nonce }}">
         $('#changeregistrationform').cdedbProtectChanges();

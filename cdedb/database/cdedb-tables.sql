@@ -145,7 +145,7 @@ CREATE TABLE core.personas (
         free_form               varchar,
         balance                 numeric(8, 2) DEFAULT NULL,
         CONSTRAINT personas_cde_balance
-            CHECK(NOT is_cde_realm OR balance IS NOT NULL),
+            CHECK(NOT is_cde_realm OR balance IS NOT NULL OR is_purged),
         -- True if user decided (positive or negative) on searchability
         decided_search          boolean DEFAULT FALSE,
         CONSTRAINT personas_cde_consent
@@ -208,7 +208,7 @@ CREATE TABLE core.genesis_cases (
         notes                   varchar,
         -- For some realms an attachment may be included. This column contains the filename,
         -- which is the hash of the file.
-        attachment              varchar,
+        attachment_hash         varchar,
         -- A verification link is sent to the email address; upon
         -- verification an admittance email is sent to the responsible team
         --
@@ -295,8 +295,7 @@ GRANT DELETE ON core.quota TO cdb_admin;
 -- keys of the dict stored here, will be runtime configurable.
 --
 -- This is in the core schema to allow anonymous access.
-CREATE TABLE core.meta_info
-(
+CREATE TABLE core.meta_info (
         id                      serial PRIMARY KEY,
         -- variable store for things like names of persons on
         -- regularily changing posts
@@ -399,8 +398,7 @@ GRANT UPDATE (code) ON core.changelog TO cdb_persona;
 GRANT UPDATE (reviewed_by) ON core.changelog TO cdb_admin;
 GRANT DELETE ON core.changelog TO cdb_admin;
 
-CREATE TABLE core.cron_store
-(
+CREATE TABLE core.cron_store (
         id                      serial PRIMARY KEY,
         title                   varchar NOT NULL UNIQUE,
         store                   jsonb NOT NULL
@@ -436,6 +434,14 @@ CREATE TABLE cde.org_period (
         balance_done            timestamp WITH TIME ZONE DEFAULT NULL,
         balance_trialmembers    integer NOT NULL DEFAULT 0,
         balance_total           numeric(11, 2) NOT NULL DEFAULT 0,
+        -- keep track of automated archival progress and stats.
+        archival_notification_state     integer REFERENCES core.personas(id),
+        archival_notification_done      timestamp WITH TIME ZONE DEFAULT NULL,
+        archival_notification_count     integer NOT NULL DEFAULT 0,
+        archival_state          integer REFERENCES core.personas(id),
+        archival_done           timestamp WITH TIME ZONE DEFAULT NULL,
+        archival_count          integer NOT NULL DEFAULT 0,
+        -- keep track of when the semester was advanced.
         semester_done           timestamp WITH TIME ZONE DEFAULT NULL
 );
 GRANT SELECT ON cde.org_period TO cdb_persona;
@@ -467,6 +473,7 @@ CREATE TABLE cde.lastschrift (
         -- validity
         granted_at              timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
         revoked_at              timestamp WITH TIME ZONE DEFAULT NULL,
+        -- administrative comments
         notes                   varchar
 );
 CREATE INDEX idx_lastschrift_persona_id ON cde.lastschrift(persona_id);
@@ -474,8 +481,7 @@ GRANT SELECT ON cde.lastschrift TO cdb_member;
 GRANT UPDATE, INSERT, DELETE ON cde.lastschrift TO cdb_admin;
 GRANT SELECT, UPDATE ON cde.lastschrift_id_seq TO cdb_admin;
 
-CREATE TABLE cde.lastschrift_transactions
-(
+CREATE TABLE cde.lastschrift_transactions (
         id                      serial PRIMARY KEY,
         submitted_by            integer REFERENCES core.personas(id) NOT NULL,
         lastschrift_id          integer REFERENCES cde.lastschrift(id) NOT NULL,
@@ -561,7 +567,7 @@ CREATE TABLE past_event.events (
         -- Note, that this is not present in event.events.
         tempus                  date NOT NULL,
         -- Information only visible to participants.
-        notes                   varchar
+        participant_info        varchar
 );
 GRANT SELECT (id, title, shortname, tempus) ON past_event.events TO cdb_persona;
 GRANT SELECT ON past_event.events to cdb_member;
@@ -622,41 +628,44 @@ CREATE SCHEMA event;
 GRANT USAGE ON SCHEMA event TO cdb_persona, cdb_anonymous;
 
 CREATE TABLE event.events (
-        id                          serial PRIMARY KEY,
-        title                       varchar NOT NULL,
-        shortname                   varchar NOT NULL,
+        id                           serial PRIMARY KEY,
+        title                        varchar NOT NULL,
+        shortname                    varchar NOT NULL,
         -- BuB,  JGW, CdE, ...
-        institution                 integer NOT NULL REFERENCES past_event.institutions(id),
-        description                 varchar,
+        institution                  integer NOT NULL REFERENCES past_event.institutions(id),
+        description                  varchar,
         --
         -- cut for past_event.events (modulo column tempus)
         --
-        registration_start          timestamp WITH TIME ZONE,
+        registration_start           timestamp WITH TIME ZONE,
         -- official end of registration
-        registration_soft_limit     timestamp WITH TIME ZONE,
+        registration_soft_limit      timestamp WITH TIME ZONE,
         -- actual end of registration, in between participants are
         -- automatically warned about registering late
-        registration_hard_limit     timestamp WITH TIME ZONE,
-        iban                        varchar,
-        nonmember_surcharge         numeric(8, 2) NOT NULL,
-        orga_address                varchar,
-        registration_text           varchar,
-        mail_text                   varchar,
-        use_additional_questionnaire    boolean NOT NULL DEFAULT False,
-        notes                       varchar,
-        offline_lock                boolean NOT NULL DEFAULT False,
-        is_visible                  boolean NOT NULL DEFAULT False, -- this is purely cosmetical
-        is_course_list_visible      boolean NOT NULL DEFAULT False, -- this is purely cosmetical
+        registration_hard_limit      timestamp WITH TIME ZONE,
+        iban                         varchar,
+        nonmember_surcharge          numeric(8, 2) NOT NULL,
+        orga_address                 varchar,
+        registration_text            varchar,
+        mail_text                    varchar,
+        -- the next one is only visible to participants
+        participant_info            varchar,
+        use_additional_questionnaire boolean NOT NULL DEFAULT False,
+        -- orga remarks
+        notes                        varchar,
+        offline_lock                 boolean NOT NULL DEFAULT False,
+        is_visible                   boolean NOT NULL DEFAULT False, -- this is purely cosmetical
+        is_course_list_visible       boolean NOT NULL DEFAULT False, -- this is purely cosmetical
         -- show cancelled courses in course list and restrict registration to active courses
-        is_course_state_visible     boolean NOT NULL DEFAULT False,
-        is_participant_list_visible boolean NOT NULL DEFAULT False,
-        courses_in_participant_list boolean NOT NULL DEFAULT False,
-        is_archived                 boolean NOT NULL DEFAULT False,
-        is_cancelled                boolean NOT NULL DEFAULT False,
+        is_course_state_visible      boolean NOT NULL DEFAULT False,
+        is_participant_list_visible  boolean NOT NULL DEFAULT False,
+        is_course_assignment_visible boolean NOT NULL DEFAULT False,
+        is_archived                  boolean NOT NULL DEFAULT False,
+        is_cancelled                 boolean NOT NULL DEFAULT False,
         -- reference to special purpose custom data fields
-        lodge_field                 integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
-        camping_mat_field           integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
-        course_room_field           integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
+        lodge_field                  integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
+        camping_mat_field            integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
+        course_room_field            integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
         -- The references above are not yet possible, but will be added later on.
 );
 GRANT SELECT, UPDATE ON event.events TO cdb_persona;
@@ -753,6 +762,7 @@ CREATE TABLE event.courses (
         instructors             varchar,
         min_size                integer,
         max_size                integer,
+        -- orga remarks
         notes                   varchar,
         -- additional data, customized by each orga team
         fields                  jsonb NOT NULL DEFAULT '{}'::jsonb
@@ -801,6 +811,7 @@ CREATE TABLE event.lodgements (
         regular_capacity        integer NOT NULL,
         -- number of people which can be accommodated with reduced comfort
         camping_mat_capacity    integer NOT NULL DEFAULT 0,
+        -- orga remarks
         notes                   varchar,
         group_id                integer REFERENCES event.lodgement_groups(id),
         -- additional data, customized by each orga team
@@ -821,7 +832,9 @@ CREATE TABLE event.registrations (
         real_persona_id         integer DEFAULT NULL,
         event_id                integer NOT NULL REFERENCES event.events(id),
 
+        -- participant freeform info
         notes                   varchar,
+        -- orga remarks
         orga_notes              varchar DEFAULT NULL,
         payment                 date DEFAULT NULL,
         amount_paid             numeric(8, 2) NOT NULL DEFAULT 0,
@@ -934,6 +947,7 @@ CREATE TABLE assembly.assemblies (
         -- concluded assemblies get deactivated and all related secrets are
         -- purged
         is_active               boolean NOT NULL DEFAULT True,
+        -- administrative comments
         notes                   varchar
 );
 GRANT SELECT ON assembly.assemblies TO cdb_persona;
@@ -992,6 +1006,7 @@ CREATE TABLE assembly.ballots (
         votes                   integer DEFAULT NULL,
         -- True after creation of the result summary file
         is_tallied              boolean NOT NULL DEFAULT False,
+        -- administrative comments
         notes                   varchar
 );
 CREATE INDEX idx_ballots_assembly_id ON assembly.ballots(assembly_id);
@@ -1082,7 +1097,7 @@ GRANT SELECT, UPDATE on assembly.attachment_versions_id_seq TO cdb_member;
 CREATE TABLE assembly.log (
         id                      bigserial PRIMARY KEY,
         ctime                   timestamp WITH TIME ZONE DEFAULT now(),
-        -- see cdedb.database.constants.AssembyLogCodes
+        -- see cdedb.database.constants.AssemblyLogCodes
         code                    integer NOT NULL,
         submitted_by            integer REFERENCES core.personas(id),
         assembly_id             integer REFERENCES assembly.assemblies(id),
@@ -1124,6 +1139,7 @@ CREATE TABLE ml.mailinglists (
         -- in kB
         maxsize                 integer,
         is_active               boolean NOT NULL,
+        -- administrative comments
         notes                   varchar,
         -- Define a list X as gateway for this list, that is everybody
         -- subscribed to X may subscribe to this list (only useful with a

@@ -8,6 +8,7 @@ members are also possible.
 
 import datetime
 import decimal
+from collections import OrderedDict
 from typing import Any, Collection, Dict, List, Optional, Tuple
 
 from typing_extensions import Protocol
@@ -50,6 +51,9 @@ class CdEBackend(AbstractBackend):
         """
         if rs.is_quiet:
             return 0
+        # To ensure logging is done if and only if the corresponding action happened,
+        # we require atomization here.
+        self.affirm_atomized_context(rs)
         data = {
             "code": code,
             "submitted_by": rs.user.persona_id,
@@ -284,12 +288,12 @@ class CdEBackend(AbstractBackend):
         """
         lastschrift_ids = affirm_set(vtypes.ID, lastschrift_ids or set())
         if "cde_admin" not in rs.user.roles:
-            # Don't allow None for non admins.
             if lastschrift_ids is None:
+                # Don't allow None for non-admins.
                 raise PrivilegeError(n_("Not privileged."))
-            # Otherwise pass this to get_lastschrift, which does access check.
             else:
-                _ = self.get_lastschrifts(rs, lastschrift_ids)
+                # Otherwise pass this to get_lastschrift, which does access check.
+                self.get_lastschrifts(rs, lastschrift_ids)
         stati = affirm_set(const.LastschriftTransactionStati, stati or set())
         periods = affirm_set(vtypes.ID, periods or set())
         query = "SELECT id, lastschrift_id FROM cde.lastschrift_transactions"
@@ -317,7 +321,7 @@ class CdEBackend(AbstractBackend):
         data = self.sql_select(rs, "cde.lastschrift_transactions",
                                LASTSCHRIFT_TRANSACTION_FIELDS, ids)
         # We only need these for access checking, which is done inside.
-        _ = self.get_lastschrifts(rs, {e["lastschrift_id"] for e in data})
+        self.get_lastschrifts(rs, {e["lastschrift_id"] for e in data})
 
         return {e['id']: e for e in data}
 
@@ -621,37 +625,51 @@ class CdEBackend(AbstractBackend):
             return self.sql_update(rs, "cde.org_period", period)
 
     @access("finance_admin")
+    def may_advance_semester(self, rs: RequestState) -> bool:
+        """Helper to determine if now is the right time to advance the semester.
+
+        :returns: True if the semester may be advanced, False otherwise.
+        """
+        with Atomizer(rs):
+            period_id = self.current_period(rs)
+            period = self.get_period(rs, period_id)
+            # Take special care about all previous steps.
+            return all(period[key] for key in
+                       ('billing_done', 'archival_notification_done', 'ejection_done',
+                        'archival_done', 'balance_done'))
+
+    @access("finance_admin")
     def advance_semester(self, rs: RequestState) -> DefaultReturnCode:
         """Mark  the current semester as finished and create a new semester."""
         with Atomizer(rs):
             current_id = self.current_period(rs)
-            current = self.get_period(rs, current_id)
-            if not current['balance_done']:
+            if not self.may_advance_semester(rs):
                 raise RuntimeError(n_("Current period not finalized."))
             update = {
                 'id': current_id,
                 'semester_done': now(),
             }
             ret = self.sql_update(rs, "cde.org_period", update)
-            new_period = {
-                'id': current_id + 1,
-                'billing_state': None,
-                'billing_done': None,
-                'billing_count': 0,
-                'ejection_state': None,
-                'ejection_done': None,
-                'ejection_count': 0,
-                'ejection_balance': decimal.Decimal(0),
-                'balance_state': None,
-                'balance_done': None,
-                'balance_trialmembers': 0,
-                'balance_total': decimal.Decimal(0),
-                'semester_done': None,
-            }
+            new_period = {'id': current_id + 1}
             ret *= self.sql_insert(rs, "cde.org_period", new_period)
             self.cde_log(rs, const.CdeLogCodes.semester_advance,
                          persona_id=None, change_note=str(ret))
             return ret
+
+    @access("finance_admin")
+    def may_start_semester_bill(self, rs: RequestState) -> bool:
+        """Helper to determine if now is the right time to start/resume billing.
+
+        Beware that this step also involves the sending of archival notifications, so
+        we check both.
+
+        :returns: True if billing may be started, False otherwise.
+        """
+        with Atomizer(rs):
+            period_id = self.current_period(rs)
+            period = self.get_period(rs, period_id)
+            # Both parts of the previous step need to be finished.
+            return not (period['billing_done'] and period['archival_notification_done'])
 
     @access("finance_admin")
     def finish_semester_bill(self, rs: RequestState,
@@ -661,7 +679,7 @@ class CdEBackend(AbstractBackend):
         with Atomizer(rs):
             period_id = self.current_period(rs)
             period = self.get_period(rs, period_id)
-            if not period['balance_done'] is None:
+            if period['balance_done'] is not None:
                 raise RuntimeError(n_("Billing already done for this period."))
             period_update = {
                 'id': period_id,
@@ -681,6 +699,62 @@ class CdEBackend(AbstractBackend):
             return ret
 
     @access("finance_admin")
+    def finish_archival_notification(self, rs: RequestState) -> DefaultReturnCode:
+        """Conclude the sending of archival notifications."""
+        with Atomizer(rs):
+            period_id = self.current_period(rs)
+            period = self.get_period(rs, period_id)
+            if period['archival_notification_done'] is not None:
+                raise RuntimeError(n_("Archival notifications done for this period."))
+            period_update = {
+                'id': period_id,
+                'archival_notification_state': None,
+                'archival_notification_done': now(),
+            }
+            ret = self.set_period(rs, period_update)
+            msg = f"{period['archival_notification_count']} E-Mails versandt."
+            self.cde_log(
+                rs, const.CdeLogCodes.automated_archival_notification_done,
+                persona_id=None, change_note=msg)
+            return ret
+
+    @access("finance_admin")
+    def may_start_semester_ejection(self, rs: RequestState) -> bool:
+        """Helper to determine if now is the right time to start/resume ejection.
+
+        Beware that this step also involves the automated archival, so we check both.
+
+        :returns: True if ejection may be started, False otherwise.
+        """
+        with Atomizer(rs):
+            period_id = self.current_period(rs)
+            period = self.get_period(rs, period_id)
+            return (period['billing_done'] and period['archival_notification_done']
+                    and not (period['ejection_done'] and period['archival_done']))
+
+    @access("finance_admin")
+    def finish_automated_archival(self, rs: RequestState) -> DefaultReturnCode:
+        """Conclude the automated archival."""
+        with Atomizer(rs):
+            period_id = self.current_period(rs)
+            period = self.get_period(rs, period_id)
+            if not period['archival_notification_done']:
+                raise RuntimeError(n_("Archival notifications not sent yet."))
+            if period['archival_done'] is not None:
+                raise RuntimeError(n_("Automated archival done for this period."))
+            period_update = {
+                'id': period_id,
+                'archival_state': None,
+                'archival_done': now(),
+            }
+            ret = self.set_period(rs, period_update)
+            msg = f"{period['archival_count']} Accounts archiviert."
+            self.cde_log(
+                rs, const.CdeLogCodes.automated_archival_done,
+                persona_id=None, change_note=msg)
+            return ret
+
+    @access("finance_admin")
     def finish_semester_ejection(self, rs: RequestState) -> DefaultReturnCode:
         """Conclude the semester ejection step."""
         with Atomizer(rs):
@@ -688,9 +762,8 @@ class CdEBackend(AbstractBackend):
             period = self.get_period(rs, period_id)
             if not period['billing_done']:
                 raise RuntimeError(n_("Billing not done for this semester."))
-            if not period['ejection_done'] is None:
-                raise RuntimeError(n_(
-                "Ejection already done for this semester."))
+            if period['ejection_done'] is not None:
+                raise RuntimeError(n_("Ejection already done for this semester."))
             period_update = {
                 'id': period_id,
                 'ejection_state': None,
@@ -705,17 +778,25 @@ class CdEBackend(AbstractBackend):
             return ret
 
     @access("finance_admin")
-    def finish_semester_balance_update(
-            self, rs: RequestState) -> DefaultReturnCode:
+    def may_start_semester_balance_update(self, rs: RequestState) -> bool:
+        """Helper to determine if now is the right time to start/resume balance update.
+
+        :returns: True if the balance update may be started, False otherwise.
+        """
+        with Atomizer(rs):
+            period_id = self.current_period(rs)
+            period = self.get_period(rs, period_id)
+            return (period['ejection_done'] and period['archival_done']
+                    and not period['balance_done'])
+
+    @access("finance_admin")
+    def finish_semester_balance_update(self, rs: RequestState) -> DefaultReturnCode:
         """Conclude the semester balance update step."""
         with Atomizer(rs):
             period_id = self.current_period(rs)
             period = self.get_period(rs, period_id)
-            if not period['ejection_done']:
-                raise RuntimeError(n_("Ejection not done for this period."))
-            if not period['balance_done'] is None:
-                raise RuntimeError(n_(
-                    "Balance update already done for this period."))
+            if not self.may_start_semester_balance_update(rs):
+                raise RuntimeError(n_("Not the right time to finish balance update."))
             period_update = {
                 'id': period_id,
                 'balance_state': None,
@@ -816,6 +897,134 @@ class CdEBackend(AbstractBackend):
                              persona_id=None, change_note=msg)
             return ret
 
+    @access("member", "cde_admin")
+    def get_member_stats(self, rs: RequestState) -> CdEDBObject:
+        """Retrieve some generic statistics about members."""
+        # Simple stats first.
+        query = """SELECT
+            num_members, num_searchable, num_ex_members
+        FROM
+            (
+                SELECT COUNT(*) AS num_members
+                FROM core.personas
+                WHERE is_member = True
+            ) AS member_count,
+            (
+                SELECT COUNT(*) AS num_searchable
+                FROM core.personas
+                WHERE is_member = True AND is_searchable = True
+            ) AS searchable_count,
+            (
+                SELECT COUNT(*) AS num_ex_members
+                FROM core.personas
+                WHERE is_cde_realm = True AND is_member = False
+                    AND is_archived = False
+            ) AS ex_member_count
+        """
+        data = self.query_one(rs, query, ())
+        assert data is not None
+
+        ret: CdEDBObject = {
+            'simple_stats': OrderedDict((k, data[k]) for k in (
+                n_("num_members"), n_("num_searchable"), n_("num_ex_members")))
+        }
+
+        # TODO: improve this type annotation with a new mypy version.
+        def query_stats(select: str, condition: str, order: str, limit: int = 0
+                        ) -> OrderedDict:  # type: ignore
+            query = (f"SELECT COUNT(*) AS num, {select} AS datum"
+                     f" FROM core.personas"
+                     f" WHERE is_member = True AND {condition} IS NOT NULL"
+                     f" GROUP BY datum HAVING COUNT(*) > {limit} ORDER BY {order}")
+            data = self.query_all(rs, query, ())
+            return OrderedDict((e['datum'], e['num']) for e in data)
+
+        # Members by country.
+        ret[n_("members_by_country")] = query_stats(
+            select="country",
+            condition="location",
+            order="num DESC, datum ASC")
+
+        # Members by PLZ.
+        # We don't want the PLZ stats for now. See #380.
+        # ret[n_("members_by_plz")] = query_stats(
+        #   select="postal_code",
+        #   condition="postal_code",
+        #   order="num DESC, datum ASC")
+
+        # Members by city.
+        # We want to cutoff the list due to privacy and readability concerns.
+        ret[n_("members_by_city")] = query_stats(
+            select="location",
+            condition="location",
+            order="num DESC, datum ASC",
+            limit=9)
+
+        # Members by birthday.
+        ret[n_("members_by_birthday")] = query_stats(
+            select="EXTRACT(year FROM birthday)::integer",
+            condition="birthday",
+            order="datum ASC"
+        )
+
+        # Members by first event.
+        query = """SELECT
+            COUNT(*) AS num, EXTRACT(year FROM min_tempus.t)::integer AS datum
+        FROM
+            (
+                SELECT persona.id, MIN(pevents.tempus) as t
+                FROM
+                    (
+                        SELECT id FROM core.personas
+                        WHERE is_member = TRUE
+                    ) as persona
+                    LEFT OUTER JOIN (
+                        SELECT DISTINCT persona_id, pevent_id
+                        FROM past_event.participants
+                    ) AS participants ON persona.id = participants.persona_id
+                    LEFT OUTER JOIN (
+                        SELECT id, tempus
+                        FROM past_event.events
+                    ) AS pevents ON participants.pevent_id = pevents.id
+                WHERE
+                    pevents.id IS NOT NULL
+                GROUP BY
+                    persona.id
+            ) AS min_tempus
+        GROUP BY
+            datum
+        ORDER BY
+            -- num DESC,
+            datum ASC
+        """
+        ret[n_("members_by_first_event")] = OrderedDict(
+            (e['datum'], e['num']) for e in self.query_all(rs, query, ()))
+
+        # Unique event attendees per year:
+        query = """SELECT
+            COUNT(DISTINCT persona_id) AS num, EXTRACT(year FROM events.tempus)::integer AS datum
+        FROM
+            (
+                past_event.institutions
+                LEFT OUTER JOIN (
+                    SELECT id, institution, tempus FROM past_event.events
+                ) AS events ON events.institution = institutions.id
+                LEFT OUTER JOIN (
+                    SELECT persona_id, pevent_id FROM past_event.participants
+                ) AS participants ON participants.pevent_id = events.id
+            )
+        WHERE
+            shortname = 'CdE'
+        GROUP BY
+            datum
+        ORDER BY
+            datum ASC
+        """
+        ret[n_("unique_participants_per_year")] = dict(
+            (e['datum'], e['num']) for e in self.query_all(rs, query, ()))
+
+        return ret
+
     @access("searchable", "core_admin", "cde_admin")
     def submit_general_query(self, rs: RequestState,
                              query: Query) -> Tuple[CdEDBObject, ...]:
@@ -826,25 +1035,20 @@ class CdEBackend(AbstractBackend):
         if query.scope == "qview_cde_member":
             if self.core.check_quota(rs, num=1):
                 raise QuotaException(n_("Too many queries."))
-            query.constraints.append(
-                ("is_cde_realm", QueryOperators.equal, True))
-            query.constraints.append(
-                ("is_member", QueryOperators.equal, True))
-            query.constraints.append(
-                ("is_searchable", QueryOperators.equal, True))
-            query.constraints.append(
-                ("is_archived", QueryOperators.equal, False))
+            query.constraints.append(("is_cde_realm", QueryOperators.equal, True))
+            query.constraints.append(("is_member", QueryOperators.equal, True))
+            query.constraints.append(("is_searchable", QueryOperators.equal, True))
+            query.constraints.append(("is_archived", QueryOperators.equal, False))
             query.spec['is_cde_realm'] = "bool"
             query.spec['is_member'] = "bool"
             query.spec['is_searchable'] = "bool"
             query.spec["is_archived"] = "bool"
-        elif query.scope == "qview_cde_user":
-            if not self.is_admin(rs):
+        elif query.scope in {"qview_cde_user", "qview_archived_past_event_user"}:
+            if not {'core_admin', 'cde_admin'} & rs.user.roles:
                 raise PrivilegeError(n_("Admin only."))
-            query.constraints.append(
-                ("is_cde_realm", QueryOperators.equal, True))
-            query.constraints.append(
-                ("is_archived", QueryOperators.equal, False))
+            query.constraints.append(("is_cde_realm", QueryOperators.equal, True))
+            query.constraints.append(("is_archived", QueryOperators.equal,
+                                      query.scope == "qview_archived_past_event_user"))
             query.spec['is_cde_realm'] = "bool"
             query.spec["is_archived"] = "bool"
             # Exclude users of any higher realm (implying event)
@@ -855,10 +1059,8 @@ class CdEBackend(AbstractBackend):
         elif query.scope == "qview_past_event_user":
             if not self.is_admin(rs):
                 raise PrivilegeError(n_("Admin only."))
-            query.constraints.append(
-                ("is_event_realm", QueryOperators.equal, True))
-            query.constraints.append(
-                ("is_archived", QueryOperators.equal, False))
+            query.constraints.append(("is_event_realm", QueryOperators.equal, True))
+            query.constraints.append(("is_archived", QueryOperators.equal, False))
             query.spec['is_event_realm'] = "bool"
             query.spec["is_archived"] = "bool"
         else:

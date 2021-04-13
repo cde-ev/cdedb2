@@ -149,6 +149,26 @@
         }
     },
     "event.registrations": {
+        "1": {
+            "amount_owed": "573.99",
+            "amount_paid": "0.00",
+            "event_id": 1,
+            "checkin": null,
+            "persona_id": 1,
+            "list_consent": true,
+            "fields": {
+                "lodge": "Die \u00fcblichen Verd\u00e4chtigen :)",
+                "is_child": false,
+                "anzahl_GROSSBUCHSTABEN": 4
+            },
+            "orga_notes": null,
+            "payment": null,
+            "id": 1,
+            "parental_agreement": true,
+            "mixed_lodging": true,
+            "notes": null,
+            "real_persona_id": null
+        },
         "2": {
             "amount_owed": "589.49",
             "amount_paid": "0.00",
@@ -159,7 +179,8 @@
             "fields": {
                 "brings_balls": true,
                 "transportation": "pedes",
-                "is_child": false
+                "is_child": false,
+                "anzahl_GROSSBUCHSTABEN": 3
             },
             "orga_notes": "Unbedingt in die Einzelzelle.",
             "payment": "2014-02-02",
@@ -167,25 +188,6 @@
             "parental_agreement": true,
             "mixed_lodging": true,
             "notes": "Extraw\u00fcnsche: Meerblick, Weckdienst und Fr\u00fchst\u00fcck am Bett",
-            "real_persona_id": null
-        },
-        "1": {
-            "amount_owed": "573.99",
-            "amount_paid": "0.00",
-            "event_id": 1,
-            "checkin": null,
-            "persona_id": 1,
-            "list_consent": true,
-            "fields": {
-                "lodge": "Die \u00fcblichen Verd\u00e4chtigen :)",
-                "is_child": false
-            },
-            "orga_notes": null,
-            "payment": null,
-            "id": 1,
-            "parental_agreement": true,
-            "mixed_lodging": true,
-            "notes": null,
             "real_persona_id": null
         },
         "3": {
@@ -197,7 +199,8 @@
             "list_consent": false,
             "fields": {
                 "transportation": "car",
-                "is_child": false
+                "is_child": false,
+                "anzahl_GROSSBUCHSTABEN": 3
             },
             "orga_notes": null,
             "payment": "2014-03-03",
@@ -218,7 +221,8 @@
                 "brings_balls": false,
                 "may_reserve": true,
                 "transportation": "etc",
-                "is_child": true
+                "is_child": true,
+                "anzahl_GROSSBUCHSTABEN": 2
             },
             "orga_notes": null,
             "payment": "2014-04-04",
@@ -235,7 +239,8 @@
             "event_id": 1,
             "fields": {
                 "transportation": "pedes",
-                "is_child": false
+                "is_child": false,
+                "anzahl_GROSSBUCHSTABEN": 2
             },
             "id": 5,
             "list_consent": true,
@@ -253,7 +258,8 @@
             "event_id": 1,
             "fields": {
                 "transportation": "pedes",
-                "is_child": false
+                "is_child": false,
+                "anzahl_GROSSBUCHSTABEN": 2
             },
             "id": 6,
             "list_consent": true,
@@ -374,11 +380,19 @@
             "id": 7,
             "field_name": "is_child",
             "association": 1
+        },
+        "8": {
+            "association": 1,
+            "entries": null,
+            "event_id": 1,
+            "field_name": "anzahl_GROSSBUCHSTABEN",
+            "id": 8,
+            "kind": 3
         }
     },
     "EVENT_SCHEMA_VERSION": [
-        14,
-        1
+        15,
+        2
     ],
     "CDEDB_EXPORT_EVENT_VERSION": 13,
     "event.registration_parts": {
@@ -952,7 +966,7 @@
             "id": 25,
             "course_id": 5,
             "track_id": 1
-        }, 
+        },
         "29": {
             "course_id": 1,
             "id": 29,
@@ -1078,7 +1092,7 @@
             "is_searchable": false,
             "is_archived": false,
             "is_purged": false,
-            "country": null,
+            "country": "DE",
             "username": "garcia@example.cde",
             "gender": 1,
             "telephone": null,
@@ -1113,7 +1127,7 @@
             "is_searchable": true,
             "is_archived": false,
             "is_purged": false,
-            "country": null,
+            "country": "DE",
             "username": "anton@example.cde",
             "gender": 2,
             "telephone": "+49 (234) 98765",
@@ -1148,7 +1162,7 @@
             "is_searchable": true,
             "is_archived": false,
             "is_purged": false,
-            "country": null,
+            "country": "DE",
             "username": "inga@example.cde",
             "gender": 1,
             "telephone": null,
@@ -1183,7 +1197,7 @@
             "is_searchable": false,
             "is_archived": false,
             "is_purged": false,
-            "country": "Deutschland",
+            "country": "DE",
             "username": "emilia@example.cde",
             "gender": 1,
             "telephone": "+49 (5432) 555666777",
@@ -1215,7 +1229,7 @@
             "address": "Kasumigaseki 1-3-2",
             "address_supplement": null,
             "birthday": "2019-12-28",
-            "country": "Japan",
+            "country": "JP",
             "display_name": "Akira",
             "family_name": "Abukara",
             "gender": 10,
@@ -1250,7 +1264,7 @@
             "address": "Im Garten 77",
             "address_supplement": "bei Spielmanns",
             "birthday": "1981-02-11",
-            "country": null,
+            "country": "DE",
             "display_name": "Bertå",
             "family_name": "Beispiel",
             "gender": 1,
@@ -1340,8 +1354,9 @@
             "registration_start": "2000-10-30T00:00:00+00:00",
             "registration_text": null,
             "mail_text": "Wir verwenden ein neues Kristallkugel-basiertes Kurszuteilungssystem; bis wir das ordentlich ans Laufen gebracht haben, m\u00fcsst ihr leider etwas auf die Teilnehmerliste warten.",
+            "participant_info": "Die Kristallkugel hat gute Dienste geleistet, nicht wahr?",
             "is_participant_list_visible": false,
-            "courses_in_participant_list": false,
+            "is_course_assignment_visible": false,
             "is_course_list_visible": true,
             "is_course_state_visible": false,
             "is_cancelled": false,

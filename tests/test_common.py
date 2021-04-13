@@ -14,8 +14,8 @@ import pytz
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
 from cdedb.common import (
-    extract_roles, int_to_words, mixed_existence_sorter, schulze_evaluate, unwrap,
-    xsorted,
+    NearlyNow, extract_roles, int_to_words, mixed_existence_sorter, nearly_now, now,
+    schulze_evaluate, unwrap, xsorted,
 )
 from tests.common import ANONYMOUS, BasicTest
 
@@ -278,21 +278,12 @@ class TestCommon(BasicTest):
                     unwrap(ncol)  # type: ignore
                 self.assertIn("Can only unwrap collections.", cmt.exception.args[0])
 
-    def test_mypy(self) -> None:
-        try:
-            result = subprocess.run(["make", "mypy"], check=True, capture_output=True)
-        except subprocess.CalledProcessError as cpe:
-            pattern = re.compile(": error: ")
-            count = len(re.findall(pattern, cpe.stdout.decode()))
-            msg = f"There are {count} mypy errors. Run `make mypy` for more details."
-            raise self.failureException(msg) from None
-
     def test_untranslated_strings(self) -> None:
         i18n_path = self.conf["REPOSITORY_PATH"] / 'i18n'
         with tempfile.TemporaryDirectory() as tempdir:
             tmppath = pathlib.Path(tempdir, 'i18n')
             shutil.copytree(i18n_path, tmppath)
-            subprocess.run(["make", f"I18NDIR={tmppath}" "i18n-refresh"],
+            subprocess.run(["make", f"I18NDIR={tmppath}", "i18n-refresh"],
                            check=True, capture_output=True)
             try:
                 result = subprocess.run(
@@ -348,3 +339,15 @@ class TestCommon(BasicTest):
         # Can use method of a parent class
         ml_type.GeneralMailinglist.get_implicit_subscribers(
             ANONYMOUS, bc, pseudo_mailinglist)
+
+    def test_nearly_now(self) -> None:
+        base_time = now()
+        self.assertEqual(base_time, nearly_now())
+        self.assertEqual(base_time + datetime.timedelta(minutes=5), nearly_now())
+        self.assertNotEqual(base_time + datetime.timedelta(minutes=15), nearly_now())
+        self.assertEqual(base_time + datetime.timedelta(minutes=15),
+                         nearly_now(datetime.timedelta(days=1)))
+        self.assertNotEqual(base_time + datetime.timedelta(minutes=5),
+                            nearly_now(datetime.timedelta(minutes=1)))
+        self.assertEqual(NearlyNow.fromisoformat("2012-12-21T12:34:56"),
+                         datetime.datetime.fromisoformat("2012-12-21T12:40:00"))

@@ -1,8 +1,8 @@
 {
     "CDEDB_EXPORT_EVENT_VERSION": 13,
     "EVENT_SCHEMA_VERSION": [
-        14,
-        1
+        15,
+        2
     ],
     "kind": "partial",
     "id": 1,
@@ -156,6 +156,7 @@
             "checkin": null,
             "list_consent": true,
             "fields": {
+                "anzahl_GROSSBUCHSTABEN": 4,
                 "lodge": "Die \u00fcblichen Verd\u00e4chtigen :)",
                 "is_child": false
             },
@@ -222,7 +223,7 @@
                 "address": "Auf der D\u00fcne 42",
                 "postal_code": "03205",
                 "location": "Musterstadt",
-                "country": null,
+                "country": "DE",
                 "is_orga": false
             }
         },
@@ -235,6 +236,7 @@
             "checkin": null,
             "list_consent": true,
             "fields": {
+                "anzahl_GROSSBUCHSTABEN": 3,
                 "is_child": false,
                 "brings_balls": true,
                 "transportation": "pedes"
@@ -302,7 +304,7 @@
                 "address": "Hohle Gasse 13",
                 "postal_code": "56767",
                 "location": "Wolkenkuckuksheim",
-                "country": "Deutschland",
+                "country": "DE",
                 "is_orga": false
             }
         },
@@ -315,6 +317,7 @@
             "checkin": null,
             "list_consent": false,
             "fields": {
+                "anzahl_GROSSBUCHSTABEN": 3,
                 "is_child": false,
                 "transportation": "car"
             },
@@ -381,7 +384,7 @@
                 "address": "Bei der W\u00fcste 39",
                 "postal_code": "88484",
                 "location": "Weltstadt",
-                "country": null,
+                "country": "DE",
                 "is_orga": true
             }
         },
@@ -394,6 +397,7 @@
             "checkin": null,
             "list_consent": false,
             "fields": {
+                "anzahl_GROSSBUCHSTABEN": 2,
                 "is_child": true,
                 "may_reserve": true,
                 "brings_balls": false,
@@ -462,7 +466,7 @@
                 "address": "Zwergstra\u00dfe 1",
                 "postal_code": "10999",
                 "location": "Liliput",
-                "country": null,
+                "country": "DE",
                 "is_orga": false
             }
         },
@@ -475,6 +479,7 @@
             "checkin": null,
             "list_consent": true,
             "fields": {
+                "anzahl_GROSSBUCHSTABEN": 2,
                 "is_child": false,
                 "transportation": "pedes"
             },
@@ -541,7 +546,7 @@
                 "address": "Kasumigaseki 1-3-2",
                 "postal_code": null,
                 "location": "Tokyo",
-                "country": "Japan",
+                "country": "JP",
                 "is_orga": false
             }
         },
@@ -554,6 +559,7 @@
             "checkin": null,
             "list_consent": true,
             "fields": {
+                "anzahl_GROSSBUCHSTABEN": 2,
                 "is_child": false,
                 "transportation": "pedes"
             },
@@ -610,7 +616,7 @@
                 "address": "Im Garten 77",
                 "postal_code": "34576",
                 "location": "Utopia",
-                "country": null,
+                "country": "DE",
                 "is_orga": false
             }
         }
@@ -628,6 +634,7 @@
         "orga_address": "aka@example.cde",
         "registration_text": null,
         "mail_text": "Wir verwenden ein neues Kristallkugel-basiertes Kurszuteilungssystem; bis wir das ordentlich ans Laufen gebracht haben, m\u00fcsst ihr leider etwas auf die Teilnehmerliste warten.",
+        "participant_info": "Die Kristallkugel hat gute Dienste geleistet, nicht wahr?",
         "use_additional_questionnaire": false,
         "notes": "Todoliste ... just kidding ;)",
         "offline_lock": false,
@@ -635,7 +642,7 @@
         "is_course_list_visible": true,
         "is_course_state_visible": false,
         "is_participant_list_visible": false,
-        "courses_in_participant_list": false,
+        "is_course_assignment_visible": false,
         "is_cancelled": false,
         "is_archived": false,
         "lodge_field": "lodge",
@@ -711,6 +718,11 @@
             }
         },
         "fields": {
+            "anzahl_GROSSBUCHSTABEN": {
+                "association": 1,
+                "entries": null,
+                "kind": 3
+            },
             "brings_balls": {
                 "kind": 2,
                 "association": 1,

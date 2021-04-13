@@ -38,7 +38,7 @@
         {{ util.form_input_static(aclass='text-info', icon='info-circle',
                                   value=gettext("Warning: All changes will be immediately "
                                                 "visible to all CdE-Members and Assembly-Participants.")) }}
-        {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink('assembly/show_ballot')) }}
+        {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink('assembly/show_ballot')) }}
     </form>
     <script nonce="{{ csp_nonce }}">
         $('#changeballotform').cdedbProtectChanges();

@@ -39,7 +39,7 @@
         {% else %}
             <p class="text-muted">{% trans %}No custom fields for lodgements available.{% endtrans %}</p>
         {% endfor %}
-        {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink("event/show_lodgement")) }}
+        {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("event/show_lodgement")) }}
     </form>
     <script nonce="{{ csp_nonce }}">
         $('#changelodgementform').cdedbProtectChanges();

@@ -29,7 +29,7 @@
             {{ util.form_input_textarea(name=key, label=gettext(key), rows=5, info=util.markdownhint) }}
         {% endfor %}
         <div>
-            {{ util.form_input_submit(value=gettext("Save")) }}
+            {{ util.form_input_submit(label=gettext("Save")) }}
         </div>
     </form>
 {% endblock %}

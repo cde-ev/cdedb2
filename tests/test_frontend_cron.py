@@ -73,7 +73,7 @@ def changelog_template(**kwargs: Any) -> str:
         'change_note': 'Radical change.',
         'code': const.MemberChangeStati.pending.value,
         'country': None,
-        'country2': 'Further Away',
+        'country2': 'US',
         'ctime': now(),
         'decided_search': True,
         'display_name': 'Zelda',
@@ -133,7 +133,7 @@ def cron_template(**kwargs: Any) -> str:
 
 def subscription_request_template(**kwargs: Any) -> Any:
     defaults: SQL_DATA = {
-        'subscription_state': const.SubscriptionStates.pending
+        'subscription_state': const.SubscriptionState.pending
     }
     data = {**defaults, **kwargs}
     return format_insert_sql("ml.subscription_states", data)
@@ -251,7 +251,7 @@ class TestCron(CronTest):
                          [mail.template for mail in self.mails])
 
     @prepsql("DELETE FROM ml.subscription_states WHERE subscription_state = "
-             "{};".format(const.SubscriptionStates.pending))
+             "{};".format(const.SubscriptionState.pending))
     def test_subscription_request_remind_empty(self) -> None:
         self.execute('subscription_request_remind')
         self.assertEqual([], [mail.template for mail in self.mails])
@@ -364,7 +364,6 @@ class TestCron(CronTest):
 
     @unittest.mock.patch("cdedb.frontend.common.CdEMailmanClient")
     def test_mailman_sync(self, client_class: unittest.mock.Mock) -> None:
-        self._run_periodics.add('mailman_sync')
         #
         # Prepare
         #
@@ -433,6 +432,9 @@ class TestCron(CronTest):
             'party50': unittest.mock.MagicMock(),
             'info': unittest.mock.MagicMock(),
             'mitgestaltung': unittest.mock.MagicMock(),
+            'moderatoren': unittest.mock.MagicMock(),
+            'everyone': unittest.mock.MagicMock(),
+            'lokalgruppen': unittest.mock.MagicMock(),
             'all': unittest.mock.MagicMock(),
             'gutscheine': unittest.mock.MagicMock(),
             'bau': unittest.mock.MagicMock(),
@@ -482,6 +484,9 @@ class TestCron(CronTest):
                           umcall('party50'),
                           umcall('info'),
                           umcall('mitgestaltung'),
+                          umcall('moderatoren'),
+                          umcall('everyone'),
+                          umcall('lokalgruppen'),
                           umcall('all'),
                           umcall('gutscheine'),
                           umcall('bau'),

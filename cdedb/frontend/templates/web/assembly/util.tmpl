@@ -64,7 +64,7 @@
           method="POST" id="deleteattachmentform{{ attachment_id }}" style="display: inline;">
         {{ util.anti_csrf_token("assembly/delete_attachment") }}
         {{ util.input_checkbox("attachment_ack_delete", gettext("Are you sure?")) }}
-        {{ util.input_submit(value=gettext("Delete Attachment"), aclass="btn btn-sm btn-danger", icon="trash-alt",
+        {{ util.input_submit(label=gettext("Delete Attachment"), aclass="btn btn-sm btn-danger", icon="trash-alt",
                 title=gettext("Delete Attachment")) }}
     </form>
     <script nonce="{{ csp_nonce }}">
@@ -104,7 +104,7 @@
                         {{ util.anti_csrf_token('assembly/delete_attachment') }}
                         {{ util.input_checkbox("attachment_ack_delete", gettext("Are you sure?")) }}
                         {% set deletable = (attachment['num_versions'] > 1) %}
-                        {{ util.input_submit(value="", aclass="btn btn-xs btn-danger", icon="trash-alt",
+                        {{ util.input_submit(label="", aclass="btn btn-xs btn-danger", icon="trash-alt",
                                 title=(gettext("Delete Version %(version)s")|format(version=version['version']) if deletable
                                        else gettext("Cannot remove the last remaining version of an attachment.")),
                                 readonly=not deletable) }}

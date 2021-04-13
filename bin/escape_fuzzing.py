@@ -21,99 +21,182 @@ Please note, that this will still not catch any vulnerabilities, since it does
 not visits any page in any possible state with any possible request data. For
 example the following things not taken into account:
   * locked events
-  * form submits with some valid data and only some values set to to the
-    marker string
+  * form submits with some valid data and only some values set to to the payload
 
 To avoid confusion by the error output of the cdedb, you may want to execute
 this script, as follows:
 
    python3 -m bin.escape_fuzzing 2>/dev/null
 """
+import argparse
 import itertools
-import os
 import pathlib
 import queue
-from typing import NamedTuple, Optional
+import tempfile
+import time
+from typing import Collection, List, NamedTuple, Optional, Set, TYPE_CHECKING
 
 import webtest
 
-os.environ['CDEDB_TEST'] = "True"
-
-from cdedb.config import BasicConfig
 from cdedb.frontend.application import Application
+from tests.common import check_test_setup
 
-_BASICCONF = BasicConfig()
-
-outdir = pathlib.Path('./out')
-
-app = Application()
-wt_app = webtest.TestApp(app, extra_environ={
-    'REMOTE_ADDR': "127.0.0.0",
-    'SERVER_PROTOCOL': "HTTP/1.1",
-    'wsgi.url_scheme': 'https'})
-
-visited_urls = set()
-posted_urls = set()
+# Custom type definitions.
 ResponseData = NamedTuple("ResponseData", [("response", webtest.TestResponse),
                                            ("url", str), ("referer", Optional[str])])
-response_queue: queue.Queue[ResponseData] = queue.Queue()
+CheckReturn = NamedTuple("CheckReturn", [("errors", List[str]),
+                                         ("queue", List[ResponseData])])
 
-# URL parameters to ignore when checking for unique urls
-IGNORE_URL_PARAMS = ('confirm_id',)
-
-# exclude some forms which do some undesired behaviour
-posted_urls.add('/core/logout')
-posted_urls.add('/core/locale')
-posted_urls.add('/event/event/1/lock')
-posted_urls.add('/event/event/2/lock')
-
-# login as Anton and add the start page
-start_page = wt_app.get('/')
-login_form = start_page.forms['loginform']
-login_form['username'] = "anton@example.cde"
-login_form['password'] = "secret"
-start_page = login_form.submit()
-start_page = start_page.maybe_follow()
-response_queue.put(ResponseData(start_page, '/', None))
+# Keep track of runtime data.
+visited_urls: Set[str] = set()
+posted_urls: Set[str] = set()
 
 
-while True:
-    try:
-        response, url, referer = response_queue.get(False)
-    except queue.Empty:
-        break
+def setup(dbname: str, storage_dir: str) -> webtest.TestApp:
+    """Prepare the application."""
+    check_test_setup()
+    with tempfile.NamedTemporaryFile("w", suffix=".py") as f:
+        f.write(f"import pathlib\n"
+                f"STORAGE_DIR = pathlib.Path('{storage_dir}')\n"
+                f"CDB_DATABASE_NAME = '{dbname}'")
+        f.flush()
+        return Application(f.name)
+
+
+def main() -> int:
+    """Iterate over all visible page links and check them for the xss payload."""
+    parser = argparse.ArgumentParser(
+        description="Insert XSS payload into database, then traverse all sites to make"
+                    " sure it is escaped properly.")
+
+    general = parser.add_argument_group("General options")
+    general.add_argument("--dbname", "-d")
+    general.add_argument("--storage-dir", "-s", default="/tmp/cdedb-store")
+    general.add_argument("--outdir", "-o", default="./out")
+
+    config = parser.add_argument_group("Ccnfiguration")
+    config.add_argument("--verbose", "-v", action="store_true")
+    config.add_argument("--payload", "-p", default="<script>abcdef</script>")
+    config.add_argument("--secondary", "-sp", nargs='*',
+                        default=["&amp;lt;", "&amp;gt;"])
+
+    args = parser.parse_args()
+
+    app = setup(args.dbname, args.storage_dir)
+    wt_app = webtest.TestApp(app, extra_environ={
+        'REMOTE_ADDR': "127.0.0.0",
+        'SERVER_PROTOCOL': "HTTP/1.1",
+        'wsgi.url_scheme': 'https'})
+    outdir = pathlib.Path(args.outdir)
+    if not outdir.exists():
+        print(f"Target directory {outdir!r} doesn't exist."
+              f" Nothing will be written to file.")
+
+    # Exclude some forms which do some undesired behaviour
+    posted_urls.clear()
+    posted_urls.update({
+        '/core/logout', '/core/logout/all', '/core/locale',
+        '/event/event/1/lock', '/event/event/2/lock', '/event/event/3/lock'})
+    visited_urls.clear()
+
+    # login as Anton and add the start page
+    start_page = wt_app.get('/')
+    login_form = start_page.forms['loginform']
+    login_form['username'] = "anton@example.cde"
+    login_form['password'] = "secret"
+    start_page = login_form.submit().maybe_follow()
+
+    # Setup response queue.
+    if TYPE_CHECKING:
+        response_queue: queue.Queue[ResponseData]
+    response_queue = queue.Queue()
+    response_queue.put(ResponseData(start_page, '/', None))
+
+    errors = []
+    start_time = time.time()
+    while True:
+        try:
+            response_data = response_queue.get(False)
+        except queue.Empty:
+            break
+        e, q = check(response_data, outdir=outdir, verbose=args.verbose,
+                     payload=args.payload, secondary_payloads=args.secondary)
+        errors.extend(e)
+        for rd in q:
+            response_queue.put(rd)
+    end_time = time.time()
+    print(f"Found {len(errors)} errors in {end_time - start_time:.3f} seconds.")
+    return len(errors)
+
+
+def write_next_file(outdir: Optional[pathlib.Path], data: bytes) -> None:
+    """Write data to the next available numbered file in the target directory."""
+    if outdir and outdir.exists():
+        outfile = outdir / str(len(list(outdir.iterdir())))
+        with open(outfile, "wb") as f:
+            f.write(data)
+
+
+def check(response_data: ResponseData, *, payload: str,
+          secondary_payloads: Collection[str] = (), outdir: pathlib.Path = None,
+          verbose: bool = False) -> CheckReturn:
+    """Check a single response for presence of the payload.
+
+    :param payload: The payload that we try to inject everywhere we can. For optimal
+        coverage, you should prepare the database beforehand in such a way, that the
+        same payload has already been injecetd into every possible column.
+    :param secondary_payloads: If given, also check that all these strings are not
+        present anywhere, but do not try to inject this. This is useful to check that
+        the injected payload is excaped only once.
+    :param outdir: If given, write encountered errors into subsequent files inside this
+        directory.
+    :param verbose: If True, print encountered errors to console.
+
+    :returns: A tuple of two lists, with the first containing string represantations
+        of encountered errors error strings and the second containing new response data
+        to check later.
+    """
+    ret = CheckReturn([], [])
+
+    def log_error(s: str) -> None:
+        if verbose:
+            print(s)
+        ret.errors.append(s)
+
+    def fmt(e: Exception) -> str:
+        """Helper to format overly long exceptions."""
+        return str(e)[:90]
+
+    response, url, referer = response_data
 
     if 'html' not in response.content_type:
-        continue
+        return ret
 
     if b"cgitb" in response.body:
-        print("Found a cgitb error page while following {}".format(url))
-        continue
+        log_error(f"Found a cgitb error page while following {url}")
+        return ret
 
     # Do checks
-    # print("Checking {} ...".format(url))
-    if "<script>abcdef" in response.text:
-        print(">>> Found unescaped marker <script> in {}, reached from {}"
-              .format(url, referer))
-        if outdir.exists():
-            outfile = outdir / str(len(list(outdir.iterdir())))
-            with open(outfile, 'wb') as f:
-                f.write(response.body)
-    if "&amp;lt;" in response.text:
-        print(">>> Found double escaped '<' in {}, reached from {}"
-              .format(url, referer))
-        if outdir.exists():
-            outfile = outdir / str(len(list(outdir.iterdir())))
-            with open(outfile, 'wb') as f:
-                f.write(response.body)
+    if verbose:
+        print(f"Checking {url} ...")
+    if payload in response.text:
+        log_error(f"Found unescaped payload in {url}, reached from {referer}.")
+        write_next_file(outdir, response.body)
+    for secondary_payload in secondary_payloads:
+        if secondary_payload in response.text:
+            log_error(f"Found secondary payload in {url}, reached from {referer}")
+            write_next_file(outdir, response.body)
 
     # Follow all links to unvisited page urls
     for link_element in response.html.find_all('a'):
         if 'href' not in link_element.attrs:
             continue
         target = str(link_element.attrs['href'])
-        if target.startswith(('http://', 'https://', 'mailto:', '/doc/')):
+        if target.startswith(('http://', 'https://', 'mailto:', 'tel:', '/doc/',
+                              '/static/')):
             continue
+        if target.startswith('/db'):
+            target = target[3:]
         target = target.split('#')[0]
 
         # Strip ambiguous parameters from the url to check if it has already
@@ -124,7 +207,7 @@ while True:
         else:
             unique_target = tmp[0] + "?" + "&".join(
                 p for p in tmp[1].split('&')
-                if p.split('=')[0] not in IGNORE_URL_PARAMS)
+                if p.split('=')[0] not in {'confirm_id'})
 
         if not target or unique_target in visited_urls:
             continue
@@ -133,10 +216,10 @@ while True:
             new_response = response.goto(target)
             new_response = new_response.maybe_follow()
         except webtest.app.AppError as e:
-            print("Got error when following {}: {}".format(target, str(e)[:70]))
+            log_error(f"Got error when following {target} from {url}: {fmt(e)}")
             continue
         visited_urls.add(unique_target)
-        response_queue.put(ResponseData(new_response, target, url))
+        ret.queue.append(ResponseData(new_response, target, url))
 
     # Submit all forms to unvisited action urls
     for form in response.forms.values():
@@ -147,23 +230,27 @@ while True:
             new_response = form.submit()
             new_response = new_response.maybe_follow()
         except webtest.app.AppError as e:
-            print("Got error when posting to {}: {}"
-                  .format(form.action, str(e)[:70]))
+            log_error(f"Got error when posting to {form.action}: {fmt(e)}")
             continue
         posted_urls.add(form.action)
-        response_queue.put(ResponseData(new_response, form.action + " [P]", url), True)
+        ret.queue.append(ResponseData(new_response, form.action + " [P]", url))
 
         # Second try: Fill in the magic token into every form field
         for field in itertools.chain.from_iterable(form.fields.values()):
             if isinstance(field, (webtest.forms.Checkbox, webtest.forms.Radio,
                                   webtest.forms.File)):
                 continue
-            field.force_value("<script>abcdef</script>")
+            field.force_value(payload)
         try:
             new_response = form.submit()
             new_response = new_response.maybe_follow()
         except webtest.app.AppError as e:
-            print("Got error when posting to {} with marker data: {}"
-                  .format(form.action, str(e)[:70]))
+            log_error(f"Got error when posting to {form.action} with payload: {fmt(e)}")
             continue
-        response_queue.put(ResponseData(new_response, form.action + " [P+token]", url))
+        ret.queue.append(ResponseData(new_response, form.action + " [P+token]", url))
+
+    return ret
+
+
+if __name__ == "__main__":
+    main()
