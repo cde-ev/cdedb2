@@ -39,7 +39,6 @@ class SubscriptionManager:
         error_matrix: ActionStateErrorMatrix = SUBSCRIPTION_ERROR_MATRIX,
         action_target_state_map: ActionMap = ACTION_TARGET_STATE_MAP,
         unwritten_states: Optional[StateColl] = None,
-        cleanup_protected_states: Optional[StateColl] = None,
     ) -> None:
         """
         Create an instance of a `SubscriptionManager`.
@@ -50,18 +49,13 @@ class SubscriptionManager:
             action to target states.
         :param unwritten_states: Provide this if you want to keep track of a subset of
             all `SubscriptionState`s, that should not be written to your database.
-        :param cleanup_protected_states: Provide a subset of all `SubscriptionState`s,
-            that should not be automatically cleaned up. Defaults to all states that
-            would raise an error if `SubscriptionAction.cleanup_subscription` would be
-            pplied to it.
         """
         self.error_matrix = error_matrix
         self.action_target_state_map = action_target_state_map
         self.unwritten_states: StateSet = set(unwritten_states or ())
-        if cleanup_protected_states is None:
-            cleanup_protected_states = {
-                state for state in SubscriptionState
-                if self._get_error(SubscriptionAction.cleanup_subscription, state)}
+        cleanup_protected_states = {
+            state for state in SubscriptionState
+            if self._get_error(SubscriptionAction.cleanup_subscription, state)}
         self.cleanup_protected_states: StateSet = set(cleanup_protected_states)
 
     def _get_error(self,
