@@ -61,13 +61,13 @@ class SubscriptionManager:
         if cleanup_protected_states is None:
             cleanup_protected_states = {
                 state for state in SubscriptionState
-                if self.get_error(SubscriptionAction.cleanup_subscription, state)}
+                if self._get_error(SubscriptionAction.cleanup_subscription, state)}
         self.cleanup_protected_states: StateSet = set(cleanup_protected_states)
 
-    def get_error(self,
-                  action: SubscriptionAction,
-                  state: SubscriptionState,
-                  ) -> Optional[SubscriptionError]:
+    def _get_error(self,
+                   action: SubscriptionAction,
+                   state: SubscriptionState,
+                   ) -> Optional[SubscriptionError]:
         """Determine whether the given action is allowed for the given state.
 
         :returns: `None` if the action is allowed, a `SubscriptionError` to be raised
@@ -75,9 +75,9 @@ class SubscriptionManager:
         """
         return self.error_matrix[action][state]
 
-    def get_target_state(self,
-                         action: SubscriptionAction,
-                         ) -> SubscriptionState:
+    def _get_target_state(self,
+                          action: SubscriptionAction,
+                          ) -> SubscriptionState:
         """Determine the target state associated with the given action.
 
         Each action may only ever have one assotiated target state.
@@ -98,7 +98,7 @@ class SubscriptionManager:
         """
 
         # TODO: `if exception := self.get_error(action, old_state)`.
-        exception = self.get_error(action, old_state)
+        exception = self._get_error(action, old_state)
         if exception:
             raise exception
 
@@ -170,7 +170,7 @@ class SubscriptionManager:
         self._check_state_requirements(action, old_state)
 
         # 4: Return target state and log code associated with the action.
-        return self.get_target_state(action)
+        return self._get_target_state(action)
 
     def _apply_cleanup(self,
                        policy: SubscriptionPolicy,
