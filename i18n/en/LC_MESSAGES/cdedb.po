@@ -12709,114 +12709,126 @@ msgstr ""
 msgid "Malformed error."
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:576
+#: cdedb/frontend/templates/web/util.tmpl:328
+msgid "Phone number in the format +49 1234 5678910"
+msgstr ""
+
+#: cdedb/frontend/templates/web/util.tmpl:332
+msgid "Datetime in the format YYYY-MM-DD HH:MM"
+msgstr ""
+
+#: cdedb/frontend/templates/web/util.tmpl:336
+msgid "IBAN in the usual format, spaces are allowed"
+msgstr ""
+
+#: cdedb/frontend/templates/web/util.tmpl:589
 msgid "from"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:577
+#: cdedb/frontend/templates/web/util.tmpl:590
 #, python-format
 msgid "%s from"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:578
+#: cdedb/frontend/templates/web/util.tmpl:591
 msgid "to"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:579
+#: cdedb/frontend/templates/web/util.tmpl:592
 #, python-format
 msgid "%s to"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:679
+#: cdedb/frontend/templates/web/util.tmpl:691
 #, python-format
 msgid "%(title)s"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:699
+#: cdedb/frontend/templates/web/util.tmpl:711
 #, python-format
 msgid "Add %(name)s"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:810
+#: cdedb/frontend/templates/web/util.tmpl:822
 msgid "Text"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:813
+#: cdedb/frontend/templates/web/util.tmpl:825
 #, python-format
 msgid "Supports %(infolink)s for “Text-Only” fields."
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:815
-#: cdedb/frontend/templates/web/util.tmpl:948
+#: cdedb/frontend/templates/web/util.tmpl:827
+#: cdedb/frontend/templates/web/util.tmpl:960
 msgid "Markdown"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:816
-#: cdedb/frontend/templates/web/util.tmpl:949
+#: cdedb/frontend/templates/web/util.tmpl:828
+#: cdedb/frontend/templates/web/util.tmpl:961
 msgid "Short Markdown summary"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:819
+#: cdedb/frontend/templates/web/util.tmpl:831
 msgid "Query"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:821
+#: cdedb/frontend/templates/web/util.tmpl:833
 msgid "— Only Text —"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:825
+#: cdedb/frontend/templates/web/util.tmpl:837
 msgid "Input Size"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:826
-#: cdedb/frontend/templates/web/util.tmpl:827
+#: cdedb/frontend/templates/web/util.tmpl:838
+#: cdedb/frontend/templates/web/util.tmpl:839
 msgid "multiline"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:826
+#: cdedb/frontend/templates/web/util.tmpl:838
 msgid "singleline"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:831
+#: cdedb/frontend/templates/web/util.tmpl:843
 msgid "Default Value"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:837
+#: cdedb/frontend/templates/web/util.tmpl:849
 msgid "read-only"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:904
+#: cdedb/frontend/templates/web/util.tmpl:916
 #, python-format
 msgid "Hide %(label)s"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:904
+#: cdedb/frontend/templates/web/util.tmpl:916
 #, python-format
 msgid "Show %(label)s"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:907
+#: cdedb/frontend/templates/web/util.tmpl:919
 msgid "(enabled)"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:945
+#: cdedb/frontend/templates/web/util.tmpl:957
 #, python-format
 msgid "Supports %(infolink)s."
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:957
+#: cdedb/frontend/templates/web/util.tmpl:969
 msgid "Info!"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:957
+#: cdedb/frontend/templates/web/util.tmpl:969
 msgid "Success!"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:958
+#: cdedb/frontend/templates/web/util.tmpl:970
 msgid "Error!"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:958
+#: cdedb/frontend/templates/web/util.tmpl:970
 msgid "Warning!"
 msgstr ""
 
