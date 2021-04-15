@@ -1177,8 +1177,8 @@ class TestCdEFrontend(FrontendTest):
         with open("/tmp/cdedb-store/testfiles/batch_admission.csv") as datafile:
             tmp = datafile.read()
             placeholder_birthday = "03.10.9999"
-            wandering_birthday = "03.10.{}".format(now().year - 5)
-            unproblematic_birthday = "03.10.{}".format(now().year - 15)
+            wandering_birthday = f"03.10.{now().year - 5}"
+            unproblematic_birthday = f"03.10.{now().year - 15}"
             tmp = tmp.replace(placeholder_birthday, wandering_birthday)
             f['accounts'] = tmp
         self.submit(f, check_notification=False)
@@ -1191,7 +1191,7 @@ class TestCdEFrontend(FrontendTest):
         _, content = content.split(" Zeile 1:")
         output = []
         for i in range(2, 16):
-            head, content = content.split(" Zeile {}:".format(i))
+            head, content = content.split(f" Zeile {i}:")
             output.append(head)
         head, _ = content.split("Erneut validieren")
         output.append(head)
@@ -1227,7 +1227,7 @@ class TestCdEFrontend(FrontendTest):
                 exp = '1'
             else:
                 exp = ''
-            self.assertEqual(exp, f['resolution{}'.format(i)].value)
+            self.assertEqual(exp, f[f'resolution{i}'].value)
         inputdata = f['accounts'].value
         f['resolution1'] = 2
         f['resolution3'] = 2
@@ -1261,7 +1261,7 @@ class TestCdEFrontend(FrontendTest):
         _, content = content.split(" Zeile 1:")
         output = []
         for i in range(2, 16):
-            head, content = content.split(" Zeile {}:".format(i))
+            head, content = content.split(f" Zeile {i}:")
             output.append(head)
         head, _ = content.split("Erneut validieren")
         output.append(head)
@@ -1334,7 +1334,7 @@ class TestCdEFrontend(FrontendTest):
         _, content = content.split(" Zeile 1:")
         output = []
         for i in range(2, 16):
-            head, content = content.split(" Zeile {}:".format(i))
+            head, content = content.split(f" Zeile {i}:")
             output.append(head)
         head, _ = content.split("Erneut validieren")
         output.append(head)
