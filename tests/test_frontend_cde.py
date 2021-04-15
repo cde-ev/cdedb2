@@ -11,7 +11,9 @@ from typing import Set, Tuple
 import webtest
 
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, ADMIN_VIEWS_COOKIE_NAME, Role, extract_roles, now
+from cdedb.common import (
+    CdEDBObject, ADMIN_VIEWS_COOKIE_NAME, Role, extract_roles, now, LineResolutions
+)
 from cdedb.query import QueryOperators
 from tests.common import (
     FrontendTest, UserIdentifier, USER_DICT, as_users, get_user, prepsql,
@@ -1224,19 +1226,19 @@ class TestCdEFrontend(FrontendTest):
                 self.assertTrue(re.search(piece, out))
         for i in range(1, 16):
             if i in (2, 8):
-                exp = '1'
+                exp = str(LineResolutions.create.value)
             else:
                 exp = ''
             self.assertEqual(exp, f[f'resolution{i}'].value)
         inputdata = f['accounts'].value
-        f['resolution1'] = 2
-        f['resolution3'] = 2
-        f['resolution4'] = 2
-        f['resolution5'] = 5
+        f['resolution1'] = LineResolutions.skip.value
+        f['resolution3'] = LineResolutions.skip.value
+        f['resolution4'] = LineResolutions.skip.value
+        f['resolution5'] = LineResolutions.renew_and_update.value
         f['doppelganger_id5'] = '2'
-        f['resolution6'] = 4
+        f['resolution6'] = LineResolutions.update.value
         f['doppelganger_id6'] = '4'
-        f['resolution7'] = 5
+        f['resolution7'] = LineResolutions.renew_and_update.value
         f['doppelganger_id7'] = '5'
         inputdata = inputdata.replace("pa99", "pa14")
         inputdata = inputdata.replace(
@@ -1246,9 +1248,9 @@ class TestCdEFrontend(FrontendTest):
         inputdata = inputdata.replace("fPingst", "Pfingst")
         inputdata = inputdata.replace("wSish", "Swish")
         inputdata = inputdata.replace(wandering_birthday, unproblematic_birthday)
-        f['resolution13'] = 2
-        f['resolution14'] = 2
-        f['resolution16'] = 5
+        f['resolution13'] = LineResolutions.skip.value
+        f['resolution14'] = LineResolutions.skip.value
+        f['resolution16'] = LineResolutions.renew_and_update.value
         f['doppelganger_id16'] = '10'
         f['accounts'] = inputdata
         self.submit(f, check_notification=False)
@@ -1315,14 +1317,14 @@ class TestCdEFrontend(FrontendTest):
         inputdata = inputdata.replace('"1a";"Beispiel";"Bertålotta"',
                                       '"Ω";"Beispiel";"Bertålotta"')
         f['accounts'] = inputdata
-        f['resolution5'] = 5
+        f['resolution5'] = LineResolutions.renew_and_update.value
         f['doppelganger_id5'] = '2'
-        f['resolution7'] = 1
-        f['resolution9'] = 1
-        f['resolution10'] = 1
-        f['resolution11'] = 1
-        f['resolution12'] = 1
-        f['resolution15'] = 1
+        f['resolution7'] = LineResolutions.create.value
+        f['resolution9'] = LineResolutions.create.value
+        f['resolution10'] = LineResolutions.create.value
+        f['resolution11'] = LineResolutions.create.value
+        f['resolution12'] = LineResolutions.create.value
+        f['resolution15'] = LineResolutions.create.value
         self.submit(f, check_notification=False)
 
         # third round
@@ -1378,9 +1380,9 @@ class TestCdEFrontend(FrontendTest):
         for nonex, out in zip(nonexpectation, output):
             for piece in nonex:
                 self.assertFalse(re.search(piece, out))
-        f['resolution5'] = 5
+        f['resolution5'] = LineResolutions.renew_and_update.value
         f['doppelganger_id5'] = '2'
-        f['resolution7'] = 5
+        f['resolution7'] = LineResolutions.renew_and_update.value
         self.assertEqual('', f['finalized'].value)
         self.submit(f, check_notification=False)
 
@@ -1388,7 +1390,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Anlegen")
         self.assertNonPresence("Erneut validieren")
         f = self.response.forms['admissionform']
-        self.assertEqual('5', f['resolution5'].value)
+        self.assertEqual(str(LineResolutions.renew_and_update.value), f['resolution5'].value)
         self.assertEqual('True', f['finalized'].value)
         self.submit(f, check_notification=False)
         self.assertPresence("7 Accounts erstellt.", div="notifications")
