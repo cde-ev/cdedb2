@@ -824,50 +824,23 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("ml", modi={"POST"})
     @mailinglist_guard(requires_privilege=True)
-    @REQUESTdata("persona_id")
-    def approve_request(self, rs: RequestState, mailinglist_id: int,
-                        persona_id: vtypes.ID) -> Response:
+    @REQUESTdata("persona_id", "action")
+    def handle_request(self, rs: RequestState, mailinglist_id: int,
+                       persona_id: vtypes.ID, action: str) -> Response:
         """Evaluate whether to admit subscribers."""
-        if rs.has_validation_errors():
+        action_map = {
+            'accept': SubscriptionAction.approve_request,
+            'reject': SubscriptionAction.deny_request,
+            'block': SubscriptionAction.block_request
+        }
+        if rs.has_validation_errors() or action not in action_map:
             return self.management(rs, mailinglist_id)
         if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):
             rs.notify("error", n_("User does not exist or is archived."))
             return self.management(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, SubscriptionAction.approve_request,
-            mailinglist_id=mailinglist_id, persona_id=persona_id)
-        return self.redirect(rs, "ml/management")
-
-    @access("ml", modi={"POST"})
-    @mailinglist_guard(requires_privilege=True)
-    @REQUESTdata("persona_id")
-    def deny_request(self, rs: RequestState, mailinglist_id: int,
-                     persona_id: vtypes.ID) -> Response:
-        """Evaluate whether to admit subscribers."""
-        if rs.has_validation_errors():
-            return self.management(rs, mailinglist_id)
-        if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):
-            rs.notify("error", n_("User does not exist or is archived."))
-            return self.management(rs, mailinglist_id)
-        self._subscription_action_handler(
-            rs, SubscriptionAction.deny_request,
-            mailinglist_id=mailinglist_id, persona_id=persona_id)
-        return self.redirect(rs, "ml/management")
-
-    @access("ml", modi={"POST"})
-    @mailinglist_guard(requires_privilege=True)
-    @REQUESTdata("persona_id")
-    def block_request(self, rs: RequestState, mailinglist_id: int,
-                      persona_id: vtypes.ID) -> Response:
-        """Evaluate whether to admit subscribers."""
-        if rs.has_validation_errors():
-            return self.management(rs, mailinglist_id)
-        if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):
-            rs.notify("error", n_("User does not exist or is archived."))
-            return self.management(rs, mailinglist_id)
-        self._subscription_action_handler(
-            rs, SubscriptionAction.block_request,
-            mailinglist_id=mailinglist_id, persona_id=persona_id)
+            rs, action=action_map[action], mailinglist_id=mailinglist_id,
+            persona_id=persona_id)
         return self.redirect(rs, "ml/management")
 
     @access("ml", modi={"POST"})
