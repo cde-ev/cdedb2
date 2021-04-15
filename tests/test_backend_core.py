@@ -1191,10 +1191,20 @@ class TestCoreBackend(BackendTest):
     @as_users("vera")
     def test_automated_archival(self, user: CdEDBObject) -> None:
         for u in USER_DICT.values():
+            self.login(user)
             with self.subTest(u=u["id"]):
                 expectation = u["id"] in {18}
                 res = self.core.is_persona_automatically_archivable(self.key, u["id"])
                 self.assertEqual(expectation, res)
+                if res:
+                    key = self.key
+                    self.assertIsNone(
+                        self.core.get_persona_latest_session(key, u["id"]))
+                    self.login(u)
+                    self.assertIsNotNone(
+                        self.core.get_persona_latest_session(key, u["id"]))
+                    self.assertFalse(
+                        self.core.is_persona_automatically_archivable(key, u["id"]))
 
     @as_users("janis")
     def test_list_personas(self, user: CdEDBObject) -> None:

@@ -1227,7 +1227,7 @@ class CoreBackend(AbstractBackend):
 
             # Check latest user session.
             latest_session = self.get_persona_latest_session(rs, persona_id)
-            if latest_session is not None and latest_session > cutoff:
+            if latest_session is not None and latest_session.date() > cutoff:
                 return False
 
             generation = self.changelog_get_generation(rs, persona_id)
