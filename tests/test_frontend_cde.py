@@ -1418,6 +1418,36 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("CdE-Mitglied (Probemitgliedschaft)",
                             div="membership")
 
+    @as_users("vera")
+    def test_batch_admission_review(self, user: CdEDBObject) -> None:
+        # check that we force a review if an existing data set is been upgraded
+        data = ('"pa14";"1a";"Dino";"Daniel";"";"";"";"1";"";"";"";"";"";"";"";'
+                '"daniel@example.cde";"19.02.1963"')
+
+        self.traverse({'description': 'Mitglieder'},
+                      {'description': 'Nutzer verwalten'},
+                      {'description': 'Massenaufnahme'})
+        self.assertTitle("Accounts anlegen")
+        f = self.response.forms['admissionform']
+        f['accounts'] = data
+        self.submit(f, check_notification=False)
+
+        self.assertTitle("Accounts anlegen")
+        f = self.response.forms['admissionform']
+        f['resolution1'] = LineResolutions.update.value
+        f['doppelganger_id1'] = "4"
+        self.submit(f, check_notification=False)
+
+        self.assertTitle("Accounts anlegen")
+        f = self.response.forms['admissionform']
+        self.submit(f)
+
+        # now, lets check the review exists
+        self.traverse({"description": "Index"},
+                      {"description": "Änderungen prüfen"})
+        self.assertPresence("Daniel Dino")
+
+
     @as_users("farin")
     def test_money_transfers(self, user: CdEDBObject) -> None:
         self.traverse({'description': 'Mitglieder'},
