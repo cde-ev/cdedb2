@@ -1247,10 +1247,12 @@ class TestCdEFrontend(FrontendTest):
         inputdata = inputdata.replace("00000", "07751")
         inputdata = inputdata.replace("fPingst", "Pfingst")
         inputdata = inputdata.replace("wSish", "Swish")
+        f['is_orga10'] = True
         inputdata = inputdata.replace(wandering_birthday, unproblematic_birthday)
         f['resolution13'] = LineResolutions.skip.value
         f['resolution14'] = LineResolutions.skip.value
         f['resolution16'] = LineResolutions.renew_and_update.value
+        f['is_instructor16'] = True
         f['doppelganger_id16'] = '10'
         f['accounts'] = inputdata
         self.submit(f, check_notification=False)
@@ -1404,6 +1406,11 @@ class TestCdEFrontend(FrontendTest):
         self.assertNonPresence("Willy Brandt")
         self.assertPresence("Gerhard Schröder", div='list-participants')
         self.assertPresence("Angela Merkel", div='list-participants')
+        self.assertPresence("Gustav Heinemann (1a. Swish -- und alles ist gut) (Orga)",
+                            div='list-participants')
+
+        self.traverse({'description': 'Swish -- und alles ist gut'})
+        self.assertPresence("Janis Jalapeño (Kursleiter)")
 
         self.traverse({'description': 'Angela Merkel'})
         self.assertPresence("0,00 €", div='balance')
