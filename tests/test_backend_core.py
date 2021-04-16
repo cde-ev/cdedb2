@@ -1168,6 +1168,8 @@ class TestCoreBackend(BackendTest):
     def test_get_persona_latest_session(self) -> None:
         ip = "127.0.0.1"
         for u in USER_DICT.values():
+            if u["id"] is None:
+                continue
             with self.subTest(u=u["id"]):
                 if u["id"] in {8, 12, 15}:
                     if u["id"] in {15}:  # These users are deactivated.
@@ -1178,7 +1180,7 @@ class TestCoreBackend(BackendTest):
                         with self.assertRaises(TypeError):
                             self.core.login(ANONYMOUS, u["username"], u["password"], ip)
                 else:
-                    if self.is_user(u["id"]):
+                    if not self.is_user(u["id"]):
                         self.assertIsNone(
                             self.core.get_persona_latest_session(self.key, u["id"]))
                         self.core.login(ANONYMOUS, u["username"], u["password"], ip)
