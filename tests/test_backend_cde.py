@@ -55,27 +55,29 @@ class TestCdEBackend(BackendTest):
         with self.assertRaises(QuotaException):
             self.cde.submit_general_query(self.key, query)
 
-    @as_users("berta")
     def test_displacement(self) -> None:
+        user = USER_DICT["berta"]
+        self.login(user)
         data = {'id': self.user['id'], 'family_name': "Link"}
         self.assertEqual(-1, self.core.change_persona(self.key, data, generation=1))
         newaddress = "newaddress@example.cde"
         ret, _ = self.core.change_username(
             self.key, self.user['id'], newaddress, self.user['password'])
         self.assertTrue(ret)
-        self.core.logout(self.key)
-        self.login(self.user)
-        self.assertEqual(None, self.key)
-        newuser = dict(self.user)
+        self.logout()
+        self.assertTrue(self.is_user("anonymous"))
+        self.login(user)
+        self.assertTrue(self.is_user("anonymous"))
+        newuser = dict(user)
         newuser['username'] = newaddress
         self.login(newuser)
-        self.assertTrue(self.key)
-        data = self.core.get_cde_user(self.key, self.user['id'],)
+        self.assertTrue(self.is_user(newuser))
+        data = self.core.get_cde_user(self.key, newuser['id'])
         self.assertEqual(self.user['family_name'], data['family_name'])
-        self.core.logout(self.key)
-        self.login(USER_DICT['vera'])
-        self.core.changelog_resolve_change(self.key, self.user['id'], 4, ack=True)
-        data = self.core.get_cde_user(self.key, self.user['id'],)
+        self.logout()
+        self.login("vera")
+        self.core.changelog_resolve_change(self.key, newuser['id'], 4, ack=True)
+        data = self.core.get_cde_user(self.key, newuser['id'],)
         self.assertEqual("Link", data['family_name'])
 
     @as_users("berta")
