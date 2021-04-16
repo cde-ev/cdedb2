@@ -934,10 +934,11 @@ class FrontendTest(BackendTest):
         user = get_user(user)
         self.user = user
         self.get("/", verbose=verbose)
-        f = self.response.forms['loginform']
-        f['username'] = user['username']
-        f['password'] = user['password']
-        self.submit(f, check_notification=False, verbose=verbose)
+        if not self.is_user("anonymous"):
+            f = self.response.forms['loginform']
+            f['username'] = user['username']
+            f['password'] = user['password']
+            self.submit(f, check_notification=False, verbose=verbose)
         self.key = self.app.cookies.get('sessionkey', None)
         return self.key  # type: ignore
 
