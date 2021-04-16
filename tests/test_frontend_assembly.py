@@ -307,6 +307,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
 
     @as_users("annika", "martin", "vera", "werner")
     def test_sidebar_one_assembly(self) -> None:
+        user = self.user
         self.traverse({'description': 'Versammlungen'})
 
         # they are no member and not yet signed up
@@ -315,12 +316,12 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
 
             # now, sign them up
             self.logout()
-            self.login(USER_DICT['werner'])
+            self.login('werner')
             self.traverse({'description': 'Versammlungen'},
                           {'description': 'Internationaler Kongress'})
-            self._external_signup(self.user)
+            self._external_signup(user)
             self.logout()
-            self.login(self.user)
+            self.login(user)
             self.traverse({'description': 'Versammlungen'})
 
         self.traverse({'description': 'Internationaler Kongress'})

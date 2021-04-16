@@ -1028,6 +1028,7 @@ class TestMlFrontend(FrontendTest):
     @as_users("nina", "berta")
     def test_subscription_errors(self) -> None:
         # preparation: subscription request from inga
+        user = self.user
         self.logout()
         self.login(USER_DICT['inga'])
         self.traverse({'href': '/ml/$'},
@@ -1036,7 +1037,7 @@ class TestMlFrontend(FrontendTest):
         f = self.response.forms['subscribe-mod-form']
         self.submit(f)
         self.logout()
-        self.login(self.user)
+        self.login(user)
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/4'},
                       {'href': '/ml/mailinglist/4/management'}, )

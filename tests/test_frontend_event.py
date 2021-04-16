@@ -1933,7 +1933,7 @@ etc;anything else""", f['entries_2'].value)
             # Make sure the index shows it as cancelled.
             # Orgas only see it as Organized event now.
             self.traverse({'href': '/event'})
-            self.assertPresence("02.02.2222–30.11.2222, wurde abgesagt.")
+            self.assertPresence("02.02.2222 – 30.11.2222, wurde abgesagt.")
 
             # Make sure the management page shows it as cancelled
             self.traverse({'href': '/event/event/list'})

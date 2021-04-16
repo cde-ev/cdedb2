@@ -1943,7 +1943,7 @@ class TestCdEFrontend(FrontendTest):
         else:
             # normal members
             self.assertNoLink('/core/persona/5/show')
-            if self.is_user("charly"):
+            if not self.is_user("charly"):
                 self.assertNoLink('/core/persona/3/show')
 
     @as_users("daniel")
@@ -1988,7 +1988,7 @@ class TestCdEFrontend(FrontendTest):
                 # requesting user not searchable / no member
                 self.assertNoLink(content="Emilia")
                 self.assertNoLink(content="Ferdindand")
-                if self.is_user("charly"):
+                if not self.is_user("charly"):
                     # requested user not searchable.
                     self.assertNoLink(content="Charly")
 

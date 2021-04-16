@@ -512,6 +512,7 @@ class TestPrivacyFrontend(FrontendTest):
                     else:
                         msg = f"Forget {self.user['given_name']} in case {realm}."
                         raise RuntimeError(msg)
+                self.logout()
 
     def test_profile_of_disabled_user(self) -> None:
         # a disabled user should be viewable as an equal non-disabled user
@@ -586,6 +587,8 @@ class TestPrivacyFrontend(FrontendTest):
                 else:
                     self.get('/assembly/search/user', status="403 FORBIDDEN")
                     self.assertTitle("403: Forbidden")
+
+                self.logout()
 
     @as_users("anton")
     def test_member_search_result(self) -> None:

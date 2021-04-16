@@ -2665,7 +2665,7 @@ class TestEventBackend(BackendTest):
 
     @as_users("emilia", "garcia", "annika")
     def test_calculate_fees(self) -> None:
-        if self.is_user("emilia"):
+        if not self.is_user("emilia"):
             reg_ids = self.event.list_registrations(self.key, event_id=1)
             expectation = {
                 1: decimal.Decimal("573.99"),

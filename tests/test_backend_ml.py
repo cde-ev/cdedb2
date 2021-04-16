@@ -1065,7 +1065,7 @@ class TestMlBackend(BackendTest):
                     persona_id=user_id)
             # You had never the chance to actually change something anyway, trying to
             # change the subscription state of someone else.
-            if self.is_user(user_id):
+            if not self.is_user(user_id):
                 with self.assertRaises(PrivilegeError):
                     datum = {
                         'mailinglist_id': ml_id,
@@ -1081,6 +1081,8 @@ class TestMlBackend(BackendTest):
 
         # Users have very diverse states on list 5.
         for subscriber in USER_DICT.values():
+            if subscriber['id'] is None:
+                continue
             _try_everything(5, subscriber['id'])
 
     @as_users("janis", "kalif")
@@ -1885,7 +1887,7 @@ class TestMlBackend(BackendTest):
                 'id': new_id,
                 'ml_type': const.MailinglistTypes.member_opt_in,
             }
-            if self.is_user("nina"):
+            if not self.is_user("nina"):
                 with self.assertRaises(PrivilegeError) as cm:
                     self.ml.set_mailinglist(self.key, mdata)
                 self.assertEqual(cm.exception.args,

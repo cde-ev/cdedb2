@@ -322,7 +322,7 @@ class TestCoreFrontend(FrontendTest):
             self.get('/core/persona/select?kind=ml_user&phrase=@exam',
                      status=403)
             self.assertTitle('403: Forbidden')
-        if self.is_user("nina"):
+        if not self.is_user("nina"):
             self.get('/core/persona/select?kind=pure_ml_user&phrase=@exam',
                      status=403)
             self.assertTitle('403: Forbidden')
