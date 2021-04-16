@@ -13,7 +13,7 @@ class TestPastEventBackend(BackendTest):
     used_backends = ("core", "event", "pastevent")
 
     @as_users("vera", "berta")
-    def test_participation_infos(self, user: CdEDBObject) -> None:
+    def test_participation_infos(self) -> None:
         participation_infos = self.pastevent.participation_infos(self.key, (1, 2))
         expectation = {
             1: dict(),
@@ -37,7 +37,7 @@ class TestPastEventBackend(BackendTest):
         self.assertEqual(participation_infos[1], participation_info)
 
     @as_users("vera")
-    def test_entity_past_event(self, user: CdEDBObject) -> None:
+    def test_entity_past_event(self) -> None:
         old_events = self.pastevent.list_past_events(self.key)
         data = {
             'title': "New Link Academy",
@@ -63,21 +63,21 @@ class TestPastEventBackend(BackendTest):
         self.assertIn(new_id, new_events)
 
     @as_users("vera")
-    def test_delete_past_course_cascade(self, user: CdEDBObject) -> None:
+    def test_delete_past_course_cascade(self) -> None:
         self.assertIn(1, self.pastevent.list_past_courses(self.key, 1))
         self.pastevent.delete_past_course(
             self.key, 1, cascade=("participants",))
         self.assertNotIn(1, self.pastevent.list_past_courses(self.key, 1))
 
     @as_users("vera")
-    def test_delete_past_event_cascade(self, user: CdEDBObject) -> None:
+    def test_delete_past_event_cascade(self) -> None:
         self.assertIn(1, self.pastevent.list_past_events(self.key))
         self.pastevent.delete_past_event(
             self.key, 1, cascade=("courses", "participants", "log"))
         self.assertNotIn(1, self.pastevent.list_past_events(self.key))
 
     @as_users("vera")
-    def test_entity_past_course(self, user: CdEDBObject) -> None:
+    def test_entity_past_course(self) -> None:
         pevent_id = 1
         old_courses = self.pastevent.list_past_courses(self.key, pevent_id)
         data = {
@@ -105,7 +105,7 @@ class TestPastEventBackend(BackendTest):
         self.assertNotIn(new_id, newer_courses)
 
     @as_users("vera")
-    def test_entity_participant(self, user: CdEDBObject) -> None:
+    def test_entity_participant(self) -> None:
         expectation = {
             (2, 1): {
                 'pcourse_id': 1, 'is_instructor': True,
@@ -159,7 +159,7 @@ class TestPastEventBackend(BackendTest):
                          self.pastevent.list_participants(self.key, pevent_id=1))
 
     @as_users("vera")
-    def test_participant_consistency(self, user: CdEDBObject) -> None:
+    def test_participant_consistency(self) -> None:
         # See issue #1458
         participants = self.pastevent.list_participants(self.key, pevent_id=1)
         self.assertIn((3, None), participants)
@@ -170,7 +170,7 @@ class TestPastEventBackend(BackendTest):
         self.assertIn((3, 2), participants)
 
     @as_users("vera")
-    def test_past_log(self, user: CdEDBObject) -> None:
+    def test_past_log(self) -> None:
         # first generate some data
         data = {
             'title': "New Link Academy",
@@ -207,53 +207,53 @@ class TestPastEventBackend(BackendTest):
              'ctime': nearly_now(),
              'pevent_id': 1001,
              'persona_id': None,
-             'submitted_by': user['id']},
+             'submitted_by': self.user['id']},
             {'id': 1002,
              'change_note': None,
              'code': const.PastEventLogCodes.event_changed,
              'ctime': nearly_now(),
              'pevent_id': 1001,
              'persona_id': None,
-             'submitted_by': user['id']},
+             'submitted_by': self.user['id']},
             {'id': 1003,
              'change_note': 'Topos theory for the kindergarden',
              'code': const.PastEventLogCodes.course_created,
              'ctime': nearly_now(),
              'pevent_id': 1,
              'persona_id': None,
-             'submitted_by': user['id']},
+             'submitted_by': self.user['id']},
             {'id': 1004,
              'change_note': 'New improved title',
              'code': const.PastEventLogCodes.course_changed,
              'ctime': nearly_now(),
              'pevent_id': 1,
              'persona_id': None,
-             'submitted_by': user['id']},
+             'submitted_by': self.user['id']},
             {'id': 1005,
              'change_note': 'New improved title',
              'code': const.PastEventLogCodes.course_deleted,
              'ctime': nearly_now(),
              'pevent_id': 1,
              'persona_id': None,
-             'submitted_by': user['id']},
+             'submitted_by': self.user['id']},
             {'id': 1006,
              'change_note': None,
              'code': const.PastEventLogCodes.participant_added,
              'ctime': nearly_now(),
              'pevent_id': 1,
              'persona_id': 5,
-             'submitted_by': user['id']},
+             'submitted_by': self.user['id']},
             {'id': 1007,
              'change_note': None,
              'code': const.PastEventLogCodes.participant_removed,
              'ctime': nearly_now(),
              'pevent_id': 1,
              'persona_id': 5,
-             'submitted_by': user['id']}))
+             'submitted_by': self.user['id']}))
         self.assertEqual(expectation, self.pastevent.retrieve_past_log(self.key))
 
     @as_users("anton")
-    def test_archive(self, user: CdEDBObject) -> None:
+    def test_archive(self) -> None:
         update = {
             'id': 1,
             'registration_soft_limit': datetime.datetime(2001, 10, 30, 0, 0, 0,
