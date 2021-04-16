@@ -443,10 +443,18 @@ class BackendTest(CdEDBTest):
         if user["id"] is None:
             raise RuntimeError("Anonymous users not supported for backend tests."
                                " Pass `ANONYMOUS` in place of `self.key` instead.")
-        self.user = user
         self.key = cast(RequestState, self.core.login(
             ANONYMOUS, user['username'], user['password'], ip))
+        if self.key:
+            self.user = user
+        else:
+            self.user = USER_DICT["anonymous"]
         return self.key  # type: ignore
+
+    def logout(self) -> None:
+        self.core.logout(self.key)
+        self.key = ANONYMOUS
+        self.user = USER_DICT["anonymous"]
 
     def is_user(self, *identifiers: UserIdentifier) -> bool:
         """Check whether the current user is any of the given users."""
