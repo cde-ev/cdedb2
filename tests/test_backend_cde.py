@@ -57,7 +57,7 @@ class TestCdEBackend(BackendTest):
 
     @as_users("berta")
     def test_displacement(self) -> None:
-        data = {'id':self.user['id'], 'family_name': "Link"}
+        data = {'id': self.user['id'], 'family_name': "Link"}
         self.assertEqual(-1, self.core.change_persona(self.key, data, generation=1))
         newaddress = "newaddress@example.cde"
         ret, _ = self.core.change_username(
@@ -66,7 +66,7 @@ class TestCdEBackend(BackendTest):
         self.core.logout(self.key)
         self.login(self.user)
         self.assertEqual(None, self.key)
-        newuser = copy.deepcopy(self.user)
+        newuser = dict(self.user)
         newuser['username'] = newaddress
         self.login(newuser)
         self.assertTrue(self.key)

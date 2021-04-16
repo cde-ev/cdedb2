@@ -10,7 +10,7 @@ import webtest
 import cdedb.database.constants as const
 from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, CdEDBObject, get_hash
 from cdedb.query import QueryOperators
-from tests.common import FrontendTest, UserIdentifier, USER_DICT, as_users
+from tests.common import FrontendTest, UserIdentifier, UserObject, USER_DICT, as_users
 
 
 class TestCoreFrontend(FrontendTest):
@@ -633,7 +633,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertNonPresence(self.user['display_name'])
         self.login(self.user)
         self.assertIn('loginform', self.response.forms)
-        new_user = copy.deepcopy(self.user)
+        new_user = dict(self.user)
         new_user['password'] = new_password
         self.login(new_user)
         self.assertNotIn('loginform', self.response.forms)
@@ -674,7 +674,7 @@ class TestCoreFrontend(FrontendTest):
                         self.submit(f)
                         self.login(user)
                         self.assertIn('loginform', self.response.forms)
-                        new_user = copy.deepcopy(user)
+                        new_user = dict(user)
                         new_user['password'] = val
                         self.login(new_user)
                         self.assertNotIn('loginform', self.response.forms)
@@ -740,7 +740,7 @@ class TestCoreFrontend(FrontendTest):
         other = USER_DICT['ferdinand']
         self.login(other)
         self.assertIn('loginform', self.response.forms)
-        new_other = copy.deepcopy(other)
+        new_other = dict(other)
         new_other['password'] = new_password
         self.login(new_other)
         self.assertNotIn('loginform', self.response.forms)
@@ -792,7 +792,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertIn('loginform', self.response.forms)
         self.login(self.user)
         self.assertIn('loginform', self.response.forms)
-        new_user = copy.deepcopy(self.user)
+        new_user = dict(self.user)
         new_user['username'] = new_username
         self.login(new_user)
         self.assertNotIn('loginform', self.response.forms)
@@ -812,7 +812,7 @@ class TestCoreFrontend(FrontendTest):
         berta = USER_DICT['berta']
         self.login(berta)
         self.assertIn('loginform', self.response.forms)
-        new_berta = copy.deepcopy(berta)
+        new_berta = dict(berta)
         new_berta['username'] = new_username
         self.login(new_berta)
         self.assertNotIn('loginform', self.response.forms)
@@ -860,7 +860,6 @@ class TestCoreFrontend(FrontendTest):
     def test_privilege_change(self) -> None:
         # Grant new admin privileges.
         new_admin = USER_DICT["berta"]
-        new_admin_copy = copy.deepcopy(new_admin)
         new_privileges = {
             'is_event_admin': True,
             'is_assembly_admin': True,
@@ -877,8 +876,8 @@ class TestCoreFrontend(FrontendTest):
             'is_cdelokal_admin': False
         }
         new_password = "ihsokdmfsod"
-        self._approve_privilege_change(
-            USER_DICT["anton"], USER_DICT["martin"], new_admin_copy,
+        new_admin_copy = self._approve_privilege_change(
+            USER_DICT["anton"], USER_DICT["martin"], new_admin,
             new_privileges, old_privileges, new_password=new_password)
         # Check success.
         self.get('/core/persona/{}/privileges'.format(new_admin["id"]))
@@ -970,18 +969,18 @@ class TestCoreFrontend(FrontendTest):
 
     def test_archival_admin_requirement(self) -> None:
         # First grant admin privileges to new admin.
-        new_admin = copy.deepcopy(USER_DICT["berta"])
+        new_admin = USER_DICT["berta"]
         new_privileges = {
             'is_core_admin': True,
             'is_cde_admin': True,
         }
         new_password = "ponsdfsidnsdgj"
-        self._approve_privilege_change(
+        new_admin_copy = self._approve_privilege_change(
             USER_DICT["anton"], USER_DICT["martin"], new_admin,
             new_privileges, new_password=new_password)
         # Test archival
         self.logout()
-        self.login(new_admin)
+        self.login(new_admin_copy)
         self.admin_view_profile("daniel")
         f = self.response.forms["archivepersonaform"]
         f["note"] = "Archived for testing."
@@ -1016,7 +1015,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence(USER_DICT["martin"]["username"])
 
     def _initialize_privilege_change(self, admin1: UserIdentifier,
-                                     admin2: UserIdentifier, new_admin: CdEDBObject,
+                                     admin2: UserIdentifier, new_admin: UserObject,
                                      new_privileges: Dict[str, bool],
                                      old_privileges: Dict[str, bool] = None,
                                      note: str = "For testing.") -> None:
@@ -1040,11 +1039,11 @@ class TestCoreFrontend(FrontendTest):
         self.logout()
 
     def _approve_privilege_change(self, admin1: UserIdentifier, admin2: UserIdentifier,
-                                  new_admin: CdEDBObject,
+                                  new_admin: UserObject,
                                   new_privileges: Dict[str, bool],
                                   old_privileges: Dict[str, bool] = None,
                                   note: str = "For testing.",
-                                  new_password: str = None) -> None:
+                                  new_password: str = None) -> UserObject:
         """Helper to make a user an admin."""
         self._initialize_privilege_change(
             admin1, admin2, new_admin, new_privileges, old_privileges)
@@ -1066,10 +1065,12 @@ class TestCoreFrontend(FrontendTest):
             f["new_password2"] = new_password
             self.submit(f)
             # Only do this with a deepcopy of the user!
+            new_admin = dict(new_admin)
             new_admin['password'] = new_password
+        return new_admin
 
     def _reject_privilege_change(self, admin1: UserIdentifier, admin2: UserIdentifier,
-                                 new_admin: CdEDBObject,
+                                 new_admin: UserObject,
                                  new_privileges: Dict[str, bool],
                                  old_privileges: Dict[str, bool] = None,
                                  note: str = "For testing.") -> None:

@@ -106,7 +106,7 @@ class TestCoreBackend(BackendTest):
         self.core.logout(self.key)
         self.login(self.user)
         self.assertIsNone(self.key)
-        newuser = copy.deepcopy(self.user)
+        newuser = dict(self.user)
         newuser['password'] = newpass
         self.login(newuser)
         self.assertTrue(self.key)
@@ -140,7 +140,7 @@ class TestCoreBackend(BackendTest):
         self.core.logout(self.key)
         self.login(self.user)
         self.assertIsNone(self.key)
-        newuser = copy.deepcopy(self.user)
+        newuser = dict(self.user)
         newuser['username'] = newaddress
         self.login(newuser)
         self.assertTrue(self.key)

@@ -13,7 +13,7 @@ import cdedb.database.constants as const
 from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, CdEDBObject, now
 from cdedb.frontend.common import CustomCSVDialect, iban_filter
 from cdedb.query import QueryOperators
-from tests.common import USER_DICT, FrontendTest, as_users, prepsql
+from tests.common import UserObject, USER_DICT, FrontendTest, as_users, prepsql
 
 
 class TestEventFrontend(FrontendTest):
@@ -1817,7 +1817,7 @@ etc;anything else""", f['entries_2'].value)
         self.get('/event/event/2/registration/list?part_id=5000', status=404)
         self.get('/event/event/2/registration/list?part_id=3', status=404)
 
-    def _sort_appearance(self, userlist: Sequence[CdEDBObject]) -> None:
+    def _sort_appearance(self, userlist: Sequence[UserObject]) -> None:
         row = 1
         for user in userlist:
             self.assertPresence(user['given_names'], div="row-" + str(row))

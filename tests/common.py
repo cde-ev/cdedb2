@@ -23,7 +23,7 @@ import unittest
 import urllib.parse
 from types import TracebackType
 from typing import (
-    Any, AnyStr, Callable, ClassVar, Collection, Dict, Iterable, List, MutableMapping,
+    Any, AnyStr, Callable, ClassVar, Dict, Iterable, List, Mapping, MutableMapping,
     NamedTuple, Optional, Pattern, Sequence, Set, TextIO, Tuple, Type, TypeVar, Union,
     cast, no_type_check,
 )
@@ -62,7 +62,7 @@ ExceptionInfo = Union[
 ]
 
 # TODO: use TypedDict to specify UserObject.
-UserObject = CdEDBObject
+UserObject = Mapping[str, Any]
 
 # This is to be used in place of `self.key` for anonymous requests. It makes mypy happy.
 ANONYMOUS = cast(RequestState, None)
@@ -400,7 +400,7 @@ class CdEDBTest(BasicTest):
         super().setUp()
 
 
-UserIdentifier = Union[CdEDBObject, str, int]
+UserIdentifier = Union[UserObject, str, int]
 
 
 class BackendTest(CdEDBTest):
@@ -415,7 +415,7 @@ class BackendTest(CdEDBTest):
     pastevent: ClassVar[PastEventBackend]
     ml: ClassVar[MlBackend]
     assembly: ClassVar[AssemblyBackend]
-    user: CdEDBObject
+    user: UserObject
     key: RequestState
 
     @classmethod
@@ -697,7 +697,7 @@ USER_DICT: Dict[str, UserObject] = {
 _PERSONA_ID_TO_USER = {user["id"]: user for user in USER_DICT.values()}
 
 
-def get_user(user: UserIdentifier) -> CdEDBObject:
+def get_user(user: UserIdentifier) -> UserObject:
     if isinstance(user, str):
         user = USER_DICT[user]
     elif isinstance(user, int):
