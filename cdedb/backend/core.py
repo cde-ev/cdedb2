@@ -1229,7 +1229,11 @@ class CoreBackend(AbstractBackend):
             if latest_session is not None and latest_session.date() > cutoff:
                 return False
 
-            generation = self.changelog_get_generation(rs, persona_id)
+            query = ("SELECT MAX(generation) FROM core.changelog"
+                     " WHERE persona_id = %s AND change_note != %s")
+            params = (persona_id, "Land auf Ländercode umgestellt.")
+            generation = unwrap(self.query_one(rs, query, params))
+            assert isinstance(generation, int)
             history = self.changelog_get_history(rs, persona_id, (generation,))
             last_change = history[generation]
             if last_change['ctime'].date() > cutoff:
