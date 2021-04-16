@@ -201,9 +201,10 @@ class MlBackend(AbstractBackend):
 
         :type: bool
         """
-        is_subscribed = bool(self.get_subscription(
+        is_subscribed = (self.get_subscription(
             rs, rs.user.persona_id, mailinglist_id=ml["id"],
-            states=const.SubscriptionState.subscribing_states()))
+            states=const.SubscriptionState.subscribing_states())
+            != const.SubscriptionState.none)
         return (is_subscribed or self.get_ml_type(rs, ml["id"]).may_view(rs)
                 or ml["id"] in rs.user.moderator)
 

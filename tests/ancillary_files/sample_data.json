@@ -7901,6 +7901,11 @@
         },
         {
             "mailinglist_id": 61,
+            "persona_id": 10,
+            "subscription_state": 10
+        },
+        {
+            "mailinglist_id": 61,
             "persona_id": 17,
             "subscription_state": 30
         },
