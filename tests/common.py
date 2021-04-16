@@ -948,6 +948,8 @@ class FrontendTest(BackendTest):
             f['password'] = user['password']
             self.submit(f, check_notification=False, verbose=verbose)
         self.key = self.app.cookies.get('sessionkey', None)
+        if not self.key:
+            self.user = USER_DICT["anonymous"]
         return self.key  # type: ignore
 
     def logout(self, verbose: bool = False) -> None:
@@ -958,6 +960,7 @@ class FrontendTest(BackendTest):
         f = self.response.forms['logoutform']
         self.submit(f, check_notification=False, verbose=verbose)
         self.key = ANONYMOUS
+        self.user = USER_DICT["anonymous"]
 
     def admin_view_profile(self, user: UserIdentifier, check: bool = True,
                            verbose: bool = False) -> None:
