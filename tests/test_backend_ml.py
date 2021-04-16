@@ -1065,7 +1065,7 @@ class TestMlBackend(BackendTest):
                     persona_id=user_id)
             # You had never the chance to actually change something anyway, trying to
             # change the subscription state of someone else.
-            if user['id'] != user_id:
+            if self.is_user(user_id):
                 with self.assertRaises(PrivilegeError):
                     datum = {
                         'mailinglist_id': ml_id,

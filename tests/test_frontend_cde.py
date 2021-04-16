@@ -901,7 +901,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Bertålotta Beispiel")
         self.traverse({'description': 'Einzugsermächtigung'})
         self.assertTitle("Einzugsermächtigung Bertålotta Beispiel")
-        if user['id'] == 32:
+        if self.is_user("farin"):
             self.assertIn("revokeform", self.response.forms)
             self.assertIn("receiptform3", self.response.forms)
         else:
