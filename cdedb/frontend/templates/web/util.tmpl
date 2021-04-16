@@ -332,7 +332,7 @@
             title="{{ gettext("Datetime in the format YYYY-MM-DD HH:MM") }}"
         {%- elif type == 'iban' %}
             placeholder="DE22100100500123456789"
-            pattern="[A-Za-z]{2} ?[0-9]{2}[0-9A-Za-z ]{8,30}"
+            pattern="[A-Za-z]{2} ?[0-9]{2}( ?[0-9A-Za-z]){8,30}"
             title="{{ gettext("IBAN in the usual format, spaces are allowed") }}"
         {%- endif %}
         {%- if type == 'date' %}
