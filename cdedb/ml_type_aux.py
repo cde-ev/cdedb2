@@ -8,7 +8,9 @@ from typing import (
 from typing_extensions import Literal
 
 import cdedb.validationtypes as vtypes
-from cdedb.common import CdEDBObject, RequestState, User, extract_roles, n_
+from cdedb.common import (
+    CdEDBObject, PrivilegeError, RequestState, User, extract_roles, n_, unwrap
+)
 from cdedb.database.constants import (
     MailinglistDomain, MailinglistTypes, RegistrationPartStati,
 )
@@ -307,11 +309,22 @@ class ImplicitsSubscribableMeta(GeneralMailinglist):
                                   mailinglist: CdEDBObject,
                                   persona_ids: Collection[int],
                                   ) -> SubscriptionPolicyMap:
-        """Return subscribable for all given implicit subscribers, none otherwise."""
+        """Return subscribable for all given implicit subscribers, none otherwise.
+
+        To avoid unneeded privilege escalation while avoiding backend errors, this
+        infers non-eligibity for mailinglists if a user raises a privilege error while
+        checking whether they are privileged.
+        """
         check_appropriate_type(mailinglist, cls)
 
         ret = {pid: SubscriptionPolicy.none for pid in persona_ids}
-        implicits = cls.get_implicit_subscribers(rs, bc, mailinglist)
+        try:
+            implicits = cls.get_implicit_subscribers(rs, bc, mailinglist)
+        except PrivilegeError:
+            if len(persona_ids) == 1 and rs.user.persona_id == unwrap(persona_ids):
+                return ret
+            else:
+                raise
         ret.update({pid: SubscriptionPolicy.subscribable
                     for pid in implicits.intersection(persona_ids)})
         return ret
