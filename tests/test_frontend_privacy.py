@@ -164,11 +164,9 @@ class TestPrivacyFrontend(FrontendTest):
 
     def _disable_searchability(self, user: UserIdentifier) -> None:
         """ To avoid gaining more viewing rights through being a member"""
-        old_user = self.user
-        if not self.is_user("anonymous"):
+        old_user = self.user["id"]
+        if old_user:
             self.logout()
-        else:
-            old_user = None
         self.login('anton')
         self.admin_view_profile(user)
         self.traverse({'description': 'Bearbeiten'})
