@@ -95,6 +95,7 @@ class TestCoreBackend(BackendTest):
 
     @as_users("anton", "berta", "janis")
     def test_change_password(self) -> None:
+        user = self.user
         ret, _ = self.core.change_password(self.key, self.user['password'],
                                            "weakpass")
         self.assertFalse(ret)
@@ -106,7 +107,7 @@ class TestCoreBackend(BackendTest):
         self.core.logout(self.key)
         self.login(self.user)
         self.assertIsNone(self.key)
-        newuser = dict(self.user)
+        newuser = dict(user)
         newuser['password'] = newpass
         self.login(newuser)
         self.assertTrue(self.key)
@@ -133,6 +134,7 @@ class TestCoreBackend(BackendTest):
 
     @as_users("anton", "berta", "janis")
     def test_change_username(self) -> None:
+        user = self.user
         newaddress = "newaddress@example.cde"
         ret, _ = self.core.change_username(
             self.key, self.user['id'], newaddress, self.user['password'])
@@ -140,7 +142,7 @@ class TestCoreBackend(BackendTest):
         self.core.logout(self.key)
         self.login(self.user)
         self.assertIsNone(self.key)
-        newuser = dict(self.user)
+        newuser = dict(user)
         newuser['username'] = newaddress
         self.login(newuser)
         self.assertTrue(self.key)

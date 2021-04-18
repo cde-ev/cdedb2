@@ -621,6 +621,7 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("vera", "berta", "emilia")
     def test_change_password(self) -> None:
+        user = self.user
         new_password = 'krce84#(=kNO3xb'
         self.traverse({'description': self.user['display_name']},
                       {'description': 'Passwort ändern'})
@@ -633,7 +634,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertNonPresence(self.user['display_name'])
         self.login(self.user)
         self.assertIn('loginform', self.response.forms)
-        new_user = dict(self.user)
+        new_user = dict(user)
         new_user['password'] = new_password
         self.login(new_user)
         self.assertNotIn('loginform', self.response.forms)
@@ -767,6 +768,7 @@ class TestCoreFrontend(FrontendTest):
     @as_users("vera", "berta", "emilia")
     def test_change_username(self) -> None:
         # First test with current username
+        user = self.user
         current_username = self.user['username']
         self.traverse({'description': self.user['display_name']},
                       {'href': '/core/self/username/change'})
@@ -792,7 +794,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertIn('loginform', self.response.forms)
         self.login(self.user)
         self.assertIn('loginform', self.response.forms)
-        new_user = dict(self.user)
+        new_user = dict(user)
         new_user['username'] = new_username
         self.login(new_user)
         self.assertNotIn('loginform', self.response.forms)

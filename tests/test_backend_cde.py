@@ -82,14 +82,15 @@ class TestCdEBackend(BackendTest):
 
     @as_users("berta")
     def test_nack_change(self) -> None:
+        user = self.user
         self.assertEqual(
-            -1, self.core.change_persona(self.key, {'id': self.user['id'],
+            -1, self.core.change_persona(self.key, {'id': user['id'],
                                                     'family_name': "Link"}, 1))
-        self.assertEqual(2, self.core.changelog_get_generation(self.key, self.user['id']))
+        self.assertEqual(2, self.core.changelog_get_generation(self.key, user['id']))
         self.core.logout(self.key)
-        self.login(USER_DICT['vera'])
-        self.core.changelog_resolve_change(self.key, self.user['id'], 2, ack=False)
-        self.assertEqual(1, self.core.changelog_get_generation(self.key, self.user['id']))
+        self.login('vera')
+        self.core.changelog_resolve_change(self.key, user['id'], 2, ack=False)
+        self.assertEqual(1, self.core.changelog_get_generation(self.key, user['id']))
 
     @as_users("berta", "vera")
     def test_get_cde_users(self) -> None:

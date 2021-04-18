@@ -164,7 +164,11 @@ class TestPrivacyFrontend(FrontendTest):
 
     def _disable_searchability(self, user: UserIdentifier) -> None:
         """ To avoid gaining more viewing rights through being a member"""
-        self.logout()
+        old_user = self.user
+        if not self.is_user("anonymous"):
+            self.logout()
+        else:
+            old_user = None
         self.login('anton')
         self.admin_view_profile(user)
         self.traverse({'description': 'Bearbeiten'})
@@ -172,6 +176,8 @@ class TestPrivacyFrontend(FrontendTest):
         f['is_searchable'].checked = False
         self.submit(f)
         self.logout()
+        if old_user:
+            self.login(old_user)
 
     def show_user_link(self, persona_id: int) -> str:
         confirm_id = urllib.parse.quote_plus(self.app.app.encode_parameter(
@@ -246,7 +252,6 @@ class TestPrivacyFrontend(FrontendTest):
         self._disable_searchability('werner')
 
         # on (assembly and ml) only users, assembly admins get full view
-        self.login(self.user)
         inspected = USER_DICT['kalif']
         self.get(self.show_user_link(inspected['id']))
         found = self._profile_assembly_admin_view(inspected)
@@ -259,7 +264,6 @@ class TestPrivacyFrontend(FrontendTest):
         self._disable_searchability('annika')
 
         # on event but not cde users, event admins get full view
-        self.login(self.user)
         inspected = USER_DICT['emilia']
         self.get(self.show_user_link(inspected['id']))
         found = self._profile_event_admin_view(inspected)
@@ -299,7 +303,6 @@ class TestPrivacyFrontend(FrontendTest):
 
         # ... even if they are not searchable
         self._disable_searchability('berta')
-        self.login(self.user)
         inspected = USER_DICT['berta']
         self.get(self.show_user_link(inspected['id']))
         found = self._profile_cde_admin_view(inspected)
@@ -312,7 +315,6 @@ class TestPrivacyFrontend(FrontendTest):
         self._disable_searchability('paul')
 
         # core admin gets full access to all users...
-        self.login(self.user)
         inspected = USER_DICT['berta']
         self.get(self.show_user_link(inspected['id']))
         found = self._profile_core_admin_view(inspected)
