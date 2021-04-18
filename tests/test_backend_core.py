@@ -13,7 +13,7 @@ from cdedb.common import (
 )
 from cdedb.validation import PERSONA_CDE_CREATION
 from tests.common import (
-    ANONYMOUS, BackendTest, USER_DICT, as_users, create_mock_image, prepsql,
+    ANONYMOUS, BackendTest, USER_DICT, as_users, create_mock_image, execsql, prepsql,
 )
 
 PERSONA_TEMPLATE = {
@@ -1204,6 +1204,9 @@ class TestCoreBackend(BackendTest):
                     self.assertEqual(
                         generation + 1,
                         self.core.changelog_get_generation(key, u["id"]))
+                    execsql(f"UPDATE core.changelog SET ctime = '2021-03-20T10:42:34'"
+                            f" WHERE persona_id = {u['id']}"
+                            f" AND generation = {generation + 1}")
                     self.assertTrue(
                         self.core.is_persona_automatically_archivable(key, u["id"]))
                     self.assertIsNone(
