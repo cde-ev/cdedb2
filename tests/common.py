@@ -459,8 +459,7 @@ class BackendTest(CdEDBTest):
     def is_user(self, *identifiers: UserIdentifier) -> bool:
         """Check whether the current user is any of the given users."""
         users = {get_user(i)["id"] for i in identifiers}
-        # TODO: go through all tests and make use of this
-        return self.user["id"] in users
+        return self.user.get("id", -1) in users
 
     @staticmethod
     def initialize_raw_backend(backendcls: Type[SessionBackend]
