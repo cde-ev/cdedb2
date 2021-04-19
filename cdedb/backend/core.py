@@ -1237,7 +1237,7 @@ class CoreBackend(AbstractBackend):
             query = ("SELECT MAX(generation) FROM core.changelog"
                      " WHERE persona_id = %s AND"
                      " NOT (change_note = %s AND ctime >= %s AND ctime < %s)")
-            country_code_timestamp = datetime.datetime(2021, 3, 20, 10, 42, 34)
+            country_code_timestamp = datetime.datetime(2021, 3, 20, 9, 42, 34)
             params = (persona_id, "Land auf Ländercode umgestellt.",
                       country_code_timestamp,
                       country_code_timestamp + datetime.timedelta(seconds=1))

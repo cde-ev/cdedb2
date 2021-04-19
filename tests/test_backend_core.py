@@ -1204,7 +1204,7 @@ class TestCoreBackend(BackendTest):
                     self.assertEqual(
                         generation + 1,
                         self.core.changelog_get_generation(key, u["id"]))
-                    execsql(f"UPDATE core.changelog SET ctime = '2021-03-20T10:42:34'"
+                    execsql(f"UPDATE core.changelog SET ctime = '2021-03-20T09:42:34'"
                             f" WHERE persona_id = {u['id']}"
                             f" AND generation = {generation + 1}")
                     self.assertTrue(
