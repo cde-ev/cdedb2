@@ -1230,7 +1230,24 @@ class CoreBackend(AbstractBackend):
             if latest_session is not None and latest_session.date() > cutoff:
                 return False
 
-            generation = self.changelog_get_generation(rs, persona_id)
+            # Check that the latest update to the persona was before the cutoff date.
+            # Normally we would utilize self.changelog_get_generation() to retrieve
+            # `generation`, but here we take special care to exclude a global change
+            # to all personas regarding country codes, so that that change is not
+            # taken into account.
+            query = ("SELECT MAX(generation) FROM core.changelog"
+                     " WHERE persona_id = %s AND"
+                     " NOT (change_note = %s AND ctime >= %s AND ctime < %s)")
+            country_code_timestamp = datetime.datetime(2021, 3, 20, 10, 42, 34)
+            params = (persona_id, "Land auf Ländercode umgestellt.",
+                      country_code_timestamp,
+                      country_code_timestamp + datetime.timedelta(seconds=1))
+            generation = unwrap(self.query_one(rs, query, params))
+            if not generation:
+                # Something strange is going on, so better not do anything.
+                self.logger.error(f"No valid generation seems to exist for persona"
+                                  f" {persona_id}.")
+                return False
             history = self.changelog_get_history(rs, persona_id, (generation,))
             last_change = history[generation]
             if last_change['ctime'].date() > cutoff:

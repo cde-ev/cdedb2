@@ -13,7 +13,7 @@ from cdedb.common import (
 )
 from cdedb.validation import PERSONA_CDE_CREATION
 from tests.common import (
-    ANONYMOUS, BackendTest, USER_DICT, as_users, create_mock_image, prepsql,
+    ANONYMOUS, BackendTest, USER_DICT, as_users, create_mock_image, execsql, prepsql,
 )
 
 PERSONA_TEMPLATE = {
@@ -1193,11 +1193,22 @@ class TestCoreBackend(BackendTest):
         for u in USER_DICT.values():
             self.login(user)
             with self.subTest(u=u["id"]):
-                expectation = u["id"] in {18}
                 res = self.core.is_persona_automatically_archivable(self.key, u["id"])
-                self.assertEqual(expectation, res)
-                if res:
+                if u["id"] == 18:
+                    self.assertTrue(res)
                     key = self.key
+                    generation = self.core.changelog_get_generation(key, u["id"])
+                    self.core.change_persona(
+                        key, {"id": u["id"], "notes": "test"},
+                        change_note="Land auf Ländercode umgestellt.")
+                    self.assertEqual(
+                        generation + 1,
+                        self.core.changelog_get_generation(key, u["id"]))
+                    execsql(f"UPDATE core.changelog SET ctime = '2021-03-20T10:42:34'"
+                            f" WHERE persona_id = {u['id']}"
+                            f" AND generation = {generation + 1}")
+                    self.assertTrue(
+                        self.core.is_persona_automatically_archivable(key, u["id"]))
                     self.assertIsNone(
                         self.core.get_persona_latest_session(key, u["id"]))
                     self.login(u)
@@ -1205,6 +1216,8 @@ class TestCoreBackend(BackendTest):
                         self.core.get_persona_latest_session(key, u["id"]))
                     self.assertFalse(
                         self.core.is_persona_automatically_archivable(key, u["id"]))
+                else:
+                    self.assertFalse(res)
 
     @as_users("janis")
     def test_list_personas(self, user: CdEDBObject) -> None:
