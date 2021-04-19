@@ -1230,8 +1230,10 @@ class CoreBackend(AbstractBackend):
                 return False
 
             # Check that the latest update to the persona was before the cutoff date.
-            # Take special care to exclude a global change to all personas regarding
-            # country codes, so that that change is not taken into account.
+            # Normally we would utilize self.changelog_get_generation() to retrieve
+            # `generation`, but here we take special care to exclude a global change
+            # to all personas regarding country codes, so that that change is not
+            # taken into account.
             query = ("SELECT MAX(generation) FROM core.changelog"
                      " WHERE persona_id = %s AND"
                      " NOT (change_note = %s AND ctime >= %s AND ctime < %s)")
