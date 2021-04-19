@@ -9,7 +9,7 @@ from typing_extensions import Literal
 
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    CdEDBObject, PrivilegeError, RequestState, User, extract_roles, n_, unwrap
+    CdEDBObject, PrivilegeError, RequestState, User, extract_roles, n_,
 )
 from cdedb.database.constants import (
     MailinglistDomain, MailinglistTypes, RegistrationPartStati,
@@ -321,7 +321,7 @@ class ImplicitsSubscribableMeta(GeneralMailinglist):
         try:
             implicits = cls.get_implicit_subscribers(rs, bc, mailinglist)
         except PrivilegeError:
-            if len(persona_ids) == 1 and rs.user.persona_id == unwrap(persona_ids):
+            if {rs.user.persona_id} == set(persona_ids):
                 return ret
             else:
                 raise
