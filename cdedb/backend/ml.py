@@ -956,10 +956,8 @@ class MlBackend(AbstractBackend):
         if states:
             constraints.append("subscription_state = ANY(%s)")
             params.append(states)
-
         if constraints:
             query = query + " WHERE " + " AND ".join(constraints)
-
         data = self.query_all(rs, query, params)
 
         ret: Dict[int, Dict[int, const.SubscriptionState]]
@@ -1002,28 +1000,23 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def get_user_subscriptions(
-            self, rs: RequestState, persona_id: Optional[int],
-            mailinglist_ids: Collection[int] = None, states: SubStates = None,
+            self, rs: RequestState, persona_id: Optional[int], states: SubStates = None,
     ) -> Dict[int, const.SubscriptionState]:
         """Returns a list of mailinglists the persona is related to.
 
-        :param persona_id: If not given, default to `rs.user.persona_id`.
         :param states: If given only relations with these states are returned.
             Defaults to DatabaseStates.
-        :param mailinglist_ids: If given only relations to these mailinglists
-            are returned.
         :return: A mapping of mailinglist ids to the persona's subscription
             state wrt. this mailinglist.
         """
-        persona_id = affirm(vtypes.ID, persona_id or rs.user.persona_id)
+        if not persona_id:
+            # Only accounts can be subscribers
+            return {}
+        persona_id = affirm(vtypes.ID, persona_id)
         states = states or set()
         # We are more restrictive here than in the signature
         states = affirm_set(vtypes.DatabaseSubscriptionState, states)
-        mailinglist_ids = affirm_set(vtypes.ID, mailinglist_ids or set())
-        if (not self.is_admin(rs) and rs.user.persona_id != persona_id
-                and (not mailinglist_ids
-                     or any(not self.may_manage(rs, ml_id)
-                            for ml_id in mailinglist_ids))):
+        if not self.is_admin(rs) and rs.user.persona_id != persona_id:
             raise PrivilegeError(n_("Not privileged."))
 
         query = ("SELECT mailinglist_id, subscription_state "
@@ -1035,30 +1028,31 @@ class MlBackend(AbstractBackend):
         if states:
             constraints.append("subscription_state = ANY(%s)")
             params.append(states)
-        if mailinglist_ids:
-            constraints.append("mailinglist_id = ANY(%s)")
-            params.append(mailinglist_ids)
-
         if constraints:
             query = query + " WHERE " + " AND ".join(constraints)
-
         data = self.query_all(rs, query, params)
 
-        ret: Dict[int, const.SubscriptionState]
-        ret = {ml_id: const.SubscriptionState.none for ml_id in mailinglist_ids}
-        ret.update({
+        return {
             e["mailinglist_id"]: const.SubscriptionState(e["subscription_state"])
-            for e in data})
+            for e in data}
 
-        return ret
+    @access("ml")
+    def get_subscription(self, rs: RequestState, persona_id: int, mailinglist_id: int
+                         ) -> const.SubscriptionState:
+        """Returns state of a persona with regard to a mailinglist."""
+        persona_id = affirm(vtypes.ID, persona_id)
 
-    class _GetSubscriptionProtocol(Protocol):
-        def __call__(self, rs: RequestState,
-                     persona_id: Optional[int], *, mailinglist_id: int,
-                     states: SubStates = None
-                     ) -> const.SubscriptionState: ...
-    get_subscription: _GetSubscriptionProtocol = singularize(
-        get_user_subscriptions, "mailinglist_ids", "mailinglist_id")
+        if not self.may_manage(rs, mailinglist_id) and rs.user.persona_id != persona_id:
+            raise PrivilegeError(n_("Not privileged."))
+
+        query = ("SELECT subscription_state FROM ml.subscription_states"
+                 " WHERE persona_id = %s AND mailinglist_id = %s")
+
+        state: int = unwrap(self.query_one(rs, query, (persona_id, mailinglist_id)))  # type: ignore
+        if state:
+            return const.SubscriptionState(state)
+        else:
+            return const.SubscriptionState.none
 
     @access("ml")
     def get_subscription_addresses(self, rs: RequestState, mailinglist_id: int,
@@ -1184,10 +1178,8 @@ class MlBackend(AbstractBackend):
             # Only accounts can be subscribers
             return False
         # validation is done inside
-        sub_states = const.SubscriptionState.subscribing_states()
-        state = self.get_subscription(
-            rs, persona_id, mailinglist_id=mailinglist_id, states=sub_states)
-        return state != const.SubscriptionState.none
+        state = self.get_subscription(rs, persona_id, mailinglist_id)
+        return state.is_subscribed()
 
     @access("ml")
     def write_subscription_states(self, rs: RequestState, mailinglist_id: int,
