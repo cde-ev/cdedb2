@@ -357,6 +357,22 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         params = tuple(data[key] for key in keys)
         return unwrap(self.query_one(rs, query, params)) or 0
 
+    def sql_insert_unique(self, rs: RequestState, table: str, data: CdEDBObject,
+                          entity_key: str = "id") -> int:
+        """Generic SQL insertion query for inserting unique rows.
+
+        This does nothing if the inserted data is already present.
+
+        :returns: id of inserted row
+        """
+        keys = tuple(key for key in data)
+        query = (f"INSERT INTO {table} ({', '.join(keys)}) VALUES"
+                 f" ({', '.join(('%s',) * len(keys))})"
+                 f" ON CONFLICT ({', '.join(keys)}) DO NOTHING"
+                 f" RETURNING {entity_key}")
+        params = tuple(data[key] for key in keys)
+        return unwrap(self.query_one(rs, query, params)) or 0
+
     def sql_insert_many(self, rs: RequestState, table: str,
                         data: Sequence[CdEDBObject]) -> int:
         """Generic SQL query to insert multiple datasets with the same keys.

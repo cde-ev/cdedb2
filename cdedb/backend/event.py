@@ -1547,52 +1547,59 @@ class EventBackend(AbstractBackend):
                            data['id'])
 
     @access("event_admin")
-    def set_event_orgas(self, rs: RequestState, event_id: int,
-                        ids: Collection[int]) -> DefaultReturnCode:
-        """Set the orgas of an event.
+    def add_event_orgas(self, rs: RequestState, event_id: int,
+                        persona_ids: Collection[int]) -> DefaultReturnCode:
+        """Add orgas to an event.
 
         This is basically un-inlined code from `set_event`, but may also be
         called separately.
 
         Note that this is only available to admins in contrast to `set_event`.
-
-        A complete set of orga IDs needs to be passed, since this will
-        overwrite the current set.
         """
         event_id = affirm(vtypes.ID, event_id)
-        ids = affirm_set(vtypes.ID, ids)
-        if not self.core.verify_ids(rs, ids, is_archived=False):
-            raise ValueError(n_(
-                "Some of these orgas do not exist or are archived."))
-        if not self.core.verify_personas(rs, ids, {"event"}):
-            raise ValueError(n_("Some of these orgas are not event users."))
-        self.assert_offline_lock(rs, event_id=event_id)
+        persona_ids = affirm_set(vtypes.ID, persona_ids)
 
         ret = 1
         with Atomizer(rs):
-            current = self.sql_select(rs, "event.orgas", ("persona_id",),
-                                      (event_id,), entity_key="event_id")
-            existing = {unwrap(e) for e in current}
-            new = ids - existing
-            deleted = existing - ids
-            if not new and not deleted:
-                return -1
-            if new:
-                for anid in mixed_existence_sorter(new):
-                    new_orga = {
-                        'persona_id': anid,
-                        'event_id': event_id,
-                    }
-                    ret *= self.sql_insert(rs, "event.orgas", new_orga)
-                    self.event_log(rs, const.EventLogCodes.orga_added,
-                                   event_id, persona_id=anid)
-            if deleted:
-                query = ("DELETE FROM event.orgas"
-                         " WHERE persona_id = ANY(%s) AND event_id = %s")
-                ret *= self.query_exec(rs, query, (deleted, event_id))
-                for anid in mixed_existence_sorter(deleted):
-                    self.event_log(rs, const.EventLogCodes.orga_removed,
-                                   event_id, persona_id=anid)
+            if not self.core.verify_ids(rs, persona_ids, is_archived=False):
+                raise ValueError(n_(
+                    "Some of these orgas do not exist or are archived."))
+            if not self.core.verify_personas(rs, persona_ids, {"event"}):
+                raise ValueError(n_("Some of these orgas are not event users."))
+            self.assert_offline_lock(rs, event_id=event_id)
+
+            for anid in mixed_existence_sorter(persona_ids):
+                new_orga = {
+                    'persona_id': anid,
+                    'event_id': event_id,
+                }
+                # on conflict do nothing
+                ret *= self.sql_insert_unique(rs, "event.orgas", new_orga)
+                if ret:
+                    self.event_log(rs, const.EventLogCodes.orga_added, event_id,
+                                   persona_id=anid)
+        return ret
+
+    @access("event_admin")
+    def remove_event_orga(self, rs: RequestState, event_id: int,
+                          persona_id: int) -> DefaultReturnCode:
+        """Add orgas to an event.
+
+        This is basically un-inlined code from `set_event`, but may also be
+        called separately.
+
+        Note that this is only available to admins in contrast to `set_event`.
+        """
+        event_id = affirm(vtypes.ID, event_id)
+        persona_id = affirm(vtypes.ID, persona_id)
+        self.assert_offline_lock(rs, event_id=event_id)
+
+        query = ("DELETE FROM event.orgas"
+                 " WHERE persona_id = %s AND event_id = %s")
+        with Atomizer(rs):
+            ret = self.query_exec(rs, query, (persona_id, event_id))
+            self.event_log(rs, const.EventLogCodes.orga_removed,
+                           event_id, persona_id=persona_id)
         return ret
 
     @access("event")
@@ -1603,8 +1610,6 @@ class EventBackend(AbstractBackend):
         The syntax for updating the associated data on orgas, parts and
         fields is as follows:
 
-        * If the key 'orgas' is present you have to pass the complete set
-          of orga IDs, which will superseed the current list of orgas.
         * If the keys 'parts', 'fee_modifiers' or 'fields' are present,
           the associated dict mapping the part, fee_modifier or field ids to
           the respective data sets can contain an arbitrary number of entities,
@@ -1683,7 +1688,7 @@ class EventBackend(AbstractBackend):
                                data['id'])
 
             if 'orgas' in data:
-                ret *= self.set_event_orgas(rs, data['id'], data['orgas'])
+                ret *= self.add_event_orgas(rs, data['id'], data['orgas'])
             if 'parts' in data:
                 parts = data['parts']
                 has_registrations = self.has_registrations(rs, data['id'])

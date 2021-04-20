@@ -791,7 +791,9 @@ GRANT SELECT ON event.course_segments TO cdb_anonymous;
 CREATE TABLE event.orgas (
         id                      serial PRIMARY KEY,
         persona_id              integer NOT NULL REFERENCES core.personas(id),
-        event_id                integer NOT NULL REFERENCES event.events(id)
+        event_id                integer NOT NULL REFERENCES event.events(id),
+        CONSTRAINT event_unique_orgas
+            UNIQUE(persona_id, event_id)
 );
 CREATE INDEX idx_orgas_persona_id ON event.orgas(persona_id);
 CREATE INDEX idx_orgas_event_id ON event.orgas(event_id);
@@ -962,7 +964,9 @@ GRANT SELECT, UPDATE ON assembly.assemblies_id_seq TO cdb_admin;
 CREATE TABLE assembly.presiders (
         id                      serial PRIMARY KEY,
         assembly_id             integer NOT NULL REFERENCES assembly.assemblies(id),
-        persona_id              integer NOT NULL REFERENCES core.personas(id)
+        persona_id              integer NOT NULL REFERENCES core.personas(id),
+        CONSTRAINT assembly_unique_presiders
+            UNIQUE(persona_id, assembly_id)
 );
 CREATE INDEX idx_assembly_presiders_persona_id ON assembly.presiders(persona_id);
 CREATE UNIQUE INDEX idx_assembly_presiders_constraint ON assembly.presiders(assembly_id, persona_id);
@@ -1197,7 +1201,9 @@ GRANT SELECT, UPDATE ON ml.subscription_addresses_id_seq TO cdb_persona;
 CREATE TABLE ml.whitelist (
         id                      serial PRIMARY KEY,
         mailinglist_id          integer NOT NULL REFERENCES ml.mailinglists(id),
-        address                 varchar NOT NULL
+        address                 varchar NOT NULL,
+        CONSTRAINT mailinglist_unique_whitelist
+            UNIQUE(address, mailinglist_id)
 );
 CREATE INDEX idx_whitelist_mailinglist_id ON ml.whitelist(mailinglist_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON ml.whitelist TO cdb_persona;
@@ -1206,7 +1212,9 @@ GRANT SELECT, UPDATE ON ml.whitelist_id_seq TO cdb_persona;
 CREATE TABLE ml.moderators (
         id                      serial PRIMARY KEY,
         mailinglist_id          integer NOT NULL REFERENCES ml.mailinglists(id),
-        persona_id              integer NOT NULL REFERENCES core.personas(id)
+        persona_id              integer NOT NULL REFERENCES core.personas(id),
+        CONSTRAINT mailinglist_unique_moderators
+            UNIQUE(persona_id, mailinglist_id)
 );
 CREATE INDEX idx_moderators_mailinglist_id ON ml.moderators(mailinglist_id);
 CREATE INDEX idx_moderators_persona_id ON ml.moderators(persona_id);
