@@ -249,6 +249,16 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'href': '/ml/mailinglist/4'})
         self.assertTitle("Klatsch und Tratsch")
 
+    @as_users("kalif", "janis")
+    def test_assembly_ml_privileges(self, user: CdEDBObject) -> None:
+        self.traverse({'href': '/ml/$'}, )
+        self.assertTitle("Mailinglisten")
+        self.assertNonPresence("Veranstaltungslisten")
+        self.assertNonPresence("CdE-Party")
+        self.traverse({'href': '/ml/mailinglist/61'})
+        self.assertTitle("Kanonische Beispielversammlung")
+        self.assertNoLink(content="Kanonische Beispielversammlung")
+
     @as_users("berta", "emilia", "annika", "nina")
     def test_hide_admin_notes(self, user: CdEDBObject) -> None:
         # CdElokal Hogwarts
