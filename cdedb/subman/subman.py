@@ -52,6 +52,9 @@ class SubscriptionManager:
         self.error_matrix = error_matrix
         self.action_target_state_map = action_target_state_map
         self.unwritten_states: StateSet = set(unwritten_states or ())
+        if (self.unwritten_states &
+                {SubscriptionState.subscribed, SubscriptionState.unsubscribed}):
+            raise RuntimeError(_("Explicit core actions must be written."))
         cleanup_protected_states = {
             state for state in SubscriptionState
             if self._get_error(SubscriptionAction.cleanup_subscription, state)}
@@ -169,30 +172,40 @@ class SubscriptionManager:
                        policy: SubscriptionPolicy,
                        old_state: SubscriptionState,
                        is_implied: bool
-                       ) -> None:
+                       ) -> SubscriptionState:
         """Analogue of apply_action for cleanup of subscribers.
+
+        This function is meant to update saved data regarding subscriptions if exterior
+        circumstances have changed. This is relevant for subscriptions if written to the
+        database, independent of being explicit or implicit.
 
         This interface is exposed mainly to make the transition understandable by
         analogy to apply_action. Since this is dependant on the fact whether a subscriber
-        would be implied as a subscriber of the respective object, it can not be done with
-        the exact same formalism as apply_action.
+        would be implied as a subscriber of the respective object, it can not be done
+        with the exact same formalism as apply_action.
 
         This is guaranteed to only touch states not in
         SubscriptionState.cleanup_protected_states().
 
         Parameters are documented at is_obsolete.
         """
-        # If user is not allowed as subscriber, remove them.
+        if old_state not in self.written_states:
+            raise SubscriptionError(_("No cleanup necessary."))
+
+        action = None
         if policy.is_none():
-            self._check_state_requirements(SubscriptionAction.cleanup_subscription, old_state)
-            return None
+            # If user is not allowed as subscriber, remove them.
+            action = SubscriptionAction.cleanup_subscription
+        elif not is_implied and policy.is_implicit():
+            # If user is implicit subscriber and not implied, remove them.
+            # This conditional is only relevant if implicit subscribers are written.
+            action = SubscriptionAction.cleanup_implicit
 
-        # If user is implicit subscriber and not implied, remove them.
-        if not is_implied and policy.is_implicit():
-            self._check_state_requirements(SubscriptionAction.cleanup_implicit, old_state)
-            return None
-
-        raise SubscriptionError(_("No cleanup necessary."))
+        if action:
+            self._check_state_requirements(action, old_state)
+            return self._get_target_state(action)
+        else:
+            raise SubscriptionError(_("No cleanup necessary."))
 
     def is_obsolete(self,
                     policy: SubscriptionPolicy,
