@@ -206,7 +206,12 @@ class SubscriptionAction(enum.IntEnum):
         return self in self.cleanup_actions()
 
 
-ACTION_TARGET_STATE_MAP = {
+ActionMap = Mapping[SubscriptionAction, SubscriptionState]
+_StateErrorMapping = Mapping[SubscriptionState, Optional[SubscriptionError]]
+ActionStateErrorMatrix = Mapping[SubscriptionAction, _StateErrorMapping]
+
+
+ACTION_TARGET_STATE_MAP: ActionMap = {
     SubscriptionAction.subscribe: SubscriptionState.subscribed,
     SubscriptionAction.unsubscribe: SubscriptionState.unsubscribed,
     SubscriptionAction.request_subscription: SubscriptionState.pending,
@@ -224,8 +229,6 @@ ACTION_TARGET_STATE_MAP = {
     SubscriptionAction.cleanup_subscription: SubscriptionState.none,
     SubscriptionAction.cleanup_implicit: SubscriptionState.none,
 }
-_StateErrorMapping = Mapping[SubscriptionState, Optional[SubscriptionError]]
-ActionStateErrorMatrix = Mapping[SubscriptionAction, _StateErrorMapping]
 
 # Errors are identical for all actions handling a subscription request.
 _SUBSCRIPTION_REQUEST_ERROR_MAPPING: _StateErrorMapping = {

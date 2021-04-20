@@ -19,18 +19,17 @@ functions:
 """
 
 from gettext import gettext as _
-from typing import AbstractSet, Collection, Mapping, Optional
+from typing import AbstractSet, Collection, Optional
 
 from .exceptions import SubscriptionError
 from .machine import (
-    SubscriptionAction, SubscriptionPolicy, SubscriptionState, ActionStateErrorMatrix,
-    ACTION_TARGET_STATE_MAP, SUBSCRIPTION_ERROR_MATRIX,
+    SubscriptionAction, SubscriptionPolicy, SubscriptionState, ActionMap,
+    ActionStateErrorMatrix, ACTION_TARGET_STATE_MAP, SUBSCRIPTION_ERROR_MATRIX,
 )
 
 
 StateColl = Collection[SubscriptionState]
 StateSet = AbstractSet[SubscriptionState]
-ActionMap = Mapping[SubscriptionAction, SubscriptionState]
 
 
 class SubscriptionManager:
