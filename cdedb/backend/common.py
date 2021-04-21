@@ -43,7 +43,7 @@ S = TypeVar('S')
 Entry = Union[int, str, enum.IntEnum, float, datetime.date, datetime.datetime, None]
 MultiEntry = Union[Entry, Collection[Entry]]
 Entity = Union[int, str]
-Entities = Collection[Entity]
+Entities = Collection[int]
 
 
 @overload
