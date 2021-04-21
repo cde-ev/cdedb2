@@ -40,10 +40,10 @@ F = TypeVar('F', bound=Callable[..., Any])
 T = TypeVar('T')
 S = TypeVar('S')
 
-Entity = Union[str, int]
-Entry = Union[Entity, float, datetime.date, datetime.datetime, None]
-Entities = Collection[Optional[int]]
-MultiEntry = Union[Entry, Entities]
+Entry = Union[int, str, enum.IntEnum, float, datetime.date, datetime.datetime, None]
+MultiEntry = Union[Entry, Collection[Entry]]
+Entity = Union[int, str]
+Entities = Collection[Entity]
 
 
 @overload
@@ -155,7 +155,7 @@ def access(*roles: Role) -> Callable[[F], F]:
                 )
             return function(self, rs, *args, **kwargs)
 
-        wrapper.access = True  # type: ignore
+        wrapper.access = True  # type: ignore[attr-defined]
         return cast(F, wrapper)
 
     return decorator
@@ -168,7 +168,7 @@ def internal(function: F) -> F:
     internal mode.
     """
 
-    function.internal = True  # type: ignore
+    function.internal = True  # type: ignore[attr-defined]
     return function
 
 
@@ -243,17 +243,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         """
         return "{}_admin".format(cls.realm) in rs.user.roles
 
-    # mypy treats all imports from `psycopg2` as `Any`, so we have overlap
-    # with `None`.
-    @staticmethod
-    @overload
-    def _sanitize_db_output(output: None) -> None: ...  # type: ignore
-
-    @staticmethod
-    @overload
-    def _sanitize_db_output(output: psycopg2.extras.RealDictRow
-                            ) -> CdEDBObject: ...
-
+    # mypy treats all imports from psycopg2 as `Any`, so we do not gain anything by
+    # overloading the definition.
     @staticmethod
     def _sanitize_db_output(output: Optional[psycopg2.extras.RealDictRow]
                             ) -> Optional[CdEDBObject]:
@@ -269,30 +260,10 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             return None
         return dict(output)
 
-    # mypy unfortunately does not allow annotations for treating some iterables
-    # differently than others, so we just ignore everything here.
+    # mypy cannot really understand the intricacies of what this function does, so
+    # we keep this simple. instead of overloading the definition.
     @staticmethod
-    @overload
-    def _sanitize_db_input(obj: Mapping[S, T]) -> Mapping[S, T]: ...  # type: ignore
-
-    @staticmethod
-    @overload
-    def _sanitize_db_input(obj: str) -> str: ...  # type: ignore
-
-    @staticmethod
-    @overload
-    def _sanitize_db_input(obj: Iterable[T]) -> List[T]: ...  # type: ignore
-
-    @staticmethod
-    @overload
-    def _sanitize_db_input(obj: enum.Enum) -> int: ...  # type: ignore
-
-    @staticmethod
-    @overload
-    def _sanitize_db_input(obj: T) -> T: ...
-
-    @staticmethod
-    def _sanitize_db_input(obj: Any) -> Any:
+    def _sanitize_db_input(obj: Any) -> Union[Any, List[Any]]:
         """Mangle data to make psycopg happy.
 
         Convert :py:class:`tuple`s (and all other iterables, but not strings
@@ -325,7 +296,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         This doesn't return anything, but has a side-effect on ``cur``.
         """
         sanitized_params = tuple(
-            self._sanitize_db_input(p) for p in params)  # type: ignore
+            self._sanitize_db_input(p) for p in params)
         self.logger.debug("Execute PostgreSQL query {}.".format(cur.mogrify(
             query, sanitized_params)))
         cur.execute(query, sanitized_params)
@@ -347,7 +318,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         with rs.conn as conn:
             with conn.cursor() as cur:
                 self.execute_db_query(cur, query, params)
-                return self._sanitize_db_output(cur.fetchone())  # type: ignore
+                return self._sanitize_db_output(cur.fetchone())
 
     def query_all(self, rs: RequestState, query: str, params: Sequence[MultiEntry]
                   ) -> Tuple[CdEDBObject, ...]:
@@ -359,7 +330,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             with conn.cursor() as cur:
                 self.execute_db_query(cur, query, params)
                 return tuple(
-                    self._sanitize_db_output(x)  # type: ignore
+                    cast(CdEDBObject, self._sanitize_db_output(x))
                     for x in cur.fetchall())
 
     def sql_insert(self, rs: RequestState, table: str, data: CdEDBObject,
@@ -526,11 +497,11 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                 # for str as well as for other types
                 sql_param_str = "lower({0})"
 
-                def caser(x: str) -> str: return x.lower()
+                def caser(x: T) -> T: return x.lower()  # type: ignore[attr-defined]
             else:
                 sql_param_str = "{0}"
 
-                def caser(x: str) -> str: return x
+                def caser(x: T) -> T: return x
             columns = field.split(',')
             # Treat containsall and friends special since they want to find
             # each value in any column, without caring that the columns are
@@ -580,7 +551,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                     phrase = "{0} = ANY(%s)".format(sql_param_str)
                 else:
                     phrase = "NOT({0} = ANY(%s))".format(sql_param_str)
-                params.extend((tuple(caser(x) for x in value),) * len(columns))  # type: ignore
+                params.extend((tuple(caser(x) for x in value),) * len(columns))  # type: ignore[arg-type] # noqa
             elif operator in (_ops.match, _ops.unmatch):
                 if operator == _ops.match:
                     phrase = "{} ~* %s"
@@ -678,6 +649,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         :param time_start: lower bound for ctime columns
         :param time_stop: upper bound for ctime column
         """
+        assert issubclass(code_validator, enum.IntEnum)
         codes = affirm_set_validation(code_validator, codes or set())
         entity_ids = affirm_set_validation(vtypes.ID, entity_ids or set())
         offset: Optional[int] = affirm_validation_typed_optional(
@@ -701,7 +673,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         params: List[MultiEntry] = []
         if codes:
             conditions.append("code = ANY(%s)")
-            params.append(codes)  # type: ignore
+            params.append(codes)
         if entity_ids:
             conditions.append("{}_id = ANY(%s)".format(entity_name))
             params.append(entity_ids)

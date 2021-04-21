@@ -2130,7 +2130,7 @@ class CoreBackend(AbstractBackend):
 
     @internal
     @access("anonymous")
-    def get_roles_multi(self, rs: RequestState, persona_ids: Collection[Optional[int]],
+    def get_roles_multi(self, rs: RequestState, persona_ids: Collection[int],
                         introspection_only: bool = False
                         ) -> Dict[Optional[int], Set[Role]]:
         """Resolve ids into roles.

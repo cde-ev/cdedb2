@@ -1936,11 +1936,11 @@ class AssemblyBackend(AbstractBackend):
         if not self.may_access(rs, assembly_id=assembly_id, ballot_id=ballot_id):
             raise PrivilegeError(n_("Not privileged."))
 
-        key = None
         if assembly_id is not None:
             column = "assembly_id"
             key = assembly_id
         else:
+            assert ballot_id is not None
             column = "ballot_id"
             key = ballot_id
 
