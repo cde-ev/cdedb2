@@ -44,6 +44,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     @access("ml")
     def index(self, rs: RequestState) -> Response:
         """Render start page."""
+        assert rs.user.persona_id is not None
         mailinglists = self.mlproxy.list_mailinglists(rs)
         mailinglist_infos = self.mlproxy.get_mailinglists(rs, mailinglists)
         sub_states = const.SubscriptionState.subscribing_states()
@@ -149,6 +150,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         For a collection of given mailinglist ids, this retrieves all relevant
         information. Querying mailinglists you have no access to will lead to
         a privilege error."""
+        assert rs.user.persona_id is not None
         mailinglist_infos = self.mlproxy.get_mailinglists(rs, mailinglists)
         sub_states = const.SubscriptionState.subscribing_states()
         subscriptions = self.mlproxy.get_user_subscriptions(

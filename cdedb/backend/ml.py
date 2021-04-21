@@ -1000,7 +1000,7 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def get_user_subscriptions(
-            self, rs: RequestState, persona_id: Optional[int], states: SubStates = None,
+            self, rs: RequestState, persona_id: int, states: SubStates = None,
     ) -> Dict[int, const.SubscriptionState]:
         """Returns a list of mailinglists the persona is related to.
 
@@ -1009,9 +1009,6 @@ class MlBackend(AbstractBackend):
         :return: A mapping of mailinglist ids to the persona's subscription
             state wrt. this mailinglist.
         """
-        if not persona_id:
-            # Only accounts can be subscribers
-            return {}
         persona_id = affirm(vtypes.ID, persona_id)
         states = states or set()
         # We are more restrictive here than in the signature
