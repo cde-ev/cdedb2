@@ -1048,7 +1048,7 @@ class MlBackend(AbstractBackend):
         query = ("SELECT subscription_state FROM ml.subscription_states"
                  " WHERE persona_id = %s AND mailinglist_id = %s")
 
-        state: int = unwrap(self.query_one(rs, query, (persona_id, mailinglist_id)))  # type: ignore
+        state = unwrap(self.query_one(rs, query, (persona_id, mailinglist_id)))
         if state:
             return const.SubscriptionState(state)
         else:
