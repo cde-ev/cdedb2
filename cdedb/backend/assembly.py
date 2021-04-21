@@ -1887,7 +1887,8 @@ class AssemblyBackend(AbstractBackend):
             setters = ", ".join(f"{k} = %s" for k in keys)
             query = (f"UPDATE assembly.attachment_versions SET {setters}"
                      f" WHERE attachment_id = %s AND version = %s")
-            params = tuple(deletor[k] for k in keys) + (attachment_id, version)
+            params: Union[Tuple[Union[int, datetime.datetime, None]]]
+            params = tuple(deletor[k] for k in keys) + (attachment_id, version)  # type: ignore
             ret = self.query_exec(rs, query, params)
 
             if ret:
