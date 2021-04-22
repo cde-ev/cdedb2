@@ -201,9 +201,7 @@ class MlBackend(AbstractBackend):
 
         :type: bool
         """
-        is_subscribed = bool(self.get_subscription(
-            rs, rs.user.persona_id, mailinglist_id=ml["id"],
-            states=const.SubscriptionState.subscribing_states()))
+        is_subscribed = self.is_subscribed(rs, rs.user.persona_id, ml["id"])
         return (is_subscribed or self.get_ml_type(rs, ml["id"]).may_view(rs)
                 or ml["id"] in rs.user.moderator)
 
@@ -1178,15 +1176,18 @@ class MlBackend(AbstractBackend):
         return ret
 
     @access("ml")
-    def is_subscribed(self, rs: RequestState, persona_id: int,
+    def is_subscribed(self, rs: RequestState, persona_id: Optional[int],
                       mailinglist_id: int) -> bool:
         """Sugar coating around :py:meth:`get_user_subscriptions`.
         """
+        if not persona_id:
+            # Only accounts can be subscribers
+            return False
         # validation is done inside
         sub_states = const.SubscriptionState.subscribing_states()
-        data = self.get_subscription(
+        state = self.get_subscription(
             rs, persona_id, mailinglist_id=mailinglist_id, states=sub_states)
-        return bool(data)
+        return state != const.SubscriptionState.none
 
     @access("ml")
     def write_subscription_states(self, rs: RequestState, mailinglist_id: int,

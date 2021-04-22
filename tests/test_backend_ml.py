@@ -75,7 +75,7 @@ class TestMlBackend(BackendTest):
         self.assertEqual(berta_new_mod, berta_mod | janis_mod)
 
         # check the logs
-        expectation = (8, (
+        expectation = (10, (
             {'change_note': 'Nutzer 10 ist in diesem Account aufgegangen.',
              'code': const.MlLogCodes.subscribed,
              'ctime': nearly_now(),
@@ -91,44 +91,58 @@ class TestMlBackend(BackendTest):
              'persona_id': 2,
              'submitted_by': 1},
             {'change_note': 'Nutzer 10 ist in diesem Account aufgegangen.',
-             'code': const.MlLogCodes.subscribed,
+             'code': const.MlLogCodes.marked_override,
              'ctime': nearly_now(),
              'id': 1003,
-             'mailinglist_id': 64,
+             'mailinglist_id': 61,
              'persona_id': 2,
              'submitted_by': 1},
             {'change_note': 'janis@example.cde',
              'code': const.MlLogCodes.subscription_changed,
              'ctime': nearly_now(),
              'id': 1004,
-             'mailinglist_id': 64,
+             'mailinglist_id': 61,
              'persona_id': 2,
              'submitted_by': 1},
             {'change_note': 'Nutzer 10 ist in diesem Account aufgegangen.',
              'code': const.MlLogCodes.subscribed,
              'ctime': nearly_now(),
              'id': 1005,
-             'mailinglist_id': 65,
+             'mailinglist_id': 64,
              'persona_id': 2,
              'submitted_by': 1},
             {'change_note': 'janis@example.cde',
              'code': const.MlLogCodes.subscription_changed,
              'ctime': nearly_now(),
              'id': 1006,
+             'mailinglist_id': 64,
+             'persona_id': 2,
+             'submitted_by': 1},
+            {'change_note': 'Nutzer 10 ist in diesem Account aufgegangen.',
+             'code': const.MlLogCodes.subscribed,
+             'ctime': nearly_now(),
+             'id': 1007,
+             'mailinglist_id': 65,
+             'persona_id': 2,
+             'submitted_by': 1},
+            {'change_note': 'janis@example.cde',
+             'code': const.MlLogCodes.subscription_changed,
+             'ctime': nearly_now(),
+             'id': 1008,
              'mailinglist_id': 65,
              'persona_id': 2,
              'submitted_by': 1},
             {'change_note': 'Nutzer 10 ist in diesem Account aufgegangen.',
              'code': const.MlLogCodes.moderator_added,
              'ctime': nearly_now(),
-             'id': 1007,
+             'id': 1009,
              'mailinglist_id': 2,
              'persona_id': 2,
              'submitted_by': 1},
             {'change_note': 'Nutzer 10 ist in diesem Account aufgegangen.',
              'code': const.MlLogCodes.moderator_added,
              'ctime': nearly_now(),
-             'id': 1008,
+             'id': 1010,
              'mailinglist_id': 63,
              'persona_id': 2,
              'submitted_by': 1}))
@@ -259,6 +273,12 @@ class TestMlBackend(BackendTest):
         expectation['address'] = ml_type.get_full_address(expectation)
         self.assertLess(0, self.ml.set_mailinglist(self.key, setter))
         self.assertEqual(expectation, self.ml.get_mailinglist(self.key, 7))
+
+
+    @as_users("janis")
+    def test_list_mailinglists_semi_privileged(self) -> None:
+        self.assertEqual(self.ml.list_mailinglists(self.key).keys(),
+                         {2, 3, 7, 12, 13, 14, 56, 57, 61, 63, 64, 65})
 
     @as_users("janis")
     def test_double_link(self) -> None:
@@ -491,6 +511,7 @@ class TestMlBackend(BackendTest):
             3: SS.subscribed,
             12: SS.implicit,
             13: SS.implicit,
+            61: SS.subscription_override,
             64: SS.subscribed,
             65: SS.subscribed,
         }

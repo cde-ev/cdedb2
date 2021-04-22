@@ -181,6 +181,8 @@ class TestCdEFrontend(FrontendTest):
     def test_changedata(self) -> None:
         self.traverse({'description': self.user['display_name']},
                       {'description': 'Bearbeiten'})
+        # Make sure all country codes are translated
+        self.assertNonPresence("CountryCode")
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
         f['location2'] = "Hyrule"

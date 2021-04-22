@@ -1097,7 +1097,6 @@ class MlBaseFrontend(AbstractUserFrontend):
         """Check if all conditions required to change a subscription adress
         are fulfilled.
         """
-        assert rs.user.persona_id is not None
         is_subscribed = self.mlproxy.is_subscribed(
             rs, rs.user.persona_id, mailinglist_id)
         if not is_subscribed:

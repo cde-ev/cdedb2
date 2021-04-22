@@ -20,7 +20,7 @@ QEMUOPTIONS ?= -m 1G -enable-kvm -net nic,model=virtio -net user,hostfwd=tcp:127
 
 QEMUCACHING ?= writethrough
 
-DEBVERSION = bullseye-DI-alpha3
+DEBVERSION = bullseye-DI-rc1
 NETINSTISO = debian-${DEBVERSION}-amd64-netinst.iso
 
 DISTINFO_DATA?= ${AWK} -v alg=$$algo -v file=$${file} \
@@ -57,7 +57,7 @@ fetch: ${WORKDIR}/.done_fetch
 ${WORKDIR}/.done_fetch:
 	[ -d ${WORKDIR} ] || (mkdir -p ${WORKDIR} && chmod 755 ${WORKDIR})
 	[ -d ${DISTDIR} ] || (mkdir -p ${DISTDIR} && chmod 755 ${DISTDIR})
-	[ -f ${DISTDIR}/${NETINSTISO} ] || (cd ${DISTDIR} && ${FETCH} https://cdimage.debian.org/cdimage/bullseye_di_alpha3/amd64/iso-cd/${NETINSTISO})
+	[ -f ${DISTDIR}/${NETINSTISO} ] || (cd ${DISTDIR} && ${FETCH} https://cdimage.debian.org/cdimage/bullseye_di_rci/amd64/iso-cd/${NETINSTISO})
 	touch $@
 
 checksum:${WORKDIR}/.done_checksum
