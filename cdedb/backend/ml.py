@@ -839,8 +839,6 @@ class MlBackend(AbstractBackend):
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
         # Managing actions can only be done by moderators. Other options always
         # change your own subscription state.
-        if action.is_automatic():
-            raise RuntimeError(n_("Automatic actions should not be done manually."))
         if action.is_managing():
             if not self.may_manage(rs, mailinglist_id, allow_restricted=False):
                 raise PrivilegeError(n_("Not privileged."))

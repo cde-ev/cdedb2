@@ -20,6 +20,7 @@ functions:
 
 from gettext import gettext as _
 from typing import AbstractSet, Collection, Optional
+from typing_extensions import Literal
 
 from .exceptions import SubscriptionError
 from .machine import (
@@ -54,11 +55,13 @@ class SubscriptionManager:
         self.unwritten_states: StateSet = set(unwritten_states or ())
         if (self.unwritten_states &
                 {SubscriptionState.subscribed, SubscriptionState.unsubscribed}):
-            raise RuntimeError(_("Explicit core actions must be written."))
-        cleanup_protected_states = {
-            state for state in SubscriptionState
-            if self._get_error(SubscriptionAction.cleanup_subscription, state)}
-        self.cleanup_protected_states: StateSet = set(cleanup_protected_states)
+            raise ValueError(_("Explicit core actions must be written."))
+        self.cleanup_protected_states: StateSet = {
+            SubscriptionState.unsubscribed,
+            SubscriptionState.none,
+            SubscriptionState.subscription_override,
+            SubscriptionState.unsubscription_override,
+            SubscriptionState.pending}
 
     def _get_error(self,
                    action: SubscriptionAction,
@@ -149,8 +152,6 @@ class SubscriptionManager:
         :param is_privileged: If this is not True, disallow managing actions.
         """
         # 1: Do basic sanity checks this library is used appropriately.
-        if action.is_automatic():
-            raise RuntimeError(_("Use is_obsolete to perform cleanup actions."))
         if not allow_unsub and old_state in {SubscriptionState.unsubscribed,
                                              SubscriptionState.unsubscription_override}:
             raise RuntimeError(_("allow_unsub is incompatible with explicitly unsubscribed states."))
@@ -172,12 +173,12 @@ class SubscriptionManager:
                        policy: SubscriptionPolicy,
                        old_state: SubscriptionState,
                        is_implied: bool
-                       ) -> SubscriptionState:
+                       ) -> Literal[SubscriptionState.none]:
         """Analogue of apply_action for cleanup of subscribers.
 
-        This function is meant to update saved data regarding subscriptions if exterior
-        circumstances have changed. This is relevant for subscriptions if written to the
-        database, independent of being explicit or implicit.
+        This function is meant to update saved data regarding subscriptions if
+        exterior circumstances have changed. This is relevant for subscriptions if
+        written to the database, independent of being explicit or implicit.
 
         This interface is exposed mainly to make the transition understandable by
         analogy to apply_action. Since this is dependant on the fact whether a subscriber
@@ -185,25 +186,21 @@ class SubscriptionManager:
         with the exact same formalism as apply_action.
 
         This is guaranteed to only touch states not in
-        SubscriptionState.cleanup_protected_states().
+        SubscriptionManager.cleanup_protected_states().
 
         Parameters are documented at is_obsolete.
         """
-        if old_state not in self.written_states:
+        if old_state in (self.unwritten_states | self.cleanup_protected_states):
             raise SubscriptionError(_("No cleanup necessary."))
 
-        action = None
-        if policy.is_none():
+        if old_state.is_subscribed() and policy.is_none():
             # If user is not allowed as subscriber, remove them.
-            action = SubscriptionAction.cleanup_subscription
-        elif not is_implied and policy.is_implicit():
+            return SubscriptionState.none
+        elif (old_state == SubscriptionState.implicit and not is_implied
+              and policy.is_implicit()):
             # If user is implicit subscriber and not implied, remove them.
             # This conditional is only relevant if implicit subscribers are written.
-            action = SubscriptionAction.cleanup_implicit
-
-        if action:
-            self._check_state_requirements(action, old_state)
-            return self._get_target_state(action)
+            return SubscriptionState.none
         else:
             raise SubscriptionError(_("No cleanup necessary."))
 

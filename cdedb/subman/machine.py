@@ -9,10 +9,11 @@ It is assumed that there are some users with additional privileges (possibly dep
 on the subscription object in question). These privileged users are referred to as
 "moderators". Actions restricted to moderators are referred to as "managing actions".
 
-Some actions are meant to be performed automatically somewhat regularly. They are not
-meant to be performed manually but rather as a reaction to some change of an external
-condition, like a user losing the privilege to subscribe to a certain subscription
-object. These actions are referred to as "cleanup actions".
+Some changes of subscription states need to be performed automatically somewhat
+regularly. They are not meant to be performed manually but rather as a reaction to some
+change of an external condition, like a user losing the privilege to subscribe to a
+certain subscription object. Therefore, these are not modelled as `SubscriptionAction`,
+but implemented via `SubscriptionManager.do_cleanup` instead.
 
 Every user has a certain `SubscriptionPolicy` that defines their relation to any
 particular object they could possibly be subscribed to. This determines what actions
@@ -143,19 +144,10 @@ class SubscriptionAction(enum.IntEnum):
     remove_subscription_override = 31  #: A moderator removing a fixed subscription.
     remove_unsubscription_override = 32  #: A moderator unblocking a user.
     reset = 40  #: A moderator removing the current state of a user.
-    #: An automatic cleanup of users being subscribed (explicitly or implicitly).
-    cleanup_subscription = 50
-    cleanup_implicit = 51  #: An automatic cleanup of users being implicitly subscribed.
-    # TODO: Add action for adding an implicit subscriber.
 
     @classmethod
     def unsubscribing_actions(cls) -> Set["SubscriptionAction"]:
-        """All actions that unsubscribe a user.
-
-        While cleanup actions may remove a user's subscription from an object, they are
-        not considered unsubscribing, because won't be performed manually.
-        """
-        # TODO: include cleanup here.
+        """All actions that unsubscribe a user."""
         return {
             cls.unsubscribe,
             cls.remove_subscriber,
@@ -189,22 +181,6 @@ class SubscriptionAction(enum.IntEnum):
         """Whether or not an action requires additional privileges."""
         return self in self.managing_actions()
 
-    @classmethod
-    def cleanup_actions(cls) -> Set["SubscriptionAction"]:
-        """All actions which are part of more involved cleanup procedures.
-
-        These cannot be executed via `apply_action`, and should be executed via
-        `do_cleanup` instead.
-        """
-        return {
-            SubscriptionAction.cleanup_subscription,
-            SubscriptionAction.cleanup_implicit,
-        }
-
-    def is_automatic(self) -> bool:
-        """Whether or not an action may not be performed manually."""
-        return self in self.cleanup_actions()
-
 
 ActionMap = Mapping[SubscriptionAction, SubscriptionState]
 _StateErrorMapping = Mapping[SubscriptionState, Optional[SubscriptionError]]
@@ -226,8 +202,6 @@ ACTION_TARGET_STATE_MAP: ActionMap = {
     SubscriptionAction.remove_subscription_override: SubscriptionState.subscribed,
     SubscriptionAction.remove_unsubscription_override: SubscriptionState.unsubscribed,
     SubscriptionAction.reset: SubscriptionState.none,
-    SubscriptionAction.cleanup_subscription: SubscriptionState.none,
-    SubscriptionAction.cleanup_implicit: SubscriptionState.none,
 }
 
 # Errors are identical for all actions handling a subscription request.
@@ -372,33 +346,6 @@ SUBSCRIPTION_ERROR_MATRIX: ActionStateErrorMatrix = {
         SubscriptionState.pending: SubscriptionError(_("User is not unsubscribed.")),
         SubscriptionState.implicit: None,
         SubscriptionState.none: None,
-    },
-    SubscriptionAction.cleanup_subscription: {
-        SubscriptionState.subscribed: None,
-        SubscriptionState.unsubscribed: SubscriptionError(_(
-            "Unsubscriptions are protected against automatic cleanup.")),
-        SubscriptionState.subscription_override: SubscriptionError(_(
-            "Overrides are protected against automatic cleanup.")),
-        SubscriptionState.unsubscription_override: SubscriptionError(_(
-            "Overrides are protected against automatic cleanup.")),
-        SubscriptionState.pending: SubscriptionError(_(
-            "Pending requests are protected against automatic cleanup.")),
-        SubscriptionState.implicit: None,
-        SubscriptionState.none: SubscriptionInfo(_("Subscription already cleaned up.")),
-    },
-    SubscriptionAction.cleanup_implicit: {
-        SubscriptionState.subscribed: SubscriptionError(_(
-            "Subscriptions are protected against automatic implicit cleanup.")),
-        SubscriptionState.unsubscribed: SubscriptionError(_(
-            "Unsubscriptions are protected against automatic cleanup.")),
-        SubscriptionState.subscription_override: SubscriptionError(_(
-            "Overrides are protected against automatic cleanup.")),
-        SubscriptionState.unsubscription_override: SubscriptionError(_(
-            "Overrides are protected against automatic cleanup.")),
-        SubscriptionState.pending: SubscriptionError(_(
-            "Pending requests are protected against automatic cleanup.")),
-        SubscriptionState.implicit: None,
-        SubscriptionState.none: SubscriptionInfo(_("Subscription already cleaned up.")),
     },
     SubscriptionAction.approve_request: _SUBSCRIPTION_REQUEST_ERROR_MAPPING,
     SubscriptionAction.block_request: _SUBSCRIPTION_REQUEST_ERROR_MAPPING,

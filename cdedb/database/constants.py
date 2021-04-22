@@ -433,7 +433,5 @@ class MlLogCodes(enum.IntEnum):
             SubscriptionAction.remove_subscription_override: cls.subscribed,
             SubscriptionAction.remove_unsubscription_override: cls.unsubscribed,
             SubscriptionAction.reset: cls.reset,
-            SubscriptionAction.cleanup_subscription: cls.automatically_removed,
-            SubscriptionAction.cleanup_implicit: cls.automatically_removed,
         }
         return log_code_map[action]
