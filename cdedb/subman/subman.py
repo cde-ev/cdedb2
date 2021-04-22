@@ -105,7 +105,8 @@ class SubscriptionManager:
 
         If the policy does not allow the action, a SubscriptionError is raised.
         """
-        if action == SubscriptionAction.add_subscriber and not policy.may_be_added():
+        if (action == SubscriptionAction.add_subscriber
+                and not policy.allows_subscription()):
             raise SubscriptionError(_("User has no means to access this list."))
         if action == SubscriptionAction.subscribe and not policy.may_subscribe():
             raise SubscriptionError(_("Can not subscribe."))

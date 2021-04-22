@@ -118,7 +118,7 @@ class SubscriptionPolicy(enum.IntEnum):
         """Return a list of policies that allow the user to be added."""
         return {cls.subscribable, cls.moderated_opt_in, cls.invitation_only}
 
-    def may_be_added(self) -> bool:
+    def allows_subscription(self) -> bool:
         """Whether or not a user may be subscribed by a moderator."""
         return self in self.addable_policies()
 
