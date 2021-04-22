@@ -38,12 +38,18 @@ class SubmanTest(unittest.TestCase):
         self.assertEqual(subman.cleanup_protected_states, expectation)
 
     def test_written_states(self) -> None:
-        state_set = set(SubscriptionState)
-        for n in range(len(state_set)):
-            for unwritten in itertools.combinations(state_set, n + 1):
+        all_states = set(SubscriptionState)
+        optional_states = {SubscriptionState.implicit,
+                     SubscriptionState.none,
+                     SubscriptionState.subscription_override,
+                     SubscriptionState.unsubscription_override,
+                     SubscriptionState.pending}
+        for n in range(len(optional_states)):
+            for unwritten in itertools.combinations(optional_states, n + 1):
                 subman = SubscriptionManager(unwritten_states=unwritten)
                 self.assertEqual(subman.unwritten_states, set(unwritten))
-                self.assertEqual(subman.written_states, state_set.difference(unwritten))
+                self.assertEqual(subman.written_states,
+                                 all_states.difference(unwritten))
 
 
 if __name__ == "__main__":
