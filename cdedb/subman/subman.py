@@ -20,7 +20,6 @@ functions:
 
 from gettext import gettext as _
 from typing import AbstractSet, Collection, Optional
-from typing_extensions import Literal
 
 from .exceptions import SubscriptionError
 from .machine import (
@@ -52,12 +51,14 @@ class SubscriptionManager:
         if (self.unwritten_states &
                 {SubscriptionState.subscribed, SubscriptionState.unsubscribed}):
             raise ValueError(_("Explicit core actions must be written."))
-        self.cleanup_protected_states: StateSet = {
-            SubscriptionState.unsubscribed,
-            SubscriptionState.none,
-            SubscriptionState.subscription_override,
-            SubscriptionState.unsubscription_override,
-            SubscriptionState.pending}
+
+    cleanup_protected_states: StateSet = {
+        SubscriptionState.unsubscribed,
+        SubscriptionState.none,
+        SubscriptionState.subscription_override,
+        SubscriptionState.unsubscription_override,
+        SubscriptionState.pending
+    }
 
     @property
     def written_states(self) -> StateSet:
@@ -142,7 +143,8 @@ class SubscriptionManager:
         # 1: Do basic sanity checks this library is used appropriately.
         if not allow_unsub and old_state in {SubscriptionState.unsubscribed,
                                              SubscriptionState.unsubscription_override}:
-            raise RuntimeError(_("allow_unsub is incompatible with explicitly unsubscribed states."))
+            raise RuntimeError(
+                _("allow_unsub is incompatible with explicitly unsubscribed states."))
 
         # 2: Check list-dependent requirements for transition.
         self._check_policy_requirements(action=action, policy=policy)
@@ -161,7 +163,7 @@ class SubscriptionManager:
                        policy: SubscriptionPolicy,
                        old_state: SubscriptionState,
                        is_implied: bool
-                       ) -> Literal[SubscriptionState.none]:
+                       ) -> SubscriptionState:
         """Analogue of apply_action for cleanup of subscribers.
 
         This function is meant to update saved data regarding subscriptions if
@@ -178,6 +180,7 @@ class SubscriptionManager:
 
         Parameters are documented at is_obsolete.
         """
+        # pylint: disable=superfluous-parens
         if old_state in (self.unwritten_states | self.cleanup_protected_states):
             raise SubscriptionError(_("No cleanup necessary."))
 
