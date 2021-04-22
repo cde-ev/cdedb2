@@ -24,8 +24,8 @@ from typing_extensions import Literal
 
 from .exceptions import SubscriptionError
 from .machine import (
-    SubscriptionAction, SubscriptionPolicy, SubscriptionState, ActionMap,
-    ActionStateErrorMatrix, ACTION_TARGET_STATE_MAP, SUBSCRIPTION_ERROR_MATRIX,
+    SubscriptionAction, SubscriptionPolicy, SubscriptionState,
+    ActionStateErrorMatrix, SUBSCRIPTION_ERROR_MATRIX,
 )
 
 
@@ -37,7 +37,6 @@ class SubscriptionManager:
     def __init__(
         self, *,
         error_matrix: ActionStateErrorMatrix = SUBSCRIPTION_ERROR_MATRIX,
-        action_target_state_map: ActionMap = ACTION_TARGET_STATE_MAP,
         unwritten_states: Optional[StateColl] = None,
     ) -> None:
         """
@@ -45,13 +44,10 @@ class SubscriptionManager:
 
         :param error_matrix: You may provide an alternative matrix defining the
             relations between actions and states.
-        :param action_target_state_map: You may provide an alternative mapping from
-            action to target states.
         :param unwritten_states: Provide this if you want to keep track of a subset of
             all `SubscriptionState`s, that should not be written to your database.
         """
         self.error_matrix = error_matrix
-        self.action_target_state_map = action_target_state_map
         self.unwritten_states: StateSet = set(unwritten_states or ())
         if (self.unwritten_states &
                 {SubscriptionState.subscribed, SubscriptionState.unsubscribed}):
@@ -63,6 +59,14 @@ class SubscriptionManager:
             SubscriptionState.unsubscription_override,
             SubscriptionState.pending}
 
+    @property
+    def written_states(self) -> StateSet:
+        """Return all states that should be written.
+
+        I.e. the complement of `self.unwritten_states`.
+        """
+        return set(SubscriptionState) - self.unwritten_states
+
     def _get_error(self,
                    action: SubscriptionAction,
                    state: SubscriptionState,
@@ -73,15 +77,6 @@ class SubscriptionManager:
             otherwiese.
         """
         return self.error_matrix[action][state]
-
-    def _get_target_state(self,
-                          action: SubscriptionAction,
-                          ) -> SubscriptionState:
-        """Determine the target state associated with the given action.
-
-        Each action may only ever have one assotiated target state.
-        """
-        return self.action_target_state_map[action]
 
     def _check_state_requirements(self,
                                   action: SubscriptionAction,
@@ -100,14 +95,6 @@ class SubscriptionManager:
         exception = self._get_error(action, old_state)
         if exception:
             raise exception
-
-    @property
-    def written_states(self) -> StateSet:
-        """Return all states that should be written.
-
-        I.e. the complement of `self.unwritten_states`.
-        """
-        return set(SubscriptionState) - self.unwritten_states
 
     @staticmethod
     def _check_policy_requirements(action: SubscriptionAction,
@@ -167,7 +154,7 @@ class SubscriptionManager:
         self._check_state_requirements(action, old_state)
 
         # 4: Return target state and log code associated with the action.
-        return self._get_target_state(action)
+        return action.get_target_state()
 
     def _apply_cleanup(self,
                        policy: SubscriptionPolicy,

@@ -181,13 +181,19 @@ class SubscriptionAction(enum.IntEnum):
         """Whether or not an action requires additional privileges."""
         return self in self.managing_actions()
 
+    def get_target_state(self) -> SubscriptionState:
+        """Get the target state associated with an action.
 
-ActionMap = Mapping[SubscriptionAction, SubscriptionState]
+        This is unique for each action.
+        """
+        return _ACTION_TARGET_STATE_MAP[self]
+
+
 _StateErrorMapping = Mapping[SubscriptionState, Optional[SubscriptionError]]
 ActionStateErrorMatrix = Mapping[SubscriptionAction, _StateErrorMapping]
 
 
-ACTION_TARGET_STATE_MAP: ActionMap = {
+_ACTION_TARGET_STATE_MAP: Mapping[SubscriptionAction, SubscriptionState] = {
     SubscriptionAction.subscribe: SubscriptionState.subscribed,
     SubscriptionAction.unsubscribe: SubscriptionState.unsubscribed,
     SubscriptionAction.request_subscription: SubscriptionState.pending,
