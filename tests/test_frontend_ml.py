@@ -24,7 +24,7 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle('Mailinglisten')
 
         # we show this only for ml admins, not for moderators or relative admins
-        if self.is_user('nina'):
+        if self.user_in('nina'):
             self.assertPresence("Aktualisieren der Subscription States")
             f = self.response.forms['writesubscriptionstates']
             self.submit(f)
@@ -35,38 +35,38 @@ class TestMlFrontend(FrontendTest):
     def test_sidebar(self) -> None:
         self.traverse({'description': 'Mailinglisten'})
         # Users with no administrated and no moderated mailinglists:
-        if self.is_user('martin'):
+        if self.user_in('martin'):
             ins = {"Übersicht"}
             out = {"Alle Mailinglisten", "Moderierte Mailinglisten",
                    "Aktive Mailinglisten", "Nutzer verwalten", "Archivsuche", "Log"}
         # Users with core admin privileges for some mailinglists:
-        elif self.is_user('vera'):
+        elif self.user_in('vera'):
             ins = {"Aktive Mailinglisten", "Administrierte Mailinglisten", "Log",
                    "Nutzer verwalten", "Archivsuche"}
             out = {"Übersicht", "Alle Mailinglisten", "Moderierte Mailinglisten"}
         # Users with relative admin privileges for some mailinglists:
-        elif self.is_user('viktor'):
+        elif self.user_in('viktor'):
             ins = {"Aktive Mailinglisten", "Administrierte Mailinglisten", "Log"}
             out = {"Übersicht", "Alle Mailinglisten", "Moderierte Mailinglisten",
                    "Nutzer verwalten", "Archivsuche"}
         # Users with moderated mailinglists and relative admin privileges
         # for some mailinglists:
-        elif self.is_user('annika'):
+        elif self.user_in('annika'):
             ins = {"Aktive Mailinglisten", "Administrierte Mailinglisten",
                    "Moderierte Mailinglisten", "Log"}
             out = {"Übersicht", "Alle Mailinglisten", "Nutzer verwalten", "Archivsuche"}
         # Users with moderated mailinglists, but no admin privileges.
-        elif self.is_user('berta'):
+        elif self.user_in('berta'):
             ins = {"Aktive Mailinglisten", "Moderierte Mailinglisten", "Log"}
             out = {"Übersicht", "Administrierte Mailinglisten", "Alle Mailinglisten",
                    "Nutzer verwalten", "Archivsuche"}
         # Users with full ml-admin privileges.
-        elif self.is_user('nina'):
+        elif self.user_in('nina'):
             ins = {"Aktive Mailinglisten", "Alle Mailinglisten",
                    "Accounts verschmelzen", "Nutzer verwalten", "Archivsuche", "Log"}
             out = {"Übersicht", "Moderierte Mailinglisten"}
         # Users with moderated mailinglists with full ml-admin privileges.
-        elif self.is_user('anton'):
+        elif self.user_in('anton'):
             ins = {"Aktive Mailinglisten", "Alle Mailinglisten",
                    "Accounts verschmelzen", "Moderierte Mailinglisten",
                    "Nutzer verwalten", "Archivsuche", "Log"}
@@ -256,7 +256,7 @@ class TestMlFrontend(FrontendTest):
                       {'description': ml_data['title']})
         # Make sure that admin notes exist.
         self.assertTrue(ml_data['notes'])
-        if self.is_user("emilia", "nina"):
+        if self.user_in("emilia", "nina"):
             # Nina is admin, Emilia is moderator, they should see the notes.
             self.assertPresence(ml_data['notes'])
         else:
@@ -273,16 +273,16 @@ class TestMlFrontend(FrontendTest):
 
         # Moderators:
         out = set()
-        if self.is_user('berta'):
+        if self.user_in('berta'):
             ins = everyone | moderator
         # Relative admins that are not also moderators:
-        elif self.is_user('vera'):
+        elif self.user_in('vera'):
             ins = everyone | moderator
         # Absolute admins that are not also moderators:
-        elif self.is_user('anton', 'nina'):
+        elif self.user_in('anton', 'nina'):
             ins = everyone | moderator
         # Other users:
-        elif self.is_user('annika', 'martin', 'werner'):
+        elif self.user_in('annika', 'martin', 'werner'):
             ins = everyone
             out = moderator
         else:
@@ -295,7 +295,7 @@ class TestMlFrontend(FrontendTest):
         # not-mandatory
         self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/3/show'},)
         self.assertTitle("Witz des Tages")
-        if self.is_user('anton'):
+        if self.user_in('anton'):
             self.assertPresence("new-anton@example.cde")
         else:
             self.assertPresence("janis-spam@example.cde")
@@ -306,12 +306,12 @@ class TestMlFrontend(FrontendTest):
 
         # mandatory
         # janis is no cde-member, so use inga instead
-        if self.is_user('janis'):
+        if self.user_in('janis'):
             self.logout()
             self.login(USER_DICT['inga'])
         self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/1/show'},)
         self.assertTitle("Verkündungen")
-        if self.is_user('anton'):
+        if self.user_in('anton'):
             self.assertPresence("anton@example.cde (default)")
         else:
             self.assertPresence("inga@example.cde (default)")
@@ -407,7 +407,7 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("Mitglieder (Opt-in)", div="mailinglist-7-row")
         self.assertPresence("3", div="mailinglist-7-row")
         self.assertPresence("1 Abonnent. 2 Moderatoren.", div="mailinglist-7-row")
-        if self.is_user('berta'):
+        if self.user_in('berta'):
             self.assertPresence("Veranstaltungslisten")
             self.assertPresence("CdE-Party 2050 Orgateam")
             # Inactive moderated mailinglists
@@ -1148,7 +1148,7 @@ class TestMlFrontend(FrontendTest):
 
         # ... these have only changed if the moderator is privileged ...
         reality = {f.get("registration_stati", index=i).value for i in range(7)}
-        if self.is_user('berta'):
+        if self.user_in('berta'):
             expectation = {None, str(const.RegistrationPartStati.guest.value)}
         else:
             expectation = {str(status)

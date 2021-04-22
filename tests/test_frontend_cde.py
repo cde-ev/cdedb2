@@ -145,23 +145,23 @@ class TestCdEFrontend(FrontendTest):
             "Überweisungen eintragen", "Semesterverwaltung", "CdE-Log"}
 
         # non-members
-        if self.is_user('annika', 'werner', 'martin'):
+        if self.user_in('annika', 'werner', 'martin'):
             ins = everyone
             out = past_event | member | searchable | cde_admin | finance_admin
         # searchable member
-        elif self.is_user('berta'):
+        elif self.user_in('berta'):
             ins = everyone | past_event | member | cde_admin_or_member | searchable
             out = cde_admin | finance_admin
         # not-searchable member
-        elif self.is_user('charly'):
+        elif self.user_in('charly'):
             ins = everyone | past_event | member | cde_admin_or_member
             out = searchable | cde_admin | finance_admin
         # cde but not finance admin (vera is no member)
-        elif self.is_user('vera'):
+        elif self.user_in('vera'):
             ins = everyone | past_event | cde_admin_or_member | cde_admin
             out = member | searchable | finance_admin
         # cde and finance admin (farin is no member)
-        elif self.is_user('farin'):
+        elif self.user_in('farin'):
             ins = everyone | past_event | cde_admin_or_member | cde_admin | finance_admin
             out = member | searchable
         else:
@@ -174,7 +174,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': self.user['display_name']},)
         self.assertTitle(f"{self.user['given_names']} {self.user['family_name']}")
         # TODO extend
-        if self.is_user("berta"):
+        if self.user_in("berta"):
             self.assertPresence('PfingstAkademie')
 
     @as_users("berta")
@@ -890,7 +890,7 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("farin", "berta")
     def test_lastschrift_show(self) -> None:
-        if self.is_user("berta"):
+        if self.user_in("berta"):
             self.traverse({'description': 'Mitglieder'},
                           {'description': 'CdE-Mitglied suchen'})
             f = self.response.forms['membersearchform']
@@ -901,7 +901,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Bertålotta Beispiel")
         self.traverse({'description': 'Einzugsermächtigung'})
         self.assertTitle("Einzugsermächtigung Bertålotta Beispiel")
-        if self.is_user("farin"):
+        if self.user_in("farin"):
             self.assertIn("revokeform", self.response.forms)
             self.assertIn("receiptform3", self.response.forms)
         else:
@@ -1873,7 +1873,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Vergangene Veranstaltungen")
         self.traverse({'description': 'PfingstAkademie 2014'})
         self.assertTitle("PfingstAkademie 2014")
-        if self.is_user(22):
+        if self.user_in(22):
             self.assertPresence(
                 "Du bist kein Teilnehmer dieser vergangenen Veranstaltung und "
                 "kannst diesen Link nur in Deiner Eigenschaft als Admin sehen.",
@@ -1883,7 +1883,7 @@ class TestCdEFrontend(FrontendTest):
                 "Du bist kein Teilnehmer dieser vergangenen Veranstaltung und "
                 "kannst diesen Link nur in Deiner Eigenschaft als Admin sehen.")
         # inga is no participant nor admin
-        if self.is_user(9):
+        if self.user_in(9):
             self.assertNonPresence("Mediensammlung "
                                    "https://pa14:secret@example.cde/pa14/")
         else:
@@ -1903,7 +1903,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("PfingstAkademie 2014")
         # Check list privacy
         # non-searchable non-participants can not see anything interesting
-        if self.is_user("garcia"):
+        if self.user_in("garcia"):
             self.assertPresence("5 Teilnehmer", div='count-extra-participants')
             self.assertNonPresence("Bertå")
             self.assertNonPresence("Ferdinand")
@@ -1913,13 +1913,13 @@ class TestCdEFrontend(FrontendTest):
             self.assertPresence("Ferdinand", div='list-participants')
 
         # non-searchable users are only visible to admins and participants
-        if self.is_user("berta", "charly", "vera"):
+        if self.user_in("berta", "charly", "vera"):
             # members and participants
             self.assertPresence("Charly", div='list-participants')
             self.assertPresence("Emilia", div='list-participants')
             self.assertNonPresence("weitere")
             # no links are displayed to non-searchable users
-            if not self.is_user("charly"):
+            if not self.user_in("charly"):
                 # searchable member
                 self.traverse({'description': 'Ferdinand F. Findus'})
                 _traverse_back()
@@ -1930,11 +1930,11 @@ class TestCdEFrontend(FrontendTest):
         else:
             self.assertNonPresence("Charly")
             self.assertNonPresence("Emilia")
-            if not self.is_user("garcia"):
+            if not self.user_in("garcia"):
                 self.assertPresence("2 weitere", div='count-extra-participants')
 
         # links to non-searchable users are only displayed for admins
-        if self.is_user("vera"):
+        if self.user_in("vera"):
             # admin
             self.traverse({'description': 'Charly C. Clown'})
             _traverse_back()
@@ -1943,7 +1943,7 @@ class TestCdEFrontend(FrontendTest):
         else:
             # normal members
             self.assertNoLink('/core/persona/5/show')
-            if not self.is_user("charly"):
+            if not self.user_in("charly"):
                 self.assertNoLink('/core/persona/3/show')
 
     @as_users("daniel")
@@ -1969,7 +1969,7 @@ class TestCdEFrontend(FrontendTest):
                       {'description': 'FingerAkademie 2020'})
         self.assertTitle("FingerAkademie 2020")
         self.assertPresence("Ferdinand F. Findus", div="orgas")
-        if self.is_user("inga"):
+        if self.user_in("inga"):
             # no patricipant, but searchable.
             self.assertPresence("und 2 weitere", div="orgas")
             self.assertNonPresence("Charly")
@@ -1982,13 +1982,13 @@ class TestCdEFrontend(FrontendTest):
             self.assertPresence("Ferdinand F. Findus", div="orgas")
             self.assertNonPresence("Garcia", div="orgas")
             self.assertNonPresence("weitere")
-            if self.is_user("anton"):
+            if self.user_in("anton"):
                 self.traverse({'description': 'Emilia'})
             else:
                 # requesting user not searchable / no member
                 self.assertNoLink(content="Emilia")
                 self.assertNoLink(content="Ferdindand")
-                if not self.is_user("charly"):
+                if not self.user_in("charly"):
                     # requested user not searchable.
                     self.assertNoLink(content="Charly")
 

@@ -73,7 +73,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("CdE-Datenbank")
         self.assertPresence("Meine Daten", div='sidebar')
         self.assertPresence("Orga-Veranstaltungen", div='orga-box')
-        if self.is_user("berta"):
+        if self.user_in("berta"):
             self.assertNonPresence("Log")
             self.assertNonPresence("Admin-Änderungen")
             self.assertNonPresence("Nutzer verwalten")
@@ -120,19 +120,19 @@ class TestCoreFrontend(FrontendTest):
         meta_admin = {"Admin-Änderungen"}
 
         # admin of a realm without genesis cases
-        if self.is_user('werner'):
+        if self.user_in('werner'):
             ins = everyone
             out = genesis | core_admin | meta_admin
         # admin of a realm with genesis cases
-        elif self.is_user('annika', 'nina'):
+        elif self.user_in('annika', 'nina'):
             ins = everyone | genesis
             out = core_admin | meta_admin
         # core admin
-        elif self.is_user('vera'):
+        elif self.user_in('vera'):
             ins = everyone | genesis | core_admin
             out = meta_admin
         # meta admin
-        elif self.is_user('martin'):
+        elif self.user_in('martin'):
             ins = everyone | meta_admin
             out = genesis | core_admin
         else:
@@ -307,31 +307,31 @@ class TestCoreFrontend(FrontendTest):
     @as_users("berta", "martin", "nina", "rowena", "vera", "viktor", "werner", "annika")
     def test_selectpersona_403(self) -> None:
         # These can not be done by Berta no matter what.
-        if not self.is_user("vera"):
+        if not self.user_in("vera"):
             self.get('/core/persona/select?kind=admin_persona&phrase=@exam',
                      status=403)
             self.assertTitle('403: Forbidden')
             self.get('/core/persona/select?kind=past_event_user&phrase=@exam',
                      status=403)
             self.assertTitle('403: Forbidden')
-        if not self.is_user("viktor", "werner"):
+        if not self.user_in("viktor", "werner"):
             self.get('/core/persona/select?kind=pure_assembly_user&phrase=@exam',
                      status=403)
             self.assertTitle('403: Forbidden')
-        if self.is_user("martin", "rowena"):
+        if self.user_in("martin", "rowena"):
             self.get('/core/persona/select?kind=ml_user&phrase=@exam',
                      status=403)
             self.assertTitle('403: Forbidden')
-        if not self.is_user("nina"):
+        if not self.user_in("nina"):
             self.get('/core/persona/select?kind=pure_ml_user&phrase=@exam',
                      status=403)
             self.assertTitle('403: Forbidden')
-        if not self.is_user("annika", "berta"):
+        if not self.user_in("annika", "berta"):
             self.get('/core/persona/select?kind=event_user&phrase=@exam',
                      status=403)
             self.assertTitle('403: Forbidden')
 
-        if self.is_user("martin", "rowena", "werner"):
+        if self.user_in("martin", "rowena", "werner"):
             self.get('/core/persona/select'
                      '?kind=event_user&phrase=@exam',
                      status=403)
@@ -1238,7 +1238,7 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("paul", "quintus")
     def test_archive_user(self) -> None:
-        if self.is_user("paul"):
+        if self.user_in("paul"):
             self.admin_view_profile('charly')
         else:
             self.realm_admin_view_profile('charly', realm='cde')

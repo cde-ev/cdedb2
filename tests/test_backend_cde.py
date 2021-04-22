@@ -65,13 +65,13 @@ class TestCdEBackend(BackendTest):
             self.key, self.user['id'], newaddress, self.user['password'])
         self.assertTrue(ret)
         self.logout()
-        self.assertTrue(self.is_user("anonymous"))
+        self.assertTrue(self.user_in("anonymous"))
         self.login(user)
-        self.assertTrue(self.is_user("anonymous"))
+        self.assertTrue(self.user_in("anonymous"))
         newuser = dict(user)
         newuser['username'] = newaddress
         self.login(newuser)
-        self.assertTrue(self.is_user(newuser))
+        self.assertTrue(self.user_in(newuser))
         data = self.core.get_cde_user(self.key, newuser['id'])
         self.assertEqual(self.user['family_name'], data['family_name'])
         self.logout()
@@ -99,7 +99,7 @@ class TestCdEBackend(BackendTest):
             'core.personas', (1, 2), PERSONA_CDE_FIELDS)
 
         self.assertEqual(expectation, data)
-        if self.is_user(22):
+        if self.user_in(22):
             data = self.core.get_event_users(self.key, (1, 2))
             expectation = self.get_sample_data(
                 'core.personas', (1, 2), PERSONA_EVENT_FIELDS)
@@ -420,9 +420,9 @@ class TestCdEBackend(BackendTest):
         self.assertFalse(self.cde.may_start_semester_balance_update(self.key))
         self.assertFalse(self.cde.may_advance_semester(self.key))
 
-        if self.is_user("anton"):
+        if self.user_in("anton"):
             self.cde.finish_semester_bill(self.key)
-        elif self.is_user("farin"):
+        elif self.user_in("farin"):
             self.cde.finish_archival_notification(self.key)
         else:
             self.fail("Invalid user configuration for this test.")
@@ -431,27 +431,27 @@ class TestCdEBackend(BackendTest):
         self.assertFalse(self.cde.may_start_semester_balance_update(self.key))
         self.assertFalse(self.cde.may_advance_semester(self.key))
 
-        if self.is_user("anton"):
+        if self.user_in("anton"):
             self.cde.finish_archival_notification(self.key)
-        elif self.is_user("farin"):
+        elif self.user_in("farin"):
             self.cde.finish_semester_bill(self.key)
         self.assertFalse(self.cde.may_start_semester_bill(self.key))
         self.assertTrue(self.cde.may_start_semester_ejection(self.key))
         self.assertFalse(self.cde.may_start_semester_balance_update(self.key))
         self.assertFalse(self.cde.may_advance_semester(self.key))
 
-        if self.is_user("anton"):
+        if self.user_in("anton"):
             self.cde.finish_semester_ejection(self.key)
-        elif self.is_user("farin"):
+        elif self.user_in("farin"):
             self.cde.finish_automated_archival(self.key)
         self.assertFalse(self.cde.may_start_semester_bill(self.key))
         self.assertTrue(self.cde.may_start_semester_ejection(self.key))
         self.assertFalse(self.cde.may_start_semester_balance_update(self.key))
         self.assertFalse(self.cde.may_advance_semester(self.key))
 
-        if self.is_user("anton"):
+        if self.user_in("anton"):
             self.cde.finish_automated_archival(self.key)
-        elif self.is_user("farin"):
+        elif self.user_in("farin"):
             self.cde.finish_semester_ejection(self.key)
         self.assertFalse(self.cde.may_start_semester_bill(self.key))
         self.assertFalse(self.cde.may_start_semester_ejection(self.key))

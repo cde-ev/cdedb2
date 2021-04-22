@@ -60,15 +60,15 @@ class TestEventFrontend(FrontendTest):
         admin = {"Alle Veranstaltungen", "Log"}
 
         # not event admins (also orgas!)
-        if self.is_user('emilia', 'martin', 'werner'):
+        if self.user_in('emilia', 'martin', 'werner'):
             ins = everyone
             out = admin | {"Nutzer verwalten", "Archivsuche"}
         # core admins
-        elif self.is_user('vera'):
+        elif self.user_in('vera'):
             ins = everyone | {"Nutzer verwalten", "Archivsuche"}
             out = admin
         # event admins
-        elif self.is_user('annika'):
+        elif self.user_in('annika'):
             ins = everyone | admin | {"Nutzer verwalten", "Archivsuche"}
             out = set()
         else:
@@ -291,7 +291,7 @@ class TestEventFrontend(FrontendTest):
         self.assertIn('quickregistrationform', self.response.forms)
         self.assertIn('changeminorformform', self.response.forms)
         self.assertIn('lockform', self.response.forms)
-        if not self.is_user('annika'):  # annika is also admin
+        if not self.user_in('annika'):  # annika is also admin
             self.assertNotIn('createparticipantlistform', self.response.forms)
 
     @as_users("berta", "garcia")
@@ -349,19 +349,19 @@ class TestEventFrontend(FrontendTest):
         # TODO this could be more expanded (event without courses, distinguish
         #  between registered and participant, ...
         # not registered, not event admin
-        if self.is_user('martin', 'vera', 'werner'):
+        if self.user_in('martin', 'vera', 'werner'):
             ins = everyone | not_registered
             out = registered | registered_or_orga | orga
         # registered
-        elif self.is_user('emilia'):
+        elif self.user_in('emilia'):
             ins = everyone | registered | registered_or_orga
             out = not_registered | orga
         # orga
-        elif self.is_user('garcia'):
+        elif self.user_in('garcia'):
             ins = everyone | registered | registered_or_orga | orga
             out = not_registered
         # event admin (annika is not registered)
-        elif self.is_user('annika'):
+        elif self.user_in('annika'):
             ins = everyone | not_registered | registered_or_orga | orga
             out = registered
         else:
@@ -436,7 +436,7 @@ class TestEventFrontend(FrontendTest):
             "können Orgas über die Konfigurations-Seite hier etwas hinzufügen.",
             div='static-notifications')
         self.traverse("Übersicht")
-        if self.is_user('ferdinand', 'annika'):
+        if self.user_in('ferdinand', 'annika'):
             f = self.response.forms['addorgaform']
             # Try to add an invalid cdedbid.
             f['orga_id'] = "DB-1-1"
@@ -1242,13 +1242,13 @@ etc;anything else""", f['entries_2'].value)
         membership_fee = "Du kannst auch stattdessen Deinen regulären Mitgliedsbeitrag"
         self.traverse({'href': '/event/event/1/register'})
         self.assertTitle("Anmeldung für Große Testakademie 2222")
-        if self.is_user('charly'):
+        if self.user_in('charly'):
             self.assertNonPresence(surcharge)
             self.assertNonPresence(membership_fee)
-        elif self.is_user('daniel'):
+        elif self.user_in('daniel'):
             self.assertPresence(surcharge, div="nonmember-surcharge")
             self.assertPresence(membership_fee, div="nonmember-surcharge")
-        elif self.is_user('rowena'):
+        elif self.user_in('rowena'):
             self.assertPresence(surcharge, div="nonmember-surcharge")
             self.assertNonPresence(membership_fee)
         else:
@@ -1280,13 +1280,13 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
         text = self.fetch_mail_content()
-        if self.is_user('charly'):
+        if self.user_in('charly'):
             self.assertIn("461,49", text)
-        elif self.is_user('daniel'):
+        elif self.user_in('daniel'):
             self.assertIn("466,49", text)
             self.assertIn(surcharge, text)
             self.assertIn(membership_fee, text)
-        elif self.is_user('rowena'):
+        elif self.user_in('rowena'):
             self.assertIn("466,49", text)
             self.assertIn(surcharge, text)
             self.assertNotIn(membership_fee, text)
@@ -1874,7 +1874,7 @@ etc;anything else""", f['entries_2'].value)
     @as_users("emilia", "garcia")
     def test_participant_list_profile_link(self) -> None:
         # first, show list for participants
-        if self.is_user('emilia'):
+        if self.user_in('emilia'):
             self.logout()
             self.login(USER_DICT['garcia'])
             self.traverse({'description': 'Veranstaltungen'},
@@ -1893,7 +1893,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertNoLink(content='Eventis')
         # akira is member and searchable, so there should be a link
         self.traverse({'description': 'Akira'})
-        if self.is_user('emilia'):
+        if self.user_in('emilia'):
             # this must be a reduced profile, since emilia is not a member
             self.assertPresence("Akira Abukara", div='personal-information')
             self.assertNonPresence("akira@example.cde")
@@ -1906,7 +1906,7 @@ etc;anything else""", f['entries_2'].value)
     def test_cancellation(self) -> None:
         self.traverse({'href': '/event/$'})
         self.assertNonPresence("abgesagt")
-        if self.is_user("garcia"):
+        if self.user_in("garcia"):
             self.traverse({'href': '/event/event/list'})
             self.assertPresence("(3 Teile)")
             self.assertNonPresence("abgesagt")
@@ -1929,7 +1929,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Diese Veranstaltung wurde abgesagt.",
                             div="static-notifications")
 
-        if self.is_user("annika"):
+        if self.user_in("annika"):
             # Make sure the index shows it as cancelled.
             # Orgas only see it as Organized event now.
             self.traverse({'href': '/event'})
@@ -3342,7 +3342,7 @@ etc;anything else""", f['entries_2'].value)
                                'email': 'emilia@example.cde',
                                'id': 2,
                                'name': 'Emilia E. Eventis'}]}
-        if not self.is_user("annika"):
+        if not self.user_in("annika"):
             del expectation['registrations'][0]['email']
         self.assertEqual(expectation, self.response.json)
 
@@ -3629,7 +3629,7 @@ etc;anything else""", f['entries_2'].value)
 
             # ... the registration mail ...
             # ... as member
-            if self.is_user('charly'):
+            if self.user_in('charly'):
                 self.assertNotIn(pay_request, text)
                 self.assertNotIn(iban, text)
                 self.assertNotIn(no_member_surcharge, text)
@@ -3641,7 +3641,7 @@ etc;anything else""", f['entries_2'].value)
 
             # ... the registration page ...
             # ... as member
-            if self.is_user('charly'):
+            if self.user_in('charly'):
                 self.assertNotIn(pay_request, text)
                 self.assertNotIn(iban, text)
                 self.assertNotIn(no_member_surcharge, text)

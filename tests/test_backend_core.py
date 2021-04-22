@@ -1182,7 +1182,7 @@ class TestCoreBackend(BackendTest):
                         with self.assertRaises(TypeError):
                             self.core.login(ANONYMOUS, u["username"], u["password"], ip)
                 else:
-                    if not self.is_user(u["id"]):
+                    if not self.user_in(u["id"]):
                         self.assertIsNone(
                             self.core.get_persona_latest_session(self.key, u["id"]))
                         self.core.login(ANONYMOUS, u["username"], u["password"], ip)

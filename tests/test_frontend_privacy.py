@@ -445,7 +445,7 @@ class TestPrivacyFrontend(FrontendTest):
             inspected = USER_DICT[profile]
             self.get(
                 self.show_user_link(inspected['id']) + f"&ml_id={ml_id}")
-            if self.is_user(admin, ml_admin):
+            if self.user_in(admin, ml_admin):
                 found = self._profile_moderator_view(inspected)
             else:
                 found = self._profile_base_view(inspected)
@@ -499,10 +499,10 @@ class TestPrivacyFrontend(FrontendTest):
                 for realm, case in cases.items():
                     inspected = case['inspected']
                     self.get(self.show_user_link(inspected['id']))
-                    if self.is_user(*case['access']):
+                    if self.user_in(*case['access']):
                         # username is only visible on extended profile views
                         self.assertPresence(inspected['username'], div='contact-email')
-                    elif self.is_user(*case['no_access']):
+                    elif self.user_in(*case['no_access']):
                         found = self._profile_base_view(inspected)
                         # username must not be visible on base profiles
                         self.assertNonPresence(inspected['username'])
@@ -546,42 +546,42 @@ class TestPrivacyFrontend(FrontendTest):
             with self.subTest(u=user):
                 self.login(user)
 
-                if self.is_user(*core):
+                if self.user_in(*core):
                     self.get('/core/search/user')
                     self.assertTitle("Allgemeine Nutzerverwaltung")
                 else:
                     self.get('/core/search/user', status="403 FORBIDDEN")
                     self.assertTitle("403: Forbidden")
 
-                if self.is_user(*archive):
+                if self.user_in(*archive):
                     self.get('/core/search/archiveduser')
                     self.assertTitle("Archivsuche")
                 else:
                     self.get('/core/search/archiveduser', status="403 FORBIDDEN")
                     self.assertTitle("403: Forbidden")
 
-                if self.is_user(*(core | cde)):
+                if self.user_in(*(core | cde)):
                     self.get('/cde/search/user')
                     self.assertTitle("CdE-Nutzerverwaltung")
                 else:
                     self.get('/cde/search/user', status="403 FORBIDDEN")
                     self.assertTitle("403: Forbidden")
 
-                if self.is_user(*(core | event)):
+                if self.user_in(*(core | event)):
                     self.get('/event/search/user')
                     self.assertTitle("Veranstaltungsnutzerverwaltung")
                 else:
                     self.get('/event/search/user', status="403 FORBIDDEN")
                     self.assertTitle("403: Forbidden")
 
-                if self.is_user(*(core | ml)):
+                if self.user_in(*(core | ml)):
                     self.get('/ml/search/user')
                     self.assertTitle("Mailinglistennutzerverwaltung")
                 else:
                     self.get('/ml/search/user', status="403 FORBIDDEN")
                     self.assertTitle("403: Forbidden")
 
-                if self.is_user(*(core | assembly)):
+                if self.user_in(*(core | assembly)):
                     self.get('/assembly/search/user')
                     self.assertTitle("Versammlungsnutzerverwaltung")
                 else:
@@ -638,7 +638,7 @@ class TestPrivacyFrontend(FrontendTest):
         emilia = "Emilia E. Eventis"
         ferdinand = "Ferdinand F. Findus"
         # non-members should not have access if they are no cde admin
-        if self.is_user('daniel'):
+        if self.user_in('daniel'):
             self.get('/cde/past/event/list', status="403 FORBIDDEN")
         else:
             self.traverse({'description': 'Mitglieder'},
@@ -646,13 +646,13 @@ class TestPrivacyFrontend(FrontendTest):
                           {'description': 'PfingstAkademie 2014'})
 
         # non-searchable users which did not participate should not see any user
-        if self.is_user('garcia'):
+        if self.user_in('garcia'):
             invisible = [akira, berta, charly, emilia, ferdinand]
             for participant in invisible:
                 self.assertNonPresence(participant)
 
         # non-cde admin who doesnt participate should see searchable members only
-        elif self.is_user('inga'):
+        elif self.user_in('inga'):
             visible = [akira, berta, ferdinand]
             invisible = [charly, emilia]
             for participant in visible:
@@ -662,7 +662,7 @@ class TestPrivacyFrontend(FrontendTest):
 
         # ... and every participant can see every participant. But if they are
         # not searchable, they should not see any profile links.
-        elif self.is_user('charly'):
+        elif self.user_in('charly'):
             visible = [akira, berta, charly, emilia, ferdinand]
             for participant in visible:
                 self.assertPresence(participant, div='list-participants')
@@ -674,7 +674,7 @@ class TestPrivacyFrontend(FrontendTest):
         emilia = "Emilia E. Eventis"
         ferdinand = "Ferdinand F. Findus"
         # non-members should not have access if they are no cde admin
-        if self.is_user('daniel'):
+        if self.user_in('daniel'):
             self.get('/cde/past/event/1/course/2/show', status="403 FORBIDDEN")
         else:
             self.traverse({'description': 'Mitglieder'},
@@ -683,13 +683,13 @@ class TestPrivacyFrontend(FrontendTest):
                           {'description': 'Goethe zum Anfassen'})
 
         # non-searchable users which did not participate should not see any user
-        if self.is_user('garcia'):
+        if self.user_in('garcia'):
             invisible = [akira, emilia, ferdinand]
             for participant in invisible:
                 self.assertNonPresence(participant)
 
         # non-cde admin who doesnt participate should see searchable members only
-        elif self.is_user('inga'):
+        elif self.user_in('inga'):
             visible = [akira, ferdinand]
             invisible = [emilia]
             for participant in visible:
@@ -699,7 +699,7 @@ class TestPrivacyFrontend(FrontendTest):
 
         # ... and every participant can see every participant. But if they are
         # not searchable, they should not see any profile links.
-        elif self.is_user('charly'):
+        elif self.user_in('charly'):
             visible = [akira, emilia, ferdinand]
             for participant in visible:
                 self.assertPresence(participant, div='list-participants')

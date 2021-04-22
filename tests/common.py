@@ -456,7 +456,7 @@ class BackendTest(CdEDBTest):
         self.key = ANONYMOUS
         self.user = USER_DICT["anonymous"]
 
-    def is_user(self, *identifiers: UserIdentifier) -> bool:
+    def user_in(self, *identifiers: UserIdentifier) -> bool:
         """Check whether the current user is any of the given users."""
         users = {get_user(i)["id"] for i in identifiers}
         return self.user.get("id", -1) in users
@@ -941,7 +941,7 @@ class FrontendTest(BackendTest):
         user = get_user(user)
         self.user = user
         self.get("/", verbose=verbose)
-        if not self.is_user("anonymous"):
+        if not self.user_in("anonymous"):
             f = self.response.forms['loginform']
             f['username'] = user['username']
             f['password'] = user['password']

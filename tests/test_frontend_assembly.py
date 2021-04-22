@@ -141,17 +141,17 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence("Internationaler Kongress", div='active-assemblies')
         self.assertPresence("(bereits angemeldet)", div='active-assemblies')
         # Werner and Kalif can only see assemblies he is signed up to
-        if self.is_user("kalif"):
+        if self.user_in("kalif"):
             self.assertNonPresence("Archiv-Sammlung")
         else:
             self.assertPresence("Archiv-Sammlung", div='active-assemblies')
-        if self.is_user("berta"):
+        if self.user_in("berta"):
             self.assertPresence("Kanonische Beispielversammlung",
                                 div='inactive-assemblies')
         else:
             self.assertNonPresence("Kanonische Beispielversammlung")
         # Only Werner is presider
-        if self.is_user("werner"):
+        if self.user_in("werner"):
             self.assertPresence("Geleitete Versammlungen")
             self.assertPresence("Archiv-Sammlung", div='presided-assemblies')
             self.assertPresence("Internationaler Kongress", div='presided-assemblies')
@@ -168,15 +168,15 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         everyone = {"Versammlungen", "Übersicht"}
 
         # not assembly admins
-        if self.is_user("annika", "martin", "werner"):
+        if self.user_in("annika", "martin", "werner"):
             ins = everyone
             out = {"Nutzer verwalten", "Archivsuche", "Log"}
         # core admins
-        elif self.is_user("vera"):
+        elif self.user_in("vera"):
             ins = everyone | {"Nutzer verwalten", "Archivsuche"}
             out = {"Log"}
         # assembly admins
-        elif self.is_user("anton"):
+        elif self.user_in("anton"):
             ins = everyone | {"Nutzer verwalten", "Archivsuche", "Log"}
             out = set()
         else:
@@ -311,7 +311,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.traverse({'description': 'Versammlungen'})
 
         # they are no member and not yet signed up
-        if self.is_user('annika', 'martin', 'vera'):
+        if self.user_in('annika', 'martin', 'vera'):
             self.assertNonPresence("Internationaler Kongress")
 
             # now, sign them up
@@ -330,11 +330,11 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         admin = {"Konfiguration", "Log"}
 
         # not assembly admins
-        if self.is_user('annika', 'martin', 'vera'):
+        if self.user_in('annika', 'martin', 'vera'):
             ins = attendee
             out = admin
         # assembly admin
-        elif self.is_user('werner'):
+        elif self.user_in('werner'):
             ins = attendee | admin
             out = set()
         else:
@@ -509,9 +509,9 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence(
             f"Insgesamt {len(attendees)} Anwesende.", div='attendees-count')
         self.assertNonPresence("Charly")
-        if self.is_user('kalif'):
+        if self.user_in('kalif'):
             self.assertNonPresence("Download")
-        elif self.is_user('viktor', 'werner'):
+        elif self.user_in('viktor', 'werner'):
             self.assertPresence("Download")
             self.traverse("TeX-Liste")
             for attendee in attendees:
@@ -739,7 +739,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.traverse({'description': 'Versammlungen$'},
                       {'description': 'Internationaler Kongress'},
                       {'description': 'Datei-Übersicht'})
-        if self.is_user(6):
+        if self.user_in(6):
             f = self.response.forms['adminviewstoggleform']
             self.submit(f, button="view_specifier", value="-assembly_presider")
             self.assertTitle("Datei-Übersicht (Internationaler Kongress)")
@@ -811,7 +811,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
 
         # Now check the attachment over view without the presider admin view.
         self.traverse({'description': "Datei-Übersicht"})
-        if self.is_user(6):
+        if self.user_in(6):
             f = self.response.forms['adminviewstoggleform']
             self.submit(f, button="view_specifier", value="-assembly_presider")
             self.assertTitle("Datei-Übersicht (Internationaler Kongress)")

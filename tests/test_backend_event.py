@@ -919,7 +919,7 @@ class TestEventBackend(BackendTest):
             'persona_id': 16,
             'real_persona_id': None}
         # try to create a registration for paul
-        if self.is_user('paul'):
+        if self.user_in('paul'):
             new_id = self.event.create_registration(self.key, new_reg)
             self.assertLess(0, new_id)
             new_reg['id'] = new_id
@@ -2665,7 +2665,7 @@ class TestEventBackend(BackendTest):
 
     @as_users("emilia", "garcia", "annika")
     def test_calculate_fees(self) -> None:
-        if not self.is_user("emilia"):
+        if not self.user_in("emilia"):
             reg_ids = self.event.list_registrations(self.key, event_id=1)
             expectation = {
                 1: decimal.Decimal("573.99"),

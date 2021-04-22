@@ -435,7 +435,7 @@ class TestMlBackend(BackendTest):
 
         for data in admin_mdatas:
             # admins may change any attribute of a mailinglist
-            if self.is_user('nina'):
+            if self.user_in('nina'):
                 expectation.update(data)
                 self.assertLess(0, self.ml.set_mailinglist(self.key, data))
             else:
@@ -447,14 +447,14 @@ class TestMlBackend(BackendTest):
         self.assertLess(0, self.ml.set_mailinglist(self.key, restricted_mod_mdata))
 
         # ... but only full moderators (here: orgas) may change these.
-        if self.is_user('janis'):
+        if self.user_in('janis'):
             with self.assertRaises(PrivilegeError):
                 self.ml.set_mailinglist(self.key, full_mod_mdata)
         else:
             expectation.update(full_mod_mdata)
             self.assertLess(0, self.ml.set_mailinglist(self.key, full_mod_mdata))
 
-        if self.is_user('nina'):
+        if self.user_in('nina'):
             # adjust address form changed local part
             expectation['address'] = 'alternativ@aka.cde-ev.de'
 
@@ -683,13 +683,13 @@ class TestMlBackend(BackendTest):
         mailinglist_id = 4
 
         # Anton and Berta are already subscribed, unsubscribe them first
-        if self.is_user(1, 2):
+        if self.user_in(1, 2):
             self._change_sub(self.user['id'], mailinglist_id,
                              SA.unsubscribe,
                              state=SS.unsubscribed)
 
         # Try to subscribe
-        expected_state = SS.unsubscribed if self.is_user(1, 2) else SS.none
+        expected_state = SS.unsubscribed if self.user_in(1, 2) else SS.none
         self._change_sub(self.user['id'], mailinglist_id, SA.subscribe,
                          state=expected_state, kind="error")
 
@@ -761,13 +761,13 @@ class TestMlBackend(BackendTest):
         mailinglist_id = 2
 
         # Ferdinand is unsubscribed already, resubscribe
-        if self.is_user(6):
+        if self.user_in(6):
             self._change_sub(self.user['id'], mailinglist_id, SA.subscribe,
                              state=SS.subscribed)
 
         # Now we have a mix of explicit and implicit subscriptions, try to
         # subscribe again
-        expected_state = SS.subscribed if self.is_user(6, 14) else SS.implicit
+        expected_state = SS.subscribed if self.user_in(6, 14) else SS.implicit
         self._change_sub(self.user['id'], mailinglist_id, SA.subscribe,
                          state=expected_state, kind="info")
 
@@ -867,7 +867,7 @@ class TestMlBackend(BackendTest):
         _try_unsubscribe(SS.subscribed)
 
         # For admins, some shallow cron testing
-        if not self.is_user(2):
+        if not self.user_in(2):
             self.ml.write_subscription_states(self.key, mailinglist_id)
             self._check_state(self.user['id'], mailinglist_id, SS.subscribed)
 
@@ -1065,7 +1065,7 @@ class TestMlBackend(BackendTest):
                     persona_id=user_id)
             # You had never the chance to actually change something anyway, trying to
             # change the subscription state of someone else.
-            if not self.is_user(user_id):
+            if not self.user_in(user_id):
                 with self.assertRaises(PrivilegeError):
                     datum = {
                         'mailinglist_id': ml_id,
@@ -1101,7 +1101,7 @@ class TestMlBackend(BackendTest):
         self._change_sub(self.user['id'], 9, SA.subscribe,
                          state=SS.none, kind="error")
         # List 11 is only joinable by assembly users
-        if self.is_user(11):
+        if self.user_in(11):
             self._change_sub(self.user['id'], 11, SA.unsubscribe,
                              state=SS.unsubscribed)
             self._change_sub(self.user['id'], 11, SA.subscribe,
@@ -1793,7 +1793,7 @@ class TestMlBackend(BackendTest):
 
     @as_users("annika", "viktor", "quintus", "nina")
     def test_relevant_admins(self) -> None:
-        if self.is_user("annika", "nina"):
+        if self.user_in("annika", "nina"):
             # Create a new event mailinglist.
             mldata = {
                 'local_part': "cyber",
@@ -1850,7 +1850,7 @@ class TestMlBackend(BackendTest):
                 self.key, new_id,
                 cascade=["moderators", "subscriptions", "log"]))
 
-        if self.is_user("viktor", "nina"):
+        if self.user_in("viktor", "nina"):
             # Create a new assembly mailinglist.
             mldata = {
                 'local_part': "mgv-ag",
@@ -1887,7 +1887,7 @@ class TestMlBackend(BackendTest):
                 'id': new_id,
                 'ml_type': const.MailinglistTypes.member_opt_in,
             }
-            if not self.is_user("nina"):
+            if not self.user_in("nina"):
                 with self.assertRaises(PrivilegeError) as cm:
                     self.ml.set_mailinglist(self.key, mdata)
                 self.assertEqual(cm.exception.args,
@@ -1899,7 +1899,7 @@ class TestMlBackend(BackendTest):
             self.assertTrue(self.ml.delete_mailinglist(
                 self.key, new_id,
                 cascade=["moderators", "subscriptions", "log"]))
-        if self.is_user("quintus", "nina"):
+        if self.user_in("quintus", "nina"):
             # Create a new member mailinglist.
             mldata = {
                 'local_part': "literatir",
@@ -1935,7 +1935,7 @@ class TestMlBackend(BackendTest):
                 'id': new_id,
                 'ml_type': const.MailinglistTypes.general_opt_in,
             }
-            if not self.is_user("nina"):
+            if not self.user_in("nina"):
                 with self.assertRaises(PrivilegeError) as cm:
                     self.ml.set_mailinglist(self.key, mdata)
                 self.assertEqual(cm.exception.args,
