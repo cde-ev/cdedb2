@@ -36,8 +36,8 @@ msgstr "Keine Zugriffsrechte auf Veranstaltungs-Log."
 
 #: cdedb/backend/assembly.py:295 cdedb/backend/cde.py:1067
 #: cdedb/backend/core.py:2890 cdedb/backend/core.py:2895
-#: cdedb/backend/event.py:924 cdedb/backend/ml.py:303 cdedb/backend/ml.py:305
-#: cdedb/backend/past_event.py:787
+#: cdedb/backend/event.py:924 cdedb/backend/ml.py:303 cdedb/backend/ml.py:304
+#: cdedb/backend/ml.py:305 cdedb/backend/past_event.py:787
 msgid "Bad scope."
 msgstr "Unzulässiger Bereich."
 
@@ -92,35 +92,39 @@ msgstr "Nicht berechtigt auf Veranstaltungstabellen zuzugreifen"
 #: cdedb/backend/event.py:3653 cdedb/backend/event.py:3684
 #: cdedb/backend/event.py:3708 cdedb/backend/event.py:3857
 #: cdedb/backend/event.py:3940 cdedb/backend/event.py:4120
-#: cdedb/backend/ml.py:162 cdedb/backend/ml.py:166 cdedb/backend/ml.py:274
-#: cdedb/backend/ml.py:276 cdedb/backend/ml.py:470 cdedb/backend/ml.py:472
-#: cdedb/backend/ml.py:641 cdedb/backend/ml.py:643 cdedb/backend/ml.py:687
-#: cdedb/backend/ml.py:689 cdedb/backend/ml.py:832 cdedb/backend/ml.py:845
-#: cdedb/backend/ml.py:881 cdedb/backend/ml.py:889 cdedb/backend/ml.py:907
-#: cdedb/backend/ml.py:915 cdedb/backend/ml.py:938 cdedb/backend/ml.py:948
-#: cdedb/backend/ml.py:1015 cdedb/backend/ml.py:1027 cdedb/backend/ml.py:1082
-#: cdedb/backend/ml.py:1093 cdedb/frontend/assembly.py:194
-#: cdedb/frontend/assembly.py:599 cdedb/frontend/assembly.py:680
-#: cdedb/frontend/assembly.py:737 cdedb/frontend/assembly.py:757
-#: cdedb/frontend/assembly.py:1086 cdedb/frontend/assembly.py:1154
-#: cdedb/frontend/assembly.py:1411 cdedb/frontend/assembly.py:1508
-#: cdedb/frontend/assembly.py:1564 cdedb/frontend/core.py:843
-#: cdedb/frontend/core.py:844 cdedb/frontend/core.py:846
-#: cdedb/frontend/core.py:847 cdedb/frontend/core.py:851
-#: cdedb/frontend/core.py:852 cdedb/frontend/core.py:857
-#: cdedb/frontend/core.py:858 cdedb/frontend/core.py:865
-#: cdedb/frontend/core.py:866 cdedb/frontend/core.py:871
-#: cdedb/frontend/core.py:872 cdedb/frontend/core.py:879
-#: cdedb/frontend/core.py:880 cdedb/frontend/core.py:884
-#: cdedb/frontend/core.py:885 cdedb/frontend/core.py:896
-#: cdedb/frontend/core.py:897 cdedb/frontend/core.py:1604
-#: cdedb/frontend/core.py:1605 cdedb/frontend/core.py:1619
-#: cdedb/frontend/core.py:1620 cdedb/frontend/core.py:2217
-#: cdedb/frontend/core.py:2218 cdedb/frontend/core.py:2231
-#: cdedb/frontend/core.py:2232 cdedb/frontend/core.py:2263
-#: cdedb/frontend/core.py:2264 cdedb/frontend/core.py:2287
-#: cdedb/frontend/core.py:2288 cdedb/frontend/event.py:6328
-#: cdedb/subman/subman.py:100
+#: cdedb/backend/ml.py:162 cdedb/backend/ml.py:165 cdedb/backend/ml.py:166
+#: cdedb/backend/ml.py:274 cdedb/backend/ml.py:275 cdedb/backend/ml.py:276
+#: cdedb/backend/ml.py:470 cdedb/backend/ml.py:471 cdedb/backend/ml.py:472
+#: cdedb/backend/ml.py:641 cdedb/backend/ml.py:642 cdedb/backend/ml.py:643
+#: cdedb/backend/ml.py:687 cdedb/backend/ml.py:688 cdedb/backend/ml.py:689
+#: cdedb/backend/ml.py:832 cdedb/backend/ml.py:842 cdedb/backend/ml.py:845
+#: cdedb/backend/ml.py:881 cdedb/backend/ml.py:886 cdedb/backend/ml.py:889
+#: cdedb/backend/ml.py:907 cdedb/backend/ml.py:912 cdedb/backend/ml.py:915
+#: cdedb/backend/ml.py:938 cdedb/backend/ml.py:945 cdedb/backend/ml.py:948
+#: cdedb/backend/ml.py:1015 cdedb/backend/ml.py:1025 cdedb/backend/ml.py:1027
+#: cdedb/backend/ml.py:1082 cdedb/backend/ml.py:1091 cdedb/backend/ml.py:1093
+#: cdedb/frontend/assembly.py:194 cdedb/frontend/assembly.py:599
+#: cdedb/frontend/assembly.py:680 cdedb/frontend/assembly.py:737
+#: cdedb/frontend/assembly.py:757 cdedb/frontend/assembly.py:1086
+#: cdedb/frontend/assembly.py:1154 cdedb/frontend/assembly.py:1411
+#: cdedb/frontend/assembly.py:1508 cdedb/frontend/assembly.py:1564
+#: cdedb/frontend/core.py:843 cdedb/frontend/core.py:844
+#: cdedb/frontend/core.py:846 cdedb/frontend/core.py:847
+#: cdedb/frontend/core.py:851 cdedb/frontend/core.py:852
+#: cdedb/frontend/core.py:857 cdedb/frontend/core.py:858
+#: cdedb/frontend/core.py:865 cdedb/frontend/core.py:866
+#: cdedb/frontend/core.py:871 cdedb/frontend/core.py:872
+#: cdedb/frontend/core.py:879 cdedb/frontend/core.py:880
+#: cdedb/frontend/core.py:884 cdedb/frontend/core.py:885
+#: cdedb/frontend/core.py:896 cdedb/frontend/core.py:897
+#: cdedb/frontend/core.py:1604 cdedb/frontend/core.py:1605
+#: cdedb/frontend/core.py:1619 cdedb/frontend/core.py:1620
+#: cdedb/frontend/core.py:2217 cdedb/frontend/core.py:2218
+#: cdedb/frontend/core.py:2231 cdedb/frontend/core.py:2232
+#: cdedb/frontend/core.py:2263 cdedb/frontend/core.py:2264
+#: cdedb/frontend/core.py:2287 cdedb/frontend/core.py:2288
+#: cdedb/frontend/event.py:6328 cdedb/subman/subman.py:100
+#: cdedb/subman/subman.py:154
 msgid "Not privileged."
 msgstr "Nicht die nötige Zugriffsberechtigung."
 
@@ -144,10 +148,10 @@ msgstr ""
 "Versammlung beendet wurde."
 
 #: cdedb/backend/assembly.py:547 cdedb/backend/ml.py:425
-#: cdedb/backend/ml.py:427 cdedb/frontend/assembly.py:255
-#: cdedb/frontend/assembly.py:426 cdedb/frontend/event.py:1196
-#: cdedb/frontend/ml_base.py:242 cdedb/frontend/ml_base.py:701
-#: cdedb/frontend/ml_base.py:793
+#: cdedb/backend/ml.py:426 cdedb/backend/ml.py:427
+#: cdedb/frontend/assembly.py:255 cdedb/frontend/assembly.py:426
+#: cdedb/frontend/event.py:1196 cdedb/frontend/ml_base.py:242
+#: cdedb/frontend/ml_base.py:701 cdedb/frontend/ml_base.py:793
 msgid "Some of these users do not exist or are archived."
 msgstr "Einige dieser Nutzer existieren nicht oder sind archiviert."
 
@@ -174,10 +178,10 @@ msgstr "Eine aktive Abstimmung kann nicht gelöscht werden."
 #: cdedb/backend/event.py:2424 cdedb/backend/event.py:3110
 #: cdedb/backend/event.py:3141 cdedb/backend/event.py:3382
 #: cdedb/backend/event.py:3411 cdedb/backend/event.py:3569
-#: cdedb/backend/event.py:3593 cdedb/backend/ml.py:694 cdedb/backend/ml.py:696
-#: cdedb/backend/ml.py:730 cdedb/backend/ml.py:732
-#: cdedb/backend/past_event.py:340 cdedb/backend/past_event.py:371
-#: cdedb/backend/past_event.py:470
+#: cdedb/backend/event.py:3593 cdedb/backend/ml.py:694 cdedb/backend/ml.py:695
+#: cdedb/backend/ml.py:696 cdedb/backend/ml.py:730 cdedb/backend/ml.py:731
+#: cdedb/backend/ml.py:732 cdedb/backend/past_event.py:340
+#: cdedb/backend/past_event.py:371 cdedb/backend/past_event.py:470
 #, python-format
 msgid "Deletion of %(type)s blocked by %(block)s."
 msgstr "Löschen von %(type)s wird verhindert von %(block)s."
@@ -1000,40 +1004,40 @@ msgstr "Nicht alle Accounts zurückübertragen."
 msgid "Referential integrity of lodgement groups violated."
 msgstr "Referentielle Integrität der Unterkunftgruppen wurde verletzt."
 
-#: cdedb/backend/ml.py:58 cdedb/backend/ml.py:62
+#: cdedb/backend/ml.py:58 cdedb/backend/ml.py:61 cdedb/backend/ml.py:62
 msgid "Unknown mailinglist_id."
 msgstr "Nicht-existente Mailingliste."
 
-#: cdedb/backend/ml.py:79 cdedb/backend/ml.py:83
+#: cdedb/backend/ml.py:79 cdedb/backend/ml.py:82 cdedb/backend/ml.py:83
 msgid "No mailinglist specified."
 msgstr "Keine Mailingliste angegeben."
 
-#: cdedb/backend/ml.py:84 cdedb/backend/ml.py:88
+#: cdedb/backend/ml.py:84 cdedb/backend/ml.py:87 cdedb/backend/ml.py:88
 msgid "Different mailinglists specified."
 msgstr "Unterschiedliche Mailinglisten angegeben."
 
-#: cdedb/backend/ml.py:420 cdedb/backend/ml.py:422
+#: cdedb/backend/ml.py:420 cdedb/backend/ml.py:421 cdedb/backend/ml.py:422
 msgid "Cannot remove all moderators."
 msgstr "Es können nicht sämtliche Moderatoren entfernt werden."
 
-#: cdedb/backend/ml.py:428 cdedb/backend/ml.py:430
+#: cdedb/backend/ml.py:428 cdedb/backend/ml.py:429 cdedb/backend/ml.py:430
 #: cdedb/frontend/ml_base.py:246 cdedb/frontend/ml_base.py:705
 msgid "Some of these users are not ml users."
 msgstr "Einige dieser Nutzer sind keine Mailinglistenutzer."
 
-#: cdedb/backend/ml.py:546 cdedb/backend/ml.py:548
+#: cdedb/backend/ml.py:546 cdedb/backend/ml.py:547 cdedb/backend/ml.py:548
 msgid "Need to be moderator or admin to change mailinglist."
 msgstr "Um eine Mailingliste zu ändern muss man Moderator oder Admin sein."
 
-#: cdedb/backend/ml.py:549 cdedb/backend/ml.py:551
+#: cdedb/backend/ml.py:549 cdedb/backend/ml.py:550 cdedb/backend/ml.py:551
 msgid "Need to be admin to change this."
 msgstr "Um das zu ändern muss man Admin sein.Nur Admins dürfen das ändern."
 
-#: cdedb/backend/ml.py:551 cdedb/backend/ml.py:553
+#: cdedb/backend/ml.py:551 cdedb/backend/ml.py:552 cdedb/backend/ml.py:553
 msgid "Restricted moderators are not allowed to change this."
 msgstr "Eingeschränkte Moderatoren können dies nicht ändern."
 
-#: cdedb/backend/ml.py:620 cdedb/backend/ml.py:622
+#: cdedb/backend/ml.py:620 cdedb/backend/ml.py:621 cdedb/backend/ml.py:622
 msgid "Non-unique mailinglist name"
 msgstr "Uneindeutige Mailadresse"
 
@@ -1041,36 +1045,36 @@ msgstr "Uneindeutige Mailadresse"
 msgid "Automatic actions should not be done manually."
 msgstr "Autmatische Aktionen dürfen nicht manuell getätigt werden."
 
-#: cdedb/backend/ml.py:1197 cdedb/backend/ml.py:1212
+#: cdedb/backend/ml.py:1197 cdedb/backend/ml.py:1211 cdedb/backend/ml.py:1212
 msgid "Moderator access has been restricted."
 msgstr "Moderatorzugriff ist eingeschränkt."
 
-#: cdedb/backend/ml.py:1310 cdedb/backend/ml.py:1325
+#: cdedb/backend/ml.py:1310 cdedb/backend/ml.py:1324 cdedb/backend/ml.py:1325
 msgid "Source User is admin and can not be merged."
 msgstr "Der Quellnutzer ist Admin und kann daher nicht verschmolzen werden."
 
-#: cdedb/backend/ml.py:1312 cdedb/backend/ml.py:1327
+#: cdedb/backend/ml.py:1312 cdedb/backend/ml.py:1326 cdedb/backend/ml.py:1327
 msgid "Source persona must be a ml-only user."
 msgstr "Der Quellnutzer muss ein reiner Mailinglistennutzer sein."
 
-#: cdedb/backend/ml.py:1314 cdedb/backend/ml.py:1329
+#: cdedb/backend/ml.py:1314 cdedb/backend/ml.py:1328 cdedb/backend/ml.py:1329
 msgid "Source User is not accessible."
 msgstr "Quellnutzer ist nicht aufrufbar."
 
-#: cdedb/backend/ml.py:1319 cdedb/backend/ml.py:1334
+#: cdedb/backend/ml.py:1319 cdedb/backend/ml.py:1333 cdedb/backend/ml.py:1334
 msgid "Target User is no valid ml user."
 msgstr "Der Zielnutzer ist kein Mailinglisten Nutzer."
 
-#: cdedb/backend/ml.py:1321 cdedb/backend/ml.py:1336
+#: cdedb/backend/ml.py:1321 cdedb/backend/ml.py:1335 cdedb/backend/ml.py:1336
 msgid "Target User is not accessible."
 msgstr "Zielnutzer ist nicht aufrufbar."
 
-#: cdedb/backend/ml.py:1323 cdedb/backend/ml.py:1338
+#: cdedb/backend/ml.py:1323 cdedb/backend/ml.py:1337 cdedb/backend/ml.py:1338
 #: cdedb/frontend/ml_base.py:301
 msgid "Can not merge user into himself."
 msgstr "Nutzer kann nicht mit sich selbst verschmolzen werden."
 
-#: cdedb/backend/ml.py:1338 cdedb/backend/ml.py:1353
+#: cdedb/backend/ml.py:1338 cdedb/backend/ml.py:1352 cdedb/backend/ml.py:1353
 #, python-format
 msgid "Both users are related to the same mailinglists: %(mls)s"
 msgstr "Beide Benutzer haben einen Bezug zu gleichen Mailinglisten: %(mls)s"
@@ -15470,6 +15474,9 @@ msgstr "Kann aus {} keinen ml_type bestimmen"
 msgid "%(ml_type)s is not an appropriate type for this mailinglist."
 msgstr "%(ml_type)s ist kein geeigneter Typ für diese Mailingliste."
 
+#: cdedb/subman/machine.py:215 cdedb/subman/machine.py:217
+#: cdedb/subman/machine.py:219 cdedb/subman/machine.py:221
+#: cdedb/subman/machine.py:224 cdedb/subman/machine.py:226
 #: cdedb/subman/machine.py:250 cdedb/subman/machine.py:252
 #: cdedb/subman/machine.py:254 cdedb/subman/machine.py:255
 #: cdedb/subman/machine.py:256 cdedb/subman/machine.py:257
@@ -15478,40 +15485,51 @@ msgstr "%(ml_type)s ist kein geeigneter Typ für diese Mailingliste."
 msgid "Not a pending subscription request."
 msgstr "Keine Abonnement-Anfrage."
 
-#: cdedb/subman/machine.py:265 cdedb/subman/machine.py:267
-#: cdedb/subman/machine.py:270 cdedb/subman/machine.py:272
-#: cdedb/subman/machine.py:273 cdedb/subman/machine.py:278
+#: cdedb/subman/machine.py:230 cdedb/subman/machine.py:232
+#: cdedb/subman/machine.py:238 cdedb/subman/machine.py:265
+#: cdedb/subman/machine.py:267 cdedb/subman/machine.py:270
+#: cdedb/subman/machine.py:272 cdedb/subman/machine.py:273
+#: cdedb/subman/machine.py:278
 msgid "User already subscribed."
 msgstr "Der Nutzer ist bereits Abonnent."
 
-#: cdedb/subman/machine.py:269 cdedb/subman/machine.py:274
+#: cdedb/subman/machine.py:234 cdedb/subman/machine.py:269
+#: cdedb/subman/machine.py:274
 msgid "User has been blocked. Remove override before subscribe."
 msgstr ""
 "Der Nutzer wurde blockiert. Entferne die Ausnahme, bevor du ihn hinzufügst."
 
-#: cdedb/subman/machine.py:271 cdedb/subman/machine.py:276
-#: cdedb/subman/machine.py:284 cdedb/subman/machine.py:289
+#: cdedb/subman/machine.py:236 cdedb/subman/machine.py:249
+#: cdedb/subman/machine.py:260 cdedb/subman/machine.py:271
+#: cdedb/subman/machine.py:276 cdedb/subman/machine.py:284
+#: cdedb/subman/machine.py:285 cdedb/subman/machine.py:289
 #: cdedb/subman/machine.py:295 cdedb/subman/machine.py:300
 #: cdedb/subman/machine.py:320 cdedb/subman/machine.py:325
 msgid "User has pending subscription request."
 msgstr "Der Nutzer hat bereits eine Abonnement-Anfrage gestellt."
 
-#: cdedb/subman/machine.py:278 cdedb/subman/machine.py:282
-#: cdedb/subman/machine.py:283 cdedb/subman/machine.py:287
-#: cdedb/subman/machine.py:292
+#: cdedb/subman/machine.py:243 cdedb/subman/machine.py:247
+#: cdedb/subman/machine.py:252 cdedb/subman/machine.py:278
+#: cdedb/subman/machine.py:282 cdedb/subman/machine.py:283
+#: cdedb/subman/machine.py:287 cdedb/subman/machine.py:292
 msgid "User already unsubscribed."
 msgstr "Der Nutzer hat die Liste bereits deabonniert."
 
-#: cdedb/subman/machine.py:280 cdedb/subman/machine.py:285
+#: cdedb/subman/machine.py:245 cdedb/subman/machine.py:280
+#: cdedb/subman/machine.py:285
 msgid "User cannot be removed. Remove override to change this."
 msgstr ""
 "Der Nutzer kann nicht entfernt werden. Entferne die Ausnahme, um die zu "
 "ändern."
 
-#: cdedb/subman/machine.py:292 cdedb/subman/machine.py:297
+#: cdedb/subman/machine.py:257 cdedb/subman/machine.py:292
+#: cdedb/subman/machine.py:297
 msgid "User is already force-subscribed."
 msgstr "Nutzer ist bereits fixierter Abonnent"
 
+#: cdedb/subman/machine.py:266 cdedb/subman/machine.py:268
+#: cdedb/subman/machine.py:271 cdedb/subman/machine.py:273
+#: cdedb/subman/machine.py:275 cdedb/subman/machine.py:277
 #: cdedb/subman/machine.py:301 cdedb/subman/machine.py:303
 #: cdedb/subman/machine.py:306 cdedb/subman/machine.py:308
 #: cdedb/subman/machine.py:310 cdedb/subman/machine.py:311
@@ -15520,10 +15538,14 @@ msgstr "Nutzer ist bereits fixierter Abonnent"
 msgid "User is not force-subscribed."
 msgstr "Nutzer ist kein fixierter Abonnent."
 
-#: cdedb/subman/machine.py:318 cdedb/subman/machine.py:323
+#: cdedb/subman/machine.py:283 cdedb/subman/machine.py:318
+#: cdedb/subman/machine.py:323
 msgid "User has already been blocked."
 msgstr "Nutzer ist bereits gebloockt."
 
+#: cdedb/subman/machine.py:291 cdedb/subman/machine.py:293
+#: cdedb/subman/machine.py:295 cdedb/subman/machine.py:298
+#: cdedb/subman/machine.py:300 cdedb/subman/machine.py:302
 #: cdedb/subman/machine.py:326 cdedb/subman/machine.py:328
 #: cdedb/subman/machine.py:330 cdedb/subman/machine.py:331
 #: cdedb/subman/machine.py:333 cdedb/subman/machine.py:335
@@ -15532,6 +15554,9 @@ msgstr "Nutzer ist bereits gebloockt."
 msgid "User is not force-unsubscribed."
 msgstr "Nutzer ist nicht geblockt."
 
+#: cdedb/subman/machine.py:305 cdedb/subman/machine.py:308
+#: cdedb/subman/machine.py:313 cdedb/subman/machine.py:317
+#: cdedb/subman/machine.py:320 cdedb/subman/machine.py:326
 #: cdedb/subman/machine.py:340 cdedb/subman/machine.py:343
 #: cdedb/subman/machine.py:345 cdedb/subman/machine.py:348
 #: cdedb/subman/machine.py:352 cdedb/subman/machine.py:353
@@ -15541,18 +15566,23 @@ msgstr "Nutzer ist nicht geblockt."
 msgid "You are already subscribed."
 msgstr "Du bist bereits Abonnent."
 
-#: cdedb/subman/machine.py:346 cdedb/subman/machine.py:351
+#: cdedb/subman/machine.py:311 cdedb/subman/machine.py:346
+#: cdedb/subman/machine.py:351
 msgid "Can not change subscription because you are blocked."
 msgstr "Keine Abonnement-Änderung möglich, da Du geblockt bist."
 
-#: cdedb/subman/machine.py:357 cdedb/subman/machine.py:362
+#: cdedb/subman/machine.py:322 cdedb/subman/machine.py:357
+#: cdedb/subman/machine.py:362
 msgid "Can not request subscription because you are blocked."
 msgstr "Keine Abonnement-Anfrage möglich, da Du geblockt bist."
 
-#: cdedb/subman/machine.py:359 cdedb/subman/machine.py:364
+#: cdedb/subman/machine.py:324 cdedb/subman/machine.py:359
+#: cdedb/subman/machine.py:364
 msgid "You already requested subscription"
 msgstr "Es existiert bereits eine Abonnement-Anfrage."
 
+#: cdedb/subman/machine.py:332 cdedb/subman/machine.py:338
+#: cdedb/subman/machine.py:340 cdedb/subman/machine.py:343
 #: cdedb/subman/machine.py:367 cdedb/subman/machine.py:372
 #: cdedb/subman/machine.py:373 cdedb/subman/machine.py:375
 #: cdedb/subman/machine.py:378 cdedb/subman/machine.py:380
@@ -15560,6 +15590,7 @@ msgstr "Es existiert bereits eine Abonnement-Anfrage."
 msgid "You are already unsubscribed."
 msgstr "Du bist gar kein Abonnent."
 
+#: cdedb/subman/machine.py:348 cdedb/subman/machine.py:350
 #: cdedb/subman/machine.py:383 cdedb/subman/machine.py:385
 #: cdedb/subman/machine.py:388 cdedb/subman/machine.py:390
 msgid "User is in override state. Remove them before reset."
@@ -15567,7 +15598,8 @@ msgstr ""
 "Der Nutzer ist eine Ausnahme oder blockiert. Entferne diese, bevor du ihn "
 "zurücksetzt."
 
-#: cdedb/subman/machine.py:387 cdedb/subman/machine.py:392
+#: cdedb/subman/machine.py:352 cdedb/subman/machine.py:387
+#: cdedb/subman/machine.py:392
 msgid "User is not unsubscribed."
 msgstr "Nutzer hat nicht abbestellt."
 
@@ -15597,31 +15629,36 @@ msgstr "Abbonement ist bereits gesäubert."
 msgid "Subscriptions are protected against automatic implicit cleanup."
 msgstr "Abbonements sind geschützt gegen automatische implizite Säuberungen."
 
-#: cdedb/subman/subman.py:55
+#: cdedb/subman/subman.py:55 cdedb/subman/subman.py:111
 msgid "User has no means to access this list."
 msgstr "Der Nutzer hat keine Berechtigung auf dieser Liste zu stehen."
 
-#: cdedb/subman/subman.py:57
+#: cdedb/subman/subman.py:57 cdedb/subman/subman.py:113
 msgid "Can not subscribe."
 msgstr "Abonnement nicht möglich."
 
-#: cdedb/subman/subman.py:59
+#: cdedb/subman/subman.py:59 cdedb/subman/subman.py:115
 msgid "Can not request subscription."
 msgstr "Abonnementanfrage nicht möglich."
+
+#: cdedb/subman/subman.py:61
+msgid "Explicit core actions must be written."
+msgstr "Explizite Core Actions müssen geschrieben werden."
 
 #: cdedb/subman/subman.py:89
 msgid "Use is_obsolete to perform cleanup actions."
 msgstr "Benutze is_obsolete um automatische Säuberungen durchzuführen."
 
-#: cdedb/subman/subman.py:92
+#: cdedb/subman/subman.py:92 cdedb/subman/subman.py:147
 msgid "allow_unsub is incompatible with explicitly unsubscribed states."
 msgstr "allow_unsub ist inkompatibel mit expliziten Abbestellungen."
 
-#: cdedb/subman/subman.py:98
+#: cdedb/subman/subman.py:98 cdedb/subman/subman.py:152
 msgid "Can not unsubscribe."
 msgstr "Abbestellung nicht möglich."
 
-#: cdedb/subman/subman.py:135
+#: cdedb/subman/subman.py:135 cdedb/subman/subman.py:185
+#: cdedb/subman/subman.py:196
 msgid "No cleanup necessary."
 msgstr "Keine Säuberung erforderlich."
 

@@ -9,10 +9,11 @@ It is assumed that there are some users with additional privileges (possibly dep
 on the subscription object in question). These privileged users are referred to as
 "moderators". Actions restricted to moderators are referred to as "managing actions".
 
-Some actions are meant to be performed automatically somewhat regularly. They are not
-meant to be performed manually but rather as a reaction to some change of an external
-condition, like a user losing the privilege to subscribe to a certain subscription
-object. These actions are referred to as "cleanup actions".
+Some changes of subscription states need to be performed automatically somewhat
+regularly. They are not meant to be performed manually but rather as a reaction to some
+change of an external condition, like a user losing the privilege to subscribe to a
+certain subscription object. Therefore, these are not modelled as `SubscriptionAction`,
+but implemented via `SubscriptionManager.do_cleanup` instead.
 
 Every user has a certain `SubscriptionPolicy` that defines their relation to any
 particular object they could possibly be subscribed to. This determines what actions
@@ -76,11 +77,6 @@ class SubscriptionState(enum.IntEnum):
         """List of states which are considered subscribing."""
         return {cls.subscribed, cls.subscription_override, cls.implicit}
 
-    @classmethod
-    def cleanup_protected_states(cls) -> Set['SubscriptionState']:
-        """List of states which are not touched by `_do_cleanup`."""
-        return _CLEANUP_PROTECTED_STATES
-
 
 @enum.unique
 class SubscriptionPolicy(enum.IntEnum):
@@ -122,7 +118,7 @@ class SubscriptionPolicy(enum.IntEnum):
         """Return a list of policies that allow the user to be added."""
         return {cls.subscribable, cls.moderated_opt_in, cls.invitation_only}
 
-    def may_be_added(self) -> bool:
+    def allows_subscription(self) -> bool:
         """Whether or not a user may be subscribed by a moderator."""
         return self in self.addable_policies()
 
@@ -148,53 +144,10 @@ class SubscriptionAction(enum.IntEnum):
     remove_subscription_override = 31  #: A moderator removing a fixed subscription.
     remove_unsubscription_override = 32  #: A moderator unblocking a user.
     reset = 40  #: A moderator removing the current state of a user.
-    #: An automatic cleanup of users being subscribed (explicitly or implicitly).
-    cleanup_subscription = 50
-    cleanup_implicit = 51  #: An automatic cleanup of users being implicitly subscribed.
-    # TODO: Add action for adding an implicit subscriber.
-
-    def get_target_state(self) -> SubscriptionState:
-        """Get the target state associated with an action.
-
-        This is unique for each action. If None, a user will have no relation with the
-        subscription object after the action has been performed.
-        """
-        action_target_state_map = {
-            self.subscribe: SubscriptionState.subscribed,
-            self.unsubscribe: SubscriptionState.unsubscribed,
-            self.request_subscription: SubscriptionState.pending,
-            self.cancel_request: SubscriptionState.none,
-            self.approve_request: SubscriptionState.subscribed,
-            self.deny_request: SubscriptionState.none,
-            self.block_request: SubscriptionState.unsubscription_override,
-            self.add_subscriber: SubscriptionState.subscribed,
-            self.add_subscription_override: SubscriptionState.subscription_override,
-            self.add_unsubscription_override: SubscriptionState.unsubscription_override,
-            self.remove_subscriber: SubscriptionState.unsubscribed,
-            self.remove_subscription_override: SubscriptionState.subscribed,
-            self.remove_unsubscription_override: SubscriptionState.unsubscribed,
-            self.reset: SubscriptionState.none,
-            self.cleanup_subscription: SubscriptionState.none,
-            self.cleanup_implicit: SubscriptionState.none,
-        }
-        return action_target_state_map[self]
-
-    def get_error(self, state: SubscriptionState) -> Optional[SubscriptionError]:
-        """Determine whether this action is allowed for the current state.
-
-        :returns: `None` if the action is allowed, a `SubscriptionError` to be raised
-            otherwise.
-        """
-        return _SUBSCRIPTION_ERROR_MATRIX[self][state]
 
     @classmethod
     def unsubscribing_actions(cls) -> Set["SubscriptionAction"]:
-        """All actions that unsubscribe a user.
-
-        While cleanup actions may remove a user's subscription from an object, they are
-        not considered unsubscribing, because won't be performed manually.
-        """
-        # TODO: include cleanup here.
+        """All actions that unsubscribe a user."""
         return {
             cls.unsubscribe,
             cls.remove_subscriber,
@@ -228,27 +181,34 @@ class SubscriptionAction(enum.IntEnum):
         """Whether or not an action requires additional privileges."""
         return self in self.managing_actions()
 
-    @classmethod
-    def cleanup_actions(cls) -> Set["SubscriptionAction"]:
-        """All actions which are part of more involved cleanup procedures.
+    def get_target_state(self) -> SubscriptionState:
+        """Get the target state associated with an action.
 
-        These cannot be executed via `apply_action`, and should be executed via
-        `do_cleanup` instead.
+        This is unique for each action.
         """
-        return {
-            SubscriptionAction.cleanup_subscription,
-            SubscriptionAction.cleanup_implicit,
-        }
-
-    def is_automatic(self) -> bool:
-        """Whether or not an action may not be performed manually."""
-        return self in self.cleanup_actions()
+        return _ACTION_TARGET_STATE_MAP[self]
 
 
-# TODO: make these `Mapping`s, so they are immutable? It might be useful to be able to
-#  alter these.
 _StateErrorMapping = Mapping[SubscriptionState, Optional[SubscriptionError]]
-_ActionStateErrorMatrix = Mapping[SubscriptionAction, _StateErrorMapping]
+ActionStateErrorMatrix = Mapping[SubscriptionAction, _StateErrorMapping]
+
+
+_ACTION_TARGET_STATE_MAP: Mapping[SubscriptionAction, SubscriptionState] = {
+    SubscriptionAction.subscribe: SubscriptionState.subscribed,
+    SubscriptionAction.unsubscribe: SubscriptionState.unsubscribed,
+    SubscriptionAction.request_subscription: SubscriptionState.pending,
+    SubscriptionAction.cancel_request: SubscriptionState.none,
+    SubscriptionAction.approve_request: SubscriptionState.subscribed,
+    SubscriptionAction.deny_request: SubscriptionState.none,
+    SubscriptionAction.block_request: SubscriptionState.unsubscription_override,
+    SubscriptionAction.add_subscriber: SubscriptionState.subscribed,
+    SubscriptionAction.add_subscription_override: SubscriptionState.subscription_override,
+    SubscriptionAction.add_unsubscription_override: SubscriptionState.unsubscription_override,
+    SubscriptionAction.remove_subscriber: SubscriptionState.unsubscribed,
+    SubscriptionAction.remove_subscription_override: SubscriptionState.subscribed,
+    SubscriptionAction.remove_unsubscription_override: SubscriptionState.unsubscribed,
+    SubscriptionAction.reset: SubscriptionState.none,
+}
 
 # Errors are identical for all actions handling a subscription request.
 _SUBSCRIPTION_REQUEST_ERROR_MAPPING: _StateErrorMapping = {
@@ -265,7 +225,7 @@ _SUBSCRIPTION_REQUEST_ERROR_MAPPING: _StateErrorMapping = {
         "Not a pending subscription request.")),
     SubscriptionState.none: SubscriptionError(_("Not a pending subscription request.")),
 }
-_SUBSCRIPTION_ERROR_MATRIX: _ActionStateErrorMatrix = {
+SUBSCRIPTION_ERROR_MATRIX: ActionStateErrorMatrix = {
     SubscriptionAction.add_subscriber: {
         SubscriptionState.subscribed: SubscriptionInfo(_("User already subscribed.")),
         SubscriptionState.unsubscribed: None,
@@ -393,40 +353,8 @@ _SUBSCRIPTION_ERROR_MATRIX: _ActionStateErrorMatrix = {
         SubscriptionState.implicit: None,
         SubscriptionState.none: None,
     },
-    SubscriptionAction.cleanup_subscription: {
-        SubscriptionState.subscribed: None,
-        SubscriptionState.unsubscribed: SubscriptionError(_(
-            "Unsubscriptions are protected against automatic cleanup.")),
-        SubscriptionState.subscription_override: SubscriptionError(_(
-            "Overrides are protected against automatic cleanup.")),
-        SubscriptionState.unsubscription_override: SubscriptionError(_(
-            "Overrides are protected against automatic cleanup.")),
-        SubscriptionState.pending: SubscriptionError(_(
-            "Pending requests are protected against automatic cleanup.")),
-        SubscriptionState.implicit: None,
-        SubscriptionState.none: SubscriptionInfo(_("Subscription already cleaned up.")),
-    },
-    SubscriptionAction.cleanup_implicit: {
-        SubscriptionState.subscribed: SubscriptionError(_(
-            "Subscriptions are protected against automatic implicit cleanup.")),
-        SubscriptionState.unsubscribed: SubscriptionError(_(
-            "Unsubscriptions are protected against automatic cleanup.")),
-        SubscriptionState.subscription_override: SubscriptionError(_(
-            "Overrides are protected against automatic cleanup.")),
-        SubscriptionState.unsubscription_override: SubscriptionError(_(
-            "Overrides are protected against automatic cleanup.")),
-        SubscriptionState.pending: SubscriptionError(_(
-            "Pending requests are protected against automatic cleanup.")),
-        SubscriptionState.implicit: None,
-        SubscriptionState.none: SubscriptionInfo(_("Subscription already cleaned up.")),
-    },
     SubscriptionAction.approve_request: _SUBSCRIPTION_REQUEST_ERROR_MAPPING,
     SubscriptionAction.block_request: _SUBSCRIPTION_REQUEST_ERROR_MAPPING,
     SubscriptionAction.deny_request: _SUBSCRIPTION_REQUEST_ERROR_MAPPING,
     SubscriptionAction.cancel_request: _SUBSCRIPTION_REQUEST_ERROR_MAPPING,
-}
-
-_CLEANUP_PROTECTED_STATES = {
-    state for state in SubscriptionState
-    if SubscriptionAction.cleanup_subscription.get_error(state)
 }
