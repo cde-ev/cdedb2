@@ -1,13 +1,29 @@
 {% set sidenav_active='cde_manage_users' %}
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block scripts %}{{ util.cdedb_script('cdedb_csv_tools.js') }}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
+
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_csv_tools.js') }}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+{% endblock %}
+
 {% set jshint='strong' %}
-{% block title %}{% trans %}Create Accounts{% endtrans %}{% endblock %}
+
+{% block title %}
+    {% trans %}Create Accounts{% endtrans %}
+{% endblock %}
+
 {% block breadcrumb %}
-{{ super() }}
-{{ util.breadcrumb_link(cdedblink("cde/user_search"), gettext("Manage Users")) }}
-{{ util.breadcrumb_link(cdedblink("cde/batch_admission_form"), gettext("Batch Admission"), active=True) }}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("cde/user_search"), gettext("Manage Users")) }}
+    {{ util.breadcrumb_link(cdedblink("cde/batch_admission_form"), gettext("Batch Admission"), active=True) }}
+{% endblock %}
+
+{% block heading %}
+    {{ util.doclink("Handbuch_Verwaltungsteam", anchor="massenaufnahme-von-mitgliedern") }}
+    <h1 class="title">
+        {% trans %}Create Accounts{% endtrans %}
+    </h1>
 {% endblock %}
 
 {% macro ba_submit_button() %}
