@@ -23,7 +23,7 @@ import unittest
 import urllib.parse
 from types import TracebackType
 from typing import (
-    Any, AnyStr, Callable, ClassVar, Collection, Dict, Iterable, List, MutableMapping,
+    Any, AnyStr, Callable, ClassVar, Dict, Iterable, List, Mapping, MutableMapping,
     NamedTuple, Optional, Pattern, Sequence, Set, TextIO, Tuple, Type, TypeVar, Union,
     cast, no_type_check,
 )
@@ -61,8 +61,12 @@ ExceptionInfo = Union[
     Tuple[None, None, None]
 ]
 
+# TODO: use TypedDict to specify UserObject.
+UserObject = Mapping[str, Any]
+
 # This is to be used in place of `self.key` for anonymous requests. It makes mypy happy.
 ANONYMOUS = cast(RequestState, None)
+
 
 def check_test_setup() -> None:
     """Raise a RuntimeError if the vm is ill-equipped for performing tests."""
@@ -131,6 +135,7 @@ def read_sample_data(filename: PathLike = "/cdedb2/tests/ancillary_files/"
             _id += 1
         ret[table] = data
     return ret
+
 
 SAMPLE_DATA = read_sample_data()
 
@@ -321,7 +326,8 @@ class BasicTest(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.conf = Config()
 
-    def get_sample_data(self, table: str, ids: Iterable[int],
+    @staticmethod
+    def get_sample_data(table: str, ids: Iterable[int],
                         keys: Iterable[str]) -> CdEDBObjectMap:
         """This mocks a select request against the sample data.
 
@@ -394,7 +400,7 @@ class CdEDBTest(BasicTest):
         super().setUp()
 
 
-UserIdentifier = Union[CdEDBObject, str, int]
+UserIdentifier = Union[UserObject, str, int]
 
 
 class BackendTest(CdEDBTest):
@@ -409,6 +415,7 @@ class BackendTest(CdEDBTest):
     pastevent: ClassVar[PastEventBackend]
     ml: ClassVar[MlBackend]
     assembly: ClassVar[AssemblyBackend]
+    user: UserObject
     key: RequestState
 
     @classmethod
@@ -428,18 +435,31 @@ class BackendTest(CdEDBTest):
     def setUp(self) -> None:
         """Reset login state."""
         super().setUp()
+        self.user = USER_DICT["anonymous"]
         self.key = ANONYMOUS
 
     def login(self, user: UserIdentifier, *, ip: str = "127.0.0.0") -> Optional[str]:
         user = get_user(user)
+        if user["id"] is None:
+            raise RuntimeError("Anonymous users not supported for backend tests."
+                               " Pass `ANONYMOUS` in place of `self.key` instead.")
         self.key = cast(RequestState, self.core.login(
             ANONYMOUS, user['username'], user['password'], ip))
+        if self.key:
+            self.user = user
+        else:
+            self.user = USER_DICT["anonymous"]
         return self.key  # type: ignore
 
-    @staticmethod
-    def is_user(user: UserIdentifier, identifier: UserIdentifier) -> bool:
-        # TODO: go through all tests and make use of this
-        return get_user(user)["id"] == get_user(identifier)["id"]
+    def logout(self) -> None:
+        self.core.logout(self.key)
+        self.key = ANONYMOUS
+        self.user = USER_DICT["anonymous"]
+
+    def user_in(self, *identifiers: UserIdentifier) -> bool:
+        """Check whether the current user is any of the given users."""
+        users = {get_user(i)["id"] for i in identifiers}
+        return self.user.get("id", -1) in users
 
     @staticmethod
     def initialize_raw_backend(backendcls: Type[SessionBackend]
@@ -454,7 +474,7 @@ class BackendTest(CdEDBTest):
 # A reference of the most important attributes for all users. This is used for
 # logging in and the `as_user` decorator.
 # Make sure not to alter this during testing.
-USER_DICT: Dict[str, CdEDBObject] = {
+USER_DICT: Dict[str, UserObject] = {
     "anton": {
         'id': 1,
         'DB-ID': "DB-1-9",
@@ -671,11 +691,20 @@ USER_DICT: Dict[str, CdEDBObject] = {
         'given_names': "Akira",
         'family_name': "Abukara",
     },
+    "anonymous": {
+        'id': None,
+        'DB-ID': None,
+        'username': None,
+        'password': None,
+        'display_name': None,
+        'given_names': None,
+        'family_name': None,
+    },
 }
 _PERSONA_ID_TO_USER = {user["id"]: user for user in USER_DICT.values()}
 
 
-def get_user(user: UserIdentifier) -> CdEDBObject:
+def get_user(user: UserIdentifier) -> UserObject:
     if isinstance(user, str):
         user = USER_DICT[user]
     elif isinstance(user, int):
@@ -697,16 +726,7 @@ def as_users(*users: UserIdentifier) -> Callable[[Callable[..., None]],
                 with self.subTest(user=user):
                     if i > 0:
                         self.setUp()
-                    if user == "anonymous":
-                        if not isinstance(self, FrontendTest):
-                            raise RuntimeError(
-                                "Anonymous testing not supported for backend tests."
-                                " Use `key=None` instead.")
-                        kwargs['user'] = None
-                        self.get('/')
-                    else:
-                        kwargs['user'] = get_user(user)
-                        self.login(user)
+                    self.login(user)
                     fun(self, *args, **kwargs)
         return new_fun
     return wrapper
@@ -919,12 +939,16 @@ class FrontendTest(BackendTest):
         :param verbose: If True display additional debug information.
         """
         user = get_user(user)
+        self.user = user
         self.get("/", verbose=verbose)
-        f = self.response.forms['loginform']
-        f['username'] = user['username']
-        f['password'] = user['password']
-        self.submit(f, check_notification=False, verbose=verbose)
+        if not self.user_in("anonymous"):
+            f = self.response.forms['loginform']
+            f['username'] = user['username']
+            f['password'] = user['password']
+            self.submit(f, check_notification=False, verbose=verbose)
         self.key = self.app.cookies.get('sessionkey', None)
+        if not self.key:
+            self.user = USER_DICT["anonymous"]
         return self.key  # type: ignore
 
     def logout(self, verbose: bool = False) -> None:
@@ -935,6 +959,7 @@ class FrontendTest(BackendTest):
         f = self.response.forms['logoutform']
         self.submit(f, check_notification=False, verbose=verbose)
         self.key = ANONYMOUS
+        self.user = USER_DICT["anonymous"]
 
     def admin_view_profile(self, user: UserIdentifier, check: bool = True,
                            verbose: bool = False) -> None:

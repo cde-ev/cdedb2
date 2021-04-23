@@ -122,4 +122,5 @@ EXPOSE 443
 # mount the code here
 WORKDIR /cdedb2
 
-CMD ["apachectl", "-DFOREGROUND"]
+STOPSIGNAL SIGWINCH
+CMD ["sh", "-c", "APACHE_HTTPD='exec /usr/sbin/apache2' exec apachectl -DFOREGROUND"]

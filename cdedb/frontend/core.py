@@ -576,7 +576,8 @@ class CoreFrontend(AbstractFrontend):
             if is_admin and not is_moderator:
                 access_mode.add("moderator")
             relevant_stati = [s for s in const.SubscriptionState
-                              if s != const.SubscriptionState.unsubscribed]
+                              if s not in {const.SubscriptionState.unsubscribed,
+                                           const.SubscriptionState.none}]
             if is_moderator or ml_type.has_moderator_view(rs.user):
                 subscriptions = self.mlproxy.get_subscription_states(
                     rs, ml_id, states=relevant_stati)

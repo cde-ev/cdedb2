@@ -54,7 +54,7 @@
         <h4 class="heading-underline">{% trans %}Banking Information{% endtrans %}</h4>
         {{ util.form_input_text(name="amount", label=gettext("Amount"), type="number",
                                 attributes='min="25" step="0.01"'|s, defaultvalue="25") }}
-        {{ util.form_input_text(name="iban", label=gettext("IBAN")) }}
+        {{ util.form_input_text(name="iban", label=gettext("IBAN"), type="iban") }}
         {{ util.form_input_text(name="account_owner", label=gettext("Account holder (if different)")) }}
 
         {{ util.form_input_submit(label=gettext("Confirm"), cancellink=cdedblink("cde/index")) }}
