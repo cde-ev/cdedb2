@@ -33,6 +33,14 @@ StateSet = AbstractSet[SubscriptionState]
 
 
 class SubscriptionManager:
+    cleanup_protected_states: StateSet = {
+        SubscriptionState.unsubscribed,
+        SubscriptionState.none,
+        SubscriptionState.subscription_override,
+        SubscriptionState.unsubscription_override,
+        SubscriptionState.pending
+    }
+
     def __init__(
         self, *,
         error_matrix: ActionStateErrorMatrix = SUBSCRIPTION_ERROR_MATRIX,
@@ -51,14 +59,6 @@ class SubscriptionManager:
         if (self.unwritten_states &
                 {SubscriptionState.subscribed, SubscriptionState.unsubscribed}):
             raise ValueError(_("Explicit core actions must be written."))
-
-    cleanup_protected_states: StateSet = {
-        SubscriptionState.unsubscribed,
-        SubscriptionState.none,
-        SubscriptionState.subscription_override,
-        SubscriptionState.unsubscription_override,
-        SubscriptionState.pending
-    }
 
     @property
     def written_states(self) -> StateSet:
