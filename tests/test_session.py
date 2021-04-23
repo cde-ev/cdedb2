@@ -115,7 +115,7 @@ class TestSessionBackend(BackendTest):
 
         # Create some sessions for some different users.
         keys = {u: self.login(u, ip=ip) for u in USER_DICT
-                if u not in {"hades", "lisa", "olaf"}}
+                if u not in {"hades", "lisa", "olaf", "anonymous"}}
         for u, key in keys.items():
             with self.subTest(user=u, key=key):
                 user = self.session.lookupsession(key, ip)

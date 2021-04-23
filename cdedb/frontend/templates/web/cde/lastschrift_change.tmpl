@@ -25,7 +25,7 @@
                                   value="{} {}".format(persona['given_names'], persona['family_name'])) }}
         {{ util.form_input_text(name="amount", label=gettext("Amount"), type="number",
                                 attributes='min="0" step="0.01"'|s) }}
-        {{ util.form_input_text(name="iban", label=gettext("IBAN")) }}
+        {{ util.form_input_text(name="iban", label=gettext("IBAN"), type="iban") }}
         {{ util.form_input_text(name="account_owner", label=gettext("Account holder (if different)")) }}
         {{ util.form_input_textarea(name="account_address", label=gettext("Account holder’s address (if different)")) }}
         {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="5", info=util.markdownhint) }}

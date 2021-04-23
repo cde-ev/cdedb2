@@ -1279,6 +1279,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 f" values={rs.values}; ambience={rs.ambience};"
                 f" errors={rs.retrieve_validation_errors()}; time={now()}")
 
+            _LOGGER.debug(debugstring)
             params['debugstring'] = debugstring
         if rs.retrieve_validation_errors() and not rs.notifications:
             rs.notify("error", n_("Failed validation."))

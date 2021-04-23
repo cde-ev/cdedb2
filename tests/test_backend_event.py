@@ -24,18 +24,18 @@ class TestEventBackend(BackendTest):
     used_backends = ("core", "event")
 
     @as_users("emilia")
-    def test_basics(self, user: CdEDBObject) -> None:
-        data = self.core.get_event_user(self.key, user['id'])
+    def test_basics(self) -> None:
+        data = self.core.get_event_user(self.key, self.user['id'])
         data['display_name'] = "Zelda"
         data['name_supplement'] = "von und zu Hylia"
         setter = {k: v for k, v in data.items() if k in
                   {'id', 'name_supplement', 'display_name', 'telephone'}}
         self.core.change_persona(self.key, setter)
-        new_data = self.core.get_event_user(self.key, user['id'])
+        new_data = self.core.get_event_user(self.key, self.user['id'])
         self.assertEqual(data, new_data)
 
     @as_users("annika", "garcia")
-    def test_entity_event(self, user: CdEDBObject) -> None:
+    def test_entity_event(self) -> None:
         # need administrator to create event
         self.login(USER_DICT["annika"])
         old_events = self.event.list_events(self.key)
@@ -129,7 +129,7 @@ class TestEventBackend(BackendTest):
         }
         new_id = self.event.create_event(self.key, data)
         # back to normal mode
-        self.login(user)
+        self.login(self.user)
         data['id'] = new_id
         data['offline_lock'] = False
         data['is_archived'] = False
@@ -393,7 +393,7 @@ class TestEventBackend(BackendTest):
              "questionnaire", "log", "mailinglists", "fee_modifiers")))
 
     @as_users("annika", "garcia")
-    def test_change_minor_form(self, user: CdEDBObject) -> None:
+    def test_change_minor_form(self) -> None:
         event_id = 1
         with open("/cdedb2/tests/ancillary_files/form.pdf", "rb") as f:
             minor_form = f.read()
@@ -408,7 +408,7 @@ class TestEventBackend(BackendTest):
         expectation = [
             {
                 'code': const.EventLogCodes.minor_form_updated,
-                'submitted_by': user['id'],
+                'submitted_by': self.user['id'],
                 'persona_id': None,
                 'event_id': event_id,
                 'ctime': nearly_now(),
@@ -416,7 +416,7 @@ class TestEventBackend(BackendTest):
             },
             {
                 'code': const.EventLogCodes.minor_form_removed,
-                'submitted_by': user['id'],
+                'submitted_by': self.user['id'],
                 'persona_id': None,
                 'event_id': event_id,
                 'ctime': nearly_now(),
@@ -429,7 +429,7 @@ class TestEventBackend(BackendTest):
                 self.assertEqual(e[k], l[k])
 
     @as_users("annika")
-    def test_aposteriori_track_creation(self, user: CdEDBObject) -> None:
+    def test_aposteriori_track_creation(self) -> None:
         event_id = 1
         part_id = 1
         # The expected new id.
@@ -479,7 +479,7 @@ class TestEventBackend(BackendTest):
         self.assertEqual(event, self.event.get_event(self.key, event_id))
 
     @as_users("annika", "garcia")
-    def test_aposteriori_track_deletion(self, user: CdEDBObject) -> None:
+    def test_aposteriori_track_deletion(self) -> None:
         event_id = 1
         part_id = 2
         track_id = 1
@@ -519,7 +519,7 @@ class TestEventBackend(BackendTest):
         self.assertEqual(expectation, event["tracks"].keys())
 
     @as_users("anton")
-    def test_event_field_double_link(self, user: CdEDBObject) -> None:
+    def test_event_field_double_link(self) -> None:
         questionnaire = {
             const.QuestionnaireUsages.additional:
                 [
@@ -581,7 +581,7 @@ class TestEventBackend(BackendTest):
         self.assertIn(msg + " (fee_modifiers)", cm.exception.args)
 
     @as_users("annika", "garcia")
-    def test_json_fields_with_dates(self, user: CdEDBObject) -> None:
+    def test_json_fields_with_dates(self) -> None:
         event_id = 1
         update_event = {
             'id': event_id,
@@ -613,7 +613,7 @@ class TestEventBackend(BackendTest):
         self.assertEqual(expectation, data['fields'])
 
     @as_users("annika", "garcia")
-    def test_entity_course(self, user: CdEDBObject) -> None:
+    def test_entity_course(self) -> None:
         event_id = 1
         old_courses = self.event.list_courses(self.key, event_id)
         data = {
@@ -654,11 +654,11 @@ class TestEventBackend(BackendTest):
                          self.event.get_course(self.key, new_id))
 
     @as_users("annika", "garcia")
-    def test_course_non_removable(self, user: CdEDBObject) -> None:
+    def test_course_non_removable(self) -> None:
         self.assertNotEqual({}, self.event.delete_course_blockers(self.key, 1))
 
     @as_users("annika", "garcia")
-    def test_course_delete(self, user: CdEDBObject) -> None:
+    def test_course_delete(self) -> None:
         event_id = 1
         data = {
             'event_id': event_id,
@@ -683,7 +683,7 @@ class TestEventBackend(BackendTest):
             self.key, new_id, ("course_segments",)))
 
     @as_users("garcia")
-    def test_course_choices_cascade(self, user: CdEDBObject) -> None:
+    def test_course_choices_cascade(self) -> None:
         # Set the status quo.
         for course_id in (1, 2, 3, 4):
             cdata = {
@@ -779,17 +779,17 @@ class TestEventBackend(BackendTest):
             partial_export["registrations"][1]["tracks"][1]["choices"])
 
     @as_users("annika", "garcia")
-    def test_visible_events(self, user: CdEDBObject) -> None:
+    def test_visible_events(self) -> None:
         expectation = {1: 'Große Testakademie 2222', 3: 'CyberTestAkademie'}
         self.assertEqual(expectation, self.event.list_events(
             self.key, visible=True, archived=False))
 
     @as_users("annika", "garcia")
-    def test_has_registrations(self, user: CdEDBObject) -> None:
+    def test_has_registrations(self) -> None:
         self.assertEqual(True, self.event.has_registrations(self.key, 1))
 
     @as_users("emilia")
-    def test_registration_participant(self, user: CdEDBObject) -> None:
+    def test_registration_participant(self) -> None:
         expectation: CdEDBObject = {
             'amount_paid': decimal.Decimal("0.00"),
             'amount_owed': decimal.Decimal("589.49"),
@@ -873,7 +873,7 @@ class TestEventBackend(BackendTest):
                          self.event.get_registration(self.key, 2))
 
     @as_users("berta", "paul")
-    def test_registering(self, user: CdEDBObject) -> None:
+    def test_registering(self) -> None:
         new_reg: CdEDBObject = {
             'amount_paid': decimal.Decimal("42.00"),
             'checkin': None,
@@ -919,7 +919,7 @@ class TestEventBackend(BackendTest):
             'persona_id': 16,
             'real_persona_id': None}
         # try to create a registration for paul
-        if user['id'] == USER_DICT['paul']['id']:
+        if self.user_in('paul'):
             new_id = self.event.create_registration(self.key, new_reg)
             self.assertLess(0, new_id)
             new_reg['id'] = new_id
@@ -947,7 +947,7 @@ class TestEventBackend(BackendTest):
                 self.event.create_registration(self.key, new_reg)
 
     @as_users("annika", "garcia")
-    def test_entity_registration(self, user: CdEDBObject) -> None:
+    def test_entity_registration(self) -> None:
         event_id = 1
         self.assertEqual({1: 1, 2: 5, 3: 7, 4: 9, 5: 100, 6: 2},
                          self.event.list_registrations(self.key, event_id))
@@ -1235,7 +1235,7 @@ class TestEventBackend(BackendTest):
                          self.event.list_registrations(self.key, event_id))
 
     @as_users("annika", "garcia")
-    def test_registration_delete(self, user: CdEDBObject) -> None:
+    def test_registration_delete(self) -> None:
         self.assertEqual({1: 1, 2: 5, 3: 7, 4: 9, 5: 100, 6: 2},
                          self.event.list_registrations(self.key, 1))
         self.assertLess(0, self.event.delete_registration(
@@ -1245,7 +1245,7 @@ class TestEventBackend(BackendTest):
                          self.event.list_registrations(self.key, 1))
 
     @as_users("annika", "garcia")
-    def test_course_filtering(self, user: CdEDBObject) -> None:
+    def test_course_filtering(self) -> None:
         event_id = 1
         expectation = {1: 1, 2: 5, 3: 7, 4: 9, 5: 100, 6: 2}
         self.assertEqual(
@@ -1262,7 +1262,7 @@ class TestEventBackend(BackendTest):
                 CourseFilterPositions.assigned, 0)))
 
     @as_users("annika", "garcia")
-    def test_entity_lodgement_group(self, user: CdEDBObject) -> None:
+    def test_entity_lodgement_group(self) -> None:
         event_id = 1
         expectation_list = {
             1: "Haupthaus",
@@ -1334,7 +1334,7 @@ class TestEventBackend(BackendTest):
             new_lodgement, self.event.get_lodgement(self.key, new_lodgement_id))
 
     @as_users("annika", "garcia")
-    def test_entity_lodgement(self, user: CdEDBObject) -> None:
+    def test_entity_lodgement(self) -> None:
         event_id = 1
         expectation_list = {
             1: 'Warme Stube',
@@ -1403,7 +1403,7 @@ class TestEventBackend(BackendTest):
                          self.event.list_lodgements(self.key, event_id))
 
     @as_users("berta", "emilia")
-    def test_get_questionnaire(self, user: CdEDBObject) -> None:
+    def test_get_questionnaire(self) -> None:
         event_id = 1
         expectation = {
             const.QuestionnaireUsages.registration:
@@ -1486,7 +1486,7 @@ class TestEventBackend(BackendTest):
                          self.event.get_questionnaire(self.key, event_id))
 
     @as_users("annika", "garcia")
-    def test_set_questionnaire(self, user: CdEDBObject) -> None:
+    def test_set_questionnaire(self) -> None:
         event_id = 1
         edata = {
             'id': event_id,
@@ -1564,7 +1564,7 @@ class TestEventBackend(BackendTest):
         self.assertEqual(qdata, result)
 
     @as_users("annika", "garcia")
-    def test_registration_query(self, user: CdEDBObject) -> None:
+    def test_registration_query(self) -> None:
         query = Query(
             scope="qview_registration",
             spec=dict(QUERY_SPECS["qview_registration"]),
@@ -1651,7 +1651,7 @@ class TestEventBackend(BackendTest):
         self.assertEqual(expectation, result)
 
     @as_users("annika")
-    def test_queries_without_fields(self, user: CdEDBObject) -> None:
+    def test_queries_without_fields(self) -> None:
         # Check that the query views work if there are no custom fields.
         event = self.event.get_event(self.key, 2)
         self.assertFalse(event["fields"])
@@ -1684,7 +1684,7 @@ class TestEventBackend(BackendTest):
         self.assertEqual(tuple(), result)
 
     @as_users("garcia")
-    def test_lodgement_query(self, user: CdEDBObject) -> None:
+    def test_lodgement_query(self) -> None:
         query = Query(
             scope="qview_event_lodgement",
             spec=dict(QUERY_SPECS['qview_event_lodgement']),
@@ -1751,7 +1751,7 @@ class TestEventBackend(BackendTest):
         self.assertEqual(result, expectation)
 
     @as_users("garcia")
-    def test_course_query(self, user: CdEDBObject) -> None:
+    def test_course_query(self) -> None:
         query = Query(
             scope="qview_event_course",
             spec=dict(QUERY_SPECS['qview_event_course']),
@@ -1810,7 +1810,7 @@ class TestEventBackend(BackendTest):
         self.assertEqual(result, expectation)
 
     @as_users("annika")
-    def test_is_instructor_query(self, user: CdEDBObject) -> None:
+    def test_is_instructor_query(self) -> None:
         registrations = (
             {
                 "id": 1,
@@ -1917,7 +1917,7 @@ class TestEventBackend(BackendTest):
         self.assertEqual(expectation, result)
 
     @as_users("annika", "garcia")
-    def test_lock_event(self, user: CdEDBObject) -> None:
+    def test_lock_event(self) -> None:
         self.assertTrue(self.event.lock_event(self.key, 1))
         self.assertTrue(self.event.get_event(self.key, 1)['offline_lock'])
 
@@ -1940,7 +1940,7 @@ class TestEventBackend(BackendTest):
         return ret
 
     @as_users("annika", "garcia")
-    def test_export_event(self, user: CdEDBObject) -> None:
+    def test_export_event(self) -> None:
         with open(self.testfile_dir / "event_export.json", "r") as f:
             expectation = self.cleanup_event_export(json.load(f))
         expectation['timestamp'] = nearly_now()
@@ -1948,7 +1948,7 @@ class TestEventBackend(BackendTest):
         self.assertEqual(expectation, self.event.export_event(self.key, 1))
 
     @as_users("annika")
-    def test_import_event(self, user: CdEDBObject) -> None:
+    def test_import_event(self) -> None:
         self.assertTrue(self.event.lock_event(self.key, 1))
         data = self.event.export_event(self.key, 1)
         new_data = copy.deepcopy(data)
@@ -2383,12 +2383,12 @@ class TestEventBackend(BackendTest):
             'event_id': 1,
             'id': 1002,
             'persona_id': None,
-            'submitted_by': user['id']}
+            'submitted_by': self.user['id']}
 
         self.assertEqual(stored_data, result)
 
     @as_users("annika")
-    def test_partial_export_event(self, user: CdEDBObject) -> None:
+    def test_partial_export_event(self) -> None:
         with open(self.testfile_dir / "TestAka_partial_export_event.json") as f:
             expectation = self.cleanup_event_export(json.load(f))
         expectation['timestamp'] = nearly_now()
@@ -2397,7 +2397,7 @@ class TestEventBackend(BackendTest):
         self.assertEqual(expectation, export)
 
     @as_users("annika")
-    def test_partial_import_event(self, user: CdEDBObject) -> None:
+    def test_partial_import_event(self) -> None:
         event = self.event.get_event(self.key, 1)
         previous = self.event.partial_export_event(self.key, 1)
         with open("/tmp/cdedb-store/testfiles/partial_event_import.json") \
@@ -2503,7 +2503,7 @@ class TestEventBackend(BackendTest):
         self.assertEqual(expectation, updated)
 
     @as_users("annika")
-    def test_partial_import_integrity(self, user: CdEDBObject) -> None:
+    def test_partial_import_integrity(self) -> None:
         with open("/tmp/cdedb-store/testfiles/partial_event_import.json") \
                 as datafile:
             orig_data = json.load(datafile)
@@ -2558,7 +2558,7 @@ class TestEventBackend(BackendTest):
                       cm.exception.args)
 
     @as_users("annika")
-    def test_partial_import_event_twice(self, user: CdEDBObject) -> None:
+    def test_partial_import_event_twice(self) -> None:
         with open("/tmp/cdedb-store/testfiles/partial_event_import.json") \
                 as datafile:
             data = json.load(datafile)
@@ -2640,7 +2640,7 @@ class TestEventBackend(BackendTest):
         self.assertEqual(expectation, delta)
 
     @as_users("annika", "garcia")
-    def test_check_registration_status(self, user: CdEDBObject) -> None:
+    def test_check_registration_status(self) -> None:
         event_id = 1
 
         # Check for participant status
@@ -2664,8 +2664,8 @@ class TestEventBackend(BackendTest):
             self.event.check_registration_status(self.key, 9, event_id, stati))
 
     @as_users("emilia", "garcia", "annika")
-    def test_calculate_fees(self, user: CdEDBObject) -> None:
-        if user['id'] != 5:
+    def test_calculate_fees(self) -> None:
+        if not self.user_in("emilia"):
             reg_ids = self.event.list_registrations(self.key, event_id=1)
             expectation = {
                 1: decimal.Decimal("573.99"),
@@ -2711,7 +2711,7 @@ class TestEventBackend(BackendTest):
                          const.RegistrationPartStati.rejected)
 
     @as_users("garcia")
-    def test_uniqueness(self, user: CdEDBObject) -> None:
+    def test_uniqueness(self) -> None:
         event_id = 1
         unique_name = 'unique_name'
         data = {
@@ -2796,7 +2796,7 @@ class TestEventBackend(BackendTest):
         self.event.set_event(self.key, data)
 
     @as_users("annika")
-    def test_fee_modifiers(self, user: CdEDBObject) -> None:
+    def test_fee_modifiers(self) -> None:
         event_id = 1
         field_name = 'is_child'
         event = self.event.get_event(self.key, event_id)
@@ -2854,7 +2854,7 @@ class TestEventBackend(BackendTest):
                          decimal.Decimal("553.49"))
 
     @as_users("garcia")
-    def test_waitlist(self, user: CdEDBObject) -> None:
+    def test_waitlist(self) -> None:
         edata = {
             'id': 1,
             'fields': {
@@ -2923,7 +2923,7 @@ class TestEventBackend(BackendTest):
                 self.key, event_id=1, persona_id=1)
 
     @as_users("annika")
-    def test_set_event_orgas(self, user: CdEDBObject) -> None:
+    def test_set_event_orgas(self) -> None:
         event_id = 1
         self.assertEqual({7}, self.event.get_event(self.key, event_id)['orgas'])
         self.assertLess(0, self.event.set_event_orgas(self.key, event_id, {1}))
@@ -2946,7 +2946,7 @@ class TestEventBackend(BackendTest):
                       cm.exception.args)
 
     @as_users("annika")
-    def test_log(self, user: CdEDBObject) -> None:
+    def test_log(self) -> None:
         # first check the already existing log
         offset = 4
         expectation = (offset, (
@@ -3291,217 +3291,217 @@ class TestEventBackend(BackendTest):
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
-             'submitted_by': user['id']},
+             'submitted_by': self.user['id']},
             {'id': 1002,
              'change_note': None,
              'code': 10,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': 2,
-             'submitted_by': user['id']},
+             'submitted_by': self.user['id']},
             {'id': 1003,
              'change_note': None,
              'code': 10,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': 7,
-             'submitted_by': user['id']},
+             'submitted_by': self.user['id']},
             {'id': 1004,
              'change_note': 'First lecture',
              'code': 35,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
-             'submitted_by': user['id']},
+             'submitted_by': self.user['id']},
             {'id': 1005,
              'change_note': 'First coming',
              'code': 15,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
-             'submitted_by': user['id']},
+             'submitted_by': self.user['id']},
             {'id': 1006,
              'change_note': 'Second lecture',
              'code': 35,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
-             'submitted_by': user['id']},
+             'submitted_by': self.user['id']},
             {'id': 1007,
              'change_note': 'Second coming',
              'code': 15,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
-             'submitted_by': user['id']},
+             'submitted_by': self.user['id']},
             {'id': 1008,
              'change_note': 'instrument',
              'code': 20,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
-             'submitted_by': user['id']},
+             'submitted_by': self.user['id']},
             {'id': 1009,
              'change_note': 'preferred_excursion_date',
              'code': 20,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
-             'submitted_by': user['id']},
+             'submitted_by': self.user['id']},
             {'id': 1010,
              'change_note': None,
              'code': 2,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
-             'submitted_by': user['id']},
+             'submitted_by': self.user['id']},
             {'id': 1011,
              'change_note': None,
              'code': 10,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': 1,
-             'submitted_by': user['id']},
+             'submitted_by': self.user['id']},
             {'id': 1012,
              'change_note': None,
              'code': 11,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': 2,
-             'submitted_by': user['id']},
+             'submitted_by': self.user['id']},
             {'id': 1013,
              'change_note': 'Third lecture',
              'code': 35,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
-             'submitted_by': user['id']},
+             'submitted_by': self.user['id']},
             {'id': 1014,
              'change_note': 'Third coming',
              'code': 15,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
-             'submitted_by': user['id']},
+             'submitted_by': self.user['id']},
             {'id': 1015,
              'change_note': 'Second lecture v2',
              'code': 36,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
-             'submitted_by': user['id']},
+             'submitted_by': self.user['id']},
             {'id': 1016,
              'change_note': 'Second coming',
              'code': 16,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
-             'submitted_by': user['id']},
+             'submitted_by': self.user['id']},
             {'id': 1017,
              'change_note': 'First lecture',
              'code': 37,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
-             'submitted_by': user['id']},
+             'submitted_by': self.user['id']},
             {'id': 1018,
              'change_note': 'First coming',
              'code': 17,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
-             'submitted_by': user['id']},
+             'submitted_by': self.user['id']},
             {'id': 1019,
              'change_note': 'kuea',
              'code': 20,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
-             'submitted_by': user['id']},
+             'submitted_by': self.user['id']},
             {'id': 1020,
              'change_note': 'preferred_excursion_date',
              'code': 21,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
-             'submitted_by': user['id']},
+             'submitted_by': self.user['id']},
             {'id': 1021,
              'change_note': 'instrument',
              'code': 22,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
-             'submitted_by': user['id']},
+             'submitted_by': self.user['id']},
             {'id': 1022,
              'change_note': 'Topos theory for the kindergarden',
              'code': 42,
              'ctime': nearly_now(),
              'event_id': 1,
              'persona_id': None,
-             'submitted_by': user['id']},
+             'submitted_by': self.user['id']},
             {'id': 1023,
              'change_note': 'Topos theory for the kindergarden',
              'code': 40,
              'ctime': nearly_now(),
              'event_id': 1,
              'persona_id': None,
-             'submitted_by': user['id']},
+             'submitted_by': self.user['id']},
             {'id': 1024,
              'change_note': 'Topos theory for the kindergarden',
              'code': 41,
              'ctime': nearly_now(),
              'event_id': 1,
              'persona_id': None,
-             'submitted_by': user['id']},
+             'submitted_by': self.user['id']},
             {'id': 1025,
              'change_note': 'Topos theory for the kindergarden',
              'code': 42,
              'ctime': nearly_now(),
              'event_id': 1,
              'persona_id': None,
-             'submitted_by': user['id']},
+             'submitted_by': self.user['id']},
             {'id': 1026,
              'change_note': None,
              'code': 50,
              'ctime': nearly_now(),
              'event_id': 1,
              'persona_id': 3,
-             'submitted_by': user['id']},
+             'submitted_by': self.user['id']},
             {'id': 1027,
              'change_note': None,
              'code': 51,
              'ctime': nearly_now(),
              'event_id': 1,
              'persona_id': 9,
-             'submitted_by': user['id']},
+             'submitted_by': self.user['id']},
             {'id': 1028,
              'change_note': 'HY',
              'code': 26,
              'ctime': nearly_now(),
              'event_id': 1,
              'persona_id': None,
-             'submitted_by': user['id']},
+             'submitted_by': self.user['id']},
             {'id': 1029,
              'change_note': 'HY',
              'code': 25,
              'ctime': nearly_now(),
              'event_id': 1,
              'persona_id': None,
-             'submitted_by': user['id']},
+             'submitted_by': self.user['id']},
             {'id': 1030,
              'change_note': 'HY',
              'code': 27,
              'ctime': nearly_now(),
              'event_id': 1,
              'persona_id': None,
-             'submitted_by': user['id']},
+             'submitted_by': self.user['id']},
             {'id': 1031,
              'change_note': None,
              'code': 30,
              'ctime': nearly_now(),
              'event_id': 1,
              'persona_id': None,
-             'submitted_by': user['id'], }))
+             'submitted_by': self.user['id'], }))
 
         result = self.event.retrieve_log(self.key, offset=offset)
         self.assertEqual(expectation, result)
