@@ -1420,7 +1420,7 @@ class TestCdEFrontend(FrontendTest):
                             div="membership")
 
     @as_users("vera")
-    def test_batch_admission_review(self, user: CdEDBObject) -> None:
+    def test_batch_admission_review(self) -> None:
         # check that we force a review if an existing data set is been upgraded
         data = ('"pa14";"1a";"Dino";"Daniel";"";"";"";"1";"";"";"";"";"";"";"";'
                 '"daniel@example.cde";"19.02.1963"')
