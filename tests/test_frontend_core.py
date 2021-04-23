@@ -1917,7 +1917,7 @@ class TestCoreFrontend(FrontendTest):
             f[field] = entry
         f['notes'] = ""
         self.submit(f, check_notification=False)
-        self.assertValidationError("notes", "Notwendige Angabe fehlt.")
+        self.assertValidationError("notes", "Darf nicht leer sein.")
 
     def test_genesis_modify(self) -> None:
         self._genesis_request(self.ML_GENESIS_DATA)
