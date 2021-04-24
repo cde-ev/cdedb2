@@ -1422,8 +1422,10 @@ class TestCdEFrontend(FrontendTest):
     @as_users("vera")
     def test_batch_admission_review(self) -> None:
         # check that we force a review if an existing data set is been upgraded
-        data = ('"pa14";"1a";"Dino";"Daniel";"";"";"";"1";"";"";"";"";"";"";"";'
-                '"daniel@example.cde";"19.02.1963"')
+        data = (
+            '"pa14";"1a";"Dino";"Daniel";"lustiger Titel";"";"";"1";"";"";"";"";"";"";"";"daniel@example.cde";"19.02.1963"\n'
+            '"pa14";"1a";"Jalapeño";"Janis";"";"komischer Namenszusatz";"";"1";"";"Chilliallee 23";"56767";"Scoville";"";"+49 (5432) 321321";"";"janis@example.cde";"04.01.2001"'
+        )
 
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Nutzer verwalten'},
@@ -1437,17 +1439,23 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['admissionform']
         f['resolution1'] = LineResolutions.update.value
         f['doppelganger_id1'] = "4"
+        f['resolution2'] = LineResolutions.update.value
+        f['doppelganger_id2'] = "10"
         self.submit(f, check_notification=False)
 
         self.assertTitle("Accounts anlegen")
         f = self.response.forms['admissionform']
         self.submit(f)
 
-        # now, lets check the review exists
+        # now, lets check the reviews exists
         self.traverse({"description": "Index"},
                       {"description": "Änderungen prüfen"})
         self.assertPresence("Daniel Dino")
+        self.assertPresence("Janis")
 
+        # take special care that no fields were silently updated during realm transition
+        self.admin_view_profile("janis")
+        self.assertNonPresence("komischer Namenszusatz", div='personal-information')
 
     @as_users("farin")
     def test_money_transfers(self) -> None:

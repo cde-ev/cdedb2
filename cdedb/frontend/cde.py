@@ -33,7 +33,8 @@ from cdedb.common import (
     EntitySorter, Error, LineResolutions, LOG_FIELDS_COMMON, PERSONA_DEFAULTS,
     RequestState, SemesterSteps, TransactionType, asciificator, deduct_years,
     determine_age_class, diacritic_patterns, get_hash, glue, int_to_words,
-    lastschrift_reference, merge_dicts, n_, now, unwrap, xsorted,
+    lastschrift_reference, merge_dicts, n_, now, unwrap, xsorted, PERSONA_CORE_FIELDS,
+    PERSONA_STATUS_FIELDS
 )
 from cdedb.database.connection import Atomizer
 from cdedb.frontend.common import (
@@ -601,20 +602,24 @@ class CdEFrontend(AbstractUserFrontend):
                     'affiliation', 'timeline', 'interests', 'free_form')
                 for field in empty_fields:
                     promotion[field] = None
-                invariant_fields = {'family_name', 'given_names'}
+                # This applies a part of the newly imported data necessary for realm
+                # transition. The remaining data will be updated later.
+                invariant_fields = set(PERSONA_CORE_FIELDS) - set(PERSONA_STATUS_FIELDS)
                 if not current['is_event_realm']:
                     if not datum['resolution'].do_update():
                         raise RuntimeError(n_("Need extra data."))
-                    # This applies a part of the newly imported data,
-                    # however email and name are not changed during a
-                    # realm transition and thus we update again later
-                    # on
+                    stored = self.coreproxy.get_persona(rs, persona_id)
                     for field in set(batch_fields) - invariant_fields:
                         promotion[field] = datum['persona'][field]
                 else:
                     stored = self.coreproxy.get_event_user(rs, persona_id)
                     for field in set(batch_fields) - invariant_fields:
                         promotion[field] = stored.get(field)
+                # The invariant fields stay the same and may be updated later.
+                # Email and name are not passed in during a realm transition.
+                not_passed_fields = {'family_name', 'given_names', 'username'}
+                for field in (invariant_fields - not_passed_fields) & set(batch_fields):
+                    promotion[field] = stored[field]
                 self.coreproxy.change_persona_realms(rs, promotion)
             if datum['resolution'].do_trial():
                 self.coreproxy.change_membership(
