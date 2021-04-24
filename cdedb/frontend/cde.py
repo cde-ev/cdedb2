@@ -830,6 +830,8 @@ class CdEFrontend(AbstractUserFrontend):
             or (e['problems'] and e['resolution'] != LineResolutions.skip)
             for e in data)
         if rs.has_validation_errors() or not data or open_issues:
+            # force a new validation round if some errors came up
+            rs.values['finalized'] = False
             return self.batch_admission_form(rs, data=data, csvfields=fields)
         if not finalized:
             rs.values['finalized'] = True
