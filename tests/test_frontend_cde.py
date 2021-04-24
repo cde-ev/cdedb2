@@ -1457,6 +1457,40 @@ class TestCdEFrontend(FrontendTest):
         self.admin_view_profile("janis")
         self.assertNonPresence("komischer Namenszusatz", div='personal-information')
 
+    @as_users("vera")
+    def test_batch_admission_username_taken(self) -> None:
+        # check that we do not allow to create an account with already taken mail adress
+        data = ('"pa14";"1a";"Dino";"Daniel";"";"";"";"1";"";"";"";"";"";"";"";'
+                '"daniel@example.cde";"19.02.1963"')
+
+        self.traverse({'description': 'Mitglieder'},
+                      {'description': 'Nutzer verwalten'},
+                      {'description': 'Massenaufnahme'})
+        self.assertTitle("Accounts anlegen")
+        f = self.response.forms['admissionform']
+        f['accounts'] = data
+        self.submit(f, check_notification=False)
+
+        self.assertTitle("Accounts anlegen")
+        f = self.response.forms['admissionform']
+        f['resolution1'] = LineResolutions.create.value
+        self.submit(f, check_notification=False)
+
+        self.assertTitle("Accounts anlegen")
+        # check a already taken mailadress is not a warning but an error, since
+        # it would otherwise violate our postgres integrity
+        self.assertPresence("Fehler persona: Emailadresse bereits vergeben.")
+        f = self.response.forms['admissionform']
+        f['resolution1'] = LineResolutions.update.value
+        f['doppelganger_id1'] = "4"
+        self.submit(f, check_notification=False)
+
+        self.assertTitle("Accounts anlegen")
+        # but updating a persona is ok
+        self.assertNonPresence("Emailadresse bereits vergeben.")
+        f = self.response.forms['admissionform']
+        self.submit(f)
+
     @as_users("farin")
     def test_money_transfers(self) -> None:
         self.traverse({'description': 'Mitglieder'},
