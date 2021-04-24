@@ -385,8 +385,8 @@ class CoreBackend(AbstractBackend):
             self.sql_insert(rs, "core.changelog", insert)
 
             # resolve change if it doesn't require review
-            if not force_review and (not requires_review
-                                     or self.conf["CDEDB_OFFLINE_DEPLOYMENT"]):
+            if (self.conf["CDEDB_OFFLINE_DEPLOYMENT"]
+                    or (not force_review and not requires_review)):
                 ret = self._changelog_resolve_change_unsafe(
                     rs, data['id'], next_generation, ack=True, reviewed=False)
             else:
