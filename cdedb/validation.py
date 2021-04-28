@@ -277,7 +277,7 @@ def _examine_dictionary_fields(
         elif not allow_superfluous:
             errs.append(KeyError(key, n_("Superfluous key found.")))
 
-    missing_mandatory = set(mandatory_fields).difference(retval)
+    missing_mandatory = set(mandatory_fields).difference(adict)
     if missing_mandatory:
         for key in missing_mandatory:
             errs.append(KeyError(key, n_("Mandatory key missing.")))

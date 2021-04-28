@@ -20,25 +20,25 @@ class TestAssemblyBackend(BackendTest):
     used_backends = ("core", "assembly")
 
     @as_users("kalif")
-    def test_basics(self, user: CdEDBObject) -> None:
-        data = self.core.get_assembly_user(self.key, user['id'])
+    def test_basics(self) -> None:
+        data = self.core.get_assembly_user(self.key,self.user['id'])
         data['display_name'] = "Zelda"
         data['family_name'] = "Lord von und zu Hylia"
         setter = {k: v for k, v in data.items() if k in
                   {'id', 'display_name', 'given_names', 'family_name'}}
         self.core.change_persona(self.key, setter)
-        new_data = self.core.get_assembly_user(self.key, user['id'])
+        new_data = self.core.get_assembly_user(self.key, self.user['id'])
         self.assertEqual(data, new_data)
 
     @as_users("anton", "berta", "charly", "kalif")
-    def test_does_attend(self, user: CdEDBObject) -> None:
-        self.assertEqual(user['id'] != 3, self.assembly.does_attend(
+    def test_does_attend(self) -> None:
+        self.assertEqual(self.user['id'] != 3, self.assembly.does_attend(
             self.key, assembly_id=1))
-        self.assertEqual(user['id'] != 3, self.assembly.does_attend(
+        self.assertEqual(self.user['id'] != 3, self.assembly.does_attend(
             self.key, ballot_id=3))
 
     @as_users("charly")
-    def test_list_attendees(self, user: CdEDBObject) -> None:
+    def test_list_attendees(self) -> None:
         expectation = {1, 2, 9, 11, 23, 100}
         self.assertEqual(expectation, self.assembly.list_attendees(self.key, 1))
 
@@ -121,7 +121,7 @@ class TestAssemblyBackend(BackendTest):
                                "presiders", "log", "mailinglists")))
 
     @as_users("viktor")
-    def test_ticket_176(self, user: CdEDBObject) -> None:
+    def test_ticket_176(self) -> None:
         data = {
             'description': None,
             'notes': None,
@@ -133,7 +133,7 @@ class TestAssemblyBackend(BackendTest):
         self.assertLess(0, self.assembly.conclude_assembly(self.key, new_id))
 
     @as_users("werner")
-    def test_entity_ballot(self, user: CdEDBObject) -> None:
+    def test_entity_ballot(self) -> None:
         assembly_id = 1
         expectation = {1: 'Antwort auf die letzte aller Fragen',
                        2: 'Farbe des Logos',
@@ -376,7 +376,7 @@ class TestAssemblyBackend(BackendTest):
         self.assertEqual(expectation, self.assembly.list_ballots(self.key, assembly_id))
 
     @as_users("werner")
-    def test_quorum(self, user: CdEDBObject) -> None:
+    def test_quorum(self) -> None:
         data = {
             'assembly_id': 1,
             'use_bar': False,
@@ -429,7 +429,7 @@ class TestAssemblyBackend(BackendTest):
         self.assembly.set_ballot(self.key, data)
 
     @as_users("viktor")
-    def test_relative_quorum(self, user: CdEDBObject) -> None:
+    def test_relative_quorum(self) -> None:
         delta = 0.3
         future = now() + datetime.timedelta(seconds=delta)
 
@@ -516,7 +516,7 @@ class TestAssemblyBackend(BackendTest):
         self.assertEqual(True, self.assembly.get_ballot(self.key, new_id)['extended'])
 
     @as_users("charly")
-    def test_signup(self, user: CdEDBObject) -> None:
+    def test_signup(self) -> None:
         self.assertEqual(False, self.assembly.does_attend(
             self.key, assembly_id=1))
         secret = self.assembly.signup(self.key, 1)
@@ -566,7 +566,7 @@ class TestAssemblyBackend(BackendTest):
             'St>Li=Go=Fi=Bu=Lo=_bar_', self.assembly.get_vote(self.key, 3, secret=None))
 
     @as_users("kalif")
-    def test_tally(self, user: CdEDBObject) -> None:
+    def test_tally(self) -> None:
         self.assertEqual(False, self.assembly.get_ballot(self.key, 1)['is_tallied'])
         self.assertTrue(self.assembly.tally_ballot(self.key, 1))
         with open("/tmp/cdedb-store/testfiles/ballot_result.json", 'rb') as f:
@@ -624,7 +624,7 @@ class TestAssemblyBackend(BackendTest):
         self.assertLess(0, self.assembly.conclude_assembly(self.key, new_id))
 
     @as_users("werner")
-    def test_entity_attachments(self, user: CdEDBObject) -> None:
+    def test_entity_attachments(self) -> None:
         with open("/cdedb2/tests/ancillary_files/rechen.pdf", "rb") as f:
             self.assertEqual(
                 f.read(),
@@ -843,7 +843,7 @@ class TestAssemblyBackend(BackendTest):
         (title, shortname, description, presider_address, signup_end) VALUES
         ('Umfrage', 'umfrage', 'sagt eure Meinung!', 'umfrage@example.cde',
          date '2111-11-11');""")
-    def test_prepsql(self, user: CdEDBObject) -> None:
+    def test_prepsql(self) -> None:
         expectation = {
             1: {'id': 1, 'is_active': True,
                 'signup_end': datetime.datetime(2111, 11, 11, 0, 0, tzinfo=pytz.utc),

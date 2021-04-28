@@ -19,7 +19,7 @@ from cdedb.backend.common import (
     internal, singularize,
 )
 from cdedb.backend.event import EventBackend
-from cdedb.subman import subman
+import cdedb.subman as subman
 from cdedb.common import (
     MAILINGLIST_FIELDS, MOD_ALLOWED_FIELDS, RESTRICTED_MOD_ALLOWED_FIELDS, CdEDBLog,
     CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, PathLike,
@@ -32,9 +32,6 @@ from cdedb.ml_type_aux import MLType, MLTypeLike
 from cdedb.query import Query, QueryOperators
 
 SubStates = Collection[const.SubscriptionState]
-# Set of states to be saved into the database.
-# Can semantically be considered `Collection[DatabaseSubscriptionState]`.
-DatabaseStates = set(const.SubscriptionState) - {const.SubscriptionState.none}
 
 
 class MlBackend(AbstractBackend):
@@ -48,6 +45,8 @@ class MlBackend(AbstractBackend):
         self.assembly = make_proxy(AssemblyBackend(configpath), internal=True)
         self.backends = ml_type.BackendContainer(
             core=self.core, event=self.event, assembly=self.assembly)
+        self.subman = subman.SubscriptionManager(
+            unwritten_states=(const.SubscriptionState.none,))
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:
@@ -573,7 +572,7 @@ class MlBackend(AbstractBackend):
                              "WHERE mailinglist_id = %s "
                              "AND subscription_state = ANY(%s)")
                     # noinspection PyTypeChecker
-                    params = (data['id'], DatabaseStates -
+                    params = (data['id'], self.subman.written_states -
                               const.SubscriptionState.subscribing_states())
                     self.query_exec(rs, query, params)
                 ret *= self._ml_type_transition(
@@ -838,8 +837,6 @@ class MlBackend(AbstractBackend):
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
         # Managing actions can only be done by moderators. Other options always
         # change your own subscription state.
-        if action.is_automatic():
-            raise RuntimeError(n_("Automatic actions should not be done manually."))
         if action.is_managing():
             if not self.may_manage(rs, mailinglist_id, allow_restricted=False):
                 raise PrivilegeError(n_("Not privileged."))
@@ -854,7 +851,7 @@ class MlBackend(AbstractBackend):
             old_state = self.get_subscription(rs, persona_id,
                                               mailinglist_id=mailinglist_id)
 
-            new_state = subman.apply_action(
+            new_state = self.subman.apply_action(
                 action=action,
                 policy=self.get_subscription_policy(rs, persona_id, mailinglist=ml),
                 allow_unsub=atype.allow_unsub,
@@ -1005,7 +1002,7 @@ class MlBackend(AbstractBackend):
         """Returns a list of mailinglists the persona is related to.
 
         :param states: If given only relations with these states are returned.
-            Defaults to DatabaseStates.
+            Defaults to all states written into the database (`subman.written_states`).
         :return: A mapping of mailinglist ids to the persona's subscription
             state wrt. this mailinglist.
         """
@@ -1188,10 +1185,11 @@ class MlBackend(AbstractBackend):
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
 
         # States we may not touch.
-        protected_states = (DatabaseStates &
-                            const.SubscriptionState.cleanup_protected_states())
+        protected_states = (self.subman.written_states
+                            & self.subman.cleanup_protected_states)
         # States we may touch: non-special subscriptions.
-        old_subscriber_states = DatabaseStates - protected_states
+        old_subscriber_states = (self.subman.written_states
+                                 - self.subman.cleanup_protected_states)
 
         ret = 1
         with Atomizer(rs):
@@ -1218,8 +1216,8 @@ class MlBackend(AbstractBackend):
                 policy = atype.get_subscription_policy(
                     rs, self.backends, mailinglist=ml, persona_id=persona_id)
                 state = old_subscribers[persona_id]
-                if subman.is_obsolete(policy=policy, old_state=state,
-                                      is_implied=persona_id in new_implicits):
+                if self.subman.is_obsolete(policy=policy, old_state=state,
+                                           is_implied=persona_id in new_implicits):
                     datum = {
                         'mailinglist_id': mailinglist_id,
                         'persona_id': persona_id,
