@@ -44,7 +44,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     @access("ml")
     def index(self, rs: RequestState) -> Response:
         """Render start page.
-        
+
         Beware that this function relies on the assumption that the user is logged in,
         as enforced by `@access`. If not, an error in the backend will be raised.
         """
