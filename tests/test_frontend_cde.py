@@ -1386,7 +1386,7 @@ class TestCdEFrontend(FrontendTest):
         f['resolution5'] = LineResolutions.renew_and_update.value
         f['doppelganger_id5'] = '2'
         f['resolution7'] = LineResolutions.renew_and_update.value
-        self.assertEqual('', f['finalized'].value)
+        self.assertEqual('False', f['finalized'].value)
         self.submit(f, check_notification=False)
 
         # fourth round
@@ -1514,11 +1514,14 @@ class TestCdEFrontend(FrontendTest):
 
         self.assertTitle("Accounts anlegen")
         f = self.response.forms['admissionform']
+        self.assertEqual('True', f['finalized'].value)
         # now change the data in the data field
         f['accounts'] = data2
         self.submit(f, check_notification=False)
 
         self.assertTitle("Accounts anlegen")
+        f = self.response.forms['admissionform']
+        self.assertEqual('False', f['finalized'].value)
         self.assertPresence("Warnung resolution: Eintrag geändert.")
 
     @as_users("farin")
