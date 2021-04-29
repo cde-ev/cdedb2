@@ -447,7 +447,7 @@ class CdEFrontend(AbstractUserFrontend):
             # reset resolution in case of a change
             datum['resolution'] = LineResolutions.none
             rs.values[f"resolution{datum['lineno']}"] = LineResolutions.none
-            warnings.append(("resolution", ValueError(n_("Entry changed."))))
+            warnings.append((None, ValueError(n_("Entry changed."))))
         persona = copy.deepcopy(datum['raw'])
         # Adapt input of gender from old convention (this is the format
         # used by external processes, i.e. BuB)

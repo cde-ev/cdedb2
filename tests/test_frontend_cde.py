@@ -1522,7 +1522,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Accounts anlegen")
         f = self.response.forms['admissionform']
         self.assertEqual('False', f['finalized'].value)
-        self.assertPresence("Warnung resolution: Eintrag geändert.")
+        self.assertPresence("Warnung Eintrag geändert.")
 
     @as_users("farin")
     def test_money_transfers(self) -> None:
