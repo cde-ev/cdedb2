@@ -1494,17 +1494,15 @@ class TestCdEFrontend(FrontendTest):
     @as_users("vera")
     def test_batch_admission_reset_finalized(self) -> None:
         # check that we reset the "finalized" parameter every time a new change comes up
-        data1 = ('"pa14";"1a";"Dino";"Daniel";"";"";"";"1";"";"";"";"";"";"";"";'
-                 '"daniel@example.cde";"19.02.1963"')
-        data2 = ('"pa14";"1a";"Dino";"Daniel";"eine kleine Änderung";"";"";"1";"";"";"";'
-                 '"";"";"";"";"daniel@example.cde";"19.02.1963"')
+        data = ["pa14", "1a", "Dino", "Daniel", "", "", "", "1", "", "", "", "", "", "",
+                "", "daniel@example.cde", "19.02.1963"]
 
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Nutzer verwalten'},
                       {'description': 'Massenaufnahme'})
         self.assertTitle("Accounts anlegen")
         f = self.response.forms['admissionform']
-        f['accounts'] = data1
+        f['accounts'] = ";".join(data)
         self.submit(f, check_notification=False)
 
         self.assertTitle("Accounts anlegen")
@@ -1516,7 +1514,8 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['admissionform']
         self.assertEqual('True', f['finalized'].value)
         # now change the data in the data field
-        f['accounts'] = data2
+        data[4] = "eine kleine Änderung"
+        f['accounts'] = ";".join(data)
         self.submit(f, check_notification=False)
 
         self.assertTitle("Accounts anlegen")
