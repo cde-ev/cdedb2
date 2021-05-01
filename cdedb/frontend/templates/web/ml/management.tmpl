@@ -111,36 +111,22 @@
                         <li class="hide-hover-container clearfix-after">
                             {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
                             {% if not restricted %}
-                            <div class="nowrap display-inline">
-                                {# TODO consider merging endpoints and use a single form - would enable usage of btn-group #}
-                                <form action="{{ cdedblink('ml/approve_request') }}"
-                                      method="POST"
-                                      id="approverequestform{{ request }}"
-                                      class="hide-hover display-inline">
-                                    {{ util.anti_csrf_token('ml/approve_request') }}
+                            <form action="{{ cdedblink('ml/handle_request') }}"
+                                  method="POST"
+                                  id="handlerequestform{{ request }}"
+                                  class="hide-hover display-inline pull-right">
+                                    {{ util.anti_csrf_token('ml/handle_request') }}
                                     {{ util.input_hidden(name="persona_id", value=request) }}
-                                    {{ util.input_submit(icon="check", value=gettext("Accept"),
-                                        aclass="btn btn-xs btn-success list-button-float") }}
-                                </form>
-                                <form action="{{ cdedblink('ml/deny_request') }}"
-                                      method="POST"
-                                      id="denyrequestform{{ request }}"
-                                      class="hide-hover display-inline">
-                                    {{ util.anti_csrf_token('ml/deny_request') }}
-                                    {{ util.input_hidden(name="persona_id", value=request) }}
-                                    {{ util.input_submit(icon="times-circle", value=gettext("Reject"),
-                                        aclass="btn btn-xs btn-danger list-button-float") }}
-                                </form>
-                                <form action="{{ cdedblink('ml/block_request') }}"
-                                      method="POST"
-                                      id="blockrequestform{{ request }}"
-                                      class="hide-hover display-inline">
-                                    {{ util.anti_csrf_token('ml/block_request') }}
-                                    {{ util.input_hidden(name="persona_id", value=request) }}
-                                    {{ util.input_submit(icon="ban", value=gettext("Block"),
-                                        aclass="btn btn-xs btn-danger list-button-float") }}
-                                </form>
-                            </div>
+                                <div class="btn-group">
+                                    {% for action, label, icon, coloring in (
+                                            ('accept', gettext('Accept'), 'check', 'success'),
+                                            ('reject', gettext('Reject'), 'times-circle', 'danger'),
+                                            ('block', gettext('Block'), 'ban', 'danger')) %}
+                                        {{ util.input_submit(label=label, value=action, name="action", icon=icon,
+                                                             aclass="btn btn-xs btn-" + coloring) }}
+                                    {% endfor %}
+                                </div>
+                            </form>
                             {% endif %}
                         </li>
                     {% endfor %}

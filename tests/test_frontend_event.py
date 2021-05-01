@@ -14,19 +14,19 @@ import cdedb.database.constants as const
 from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, CdEDBObject, now
 from cdedb.frontend.common import CustomCSVDialect, iban_filter
 from cdedb.query import QueryOperators
-from tests.common import USER_DICT, FrontendTest, as_users, prepsql, storage
+from tests.common import UserObject, USER_DICT, FrontendTest, as_users, prepsql, storage
 
 
 class TestEventFrontend(FrontendTest):
     @as_users("emilia")
-    def test_index(self, user: CdEDBObject) -> None:
+    def test_index(self) -> None:
         self.traverse({'description': 'Veranstaltungen'})
         self.assertPresence("Große Testakademie 2222", div='current-events')
         self.assertNonPresence("PfingstAkademie 2014")
         self.assertNonPresence("CdE-Party 2050")
 
     @as_users("anonymous", "janis")
-    def test_no_event_realm_view(self, user: CdEDBObject) -> None:
+    def test_no_event_realm_view(self) -> None:
         self.traverse({'description': 'Veranstaltungen'})
         self.assertPresence("Große Testakademie 2222", div='current-events')
         self.assertNonPresence("PfingstAkademie 2014")
@@ -48,29 +48,28 @@ class TestEventFrontend(FrontendTest):
         self.assertNonPresence("Bernd Lucke")
 
     @as_users("anton", "berta")
-    def test_index_orga(self, user: CdEDBObject) -> None:
+    def test_index_orga(self) -> None:
         self.traverse({'description': 'Veranstaltungen'})
         self.assertPresence("Große Testakademie 2222", div='current-events')
         self.assertPresence("CdE-Party 2050", div='organized-events')
         self.assertNonPresence("CdE-Party 2050", div='current-events')
 
     @as_users("annika", "emilia", "martin", "vera", "werner")
-    def test_sidebar(self, user: CdEDBObject) -> None:
+    def test_sidebar(self) -> None:
         self.traverse({'description': 'Veranstaltungen'})
         everyone = {"Veranstaltungen", "Übersicht"}
         admin = {"Alle Veranstaltungen", "Log"}
 
         # not event admins (also orgas!)
-        if user in [USER_DICT['emilia'], USER_DICT['martin'],
-                    USER_DICT['werner']]:
+        if self.user_in('emilia', 'martin', 'werner'):
             ins = everyone
             out = admin | {"Nutzer verwalten", "Archivsuche"}
         # core admins
-        elif user == USER_DICT['vera']:
+        elif self.user_in('vera'):
             ins = everyone | {"Nutzer verwalten", "Archivsuche"}
             out = admin
         # event admins
-        elif user == USER_DICT['annika']:
+        elif self.user_in('annika'):
             ins = everyone | admin | {"Nutzer verwalten", "Archivsuche"}
             out = set()
         else:
@@ -79,14 +78,14 @@ class TestEventFrontend(FrontendTest):
         self.check_sidebar(ins, out)
 
     @as_users("emilia")
-    def test_showuser(self, user: CdEDBObject) -> None:
-        self.traverse({'description': user['display_name']})
-        self.assertTitle("{} {}".format(user['given_names'],
-                                        user['family_name']))
+    def test_showuser(self) -> None:
+        self.traverse({'description': self.user['display_name']})
+        self.assertTitle("{} {}".format(self.user['given_names'],
+                                        self.user['family_name']))
 
     @as_users("emilia")
-    def test_changeuser(self, user: CdEDBObject) -> None:
-        self.traverse({'description': user['display_name']},
+    def test_changeuser(self) -> None:
+        self.traverse({'description': self.user['display_name']},
                       {'description': 'Bearbeiten'})
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
@@ -97,7 +96,7 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("Hyrule", div='address')
 
     @as_users("annika", "ferdinand")
-    def test_adminchangeuser(self, user: CdEDBObject) -> None:
+    def test_adminchangeuser(self) -> None:
         self.realm_admin_view_profile('emilia', 'event')
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['changedataform']
@@ -110,7 +109,7 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("03.04.1933", div='personal-information')
 
     @as_users("annika", "ferdinand")
-    def test_toggleactivity(self, user: CdEDBObject) -> None:
+    def test_toggleactivity(self) -> None:
         self.realm_admin_view_profile('emilia', 'event')
         self.assertPresence("Ja", div='account-active')
         f = self.response.forms['activitytoggleform']
@@ -118,7 +117,7 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("Nein", div='account-active')
 
     @as_users("annika", "vera")
-    def test_user_search(self, user: CdEDBObject) -> None:
+    def test_user_search(self) -> None:
         self.traverse({'description': 'Veranstaltunge'},
                       {'description': 'Nutzer verwalten'})
         self.assertTitle("Veranstaltungsnutzerverwaltung")
@@ -134,7 +133,7 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("Hohle Gasse 13", div='query-result')
 
     @as_users("annika", "paul")
-    def test_create_archive_user(self, user: CdEDBObject) -> None:
+    def test_create_archive_user(self) -> None:
         data = {
             "title": "Dr.",
             "name_supplement": 'von und zu',
@@ -151,7 +150,7 @@ class TestEventFrontend(FrontendTest):
         self.check_create_archive_user("event", data)
 
     @as_users("anton")
-    def test_event_admin_views(self, user: CdEDBObject) -> None:
+    def test_event_admin_views(self) -> None:
         self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, '')
 
         self.traverse({'href': '/event'})
@@ -220,7 +219,7 @@ class TestEventFrontend(FrontendTest):
         self.assertIn('lockform', self.response.forms)
 
     @as_users("annika")
-    def test_list_events(self, user: CdEDBObject) -> None:
+    def test_list_events(self) -> None:
         self.traverse({'description': 'Veranstaltungen'},
                       {'description': 'Alle Veranstaltungen'})
         self.assertTitle("Alle Veranstaltungen")
@@ -231,7 +230,7 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("Anmeldungen")
 
     @as_users("anonymous", "garcia")
-    def test_list_events_unprivileged(self, user: CdEDBObject) -> None:
+    def test_list_events_unprivileged(self) -> None:
         self.traverse({'description': 'Veranstaltungen'},
                       {'href': '/event/event/list'})
         self.assertTitle("Alle Veranstaltungen")
@@ -242,7 +241,7 @@ class TestEventFrontend(FrontendTest):
         self.assertNonPresence("Anmeldungen")
 
     @as_users("annika", "berta", "emilia")
-    def test_show_event(self, user: CdEDBObject) -> None:
+    def test_show_event(self) -> None:
         self.traverse({'description': 'Veranstaltungen'},
                       {'description': 'Große Testakademie 2222'})
         self.assertTitle("Große Testakademie 2222")
@@ -259,7 +258,7 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("Garcia G. Generalis", div='orgas', exact=True)
 
     @as_users("berta", "charly")
-    def test_show_event_noorga(self, user: CdEDBObject) -> None:
+    def test_show_event_noorga(self) -> None:
         self.traverse({'description': 'Veranstaltungen'},
                       {'description': 'Große Testakademie 2222'})
         self.assertTitle("Große Testakademie 2222")
@@ -276,7 +275,7 @@ class TestEventFrontend(FrontendTest):
         self.assertNotIn("createparticipantlistform", self.response.forms)
 
     @as_users("annika", "garcia")
-    def test_show_event_orga(self, user: CdEDBObject) -> None:
+    def test_show_event_orga(self) -> None:
         self.traverse({'description': 'Veranstaltungen'},
                       {'description': 'Große Testakademie 2222'})
         self.assertTitle("Große Testakademie 2222")
@@ -293,11 +292,11 @@ class TestEventFrontend(FrontendTest):
         self.assertIn('quickregistrationform', self.response.forms)
         self.assertIn('changeminorformform', self.response.forms)
         self.assertIn('lockform', self.response.forms)
-        if not self.is_user(user, 'annika'):  # annika is also admin
+        if not self.user_in('annika'):  # annika is also admin
             self.assertNotIn('createparticipantlistform', self.response.forms)
 
     @as_users("berta", "garcia")
-    def test_show_event_noadmin(self, user: CdEDBObject) -> None:
+    def test_show_event_noadmin(self) -> None:
         self.traverse({'description': 'Veranstaltungen'},
                       {'description': 'Große Testakademie 2222'})
         self.assertTitle("Große Testakademie 2222")
@@ -307,7 +306,7 @@ class TestEventFrontend(FrontendTest):
         self.assertNotIn("removeorgaform7", self.response.forms)
 
     @as_users("annika")
-    def test_show_event_admin(self, user: CdEDBObject) -> None:
+    def test_show_event_admin(self) -> None:
         self.traverse({'description': 'Veranstaltungen'},
                       {'description': 'Große Testakademie 2222'})
         self.assertTitle("Große Testakademie 2222")
@@ -327,7 +326,7 @@ class TestEventFrontend(FrontendTest):
         self.submit(f)
 
     @as_users("anton")
-    def test_create_participant_list(self, user: CdEDBObject) -> None:
+    def test_create_participant_list(self) -> None:
         self.traverse({'description': 'Veranstaltungen'},
                       {'description': 'Große Testakademie 2222'})
         self.assertTitle("Große Testakademie 2222")
@@ -335,7 +334,7 @@ class TestEventFrontend(FrontendTest):
         self.submit(f)
 
     @as_users("annika", "emilia", "garcia", "martin", "vera", "werner")
-    def test_sidebar_one_event(self, user: CdEDBObject) -> None:
+    def test_sidebar_one_event(self) -> None:
         self.traverse({'description': 'Veranstaltungen'},
                       {'description': 'Große Testakademie 2222'})
         everyone = {"Veranstaltungsübersicht", "Übersicht", "Kursliste"}
@@ -351,19 +350,19 @@ class TestEventFrontend(FrontendTest):
         # TODO this could be more expanded (event without courses, distinguish
         #  between registered and participant, ...
         # not registered, not event admin
-        if user in [USER_DICT['martin'], USER_DICT['vera'], USER_DICT['werner']]:
+        if self.user_in('martin', 'vera', 'werner'):
             ins = everyone | not_registered
             out = registered | registered_or_orga | orga
         # registered
-        elif user == USER_DICT['emilia']:
+        elif self.user_in('emilia'):
             ins = everyone | registered | registered_or_orga
             out = not_registered | orga
         # orga
-        elif user == USER_DICT['garcia']:
+        elif self.user_in('garcia'):
             ins = everyone | registered | registered_or_orga | orga
             out = not_registered
         # event admin (annika is not registered)
-        elif user == USER_DICT['annika']:
+        elif self.user_in('annika'):
             ins = everyone | not_registered | registered_or_orga | orga
             out = registered
         else:
@@ -372,7 +371,7 @@ class TestEventFrontend(FrontendTest):
         self.check_sidebar(ins, out)
 
     @as_users("anton", "berta")
-    def test_no_hard_limit(self, user: CdEDBObject) -> None:
+    def test_no_hard_limit(self) -> None:
         self.traverse({'description': 'Veranstaltungen'},
                       {'description': 'CdE-Party 2050'})
         self.assertTitle("CdE-Party 2050")
@@ -381,7 +380,7 @@ class TestEventFrontend(FrontendTest):
                             div='timeframe-registration', exact=True)
 
     @as_users("annika", "garcia")
-    def test_hard_limit_orga(self, user: CdEDBObject) -> None:
+    def test_hard_limit_orga(self) -> None:
         self.traverse({'description': 'Veranstaltungen'},
                       {'description': 'Große Testakademie 2222'})
         self.assertTitle("Große Testakademie 2222")
@@ -390,7 +389,7 @@ class TestEventFrontend(FrontendTest):
                             div='timeframe-registration', exact=True)
 
     @as_users("charly", "emilia")
-    def test_hard_limit_noorga(self, user: CdEDBObject) -> None:
+    def test_hard_limit_noorga(self) -> None:
         self.traverse({'description': 'Veranstaltungen'},
                       {'description': 'Große Testakademie 2222'})
         self.assertTitle("Große Testakademie 2222")
@@ -398,7 +397,7 @@ class TestEventFrontend(FrontendTest):
                             div='timeframe-registration', exact=True)
 
     @as_users("annika", "berta", "emilia")
-    def test_course_list(self, user: CdEDBObject) -> None:
+    def test_course_list(self) -> None:
         self.traverse({'description': 'Veranstaltungen'},
                       {'description': 'Große Testakademie 2222'},
                       {'description': 'Kursliste'})
@@ -407,7 +406,7 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("Wir werden die Bäume drücken.")
 
     @as_users("annika", "garcia", "ferdinand")
-    def test_change_event(self, user: CdEDBObject) -> None:
+    def test_change_event(self) -> None:
         self.traverse({'description': 'Veranstaltungen'},
                       {'description': 'Große Testakademie 2222'},
                       {'description': 'Konfiguration'})
@@ -438,7 +437,7 @@ class TestEventFrontend(FrontendTest):
             "können Orgas über die Konfigurations-Seite hier etwas hinzufügen.",
             div='static-notifications')
         self.traverse("Übersicht")
-        if user in (USER_DICT['ferdinand'], USER_DICT['annika']):
+        if self.user_in('ferdinand', 'annika'):
             f = self.response.forms['addorgaform']
             # Try to add an invalid cdedbid.
             f['orga_id'] = "DB-1-1"
@@ -471,7 +470,7 @@ class TestEventFrontend(FrontendTest):
             self.assertNonPresence("Bertålotta")
 
     @as_users("garcia")
-    def test_orga_rate_limit(self, user: CdEDBObject) -> None:
+    def test_orga_rate_limit(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/registration/query'})
@@ -607,7 +606,7 @@ class TestEventFrontend(FrontendTest):
                                in f['course_choice3_0'].options])
 
     @as_users("annika", "garcia")
-    def test_part_summary_trivial(self, user: CdEDBObject) -> None:
+    def test_part_summary_trivial(self) -> None:
         self.traverse("Veranstaltungen", "Große Testakademie 2222", "Log")
         self.assertTitle("Große Testakademie 2222: Log [1–4 von 4]")
         self.traverse("Veranstaltungsteile")
@@ -622,7 +621,7 @@ class TestEventFrontend(FrontendTest):
         self.assertTitle("Große Testakademie 2222: Log [1–4 von 4]")
 
     @as_users("annika")
-    def test_part_summary_complex(self, user: CdEDBObject) -> None:
+    def test_part_summary_complex(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'description': 'Alle Veranstaltungen'},
                       {'description': 'CdE-Party 2050'},
@@ -698,7 +697,7 @@ class TestEventFrontend(FrontendTest):
         self.assertNotIn('title_1001', f.fields)
 
     @as_users("garcia")
-    def test_aposteriori_change_num_choices(self, user: CdEDBObject) -> None:
+    def test_aposteriori_change_num_choices(self) -> None:
         # Increase number of course choices of track 2 ("Kaffekränzchen")
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
@@ -778,7 +777,7 @@ class TestEventFrontend(FrontendTest):
         self.assertNonPresence('Heldentum')
 
     @as_users("annika", "garcia")
-    def test_change_event_fields(self, user: CdEDBObject) -> None:
+    def test_change_event_fields(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/field/summary'})
@@ -816,7 +815,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertNotIn('field_name_9', f.fields)
 
     @as_users("garcia")
-    def test_event_fields_unique_name(self, user: CdEDBObject) -> None:
+    def test_event_fields_unique_name(self) -> None:
         self.get("/event/event/1/field/summary")
         f = self.response.forms['fieldsummaryform']
         f['delete_1'].checked = True
@@ -855,7 +854,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertValidationError('field_name_-2', "Feldname nicht eindeutig.")
 
     @as_users("garcia")
-    def test_event_fields_datatype(self, user: CdEDBObject) -> None:
+    def test_event_fields_datatype(self) -> None:
         self.get("/event/event/1/field/summary")
         f = self.response.forms['fieldsummaryform']
         f['create_-1'].checked = True
@@ -877,7 +876,7 @@ etc;anything else""", f['entries_2'].value)
             "Ungültige Eingabe für Enumeration <enum 'FieldDatatypes'>.")
 
     @as_users("annika", "garcia")
-    def test_event_fields_change_datatype(self, user: CdEDBObject) -> None:
+    def test_event_fields_change_datatype(self) -> None:
         # First, remove the "lodge" field from the questionaire and the event's,
         # so it can be deleted
         self.get("/event/event/1/questionnaire/config")
@@ -922,7 +921,7 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/registration/1/change'})
 
     @as_users("garcia")
-    def test_event_fields_boolean(self, user: CdEDBObject) -> None:
+    def test_event_fields_boolean(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/field/summary'})
@@ -952,7 +951,7 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
 
     @as_users("garcia")
-    def test_event_fields_date(self, user: CdEDBObject) -> None:
+    def test_event_fields_date(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/field/summary'})
@@ -984,7 +983,7 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
 
     @as_users("annika", "garcia")
-    def test_event_fields_query_capital_letter(self, user: CdEDBObject) -> None:
+    def test_event_fields_query_capital_letter(self) -> None:
         self.get("/event/event/1/field/summary")
         f = self.response.forms['fieldsummaryform']
         f['create_-1'].checked = True
@@ -1025,7 +1024,7 @@ etc;anything else""", f['entries_2'].value)
 
     @storage
     @as_users("annika", "garcia")
-    def test_change_minor_form(self, user: CdEDBObject) -> None:
+    def test_change_minor_form(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'})
         self.assertTitle("Große Testakademie 2222")
@@ -1050,7 +1049,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Kein Formular vorhanden", div='minor-form')
 
     @as_users("annika", "ferdinand")
-    def test_create_event(self, user: CdEDBObject) -> None:
+    def test_create_event(self) -> None:
         # Some helper to find dynamic ids
         def find_event_id(url: str) -> int:
             result = re.search(r'event/event/(\d+)', url)
@@ -1141,7 +1140,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual(len(tracks), 1)
 
     @as_users("annika", "garcia")
-    def test_change_course(self, user: CdEDBObject) -> None:
+    def test_change_course(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/course/list'},
@@ -1178,7 +1177,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("Canyon", f['fields.room'].value)
 
     @as_users("annika", "garcia")
-    def test_create_delete_course(self, user: CdEDBObject) -> None:
+    def test_create_delete_course(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/course/list'})
@@ -1217,7 +1216,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence("Abstract Nonsense")
 
     @as_users("annika", "garcia")
-    def test_create_course_with_fields(self, user: CdEDBObject) -> None:
+    def test_create_course_with_fields(self) -> None:
         self.get("/event/event/1/course/create")
         self.assertTitle("Kurs hinzufügen (Große Testakademie 2222)")
         f = self.response.forms['createcourseform']
@@ -1230,7 +1229,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Outside")
 
     @as_users("charly", "daniel", "rowena")
-    def test_register(self, user: CdEDBObject) -> None:
+    def test_register(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'})
         # check participant info page for unregistered users
@@ -1245,13 +1244,13 @@ etc;anything else""", f['entries_2'].value)
         membership_fee = "Du kannst auch stattdessen Deinen regulären Mitgliedsbeitrag"
         self.traverse({'href': '/event/event/1/register'})
         self.assertTitle("Anmeldung für Große Testakademie 2222")
-        if user == USER_DICT['charly']:
+        if self.user_in('charly'):
             self.assertNonPresence(surcharge)
             self.assertNonPresence(membership_fee)
-        elif user == USER_DICT['daniel']:
+        elif self.user_in('daniel'):
             self.assertPresence(surcharge, div="nonmember-surcharge")
             self.assertPresence(membership_fee, div="nonmember-surcharge")
-        elif user == USER_DICT['rowena']:
+        elif self.user_in('rowena'):
             self.assertPresence(surcharge, div="nonmember-surcharge")
             self.assertNonPresence(membership_fee)
         else:
@@ -1283,13 +1282,13 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
         text = self.fetch_mail_content()
-        if user == USER_DICT['charly']:
+        if self.user_in('charly'):
             self.assertIn("461,49", text)
-        elif user == USER_DICT['daniel']:
+        elif self.user_in('daniel'):
             self.assertIn("466,49", text)
             self.assertIn(surcharge, text)
             self.assertIn(membership_fee, text)
-        elif user == USER_DICT['rowena']:
+        elif self.user_in('rowena'):
             self.assertIn("466,49", text)
             self.assertIn(surcharge, text)
             self.assertNotIn(membership_fee, text)
@@ -1331,7 +1330,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Kein Teilnehmer der Veranstaltung", div='notifications')
 
     @as_users("anton")
-    def test_registration_status(self, user: CdEDBObject) -> None:
+    def test_registration_status(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/registration/status'})
@@ -1398,7 +1397,7 @@ etc;anything else""", f['entries_2'].value)
         "DELETE FROM event.registration_parts;"
         "DELETE FROM event.registrations;"
     )
-    def test_register_with_fee_modifier(self, user: CdEDBObject) -> None:
+    def test_register_with_fee_modifier(self) -> None:
         self.traverse({'description': "Veranstaltungen"},
                       {'description': "Große Testakademie 2222"},
                       {'description': "Anmelden"})
@@ -1421,7 +1420,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Betrag 10,50 €")
 
     @as_users("annika")
-    def test_registration_questionnaire(self, user: CdEDBObject) -> None:
+    def test_registration_questionnaire(self) -> None:
         self.traverse({'description': "Veranstaltungen"},
                       {'description': "Große Testakademie 2222"},
                       {'description': "Veranstaltungsteile"})
@@ -1544,7 +1543,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("21,99 €", div="registrationsummary")
 
     @as_users("garcia")
-    def test_questionnaire(self, user: CdEDBObject) -> None:
+    def test_questionnaire(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/change'})
@@ -1575,7 +1574,7 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
 
     @as_users("annika")
-    def test_fee_modifiers(self, user: CdEDBObject) -> None:
+    def test_fee_modifiers(self) -> None:
         self.traverse({'description': "Veranstaltungen"},
                       {'description': "Alle Veranstaltungen"},
                       {'description': "CdE-Party 2050"})
@@ -1646,7 +1645,7 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
 
     @as_users("garcia")
-    def test_waitlist(self, user: CdEDBObject) -> None:
+    def test_waitlist(self) -> None:
         # 1. Create some new fields.
         self.traverse({'description': "Veranstaltungen"},
                       {'description': "Große Testakademie 2222"})
@@ -1793,7 +1792,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence("Stadt, Postleitzahl")
 
     @as_users("berta")
-    def test_participant_list_event_with_one_part(self, user: CdEDBObject) -> None:
+    def test_participant_list_event_with_one_part(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/2/show'},
                       {'href': '/event/event/2/registration/list'})
@@ -1820,14 +1819,14 @@ etc;anything else""", f['entries_2'].value)
         self.get('/event/event/2/registration/list?part_id=5000', status=404)
         self.get('/event/event/2/registration/list?part_id=3', status=404)
 
-    def _sort_appearance(self, userlist: Sequence[CdEDBObject]) -> None:
+    def _sort_appearance(self, userlist: Sequence[UserObject]) -> None:
         row = 1
         for user in userlist:
             self.assertPresence(user['given_names'], div="row-" + str(row))
             row += 1
 
     @as_users("garcia")
-    def test_participant_list_sorting(self, user: CdEDBObject) -> None:
+    def test_participant_list_sorting(self) -> None:
         # first, show courses on participant list
         self.traverse({'description': 'Veranstaltungen'},
                       {'description': 'Große Testakademie 2222'},
@@ -1875,9 +1874,9 @@ etc;anything else""", f['entries_2'].value)
         self._sort_appearance([anton, akira, emilia])
 
     @as_users("emilia", "garcia")
-    def test_participant_list_profile_link(self, user: CdEDBObject) -> None:
+    def test_participant_list_profile_link(self) -> None:
         # first, show list for participants
-        if user == USER_DICT['emilia']:
+        if self.user_in('emilia'):
             self.logout()
             self.login(USER_DICT['garcia'])
             self.traverse({'description': 'Veranstaltungen'},
@@ -1896,7 +1895,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertNoLink(content='Eventis')
         # akira is member and searchable, so there should be a link
         self.traverse({'description': 'Akira'})
-        if user == USER_DICT['emilia']:
+        if self.user_in('emilia'):
             # this must be a reduced profile, since emilia is not a member
             self.assertPresence("Akira Abukara", div='personal-information')
             self.assertNonPresence("akira@example.cde")
@@ -1906,10 +1905,10 @@ etc;anything else""", f['entries_2'].value)
             self.assertPresence("akira@example.cde", div='contact-email')
 
     @as_users("annika", "garcia")
-    def test_cancellation(self, user: CdEDBObject) -> None:
+    def test_cancellation(self) -> None:
         self.traverse({'href': '/event/$'})
         self.assertNonPresence("abgesagt")
-        if user['display_name'] == "garcia":
+        if self.user_in("garcia"):
             self.traverse({'href': '/event/event/list'})
             self.assertPresence("(3 Teile)")
             self.assertNonPresence("abgesagt")
@@ -1932,18 +1931,18 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Diese Veranstaltung wurde abgesagt.",
                             div="static-notifications")
 
-        if user['display_name'] == "annika":
+        if self.user_in("annika"):
             # Make sure the index shows it as cancelled.
             # Orgas only see it as Organized event now.
             self.traverse({'href': '/event'})
-            self.assertPresence("02.02.2222–30.11.2222, wurde abgesagt.")
+            self.assertPresence("02.02.2222 – 30.11.2222, wurde abgesagt.")
 
             # Make sure the management page shows it as cancelled
             self.traverse({'href': '/event/event/list'})
             self.assertPresence("(3 Teile, wurde abgesagt)")
 
     @as_users("garcia")
-    def test_batch_fee(self, user: CdEDBObject) -> None:
+    def test_batch_fee(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/batchfees'})
@@ -2010,7 +2009,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Bereits bezahlter Betrag 451,00 €")
 
     @as_users("garcia")
-    def test_batch_fee_regex(self, user: CdEDBObject) -> None:
+    def test_batch_fee_regex(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/batchfee'})
@@ -2021,7 +2020,7 @@ etc;anything else""", f['entries_2'].value)
         # Here the active regex chars where successfully neutralised
 
     @as_users("garcia")
-    def test_registration_query(self, user: CdEDBObject) -> None:
+    def test_registration_query(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/registration/query'})
@@ -2049,7 +2048,7 @@ etc;anything else""", f['entries_2'].value)
                                      '"lodgement2.title"]')[0].text.strip())
 
     @as_users("annika")
-    def test_course_query(self, user: CdEDBObject) -> None:
+    def test_course_query(self) -> None:
         self.traverse({'description': 'Veranstaltungen'},
                       {'description': 'Große Testakademie 2222'},
                       {'description': 'Kurse'},
@@ -2073,7 +2072,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Theater", div="result-container")
 
     @as_users("garcia")
-    def test_lodgement_query(self, user: CdEDBObject) -> None:
+    def test_lodgement_query(self) -> None:
         self.traverse({'description': 'Veranstaltungen'},
                       {'description': 'Große Testakademie 2222'},
                       {'description': 'Unterkünfte'},
@@ -2092,7 +2091,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Warme Stube", div="result-container")
 
     @as_users("garcia")
-    def test_multiedit(self, user: CdEDBObject) -> None:
+    def test_multiedit(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/registration/query'},
@@ -2130,7 +2129,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("pedes", f['fields.transportation'].value)
 
     @as_users("garcia")
-    def test_show_registration(self, user: CdEDBObject) -> None:
+    def test_show_registration(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/registration/query'})
@@ -2145,7 +2144,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Extrawünsche: Meerblick, Weckdienst")
 
     @as_users("garcia")
-    def test_multiedit_wa1920(self, user: CdEDBObject) -> None:
+    def test_multiedit_wa1920(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/registration/query'},
@@ -2166,7 +2165,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("2", f['track2.course_id'].value)
 
     @as_users("garcia")
-    def test_change_registration(self, user: CdEDBObject) -> None:
+    def test_change_registration(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/registration/query'})
@@ -2208,7 +2207,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("Om nom nom nom", f['fields.lodge'].value)
 
     @as_users("garcia")
-    def test_add_registration(self, user: CdEDBObject) -> None:
+    def test_add_registration(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/registration/query'},
@@ -2257,7 +2256,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("5", f['track1.course_choice_0'].value)
 
     @as_users("garcia")
-    def test_add_illegal_registration(self, user: CdEDBObject) -> None:
+    def test_add_illegal_registration(self) -> None:
         self.get("/event/event/1/registration/add")
         self.assertTitle("Neue Anmeldung (Große Testakademie 2222)")
         f = self.response.forms["addregistrationform"]
@@ -2277,7 +2276,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("4", f['track1.course_choice_1'].value)
 
     @as_users("berta")
-    def test_add_empty_registration(self, user: CdEDBObject) -> None:
+    def test_add_empty_registration(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'description': 'CdE-Party 2050'},
                       {'description': 'Anmeldungen'},
@@ -2293,7 +2292,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual(True, f['reg.parental_agreement'].checked)
 
     @as_users("garcia")
-    def test_delete_registration(self, user: CdEDBObject) -> None:
+    def test_delete_registration(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/registration/query'},
@@ -2310,7 +2309,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence("Anton Armin A.")
 
     @as_users("garcia")
-    def test_profile_link(self, user: CdEDBObject) -> None:
+    def test_profile_link(self) -> None:
         # Test if I can view the profile of searchable members
         self.get('/event/event/1/registration/5/show')
         self.traverse({'description': 'DB-100-7'})
@@ -2325,7 +2324,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence("Ich bin ein „Künstler“; im weiteren Sinne.")
 
     @as_users("garcia")
-    def test_lodgements(self, user: CdEDBObject) -> None:
+    def test_lodgements(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/lodgement/overview'})
@@ -2375,7 +2374,7 @@ etc;anything else""", f['entries_2'].value)
                          f['notes'].value)
 
     @as_users("garcia")
-    def test_lodgement_capacities(self, user: CdEDBObject) -> None:
+    def test_lodgement_capacities(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/lodgement/overview'})
@@ -2403,7 +2402,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("53", div="total_regular")
 
     @as_users("garcia")
-    def test_lodgement_groups(self, user: CdEDBObject) -> None:
+    def test_lodgement_groups(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/lodgement/overview'},
@@ -2449,7 +2448,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Altes Schloss")
 
     @as_users("garcia")
-    def test_field_set(self, user: CdEDBObject) -> None:
+    def test_field_set(self) -> None:
         # first for registration-associated fields
         self.get('/event/event/1/field/setselect?kind=1&ids=1,2')
         self.assertTitle("Datenfeld auswählen (Große Testakademie 2222)")
@@ -2531,14 +2530,14 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("elevated level of radiation ")
 
     @as_users("garcia")
-    def test_stats(self, user: CdEDBObject) -> None:
+    def test_stats(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/stats'},)
         self.assertTitle("Statistik (Große Testakademie 2222)")
 
     @as_users("garcia")
-    def test_course_stats(self, user: CdEDBObject) -> None:
+    def test_course_stats(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/course/stats'},)
@@ -2548,7 +2547,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("δ")
 
     @as_users("garcia")
-    def test_course_choices(self, user: CdEDBObject) -> None:
+    def test_course_choices(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/course/choices'},)
@@ -2669,7 +2668,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Emilia")
 
     @as_users("garcia")
-    def test_automatic_assignment(self, user: CdEDBObject) -> None:
+    def test_automatic_assignment(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/course/choices'},)
@@ -2681,7 +2680,7 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
 
     @as_users("garcia")
-    def test_course_choices_filter_persistence(self, user: CdEDBObject) -> None:
+    def test_course_choices_filter_persistence(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/course/choices'},)
@@ -2715,7 +2714,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence("Inga")
 
     @as_users("garcia")
-    def test_course_choices_problems(self, user: CdEDBObject) -> None:
+    def test_course_choices_problems(self) -> None:
         self.traverse({'href': '/event/$'}, {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/course/choices'}, )
         self.assertTitle("Kurswahlen (Große Testakademie 2222)")
@@ -2753,7 +2752,7 @@ etc;anything else""", f['entries_2'].value)
                             div="notifications")
 
     @as_users("garcia")
-    def test_assignment_checks(self, user: CdEDBObject) -> None:
+    def test_assignment_checks(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/course/choices'},
@@ -2789,7 +2788,7 @@ etc;anything else""", f['entries_2'].value)
 
     @storage
     @as_users("garcia")
-    def test_downloads(self, user: CdEDBObject) -> None:
+    def test_downloads(self) -> None:
         magic_bytes = {
             'pdf': b"%PDF",
             'targz': b"\x1f\x8b",
@@ -2895,7 +2894,7 @@ etc;anything else""", f['entries_2'].value)
 
     @storage
     @as_users("garcia")
-    def test_download_export(self, user: CdEDBObject) -> None:
+    def test_download_export(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'})
         self.assertTitle("Große Testakademie 2222")
@@ -2917,7 +2916,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual(expectation, result)
 
     @as_users("garcia")
-    def test_download_csv(self, user: CdEDBObject) -> None:
+    def test_download_csv(self) -> None:
 
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
@@ -2953,7 +2952,7 @@ etc;anything else""", f['entries_2'].value)
                                    for row in result))
 
     @as_users("berta")
-    def test_no_downloads(self, user: CdEDBObject) -> None:
+    def test_no_downloads(self) -> None:
         self.traverse({'description': 'Veranstaltungen'},
                       {'description': 'CdE-Party 2050'},
                       {'description': 'Downloads'})
@@ -3002,7 +3001,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence('documentclass')
 
     @as_users("garcia")
-    def test_questionnaire_manipulation(self, user: CdEDBObject) -> None:
+    def test_questionnaire_manipulation(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/change'})
@@ -3058,7 +3057,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("Input", f['title_5'].value)
 
     @as_users("garcia")
-    def test_questionnaire_reorder(self, user: CdEDBObject) -> None:
+    def test_questionnaire_reorder(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/questionnaire/config'},
@@ -3099,7 +3098,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("", f['field_id_3'].value)
 
     @as_users("garcia")
-    def test_checkin(self, user: CdEDBObject) -> None:
+    def test_checkin(self) -> None:
         # multi-part
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
@@ -3122,7 +3121,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertNotIn('checkinform7', self.response.forms)
 
     @as_users("garcia")
-    def test_checkin_concurrent_modification(self, user: CdEDBObject) -> None:
+    def test_checkin_concurrent_modification(self) -> None:
         # Test the special measures of the 'Edit' button at the Checkin page,
         # that ensure that the checkin state is not overriden by the
         # change_registration form
@@ -3141,7 +3140,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("eingecheckt:")
 
     @as_users("garcia")
-    def test_manage_attendees(self, user: CdEDBObject) -> None:
+    def test_manage_attendees(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/course/list'},
@@ -3159,7 +3158,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence("Inga")
 
     @as_users("garcia")
-    def test_manage_inhabitants(self, user: CdEDBObject) -> None:
+    def test_manage_inhabitants(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/lodgement/overview'},
@@ -3183,7 +3182,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence("Inga")
 
     @as_users("annika", "garcia")
-    def test_lock_event(self, user: CdEDBObject) -> None:
+    def test_lock_event(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'})
         self.assertTitle("Große Testakademie 2222")
@@ -3195,7 +3194,7 @@ etc;anything else""", f['entries_2'].value)
             "Die Veranstaltung ist zur Offline-Nutzung gesperrt.")
 
     @as_users("annika", "garcia")
-    def test_unlock_event(self, user: CdEDBObject) -> None:
+    def test_unlock_event(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'})
         self.assertTitle("Große Testakademie 2222")
@@ -3218,7 +3217,7 @@ etc;anything else""", f['entries_2'].value)
 
     @storage
     @as_users("annika", "garcia")
-    def test_partial_import_normal(self, user: CdEDBObject) -> None:
+    def test_partial_import_normal(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/import'})
@@ -3282,7 +3281,7 @@ etc;anything else""", f['entries_2'].value)
 
     @storage
     @as_users("annika", "garcia")
-    def test_partial_import_interleaved(self, user: CdEDBObject) -> None:
+    def test_partial_import_interleaved(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/import'})
@@ -3309,7 +3308,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("doppelt erstellte Unterkünfte", div="notifications")
 
     @as_users("annika")
-    def test_delete_event(self, user: CdEDBObject) -> None:
+    def test_delete_event(self) -> None:
         self.traverse({'href': '/event'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/part/summary'})
@@ -3341,7 +3340,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence("Testakademie")
 
     @as_users("annika", "garcia")
-    def test_selectregistration(self, user: CdEDBObject) -> None:
+    def test_selectregistration(self) -> None:
         self.get('/event/registration'
                  + '/select?kind=orga_registration&phrase=emil&aux=1')
         expectation = {
@@ -3349,12 +3348,12 @@ etc;anything else""", f['entries_2'].value)
                                'email': 'emilia@example.cde',
                                'id': 2,
                                'name': 'Emilia E. Eventis'}]}
-        if user['id'] != 27:
+        if not self.user_in("annika"):
             del expectation['registrations'][0]['email']
         self.assertEqual(expectation, self.response.json)
 
     @as_users("annika", "garcia")
-    def test_quick_registration(self, user: CdEDBObject) -> None:
+    def test_quick_registration(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'})
         self.assertTitle("Große Testakademie 2222")
@@ -3378,7 +3377,7 @@ etc;anything else""", f['entries_2'].value)
 
     @storage
     @as_users("annika", "garcia")
-    def test_partial_export(self, user: CdEDBObject) -> None:
+    def test_partial_export(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/download'})
@@ -3391,7 +3390,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual(expectation, result)
 
     @as_users("annika", "garcia")
-    def test_partial_idempotency(self, user: CdEDBObject) -> None:
+    def test_partial_idempotency(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/download'})
@@ -3427,7 +3426,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual(first, second)
 
     @as_users("ferdinand")
-    def test_archive(self, user: CdEDBObject) -> None:
+    def test_archive(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'})
         self.assertTitle("Große Testakademie 2222")
@@ -3476,7 +3475,7 @@ etc;anything else""", f['entries_2'].value)
                             div="notifications")
 
     @as_users("anton")
-    def test_archive_without_past_event(self, user: CdEDBObject) -> None:
+    def test_archive_without_past_event(self) -> None:
         self.traverse({'description': 'Veranstaltungen'},
                       {'description': 'CdE-Party 2050'})
         self.assertTitle("CdE-Party 2050")
@@ -3511,7 +3510,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence("CdE-Party 2050")
 
     @as_users("anton")
-    def test_archive_event_purge_persona(self, user: CdEDBObject) -> None:
+    def test_archive_event_purge_persona(self) -> None:
         self.traverse({'description': 'Veranstaltungen'},
                       {'description': 'CyberTestAkademie'})
         self.assertTitle("CyberTestAkademie")
@@ -3554,7 +3553,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence("Daniel")
 
     @as_users("annika")
-    def test_one_track_no_courses(self, user: CdEDBObject) -> None:
+    def test_one_track_no_courses(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'description': 'Alle Veranstaltungen'},
                       {'description': 'CdE-Party 2050'})
@@ -3624,7 +3623,7 @@ etc;anything else""", f['entries_2'].value)
         # now check ...
         for user in {'charly', 'daniel'}:
             self.logout()
-            self.login(USER_DICT[user])
+            self.login(user)
             self.traverse({'href': '/event/event/1/register'})
             f = self.response.forms['registerform']
             f['parts'] = ['1', '3']
@@ -3637,7 +3636,7 @@ etc;anything else""", f['entries_2'].value)
 
             # ... the registration mail ...
             # ... as member
-            if user == 'charly':
+            if self.user_in('charly'):
                 self.assertNotIn(pay_request, text)
                 self.assertNotIn(iban, text)
                 self.assertNotIn(no_member_surcharge, text)
@@ -3649,7 +3648,7 @@ etc;anything else""", f['entries_2'].value)
 
             # ... the registration page ...
             # ... as member
-            if user == 'charly':
+            if self.user_in('charly'):
                 self.assertNotIn(pay_request, text)
                 self.assertNotIn(iban, text)
                 self.assertNotIn(no_member_surcharge, text)
@@ -3660,7 +3659,7 @@ etc;anything else""", f['entries_2'].value)
                 self.assertIn(no_member_surcharge, text)
 
     @as_users("garcia")
-    def test_no_choices(self, user: CdEDBObject) -> None:
+    def test_no_choices(self) -> None:
         """This is a regression test for #1224, #1271 and #1395."""
         self.traverse({"description": "Veranstaltungen"},
                       {"description": "Große Testakademie 2222"},
@@ -3689,7 +3688,7 @@ etc;anything else""", f['entries_2'].value)
 
     @as_users("anton")
     # @prepsql("UPDATE event.events SET registration_start = now() WHERE id = 2")
-    def test_archived_participant(self, user: CdEDBObject) -> None:
+    def test_archived_participant(self) -> None:
         self.get("/event/event/2/registration/add")
         f = self.response.forms["addregistrationform"]
         f["persona.persona_id"] = USER_DICT["charly"]["DB-ID"]

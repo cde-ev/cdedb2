@@ -113,7 +113,7 @@ class TestParseFrontend(FrontendTest):
 
     @storage
     @as_users("farin")
-    def test_parse_statement(self, user: CdEDBObject) -> None:
+    def test_parse_statement(self) -> None:
         self.get("/cde/parse")
         self.assertTitle("Kontoauszug parsen")
         f = self.response.forms["statementform"]
