@@ -45,7 +45,7 @@ TESTTMPDIR ?= ${CDEDB_TEST_TMP_DIR}
 TESTSTORAGEPATH ?= $(TESTTMPDIR)/storage
 TESTLOGPATH ?= $(TESTTMPDIR)/logs
 THREADID ?= 1
-XSS_PAYLOAD ?= <script>abcdef</script>
+XSS_PAYLOAD ?= $(or ${CDEDB_TEST_XSS_PAYLOAD}, <script>abcdef</script>)
 I18NDIR ?= ./i18n
 
 doc:
@@ -256,9 +256,7 @@ endif
 	$(PSQL) -f tests/ancillary_files/sample_data_xss.sql --dbname=${TESTDATABASENAME}
 
 xss-check:
-	$(PYTHONBIN) -m bin.escape_fuzzing --verbose --dbname ${TESTDATABASENAME} \
-		--payload "${XSS_PAYLOAD}"
-# with check-script: $(PYTHONBIN) -m tests.check --thread_id $(THREADID) --xss-check
+	$(PYTHONBIN) -m tests.check --thread_id $(THREADID) --xss-check --verbose
 
 dump-html: export SCRAP_ENCOUNTERED_PAGES=1
 dump-html:

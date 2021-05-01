@@ -282,7 +282,6 @@ class BasicTest(unittest.TestCase):
 
 class CdEDBTest(BasicTest):
     """Reset the DB for every test."""
-    testfile_dir = pathlib.Path("/tmp/cdedb-store/testfiles")
 
     def setUp(self) -> None:
         with setup(

@@ -6,7 +6,7 @@ import pathlib
 import subprocess
 import sys
 import unittest
-from typing import List
+from typing import List, Tuple
 
 from tests.helpers import MyTextTestResult, MyTextTestRunner, check_test_setup
 
@@ -20,16 +20,25 @@ def _prepare_check(thread_id: int = 1) -> None:
     subprocess.run(('make', 'prepare-check'), check=True, stdout=subprocess.DEVNULL)
 
 
-def check_xss(thread_id: int = 1, manual_preparation: bool = False) -> int:
-    """run xss checks as implemented in bin/escape_fuzzing.py"""
+def check_xss(payload: str, thread_id: int = 1, verbose: bool = False,
+              manual_preparation: bool = False) -> int:
+    """Check for XSS vulnerabilites"""
     if not manual_preparation:
+        os.environ['CDEDB_TEST_XSS_PAYLOAD'] = payload
         _prepare_check(thread_id=thread_id)
-        subprocess.run(('make', 'sample-data-xss'), check=True,
-                       stdout=subprocess.DEVNULL)
-    subprocess.run(('make', 'storage-test'), check=True, stdout=subprocess.DEVNULL)
-    # TODO: refactor xss test script and import as function instead of subprocess call
-    xss_run = subprocess.run(('python3', '-m', 'bin.escape_fuzzing'))
-    return xss_run.returncode
+        subprocess.run(('make', 'storage-test'), check=True, stdout=subprocess.DEVNULL)
+        subprocess.run(('make', 'sql-xss'), check=True, stdout=subprocess.DEVNULL)
+    check_test_setup()
+
+    command: Tuple[str, ...] = (
+        'python3', '-m', 'bin.escape_fuzzing', '--payload', payload,
+        '--dbname', os.environ['CDEDB_TEST_DATABASE'],
+        '--storage-dir', os.environ['CDEDB_TEST_TMP_DIR'] + '/storage'
+    )
+    if verbose:
+        command = command + ('--verbose', )
+    ret = subprocess.run(command)
+    return ret.returncode
 
 
 def run_testsuite(testpatterns: List[str] = None, *, thread_id: int = 1,
@@ -62,19 +71,27 @@ if __name__ == '__main__':
     # TODO: some of the help texts can be improved
     parser = argparse.ArgumentParser()
     parser.add_argument('testpatterns', default="", nargs="*")
-    parser.add_argument('--manual-preparation', action='store_true',
+
+    test_options = parser.add_argument_group("general options")
+    test_options.add_argument('--manual-preparation', action='store_true',
                         help="don't do test preparation")
-    parser.add_argument('--xss-check', '--xss', action='store_true',
-                        help="check for xss vulnerabilities (Note that this ignores most"
-                             " other options, like --threads or -v and -q.)")
-    thread_options = parser.add_mutually_exclusive_group()
+    thread_options = test_options.add_mutually_exclusive_group()
     thread_options.add_argument(
         '--thread_id', type=int, choices=(1, 2, 3, 4), default=1, metavar="INT",
         help="ID of thread to use for run (this is useful if you manually start"
              " multiple test suite runs in parallel)")
     thread_options.add_argument('--threads', type=int, choices=(1, 2, 3), default=1,
                                 metavar="NUMBER", help="number of threads to use")
-    # TODO: implement verbosity settings -v and -q
+
+    xss_options = parser.add_argument_group("XSS Options")
+    xss_options.add_argument('--xss-check', '--xss', action='store_true',
+                             help="check for xss vulnerabilities (Note that this"
+                                  " ignores some other options, like --threads)")
+    xss_options.add_argument('--payload', type=str, default='<script>abcdef</script>',
+                             help="Payload string to use for xss vulnerability check")
+
+    parser.add_argument('--verbose', '-v', action='store_true')
+    # TODO: implement verbosity settings -v and -q (-v currently only used for xss)
     args = parser.parse_args()
 
     # for debugging
@@ -86,7 +103,7 @@ if __name__ == '__main__':
     # TODO: implement some kind of lock mechanism, which prevents race conditions by
     #  prohibiting parallel runs with the same thread_id
     if args.xss_check:
-        return_code = check_xss(thread_id=args.thread_id,
+        return_code = check_xss(args.payload, thread_id=args.thread_id, verbose=args.verbose,
                                 manual_preparation=args.manual_preparation)
     else:
         return_code = run_testsuite(args.testpatterns, thread_id=args.thread_id,
