@@ -23,7 +23,7 @@ import time
 import unittest
 import urllib.parse
 from typing import (
-    Any, AnyStr, Callable, ClassVar, Collection, Dict, Iterable, List, MutableMapping,
+    Any, AnyStr, Callable, ClassVar, Dict, Iterable, List, Mapping, MutableMapping,
     NamedTuple, Optional, Pattern, Sequence, Set, Tuple, Type, TypeVar, Union, cast,
     no_type_check,
 )
@@ -41,7 +41,7 @@ from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.common import (
     ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, CdEDBObject, CdEDBObjectMap, PathLike,
-    PrivilegeError, RequestState, n_, nearly_now, now, roles_to_db_role, merge_dicts,
+    PrivilegeError, RequestState, nearly_now, now, roles_to_db_role, merge_dicts,
 )
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
