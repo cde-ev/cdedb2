@@ -8,6 +8,11 @@ import sys
 import unittest
 from typing import List, Tuple
 
+# the directory containing the cdedb and tests modules
+root = pathlib.Path(__file__).absolute().parent.parent
+# add it to sys.path to make this script executable directly from everywhere
+sys.path.append(str(root))
+
 from tests.helpers import MyTextTestResult, MyTextTestRunner, check_test_setup
 
 
@@ -52,9 +57,6 @@ def run_testsuite(testpatterns: List[str] = None, *, thread_id: int = 1,
         # when no/empty pattern given, run full suite
         testpatterns = ["*"]
 
-    # the directory containing the cdedb and tests modules
-    root = pathlib.Path(__file__).absolute().parent.parent
-
     unittest.defaultTestLoader.testNamePatterns = [
         pattern if "*" in pattern else f"*{pattern}*" for pattern in testpatterns]
     all_tests = unittest.defaultTestLoader.discover('tests', top_level_dir=str(root))
@@ -69,12 +71,13 @@ def run_testsuite(testpatterns: List[str] = None, *, thread_id: int = 1,
 if __name__ == '__main__':
     # parse arguments
     # TODO: some of the help texts can be improved
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="Entry point to CdEDB's"
+                                                 " testing facilities.")
     parser.add_argument('testpatterns', default="", nargs="*")
 
     test_options = parser.add_argument_group("general options")
     test_options.add_argument('--manual-preparation', action='store_true',
-                        help="don't do test preparation")
+                              help="don't do test preparation")
     thread_options = test_options.add_mutually_exclusive_group()
     thread_options.add_argument(
         '--thread_id', type=int, choices=(1, 2, 3, 4), default=1, metavar="INT",
@@ -90,7 +93,8 @@ if __name__ == '__main__':
     xss_options.add_argument('--payload', type=str, default='<script>abcdef</script>',
                              help="Payload string to use for xss vulnerability check")
 
-    parser.add_argument('--verbose', '-v', action='store_true')
+    parser.add_argument('--verbose', '-v', action='store_true',
+                        help="more detailed output")
     # TODO: implement verbosity settings -v and -q (-v currently only used for xss)
     args = parser.parse_args()
 
@@ -103,7 +107,8 @@ if __name__ == '__main__':
     # TODO: implement some kind of lock mechanism, which prevents race conditions by
     #  prohibiting parallel runs with the same thread_id
     if args.xss_check:
-        return_code = check_xss(args.payload, thread_id=args.thread_id, verbose=args.verbose,
+        return_code = check_xss(args.payload, thread_id=args.thread_id,
+                                verbose=args.verbose,
                                 manual_preparation=args.manual_preparation)
     else:
         return_code = run_testsuite(args.testpatterns, thread_id=args.thread_id,
