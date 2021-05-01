@@ -31,6 +31,7 @@ To check odbc functionality we use the following command::
 
 We need some additional info inside the SQL database. Here the necessary
 additions to cdedb/database/cdedb-tables.sql (untested)::
+
     ---
     --- ldap stuff (in public schema)
     ---
@@ -94,6 +95,7 @@ additions to cdedb/database/cdedb-tables.sql (untested)::
 We now configure the SQL-backend for LDAP via a corresponding LDIF file (as
 is necessary according to the cn=config mechanism). Current state of the
 content of our sql-ldap.ldif::
+
     # backend definition
     dn: olcBackend=sql,cn=config
     changetype: add
@@ -132,7 +134,7 @@ Unfortunately this results in a rather terse error message::
 References
 ----------
 
-* `https://github.com/peppelinux/django-slapd-sql`__
-* `https://linux.die.net/man/5/slapd-sql`__
-* `http://www.flatmtn.com/article/setting-ldap-back-sql.html`__
-* `https://www.openldap.org/faq/data/cache/978.html`__
+* https://github.com/peppelinux/django-slapd-sql
+* https://linux.die.net/man/5/slapd-sql
+* http://www.flatmtn.com/article/setting-ldap-back-sql.html
+* https://www.openldap.org/faq/data/cache/978.html
