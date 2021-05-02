@@ -3,14 +3,10 @@
 """
 This script tries to verify successful XSS mitigation, i.e. HTML escaping.
 
-First, load manually the special sample data, which contains the magic
-token "<script>abcdef</script>" in every user definable string:
-
-TODO: the following commands have to be adjusted after #1834 is ready
-    make sample-data-test
-    sudo -u cdb psql -U cdb -d cdb_test -f tests/ancillary_files/clean_data.sql
-    sudo -u cdb psql -U cdb -d cdb_test
-        -f tests/ancillary_files/sample_data_escaping.sql
+It has some requirements, most importantly the storage directory to be
+existing and the environment variable CDEDB_TEST to be truthy. Thus, it is not
+recommended to run it directly, but invoke it via `make xss-check` or
+`tests/check.py --xss-check`. See also the documentation.
 
 This script logs in as Anton (our testing meta admin account) and traverses all
 links and forms it can find. In every response it checks for the magic string
@@ -23,11 +19,6 @@ not visits any page in any possible state with any possible request data. For
 example the following things not taken into account:
   * locked events
   * form submits with some valid data and only some values set to to the payload
-
-To avoid confusion by the error output of the cdedb, you may want to execute
-this script, as follows:
-
-   python3 -m bin.escape_fuzzing 2>/dev/null
 """
 import argparse
 import itertools

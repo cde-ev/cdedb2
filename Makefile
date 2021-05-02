@@ -230,19 +230,19 @@ check-parallel:
 	# TODO: move this logic into tests/check.py
 	# TODO: using inverse regex arguments possible? Would be helpful for not overlooking some tests
 	# sleeping is necessary here that the i18n-refresh runs at the very beginning to not interfere
-	$(PYTHONBIN) -m tests.check --thread_id 2 \
+	$(PYTHONBIN) -m tests.check --thread-id 2 \
 		test_backend test_common test_config test_database test_offline test_script test_session \
 		test_validation test_vote_verification & \
 	sleep 0.5; \
-	$(PYTHONBIN) -m tests.check --thread_id 4 \
+	$(PYTHONBIN) -m tests.check --thread-id 4 \
 		frontend_event frontend_ml frontend_privacy frontend_parse & \
 	sleep 0.5; \
-	$(PYTHONBIN) -m tests.check --thread_id 3 \
+	$(PYTHONBIN) -m tests.check --thread-id 3 \
 		frontend_application frontend_assembly frontend_common frontend_core frontend_cde \
 		frontend_cron
 
 check:
-	$(PYTHONBIN) -m tests.check --thread_id $(THREADID) $(or $(TESTPATTERNS), )
+	$(PYTHONBIN) -m tests.check --thread-id $(THREADID) $(or $(TESTPATTERNS), )
 
 sql-xss: tests/ancillary_files/sample_data_xss.sql
 ifneq ($(wildcard /CONTAINER),/CONTAINER)
@@ -256,11 +256,11 @@ endif
 	$(PSQL) -f tests/ancillary_files/sample_data_xss.sql --dbname=${TESTDATABASENAME}
 
 xss-check:
-	$(PYTHONBIN) -m tests.check --thread_id $(THREADID) --xss-check --verbose
+	$(PYTHONBIN) -m tests.check --thread-id $(THREADID) --xss-check --verbose
 
 dump-html: export SCRAP_ENCOUNTERED_PAGES=1
 dump-html:
-	$(PYTHONBIN) -m tests.check --thread_id $(THREADID) test_frontend
+	$(PYTHONBIN) -m tests.check --thread-id $(THREADID) test_frontend
 
 
 validate-html: /opt/validator/vnu-runtime-image/bin/vnu
@@ -288,7 +288,7 @@ VALIDATORCHECKSUM := "c7d8d7c925dbd64fd5270f7b81a56f526e6bbef0 $\
 .coverage: $(wildcard cdedb/*.py) $(wildcard cdedb/database/*.py) \
 		$(wildcard cdedb/frontend/*.py) \
 		$(wildcard cdedb/backend/*.py) $(wildcard tests/*.py)
-	$(COVERAGE) run -m tests.check --thread_id $(THREADID)
+	$(COVERAGE) run -m tests.check --thread-id $(THREADID)
 
 coverage: .coverage
 	$(COVERAGE) report --include 'cdedb/*' --show-missing

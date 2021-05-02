@@ -80,7 +80,7 @@ if __name__ == '__main__':
                               help="don't do test preparation")
     thread_options = test_options.add_mutually_exclusive_group()
     thread_options.add_argument(
-        '--thread_id', type=int, choices=(1, 2, 3, 4), default=1, metavar="INT",
+        '--thread-id', type=int, choices=(1, 2, 3, 4), default=1, metavar="INT",
         help="ID of thread to use for run (this is useful if you manually start"
              " multiple test suite runs in parallel)")
     thread_options.add_argument('--threads', type=int, choices=(1, 2, 3), default=1,
@@ -88,8 +88,9 @@ if __name__ == '__main__':
 
     xss_options = parser.add_argument_group("XSS Options")
     xss_options.add_argument('--xss-check', '--xss', action='store_true',
-                             help="check for xss vulnerabilities (Note that this"
-                                  " ignores some other options, like --threads)")
+                             help="check for xss vulnerabilities as implemented in "
+                                  "bin/escape_fuzzing.py (Note that this ignores some"
+                                  " other options, like --threads)")
     xss_options.add_argument('--payload', type=str, default='<script>abcdef</script>',
                              help="Payload string to use for xss vulnerability check")
 
