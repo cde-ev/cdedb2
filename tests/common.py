@@ -678,9 +678,9 @@ def execsql(sql: AnyStr) -> None:
     mode = 'w'
     if isinstance(sql, bytes):
         mode += 'b'
-    with tempfile.TemporaryDirectory() as tmpdir:
-        with open(pathlib.Path(tmpdir) / "cdedb-test.sql", mode=mode) as sql_file:
-            sql_file.write(sql)
+    with tempfile.NamedTemporaryFile(mode=mode, suffix='.sql') as sql_file:
+        sql_file.write(sql)
+        sql_file.flush()
         subprocess.run(psql + ("--file", sql_file.name), stdout=subprocess.DEVNULL,
                        start_new_session=True, check=True)
 
