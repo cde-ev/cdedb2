@@ -99,12 +99,6 @@ if __name__ == '__main__':
     # TODO: implement verbosity settings -v and -q (-v currently only used for xss)
     args = parser.parse_args()
 
-    # for debugging
-    print("#" * 80)
-    print("Called with arguments:")
-    print(args)
-    print("#" * 80)
-
     # TODO: implement some kind of lock mechanism, which prevents race conditions by
     #  prohibiting parallel runs with the same thread_id
     if args.xss_check:
