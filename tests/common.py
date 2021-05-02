@@ -675,9 +675,8 @@ def execsql(sql: AnyStr) -> None:
     """Execute arbitrary SQL-code on the test database."""
     psql = ("/cdedb2/bin/execute_sql_script.py",
             "--username", "cdb", "--dbname", os.environ['CDEDB_TEST_DATABASE'])
-    mode = 'w'
-    if isinstance(sql, bytes):
-        mode += 'b'
+    # TODO: remove the type: ignore in a newer mypy version (0.800 or higher)
+    mode = 'wb' if isinstance(sql, bytes) else 'w' # type: ignore
     with tempfile.NamedTemporaryFile(mode=mode, suffix='.sql') as sql_file:
         sql_file.write(sql)
         sql_file.flush()
