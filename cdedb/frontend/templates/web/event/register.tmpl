@@ -16,11 +16,18 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher",
-                        readonly=not (ambience['event']['is_visible']
-                                      or ambience['event']['id'] in user.orga
-                                      or user.admin_views.intersection(('event_orga', 'event_mgmt')))) }}
-{{ util.breadcrumb_link(cdedblink("event/register"), gettext("Register"), active=True) }}
+{% if not preview %}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher",
+                            readonly=not (ambience['event']['is_visible']
+                                          or ambience['event']['id'] in user.orga
+                                          or user.admin_views.intersection(('event_orga', 'event_mgmt')))) }}
+    {{ util.breadcrumb_link(cdedblink("event/register"), gettext("Register"), active=True) }}
+{% else %}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+    {{ util.breadcrumb_link(cdedblink("event/configure_registration"), gettext("Configure Registration")) }}
+    {{ util.breadcrumb_link(cdedblink("event/register", {"preview": True}),
+                            gettext("Registration Preview"), active=True) }}
+{% endif %}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
