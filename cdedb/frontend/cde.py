@@ -321,7 +321,8 @@ class CdEFrontend(AbstractUserFrontend):
         field's name.
         """
         current = tuple(rs.retrieve_validation_errors())
-        rs.replace_validation_errors([('qval_' + k, v) for k, v in current])
+        rs.replace_validation_errors(
+            [('qval_' + k, v) for k, v in current])  # type: ignore[operator]
         rs.ignore_validation_errors()
 
     @access("core_admin", "cde_admin")

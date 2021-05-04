@@ -74,7 +74,7 @@ DeletionBlockers = Dict[str, List[int]]
 
 # Pseudo error objects used to display errors in the frontend. First argument
 # is the field that contains the error, second argument is the error itself.
-Error = Tuple[str, Exception]
+Error = Tuple[Optional[str], Exception]
 
 # A notification to be displayed. First argument ist the notification type
 # (warning, info, error, success, question). Second argument is the message.
