@@ -57,10 +57,10 @@
     </p>
 
     {% if preview %}
+    <form class="form-horizontal">
+    {% else %}
     <form action="{{ cdedblink('event/register') }}" method="POST" id="registerform" class="form-horizontal">
         {{ util.anti_csrf_token('event/register') }}
-    {% else %}
-        <div class="form-horizontal">
     {% endif %}
 
         {% if ambience['event']['registration_text'] %}
@@ -162,11 +162,8 @@
         {% if not preview %}
         {{ util.form_input_submit(label=gettext("Register"), cancellink=cdedblink('event/show_event')) }}
         {% endif %}
-    {% if preview %}
-    </div>
-    {% else %}
     </form>
-    {% endif %}
+
     <script nonce="{{ csp_nonce }}">
         var $form = $('#registerform');
         $form.cdedbProtectChanges();
