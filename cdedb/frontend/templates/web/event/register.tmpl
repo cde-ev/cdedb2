@@ -1,6 +1,7 @@
 {% set sidenav_active='event_configure_registration' if preview else 'event_register' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/event/generic.tmpl" as generic with context %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% block title %}
     {% if preview %}
@@ -125,32 +126,8 @@
             </div>
         {% endif %}
 
-        {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
-            {% set course_list = course_choices[track_id] %}
-            {% if track['num_choices'] %}
-                <div id="course_choice_container-{{ track_id }}" class="course_choice_container"
-                     data-part="{{ track['part_id'] }}">
-                    <h4>
-                        {% trans %}Course Choices{% endtrans %}
-                        {% if course_choices|length > 1 %}
-                            {% trans track=track['title'] %}
-                            	for {{ track }}
-                            {% endtrans %}
-                        {% endif %}
-                    </h4>
-
-                    {% set course_entries = courses|keydictsort(EntitySorter.course)
-                                            |xdict_entries('{id}', '{nr}. {title}', include=course_list) %}
-                    {% for i in range(track['num_choices']) %}
-                        {{ util.form_input_select(name="course_choice{}_{}".format(track_id, i), nulloption=nbsp,
-                                                  label=gettext("%s. Choice")|format(i + 1), entries=course_entries) }}
-                    {% endfor %}
-
-                    {{ util.form_input_select(name="course_instructor{}".format(track_id), entries=course_entries,
-                                              nulloption=gettext("– I am not an Instructor –"), label=gettext("Instructor"),
-                                              info=gettext("If you are instructing a course, please specify which one.")) }}
-                </div>
-            {% endif %}
+        {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) if track['num_choices'] %}
+            {{ generic.select_course_choice(track, courses, course_choices) }}
         {% endfor %}
 
         <h3 class="heading-underline">{% trans %}Additional Information{% endtrans %}</h3>

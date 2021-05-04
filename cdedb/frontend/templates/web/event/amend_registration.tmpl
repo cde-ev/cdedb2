@@ -1,6 +1,7 @@
 {% set sidenav_active='event_register' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/event/generic.tmpl" as generic with context %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
@@ -29,25 +30,7 @@
         {{ util.anti_csrf_token('event/amend_registration') }}
 
         {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) if track_id in involved_tracks and track['num_choices'] %}
-            {% set course_list = course_choices[track_id] %}
-            <h4>
-                {% trans %}Course Choices{% endtrans %}
-                {% if course_choices|length > 1 %}
-                    {% trans title=track['title'] %}for {{ title }}{% endtrans %}
-                {% endif %}
-            </h4>
-
-            {% set course_entries = courses|keydictsort(EntitySorter.course)
-                                    |xdict_entries('{id}', '{nr}. {title}', include=course_list) %}
-            {% for i in range(track['num_choices']) %}
-                {{ util.form_input_select(name="course_choice{}_{}".format(track_id, i), nulloption=nbsp,
-                                          label=gettext("%s. Choice")|format(i + 1), entries=course_entries,
-                                          readonly=readonly, info=(gettext("Optional choice") if i >= track['min_choices'] else "")) }}
-            {% endfor %}
-            {{ util.form_input_select(name="course_instructor{}".format(track_id), entries=course_entries,
-                                      nulloption=gettext("– I am not an Instructor –"), label=gettext("Instructor"),
-                                      readonly=readonly,
-                                      info=gettext("If you are instructing a course, please specify which one.")) }}
+            {{ generic.select_course_choice(track, courses, course_choices) }}
         {% endfor %}
 
         {% if not age.may_mix() %}
