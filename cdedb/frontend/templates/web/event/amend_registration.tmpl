@@ -33,33 +33,8 @@
             {{ generic.select_course_choice(track, courses, course_choices) }}
         {% endfor %}
 
-        {% if not age.may_mix() %}
-            {{ util.form_input_static(label=gettext("Mixed Lodging"), value=gettext("Mixed Lodging not possible.")) }}
-            {{ util.input_hidden(name="mixed_lodging", value=False) }}
-        {% else %}
-            {% if age.is_minor() %}
-                {% set mix_info = gettext("The selection must be compatible with the parental consent form.") %}
-            {% else %}
-                {% set mix_info = "" %}
-            {% endif %}
-            {{ util.form_input_select(name="mixed_lodging", entries=(
-                (True, gettext("I agree to mixed lodging.")),
-                (False, gettext("I want to be lodged separated by gender."))),
-                label=gettext("Mixed Lodging"), info=mix_info, readonly=readonly) }}
-        {% endif %}
-        {{ util.form_input_checkbox(name="list_consent", label=gettext(
-                "I agree that my data, including my name, address and my email, may be sent "
-                "to other participants of this event beforehand.")) }}
+        {{ generic.additional_registration_choices(age, reg_questionnaire) }}
 
-        {% if reg_questionnaire %}
-            {% for entry in reg_questionnaire %}
-                {% if entry['kind'] == enums['QuestionnaireUsages'].registration %}
-                    {{ util.print_questionnaire_entry(entry) }}
-                {% endif %}
-            {% endfor %}
-        {% endif %}
-
-        {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="5", readonly=readonly) }}
         {{ util.form_input_submit(label=gettext("Save"), readonly=readonly,
                                   cancellink=cdedblink("event/registration_status")) }}
     </form>
