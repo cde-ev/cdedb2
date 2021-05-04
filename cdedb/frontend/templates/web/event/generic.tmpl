@@ -43,8 +43,6 @@
 #}
 {% macro additional_registration_choices(age, reg_questionnaire) %}
 
-    <h3 class="heading-underline">{% trans %}Additional Information{% endtrans %}</h3>
-
     {{ util.form_input_checkbox(name="list_consent", defaultvalue='True', label=gettext("Privacy consent"), info=gettext(
             "I agree that my data, including my name, address and my email, may be sent "
             "to other participants of this event beforehand.")) }}

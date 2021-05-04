@@ -140,6 +140,7 @@
             {{ generic.select_course_choice(track, courses, course_choices) }}
         {% endfor %}
 
+        <h3 class="heading-underline">{% trans %}Additional Information{% endtrans %}</h3>
         {{ generic.additional_registration_choices(age, reg_questionnaire) }}
 
         {% call util.form_input_general(displayerrors=False) %}
