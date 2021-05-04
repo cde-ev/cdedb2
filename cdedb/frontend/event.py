@@ -4620,7 +4620,7 @@ class EventFrontend(AbstractUserFrontend):
                     regular if sortkey == LodgementsSortkeys.total_regular
                     else camping_mat,)
             elif sortkey == LodgementsSortkeys.title:
-                primary_sort = (lodgement["title"])
+                primary_sort = (lodgement["title"],)
             else:
                 primary_sort = ()
             secondary_sort = EntitySorter.lodgement(lodgement)
