@@ -135,6 +135,7 @@
             </div>
         {% endif %}
 
+        <h3 class="sr-only">{% trans %}Course Choice{% endtrans %}</h3>
         {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) if track['num_choices'] %}
             {{ generic.select_course_choice(track, courses, course_choices) }}
         {% endfor %}
