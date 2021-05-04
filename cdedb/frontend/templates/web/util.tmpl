@@ -767,7 +767,11 @@
     {# Text-only entry #}
     {% else %}
         {% if entry['title'] %}
-            <h3 class="heading-underline">{{ entry['title'] }}</h3>
+            {% if entry['kind'] == enums['QuestionnaireUsages'].additional %}
+                <h3 class="heading-underline">{{ entry['title'] }}</h3>
+            {% else %}
+                <h4 class="heading-underline">{{ entry['title'] }}</h4>
+            {% endif %}
         {% endif %}
         {% if entry['info'] %}
             {{ entry['info']|md }}
