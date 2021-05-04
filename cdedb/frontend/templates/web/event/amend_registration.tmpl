@@ -29,6 +29,12 @@
           class="form-horizontal">
         {{ util.anti_csrf_token('event/amend_registration') }}
 
+        {% if ambience['event']['registration_text'] %}
+            {% call util.bootstrap_panel(title=gettext("Note of the Orga Team"), icon="info-circle", aclass="panel-info") %}
+                {{ ambience['event']['registration_text']|md }}
+            {% endcall %}
+        {% endif %}
+
         {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) if track_id in involved_tracks and track['num_choices'] %}
             {{ generic.select_course_choice(track, courses, course_choices) }}
         {% endfor %}
