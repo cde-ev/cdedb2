@@ -40,10 +40,20 @@ F = TypeVar('F', bound=Callable[..., Any])
 T = TypeVar('T')
 S = TypeVar('S')
 
-Entry = Union[int, str, enum.IntEnum, float, datetime.date, datetime.datetime, None]
-MultiEntry = Union[Entry, Collection[Entry]]
-Entity = Union[int, str]
-Entities = Collection[int]
+# The following are meant to be used for type hinting the sql backend methods.
+# DatabaseValue is for any singular value that should be written into the database or
+# compared to something already stored.
+DatabaseValue = Union[int, str, enum.IntEnum, float, datetime.date, datetime.datetime,
+                      None]
+# DatabaseValue_s is either a singular value or a collection of such values, e.g. to be
+# used with an "ANY(%s)" like comparison.
+DatabaseValue_s = Union[DatabaseValue, Collection[DatabaseValue]]
+# EntityKey is the value of an identifier, most often an id, given to retrieve or
+# delete the corresponding entity from the database.
+EntityKey = Union[int, str]
+# EntityKeys is a collection of identifiers, i.e. ids, given for retrieval or deletion
+# of the corresponding entities. Note that we do not use string identifiers for this.
+EntityKeys = Collection[int]
 
 
 @overload
@@ -284,7 +294,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             return obj
 
     def execute_db_query(self, cur: psycopg2.extensions.cursor, query: str,
-                         params: Sequence[MultiEntry]) -> None:
+                         params: Sequence[DatabaseValue_s]) -> None:
         """Perform a database query. This low-level wrapper should be used
         for all explicit database queries, mostly because it invokes
         :py:meth:`_sanitize_db_input`. However in nearly all cases you want to
@@ -302,14 +312,14 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         cur.execute(query, sanitized_params)
 
     def query_exec(self, rs: RequestState, query: str,
-                   params: Sequence[MultiEntry]) -> int:
+                   params: Sequence[DatabaseValue_s]) -> int:
         """Execute a query in a safe way (inside a transaction)."""
         with rs.conn as conn:
             with conn.cursor() as cur:
                 self.execute_db_query(cur, query, params)
                 return cur.rowcount
 
-    def query_one(self, rs: RequestState, query: str, params: Sequence[MultiEntry]
+    def query_one(self, rs: RequestState, query: str, params: Sequence[DatabaseValue_s]
                   ) -> Optional[CdEDBObject]:
         """Execute a query in a safe way (inside a transaction).
 
@@ -320,7 +330,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                 self.execute_db_query(cur, query, params)
                 return self._sanitize_db_output(cur.fetchone())
 
-    def query_all(self, rs: RequestState, query: str, params: Sequence[MultiEntry]
+    def query_all(self, rs: RequestState, query: str, params: Sequence[DatabaseValue_s]
                   ) -> Tuple[CdEDBObject, ...]:
         """Execute a query in a safe way (inside a transaction).
 
@@ -359,7 +369,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             return 0
         keys = tuple(data[0].keys())
         key_set = set(keys)
-        params: List[Entry] = []
+        params: List[DatabaseValue] = []
         for entry in data:
             if entry.keys() != key_set:
                 raise ValueError(n_("Dict keys do not match."))
@@ -371,7 +381,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         return self.query_exec(rs, query, params)
 
     def sql_select(self, rs: RequestState, table: str, columns: Sequence[str],
-                   entities: Entities, entity_key: str = "id"
+                   entities: EntityKeys, entity_key: str = "id"
                    ) -> Tuple[CdEDBObject, ...]:
         """Generic SQL select query.
 
@@ -388,7 +398,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         return self.query_all(rs, query, (entities,))
 
     def sql_select_one(self, rs: RequestState, table: str, columns: Sequence[str],
-                       entity: Entity, entity_key: str = "id") -> Optional[CdEDBObject]:
+                       entity: EntityKey, entity_key: str = "id") -> Optional[CdEDBObject]:
         """Generic SQL select query for one row.
 
         See :py:meth:`sql_select` for thoughts on this.
@@ -437,7 +447,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         params += (data[entity_key],)
         return self.query_exec(rs, query, params)
 
-    def sql_delete(self, rs: RequestState, table: str, entities: Entities,
+    def sql_delete(self, rs: RequestState, table: str, entities: EntityKeys,
                    entity_key: str = "id") -> int:
         """Generic SQL deletion query.
 
@@ -448,7 +458,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         query = f"DELETE FROM {table} WHERE {entity_key} = ANY(%s)"
         return self.query_exec(rs, query, (entities,))
 
-    def sql_delete_one(self, rs: RequestState, table: str, entity: Entity,
+    def sql_delete_one(self, rs: RequestState, table: str, entity: EntityKey,
                        entity_key: str = "id") -> int:
         """Generic SQL deletion query for a single row.
 
@@ -487,7 +497,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         select = glue(select, ',', QUERY_PRIMARIES[query.scope])
         view = view or QUERY_VIEWS[query.scope]
         q = f"SELECT {'DISTINCT' if distinct else ''} {select} FROM {view}"
-        params: List[Entry] = []
+        params: List[DatabaseValue] = []
         constraints = []
         _ops = QueryOperators
         for field, operator, value in query.constraints:
@@ -670,7 +680,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
 
         # First, define the common WHERE filter clauses
         conditions = []
-        params: List[MultiEntry] = []
+        params: List[DatabaseValue_s] = []
         if codes:
             conditions.append("code = ANY(%s)")
             params.append(codes)
