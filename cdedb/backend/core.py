@@ -1636,7 +1636,7 @@ class CoreBackend(AbstractBackend):
 
     @access("persona")
     def change_username(self, rs: RequestState, persona_id: int,
-                        new_username: Optional[str], password: Optional[str]
+                        new_username: str, password: Optional[str]
                         ) -> Tuple[bool, str]:
         """Since usernames are used for login, this needs a bit of care.
 
@@ -1644,12 +1644,10 @@ class CoreBackend(AbstractBackend):
             is an error message or the new username on success.
         """
         persona_id = affirm(vtypes.ID, persona_id)
-        new_username = affirm_optional(vtypes.Email, new_username)
+        new_username = affirm(vtypes.Email, new_username)
         password = affirm_optional(str, password)
-        if new_username is None and not self.is_relative_admin(rs, persona_id):
-            return False, n_("Only admins may unset an email address.")
         with Atomizer(rs):
-            if new_username and self.verify_existence(rs, new_username):
+            if self.verify_existence(rs, new_username):
                 # abort if there is already an account with this address
                 return False, n_("Name collision.")
             authorized = False
@@ -1670,10 +1668,7 @@ class CoreBackend(AbstractBackend):
                     self.core_log(
                         rs, const.CoreLogCodes.username_change, persona_id,
                         change_note=new_username)
-                    if new_username:
-                        return True, new_username
-                    else:
-                        return True, n_("Username removed.")
+                    return True, new_username
         return False, n_("Failed.")
 
     @access("persona")

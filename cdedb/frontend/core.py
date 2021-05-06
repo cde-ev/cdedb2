@@ -1938,7 +1938,7 @@ class CoreFrontend(AbstractFrontend):
     @access(*REALM_ADMINS, modi={"POST"})
     @REQUESTdata("new_username")
     def admin_username_change(self, rs: RequestState, persona_id: int,
-                              new_username: Optional[vtypes.Email]) -> Response:
+                              new_username: vtypes.Email) -> Response:
         """Change username without verification."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
