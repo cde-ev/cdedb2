@@ -553,20 +553,17 @@ class CoreBackend(AbstractBackend):
 
     @internal
     @access("ml")
-    def list_all_personas(self, rs: RequestState, is_active: bool = False,
-                          valid_email: bool = False) -> Set[int]:
+    def list_all_personas(self, rs: RequestState, is_active: bool = False) -> Set[int]:
         query = "SELECT id from core.personas WHERE is_archived = False"
         if is_active:
             query += " AND is_active = True"
-        if valid_email:
-            query += " AND username IS NOT NULL"
         data = self.query_all(rs, query, params=tuple())
         return {e["id"] for e in data}
 
     @internal
     @access("ml")
-    def list_current_members(self, rs: RequestState, is_active: bool = False,
-                             valid_email: bool = False) -> Set[int]:
+    def list_current_members(self, rs: RequestState, is_active: bool = False
+                             ) -> Set[int]:
         """Helper to list all current members.
 
         Used to determine subscribers of mandatory/opt-out member mailinglists.
@@ -574,8 +571,6 @@ class CoreBackend(AbstractBackend):
         query = "SELECT id from core.personas WHERE is_member = True"
         if is_active:
             query += " AND is_active = True"
-        if valid_email:
-            query += " AND username IS NOT NULL"
         data = self.query_all(rs, query, params=tuple())
         return {e["id"] for e in data}
 
