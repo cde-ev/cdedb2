@@ -17,6 +17,8 @@ following steps to deploy a new revision.
   abort the push. If no such commits are present the push simply
   proceeds. The script accepts the parameter "-d" which enables the dry-run
   mode where no actual push happens.
+  The script also automatically creates a new release tag marked as "release/YYYY-MM-DD"
+  and manually pushes to the "mirror" remote if it is set up.
 
   ::
 
