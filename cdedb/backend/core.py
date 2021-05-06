@@ -1551,24 +1551,26 @@ class CoreBackend(AbstractBackend):
             return ret
 
     @access(*REALM_ADMINS)
-    def dearchive_persona(self, rs: RequestState,
-                          persona_id: int) -> DefaultReturnCode:
+    def dearchive_persona(self, rs: RequestState, persona_id: int, new_username: str
+                          ) -> DefaultReturnCode:
         """Return a persona from the attic to activity.
 
         This does nothing but flip the archiving bit.
         """
         persona_id = affirm(vtypes.ID, persona_id)
+        new_username = affirm(vtypes.Email, new_username)
         with Atomizer(rs):
             update = {
                 'id': persona_id,
                 'is_archived': False,
+                'username': new_username,
             }
             code = self.set_persona(
                 rs, update, generation=None, may_wait=False,
                 change_note="Benutzer aus dem Archiv wiederhergestellt.",
-                allow_specials=("archive",))
+                allow_specials=("archive", "username"))
             self.core_log(rs, const.CoreLogCodes.persona_dearchived, persona_id)
-            return code
+        return code
 
     @access("core_admin")
     def purge_persona(self, rs: RequestState, persona_id: int) -> DefaultReturnCode:

@@ -959,7 +959,8 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(True, data['is_cde_realm'])
         data = self.core.get_total_persona(self.key, persona_id)
         self.assertEqual(True, data['is_archived'])
-        ret = self.core.dearchive_persona(self.key, persona_id)
+        ret = self.core.dearchive_persona(self.key, persona_id,
+                                          new_username="charly@example.cde")
         self.assertLess(0, ret)
         data = self.core.get_total_persona(self.key, persona_id)
         self.assertEqual(False, data['is_archived'])
@@ -1000,7 +1001,8 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(old_ls["account_address"], "")
         self.assertEqual(old_ls["amount"], 0)
         self.assertEqual(old_ls["notes"], ls_data["notes"])
-        self.core.dearchive_persona(self.key, persona_id)
+        self.core.dearchive_persona(self.key, persona_id,
+                                    new_username="charly@example.cde")
 
         # Check that sole moderators cannot be archived.
         self.ml.set_moderators(self.key, 2, {persona_id})
@@ -1014,7 +1016,7 @@ class TestCoreBackend(BackendTest):
     @as_users("vera")
     def test_archive_activate_bug(self) -> None:
         self.core.archive_persona(self.key, 4, "Archived for testing.")
-        self.core.dearchive_persona(self.key, 4)
+        self.core.dearchive_persona(self.key, 4, new_username="daniel@example.cde")
         # The following call sometimes failed with the error "editing
         # archived members impossbile". The solution may be to add some
         # sleep to let the DB settle, but this seems kind of bogus.

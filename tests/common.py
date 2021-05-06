@@ -1386,7 +1386,7 @@ class FrontendTest(BackendTest):
         self.assertTitle("Zelda Zeruda-Hime")
         for key, value in data.items():
             if key not in {'birthday', 'telephone', 'mobile', 'country', 'country2'}:
-                # Omitt values with heavy formatting in the frontend here
+                # Omit values with heavy formatting in the frontend here
                 self.assertPresence(value)
         # Now test archival
         # 1. Archive user
@@ -1412,9 +1412,15 @@ class FrontendTest(BackendTest):
         # 3: Dearchive user
         self.assertTitle("Zelda Zeruda-Hime")
         self.assertPresence("Der Benutzer ist archiviert.", div='archived')
+        self.traverse({'description': "Account wiederherstellen"})
         f = self.response.forms['dearchivepersonaform']
+        self.submit(f, check_notification=False)
+        self.assertValidationError('new_username', "Darf nicht leer sein.")
+        f = self.response.forms['dearchivepersonaform']
+        f['new_username'] = "zeruda@example.cde"
         self.submit(f)
         self.assertTitle("Zelda Zeruda-Hime")
+        self.assertPresence('zeruda@example.cde')
         _check_deleted_data()
 
     def _click_admin_view_button(self, label: Union[str, Pattern[str]],

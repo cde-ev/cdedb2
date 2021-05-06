@@ -91,6 +91,9 @@
                     {{ util.href(cdedblink("core/show_history"), gettext("Change History"),
                             aclass="btn btn-info btn-sm mosp", icon="clock") }}
                 {% endif %}
+            {% elif not ambience['persona']['is_purged'] %}
+                {{ util.href(cdedblink('core/dearchive_persona_form'), gettext("Restore Account"),
+                             aclass="btn btn-success btn-sm mosp", icon="file-upload") }}
             {% endif %}
         </div>
     {% endif %}
@@ -597,26 +600,7 @@ Mitglied.</pre>
                 {% endif %}
 
             {% else %} {# user is archived #}
-                    <div class="row">
-                        <div class="col-sm-4">
-                            <div class="p">
-                                <form action="{{ cdedblink('core/dearchive_persona') }}" method="POST"
-                                      id="dearchivepersonaform" style="display: inline;">
-                                    {{ util.anti_csrf_token('core/dearchive_persona') }}
-                                    {{ util.input_submit(label=gettext("Restore Account"), icon="file-upload",
-                                                         aclass="btn btn-success btn-sm") }}
-                                </form>
-                            </div>
-                        </div>
-                        <div class="col-sm-8">
-                            <p class="text-muted">
-                                {% trans %}
-                                    Restores the archived Account. It will be usable again.
-                                {% endtrans %}
-                            </p>
-                        </div>
-                    </div>
-
+                {# User dearchiving is no immediate action and thus resides at the top of the page. #}
                 {% if "core_admin" in user.roles %}
                     <div class="row">
                         <div class="col-sm-4">
