@@ -305,7 +305,7 @@ class TestAssemblyBackend(BackendTest):
         for key in ('use_bar', 'notes', 'vote_extension_end', 'rel_quorum'):
             expectation[key] = data[key]
         expectation['abs_quorum'] = 0
-        expectation['quorum'] = 11
+        expectation['quorum'] = 10
         expectation['candidates'][6]['title'] = data['candidates'][6]['title']
         expectation['candidates'][6]['shortname'] = data['candidates'][6]['shortname']
         del expectation['candidates'][7]
@@ -386,7 +386,7 @@ class TestAssemblyBackend(BackendTest):
             },
             'description': 'Sind sie sich sicher?',
             'notes': None,
-            'abs_quorum': 11,
+            'abs_quorum': 10,
             'title': 'Verstehen wir Spaß',
             'vote_begin': datetime.datetime(2222, 2, 5, 13, 22, 22, 222222,
                                             tzinfo=pytz.utc),
@@ -404,7 +404,7 @@ class TestAssemblyBackend(BackendTest):
             self.assembly.create_ballot(self.key, data)
 
         # now create the ballot
-        data['abs_quorum'] = 11
+        data['abs_quorum'] = 10
         new_id = self.assembly.create_ballot(self.key, data)
 
         data = {
@@ -474,18 +474,18 @@ class TestAssemblyBackend(BackendTest):
                       cm.exception.args[0])
 
         # Initial quorum should be number of members.
-        self.assertEqual(9, self.assembly.get_ballot(self.key, ballot_id)["quorum"])
+        self.assertEqual(8, self.assembly.get_ballot(self.key, ballot_id)["quorum"])
 
         # Adding a non-member attendee increases the quorum.
         self.assembly.external_signup(self.key, assembly_id, 4)
-        self.assertEqual(10, self.assembly.get_ballot(self.key, ballot_id)["quorum"])
+        self.assertEqual(9, self.assembly.get_ballot(self.key, ballot_id)["quorum"])
 
         # Conclude the ballot.
         time.sleep(2 * delta)
         self.assembly.check_voting_period_extension(self.key, ballot_id)
         # Now adding an attendee does not change the quorum.
         self.assembly.external_signup(self.key, assembly_id, 11)
-        self.assertEqual(10, self.assembly.get_ballot(self.key, ballot_id)["quorum"])
+        self.assertEqual(9, self.assembly.get_ballot(self.key, ballot_id)["quorum"])
 
     def test_extension(self) -> None:
         self.login(USER_DICT['werner'])

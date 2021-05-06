@@ -89,6 +89,8 @@ CREATE TABLE core.personas (
         is_archived             boolean NOT NULL DEFAULT False,
         CONSTRAINT personas_archived_username
             CHECK ((username IS NULL) = is_archived),
+        CONSTRAINT personas_archived_member
+            CHECK (NOT is_member OR NOT is_archived),
         -- signal all remaining information about a user has been cleared.
         -- this can never be undone.
         is_purged               boolean NOT NULL DEFAULT False,

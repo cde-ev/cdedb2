@@ -634,7 +634,7 @@
             "is_event_realm": true,
             "is_ml_realm": true,
             "is_assembly_realm": true,
-            "is_member": true,
+            "is_member": false,
             "is_searchable": true,
             "is_archived": true,
             "is_purged": false,

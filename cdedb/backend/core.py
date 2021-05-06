@@ -1366,7 +1366,7 @@ class CoreBackend(AbstractBackend):
             query = "UPDATE core.personas SET password_hash = %s WHERE id = %s"
             self.query_exec(rs, query, (password_hash, persona_id))
             #
-            # 3. Strip all unnecessary attributes
+            # 3. Strip all unnecessary attributes and mark as archived
             #
             update = {
                 'id': persona_id,
@@ -1390,7 +1390,7 @@ class CoreBackend(AbstractBackend):
                 # 'is_assembly_realm'
                 # 'is_member' already adjusted
                 'is_searchable': False,
-                # 'is_archived' will be done later
+                'is_archived': True,
                 # 'is_purged' not relevant here
                 # 'display_name' kept for later recognition
                 # 'given_names' kept for later recognition
@@ -1515,16 +1515,8 @@ class CoreBackend(AbstractBackend):
             # assembly log stays since assemblies have a separate life cycle
             self.sql_delete(rs, "ml.log", (persona_id,), "persona_id")
             #
-            # 10. Mark archived
+            # 10. Create archival log entry
             #
-            update = {
-                'id': persona_id,
-                'is_archived': True,
-            }
-            self.set_persona(
-                rs, update, generation=None, may_wait=False,
-                change_note="Benutzer archiviert.",
-                allow_specials=("archive",))
             self.core_log(rs, const.CoreLogCodes.persona_archived, persona_id)
             #
             # 11. Clear changelog

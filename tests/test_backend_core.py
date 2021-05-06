@@ -1229,15 +1229,15 @@ class TestCoreBackend(BackendTest):
     @as_users("janis")
     def test_list_personas(self) -> None:
         reality = self.core.list_all_personas(self.key, is_active=True)
-        active_personas = {1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 16, 17, 18, 22,
+        active_personas = {1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 13, 14, 16, 17, 18, 22,
                            23, 27, 32, 48, 100}
         self.assertEqual(active_personas, reality)
         reality = self.core.list_all_personas(self.key, is_active=False)
         self.assertEqual(active_personas | {15}, reality)
         reality = self.core.list_current_members(self.key, is_active=True)
-        self.assertEqual({1, 2, 3, 6, 7, 9, 12, 100}, reality)
+        self.assertEqual({1, 2, 3, 6, 7, 9, 100}, reality)
         reality = self.core.list_current_members(self.key, is_active=False)
-        self.assertEqual({1, 2, 3, 6, 7, 9, 12, 15, 100}, reality)
+        self.assertEqual({1, 2, 3, 6, 7, 9, 15, 100}, reality)
         reality = self.core.list_all_moderators(self.key)
         self.assertEqual({1, 2, 3, 4, 5, 7, 9, 10, 11, 15, 23, 27, 100}, reality)
         MT = const.MailinglistTypes
