@@ -14930,11 +14930,11 @@ msgstr "Réunion"
 
 #: cdedb/i18n_additional.py:534
 msgid "CountryCodes.RO"
-msgstr "Réunion"
+msgstr "Rumänien"
 
 #: cdedb/i18n_additional.py:535
 msgid "CountryCodes.RU"
-msgstr "Rumänien"
+msgstr "Russland"
 
 #: cdedb/i18n_additional.py:536
 msgid "CountryCodes.RW"
