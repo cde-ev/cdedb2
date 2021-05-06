@@ -87,6 +87,8 @@ CREATE TABLE core.personas (
         -- signal a data set of a former member which was stripped of all
         -- non-essential attributes to implement data protection
         is_archived             boolean NOT NULL DEFAULT False,
+        CONSTRAINT personas_archived_username
+            CHECK ((username IS NULL) = is_archived),
         -- signal all remaining information about a user has been cleared.
         -- this can never be undone.
         is_purged               boolean NOT NULL DEFAULT False,
