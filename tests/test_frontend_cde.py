@@ -1225,22 +1225,22 @@ class TestCdEFrontend(FrontendTest):
         for ex, out in zip(expectation, output):
             for piece in ex:
                 self.assertTrue(re.search(piece, out))
-        for i in range(1, 16):
-            if i in (2, 8):
+        for i in range(0, 15):
+            if i in (1, 7):
                 exp = str(LineResolutions.create.value)
             else:
                 exp = ''
             self.assertEqual(exp, f[f'resolution{i}'].value)
         inputdata = f['accounts'].value
-        f['resolution1'] = LineResolutions.skip.value
+        f['resolution0'] = LineResolutions.skip.value
+        f['resolution2'] = LineResolutions.skip.value
         f['resolution3'] = LineResolutions.skip.value
-        f['resolution4'] = LineResolutions.skip.value
-        f['resolution5'] = LineResolutions.renew_and_update.value
-        f['doppelganger_id5'] = '2'
-        f['resolution6'] = LineResolutions.update.value
-        f['doppelganger_id6'] = '4'
-        f['resolution7'] = LineResolutions.renew_and_update.value
-        f['doppelganger_id7'] = '5'
+        f['resolution4'] = LineResolutions.renew_and_update.value
+        f['doppelganger_id4'] = '2'
+        f['resolution5'] = LineResolutions.update.value
+        f['doppelganger_id5'] = '4'
+        f['resolution6'] = LineResolutions.renew_and_update.value
+        f['doppelganger_id6'] = '5'
         inputdata = inputdata.replace("pa99", "pa14")
         inputdata = inputdata.replace(
             "Doomed course from hell", "Swish -- und alles ist gut")
@@ -1248,13 +1248,13 @@ class TestCdEFrontend(FrontendTest):
         inputdata = inputdata.replace("00000", "07751")
         inputdata = inputdata.replace("fPingst", "Pfingst")
         inputdata = inputdata.replace("wSish", "Swish")
-        f['is_orga10'] = True
+        f['is_orga9'] = True
         inputdata = inputdata.replace(wandering_birthday, unproblematic_birthday)
+        f['resolution12'] = LineResolutions.skip.value
         f['resolution13'] = LineResolutions.skip.value
-        f['resolution14'] = LineResolutions.skip.value
-        f['resolution16'] = LineResolutions.renew_and_update.value
-        f['is_instructor16'] = True
-        f['doppelganger_id16'] = '10'
+        f['resolution15'] = LineResolutions.renew_and_update.value
+        f['is_instructor15'] = True
+        f['doppelganger_id15'] = '10'
         f['accounts'] = inputdata
         self.submit(f, check_notification=False)
 
@@ -1320,21 +1320,21 @@ class TestCdEFrontend(FrontendTest):
         inputdata = inputdata.replace('"1a";"Beispiel";"Bertålotta"',
                                       '"Ω";"Beispiel";"Bertålotta"')
         f['accounts'] = inputdata
-        f['resolution5'] = LineResolutions.renew_and_update.value
-        f['doppelganger_id5'] = '2'
-        f['resolution7'] = LineResolutions.create.value
+        f['resolution4'] = LineResolutions.renew_and_update.value
+        f['doppelganger_id4'] = '2'
+        f['resolution6'] = LineResolutions.create.value
+        f['resolution8'] = LineResolutions.create.value
         f['resolution9'] = LineResolutions.create.value
         f['resolution10'] = LineResolutions.create.value
         f['resolution11'] = LineResolutions.create.value
-        f['resolution12'] = LineResolutions.create.value
-        f['resolution15'] = LineResolutions.create.value
+        f['resolution14'] = LineResolutions.create.value
         self.submit(f, check_notification=False)
 
         # third round
         self.assertPresence("Erneut validieren")
         self.assertNonPresence("Anlegen")
         f = self.response.forms['admissionform']
-        self.assertEqual('', f['resolution5'].value)
+        self.assertEqual('', f['resolution4'].value)
         content = self.get_content()
         _, content = content.split(" Zeile 1:")
         output = []
@@ -1383,9 +1383,9 @@ class TestCdEFrontend(FrontendTest):
         for nonex, out in zip(nonexpectation, output):
             for piece in nonex:
                 self.assertFalse(re.search(piece, out))
-        f['resolution5'] = LineResolutions.renew_and_update.value
-        f['doppelganger_id5'] = '2'
-        f['resolution7'] = LineResolutions.renew_and_update.value
+        f['resolution4'] = LineResolutions.renew_and_update.value
+        f['doppelganger_id4'] = '2'
+        f['resolution6'] = LineResolutions.renew_and_update.value
         self.assertEqual('False', f['finalized'].value)
         self.submit(f, check_notification=False)
 
@@ -1393,7 +1393,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Anlegen")
         self.assertNonPresence("Erneut validieren")
         f = self.response.forms['admissionform']
-        self.assertEqual(str(LineResolutions.renew_and_update.value), f['resolution5'].value)
+        self.assertEqual(str(LineResolutions.renew_and_update.value), f['resolution4'].value)
         self.assertEqual('True', f['finalized'].value)
         self.submit(f, check_notification=False)
         self.assertPresence("7 Accounts erstellt.", div="notifications")
@@ -1437,10 +1437,10 @@ class TestCdEFrontend(FrontendTest):
 
         self.assertTitle("Accounts anlegen")
         f = self.response.forms['admissionform']
+        f['resolution0'] = LineResolutions.update.value
+        f['doppelganger_id0'] = "4"
         f['resolution1'] = LineResolutions.update.value
-        f['doppelganger_id1'] = "4"
-        f['resolution2'] = LineResolutions.update.value
-        f['doppelganger_id2'] = "10"
+        f['doppelganger_id1'] = "10"
         self.submit(f, check_notification=False)
 
         self.assertTitle("Accounts anlegen")
@@ -1473,7 +1473,7 @@ class TestCdEFrontend(FrontendTest):
 
         self.assertTitle("Accounts anlegen")
         f = self.response.forms['admissionform']
-        f['resolution1'] = LineResolutions.create.value
+        f['resolution0'] = LineResolutions.create.value
         self.submit(f, check_notification=False)
 
         self.assertTitle("Accounts anlegen")
@@ -1481,8 +1481,8 @@ class TestCdEFrontend(FrontendTest):
         # it would otherwise violate our postgres integrity
         self.assertPresence("Fehler persona: Emailadresse bereits vergeben.")
         f = self.response.forms['admissionform']
-        f['resolution1'] = LineResolutions.update.value
-        f['doppelganger_id1'] = "4"
+        f['resolution0'] = LineResolutions.update.value
+        f['doppelganger_id0'] = "4"
         self.submit(f, check_notification=False)
 
         self.assertTitle("Accounts anlegen")
@@ -1507,7 +1507,7 @@ class TestCdEFrontend(FrontendTest):
 
         self.assertTitle("Accounts anlegen")
         f = self.response.forms['admissionform']
-        f['resolution1'] = LineResolutions.skip.value
+        f['resolution0'] = LineResolutions.skip.value
         self.submit(f, check_notification=False)
 
         self.assertTitle("Accounts anlegen")
