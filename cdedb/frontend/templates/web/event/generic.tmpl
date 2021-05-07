@@ -1,10 +1,10 @@
+{% import "web/util.tmpl" as util with context %}
 {# A macro to generate the form select fields for all course choices of a given track.
 
     track           The track dict of the requested track.
     all_courses     A dict containing all courses of the current event.
     course_choices  A dict containing a mapping from track to a list of ids of all choosable courses.
 #}
-{% import "web/util.tmpl" as util with context %}
 {% macro select_course_choice(track, all_courses, course_choices) %}
 
     <div id="course_choice_container-{{ track['id'] }}" class="course_choice_container" data-part="{{ track['part_id'] }}">
@@ -33,7 +33,7 @@
 
 {# Insert general and additional fields in the registration form, including
     * lodging preference
-    * "Film und Foto Hinweis"
+    * Photo consent
     * Agreement to be visible in online participant list
     * custom orga fields
     * general notes field
@@ -80,7 +80,7 @@
         </div>
     {% endif %}
 
-    {%- if ambience["event"]["is_course_list_visible"] %}
+    {%- if ambience["event"]["tracks"] %}
         {%- set noteslabel = gettext("Notes for Orgas and Instructors") %}
     {%- else %}
         {%- set noteslabel = gettext("Notes for Orgas") %}
