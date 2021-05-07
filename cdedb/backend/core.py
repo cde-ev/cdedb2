@@ -1542,7 +1542,8 @@ class CoreBackend(AbstractBackend):
                           ) -> DefaultReturnCode:
         """Return a persona from the attic to activity.
 
-        This does nothing but flip the archiving bit.
+        This does nothing but flip the archiving bit and set a new username,
+        which makes sure the resulting persona will pass validation.
         """
         persona_id = affirm(vtypes.ID, persona_id)
         new_username = affirm(vtypes.Email, new_username)
