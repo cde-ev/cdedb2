@@ -30,6 +30,8 @@ Darüber hinaus bietet das *Aktion* Dropdown verschiedene Möglichkeiten, wie im
 weiteren Verlauf mit dem Datensatz verfahren werden soll.
 Ein Klick auf die Zeilennummer lässt den Cursor zur entsprechenden Zeile der
 Texteingabe springen.
+Ein Klick auf ein Problem oder eine Warnung lässt den Cursor sogar in das
+entsprechende Feld der entsprechenden Zeile springen.
 
 Die Checkboxen "Orga" und "Kursleiter" markieren den Datensatz als Orga bzw Kursleiter
 in der entsprechenden vergangenen Veranstaltung.
