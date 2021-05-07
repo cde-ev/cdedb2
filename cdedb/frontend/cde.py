@@ -761,10 +761,9 @@ class CdEFrontend(AbstractUserFrontend):
         reader = csv.DictReader(
             accountlines, fieldnames=fields, dialect=CustomCSVDialect())
         data = []
-        # we start the line numbers at one to avoid some confusion with the template
-        lineno = 0
-        for raw_entry in reader:
-            lineno += 1
+        total_account_number = 0
+        for lineno, raw_entry in enumerate(reader):
+            total_account_number += 1
             dataset: CdEDBObject = {'raw': raw_entry}
             params: TypeMapping = {
                 # since we dont know the line numbers on the first submit, we have to
@@ -784,7 +783,7 @@ class CdEFrontend(AbstractUserFrontend):
             dataset['is_orga'] = tmp[f"is_orga{lineno}"]
             dataset['is_instructor'] = tmp[f"is_instructor{lineno}"]
             dataset['old_hash'] = tmp[f"hash{lineno}"]
-            dataset['new_hash'] = get_hash(accountlines[lineno - 1].encode())
+            dataset['new_hash'] = get_hash(accountlines[lineno].encode())
             rs.values[f"hash{lineno}"] = dataset['new_hash']
             dataset['lineno'] = lineno
             data.append(self.examine_for_admission(rs, dataset))
@@ -795,9 +794,11 @@ class CdEFrontend(AbstractUserFrontend):
         for ds1, ds2 in itertools.combinations(data, 2):
             similarity = self.similarity_score(ds1, ds2)
             if similarity == "high":
+                # note that we 0-indexed our lines internally but present them 1-indexed
+                # to the user. So, we need to increase the line number here manually.
                 problem = (None, ValueError(
                     n_("Lines %(first)s and %(second)s are the same."),
-                    {'first': ds1['lineno'], 'second': ds2['lineno']}))
+                    {'first': ds1['lineno']+1, 'second': ds2['lineno']+1}))
                 ds1['problems'].append(problem)
                 ds2['problems'].append(problem)
             elif similarity == "medium":
@@ -820,7 +821,7 @@ class CdEFrontend(AbstractUserFrontend):
                 dataset['resolution'] = LineResolutions.create
                 rs.values[f"resolution{dataset['lineno']}"] = LineResolutions.create.value
 
-        if lineno != len(accountlines):
+        if total_account_number != len(accountlines):
             rs.append_validation_error(
                 ("accounts", ValueError(n_("Lines didn’t match up."))))
         if not membership:

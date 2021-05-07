@@ -82,7 +82,7 @@
                 {{ util.input_hidden("hash{}".format(dataset['lineno'])) }}
                 <strong>
                     <span class="row-key" data-row="{{ dataset['lineno'] }}">
-                        {% trans lineno=dataset['lineno'] %}Line {{ lineno }}{% endtrans -%}
+                        {% trans lineno=dataset['lineno'] + 1 %}Line {{ lineno }}{% endtrans -%}
                     </span>:
                     {{ dataset['raw']['given_names'] }} {{ dataset['raw']['family_name'] }}
                     {% if dataset['raw']['username'] %}
