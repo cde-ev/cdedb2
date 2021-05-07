@@ -1674,7 +1674,7 @@ GERMAN_POSTAL_CODES = {
 
 #: source `https://github.com/umpirsky/country-list/blob/master/data/en/country.csv`
 #:
-#: County codes according to ISO 3166-1.
+#: Country codes according to ISO 3166-1.
 COUNTRY_CODES = [
     "HY",
     "AF", "AX", "AL", "DZ", "AS", "AD", "AO", "AI", "AQ", "AG", "AR", "AM",
