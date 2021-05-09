@@ -146,10 +146,9 @@ Finally we need to create the directory for uploaded data (where
 
 .. note:: For optimal experience you should run::
 
-    mkdir /tmp/cdedb-init/
-    CDEDB_TEST_TMP_DIR=/tmp/cdedb-init/ make storage-test
+    make storage-test
 
-  and copy the resulting uploaded data from ``/tmp/cdedb-init/storage`` to
+  and copy the resulting uploaded data from ``/tmp/cdedb-test-default/storage`` to
   ``/var/lib/cdedb`` and make it owned by the apache user.
 
 Configure the application

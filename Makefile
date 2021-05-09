@@ -42,7 +42,7 @@ SAMPLE_DATA_SQL ?= bin/create_sample_data_sql.py
 # Others
 TESTPREPARATION ?= automatic
 TESTDATABASENAME ?= $(or ${CDEDB_TEST_DATABASE}, cdb_test)
-TESTTMPDIR ?= ${CDEDB_TEST_TMP_DIR}
+TESTTMPDIR ?= $(or ${CDEDB_TEST_TMP_DIR}, /tmp/cdedb-test-default )
 TESTSTORAGEPATH ?= $(TESTTMPDIR)/storage
 TESTLOGPATH ?= $(TESTTMPDIR)/logs
 THREADID ?= 1
