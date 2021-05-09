@@ -338,7 +338,7 @@
         {%- if type == 'date' %}
             value="{{ values.get(name, defaultvalue)|date('%Y-%m-%d', passthrough=True) }}"
         {%- elif type == 'datetime-local' %}
-            value="{{ values.get(name, defaultvalue)|datetime('%Y-%m-%dT%H:%M:%S', passthrough=True) }}"
+            value="{{ values.get(name, defaultvalue)|datetime('%Y-%m-%dT%H:%M', passthrough=True) }}"
         {%- elif type != 'password' %}
             value="{{ values.get(name, defaultvalue) }}"
         {%- endif %}
