@@ -55,12 +55,10 @@ def run_testsuite(testpatterns: List[str] = None, *, thread_id: int = 1,
         _prepare_check(thread_id=thread_id)
     check_test_setup()
 
-    if not testpatterns:
-        # when no/empty pattern given, run full suite
-        testpatterns = ["*"]
-
-    unittest.defaultTestLoader.testNamePatterns = [
-        pattern if "*" in pattern else f"*{pattern}*" for pattern in testpatterns]
+    if testpatterns:  # when no/empty pattern given, specify nothing to run full suite
+        unittest.defaultTestLoader.testNamePatterns = [
+            pattern if "*" in pattern else f"*{pattern}*" for pattern in testpatterns
+        ]
     all_tests = unittest.defaultTestLoader.discover('tests', top_level_dir=str(root))
 
     unittest.installHandler()
