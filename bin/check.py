@@ -12,6 +12,8 @@ from typing import List, Tuple
 root = pathlib.Path(__file__).absolute().parent.parent
 # add it to sys.path to make this script executable directly from everywhere
 sys.path.append(str(root))
+# this is necessary for calling make as subprocess
+os.chdir(root)
 
 from bin.test_runner_helpers import MyTextTestResult, MyTextTestRunner, check_test_setup
 
