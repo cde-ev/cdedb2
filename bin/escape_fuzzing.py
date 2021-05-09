@@ -31,7 +31,7 @@ from typing import Collection, List, NamedTuple, Optional, Set, TYPE_CHECKING
 import webtest
 
 from cdedb.frontend.application import Application
-from tests.helpers import check_test_setup
+from bin.test_runner_helpers import check_test_setup
 
 # Custom type definitions.
 ResponseData = NamedTuple("ResponseData", [("response", webtest.TestResponse),

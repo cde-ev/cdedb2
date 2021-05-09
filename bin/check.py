@@ -13,7 +13,7 @@ root = pathlib.Path(__file__).absolute().parent.parent
 # add it to sys.path to make this script executable directly from everywhere
 sys.path.append(str(root))
 
-from tests.helpers import MyTextTestResult, MyTextTestRunner, check_test_setup
+from bin.test_runner_helpers import MyTextTestResult, MyTextTestRunner, check_test_setup
 
 
 def _prepare_check(thread_id: int = 1) -> None:

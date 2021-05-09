@@ -37,6 +37,7 @@ else
 	PSQL_ADMIN ?= sudo -u postgres psql
 	PSQL ?= sudo -u cdb psql
 endif
+SAMPLE_DATA_SQL ?= bin/create_sample_data_sql.py
 
 # Others
 TESTPREPARATION ?= automatic
@@ -296,12 +297,12 @@ coverage: .coverage
 	@echo "HTML reports for easier inspection are in ./htmlcov"
 
 tests/ancillary_files/sample_data.sql: tests/ancillary_files/sample_data.json \
-		tests/create_sample_data_sql.py cdedb/database/cdedb-tables.sql
+		$(SAMPLE_DATA_SQL) cdedb/database/cdedb-tables.sql
 	SQLTEMPFILE=`sudo -u www-data mktemp` \
 		&& sudo -u www-data chmod +r "$${SQLTEMPFILE}" \
 		&& sudo rm -f /tmp/cdedb*log \
 		&& sudo -u www-data $(PYTHONBIN) \
-			tests/create_sample_data_sql.py \
+			$(SAMPLE_DATA_SQL) \
 			-i tests/ancillary_files/sample_data.json \
 			-o "$${SQLTEMPFILE}" \
 		&& sudo rm -f /tmp/cdedb*log \
@@ -309,12 +310,12 @@ tests/ancillary_files/sample_data.sql: tests/ancillary_files/sample_data.json \
 		&& sudo -u www-data rm "$${SQLTEMPFILE}"
 
 tests/ancillary_files/sample_data_xss.sql: tests/ancillary_files/sample_data.json \
-		tests/create_sample_data_sql.py cdedb/database/cdedb-tables.sql
+		$(SAMPLE_DATA_SQL) cdedb/database/cdedb-tables.sql
 	SQLTEMPFILE=`sudo -u www-data mktemp` \
 		&& sudo -u www-data chmod +r "$${SQLTEMPFILE}" \
 		&& sudo rm -f /tmp/cdedb*log \
 		&& sudo -u www-data $(PYTHONBIN) \
-			tests/create_sample_data_sql.py \
+			$(SAMPLE_DATA_SQL) \
 			-i tests/ancillary_files/sample_data.json \
 			-o "$${SQLTEMPFILE}" \
 			--xss "${XSS_PAYLOAD}" \
