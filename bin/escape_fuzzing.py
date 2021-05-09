@@ -6,7 +6,7 @@ This script tries to verify successful XSS mitigation, i.e. HTML escaping.
 It has some requirements, most importantly the storage directory to be
 existing and the environment variable CDEDB_TEST to be truthy. Thus, it is not
 recommended to run it directly, but invoke it via `make xss-check` or
-`tests/check.py --xss-check`. See also the documentation.
+`bin/check.py --xss-check`. See also the documentation.
 
 This script logs in as Anton (our testing meta admin account) and traverses all
 links and forms it can find. In every response it checks for the magic string

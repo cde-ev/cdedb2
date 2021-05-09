@@ -228,7 +228,7 @@ else
 endif
 
 check-parallel:
-	# TODO: move this logic into tests/check.py
+	# TODO: move this logic into bin/check.py
 	# TODO: using inverse regex arguments possible? Would be helpful for not overlooking some tests
 	# sleeping is necessary here that the i18n-refresh runs at the very beginning to not interfere
 	$(PYTHONBIN) -m tests.check --thread-id 2 \

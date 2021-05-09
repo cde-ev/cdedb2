@@ -82,7 +82,7 @@ Assembly User               Secret
 Running tests
 -------------
 
-We provide a central script to run (parts of) our testsuite: ``tests/check.py``
+We provide a central script to run (parts of) our testsuite: ``bin/check.py``
 
 Unittest
 ^^^^^^^^
@@ -91,9 +91,9 @@ You can pass an arbitrary amount of patterns to ``check.py``, which will then ge
 against the fully qualified test method name.
 Such a full specifier looks like
 ``tests.test_frontend_event.TestEventFrontend.test_create_event``, but you can also pass
-a precise part of it, like e.g. just ``create_eve``, for convenience.
+an unambiguous part of it, like e.g. just ``create_eve``, for convenience.
 These parts of course can also specify complete test files, like ``test_backend_core``,
-where the ``test_`` prefix is optional.
+where unambiguous parts suffer too.
 
 Pattern matching is performed by unittest, which uses ``fnmatch.fnmatchcase``
 internally [#fnmatch]_.
@@ -102,7 +102,7 @@ If a pattern without an asterisk is passed it will be wrapped with one on both e
 Code coverage
 ^^^^^^^^^^^^^
 
-.. todo:: Implement coverage in ``tests/check.py`` script an document this here.
+.. todo:: Implement coverage in ``bin/check.py`` script an document this here.
 
 The coverage html reports for easier to inspection are accessible on the local dev
 instance via Apache at `localhost:8443/coverage <https://localhost:8443/coverage>`_ for
@@ -118,7 +118,7 @@ every database field and then checks that it is escaped correctly.
 You can run this script by just invoking ``make xss-check`` or specify a custom
 payload using the argparse entrypoint, e.g.::
 
-    tests/check.py --xss-check --payload "<script>mycustompayload</script>"
+    bin/check.py --xss-check --payload "<script>mycustompayload</script>"
 
 
 Parallel testing
@@ -132,10 +132,10 @@ four test databases, ``cdb_test_1`` to ``cdb_test_4``.
 .. todo:: Implement a lock mechanism preventing multiple test runs using the same thread
     in parallel. Document this here.
 
-    Implement parallel testing inside ``tests/check.py``.
+    Implement parallel testing inside ``bin/check.py``.
 
 To specify which thread should be used for a test run, you can either use the
-``--thread-id`` option of the argparse entrypoint of ``tests/check.py``, or when using
+``--thread-id`` option of the argparse entrypoint of ``bin/check.py``, or when using
 ``make``, just pass the thread id as environment variable directly via the command
 line, as e.g.::
 
