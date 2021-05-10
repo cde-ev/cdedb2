@@ -2350,6 +2350,7 @@ class TestCdEFrontend(FrontendTest):
         # Now check it
         self.traverse({'description': 'Verg.-Veranstaltungen-Log'})
         self.log_pagination("Verg.-Veranstaltungen-Log", tuple(logs))
+        self.assertPresence("Piraten Arrrkademie", div="4-1004")
 
     @as_users("farin")
     def test_cde_log(self) -> None:
