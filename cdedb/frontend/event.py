@@ -4368,7 +4368,7 @@ class EventFrontend(AbstractUserFrontend):
             aspect = 'parts'
         else:
             raise ValueError(n_(
-                "Invalid key. Expected 'course_id' or 'event_id"))
+                "Invalid key. Expected 'course_id' or 'lodgement_id"))
 
         def _check_belonging(entity_id: int, sub_id: int, reg_id: int) -> bool:
             """The actual check, un-inlined."""
@@ -4953,8 +4953,7 @@ class EventFrontend(AbstractUserFrontend):
             # Check if registration is new inhabitant or deleted inhabitant
             # in any part
             for part_id in rs.ambience['event']['parts']:
-                new_inhabitant = (
-                        reg_id in data["new_{}".format(part_id)])
+                new_inhabitant = (reg_id in data[f"new_{part_id}"])
                 deleted_inhabitant = data.get(
                     "delete_{}_{}".format(part_id, reg_id), False)
                 is_camping_mat = reg['parts'][part_id]['is_camping_mat']
@@ -4964,8 +4963,7 @@ class EventFrontend(AbstractUserFrontend):
                                      False) != is_camping_mat)
                 if new_inhabitant or deleted_inhabitant:
                     new_reg['parts'][part_id] = {
-                        'lodgement_id': (
-                            lodgement_id if new_inhabitant else None)
+                        'lodgement_id': lodgement_id if new_inhabitant else None
                     }
                 elif changed_inhabitant:
                     new_reg['parts'][part_id] = {
