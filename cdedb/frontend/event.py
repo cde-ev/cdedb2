@@ -4896,12 +4896,16 @@ class EventFrontend(AbstractUserFrontend):
             for part_id in rs.ambience['event']['parts']
         }
         lodgement_names = self.eventproxy.list_lodgements(rs, event_id)
+        other_lodgements = {
+            anid: name for anid, name in lodgement_names.items() if anid != lodgement_id
+        }
         return self.render(rs, "manage_inhabitants", {
             'registrations': registrations,
             'personas': personas, 'inhabitants': inhabitants,
             'without_lodgement': without_lodgement,
             'selectize_data': selectize_data,
-            'lodgement_names': lodgement_names})
+            'lodgement_names': lodgement_names,
+            'other_lodgements': other_lodgements})
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
@@ -4971,6 +4975,54 @@ class EventFrontend(AbstractUserFrontend):
                     }
             if new_reg['parts']:
                 code *= self.eventproxy.set_registration(rs, new_reg)
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "event/show_lodgement")
+
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
+    def swap_inhabitants(self, rs: RequestState, event_id: int,
+                         lodgement_id: int) -> Response:
+        """Swap inhabitants of two lodgements of the same part."""
+        params: TypeMapping = {
+            f"swap_with_{part_id}": Optional[vtypes.ID]
+            for part_id in rs.ambience['event']['parts']
+        }
+        data = request_extractor(rs, params)
+        if rs.has_validation_errors():
+            return self.manage_inhabitants_form(rs, event_id, lodgement_id)
+
+        registration_ids = self.eventproxy.list_registrations(rs, event_id)
+        registrations = self.eventproxy.get_registrations(rs, registration_ids)
+        lodgements = self.eventproxy.list_lodgements(rs, event_id)
+        inhabitants = self.calculate_groups(
+            lodgements.keys(), rs.ambience['event'],registrations, key="lodgement_id")
+
+        code = 1
+        for part_id in rs.ambience['event']['parts']:
+            if data[f"swap_with_{part_id}"]:
+                swap_lodgement_id = data[f"swap_with_{part_id}"]
+                current_inhabitants = inhabitants[(lodgement_id, part_id)]
+                swap_inhabitants = inhabitants[(swap_lodgement_id, part_id)]
+                for reg_id in current_inhabitants:
+                    new_reg: CdEDBObject = {
+                        'id': reg_id,
+                        'parts': {
+                            part_id:  {
+                                'lodgement_id': swap_lodgement_id
+                            }
+                        }
+                    }
+                    code *= self.eventproxy.set_registration(rs, new_reg)
+                for reg_id in swap_inhabitants:
+                    new_reg: CdEDBObject = {
+                        'id': reg_id,
+                        'parts': {
+                            part_id: {
+                                'lodgement_id': lodgement_id
+                            }
+                        }
+                    }
+                    code *= self.eventproxy.set_registration(rs, new_reg)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/show_lodgement")
 

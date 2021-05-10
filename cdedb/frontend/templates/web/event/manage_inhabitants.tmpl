@@ -82,4 +82,14 @@
         {{ util.input_submit(label=gettext("Save")) }}&emsp;
         {{ util.href(cdedblink('event/show_lodgement'), gettext("Cancel"), icon='times-circle', aclass="btn btn-default") }}
     </form>
+
+    <h2 class="mosp">{% trans %}Swap inhabitants{% endtrans %}</h2>
+    <form action="{{ cdedblink('event/swap_inhabitants') }}" method="POST" class="form-horizontal" id="swapinhabitantsform">
+        {{ util.anti_csrf_token('event/swap_inhabitants') }}
+        {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+            {{ util.form_input_select("swap_with_{}".format(part_id), entries=other_lodgements.items(), label=ambience['event']['parts'][part_id]['title'], nulloption=mosp, sort=True) }}
+        {% endfor %}
+        {{ util.input_submit(label=gettext("Save")) }}&emsp;
+        {{ util.href(cdedblink('event/show_lodgement'), gettext("Cancel"), icon='times-circle', aclass="btn btn-default") }}
+    </form>
 {% endblock %}
