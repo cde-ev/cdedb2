@@ -26,8 +26,9 @@
 {% block content %}
     <form action="{{ cdedblink('event/manage_inhabitants') }}" method="POST" id="manageinhabitantsform">
         {{ util.anti_csrf_token('event/manage_inhabitants') }}
-        <div class="row">
-            {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+        {% for slice in ambience['event']['parts']|keydictsort(EntitySorter.event_part)|slice(2) %}
+            <div class="row">
+            {% for part_id, part in slice %}
                 <div class="col-md-6">
                     {% call util.bootstrap_panel(title=(part['title'] if ambience['event']['parts']|length > 1
                                                                       else gettext("Assigned Inhabitants")),
@@ -70,15 +71,18 @@
                     {% endcall %}
                 </div>
             {% endfor %}
-            <script nonce="{{ csp_nonce }}">
-                var lodgement_names = {{ lodgement_names|json|s }};
-                {% for part_id in ambience['event']['parts'] %}
-                    $('#input_new_{{ part_id }}').cdedbSearchParticipant(
-                        {{ selectize_data[part_id]|json|s }}, lodgement_names, "{{ gettext("currently") }}: ");
-                {% endfor %}
-                $('.del-box').cdedbRemoveParticipantButton('{{ gettext("Remove Inhabitant") }}');
-            </script>
-        </div>
+            </div>
+        {% endfor %}
+
+        <script nonce="{{ csp_nonce }}">
+            var lodgement_names = {{ lodgement_names|json|s }};
+            {% for part_id in ambience['event']['parts'] %}
+                $('#input_new_{{ part_id }}').cdedbSearchParticipant(
+                    {{ selectize_data[part_id]|json|s }}, lodgement_names, "{{ gettext("currently") }}: ");
+            {% endfor %}
+            $('.del-box').cdedbRemoveParticipantButton('{{ gettext("Remove Inhabitant") }}');
+        </script>
+
         {{ util.input_submit(label=gettext("Save")) }}&emsp;
         {{ util.href(cdedblink('event/show_lodgement'), gettext("Cancel"), icon='times-circle', aclass="btn btn-default") }}
     </form>
