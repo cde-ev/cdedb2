@@ -4982,7 +4982,7 @@ class EventFrontend(AbstractUserFrontend):
                          lodgement_id: int) -> Response:
         """Swap inhabitants of two lodgements of the same part."""
         params: TypeMapping = {
-            f"swap_with_{part_id}": Optional[vtypes.ID]
+            f"swap_with_{part_id}": Optional[vtypes.ID]  # type: ignore
             for part_id in rs.ambience['event']['parts']
         }
         data = request_extractor(rs, params)
@@ -4993,7 +4993,7 @@ class EventFrontend(AbstractUserFrontend):
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         lodgements = self.eventproxy.list_lodgements(rs, event_id)
         inhabitants = self.calculate_groups(
-            lodgements.keys(), rs.ambience['event'],registrations, key="lodgement_id")
+            lodgements.keys(), rs.ambience['event'], registrations, key="lodgement_id")
 
         code = 1
         for part_id in rs.ambience['event']['parts']:
@@ -5001,8 +5001,9 @@ class EventFrontend(AbstractUserFrontend):
                 swap_lodgement_id = data[f"swap_with_{part_id}"]
                 current_inhabitants = inhabitants[(lodgement_id, part_id)]
                 swap_inhabitants = inhabitants[(swap_lodgement_id, part_id)]
+                new_reg: CdEDBObject
                 for reg_id in current_inhabitants:
-                    new_reg: CdEDBObject = {
+                    new_reg = {
                         'id': reg_id,
                         'parts': {
                             part_id:  {
@@ -5012,7 +5013,7 @@ class EventFrontend(AbstractUserFrontend):
                     }
                     code *= self.eventproxy.set_registration(rs, new_reg)
                 for reg_id in swap_inhabitants:
-                    new_reg: CdEDBObject = {
+                    new_reg = {
                         'id': reg_id,
                         'parts': {
                             part_id: {
