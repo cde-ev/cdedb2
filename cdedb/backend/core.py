@@ -2130,7 +2130,7 @@ class CoreBackend(AbstractBackend):
 
     @internal
     @access("anonymous")
-    def get_roles_multi(self, rs: RequestState, persona_ids: Collection[Optional[int]],
+    def get_roles_multi(self, rs: RequestState, persona_ids: Collection[int],
                         introspection_only: bool = False
                         ) -> Dict[Optional[int], Set[Role]]:
         """Resolve ids into roles.
@@ -2422,6 +2422,7 @@ class CoreBackend(AbstractBackend):
         if email:
             persona_id = unwrap(self.sql_select_one(
                 rs, "core.personas", ("id",), email, entity_key="username"))
+        assert persona_id is not None
 
         columns_of_interest = [
             "is_cde_realm", "is_meta_admin", "is_core_admin", "is_cde_admin",
