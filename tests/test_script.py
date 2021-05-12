@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import io
+import os
 import tempfile
 import unittest
 from contextlib import redirect_stdout
@@ -17,8 +18,8 @@ class TestScript(unittest.TestCase):
 
     @staticmethod
     def get_rs() -> _RSFactory:
-        return setup(persona_id=-1, dbname="cdb_test", dbuser="cdb_admin",
-                     dbpassword="9876543210abcdefghijklmnopqrst",
+        return setup(persona_id=-1, dbname=os.environ['CDEDB_TEST_DATABASE'],
+                     dbuser="cdb_admin", dbpassword="9876543210abcdefghijklmnopqrst",
                      check_system_user=False)
 
     @staticmethod
@@ -35,8 +36,8 @@ class TestScript(unittest.TestCase):
         self.assertEqual(23, rs_factory(23).user.persona_id)
 
         with self.assertRaises(psycopg2.OperationalError) as cm:
-            setup(-1, dbname="cdb_test", dbuser="cdb_admin", dbpassword="abc",
-                  check_system_user=False)
+            setup(-1, dbname=os.environ['CDEDB_TEST_DATABASE'], dbuser="cdb_admin",
+                  dbpassword="abc", check_system_user=False)
         # the vm is german while the postgresql docker image is english
         self.assertTrue(
             ("Passwort-Authentifizierung für Benutzer"

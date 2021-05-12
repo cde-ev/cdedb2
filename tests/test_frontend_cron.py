@@ -10,7 +10,7 @@ import unittest.mock
 
 import cdedb.database.constants as const
 from cdedb.common import RequestState, now, xsorted
-from tests.common import CronTest, prepsql
+from tests.common import CronTest, prepsql, storage
 
 INSERT_TEMPLATE = """
 INSERT INTO {table} ({columns}) VALUES ({values});
@@ -187,14 +187,17 @@ class TestCron(CronTest):
         self.assertEqual(["genesis_requests_pending"],
                          [mail.template for mail in self.mails])
 
+    @storage
     def test_genesis_forget_empty(self) -> None:
         self.execute('genesis_forget')
 
+    @storage
     @prepsql(genesis_template())
     def test_genesis_forget_unrelated(self) -> None:
         self.execute('genesis_forget')
         self.assertEqual({1001}, set(self.core.genesis_list_cases(RS)))
 
+    @storage
     @prepsql(genesis_template(
         ctime=datetime.datetime(2000, 1, 1),
         case_status=const.GenesisStati.rejected.value))
@@ -202,6 +205,7 @@ class TestCron(CronTest):
         self.execute('genesis_forget')
         self.assertEqual({}, self.core.genesis_list_cases(RS))
 
+    @storage
     @prepsql(genesis_template(
         ctime=datetime.datetime(2000, 1, 1),
         case_status=const.GenesisStati.unconfirmed.value))
@@ -209,6 +213,7 @@ class TestCron(CronTest):
         self.execute('genesis_forget')
         self.assertEqual({}, self.core.genesis_list_cases(RS))
 
+    @storage
     @prepsql(genesis_template(
         case_status=const.GenesisStati.unconfirmed.value))
     def test_genesis_forget_recent_unconfirmed(self) -> None:
@@ -342,6 +347,7 @@ class TestCron(CronTest):
         )
         self.assertEqual([1], self.core.get_cron_store(RS, name)["deleted"])
 
+    @storage
     def test_tally_ballots(self) -> None:
         ballot_ids: Set[int] = set()
         for assembly_id in self.assembly.list_assemblies(RS):
@@ -362,6 +368,7 @@ class TestCron(CronTest):
         # We just want to test that no exception is raised.
         self.execute('deactivate_old_sessions', 'clean_session_log')
 
+    @storage
     @unittest.mock.patch("cdedb.frontend.common.CdEMailmanClient")
     def test_mailman_sync(self, client_class: unittest.mock.Mock) -> None:
         #

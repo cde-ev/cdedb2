@@ -12,7 +12,7 @@ from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, FUTURE_TIMESTAMP, get_hash, now, nearly_now,
 )
 from tests.common import (
-    BackendTest, UserIdentifier, USER_DICT, as_users, prepsql,
+    BackendTest, UserIdentifier, USER_DICT, as_users, prepsql, storage,
 )
 
 
@@ -565,14 +565,16 @@ class TestAssemblyBackend(BackendTest):
         self.assertEqual(
             'St>Li=Go=Fi=Bu=Lo=_bar_', self.assembly.get_vote(self.key, 3, secret=None))
 
+    @storage
     @as_users("kalif")
     def test_tally(self) -> None:
         self.assertEqual(False, self.assembly.get_ballot(self.key, 1)['is_tallied'])
         self.assertTrue(self.assembly.tally_ballot(self.key, 1))
-        with open("/tmp/cdedb-store/testfiles/ballot_result.json", 'rb') as f:
-            with open("/tmp/cdedb-store/ballot_result/1", 'rb') as g:
+        with open(self.testfile_dir / "ballot_result.json", 'rb') as f:
+            with open(self.conf['STORAGE_DIR'] / "ballot_result/1", 'rb') as g:
                 self.assertEqual(json.load(f), json.load(g))
 
+    @storage
     def test_conclusion(self) -> None:
         self.login("viktor")
         data = {
@@ -623,6 +625,7 @@ class TestAssemblyBackend(BackendTest):
         self.login("anton")
         self.assertLess(0, self.assembly.conclude_assembly(self.key, new_id))
 
+    @storage
     @as_users("werner")
     def test_entity_attachments(self) -> None:
         with open("/cdedb2/tests/ancillary_files/rechen.pdf", "rb") as f:
