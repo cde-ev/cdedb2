@@ -1640,6 +1640,11 @@ class EventFrontend(AbstractUserFrontend):
                 participant_filter(p),
                 ('track{}.is_course_instructor'.format(t['id']),
                  QueryOperators.equal, True),),
+            'attendees': lambda e, p, t: (
+                participant_filter(p),
+                (f'course{t["id"]}.id', QueryOperators.nonempty, None),
+                (f'track{t["id"]}.is_course_instructor',
+                 QueryOperators.equalornull, False),),
             'no course': lambda e, p, t: (
                 participant_filter(p),
                 ('course{}.id'.format(t['id']),
@@ -1656,8 +1661,6 @@ class EventFrontend(AbstractUserFrontend):
             'cancelled courses': lambda e, p, t: (
                 (f'track{t["id"]}.is_offered', QueryOperators.equal, True),
                 (f'track{t["id"]}.takes_place', QueryOperators.equal, False),),
-            'attendees': lambda e, p, t: (
-                (f'track{t["id"]}.attendees', QueryOperators.unequal, 0),),
         }
 
         query_additional_fields: Dict[str, Collection[str]] = {
@@ -1670,7 +1673,6 @@ class EventFrontend(AbstractUserFrontend):
             'instructors': ('course_instructor{track}.id',),
             'all instructors': ('course{track}.id',
                                 'course_instructor{track}.id',),
-            'attendees': ('track{track}.attendees',),
         }
 
         def get_query(category: str, part_id: int, track_id: int = None
