@@ -1533,13 +1533,20 @@ class EventFrontend(AbstractUserFrontend):
                     for track_id in tracks}
 
         # The base query object to use for links to event/registration_query
-        base_query = Query(
+        base_registration_query = Query(
             "qview_registration",
             self.make_registration_query_spec(rs.ambience['event']),
             ["reg.id", "persona.given_names", "persona.family_name",
              "persona.username"],
             [],
             (("persona.family_name", True), ("persona.given_names", True),)
+        )
+        base_course_query = Query(
+            "qview_course",
+            self.make_course_query_spec(rs.ambience['event']),
+            ["course.nr", "course.shortname"],
+            [],
+            (("course.nr", True), ("course.shortname", True),)
         )
         # Some reusable query filter definitions
         involved_filter = lambda p: (
@@ -1552,11 +1559,10 @@ class EventFrontend(AbstractUserFrontend):
             QueryOperators.equal,
             stati.participant.value,
         )
-        # Query filters for all the statistics defined and calculated above.
-        # They are customized and inserted into the query on the fly by
-        # get_query().
+        # Query filters for all the registration statistics defined and calculated above.
+        # They are customized and inserted into the query on the fly by get_query().
         # `e` is the event, `p` is the event_part, `t` is the track.
-        query_filters: Dict[str, Callable[
+        registration_query_filters: Dict[str, Callable[
             [CdEDBObject, CdEDBObject, CdEDBObject],
             Collection[QueryConstraint]]] = {
             'pending': lambda e, p, t: (
@@ -1641,6 +1647,21 @@ class EventFrontend(AbstractUserFrontend):
                 ('persona.id', QueryOperators.otherthan,
                  rs.ambience['event']['orgas']),)
         }
+        # Query filters for all the course statistics defined and calculated above.
+        # They are customized and inserted into the query on the fly by get_query().
+        # `e` is the event, `p` is the event_part, `t` is the track.
+        course_query_filters: Dict[str, Callable[
+            [CdEDBObject, CdEDBObject, CdEDBObject],
+            Collection[QueryConstraint]]] = {
+            'courses': lambda e, p, t: (
+                (f'track{t["id"]}.is_offered', QueryOperators.equal, True),),
+            'cancelled courses': lambda e, p, t: (
+                (f'track{t["id"]}.is_offered', QueryOperators.equal, True),
+                (f'track{t["id"]}.takes_place', QueryOperators.equal, False),),
+            'attendees': lambda e, p, t: (
+                (f'track{t["id"]}.attendees', QueryOperators.unequal, 0),),
+        }
+
         query_additional_fields: Dict[str, Collection[str]] = {
             ' payed': ('reg.payment',),
             ' u18': ('persona.birthday',),
@@ -1651,17 +1672,23 @@ class EventFrontend(AbstractUserFrontend):
             'instructors': ('course_instructor{track}.id',),
             'all instructors': ('course{track}.id',
                                 'course_instructor{track}.id',),
+            'attendees': ('track{track}.attendees',),
         }
 
         def get_query(category: str, part_id: int, track_id: int = None
                       ) -> Optional[Query]:
-            if category not in query_filters:
+            if category in registration_query_filters:
+                q = copy.deepcopy(base_registration_query)
+                filters = registration_query_filters
+            elif category in course_query_filters:
+                q = copy.deepcopy(base_course_query)
+                filters = course_query_filters
+            else:
                 return None
-            q = copy.deepcopy(base_query)
             e = rs.ambience['event']
             p = e['parts'][part_id]
             t = e['tracks'][track_id] if track_id else None
-            for c in query_filters[category](e, p, t):
+            for c in filters[category](e, p, t):
                 q.constraints.append(c)
             if category in query_additional_fields:
                 for f in query_additional_fields[category]:
@@ -1669,11 +1696,20 @@ class EventFrontend(AbstractUserFrontend):
                                                          part=part_id))
             return q
 
+        def get_query_page(category: str) -> Optional[str]:
+            if category in registration_query_filters:
+                page = "event/registration_query"
+            elif category in course_query_filters:
+                page = "event/course_query"
+            else:
+                page = None
+            return page
+
         return self.render(rs, "stats", {
             'registrations': registrations, 'personas': personas,
             'courses': courses, 'per_part_statistics': per_part_statistics,
             'per_track_statistics': per_track_statistics,
-            'get_query': get_query})
+            'get_query': get_query, 'get_query_page': get_query_page})
 
     @access("event")
     @event_guard()
