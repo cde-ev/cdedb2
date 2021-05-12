@@ -1559,12 +1559,12 @@ class EventFrontend(AbstractUserFrontend):
             QueryOperators.equal,
             stati.participant.value,
         )
+        QueryFilterGetter = Callable[
+            [CdEDBObject, CdEDBObject, CdEDBObject], Collection[QueryConstraint]]
         # Query filters for all the registration statistics defined and calculated above.
         # They are customized and inserted into the query on the fly by get_query().
         # `e` is the event, `p` is the event_part, `t` is the track.
-        registration_query_filters: Dict[str, Callable[
-            [CdEDBObject, CdEDBObject, CdEDBObject],
-            Collection[QueryConstraint]]] = {
+        registration_query_filters: Dict[str, QueryFilterGetter] = {
             'pending': lambda e, p, t: (
                 ('part{}.status'.format(p['id']), QueryOperators.equal,
                  stati.applied.value),),
@@ -1650,9 +1650,7 @@ class EventFrontend(AbstractUserFrontend):
         # Query filters for all the course statistics defined and calculated above.
         # They are customized and inserted into the query on the fly by get_query().
         # `e` is the event, `p` is the event_part, `t` is the track.
-        course_query_filters: Dict[str, Callable[
-            [CdEDBObject, CdEDBObject, CdEDBObject],
-            Collection[QueryConstraint]]] = {
+        course_query_filters: Dict[str, QueryFilterGetter] = {
             'courses': lambda e, p, t: (
                 (f'track{t["id"]}.is_offered', QueryOperators.equal, True),),
             'cancelled courses': lambda e, p, t: (
