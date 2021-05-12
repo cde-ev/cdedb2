@@ -1698,12 +1698,10 @@ class EventFrontend(AbstractUserFrontend):
 
         def get_query_page(category: str) -> Optional[str]:
             if category in registration_query_filters:
-                page = "event/registration_query"
+                return "event/registration_query"
             elif category in course_query_filters:
-                page = "event/course_query"
-            else:
-                page = None
-            return page
+                return "event/course_query"
+            return None
 
         return self.render(rs, "stats", {
             'registrations': registrations, 'personas': personas,
