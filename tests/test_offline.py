@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import os
 import pathlib
 import shutil
 import subprocess
@@ -22,17 +22,18 @@ class TestOffline(FrontendTest):
         existing_config = base / "cdedb/localconfig.py"
         config_backup = base / "cdedb/localconfig.copy"
         if existing_config.exists():
-            shutil.copyfile(
-                existing_config, config_backup)
+            shutil.copyfile(existing_config, config_backup)
         subprocess.run(
-            ['bin/execute_sql_script.py', '-U', 'cdb', '-d', 'cdb_test',
+            ['bin/execute_sql_script.py', '-U', 'cdb',
+             '-d', os.environ['CDEDB_TEST_DATABASE'],
              '-f', 'tests/ancillary_files/clean_data.sql'],
             cwd=base, check=True, stdout=subprocess.DEVNULL)
         try:
             subprocess.run(
                 ['bin/make_offline_vm.py', '--test', '--no-extra-packages',
                  'tests/ancillary_files/event_export.json'],
-                cwd=base, check=True, stdout=subprocess.DEVNULL)
+                cwd=base, check=True, stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL)
             # Reset web test app for changed configuration
             try:
                 del sys.modules['cdedb.localconfig']
