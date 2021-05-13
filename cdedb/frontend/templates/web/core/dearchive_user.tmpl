@@ -1,0 +1,24 @@
+{% extends "web/core/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block title %}
+    {% trans given_names=data['given_names'], family_name=data['family_name'] %}
+        Dearchive {{ given_names }} {{ family_name }}
+    {% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(show_user_link(user, data['id']), data['given_names'] + " " + data['family_name'], icon="user") }}
+    {{ util.breadcrumb_link(cdedblink("core/dearchive_persona_form"), gettext("Dearchive"), active=True) }}
+{% endblock %}
+{% block content %}
+    {% trans %}
+        This restores the archived Account. It will be usable again.
+    {% endtrans %}
+    <form action="{{ cdedblink('core/dearchive_persona') }}" method="POST" id="dearchivepersonaform"
+            class="form-horizontal">
+        {{ util.anti_csrf_token('core/dearchive_persona') }}
+        {{ util.form_input_static(label=gettext("User"), value=(data['given_names'] +" "+ data['family_name'])) }}
+        {{ util.form_input_text(name="new_username", label=gettext("Email Address"), type="email") }}
+        {{ util.form_input_submit(label=gettext("Dearchive user"), cancellink=show_user_link(user, values['persona_id'])) }}
+    </form>
+{% endblock %}

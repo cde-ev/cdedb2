@@ -963,7 +963,8 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(True, data['is_cde_realm'])
         data = self.core.get_total_persona(self.key, persona_id)
         self.assertEqual(True, data['is_archived'])
-        ret = self.core.dearchive_persona(self.key, persona_id)
+        ret = self.core.dearchive_persona(self.key, persona_id,
+                                          new_username="charly@example.cde")
         self.assertLess(0, ret)
         data = self.core.get_total_persona(self.key, persona_id)
         self.assertEqual(False, data['is_archived'])
@@ -1004,7 +1005,8 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(old_ls["account_address"], "")
         self.assertEqual(old_ls["amount"], 0)
         self.assertEqual(old_ls["notes"], ls_data["notes"])
-        self.core.dearchive_persona(self.key, persona_id)
+        self.core.dearchive_persona(self.key, persona_id,
+                                    new_username="charly@example.cde")
 
         # Check that sole moderators cannot be archived.
         self.ml.set_moderators(self.key, 2, {persona_id})
@@ -1018,7 +1020,7 @@ class TestCoreBackend(BackendTest):
     @as_users("vera")
     def test_archive_activate_bug(self) -> None:
         self.core.archive_persona(self.key, 4, "Archived for testing.")
-        self.core.dearchive_persona(self.key, 4)
+        self.core.dearchive_persona(self.key, 4, new_username="daniel@example.cde")
         # The following call sometimes failed with the error "editing
         # archived members impossbile". The solution may be to add some
         # sleep to let the DB settle, but this seems kind of bogus.
@@ -1231,15 +1233,15 @@ class TestCoreBackend(BackendTest):
     @as_users("janis")
     def test_list_personas(self) -> None:
         reality = self.core.list_all_personas(self.key, is_active=True)
-        active_personas = {1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 16, 17, 18, 22,
+        active_personas = {1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 13, 14, 16, 17, 18, 22,
                            23, 27, 32, 48, 100}
         self.assertEqual(active_personas, reality)
         reality = self.core.list_all_personas(self.key, is_active=False)
         self.assertEqual(active_personas | {15}, reality)
         reality = self.core.list_current_members(self.key, is_active=True)
-        self.assertEqual({1, 2, 3, 6, 7, 9, 12, 100}, reality)
+        self.assertEqual({1, 2, 3, 6, 7, 9, 100}, reality)
         reality = self.core.list_current_members(self.key, is_active=False)
-        self.assertEqual({1, 2, 3, 6, 7, 9, 12, 15, 100}, reality)
+        self.assertEqual({1, 2, 3, 6, 7, 9, 15, 100}, reality)
         reality = self.core.list_all_moderators(self.key)
         self.assertEqual({1, 2, 3, 4, 5, 7, 9, 10, 11, 15, 23, 27, 100}, reality)
         MT = const.MailinglistTypes

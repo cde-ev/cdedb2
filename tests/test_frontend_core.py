@@ -1093,8 +1093,7 @@ class TestCoreFrontend(FrontendTest):
     @as_users("vera")
     def test_toggle_activity(self) -> None:
         for i, u in enumerate(("berta", "charly", "daniel", "emilia", "garcia",
-                               "inga", "janis", "kalif", "lisa", "martin",
-                               "olaf")):
+                               "inga", "janis", "kalif", "martin", "olaf")):
             with self.subTest(target=u):
                 self.admin_view_profile(u)
                 f = self.response.forms['activitytoggleform']
@@ -1266,7 +1265,9 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Charly C. Clown")
         self.assertPresence("Der Benutzer ist archiviert.", div='archived')
         self.assertNonPresence("Zirkusstadt")
+        self.traverse({'description': "Account wiederherstellen"})
         f = self.response.forms['dearchivepersonaform']
+        f['new_username'] = "charly@example.cde"
         self.submit(f)
         self.assertTitle("Charly C. Clown")
         self.assertNonPresence("Der Benutzer ist archiviert.")
