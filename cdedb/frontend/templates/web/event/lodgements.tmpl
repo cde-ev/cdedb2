@@ -63,7 +63,7 @@
                         {% if ambience['event']['parts']|length == 1 %}
                             {{ display_sorting_header(part_id,  enums['LodgementsSortkeys'].used_regular.value, gettext("Regular")) }}
                         {% else %}
-                            {{ display_sorting_header(part_id,  enums['LodgementsSortkeys'].used_regular.value, part['title']) }}
+                            {{ display_sorting_header(part_id,  enums['LodgementsSortkeys'].used_regular.value, part['shortname']) }}
                         {% endif %}
                     </th>
                     <th class="text-right">

@@ -74,7 +74,7 @@
                         {%- if ambience['event']['tracks']|length == 1 -%}
                             {% trans %}Course Size & Choices{% endtrans %}
                         {%- else -%}
-                            {{ track['title'] }}
+                            {{ track['shortname'] }}
                         {%- endif -%}
                     </th>
                 {% endfor %}
