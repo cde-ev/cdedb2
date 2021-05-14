@@ -78,10 +78,10 @@ body{
     width: auto;
 }
 .table-wide {
-    width: max-content;
-    min-width: 100%;
-    max-width: unset;
     background-color: #fff;
+}
+.table-wide>thead>tr>th {
+    white-space: nowrap;
 }
 .table-layout-fixed {
     table-layout: fixed;
