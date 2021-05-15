@@ -2699,24 +2699,6 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard()
-    def download_expuls(self, rs: RequestState, event_id: int) -> Response:
-        """Create TeX-snippet for announcement in the exPuls."""
-        course_ids = self.eventproxy.list_courses(rs, event_id)
-        if not course_ids:
-            rs.notify("info", n_("Empty File."))
-            return self.redirect(rs, "event/downloads")
-        courses = self.eventproxy.get_courses(rs, course_ids)
-        tracks = rs.ambience['event']['tracks']
-        tracks_sorted = [e['id'] for e in xsorted(
-            tracks.values(), key=EntitySorter.course_track)]
-        tex = self.fill_template(
-            rs, "tex", "expuls", {'courses': courses, 'tracks': tracks_sorted})
-        return self.send_file(
-            rs, data=tex, inline=False,
-            filename="{}_expuls.tex".format(rs.ambience['event']['shortname']))
-
-    @access("event")
-    @event_guard()
     def download_dokuteam_courselist(self, rs: RequestState, event_id: int) -> Response:
         """A pipe-seperated courselist for the dokuteam aca-generator script."""
         course_ids = self.eventproxy.list_courses(rs, event_id)

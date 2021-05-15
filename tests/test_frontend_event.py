@@ -2880,10 +2880,6 @@ etc;anything else""", f['entries_2'].value)
         self.response = save.click(href='/event/event/1/download/csv_lodgements')
         self.assertIn(
             'lodgement.id;lodgement.lodgement_id;lodgement.title;', self.response.text)
-        # courselist for exPuls
-        self.response = save.click(href='/event/event/1/download/expuls')
-        self.assertPresence('\\kurs')
-        self.assertPresence('Planetenretten für Anfänger')
         # dokuteam courselist
         self.response = save.click(href='/event/event/1/download/dokuteam_course')
         self.assertPresence('|cde')
@@ -2964,8 +2960,6 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/2/download/csv_courses'})
         self.assertPresence('Leere Datei.', div='notifications')
         self.traverse({'href': '/event/event/2/download/csv_lodgements'})
-        self.assertPresence('Leere Datei.', div='notifications')
-        self.traverse({'href': '/event/event/2/download/expuls'})
         self.assertPresence('Leere Datei.', div='notifications')
 
         # now check empty pdfs
