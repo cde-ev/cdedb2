@@ -2094,6 +2094,7 @@ EVENT_EXPOSED_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'lodge_field': Optional[ID],
     'camping_mat_field': Optional[ID],
     'course_room_field': Optional[ID],
+    'custom_checkin_fields': Optional[List[ID]],
 }
 
 EVENT_EXPOSED_FIELDS = {**EVENT_COMMON_FIELDS, **EVENT_EXPOSED_OPTIONAL_FIELDS}

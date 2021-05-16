@@ -1642,6 +1642,7 @@ class EventBackend(AbstractBackend):
                     f for f in [edata.get('lodge_field'),
                                 edata.get('camping_mat_field'),
                                 edata.get('course_room_field')] if f)
+                indirect_fields |= set(edata.get("custom_checkin_fields", list()))
                 if indirect_fields:
                     indirect_data = self.sql_select(
                         rs, "event.field_definitions",
@@ -1678,6 +1679,15 @@ class EventBackend(AbstractBackend):
                                 or course_room_data['association'] not in legal_assocs):
                             raise ValueError(n_("Unfit field for %(field)s"),
                                              {'field': 'course_room_field'})
+                    legal_assoc = const.FieldAssociations.registration
+                    if edata.get('custom_checkin_fields'):
+                        checkin_fields = [x for x in indirect_data
+                                          if x['id'] in edata['custom_checkin_fields']]
+                        if any(field['event_id'] != data['id']
+                               or field['association'] != legal_assoc
+                               for field in checkin_fields):
+                            raise ValueError(n_("Unfit field for %(field)s"),
+                                             {'field': 'custom_checkin_fields'})
                 ret *= self.sql_update(rs, "event.events", edata)
                 self.event_log(rs, const.EventLogCodes.event_changed,
                                data['id'])
