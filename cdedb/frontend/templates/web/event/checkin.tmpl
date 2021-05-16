@@ -1,6 +1,7 @@
 {% set sidenav_active='event_checkin' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/event/generic.tmpl" as generic with context %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
@@ -27,7 +28,8 @@
 
     <div class="list-group list-group-hover">
         {% for registration_id, registration in registrations.items() %}
-                <div class="selectee list-group-item row">
+            <div class="selectee list-group-item">
+                <div class="row">
                     <div class="col-sm-4">
                         <span class="searchname">
                             {{ personas[registration['persona_id']]['given_names'] }}
@@ -85,6 +87,18 @@
                                                  readonly=is_locked) }}
                         </form>
                     </div>
+                </div>
+                <div class="row">
+                    <dl class="dl-horizontal small">
+                    {% for field_id, field in ambience['event']['fields']|keydictsort(EntitySorter.event_field) if field['id'] in ambience['event']['custom_checkin_fields'] %}
+                        {% set field_key = ambience['event']['fields'][field_id]['field_name'] %}
+                        <dt>{{ field['field_name'] }}</dt>
+                        <dd>
+                            {{ generic.display_field(field, registration['fields'][field_key]) }}
+                        </dd>
+                    {% endfor %}
+                    </dl>
+                </div>
             </div>
         {% endfor %}
     </div>
