@@ -87,3 +87,30 @@
     {%- endif %}
     {{ util.form_input_textarea(name="notes", label=noteslabel, rows="5") }}
 {% endmacro %}
+
+{# Display the value of a custom event field.
+
+    field       A dict containing all information of a custom event field.
+    entry       The value of the field of the current entity.
+#}
+{% macro display_field(field, entry) %}
+    {% if field['entries'] %}
+        {% for value, description in field['entries'] %}
+            {% if value == entry|string %}
+                {{ description }}
+            {% endif %}
+        {% endfor %}
+    {% else %}
+        {% if field['kind'] == enums['FieldDatatypes'].bool %}
+            {{ util.deko_checkbox(checked=entry) }}
+        {% elif field['kind'] == enums['FieldDatatypes'].date %}
+            {{ entry|date(lang=lang, passthrough=True) }}
+        {% elif field['kind'] == enums['FieldDatatypes'].datetime %}
+            {{ entry|datetime(lang=lang, passthrough=True) }}
+        {% elif field['kind'] == enums['FieldDatatypes'].float %}
+            {{ entry|decimal(lang=lang) }}
+        {% else %}
+            {{ entry|linebreaks }}
+        {% endif %}
+    {% endif %}
+{% endmacro %}
