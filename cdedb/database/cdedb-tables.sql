@@ -669,8 +669,10 @@ CREATE TABLE event.events (
         -- reference to special purpose custom data fields
         lodge_field                  integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
         camping_mat_field            integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
-        course_room_field            integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
+        course_room_field            integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
         -- The references above are not yet possible, but will be added later on.
+        -- Additional custom fields which are displayed during checking.
+        custom_checkin_fields        integer[] NOT NULL DEFAULT array[]::integer[]
 );
 GRANT SELECT, UPDATE ON event.events TO cdb_persona;
 GRANT INSERT, DELETE ON event.events TO cdb_admin;

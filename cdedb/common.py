@@ -2043,7 +2043,7 @@ EVENT_FIELDS = (
     "notes", "participant_info", "offline_lock", "is_visible",
     "is_course_list_visible", "is_course_state_visible", "is_participant_list_visible",
     "is_course_assignment_visible", "is_cancelled", "is_archived", "lodge_field",
-    "camping_mat_field", "course_room_field")
+    "camping_mat_field", "course_room_field", "custom_checkin_fields")
 
 #: Fields of an event part organized via CdEDB
 EVENT_PART_FIELDS = ("id", "event_id", "title", "shortname", "part_begin",
