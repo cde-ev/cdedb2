@@ -1336,6 +1336,7 @@
     "event.events": {
         "1": {
             "course_room_field": 2,
+            "custom_checkin_fields": [],
             "is_visible": true,
             "iban": "DE26370205000008068900",
             "nonmember_surcharge": "5.00",

@@ -648,6 +648,7 @@
         "lodge_field": "lodge",
         "camping_mat_field": "may_reserve",
         "course_room_field": "transportation",
+        "custom_checkin_fields": [],
         "parts": {
             "1": {
                 "title": "Warmup",
