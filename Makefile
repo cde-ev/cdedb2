@@ -265,7 +265,7 @@ dump-html:
 
 
 validate-html: /opt/validator/vnu-runtime-image/bin/vnu
-	/opt/validator/vnu-runtime-image/bin/vnu /tmp/tmp* 2>&1 \
+	/opt/validator/vnu-runtime-image/bin/vnu /tmp/cdedb-dump-* 2>&1 \
 		| grep -v -F 'This document appears to be written in English' \
 		| grep -v -F 'input type is not supported in all browsers'
 

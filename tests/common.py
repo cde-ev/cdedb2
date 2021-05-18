@@ -716,7 +716,7 @@ class FrontendTest(BackendTest):
         cls.do_scrap = "SCRAP_ENCOUNTERED_PAGES" in os.environ
         if cls.do_scrap:
             # create a temporary directory and print it
-            cls.scrap_path = tempfile.mkdtemp(prefix=cls.__name__ + '.')
+            cls.scrap_path = tempfile.mkdtemp(prefix=f'cdedb-dump-{cls.__name__}.')
             print(cls.scrap_path, file=sys.stderr)
 
     @classmethod
