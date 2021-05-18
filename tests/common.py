@@ -713,10 +713,13 @@ class FrontendTest(BackendTest):
         cls.app = webtest.TestApp(app, extra_environ=cls.app_extra_environ)
 
         # set `do_scrap` to True to capture a snapshot of all visited pages
-        cls.do_scrap = "SCRAP_ENCOUNTERED_PAGES" in os.environ
+        cls.do_scrap = 'CDEDB_TEST_DUMP_DIR' in os.environ
         if cls.do_scrap:
+            # create a parent directory for all dumps
+            dump_root = pathlib.Path(os.environ['CDEDB_TEST_DUMP_DIR'])
+            dump_root.mkdir(exist_ok=True)
             # create a temporary directory and print it
-            cls.scrap_path = tempfile.mkdtemp(prefix=f'cdedb-dump-{cls.__name__}.')
+            cls.scrap_path = tempfile.mkdtemp(dir=dump_root, prefix=f'{cls.__name__}.')
             print(cls.scrap_path, file=sys.stderr)
 
     @classmethod

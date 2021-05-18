@@ -259,13 +259,15 @@ endif
 xss-check:
 	$(PYTHONBIN) -m bin.check --thread-id $(THREADID) --xss-check --verbose
 
-dump-html: export SCRAP_ENCOUNTERED_PAGES=1
-dump-html:
+dump-html: /tmp/cdedb-dump/
+
+/tmp/cdedb-dump/: export CDEDB_TEST_DUMP_DIR=/tmp/cdedb-dump/
+/tmp/cdedb-dump/:
 	$(PYTHONBIN) -m bin.check --thread-id $(THREADID) test_frontend
 
 
-validate-html: /opt/validator/vnu-runtime-image/bin/vnu
-	/opt/validator/vnu-runtime-image/bin/vnu /tmp/cdedb-dump-* 2>&1 \
+validate-html: /tmp/cdedb-dump/ /opt/validator/vnu-runtime-image/bin/vnu
+	/opt/validator/vnu-runtime-image/bin/vnu /tmp/cdedb-dump/* 2>&1 \
 		| grep -v -F 'This document appears to be written in English' \
 		| grep -v -F 'input type is not supported in all browsers'
 
