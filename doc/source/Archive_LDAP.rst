@@ -108,10 +108,10 @@ content of our sql-ldap.ldif::
     olcModuleLoad: back_sql
 
     # backend definition
-    dn: olcBackend=sql,cn=config
+    dn: olcBackend={1}sql,cn=config
     changetype: add
     objectClass: olcBackendConfig
-    olcBackend: sql
+    olcBackend: {1}sql
 
     # database definitions
     dn: olcDatabase=sql,cn=config
