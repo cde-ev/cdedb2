@@ -6,22 +6,33 @@ SHELL := /bin/bash
 help:
 	@echo "doc -- build documentation"
 	@echo "reload -- re-compile GNU gettext data and trigger WSGI worker reload"
+	@echo "i18n-refresh -- extract translatable strings from our code and update translation po-files"
 	@echo "sample-data -- initialize database structures (DESTROYS DATA!)"
+	@echo "sample-data-dump -- dump current database state into json file in tests directory"
 	@echo "sql -- initialize postgres (use sample-data instead)"
 	@echo "sql-test -- initialize database structures for test suite"
 	@echo "sql-test-shallow -- reset database structures for test suite"
 	@echo "                    (this is a fast version of sql-test, can be substituted after that"
 	@echo "                     was executed)"
-	@echo "storage-test -- create STORAGE_DIR inside /tmp for tests needing this for attachments,"
-	@echo "                photos etc."
+	@echo "storage -- (re)create storage directory in /var/lib/cdedb"
+	@echo "storage-test -- create storage directory inside /tmp for tests needing this for"
+	@echo "                attachments, photos etc."
 	@echo "                (this should not be called by hand, but every test needing this should"
 	@echo "                 get the @storage decorator)"
-	@echo "lint -- run linters (mainly pylint)"
+	@echo "cron -- trigger cronjob execution (as user www-data)"
+	@echo "lint -- run linters (flake8 and pylint)"
 	@echo "check -- run test suite"
 	@echo "         (TESTPATTERNS specifies globs to match against the testnames like '404 500' or "
 	@echo "         tests.test_frontend_event.TestEventFrontend.test_create_event."
 	@echo "         If TESTPATTERNS is empty, run full test suite)"
+	@echo "check-parallel -- run full test suite using multiple CPU cores/threads"
+	@echo "                  (beta, not stable yet!)"
+	@echo "xss-check -- check for xss vulnerabilities"
+	@echo "dump-html -- run frontend tests and store all encountered pages inside /tmp/cdedb-dump/"
+	@echo "validate-html -- run html validator over the dumped frontend pages "
+	@echo "                 (dump-html is executed before if they do not exist yet)"
 	@echo "coverage -- run coverage to determine test suite coverage"
+	@echo "mypy -- let mypy run over our codebase (bin, cdedb, tests)"
 
 # Executables
 PYTHONBIN ?= python3
@@ -264,7 +275,6 @@ dump-html: /tmp/cdedb-dump/
 /tmp/cdedb-dump/: export CDEDB_TEST_DUMP_DIR=/tmp/cdedb-dump/
 /tmp/cdedb-dump/:
 	$(PYTHONBIN) -m bin.check --thread-id $(THREADID) test_frontend
-
 
 validate-html: /tmp/cdedb-dump/ /opt/validator/vnu-runtime-image/bin/vnu
 	/opt/validator/vnu-runtime-image/bin/vnu /tmp/cdedb-dump/* 2>&1 \
