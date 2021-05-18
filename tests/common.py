@@ -716,7 +716,7 @@ class FrontendTest(BackendTest):
         cls.do_scrap = "SCRAP_ENCOUNTERED_PAGES" in os.environ
         if cls.do_scrap:
             # create a temporary directory and print it
-            cls.scrap_path = tempfile.mkdtemp()
+            cls.scrap_path = tempfile.mkdtemp(prefix=cls.__name__ + '.')
             print(cls.scrap_path, file=sys.stderr)
 
     @classmethod
@@ -749,7 +749,7 @@ class FrontendTest(BackendTest):
         if self.do_scrap and self.response.status_int // 100 == 2:
             # path without host but with query string - capped at 64 chars
             url = urllib.parse.quote_plus(self.response.request.path_qs)[:64]
-            with tempfile.NamedTemporaryFile(dir=self.scrap_path, suffix=url,
+            with tempfile.NamedTemporaryFile(dir=self.scrap_path, prefix=url + '.',
                                              delete=False) as f:
                 # create a temporary file in scrap_path with url as a suffix
                 # persisting after process completion and dump the response.
