@@ -122,7 +122,7 @@ sample-data:
 sample-data-dump:
 	JSONTEMPFILE=`sudo -u www-data mktemp` \
 		&& sudo -u www-data chmod +r "$${JSONTEMPFILE}" \
-		&& sudo -u www-data $(PYTHONBIN) tests/create_sample_data_json.py -o "$${JSONTEMPFILE}" \
+		&& sudo -u www-data $(PYTHONBIN) bin/create_sample_data_json.py -o "$${JSONTEMPFILE}" \
 		&& cp "$${JSONTEMPFILE}" tests/ancillary_files/sample_data.json \
 		&& sudo -u www-data rm "$${JSONTEMPFILE}"
 
