@@ -101,6 +101,12 @@ We now configure the SQL-backend for LDAP via a corresponding LDIF file (as
 is necessary according to the cn=config mechanism). Current state of the
 content of our sql-ldap.ldif::
 
+    # load sql-backend module
+    dn: cn=module{0},cn=config
+    changetype: modify
+    add: olcModuleLoad
+    olcModuleLoad: back_sql
+
     # backend definition
     dn: olcBackend=sql,cn=config
     changetype: add
@@ -131,11 +137,6 @@ To apply the LDIF configuration file we issue the following command::
 
     ldapmodify -Y EXTERNAL -H ldapi:/// -f /cdedb2/sql-ldap.ldif
 
-Unfortunately this results in a rather terse error message::
-
-    ldap_add: Other (e.g., implementation specific) error (80)
-            additional info: <olcBackend> failed init
-
 .. _sec-ldap-references:
 
 References
@@ -145,3 +146,5 @@ References
 * https://linux.die.net/man/5/slapd-sql
 * http://www.flatmtn.com/article/setting-ldap-back-sql.html
 * https://www.openldap.org/faq/data/cache/978.html
+* https://www.digitalocean.com/community/tutorials/how-to-use-ldif-files-to-make-changes-to-an-openldap-system
+* https://serverfault.com/questions/725887/how-do-i-add-an-openldap-contrib-module-with-cn-config-layout-to-ubuntu
