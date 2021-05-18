@@ -7,9 +7,11 @@ the old-style slapd.conf mechanism whereas newer ldap has switched to the
 new-style cn=config mechanism.
 
 First we install odbc::
+
     apt-get install unixodbc odbc-postgresql
 
 And configure it via /etc/odbc.ini::
+
     [cdb]
     Description         = cdb connector for OpenLDAP's back-sql
     Driver              = PostgreSQL
@@ -27,6 +29,7 @@ And configure it via /etc/odbc.ini::
     ConnSettings        =
 
 To check odbc functionality we use the following command::
+
     isql cdb
 
 We need some additional info inside the SQL database. Here the necessary
@@ -123,9 +126,11 @@ content of our sql-ldap.ldif::
     # has_ldapinfo_dn_ru	no
 
 To apply the LDIF configuration file we issue the following command::
+
     ldapmodify -Y EXTERNAL -H ldapi:/// -f /cdedb2/sql-ldap.ldif
 
 Unfortunately this results in a rather terse error message::
+
     ldap_add: Other (e.g., implementation specific) error (80)
             additional info: <olcBackend> failed init
 
