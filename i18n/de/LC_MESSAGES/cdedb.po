@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2021-04-23 23:20+0200\n"
+"POT-Creation-Date: 2021-05-19 16:51+0200\n"
 "PO-Revision-Date: 2020-12-06 11:30+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -90,21 +90,21 @@ msgstr "Nicht berechtigt auf Veranstaltungstabellen zuzugreifen"
 #: cdedb/backend/event.py:4120 cdedb/backend/ml.py:165 cdedb/backend/ml.py:275
 #: cdedb/backend/ml.py:471 cdedb/backend/ml.py:642 cdedb/backend/ml.py:688
 #: cdedb/backend/ml.py:842 cdedb/backend/ml.py:886 cdedb/backend/ml.py:912
-#: cdedb/backend/ml.py:945 cdedb/backend/ml.py:1025 cdedb/backend/ml.py:1091
-#: cdedb/frontend/assembly.py:194 cdedb/frontend/assembly.py:599
-#: cdedb/frontend/assembly.py:680 cdedb/frontend/assembly.py:737
-#: cdedb/frontend/assembly.py:757 cdedb/frontend/assembly.py:1086
-#: cdedb/frontend/assembly.py:1154 cdedb/frontend/assembly.py:1411
-#: cdedb/frontend/assembly.py:1508 cdedb/frontend/assembly.py:1564
-#: cdedb/frontend/core.py:844 cdedb/frontend/core.py:847
-#: cdedb/frontend/core.py:852 cdedb/frontend/core.py:858
-#: cdedb/frontend/core.py:866 cdedb/frontend/core.py:872
-#: cdedb/frontend/core.py:880 cdedb/frontend/core.py:885
-#: cdedb/frontend/core.py:897 cdedb/frontend/core.py:1605
-#: cdedb/frontend/core.py:1620 cdedb/frontend/core.py:2218
-#: cdedb/frontend/core.py:2232 cdedb/frontend/core.py:2264
-#: cdedb/frontend/core.py:2288 cdedb/frontend/event.py:6328
-#: cdedb/subman/subman.py:154
+#: cdedb/backend/ml.py:945 cdedb/backend/ml.py:1014 cdedb/backend/ml.py:1040
+#: cdedb/backend/ml.py:1081 cdedb/frontend/assembly.py:194
+#: cdedb/frontend/assembly.py:599 cdedb/frontend/assembly.py:680
+#: cdedb/frontend/assembly.py:737 cdedb/frontend/assembly.py:757
+#: cdedb/frontend/assembly.py:1086 cdedb/frontend/assembly.py:1154
+#: cdedb/frontend/assembly.py:1411 cdedb/frontend/assembly.py:1508
+#: cdedb/frontend/assembly.py:1564 cdedb/frontend/core.py:844
+#: cdedb/frontend/core.py:847 cdedb/frontend/core.py:852
+#: cdedb/frontend/core.py:858 cdedb/frontend/core.py:866
+#: cdedb/frontend/core.py:872 cdedb/frontend/core.py:880
+#: cdedb/frontend/core.py:885 cdedb/frontend/core.py:897
+#: cdedb/frontend/core.py:1605 cdedb/frontend/core.py:1620
+#: cdedb/frontend/core.py:2218 cdedb/frontend/core.py:2232
+#: cdedb/frontend/core.py:2264 cdedb/frontend/core.py:2288
+#: cdedb/frontend/event.py:6328 cdedb/subman/subman.py:154
 msgid "Not privileged."
 msgstr "Nicht die nötige Zugriffsberechtigung."
 
@@ -129,8 +129,8 @@ msgstr ""
 
 #: cdedb/backend/assembly.py:547 cdedb/backend/ml.py:426
 #: cdedb/frontend/assembly.py:255 cdedb/frontend/assembly.py:426
-#: cdedb/frontend/event.py:1196 cdedb/frontend/ml_base.py:242
-#: cdedb/frontend/ml_base.py:701 cdedb/frontend/ml_base.py:793
+#: cdedb/frontend/event.py:1196 cdedb/frontend/ml_base.py:248
+#: cdedb/frontend/ml_base.py:707 cdedb/frontend/ml_base.py:799
 msgid "Some of these users do not exist or are archived."
 msgstr "Einige dieser Nutzer existieren nicht oder sind archiviert."
 
@@ -976,8 +976,8 @@ msgstr "Unterschiedliche Mailinglisten angegeben."
 msgid "Cannot remove all moderators."
 msgstr "Es können nicht sämtliche Moderatoren entfernt werden."
 
-#: cdedb/backend/ml.py:429 cdedb/frontend/ml_base.py:246
-#: cdedb/frontend/ml_base.py:705
+#: cdedb/backend/ml.py:429 cdedb/frontend/ml_base.py:252
+#: cdedb/frontend/ml_base.py:711
 msgid "Some of these users are not ml users."
 msgstr "Einige dieser Nutzer sind keine Mailinglistenutzer."
 
@@ -997,35 +997,35 @@ msgstr "Eingeschränkte Moderatoren können dies nicht ändern."
 msgid "Non-unique mailinglist name"
 msgstr "Uneindeutige Mailadresse"
 
-#: cdedb/backend/ml.py:1211
+#: cdedb/backend/ml.py:1199
 msgid "Moderator access has been restricted."
 msgstr "Moderatorzugriff ist eingeschränkt."
 
-#: cdedb/backend/ml.py:1324
+#: cdedb/backend/ml.py:1312
 msgid "Source User is admin and can not be merged."
 msgstr "Der Quellnutzer ist Admin und kann daher nicht verschmolzen werden."
 
-#: cdedb/backend/ml.py:1326
+#: cdedb/backend/ml.py:1314
 msgid "Source persona must be a ml-only user."
 msgstr "Der Quellnutzer muss ein reiner Mailinglistennutzer sein."
 
-#: cdedb/backend/ml.py:1328
+#: cdedb/backend/ml.py:1316
 msgid "Source User is not accessible."
 msgstr "Quellnutzer ist nicht aufrufbar."
 
-#: cdedb/backend/ml.py:1333
+#: cdedb/backend/ml.py:1321
 msgid "Target User is no valid ml user."
 msgstr "Der Zielnutzer ist kein Mailinglisten Nutzer."
 
-#: cdedb/backend/ml.py:1335
+#: cdedb/backend/ml.py:1323
 msgid "Target User is not accessible."
 msgstr "Zielnutzer ist nicht aufrufbar."
 
-#: cdedb/backend/ml.py:1337 cdedb/frontend/ml_base.py:301
+#: cdedb/backend/ml.py:1325 cdedb/frontend/ml_base.py:307
 msgid "Can not merge user into himself."
 msgstr "Nutzer kann nicht mit sich selbst verschmolzen werden."
 
-#: cdedb/backend/ml.py:1352
+#: cdedb/backend/ml.py:1340
 #, python-format
 msgid "Both users are related to the same mailinglists: %(mls)s"
 msgstr "Beide Benutzer haben einen Bezug zu gleichen Mailinglisten: %(mls)s"
@@ -1317,7 +1317,7 @@ msgstr "Der Anti-CSRF-Token is ungültig."
 
 #: cdedb/frontend/assembly.py:265 cdedb/frontend/assembly.py:280
 #: cdedb/frontend/event.py:495 cdedb/frontend/event.py:511
-#: cdedb/frontend/ml_base.py:712 cdedb/frontend/ml_base.py:821
+#: cdedb/frontend/ml_base.py:718 cdedb/frontend/ml_base.py:827
 msgid "Action had no effect."
 msgstr "Aktion hatte keinen Effekt."
 
@@ -1366,7 +1366,7 @@ msgstr "Versammlung angelegt."
 #: cdedb/frontend/core.py:2408 cdedb/frontend/core.py:2441
 #: cdedb/frontend/event.py:1387 cdedb/frontend/event.py:4212
 #: cdedb/frontend/event.py:4828 cdedb/frontend/event.py:6235
-#: cdedb/frontend/event.py:6267 cdedb/frontend/ml_base.py:528
+#: cdedb/frontend/event.py:6267 cdedb/frontend/ml_base.py:534
 msgid "Must be checked."
 msgstr "Muss markiert sein."
 
@@ -1394,7 +1394,7 @@ msgstr "Mitglieder müssen sich selbst anmelden."
 #: cdedb/frontend/event.py:2690 cdedb/frontend/event.py:2764
 #: cdedb/frontend/event.py:2787 cdedb/frontend/event.py:2815
 #: cdedb/frontend/event.py:2838 cdedb/frontend/event.py:2852
-#: cdedb/frontend/ml_base.py:656
+#: cdedb/frontend/ml_base.py:662
 msgid "Empty File."
 msgstr "Leere Datei."
 
@@ -2533,7 +2533,7 @@ msgid "Lodgement"
 msgstr "Unterkunft"
 
 #: cdedb/frontend/event.py:3174
-#: cdedb/frontend/templates/web/event/lodgements.tmpl:77
+#: cdedb/frontend/templates/web/event/lodgements.tmpl:79
 #: cdedb/frontend/templates/web/event/manage_inhabitants.tmpl:44
 #: cdedb/frontend/templates/web/event/show_lodgement.tmpl:131
 msgid "Camping Mat"
@@ -3102,51 +3102,51 @@ msgstr "Nachricht moderiert."
 msgid "Message not moderated."
 msgstr "Nachricht moderiert."
 
-#: cdedb/frontend/ml_base.py:210
+#: cdedb/frontend/ml_base.py:216
 msgid "May not create mailinglist of this type."
 msgstr "Kann keine Mailingliste des gewünschten Typs erstellen."
 
-#: cdedb/frontend/ml_base.py:289 cdedb/frontend/ml_base.py:293
-#: cdedb/frontend/ml_base.py:839 cdedb/frontend/ml_base.py:879
-#: cdedb/frontend/ml_base.py:895 cdedb/frontend/ml_base.py:922
-#: cdedb/frontend/ml_base.py:955 cdedb/frontend/ml_base.py:989
+#: cdedb/frontend/ml_base.py:295 cdedb/frontend/ml_base.py:299
+#: cdedb/frontend/ml_base.py:845 cdedb/frontend/ml_base.py:885
+#: cdedb/frontend/ml_base.py:901 cdedb/frontend/ml_base.py:928
+#: cdedb/frontend/ml_base.py:961 cdedb/frontend/ml_base.py:995
 msgid "User does not exist or is archived."
 msgstr "Dieser Benutzer existiert nicht oder ist archiviert."
 
-#: cdedb/frontend/ml_base.py:297
+#: cdedb/frontend/ml_base.py:303
 msgid "Source persona must be a ml-only user and no admin."
 msgstr ""
 "Der Quellnutzer muss ein reiner Mailinglistennutzer und darf kein Admin sein."
 
-#: cdedb/frontend/ml_base.py:341
+#: cdedb/frontend/ml_base.py:347
 msgid "Not privileged to view log for all these mailinglists."
 msgstr "Keine Berechtigung um auf die Logs aller Mailinglisten zuzugreifen."
 
-#: cdedb/frontend/ml_base.py:724
+#: cdedb/frontend/ml_base.py:730
 msgid "User is no moderator."
 msgstr "Person ist kein Moderator."
 
-#: cdedb/frontend/ml_base.py:730
+#: cdedb/frontend/ml_base.py:736
 msgid "Not allowed to remove yourself as moderator."
 msgstr "Du kannst Dich nicht selbst als Moderator entfernen."
 
-#: cdedb/frontend/ml_base.py:735
+#: cdedb/frontend/ml_base.py:741
 msgid "Cannot remove last moderator."
 msgstr "Der letzte Moderator kann nicht entfernt werden."
 
-#: cdedb/frontend/ml_base.py:778 cdedb/frontend/ml_base.py:819
+#: cdedb/frontend/ml_base.py:784 cdedb/frontend/ml_base.py:825
 msgid "Not privileged to change subscriptions."
 msgstr "Darf Abonnements nicht ändern."
 
-#: cdedb/frontend/ml_base.py:1070
+#: cdedb/frontend/ml_base.py:1076
 msgid "Confirmation email sent."
 msgstr "Verifizierungsmail verschickt."
 
-#: cdedb/frontend/ml_base.py:1103
+#: cdedb/frontend/ml_base.py:1109
 msgid "Not subscribed."
 msgstr "Nicht abonniert."
 
-#: cdedb/frontend/ml_base.py:1106
+#: cdedb/frontend/ml_base.py:1112
 msgid "Disallowed to change address."
 msgstr "Adressänderung unzulässig."
 
@@ -4353,7 +4353,7 @@ msgstr "%(ballot)s bearbeiten %(assembly)s"
 #: cdedb/frontend/templates/web/event/checkin.tmpl:73
 #: cdedb/frontend/templates/web/event/course_list.tmpl:59
 #: cdedb/frontend/templates/web/event/course_stats.tmpl:146
-#: cdedb/frontend/templates/web/event/lodgements.tmpl:132
+#: cdedb/frontend/templates/web/event/lodgements.tmpl:137
 #: cdedb/frontend/templates/web/event/registration_query.tmpl:103
 #: cdedb/frontend/templates/web/event/show_course.tmpl:33
 #: cdedb/frontend/templates/web/event/show_lodgement.tmpl:26
@@ -5247,8 +5247,8 @@ msgid "Enter Bank Transfers"
 msgstr "Überweisungen eintragen"
 
 #: cdedb/frontend/templates/web/cde/base.tmpl:42
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:6
 #: cdedb/frontend/templates/web/cde/show_semester.tmpl:9
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:12
 msgid "Semester Management"
 msgstr "Semesterverwaltung"
 
@@ -5650,7 +5650,7 @@ msgstr "Fehler"
 #: cdedb/frontend/templates/web/cde/money_transfers.tmpl:63
 #: cdedb/frontend/templates/web/cde/parse_statement.tmpl:56
 #: cdedb/frontend/templates/web/event/batch_fees.tmpl:81
-#: cdedb/frontend/templates/web/event/lodgements.tmpl:163
+#: cdedb/frontend/templates/web/event/lodgements.tmpl:171
 msgid "Warning"
 msgstr "Warnung"
 
@@ -6431,7 +6431,7 @@ msgid "Finalized"
 msgstr "Finalisiert"
 
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:134
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:213
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:219
 msgid "Semester"
 msgstr "Semester"
 
@@ -6956,7 +6956,7 @@ msgstr "Die Veranstaltung wird irreversibel gelöscht."
 msgid "The Participant will be removed from the Event."
 msgstr "Der Teilnehmer wird aus der Veranstaltung entfernt."
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:13
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:16
 msgid ""
 "The actions on this site affect all Members, therefore they are basically "
 "irreversibel. Only use them, if You are absolutely sure what You are doing."
@@ -6965,20 +6965,20 @@ msgstr ""
 "diesem Grund sind sie praktisch nicht rückgängig zu machen. Führe diese "
 "Aktionen bitte nur aus, wenn Du Dir sicher bist, was Du tust."
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:20
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:23
 msgid "CdE-Semester"
 msgstr "CdE-Semester"
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:23
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:26
 #, python-format
 msgid "We are currently in Semester %(number)s."
 msgstr "Derzeit befinden wir uns in Semester Nummer %(number)s."
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:31
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:34
 msgid "Payment Requests will be sent."
 msgstr "Der Versand der Zahlungsaufforderungen wird gestartet."
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:36
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:39
 msgid ""
 "All inactive Members will be removed. This cannot be undone and it can only "
 "be done once per Semester."
@@ -6986,60 +6986,60 @@ msgstr ""
 "Die inaktiven Mitglieder werden gestrichen. Das ist irreversibel und nur "
 "einmal im Semester möglich."
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:38
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:41
 msgid "The Balance of all Members will be updated. This cannot be undone."
 msgstr ""
 "Das Guthaben aller Mitglieder wird aktualisiert. Diese Aktion ist "
 "irreversibel."
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:40
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:43
 msgid "The new Semester will be created."
 msgstr "Das neue Semester wird angelegt."
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:42
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:45
 msgid "Address-Check-Mails will be sent."
 msgstr "Der Versand der Address-Check-Mails wird gestartet."
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:47
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:50
 msgid "The new exPuls-Semester will be created."
 msgstr "Das neue exPuls-Semester wird angelegt."
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:56
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:59
 msgid "Send Payment Requests/Information"
 msgstr "Zahlungsaufforderung/-information versenden"
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:62
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:277
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:65
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:289
 #, python-format
 msgid "Done up until %(state)s. %(count)s emails have been sent so far."
 msgstr "Erledigt bis %(state)s. %(count)s E-Mails wurden bisher versandt."
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:71
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:286
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:74
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:298
 msgid "Only one Test-Mail"
 msgstr "Nur einzelne Testmail"
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:74
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:77
 msgid "Include Address-Check"
 msgstr "Mit Adressabfrage"
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:76
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:289
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:79
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:301
 msgid "Send Mails"
 msgstr "Mails verschicken"
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:80
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:270
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:83
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:282
 #, python-format
 msgid "Done on the %(date)s. %(count)s emails were sent."
 msgstr "Erledigt am %(date)s. %(count)s E-Mails versandt."
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:91
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:119
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:94
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:122
 msgid "Remove inactive Members"
 msgstr "Streichung inaktiver Mitglieder"
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:97
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:100
 #, python-format
 msgid ""
 "Done up until %(state)s. %(count)s memberships have been ended so far. A "
@@ -7048,7 +7048,7 @@ msgstr ""
 "Erledigt bis %(state)s. %(count)s Mitgliedschaften wurden bisher beendet. "
 "%(balance)s an Guthaben wurde bisher eingezogen."
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:107
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:110
 #, python-format
 msgid ""
 "%(low_count)s members have insufficient balance (total of %(low_total)s) "
@@ -7059,14 +7059,14 @@ msgstr ""
 "%(low_total)s, davon %(low_last_count)s mit einer aktiven "
 "Einzugsermächtigung). Zusätzlich gibt es %(trial_count)s Probemitglieder."
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:122
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:145
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:202
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:315
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:125
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:148
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:205
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:327
 msgid "To be done later."
 msgstr "Später zu erledigen."
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:125
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:128
 #, python-format
 msgid ""
 "Done on the %(date)s. %(count)s memberships were ended. A total of "
@@ -7075,12 +7075,12 @@ msgstr ""
 "Erledigt am %(date)s. %(count)s Mitgliedschaften beendet. %(balance)s an "
 "Guthaben eingezogen."
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:141
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:168
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:144
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:171
 msgid "Update Balances"
 msgstr "Guthaben aktualisieren"
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:149
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:152
 #, python-format
 msgid ""
 "Done up until %(state)s. %(count)s trial meberships have been ended so far. "
@@ -7089,7 +7089,7 @@ msgstr ""
 "Erledigt bis %(state)s. %(count)s Probemitgliedschaften wurden bisher "
 "beendet. Bisher wurden %(total)s abgebucht."
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:160
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:163
 #, python-format
 msgid ""
 "%(total_count)s Members total, %(trial_count)s of which have a Trial-"
@@ -7098,7 +7098,7 @@ msgstr ""
 "Insgesamt %(total_count)s Mitglieder, %(trial_count)s davon haben eine "
 "Probemitgliedschaft."
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:172
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:175
 #, python-format
 msgid ""
 "Done on the %(date)s. %(count)s trial memberships were ended. A total of "
@@ -7107,12 +7107,12 @@ msgstr ""
 "Erledigt am %(date)s. %(count)s Probemitgliedschaften wurden beendet. "
 "Insgesamt wurden %(total)s abgebucht."
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:187
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:199
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:190
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:202
 msgid "Next Semester"
 msgstr "Nächstes Semester"
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:191
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:194
 msgid ""
 "The Semesterstate influences the display of Balances. This button should be "
 "pressed at the target date (give or take three weeks)."
@@ -7120,93 +7120,98 @@ msgstr ""
 "Der Semesterzustand beeinflusst die Anzeige der Guthaben. Dieser Knopf "
 "sollte also zum Zielzeitpunkt (plus/minus drei Wochen) gedrückt werden."
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:209
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:212
 msgid "Semester History"
 msgstr "Semesterhistorie"
 
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:213
 #: cdedb/frontend/templates/web/cde/show_semester.tmpl:214
+msgid "widen semester history"
+msgstr "Semesterhistorie breiter anzeigen"
+
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:220
 msgid "Billing Mails Sent"
 msgstr "Zahlungsaufforderungen"
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:215
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:221
 msgid "Billing Done"
 msgstr "Zahlungsaufforderungen erledigt"
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:216
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:222
 msgid "Archival Notifications Sent"
 msgstr "Archivierungsbenachrichtigungen verschickt."
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:217
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:223
 msgid "Archival Notifications Done"
 msgstr "Archivierungsbenachrichtigungen verschickt."
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:218
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:224
 msgid "Members Ejected"
 msgstr "Gestrichene Mitglieder"
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:219
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:225
 msgid "Ejection Balance"
 msgstr "Gestrichenes Guthaben"
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:220
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:226
 msgid "Ejection Done"
 msgstr "Streichung inaktiver Mitglieder erledigt"
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:221
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:227
 msgid "Accounts Archived"
 msgstr "Archivierte Benutzer"
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:222
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:228
 msgid "Automated Archival Done"
 msgstr "Automatische Archivierung abgeschlossen."
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:223
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:229
 msgid "Trialmemberships Ended"
 msgstr "Beendete Probemitgliedschaften"
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:224
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:230
 msgid "Balance Deducted"
 msgstr "Abgebuchtes Guthaben"
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:225
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:231
 msgid "Balance Update Done"
 msgstr "Guthabenaktualisierung erledigt"
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:226
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:232
 msgid "Semester Done"
 msgstr "Semester erledigt"
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:253
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:265
 msgid "exPuls-Semester"
 msgstr "exPuls-Semester"
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:256
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:268
 #, python-format
 msgid "The next exPuls will be number %(number)s."
 msgstr "Der nächste exPuls trägt die Nummer %(number)s."
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:265
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:277
 msgid "Send Address-Checks"
 msgstr "Adressabfragen verschicken"
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:296
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:308
 msgid "Mark as done"
 msgstr "Als erledigt markieren"
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:306
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:312
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:318
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:324
 msgid "Next exPuls"
 msgstr "Nächster exPuls"
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:322
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:334
 msgid "exPuls History"
 msgstr "exPuls-Historie"
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:326
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:338
 msgid "Issue"
 msgstr "Ausgabe"
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:327
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:339
 msgid "Addresscheck Mails Sent"
 msgstr "Adressabfragen"
 
@@ -9986,7 +9991,7 @@ msgstr "%s %s auswählen"
 
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:283
 #: cdedb/frontend/templates/web/event/course_stats.tmpl:172
-#: cdedb/frontend/templates/web/event/lodgements.tmpl:162
+#: cdedb/frontend/templates/web/event/lodgements.tmpl:170
 msgid "Color Guide"
 msgstr "Farb-Legende"
 
@@ -10647,41 +10652,41 @@ msgstr "Unterkunft anlegen"
 msgid "Inhabitants"
 msgstr "Bewohner"
 
-#: cdedb/frontend/templates/web/event/lodgements.tmpl:64
-#: cdedb/frontend/templates/web/event/lodgements.tmpl:74
+#: cdedb/frontend/templates/web/event/lodgements.tmpl:66
+#: cdedb/frontend/templates/web/event/lodgements.tmpl:76
 msgid "Regular"
 msgstr "Regulär"
 
-#: cdedb/frontend/templates/web/event/lodgements.tmpl:88
+#: cdedb/frontend/templates/web/event/lodgements.tmpl:90
 msgid "Ungrouped Lodgements"
 msgstr "Ungruppierte Unterkünfte"
 
-#: cdedb/frontend/templates/web/event/lodgements.tmpl:135
+#: cdedb/frontend/templates/web/event/lodgements.tmpl:140
 #: cdedb/frontend/templates/web/event/manage_inhabitants.tmpl:16
 #: cdedb/frontend/templates/web/event/show_lodgement.tmpl:28
 msgid "Manage Inhabitants"
 msgstr "Bewohner verwalten"
 
-#: cdedb/frontend/templates/web/event/lodgements.tmpl:164
+#: cdedb/frontend/templates/web/event/lodgements.tmpl:172
 msgid "Overfull"
 msgstr "Überfüllt"
 
-#: cdedb/frontend/templates/web/event/lodgements.tmpl:165
+#: cdedb/frontend/templates/web/event/lodgements.tmpl:173
 msgid "Illegal Gendermix"
 msgstr "unzulässige Geschlechtermischung"
 
-#: cdedb/frontend/templates/web/event/lodgements.tmpl:168
+#: cdedb/frontend/templates/web/event/lodgements.tmpl:176
 msgid "Sorting:"
 msgstr "Sortierung:"
 
-#: cdedb/frontend/templates/web/event/lodgements.tmpl:169
+#: cdedb/frontend/templates/web/event/lodgements.tmpl:177
 msgid ""
 "The lodgements may be sorted according to the following criteria inside "
 "their lodgement groups."
 msgstr ""
 "Die Unterkünfte können innerhalb der Unterkunftsgruppen sortiert werden."
 
-#: cdedb/frontend/templates/web/event/lodgements.tmpl:174
+#: cdedb/frontend/templates/web/event/lodgements.tmpl:182
 msgid ""
 "The names of the <strong>event parts</strong> sort by the number of regular "
 "spaces used in this part."
@@ -10689,7 +10694,7 @@ msgstr ""
 "Die Namen der <strong>Veranstaltungsteile</strong> sortieren nach den "
 "genutzten regulären Plätzen in diesem Veranstaltungsteil."
 
-#: cdedb/frontend/templates/web/event/lodgements.tmpl:179
+#: cdedb/frontend/templates/web/event/lodgements.tmpl:187
 msgid ""
 "The <strong>+x</strong> sort by the number of camping mat spaces used in the "
 "associated part."
@@ -10697,7 +10702,7 @@ msgstr ""
 "Die <strong>+x</strong> sortieren nach den genutzten Isomattenplätzen in dem "
 "zugehörigen Veranstaltungsteil."
 
-#: cdedb/frontend/templates/web/event/lodgements.tmpl:184
+#: cdedb/frontend/templates/web/event/lodgements.tmpl:192
 msgid ""
 "The columns <strong>regular</strong> and <strong>camping mat</strong> sort "
 "numerically."
