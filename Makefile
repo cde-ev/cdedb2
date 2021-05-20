@@ -294,9 +294,9 @@ dump-html: /tmp/cdedb-dump/
 	$(PYTHONBIN) -m bin.check --thread-id $(THREADID) test_frontend
 
 validate-html: /tmp/cdedb-dump/ /opt/validator/vnu-runtime-image/bin/vnu
-	/opt/validator/vnu-runtime-image/bin/vnu /tmp/cdedb-dump/* 2>&1 \
-		| grep -v -F 'This document appears to be written in English' \
-		| grep -v -F 'input type is not supported in all browsers'
+	/opt/validator/vnu-runtime-image/bin/vnu --no-langdetect --exit-zero-always /tmp/cdedb-dump/* 2>&1 \
+		| grep -v -F 'input type is not supported in all browsers' \
+		> /cdedb2/validate-html.txt
 
 /opt/validator/vnu-runtime-image/bin/vnu: /opt/validator/vnu.linux.zip
 	unzip -DD /opt/validator/vnu.linux.zip -d /opt/validator
