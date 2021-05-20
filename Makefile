@@ -287,7 +287,8 @@ endif
 xss-check:
 	$(PYTHONBIN) -m bin.check --thread-id $(THREADID) --xss-check --verbose
 
-dump-html: /tmp/cdedb-dump/
+dump-html:
+	$(MAKE) -B /tmp/cdedb-dump/
 
 /tmp/cdedb-dump/: export CDEDB_TEST_DUMP_DIR=/tmp/cdedb-dump/
 /tmp/cdedb-dump/:
