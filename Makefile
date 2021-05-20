@@ -301,8 +301,8 @@ validate-html: /tmp/cdedb-dump/ /opt/validator/vnu-runtime-image/bin/vnu
 /opt/validator/vnu-runtime-image/bin/vnu: /opt/validator/vnu.linux.zip
 	unzip -DD /opt/validator/vnu.linux.zip -d /opt/validator
 
-VALIDATORURL := "https://github.com/validator/validator/releases/download/20.3.16/vnu.linux.zip"
-VALIDATORCHECKSUM := "c7d8d7c925dbd64fd5270f7b81a56f526e6bbef0 /opt/validator/vnu.linux.zip"
+VALIDATORURL := "https://github.com/validator/validator/releases/download/20.6.30/vnu.linux.zip"
+VALIDATORCHECKSUM := "f56d95448fba4015ec75cfc9546e3063e8d66390 /opt/validator/vnu.linux.zip"
 
 /opt/validator/vnu.linux.zip: /opt/validator
 	wget $(VALIDATORURL) -O /opt/validator/vnu.linux.zip
