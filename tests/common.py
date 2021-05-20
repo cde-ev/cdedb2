@@ -720,7 +720,7 @@ class FrontendTest(BackendTest):
             dump_root.mkdir(exist_ok=True)
             # create a temporary directory and print it
             cls.scrap_path = tempfile.mkdtemp(dir=dump_root, prefix=f'{cls.__name__}.')
-            print(cls.scrap_path, file=sys.stderr)
+            print(f'\n\n{cls.scrap_path}\n', file=sys.stderr)
 
     @classmethod
     def tearDownClass(cls) -> None:
@@ -756,7 +756,7 @@ class FrontendTest(BackendTest):
             url = urllib.parse.quote(self.response.request.path_qs, safe='/;@&=+$,~')[:64]
             # since / chars are forbidden in file paths, we replace them by _
             url = url.replace('/', '_')
-            with tempfile.NamedTemporaryFile(dir=self.scrap_path, prefix=url + '.',
+            with tempfile.NamedTemporaryFile(dir=self.scrap_path, prefix=f'{url}.',
                                              delete=False) as f:
                 # create a temporary file in scrap_path with url as a suffix
                 # persisting after process completion and dump the response.
