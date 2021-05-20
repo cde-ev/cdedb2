@@ -295,7 +295,7 @@ dump-html:
 	$(PYTHONBIN) -m bin.check --thread-id $(THREADID) test_frontend
 
 validate-html: /tmp/cdedb-dump/ /opt/validator/vnu-runtime-image/bin/vnu
-	/opt/validator/vnu-runtime-image/bin/vnu --no-langdetect --exit-zero-always --stdout \
+	/opt/validator/vnu-runtime-image/bin/vnu --no-langdetect --stdout \
 		--filterpattern '(.*)input type is not supported in all browsers(.*)' /tmp/cdedb-dump/* \
 		> /cdedb2/validate-html.txt
 
