@@ -1505,10 +1505,12 @@ class EventFrontend(AbstractUserFrontend):
                     and not t['course_id']
                     and r['persona_id'] not in e['orgas']))),))
         per_track_statistics: Dict[str, Dict[int, int]] = OrderedDict()
+        regs_in_choice_x: Dict[str, Dict[int, List[int]]] = OrderedDict()
         if tracks:
             # Additional dynamic tests for course attendee statistics
             for i in range(max(t['num_choices'] for t in tracks.values())):
-                tests3[rs.gettext('In {}. Choice').format(i + 1)] = (
+                key = rs.gettext('In {}. Choice').format(i + 1)
+                checker = (
                     functools.partial(
                         lambda e, r, p, t, j: (
                             p['status'] == stati.participant
@@ -1516,6 +1518,18 @@ class EventFrontend(AbstractUserFrontend):
                             and len(t['choices']) > j
                             and (t['choices'][j] == t['course_id'])),
                         j=i))
+                tests3[key] = checker
+
+                # the ids are used later on for the query page
+                regs_in_choice_x[key] = {
+                    track_id: [
+                        r['id'] for r in registrations.values()
+                        if checker(rs.ambience['event'], r,
+                                   r['parts'][tracks[track_id]['part_id']],
+                                   r['tracks'][track_id])
+                    ]
+                    for track_id in tracks
+                }
 
             for key, test2 in tests2.items():
                 per_track_statistics[key] = {
@@ -1652,6 +1666,12 @@ class EventFrontend(AbstractUserFrontend):
                 ('persona.id', QueryOperators.otherthan,
                  rs.ambience['event']['orgas']),)
         }
+        for name, track_regs in regs_in_choice_x.items():
+            registration_query_filters[name] = functools.partial(
+                lambda e, p, t, t_r: (
+                    ("reg.id", QueryOperators.oneof, t_r[t['id']]),
+                ), t_r=track_regs
+            )
         # Query filters for all the course statistics defined and calculated above.
         # They are customized and inserted into the query on the fly by get_query().
         # `e` is the event, `p` is the event_part, `t` is the track.
