@@ -1465,19 +1465,8 @@ class CoreBackend(AbstractBackend):
                 raise ArchiveError(n_("Involved in unfinished event."))
             self.sql_delete(rs, "event.orgas", (persona_id,), "persona_id")
             #
-            # 7. Handle assembly realm
+            # 7. Assembly realm is handled via assembly archival.
             #
-            query = glue(
-                "SELECT ass.id FROM assembly.assemblies as ass",
-                "JOIN assembly.attendees as att ON att.assembly_id = ass.id",
-                "WHERE att.persona_id = %s AND ass.is_active = True")
-            ass_active = self.query_all(rs, query, (persona_id,))
-            if ass_active:
-                raise ArchiveError(n_("Involved in unfinished assembly."))
-            query = glue(
-                "UPDATE assembly.attendees SET secret = NULL",
-                "WHERE persona_id = %s")
-            self.query_exec(rs, query, (persona_id,))
             #
             # 8. Handle ml realm
             #
