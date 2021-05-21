@@ -32,11 +32,11 @@
                 <div class="col-md-6">
                     {% call util.bootstrap_panel(title=(part['title'] if ambience['event']['parts']|length > 1
                                                                       else gettext("Assigned Inhabitants")),
-                                                 aclass="panel-info") %}
+                                                 aclass="panel-info", anid="inhabitants-{}".format(part_id)) %}
                         <table class="table table-condensed">
                             <tbody>
                             {% for registration_id in inhabitants[(ambience['lodgement']['id'], part_id)] %}
-                                <tr>
+                                <tr id="inhabitant-{{ part_id }}-{{ registration_id }}">
                                     <td>
                                         {{ personas[registrations[registration_id]['persona_id']]['given_names'] }}
                                         {{ personas[registrations[registration_id]['persona_id']]['family_name'] }}

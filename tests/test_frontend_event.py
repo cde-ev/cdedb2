@@ -3184,6 +3184,67 @@ etc;anything else""", f['entries_2'].value)
         self.assertCheckbox(False, "is_camping_mat_3_3")
         self.assertCheckbox(True, "is_camping_mat_3_4")
 
+    @as_users("garcia")
+    def test_lodgements_swap_inhabitants(self) -> None:
+        # check current inhabitants
+        self.traverse({'description': 'Veranstaltungen'},
+                      {'description': 'Große Testakademie 2222'},
+                      {'description': 'Unterkünfte'},
+                      {'description': 'Warme Stube'},
+                      {'description': 'Bewohner verwalten'})
+        self.assertPresence('Zur Zeit keine Bewohner eingeteilt.', div='inhabitants-1')
+        self.assertPresence('Zur Zeit keine Bewohner eingeteilt.', div='inhabitants-2')
+        self.assertPresence('Akira', div='inhabitant-3-5')
+        self.assertCheckbox(False, "is_camping_mat_3_5")
+        self.assertPresence('Anton', div='inhabitant-3-1')
+        self.assertCheckbox(False, "is_camping_mat_3_1")
+        self.assertNonPresence('Garcia', div="inhabitants-3")
+        self.assertNonPresence('Inga', div="inhabitants-3")
+
+        self.traverse({'description': 'Unterkünfte'},
+                      {'description': 'Kalte Kammer'},
+                      {'description': 'Bewohner verwalten'})
+        self.assertPresence('Garcia', div='inhabitant-1-3')
+        self.assertCheckbox(False, "is_camping_mat_1_3")
+        self.assertPresence('Zur Zeit keine Bewohner eingeteilt.', div='inhabitants-2')
+        self.assertPresence('Garcia', div='inhabitant-3-3')
+        self.assertCheckbox(False, "is_camping_mat_3_3")
+        self.assertPresence('Inga', div='inhabitant-3-4')
+        self.assertCheckbox(True, "is_camping_mat_3_4")
+        self.assertNonPresence('Akira', div="inhabitants-3")
+        self.assertNonPresence('Anton', div="inhabitants-3")
+
+        # swap inhabitants of both lodgements in part 3
+        f = self.response.forms['swapinhabitantsform']
+        f['swap_with_3'] = 1
+        self.submit(f)
+
+        # check the inhabitants of both lodgements
+        self.traverse({'description': 'Unterkünfte'},
+                      {'description': 'Warme Stube'},
+                      {'description': 'Bewohner verwalten'})
+        self.assertPresence('Zur Zeit keine Bewohner eingeteilt.', div='inhabitants-1')
+        self.assertPresence('Zur Zeit keine Bewohner eingeteilt.', div='inhabitants-2')
+        self.assertPresence('Garcia', div='inhabitant-3-3')
+        self.assertCheckbox(False, "is_camping_mat_3_3")
+        self.assertPresence('Inga', div='inhabitant-3-4')
+        self.assertCheckbox(True, "is_camping_mat_3_4")
+        self.assertNonPresence('Akira', div="inhabitants-3")
+        self.assertNonPresence('Anton', div="inhabitants-3")
+
+        self.traverse({'description': 'Unterkünfte'},
+                      {'description': 'Kalte Kammer'},
+                      {'description': 'Bewohner verwalten'})
+        self.assertPresence('Garcia', div='inhabitant-1-3')
+        self.assertCheckbox(False, "is_camping_mat_1_3")
+        self.assertPresence('Zur Zeit keine Bewohner eingeteilt.', div='inhabitants-2')
+        self.assertPresence('Akira', div='inhabitant-3-5')
+        self.assertCheckbox(False, "is_camping_mat_3_5")
+        self.assertPresence('Anton', div='inhabitant-3-1')
+        self.assertCheckbox(False, "is_camping_mat_3_1")
+        self.assertNonPresence('Garcia', div="inhabitants-3")
+        self.assertNonPresence('Inga', div="inhabitants-3")
+
     @as_users("annika", "garcia")
     def test_lock_event(self) -> None:
         self.traverse({'href': '/event/$'},
