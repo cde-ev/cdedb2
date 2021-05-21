@@ -4863,7 +4863,7 @@ class EventFrontend(AbstractUserFrontend):
             key="lodgement_id", personas=personas)
         for part_id in rs.ambience['event']['parts']:
             merge_dicts(rs.values, {
-                'camping_mat_capacity_{}_{}'.format(part_id, registration_id):
+                'is_camping_mat_{}_{}'.format(part_id, registration_id):
                     registrations[registration_id]['parts'][part_id][
                         'is_camping_mat']
                 for registration_id in inhabitants[(lodgement_id, part_id)]
@@ -4951,7 +4951,7 @@ class EventFrontend(AbstractUserFrontend):
                 for reg_id in current_inhabitants[part_id]
             },
             **{
-                f"camping_mat_capacity_{part_id}_{reg_id}": bool
+                f"is_camping_mat_{part_id}_{reg_id}": bool
                 for part_id in rs.ambience['event']['parts']
                 for reg_id in current_inhabitants[part_id]
             }
@@ -4975,7 +4975,7 @@ class EventFrontend(AbstractUserFrontend):
                 is_camping_mat = reg['parts'][part_id]['is_camping_mat']
                 changed_inhabitant = (
                         reg_id in current_inhabitants[part_id]
-                        and data.get(f"camping_mat_capacity_{part_id}_{reg_id}",
+                        and data.get(f"is_camping_mat_{part_id}_{reg_id}",
                                      False) != is_camping_mat)
                 if new_inhabitant or deleted_inhabitant:
                     new_reg['parts'][part_id] = {
@@ -4984,7 +4984,7 @@ class EventFrontend(AbstractUserFrontend):
                 elif changed_inhabitant:
                     new_reg['parts'][part_id] = {
                         'is_camping_mat': data.get(
-                            f"camping_mat_capacity_{part_id}_{reg_id}",
+                            f"is_camping_mat_{part_id}_{reg_id}",
                             False)
                     }
             if new_reg['parts']:

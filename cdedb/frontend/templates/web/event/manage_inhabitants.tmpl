@@ -42,7 +42,7 @@
                                         {{ personas[registrations[registration_id]['persona_id']]['family_name'] }}
                                     </td>
                                     <td>
-                                        &ensp;{{ util.input_checkbox('camping_mat_%s_%s'|format(part_id, registration_id), gettext("Camping Mat")) }}
+                                        &ensp;{{ util.input_checkbox('is_camping_mat_%s_%s'|format(part_id, registration_id), gettext("Camping Mat")) }}
                                     </td>
                                     <td>
                                         &ensp;{{ util.input_checkbox('delete_%s_%s'|format(part_id, registration_id), gettext("Remove"),
