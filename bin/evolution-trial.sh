@@ -46,10 +46,8 @@ ls cdedb/database/evolutions > /tmp/oldevolutions.txt
 make -B tests/ancillary_files/sample_data.sql &> /dev/null
 if [[ "$ISOLATED" == true ]]; then
     make sample-data &> /dev/null
-    make sample-data-test &> /dev/null
-else
-    make sql-test &> /dev/null
 fi
+make sql-test &> /dev/null
 
 # new revision
 echo "Checkout $NEWREVISION"
@@ -75,8 +73,8 @@ bin/normalize_database_description.py /tmp/evolved-description.txt
 make i18n-compile
 make -B tests/ancillary_files/sample_data.sql &> /dev/null
 if [[ "$ISOLATED" == true ]]; then
-    make sample-data-test-shallow
-    ./bin/check.sh 2> >(tee -a /tmp/output-check.txt >&2)
+    make sql-test-shallow
+    ./bin/check.py 2> >(tee -a /tmp/output-check.txt >&2)
 fi
 
 # new db
