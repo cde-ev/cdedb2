@@ -1504,7 +1504,7 @@ class EventFrontend(AbstractUserFrontend):
                     p['status'] == stati.participant
                     and not t['course_id']
                     and r['persona_id'] not in e['orgas']))),))
-        per_track_statistics: Dict[str, Dict[int, int]] = OrderedDict()
+        per_track_statistics: Dict[str, Dict[int, Optional[int]]] = OrderedDict()
         regs_in_choice_x: Dict[str, Dict[int, List[int]]] = OrderedDict()
         if tracks:
             # Additional dynamic tests for course attendee statistics
@@ -1512,20 +1512,26 @@ class EventFrontend(AbstractUserFrontend):
                 key = rs.gettext('In {}. Choice').format(i + 1)
                 checker = (
                     functools.partial(
-                        lambda e, r, p, t, j: (
+                        lambda p, t, j: (
                             p['status'] == stati.participant
                             and t['course_id']
                             and len(t['choices']) > j
                             and (t['choices'][j] == t['course_id'])),
                         j=i))
-                tests3[key] = checker
+                per_track_statistics[key] = {
+                    track_id: sum(
+                        1 for r in registrations.values()
+                        if checker(r['parts'][tracks[track_id]['part_id']],
+                                   r['tracks'][track_id]))
+                    if i < tracks[track_id]['num_choices'] else None
+                    for track_id in tracks
+                }
 
                 # the ids are used later on for the query page
                 regs_in_choice_x[key] = {
                     track_id: [
                         r['id'] for r in registrations.values()
-                        if checker(rs.ambience['event'], r,
-                                   r['parts'][tracks[track_id]['part_id']],
+                        if checker(r['parts'][tracks[track_id]['part_id']],
                                    r['tracks'][track_id])
                     ]
                     for track_id in tracks
