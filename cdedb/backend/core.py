@@ -1470,7 +1470,7 @@ class CoreBackend(AbstractBackend):
                 raise ArchiveError(n_("Involved in unfinished event."))
             self.sql_delete(rs, "event.orgas", (persona_id,), "persona_id")
             #
-            # 7. Handle assembly realm within the normal assembly lifecycle
+            # 7. Assembly realm is handled via assembly archival.
             #
             #
             # 8. Handle ml realm
