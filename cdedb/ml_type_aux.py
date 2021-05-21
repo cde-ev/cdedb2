@@ -262,7 +262,7 @@ class AllUsersImplicitMeta(GeneralMailinglist):
 
         Leave out personas which are archived or have no valid email set.."""
         check_appropriate_type(mailinglist, cls)
-        return bc.core.list_all_personas(rs, is_active=False, valid_email=True)
+        return bc.core.list_all_personas(rs, is_active=False)
 
 
 class AllMembersImplicitMeta(GeneralMailinglist):
@@ -274,7 +274,7 @@ class AllMembersImplicitMeta(GeneralMailinglist):
                                  mailinglist: CdEDBObject) -> Set[int]:
         """Return a set of all current members."""
         check_appropriate_type(mailinglist, cls)
-        return bc.core.list_current_members(rs, is_active=False, valid_email=True)
+        return bc.core.list_current_members(rs, is_active=False)
 
 
 class EventAssociatedMeta(GeneralMailinglist):

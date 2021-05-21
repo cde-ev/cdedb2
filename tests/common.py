@@ -15,23 +15,22 @@ import json
 import os
 import pathlib
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
 import time
 import unittest
 import urllib.parse
-from types import TracebackType
 from typing import (
     Any, AnyStr, Callable, ClassVar, Dict, Iterable, List, Mapping, MutableMapping,
-    NamedTuple, Optional, Pattern, Sequence, Set, TextIO, Tuple, Type, TypeVar, Union,
-    cast, no_type_check,
+    NamedTuple, Optional, Pattern, Sequence, Set, Tuple, Type, TypeVar, Union, cast,
+    no_type_check,
 )
 
 import PIL.Image
 import webtest
 import webtest.utils
-
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.common import AbstractBackend
@@ -42,7 +41,7 @@ from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.common import (
     ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, CdEDBObject, CdEDBObjectMap, PathLike,
-    PrivilegeError, RequestState, n_, nearly_now, now, roles_to_db_role, merge_dicts,
+    PrivilegeError, RequestState, nearly_now, now, roles_to_db_role, merge_dicts,
 )
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -56,26 +55,11 @@ from cdedb.script import setup
 _BASICCONF = BasicConfig()
 _SECRETSCONF = SecretsConfig()
 
-ExceptionInfo = Union[
-    Tuple[Type[BaseException], BaseException, TracebackType],
-    Tuple[None, None, None]
-]
-
 # TODO: use TypedDict to specify UserObject.
 UserObject = Mapping[str, Any]
 
 # This is to be used in place of `self.key` for anonymous requests. It makes mypy happy.
 ANONYMOUS = cast(RequestState, None)
-
-
-def check_test_setup() -> None:
-    """Raise a RuntimeError if the vm is ill-equipped for performing tests."""
-    if pathlib.Path("/OFFLINEVM").exists():
-        raise RuntimeError("Cannot run tests in an Offline-VM.")
-    if pathlib.Path("/PRODUCTIONVM").exists():
-        raise RuntimeError("Cannot run tests in Production-VM.")
-    if not os.environ.get('CDEDB_TEST'):
-        raise RuntimeError("Not configured for test (CDEDB_TEST unset).")
 
 
 def create_mock_image(file_type: str = "png") -> bytes:
@@ -234,100 +218,29 @@ def make_backend_shim(backend: B, internal: bool = False) -> B:
     return cast(B, Proxy())
 
 
-class MyTextTestRunner(unittest.TextTestRunner):
-    stream: TextIO
-
-    def run(
-        self, test: Union[unittest.TestSuite, unittest.TestCase]
-    ) -> unittest.TestResult:
-        result = super().run(test)
-        failed = map(
-            lambda error: error[0].id().split()[0],  # split to strip subtest paramters
-            result.errors + result.failures + result.unexpectedSuccesses  # type: ignore
-        )
-        if not result.wasSuccessful():
-            print("To rerun failed tests execute the following:", file=self.stream)
-            print(f"/cdedb2/bin/singlecheck.sh {' '.join(failed)}", file=self.stream)
-        return result
-
-
-class MyTextTestResult(unittest.TextTestResult):
-    """Subclass the TextTestResult object to fix the CLI reporting.
-
-    We keep track of the errors, failures and skips occurring in SubTests,
-    and print a summary at the end of the TestCase itself.
-    """
-
-    def __init__(self, stream: TextIO, descriptions: bool, verbosity: int) -> None:
-        self.showAll: bool
-        self.stream: TextIO
-        super().__init__(stream, descriptions, verbosity)
-        self._subTestErrors: List[ExceptionInfo] = []
-        self._subTestFailures: List[ExceptionInfo] = []
-        self._subTestSkips: List[str] = []
-
-    def startTest(self, test: unittest.TestCase) -> None:
-        super().startTest(test)
-        self._subTestErrors = []
-        self._subTestFailures = []
-        self._subTestSkips = []
-
-    def addSubTest(self, test: unittest.TestCase, subtest: unittest.TestCase,
-                   err: Optional[ExceptionInfo]) -> None:
-        super().addSubTest(test, subtest, err)
-        if err is not None and err[0] is not None:
-            if issubclass(err[0], subtest.failureException):
-                errors = self._subTestFailures
-            else:
-                errors = self._subTestErrors
-            errors.append(err)
-
-    def stopTest(self, test: unittest.TestCase) -> None:
-        super().stopTest(test)
-        # Print a comprehensive list of failures and errors in subTests.
-        output = []
-        if self._subTestErrors:
-            length = len(self._subTestErrors)
-            if self.showAll:
-                s = "ERROR" + (f"({length})" if length > 1 else "")
-            else:
-                s = "E" * length
-            output.append(s)
-        if self._subTestFailures:
-            length = len(self._subTestFailures)
-            if self.showAll:
-                s = "FAIL" + (f"({length})" if length > 1 else "")
-            else:
-                s = "F" * length
-            output.append(s)
-        if self._subTestSkips:
-            if self.showAll:
-                s = "skipped {}".format(", ".join(
-                    "{0!r}".format(r) for r in self._subTestSkips))
-            else:
-                s = "s" * len(self._subTestSkips)
-            output.append(s)
-        if output:
-            if self.showAll:
-                self.stream.writeln(", ".join(output))  # type: ignore
-            else:
-                self.stream.write("".join(output))
-                self.stream.flush()
-
-    def addSkip(self, test: unittest.TestCase, reason: str) -> None:
-        # Purposely override the parents method, to not print the skip here.
-        super(unittest.TextTestResult, self).addSkip(test, reason)
-        self._subTestSkips.append(reason)
-
-
 class BasicTest(unittest.TestCase):
     """Provide some basic useful test functionalities."""
-    testfile_dir = pathlib.Path("/tmp/cdedb-store/testfiles")
+    storage_dir: ClassVar[pathlib.Path]
+    testfile_dir: ClassVar[pathlib.Path]
+    needs_storage_marker = "_needs_storage"
     conf: ClassVar[Config]
 
     @classmethod
     def setUpClass(cls) -> None:
         cls.conf = Config()
+        cls.storage_dir = cls.conf['STORAGE_DIR']
+        cls.testfile_dir = cls.storage_dir / "testfiles"
+
+    def setUp(self) -> None:
+        test_method = getattr(self, self._testMethodName)
+        if getattr(test_method, self.needs_storage_marker, False):
+            subprocess.run(("make", "storage-test"), stdout=subprocess.DEVNULL,
+                           check=True, start_new_session=True)
+
+    def tearDown(self) -> None:
+        test_method = getattr(self, self._testMethodName)
+        if getattr(test_method, self.needs_storage_marker, False):
+            shutil.rmtree(self.storage_dir)
 
     @staticmethod
     def get_sample_data(table: str, ids: Iterable[int],
@@ -376,14 +289,8 @@ class BasicTest(unittest.TestCase):
 
 class CdEDBTest(BasicTest):
     """Reset the DB for every test."""
-    testfile_dir = pathlib.Path("/tmp/cdedb-store/testfiles")
 
     def setUp(self) -> None:
-        # Start the call in a new session, so that a SIGINT does not interrupt this.
-        subprocess.check_call(("make", "storage-test"),
-                              stdout=subprocess.DEVNULL,
-                              stderr=subprocess.DEVNULL,
-                              start_new_session=True)
         with setup(
             persona_id=-1,
             dbuser="cdb",
@@ -757,18 +664,24 @@ def prepsql(sql: AnyStr) -> Callable[[F], F]:
     return decorator
 
 
+# TODO: should this better be named needs_storage?
+def storage(fun: F) -> F:
+    """Decorate a test which needs some of the test files on the local drive."""
+    setattr(fun, BasicTest.needs_storage_marker, True)
+    return fun
+
+
 def execsql(sql: AnyStr) -> None:
     """Execute arbitrary SQL-code on the test database."""
-    path = pathlib.Path("/tmp/test-cdedb-sql-commands.sql")
     psql = ("/cdedb2/bin/execute_sql_script.py",
-            "--username", "cdb", "--dbname", "cdb_test")
-    null = subprocess.DEVNULL
-    mode = "w"
-    if isinstance(sql, bytes):
-        mode = "wb"
-    with open(path, mode) as f:
-        f.write(sql)
-    subprocess.check_call(psql + ("--file", str(path)), stdout=null)
+            "--username", "cdb", "--dbname", os.environ['CDEDB_TEST_DATABASE'])
+    # TODO: remove the type: ignore in a newer mypy version (0.800 or higher)
+    mode = 'wb' if isinstance(sql, bytes) else 'w'  # type: ignore[unreachable]
+    with tempfile.NamedTemporaryFile(mode=mode, suffix='.sql') as sql_file:
+        sql_file.write(sql)
+        sql_file.flush()
+        subprocess.run(psql + ("--file", sql_file.name), stdout=subprocess.DEVNULL,
+                       start_new_session=True, check=True)
 
 
 class FrontendTest(BackendTest):
@@ -1386,7 +1299,7 @@ class FrontendTest(BackendTest):
         self.assertTitle("Zelda Zeruda-Hime")
         for key, value in data.items():
             if key not in {'birthday', 'telephone', 'mobile', 'country', 'country2'}:
-                # Omitt values with heavy formatting in the frontend here
+                # Omit values with heavy formatting in the frontend here
                 self.assertPresence(value)
         # Now test archival
         # 1. Archive user
@@ -1412,9 +1325,15 @@ class FrontendTest(BackendTest):
         # 3: Dearchive user
         self.assertTitle("Zelda Zeruda-Hime")
         self.assertPresence("Der Benutzer ist archiviert.", div='archived')
+        self.traverse({'description': "Account wiederherstellen"})
         f = self.response.forms['dearchivepersonaform']
+        self.submit(f, check_notification=False)
+        self.assertValidationError('new_username', "Darf nicht leer sein.")
+        f = self.response.forms['dearchivepersonaform']
+        f['new_username'] = "zeruda@example.cde"
         self.submit(f)
         self.assertTitle("Zelda Zeruda-Hime")
+        self.assertPresence('zeruda@example.cde')
         _check_deleted_data()
 
     def _click_admin_view_button(self, label: Union[str, Pattern[str]],

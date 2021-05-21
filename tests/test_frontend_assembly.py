@@ -17,7 +17,7 @@ from cdedb.query import QueryOperators
 from cdedb.validation import parse_datetime
 from tests.common import (
     FrontendTest, MultiAppFrontendTest, UserIdentifier, USER_DICT, as_users,
-    get_user,
+    get_user, storage,
 )
 
 
@@ -243,6 +243,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
     def test_create_archive_user(self) -> None:
         self.check_create_archive_user('assembly')
 
+    @storage
     @as_users("anton")
     def test_assembly_admin_views(self) -> None:
         self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, '')
@@ -517,6 +518,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             for attendee in attendees:
                 self.assertIn(attendee, self.response.text)
 
+    @storage
     @as_users("rowena")
     def test_summary_ballots(self) -> None:
         self.traverse({'description': 'Versammlungen'},
@@ -526,6 +528,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence("Entlastung des Vorstands")
         self.assertPresence("Wir kaufen den Eisenberg!")
 
+    @storage
     @as_users("ferdinand")
     def test_conclude_assembly(self) -> None:
         self._create_assembly()
@@ -565,6 +568,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertNotIn("addpresidersform", self.response.forms)
         self.assertNotIn("removepresiderform1", self.response.forms)
 
+    @storage
     @as_users("anton")
     def test_preferential_vote_result(self) -> None:
         self.get('/assembly/assembly/1/ballot/1/show')
@@ -577,6 +581,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                     " 23 > 42 > Ablehnungsgrenze > Ich = Philosophie")
         self.assertPresence(own_vote, div='own-vote', exact=True)
 
+    @storage
     @as_users("garcia")
     def test_show_ballot_without_vote(self) -> None:
         self.get('/assembly/assembly/1/show')
@@ -591,6 +596,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence("Du hast nicht abgestimmt.", div='own-vote',
                             exact=True)
 
+    @storage
     @as_users("berta")
     def test_show_ballot_status(self) -> None:
         ballots = self.get_sample_data(
@@ -647,6 +653,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                 else:
                     self.assertNonPresence("Die Abstimmung läuft.", div='ballot-status')
 
+    @storage
     @as_users("garcia")
     def test_show_ballot_without_attendance(self) -> None:
         self.get('/assembly/assembly/1/ballot/1/show')
@@ -658,6 +665,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence("Du nimmst nicht an der Versammlung teil.",
                             div='own-vote', exact=True)
 
+    @storage
     @as_users("werner")
     def test_entity_ballot_simple(self) -> None:
         self.traverse({'description': 'Versammlungen$'},
@@ -707,6 +715,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertTitle("Abstimmungen (Internationaler Kongress)")
         self.assertNonPresence("Maximale Länge der Satzung")
 
+    @storage
     @as_users("werner")
     def test_delete_ballot(self) -> None:
         self.get("/assembly/assembly/1/ballot/2/show")
@@ -732,9 +741,10 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertNonPresence("Löschen")
         self.assertNotIn("deleteballotform", self.response.forms)
 
+    @storage
     @as_users("werner", "ferdinand")
     def test_attachments(self) -> None:
-        with open("/tmp/cdedb-store/testfiles/form.pdf", 'rb') as datafile:
+        with open(self.testfile_dir / "form.pdf", 'rb') as datafile:
             data = datafile.read()
         self.traverse({'description': 'Versammlungen$'},
                       {'description': 'Internationaler Kongress'},
@@ -825,6 +835,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.submit(f)
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
 
+    @storage
     @as_users("werner", "inga", "kalif")
     def test_preferential_vote(self) -> None:
         self.traverse({'description': 'Versammlungen'},
@@ -845,6 +856,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f = self.response.forms['voteform']
         self.assertEqual("1=i>pi>e=0", f['vote'].value)
 
+    @storage
     @as_users("werner", "inga", "kalif")
     def test_classical_vote_radio(self) -> None:
         self.traverse({'description': 'Versammlungen'},
@@ -875,6 +887,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f = self.response.forms['voteform']
         self.assertEqual("St", f['vote'].value)
 
+    @storage
     @as_users("werner", "inga", "kalif")
     def test_classical_vote_select(self) -> None:
         self.traverse({'description': 'Versammlungen'},
@@ -912,6 +925,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertEqual(None, f.get('vote', index=1).value)
         self.assertEqual(None, f.get('vote', index=2).value)
 
+    @storage
     @as_users("werner")
     def test_classical_voting_all_choices(self) -> None:
         # This test asserts that in classical voting, we can distinguish
@@ -983,6 +997,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                                     "gestimmt: Arthur Dent = Ford Prefect",
                                     div='own-vote', exact=True)
 
+    @storage
     @as_users("werner", "inga", "kalif")
     def test_tally_and_get_result(self) -> None:
         self.traverse({'description': 'Versammlungen'},
@@ -995,9 +1010,10 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.traverse({'description': 'Antwort auf die letzte aller Fragen'},
                       {'description': 'Ergebnisdetails'},
                       {'description': 'Ergebnisdatei herunterladen'},)
-        with open("/tmp/cdedb-store/testfiles/ballot_result.json", 'rb') as f:
+        with open(self.testfile_dir / "ballot_result.json", 'rb') as f:
             self.assertEqual(json.load(f), json.loads(self.response.body))
 
+    @storage
     @as_users("anton")
     def test_ballot_result_page(self) -> None:
         for ballot_id in self.CANONICAL_BALLOTS:
@@ -1065,6 +1081,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
 
             self.response = save
 
+    @storage
     @as_users("anton")
     def test_ballot_result_page_extended(self) -> None:
         # classical vote with bar
@@ -1138,7 +1155,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence("42 > 23 = Philosophie > Ablehnungsgrenze > Ich 1",
                             div='vote-1', exact=True)
 
-
+    @storage
     @as_users("werner")
     def test_extend(self) -> None:
         self.traverse({'description': 'Versammlungen'},
@@ -1158,16 +1175,17 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.submit(f)
         self.assertTitle("Maximale Länge der Verfassung (Internationaler Kongress)")
         self.assertPresence(
-            "Verlängerung bis 01.05.2222, 00:00:00, falls 11 Stimmen nicht "
+            "Verlängerung bis 01.05.2222, 00:00:00, falls 10 Stimmen nicht "
             "erreicht werden.", div='voting-period')
         time.sleep(1)
         self.traverse({'href': '/assembly/1/ballot/list'},
                       {'description': 'Maximale Länge der Verfassung'},)
         self.assertTitle("Maximale Länge der Verfassung (Internationaler Kongress)")
-        s = ("Wurde bis 01.05.2222, 00:00:00 verlängert, da 11 Stimmen nicht "
+        s = ("Wurde bis 01.05.2222, 00:00:00 verlängert, da 10 Stimmen nicht "
              "erreicht wurden.")
         self.assertPresence(s, div='voting-period')
 
+    @storage
     @as_users("werner")
     def test_candidate_manipulation(self) -> None:
         self.traverse({'description': 'Versammlungen'},
@@ -1214,6 +1232,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertEqual("aqua", f['shortname_1001'].value)
         self.assertNotIn("gelb", f.fields)
 
+    @storage
     @as_users("werner")
     def test_has_voted(self) -> None:
         self.traverse({'description': 'Versammlungen'},
@@ -1237,6 +1256,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence("Du hast nicht abgestimmt.", div='own-vote',
                             exact=True)
 
+    @storage
     def test_provide_secret(self) -> None:
         user = USER_DICT["werner"]
         self.login(user)
@@ -1322,6 +1342,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence("Du hast für die folgenden Kandidaten gestimmt: Ja",
                             div='own-vote', exact=True)
 
+    @storage
     def test_log(self) -> None:
         # First: generate data
         self.test_entity_ballot_simple()

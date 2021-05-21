@@ -1,29 +1,26 @@
 SHELL := /bin/bash
 
-.PHONY: help doc sample-data sample-data-test sample-data-test-shallow sql \
-	sql-test sql-test-shallow lint check single-check .coverage coverage \
-	dump-html validate-html \
-	i18n-extract i18n-update i18n-compile i18n-refresh
+.PHONY: help doc sample-data sql sql-test sql-test-shallow lint check single-check \
+	.coverage coverage dump-html validate-html i18n-extract i18n-update i18n-compile i18n-refresh
 
 help:
 	@echo "doc -- build documentation"
 	@echo "reload -- re-compile GNU gettext data and trigger WSGI worker reload"
-	@echo "sample-data -- initialize database structures (DESTROYES DATA!)"
-	@echo "sample-data-test -- initialize database structures for test suite"
-	@echo "sample-data-test-shallow -- initialize database structures for test suite"
-	@echo "                            (this is a fast version of sample-data-test,"
-	@echo "                             can be substituted after sample-data-test was"
-	@echo "                             executed)"
+	@echo "sample-data -- initialize database structures (DESTROYS DATA!)"
 	@echo "sql -- initialize postgres (use sample-data instead)"
-	@echo "sql-test -- initialize postgres for test suite (use sample-data-test instead)"
-	@echo "sql-test-shallow -- reset postgres for test suite"
-	@echo "                    (use sample-data-test-shallow instead)"
+	@echo "sql-test -- initialize database structures for test suite"
+	@echo "sql-test-shallow -- reset database structures for test suite"
+	@echo "                    (this is a fast version of sql-test, can be substituted after that"
+	@echo "                     was executed)"
+	@echo "storage-test -- create STORAGE_DIR inside /tmp for tests needing this for attachments,"
+	@echo "                photos etc."
+	@echo "                (this should not be called by hand, but every test needing this should"
+	@echo "                 get the @storage decorator)"
 	@echo "lint -- run linters (mainly pylint)"
 	@echo "check -- run test suite"
-	@echo "         (TESTPATTERN specifies files, e.g. 'test_common.py')"
-	@echo "single-check -- run some tests from the test suite"
-	@echo "                (PATTERNS specifies globs to match against the testnames like"
-	@echo "                tests.test_frontend_event.TestEventFrontend.test_create_event)"
+	@echo "         (TESTPATTERNS specifies globs to match against the testnames like '404 500' or "
+	@echo "         tests.test_frontend_event.TestEventFrontend.test_create_event."
+	@echo "         If TESTPATTERNS is empty, run full test suite)"
 	@echo "coverage -- run coverage to determine test suite coverage"
 
 # Executables
@@ -40,9 +37,16 @@ else
 	PSQL_ADMIN ?= sudo -u postgres psql
 	PSQL ?= sudo -u cdb psql
 endif
+SAMPLE_DATA_SQL ?= bin/create_sample_data_sql.py
 
 # Others
 TESTPREPARATION ?= automatic
+TESTDATABASENAME ?= $(or ${CDEDB_TEST_DATABASE}, cdb_test)
+TESTTMPDIR ?= $(or ${CDEDB_TEST_TMP_DIR}, /tmp/cdedb-test-default )
+TESTSTORAGEPATH ?= $(TESTTMPDIR)/storage
+TESTLOGPATH ?= $(TESTTMPDIR)/logs
+THREADID ?= 1
+XSS_PAYLOAD ?= $(or ${CDEDB_TEST_XSS_PAYLOAD}, <script>abcdef</script>)
 I18NDIR ?= ./i18n
 
 doc:
@@ -93,14 +97,6 @@ sample-data-dump:
 		&& cp "$${JSONTEMPFILE}" tests/ancillary_files/sample_data.json \
 		&& sudo -u www-data rm "$${JSONTEMPFILE}"
 
-sample-data-test:
-	$(MAKE) storage-test
-	$(MAKE) sql-test
-
-sample-data-test-shallow:
-	$(MAKE) storage-test
-	$(MAKE) sql-test-shallow
-
 TESTFOTONAME := e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e6$\
 		1ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570$\
 		c6589d64f9
@@ -138,26 +134,22 @@ TESTFILES := picture.pdf,picture.png,picture.jpg,form.pdf$\
 		,TestAka_partial_export_event.json,statement.csv
 
 storage-test:
-	rm -rf -- /tmp/cdedb-store/*
-	mkdir -p /tmp/cdedb-store/foto/
-	cp tests/ancillary_files/$(TESTFOTONAME) /tmp/cdedb-store/foto/
-	mkdir -p /tmp/cdedb-store/minor_form/
-	mkdir -p /tmp/cdedb-store/event_logo/
-	mkdir -p /tmp/cdedb-store/course_logo/
-	mkdir -p /tmp/cdedb-store/ballot_result/
-	mkdir -p /tmp/cdedb-store/assembly_attachment/
-	mkdir -p /tmp/cdedb-store/genesis_attachment/
-	mkdir -p /tmp/cdedb-store/mailman_templates/
-	mkdir -p /tmp/cdedb-store/testfiles/
-	cp tests/ancillary_files/rechen.pdf \
-		/tmp/cdedb-store/assembly_attachment/1_v1
-	cp tests/ancillary_files/kassen.pdf \
-		/tmp/cdedb-store/assembly_attachment/2_v1
-	cp tests/ancillary_files/kassen2.pdf \
-		/tmp/cdedb-store/assembly_attachment/2_v3
-	cp tests/ancillary_files/kandidaten.pdf \
-		/tmp/cdedb-store/assembly_attachment/3_v1
-	cp -t /tmp/cdedb-store/testfiles/ tests/ancillary_files/{$(TESTFILES)}
+	rm -rf -- ${TESTSTORAGEPATH}/*
+	mkdir -p ${TESTSTORAGEPATH}/foto/
+	mkdir -p ${TESTSTORAGEPATH}/minor_form/
+	mkdir -p ${TESTSTORAGEPATH}/event_logo/
+	mkdir -p ${TESTSTORAGEPATH}/course_logo/
+	mkdir -p ${TESTSTORAGEPATH}/ballot_result/
+	mkdir -p ${TESTSTORAGEPATH}/assembly_attachment/
+	mkdir -p ${TESTSTORAGEPATH}/genesis_attachment/
+	mkdir -p ${TESTSTORAGEPATH}/mailman_templates/
+	mkdir -p ${TESTSTORAGEPATH}/testfiles/
+	cp tests/ancillary_files/$(TESTFOTONAME) ${TESTSTORAGEPATH}/foto/
+	cp tests/ancillary_files/rechen.pdf ${TESTSTORAGEPATH}/assembly_attachment/1_v1
+	cp tests/ancillary_files/kassen.pdf ${TESTSTORAGEPATH}/assembly_attachment/2_v1
+	cp tests/ancillary_files/kassen2.pdf ${TESTSTORAGEPATH}/assembly_attachment/2_v3
+	cp tests/ancillary_files/kandidaten.pdf ${TESTSTORAGEPATH}/assembly_attachment/3_v1
+	cp -t ${TESTSTORAGEPATH}/testfiles/ tests/ancillary_files/{$(TESTFILES)}
 
 sql: tests/ancillary_files/sample_data.sql
 ifeq ($(wildcard /PRODUCTIONVM),/PRODUCTIONVM)
@@ -171,29 +163,29 @@ ifneq ($(wildcard /CONTAINER),/CONTAINER)
 endif
 	$(PSQL_ADMIN) -f cdedb/database/cdedb-users.sql
 	$(PSQL_ADMIN) -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb
-	$(PSQL_ADMIN) -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb_test
+	$(PSQL_ADMIN) -f cdedb/database/cdedb-db.sql -v cdb_database_name=${TESTDATABASENAME}
 ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl start pgbouncer
 endif
 	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=cdb
-	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=cdb_test
+	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=${TESTDATABASENAME}
 	$(PSQL) -f tests/ancillary_files/sample_data.sql --dbname=cdb
-	$(PSQL) -f tests/ancillary_files/sample_data.sql --dbname=cdb_test
+	$(PSQL) -f tests/ancillary_files/sample_data.sql --dbname=${TESTDATABASENAME}
 
 sql-test:
 ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl stop pgbouncer
 endif
-	$(PSQL_ADMIN) -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb_test
+	$(PSQL_ADMIN) -f cdedb/database/cdedb-db.sql -v cdb_database_name=${TESTDATABASENAME}
 ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl start pgbouncer
 endif
-	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=cdb_test
+	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=${TESTDATABASENAME}
 	$(MAKE) sql-test-shallow
 
 sql-test-shallow: tests/ancillary_files/sample_data.sql
-	$(PSQL) -f tests/ancillary_files/clean_data.sql --dbname=cdb_test
-	$(PSQL) -f tests/ancillary_files/sample_data.sql --dbname=cdb_test
+	$(PSQL) -f tests/ancillary_files/clean_data.sql --dbname=${TESTDATABASENAME}
+	$(PSQL) -f tests/ancillary_files/sample_data.sql --dbname=${TESTDATABASENAME}
 
 cron:
 	sudo -u www-data /cdedb2/bin/cron_execute.py
@@ -225,53 +217,51 @@ lint: flake8 pylint
 
 prepare-check:
 ifneq ($(TESTPREPARATION), manual)
-	$(MAKE) i18n-compile
-	$(MAKE) sample-data-test &> /dev/null
-	sudo rm -f /tmp/test-cdedb* /tmp/cdedb-timing.log /tmp/cdedb-mail-* \
+	mkdir -p $(TESTTMPDIR)
+	sudo rm -rf $(TESTLOGPATH)  /tmp/cdedb-mail-* \
 		|| true
+	mkdir $(TESTLOGPATH)
+	$(MAKE) i18n-compile
+	$(MAKE) sql-test
 else
 	@echo "Omitting test preparation."
 endif
 
-check: export CDEDB_TEST=True
+check-parallel:
+	# TODO: move this logic into bin/check.py
+	# TODO: using inverse regex arguments possible? Would be helpful for not overlooking some tests
+	# sleeping is necessary here that the i18n-refresh runs at the very beginning to not interfere
+	$(PYTHONBIN) -m bin.check --thread-id 2 \
+		test_backend test_common test_config test_database test_offline test_script test_session \
+		test_validation test_vote_verification & \
+	sleep 0.5; \
+	$(PYTHONBIN) -m bin.check --thread-id 4 \
+		frontend_event frontend_ml frontend_privacy frontend_parse & \
+	sleep 0.5; \
+	$(PYTHONBIN) -m bin.check --thread-id 3 \
+		frontend_application frontend_assembly frontend_common frontend_core frontend_cde \
+		frontend_cron
+
 check:
-	$(MAKE) prepare-check
-	$(PYTHONBIN) -m tests.main "$${TESTPATTERN}"
-
-single-check: export CDEDB_TEST=True
-single-check:
-	$(MAKE) prepare-check
-	$(PYTHONBIN) -m tests.singular "$${PATTERNS}"
-
-# By overriding this variable you can change the database that is used for the xss check.
-XSS_DATABASE_NAME ?= cdb_test
-XSS_PAYLOAD ?= <script>abcdef</script>
+	$(PYTHONBIN) -m bin.check --thread-id $(THREADID) $(or $(TESTPATTERNS), )
 
 sql-xss: tests/ancillary_files/sample_data_xss.sql
 ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl stop pgbouncer
 endif
-	$(PSQL_ADMIN) -f cdedb/database/cdedb-db.sql -v cdb_database_name=${XSS_DATABASE_NAME}
+	$(PSQL_ADMIN) -f cdedb/database/cdedb-db.sql -v cdb_database_name=${TESTDATABASENAME}
 ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl start pgbouncer
 endif
-	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=${XSS_DATABASE_NAME}
-	$(PSQL) -f tests/ancillary_files/sample_data_xss.sql --dbname=${XSS_DATABASE_NAME}
+	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=${TESTDATABASENAME}
+	$(PSQL) -f tests/ancillary_files/sample_data_xss.sql --dbname=${TESTDATABASENAME}
 
-sample-data-xss:
-	cp -f related/auto-build/files/stage3/localconfig.py cdedb/localconfig.py
-	$(MAKE) storage-test > /dev/null
-	$(MAKE) sql-xss > /dev/null
-
-xss-check: export CDEDB_TEST=True
 xss-check:
-	$(MAKE) sample-data-xss
-	$(PYTHONBIN) -m bin.escape_fuzzing --verbose --dbname ${XSS_DATABASE_NAME} \
-		--payload "${XSS_PAYLOAD}"
+	$(PYTHONBIN) -m bin.check --thread-id $(THREADID) --xss-check --verbose
 
-dump-html: export SCRAP_ENCOUNTERED_PAGES=1 TESTPATTERN=test_frontend
+dump-html: export SCRAP_ENCOUNTERED_PAGES=1
 dump-html:
-	$(MAKE) check
+	$(PYTHONBIN) -m bin.check --thread-id $(THREADID) test_frontend
 
 
 validate-html: /opt/validator/vnu-runtime-image/bin/vnu
@@ -296,12 +286,10 @@ VALIDATORCHECKSUM := "c7d8d7c925dbd64fd5270f7b81a56f526e6bbef0 $\
 	sudo chown cdedb:cdedb /opt/validator
 
 
-.coverage: export CDEDB_TEST=True
 .coverage: $(wildcard cdedb/*.py) $(wildcard cdedb/database/*.py) \
 		$(wildcard cdedb/frontend/*.py) \
 		$(wildcard cdedb/backend/*.py) $(wildcard tests/*.py)
-	$(MAKE) prepare-check
-	$(COVERAGE) run -m tests.main
+	$(COVERAGE) run -m bin.check --thread-id $(THREADID)
 
 coverage: .coverage
 	$(COVERAGE) report --include 'cdedb/*' --show-missing
@@ -309,12 +297,12 @@ coverage: .coverage
 	@echo "HTML reports for easier inspection are in ./htmlcov"
 
 tests/ancillary_files/sample_data.sql: tests/ancillary_files/sample_data.json \
-		tests/create_sample_data_sql.py cdedb/database/cdedb-tables.sql
+		$(SAMPLE_DATA_SQL) cdedb/database/cdedb-tables.sql
 	SQLTEMPFILE=`sudo -u www-data mktemp` \
 		&& sudo -u www-data chmod +r "$${SQLTEMPFILE}" \
 		&& sudo rm -f /tmp/cdedb*log \
 		&& sudo -u www-data $(PYTHONBIN) \
-			tests/create_sample_data_sql.py \
+			$(SAMPLE_DATA_SQL) \
 			-i tests/ancillary_files/sample_data.json \
 			-o "$${SQLTEMPFILE}" \
 		&& sudo rm -f /tmp/cdedb*log \
@@ -322,12 +310,12 @@ tests/ancillary_files/sample_data.sql: tests/ancillary_files/sample_data.json \
 		&& sudo -u www-data rm "$${SQLTEMPFILE}"
 
 tests/ancillary_files/sample_data_xss.sql: tests/ancillary_files/sample_data.json \
-		tests/create_sample_data_sql.py cdedb/database/cdedb-tables.sql
+		$(SAMPLE_DATA_SQL) cdedb/database/cdedb-tables.sql
 	SQLTEMPFILE=`sudo -u www-data mktemp` \
 		&& sudo -u www-data chmod +r "$${SQLTEMPFILE}" \
 		&& sudo rm -f /tmp/cdedb*log \
 		&& sudo -u www-data $(PYTHONBIN) \
-			tests/create_sample_data_sql.py \
+			$(SAMPLE_DATA_SQL) \
 			-i tests/ancillary_files/sample_data.json \
 			-o "$${SQLTEMPFILE}" \
 			--xss "${XSS_PAYLOAD}" \

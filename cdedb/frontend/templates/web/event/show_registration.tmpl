@@ -236,7 +236,7 @@
                     <dd>
                         {% if field['entries'] %}
                             {% for value, description in field['entries'] %}
-                                {% if ambience['registration']['fields'].get(field['field_name']) == value %}
+                                {% if value == ambience['registration']['fields'].get(field['field_name'])|string %}
                                     {{ description }}
                                 {% endif %}
                             {% endfor %}

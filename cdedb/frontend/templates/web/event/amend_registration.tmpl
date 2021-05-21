@@ -1,6 +1,7 @@
 {% set sidenav_active='event_register' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/event/generic.tmpl" as generic with context %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
@@ -28,55 +29,20 @@
           class="form-horizontal">
         {{ util.anti_csrf_token('event/amend_registration') }}
 
-        {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) if track_id in involved_tracks and track['num_choices'] %}
-            {% set course_list = course_choices[track_id] %}
-            <h4>
-                {% trans %}Course Choices{% endtrans %}
-                {% if course_choices|length > 1 %}
-                    {% trans title=track['title'] %}for {{ title }}{% endtrans %}
-                {% endif %}
-            </h4>
+        {% if ambience['event']['registration_text'] %}
+            {% call util.bootstrap_panel(title=gettext("Note of the Orga Team"), icon="info-circle", aclass="panel-info") %}
+                {{ ambience['event']['registration_text']|md }}
+            {% endcall %}
+        {% endif %}
 
-            {% set course_entries = courses|keydictsort(EntitySorter.course)
-                                    |xdict_entries('{id}', '{nr}. {title}', include=course_list) %}
-            {% for i in range(track['num_choices']) %}
-                {{ util.form_input_select(name="course_choice{}_{}".format(track_id, i), nulloption=nbsp,
-                                          label=gettext("%s. Choice")|format(i + 1), entries=course_entries,
-                                          readonly=readonly, info=(gettext("Optional choice") if i >= track['min_choices'] else "")) }}
-            {% endfor %}
-            {{ util.form_input_select(name="course_instructor{}".format(track_id), entries=course_entries,
-                                      nulloption=gettext("– I am not an Instructor –"), label=gettext("Instructor"),
-                                      readonly=readonly,
-                                      info=gettext("If you are instructing a course, please specify which one.")) }}
+        <h3 class="sr-only">{% trans %}Course Choices{% endtrans %}</h3>
+        {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) if track_id in involved_tracks and track['num_choices'] %}
+            {{ generic.select_course_choice(track, courses, course_choices) }}
         {% endfor %}
 
-        {% if not age.may_mix() %}
-            {{ util.form_input_static(label=gettext("Mixed Lodging"), value=gettext("Mixed Lodging not possible.")) }}
-            {{ util.input_hidden(name="mixed_lodging", value=False) }}
-        {% else %}
-            {% if age.is_minor() %}
-                {% set mix_info = gettext("The selection must be compatible with the parental consent form.") %}
-            {% else %}
-                {% set mix_info = "" %}
-            {% endif %}
-            {{ util.form_input_select(name="mixed_lodging", entries=(
-                (True, gettext("I agree to mixed lodging.")),
-                (False, gettext("I want to be lodged separated by gender."))),
-                label=gettext("Mixed Lodging"), info=mix_info, readonly=readonly) }}
-        {% endif %}
-        {{ util.form_input_checkbox(name="list_consent", label=gettext(
-                "I agree that my data, including my name, address and my email, may be sent "
-                "to other participants of this event beforehand.")) }}
+        <h3 class="heading-underline">{% trans %}Additional Information{% endtrans %}</h3>
+        {{ generic.additional_registration_choices(age, reg_questionnaire) }}
 
-        {% if reg_questionnaire %}
-            {% for entry in reg_questionnaire %}
-                {% if entry['kind'] == enums['QuestionnaireUsages'].registration %}
-                    {{ util.print_questionnaire_entry(entry) }}
-                {% endif %}
-            {% endfor %}
-        {% endif %}
-
-        {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="5", readonly=readonly) }}
         {{ util.form_input_submit(label=gettext("Save"), readonly=readonly,
                                   cancellink=cdedblink("event/registration_status")) }}
     </form>
