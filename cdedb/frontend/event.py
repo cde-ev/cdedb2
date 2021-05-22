@@ -1701,7 +1701,7 @@ class EventFrontend(AbstractUserFrontend):
                                 'course_instructor{track}.id',),
         }
         for name, track_regs in regs_in_choice_x.items():
-            query_additional_fields[name] = ('course{track}.id',)
+            query_additional_fields[name] = ('track{track}.course_id',)
 
         def get_query(category: str, part_id: int, track_id: int = None
                       ) -> Optional[Query]:
