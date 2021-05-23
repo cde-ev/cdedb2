@@ -43,8 +43,8 @@ from email.mime.nonmultipart import MIMENonMultipart
 from secrets import token_hex
 from typing import (
     IO, AbstractSet, Any, AnyStr, Callable, ClassVar, Collection, Container, Dict,
-    Generator, ItemsView, Iterable, List, Mapping, MutableMapping, NamedTuple,
-    Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast, overload,
+    ItemsView, Iterable, List, Mapping, MutableMapping, NamedTuple, Optional, Sequence,
+    Set, Tuple, Type, TypeVar, Union, cast, overload,
 )
 
 import babel.dates
