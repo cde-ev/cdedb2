@@ -111,7 +111,7 @@
                                 <script nonce="{{ csp_nonce }}">
                                     $('#input-add-participant').cdedbSearchPerson(
                                         '{{ cdedblink('core/select_persona') + '?kind=past_event_user&phrase=%s'|s }}',
-                                        {{ participants.keys()|list|json|s }}, false, true, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
+                                        {{ participants.keys()|list|tojson }}, false, true, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                                     );
                                 </script>
                             {% endcall %}

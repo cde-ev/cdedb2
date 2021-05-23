@@ -192,7 +192,7 @@
                             $('#input-add-orga').cdedbSearchPerson(
                                 '{{ (cdedblink('core/select_persona')|e) + ('?kind=event_user&phrase=%s&aux='|s) +
                                     (ambience['event']['id']|string|e) }}',
-                                {{ ambience['event']['orgas']|list|json|s }}, false, false,
+                                {{ ambience['event']['orgas']|list|tojson }}, false, false,
                                 "{{ gettext("ID, name, email") }}"
                             );
                         </script>
