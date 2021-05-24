@@ -137,6 +137,19 @@ To apply the LDIF configuration file we issue the following command::
 
     ldapmodify -Y EXTERNAL -H ldapi:/// -f /cdedb2/sql-ldap.ldif
 
+Troubleshooting
+---------------
+
+To receive more information from LDAP in case anything goes wrong the log
+level can be increased with the following::
+
+ldapmodify -Y EXTERNAL -H ldapi:/// <<EOF
+dn: cn=config
+changetype: modify
+replace: olcLogLevel
+olcLogLevel: -1
+EOF
+
 .. _sec-ldap-references:
 
 References
