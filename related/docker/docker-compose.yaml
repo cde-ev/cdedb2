@@ -20,6 +20,7 @@ services:
       - files:/var/lib/cdedb # attachments etc
       - ../..:/cdedb2
     ports:
+      - 8000:8000
       - 8443:443
     depends_on:
       - cdb
