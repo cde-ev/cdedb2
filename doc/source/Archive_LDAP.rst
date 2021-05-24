@@ -28,9 +28,9 @@ And configure it via /etc/odbc.ini::
     FakeOidIndex        = No
     ConnSettings        =
 
-The Driver must be specified in /etc/odbcinst.ini.
-This should already be the case.
-To check odbc functionality we use the following command::
+The ``Driver`` must be as specified in /etc/odbcinst.ini (which should be
+prefilled by the Debian package). To check odbc functionality we use the
+following command::
 
     isql cdb
 
