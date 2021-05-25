@@ -317,6 +317,8 @@ def datetime_filter(val: Union[datetime.datetime, str, None],
         datetime_formatter = icu.DateFormat.createDateTimeInstance(
             verbosity_mapping[verbosity], verbosity_mapping[verbosity], locale
         )
+        zone = _BASICCONF["DEFAULT_TIMEZONE"].zone
+        datetime_formatter.setTimeZone(icu.TimeZone.createTimeZone(zone))
         return datetime_formatter.format(val)
     else:
         return val.strftime(formatstr)
