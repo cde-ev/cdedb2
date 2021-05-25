@@ -61,7 +61,7 @@
                                        arialabel=gettext("IDs of the new moderators")) }}
                     <script nonce="{{ csp_nonce }}">
                         $('#input-add-moderator').cdedbSearchPerson(
-                            '{{ (cdedblink('core/select_persona')|e) + ('?kind=ml_user&phrase=%s'|s) }}', {{ ambience['mailinglist']['moderators']|list|json|s }},
+                            '{{ (cdedblink('core/select_persona')|e) + ('?kind=ml_user&phrase=%s'|s) }}', {{ ambience['mailinglist']['moderators']|list|tojson }},
                             false, true, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                         );
                     </script>
@@ -158,7 +158,7 @@
             <script nonce="{{ csp_nonce }}">
                 $('#input-add-subscriber').cdedbSearchPerson(
                     '{{ (cdedblink('core/select_persona')|e) + ('?kind=ml_subscriber&phrase=%s&aux='|s) +
-                        (ambience['mailinglist']['id']|string|e) }}', {{ subscribers|list|json|s }},
+                        (ambience['mailinglist']['id']|string|e) }}', {{ subscribers|list|tojson }},
                     false, true, '{{ gettext("CdEDB-ID, Name or E-Mail") }}'
                 );
             </script>

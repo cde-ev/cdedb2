@@ -95,7 +95,7 @@
             <script nonce="{{ csp_nonce }}">
                 var $select = $('#realm-select');
                 var $realmSpecificFields = $('.genesis-realm-specific');
-                var fieldsPerRealm = {{ REALM_SPECIFIC_GENESIS_FIELDS|json|s }};
+                var fieldsPerRealm = {{ REALM_SPECIFIC_GENESIS_FIELDS|tojson }};
                 // Add UI specific attachment field which is otherwise not displayed
                 fieldsPerRealm["cde"] += "attachment";
                 var show_realm_specific_fields = function() {
