@@ -5,6 +5,7 @@ import csv
 import datetime
 import json
 import re
+import tempfile
 from typing import Sequence
 
 import webtest
@@ -13,7 +14,7 @@ import cdedb.database.constants as const
 from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, CdEDBObject, now
 from cdedb.frontend.common import CustomCSVDialect, iban_filter
 from cdedb.query import QueryOperators
-from tests.common import UserObject, USER_DICT, FrontendTest, as_users, prepsql
+from tests.common import UserObject, USER_DICT, FrontendTest, as_users, prepsql, storage
 
 
 class TestEventFrontend(FrontendTest):
@@ -1021,18 +1022,19 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.assertPresence("Other Text")
 
+    @storage
     @as_users("annika", "garcia")
     def test_change_minor_form(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'})
         self.assertTitle("Große Testakademie 2222")
         f = self.response.forms['changeminorformform']
-        with open("/tmp/cdedb-store/testfiles/form.pdf", 'rb') as datafile:
+        with open(self.testfile_dir / "form.pdf", 'rb') as datafile:
             data = datafile.read()
         f['minor_form'] = webtest.Upload("form.pdf", data, "application/octet-stream")
         self.submit(f)
         self.traverse({'href': '/event/event/1/minorform'})
-        with open("/tmp/cdedb-store/testfiles/form.pdf", 'rb') as f:
+        with open(self.testfile_dir / "form.pdf", 'rb') as f:
             self.assertEqual(f.read(), self.response.body)
         # Remove the form again
         self.get("/event/event/1/show")
@@ -1857,7 +1859,7 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'description': r"\sE-Mail-Adresse$"})
         self._sort_appearance([akira, anton, berta, emilia])
         self.traverse({'description': r"\sPostleitzahl, Stadt$"})
-        self._sort_appearance([akira, anton, berta, emilia])
+        self._sort_appearance([anton, berta, emilia, akira])
 
         self.traverse({'description': r"^Zweite Hälfte$"})
         self.traverse({'description': r"\sVorname\(n\)"})
@@ -1867,7 +1869,7 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'description': r"\sE-Mail-Adresse$"})
         self._sort_appearance([akira, anton, emilia])
         self.traverse({'description': r"\sPostleitzahl, Stadt$"})
-        self._sort_appearance([akira, anton, emilia])
+        self._sort_appearance([anton, emilia, akira])
         self.traverse({'description': r"\sKurs$"})
         self._sort_appearance([anton, akira, emilia])
 
@@ -2784,6 +2786,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("α", div='problem_instructor_wrong_course')
         self.assertPresence("δ", div='problem_instructor_wrong_course')
 
+    @storage
     @as_users("garcia")
     def test_downloads(self) -> None:
         magic_bytes = {
@@ -2803,7 +2806,7 @@ etc;anything else""", f['entries_2'].value)
         self.response = save.click(href='/event/event/1/download/nametag\\?runs=0')
         self.assertTrue(self.response.body.startswith(magic_bytes['targz']))
         self.assertLess(1000, len(self.response.body))
-        with open("/tmp/output.tar.gz", 'wb') as f:
+        with tempfile.TemporaryFile() as f:
             f.write(self.response.body)
         self.response = save.click(href='/event/event/1/download/nametag\\?runs=2')
         self.assertTrue(self.response.body.startswith(magic_bytes['pdf']))
@@ -2877,10 +2880,6 @@ etc;anything else""", f['entries_2'].value)
         self.response = save.click(href='/event/event/1/download/csv_lodgements')
         self.assertIn(
             'lodgement.id;lodgement.lodgement_id;lodgement.title;', self.response.text)
-        # courselist for exPuls
-        self.response = save.click(href='/event/event/1/download/expuls')
-        self.assertPresence('\\kurs')
-        self.assertPresence('Planetenretten für Anfänger')
         # dokuteam courselist
         self.response = save.click(href='/event/event/1/download/dokuteam_course')
         self.assertPresence('|cde')
@@ -2889,6 +2888,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertTrue(self.response.body.startswith(magic_bytes['zip']))
         self.assertLess(500, len(self.response.body))
 
+    @storage
     @as_users("garcia")
     def test_download_export(self) -> None:
         self.traverse({'href': '/event/$'},
@@ -2905,7 +2905,7 @@ etc;anything else""", f['entries_2'].value)
 
         f['agree_unlocked_download'].checked = True
         self.submit(f)
-        with open("/tmp/cdedb-store/testfiles/event_export.json") as datafile:
+        with open(self.testfile_dir / "event_export.json") as datafile:
             expectation = json.load(datafile)
         result = json.loads(self.response.text)
         expectation['timestamp'] = result['timestamp']  # nearly_now() won't do
@@ -2960,8 +2960,6 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/2/download/csv_courses'})
         self.assertPresence('Leere Datei.', div='notifications')
         self.traverse({'href': '/event/event/2/download/csv_lodgements'})
-        self.assertPresence('Leere Datei.', div='notifications')
-        self.traverse({'href': '/event/event/2/download/expuls'})
         self.assertPresence('Leere Datei.', div='notifications')
 
         # now check empty pdfs
@@ -3211,6 +3209,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Mittelgroße Testakademie 2222")
         self.assertPresence("Die Veranstaltung ist nicht gesperrt.")
 
+    @storage
     @as_users("annika", "garcia")
     def test_partial_import_normal(self) -> None:
         self.traverse({'href': '/event/$'},
@@ -3274,6 +3273,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Geheime Etage")
         self.assertPresence("Geheimkabinett")
 
+    @storage
     @as_users("annika", "garcia")
     def test_partial_import_interleaved(self) -> None:
         self.traverse({'href': '/event/$'},
@@ -3369,6 +3369,7 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.assertTitle("Anmeldung von Emilia E. Eventis (Große Testakademie 2222)")
 
+    @storage
     @as_users("annika", "garcia")
     def test_partial_export(self) -> None:
         self.traverse({'href': '/event/$'},

@@ -557,20 +557,17 @@ class CoreBackend(AbstractBackend):
 
     @internal
     @access("ml")
-    def list_all_personas(self, rs: RequestState, is_active: bool = False,
-                          valid_email: bool = False) -> Set[int]:
+    def list_all_personas(self, rs: RequestState, is_active: bool = False) -> Set[int]:
         query = "SELECT id from core.personas WHERE is_archived = False"
         if is_active:
             query += " AND is_active = True"
-        if valid_email:
-            query += " AND username IS NOT NULL"
         data = self.query_all(rs, query, params=tuple())
         return {e["id"] for e in data}
 
     @internal
     @access("ml")
-    def list_current_members(self, rs: RequestState, is_active: bool = False,
-                             valid_email: bool = False) -> Set[int]:
+    def list_current_members(self, rs: RequestState, is_active: bool = False
+                             ) -> Set[int]:
         """Helper to list all current members.
 
         Used to determine subscribers of mandatory/opt-out member mailinglists.
@@ -578,8 +575,6 @@ class CoreBackend(AbstractBackend):
         query = "SELECT id from core.personas WHERE is_member = True"
         if is_active:
             query += " AND is_active = True"
-        if valid_email:
-            query += " AND username IS NOT NULL"
         data = self.query_all(rs, query, params=tuple())
         return {e["id"] for e in data}
 
@@ -1383,7 +1378,7 @@ class CoreBackend(AbstractBackend):
             query = "UPDATE core.personas SET password_hash = %s WHERE id = %s"
             self.query_exec(rs, query, (password_hash, persona_id))
             #
-            # 3. Strip all unnecessary attributes
+            # 3. Strip all unnecessary attributes and mark as archived
             #
             update = {
                 'id': persona_id,
@@ -1407,7 +1402,7 @@ class CoreBackend(AbstractBackend):
                 # 'is_assembly_realm'
                 # 'is_member' already adjusted
                 'is_searchable': False,
-                # 'is_archived' will be done later
+                'is_archived': True,
                 # 'is_purged' not relevant here
                 # 'display_name' kept for later recognition
                 # 'given_names' kept for later recognition
@@ -1532,16 +1527,8 @@ class CoreBackend(AbstractBackend):
             # assembly log stays since assemblies have a separate life cycle
             self.sql_delete(rs, "ml.log", (persona_id,), "persona_id")
             #
-            # 10. Mark archived
+            # 10. Create archival log entry
             #
-            update = {
-                'id': persona_id,
-                'is_archived': True,
-            }
-            self.set_persona(
-                rs, update, generation=None, may_wait=False,
-                change_note="Benutzer archiviert.",
-                allow_specials=("archive",))
             self.core_log(rs, const.CoreLogCodes.persona_archived, persona_id)
             #
             # 11. Clear changelog
@@ -1563,24 +1550,27 @@ class CoreBackend(AbstractBackend):
             return ret
 
     @access(*REALM_ADMINS)
-    def dearchive_persona(self, rs: RequestState,
-                          persona_id: int) -> DefaultReturnCode:
+    def dearchive_persona(self, rs: RequestState, persona_id: int, new_username: str
+                          ) -> DefaultReturnCode:
         """Return a persona from the attic to activity.
 
-        This does nothing but flip the archiving bit.
+        This does nothing but flip the archiving bit and set a new username,
+        which makes sure the resulting persona will pass validation.
         """
         persona_id = affirm(vtypes.ID, persona_id)
+        new_username = affirm(vtypes.Email, new_username)
         with Atomizer(rs):
             update = {
                 'id': persona_id,
                 'is_archived': False,
+                'username': new_username,
             }
             code = self.set_persona(
                 rs, update, generation=None, may_wait=False,
                 change_note="Benutzer aus dem Archiv wiederhergestellt.",
-                allow_specials=("archive",))
+                allow_specials=("archive", "username"))
             self.core_log(rs, const.CoreLogCodes.persona_dearchived, persona_id)
-            return code
+        return code
 
     @access("core_admin")
     def purge_persona(self, rs: RequestState, persona_id: int) -> DefaultReturnCode:
@@ -1646,7 +1636,7 @@ class CoreBackend(AbstractBackend):
 
     @access("persona")
     def change_username(self, rs: RequestState, persona_id: int,
-                        new_username: Optional[str], password: Optional[str]
+                        new_username: str, password: Optional[str]
                         ) -> Tuple[bool, str]:
         """Since usernames are used for login, this needs a bit of care.
 
@@ -1654,12 +1644,10 @@ class CoreBackend(AbstractBackend):
             is an error message or the new username on success.
         """
         persona_id = affirm(vtypes.ID, persona_id)
-        new_username = affirm_optional(vtypes.Email, new_username)
+        new_username = affirm(vtypes.Email, new_username)
         password = affirm_optional(str, password)
-        if new_username is None and not self.is_relative_admin(rs, persona_id):
-            return False, n_("Only admins may unset an email address.")
         with Atomizer(rs):
-            if new_username and self.verify_existence(rs, new_username):
+            if self.verify_existence(rs, new_username):
                 # abort if there is already an account with this address
                 return False, n_("Name collision.")
             authorized = False
@@ -1680,10 +1668,7 @@ class CoreBackend(AbstractBackend):
                     self.core_log(
                         rs, const.CoreLogCodes.username_change, persona_id,
                         change_note=new_username)
-                    if new_username:
-                        return True, new_username
-                    else:
-                        return True, n_("Username removed.")
+                    return True, new_username
         return False, n_("Failed.")
 
     @access("persona")
@@ -2142,7 +2127,7 @@ class CoreBackend(AbstractBackend):
 
     @internal
     @access("anonymous")
-    def get_roles_multi(self, rs: RequestState, persona_ids: Collection[Optional[int]],
+    def get_roles_multi(self, rs: RequestState, persona_ids: Collection[int],
                         introspection_only: bool = False
                         ) -> Dict[Optional[int], Set[Role]]:
         """Resolve ids into roles.
@@ -2434,6 +2419,7 @@ class CoreBackend(AbstractBackend):
         if email:
             persona_id = unwrap(self.sql_select_one(
                 rs, "core.personas", ("id",), email, entity_key="username"))
+        assert persona_id is not None
 
         columns_of_interest = [
             "is_cde_realm", "is_meta_admin", "is_core_admin", "is_cde_admin",

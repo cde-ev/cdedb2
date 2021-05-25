@@ -10,7 +10,9 @@ import webtest
 import cdedb.database.constants as const
 from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, CdEDBObject, get_hash
 from cdedb.query import QueryOperators
-from tests.common import FrontendTest, UserIdentifier, UserObject, USER_DICT, as_users
+from tests.common import (
+    FrontendTest, UserIdentifier, UserObject, USER_DICT, as_users, storage
+)
 
 
 class TestCoreFrontend(FrontendTest):
@@ -1091,8 +1093,7 @@ class TestCoreFrontend(FrontendTest):
     @as_users("vera")
     def test_toggle_activity(self) -> None:
         for i, u in enumerate(("berta", "charly", "daniel", "emilia", "garcia",
-                               "inga", "janis", "kalif", "lisa", "martin",
-                               "olaf")):
+                               "inga", "janis", "kalif", "martin", "olaf")):
             with self.subTest(target=u):
                 self.admin_view_profile(u)
                 f = self.response.forms['activitytoggleform']
@@ -1113,6 +1114,7 @@ class TestCoreFrontend(FrontendTest):
                     self.assertNonPresence(msg)
                     self.assertPresence("Ja", div='account-active')
 
+    @storage
     @as_users("vera", "berta")
     def test_get_foto(self) -> None:
         response = self.app.get(
@@ -1121,12 +1123,13 @@ class TestCoreFrontend(FrontendTest):
         self.assertTrue(response.body.startswith(b"\x89PNG"))
         self.assertTrue(len(response.body) > 10000)
 
+    @storage
     @as_users("vera", "berta")
     def test_set_foto(self) -> None:
         self.traverse({'description': self.user['display_name']},
                       {'description': 'Profilbild ändern'})
         f = self.response.forms['setfotoform']
-        with open("/tmp/cdedb-store/testfiles/picture.png", 'rb') as datafile:
+        with open(self.testfile_dir / "picture.png", 'rb') as datafile:
             data = datafile.read()
         my_hash = get_hash(data)
         f['foto'] = webtest.Upload("picture.png", data, "application/octet-stream")
@@ -1135,12 +1138,13 @@ class TestCoreFrontend(FrontendTest):
         self.get(f'/core/foto/{my_hash}')
         self.assertEqual(data, self.response.body)
 
+    @storage
     @as_users("vera", "berta")
     def test_set_foto_jpg(self) -> None:
         self.traverse({'description': self.user['display_name']},
                       {'description': 'Profilbild ändern'})
         f = self.response.forms['setfotoform']
-        with open("/tmp/cdedb-store/testfiles/picture.jpg", 'rb') as datafile:
+        with open(self.testfile_dir / "picture.jpg", 'rb') as datafile:
             data = datafile.read()
         my_hash = get_hash(data)
         f['foto'] = webtest.Upload("picture.jpg", data, "application/octet-stream")
@@ -1261,7 +1265,9 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Charly C. Clown")
         self.assertPresence("Der Benutzer ist archiviert.", div='archived')
         self.assertNonPresence("Zirkusstadt")
+        self.traverse({'description': "Account wiederherstellen"})
         f = self.response.forms['dearchivepersonaform']
+        f['new_username'] = "charly@example.cde"
         self.submit(f)
         self.assertTitle("Charly C. Clown")
         self.assertNonPresence("Der Benutzer ist archiviert.")
@@ -1713,6 +1719,7 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'href': '/core/self/show'})
         self.assertTitle("Zelda Zeruda-Hime")
 
+    @storage
     def test_genesis_cde(self) -> None:
         self.get('/core/genesis/request')
         self.assertTitle("Account anfordern")
@@ -1722,7 +1729,7 @@ class TestCoreFrontend(FrontendTest):
             f[field] = entry
         f['birth_name'] = "Ganondorf"
         f['notes'] = ""  # Do not send this to test upload permanance.
-        with open("/tmp/cdedb-store/testfiles/form.pdf", 'rb') as datafile:
+        with open(self.testfile_dir / "form.pdf", 'rb') as datafile:
             data = datafile.read()
         f['attachment'] = webtest.Upload(
             "my_participation_certificate.pdf", data, content_type="application/pdf")
@@ -1769,7 +1776,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Anhang herunterladen")
         save = self.response
         self.traverse({'description': 'Anhang herunterladen'})
-        with open("/tmp/cdedb-store/testfiles/form.pdf", 'rb') as f:
+        with open(self.testfile_dir / "form.pdf", 'rb') as f:
             self.assertEqual(f.read(), self.response.body)
         self.response = save
         self.assertNonPresence("zelda@example.cde")

@@ -1874,7 +1874,7 @@ class AssemblyBackend(AbstractBackend):
             if attachment['num_versions'] <= 1:
                 raise ValueError(n_("Cannot remove the last remaining version "
                                     "of an attachment."))
-            deletor = {
+            deletor: Dict[str, Union[int, datetime.datetime, None]] = {
                 'attachment_id': attachment_id,
                 'version': version,
                 'dtime': now(),
@@ -1935,11 +1935,11 @@ class AssemblyBackend(AbstractBackend):
         if not self.may_access(rs, assembly_id=assembly_id, ballot_id=ballot_id):
             raise PrivilegeError(n_("Not privileged."))
 
-        key = None
         if assembly_id is not None:
             column = "assembly_id"
             key = assembly_id
         else:
+            assert ballot_id is not None
             column = "ballot_id"
             key = ballot_id
 

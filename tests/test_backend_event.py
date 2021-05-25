@@ -17,7 +17,7 @@ from cdedb.common import (
     CourseFilterPositions, nearly_now
 )
 from cdedb.query import QUERY_SPECS, Query, QueryOperators
-from tests.common import USER_DICT, BackendTest, as_users, json_keys_to_int
+from tests.common import USER_DICT, BackendTest, as_users, json_keys_to_int, storage
 
 
 class TestEventBackend(BackendTest):
@@ -392,6 +392,7 @@ class TestEventBackend(BackendTest):
              "orgas", "lodgement_groups", "lodgements", "registrations",
              "questionnaire", "log", "mailinglists", "fee_modifiers")))
 
+    @storage
     @as_users("annika", "garcia")
     def test_change_minor_form(self) -> None:
         event_id = 1
@@ -1939,6 +1940,7 @@ class TestEventBackend(BackendTest):
 
         return ret
 
+    @storage
     @as_users("annika", "garcia")
     def test_export_event(self) -> None:
         with open(self.testfile_dir / "event_export.json", "r") as f:
@@ -2387,6 +2389,7 @@ class TestEventBackend(BackendTest):
 
         self.assertEqual(stored_data, result)
 
+    @storage
     @as_users("annika")
     def test_partial_export_event(self) -> None:
         with open(self.testfile_dir / "TestAka_partial_export_event.json") as f:
@@ -2396,11 +2399,12 @@ class TestEventBackend(BackendTest):
         export = self.event.partial_export_event(self.key, 1)
         self.assertEqual(expectation, export)
 
+    @storage
     @as_users("annika")
     def test_partial_import_event(self) -> None:
         event = self.event.get_event(self.key, 1)
         previous = self.event.partial_export_event(self.key, 1)
-        with open("/tmp/cdedb-store/testfiles/partial_event_import.json") \
+        with open(self.testfile_dir / "partial_event_import.json") \
                 as datafile:
             data = json.load(datafile)
 
@@ -2502,10 +2506,10 @@ class TestEventBackend(BackendTest):
             expectation['EVENT_SCHEMA_VERSION'])
         self.assertEqual(expectation, updated)
 
+    @storage
     @as_users("annika")
     def test_partial_import_integrity(self) -> None:
-        with open("/tmp/cdedb-store/testfiles/partial_event_import.json") \
-                as datafile:
+        with open(self.testfile_dir / "partial_event_import.json") as datafile:
             orig_data = json.load(datafile)
 
         base_data = {
@@ -2557,10 +2561,10 @@ class TestEventBackend(BackendTest):
         self.assertIn("Referential integrity of lodgement groups violated.",
                       cm.exception.args)
 
+    @storage
     @as_users("annika")
     def test_partial_import_event_twice(self) -> None:
-        with open("/tmp/cdedb-store/testfiles/partial_event_import.json") \
-                as datafile:
+        with open(self.testfile_dir / "partial_event_import.json") as datafile:
             data = json.load(datafile)
 
         # first a test run

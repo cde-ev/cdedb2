@@ -17,7 +17,7 @@ CREATE TABLE core.personas (
         --
         id                      serial PRIMARY KEY,
         -- an email address (should be lower-cased)
-        -- may be NULL (which is not nice, but dictated by reality, like expired addresses)
+        -- may be NULL precisely for archived users
         username                varchar UNIQUE,
         -- password hash as specified by passlib.hash.sha512_crypt
         -- not logged in changelog
@@ -87,6 +87,10 @@ CREATE TABLE core.personas (
         -- signal a data set of a former member which was stripped of all
         -- non-essential attributes to implement data protection
         is_archived             boolean NOT NULL DEFAULT False,
+        CONSTRAINT personas_archived_username
+            CHECK ((username IS NULL) = is_archived),
+        CONSTRAINT personas_archived_member
+            CHECK (NOT (is_member AND is_archived)),
         -- signal all remaining information about a user has been cleared.
         -- this can never be undone.
         is_purged               boolean NOT NULL DEFAULT False,
