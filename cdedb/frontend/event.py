@@ -5011,7 +5011,7 @@ class EventFrontend(AbstractUserFrontend):
         inhabitants = self.calculate_groups(
             lodgements.keys(), rs.ambience['event'], registrations, key="lodgement_id")
 
-        code = 1
+        new_regs: CdEDBObjectMap = {}
         for part_id in rs.ambience['event']['parts']:
             if data[f"swap_with_{part_id}"]:
                 swap_lodgement_id = data[f"swap_with_{part_id}"]
@@ -5019,25 +5019,17 @@ class EventFrontend(AbstractUserFrontend):
                 swap_inhabitants = inhabitants[(swap_lodgement_id, part_id)]
                 new_reg: CdEDBObject
                 for reg_id in current_inhabitants:
-                    new_reg = {
-                        'id': reg_id,
-                        'parts': {
-                            part_id:  {
-                                'lodgement_id': swap_lodgement_id
-                            }
-                        }
-                    }
-                    code *= self.eventproxy.set_registration(rs, new_reg)
+                    new_reg = new_regs.get(reg_id, {'id': reg_id, 'parts': dict()})
+                    new_reg['parts'][part_id] = {'lodgement_id': swap_lodgement_id}
+                    new_regs[reg_id] = new_reg
                 for reg_id in swap_inhabitants:
-                    new_reg = {
-                        'id': reg_id,
-                        'parts': {
-                            part_id: {
-                                'lodgement_id': lodgement_id
-                            }
-                        }
-                    }
-                    code *= self.eventproxy.set_registration(rs, new_reg)
+                    new_reg = new_regs.get(reg_id, {'id': reg_id, 'parts': dict()})
+                    new_reg['parts'][part_id] = {'lodgement_id': lodgement_id}
+                    new_regs[reg_id] = new_reg
+
+        code = 1
+        for new_reg in new_regs.values():
+            code *= self.eventproxy.set_registration(rs, new_reg)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/show_lodgement")
 
