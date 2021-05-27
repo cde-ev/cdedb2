@@ -476,7 +476,7 @@ class TestValidation(unittest.TestCase):
                 (b'{"open": 1', None, ValueError),
                 (b"\xff", None, ValueError)):
             with self.subTest(input=input_):
-                result, errs = validate.validate_check(JSON, input_, _convert=True)
+                result, errs = validate.validate_check(JSON, input_)
                 self.assertEqual(output, result)
                 if error is None:
                     self.assertFalse(errs)
