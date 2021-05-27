@@ -15,8 +15,6 @@ We offer three variants.
 * ``validate_check`` return a tuple ``(mangled_value, errors)``.
 * ``validate_affirm`` on success return the mangled value,
     but if there is an error raise an exception.
-* ``validate_is`` returns a :py:class:`boolean`,
-    but does no type conversion (hence things like dates mustn't be strings)
 
 The raw validator implementations are functions with signature
 ``(val, argname, **kwargs)`` of which many support the keyword arguments
@@ -57,8 +55,8 @@ import re
 import string
 from enum import Enum
 from typing import (
-    Callable, Iterable, Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar,
-    Union, cast, get_type_hints, overload,
+    Callable, Iterable, Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar, Union,
+    cast, get_type_hints, overload,
 )
 
 import magic
@@ -165,19 +163,6 @@ def validate_assert(type_: Type[T], value: Any, **kwargs: Any) -> T:
 
 def validate_assert_optional(type_: Type[T], value: Any, **kwargs: Any) -> Optional[T]:
     return validate_assert(Optional[type_], value, **kwargs)  # type: ignore
-
-
-def validate_is(type_: Type[T], value: Any, **kwargs: Any) -> bool:
-    kwargs['_convert'] = False
-    try:
-        _ALL_TYPED[type_](value, **kwargs)
-        return True
-    except ValidationSummary:
-        return False
-
-
-def validate_is_optional(type_: Type[T], value: Any, **kwargs: Any) -> Optional[T]:
-    return validate_is(Optional[type_], value, **kwargs)  # type: ignore
 
 
 def validate_check(
@@ -4160,7 +4145,7 @@ def _query(
 
     # scope
     # TODO why no convert here?
-    _identifier(val.scope, "scope", **{**kwargs, '_convert': False})
+    _identifier(val.scope, "scope", **kwargs)
 
     if not val.scope.startswith("qview_"):
         errs.append(ValueError("scope", n_("Must start with “qview_”.")))
@@ -4168,21 +4153,19 @@ def _query(
     # spec
     for field, validator in val.spec.items():
         try:
-            _csv_identifier(field, "spec", **{**kwargs, '_convert': False})
+            _csv_identifier(field, "spec", **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
 
         try:
-            _printable_ascii(validator, "spec", **
-                             {**kwargs, '_convert': False})
+            _printable_ascii(validator, "spec", **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
 
     # fields_of_interest
     for field in val.fields_of_interest:
         try:
-            _csv_identifier(field, "fields_of_interest", **
-                            {**kwargs, '_convert': False})
+            _csv_identifier(field, "fields_of_interest", **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
     if not val.fields_of_interest:
@@ -4198,8 +4181,7 @@ def _query(
             continue
 
         try:
-            field = _csv_identifier(
-                field, "constraints", **{**kwargs, '_convert': False})
+            field = _csv_identifier(field, "constraints", **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
 
@@ -4209,8 +4191,7 @@ def _query(
 
         try:
             operator = _ALL_TYPED[QueryOperators](
-                operator, "constraints/{}".format(field),
-                **{**kwargs, '_convert': False})
+                operator, "constraints/{}".format(field), **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
             continue
@@ -4228,8 +4209,7 @@ def _query(
                 Optional[VALIDATOR_LOOKUP[val.spec[field]]]]  # type: ignore
             for v in value:
                 try:
-                    validator(v, "constraints/{}".format(field),
-                              **{**kwargs, '_convert': False})
+                    validator(v, "constraints/{}".format(field), **kwargs)
                 except ValidationSummary as e:
                     errs.extend(e)
         else:
@@ -4239,7 +4219,7 @@ def _query(
                 ](
                     value,
                     "constraints/{}".format(field),
-                    **{**kwargs, '_convert': False}
+                    **kwargs
                 )
             except ValidationSummary as e:
                 errs.extend(e)
@@ -4249,7 +4229,7 @@ def _query(
         try:
             # TODO use generic tuple here once implemented
             entry = _ALL_TYPED[Iterable](  # type: ignore
-                entry, 'order', **{**kwargs, '_convert': False})
+                entry, 'order', **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
             continue
@@ -4261,8 +4241,8 @@ def _query(
             errs.append(ValueError("order", msg, {'index': idx}))
         else:
             try:
-                _csv_identifier(field, "order", **{**kwargs, '_convert': False})
-                _bool(ascending, "order", **{**kwargs, '_convert': False})
+                _csv_identifier(field, "order", **kwargs)
+                _bool(ascending, "order", **kwargs)
             except ValidationSummary as e:
                 errs.extend(e)
 
@@ -4345,7 +4325,7 @@ def _db_subscription_state(
     val = _ALL_TYPED[const.SubscriptionState](val, argname, **kwargs)
     if val == const.SubscriptionState.none:
         raise ValidationSummary(ValueError(argname,
-            n_("SubscriptionState.none is not written into the database.")))
+                                           n_("SubscriptionState.none is not written into the database.")))
     return DatabaseSubscriptionState(val)
 
 
