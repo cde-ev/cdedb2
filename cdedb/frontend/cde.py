@@ -770,8 +770,8 @@ class CdEFrontend(AbstractUserFrontend):
             total_account_number += 1
             dataset: CdEDBObject = {'raw': raw_entry}
             params: TypeMapping = {
-                # since we dont know the line numbers on the first submit, we have to
-                # cast the None -> LineResolutions.none after extraction
+                # as on the first submit no values for the resolution are transmitted,
+                # we have to cast None -> LineResolutions.none after extraction
                 f"resolution{lineno}": Optional[LineResolutions],  # type: ignore
                 f"doppelganger_id{lineno}": Optional[vtypes.ID],  # type: ignore
                 f"hash{lineno}": Optional[str],  # type: ignore
