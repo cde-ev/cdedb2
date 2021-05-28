@@ -3190,14 +3190,17 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'description': 'Veranstaltungen'},
                       {'description': 'Große Testakademie 2222'},
                       {'description': 'Unterkünfte'},
-                      {'description': 'Warme Stube'},
+                      {'description': 'Einzelzelle'},
                       {'description': 'Bewohner verwalten'})
-        self.assertPresence('Zur Zeit keine Bewohner eingeteilt.', div='inhabitants-1')
-        self.assertPresence('Zur Zeit keine Bewohner eingeteilt.', div='inhabitants-2')
-        self.assertPresence('Akira', div='inhabitant-3-5')
-        self.assertCheckbox(False, "is_camping_mat_3_5")
-        self.assertPresence('Anton', div='inhabitant-3-1')
-        self.assertCheckbox(False, "is_camping_mat_3_1")
+        self.assertPresence('Akira', div='inhabitant-1-5')
+        self.assertCheckbox(False, "is_camping_mat_1_5")
+        self.assertPresence('Akira', div='inhabitant-2-5')
+        self.assertCheckbox(False, "is_camping_mat_2_5")
+        self.assertPresence('Emilia', div='inhabitant-2-2')
+        self.assertCheckbox(False, "is_camping_mat_2_2")
+        self.assertPresence('Emilia', div='inhabitant-3-2')
+        self.assertCheckbox(False, "is_camping_mat_3_2")
+        self.assertNonPresence('Garcia', div="inhabitants-1")
         self.assertNonPresence('Garcia', div="inhabitants-3")
         self.assertNonPresence('Inga', div="inhabitants-3")
 
@@ -3211,37 +3214,41 @@ etc;anything else""", f['entries_2'].value)
         self.assertCheckbox(False, "is_camping_mat_3_3")
         self.assertPresence('Inga', div='inhabitant-3-4')
         self.assertCheckbox(True, "is_camping_mat_3_4")
-        self.assertNonPresence('Akira', div="inhabitants-3")
-        self.assertNonPresence('Anton', div="inhabitants-3")
+        self.assertNonPresence('Akira', div='inhabitants-1')
+        self.assertNonPresence('Emilia', div="inhabitants-3")
 
-        # swap inhabitants of both lodgements in part 3
+        # swap inhabitants of both lodgements in part 1 and 3
         f = self.response.forms['swapinhabitantsform']
-        f['swap_with_3'] = 1
+        f['swap_with_1'] = 4
+        f['swap_with_3'] = 4
         self.submit(f)
 
         # check the inhabitants of both lodgements
         self.traverse({'description': 'Unterkünfte'},
-                      {'description': 'Warme Stube'},
+                      {'description': 'Einzelzelle'},
                       {'description': 'Bewohner verwalten'})
-        self.assertPresence('Zur Zeit keine Bewohner eingeteilt.', div='inhabitants-1')
-        self.assertPresence('Zur Zeit keine Bewohner eingeteilt.', div='inhabitants-2')
+        self.assertPresence('Garcia', div='inhabitant-1-3')
+        self.assertCheckbox(False, "is_camping_mat_1_3")
+        self.assertPresence('Akira', div='inhabitant-2-5')
+        self.assertCheckbox(False, "is_camping_mat_2_5")
+        self.assertPresence('Emilia', div='inhabitant-2-2')
+        self.assertCheckbox(False, "is_camping_mat_2_2")
         self.assertPresence('Garcia', div='inhabitant-3-3')
         self.assertCheckbox(False, "is_camping_mat_3_3")
         self.assertPresence('Inga', div='inhabitant-3-4')
         self.assertCheckbox(True, "is_camping_mat_3_4")
-        self.assertNonPresence('Akira', div="inhabitants-3")
-        self.assertNonPresence('Anton', div="inhabitants-3")
+        self.assertNonPresence('Akira', div="inhabitants-1")
+        self.assertNonPresence('Emilia', div="inhabitants-3")
 
         self.traverse({'description': 'Unterkünfte'},
                       {'description': 'Kalte Kammer'},
                       {'description': 'Bewohner verwalten'})
-        self.assertPresence('Garcia', div='inhabitant-1-3')
-        self.assertCheckbox(False, "is_camping_mat_1_3")
+        self.assertPresence('Akira', div='inhabitant-1-5')
+        self.assertCheckbox(False, "is_camping_mat_1_5")
         self.assertPresence('Zur Zeit keine Bewohner eingeteilt.', div='inhabitants-2')
-        self.assertPresence('Akira', div='inhabitant-3-5')
-        self.assertCheckbox(False, "is_camping_mat_3_5")
-        self.assertPresence('Anton', div='inhabitant-3-1')
-        self.assertCheckbox(False, "is_camping_mat_3_1")
+        self.assertPresence('Emilia', div='inhabitant-3-2')
+        self.assertCheckbox(False, "is_camping_mat_3_2")
+        self.assertNonPresence('Garcia', div="inhabitants-1")
         self.assertNonPresence('Garcia', div="inhabitants-3")
         self.assertNonPresence('Inga', div="inhabitants-3")
 
