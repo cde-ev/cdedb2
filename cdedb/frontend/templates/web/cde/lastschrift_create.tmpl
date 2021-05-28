@@ -48,7 +48,7 @@
             <script nonce="{{ csp_nonce }}">
                 $('#input-persona_id').cdedbSearchPerson(
                     '{{ (cdedblink('core/select_persona')|e) + ('?kind=cde_user&phrase=%s'|s) }}',
-                    {{ []|list|json|s }}, false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
+                    {{ []|list|tojson }}, false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                 );
             </script>
         {% endif %}

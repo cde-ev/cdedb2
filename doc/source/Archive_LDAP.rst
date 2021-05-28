@@ -14,7 +14,7 @@ And configure it via /etc/odbc.ini::
 
     [cdb]
     Description         = cdb connector for OpenLDAP's back-sql
-    Driver              = PostgreSQL
+    Driver              = PostgreSQL Unicode
     Trace               = No
     Database            = cdb
     Servername          = localhost
@@ -28,7 +28,9 @@ And configure it via /etc/odbc.ini::
     FakeOidIndex        = No
     ConnSettings        =
 
-To check odbc functionality we use the following command::
+The ``Driver`` must be as specified in /etc/odbcinst.ini (which should be
+prefilled by the Debian package). To check odbc functionality we use the
+following command::
 
     isql cdb
 
@@ -99,11 +101,17 @@ We now configure the SQL-backend for LDAP via a corresponding LDIF file (as
 is necessary according to the cn=config mechanism). Current state of the
 content of our sql-ldap.ldif::
 
+    # load sql-backend module
+    dn: cn=module{0},cn=config
+    changetype: modify
+    add: olcModuleLoad
+    olcModuleLoad: back_sql
+
     # backend definition
-    dn: olcBackend=sql,cn=config
+    dn: olcBackend={1}sql,cn=config
     changetype: add
     objectClass: olcBackendConfig
-    olcBackend: sql
+    olcBackend: {1}sql
 
     # database definitions
     dn: olcDatabase=sql,cn=config
@@ -129,10 +137,18 @@ To apply the LDIF configuration file we issue the following command::
 
     ldapmodify -Y EXTERNAL -H ldapi:/// -f /cdedb2/sql-ldap.ldif
 
-Unfortunately this results in a rather terse error message::
+Troubleshooting
+---------------
 
-    ldap_add: Other (e.g., implementation specific) error (80)
-            additional info: <olcBackend> failed init
+To receive more information from LDAP in case anything goes wrong the log
+level can be increased with the following::
+
+ldapmodify -Y EXTERNAL -H ldapi:/// <<EOF
+dn: cn=config
+changetype: modify
+replace: olcLogLevel
+olcLogLevel: -1
+EOF
 
 .. _sec-ldap-references:
 
@@ -143,3 +159,5 @@ References
 * https://linux.die.net/man/5/slapd-sql
 * http://www.flatmtn.com/article/setting-ldap-back-sql.html
 * https://www.openldap.org/faq/data/cache/978.html
+* https://www.digitalocean.com/community/tutorials/how-to-use-ldif-files-to-make-changes-to-an-openldap-system
+* https://serverfault.com/questions/725887/how-do-i-add-an-openldap-contrib-module-with-cn-config-layout-to-ubuntu

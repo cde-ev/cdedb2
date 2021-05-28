@@ -65,10 +65,10 @@
                 </div>
             {% endfor %}
             <script nonce="{{ csp_nonce }}">
-                var course_names = {{ course_names|json|s }};
+                var course_names = {{ course_names|tojson }};
                 {% for track_id in ambience['event']['tracks'] %}
                     $('#input_new_{{ track_id }}').cdedbSearchParticipant(
-                        {{ selectize_data[track_id]|json|s }}, course_names, "{{ gettext("currently")|s }}: ");
+                        {{ selectize_data[track_id]|tojson }}, course_names, "{{ gettext("currently")|s }}: ");
                 {% endfor %}
                 $('.del-box').cdedbRemoveParticipantButton('{{ gettext("Remove Attendee") }}');
             </script>
