@@ -50,7 +50,8 @@ from cdedb.query import (
 from cdedb.validation import (
     LASTSCHRIFT_COMMON_FIELDS, PAST_EVENT_FIELDS, PAST_COURSE_COMMON_FIELDS,
     PERSONA_FULL_CDE_CREATION, TypeMapping, filter_none, validate_check,
-    validate_check_optional,
+    validate_check_optional, PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
+    is_optional, PERSONA_COMMON_FIELDS
 )
 
 MEMBERSEARCH_DEFAULTS = {
@@ -569,7 +570,6 @@ class CdEFrontend(AbstractUserFrontend):
             'birth_name', 'gender', 'address_supplement', 'address',
             'postal_code', 'location', 'country', 'telephone',
             'mobile', 'birthday')  # email omitted as it is handled separately
-        persona_id = None
         if datum['resolution'] == LineResolutions.skip:
             return ret
         elif datum['resolution'] == LineResolutions.create:
@@ -587,7 +587,10 @@ class CdEFrontend(AbstractUserFrontend):
             current = self.coreproxy.get_persona(rs, persona_id)
             if not current['is_cde_realm']:
                 # Promote to cde realm dependent on current realm
-                promotion: CdEDBObject = {
+                promotion: CdEDBObject = {field: None for field in CDE_TRANSITION_FIELDS}
+                # The ream independent upgrades of the persona. They are applied at last
+                # to prevent unintentional overrides
+                upgrades = {
                     'is_cde_realm': True,
                     'is_event_realm': True,
                     'is_assembly_realm': True,
@@ -598,30 +601,32 @@ class CdEFrontend(AbstractUserFrontend):
                     'bub_search': False,
                     'id': persona_id,
                 }
-                empty_fields = (
-                    'address_supplement2', 'address2', 'postal_code2',
-                    'location2', 'country2', 'weblink', 'specialisation',
-                    'affiliation', 'timeline', 'interests', 'free_form')
-                for field in empty_fields:
-                    promotion[field] = None
                 # This applies a part of the newly imported data necessary for realm
                 # transition. The remaining data will be updated later.
-                invariant_fields = set(PERSONA_CORE_FIELDS) - set(PERSONA_STATUS_FIELDS)
+                mandatory_fields = {
+                    field for field, validator in CDE_TRANSITION_FIELDS.items()
+                    if field not in upgrades and not is_optional(validator)
+                }
+                assert mandatory_fields <= set(batch_fields)
                 if not current['is_event_realm']:
                     if not datum['resolution'].do_update():
                         raise RuntimeError(n_("Need extra data."))
-                    stored = self.coreproxy.get_persona(rs, persona_id)
-                    for field in set(batch_fields) - invariant_fields:
+                    for field in mandatory_fields:
                         promotion[field] = datum['persona'][field]
                 else:
-                    stored = self.coreproxy.get_event_user(rs, persona_id)
-                    for field in set(batch_fields) - invariant_fields:
-                        promotion[field] = stored.get(field)
-                # The invariant fields stay the same and may be updated later.
-                # Email and name are not passed in during a realm transition.
-                not_passed_fields = {'family_name', 'given_names', 'username'}
-                for field in (invariant_fields - not_passed_fields) & set(batch_fields):
-                    promotion[field] = stored[field]
+                    current = self.coreproxy.get_event_user(rs, persona_id)
+                    # take care that we do not override existent data
+                    current_fields = {
+                        field for field in CDE_TRANSITION_FIELDS
+                        if current.get(field) is not None
+                    }
+                    for field in current_fields:
+                        promotion[field] = current[field]
+                    for field in mandatory_fields:
+                        if promotion[field] is None:
+                            promotion[field] = datum['persona'][field]
+                # apply the actual changes
+                promotion.update(upgrades)
                 self.coreproxy.change_persona_realms(rs, promotion)
             if datum['resolution'].do_trial():
                 self.coreproxy.change_membership(
@@ -634,12 +639,11 @@ class CdEFrontend(AbstractUserFrontend):
                     rs, update, may_wait=False,
                     change_note="Probemitgliedschaft erneuert.")
             if datum['resolution'].do_update():
+                self.coreproxy.change_username(
+                    rs, persona_id, datum['persona']['username'], password=None)
                 update = {'id': datum['doppelganger_id']}
                 for field in batch_fields:
                     update[field] = datum['persona'][field]
-                self.coreproxy.change_username(
-                    rs, datum['doppelganger_id'],
-                    datum['persona']['username'], password=None)
                 self.coreproxy.change_persona(
                     rs, update, may_wait=True, force_review=True,
                     change_note="Import aktualisierter Daten.")
