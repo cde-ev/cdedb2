@@ -22,10 +22,10 @@
         </label>
         {% if name in diff %}
             <div class="col-sm-4 bg-danger">
-                {% if caller %}{{ caller(False) }}{% else %}{{ current[name] }}{% endif %}
+                {% if caller %}{{ caller(False) }}{% else %}{{ current[name] or "–" }}{% endif %}
             </div>
             <div class="col-sm-4 bg-success">
-                {% if caller %}{{ caller(True) }}{% else %}{{ pending[name] }}{% endif %}
+                {% if caller %}{{ caller(True) }}{% else %}{{ pending[name] or "–" }}{% endif %}
             </div>
         {% else %}
             <div class="col-sm-4">
