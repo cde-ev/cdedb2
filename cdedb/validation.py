@@ -200,9 +200,12 @@ def validate_check_optional(
 ) -> Tuple[Optional[T], List[Error]]:
     return validate_check(Optional[type_], value, **kwargs)  # type: ignore
 
+
 # TODO replace with get_origin etc in Python 3.8 from typing
 get_args = lambda t: getattr(t, '__args__', ()) if t is not Generic else Generic
 get_origin = lambda t: getattr(t, '__origin__', None)
+
+
 def is_optional(type_: Type[T]) -> bool:
     return get_origin(type_) is Union and NoneType in get_args(type_)
 

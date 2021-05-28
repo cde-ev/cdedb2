@@ -33,8 +33,7 @@ from cdedb.common import (
     EntitySorter, Error, LineResolutions, LOG_FIELDS_COMMON, PERSONA_DEFAULTS,
     RequestState, SemesterSteps, TransactionType, asciificator, deduct_years,
     determine_age_class, diacritic_patterns, get_hash, glue, int_to_words,
-    lastschrift_reference, merge_dicts, n_, now, unwrap, xsorted, PERSONA_CORE_FIELDS,
-    PERSONA_STATUS_FIELDS
+    lastschrift_reference, merge_dicts, n_, now, unwrap, xsorted,
 )
 from cdedb.database.connection import Atomizer
 from cdedb.frontend.common import (
@@ -51,7 +50,7 @@ from cdedb.validation import (
     LASTSCHRIFT_COMMON_FIELDS, PAST_EVENT_FIELDS, PAST_COURSE_COMMON_FIELDS,
     PERSONA_FULL_CDE_CREATION, TypeMapping, filter_none, validate_check,
     validate_check_optional, PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
-    is_optional, PERSONA_COMMON_FIELDS
+    is_optional
 )
 
 MEMBERSEARCH_DEFAULTS = {
