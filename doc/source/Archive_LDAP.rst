@@ -143,12 +143,13 @@ Troubleshooting
 To receive more information from LDAP in case anything goes wrong the log
 level can be increased with the following::
 
-ldapmodify -Y EXTERNAL -H ldapi:/// <<EOF
-dn: cn=config
-changetype: modify
-replace: olcLogLevel
-olcLogLevel: -1
-EOF
+    ldapmodify -Y EXTERNAL -H ldapi:/// <<EOF
+    dn: cn=config
+    changetype: modify
+    replace: olcLogLevel
+    olcLogLevel: -1
+    EOF
+
 
 .. _sec-ldap-references:
 
