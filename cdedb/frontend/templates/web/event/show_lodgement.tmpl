@@ -90,7 +90,7 @@
     <h2>{% trans %}Inhabitants{% endtrans %}</h2>
     <div class="row">
         {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
-            <div class="col-md-4">
+            <div class="col-md-4" id="inhabitants-{{ part_id }}">
                 <div class="panel panel-info panel-condensed">
                     <div class="panel-heading">
                         <div class="pull-right">{{ inhabitants[(values['lodgement_id'], part_id)]|length }}</div>

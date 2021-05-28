@@ -26,22 +26,23 @@
 {% block content %}
     <form action="{{ cdedblink('event/manage_inhabitants') }}" method="POST" id="manageinhabitantsform">
         {{ util.anti_csrf_token('event/manage_inhabitants') }}
-        <div class="row">
-            {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+        {% for slice in ambience['event']['parts']|keydictsort(EntitySorter.event_part)|slice(2) %}
+            <div class="row">
+            {% for part_id, part in slice %}
                 <div class="col-md-6">
                     {% call util.bootstrap_panel(title=(part['title'] if ambience['event']['parts']|length > 1
                                                                       else gettext("Assigned Inhabitants")),
-                                                 aclass="panel-info") %}
+                                                 aclass="panel-info", anid="inhabitants-{}".format(part_id)) %}
                         <table class="table table-condensed">
                             <tbody>
                             {% for registration_id in inhabitants[(ambience['lodgement']['id'], part_id)] %}
-                                <tr>
+                                <tr id="inhabitant-{{ part_id }}-{{ registration_id }}">
                                     <td>
                                         {{ personas[registrations[registration_id]['persona_id']]['given_names'] }}
                                         {{ personas[registrations[registration_id]['persona_id']]['family_name'] }}
                                     </td>
                                     <td>
-                                        &ensp;{{ util.input_checkbox('camping_mat_%s_%s'|format(part_id, registration_id), gettext("Camping Mat")) }}
+                                        &ensp;{{ util.input_checkbox('is_camping_mat_%s_%s'|format(part_id, registration_id), gettext("Camping Mat")) }}
                                     </td>
                                     <td>
                                         &ensp;{{ util.input_checkbox('delete_%s_%s'|format(part_id, registration_id), gettext("Remove"),
@@ -70,15 +71,28 @@
                     {% endcall %}
                 </div>
             {% endfor %}
-            <script nonce="{{ csp_nonce }}">
-                var lodgement_names = {{ lodgement_names|tojson }};
-                {% for part_id in ambience['event']['parts'] %}
-                    $('#input_new_{{ part_id }}').cdedbSearchParticipant(
-                        {{ selectize_data[part_id]|tojson }}, lodgement_names, "{{ gettext("currently") }}: ");
-                {% endfor %}
-                $('.del-box').cdedbRemoveParticipantButton('{{ gettext("Remove Inhabitant") }}');
-            </script>
-        </div>
+            </div>
+        {% endfor %}
+
+        <script nonce="{{ csp_nonce }}">
+            var lodgement_names = {{ lodgement_names|tojson }};
+            {% for part_id in ambience['event']['parts'] %}
+                $('#input_new_{{ part_id }}').cdedbSearchParticipant(
+                    {{ selectize_data[part_id]|tojson }}, lodgement_names, "{{ gettext("currently") }}: ");
+            {% endfor %}
+            $('.del-box').cdedbRemoveParticipantButton('{{ gettext("Remove Inhabitant") }}');
+        </script>
+
+        {{ util.input_submit(label=gettext("Save")) }}&emsp;
+        {{ util.href(cdedblink('event/show_lodgement'), gettext("Cancel"), icon='times-circle', aclass="btn btn-default") }}
+    </form>
+
+    <h2 class="mosp">{% trans %}Swap inhabitants with{% endtrans %}</h2>
+    <form action="{{ cdedblink('event/swap_inhabitants') }}" method="POST" class="form-horizontal" id="swapinhabitantsform">
+        {{ util.anti_csrf_token('event/swap_inhabitants') }}
+        {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+            {{ util.form_input_select("swap_with_{}".format(part_id), entries=other_lodgements.items(), label=ambience['event']['parts'][part_id]['title'], nulloption=mosp, sort=True) }}
+        {% endfor %}
         {{ util.input_submit(label=gettext("Save")) }}&emsp;
         {{ util.href(cdedblink('event/show_lodgement'), gettext("Cancel"), icon='times-circle', aclass="btn btn-default") }}
     </form>

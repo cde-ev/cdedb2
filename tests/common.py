@@ -993,15 +993,20 @@ class FrontendTest(BackendTest):
 
     def assertCheckbox(self, status: bool, anid: str) -> None:
         """Assert that the checkbox with the given id is checked (or not)."""
-        tmp = self.response.html.find_all(id=anid)
+        tmp = (self.response.html.find_all(id=anid)
+               or self.response.html.find_all(attrs={'name': anid}))
         if not tmp:
-            raise AssertionError("Id not found.", id)
+            raise AssertionError("Id not found.", anid)
         if len(tmp) != 1:
             raise AssertionError("More or less then one hit.", anid)
         checkbox = tmp[0]
-        if "data-checked" not in checkbox.attrs:
+        if "data-checked" in checkbox.attrs:
+            self.assertEqual(str(status), checkbox['data-checked'])
+        elif "type" in checkbox.attrs:
+            self.assertEqual("checkbox", checkbox['type'])
+            self.assertEqual(status, 'checked' == checkbox.get('checked'))
+        else:
             raise ValueError("Id doesnt belong to a checkbox", anid)
-        self.assertEqual(str(status), checkbox['data-checked'])
 
     def assertPresence(self, s: str, *, div: str = "content", regex: bool = False,
                        exact: bool = False) -> None:
