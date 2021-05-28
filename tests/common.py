@@ -751,15 +751,15 @@ class FrontendTest(BackendTest):
     def scrap(self) -> None:
         if self.do_scrap and self.response.status_int // 100 == 2:
             # path without host but with query string - capped at 64 chars
-            # to enhance readability, we mark most chars as safe. All special chars are
+            # To enhance readability, we mark most chars as safe. All special chars are
             # allowed in linux file paths, but sadly windows is more restrictive...
             url = urllib.parse.quote(self.response.request.path_qs, safe='/;@&=+$,~')[:64]
             # since / chars are forbidden in file paths, we replace them by _
             url = url.replace('/', '_')
+            # create a temporary file in scrap_path with url as a prefix
+            # persisting after process completion and dump the response.
             with tempfile.NamedTemporaryFile(dir=self.scrap_path, prefix=f'{url}.',
                                              delete=False) as f:
-                # create a temporary file in scrap_path with url as a suffix
-                # persisting after process completion and dump the response.
                 f.write(self.response.body)
 
     def log_generation_time(self, response: webtest.TestResponse = None) -> None:
