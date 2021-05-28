@@ -1425,7 +1425,7 @@ class TestCdEFrontend(FrontendTest):
     def test_batch_admission_review(self) -> None:
         # check that we force a review if an existing data set is been upgraded
         data = (
-            '"pa14";"1a";"Dino";"Daniel";"lustiger Titel";"";"";"1";"";"";"";"";"";"";"";"daniel@example.cde";"19.02.1963"\n'
+            '"pa14";"1a";"Dino";"Daniel";"lustiger Titel";"";"";"1";"";"";"";"";"";"";"";"daniel@example.cde";"1.01.1900"\n'
             '"pa14";"1a";"Jalapeño";"Janis";"";"komischer Namenszusatz";"";"1";"";"Chilliallee 23";"56767";"Scoville";"";"+49 (5432) 321321";"";"janis@example.cde";"04.01.2001"'
         )
 
@@ -1458,6 +1458,9 @@ class TestCdEFrontend(FrontendTest):
         # take special care that no fields were silently updated during realm transition
         self.admin_view_profile("janis")
         self.assertNonPresence("komischer Namenszusatz", div='personal-information')
+        self.admin_view_profile("daniel")
+        self.assertPresence("19.02.1963", div='personal-information')
+        self.assertPresence("Am Denkmal 91", div='address-information')
 
     @as_users("vera")
     def test_batch_admission_username_taken(self) -> None:
