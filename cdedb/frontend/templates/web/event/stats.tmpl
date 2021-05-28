@@ -89,7 +89,7 @@
             'instructors': gettext("Instructor"),
             'attendees': gettext("Attendees"),
             'no course': gettext("No Course"),
-        } %}
+        } %} {# The 'In x. Choice' labels are already translated #}
             <table class="table table-condensed table-slim">
                 <thead>
                     <tr>
@@ -109,18 +109,22 @@
                     {% for key, row in per_track_statistics.items() %}
                         <tr>
                             <th>{{ HEADINGS.get(key, key) }}</th>
-                                {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
+                            {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
                                 <td id="track_{{ key|replace(' ', '_') }}_{{ track_id }}">
-                                    {% set query = get_query(key, track['part_id'], track_id) %}
-                                    {% set page = get_query_page(key) %}
-                                    {% if query %}
-                                        {{ util.href(cdedblink(page, query|querytoparams),
-                                                     row[track_id]) }}
+                                    {% if row[track_id] is none %}
+                                        –
                                     {% else %}
-                                        {{ row[track_id] }}
+                                        {% set query = get_query(key, track['part_id'], track_id) %}
+                                        {% set page = get_query_page(key) %}
+                                        {% if query %}
+                                            {{ util.href(cdedblink(page, query|querytoparams),
+                                                         row[track_id]) }}
+                                        {% else %}
+                                            {{ row[track_id] }}
+                                        {% endif %}
                                     {% endif %}
                                 </td>
-                                {% endfor %}
+                            {% endfor %}
                         </tr>
                     {% endfor %}
                 <tbody>

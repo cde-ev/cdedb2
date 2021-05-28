@@ -18,11 +18,11 @@ class TestValidation(unittest.TestCase):
     def do_validator_test(
         self,
         type_: Type[Any],
-        spec: Iterable[Tuple[Any, Any, Union[Type[Exception], Exception, None], bool]],
-        extraparams: Mapping[str, Any]=None
+        spec: Iterable[Tuple[Any, Any, Union[Type[Exception], Exception, None]]],
+        extraparams: Mapping[str, Any] = None
     ) -> None:
         extraparams = extraparams or {}
-        for inval, retval, exception, verifies in spec:
+        for inval, retval, exception in spec:
             with self.subTest(inval=inval):
                 if not exception:
                     self.assertEqual(
@@ -50,26 +50,11 @@ class TestValidation(unittest.TestCase):
                         validate.validate_assert(type_, inval, **extraparams)
                     if exception_args:
                         self.assertEqual(cm.exception.args, exception_args)
-                if verifies:
-                    self.assertTrue(validate.validate_is(
-                        type_, inval, **extraparams))
-                else:
-                    self.assertFalse(validate.validate_is(
-                        type_, inval, **extraparams))
                 onepass = validate.validate_check(type_, inval, **extraparams)[0]
                 twopass = validate.validate_check(type_, onepass, **extraparams)[0]
                 self.assertEqual(onepass, twopass)
 
     def test_optional(self) -> None:
-        self.assertTrue(validate.validate_is(int, 12))
-        self.assertFalse(validate.validate_is(int, None))
-        self.assertFalse(validate.validate_is(int, "12"))
-        self.assertFalse(validate.validate_is(int, "garbage"))
-        self.assertTrue(validate.validate_is_optional(int, 12))
-        self.assertTrue(validate.validate_is_optional(int, None))
-        self.assertFalse(validate.validate_is_optional(int, "12"))
-        self.assertFalse(validate.validate_is_optional(int, "garbage"))
-
         self.assertEqual((12, []), validate.validate_check(int, 12))
         self.assertEqual(None, validate.validate_check(int, None)[0])
         self.assertLess(0, len(validate.validate_check(int, None)[1]))
@@ -96,125 +81,119 @@ class TestValidation(unittest.TestCase):
 
     def test_int(self) -> None:
         self.do_validator_test(int, (
-            (0, 0, None, True),
-            (12, 12, None, True),
-            (None, None, TypeError, False),
-            ("-12", -12, None, False),
-            ("12.3", None, ValueError, False),
-            ("garbage", None, ValueError, False),
-            (12.0, 12, None, False),
-            (12.5, None, ValueError, False),
-            (True, 1, None, False),
-            (False, 0, None, False),
-            (2147483647, 2147483647, None, True),
-            (1e10, None, ValueError, False),
+            (0, 0, None),
+            (12, 12, None),
+            (None, None, TypeError),
+            ("-12", -12, None),
+            ("12.3", None, ValueError),
+            ("garbage", None, ValueError),
+            (12.0, 12, None),
+            (12.5, None, ValueError),
+            (True, 1, None),
+            (False, 0, None),
+            (2147483647, 2147483647, None),
+            (1e10, None, ValueError),
         ))
-
-    def test_bool_int(self) -> None:
-        self.do_validator_test(int, (
-            (True, None, TypeError, False),
-            (False, None, TypeError, False),
-        ), {"_convert": False})
 
     def test_float(self) -> None:
         self.do_validator_test(float, (
-            (0.0, 0.0, None, True),
-            (12.3, 12.3, None, True),
-            (None, None, ValueError, False),
-            ("12", 12.0, None, False),
-            ("-12.3", -12.3, None, False),
-            ("garbage", None, ValueError, False),
-            (12, 12.0, None, False),
-            (9e6, 9e6, None, True),
-            (1e7, None, ValueError, False),
+            (0.0, 0.0, None),
+            (12.3, 12.3, None),
+            (None, None, ValueError),
+            ("12", 12.0, None),
+            ("-12.3", -12.3, None),
+            ("garbage", None, ValueError),
+            (12, 12.0, None),
+            (9e6, 9e6, None),
+            (1e7, None, ValueError),
         ))
 
     def test_decimal(self) -> None:
         self.do_validator_test(decimal.Decimal, (
-            (decimal.Decimal(0), decimal.Decimal(0), None, True),
-            (decimal.Decimal(12.3), decimal.Decimal(12.3), None, True),
-            (None, None, TypeError, False),
-            ("12", decimal.Decimal((0, (1, 2), 0)), None, False),
-            ("-12.3", decimal.Decimal((1, (1, 2, 3), -1)), None, False),
-            ("garbage", None, ValueError, False),
-            (12, None, TypeError, False),
-            (12.3, None, TypeError, False),
+            (decimal.Decimal(0), decimal.Decimal(0), None),
+            (decimal.Decimal(12.3), decimal.Decimal(12.3), None),
+            (None, None, TypeError),
+            ("12", decimal.Decimal((0, (1, 2), 0)), None),
+            ("-12.3", decimal.Decimal((1, (1, 2, 3), -1)), None),
+            ("garbage", None, ValueError),
+            (12, None, TypeError),
+            (12.3, None, TypeError),
         ))
 
     def test_str_type(self) -> None:
         self.do_validator_test(StringType, (
-            ("a string", "a string", None, True),
-            ("with stuff äößł€ ", "with stuff äößł€ ", None, True),
-            ("", "", None, True),
-            (54, "54", None, False),
-            ("multiple\r\nlines\rof\ntext", "multiple\nlines\nof\ntext", None, True),
+            ("a string", "a string", None),
+            ("with stuff äößł€ ", "with stuff äößł€ ", None),
+            ("", "", None),
+            (54, "54", None),
+            ("multiple\r\nlines\rof\ntext", "multiple\nlines\nof\ntext", None),
         ))
         self.do_validator_test(StringType, (
-            ("a string", "a stig", None, True),
+            ("a string", "a stig", None),
         ), extraparams={'zap': 'rn'})
         self.do_validator_test(StringType, (
-            ("a string", "a sti", None, True),
+            ("a string", "a sti", None),
         ), extraparams={'sieve': ' aist'})
 
     def test_str(self) -> None:
         self.do_validator_test(str, (
-            ("a string", "a string", None, True),
-            ("string with stuff äößł€", "string with stuff äößł€", None, True),
-            ("", "", ValueError, False),
-            (54, "54", None, False),
-            ("multiple\r\nlines\rof\ntext", "multiple\nlines\nof\ntext", None, True),
+            ("a string", "a string", None),
+            ("string with stuff äößł€", "string with stuff äößł€", None),
+            ("", "", ValueError),
+            (54, "54", None),
+            ("multiple\r\nlines\rof\ntext", "multiple\nlines\nof\ntext", None),
         ))
 
     def test_mapping(self) -> None:
         self.do_validator_test(Mapping, (
-            ({"a": "dict"}, {"a": "dict"}, None, True),
-            ("something else", "", TypeError, False),
+            ({"a": "dict"}, {"a": "dict"}, None),
+            ("something else", "", TypeError),
         ))
 
     def test_bool(self) -> None:
         self.do_validator_test(bool, (
-            (True, True, None, True),
-            (False, False, None, True),
-            ("a string", True, None, False),
-            ("", False, None, False),
-            ("True", True, None, False),
-            ("False", False, None, False),
-            (54, True, None, False),
+            (True, True, None),
+            (False, False, None),
+            ("a string", True, None),
+            ("", False, None),
+            ("True", True, None),
+            ("False", False, None),
+            (54, True, None),
         ))
 
     def test_printable_ascii_type(self) -> None:
         self.do_validator_test(PrintableASCIIType, (
-            ("a string", "a string", None, True),
-            ("string with stuff äößł€", None, ValueError, False),
-            ("", "", None, True),
-            (54, "54", None, False),
+            ("a string", "a string", None),
+            ("string with stuff äößł€", None, ValueError),
+            ("", "", None),
+            (54, "54", None),
         ))
 
     def test_printable_ascii(self) -> None:
         self.do_validator_test(PrintableASCII, (
-            ("a string", "a string", None, True),
-            ("string with stuff äößł€", None, ValueError, False),
-            ("", "", ValueError, False),
-            (54, "54", None, False),
+            ("a string", "a string", None),
+            ("string with stuff äößł€", None, ValueError),
+            ("", "", ValueError),
+            (54, "54", None),
         ))
 
     def test_password_strength(self) -> None:
         self.do_validator_test(PasswordStrength, (
-            ("Secure String 0#", "Secure String 0#", None, True),
-            ("short", None, ValueError, False),
-            ("insecure", None, ValueError, False),
-            ("", "", ValueError, False),
+            ("Secure String 0#", "Secure String 0#", None),
+            ("short", None, ValueError),
+            ("insecure", None, ValueError),
+            ("", "", ValueError),
         ))
 
     def test_email(self) -> None:
         self.do_validator_test(Email, (
-            ("address@domain.tld", "address@domain.tld", None, True),
-            ("eXtRaS_-4+@DomAin.tld", "extras_-4+@domain.tld", None, True),
-            ("other@mailer.berlin", "other@mailer.berlin", None, True),
-            ("äddress@domain.tld", None, ValueError, False),
-            ("address@domain", None, ValueError, False),
-            ("address_at_domain.tld", None, ValueError, False),
-            ("a@ddress@domain.tld", None, ValueError, False),
+            ("address@domain.tld", "address@domain.tld", None),
+            ("eXtRaS_-4+@DomAin.tld", "extras_-4+@domain.tld", None),
+            ("other@mailer.berlin", "other@mailer.berlin", None),
+            ("äddress@domain.tld", None, ValueError),
+            ("address@domain", None, ValueError),
+            ("address_at_domain.tld", None, ValueError),
+            ("a@ddress@domain.tld", None, ValueError),
         ))
 
     def test_persona_data(self) -> None:
@@ -236,26 +215,25 @@ class TestValidation(unittest.TestCase):
         value_example = copy.deepcopy(base_example)
         value_example["username"] = "garbage"
         self.do_validator_test(Persona, (
-            (base_example, base_example, None, True),
-            (stripped_example, stripped_example, None, True),
-            (key_example, key_example, KeyError, False),
-            (password_example, password_example, KeyError, False),
-            (value_example, value_example, ValueError, False),
+            (base_example, base_example, None),
+            (stripped_example, stripped_example, None),
+            (key_example, key_example, KeyError),
+            (password_example, password_example, KeyError),
+            (value_example, value_example, ValueError),
         ))
 
     def test_date(self) -> None:
         now = datetime.datetime.now()
         self.do_validator_test(datetime.date, (
-            (now.date(), now.date(), None, True),
-            (now, now.date(), None, True),
-            ("2014-04-2", datetime.date(2014, 4, 2), None, False),
-            ("01.02.2014", datetime.date(2014, 2, 1), None, False),
-            ("2014-04-02T20:48:25.808240+00:00",
-             datetime.date(2014, 4, 2), None, False),
+            (now.date(), now.date(), None),
+            (now, now.date(), None),
+            ("2014-04-2", datetime.date(2014, 4, 2), None),
+            ("01.02.2014", datetime.date(2014, 2, 1), None),
+            ("2014-04-02T20:48:25.808240+00:00", datetime.date(2014, 4, 2), None),
             # the following fails with inconsistent exception type
             # TypeError on Gentoo
             # ValueError on Debian
-            # ("more garbage", None, TypeError, False),
+            # ("more garbage", None, TypeError),
         ))
 
     def test_datetime(self) -> None:
@@ -263,70 +241,70 @@ class TestValidation(unittest.TestCase):
         now_aware = datetime.datetime.now(pytz.utc)
         now_other = pytz.timezone('America/New_York').localize(now)
         self.do_validator_test(datetime.datetime, (
-            (now, now, None, True),
-            (now_aware, now_aware, None, True),
-            (now_other, now_other, None, True),
-            (now.date(), None, TypeError, False),
+            (now, now, None),
+            (now_aware, now_aware, None),
+            (now_other, now_other, None),
+            (now.date(), None, TypeError),
             ("2014-04-20",
              datetime.datetime(2014, 4, 19, 22, 0, 0,
-                               tzinfo=pytz.utc), None, False),
+                               tzinfo=pytz.utc), None),
             ("2014-04-02 21:53",
              datetime.datetime(2014, 4, 2, 19, 53, 0,
-                               tzinfo=pytz.utc), None, False),
+                               tzinfo=pytz.utc), None),
             ("01.02.2014 21:53",
              datetime.datetime(2014, 2, 1, 20, 53, 0,
-                               tzinfo=pytz.utc), None, False),
-            ("21:53", None, ValueError, False),
+                               tzinfo=pytz.utc), None),
+            ("21:53", None, ValueError),
             ("2014-04-02T20:48:25.808240+00:00",
              datetime.datetime(2014, 4, 2, 20, 48, 25, 808240,
-                               tzinfo=pytz.utc), None, False),
+                               tzinfo=pytz.utc), None),
             ("2014-04-02T20:48:25.808240+03:00",
              datetime.datetime(2014, 4, 2, 17, 48, 25, 808240,
-                               tzinfo=pytz.utc), None, False),
+                               tzinfo=pytz.utc), None),
             # see above
-            # ("more garbage", None, TypeError, False),
+            # ("more garbage", None, TypeError),
         ))
         self.do_validator_test(datetime.datetime, (
-            (now, now, None, True),
-            (now_aware, now_aware, None, True),
-            (now_other, now_other, None, True),
-            (now.date(), None, TypeError, False),
+            (now, now, None),
+            (now_aware, now_aware, None),
+            (now_other, now_other, None),
+            (now.date(), None, TypeError),
             ("2014-04-20",
              datetime.datetime(2014, 4, 19, 22, 0, 0,
-                               tzinfo=pytz.utc), None, False),
+                               tzinfo=pytz.utc), None),
             ("2014-04-20 21:53",
              datetime.datetime(2014, 4, 20, 19, 53, 0,
-                               tzinfo=pytz.utc), None, False),
+                               tzinfo=pytz.utc), None),
             ("01.02.2014 21:53",
              datetime.datetime(2014, 2, 1, 20, 53, 0,
-                               tzinfo=pytz.utc), None, False),
+                               tzinfo=pytz.utc), None),
             ("21:53",
              datetime.datetime(2000, 5, 23, 19, 53, 0,
-                               tzinfo=pytz.utc), None, False),
+                               tzinfo=pytz.utc), None),
             ("2014-04-20T20:48:25.808240+00:00",
              datetime.datetime(2014, 4, 20, 20, 48, 25, 808240,
-                               tzinfo=pytz.utc), None, False),
+                               tzinfo=pytz.utc), None),
             ("2014-04-20T20:48:25.808240+03:00",
              datetime.datetime(2014, 4, 20, 17, 48, 25, 808240,
-                               tzinfo=pytz.utc), None, False),
+                               tzinfo=pytz.utc), None),
             # see above
-            # ("more garbage", None, TypeError, False),
+            # ("more garbage", None, TypeError),
         ), extraparams={'default_date': datetime.date(2000, 5, 23)})
 
     def test_phone(self) -> None:
         self.do_validator_test(Phone, (
-            ("+49 (3641) 12345", "+49 (3641) 12345", None, True),
-            ("0049364112345", "+49 (3641) 12345", None, True),
-            ("03641/12345", "+49 (3641) 12345", None, True),
-            ("+500 (1111) 54321", "+500 (1111) 54321", None, True),
-            ("+500-1111/54321", "+500 (1111) 54321", None, True),
-            ("+500/1111/54321", "+500 (1111) 54321", None, True),
-            ("00500__1111__54321", "+500 (1111) 54321", None, True),
-            ("+5001111-54321", "+500 (1111) 54321", None, True),
-            ("00500111154321", "+500 111154321", None, True),
-            ("+49 (36460) 12345", None, ValueError, False),
-            ("12345", None, ValueError, False),
-            ("+210 (12390) 12345", None, ValueError, False),
+            ("+49 (3641) 12345", "+49 (3641) 12345", None),
+            ("0049364112345", "+49 (3641) 12345", None),
+            ("03641/12345", "+49 (3641) 12345", None),
+            ("+500 (1111) 54321", "+500 (1111) 54321", None),
+            ("+500-1111/54321", "+500 (1111) 54321", None),
+            ("+500/1111/54321", "+500 (1111) 54321", None),
+            ("00500__1111__54321", "+500 (1111) 54321", None),
+            ("+5001111-54321", "+500 (1111) 54321", None),
+            ("00500111154321", "+500 111154321", None),
+            ("+49 (36460) 12345", None, ValueError),
+            ("12345", None, ValueError),
+            ("+210 (12390) 12345", None, ValueError),
         ))
 
     def test_member_data(self) -> None:
@@ -375,11 +353,11 @@ class TestValidation(unittest.TestCase):
         convert_example = copy.deepcopy(base_example)
         convert_example["birthday"] = base_example["birthday"].isoformat()
         self.do_validator_test(Persona, (
-            (base_example, base_example, None, True),
-            (convert_example, base_example, None, False),
-            (stripped_example, stripped_example, None, True),
-            (key_example, key_example, KeyError, False),
-            (value_example, value_example, ValidationWarning, False),
+            (base_example, base_example, None),
+            (convert_example, base_example, None),
+            (stripped_example, stripped_example, None),
+            (key_example, key_example, KeyError),
+            (value_example, value_example, ValidationWarning),
         ))
 
     def test_event_user_data(self) -> None:
@@ -413,21 +391,21 @@ class TestValidation(unittest.TestCase):
         convert_example = copy.deepcopy(base_example)
         convert_example["birthday"] = base_example["birthday"].isoformat()
         self.do_validator_test(Persona, (
-            (base_example, base_example, None, True),
-            (convert_example, base_example, None, False),
-            (stripped_example, stripped_example, None, True),
-            (key_example, None, KeyError, False),
-            (value_example, None, ValidationWarning, False),
+            (base_example, base_example, None),
+            (convert_example, base_example, None),
+            (stripped_example, stripped_example, None),
+            (key_example, None, KeyError),
+            (value_example, None, ValidationWarning),
         ))
 
     def test_enum_validators(self) -> None:
         stati = const.RegistrationPartStati
         self.do_validator_test(const.RegistrationPartStati, (
-            (stati.participant, stati.participant, None, True),
-            (2, stati.participant, None, True),
-            ("2", stati.participant, None, False),
-            (-2, None, ValueError, False),
-            ("alorecuh", None, ValueError, False),
+            (stati.participant, stati.participant, None),
+            (2, stati.participant, None),
+            ("2", stati.participant, None),
+            (-2, None, ValueError),
+            ("alorecuh", None, ValueError),
         ))
 
     def test_vote(self) -> None:
@@ -445,45 +423,43 @@ class TestValidation(unittest.TestCase):
         classical_ballot = copy.deepcopy(ballot)
         classical_ballot['votes'] = 2
         self.do_validator_test(Vote, (
-            ("A>B>C=D>E>_bar_", "A>B>C=D>E>_bar_", None, True),
-            ("_bar_=B>E=C=D>A", "_bar_=B>E=C=D>A", None, True),
-            ("_bar_=B>F=C=D>A", None, KeyError, False),
-            ("", None, ValueError, False),
-            ("_bar_=B<E=C=D<A", None, KeyError, False),
-            ("_bar_=B>E=C>A", None, KeyError, False),
-            ("_bar_=B>E=C>A>F=D", None, KeyError, False),
-            ("=>=>>=", None, KeyError, False),
+            ("A>B>C=D>E>_bar_", "A>B>C=D>E>_bar_", None),
+            ("_bar_=B>E=C=D>A", "_bar_=B>E=C=D>A", None),
+            ("_bar_=B>F=C=D>A", None, KeyError),
+            ("", None, ValueError),
+            ("_bar_=B<E=C=D<A", None, KeyError),
+            ("_bar_=B>E=C>A", None, KeyError),
+            ("_bar_=B>E=C>A>F=D", None, KeyError),
+            ("=>=>>=", None, KeyError),
         ), extraparams={'ballot': ballot})
         self.do_validator_test(Vote, (
-            ("A=B>C=D=E=_bar_", "A=B>C=D=E=_bar_", None, True),
-            ("A>B=C=D=E=_bar_", "A>B=C=D=E=_bar_", None, True),
-            ("_bar_>A=B=C=D=E", "_bar_>A=B=C=D=E", None, True),
-            ("_bar_=A=B=C=D=E", "_bar_=A=B=C=D=E", None, True),
-            ("E=C>A=D=B=_bar_", "E=C>A=D=B=_bar_", None, True),
-            ("A=B=C>_bar_>D=E", None, ValueError, False),
-            ("A>B>_bar_=C=D=E", None, ValueError, False),
-            ("A=_bar_>B=C=D=E", None, ValueError, False),
-            ("A>_bar_>B=C=D>E", None, ValueError, False),
-            ("_bar_>A=B=C=D>E", None, ValueError, False),
-            ("A>B=C=D=E>_bar_", None, ValueError, False),
-            ("E=C>A>_bar_=D=B",  None, ValueError, False),
+            ("A=B>C=D=E=_bar_", "A=B>C=D=E=_bar_", None),
+            ("A>B=C=D=E=_bar_", "A>B=C=D=E=_bar_", None),
+            ("_bar_>A=B=C=D=E", "_bar_>A=B=C=D=E", None),
+            ("_bar_=A=B=C=D=E", "_bar_=A=B=C=D=E", None),
+            ("E=C>A=D=B=_bar_", "E=C>A=D=B=_bar_", None),
+            ("A=B=C>_bar_>D=E", None, ValueError),
+            ("A>B>_bar_=C=D=E", None, ValueError),
+            ("A=_bar_>B=C=D=E", None, ValueError),
+            ("A>_bar_>B=C=D>E", None, ValueError),
+            ("_bar_>A=B=C=D>E", None, ValueError),
+            ("A>B=C=D=E>_bar_", None, ValueError),
+            ("E=C>A>_bar_=D=B",  None, ValueError),
         ), extraparams={'ballot': classical_ballot})
 
     def test_iban(self) -> None:
         self.do_validator_test(IBAN, (
-            ("DE75512108001245126199", "DE75512108001245126199", None, True),
-            ("DE75 5121 0800 1245 1261 99", "DE75512108001245126199", None, True),
-            ("IT60X0542811101000000123456",
-             "IT60X0542811101000000123456", None, True),
-            ("123", None, ValueError, False),  # Too short
-            ("1234567890", None, ValueError, False),  # Missing Country Code
-            ("DEFG1234567890", None, ValueError, False),  # Digits in checksum
-            ("DE1234+-567890", None, ValueError, False),  # Invalid Characters
-            ("XX75512108001245126199", None,
-             ValueError, False),  # Wrong Country Code
-            ("FR75512108001245126199", None, ValueError, False),  # Wrong length
-            ("DE0651210800124512619", None, ValueError, False),  # Wrong length
-            ("DE00512108001245126199", None, ValueError, False),  # Wrong Checksum
+            ("DE75512108001245126199", "DE75512108001245126199", None),
+            ("DE75 5121 0800 1245 1261 99", "DE75512108001245126199", None),
+            ("IT60X0542811101000000123456", "IT60X0542811101000000123456", None),
+            ("123", None, ValueError),  # Too short
+            ("1234567890", None, ValueError),  # Missing Country Code
+            ("DEFG1234567890", None, ValueError),  # Digits in checksum
+            ("DE1234+-567890", None, ValueError),  # Invalid Characters
+            ("XX75512108001245126199", None, ValueError),  # Wrong Country Code
+            ("FR75512108001245126199", None, ValueError),  # Wrong length
+            ("DE0651210800124512619", None, ValueError),  # Wrong length
+            ("DE00512108001245126199", None, ValueError),  # Wrong Checksum
         ))
 
     def test_json(self) -> None:
@@ -492,17 +468,15 @@ class TestValidation(unittest.TestCase):
                 (b"42", 42, None),
                 ('"42"', "42", None),
                 (b'"42"', "42", None),
-                ('{"foo": 1, "bar": "correct"}', {
-                 "foo": 1, "bar": "correct"}, None),
-                (b'{"foo": 1, "bar": "correct"}', {
-                 "foo": 1, "bar": "correct"}, None),
+                ('{"foo": 1, "bar": "correct"}', {"foo": 1, "bar": "correct"}, None),
+                (b'{"foo": 1, "bar": "correct"}', {"foo": 1, "bar": "correct"}, None),
                 ("{'foo': 1, 'bar': 'correct'}", None, ValueError),
                 (b"{'foo': 1, 'bar': 'correct'}", None, ValueError),
                 ('{"open": 1', None, ValueError),
                 (b'{"open": 1', None, ValueError),
                 (b"\xff", None, ValueError)):
             with self.subTest(input=input_):
-                result, errs = validate.validate_check(JSON, input_, _convert=True)
+                result, errs = validate.validate_check(JSON, input_)
                 self.assertEqual(output, result)
                 if error is None:
                     self.assertFalse(errs)
@@ -513,71 +487,53 @@ class TestValidation(unittest.TestCase):
     def test_german_postal_code(self) -> None:
         for assertion in (Persona, GenesisCase):
             spec = (
-                ({'id': 1, 'postal_code': "ABC", 'country': ""},
-                 None,
-                 ValueError, False),
-                ({'id': 1, 'postal_code': "ABC", 'country': None},
-                 None,
-                 ValueError, False),
-                ({'id': 1, 'postal_code': "ABC", 'country': "DE"},
-                 None,
-                 ValueError, False),
-                ({'id': 1, 'postal_code': "ABC"},
-                 None,
-                 ValueError, False),
-                ({'id': 1, 'postal_code': "11111"},
-                 None,
-                 ValidationWarning, False),
+                ({'id': 1, 'postal_code': "ABC", 'country': ""}, None, ValueError),
+                ({'id': 1, 'postal_code': "ABC", 'country': None}, None, ValueError),
+                ({'id': 1, 'postal_code': "ABC", 'country': "DE"}, None, ValueError),
+                ({'id': 1, 'postal_code': "ABC"}, None, ValueError),
+                ({'id': 1, 'postal_code': "11111"}, None, ValidationWarning),
                 ({'id': 1, 'postal_code': "11111", 'country': "DE"},
                  None,
-                 ValidationWarning, False),
+                 ValidationWarning),
                 ({'id': 1, 'postal_code': "47239", 'country': "AQ"},
                  {'id': 1, 'postal_code': "47239", 'country': "AQ"},
-                 None, True),
+                 None),
                 ({'id': 1, 'postal_code': "47239", 'country': "DE"},
                  {'id': 1, 'postal_code': "47239", 'country': "DE"},
-                 None, True),
+                 None),
                 ({'id': 1, 'postal_code': "47239"},
                  {'id': 1, 'postal_code': "47239"},
-                 None, True),
+                 None),
             )
             if assertion == GenesisCase:
-                for inv, outv, _, _ in spec:
+                for inv, outv, _ in spec:
                     inv['realm'] = "event"
                     if outv is not None:
                         outv['realm'] = "event"
             self.do_validator_test(assertion, spec, None)
             spec = (
-                ({'id': 1, 'postal_code': "ABC", 'country': ""},
-                 None,
-                 ValueError, False),
-                ({'id': 1, 'postal_code': "ABC", 'country': None},
-                 None,
-                 ValueError, False),
-                ({'id': 1, 'postal_code': "ABCF", 'country': "DE"},
-                 None,
-                 ValueError, False),
-                ({'id': 1, 'postal_code': "ABC"},
-                 None,
-                 ValueError, False),
+                ({'id': 1, 'postal_code': "ABC", 'country': ""}, None, ValueError),
+                ({'id': 1, 'postal_code': "ABC", 'country': None}, None, ValueError),
+                ({'id': 1, 'postal_code': "ABCF", 'country': "DE"}, None, ValueError),
+                ({'id': 1, 'postal_code': "ABC"}, None, ValueError),
                 ({'id': 1, 'postal_code': "11111"},
                  {'id': 1, 'postal_code': "11111"},
-                 None, True),
+                 None),
                 ({'id': 1, 'postal_code': "11111", 'country': "DE"},
                  {'id': 1, 'postal_code': "11111", 'country': "DE"},
-                 None, True),
+                 None),
                 ({'id': 1, 'postal_code': "47239", 'country': "AQ"},
                  {'id': 1, 'postal_code': "47239", 'country': "AQ"},
-                 None, True),
+                 None),
                 ({'id': 1, 'postal_code': "47239", 'country': "DE"},
                  {'id': 1, 'postal_code': "47239", 'country': "DE"},
-                 None, True),
+                 None),
                 ({'id': 1, 'postal_code': "47239"},
                  {'id': 1, 'postal_code': "47239"},
-                 None, True),
+                 None),
             )
             if assertion == GenesisCase:
-                for inv, outv, _, _ in spec:
+                for inv, outv, _ in spec:
                     inv['realm'] = "event"
                     if outv is not None:
                         outv['realm'] = "event"
@@ -588,21 +544,24 @@ class TestValidation(unittest.TestCase):
         msg = "abc"
         self.assertEqual(msg, msg.encode('utf-8').decode('utf-8'))
         self.assertEqual(msg, msg.encode('utf-8').decode('utf-8-sig'))
-        self.assertEqual(
-            "\ufeff" + msg, msg.encode('utf-8-sig').decode('utf-8'))
+        self.assertEqual("\ufeff" + msg, msg.encode('utf-8-sig').decode('utf-8'))
         self.assertEqual(msg, msg.encode('utf-8-sig').decode('utf-8-sig'))
 
     def test_safe_str(self) -> None:
         spec = [
-            ("abc123 .,-+()/", "abc123 .,-+()/", None, True),
-            ("", None, ValueError, False),
-            (1, "1", None, False),
-            ((1, 2, 3), "(1, 2, 3)", None, False),
+            ("abc123 .,-+()/", "abc123 .,-+()/", None),
+            ("", None, ValueError),
+            (1, "1", None),
+            ((1, 2, 3), "(1, 2, 3)", None),
             ("abc[]&def", None, ValueError(
-                "Forbidden characters (%(chars)s). (None)", {"chars": "[]&"}), False),
+                "Forbidden characters (%(chars)s). (None)", {"chars": "[]&"})),
         ]
         self.do_validator_test(SafeStr, spec)
 
     def test_generic_list(self) -> None:
-        self.assertTrue(validate.validate_is(List[int], [0, 1, 2, 3]))
-        self.assertFalse(validate.validate_is(List[int], [0, 1.7, 2, 3]))
+        self.do_validator_test(List[int], [
+            ([0, 1, 2, 3], [0, 1, 2, 3], None),
+            ([0, 1.7, 2, 3], None, ValueError),
+            ([0, "Test", 2, 3], None, ValueError),
+            ([0, None, 2, 3], None, TypeError),
+        ])

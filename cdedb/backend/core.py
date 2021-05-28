@@ -39,7 +39,7 @@ from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import Atomizer, connection_pool_factory
 from cdedb.query import Query, QueryOperators
-from cdedb.validation import validate_check, validate_is
+from cdedb.validation import validate_check
 
 
 class CoreBackend(AbstractBackend):
@@ -1465,19 +1465,8 @@ class CoreBackend(AbstractBackend):
                 raise ArchiveError(n_("Involved in unfinished event."))
             self.sql_delete(rs, "event.orgas", (persona_id,), "persona_id")
             #
-            # 7. Handle assembly realm
+            # 7. Assembly realm is handled via assembly archival.
             #
-            query = glue(
-                "SELECT ass.id FROM assembly.assemblies as ass",
-                "JOIN assembly.attendees as att ON att.assembly_id = ass.id",
-                "WHERE att.persona_id = %s AND ass.is_active = True")
-            ass_active = self.query_all(rs, query, (persona_id,))
-            if ass_active:
-                raise ArchiveError(n_("Involved in unfinished assembly."))
-            query = glue(
-                "UPDATE assembly.attendees SET secret = NULL",
-                "WHERE persona_id = %s")
-            self.query_exec(rs, query, (persona_id,))
             #
             # 8. Handle ml realm
             #
@@ -2345,7 +2334,8 @@ class CoreBackend(AbstractBackend):
                 return False, msg  # type: ignore
         if not new_password:
             return False, n_("No new password provided.")
-        if not validate_is(vtypes.PasswordStrength, new_password):
+        _val, errs = validate_check(vtypes.PasswordStrength, new_password)
+        if errs:
             return False, n_("Password too weak.")
         # escalate db privilege role in case of resetting passwords
         orig_conn = None

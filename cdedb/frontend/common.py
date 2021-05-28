@@ -43,8 +43,8 @@ from email.mime.nonmultipart import MIMENonMultipart
 from secrets import token_hex
 from typing import (
     IO, AbstractSet, Any, AnyStr, Callable, ClassVar, Collection, Container, Dict,
-    Generator, ItemsView, Iterable, List, Mapping, MutableMapping, NamedTuple,
-    Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast, overload,
+    ItemsView, Iterable, List, Mapping, MutableMapping, NamedTuple, Optional, Sequence,
+    Set, Tuple, Type, TypeVar, Union, cast, overload,
 )
 
 import babel.dates
@@ -446,45 +446,6 @@ def tex_escape_filter(val: Optional[str]) -> Optional[str]:
         return val
 
 
-class CustomEscapingJSONEncoder(CustomJSONEncoder):
-    """Extension to CustomJSONEncoder defined in cdedb.common, that
-    escapes all strings for safely embedding the
-    resulting JSON string into an HTML <script> tag.
-
-    Inspired by https://github.com/simplejson/simplejson/blob/
-    dd0f99d6431b5e75293369f5554a1396f8ae6251/simplejson/encoder.py#L378
-    """
-
-    def encode(self, o: Any) -> str:
-        # Override JSONEncoder.encode to avoid bypasses of interencode()
-        # in original version
-        chunks = self.iterencode(o, True)
-        if self.ensure_ascii:
-            return ''.join(chunks)
-        else:
-            return u''.join(chunks)
-
-    def iterencode(self, o: Any, _one_shot: bool = False
-                   ) -> Generator[str, None, None]:
-        chunks = super().iterencode(o, _one_shot)
-        for chunk in chunks:
-            chunk = chunk.replace('/', '\\x2f')
-            chunk = chunk.replace('&', '\\x26')
-            chunk = chunk.replace('<', '\\x3c')
-            chunk = chunk.replace('>', '\\x3e')
-            yield chunk
-
-
-def json_filter(val: Any) -> str:
-    """Custom jinja filter to create json representation of objects. This is
-    intended to allow embedding of values into generated javascript code.
-
-    The result of this method does not need to be escaped -- more so if
-    escaped, the javascript execution will probably fail.
-    """
-    return json.dumps(val, cls=CustomEscapingJSONEncoder)
-
-
 @overload
 def enum_filter(val: None, enum: Type[enum.Enum]) -> None: ...
 
@@ -882,7 +843,6 @@ JINJA_FILTERS = {
     'hidden_iban': hidden_iban_filter,
     'escape': escape_filter,
     'e': escape_filter,
-    'json': json_filter,
     'stringIn': stringIn_filter,
     'querytoparams': querytoparams_filter,
     'genus': genus_filter,
@@ -917,6 +877,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             loader=jinja2.FileSystemLoader(str(self.template_dir)),
             extensions=['jinja2.ext.i18n', 'jinja2.ext.do', 'jinja2.ext.loopcontrols'],
             finalize=sanitize_None, autoescape=True, auto_reload=self.conf["CDEDB_DEV"])
+        self.jinja_env.policies['ext.i18n.trimmed'] = True  # type: ignore
+        self.jinja_env.policies['json.dumps_kwargs']['cls'] = CustomJSONEncoder  # type: ignore
         self.jinja_env.filters.update(JINJA_FILTERS)
         self.jinja_env.globals.update({
             'now': now,
@@ -961,7 +923,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             trim_blocks=True,
             lstrip_blocks=True,
         )
-        self.jinja_env.policies['ext.i18n.trimmed'] = True  # type: ignore
         # Always provide all backends -- they are cheap
         self.assemblyproxy = make_proxy(AssemblyBackend(configpath))
         self.cdeproxy = make_proxy(CdEBackend(configpath))
