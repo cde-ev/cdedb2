@@ -3955,10 +3955,15 @@ class EventFrontend(AbstractUserFrontend):
         fee = self.eventproxy.calculate_fee(rs, registration_id)
         waitlist_position = self.eventproxy.get_waitlist_position(
             rs, event_id, persona_id=persona['id'])
+        log_id, log = self.eventproxy.retrieve_log(
+            rs, codes=[const.EventLogCodes.registration_created], event_id=event_id,
+            persona_id=persona['id'])
+        registration_created = unwrap(log)['ctime']
         return self.render(rs, "show_registration", {
             'persona': persona, 'age': age, 'courses': courses,
             'lodgements': lodgements, 'meta_info': meta_info, 'fee': fee,
-            'reference': reference, 'waitlist_position': waitlist_position
+            'reference': reference, 'waitlist_position': waitlist_position,
+            'registration_created': registration_created
         })
 
     @access("event")

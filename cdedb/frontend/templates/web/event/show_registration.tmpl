@@ -107,6 +107,11 @@
             {% endif %}
         </dd>
 
+        <dt>{% trans %}Registered at{% endtrans %}</dt>
+        <dd>
+            {{ registration_created|datetime(lang=lang) }}
+        </dd>
+
         <dt>{% trans %}Checked-In{% endtrans %}</dt>
         <dd>
             {% if ambience['registration']['checkin'] %}
