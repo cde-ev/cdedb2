@@ -76,10 +76,12 @@
     </p>
     {% endif %}
 
-    {% call util.bootstrap_panel(title=gettext("Orga-Notes"), icon="tag",
-                                 aclass="panel-default panel-condensed") %}
-        {{ ambience['registration']['orga_notes']|md }}
-    {% endcall %}
+    {% if ambience['registration']['orga_notes'] %}
+        {% call util.bootstrap_panel(title=gettext("Orga-Notes"), icon="tag",
+                                     aclass="panel-default panel-condensed") %}
+            {{ ambience['registration']['orga_notes']|md }}
+        {% endcall %}
+    {% endif %}
 
     <h3 class="heading-underline">{% trans %}Status{% endtrans %}</h3>
     <dl class="dl-horizontal">
