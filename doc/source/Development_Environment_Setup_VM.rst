@@ -27,7 +27,7 @@ If ``cdedb.qcow2`` is the downloaded image, then the VM can be started with
 QEMU via the following command (note that the name of the binary may differ
 from ``kvm``)::
 
-  kvm -m 1G -enable-kvm -device virtio-rng-pci -net nic,model=virtio -net user,hostfwd=tcp:127.0.0.1:20022-:22,hostfwd=tcp:127.0.0.1:20443-:443 -drive file=cdedb.qcow2,if=virtio,cache=writethrough
+  kvm -m 1G -enable-kvm -device virtio-rng-pci -net nic,model=virtio -net user,hostfwd=tcp:127.0.0.1:20022-:22,hostfwd=tcp:127.0.0.1:20443-:443,hostfwd=tcp:127.0.0.1:5000-:5000 -drive file=cdedb.qcow2,if=virtio,cache=writethrough
 
 If ``cdedb.vdi`` is the downloaded image, then the VM can be run with
 VirtualBox via the GUI. Thereby, choose the unpacked ``cdedb.vi`` image as hard
