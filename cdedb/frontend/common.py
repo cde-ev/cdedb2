@@ -270,6 +270,8 @@ def date_filter(val: Union[datetime.date, str, None],
         if passthrough and isinstance(val, str) and val:
             return val
         return None
+    if val == datetime.date.min:
+        return "N/A"
     if lang:
         verbosity_mapping = {
             "short": icu.DateFormat.SHORT,
