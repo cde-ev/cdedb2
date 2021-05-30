@@ -651,9 +651,9 @@ msgstr "Ist in eine nicht-abgeschlossene Veranstaltung involviert."
 msgid "Involved in unfinished assembly."
 msgstr "Ist in eine nicht-abgeschlossene Versammlung involviert."
 
-#: cdedb/backend/core.py:1505 cdedb/backend/core.py:1510
-msgid "Sole moderator of a mailinglist {ml_ids}."
-msgstr "Einziger Moderator der Mailinglisten {ml_ids}."
+#: cdedb/backend/core.py:1505
+msgid "Sole moderator of a mailinglist %(ml_ids)s."
+msgstr "Einziger Moderator der Mailinglisten %(ml_ids)s."
 
 #: cdedb/backend/core.py:1531 cdedb/backend/core.py:1544
 msgid "Cannot archive silently."

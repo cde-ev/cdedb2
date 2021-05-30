@@ -634,8 +634,8 @@ msgstr ""
 msgid "Involved in unfinished assembly."
 msgstr ""
 
-#: cdedb/backend/core.py:1505 cdedb/backend/core.py:1510
-msgid "Sole moderator of a mailinglist {ml_ids}."
+#: cdedb/backend/core.py:1505
+msgid "Sole moderator of a mailinglist %(ml_ids)s."
 msgstr ""
 
 #: cdedb/backend/core.py:1531 cdedb/backend/core.py:1544
