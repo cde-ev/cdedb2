@@ -6,7 +6,8 @@ import pathlib
 import subprocess
 import sys
 import unittest
-from typing import List, Optional, Tuple, TextIO
+from types import TracebackType
+from typing import List, Optional, TextIO, Tuple, Type
 
 # the directory containing the cdedb and tests modules
 root = pathlib.Path(__file__).absolute().parent.parent
@@ -64,11 +65,13 @@ class CdEDBTestLock():
         self.lockfile.close()
         self._get_lockfile_path().unlink()
 
-    def __enter__(self):
+    def __enter__(self) -> "CdEDBTestLock":
         self.acquire()
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type: Optional[Type[BaseException]],
+                 exc_val: Optional[BaseException],
+                 exc_tb: Optional[TracebackType]) -> None:
         self.release()
 
 
