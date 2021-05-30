@@ -36,13 +36,13 @@ class CdEDBTestLock():
         self.thread_id = thread_id
 
     def _get_lockfile_path(self) -> pathlib.Path:
-        if self.thread_id not in self.THREADS:
-            raise RuntimeError("Invalid thread id")
         return pathlib.Path('/tmp') / f'cdedb-test-{self.thread_id}.lock'
 
     def acquire(self) -> None:
         """Lock the thread"""
         if self.thread_id:
+            if self.thread_id not in self.THREADS:
+                raise RuntimeError("Invalid thread id")
             try:
                 self.lockfile = open(self._get_lockfile_path(), 'x')
                 return
@@ -53,7 +53,6 @@ class CdEDBTestLock():
                 try:
                     self.thread_id = thread_id
                     self.lockfile = open(self._get_lockfile_path(), 'x')
-                    print(f"Using thread {thread_id}", file=sys.stderr)
                     return
                 except FileExistsError:
                     continue
@@ -157,6 +156,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     with CdEDBTestLock(args.thread_id) as Lock:
+        print(f"Using thread {Lock.thread_id}", file=sys.stderr)
         if args.xss_check:
             return_code = check_xss(args.payload, thread_id=Lock.thread_id,
                                     verbose=args.verbose,
