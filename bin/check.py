@@ -6,7 +6,7 @@ import pathlib
 import subprocess
 import sys
 import unittest
-from typing import List, Tuple
+from typing import List, Tuple, TextIO
 
 # the directory containing the cdedb and tests modules
 root = pathlib.Path(__file__).absolute().parent.parent
@@ -24,26 +24,34 @@ class CdEDBTestLock():
     test database and files simultaneously.
     """
     thread_id: int
-    lockfile: pathlib.Path
+    lockfile_path: pathlib.Path
+    lockfile: TextIO
 
     def __init__(self, thread_id: int):
         self.thread_id = thread_id
-        self.lockfile = pathlib.Path('/tmp') / f'cdedb-test-{self.thread_id}.lock'
+        self.lockfile_path = pathlib.Path('/tmp') / f'cdedb-test-{self.thread_id}.lock'
 
     def acquire(self) -> bool:
         """Lock the thread
 
         :returns: whether locking was successful.
         """
-        if self.lockfile.exists():
-            return False
-        else:
-            self.lockfile.touch()
+        try:
+            self.lockfile = open(self.lockfile_path, 'x')
             return True
+        except FileExistsError as e:
+            return False
 
     def release(self) -> None:
         """Unlock the thread"""
-        self.lockfile.unlink()
+        self.lockfile.close()
+        self.lockfile_path.unlink()
+
+    def __enter__(self):
+        self.acquire()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.release()
 
 
 def _find_free_thread() -> int:
@@ -53,8 +61,8 @@ def _find_free_thread() -> int:
     :raises: RuntimeError if all threads are locked
     """
     for test_id in range(1,5):
-        Lock = CdEDBTestLock(test_id)
-        if Lock.acquire():
+        lockfile = pathlib.Path('/tmp') / f'cdedb-test-{test_id}.lock'
+        if not lockfile.exists():
             return test_id
     raise RuntimeError("All threads are currently in use. If you are sure that not, fix"
                        " it manually by removing the lock file(s) from /tmp. For"
@@ -108,8 +116,6 @@ def run_testsuite(testpatterns: List[str] = None, *, thread_id: int = 1,
     test_runner = MyTextTestRunner(
         verbosity=2, resultclass=MyTextTestResult, descriptions=False)
     ran_tests = test_runner.run(all_tests)
-
-    CdEDBTestLock(thread_id).release()
     return 0 if ran_tests.wasSuccessful() else 1
 
 
@@ -146,17 +152,17 @@ if __name__ == '__main__':
 
     if args.thread_id:
         thread_id = args.thread_id
-        Lock = CdEDBTestLock(thread_id)
-        if not Lock.acquire():
-            raise RuntimeError("The thread you want to use is currently in use.")
     else:
         thread_id = _find_free_thread()
         print(f"Using thread {thread_id}")
-    if args.xss_check:
-        return_code = check_xss(args.payload, thread_id=thread_id,
-                                verbose=args.verbose,
-                                manual_preparation=args.manual_preparation)
-    else:
-        return_code = run_testsuite(args.testpatterns, thread_id=thread_id,
+
+    with CdEDBTestLock(thread_id) as Lock:
+        if args.xss_check:
+            return_code = check_xss(args.payload, thread_id=thread_id,
+                                    verbose=args.verbose,
                                     manual_preparation=args.manual_preparation)
+        else:
+            return_code = run_testsuite(args.testpatterns, thread_id=thread_id,
+                                        manual_preparation=args.manual_preparation)
+
     sys.exit(return_code)

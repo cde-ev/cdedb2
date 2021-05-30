@@ -114,7 +114,6 @@ i18n-compile:
 ########################
 
 sample-data:
-	rm -f /tmp/cdedb-test-*.lock
 	cp -f related/auto-build/files/stage3/localconfig.py cdedb/localconfig.py
 	$(MAKE) storage > /dev/null
 	$(MAKE) sql > /dev/null
