@@ -74,9 +74,7 @@ steps:
   - sleep 5 # wait for db to come online
   - make i18n-compile # required for sample-data target
   - make sample-data # this creates the sql schema and copies the localconfig.py
-  # thread id needs to be specified explicitly since drone steps do not share the
-  # lock files inside /tmp
-  - python3 -m bin.check --thread-id 1
+  - make check
 - name: xss
   image: cdedb
   pull: never
@@ -87,9 +85,7 @@ steps:
     path: /tmp
   commands:
     - sleep 15 # wait for make sample-data in testsuite to finish
-    # thread id needs to be specified explicitly since drone steps do not share the
-    # lock mechanism inside /tmp
-    - python3 -m bin.check --thread-id 2 --xss-check --verbose
+    - make xss-check
 - name: check for merge conflicts
   image: docker:20.10-git
   pull: never # do not try to pull image from docker hub
