@@ -270,8 +270,10 @@ def date_filter(val: Union[datetime.date, str, None],
         if passthrough and isinstance(val, str) and val:
             return val
         return None
+
     if val == datetime.date.min:
         return "N/A"
+
     if lang:
         verbosity_mapping = {
             "short": icu.DateFormat.SHORT,
@@ -304,10 +306,12 @@ def datetime_filter(val: Union[datetime.datetime, str, None],
         if passthrough and isinstance(val, str) and val:
             return val
         return None
+
     if val.tzinfo is not None:
         val = val.astimezone(_BASICCONF["DEFAULT_TIMEZONE"])
     else:
         _LOGGER.warning("Found naive datetime object {}.".format(val))
+
     if lang:
         verbosity_mapping = {
             "short": icu.DateFormat.SHORT,
