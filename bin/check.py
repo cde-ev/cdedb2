@@ -19,7 +19,7 @@ os.chdir(root)
 from bin.test_runner_helpers import MyTextTestResult, MyTextTestRunner, check_test_setup
 
 
-class CdEDBTestLock():
+class CdEDBTestLock:
     """
     Simple lock mechanism to prevent multiple tests accessing the same
     test database and files simultaneously.
@@ -29,10 +29,12 @@ class CdEDBTestLock():
     # TODO: improve this in #1948
     THREADS = (1, 2, 3, 4)
 
-    thread_id: int
+    thread_id: Optional[int]
     lockfile: TextIO
 
-    def __init__(self, thread_id: int = 0):
+    def __init__(self, thread_id: Optional[int] = None):
+        if not ((thread_id is None) or (thread_id in self.THREADS)):
+            raise RuntimeError("Invalid thread id")
         self.thread_id = thread_id
 
     def _get_lockfile_path(self) -> pathlib.Path:
@@ -40,9 +42,7 @@ class CdEDBTestLock():
 
     def acquire(self) -> None:
         """Lock the thread"""
-        if self.thread_id:
-            if self.thread_id not in self.THREADS:
-                raise RuntimeError("Invalid thread id")
+        if self.thread_id is not None:
             try:
                 self.lockfile = open(self._get_lockfile_path(), 'x')
                 return
@@ -56,7 +56,7 @@ class CdEDBTestLock():
                     return
                 except FileExistsError:
                     continue
-            self.thread_id = 0
+            self.thread_id = None
             raise RuntimeError("All threads are currently in use.")
 
     def release(self) -> None:
@@ -136,7 +136,7 @@ if __name__ == '__main__':
                               help="don't do test preparation")
     thread_options = test_options.add_mutually_exclusive_group()
     thread_options.add_argument(
-        '--thread-id', type=int, choices=(1, 2, 3, 4), default=0, metavar="INT",
+        '--thread-id', type=int, choices=(1, 2, 3, 4), metavar="INT",
         help="ID of thread to use for run (optional, if not given, choose free thread"
              " automatically)")
     thread_options.add_argument('--threads', type=int, choices=(1, 2, 3), default=1,
@@ -156,6 +156,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     with CdEDBTestLock(args.thread_id) as Lock:
+        assert Lock.thread_id is not None
         print(f"Using thread {Lock.thread_id}", file=sys.stderr)
         if args.xss_check:
             return_code = check_xss(args.payload, thread_id=Lock.thread_id,
