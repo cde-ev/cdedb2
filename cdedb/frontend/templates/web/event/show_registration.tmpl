@@ -109,7 +109,12 @@
 
         <dt>{% trans %}Registered at{% endtrans %}</dt>
         <dd>
-            {{ registration_created|datetime(lang=lang) }}
+            {{ ambience['registration']['ctime']|datetime(lang=lang) }}
+        </dd>
+
+        <dt>{% trans %}Last modified at{% endtrans %}</dt>
+        <dd>
+            {{ ambience['registration']['mtime']|datetime(lang=lang) or ambience['registration']['ctime']|datetime(lang=lang) }}
         </dd>
 
         <dt>{% trans %}Checked-In{% endtrans %}</dt>
