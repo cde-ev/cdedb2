@@ -714,7 +714,7 @@ tr.drow-delete>td, tr.drow-delete1>td {
 
 /* Batch import */
 .batch-line-body {
-    padding-left: 20px;
+    padding-left: 10px;
     margin-bottom: 30px;
     border-left: solid 4px #ddd;
 }

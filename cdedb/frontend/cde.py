@@ -607,6 +607,9 @@ class CdEFrontend(AbstractUserFrontend):
                     if field not in upgrades and not is_optional(validator)
                 }
                 assert mandatory_fields <= set(batch_fields)
+                # It is pure incident that only event users have additional (optional)
+                # data they share with cde users and which must be honoured during realm
+                # transition. This may be changed if a new user tier is introduced.
                 if not current['is_event_realm']:
                     if not datum['resolution'].do_update():
                         raise RuntimeError(n_("Need extra data."))
