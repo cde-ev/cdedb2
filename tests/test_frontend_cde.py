@@ -2236,19 +2236,13 @@ class TestCdEFrontend(FrontendTest):
                             div="complex-stats-members_by_city")
         self.assertNonPresence("Burokratia")
         self.assertNonPresence("Liliput")
-        self.assertPresence("Mitglieder nach Geburtsjahr",
-                            div="complex-stats-members_by_birthday")
-        self.assertPresence("1991", div="complex-stats-members_by_birthday")
-        self.assertPresence("2222", div="complex-stats-members_by_birthday")
-        self.assertNonPresence("2014", div="complex-stats-members_by_birthday")
-        self.assertPresence("Mitglieder nach erster Akademieteilnahme",
-                            div="complex-stats-members_by_first_event")
-        self.assertPresence("2014", div="complex-stats-members_by_first_event")
-        self.assertNonPresence("2010", div="complex-stats-members_by_first_event")
-        self.assertPresence("Verschiedene Akademie-Teilnehmer nach Jahr",
-                            div="complex-stats-unique_participants_per_year")
-        self.assertPresence("2010", div="complex-stats-unique_participants_per_year")
-        self.assertPresence("2014", div="complex-stats-unique_participants_per_year")
+        self.assertNonPresence("—", div="year-stats-members_by_birthday-1991")
+        self.assertNonPresence("—", div="year-stats-members_by_birthday-2222")
+        self.assertPresence("—", div="year-stats-members_by_birthday-2014")
+        self.assertNonPresence("—", div="year-stats-members_by_first_event-2014")
+        self.assertPresence("—", div="year-stats-members_by_first_event-2010")
+        self.assertNonPresence("—", div="year-stats-unique_participants_per_year-2010")
+        self.assertNonPresence("—", div="year-stats-unique_participants_per_year-2014")
 
     @as_users("vera")
     def test_past_log(self) -> None:

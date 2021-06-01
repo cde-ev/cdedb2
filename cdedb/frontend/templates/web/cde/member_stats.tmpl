@@ -6,15 +6,18 @@
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("cde/index"), gettext("Members")) }}
-{{ util.breadcrumb_link(cdedblink("cde/member_stats"), gettext("Member Stats"), active=True) }}
+    {{ util.breadcrumb_link(cdedblink("cde/index"), gettext("Members")) }}
+    {{ util.breadcrumb_link(cdedblink("cde/member_stats"), gettext("Member Stats"), active=True) }}
 {% endblock %}
 {% block content %}
     <div id="cde-simple-stats">
         <table class="table table-hover table-condensed">
-            {% for key, value in stats['simple_stats'].items() %}
+            {% for key, value in simple_stats.items() %}
                 <tr>
-                    <td>
+                    {% if "num_of" in key %}
+                    <td class="indent"></td>
+                    {% endif %}
+                    <td {% if not "num_of" in key %}colspan="2"{% endif %}>
                         {{ gettext(key) }}
                     </td>
                     <td id="simple-stats-{{ key }}">
@@ -24,9 +27,33 @@
             {% endfor %}
         </table>
     </div>
-    <hr>
+    <hr />
+
+    <div id="cde-year-stats">
+        <table class="table table-hover table-condensed" id="year-stats">
+            <thead>
+                <tr>
+                    <td></td>
+                    {% for key, value in year_stats.items() %}
+                    <td>{{ gettext(key) }}</td>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+            {% for year in all_years|sort %}
+                <tr>
+                    <td>{{ year }}</td>
+                    {% for key, value in year_stats.items() %}
+                    <td id="year-stats-{{ key }}-{{ year }}">{{ value.get(year, "—") }}</td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
     <div id="cde-complex-stats">
-        {% for view, view_stats in stats.items() if view != 'simple_stats' %}
+        {% for view, view_stats in other_stats.items() %}
             {% if view == "members_by_country" %}
                 {{ stat_table(view, view_stats, util.gettext_country) }}
             {% else %}
@@ -44,6 +71,7 @@
                 <td>{{ gettext(view) }}</td>
             </tr>
         </thead>
+        <tbody>
         {% for datum, num in view_stats.items() %}
             <tr>
                 <td>
@@ -58,5 +86,6 @@
                 </td>
             </tr>
         {% endfor %}
+        </tbody>
     </table>
 {% endmacro %}
