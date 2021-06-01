@@ -47,7 +47,7 @@
         {{ util.href(docurl('Realm_Core_Privacy'), gettext("Who can see my data?"), aclass="btn btn-info btn-default", icon="question-circle") }}
     </p>
 
-    <h1>{% trans %}Consent{% endtrans %}</h1>
+    <h2>{% trans %}Consent{% endtrans %}</h2>
 
         {% if "searchable" in user.roles and not decided_search %}
             <p>
