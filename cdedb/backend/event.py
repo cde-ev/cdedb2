@@ -2769,6 +2769,21 @@ class EventBackend(AbstractBackend):
                     tracks[track_id]['choices'] = xsorted(tmp.keys(), key=tmp.get)
                 ret[anid]['tracks'] = tracks
                 ret[anid]['fields'] = cast_fields(ret[anid]['fields'], event_fields)
+
+            reg_created = const.EventLogCodes.registration_created
+            reg_changed = const.EventLogCodes.registration_changed
+            _, log = self.retrieve_log(
+                rs, event_id=event_id, codes=[reg_created, reg_changed])
+            for anid in ret:
+                ctime = [e['ctime'] for e in log
+                         if e['persona_id'] == anid and e['code'] == reg_created]
+                ctime.sort(reverse=True)
+                ret[anid]['ctime'] = next(iter(ctime), None)
+
+                mtime = [e['mtime'] for e in log
+                         if e['persona_id'] == anid and e['code'] == reg_changed]
+                mtime.sort(reverse=True)
+                ret[anid]['mtime'] = next(iter(mtime), None)
         return ret
 
     class _GetRegistrationProtocol(Protocol):
