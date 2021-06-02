@@ -104,7 +104,7 @@ Code coverage
 
 .. todo:: Implement coverage in ``bin/check.py`` script an document this here.
 
-The coverage html reports for easier to inspection are accessible on the local dev
+The coverage html reports for easier inspection are accessible on the local dev
 instance via Apache at `localhost:8443/coverage <https://localhost:8443/coverage>`_ for
 docker and `localhost:20443/coverage <https://localhost:20443/coverage>`_ for the VM.
 
@@ -129,17 +129,14 @@ However, as a web application the CdEDB needs database access.
 To mock the database and allow running multiple test "threads" in parallel, we create
 four test databases, ``cdb_test_1`` to ``cdb_test_4``.
 
-.. todo:: Implement a lock mechanism preventing multiple test runs using the same thread
-    in parallel. Document this here.
+Which thread should be used for a test run is detected automatically by our script,
+using simple lockfiles inside ``/tmp``.
+This prevents multiple test runs from using the same database simultaneously, which
+would break everything.
+You can explicitly specify a thread id by using the ``--thread-id`` flag of
+``bin/check.py``.
 
-    Implement parallel testing inside ``bin/check.py``.
-
-To specify which thread should be used for a test run, you can either use the
-``--thread-id`` option of the argparse entrypoint of ``bin/check.py``, or when using
-``make``, just pass the thread id as environment variable directly via the command
-line, as e.g.::
-
-    THREADID=3 make xss-check
+.. todo:: Implement parallel testing inside ``bin/check.py``.
 
 Every test ``Application`` stores log files and, if needed, some test files for up- and
 downloading (e.g. assembly attachments) in a temporary directory living inside ``/tmp``,

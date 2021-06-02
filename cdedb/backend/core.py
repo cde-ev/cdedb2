@@ -39,7 +39,7 @@ from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import Atomizer, connection_pool_factory
 from cdedb.query import Query, QueryOperators
-from cdedb.validation import validate_check, validate_is
+from cdedb.validation import validate_check
 
 
 class CoreBackend(AbstractBackend):
@@ -1503,7 +1503,7 @@ class CoreBackend(AbstractBackend):
                 unmodearated_mailinglists = moderated_mailinglists - ml_ids
                 if unmodearated_mailinglists:
                     raise ArchiveError(
-                        n_("Sole moderator of a mailinglist {ml_ids}."),
+                        n_("Sole moderator of a mailinglist %(ml_ids)s."),
                         {'ml_ids': unmodearated_mailinglists})
             #
             # 9. Clear logs
@@ -2346,7 +2346,8 @@ class CoreBackend(AbstractBackend):
                 return False, msg  # type: ignore
         if not new_password:
             return False, n_("No new password provided.")
-        if not validate_is(vtypes.PasswordStrength, new_password):
+        _val, errs = validate_check(vtypes.PasswordStrength, new_password)
+        if errs:
             return False, n_("Password too weak.")
         # escalate db privilege role in case of resetting passwords
         orig_conn = None

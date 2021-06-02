@@ -541,6 +541,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                          endpoint="manage_inhabitants_form"),
                     rule("/manage", methods=_POST,
                          endpoint="manage_inhabitants"),
+                    rule("/swap", methods=_POST,
+                         endpoint="swap_inhabitants"),
                     rule("/show", methods=_GET,
                          endpoint="show_lodgement"),)),
                 sub('/field/<int:field_id>', (
