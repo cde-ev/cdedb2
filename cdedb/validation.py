@@ -52,8 +52,13 @@ import re
 import string
 from enum import Enum
 from typing import (
+<<<<<<< HEAD
+    Callable, Iterable, Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar,
+    Union, cast, get_type_hints, overload, Generic
+=======
     Callable, Iterable, Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar, Union,
     cast, get_type_hints, overload,
+>>>>>>> origin/master
 )
 
 import magic
@@ -181,6 +186,15 @@ def validate_check_optional(
     type_: Type[T], value: Any, **kwargs: Any
 ) -> Tuple[Optional[T], List[Error]]:
     return validate_check(Optional[type_], value, **kwargs)  # type: ignore
+
+
+# TODO replace with get_origin etc in Python 3.8 from typing
+get_args = lambda t: getattr(t, '__args__', ()) if t is not Generic else Generic
+get_origin = lambda t: getattr(t, '__origin__', None)
+
+
+def is_optional(type_: Type[T]) -> bool:
+    return get_origin(type_) is Union and NoneType in get_args(type_)
 
 
 def _allow_None(fun: Callable[..., T]) -> Callable[..., Optional[T]]:

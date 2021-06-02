@@ -22,10 +22,10 @@
         </label>
         {% if name in diff %}
             <div class="col-sm-4 bg-danger">
-                {% if caller %}{{ caller(False) }}{% else %}{{ current[name] }}{% endif %}
+                {% if caller %}{{ caller(False) }}{% else %}{{ current[name] or "–" }}{% endif %}
             </div>
             <div class="col-sm-4 bg-success">
-                {% if caller %}{{ caller(True) }}{% else %}{{ pending[name] }}{% endif %}
+                {% if caller %}{{ caller(True) }}{% else %}{{ pending[name] or "–" }}{% endif %}
             </div>
         {% else %}
             <div class="col-sm-4">
@@ -56,7 +56,7 @@
         {{ show_diff('display_name', gettext("First Given Name")) }}
         {{ show_diff('birth_name', gettext("Birth Name")) }}
         {% call(next) show_diff('birthday', gettext("Birthday"), True) %}
-            {% if next %}{{ pending['birthday']|date }}{% else %}{{ current['birthday']|date(lang=lang) }}{% endif %}
+            {% if next %}{{ pending['birthday']|date(lang=lang) }}{% else %}{{ current['birthday']|date(lang=lang) }}{% endif %}
         {% endcall %}
         {% call(next) show_diff('gender', gettext("Gender"), True) %}
             {% if next %}{{ gettext(enums['Genders'](pending['gender'])|string) }}{% else %}{{ gettext(enums['Genders'](current['gender'])|string) }}{% endif %}
