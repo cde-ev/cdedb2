@@ -102,64 +102,9 @@ additions to cdedb/database/cdedb-tables.sql::
 
 We now configure the SQL-backend for LDAP via a corresponding LDIF file (as
 is necessary according to the cn=config mechanism). Current state of the
-content of our sql-ldap.ldif::
+content of our sql-ldap.ldif
 
-    # load sql-backend module
-    dn: cn=module{0},cn=config
-    changetype: modify
-    add: olcModuleLoad
-    olcModuleLoad: back_sql
-
-    # backend definition
-    dn: olcBackend={1}sql,cn=config
-    changetype: add
-    objectClass: olcBackendConfig
-    olcBackend: {1}sql
-
-    # database definitions
-    dn: olcDatabase={2}sql,cn=config
-    changetype: add
-    objectClass: olcDatabaseConfig
-    objectClass: olcSqlConfig
-    olcSuffix: dc=cde-ev,dc=de
-    olcAccess: {0}to * by * read
-    #olcRootDN: cn=admin,dc=cde-ev,dc=de
-    #olcRootPW: secret
-    olcDatabase: sql
-    olcDbHost: localhost
-    olcDbName: cdb
-    # the credentials are irrelevant as we use odbc,
-    # but the parameters mustn't be empty
-    olcDbUser: cdb_admin
-    olcDbPass: 9876543210abcdefghijklmnopqrst
-    # SQL-backend configuration options (unused commented out)
-    olcSqlConcatPattern: ?||?
-    # olcSqlSubtreeCond
-    # olcSqlChildrenCond
-    # olcSqlDnMatchCond
-    # olcSqlOcQuery
-    # olcSqlAtQuery
-    # olcSqlInsEntryStmt
-    # olcSqlCreateNeedsSelect
-    olcSqlUpperFunc: upper
-    # olcSqlUpperNeedsCast
-    olcSqlStrcastFunc: text
-    # olcSqlDelEntryStmt
-    # olcSqlRenEntryStmt
-    # olcSqlDelObjclassesStmt
-    olcSqlHasLDAPinfoDnRu: FALSE
-    # olcSqlFailIfNoMapping
-    # olcSqlAllowOrphans
-    # olcSqlBaseObject
-    # olcSqlLayer
-    # olcSqlUseSubtreeShortcut
-    # olcSqlFetchAllAttrs
-    # olcSqlFetchAttrs
-    # olcSqlCheckSchema
-    # olcSqlAliasingKeyword
-    # olcSqlAliasingQuote
-    # olcSqlAutocommit
-    # olcSqlIdQuery
+.. literalinclude:: ../../sql-ldap.ldif
 
 To apply the LDIF configuration file we issue the following command::
 
