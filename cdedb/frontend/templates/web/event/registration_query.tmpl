@@ -79,12 +79,9 @@
             {% if "persona.username" in query.fields_of_interest %}
                     {% set usernames = [] %}
                 {% for entry in result if "persona.username" in entry and entry["persona.username"] %}
-                    {% do usernames.append("%s %s <%s>"|format(
-                            entry.get("persona.given_names", ""),
-                            entry.get("persona.family_name", ""),
-                            entry["persona.username"])) %}
+                    {% do usernames.append(entry["persona.username"]) %}
                 {% endfor %}
-                {{ util.href(util.mailto(bcc="; ".join(usernames)), gettext("bcc email to all"),
+                {{ util.href(util.mailto(bcc=";".join(usernames)), gettext("bcc email to all"),
                              icon="envelope", aclass="btn btn-sm btn-default",
                              title=gettext("Send Mail to all registrations listed below as BCC.")) }}
             {% else %}

@@ -276,7 +276,7 @@
                 $('#tablist-formselect').show();
                 /* Initialize JS Fancy form */
                 $('#prefvote_container').cdedbPrefVote(
-                    {{ ambience['ballot']['candidates']|keydictsort(EntitySorter.candidates)|json|s }},
+                    {{ ambience['ballot']['candidates']|keydictsort(EntitySorter.candidates)|tojson }},
                     {{ "'"|s+ASSEMBLY_BAR_SHORTNAME+"'"|s if ambience['ballot']['use_bar'] else "null" }},
                     $('#input-preferencelist'),
                     {{ {'bar_name': gettext('neutral'),
@@ -286,7 +286,7 @@
                         'spacer': gettext('Between box {0} and {1}'),
                         'spacer_highest': gettext('Above box with highest priority'),
                         'spacer_lowest': gettext('Below box with lowest priority'),
-                        }|json|s }}
+                        }|tojson }}
                 );
                 /* Register callback to refresh fancy form every time the tab is shown.
                  * Additionally register handlers to set or reset 'prefvote_nojs' cookie. */

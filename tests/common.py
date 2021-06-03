@@ -713,11 +713,14 @@ class FrontendTest(BackendTest):
         cls.app = webtest.TestApp(app, extra_environ=cls.app_extra_environ)
 
         # set `do_scrap` to True to capture a snapshot of all visited pages
-        cls.do_scrap = "SCRAP_ENCOUNTERED_PAGES" in os.environ
+        cls.do_scrap = 'CDEDB_TEST_DUMP_DIR' in os.environ
         if cls.do_scrap:
+            # create a parent directory for all dumps
+            dump_root = pathlib.Path(os.environ['CDEDB_TEST_DUMP_DIR'])
+            dump_root.mkdir(exist_ok=True)
             # create a temporary directory and print it
-            cls.scrap_path = tempfile.mkdtemp()
-            print(cls.scrap_path, file=sys.stderr)
+            cls.scrap_path = tempfile.mkdtemp(dir=dump_root, prefix=f'{cls.__name__}.')
+            print(f'\n\n{cls.scrap_path}\n', file=sys.stderr)
 
     @classmethod
     def tearDownClass(cls) -> None:
@@ -748,11 +751,15 @@ class FrontendTest(BackendTest):
     def scrap(self) -> None:
         if self.do_scrap and self.response.status_int // 100 == 2:
             # path without host but with query string - capped at 64 chars
-            url = urllib.parse.quote_plus(self.response.request.path_qs)[:64]
-            with tempfile.NamedTemporaryFile(dir=self.scrap_path, suffix=url,
+            # To enhance readability, we mark most chars as safe. All special chars are
+            # allowed in linux file paths, but sadly windows is more restrictive...
+            url = urllib.parse.quote(self.response.request.path_qs, safe='/;@&=+$,~')[:64]
+            # since / chars are forbidden in file paths, we replace them by _
+            url = url.replace('/', '_')
+            # create a temporary file in scrap_path with url as a prefix
+            # persisting after process completion and dump the response.
+            with tempfile.NamedTemporaryFile(dir=self.scrap_path, prefix=f'{url}.',
                                              delete=False) as f:
-                # create a temporary file in scrap_path with url as a suffix
-                # persisting after process completion and dump the response.
                 f.write(self.response.body)
 
     def log_generation_time(self, response: webtest.TestResponse = None) -> None:
@@ -986,15 +993,20 @@ class FrontendTest(BackendTest):
 
     def assertCheckbox(self, status: bool, anid: str) -> None:
         """Assert that the checkbox with the given id is checked (or not)."""
-        tmp = self.response.html.find_all(id=anid)
+        tmp = (self.response.html.find_all(id=anid)
+               or self.response.html.find_all(attrs={'name': anid}))
         if not tmp:
-            raise AssertionError("Id not found.", id)
+            raise AssertionError("Id not found.", anid)
         if len(tmp) != 1:
             raise AssertionError("More or less then one hit.", anid)
         checkbox = tmp[0]
-        if "data-checked" not in checkbox.attrs:
+        if "data-checked" in checkbox.attrs:
+            self.assertEqual(str(status), checkbox['data-checked'])
+        elif "type" in checkbox.attrs:
+            self.assertEqual("checkbox", checkbox['type'])
+            self.assertEqual(status, 'checked' == checkbox.get('checked'))
+        else:
             raise ValueError("Id doesnt belong to a checkbox", anid)
-        self.assertEqual(str(status), checkbox['data-checked'])
 
     def assertPresence(self, s: str, *, div: str = "content", regex: bool = False,
                        exact: bool = False) -> None:

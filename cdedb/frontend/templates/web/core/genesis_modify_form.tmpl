@@ -72,7 +72,7 @@
             <script nonce="{{ csp_nonce }}">
                 var $select = $('#realm-select');
                 var $realmSpecificFields = $('.genesis-realm-specific');
-                var fieldsPerRealm = {{ REALM_SPECIFIC_GENESIS_FIELDS|json|s }};
+                var fieldsPerRealm = {{ REALM_SPECIFIC_GENESIS_FIELDS|tojson }};
                 var show_realm_specific_fields = function() {
                     $realmSpecificFields.each(function() {
                         if (fieldsPerRealm[$select.val()].indexOf($(this).prop('name')) >= 0) {

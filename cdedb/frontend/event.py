@@ -1504,18 +1504,38 @@ class EventFrontend(AbstractUserFrontend):
                     p['status'] == stati.participant
                     and not t['course_id']
                     and r['persona_id'] not in e['orgas']))),))
-        per_track_statistics: Dict[str, Dict[int, int]] = OrderedDict()
+        per_track_statistics: Dict[str, Dict[int, Optional[int]]] = OrderedDict()
+        regs_in_choice_x: Dict[str, Dict[int, List[int]]] = OrderedDict()
         if tracks:
             # Additional dynamic tests for course attendee statistics
             for i in range(max(t['num_choices'] for t in tracks.values())):
-                tests3[rs.gettext('In {}. Choice').format(i + 1)] = (
+                key = rs.gettext('In {}. Choice').format(i + 1)
+                checker = (
                     functools.partial(
-                        lambda e, r, p, t, j: (
+                        lambda p, t, j: (
                             p['status'] == stati.participant
                             and t['course_id']
                             and len(t['choices']) > j
                             and (t['choices'][j] == t['course_id'])),
                         j=i))
+                per_track_statistics[key] = {
+                    track_id: sum(
+                        1 for r in registrations.values()
+                        if checker(r['parts'][tracks[track_id]['part_id']],
+                                   r['tracks'][track_id]))
+                    if i < tracks[track_id]['num_choices'] else None
+                    for track_id in tracks
+                }
+
+                # the ids are used later on for the query page
+                regs_in_choice_x[key] = {
+                    track_id: [
+                        r['id'] for r in registrations.values()
+                        if checker(r['parts'][tracks[track_id]['part_id']],
+                                   r['tracks'][track_id])
+                    ]
+                    for track_id in tracks
+                }
 
             for key, test2 in tests2.items():
                 per_track_statistics[key] = {
@@ -1652,6 +1672,12 @@ class EventFrontend(AbstractUserFrontend):
                 ('persona.id', QueryOperators.otherthan,
                  rs.ambience['event']['orgas']),)
         }
+        for name, track_regs in regs_in_choice_x.items():
+            registration_query_filters[name] = functools.partial(
+                lambda e, p, t, t_r: (
+                    ("reg.id", QueryOperators.oneof, t_r[t['id']]),
+                ), t_r=track_regs
+            )
         # Query filters for all the course statistics defined and calculated above.
         # They are customized and inserted into the query on the fly by get_query().
         # `e` is the event, `p` is the event_part, `t` is the track.
@@ -1674,6 +1700,8 @@ class EventFrontend(AbstractUserFrontend):
             'all instructors': ('course{track}.id',
                                 'course_instructor{track}.id',),
         }
+        for name, track_regs in regs_in_choice_x.items():
+            query_additional_fields[name] = ('track{track}.course_id',)
 
         def get_query(category: str, part_id: int, track_id: int = None
                       ) -> Optional[Query]:
@@ -4384,7 +4412,7 @@ class EventFrontend(AbstractUserFrontend):
             aspect = 'parts'
         else:
             raise ValueError(n_(
-                "Invalid key. Expected 'course_id' or 'event_id"))
+                "Invalid key. Expected 'course_id' or 'lodgement_id"))
 
         def _check_belonging(entity_id: int, sub_id: int, reg_id: int) -> bool:
             """The actual check, un-inlined."""
@@ -4863,7 +4891,7 @@ class EventFrontend(AbstractUserFrontend):
             key="lodgement_id", personas=personas)
         for part_id in rs.ambience['event']['parts']:
             merge_dicts(rs.values, {
-                'camping_mat_capacity_{}_{}'.format(part_id, registration_id):
+                'is_camping_mat_{}_{}'.format(part_id, registration_id):
                     registrations[registration_id]['parts'][part_id][
                         'is_camping_mat']
                 for registration_id in inhabitants[(lodgement_id, part_id)]
@@ -4912,12 +4940,16 @@ class EventFrontend(AbstractUserFrontend):
             for part_id in rs.ambience['event']['parts']
         }
         lodgement_names = self.eventproxy.list_lodgements(rs, event_id)
+        other_lodgements = {
+            anid: name for anid, name in lodgement_names.items() if anid != lodgement_id
+        }
         return self.render(rs, "manage_inhabitants", {
             'registrations': registrations,
             'personas': personas, 'inhabitants': inhabitants,
             'without_lodgement': without_lodgement,
             'selectize_data': selectize_data,
-            'lodgement_names': lodgement_names})
+            'lodgement_names': lodgement_names,
+            'other_lodgements': other_lodgements})
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
@@ -4947,7 +4979,7 @@ class EventFrontend(AbstractUserFrontend):
                 for reg_id in current_inhabitants[part_id]
             },
             **{
-                f"camping_mat_capacity_{part_id}_{reg_id}": bool
+                f"is_camping_mat_{part_id}_{reg_id}": bool
                 for part_id in rs.ambience['event']['parts']
                 for reg_id in current_inhabitants[part_id]
             }
@@ -4965,28 +4997,67 @@ class EventFrontend(AbstractUserFrontend):
             # Check if registration is new inhabitant or deleted inhabitant
             # in any part
             for part_id in rs.ambience['event']['parts']:
-                new_inhabitant = (
-                        reg_id in data["new_{}".format(part_id)])
+                new_inhabitant = (reg_id in data[f"new_{part_id}"])
                 deleted_inhabitant = data.get(
                     "delete_{}_{}".format(part_id, reg_id), False)
                 is_camping_mat = reg['parts'][part_id]['is_camping_mat']
                 changed_inhabitant = (
                         reg_id in current_inhabitants[part_id]
-                        and data.get(f"camping_mat_capacity_{part_id}_{reg_id}",
+                        and data.get(f"is_camping_mat_{part_id}_{reg_id}",
                                      False) != is_camping_mat)
                 if new_inhabitant or deleted_inhabitant:
                     new_reg['parts'][part_id] = {
-                        'lodgement_id': (
-                            lodgement_id if new_inhabitant else None)
+                        'lodgement_id': lodgement_id if new_inhabitant else None
                     }
                 elif changed_inhabitant:
                     new_reg['parts'][part_id] = {
                         'is_camping_mat': data.get(
-                            f"camping_mat_capacity_{part_id}_{reg_id}",
+                            f"is_camping_mat_{part_id}_{reg_id}",
                             False)
                     }
             if new_reg['parts']:
                 code *= self.eventproxy.set_registration(rs, new_reg)
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "event/show_lodgement")
+
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
+    def swap_inhabitants(self, rs: RequestState, event_id: int,
+                         lodgement_id: int) -> Response:
+        """Swap inhabitants of two lodgements of the same part."""
+        params: TypeMapping = {
+            f"swap_with_{part_id}": Optional[vtypes.ID]  # type: ignore
+            for part_id in rs.ambience['event']['parts']
+        }
+        data = request_extractor(rs, params)
+        if rs.has_validation_errors():
+            return self.manage_inhabitants_form(rs, event_id, lodgement_id)
+
+        registration_ids = self.eventproxy.list_registrations(rs, event_id)
+        registrations = self.eventproxy.get_registrations(rs, registration_ids)
+        lodgements = self.eventproxy.list_lodgements(rs, event_id)
+        inhabitants = self.calculate_groups(
+            lodgements.keys(), rs.ambience['event'], registrations, key="lodgement_id")
+
+        new_regs: CdEDBObjectMap = {}
+        for part_id in rs.ambience['event']['parts']:
+            if data[f"swap_with_{part_id}"]:
+                swap_lodgement_id = data[f"swap_with_{part_id}"]
+                current_inhabitants = inhabitants[(lodgement_id, part_id)]
+                swap_inhabitants = inhabitants[(swap_lodgement_id, part_id)]
+                new_reg: CdEDBObject
+                for reg_id in current_inhabitants:
+                    new_reg = new_regs.get(reg_id, {'id': reg_id, 'parts': dict()})
+                    new_reg['parts'][part_id] = {'lodgement_id': swap_lodgement_id}
+                    new_regs[reg_id] = new_reg
+                for reg_id in swap_inhabitants:
+                    new_reg = new_regs.get(reg_id, {'id': reg_id, 'parts': dict()})
+                    new_reg['parts'][part_id] = {'lodgement_id': lodgement_id}
+                    new_regs[reg_id] = new_reg
+
+        code = 1
+        for new_reg in new_regs.values():
+            code *= self.eventproxy.set_registration(rs, new_reg)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/show_lodgement")
 
