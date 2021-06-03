@@ -110,6 +110,14 @@ To apply the LDIF configuration file we issue the following command::
 
     ldapmodify -Y EXTERNAL -H ldapi:/// -f /cdedb2/sql-ldap.ldif
 
+To access the root DN, use::
+
+    ldapsearch -H ldap:// -x -D "cn=admin,dc=cdedb,dc=virtual" -w sicher -s base -b "" "+"
+
+To view the current content of the cn=config DIT, user::
+
+    sudo ldapsearch -H ldapi:// -Y EXTERNAL -b "cn=config" -LLL -Q | less
+
 Now we insert some sample data to test the LDAP-SQL integration (here in a
 repsesentation as Python dict as used in ``bin/create_sample_data_sql.py``)::
 
@@ -256,7 +264,20 @@ Server is unwilling to perform (53)``)::
     rm /etc/ldap/slapd.d/cn\=config/*Database*sql*
     systemctl start slapd.service
 
+To reset the whole ldap stuff, a purged reinstall should be done::
+
+    apt remove --purge slapd
+    apt install slapd
+
+After reinstalling, a ldap admin passwort has to be specified.
 .. _sec-ldap-references:
+
+-----
+
+Bind to rootDN with ldapsearch::
+
+    ldapsearch -H ldap:// -x -D "cn=admin,dc=cdedb,dc=virtual" -W
+
 
 References
 ----------
@@ -267,3 +288,6 @@ References
 * https://www.openldap.org/faq/data/cache/978.html
 * https://www.digitalocean.com/community/tutorials/how-to-use-ldif-files-to-make-changes-to-an-openldap-system
 * https://serverfault.com/questions/725887/how-do-i-add-an-openldap-contrib-module-with-cn-config-layout-to-ubuntu
+* http://www.zytrax.com/books/ldap/ch6/slapd-config.html
+* https://www.digitalocean.com/community/tutorials/how-to-configure-openldap-and-perform-administrative-ldap-tasks
+* https://stackoverflow.com/questions/30898397/creating-second-database-domain-in-openldap

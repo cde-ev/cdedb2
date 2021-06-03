@@ -77,6 +77,15 @@ doc:
 	bin/create_email_template_list.sh .
 	$(MAKE) -C doc html
 
+ldap-reset-sql:
+	systemctl stop slapd.service \
+    && rm /etc/ldap/slapd.d/cn\=config/*Database*sql* \
+    && systemctl start slapd.service
+
+ldap-reset:
+	apt remove --purge -y slapd \
+    && apt install -y slapd
+
 reload:
 	$(MAKE) i18n-compile
 ifeq ($(wildcard /CONTAINER),/CONTAINER)
