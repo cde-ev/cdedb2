@@ -52,13 +52,8 @@ import re
 import string
 from enum import Enum
 from typing import (
-<<<<<<< HEAD
     Callable, Iterable, Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar,
     Union, cast, get_type_hints, overload, Generic
-=======
-    Callable, Iterable, Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar, Union,
-    cast, get_type_hints, overload,
->>>>>>> origin/master
 )
 
 import magic
