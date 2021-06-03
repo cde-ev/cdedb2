@@ -28,9 +28,11 @@
 
     <div class="list-group list-group-hover">
         {% for registration_id, registration in registrations.items() %}
-            <div class="selectee list-group-item">
+        <div class="selectee list-group-item">
+            <div class="row">
+                <div class="col-sm-8">
                 <div class="row">
-                    <div class="col-sm-4">
+                    <div class="col-sm-6">
                         <span class="searchname">
                             {{ personas[registration['persona_id']]['given_names'] }}
                             {{ personas[registration['persona_id']]['family_name'] }}
@@ -55,7 +57,7 @@
                             ({{ gettext(enums['RegistrationPartStati'].guest|string) }})
                         {% endif %}
                     </div>
-                    <div class="col-sm-4 hide-xs">
+                    <div class="col-sm-6 hide-xs">
                         <small class="text-info">
                             {% trans %}Lodgement{% endtrans %}:
                             {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part)
@@ -69,6 +71,31 @@
                             {% endfor %}
                         </small>
                     </div>
+                </div>
+                {% if ambience['event']['custom_checkin_fields'] %}
+                    <hr class="nosp" />
+                    {% set relevant_fields = [] %}
+                    {% for field_id, field in ambience['event']['fields']|keydictsort(EntitySorter.event_field)
+                            if field['id'] in ambience['event']['custom_checkin_fields'] %}
+                        {% do relevant_fields.append((field_id, field)) %}
+                    {% endfor %}
+                    <div class="row">
+                        {% for slice in relevant_fields|slice(2) %}
+                            <div class="col-sm-6">
+                                <dl class="dl-horizontal small" style="margin-bottom: 5px">
+                                    {% for field_id, field in slice %}
+                                        {% set field_key = ambience['event']['fields'][field_id]['field_name'] %}
+                                        <dt>{{ field['field_name'] }}</dt>
+                                        <dd>
+                                            {{ generic.display_field(field, registration['fields'][field_key]) }}
+                                        </dd>
+                                    {% endfor %}
+                                </dl>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                </div>
                     <div class="col-sm-2">
                         {{ util.href(cdedblink('event/change_registration',
                                                {'registration_id': registration_id, 'skip': 'reg.checkin'}),
@@ -87,19 +114,8 @@
                                                  readonly=is_locked) }}
                         </form>
                     </div>
-                </div>
-                <div class="row">
-                    <dl class="dl-horizontal small">
-                    {% for field_id, field in ambience['event']['fields']|keydictsort(EntitySorter.event_field) if field['id'] in ambience['event']['custom_checkin_fields'] %}
-                        {% set field_key = ambience['event']['fields'][field_id]['field_name'] %}
-                        <dt>{{ field['field_name'] }}</dt>
-                        <dd>
-                            {{ generic.display_field(field, registration['fields'][field_key]) }}
-                        </dd>
-                    {% endfor %}
-                    </dl>
-                </div>
             </div>
+        </div>
         {% endfor %}
     </div>
     <script nonce="{{ csp_nonce }}">

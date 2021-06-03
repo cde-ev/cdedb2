@@ -246,6 +246,10 @@ h2.mosp {
 h3.mosp {
     margin-top: 24px;
 }
+hr.nosp {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
 label.nosp {
     margin-bottom: 0;
 }
