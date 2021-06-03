@@ -5,13 +5,13 @@ add: olcModuleLoad
 olcModuleLoad: back_sql
 
 # backend definition
-dn: olcBackend={1}sql,cn=config
+dn: olcBackend=sql,cn=config
 changetype: add
 objectClass: olcBackendConfig
-olcBackend: {1}sql
+olcBackend: sql
 
 # database definitions
-dn: olcDatabase={2}sql,cn=config
+dn: olcDatabase=sql,cn=config
 changetype: add
 objectClass: olcDatabaseConfig
 objectClass: olcSqlConfig
