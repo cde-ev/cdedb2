@@ -17,8 +17,8 @@ objectClass: olcDatabaseConfig
 objectClass: olcSqlConfig
 olcSuffix: dc=cde-ev,dc=de
 olcAccess: {0}to * by * read
-#olcRootDN: cn=admin,dc=cdedb,dc=virtual,dc=cde-ev,dc=de
-#olcRootPW: secret
+olcRootDN: cn=admin,dc=cde-ev,dc=de
+olcRootPW: secret
 olcDatabase: sql
 olcDbHost: localhost
 olcDbName: cdb
