@@ -529,7 +529,7 @@ class AssemblyBackend(AbstractBackend):
     @access("assembly_admin")
     def add_assembly_presiders(self, rs: RequestState, assembly_id: int,
                                persona_ids: Collection[int]) -> DefaultReturnCode:
-        """Overwrite the set of presiders for an assembly."""
+        """Add a collection of presiders for an assembly."""
         assembly_id = affirm(vtypes.ID, assembly_id)
         persona_ids = affirm_set(vtypes.ID, persona_ids)
 
@@ -552,17 +552,18 @@ class AssemblyBackend(AbstractBackend):
                     'assembly_id': assembly_id,
                 }
                 # on conflict do nothing
-                ret *= self.sql_insert_unique(rs, "assembly.presiders", new_presider)
-                if ret:
+                r = self.sql_insert(rs, "assembly.presiders", new_presider, unique=True)
+                if r:
                     self.assembly_log(
                         rs, const.AssemblyLogCodes.assembly_presider_added,
                         assembly_id, anid)
+                ret *= r
         return ret
 
     @access("assembly_admin")
     def remove_assembly_presider(self, rs: RequestState, assembly_id: int,
                                 persona_id: int) -> DefaultReturnCode:
-        """Overwrite the set of presiders for an assembly."""
+        """Remove a single presiders for an assembly."""
         assembly_id = affirm(vtypes.ID, assembly_id)
         persona_id = affirm(vtypes.ID, persona_id)
 
@@ -570,8 +571,9 @@ class AssemblyBackend(AbstractBackend):
                  " WHERE persona_id = %s AND assembly_id = %s")
         with Atomizer(rs):
             ret = self.query_exec(rs, query, (persona_id, assembly_id))
-            self.assembly_log(rs, const.AssemblyLogCodes.assembly_presider_removed,
-                              assembly_id, persona_id)
+            if ret:
+                self.assembly_log(rs, const.AssemblyLogCodes.assembly_presider_removed,
+                                  assembly_id, persona_id)
         return ret
 
     @internal

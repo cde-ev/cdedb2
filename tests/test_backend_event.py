@@ -3120,7 +3120,7 @@ class TestEventBackend(BackendTest):
                 ["2110-8-17", "late second coming"],
             ],
         }
-        self.event.add_event_orgas(self.key, new_id, {1})
+        self.event.add_event_orgas(self.key, new_id, {2, 1})
         self.event.remove_event_orga(self.key, new_id, 2)
         self.event.set_event(self.key, {
             'id': new_id,

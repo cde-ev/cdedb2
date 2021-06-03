@@ -1574,19 +1574,17 @@ class EventBackend(AbstractBackend):
                     'event_id': event_id,
                 }
                 # on conflict do nothing
-                ret *= self.sql_insert_unique(rs, "event.orgas", new_orga)
-                if ret:
+                r = self.sql_insert(rs, "event.orgas", new_orga, unique=True)
+                if r:
                     self.event_log(rs, const.EventLogCodes.orga_added, event_id,
                                    persona_id=anid)
+                ret *= r
         return ret
 
     @access("event_admin")
     def remove_event_orga(self, rs: RequestState, event_id: int,
                           persona_id: int) -> DefaultReturnCode:
-        """Add orgas to an event.
-
-        This is basically un-inlined code from `set_event`, but may also be
-        called separately.
+        """Remove a single orga of an event.
 
         Note that this is only available to admins in contrast to `set_event`.
         """
@@ -1598,8 +1596,9 @@ class EventBackend(AbstractBackend):
                  " WHERE persona_id = %s AND event_id = %s")
         with Atomizer(rs):
             ret = self.query_exec(rs, query, (persona_id, event_id))
-            self.event_log(rs, const.EventLogCodes.orga_removed,
-                           event_id, persona_id=persona_id)
+            if ret:
+                self.event_log(rs, const.EventLogCodes.orga_removed,
+                               event_id, persona_id=persona_id)
         return ret
 
     @access("event")

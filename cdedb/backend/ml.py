@@ -432,10 +432,12 @@ class MlBackend(AbstractBackend):
                     'mailinglist_id': mailinglist_id,
                 }
                 # on conflict do nothing
-                ret *= self.sql_insert_unique(rs, "ml.moderators", new_mod)
-                if ret:
+                r = self.sql_insert(rs, "ml.moderators", new_mod, unique=True)
+                if r:
                     self.ml_log(rs, const.MlLogCodes.moderator_added, mailinglist_id,
                                     persona_id=anid, change_note=change_note)
+                ret *= r
+
         return ret
 
     @access("ml")
@@ -445,6 +447,9 @@ class MlBackend(AbstractBackend):
         """Remove moderators from a mailinglist."""
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
         persona_id = affirm(vtypes.ID, persona_id)
+
+        if not self.may_manage(rs, mailinglist_id):
+            raise PrivilegeError("Not privileged.")
 
         query = ("DELETE FROM ml.moderators"
                  " WHERE persona_id = %s AND mailinglist_id = %s")
@@ -458,8 +463,9 @@ class MlBackend(AbstractBackend):
                 raise ValueError(n_("Cannot remove all moderators."))
 
             ret = self.query_exec(rs, query, (persona_id, mailinglist_id))
-            self.ml_log(rs, const.MlLogCodes.moderator_removed, mailinglist_id,
-                        persona_id=persona_id, change_note=change_note)
+            if ret:
+                self.ml_log(rs, const.MlLogCodes.moderator_removed, mailinglist_id,
+                            persona_id=persona_id, change_note=change_note)
         return ret
 
     @access("ml")
@@ -477,7 +483,7 @@ class MlBackend(AbstractBackend):
             'mailinglist_id': mailinglist_id,
         }
         with Atomizer(rs):
-            ret = self.sql_insert_unique(rs, "ml.whitelist", new_white)
+            ret = self.sql_insert(rs, "ml.whitelist", new_white, unique=True)
             if ret:
                 self.ml_log(rs, const.MlLogCodes.whitelist_added,
                             mailinglist_id, change_note=address)
@@ -486,12 +492,7 @@ class MlBackend(AbstractBackend):
     @access("ml")
     def remove_whitelist_entry(self, rs: RequestState, mailinglist_id: int,
                                address: str) -> DefaultReturnCode:
-        """Set whitelist of a mailinglist.
-
-        A complete set must be passed, which will superseed the current set.
-
-        Contrary to `set_mailinglist` this may be used by moderators.
-        """
+        """Remove whitelist entry from a mailinglist."""
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
         address = affirm(str, address)
 
@@ -502,8 +503,9 @@ class MlBackend(AbstractBackend):
                  " WHERE address = %s AND mailinglist_id = %s")
         with Atomizer(rs):
             ret = self.query_exec(rs, query, (address, mailinglist_id))
-            self.ml_log(rs, const.MlLogCodes.whitelist_removed,
-                        mailinglist_id, change_note=address)
+            if ret:
+                self.ml_log(rs, const.MlLogCodes.whitelist_removed,
+                            mailinglist_id, change_note=address)
         return ret
 
     def _ml_type_transition(self, rs: RequestState, mailinglist_id: int,
