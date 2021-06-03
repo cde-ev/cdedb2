@@ -41,8 +41,6 @@
                                    gettext("No course instructors / email addresses available."))) }}
     </div>
 
-    <div class="row">
-        <div class="col-md-6">
             <dl class="dl-horizontal">
                 <dt>{% trans %}Instructor{% endtrans %}</dt><dd>{{ ambience['course']['instructors'] }}</dd>
                 <dt>{% trans %}Maximum Size (excl. instr.){% endtrans %}</dt><dd>{{ ambience['course']['max_size'] }}</dd>
@@ -78,22 +76,23 @@
                     {% endif %}
                 {% endfor %}
             </dl>
-        </div>
 
-        {% if ambience['course']['notes'] %}
-            <div class="col-md-6">
-                {% call util.bootstrap_panel(gettext("Orga-Notes"), icon='tag',
-                                             aclass='panel panel-default panel-condensed') %}
-                    {{ ambience['course']['notes']|md }}
-                {% endcall %}
-            </div>
-        {% endif %}
-    </div>
+    {% if ambience['course']['notes'] %}
+        {% call util.bootstrap_panel(title=gettext("Orga-Notes"), icon="tag",
+                                     aclass="panel panel-default panel-condensed") %}
+            {{ ambience['course']['notes']|md }}
+        {% endcall %}
+    {% endif %}
 
     <h2>{% trans %}Attendees{% endtrans %}</h2>
-    <div class="row">
-        {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track)
-                if track_id in ambience['course']['segments'] %}
+    {% set relevant_tracks = [] %}
+    {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track)
+            if track_id in ambience['course']['segments'] %}
+        {% do relevant_tracks.append((track_id, track)) %}
+    {% endfor %}
+    {% for batch in relevant_tracks|batch(3) %}
+        <div class="row">
+        {% for track_id, track in batch %}
             {% set num_track_learners = learners[(ambience['course']['id'], track_id)]|length %}
             <div class="col-md-4">
                 <div class="panel panel-info panel-condensed">
@@ -157,7 +156,8 @@
                 </div>
             </div>
         {% endfor %}
-    </div>
+        </div>
+    {% endfor %}
     {% call util.bootstrap_panel(title=gettext("Description"), icon="thumbtack", aclass="panel-default panel-condensed") %}
         {{ ambience['course']['description']|md }}
     {% endcall %}
