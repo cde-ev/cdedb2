@@ -2771,7 +2771,7 @@ class EventBackend(AbstractBackend):
                 ret[anid]['fields'] = cast_fields(ret[anid]['fields'], event_fields)
 
             query = """
-                SELECT event.registrations.id, ctime, mtime
+                SELECT event.registrations.id AS reg_id, ctime, mtime
                 FROM event.registrations
                 LEFT OUTER JOIN (
                     SELECT persona_id, MAX(ctime) AS ctime
@@ -2789,8 +2789,8 @@ class EventBackend(AbstractBackend):
                       const.EventLogCodes.registration_changed, registration_ids)
             logs = self.query_all(rs, query, params)
             for log in logs:
-                ret[log['id']]['ctime'] = log['ctime']
-                ret[log['id']]['mtime'] = log['mtime']
+                ret[log['reg_id']]['ctime'] = log['ctime']
+                ret[log['reg_id']]['mtime'] = log['mtime']
         return ret
 
     class _GetRegistrationProtocol(Protocol):
