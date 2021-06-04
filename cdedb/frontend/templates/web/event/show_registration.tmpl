@@ -109,23 +109,17 @@
 
         <dt>{% trans %}Registered at{% endtrans %}</dt>
         <dd>
-            {{ ambience['registration']['ctime']|datetime(lang=lang) }}
+            {{ ambience['registration']['ctime']|datetime(lang=lang) or "—" }}
+        </dd>
+
+        <dt>{% trans %}Checked-In at{% endtrans %}</dt>
+        <dd>
+            {{ ambience['registration']['checkin']|datetime(lang=lang) or "—" }}
         </dd>
 
         <dt>{% trans %}Last modified at{% endtrans %}</dt>
         <dd>
-            {{ ambience['registration']['mtime']|datetime(lang=lang) or ambience['registration']['ctime']|datetime(lang=lang) }}
-        </dd>
-
-        <dt>{% trans %}Checked-In{% endtrans %}</dt>
-        <dd>
-            {% if ambience['registration']['checkin'] %}
-                {% trans datetime=ambience['registration']['checkin']|datetime(lang=lang) %}
-                	Checked-In: {{ datetime }}
-                {% endtrans %}
-            {% else %}
-                —
-            {% endif %}
+            {{ ambience['registration']['mtime']|datetime(lang=lang) or "—" }}
         </dd>
     </dl>
 
