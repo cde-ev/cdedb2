@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2021-06-01 02:25+0200\n"
+"POT-Creation-Date: 2021-06-05 00:41+0200\n"
 "PO-Revision-Date: 2020-12-06 11:30+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -4925,6 +4925,7 @@ msgid "Vote_[[on a voting paper]]"
 msgstr "Stimme"
 
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:156
+#: cdedb/frontend/templates/web/cde/member_stats.tmpl:18
 #: cdedb/frontend/templates/web/event/stats.tmpl:52
 #: cdedb/frontend/templates/web/event/stats.tmpl:102
 msgid "Count"
@@ -6678,6 +6679,14 @@ msgid ""
 msgstr ""
 "Beispielsweise wird bei \"Aka\" in der Volltextsuche \"Akademie\" nicht "
 "gefunden, bei \"Akadem\" hingegen wird \"Akademie\" gefunden."
+
+#: cdedb/frontend/templates/web/cde/member_stats.tmpl:39
+msgid "Stats by Year"
+msgstr "Statistik nach Jahr"
+
+#: cdedb/frontend/templates/web/cde/member_stats.tmpl:65
+msgid "Stats by Location"
+msgstr "Statistik nach Ort"
 
 #: cdedb/frontend/templates/web/cde/money_transfers.tmpl:6
 #: cdedb/frontend/templates/web/event/base.tmpl:57
@@ -9743,14 +9752,14 @@ msgstr "Teil hinzufügen"
 #: cdedb/frontend/templates/web/event/configure_additional_questionnaire.tmpl:62
 #: cdedb/frontend/templates/web/event/configure_registration.tmpl:62
 #: cdedb/frontend/templates/web/generic.tmpl:469
-#: cdedb/frontend/templates/web/generic.tmpl:656
+#: cdedb/frontend/templates/web/generic.tmpl:653
 msgid "true"
 msgstr "wahr"
 
 #: cdedb/frontend/templates/web/event/configure_additional_questionnaire.tmpl:63
 #: cdedb/frontend/templates/web/event/configure_registration.tmpl:63
 #: cdedb/frontend/templates/web/generic.tmpl:470
-#: cdedb/frontend/templates/web/generic.tmpl:655
+#: cdedb/frontend/templates/web/generic.tmpl:652
 msgid "false"
 msgstr "falsch"
 
@@ -10037,7 +10046,7 @@ msgstr "Kurssuche"
 #: cdedb/frontend/templates/web/event/field_set_select.tmpl:39
 #: cdedb/frontend/templates/web/event/lodgement_query.tmpl:31
 #: cdedb/frontend/templates/web/event/registration_query.tmpl:30
-#: cdedb/frontend/templates/web/generic.tmpl:674
+#: cdedb/frontend/templates/web/generic.tmpl:671
 msgid "Set Field"
 msgstr "Datenfeld setzen"
 

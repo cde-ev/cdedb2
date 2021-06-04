@@ -35,8 +35,8 @@
             </tbody>
         </table>
     </div>
-    <hr />
 
+    <h3>{% trans %}Stats by Year{% endtrans %}</h3>
     <div id="cde-year-stats">
         <table class="table table-slim table-condensed" id="year-stats">
             <thead>
@@ -62,6 +62,7 @@
         </table>
     </div>
 
+    <h3>{% trans %}Stats by Location{% endtrans %}</h3>
     <div id="cde-complex-stats">
         {% for view, view_stats in other_stats.items() %}
             {% if view == "members_by_country" %}
