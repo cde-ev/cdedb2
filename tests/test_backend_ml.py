@@ -262,6 +262,7 @@ class TestMlBackend(BackendTest):
             'whitelist': {'aliens@example.cde',
                           'captiankirk@example.cde',
                           'picard@example.cde'},
+            'domain': const.MailinglistDomain.lists,
             'ml_type': const.MailinglistTypes.member_moderated_opt_in,
             'is_active': False,
             'local_part': 'passivenforum',
@@ -407,27 +408,32 @@ class TestMlBackend(BackendTest):
         admin_mdatas: Collection[CdEDBObject] = [
             {
                 'id': mailinglist_id,
+                'domain': const.MailinglistDomain.aka,
                 'ml_type': const.MailinglistTypes.event_associated,
                 'title': 'Hallo Welt',
             },
             {
                 'id': mailinglist_id,
+                'domain': const.MailinglistDomain.aka,
                 'ml_type': const.MailinglistTypes.event_associated,
                 'local_part': 'alternativ',
             },
             {
                 'id': mailinglist_id,
+                'domain': const.MailinglistDomain.aka,
                 'ml_type': const.MailinglistTypes.event_associated,
                 'is_active': False,
             },
             {
                 'id': mailinglist_id,
+                'domain': const.MailinglistDomain.aka,
                 'ml_type': const.MailinglistTypes.event_associated,
                 'event_id': 1,
                 'registration_stati': [],
             },
             {
                 'id': mailinglist_id,
+                'domain': const.MailinglistDomain.aka,
                 'ml_type': const.MailinglistTypes.event_orga,
                 'event_id': None,
                 'registration_stati': [],
@@ -436,6 +442,7 @@ class TestMlBackend(BackendTest):
 
         restricted_mod_mdata = {
             'id': mailinglist_id,
+            'domain': const.MailinglistDomain.aka,
             'ml_type': const.MailinglistTypes.event_associated,
             'description': "Nice one",
             'notes': "Blabediblubblabla",
@@ -447,6 +454,7 @@ class TestMlBackend(BackendTest):
 
         full_mod_mdata = {
             'id': mailinglist_id,
+            'domain': const.MailinglistDomain.aka,
             'ml_type': const.MailinglistTypes.event_associated,
             'registration_stati': [const.RegistrationPartStati.applied],
         }
@@ -971,6 +979,7 @@ class TestMlBackend(BackendTest):
         mdata = {
             'id': ml_id,
             'event_id': 2,
+            'domain': const.MailinglistDomain.aka,
             'ml_type': const.MailinglistTypes.event_associated,
         }
         self.ml.set_mailinglist(self.key, mdata)
@@ -1318,6 +1327,7 @@ class TestMlBackend(BackendTest):
         # Making the list Opt-Out should yield implicits subscribers.
         mdata = {
             'id': new_id,
+            'domain': const.MailinglistDomain.lists,
             'ml_type': const.MailinglistTypes.member_opt_out,
         }
         self.ml.set_mailinglist(self.key, mdata)
@@ -1380,6 +1390,7 @@ class TestMlBackend(BackendTest):
         # outside of the audience.
         mdata = {
             'id': new_id,
+            'domain': const.MailinglistDomain.lists,
             'ml_type': const.MailinglistTypes.member_mandatory,
         }
         self.ml.set_mailinglist(self.key, mdata)
@@ -1429,6 +1440,7 @@ class TestMlBackend(BackendTest):
         mdata = {
             'id': new_id,
             'event_id': 1,
+            'domain': const.MailinglistDomain.aka,
             'ml_type': const.MailinglistTypes.event_orga,
         }
         self.ml.set_mailinglist(self.key, mdata)
@@ -1441,6 +1453,7 @@ class TestMlBackend(BackendTest):
 
         mdata = {
             'id': new_id,
+            'domain': const.MailinglistDomain.aka,
             'ml_type': const.MailinglistTypes.event_associated,
             'registration_stati': [const.RegistrationPartStati.guest,
                                    const.RegistrationPartStati.cancelled],
@@ -1456,6 +1469,7 @@ class TestMlBackend(BackendTest):
 
         mdata = {
             'id': new_id,
+            'domain': const.MailinglistDomain.lists,
             'ml_type': const.MailinglistTypes.assembly_associated,
             'event_id': None,
             'assembly_id': 1,
@@ -1849,6 +1863,7 @@ class TestMlBackend(BackendTest):
                     const.RegistrationPartStati.waitlist,
                 ],
                 'event_id': 1,
+                'domain': const.MailinglistDomain.aka,
                 'ml_type': const.MailinglistTypes.event_associated,
             }
             self.assertTrue(self.ml.set_mailinglist(self.key, mdata))
@@ -1856,6 +1871,7 @@ class TestMlBackend(BackendTest):
             # Attempt to change the mailinglist type.
             mdata = {
                 'id': new_id,
+                'domain': const.MailinglistDomain.lists,
                 'ml_type': const.MailinglistTypes.member_opt_in,
             }
             if self.user['display_name'] != "Nina":
@@ -1899,6 +1915,7 @@ class TestMlBackend(BackendTest):
             mdata = {
                 'id': new_id,
                 'assembly_id': 2,
+                'domain': const.MailinglistDomain.lists,
                 'ml_type': const.MailinglistTypes.assembly_associated,
             }
             self.assertTrue(self.ml.set_mailinglist(self.key, mdata))
@@ -1906,6 +1923,7 @@ class TestMlBackend(BackendTest):
             # Attempt to change the mailinglist type.
             mdata = {
                 'id': new_id,
+                'domain': const.MailinglistDomain.lists,
                 'ml_type': const.MailinglistTypes.member_opt_in,
             }
             if not self.user_in("nina"):
@@ -1947,6 +1965,7 @@ class TestMlBackend(BackendTest):
             # Modify the new mailinglist.
             mdata = {
                 'id': new_id,
+                'domain': const.MailinglistDomain.lists,
                 'ml_type': const.MailinglistTypes.member_opt_out,
             }
             self.assertTrue(self.ml.set_mailinglist(self.key, mdata))
@@ -1954,6 +1973,7 @@ class TestMlBackend(BackendTest):
             # Attempt to change the mailinglist type.
             mdata = {
                 'id': new_id,
+                'domain': const.MailinglistDomain.lists,
                 'ml_type': const.MailinglistTypes.general_opt_in,
             }
             if not self.user_in("nina"):
