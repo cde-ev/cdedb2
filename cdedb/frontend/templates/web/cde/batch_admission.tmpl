@@ -1,14 +1,31 @@
 {% set sidenav_active='cde_manage_users' %}
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block scripts %}{{ util.cdedb_script('cdedb_csv_tools.js') }}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
-{% set jshint='strong' %}
-{% block title %}{% trans %}Create Accounts{% endtrans %}{% endblock %}
-{% block breadcrumb %}
-{{ super() }}
-{{ util.breadcrumb_link(cdedblink("cde/user_search"), gettext("Manage Users")) }}
-{{ util.breadcrumb_link(cdedblink("cde/batch_admission_form"), gettext("Batch Admission"), active=True) }}
+
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_csv_tools.js') }}
+    {{ util.cdedb_script('cdedb_helper.js') }}
 {% endblock %}
+
+{% set jshint='strong' %}
+
+{% block title %}
+    {% trans %}Create Accounts{% endtrans %}
+{% endblock %}
+
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("cde/user_search"), gettext("Manage Users")) }}
+    {{ util.breadcrumb_link(cdedblink("cde/batch_admission_form"), gettext("Batch Admission"), active=True) }}
+{% endblock %}
+
+{% block heading %}
+    {{ util.doclink("Handbuch_Verwaltungsteam", anchor="massenaufnahme-von-mitgliedern") }}
+    <h1 class="title">
+        {% trans %}Create Accounts{% endtrans %}
+    </h1>
+{% endblock %}
+
 {% macro ba_submit_button() %}
     {% if values['finalized'] %}
         {{ util.form_input_submit(label=gettext("Create"), horizontal=False) }}
@@ -20,6 +37,7 @@
         {% endif %}
     {% endif %}
 {% endmacro %}
+
 {% block content %}
     <form action="{{ cdedblink('cde/batch_admission') }}" method="POST" id="admissionform">
         {{ util.anti_csrf_token('cde/batch_admission') }}
@@ -61,13 +79,18 @@
         {% if data %}
             <h2>{% trans %}Validation results{% endtrans %}</h2>
             {% for dataset in data %}
-                {{ util.input_hidden("hash{}".format(dataset['lineno'] - 1)) }}
+                {{ util.input_hidden("hash{}".format(dataset['lineno'])) }}
                 <strong>
                     <span class="row-key" data-row="{{ dataset['lineno'] }}">
-                        {% trans lineno=dataset['lineno'] %}Line {{ lineno }}{% endtrans -%}
+                        {% trans lineno=dataset['lineno'] + 1 %}Line {{ lineno }}{% endtrans -%}
                     </span>:
                     {{ dataset['raw']['given_names'] }} {{ dataset['raw']['family_name'] }}
-                    &lt;{{ dataset['raw']['username'] }}&gt; {% trans %}born{% endtrans %} {{ dataset['raw']['birthday'] }}
+                    {% if dataset['raw']['username'] %}
+                        &lt;{{ dataset['raw']['username'] }}&gt;
+                    {% endif %}
+                    {% if dataset['raw']['birthday'] %}
+                        {% trans %}born{% endtrans %} {{ dataset['raw']['birthday'] }}
+                    {% endif %}
                     {% if dataset['pevent_id'] %}
                         ({{ pevents[dataset['pevent_id']] }}
                         {%- if dataset['pcourse_id'] -%}
@@ -76,6 +99,7 @@
                         )
                     {% endif %}
                 </strong>
+
                 <div class="batch-line-body">
                     {% if dataset['problems'] or dataset['warnings'] %}
                         <ul class="list-unstyled">
@@ -105,20 +129,30 @@
                             {% endfor %}
                         </ul>
                     {% endif %}
+
                     <div class="row">
                         <div class="col-md-6">
                             <label>{% trans %}Action{% endtrans %}</label>
                             <div class="p">
                                 {#- jinja does not support list comprehension ... #}
                                 {%- set myentries = [] %}
-                                {%- for resolution in enums['LineResolutions']
-                                        if dataset['doppelgangers'] or not resolution.is_modification() %}
+                                {%- for resolution in enums['LineResolutions'] if dataset['doppelgangers'] or not resolution.is_modification() %}
+                                    {# We map None -> LineResolutions.none later in the frontend #}
+                                    {% if resolution == enums['LineResolutions'].none %}
+                                        {% continue %}
+                                    {% endif %}
                                     {%- do myentries.append((resolution.value, gettext(resolution|string))) %}
                                 {%- endfor %}
-                                {{ util.input_select("resolution{}".format(dataset['lineno'] - 1), myentries,
+                                {{ util.input_select("resolution{}".format(dataset['lineno']), myentries,
                                         nulloption=nbsp, aclass="form-control select-action",
                                         arialabel=gettext("Operation for line %s")|format(dataset['lineno'])) }}
                             </div>
+                            {% if dataset['pevent_id'] %}
+                                {{ util.input_checkbox("is_orga{}".format(dataset['lineno']), label=gettext("Orga")) }}
+                                {% if dataset['pcourse_id'] %}
+                                    &emsp;{{ util.input_checkbox("is_instructor{}".format(dataset['lineno']), label=gettext("Course instructor")) }}
+                                {% endif %}
+                            {% endif %}
                         </div>
 
                         {% if dataset['doppelgangers'] %}
@@ -130,16 +164,16 @@
                                     {#- jinja does not support list comprehension ... #}
                                     {%- set myentries = [('', '–')] %}
                                     {%- for key, value in dataset['doppelgangers']|keydictsort(EntitySorter.persona) %}
-                                        {%- with description = "{} {} ({}) <{}> ({} {}), {}{}".format(
+                                        {%- with description = "{} {} {} <{}> ({} {}), {}{}".format(
                                                 value['given_names'], value['family_name'],
-                                                value['birth_name'] or value['family_name'],
+                                                "(" + value['birth_name'] + ")" if value['birth_name'] else "",
                                                 value['username'], gettext("born"),
                                                 value['birthday']|date(lang=lang) or "–", key|cdedbid,
                                                 '' if value['is_member'] else gettext(" (not a Member)")) %}
                                             {%- do myentries.append((key, description)) %}
                                         {%- endwith %}
                                     {%- endfor %}
-                                    {{ util.input_checkboxes("doppelganger_id{}".format(dataset['lineno'] - 1),
+                                    {{ util.input_checkboxes("doppelganger_id{}".format(dataset['lineno']),
                                             myentries, radio=True,
                                             arialabeledby="doppelgangers-{}-label".format(dataset['lineno'])) }}
                                 </div>

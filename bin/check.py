@@ -6,7 +6,8 @@ import pathlib
 import subprocess
 import sys
 import unittest
-from typing import List, Tuple
+from types import TracebackType
+from typing import List, Optional, TextIO, Tuple, Type
 
 # the directory containing the cdedb and tests modules
 root = pathlib.Path(__file__).absolute().parent.parent
@@ -16,6 +17,62 @@ sys.path.append(str(root))
 os.chdir(root)
 
 from bin.test_runner_helpers import MyTextTestResult, MyTextTestRunner, check_test_setup
+
+
+class CdEDBTestLock:
+    """
+    Simple lock mechanism to prevent multiple tests accessing the same
+    test database and files simultaneously.
+    """
+    # Identifiers of existing test threads. Only truthy values allowed.
+    # Take care that the database setup is configured accordingly.
+    # TODO: improve this in #1948
+    THREADS = (1, 2, 3, 4)
+
+    thread_id: Optional[int]
+    lockfile: TextIO
+
+    def __init__(self, thread_id: Optional[int] = None):
+        if not ((thread_id is None) or (thread_id in self.THREADS)):
+            raise RuntimeError("Invalid thread id")
+        self.thread_id = thread_id
+
+    @property
+    def lockfile_path(self) -> pathlib.Path:
+        return pathlib.Path('/tmp') / f'cdedb-test-{self.thread_id}.lock'
+
+    def acquire(self) -> None:
+        """Lock the thread"""
+        if self.thread_id is not None:
+            try:
+                self.lockfile = open(self.lockfile_path, 'x')
+                return
+            except FileExistsError:
+                raise RuntimeError(f"Thread {self.thread_id} is currently in use.")
+        else:
+            for thread_id in self.THREADS:
+                try:
+                    self.thread_id = thread_id
+                    self.lockfile = open(self.lockfile_path, 'x')
+                    return
+                except FileExistsError:
+                    continue
+            self.thread_id = None
+            raise RuntimeError("All threads are currently in use.")
+
+    def release(self) -> None:
+        """Unlock the thread"""
+        self.lockfile.close()
+        self.lockfile_path.unlink()
+
+    def __enter__(self) -> "CdEDBTestLock":
+        self.acquire()
+        return self
+
+    def __exit__(self, exc_type: Optional[Type[BaseException]],
+                 exc_val: Optional[BaseException],
+                 exc_tb: Optional[TracebackType]) -> None:
+        self.release()
 
 
 def _prepare_check(thread_id: int = 1) -> None:
@@ -64,8 +121,8 @@ def run_testsuite(testpatterns: List[str] = None, *, thread_id: int = 1,
     unittest.installHandler()
     test_runner = MyTextTestRunner(
         verbosity=2, resultclass=MyTextTestResult, descriptions=False)
-
-    return 0 if test_runner.run(all_tests).wasSuccessful() else 1
+    ran_tests = test_runner.run(all_tests)
+    return 0 if ran_tests.wasSuccessful() else 1
 
 
 if __name__ == '__main__':
@@ -80,9 +137,9 @@ if __name__ == '__main__':
                               help="don't do test preparation")
     thread_options = test_options.add_mutually_exclusive_group()
     thread_options.add_argument(
-        '--thread-id', type=int, choices=(1, 2, 3, 4), default=1, metavar="INT",
-        help="ID of thread to use for run (this is useful if you manually start"
-             " multiple test suite runs in parallel)")
+        '--thread-id', type=int, choices=(1, 2, 3, 4), metavar="INT",
+        help="ID of thread to use for run (optional, if not given, choose free thread"
+             " automatically)")
     thread_options.add_argument('--threads', type=int, choices=(1, 2, 3), default=1,
                                 metavar="NUMBER", help="number of threads to use")
 
@@ -99,13 +156,15 @@ if __name__ == '__main__':
     # TODO: implement verbosity settings -v and -q (-v currently only used for xss)
     args = parser.parse_args()
 
-    # TODO: implement some kind of lock mechanism, which prevents race conditions by
-    #  prohibiting parallel runs with the same thread_id
-    if args.xss_check:
-        return_code = check_xss(args.payload, thread_id=args.thread_id,
-                                verbose=args.verbose,
-                                manual_preparation=args.manual_preparation)
-    else:
-        return_code = run_testsuite(args.testpatterns, thread_id=args.thread_id,
+    with CdEDBTestLock(args.thread_id) as Lock:
+        assert Lock.thread_id is not None
+        print(f"Using thread {Lock.thread_id}", file=sys.stderr)
+        if args.xss_check:
+            return_code = check_xss(args.payload, thread_id=Lock.thread_id,
+                                    verbose=args.verbose,
                                     manual_preparation=args.manual_preparation)
+        else:
+            return_code = run_testsuite(args.testpatterns, thread_id=Lock.thread_id,
+                                        manual_preparation=args.manual_preparation)
+
     sys.exit(return_code)

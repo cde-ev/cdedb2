@@ -29,8 +29,6 @@
                      aclass="btn btn-sm btn-warning", icon='user') }}
     </div>
 
-    <div class="row">
-        <div class="col-md-6">
             <dl class="dl-horizontal">
                 <dt>{% trans %}Regular Capacity{% endtrans %}</dt>
                 <dd>{{ ambience['lodgement']['regular_capacity'] }}</dd>
@@ -75,21 +73,18 @@
                     {% endif %}
                 {% endfor %}
             </dl>
-        </div>
 
-        {% if ambience['lodgement']['notes'] %}
-            <div class="col-md-6">
-                {% call util.bootstrap_panel(gettext("Orga-Notes"), icon='tag',
-                                             aclass='panel panel-default panel-condensed') %}
-                    {{ ambience['lodgement']['notes']|md }}
-                {% endcall %}
-            </div>
-        {% endif %}
-    </div>
+    {% if ambience['lodgement']['notes'] %}
+        {% call util.bootstrap_panel(title=gettext("Orga-Notes"), icon="tag",
+                                 aclass="panel panel-default panel-condensed") %}
+            {{ ambience['lodgement']['notes']|md }}
+        {% endcall %}
+    {% endif %}
 
     <h2>{% trans %}Inhabitants{% endtrans %}</h2>
-    <div class="row">
-        {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+    {% for batch in ambience['event']['parts']|keydictsort(EntitySorter.event_part)|batch(3) %}
+        <div class="row">
+        {% for part_id, part in batch %}
             <div class="col-md-4" id="inhabitants-{{ part_id }}">
                 <div class="panel panel-info panel-condensed">
                     <div class="panel-heading">
@@ -137,7 +132,8 @@
                 </div>
             </div>
         {% endfor %}
-    </div>
+        </div>
+    {% endfor %}
 
     {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
         <div class="row">
