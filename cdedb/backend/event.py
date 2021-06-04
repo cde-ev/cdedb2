@@ -2770,20 +2770,27 @@ class EventBackend(AbstractBackend):
                 ret[anid]['tracks'] = tracks
                 ret[anid]['fields'] = cast_fields(ret[anid]['fields'], event_fields)
 
-            reg_created = const.EventLogCodes.registration_created
-            reg_changed = const.EventLogCodes.registration_changed
-            _, log = self.retrieve_log(
-                rs, event_id=event_id, codes=[reg_created, reg_changed])
-            for anid in ret:
-                ctime = [e['ctime'] for e in log
-                         if e['persona_id'] == anid and e['code'] == reg_created]
-                ctime.sort(reverse=True)
-                ret[anid]['ctime'] = next(iter(ctime), None)
-
-                mtime = [e['mtime'] for e in log
-                         if e['persona_id'] == anid and e['code'] == reg_changed]
-                mtime.sort(reverse=True)
-                ret[anid]['mtime'] = next(iter(mtime), None)
+            query = """
+                SELECT event.registrations.id, ctime, mtime
+                FROM event.registrations
+                LEFT OUTER JOIN (
+                    SELECT persona_id, MAX(ctime) AS ctime
+                    FROM event.log WHERE code = %s GROUP BY persona_id
+                ) AS ctime
+                ON event.registrations.persona_id = ctime.persona_id
+                LEFT OUTER JOIN (
+                    SELECT persona_id, MAX(ctime) AS mtime
+                    FROM event.log WHERE code = %s GROUP BY persona_id
+                ) AS mtime
+                ON event.registrations.persona_id = mtime.persona_id
+                WHERE event.registrations.id = ANY(%s)
+                """
+            params = (const.EventLogCodes.registration_created,
+                      const.EventLogCodes.registration_changed, registration_ids)
+            logs = self.query_all(rs, query, params)
+            for log in logs:
+                ret[log['id']]['ctime'] = log['ctime']
+                ret[log['id']]['mtime'] = log['mtime']
         return ret
 
     class _GetRegistrationProtocol(Protocol):
