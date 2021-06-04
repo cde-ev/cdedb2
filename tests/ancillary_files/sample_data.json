@@ -644,7 +644,7 @@
             "title": null,
             "name_supplement": null,
             "gender": 1,
-            "birthday": null,
+            "birthday": "0001-01-01",
             "telephone": null,
             "mobile": null,
             "address_supplement": null,

@@ -1209,6 +1209,8 @@ def _date(
 
 @_add_typed_validator
 def _birthday(val: Any, argname: str = None, **kwargs: Any) -> Birthday:
+    if not val:
+        val = datetime.date.min
     val = _date(val, argname=argname, **kwargs)
     if now().date() < val:
         raise ValidationSummary(ValueError(
