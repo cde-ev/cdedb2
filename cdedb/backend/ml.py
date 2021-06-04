@@ -23,8 +23,8 @@ import cdedb.subman as subman
 from cdedb.common import (
     MAILINGLIST_FIELDS, MOD_ALLOWED_FIELDS, RESTRICTED_MOD_ALLOWED_FIELDS, CdEDBLog,
     CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, PathLike,
-    PrivilegeError, RequestState, implying_realms, make_proxy, mixed_existence_sorter,
-    n_, unwrap, ADMIN_KEYS,
+    PrivilegeError, RequestState, implying_realms, make_proxy, n_, unwrap, xsorted,
+    ADMIN_KEYS,
 )
 from cdedb.subman.machine import SubscriptionAction, SubscriptionPolicy
 from cdedb.database.connection import Atomizer
@@ -426,7 +426,7 @@ class MlBackend(AbstractBackend):
             if not self.core.verify_personas(rs, persona_ids, {"ml"}):
                 raise ValueError(n_("Some of these users are not ml users."))
 
-            for anid in mixed_existence_sorter(persona_ids):
+            for anid in xsorted(persona_ids):
                 new_mod = {
                     'persona_id': anid,
                     'mailinglist_id': mailinglist_id,

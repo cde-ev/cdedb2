@@ -1568,7 +1568,7 @@ class EventBackend(AbstractBackend):
                 raise ValueError(n_("Some of these orgas are not event users."))
             self.assert_offline_lock(rs, event_id=event_id)
 
-            for anid in mixed_existence_sorter(persona_ids):
+            for anid in xsorted(persona_ids):
                 new_orga = {
                     'persona_id': anid,
                     'event_id': event_id,

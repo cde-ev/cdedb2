@@ -546,7 +546,7 @@ class AssemblyBackend(AbstractBackend):
                 raise ValueError(n_(
                     "Some of these users are not assembly users."))
 
-            for anid in mixed_existence_sorter(persona_ids):
+            for anid in xsorted(persona_ids):
                 new_presider = {
                     'persona_id': anid,
                     'assembly_id': assembly_id,
