@@ -552,7 +552,8 @@ class AssemblyBackend(AbstractBackend):
                     'assembly_id': assembly_id,
                 }
                 # on conflict do nothing
-                r = self.sql_insert(rs, "assembly.presiders", new_presider, unique=True)
+                r = self.sql_insert(rs, "assembly.presiders", new_presider,
+                                    drop_on_conflict=True)
                 if r:
                     self.assembly_log(
                         rs, const.AssemblyLogCodes.assembly_presider_added,

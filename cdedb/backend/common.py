@@ -344,7 +344,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                     for x in cur.fetchall())
 
     def sql_insert(self, rs: RequestState, table: str, data: CdEDBObject,
-                   entity_key: str = "id", unique: bool = False) -> int:
+                   entity_key: str = "id", drop_on_conflict: bool = False) -> int:
         """Generic SQL insertion query.
 
         See :py:meth:`sql_select` for thoughts on this.
@@ -355,7 +355,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         keys = tuple(key for key in data)
         query = (f"INSERT INTO {table} ({', '.join(keys)}) VALUES"
                  f" ({', '.join(('%s',) * len(keys))})")
-        if unique:
+        if drop_on_conflict:
             query += " ON CONFLICT DO NOTHING"
         query += f" RETURNING {entity_key}"
         params = tuple(data[key] for key in keys)

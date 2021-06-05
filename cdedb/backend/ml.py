@@ -432,10 +432,11 @@ class MlBackend(AbstractBackend):
                     'mailinglist_id': mailinglist_id,
                 }
                 # on conflict do nothing
-                r = self.sql_insert(rs, "ml.moderators", new_mod, unique=True)
+                r = self.sql_insert(rs, "ml.moderators", new_mod,
+                                    drop_on_conflict=True)
                 if r:
                     self.ml_log(rs, const.MlLogCodes.moderator_added, mailinglist_id,
-                                    persona_id=anid, change_note=change_note)
+                                persona_id=anid, change_note=change_note)
                 ret *= r
 
         return ret
@@ -483,7 +484,8 @@ class MlBackend(AbstractBackend):
             'mailinglist_id': mailinglist_id,
         }
         with Atomizer(rs):
-            ret = self.sql_insert(rs, "ml.whitelist", new_white, unique=True)
+            ret = self.sql_insert(rs, "ml.whitelist", new_white,
+                                  drop_on_conflict=True)
             if ret:
                 self.ml_log(rs, const.MlLogCodes.whitelist_added,
                             mailinglist_id, change_note=address)
