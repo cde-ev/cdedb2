@@ -430,7 +430,7 @@ class MlBackend(AbstractBackend):
 
             if not self.may_manage(rs, mailinglist_id):
                 raise PrivilegeError("Not privileged.")
-            current = unwrap(self.get_mailinglists(rs, (mailinglist_id,)))
+            current = self.get_mailinglist(rs, mailinglist_id)
 
             existing = current['moderators']
             new = moderators - existing
@@ -472,7 +472,7 @@ class MlBackend(AbstractBackend):
 
         ret = 1
         with Atomizer(rs):
-            current = unwrap(self.get_mailinglists(rs, (mailinglist_id,)))
+            current = self.get_mailinglist(rs, mailinglist_id)
 
             existing = current['whitelist']
             new = whitelist - existing
@@ -534,7 +534,7 @@ class MlBackend(AbstractBackend):
 
         ret = 1
         with Atomizer(rs):
-            current = unwrap(self.get_mailinglists(rs, (data['id'],)))
+            current = self.get_mailinglist(rs, data['id'])
             changed = {k for k, v in data.items()
                        if k not in current or v != current[k]}
             is_admin = self.is_relevant_admin(rs, mailinglist=current)

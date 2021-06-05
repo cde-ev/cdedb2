@@ -75,7 +75,7 @@
                         <script nonce="{{ csp_nonce }}">
                             $('#input-add-presiders').cdedbSearchPerson(
                                 '{{ (cdedblink('core/select_persona')|e) + ('?kind=assembly_user&phrase=%s'|s) }}',
-                                {{ ambience['assembly']['presiders']|list|json|s }}, false, true,
+                                {{ ambience['assembly']['presiders']|list|tojson }}, false, true,
                                 "{{ gettext("ID, name, email") }}"
                             );
                         </script>

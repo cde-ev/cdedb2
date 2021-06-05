@@ -151,6 +151,7 @@ I18N_STRINGS = (
     n_("GenesisStati.successful"),
     n_("GenesisStati.rejected"),
 
+    n_("LineResolutions.none"),
     n_("LineResolutions.create"),
     n_("LineResolutions.skip"),
     n_("LineResolutions.renew_trial"),
