@@ -292,14 +292,11 @@ def date_filter(val: Union[datetime.date, str, None],
 
 def datetime_filter(val: Union[datetime.datetime, str, None],
                     formatstr: str = "%Y-%m-%d %H:%M (%Z)", lang: str = None,
-                    verbosity: str = "medium",
                     passthrough: bool = False) -> Optional[str]:
     """Custom jinja filter to format ``datetime.datetime`` objects.
 
     :param formatstr: Formatting used, if no l10n happens.
     :param lang: If not None, then localize to the passed language.
-    :param verbosity: Controls localized formatting. Takes one of the
-      following values: short, medium, long and full.
     :param passthrough: If True return strings unmodified.
     """
     if val is None or val == '' or not isinstance(val, datetime.datetime):
@@ -313,16 +310,9 @@ def datetime_filter(val: Union[datetime.datetime, str, None],
         _LOGGER.warning("Found naive datetime object {}.".format(val))
 
     if lang:
-        verbosity_mapping = {
-            "short": icu.DateFormat.SHORT,
-            "medium": icu.DateFormat.MEDIUM,
-            "long": icu.DateFormat.LONG,
-            "full": icu.DateFormat.FULL,
-        }
         locale = icu.Locale(lang)
         datetime_formatter = icu.DateFormat.createDateTimeInstance(
-            verbosity_mapping[verbosity], verbosity_mapping[verbosity], locale
-        )
+            icu.DateFormat.MEDIUM, icu.DateFormat.MEDIUM, locale)
         zone = _BASICCONF["DEFAULT_TIMEZONE"].zone
         datetime_formatter.setTimeZone(icu.TimeZone.createTimeZone(zone))
         return datetime_formatter.format(val)
