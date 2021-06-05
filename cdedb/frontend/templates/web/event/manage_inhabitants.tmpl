@@ -26,9 +26,9 @@
 {% block content %}
     <form action="{{ cdedblink('event/manage_inhabitants') }}" method="POST" id="manageinhabitantsform">
         {{ util.anti_csrf_token('event/manage_inhabitants') }}
-        {% for slice in ambience['event']['parts']|keydictsort(EntitySorter.event_part)|slice(2) %}
+        {% for batch in ambience['event']['parts']|keydictsort(EntitySorter.event_part)|batch(2) %}
             <div class="row">
-            {% for part_id, part in slice %}
+            {% for part_id, part in batch %}
                 <div class="col-md-6">
                     {% call util.bootstrap_panel(title=(part['title'] if ambience['event']['parts']|length > 1
                                                                       else gettext("Assigned Inhabitants")),

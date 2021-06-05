@@ -64,7 +64,6 @@ TESTDATABASENAME ?= $(or ${CDEDB_TEST_DATABASE}, cdb_test)
 TESTTMPDIR ?= $(or ${CDEDB_TEST_TMP_DIR}, /tmp/cdedb-test-default )
 TESTSTORAGEPATH ?= $(TESTTMPDIR)/storage
 TESTLOGPATH ?= $(TESTTMPDIR)/logs
-THREADID ?= 1
 XSS_PAYLOAD ?= $(or ${CDEDB_TEST_XSS_PAYLOAD}, <script>abcdef</script>)
 I18NDIR ?= ./i18n
 
@@ -259,19 +258,19 @@ check-parallel:
 	# TODO: move this logic into bin/check.py
 	# TODO: using inverse regex arguments possible? Would be helpful for not overlooking some tests
 	# sleeping is necessary here that the i18n-refresh runs at the very beginning to not interfere
-	$(PYTHONBIN) -m bin.check --thread-id 2 \
+	$(PYTHONBIN) -m bin.check \
 		test_backend test_common test_config test_database test_offline test_script test_session \
 		test_validation test_vote_verification & \
 	sleep 0.5; \
-	$(PYTHONBIN) -m bin.check --thread-id 4 \
+	$(PYTHONBIN) -m bin.check \
 		frontend_event frontend_ml frontend_privacy frontend_parse & \
 	sleep 0.5; \
-	$(PYTHONBIN) -m bin.check --thread-id 3 \
+	$(PYTHONBIN) -m bin.check \
 		frontend_application frontend_assembly frontend_common frontend_core frontend_cde \
 		frontend_cron
 
 check:
-	$(PYTHONBIN) -m bin.check --thread-id $(THREADID) $(or $(TESTPATTERNS), )
+	$(PYTHONBIN) -m bin.check $(or $(TESTPATTERNS), )
 
 sql-xss: tests/ancillary_files/sample_data_xss.sql
 ifneq ($(wildcard /CONTAINER),/CONTAINER)
@@ -285,14 +284,14 @@ endif
 	$(PSQL) -f tests/ancillary_files/sample_data_xss.sql --dbname=${TESTDATABASENAME}
 
 xss-check:
-	$(PYTHONBIN) -m bin.check --thread-id $(THREADID) --xss-check --verbose
+	$(PYTHONBIN) -m bin.check --xss-check --verbose
 
 dump-html:
 	$(MAKE) -B /tmp/cdedb-dump/
 
 /tmp/cdedb-dump/: export CDEDB_TEST_DUMP_DIR=/tmp/cdedb-dump/
 /tmp/cdedb-dump/:
-	$(PYTHONBIN) -m bin.check --thread-id $(THREADID) test_frontend
+	$(PYTHONBIN) -m bin.check test_frontend
 
 validate-html: /tmp/cdedb-dump/ /opt/validator/vnu-runtime-image/bin/vnu
 	/opt/validator/vnu-runtime-image/bin/vnu --no-langdetect --stdout \
@@ -317,7 +316,7 @@ VALIDATORCHECKSUM := "f56d95448fba4015ec75cfc9546e3063e8d66390 /opt/validator/vn
 
 .coverage: $(wildcard cdedb/*.py) $(wildcard cdedb/database/*.py) $(wildcard cdedb/frontend/*.py) \
 		$(wildcard cdedb/backend/*.py) $(wildcard tests/*.py)
-	$(COVERAGE) run -m bin.check --thread-id $(THREADID)
+	$(COVERAGE) run -m bin.check
 
 coverage: .coverage
 	$(COVERAGE) report --include 'cdedb/*' --show-missing

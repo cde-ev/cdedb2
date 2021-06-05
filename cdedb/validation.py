@@ -52,8 +52,8 @@ import re
 import string
 from enum import Enum
 from typing import (
-    Callable, Iterable, Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar, Union,
-    cast, get_type_hints, overload,
+    Callable, Iterable, Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar,
+    Union, cast, get_type_hints, overload, Generic
 )
 
 import magic
@@ -181,6 +181,15 @@ def validate_check_optional(
     type_: Type[T], value: Any, **kwargs: Any
 ) -> Tuple[Optional[T], List[Error]]:
     return validate_check(Optional[type_], value, **kwargs)  # type: ignore
+
+
+# TODO replace with get_origin etc in Python 3.8 from typing
+get_args = lambda t: getattr(t, '__args__', ()) if t is not Generic else Generic
+get_origin = lambda t: getattr(t, '__origin__', None)
+
+
+def is_optional(type_: Type[T]) -> bool:
+    return get_origin(type_) is Union and NoneType in get_args(type_)
 
 
 def _allow_None(fun: Callable[..., T]) -> Callable[..., Optional[T]]:
@@ -3501,15 +3510,14 @@ def _mailinglist(
 
     errs = ValidationSummary()
 
-    if "domain" in val:
-        if "ml_type" not in val:
+    if "domain" not in val:
+        errs.append(ValueError("domain",
+            "Must specify domain for setting mailinglist."))
+    else:
+        atype = ml_type.get_type(val["ml_type"])
+        if val["domain"].value not in atype.domains:
             errs.append(ValueError("domain", n_(
-                "Must specify mailinglist type to change domain.")))
-        else:
-            atype = ml_type.get_type(val["ml_type"])
-            if val["domain"].value not in atype.domains:
-                errs.append(ValueError("domain", n_(
-                    "Invalid domain for this mailinglist type.")))
+                "Invalid domain for this mailinglist type.")))
 
     if errs:
         raise errs

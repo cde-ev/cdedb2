@@ -9,11 +9,11 @@
                 <th class="col-sm-{% if is_classical %}10{% else %}9{% endif %}">
                     {% trans %}Candidates{% endtrans %}
                 </th>
-                <th class="col-sm-1">
+                <th class="col-sm-1 text-right">
                     {{ util.make_icon('plus', title=gettext("Pro-Votes"), fixed_width=False) }}
                 </th>
             {% if not is_classical %}
-                <th class="col-sm-1">
+                <th class="col-sm-1 text-right">
                     {{ util.make_icon('minus', title=gettext("Contra-Votes"), fixed_width=False) }}
                 </th>
             {% endif %}
@@ -43,14 +43,14 @@
                             {% endif %}
                         </td>
                     {% else %}
-                        <td>
+                        <td class="text-right">
                             {% for level in result['counts'] %}
                                 {% if candidate_shortname in level['winner'] and first_candidate %}
                                     {{ level['pro_votes'] }}
                                 {% endif %}
                             {% endfor %}
                         </td>
-                        <td>
+                        <td class="text-right">
                             {% for level in result['counts'] %}
                                 {% if candidate_shortname in level['winner'] and first_candidate %}
                                     {{ level['contra_votes'] }}
@@ -95,11 +95,11 @@
                 </td>
             {% if is_classical %}
                 {# this are the votes for the 'against all' choice #}
-                <td>
+                <td class="text-right">
                     {{ result['counts'][ASSEMBLY_BAR_SHORTNAME] }}
                 </td>
             {% else %}
-                <td>
+                <td class="text-right">
                     {% for level in result['counts'] %}
                         {# It is possible that a candidate is equal to bar. This candidate will be in the winner section.
                            So, if bar is a winner and not the only winner, we do not show the votes. #}
@@ -108,7 +108,7 @@
                         {% endif %}
                     {% endfor %}
                 </td>
-                <td>
+                <td class="text-right">
                     {% for level in result['counts'] %}
                         {# see above for a detailed explanation #}
                         {% if ASSEMBLY_BAR_SHORTNAME in level['winner'] and level['winner']|length == 1 %}
@@ -136,20 +136,20 @@
                             {{ ballot['candidates'][candidate_id]['title'] }}
                         </td>
                     {% if is_classical %}
-                        <td>
+                        <td class="text-right">
                             {% if first_candidate %}
                                 {{ result['counts'][candidate_shortname] }}
                             {% endif %}
                         </td>
                     {% else %}
-                        <td>
+                        <td class="text-right">
                             {% for level in result['counts'] %}
                                 {% if candidate_shortname in level['winner'] and first_candidate %}
                                     {{ level['pro_votes'] }}
                                 {% endif %}
                             {% endfor %}
                         </td>
-                        <td>
+                        <td class="text-right">
                             {% for level in result['counts'] %}
                                 {% if candidate_shortname in level['winner'] and first_candidate %}
                                     {{ level['contra_votes'] }}
