@@ -549,7 +549,7 @@ class MlBackend(AbstractBackend):
 
         ret = 1
         with Atomizer(rs):
-            current = unwrap(self.get_mailinglists(rs, (data['id'],)))
+            current = self.get_mailinglist(rs, data['id'])
             changed = {k for k, v in data.items()
                        if k not in current or v != current[k]}
             is_admin = self.is_relevant_admin(rs, mailinglist=current)

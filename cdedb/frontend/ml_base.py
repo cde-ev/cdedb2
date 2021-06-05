@@ -511,8 +511,9 @@ class MlBaseFrontend(AbstractUserFrontend):
         ml = rs.ambience['mailinglist']
         data['id'] = mailinglist_id
         data['ml_type'] = ml_type
+        data['domain'] = ml['domain']
         new_type = get_type(data['ml_type'])
-        if ml['domain'] not in new_type.domains:
+        if data['domain'] not in new_type.domains:
             data['domain'] = new_type.domains[0]
         data = check(rs, vtypes.Mailinglist, data)
         if rs.has_validation_errors():

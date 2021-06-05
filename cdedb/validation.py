@@ -3510,15 +3510,14 @@ def _mailinglist(
 
     errs = ValidationSummary()
 
-    if "domain" in val:
-        if "ml_type" not in val:
+    if "domain" not in val:
+        errs.append(ValueError("domain",
+            "Must specify domain for setting mailinglist."))
+    else:
+        atype = ml_type.get_type(val["ml_type"])
+        if val["domain"].value not in atype.domains:
             errs.append(ValueError("domain", n_(
-                "Must specify mailinglist type to change domain.")))
-        else:
-            atype = ml_type.get_type(val["ml_type"])
-            if val["domain"].value not in atype.domains:
-                errs.append(ValueError("domain", n_(
-                    "Invalid domain for this mailinglist type.")))
+                "Invalid domain for this mailinglist type.")))
 
     if errs:
         raise errs
