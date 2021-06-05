@@ -105,16 +105,11 @@ class TestAssemblyBackend(BackendTest):
         expectation['is_active'] = True
         self.assertEqual(expectation, self.assembly.get_assembly(
             self.key, new_id))
-        data = {
-            'id': new_id,
-            'presiders': {1},
-        }
-        self.assertLess(0, self.assembly.set_assembly(self.key, data))
-        self.assertTrue(self.assembly.set_assembly_presiders(self.key, new_id, {23}))
+        self.assertLess(0, self.assembly.remove_assembly_presider(self.key, new_id, 23))
+        self.assertTrue(self.assembly.add_assembly_presiders(self.key, new_id, {23}))
         # Check return of setting presiders to the same thing.
-        self.assertEqual(
-            -1, self.assembly.set_assembly_presiders(self.key, new_id, {23}))
-        expectation['presiders'] = {23}
+        self.assertEqual(0, self.assembly.add_assembly_presiders(self.key, new_id, {23}))
+        expectation['presiders'] = {1, 23}
         self.assertEqual(expectation, self.assembly.get_assembly(self.key, new_id))
         self.assertLess(0, self.assembly.delete_assembly(
             self.key, new_id, ("ballots", "attendees", "attachments",
@@ -587,7 +582,7 @@ class TestAssemblyBackend(BackendTest):
         new_id = self.assembly.create_assembly(self.key, data)
         non_member_id = USER_DICT["werner"]["id"]
         assert isinstance(non_member_id, int)
-        self.assertTrue(self.assembly.set_assembly_presiders(
+        self.assertTrue(self.assembly.add_assembly_presiders(
             self.key, new_id, {non_member_id}))
         self.login(non_member_id)
         # werner is no member, so he must use the external signup function
@@ -946,70 +941,70 @@ class TestAssemblyBackend(BackendTest):
              'persona_id': None,
              'submitted_by': sub_id},
             # we delete all log entries related to an entity when deleting it
-            {'id': 1009,
+            {'id': 1007,
              'change_note': "Außerordentliche Mitgliederversammlung",
              'assembly_id': None,
              'code': const.AssemblyLogCodes.assembly_deleted,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': 48},
-            {'id': 1010,
+            {'id': 1008,
              'change_note': 'Farbe des Logos',
              'assembly_id': 1,
              'code': const.AssemblyLogCodes.ballot_changed,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': sub_id},
-            {'id': 1011,
+            {'id': 1009,
              'change_note': 'aqua',
              'assembly_id': 1,
              'code': const.AssemblyLogCodes.candidate_added,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': sub_id},
-            {'id': 1012,
+            {'id': 1010,
              'change_note': 'rot',
              'assembly_id': 1,
              'code': const.AssemblyLogCodes.candidate_updated,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': sub_id},
-            {'id': 1013,
+            {'id': 1011,
              'change_note': 'gelb',
              'assembly_id': 1,
              'code': const.AssemblyLogCodes.candidate_removed,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': sub_id},
-            {'id': 1014,
+            {'id': 1012,
              'change_note': 'j',
              'assembly_id': 1,
              'code': const.AssemblyLogCodes.candidate_added,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': sub_id},
-            {'id': 1015,
+            {'id': 1013,
              'change_note': 'n',
              'assembly_id': 1,
              'code': const.AssemblyLogCodes.candidate_added,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': sub_id},
-            {'id': 1016,
+            {'id': 1014,
              'change_note': 'Verstehen wir Spaß',
              'assembly_id': 1,
              'code': const.AssemblyLogCodes.ballot_changed,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': sub_id},
-            {'id': 1017,
+            {'id': 1015,
              'change_note': 'Verstehen wir Spaß',
              'assembly_id': 1,
              'code': const.AssemblyLogCodes.ballot_created,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': sub_id},
-            {'id': 1018,
+            {'id': 1016,
              'change_note': 'Farbe des Logos',
              'assembly_id': 1,
              'code': const.AssemblyLogCodes.ballot_deleted,
