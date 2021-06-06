@@ -6894,7 +6894,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/show_history.tmpl:206
 #: cdedb/frontend/templates/web/core/show_user.tmpl:258
 msgid "Balance"
-msgstr ""
+msgstr "mensura pecuniae"
 
 #: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:27
 #: cdedb/frontend/templates/web/core/show_history.tmpl:277
@@ -6902,21 +6902,21 @@ msgstr ""
 #: cdedb/frontend/templates/web/logging.tmpl:35
 #: cdedb/frontend/templates/web/logging.tmpl:121
 msgid "Additional Info"
-msgstr ""
+msgstr "addita"
 
 #: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:29
 msgid "Overall Balance"
-msgstr ""
+msgstr "mensura universa pecuniae"
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:7
 #: cdedb/frontend/templates/web/event/change_registration.tmpl:21
 #, python-format
 msgid "Edit %(given_names)s %(family_name)s"
-msgstr ""
+msgstr "%(given_names)s %(family_name)s tracta"
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:15
 msgid "Edit Userdata"
-msgstr ""
+msgstr "data utentis tracta"
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:35
 #: cdedb/frontend/templates/web/core/change_user.tmpl:35
@@ -6926,7 +6926,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/generic.tmpl:139
 #: cdedb/frontend/templates/web/generic.tmpl:210
 msgid "First Given Name"
-msgstr ""
+msgstr "nomen, quo vocandus/a/um es"
+# TODO: Geschlecht
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:49
 #: cdedb/frontend/templates/web/core/show_history.tmpl:196
@@ -6934,7 +6935,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/generic.tmpl:170
 #: cdedb/frontend/templates/web/generic.tmpl:241
 msgid "Searchable"
-msgstr ""
+msgstr "visibilitas"
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:52
 #: cdedb/frontend/templates/web/core/change_user.tmpl:39
@@ -6943,11 +6944,11 @@ msgstr ""
 #: cdedb/frontend/templates/web/generic.tmpl:167
 #: cdedb/frontend/templates/web/generic.tmpl:238
 msgid "Printed exPuls"
-msgstr ""
+msgstr "exPulsus impressus"
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:56
 msgid "Visible to all Admins."
-msgstr ""
+msgstr "omnibus administratoribus visibilis"
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:58
 #: cdedb/frontend/templates/web/core/change_user.tmpl:47
@@ -6956,7 +6957,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/show_user.tmpl:318
 #: cdedb/frontend/templates/web/generic.tmpl:31
 msgid "Contact Information"
-msgstr ""
+msgstr "notitiae rationis"
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:62
 #: cdedb/frontend/templates/web/core/change_user.tmpl:52
@@ -6974,7 +6975,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/generic.tmpl:145
 #: cdedb/frontend/templates/web/generic.tmpl:216
 msgid "Mobile Phone"
-msgstr ""
+msgstr "telephonium mobile"
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:65
 #: cdedb/frontend/templates/web/core/change_user.tmpl:55
@@ -6985,12 +6986,13 @@ msgstr ""
 #: cdedb/frontend/templates/web/generic.tmpl:156
 #: cdedb/frontend/templates/web/generic.tmpl:227
 msgid "WWW"
-msgstr ""
+msgstr "WWW"
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:72
 #: cdedb/frontend/templates/web/core/change_user.tmpl:62
 msgid "This should be your primary address. The exPuls will be sent here."
-msgstr ""
+msgstr "hanc ad insriptionem locus tibi commorationis principalis sit. "
+"exPulsus huc mittetur."
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:85
 #: cdedb/frontend/templates/web/core/change_user.tmpl:75
@@ -6999,7 +7001,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/show_user.tmpl:375
 #: cdedb/frontend/templates/web/generic.tmpl:51
 msgid "Second Address"
-msgstr ""
+msgstr "inscriptio secunda"
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:87
 #: cdedb/frontend/templates/web/core/change_user.tmpl:77
@@ -7007,7 +7009,9 @@ msgid ""
 "This address is meant to be a “backup”, should the primary address not work. "
 "Please give an address where you can be reached long-term, e.g. your "
 "parents' address."
-msgstr ""
+msgstr "si inveniri ad primam inscriptionem non potes, hac inscriptione "
+"uteamur. quaesimus, quam ad inscriptionem longe inveniri poteris, dice, "
+"parentium exemplo inscriptionem."
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:102
 #: cdedb/frontend/templates/web/core/change_user.tmpl:91
@@ -7018,7 +7022,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/generic.tmpl:157
 #: cdedb/frontend/templates/web/generic.tmpl:228
 msgid "Specialisation"
-msgstr ""
+msgstr "disciplina"
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:104
 #: cdedb/frontend/templates/web/core/change_user.tmpl:93
@@ -7029,7 +7033,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/generic.tmpl:158
 #: cdedb/frontend/templates/web/generic.tmpl:229
 msgid "School, University, …"
-msgstr ""
+msgstr "schola, universitas studiorum, …"
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:106
 #: cdedb/frontend/templates/web/core/change_user.tmpl:95
@@ -7040,50 +7044,51 @@ msgstr ""
 #: cdedb/frontend/templates/web/generic.tmpl:159
 #: cdedb/frontend/templates/web/generic.tmpl:230
 msgid "Year(s) of Graduation"
-msgstr ""
+msgstr "anni erudentionis perficiendae"
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:115
 #: cdedb/frontend/templates/web/core/modify_balance.tmpl:27
 msgid "Changenotes"
-msgstr ""
+msgstr "commentarium mutationis"
 
 #: cdedb/frontend/templates/web/core/admin_username_change.tmpl:4
 #, python-format
 msgid "Edit Email Address for %(given_names)s %(family_name)s"
-msgstr ""
+msgstr "insriptionem electronicam %given_names)sis %(family_name)sis tracta"
+# TODO: Genitiv
 
 #: cdedb/frontend/templates/web/core/admin_username_change.tmpl:11
 #: cdedb/frontend/templates/web/core/admin_username_change.tmpl:20
 msgid "Edit Email Address"
-msgstr ""
+msgstr "inscriptionem electronicam tracta"
 
 #: cdedb/frontend/templates/web/core/admin_username_change.tmpl:17
 #: cdedb/frontend/templates/web/core/dearchive_user.tmpl:20
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:42
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:54
 msgid "User"
-msgstr ""
+msgstr "utens"
 
 #: cdedb/frontend/templates/web/core/admin_username_change.tmpl:18
 msgid "Old Email Address"
-msgstr ""
+msgstr "inscriptio electronica pristina"
 
 #: cdedb/frontend/templates/web/core/admin_username_change.tmpl:19
 #: cdedb/frontend/templates/web/core/change_username.tmpl:25
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:120
 msgid "New Email Address"
-msgstr ""
+msgstr "inscriptio electronica nova"
 
 #: cdedb/frontend/templates/web/core/base.tmpl:13
 #: cdedb/frontend/templates/web/event/register.tmpl:72
 msgid "My Data"
-msgstr ""
+msgstr "data mea"
 
 #: cdedb/frontend/templates/web/core/base.tmpl:15
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:5
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:11
 msgid "Admin Overview"
-msgstr ""
+msgstr "administratoribus conspectus"
 
 #: cdedb/frontend/templates/web/core/base.tmpl:25
 msgid "Pending Changes"
@@ -7135,7 +7140,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/change_password.tmpl:13
 #: cdedb/frontend/templates/web/core/show_user.tmpl:80
 msgid "Change Password"
-msgstr ""
+msgstr "signum arcanum muta"
 
 #: cdedb/frontend/templates/web/core/change_password.tmpl:17
 #: cdedb/frontend/templates/web/core/do_password_reset.tmpl:15
@@ -7146,21 +7151,26 @@ msgid ""
 "randomized string of 8 characters, but it is also fine to use two words that "
 "aren’t too common. This form will provide feedback to help you chose a "
 "better password if your new password is too weak."
-msgstr ""
+msgstr "nobis ad vim signorum arcanorum percontandum bibliotheca zxcvbn usis "
+"condiciones firmae signo arcano novo non sunt. notis numeris, litteris "
+"maioribus signisve miris uti opus non est. exemplo octo fortuitarum "
+"litterarum serie uti tibi decet, sed duo verba non nimis solita etiam aequa "
+"sunt. hoc formularium respondens tibi auxilium ad melius signum arcanum "
+"inveniendum dabis, si signo arcano novo parum vis est."
 
 #: cdedb/frontend/templates/web/core/change_password.tmpl:29
 msgid "Old Password"
-msgstr ""
+msgstr "signum arcanum pristinum"
 
 #: cdedb/frontend/templates/web/core/change_password.tmpl:31
 #: cdedb/frontend/templates/web/core/do_password_reset.tmpl:30
 msgid "New Password"
-msgstr ""
+msgstr "signum arcanum novum"
 
 #: cdedb/frontend/templates/web/core/change_password.tmpl:33
 #: cdedb/frontend/templates/web/core/do_password_reset.tmpl:32
 msgid "Confirm new Password"
-msgstr ""
+msgstr "signum arcanum novum confirmo"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:4
 #, python-format
@@ -7224,12 +7234,12 @@ msgstr "administrator coetuum"
 #: cdedb/frontend/templates/web/core/change_user.tmpl:7
 #: cdedb/frontend/templates/web/core/change_user.tmpl:15
 msgid "Edit Your Data"
-msgstr ""
+msgstr "data tua tracta"
 
 #: cdedb/frontend/templates/web/core/change_user.tmpl:38
 #: cdedb/frontend/templates/web/core/show_user.tmpl:241
 msgid "Membership"
-msgstr ""
+msgstr "consocietanda"
 
 #: cdedb/frontend/templates/web/core/change_user.tmpl:40
 #: cdedb/frontend/templates/web/core/show_user.tmpl:309
@@ -7237,34 +7247,37 @@ msgstr ""
 msgid ""
 "The exPuls is published semi-anually printed and online. You can find "
 "further information about the online version at %(link)s."
-msgstr ""
+msgstr "exPulsus bis in anno divulgatus est, impressus atque electronicus. "
+"notitiae additae electronici in %(link)s inveniuntur."
 
 #: cdedb/frontend/templates/web/core/change_user.tmpl:49
 msgid "To Change Your email address, use the button on Your Profile Page."
-msgstr ""
+msgstr "inscriptionem electronicam ad mutandam bulla in pagina vestigii utere."
 
 #: cdedb/frontend/templates/web/core/change_username.tmpl:5
 #: cdedb/frontend/templates/web/core/do_username_change.tmpl:4
 msgid "Change Your Email Address"
-msgstr ""
+msgstr "inscriptionem electronicam muta"
 
 #: cdedb/frontend/templates/web/core/change_username.tmpl:13
 msgid "Change Email Address"
-msgstr ""
+msgstr "inscriptionem electronicam muta"
 
 #: cdedb/frontend/templates/web/core/change_username.tmpl:17
 msgid ""
 "To change Your email address, You will have to confirm Your new email "
 "address by clicking a link in the verification mail sent to the new E-Mail."
-msgstr ""
+msgstr "inscriptionem electronicam ad mutandam tibi inscriptio nova "
+"confirmanda erit. qua de causa iunctio in epistula electronica ad verificandum "
+"tibi primenda erit."
 
 #: cdedb/frontend/templates/web/core/change_username.tmpl:27
 msgid "Send verification mail"
-msgstr ""
+msgstr "epistula electronica ad verificandum mitte"
 
 #: cdedb/frontend/templates/web/core/create_user.tmpl:12
 msgid "Create New Account"
-msgstr ""
+msgstr "vestigium novum crea"
 
 #: cdedb/frontend/templates/web/core/create_user.tmpl:24
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:31
@@ -7279,7 +7292,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/generic.tmpl:244
 #: cdedb/frontend/templates/web/generic.tmpl:245
 msgid "Realm"
-msgstr ""
+msgstr "regnum"
 
 #: cdedb/frontend/templates/web/core/create_user.tmpl:25
 #: cdedb/frontend/templates/web/event/field_set_select.tmpl:47
@@ -7440,11 +7453,11 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/genesis_request.tmpl:70
 msgid "Example: Dream Alley 1"
-msgstr ""
+msgstr "exemlo: Via Appia 753"
 
 #: cdedb/frontend/templates/web/core/genesis_request.tmpl:73
 msgid "Example: Apartment 4, c/o Doc Brown"
-msgstr ""
+msgstr "exemplo: tabulatum 1, ad manus M. Tullii Ciceronis"
 
 #: cdedb/frontend/templates/web/core/genesis_request.tmpl:81
 msgid "The file must be a PDF. The maximum allowed filesize is 8 MB."

@@ -11,14 +11,26 @@ Desine (Philipp findet den Imperativ passend, es wird ja dem Computer eine Anwei
 Abstimmung
 suffragatio (can. 699 § 1 CIC "per secretam suffragationem"; nach Stowasser "Begünstigung, Empfehlung")
 
+Account
+siehe "Profil"
+
 Admin
 administrator, -oris, m. (PONS: "Verwalter", Philipp findet das passend)
 
 Adresse, Anschrift
 inscriptio (NLL)
 
+Bearbeiten
+tractare (PONS)
+
+Benutzer
+siehe "Nutzer"
+
 Bestätigen (Knopf-Beschriftung)
 Confirmo (Philipp findet die erste Person passend, weil der Nutzer ja etwas bestätigt.)
+
+Button
+siehe "Knopf"
 
 CdE
 CdEs, CdEi, f. (Vorschlag Philipp)
@@ -62,8 +74,17 @@ inscriptio electronica (https://la.wikipedia.org/wiki/Cursus_electronicus)
 Finanz-...
 ... pecuniae
 
+Formular
+formularium (PONS)
+
 Fragebogen (für eine Veranstaltung)
 interrogatio, -onis, f. ("Befragung, Verhör", aber kurz & knackig und daher besser als eine wörtliche Übersetzung, findet Philipp)
+
+Information
+notitia (Philipps Favorit unter den Vorschlägen des NLL)
+
+Knopf
+bulla (PONS)
 
 löschen (Informatik)
 delere (Philipp findet das am passendsten. Siehe auch "entfernen")
@@ -77,8 +98,20 @@ administrator administratorum
 Mitglied (d. Vereins)
 consocius (Diskussionsergebnis Philipp & Kilian, Stowasser)
 
+Mitglied sein
+consocietare (Vorschlag Philipp, nötig für Konstruktionen wie "Mitgliedschaft")
+
+Nutzer
+utens (Vorschlag Philipp, NLL sagt für den Plural (die Gesamtheit der Nutzer): utentium corpus / universitas)
+
 Passwort
 signum arcanum (PONS, wörtl. "geheimes Zeichen")
+
+Profil (eines Nutzers)
+vestigium (Vorschlag Philipp, Diskussionsbedarf)
+
+Schaltfläche
+siehe "Knopf"
 
 Stimme (bei einer Abstimmung)
 suffragium (PONS, Stowasser; identisch mit Abstimmung; auch in can. 119 n. 2, 171ff CIC)
