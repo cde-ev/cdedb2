@@ -509,7 +509,8 @@ a.headerlink {
 .btn-lang-change {
     border: none;
     background: none;
-    padding: 0 5px;
+    padding: 0;
+    margin: 0 2px;
 }
 
 .profilepic {
