@@ -9,11 +9,11 @@
                 <th class="col-sm-{% if is_classical %}10{% else %}9{% endif %}">
                     {% trans %}Candidates{% endtrans %}
                 </th>
-                <th class="col-sm-1">
+                <th class="col-sm-1 text-right">
                     {{ util.make_icon('plus', title=gettext("Pro-Votes"), fixed_width=False) }}
                 </th>
             {% if not is_classical %}
-                <th class="col-sm-1">
+                <th class="col-sm-1 text-right">
                     {{ util.make_icon('minus', title=gettext("Contra-Votes"), fixed_width=False) }}
                 </th>
             {% endif %}
@@ -35,11 +35,6 @@
                         </td>
                         <td>
                             {{ ballot['candidates'][candidate_id]['title'] }}
-                            {% if not ballot['votes'] and not short %}
-                                <span class="label label-primary">
-                                    {{- candidate_shortname -}}
-                                </span>
-                            {% endif %}
                         </td>
                     {% if is_classical %}
                         <td>
@@ -48,14 +43,14 @@
                             {% endif %}
                         </td>
                     {% else %}
-                        <td>
+                        <td class="text-right">
                             {% for level in result['counts'] %}
                                 {% if candidate_shortname in level['winner'] and first_candidate %}
                                     {{ level['pro_votes'] }}
                                 {% endif %}
                             {% endfor %}
                         </td>
-                        <td>
+                        <td class="text-right">
                             {% for level in result['counts'] %}
                                 {% if candidate_shortname in level['winner'] and first_candidate %}
                                     {{ level['contra_votes'] }}
@@ -100,11 +95,11 @@
                 </td>
             {% if is_classical %}
                 {# this are the votes for the 'against all' choice #}
-                <td>
+                <td class="text-right">
                     {{ result['counts'][ASSEMBLY_BAR_SHORTNAME] }}
                 </td>
             {% else %}
-                <td>
+                <td class="text-right">
                     {% for level in result['counts'] %}
                         {# It is possible that a candidate is equal to bar. This candidate will be in the winner section.
                            So, if bar is a winner and not the only winner, we do not show the votes. #}
@@ -113,7 +108,7 @@
                         {% endif %}
                     {% endfor %}
                 </td>
-                <td>
+                <td class="text-right">
                     {% for level in result['counts'] %}
                         {# see above for a detailed explanation #}
                         {% if ASSEMBLY_BAR_SHORTNAME in level['winner'] and level['winner']|length == 1 %}
@@ -139,27 +134,22 @@
                         </td>
                         <td>
                             {{ ballot['candidates'][candidate_id]['title'] }}
-                            {% if not ballot['votes'] and not short %}
-                                <span class="label label-primary">
-                                    {{- candidate_shortname -}}
-                                </span>
-                            {% endif %}
                         </td>
                     {% if is_classical %}
-                        <td>
+                        <td class="text-right">
                             {% if first_candidate %}
                                 {{ result['counts'][candidate_shortname] }}
                             {% endif %}
                         </td>
                     {% else %}
-                        <td>
+                        <td class="text-right">
                             {% for level in result['counts'] %}
                                 {% if candidate_shortname in level['winner'] and first_candidate %}
                                     {{ level['pro_votes'] }}
                                 {% endif %}
                             {% endfor %}
                         </td>
-                        <td>
+                        <td class="text-right">
                             {% for level in result['counts'] %}
                                 {% if candidate_shortname in level['winner'] and first_candidate %}
                                     {{ level['contra_votes'] }}
@@ -223,53 +213,3 @@
 
     {% endcall %}
 {% endmacro %}
-
-
-
-{% macro show_own_vote() -%}
-    <div id="own-vote">
-        {% if not attends %}
-            {% trans %}You are not participating in this assembly.{% endtrans %}
-        {% elif not has_voted %}
-                {% trans %}You did not vote.{% endtrans %}
-        {% elif own_vote %}
-            {% if own_vote == MAGIC_ABSTAIN %}
-                <p>{% trans %}You abstained.{% endtrans %}</p>
-            {# Show own vote under result: Classical vote #}
-            {% elif ambience['ballot']['votes'] %}
-                {% if own_vote == ASSEMBLY_BAR_SHORTNAME %}
-                    <p>{% trans %}You voted against all candidates.{% endtrans %}</p>
-                {% else %}
-                    <p>{% trans %}You voted for the following candidates:{% endtrans %}</p>
-                    <pre class="result">
-                        {%- for vote in own_vote.split('=') -%}
-                            {{ vote }}{% if not loop.last %},{{ nbsp }}{% endif %}
-                        {%- endfor -%}
-                    </pre>
-                {% endif %}
-            {# Show own vote under result: Preferential vote #}
-            {% else %}
-                <p>{% trans %}You voted in the following preference:{% endtrans %}</p>
-                    <pre class="result">{{ own_vote }}</pre>
-            {% endif %}
-        {% else %}
-            <p>
-                {% trans %}The assembly concluded. The votes of specific users can no longer be extracted from the database in any way.{% endtrans %}
-                {% trans %}To show your vote, enter the secret you were sent when registering for the assembly.{% endtrans %}
-            </p>
-            <form action="{{ cdedblink("assembly/show_old_vote") }}" id="showoldvoteform" method="POST">
-                {{ util.anti_csrf_token("assembly/show_old_vote") }}
-                <div class="input-group">
-                    <span class="input-group-addon"><label for="input-secret">
-                        {% trans %}Secret{% endtrans %}
-                    </label></span>
-                    {{ util.input_text(name="secret", anid="input-secret") }}
-                    <div class="input-group-btn">
-                        {{ util.input_submit(value=gettext("Show Vote"), aclass="btn btn-success", icon="lock") }}
-                    </div>
-                </div>
-                {{ util.output_errors('secret', wrapper=True) }}
-            </form>
-        {% endif %}
-    </div>
-{%- endmacro %}

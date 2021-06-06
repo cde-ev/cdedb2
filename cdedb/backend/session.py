@@ -16,12 +16,12 @@ import psycopg2.extensions
 
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    PERSONA_STATUS_FIELDS, PathLike, User, droid_roles, extract_roles, glue,
+    PERSONA_STATUS_FIELDS, PathLike, User, droid_roles, extract_roles,
     make_root_logger, now,
 )
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import connection_pool_factory
-from cdedb.validation import validate_is
+from cdedb.validation import validate_check
 
 
 class SessionBackend:
@@ -39,7 +39,7 @@ class SessionBackend:
 
         # local variable also to prevent closure over secrets
         lookup = {v: k for k, v in secrets['API_TOKENS'].items()}
-        self.api_token_lookup = lambda token: lookup.get(token)
+        self.api_token_lookup = lookup.get
 
         make_root_logger(
             "cdedb.backend.session", self.conf["SESSION_BACKEND_LOG"],
@@ -70,8 +70,9 @@ class SessionBackend:
         """
         persona_id = None
         data = None
-        if (validate_is(vtypes.PrintableASCII, sessionkey)
-                and validate_is(vtypes.PrintableASCII, ip) and sessionkey):
+        sessionkey, sessionkey_errs = validate_check(vtypes.PrintableASCII, sessionkey)
+        ip, ip_errs = validate_check(vtypes.PrintableASCII, ip)
+        if not sessionkey_errs and not ip_errs:
             query = ("SELECT persona_id, ip, is_active, atime, ctime"
                      " FROM core.sessions WHERE sessionkey = %s")
             with self.connpool["cdb_anonymous"] as conn:

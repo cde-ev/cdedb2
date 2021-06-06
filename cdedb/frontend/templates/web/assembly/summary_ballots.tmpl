@@ -2,7 +2,6 @@
 {% extends "web/assembly/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/assembly/_ballot_tallied.tmpl" as ballot_tallied with context %}
-{% set jshint = 'weak' %}
 {% block title %}{{ gettext("Summary") }} ({{ ambience['assembly']['title'] }}){% endblock %}
 {% block heading %}
     <h1 class="title">

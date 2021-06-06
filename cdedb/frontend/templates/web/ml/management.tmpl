@@ -25,11 +25,11 @@
     </h1>
 {% endblock %}
 {% block static_notifications %}
-    {% if not privileged %}
+    {% if restricted %}
         {% call util.notification('info') %}
-            {% trans link = util.href(docurl("Handbuch_Moderator", anchor="privilegierte-moderatoren"),
-                                      gettext("privileged moderator access"))|s %}
-                You do not have %(link)s and may not change subscriptions.
+            {% trans link = util.href(docurl("Handbuch_Moderator", anchor="eingeschränkte-moderatoren"),
+                                      gettext("restricted moderator access"))|s %}
+                You only have %(link)s and may not change subscriptions.
             {% endtrans %}
         {% endcall %}
     {% endif %}
@@ -61,18 +61,18 @@
                                        arialabel=gettext("IDs of the new moderators")) }}
                     <script nonce="{{ csp_nonce }}">
                         $('#input-add-moderator').cdedbSearchPerson(
-                            '{{ (cdedblink('core/select_persona')|e) + ('?kind=ml_user&phrase=%s'|s) }}', {{ ambience['mailinglist']['moderators']|list|json|s }},
+                            '{{ (cdedblink('core/select_persona')|e) + ('?kind=ml_user&phrase=%s'|s) }}', {{ ambience['mailinglist']['moderators']|list|tojson }},
                             false, true, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                         );
                     </script>
                     <div class="input-group-btn">
-                        {{ util.input_submit(value=gettext("Add"), aclass="btn btn-success") }}
+                        {{ util.input_submit(label=gettext("Add"), aclass="btn btn-success") }}
                     </div>
                 </div>
                 {{ util.output_errors('moderators', wrapper=True) }}
             </form>
 
-            <ul id="moderator_list">
+            <ul class="slim" id="moderator-list">
                 {% for moderator, persona in moderators.items() %} {# This is already sorted. #}
                     <li class="hide-hover-container clearfix-after">
                         {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
@@ -83,11 +83,13 @@
                                   class="hide-hover display-inline">
                                 {{ util.anti_csrf_token('ml/remove_moderator') }}
                                 {{ util.input_hidden(name="moderator_id", value=moderator) }}
-                                {{ util.input_submit(value='', aclass="btn btn-xs btn-danger list-button-float", icon="minus",
+                                {{ util.input_submit(label='', aclass="btn btn-xs btn-danger list-button-float", icon="minus",
                                         title=gettext("Remove %(given_names)s %(family_name)s as moderator")|format(
                                             given_names=persona['given_names'],
                                             family_name=persona['family_name'])) }}
                             </form>
+                        {% else %}
+                            {{ util.input_submit(label="", aclass="btn btn-xs btn-danger list-button-float dummy", icon="minus", ariahidden=True) }}
                         {% endif %}
                     </li>
                 {% endfor %}
@@ -104,41 +106,27 @@
                 </p>
             {# TODO Restyle #}
             {% if requests|length > 0 %}
-                <ul>
+                <ul class="slim" id="pending-list">
                     {% for request, persona in requests.items() %} {# This is already sorted. #}
                         <li class="hide-hover-container clearfix-after">
                             {{ util.persona_anchor(persona, ml_id=ambience['mailinglist']['id']) }}
-                            {% if privileged %}
-                            <div class="nowrap display-inline">
-                                {# TODO consider merging endpoints and use a single form - would enable usage of btn-group #}
-                                <form action="{{ cdedblink('ml/approve_request') }}"
-                                      method="POST"
-                                      id="approverequestform{{ request }}"
-                                      class="hide-hover display-inline">
-                                    {{ util.anti_csrf_token('ml/approve_request') }}
+                            {% if not restricted %}
+                            <form action="{{ cdedblink('ml/handle_request') }}"
+                                  method="POST"
+                                  id="handlerequestform{{ request }}"
+                                  class="hide-hover display-inline pull-right">
+                                    {{ util.anti_csrf_token('ml/handle_request') }}
                                     {{ util.input_hidden(name="persona_id", value=request) }}
-                                    {{ util.input_submit(icon="check", value=gettext("Accept"),
-                                        aclass="btn btn-xs btn-success list-button-float") }}
-                                </form>
-                                <form action="{{ cdedblink('ml/deny_request') }}"
-                                      method="POST"
-                                      id="denyrequestform{{ request }}"
-                                      class="hide-hover display-inline">
-                                    {{ util.anti_csrf_token('ml/deny_request') }}
-                                    {{ util.input_hidden(name="persona_id", value=request) }}
-                                    {{ util.input_submit(icon="times-circle", value=gettext("Reject"),
-                                        aclass="btn btn-xs btn-danger list-button-float") }}
-                                </form>
-                                <form action="{{ cdedblink('ml/block_request') }}"
-                                      method="POST"
-                                      id="blockrequestform{{ request }}"
-                                      class="hide-hover display-inline">
-                                    {{ util.anti_csrf_token('ml/block_request') }}
-                                    {{ util.input_hidden(name="persona_id", value=request) }}
-                                    {{ util.input_submit(icon="ban", value=gettext("Block"),
-                                        aclass="btn btn-xs btn-danger list-button-float") }}
-                                </form>
-                            </div>
+                                <div class="btn-group">
+                                    {% for action, label, icon, coloring in (
+                                            ('accept', gettext('Accept'), 'check', 'success'),
+                                            ('reject', gettext('Reject'), 'times-circle', 'danger'),
+                                            ('block', gettext('Block'), 'ban', 'danger')) %}
+                                        {{ util.input_submit(label=label, value=action, name="action", icon=icon,
+                                                             aclass="btn btn-xs btn-" + coloring) }}
+                                    {% endfor %}
+                                </div>
+                            </form>
                             {% endif %}
                         </li>
                     {% endfor %}
@@ -154,12 +142,12 @@
     <h2>{% trans %}Subscribers{% endtrans %} [{{ subscribers|length }}]</h2>
         <p class="text-muted">
             {{ util.make_icon('info-circle') }}
-            {% trans link = util.href(cdedblink('ml/show_subscription_details'), label=gettext("advanced management")) %}
+            {% trans link = util.href(cdedblink('ml/advanced_management'), label=gettext("advanced management")) %}
                 Forced subscribers cannot be unsubscribed; blocked subscribers cannot be subscribed here.
                 Use the {{ link }} site instead. People who are already subscribed are not proposed for adding.
             {% endtrans %}
         </p>
-    {% if privileged %}
+    {% if not restricted %}
     <form action="{{ cdedblink('ml/add_subscribers') }}" method="POST"
           id="addsubscriberform" class="p">
         {{ util.anti_csrf_token('ml/add_subscribers') }}
@@ -170,19 +158,19 @@
             <script nonce="{{ csp_nonce }}">
                 $('#input-add-subscriber').cdedbSearchPerson(
                     '{{ (cdedblink('core/select_persona')|e) + ('?kind=ml_subscriber&phrase=%s&aux='|s) +
-                        (ambience['mailinglist']['id']|string|e) }}', {{ subscribers|list|json|s }},
+                        (ambience['mailinglist']['id']|string|e) }}', {{ subscribers|list|tojson }},
                     false, true, '{{ gettext("CdEDB-ID, Name or E-Mail") }}'
                 );
             </script>
             <div class="input-group-btn">
-                {{ util.input_submit(value=gettext("Add Subscriber"), aclass="btn btn-success") }}
+                {{ util.input_submit(label=gettext("Add"), aclass="btn btn-success") }}
             </div>
         </div>
         {{ util.output_errors('subscriber_ids', wrapper=True) }}
     </form>
     {% endif %}
 
-    <div class="row">
+    <div class="row" id="subscriber-list">
         {% set col_width = 4 if subscribers|length > 10 else (6 if subscribers|length > 5 else 12) %}
         {% for list in subscribers | slice(3 if subscribers|length > 10 else (2 if subscribers|length > 5 else 1)) %}
             <div class="col-sm-{{ col_width }}">
@@ -191,14 +179,14 @@
                         <li class="hide-hover-container clearfix-after">
                             {{ util.persona_anchor(subscribers[subscriber], ml_id=ambience['mailinglist']['id']) }}
                             {% if subscriber in explicits %}({{ explicits[subscriber] }}){% endif %}
-                            {% if privileged %}
+                            {% if not restricted %}
                                 <form action="{{ cdedblink('ml/remove_subscriber') }}"
                                       method="POST"
                                       id="removesubscriberform{{ subscriber }}"
                                       class="hide-hover display-inline">
                                     {{ util.anti_csrf_token('ml/remove_subscriber') }}
                                     {{ util.input_hidden(name="subscriber_id", value=subscriber) }}
-                                    {{ util.input_submit(value="", icon="minus", aclass="btn btn-xs btn-danger list-button-float",
+                                    {{ util.input_submit(label="", icon="minus", aclass="btn btn-xs btn-danger list-button-float",
                                             title=gettext("Remove %(given_names)s %(family_name)s as subscriber")|format(
                                                 given_names=subscribers[subscriber]['given_names'],
                                                 family_name=subscribers[subscriber]['family_name'])) }}

@@ -1,0 +1,21 @@
+{% set sidenav_active='cde_manage_archive' %}
+{% extends "web/cde/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% import "web/generic.tmpl" as generic with context %}
+{% set jshint='strong' %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_queryform.js') }}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+{% endblock %}
+{% block title %}
+    {% trans %}
+        Search Archived Users
+    {% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("cde/archived_user_search"), gettext("Search Archived Users"), active="True") }}
+{% endblock %}
+{% block content %}
+    {{ generic.archived_user_search("cde") }}
+{% endblock %}

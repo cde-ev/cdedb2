@@ -24,7 +24,7 @@
                                   entries=institutions|keydictsort(EntitySorter.institution)|dict_entries('id', 'title')) }}
         {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5", info=util.markdownhint) }}
         {{ util.form_input_text(name="tempus", label=gettext("Cutoff date"), type="date", placeholder="YYYY-MM-DD") }}
-        {{ util.form_input_textarea(name="notes", label=gettext("Photo gallery"), rows="3",
+        {{ util.form_input_textarea(name="participant_info", label=gettext("Photo gallery"), rows="3",
                                     info=(util.markdownhint + " "
                                           + gettext("Link to photo gallery (e.g. <https://user:pwd@example.cde>) with "
                                                     "http authentification information encoded")|escape)) }}
@@ -35,6 +35,6 @@
         {{ util.form_input_static(aclass='text-info', icon='info-circle',
                           value=gettext("Warning: The new Event will be immediately visible to all CdE-Members "
                                         "viewing the list of past Events.")) }}
-        {{ util.form_input_submit(value=gettext("Create"), cancellink=cdedblink("cde/list_past_events")) }}
+        {{ util.form_input_submit(label=gettext("Create"), cancellink=cdedblink("cde/list_past_events")) }}
     </form>
 {% endblock %}

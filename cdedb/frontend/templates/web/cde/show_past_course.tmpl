@@ -49,7 +49,7 @@
                                 <script nonce="{{ csp_nonce }}">
                                     $('#input-add-participant').cdedbSearchPerson(
                                         '{{ cdedblink('core/select_persona') + '?kind=past_event_user&phrase=%s'|s }}',
-                                        {{ participants.keys()|list|json|s }}, false, true, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
+                                        {{ participants.keys()|list|tojson }}, false, true, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                                     );
                                 </script>
                             {% endcall %}
@@ -65,7 +65,7 @@
                             </div>
                         </div>
                         <div class="col-sm-3">
-                            {{ util.input_submit(value=gettext("Add"), aclass="btn btn-primary btn-sm") }}
+                            {{ util.input_submit(label=gettext("Add"), aclass="btn btn-primary btn-sm") }}
                         </div>
                     </div>
                 </form>
@@ -82,6 +82,7 @@
                         {{ personas[anid]['given_names'] }} {{ personas[anid]['family_name'] }}
                     {% endif %}
                     {% if participant['is_instructor'] %}</strong>{% endif %}
+                    {% if participant['is_instructor'] %}({% trans %}Course instructor{% endtrans %}){% endif %}
                     {% if "past_event" in user.admin_views %}
                         <form action="{{ cdedblink('cde/remove_participant') }}" method="POST"
                               id="removeparticipantform{{ anid }}" style="display: inline;"
@@ -91,7 +92,7 @@
                             {{ util.input_hidden(name="pcourse_id", value=values['pcourse_id']) }}
                             {{ util.input_hidden(name="course_page", value=True) }}
                             {{ util.input_submit(title=gettext("Remove"), icon="minus", aclass="btn btn-xs btn-danger list-button-float",
-                                    value="") }}
+                                    label="") }}
                         </form>
                     {% endif %}
                 </li>
@@ -99,9 +100,9 @@
             {% if extra_participants %}
                 <li id="count-extra-participants">
                     {% trans count=extra_participants %}
-                        extra_participants_singular
+                        and_one_more
                     {%- pluralize count -%}
-                        extra_participants_plural
+                        and_count_more
                     {% endtrans %} …
                 </li>
             {% endif %}
@@ -131,7 +132,7 @@
                         <form action="{{ cdedblink('cde/delete_past_course') }}" method="POST"
                                 id="deletecourseform" style="display: inline;">
                             {{ util.anti_csrf_token('cde/delete_past_course') }}
-                            {{ util.input_submit(value=gettext("Delete Course"), icon="trash-alt", aclass="btn btn-danger") }}
+                            {{ util.input_submit(label=gettext("Delete Course"), icon="trash-alt", aclass="btn btn-danger") }}
                             {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?"), readonly=is_locked) }}
                         </form>
                     </div>

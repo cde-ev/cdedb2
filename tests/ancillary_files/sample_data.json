@@ -1,28 +1,4 @@
 {
-    "core.meta_info": [
-        {
-            "id": 1,
-            "info": {
-                "Vorstand": "Anton und Berta",
-                "CdE_Konto_BIC": "BFSWDE33XXX",
-                "CdE_Konto_IBAN": "DE26370205000008068900",
-                "CdE_Konto_Inhaber": "CdE e.V.",
-                "CdE_Konto_Institut": "Bank f\u00fcr Sozialwirtschaft",
-                "Finanzvorstand_Ort": "Utopia",
-                "banner_after_login": "*Dies ist eine Testversion der Datenbank, alles wird gel\u00f6scht werden!*",
-                "banner_before_login": "Das Passwort ist secret!",
-                "banner_genesis": "Bei Problemen mit der Accountanfrage wendet Euch bitte an die Verwaltung.",
-                "cde_misc": null,
-                "Finanzvorstand_Name": "Bert\u00e5lotta Beispiel",
-                "Finanzvorstand_Vorname": "Bert\u00e5lotta",
-                "Finanzvorstand_Adresse_Zeile2": "bei Spielmanns",
-                "Finanzvorstand_Adresse_Zeile3": "Im Garten 77",
-                "Finanzvorstand_Adresse_Zeile4": "34576 Utopia",
-                "Finanzvorstand_Adresse_Einzeiler": "Bert\u00e5lotta Beispiel, bei Spielmanns, Im Garten 77, 34576 Utopia"
-            }
-        }
-    ],
-    "core.cron_store": [],
     "core.personas": [
         {
             "id": 1,
@@ -56,16 +32,16 @@
             "telephone": "+49 (234) 98765",
             "mobile": null,
             "address_supplement": null,
-            "address": "Auf der D\u00fcne 42",
+            "address": "Auf der Düne 42",
             "postal_code": "03205",
             "location": "Musterstadt",
-            "country": null,
+            "country": "DE",
             "birth_name": null,
             "address_supplement2": null,
-            "address2": "Unter dem H\u00fcgel 23",
+            "address2": "Unter dem Hügel 23",
             "postal_code2": "22335",
             "location2": "Hintertupfingen",
-            "country2": null,
+            "country2": "DE",
             "weblink": null,
             "specialisation": null,
             "affiliation": null,
@@ -77,7 +53,8 @@
             "trial_member": false,
             "bub_search": true,
             "foto": null,
-            "paper_expuls": true
+            "paper_expuls": true,
+            "fulltext": null
         },
         {
             "id": 2,
@@ -101,8 +78,8 @@
             "is_searchable": true,
             "is_archived": false,
             "is_purged": false,
-            "display_name": "Bert\u00e5",
-            "given_names": "Bert\u00e5lotta",
+            "display_name": "Bertå",
+            "given_names": "Bertålotta",
             "family_name": "Beispiel",
             "title": "Dr.",
             "name_supplement": "MdB",
@@ -114,25 +91,26 @@
             "address": "Im Garten 77",
             "postal_code": "34576",
             "location": "Utopia",
-            "country": null,
+            "country": "DE",
             "birth_name": "Gemeinser",
             "address_supplement2": null,
             "address2": "Strange Road 9 3/4",
             "postal_code2": "8XA 45-$",
             "location2": "Foreign City",
-            "country2": "Far Away",
-            "weblink": "https://www.bundestag.cde",
+            "country2": "GB",
+            "weblink": "<https://www.bundestag.cde>",
             "specialisation": "Alles\nUnd noch mehr",
             "affiliation": "Jedermann",
-            "timeline": "\u00dcberall",
+            "timeline": "Überall",
             "interests": "Immer",
-            "free_form": "Jede Menge Gefasel  \nGut verteilt  \n\u00dcber mehrere Zeilen",
+            "free_form": "Jede Menge Gefasel  \nGut verteilt  \nÜber mehrere Zeilen",
             "balance": "12.50",
             "decided_search": true,
             "trial_member": false,
             "bub_search": true,
             "foto": "e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9",
-            "paper_expuls": true
+            "paper_expuls": true,
+            "fulltext": null
         },
         {
             "id": 3,
@@ -169,7 +147,7 @@
             "address": "Am Zelt 1",
             "postal_code": "22969",
             "location": "Zirkusstadt",
-            "country": null,
+            "country": "DE",
             "birth_name": null,
             "address_supplement2": null,
             "address2": null,
@@ -181,13 +159,14 @@
             "affiliation": null,
             "timeline": null,
             "interests": null,
-            "free_form": "Ich bin ein \"K\u00fcnstler\"; im weiteren Sinne.",
+            "free_form": "Ich bin ein \"Künstler\"; im weiteren Sinne.",
             "balance": "1.00",
             "decided_search": true,
             "trial_member": true,
             "bub_search": false,
             "foto": null,
-            "paper_expuls": true
+            "paper_expuls": true,
+            "fulltext": null
         },
         {
             "id": 4,
@@ -224,7 +203,7 @@
             "address": "Am Denkmal 91",
             "postal_code": "76543",
             "location": "Atlantis",
-            "country": null,
+            "country": "DE",
             "birth_name": null,
             "address_supplement2": null,
             "address2": null,
@@ -242,7 +221,8 @@
             "trial_member": false,
             "bub_search": true,
             "foto": null,
-            "paper_expuls": true
+            "paper_expuls": true,
+            "fulltext": null
         },
         {
             "id": 5,
@@ -279,7 +259,7 @@
             "address": "Hohle Gasse 13",
             "postal_code": "56767",
             "location": "Wolkenkuckuksheim",
-            "country": "Deutschland",
+            "country": "DE",
             "birth_name": null,
             "address_supplement2": null,
             "address2": null,
@@ -297,7 +277,8 @@
             "trial_member": null,
             "bub_search": null,
             "foto": null,
-            "paper_expuls": null
+            "paper_expuls": null,
+            "fulltext": null
         },
         {
             "id": 6,
@@ -334,7 +315,7 @@
             "address": "Am Rathaus 1",
             "postal_code": "64354",
             "location": "Burokratia",
-            "country": null,
+            "country": "DE",
             "birth_name": null,
             "address_supplement2": null,
             "address2": null,
@@ -352,7 +333,8 @@
             "trial_member": false,
             "bub_search": false,
             "foto": null,
-            "paper_expuls": true
+            "paper_expuls": true,
+            "fulltext": null
         },
         {
             "id": 7,
@@ -386,10 +368,10 @@
             "telephone": null,
             "mobile": null,
             "address_supplement": null,
-            "address": "Bei der W\u00fcste 39",
+            "address": "Bei der Wüste 39",
             "postal_code": "88484",
             "location": "Weltstadt",
-            "country": null,
+            "country": "DE",
             "birth_name": null,
             "address_supplement2": null,
             "address2": null,
@@ -407,7 +389,8 @@
             "trial_member": false,
             "bub_search": false,
             "foto": null,
-            "paper_expuls": true
+            "paper_expuls": true,
+            "fulltext": null
         },
         {
             "id": 8,
@@ -445,7 +428,7 @@
             "postal_code": null,
             "location": null,
             "country": null,
-            "birth_name": "\u039a\u03cc\u03bb\u03b1\u03c3\u03b7",
+            "birth_name": "Κόλαση",
             "address_supplement2": null,
             "address2": null,
             "postal_code2": null,
@@ -457,12 +440,13 @@
             "timeline": null,
             "interests": null,
             "free_form": null,
-            "balance": 0,
+            "balance": "0.00",
             "decided_search": false,
             "trial_member": false,
             "bub_search": false,
             "foto": null,
-            "paper_expuls": true
+            "paper_expuls": true,
+            "fulltext": null
         },
         {
             "id": 9,
@@ -496,10 +480,10 @@
             "telephone": null,
             "mobile": "0163/456897",
             "address_supplement": null,
-            "address": "Zwergstra\u00dfe 1",
+            "address": "Zwergstraße 1",
             "postal_code": "10999",
             "location": "Liliput",
-            "country": null,
+            "country": "DE",
             "birth_name": null,
             "address_supplement2": null,
             "address2": null,
@@ -511,13 +495,14 @@
             "affiliation": null,
             "timeline": null,
             "interests": null,
-            "free_form": "# Inga\n\nKleines Inhaltsverzeichnis\n\n[TOC]\n\n## Auslandsjahr\n\nIch war ein Jahr in S\u00fcdafrika. Dort habe ich viele Dinge besucht.\n\n  - den Nationalpark\n  - verschiedene St\u00e4dte\n\n  1. Johannisburg\n  2. Cape Town\n\n## Literatur\n\nIch lese gerne\n\n  - Vampirroman,\n  - W\u00e4chter-Romane (nicht den >>Wachturm<<, das ist eine ganz schr\u00e4ge Zeitschrift von ziemlich dubiosen Typen),\n  - Ikea-Anleitungen.\n\n## Musik\n\nEs gibt ganz viel schreckliche *Popmusik* und so viel bessere **klassische Musik**, beispielsweise ``Bach`` und ``Beethoven`` sind vorne dabei [^1].\n\n## Programmieren\n\nMein Lieblingsprogramm:\n\n    int main ( int argc, char *argv[] ) {\n        printf(\"Hello World\\n\");\n        return 0;\n    }\n\nUnd hier gleich noch mal:\n\n~~~~~~~~~~~~~~~~~~.c\nint main ( int argc, char *argv[] ) {\n    printf(\"Hello World\\n\");\n    return 0;\n}\n~~~~~~~~~~~~~~~~~~\n\nAber alles, was etwas mit einem Buch aus Abschnitt `Literatur` zu tun hat ist auch gut.\n\n## Referenzen\n\nDer CdE ist voll cool und hat eine Homepage <http://www.cde-ev.de>{: .btn .btn-xs .btn-warning }. Dort kann man auch jederzeit gerne eine Akademie organisieren [^2]. Au\u00dferdem gibt es verschiedene Teams, die den Verein am laufen halten\n\nAdmin-Team\n:  K\u00fcmmert sich um den Server f\u00fcr die Datenbank\n\nDatenbank-Team\n:  Entwickelt die Datenbank\n\nDoku-Team\n:  Druckt zu jeder Akademie ein Buch\n\n<script>evil();</script>\n\n-- --- ...  \"\" '\n\n[^1]: \u00dcber die Qualit\u00e4ten von ``Mozart`` kann man streiten.\n[^2]: Orga sein hat viele tolle Vorteile:\n\n    - entscheide \u00fcber die Schokoladensorten\n    - suche Dir Dein Lieblingshaus aus\n    - werde von allen Teilnehmern angehimmelt\n    - lasse Dich bestechen\n\n*[CdE]: Club der Ehemaligen",
+            "free_form": "# Inga\n\nKleines Inhaltsverzeichnis\n\n[TOC]\n\n## Auslandsjahr\n\nIch war ein Jahr in Südafrika. Dort habe ich viele Dinge besucht.\n\n  - den Nationalpark\n  - verschiedene Städte\n\n  1. Johannisburg\n  2. Cape Town\n\n## Literatur\n\nIch lese gerne\n\n  - Vampirroman,\n  - Wächter-Romane (nicht den >>Wachturm<<, das ist eine ganz schräge Zeitschrift von ziemlich dubiosen Typen),\n  - Ikea-Anleitungen.\n\n## Musik\n\nEs gibt ganz viel schreckliche *Popmusik* und so viel bessere **klassische Musik**, beispielsweise ``Bach`` und ``Beethoven`` sind vorne dabei [^1].\n\n## Programmieren\n\nMein Lieblingsprogramm:\n\n    int main ( int argc, char *argv[] ) {\n        printf(\"Hello World\\n\");\n        return 0;\n    }\n\nUnd hier gleich noch mal:\n\n~~~~~~~~~~~~~~~~~~.c\nint main ( int argc, char *argv[] ) {\n    printf(\"Hello World\\n\");\n    return 0;\n}\n~~~~~~~~~~~~~~~~~~\n\nAber alles, was etwas mit einem Buch aus Abschnitt `Literatur` zu tun hat ist auch gut.\n\n## Referenzen\n\nDer CdE ist voll cool und hat eine Homepage <http://www.cde-ev.de>{: .btn .btn-xs .btn-warning }. Dort kann man auch jederzeit gerne eine Akademie organisieren [^2]. Außerdem gibt es verschiedene Teams, die den Verein am laufen halten\n\nAdmin-Team\n:  Kümmert sich um den Server für die Datenbank\n\nDatenbank-Team\n:  Entwickelt die Datenbank\n\nDoku-Team\n:  Druckt zu jeder Akademie ein Buch\n\n<script>evil();</script>\n\n-- --- ...  \"\" '\n\n[^1]: Über die Qualitäten von ``Mozart`` kann man streiten.\n[^2]: Orga sein hat viele tolle Vorteile:\n\n    - entscheide über die Schokoladensorten\n    - suche Dir Dein Lieblingshaus aus\n    - werde von allen Teilnehmern angehimmelt\n    - lasse Dich bestechen\n\n*[CdE]: Club der Ehemaligen",
             "balance": "5.00",
             "decided_search": true,
             "trial_member": true,
             "bub_search": true,
             "foto": null,
-            "paper_expuls": true
+            "paper_expuls": true,
+            "fulltext": null
         },
         {
             "id": 10,
@@ -543,7 +528,7 @@
             "is_purged": false,
             "display_name": "Janis",
             "given_names": "Janis",
-            "family_name": "Jalape\u00f1o",
+            "family_name": "Jalapeño",
             "title": null,
             "name_supplement": null,
             "gender": null,
@@ -572,7 +557,8 @@
             "trial_member": null,
             "bub_search": null,
             "foto": null,
-            "paper_expuls": null
+            "paper_expuls": null,
+            "fulltext": null
         },
         {
             "id": 11,
@@ -597,7 +583,7 @@
             "is_archived": false,
             "is_purged": false,
             "display_name": "Kalif",
-            "given_names": "Kalif ibn al-\u1e24asan",
+            "given_names": "Kalif ibn al-Ḥasan",
             "family_name": "Karabatschi",
             "title": null,
             "name_supplement": null,
@@ -627,13 +613,14 @@
             "trial_member": null,
             "bub_search": null,
             "foto": null,
-            "paper_expuls": null
+            "paper_expuls": null,
+            "fulltext": null
         },
         {
             "id": 12,
             "username": null,
             "password_hash": "$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/",
-            "is_active": true,
+            "is_active": false,
             "notes": null,
             "is_meta_admin": false,
             "is_core_admin": false,
@@ -647,9 +634,9 @@
             "is_event_realm": true,
             "is_ml_realm": true,
             "is_assembly_realm": true,
-            "is_member": true,
+            "is_member": false,
             "is_searchable": true,
-            "is_archived": false,
+            "is_archived": true,
             "is_purged": false,
             "display_name": "Lisa",
             "given_names": "Lisa",
@@ -664,7 +651,7 @@
             "address": null,
             "postal_code": null,
             "location": null,
-            "country": null,
+            "country": "DE",
             "birth_name": null,
             "address_supplement2": null,
             "address2": null,
@@ -682,7 +669,8 @@
             "trial_member": true,
             "bub_search": true,
             "foto": null,
-            "paper_expuls": true
+            "paper_expuls": true,
+            "fulltext": null
         },
         {
             "id": 13,
@@ -703,7 +691,7 @@
             "is_ml_realm": true,
             "is_assembly_realm": true,
             "is_member": false,
-            "is_searchable": false,
+            "is_searchable": true,
             "is_archived": false,
             "is_purged": false,
             "display_name": "Martin",
@@ -719,7 +707,7 @@
             "address": null,
             "postal_code": null,
             "location": null,
-            "country": null,
+            "country": "DE",
             "birth_name": null,
             "address_supplement2": null,
             "address2": null,
@@ -737,7 +725,8 @@
             "trial_member": false,
             "bub_search": false,
             "foto": null,
-            "paper_expuls": true
+            "paper_expuls": true,
+            "fulltext": null
         },
         {
             "id": 14,
@@ -792,7 +781,8 @@
             "trial_member": null,
             "bub_search": null,
             "foto": null,
-            "paper_expuls": null
+            "paper_expuls": null,
+            "fulltext": null
         },
         {
             "id": 15,
@@ -829,7 +819,7 @@
             "address": null,
             "postal_code": null,
             "location": null,
-            "country": null,
+            "country": "DE",
             "birth_name": null,
             "address_supplement2": null,
             "address2": null,
@@ -847,7 +837,8 @@
             "trial_member": false,
             "bub_search": false,
             "foto": null,
-            "paper_expuls": true
+            "paper_expuls": true,
+            "fulltext": null
         },
         {
             "id": 16,
@@ -884,7 +875,7 @@
             "address": "California Street 1",
             "postal_code": null,
             "location": "Burbank",
-            "country": "California, USA",
+            "country": "US",
             "birth_name": null,
             "address_supplement2": null,
             "address2": null,
@@ -902,7 +893,8 @@
             "trial_member": false,
             "bub_search": false,
             "foto": null,
-            "paper_expuls": true
+            "paper_expuls": true,
+            "fulltext": null
         },
         {
             "id": 17,
@@ -939,7 +931,7 @@
             "address": "Straße Schlauer Kunsthandwerker 42",
             "postal_code": null,
             "location": "Ankh-Morpork",
-            "country": "Scheibenwelt",
+            "country": "SC",
             "birth_name": null,
             "address_supplement2": null,
             "address2": null,
@@ -957,7 +949,8 @@
             "trial_member": false,
             "bub_search": false,
             "foto": null,
-            "paper_expuls": true
+            "paper_expuls": true,
+            "fulltext": null
         },
         {
             "id": 18,
@@ -987,14 +980,14 @@
             "title": "Lady",
             "name_supplement": null,
             "gender": 1,
-            "birthday": "932-08-31",
+            "birthday": "0932-08-31",
             "telephone": null,
             "mobile": null,
             "address_supplement": null,
             "address": "Glen House",
             "postal_code": "EH44 6PX",
             "location": "Innerleithen",
-            "country": "Scotland",
+            "country": "UK",
             "birth_name": null,
             "address_supplement2": null,
             "address2": null,
@@ -1012,7 +1005,8 @@
             "trial_member": false,
             "bub_search": false,
             "foto": null,
-            "paper_expuls": null
+            "paper_expuls": null,
+            "fulltext": null
         },
         {
             "id": 22,
@@ -1049,7 +1043,7 @@
             "address": null,
             "postal_code": null,
             "location": null,
-            "country": null,
+            "country": "DE",
             "birth_name": null,
             "address_supplement2": null,
             "address2": null,
@@ -1067,7 +1061,8 @@
             "trial_member": false,
             "bub_search": false,
             "foto": null,
-            "paper_expuls": true
+            "paper_expuls": true,
+            "fulltext": null
         },
         {
             "id": 23,
@@ -1104,7 +1099,7 @@
             "address": null,
             "postal_code": null,
             "location": null,
-            "country": null,
+            "country": "DE",
             "birth_name": null,
             "address_supplement2": null,
             "address2": null,
@@ -1122,7 +1117,8 @@
             "trial_member": false,
             "bub_search": false,
             "foto": null,
-            "paper_expuls": true
+            "paper_expuls": true,
+            "fulltext": null
         },
         {
             "id": 27,
@@ -1156,10 +1152,10 @@
             "telephone": null,
             "mobile": null,
             "address_supplement": null,
-            "address": "Auf der D\u00fcne 120",
+            "address": "Auf der Düne 120",
             "postal_code": "03205",
             "location": "Musterstadt",
-            "country": null,
+            "country": "DE",
             "birth_name": null,
             "address_supplement2": null,
             "address2": null,
@@ -1177,7 +1173,8 @@
             "trial_member": false,
             "bub_search": false,
             "foto": null,
-            "paper_expuls": true
+            "paper_expuls": true,
+            "fulltext": null
         },
         {
             "id": 32,
@@ -1214,7 +1211,7 @@
             "address": null,
             "postal_code": null,
             "location": null,
-            "country": null,
+            "country": "DE",
             "birth_name": null,
             "address_supplement2": null,
             "address2": null,
@@ -1232,7 +1229,8 @@
             "trial_member": false,
             "bub_search": false,
             "foto": null,
-            "paper_expuls": true
+            "paper_expuls": true,
+            "fulltext": null
         },
         {
             "id": 48,
@@ -1269,7 +1267,7 @@
             "address": "Irgendwo im Nirgendwo",
             "postal_code": "98765",
             "location": "Nirvana",
-            "country": null,
+            "country": "DE",
             "birth_name": null,
             "address_supplement2": null,
             "address2": null,
@@ -1287,7 +1285,8 @@
             "trial_member": false,
             "bub_search": false,
             "foto": null,
-            "paper_expuls": true
+            "paper_expuls": true,
+            "fulltext": null
         },
         {
             "id": 100,
@@ -1324,7 +1323,7 @@
             "address": "Kasumigaseki 1-3-2",
             "postal_code": null,
             "location": "Tokyo",
-            "country": "Japan",
+            "country": "JP",
             "birth_name": null,
             "address_supplement2": null,
             "address2": null,
@@ -1342,11 +1341,41 @@
             "trial_member": false,
             "bub_search": true,
             "foto": null,
-            "paper_expuls": true
+            "paper_expuls": true,
+            "fulltext": null
         }
     ],
+    "core.genesis_cases": [],
+    "core.privilege_changes": [],
+    "core.sessions": [],
+    "core.quota": [],
+    "core.meta_info": [
+        {
+            "id": 1,
+            "info": {
+                "Vorstand": "Anton und Berta",
+                "cde_misc": null,
+                "CdE_Konto_BIC": "BFSWDE33XXX",
+                "CdE_Konto_IBAN": "DE26370205000008068900",
+                "banner_genesis": "Bei Problemen mit der Accountanfrage wendet Euch bitte an die Verwaltung.",
+                "CdE_Konto_Inhaber": "CdE e.V.",
+                "CdE_Konto_Institut": "Bank für Sozialwirtschaft",
+                "Finanzvorstand_Ort": "Utopia",
+                "banner_after_login": "*Dies ist eine Testversion der Datenbank, alles wird gelöscht werden!*",
+                "Finanzvorstand_Name": "Bertålotta Beispiel",
+                "banner_before_login": "Das Passwort ist secret!",
+                "Finanzvorstand_Vorname": "Bertålotta",
+                "Finanzvorstand_Adresse_Zeile2": "bei Spielmanns",
+                "Finanzvorstand_Adresse_Zeile3": "Im Garten 77",
+                "Finanzvorstand_Adresse_Zeile4": "34576 Utopia",
+                "Finanzvorstand_Adresse_Einzeiler": "Bertålotta Beispiel, bei Spielmanns, Im Garten 77, 34576 Utopia"
+            }
+        }
+    ],
+    "core.log": [],
     "core.changelog": [
         {
+            "id": 1,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1383,16 +1412,16 @@
             "telephone": "+49 (234) 98765",
             "mobile": null,
             "address_supplement": null,
-            "address": "Auf der D\u00fcne 42",
+            "address": "Auf der Düne 42",
             "postal_code": "03205",
             "location": "Musterstadt",
-            "country": null,
+            "country": "DE",
             "birth_name": null,
             "address_supplement2": null,
-            "address2": "Unter dem H\u00fcgel 23",
+            "address2": "Unter dem Hügel 23",
             "postal_code2": "22335",
             "location2": "Hintertupfingen",
-            "country2": null,
+            "country2": "DE",
             "weblink": null,
             "specialisation": null,
             "affiliation": null,
@@ -1407,6 +1436,7 @@
             "paper_expuls": true
         },
         {
+            "id": 2,
             "submitted_by": 2,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1433,8 +1463,8 @@
             "is_searchable": true,
             "is_archived": false,
             "is_purged": false,
-            "display_name": "Bert\u00e5",
-            "given_names": "Bert\u00e5lotta",
+            "display_name": "Bertå",
+            "given_names": "Bertålotta",
             "family_name": "Beispiel",
             "title": "Dr.",
             "name_supplement": "MdB",
@@ -1446,19 +1476,19 @@
             "address": "Im Garten 77",
             "postal_code": "34576",
             "location": "Utopia",
-            "country": null,
+            "country": "DE",
             "birth_name": "Gemeinser",
             "address_supplement2": null,
             "address2": "Strange Road 9 3/4",
             "postal_code2": "8XA 45-$",
             "location2": "Foreign City",
-            "country2": "Far Away",
-            "weblink": "https://www.bundestag.cde",
+            "country2": "GB",
+            "weblink": "<https://www.bundestag.cde>",
             "specialisation": "Alles\nUnd noch mehr",
             "affiliation": "Jedermann",
-            "timeline": "\u00dcberall",
+            "timeline": "Überall",
             "interests": "Immer",
-            "free_form": "Jede Menge Gefasel  \nGut verteilt  \n\u00dcber mehrere Zeilen",
+            "free_form": "Jede Menge Gefasel  \nGut verteilt  \nÜber mehrere Zeilen",
             "balance": "12.50",
             "decided_search": true,
             "trial_member": false,
@@ -1467,6 +1497,7 @@
             "paper_expuls": true
         },
         {
+            "id": 3,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1506,7 +1537,7 @@
             "address": "Am Zelt 1",
             "postal_code": "22969",
             "location": "Zirkusstadt",
-            "country": null,
+            "country": "DE",
             "birth_name": null,
             "address_supplement2": null,
             "address2": null,
@@ -1518,7 +1549,7 @@
             "affiliation": null,
             "timeline": null,
             "interests": null,
-            "free_form": "Ich bin ein \"K\u00fcnstler\"; im weiteren Sinne.",
+            "free_form": "Ich bin ein \"Künstler\"; im weiteren Sinne.",
             "balance": "1.00",
             "decided_search": true,
             "trial_member": true,
@@ -1527,6 +1558,7 @@
             "paper_expuls": true
         },
         {
+            "id": 4,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1566,7 +1598,7 @@
             "address": "Am Denkmal 91",
             "postal_code": "76543",
             "location": "Atlantis",
-            "country": null,
+            "country": "DE",
             "birth_name": null,
             "address_supplement2": null,
             "address2": null,
@@ -1587,6 +1619,7 @@
             "paper_expuls": true
         },
         {
+            "id": 5,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1626,7 +1659,7 @@
             "address": "Hohle Gasse 13",
             "postal_code": "56767",
             "location": "Wolkenkuckuksheim",
-            "country": "Deutschland",
+            "country": "DE",
             "birth_name": null,
             "address_supplement2": null,
             "address2": null,
@@ -1647,6 +1680,7 @@
             "paper_expuls": null
         },
         {
+            "id": 6,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1686,7 +1720,7 @@
             "address": "Am Rathaus 1",
             "postal_code": "64354",
             "location": "Burokratia",
-            "country": null,
+            "country": "DE",
             "birth_name": null,
             "address_supplement2": null,
             "address2": null,
@@ -1707,6 +1741,7 @@
             "paper_expuls": true
         },
         {
+            "id": 7,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1743,10 +1778,10 @@
             "telephone": null,
             "mobile": null,
             "address_supplement": null,
-            "address": "Bei der W\u00fcste 39",
+            "address": "Bei der Wüste 39",
             "postal_code": "88484",
             "location": "Weltstadt",
-            "country": null,
+            "country": "DE",
             "birth_name": null,
             "address_supplement2": null,
             "address2": null,
@@ -1767,6 +1802,7 @@
             "paper_expuls": true
         },
         {
+            "id": 8,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1807,7 +1843,7 @@
             "postal_code": null,
             "location": null,
             "country": null,
-            "birth_name": "\u039a\u03cc\u03bb\u03b1\u03c3\u03b7",
+            "birth_name": "Κόλαση",
             "address_supplement2": null,
             "address2": null,
             "postal_code2": null,
@@ -1819,7 +1855,7 @@
             "timeline": null,
             "interests": null,
             "free_form": null,
-            "balance": 0,
+            "balance": "0.00",
             "decided_search": false,
             "trial_member": false,
             "bub_search": false,
@@ -1827,6 +1863,7 @@
             "paper_expuls": true
         },
         {
+            "id": 9,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1863,10 +1900,10 @@
             "telephone": null,
             "mobile": null,
             "address_supplement": null,
-            "address": "Zwergstra\u00dfe 1",
+            "address": "Zwergstraße 1",
             "postal_code": "10999",
             "location": "Liliput",
-            "country": null,
+            "country": "DE",
             "birth_name": null,
             "address_supplement2": null,
             "address2": null,
@@ -1878,7 +1915,7 @@
             "affiliation": null,
             "timeline": null,
             "interests": null,
-            "free_form": "# Inga\n\nKleines Inhaltsverzeichnis\n\n[TOC]\n\n## Auslandsjahr\n\nIch war ein Jahr in S\u00fcdafrika. Dort habe ich viele Dinge besucht.\n\n  - den Nationalpark\n  - verschiedene St\u00e4dte\n\n  1. Johannisburg\n  2. Cape Town\n\n## Literatur\n\nIch lese gerne\n\n  - Vampirroman,\n  - W\u00e4chter-Romane (nicht den >>Wachturm<<, das ist eine ganz schr\u00e4ge Zeitschrift von ziemlich dubiosen Typen),\n  - Ikea-Anleitungen.\n\n## Musik\n\nEs gibt ganz viel schreckliche *Popmusik* und so viel bessere **klassische Musik**, beispielsweise ``Bach`` und ``Beethoven`` sind vorne dabei [^1].\n\n## Programmieren\n\nMein Lieblingsprogramm:\n\n    int main ( int argc, char *argv[] ) {\n        printf(\"Hello World\\n\");\n        return 0;\n    }\n\nUnd hier gleich noch mal:\n\n~~~~~~~~~~~~~~~~~~.c\nint main ( int argc, char *argv[] ) {\n    printf(\"Hello World\\n\");\n    return 0;\n}\n~~~~~~~~~~~~~~~~~~\n\nAber alles, was etwas mit einem Buch aus Abschnitt `Literatur` zu tun hat ist auch gut.\n\n## Referenzen\n\nDer CdE ist voll cool und hat eine Homepage <http://www.cde-ev.de>{: .btn .btn-xs .btn-warning }. Dort kann man auch jederzeit gerne eine Akademie organisieren [^2]. Au\u00dferdem gibt es verschiedene Teams, die den Verein am laufen halten\n\nAdmin-Team\n:  K\u00fcmmert sich um den Server f\u00fcr die Datenbank\n\nDatenbank-Team\n:  Entwickelt die Datenbank\n\nDoku-Team\n:  Druckt zu jeder Akademie ein Buch\n\n<script>evil();</script>\n\n-- --- ...  \"\" '\n\n[^1]: \u00dcber die Qualit\u00e4ten von ``Mozart`` kann man streiten.\n[^2]: Orga sein hat viele tolle Vorteile:\n\n    - entscheide \u00fcber die Schokoladensorten\n    - suche Dir Dein Lieblingshaus aus\n    - werde von allen Teilnehmern angehimmelt\n    - lasse Dich bestechen\n\n*[CdE]: Club der Ehemaligen",
+            "free_form": "# Inga\n\nKleines Inhaltsverzeichnis\n\n[TOC]\n\n## Auslandsjahr\n\nIch war ein Jahr in Südafrika. Dort habe ich viele Dinge besucht.\n\n  - den Nationalpark\n  - verschiedene Städte\n\n  1. Johannisburg\n  2. Cape Town\n\n## Literatur\n\nIch lese gerne\n\n  - Vampirroman,\n  - Wächter-Romane (nicht den >>Wachturm<<, das ist eine ganz schräge Zeitschrift von ziemlich dubiosen Typen),\n  - Ikea-Anleitungen.\n\n## Musik\n\nEs gibt ganz viel schreckliche *Popmusik* und so viel bessere **klassische Musik**, beispielsweise ``Bach`` und ``Beethoven`` sind vorne dabei [^1].\n\n## Programmieren\n\nMein Lieblingsprogramm:\n\n    int main ( int argc, char *argv[] ) {\n        printf(\"Hello World\\n\");\n        return 0;\n    }\n\nUnd hier gleich noch mal:\n\n~~~~~~~~~~~~~~~~~~.c\nint main ( int argc, char *argv[] ) {\n    printf(\"Hello World\\n\");\n    return 0;\n}\n~~~~~~~~~~~~~~~~~~\n\nAber alles, was etwas mit einem Buch aus Abschnitt `Literatur` zu tun hat ist auch gut.\n\n## Referenzen\n\nDer CdE ist voll cool und hat eine Homepage <http://www.cde-ev.de>{: .btn .btn-xs .btn-warning }. Dort kann man auch jederzeit gerne eine Akademie organisieren [^2]. Außerdem gibt es verschiedene Teams, die den Verein am laufen halten\n\nAdmin-Team\n:  Kümmert sich um den Server für die Datenbank\n\nDatenbank-Team\n:  Entwickelt die Datenbank\n\nDoku-Team\n:  Druckt zu jeder Akademie ein Buch\n\n<script>evil();</script>\n\n-- --- ...  \"\" '\n\n[^1]: Über die Qualitäten von ``Mozart`` kann man streiten.\n[^2]: Orga sein hat viele tolle Vorteile:\n\n    - entscheide über die Schokoladensorten\n    - suche Dir Dein Lieblingshaus aus\n    - werde von allen Teilnehmern angehimmelt\n    - lasse Dich bestechen\n\n*[CdE]: Club der Ehemaligen",
             "balance": "5.00",
             "decided_search": true,
             "trial_member": true,
@@ -1887,6 +1924,7 @@
             "paper_expuls": true
         },
         {
+            "id": 10,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1915,7 +1953,7 @@
             "is_purged": false,
             "display_name": "Janis",
             "given_names": "Janis",
-            "family_name": "Jalape\u00f1o",
+            "family_name": "Jalapeño",
             "title": null,
             "name_supplement": null,
             "gender": null,
@@ -1947,6 +1985,7 @@
             "paper_expuls": null
         },
         {
+            "id": 11,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1974,7 +2013,7 @@
             "is_archived": false,
             "is_purged": false,
             "display_name": "Kalif",
-            "given_names": "Kalif ibn al-\u1e24asan",
+            "given_names": "Kalif ibn al-Ḥasan",
             "family_name": "Karabatschi",
             "title": null,
             "name_supplement": null,
@@ -2007,6 +2046,7 @@
             "paper_expuls": null
         },
         {
+            "id": 12,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2067,6 +2107,7 @@
             "paper_expuls": true
         },
         {
+            "id": 13,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2127,6 +2168,7 @@
             "paper_expuls": true
         },
         {
+            "id": 14,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2187,6 +2229,7 @@
             "paper_expuls": null
         },
         {
+            "id": 15,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2247,6 +2290,7 @@
             "paper_expuls": true
         },
         {
+            "id": 16,
             "submitted_by": 6,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2307,6 +2351,7 @@
             "paper_expuls": true
         },
         {
+            "id": 17,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2346,7 +2391,7 @@
             "address": null,
             "postal_code": null,
             "location": null,
-            "country": null,
+            "country": "DE",
             "birth_name": null,
             "address_supplement2": null,
             "address2": null,
@@ -2367,6 +2412,7 @@
             "paper_expuls": true
         },
         {
+            "id": 18,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2427,6 +2473,7 @@
             "paper_expuls": true
         },
         {
+            "id": 19,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2487,6 +2534,7 @@
             "paper_expuls": true
         },
         {
+            "id": 20,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2547,6 +2595,7 @@
             "paper_expuls": true
         },
         {
+            "id": 21,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2586,7 +2635,7 @@
             "address": "Irgendwo im Nirgendwo",
             "postal_code": "98765",
             "location": "Nirvana",
-            "country": null,
+            "country": "DE",
             "birth_name": null,
             "address_supplement2": null,
             "address2": null,
@@ -2607,6 +2656,7 @@
             "paper_expuls": true
         },
         {
+            "id": 22,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2646,7 +2696,7 @@
             "address": "Kasumigaseki 1-3-2",
             "postal_code": null,
             "location": "Tokyo",
-            "country": "Japan",
+            "country": "JP",
             "birth_name": null,
             "address_supplement2": null,
             "address2": null,
@@ -2667,6 +2717,7 @@
             "paper_expuls": true
         },
         {
+            "id": 23,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2706,7 +2757,7 @@
             "address": "California Street 1",
             "postal_code": null,
             "location": "Burbank",
-            "country": "California, USA",
+            "country": "US",
             "birth_name": null,
             "address_supplement2": null,
             "address2": null,
@@ -2727,6 +2778,7 @@
             "paper_expuls": true
         },
         {
+            "id": 24,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2766,7 +2818,7 @@
             "address": "Straße Schlauer Kunsthandwerker 42",
             "postal_code": null,
             "location": "Ankh-Morpork",
-            "country": "Scheibenwelt",
+            "country": "SC",
             "birth_name": null,
             "address_supplement2": null,
             "address2": null,
@@ -2787,6 +2839,7 @@
             "paper_expuls": true
         },
         {
+            "id": 25,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2819,14 +2872,14 @@
             "title": "Lady",
             "name_supplement": null,
             "gender": 1,
-            "birthday": "932-08-31",
+            "birthday": "0932-08-31",
             "telephone": null,
             "mobile": null,
             "address_supplement": null,
             "address": "Glen House",
             "postal_code": "EH44 6PX",
             "location": "Innerleithen",
-            "country": "Scotland",
+            "country": "UK",
             "birth_name": null,
             "address_supplement2": null,
             "address2": null,
@@ -2847,6 +2900,7 @@
             "paper_expuls": null
         },
         {
+            "id": 26,
             "submitted_by": 100,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2886,7 +2940,7 @@
             "address": null,
             "postal_code": null,
             "location": null,
-            "country": null,
+            "country": "DE",
             "birth_name": null,
             "address_supplement2": null,
             "address2": null,
@@ -2907,6 +2961,7 @@
             "paper_expuls": true
         },
         {
+            "id": 27,
             "submitted_by": 100,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2967,6 +3022,7 @@
             "paper_expuls": true
         },
         {
+            "id": 28,
             "submitted_by": 100,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -3027,6 +3083,7 @@
             "paper_expuls": true
         },
         {
+            "id": 29,
             "submitted_by": 100,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -3087,6 +3144,7 @@
             "paper_expuls": true
         },
         {
+            "id": 30,
             "submitted_by": 100,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -3110,7 +3168,7 @@
             "is_ml_realm": true,
             "is_assembly_realm": true,
             "is_member": false,
-            "is_searchable": false,
+            "is_searchable": true,
             "is_archived": false,
             "is_purged": false,
             "display_name": "Martin",
@@ -3147,6 +3205,7 @@
             "paper_expuls": true
         },
         {
+            "id": 31,
             "submitted_by": 100,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -3186,7 +3245,7 @@
             "address": "Straße Schlauer Kunsthandwerker 42",
             "postal_code": null,
             "location": "Ankh-Morpork",
-            "country": "Scheibenwelt",
+            "country": "SC",
             "birth_name": null,
             "address_supplement2": null,
             "address2": null,
@@ -3207,16 +3266,13 @@
             "paper_expuls": true
         }
     ],
-    "core.privilege_changes": [],
-    "core.genesis_cases": [],
-    "core.sessions": [],
-    "core.quota": [],
-    "core.log": [],
+    "core.cron_store": [],
     "cde.org_period": [
         {
             "id": 41,
             "billing_state": null,
             "billing_done": "2000-01-11T10:11:11.111111+00:00",
+            "billing_count": 0,
             "ejection_state": null,
             "ejection_done": "2000-01-12T10:11:11.111111+00:00",
             "ejection_count": 0,
@@ -3225,12 +3281,19 @@
             "balance_done": "2000-01-13T10:11:11.111111+00:00",
             "balance_trialmembers": 0,
             "balance_total": "0.00",
+            "archival_notification_state": null,
+            "archival_notification_done": null,
+            "archival_notification_count": 0,
+            "archival_state": null,
+            "archival_done": null,
+            "archival_count": 0,
             "semester_done": "2000-01-14T10:11:11.111111+00:00"
         },
         {
             "id": 42,
             "billing_state": null,
             "billing_done": "---now---",
+            "billing_count": 0,
             "ejection_state": null,
             "ejection_done": "---now---",
             "ejection_count": 0,
@@ -3239,12 +3302,19 @@
             "balance_done": "---now---",
             "balance_trialmembers": 0,
             "balance_total": "0.00",
+            "archival_notification_state": null,
+            "archival_notification_done": null,
+            "archival_notification_count": 0,
+            "archival_state": null,
+            "archival_done": null,
+            "archival_count": 0,
             "semester_done": "---now---"
         },
         {
             "id": 43,
             "billing_state": null,
             "billing_done": null,
+            "billing_count": 0,
             "ejection_state": null,
             "ejection_done": null,
             "ejection_count": 0,
@@ -3253,6 +3323,12 @@
             "balance_done": null,
             "balance_trialmembers": 0,
             "balance_total": "0.00",
+            "archival_notification_state": null,
+            "archival_notification_done": null,
+            "archival_notification_count": 0,
+            "archival_state": null,
+            "archival_done": null,
+            "archival_count": 0,
             "semester_done": null
         }
     ],
@@ -3260,12 +3336,16 @@
         {
             "id": 41,
             "addresscheck_state": null,
-            "addresscheck_done": "---now---"
+            "addresscheck_done": "---now---",
+            "addresscheck_count": 0,
+            "expuls_done": null
         },
         {
             "id": 42,
             "addresscheck_state": null,
-            "addresscheck_done": null
+            "addresscheck_done": null,
+            "addresscheck_count": 0,
+            "expuls_done": null
         }
     ],
     "cde.lastschrift": [
@@ -3331,26 +3411,24 @@
     ],
     "cde.finance_log": [
         {
-            "id": 1,
             "ctime": "---now---",
             "code": 32,
             "submitted_by": 1,
             "persona_id": 2,
             "delta": null,
             "new_balance": null,
-            "change_note": "-4.50\u20ac",
+            "change_note": "-4.50€",
             "members": 7,
             "total": "106.50"
         },
         {
-            "id": 2,
             "ctime": "---now---",
             "code": 31,
             "submitted_by": 1,
             "persona_id": 2,
             "delta": "5.00",
             "new_balance": "12.50",
-            "change_note": "42.23\u20ac",
+            "change_note": "42.23€",
             "members": 7,
             "total": "111.50"
         }
@@ -3376,7 +3454,7 @@
             "institution": 1,
             "description": "Great event!",
             "tempus": "2014-05-25",
-            "notes": "Mediensammlung\n:    <https://pa14:secret@example.cde/pa14/>"
+            "participant_info": "Mediensammlung\n:    <https://pa14:secret@example.cde/pa14/>"
         },
         {
             "id": 2,
@@ -3385,14 +3463,25 @@
             "institution": 2,
             "description": null,
             "tempus": "2019-07-26",
-            "notes": null
+            "participant_info": null
         },
         {
             "id": 3,
             "title": "KotzAkademie 2010",
             "shortname": "Kotz",
+            "institution": 1,
+            "description": null,
             "tempus": "2010-12-31",
-            "institution": 1
+            "participant_info": null
+        },
+        {
+            "id": 4,
+            "title": "FingerAkademie 2020",
+            "shortname": "Digital",
+            "institution": 1,
+            "description": null,
+            "tempus": "2020-06-01",
+            "participant_info": null
         }
     ],
     "past_event.courses": [
@@ -3406,14 +3495,13 @@
         {
             "id": 2,
             "pevent_id": 1,
-            "nr": "\u03a9",
+            "nr": "Ω",
             "title": "Goethe zum Anfassen",
             "description": "Hier werden die Reime getanzt. Und anfassen kann man sie auch!"
         }
     ],
     "past_event.participants": [
         {
-            "id": 1,
             "persona_id": 2,
             "pevent_id": 1,
             "pcourse_id": 1,
@@ -3421,7 +3509,6 @@
             "is_orga": false
         },
         {
-            "id": 2,
             "persona_id": 3,
             "pevent_id": 1,
             "pcourse_id": null,
@@ -3429,7 +3516,6 @@
             "is_orga": false
         },
         {
-            "id": 3,
             "persona_id": 5,
             "pevent_id": 1,
             "pcourse_id": 2,
@@ -3437,7 +3523,6 @@
             "is_orga": false
         },
         {
-            "id": 4,
             "persona_id": 6,
             "pevent_id": 1,
             "pcourse_id": 2,
@@ -3445,10 +3530,37 @@
             "is_orga": true
         },
         {
-            "id": 5,
             "persona_id": 100,
             "pevent_id": 1,
             "pcourse_id": 2,
+            "is_instructor": false,
+            "is_orga": false
+        },
+        {
+            "persona_id": 3,
+            "pevent_id": 4,
+            "pcourse_id": null,
+            "is_instructor": false,
+            "is_orga": true
+        },
+        {
+            "persona_id": 5,
+            "pevent_id": 4,
+            "pcourse_id": null,
+            "is_instructor": false,
+            "is_orga": true
+        },
+        {
+            "persona_id": 6,
+            "pevent_id": 4,
+            "pcourse_id": null,
+            "is_instructor": false,
+            "is_orga": true
+        },
+        {
+            "persona_id": 7,
+            "pevent_id": 4,
+            "pcourse_id": null,
             "is_instructor": false,
             "is_orga": false
         }
@@ -3457,7 +3569,7 @@
     "event.events": [
         {
             "id": 1,
-            "title": "Gro\u00dfe Testakademie 2222",
+            "title": "Große Testakademie 2222",
             "shortname": "TestAka",
             "institution": 1,
             "description": "Everybody come!",
@@ -3468,7 +3580,8 @@
             "nonmember_surcharge": "5.00",
             "orga_address": "aka@example.cde",
             "registration_text": null,
-            "mail_text": "Wir verwenden ein neues Kristallkugel-basiertes Kurszuteilungssystem; bis wir das ordentlich ans Laufen gebracht haben, m\u00fcsst ihr leider etwas auf die Teilnehmerliste warten.",
+            "mail_text": "Wir verwenden ein neues Kristallkugel-basiertes Kurszuteilungssystem; bis wir das ordentlich ans Laufen gebracht haben, müsst ihr leider etwas auf die Teilnehmerliste warten.",
+            "participant_info": "Die Kristallkugel hat gute Dienste geleistet, nicht wahr?",
             "use_additional_questionnaire": false,
             "notes": "Todoliste ... just kidding ;)",
             "offline_lock": false,
@@ -3476,9 +3589,9 @@
             "is_course_list_visible": true,
             "is_course_state_visible": false,
             "is_participant_list_visible": false,
-            "courses_in_participant_list": false,
-            "is_cancelled": false,
+            "is_course_assignment_visible": false,
             "is_archived": false,
+            "is_cancelled": false,
             "lodge_field": 3,
             "camping_mat_field": 4,
             "course_room_field": 2
@@ -3497,16 +3610,17 @@
             "orga_address": "",
             "registration_text": null,
             "mail_text": "",
+            "participant_info": null,
             "use_additional_questionnaire": false,
-            "notes": "Wird anstrengend \u2026",
+            "notes": "Wird anstrengend …",
             "offline_lock": false,
             "is_visible": false,
             "is_course_list_visible": true,
             "is_course_state_visible": false,
             "is_participant_list_visible": false,
-            "courses_in_participant_list": false,
-            "is_cancelled": false,
+            "is_course_assignment_visible": false,
             "is_archived": false,
+            "is_cancelled": false,
             "lodge_field": null,
             "camping_mat_field": null,
             "course_room_field": null
@@ -3514,9 +3628,9 @@
         {
             "id": 3,
             "title": "CyberTestAkademie",
-            "institution": 1,
-            "description": "Ein ganz normales Event \u2013 mit \u2728.",
             "shortname": "cyta",
+            "institution": 1,
+            "description": "Ein ganz normales Event – mit ✨.",
             "registration_start": null,
             "registration_soft_limit": null,
             "registration_hard_limit": null,
@@ -3525,6 +3639,7 @@
             "orga_address": null,
             "registration_text": null,
             "mail_text": null,
+            "participant_info": null,
             "use_additional_questionnaire": false,
             "notes": null,
             "offline_lock": false,
@@ -3532,9 +3647,9 @@
             "is_course_list_visible": true,
             "is_course_state_visible": false,
             "is_participant_list_visible": false,
-            "courses_in_participant_list": false,
-            "is_cancelled": false,
+            "is_course_assignment_visible": false,
             "is_archived": false,
+            "is_cancelled": false,
             "lodge_field": null,
             "camping_mat_field": null,
             "course_room_field": null
@@ -3548,25 +3663,28 @@
             "shortname": "Wu",
             "part_begin": "2222-02-02",
             "part_end": "2222-02-02",
-            "fee": "10.50"
+            "fee": "10.50",
+            "waitlist_field": null
         },
         {
             "id": 2,
             "event_id": 1,
-            "title": "Erste H\u00e4lfte",
+            "title": "Erste Hälfte",
             "shortname": "1.H.",
             "part_begin": "2222-11-01",
             "part_end": "2222-11-11",
-            "fee": "123.00"
+            "fee": "123.00",
+            "waitlist_field": null
         },
         {
             "id": 3,
             "event_id": 1,
-            "title": "Zweite H\u00e4lfte",
+            "title": "Zweite Hälfte",
             "shortname": "2.H.",
             "part_begin": "2222-11-11",
             "part_end": "2222-11-30",
-            "fee": "450.99"
+            "fee": "450.99",
+            "waitlist_field": null
         },
         {
             "id": 4,
@@ -3575,7 +3693,8 @@
             "shortname": "Party",
             "part_begin": "2050-01-15",
             "part_end": "2050-01-15",
-            "fee": "15.00"
+            "fee": "15.00",
+            "waitlist_field": null
         },
         {
             "id": 5,
@@ -3592,7 +3711,7 @@
         {
             "id": 1,
             "part_id": 2,
-            "title": "Morgenkreis (Erste H\u00e4lfte)",
+            "title": "Morgenkreis (Erste Hälfte)",
             "shortname": "Morgenkreis",
             "num_choices": 4,
             "min_choices": 4,
@@ -3601,7 +3720,7 @@
         {
             "id": 2,
             "part_id": 2,
-            "title": "Kaffeekr\u00e4nzchen (Erste H\u00e4lfte)",
+            "title": "Kaffeekränzchen (Erste Hälfte)",
             "shortname": "Kaffee",
             "num_choices": 1,
             "min_choices": 1,
@@ -3610,7 +3729,7 @@
         {
             "id": 3,
             "part_id": 3,
-            "title": "Arbeitssitzung (Zweite H\u00e4lfte)",
+            "title": "Arbeitssitzung (Zweite Hälfte)",
             "shortname": "Sitzung",
             "num_choices": 3,
             "min_choices": 2,
@@ -3624,38 +3743,6 @@
             "num_choices": 3,
             "min_choices": 2,
             "sortkey": 1
-        }
-    ],
-    "event.orgas": [
-        {
-            "id": 1,
-            "persona_id": 7,
-            "event_id": 1
-        },
-        {
-            "id": 2,
-            "persona_id": 1,
-            "event_id": 2
-        },
-        {
-            "id": 3,
-            "persona_id": 2,
-            "event_id": 2
-        },
-        {
-            "id": 4,
-            "persona_id": 100,
-            "event_id": 2
-        },
-        {
-            "id": 5,
-            "persona_id": 1,
-            "event_id": 3
-        },
-        {
-            "id": 6,
-            "persona_id": 7,
-            "event_id": 3
         }
     ],
     "event.field_definitions": [
@@ -3744,141 +3831,74 @@
             "kind": 2,
             "association": 1,
             "entries": null
+        },
+        {
+            "id": 8,
+            "event_id": 1,
+            "field_name": "anzahl_GROSSBUCHSTABEN",
+            "kind": 3,
+            "association": 1,
+            "entries": null
         }
     ],
     "event.fee_modifiers": [
         {
             "id": 1,
-            "amount": "-5.00",
-            "field_id": 7,
+            "part_id": 1,
             "modifier_name": "is_child",
-            "part_id": 1
+            "amount": "-5.00",
+            "field_id": 7
         },
         {
             "id": 2,
-            "amount": "-12.00",
-            "field_id": 7,
+            "part_id": 2,
             "modifier_name": "is_child",
-            "part_id": 2
+            "amount": "-12.00",
+            "field_id": 7
         },
         {
             "id": 3,
-            "amount": "-19.00",
-            "field_id": 7,
+            "part_id": 3,
             "modifier_name": "is_child",
-            "part_id": 3
-        }
-    ],
-    "event.questionnaire_rows": [
-        {
-            "event_id": 1,
-            "field_id": 7,
-            "pos": 0,
-            "title": "Ich bin unter 13 Jahre alt.",
-            "info": null,
-            "input_size": null,
-            "readonly": null,
-            "default_value": null,
-            "kind": 1
-        },
-        {
-            "event_id": 1,
-            "field_id": null,
-            "pos": 0,
-            "title": "Unter\u00fcberschrift",
-            "info": "mit Text darunter",
-            "input_size": null,
-            "readonly": null,
-            "default_value": null,
-            "kind": 2
-        },
-        {
-            "event_id": 1,
-            "field_id": 1,
-            "pos": 1,
-            "title": "B\u00e4lle",
-            "info": "Du bringst genug B\u00e4lle mit um einen ganzen Kurs abzuwerfen.",
-            "input_size": null,
-            "readonly": false,
-            "default_value": "True",
-            "kind": 2
-        },
-        {
-            "event_id": 1,
-            "field_id": null,
-            "pos": 2,
-            "title": null,
-            "info": "nur etwas Text",
-            "input_size": null,
-            "readonly": null,
-            "default_value": null,
-            "kind": 2
-        },
-        {
-            "event_id": 1,
-            "field_id": null,
-            "pos": 3,
-            "title": "Weitere \u00dcberschrift",
-            "info": null,
-            "input_size": null,
-            "readonly": null,
-            "default_value": null,
-            "kind": 2
-        },
-        {
-            "event_id": 1,
-            "field_id": 2,
-            "pos": 4,
-            "title": "Vehikel",
-            "info": null,
-            "input_size": null,
-            "readonly": false,
-            "default_value": "etc",
-            "kind": 2
-        },
-        {
-            "event_id": 1,
-            "field_id": 3,
-            "pos": 5,
-            "title": "Hauswunsch",
-            "info": null,
-            "input_size": 3,
-            "readonly": false,
-            "default_value": null,
-            "kind": 2
+            "amount": "-19.00",
+            "field_id": 7
         }
     ],
     "event.courses": [
         {
             "id": 1,
             "event_id": 1,
-            "nr": "\u03b1",
-            "title": "Planetenretten f\u00fcr Anf\u00e4nger",
-            "description": "Wir werden die B\u00e4ume dr\u00fccken.",
+            "nr": "α",
+            "title": "Planetenretten für Anfänger",
+            "description": "Wir werden die Bäume drücken.",
             "shortname": "Heldentum",
             "instructors": "ToFi & Co",
             "min_size": 2,
             "max_size": 10,
-            "notes": "Promotionen in Mathematik und Ethik f\u00fcr Teilnehmer notwendig.",
-            "fields": "{\"room\": \"Wald\"}"
+            "notes": "Promotionen in Mathematik und Ethik für Teilnehmer notwendig.",
+            "fields": {
+                "room": "Wald"
+            }
         },
         {
             "id": 2,
             "event_id": 1,
-            "nr": "\u03b2",
-            "title": "Lustigsein f\u00fcr Fortgeschrittene",
-            "description": "Inklusive Post, Backwaren und fr\u00fchzeitigem Ableben.",
+            "nr": "β",
+            "title": "Lustigsein für Fortgeschrittene",
+            "description": "Inklusive Post, Backwaren und frühzeitigem Ableben.",
             "shortname": "Kabarett",
             "instructors": "Bernd Lucke",
             "min_size": 10,
             "max_size": 20,
             "notes": "Kursleiter hat Sekt angefordert.",
-            "fields": "{\"room\": \"Theater\"}"
+            "fields": {
+                "room": "Theater"
+            }
         },
         {
             "id": 3,
             "event_id": 1,
-            "nr": "\u03b3",
+            "nr": "γ",
             "title": "Kurzer Kurs",
             "description": "mit hoher Leistung.",
             "shortname": "Kurz",
@@ -3886,12 +3906,14 @@
             "min_size": 5,
             "max_size": 14,
             "notes": null,
-            "fields": "{\"room\": \"Seminarraum 42\"}"
+            "fields": {
+                "room": "Seminarraum 42"
+            }
         },
         {
             "id": 4,
             "event_id": 1,
-            "nr": "\u03b4",
+            "nr": "δ",
             "title": "Langer Kurs",
             "description": "mit hohem Umsatz.",
             "shortname": "Lang",
@@ -3899,12 +3921,14 @@
             "min_size": null,
             "max_size": null,
             "notes": null,
-            "fields": "{\"room\": \"Seminarraum 23\"}"
+            "fields": {
+                "room": "Seminarraum 23"
+            }
         },
         {
             "id": 5,
             "event_id": 1,
-            "nr": "\u03b5",
+            "nr": "ε",
             "title": "Backup-Kurs",
             "description": "damit wir Auswahl haben",
             "shortname": "Backup",
@@ -3912,44 +3936,46 @@
             "min_size": null,
             "max_size": null,
             "notes": null,
-            "fields": "{\"room\": \"Nirwana\"}"
+            "fields": {
+                "room": "Nirwana"
+            }
         },
         {
             "id": 6,
             "event_id": 3,
+            "nr": "π",
             "title": "Die Kreise des Internets",
             "description": null,
-            "nr": "\u03c0",
             "shortname": "Kreise",
             "instructors": "L. Euler",
-            "max_size": 31,
             "min_size": 3,
+            "max_size": 31,
             "notes": null,
             "fields": {}
         },
         {
             "id": 7,
             "event_id": 3,
-            "title": "Komplexe L\u00f6sungen f\u00fcr einfache Probleme \u2013 der CyberClub der Ehemaligen im 23. Jahrhundert",
-            "description": null,
             "nr": "i",
+            "title": "Komplexe Lösungen für einfache Probleme – der CyberClub der Ehemaligen im 23. Jahrhundert",
+            "description": null,
             "shortname": "CydE",
             "instructors": "Deep Thought",
-            "max_size": 42,
             "min_size": 0,
+            "max_size": 42,
             "notes": null,
             "fields": {}
         },
         {
             "id": 8,
             "event_id": 3,
+            "nr": "1",
             "title": "Die alte CdE-Homepage",
             "description": null,
-            "nr": "1",
             "shortname": "Aus neu mach alt",
-            "instructors": "\u2013",
-            "max_size": 1,
+            "instructors": "–",
             "min_size": 1,
+            "max_size": 1,
             "notes": null,
             "fields": {}
         }
@@ -4046,6 +4072,38 @@
             "is_active": true
         }
     ],
+    "event.orgas": [
+        {
+            "id": 1,
+            "persona_id": 7,
+            "event_id": 1
+        },
+        {
+            "id": 2,
+            "persona_id": 1,
+            "event_id": 2
+        },
+        {
+            "id": 3,
+            "persona_id": 2,
+            "event_id": 2
+        },
+        {
+            "id": 4,
+            "persona_id": 100,
+            "event_id": 2
+        },
+        {
+            "id": 5,
+            "persona_id": 1,
+            "event_id": 3
+        },
+        {
+            "id": 6,
+            "persona_id": 7,
+            "event_id": 3
+        }
+    ],
     "event.lodgement_groups": [
         {
             "id": 1,
@@ -4055,7 +4113,7 @@
         {
             "id": 2,
             "event_id": 1,
-            "title": "Au\u00dfenWohnGruppe"
+            "title": "AußenWohnGruppe"
         }
     ],
     "event.lodgements": [
@@ -4067,7 +4125,9 @@
             "camping_mat_capacity": 1,
             "notes": null,
             "group_id": 2,
-            "fields": "{\"contamination\": \"high\"}"
+            "fields": {
+                "contamination": "high"
+            }
         },
         {
             "id": 2,
@@ -4075,9 +4135,11 @@
             "title": "Kalte Kammer",
             "regular_capacity": 10,
             "camping_mat_capacity": 2,
-            "notes": "Daf\u00fcr mit Frischluft.",
+            "notes": "Dafür mit Frischluft.",
             "group_id": 1,
-            "fields": "{\"contamination\": \"none\"}"
+            "fields": {
+                "contamination": "none"
+            }
         },
         {
             "id": 3,
@@ -4085,9 +4147,11 @@
             "title": "Kellerverlies",
             "regular_capacity": 0,
             "camping_mat_capacity": 100,
-            "notes": "Nur f\u00fcr Notf\u00e4lle.",
+            "notes": "Nur für Notfälle.",
             "group_id": null,
-            "fields": "{\"contamination\": \"low\"}"
+            "fields": {
+                "contamination": "low"
+            }
         },
         {
             "id": 4,
@@ -4097,7 +4161,9 @@
             "camping_mat_capacity": 0,
             "notes": null,
             "group_id": 1,
-            "fields": "{\"contamination\": \"high\"}"
+            "fields": {
+                "contamination": "high"
+            }
         }
     ],
     "event.registrations": [
@@ -4109,29 +4175,38 @@
             "notes": null,
             "orga_notes": null,
             "payment": null,
-            "amount_owed": "573.99",
             "amount_paid": "0.00",
+            "amount_owed": "573.99",
             "parental_agreement": true,
             "mixed_lodging": true,
             "checkin": null,
             "list_consent": true,
-            "fields": {"lodge": "Die üblichen Verdächtigen :)", "is_child": false}
+            "fields": {
+                "lodge": "Die üblichen Verdächtigen :)",
+                "is_child": false,
+                "anzahl_GROSSBUCHSTABEN": 4
+            }
         },
         {
             "id": 2,
             "persona_id": 5,
             "real_persona_id": null,
             "event_id": 1,
-            "notes": "Extraw\u00fcnsche: Meerblick, Weckdienst und Fr\u00fchst\u00fcck am Bett",
+            "notes": "Extrawünsche: Meerblick, Weckdienst und Frühstück am Bett",
             "orga_notes": "Unbedingt in die Einzelzelle.",
             "payment": "2014-02-02",
-            "amount_owed": "589.49",
             "amount_paid": "0.00",
+            "amount_owed": "589.49",
             "parental_agreement": true,
             "mixed_lodging": true,
             "checkin": null,
             "list_consent": true,
-            "fields": {"brings_balls": true, "transportation": "pedes", "is_child": false}
+            "fields": {
+                "is_child": false,
+                "brings_balls": true,
+                "transportation": "pedes",
+                "anzahl_GROSSBUCHSTABEN": 3
+            }
         },
         {
             "id": 3,
@@ -4141,13 +4216,17 @@
             "notes": null,
             "orga_notes": null,
             "payment": "2014-03-03",
-            "amount_owed": "584.49",
             "amount_paid": "0.00",
+            "amount_owed": "584.49",
             "parental_agreement": true,
             "mixed_lodging": true,
             "checkin": null,
             "list_consent": false,
-            "fields": {"transportation": "car", "is_child": false}
+            "fields": {
+                "is_child": false,
+                "transportation": "car",
+                "anzahl_GROSSBUCHSTABEN": 3
+            }
         },
         {
             "id": 4,
@@ -4157,13 +4236,19 @@
             "notes": null,
             "orga_notes": null,
             "payment": "2014-04-04",
-            "amount_owed": "431.99",
             "amount_paid": "0.00",
+            "amount_owed": "431.99",
             "parental_agreement": false,
             "mixed_lodging": false,
             "checkin": null,
             "list_consent": false,
-            "fields": {"may_reserve": true, "brings_balls": false, "transportation": "etc", "is_child": true}
+            "fields": {
+                "is_child": true,
+                "may_reserve": true,
+                "brings_balls": false,
+                "transportation": "etc",
+                "anzahl_GROSSBUCHSTABEN": 2
+            }
         },
         {
             "id": 5,
@@ -4173,13 +4258,17 @@
             "notes": null,
             "orga_notes": null,
             "payment": null,
-            "amount_owed": "584.49",
             "amount_paid": "0.00",
+            "amount_owed": "584.49",
             "parental_agreement": true,
             "mixed_lodging": false,
             "checkin": null,
             "list_consent": true,
-            "fields": {"transportation": "pedes", "is_child": false}
+            "fields": {
+                "is_child": false,
+                "transportation": "pedes",
+                "anzahl_GROSSBUCHSTABEN": 2
+            }
         },
         {
             "id": 6,
@@ -4189,45 +4278,49 @@
             "notes": null,
             "orga_notes": null,
             "payment": null,
-            "amount_owed": "10.50",
             "amount_paid": "0.00",
+            "amount_owed": "10.50",
             "parental_agreement": true,
             "mixed_lodging": true,
             "checkin": null,
             "list_consent": true,
-            "fields": {"transportation": "pedes", "is_child": false}
+            "fields": {
+                "is_child": false,
+                "transportation": "pedes",
+                "anzahl_GROSSBUCHSTABEN": 2
+            }
         },
         {
             "id": 7,
             "persona_id": 4,
+            "real_persona_id": null,
             "event_id": 3,
             "notes": null,
             "orga_notes": null,
             "payment": null,
+            "amount_paid": "0.00",
+            "amount_owed": "0.00",
             "parental_agreement": false,
             "mixed_lodging": false,
             "checkin": null,
             "list_consent": false,
-            "fields": {},
-            "real_persona_id": null,
-            "amount_paid": "0.00",
-            "amount_owed": "0.00"
+            "fields": {}
         },
         {
             "id": 8,
             "persona_id": 15,
+            "real_persona_id": null,
             "event_id": 3,
             "notes": null,
             "orga_notes": null,
             "payment": null,
+            "amount_paid": "0.00",
+            "amount_owed": "0.00",
             "parental_agreement": false,
             "mixed_lodging": false,
             "checkin": null,
             "list_consent": false,
-            "fields": {},
-            "real_persona_id": null,
-            "amount_paid": "0.00",
-            "amount_owed": "0.00"
+            "fields": {}
         }
     ],
     "event.registration_parts": [
@@ -4816,9 +4909,94 @@
             "rank": 2
         }
     ],
-    "event.log": [
+    "event.questionnaire_rows": [
         {
             "id": 1,
+            "event_id": 1,
+            "field_id": 7,
+            "pos": 0,
+            "title": "Ich bin unter 13 Jahre alt.",
+            "info": null,
+            "input_size": null,
+            "readonly": null,
+            "default_value": null,
+            "kind": 1
+        },
+        {
+            "id": 2,
+            "event_id": 1,
+            "field_id": null,
+            "pos": 0,
+            "title": "Unterüberschrift",
+            "info": "mit Text darunter",
+            "input_size": null,
+            "readonly": null,
+            "default_value": null,
+            "kind": 2
+        },
+        {
+            "id": 3,
+            "event_id": 1,
+            "field_id": 1,
+            "pos": 1,
+            "title": "Bälle",
+            "info": "Du bringst genug Bälle mit um einen ganzen Kurs abzuwerfen.",
+            "input_size": null,
+            "readonly": false,
+            "default_value": "True",
+            "kind": 2
+        },
+        {
+            "id": 4,
+            "event_id": 1,
+            "field_id": null,
+            "pos": 2,
+            "title": null,
+            "info": "nur etwas Text",
+            "input_size": null,
+            "readonly": null,
+            "default_value": null,
+            "kind": 2
+        },
+        {
+            "id": 5,
+            "event_id": 1,
+            "field_id": null,
+            "pos": 3,
+            "title": "Weitere Überschrift",
+            "info": null,
+            "input_size": null,
+            "readonly": null,
+            "default_value": null,
+            "kind": 2
+        },
+        {
+            "id": 6,
+            "event_id": 1,
+            "field_id": 2,
+            "pos": 4,
+            "title": "Vehikel",
+            "info": null,
+            "input_size": null,
+            "readonly": false,
+            "default_value": "etc",
+            "kind": 2
+        },
+        {
+            "id": 7,
+            "event_id": 1,
+            "field_id": 3,
+            "pos": 5,
+            "title": "Hauswunsch",
+            "info": null,
+            "input_size": 3,
+            "readonly": false,
+            "default_value": null,
+            "kind": 2
+        }
+    ],
+    "event.log": [
+        {
             "ctime": "2014-01-01T01:04:05+00:00",
             "code": 50,
             "submitted_by": 1,
@@ -4827,7 +5005,6 @@
             "change_note": null
         },
         {
-            "id": 2,
             "ctime": "2014-01-01T02:05:06+00:00",
             "code": 50,
             "submitted_by": 5,
@@ -4836,7 +5013,6 @@
             "change_note": null
         },
         {
-            "id": 3,
             "ctime": "2014-01-01T03:06:07+00:00",
             "code": 50,
             "submitted_by": 7,
@@ -4845,7 +5021,6 @@
             "change_note": null
         },
         {
-            "id": 4,
             "ctime": "2014-01-01T04:07:08+00:00",
             "code": 50,
             "submitted_by": 9,
@@ -4859,7 +5034,7 @@
             "id": 1,
             "title": "Internationaler Kongress",
             "shortname": "kongress",
-            "description": "Proletarier aller L\u00e4nder vereinigt Euch!",
+            "description": "Proletarier aller Länder vereinigt Euch!",
             "presider_address": "kongress@example.cde",
             "signup_end": "2111-11-11T00:00:00+00:00",
             "is_active": true,
@@ -4896,50 +5071,6 @@
             "persona_id": 23
         }
     ],
-    "assembly.attendees": [
-        {
-            "id": 1,
-            "persona_id": 1,
-            "assembly_id": 1,
-            "secret": "aoeuidhtns"
-        },
-        {
-            "id": 2,
-            "persona_id": 2,
-            "assembly_id": 1,
-            "secret": "snthdiueoa"
-        },
-        {
-            "id": 3,
-            "persona_id": 9,
-            "assembly_id": 1,
-            "secret": "asonetuhid"
-        },
-        {
-            "id": 4,
-            "persona_id": 11,
-            "assembly_id": 1,
-            "secret": "bxronkxeud"
-        },
-        {
-            "id": 5,
-            "persona_id": 23,
-            "assembly_id": 1,
-            "secret": "esfawernae"
-        },
-        {
-            "id": 6,
-            "persona_id": 100,
-            "assembly_id": 1,
-            "secret": "sefnasdfiw"
-        },
-        {
-            "id": 7,
-            "persona_id": 18,
-            "assembly_id": 2,
-            "secret": null
-        }
-    ],
     "assembly.ballots": [
         {
             "id": 1,
@@ -4952,6 +5083,8 @@
             "extended": true,
             "use_bar": true,
             "abs_quorum": 2,
+            "rel_quorum": 0,
+            "quorum": null,
             "votes": null,
             "is_tallied": false,
             "notes": null
@@ -4967,6 +5100,8 @@
             "extended": null,
             "use_bar": false,
             "abs_quorum": 0,
+            "rel_quorum": 0,
+            "quorum": null,
             "votes": null,
             "is_tallied": false,
             "notes": "Nochmal alle auf diese wichtige Entscheidung hinweisen."
@@ -4982,6 +5117,8 @@
             "extended": null,
             "use_bar": true,
             "abs_quorum": 0,
+            "rel_quorum": 0,
+            "quorum": null,
             "votes": 1,
             "is_tallied": false,
             "notes": null
@@ -4997,6 +5134,8 @@
             "extended": null,
             "use_bar": true,
             "abs_quorum": 0,
+            "rel_quorum": 0,
+            "quorum": null,
             "votes": 2,
             "is_tallied": false,
             "notes": null
@@ -5012,6 +5151,8 @@
             "extended": null,
             "use_bar": false,
             "abs_quorum": 0,
+            "rel_quorum": 0,
+            "quorum": null,
             "votes": null,
             "is_tallied": false,
             "notes": null
@@ -5019,7 +5160,7 @@
         {
             "id": 6,
             "assembly_id": 3,
-            "title": "Test-Abstimmung \u2013 bitte ignorieren",
+            "title": "Test-Abstimmung – bitte ignorieren",
             "description": null,
             "vote_begin": "1999-12-31T22:00:00+00:00",
             "vote_end": "2000-02-01T22:00:00+00:00",
@@ -5027,6 +5168,8 @@
             "extended": false,
             "use_bar": false,
             "abs_quorum": 0,
+            "rel_quorum": 0,
+            "quorum": null,
             "votes": 1,
             "is_tallied": false,
             "notes": null
@@ -5042,6 +5185,8 @@
             "extended": false,
             "use_bar": false,
             "abs_quorum": 0,
+            "rel_quorum": 0,
+            "quorum": null,
             "votes": 1,
             "is_tallied": false,
             "notes": null
@@ -5050,13 +5195,15 @@
             "id": 8,
             "assembly_id": 2,
             "title": "Eine damals wichtige Frage",
-            "description": "Was für ein Logo soll der CdE bekommen?",
-            "vote_begin": "900-09-29T22:00:00+00:00",
-            "vote_end": "1000-01-01T23:00:00+00:00",
+            "description": "Was für ein Logo soll der CdE bekommen?\n\n* CdE Wappen: Die vier Wappentiere, die den Schriftzug CdE umringen\n* CdE Glühbirne: Glühbirne mit dem Schriftzug CdE\n* Baum & Blätter: Ein Baum mit Blättern und Grün",
+            "vote_begin": "1800-09-29T22:00:00+00:00",
+            "vote_end": "1900-01-01T23:00:00+00:00",
             "vote_extension_end": "1999-09-05T23:00:00+00:00",
             "extended": true,
             "use_bar": true,
             "abs_quorum": 100000,
+            "rel_quorum": 0,
+            "quorum": null,
             "votes": 1,
             "is_tallied": false,
             "notes": null
@@ -5072,6 +5219,8 @@
             "extended": false,
             "use_bar": true,
             "abs_quorum": 0,
+            "rel_quorum": 0,
+            "quorum": null,
             "votes": 2,
             "is_tallied": false,
             "notes": null
@@ -5087,6 +5236,8 @@
             "extended": true,
             "use_bar": false,
             "abs_quorum": 4444,
+            "rel_quorum": 0,
+            "quorum": null,
             "votes": null,
             "is_tallied": false,
             "notes": null
@@ -5102,6 +5253,8 @@
             "extended": false,
             "use_bar": false,
             "abs_quorum": 0,
+            "rel_quorum": 0,
+            "quorum": null,
             "votes": 1,
             "is_tallied": false,
             "notes": null
@@ -5117,6 +5270,8 @@
             "extended": null,
             "use_bar": false,
             "abs_quorum": 4,
+            "rel_quorum": 0,
+            "quorum": null,
             "votes": 1,
             "is_tallied": false,
             "notes": null
@@ -5132,6 +5287,8 @@
             "extended": null,
             "use_bar": true,
             "abs_quorum": 0,
+            "rel_quorum": 0,
+            "quorum": null,
             "votes": null,
             "is_tallied": false,
             "notes": null
@@ -5147,6 +5304,8 @@
             "extended": null,
             "use_bar": false,
             "abs_quorum": 3333,
+            "rel_quorum": 0,
+            "quorum": null,
             "votes": null,
             "is_tallied": false,
             "notes": null
@@ -5162,6 +5321,8 @@
             "extended": null,
             "use_bar": false,
             "abs_quorum": 2000,
+            "rel_quorum": 0,
+            "quorum": null,
             "votes": null,
             "is_tallied": false,
             "notes": null
@@ -5171,12 +5332,14 @@
             "assembly_id": 3,
             "title": "Ganz wichtige Wahl",
             "description": null,
-            "vote_begin": "2222-02-22T00:00+00:00",
-            "vote_end": "2222-02-22T00:01+00:00",
+            "vote_begin": "2222-02-22T00:00:00+00:00",
+            "vote_end": "2222-02-22T00:01:00+00:00",
             "vote_extension_end": null,
             "extended": null,
             "use_bar": false,
             "abs_quorum": 0,
+            "rel_quorum": 0,
+            "quorum": null,
             "votes": null,
             "is_tallied": false,
             "notes": null
@@ -5222,7 +5385,7 @@
         {
             "id": 8,
             "ballot_id": 2,
-            "title": "Gr\u00fcn",
+            "title": "Grün",
             "shortname": "gruen"
         },
         {
@@ -5258,7 +5421,7 @@
         {
             "id": 14,
             "ballot_id": 3,
-            "title": "L\u00f6scher",
+            "title": "Löscher",
             "shortname": "Lo"
         },
         {
@@ -5438,19 +5601,19 @@
         {
             "id": 46,
             "ballot_id": 8,
-            "title": "Eine Glühbirne mit Schriftzug",
+            "title": "CdE Glühbirne",
             "shortname": "Gluehbirne"
         },
         {
             "id": 47,
             "ballot_id": 8,
-            "title": "Die vier Wappentiere, die den Schriftzug CdE umringen",
+            "title": "CdE Wappen",
             "shortname": "Wappen"
         },
         {
             "id": 48,
             "ballot_id": 8,
-            "title": "Ein Baum mit Blättern und Grün!",
+            "title": "Baum & Blätter",
             "shortname": "Baum"
         },
         {
@@ -5490,531 +5653,860 @@
             "shortname": "Akademien"
         }
     ],
-    "assembly.attachments": [
+    "assembly.attendees": [
         {
-            "id": 1,
-            "ballot_id": null,
-            "assembly_id": 3
+            "persona_id": 1,
+            "assembly_id": 1,
+            "secret": "aoeuidhtns"
         },
         {
-            "id": 2,
-            "ballot_id": null,
-            "assembly_id": 3
+            "persona_id": 2,
+            "assembly_id": 1,
+            "secret": "snthdiueoa"
         },
         {
-            "id": 3,
-            "ballot_id": 16,
-            "assembly_id": null
+            "persona_id": 9,
+            "assembly_id": 1,
+            "secret": "asonetuhid"
+        },
+        {
+            "persona_id": 11,
+            "assembly_id": 1,
+            "secret": "bxronkxeud"
+        },
+        {
+            "persona_id": 23,
+            "assembly_id": 1,
+            "secret": "esfawernae"
+        },
+        {
+            "persona_id": 100,
+            "assembly_id": 1,
+            "secret": "sefnasdfiw"
+        },
+        {
+            "persona_id": 1,
+            "assembly_id": 2,
+            "secret": "V04KDLN6JQQCR6NF"
+        },
+        {
+            "persona_id": 3,
+            "assembly_id": 2,
+            "secret": "A32UkoilRtAhrnCc"
+        },
+        {
+            "persona_id": 7,
+            "assembly_id": 2,
+            "secret": "9U0Oe0xNzrHO_MmW"
+        },
+        {
+            "persona_id": 9,
+            "assembly_id": 2,
+            "secret": "VDQCL3e53pV-QbY2"
+        },
+        {
+            "persona_id": 17,
+            "assembly_id": 2,
+            "secret": "iQ86C3CWgd6aQN9Z"
+        },
+        {
+            "persona_id": 18,
+            "assembly_id": 2,
+            "secret": null
+        },
+        {
+            "persona_id": 22,
+            "assembly_id": 2,
+            "secret": "CtRNJJ-wfDQxdSQM"
+        },
+        {
+            "persona_id": 32,
+            "assembly_id": 2,
+            "secret": "6I96448xmPJExrcJ"
         }
     ],
-    "assembly.attachment_versions": [
+    "assembly.voter_register": [
         {
-            "attachment_id": 1,
-            "version": 1,
-            "title": "Rechenschaftsbericht",
-            "authors": "Farin",
-            "ctime": "---now---",
-            "dtime": null,
-            "filename": "rechen.pdf",
-            "file_hash": "abc"
+            "persona_id": 1,
+            "ballot_id": 1,
+            "has_voted": true
         },
         {
-            "attachment_id": 2,
-            "version": 1,
-            "title": "Kassenprüferbericht",
-            "authors": "Berta",
-            "ctime": "---now---",
-            "dtime": null,
-            "filename": "kasse.pdf",
-            "file_hash": "bcd"
+            "persona_id": 2,
+            "ballot_id": 1,
+            "has_voted": true
         },
         {
-            "attachment_id": 2,
-            "version": 2,
-            "title": null,
-            "authors": null,
-            "ctime": "---now---",
-            "dtime": "---now---",
-            "filename": null,
-            "file_hash": "del"
+            "persona_id": 9,
+            "ballot_id": 1,
+            "has_voted": true
         },
         {
-            "attachment_id": 2,
-            "version": 3,
-            "title": "Kassenprüferbericht 2",
-            "authors": "Garcia",
-            "ctime": "---now---",
-            "dtime": null,
-            "filename": "kasse.pdf",
-            "file_hash": "cde"
+            "persona_id": 11,
+            "ballot_id": 1,
+            "has_voted": true
         },
         {
-            "attachment_id": 3,
-            "version": 1,
-            "title": "Liste der Kanditaten",
-            "authors": "Wahlleitung",
-            "ctime": "---now---",
-            "dtime": null,
-            "filename": "kandidaten.pdf",
-            "file_hash": "xyz"
+            "persona_id": 23,
+            "ballot_id": 1,
+            "has_voted": false
+        },
+        {
+            "persona_id": 100,
+            "ballot_id": 1,
+            "has_voted": false
+        },
+        {
+            "persona_id": 1,
+            "ballot_id": 2,
+            "has_voted": false
+        },
+        {
+            "persona_id": 2,
+            "ballot_id": 2,
+            "has_voted": false
+        },
+        {
+            "persona_id": 9,
+            "ballot_id": 2,
+            "has_voted": false
+        },
+        {
+            "persona_id": 11,
+            "ballot_id": 2,
+            "has_voted": false
+        },
+        {
+            "persona_id": 23,
+            "ballot_id": 2,
+            "has_voted": false
+        },
+        {
+            "persona_id": 100,
+            "ballot_id": 2,
+            "has_voted": false
+        },
+        {
+            "persona_id": 1,
+            "ballot_id": 3,
+            "has_voted": false
+        },
+        {
+            "persona_id": 2,
+            "ballot_id": 3,
+            "has_voted": true
+        },
+        {
+            "persona_id": 9,
+            "ballot_id": 3,
+            "has_voted": false
+        },
+        {
+            "persona_id": 11,
+            "ballot_id": 3,
+            "has_voted": false
+        },
+        {
+            "persona_id": 23,
+            "ballot_id": 3,
+            "has_voted": false
+        },
+        {
+            "persona_id": 100,
+            "ballot_id": 3,
+            "has_voted": false
+        },
+        {
+            "persona_id": 1,
+            "ballot_id": 4,
+            "has_voted": false
+        },
+        {
+            "persona_id": 2,
+            "ballot_id": 4,
+            "has_voted": false
+        },
+        {
+            "persona_id": 9,
+            "ballot_id": 4,
+            "has_voted": false
+        },
+        {
+            "persona_id": 11,
+            "ballot_id": 4,
+            "has_voted": false
+        },
+        {
+            "persona_id": 23,
+            "ballot_id": 4,
+            "has_voted": false
+        },
+        {
+            "persona_id": 100,
+            "ballot_id": 4,
+            "has_voted": false
+        },
+        {
+            "persona_id": 1,
+            "ballot_id": 5,
+            "has_voted": false
+        },
+        {
+            "persona_id": 2,
+            "ballot_id": 5,
+            "has_voted": false
+        },
+        {
+            "persona_id": 9,
+            "ballot_id": 5,
+            "has_voted": false
+        },
+        {
+            "persona_id": 11,
+            "ballot_id": 5,
+            "has_voted": false
+        },
+        {
+            "persona_id": 23,
+            "ballot_id": 5,
+            "has_voted": false
+        },
+        {
+            "persona_id": 100,
+            "ballot_id": 5,
+            "has_voted": false
+        },
+        {
+            "persona_id": 18,
+            "ballot_id": 7,
+            "has_voted": true
+        },
+        {
+            "persona_id": 1,
+            "ballot_id": 7,
+            "has_voted": true
+        },
+        {
+            "persona_id": 3,
+            "ballot_id": 7,
+            "has_voted": true
+        },
+        {
+            "persona_id": 32,
+            "ballot_id": 7,
+            "has_voted": true
+        },
+        {
+            "persona_id": 7,
+            "ballot_id": 7,
+            "has_voted": true
+        },
+        {
+            "persona_id": 9,
+            "ballot_id": 7,
+            "has_voted": true
+        },
+        {
+            "persona_id": 17,
+            "ballot_id": 7,
+            "has_voted": false
+        },
+        {
+            "persona_id": 22,
+            "ballot_id": 7,
+            "has_voted": false
+        },
+        {
+            "persona_id": 18,
+            "ballot_id": 8,
+            "has_voted": true
+        },
+        {
+            "persona_id": 1,
+            "ballot_id": 8,
+            "has_voted": true
+        },
+        {
+            "persona_id": 3,
+            "ballot_id": 8,
+            "has_voted": true
+        },
+        {
+            "persona_id": 32,
+            "ballot_id": 8,
+            "has_voted": true
+        },
+        {
+            "persona_id": 7,
+            "ballot_id": 8,
+            "has_voted": true
+        },
+        {
+            "persona_id": 9,
+            "ballot_id": 8,
+            "has_voted": true
+        },
+        {
+            "persona_id": 17,
+            "ballot_id": 8,
+            "has_voted": false
+        },
+        {
+            "persona_id": 22,
+            "ballot_id": 8,
+            "has_voted": false
+        },
+        {
+            "persona_id": 18,
+            "ballot_id": 9,
+            "has_voted": true
+        },
+        {
+            "persona_id": 1,
+            "ballot_id": 9,
+            "has_voted": true
+        },
+        {
+            "persona_id": 3,
+            "ballot_id": 9,
+            "has_voted": true
+        },
+        {
+            "persona_id": 32,
+            "ballot_id": 9,
+            "has_voted": true
+        },
+        {
+            "persona_id": 7,
+            "ballot_id": 9,
+            "has_voted": true
+        },
+        {
+            "persona_id": 9,
+            "ballot_id": 9,
+            "has_voted": true
+        },
+        {
+            "persona_id": 17,
+            "ballot_id": 9,
+            "has_voted": false
+        },
+        {
+            "persona_id": 22,
+            "ballot_id": 9,
+            "has_voted": false
+        },
+        {
+            "persona_id": 18,
+            "ballot_id": 10,
+            "has_voted": true
+        },
+        {
+            "persona_id": 1,
+            "ballot_id": 10,
+            "has_voted": true
+        },
+        {
+            "persona_id": 3,
+            "ballot_id": 10,
+            "has_voted": true
+        },
+        {
+            "persona_id": 32,
+            "ballot_id": 10,
+            "has_voted": true
+        },
+        {
+            "persona_id": 7,
+            "ballot_id": 10,
+            "has_voted": true
+        },
+        {
+            "persona_id": 9,
+            "ballot_id": 10,
+            "has_voted": true
+        },
+        {
+            "persona_id": 17,
+            "ballot_id": 10,
+            "has_voted": false
+        },
+        {
+            "persona_id": 22,
+            "ballot_id": 10,
+            "has_voted": false
+        },
+        {
+            "persona_id": 1,
+            "ballot_id": 11,
+            "has_voted": false
+        },
+        {
+            "persona_id": 2,
+            "ballot_id": 11,
+            "has_voted": false
+        },
+        {
+            "persona_id": 9,
+            "ballot_id": 11,
+            "has_voted": false
+        },
+        {
+            "persona_id": 11,
+            "ballot_id": 11,
+            "has_voted": false
+        },
+        {
+            "persona_id": 23,
+            "ballot_id": 11,
+            "has_voted": false
+        },
+        {
+            "persona_id": 100,
+            "ballot_id": 11,
+            "has_voted": false
+        },
+        {
+            "persona_id": 1,
+            "ballot_id": 12,
+            "has_voted": false
+        },
+        {
+            "persona_id": 2,
+            "ballot_id": 12,
+            "has_voted": false
+        },
+        {
+            "persona_id": 9,
+            "ballot_id": 12,
+            "has_voted": false
+        },
+        {
+            "persona_id": 11,
+            "ballot_id": 12,
+            "has_voted": false
+        },
+        {
+            "persona_id": 23,
+            "ballot_id": 12,
+            "has_voted": false
+        },
+        {
+            "persona_id": 100,
+            "ballot_id": 12,
+            "has_voted": false
+        },
+        {
+            "persona_id": 1,
+            "ballot_id": 13,
+            "has_voted": false
+        },
+        {
+            "persona_id": 2,
+            "ballot_id": 13,
+            "has_voted": false
+        },
+        {
+            "persona_id": 9,
+            "ballot_id": 13,
+            "has_voted": false
+        },
+        {
+            "persona_id": 11,
+            "ballot_id": 13,
+            "has_voted": false
+        },
+        {
+            "persona_id": 23,
+            "ballot_id": 13,
+            "has_voted": false
+        },
+        {
+            "persona_id": 100,
+            "ballot_id": 13,
+            "has_voted": false
+        },
+        {
+            "persona_id": 1,
+            "ballot_id": 14,
+            "has_voted": false
+        },
+        {
+            "persona_id": 2,
+            "ballot_id": 14,
+            "has_voted": false
+        },
+        {
+            "persona_id": 9,
+            "ballot_id": 14,
+            "has_voted": false
+        },
+        {
+            "persona_id": 11,
+            "ballot_id": 14,
+            "has_voted": false
+        },
+        {
+            "persona_id": 23,
+            "ballot_id": 14,
+            "has_voted": false
+        },
+        {
+            "persona_id": 100,
+            "ballot_id": 14,
+            "has_voted": false
+        },
+        {
+            "persona_id": 1,
+            "ballot_id": 15,
+            "has_voted": false
+        },
+        {
+            "persona_id": 2,
+            "ballot_id": 15,
+            "has_voted": false
+        },
+        {
+            "persona_id": 9,
+            "ballot_id": 15,
+            "has_voted": false
+        },
+        {
+            "persona_id": 11,
+            "ballot_id": 15,
+            "has_voted": false
+        },
+        {
+            "persona_id": 23,
+            "ballot_id": 15,
+            "has_voted": false
+        },
+        {
+            "persona_id": 100,
+            "ballot_id": 15,
+            "has_voted": false
         }
     ],
     "assembly.votes": [
         {
-            "id": 1,
-            "ballot_id": 1,
-            "vote": "2>3>_bar_>1=4",
-            "salt": "rxt3x/jnl",
-            "hash": "a3bf0788f1eaa85f5ca979d2ba963b7c60bce02c49ac1c0dfe5d06d5b3950d69c55752df5d963b8de770d353bf795ca07060f7578456b19e18028249bcf51195"
-        },
-        {
-            "id": 2,
-            "ballot_id": 1,
-            "vote": "3>2=4>_bar_>1",
-            "salt": "et3[uh{kr",
-            "hash": "f99ade4db2d724c6ae887cffc099c5758927358c99d65aac43e3ce61d212effad5bfbb68e69d6f2669f42d58c74e1fa3f2149a92c7172f2bb9d0e487478e5bb7"
-        },
-        {
-            "id": 3,
-            "ballot_id": 1,
-            "vote": "_bar_>4>3>2>1",
-            "salt": "krcqm\"xdv",
-            "hash": "65ab33a95a367ff3dd07d19ecb9de1311dd3cee5525bae5c7ba6ff46587e79e964e14a246211748f3beb406506b3aa926a66ff5754a69d4c340c98a0f3f5d69d"
-        },
-        {
-            "id": 4,
             "ballot_id": 1,
             "vote": "1>2=3=4>_bar_",
             "salt": "klw3xjq8s",
             "hash": "9d59b3a4a6a9eca9613ef2e0710117a8e240e9197f20f2b970288dd93fd6347d657d265033f915c7fa44043315c4a8b834951c4f4e6fc46ea59a795c02af93e7"
         },
         {
-            "id": 5,
+            "ballot_id": 1,
+            "vote": "2>3>_bar_>1=4",
+            "salt": "rxt3x/jnl",
+            "hash": "a3bf0788f1eaa85f5ca979d2ba963b7c60bce02c49ac1c0dfe5d06d5b3950d69c55752df5d963b8de770d353bf795ca07060f7578456b19e18028249bcf51195"
+        },
+        {
+            "ballot_id": 1,
+            "vote": "3>2=4>_bar_>1",
+            "salt": "et3[uh{kr",
+            "hash": "f99ade4db2d724c6ae887cffc099c5758927358c99d65aac43e3ce61d212effad5bfbb68e69d6f2669f42d58c74e1fa3f2149a92c7172f2bb9d0e487478e5bb7"
+        },
+        {
+            "ballot_id": 1,
+            "vote": "_bar_>4>3>2>1",
+            "salt": "krcqm\"xdv",
+            "hash": "65ab33a95a367ff3dd07d19ecb9de1311dd3cee5525bae5c7ba6ff46587e79e964e14a246211748f3beb406506b3aa926a66ff5754a69d4c340c98a0f3f5d69d"
+        },
+        {
             "ballot_id": 3,
             "vote": "Lo>Li=St=Fi=Bu=Go=_bar_",
             "salt": "lkn/4kvj9",
             "hash": "314776ac07ffdd56a53112ae5f5113fb356b82b19f3a43754695aa41bf8e120c0346b45e43d0a0114e2bbc7756e7f34ce41f784000c010570d71e90a5c2ab1f1"
         },
         {
-            "id": 6,
+            "ballot_id": 7,
+            "vote": "Ja=Nein=_bar_",
+            "salt": "3qKtF_n5-N1x6SXg",
+            "hash": "9a6ccef853b8d047117245f376e32d7e26679e7e04821240f66ec6e7b4aa349017b420d58b3674872833d90b080a7021cb5a7d8477827ae52f296678c3b44375"
+        },
+        {
+            "ballot_id": 7,
+            "vote": "Ja>Nein=_bar_",
+            "salt": "4gqC7wabgL-3QNJ4",
+            "hash": "af192fbe7a45b78f5f1207489e8fdcecec14a56a21ce35b60e045719237e95459502e452e6b528a512ea50616515209885b8bb11bf5ed314daeb2153e44fae03"
+        },
+        {
+            "ballot_id": 7,
+            "vote": "Ja>Nein=_bar_",
+            "salt": "e7yJMgd8Pny-CTTw",
+            "hash": "c7a19f5d43d3d8e19eed5c30a35171cb6f03722857b6829223c80f5c9b64dfe5e4581efef9ca5968a1c2d2259fd9dcd9a24edf102956064abd8b6f508ebf0a37"
+        },
+        {
+            "ballot_id": 7,
+            "vote": "Ja>Nein=_bar_",
+            "salt": "oxhpQAiFuo3FGeKh",
+            "hash": "f604f6b034a8f2ad7cdd526bfed5e7cc284988fc932ea5b298f1290613c4dba71e27f2b33ba114df729ed9dfb9efb44a9cdbd7f491da26cd66d2bf2e28008137"
+        },
+        {
             "ballot_id": 7,
             "vote": "Nein>Ja=_bar_",
             "salt": "le4sk502j",
             "hash": "1b92235ea46875b7fa0c902377f642f80a07646e8ef7528c058e246aa74a9ee34b24b5dcbc52340d04c643b89e035e556b43a84a0332785954b310a30ae49981"
         },
         {
-            "id": 7,
+            "ballot_id": 7,
+            "vote": "Nein>Ja=_bar_",
+            "salt": "tXsTeh_u4W8hkgFw",
+            "hash": "9ffdeb8357bd7f2f55796fc7b758c366ddf4d5c9a2099db2175c37e3439f5447482d7c70f41768b772acf0eb83de6b9b6f1de839d8e7017ea7dcd93c277038fd"
+        },
+        {
+            "ballot_id": 8,
+            "vote": "_bar_>Gluehbirne=Wappen=Baum",
+            "salt": "rBzNY2yvrIfhJvVX",
+            "hash": "597b4b9389443a8e712f84353cb6543fcfdb5303f52863832e1e20ddc3b16bbcdc50e45a763cd60f40a27de9dae694c7a2cabc337a99b6c5c16841b616066be1"
+        },
+        {
+            "ballot_id": 8,
+            "vote": "Baum>Gluehbirne=Wappen=_bar_",
+            "salt": "ONniRgTiarLlGG6g",
+            "hash": "462a25f47353c2201805f78721e809d1ec657a77a10ad9a23dd8abbf032449584fc8ab79c8a398c90dcc4a05906b165c93683bf8799269518650ce9c20ee3687"
+        },
+        {
+            "ballot_id": 8,
+            "vote": "Gluehbirne>Wappen=Baum=_bar_",
+            "salt": "6jFfFLgzS7v-5RzS",
+            "hash": "af5d435c45eb47be1e59038f0b58df82b74ccc357f0b0be6c2dd55947408ac9e0b79b10f4d91947659aa0041cda8f5c2ed7082dd80397af30135113209b89671"
+        },
+        {
             "ballot_id": 8,
             "vote": "Wappen>_bar_=Gluehbirne=Baum",
             "salt": "ikejsoe8p",
             "hash": "eb0eead9670397754d99a53af7ec56e94a5b44144aa2974f5ecd172f434f742b9f51783d9c4e4d2ae016d9fae1be9425621fe2bb91dfbb541ba9cccd34c92b3f"
         },
         {
-            "id": 8,
+            "ballot_id": 8,
+            "vote": "Wappen>Gluehbirne=Baum=_bar_",
+            "salt": "mZvg8C3N_mTw0NHR",
+            "hash": "091121018b9b4abb32170cf94b1835d54257aff1af0ab89a9d8f0cccb285feed684f4d156c7e0c3b2712ee09c29ff4a86fa84248f50e27fc7201160992c1aaed"
+        },
+        {
+            "ballot_id": 8,
+            "vote": "Wappen>Gluehbirne=Baum=_bar_",
+            "salt": "m_4y96XOHVw23G8S",
+            "hash": "31ffbf8192e2ad59d2a4876b2f56c97c7afd5ee6d1f69c878dbbfcc59fd825e15c5cb5633d12b1570d8d7ba39996c918f0a4797a26a0347db4b3ce7ab249fa72"
+        },
+        {
             "ballot_id": 9,
             "vote": "Farin=Inga>_bar_=Olaf",
             "salt": "l9tmeid73",
             "hash": "24a751056614ea223b1af4099d228ee943a3d33507c13fe746a3e6811b78188495ab6015bc9deda17ecb79ced8189ca6bb91e96d17d263bd713997fb4ecb9a88"
         },
         {
-            "id": 9,
+            "ballot_id": 9,
+            "vote": "Farin>Inga=Olaf=_bar_",
+            "salt": "9hXGpSsu7Qa8yRZ2",
+            "hash": "61bc51488881cf86d60aba06a2b77992aacde7be81a5f3a58db0bc3a3e7b453a9852d4f6e334fe435e361bd88c276aae76563bbe18b3a6cd782b2302ff2a14a3"
+        },
+        {
+            "ballot_id": 9,
+            "vote": "Farin>Inga=Olaf=_bar_",
+            "salt": "xecpP9gmqvB6Rrgf",
+            "hash": "73df69c21688a5220e530155a3afabec5ec33d3891a2d5ac96a8e50d0af4e0bb70fed78d2d877743134b972749de22c68fb9898ad842df57354b321f85fd1acc"
+        },
+        {
+            "ballot_id": 9,
+            "vote": "Inga>Farin=Olaf=_bar_",
+            "salt": "EotzylymAo0VIqE7",
+            "hash": "25a016c273582b9908f32c6746d438f815ad8709cb8b3e2397cee59f9d66bbfa6593b23d9c764b3de75d880fa79aa0d090f58d514d5c5879d912d2625fbd626e"
+        },
+        {
+            "ballot_id": 9,
+            "vote": "Inga>Farin=Olaf=_bar_",
+            "salt": "cF0alQC23taX_Vcf",
+            "hash": "25c43a5c71ed71ebb1c92c131c1e17c0519c8b53b3f76d68924a319c34b736e03b9d86345b2536d2cdf94696aa72d05e70391ec317b47aa44f57d6c507199ad9"
+        },
+        {
+            "ballot_id": 9,
+            "vote": "Olaf>Farin=Inga=_bar_",
+            "salt": "8USC8u8z8V6Jr1Sv",
+            "hash": "ea3810b465a5696333e1642d1c4fe0f9806c39dd25cb7ba0b592c9d4d4649de38333b4060aac8d776f13e680620404f41f445dff818ccae3a3dfdbf226331558"
+        },
+        {
+            "ballot_id": 10,
+            "vote": "Akademien>Aktien=Eisenberg",
+            "salt": "FnOt-eANAelixHHS",
+            "hash": "5b42013b4add2dab818a49df94477a7cfea5ddcd1726c4b786d683e5dd3bc6cbbfacb0bd16be7d18ec72940f9f83b73e73c6852518339f3254558ab4d68a2414"
+        },
+        {
+            "ballot_id": 10,
+            "vote": "Akademien>Aktien=Eisenberg",
+            "salt": "36wNHsz7gVZLah8N",
+            "hash": "6e7d517f142dda4f30aa674c9587c160c5f248f0bfa3df7567a4cd6b7516e39662341c84b97931f70038552de250bb6a0d8c007fdf14dccf7d2f2e7e44a443f4"
+        },
+        {
+            "ballot_id": 10,
+            "vote": "Akademien>Aktien=Eisenberg",
+            "salt": "lRM2mSqJNbAZRQyQ",
+            "hash": "bc5657f03d4062bf2680850199e4e1dea057d081c865549b0b4766e881c99a515bb25bed4dd0933812628c41c694dab2eeed40d20bc992996780c776617a1cf3"
+        },
+        {
+            "ballot_id": 10,
+            "vote": "Aktien=Eisenberg>Akademien",
+            "salt": "XmqDTwUsvglmweu1",
+            "hash": "b3ed496a4cf289fdffb92c87fe00b0511e56c87960d0a6a785cdea67c5845a6ad74a4c5f502160c071b2c7c95dd52c12137cb7a03c957437579447d0b4010756"
+        },
+        {
+            "ballot_id": 10,
+            "vote": "Eisenberg>Akademien=Aktien",
+            "salt": "4-kBxpIISJfyQD1p",
+            "hash": "25657cc8604a54b8e6c2ea98f72b93920634e46378cbc9d8f38e4d15f6f45ab12adf34dd801ede59b37e16ac4cc899e8adee798a70735e8f736e7bdd76795626"
+        },
+        {
             "ballot_id": 10,
             "vote": "Eisenberg>Akademien>Aktien",
             "salt": "8ci4wof73",
             "hash": "ec21445bdd06f5a62a59add324b1f7743a00e9e60f9d546f45199e96a3706af603b114069f3dbbecdd53ab4765522f1eea1bca410a3a91aec48ac97a2b2baddc"
         }
     ],
-    "assembly.voter_register": [
+    "assembly.attachments": [
         {
             "id": 1,
-            "persona_id": 1,
-            "ballot_id": 1,
-            "has_voted": true
+            "assembly_id": 3,
+            "ballot_id": null
         },
         {
             "id": 2,
-            "persona_id": 1,
-            "ballot_id": 2,
-            "has_voted": false
+            "assembly_id": 3,
+            "ballot_id": null
         },
         {
             "id": 3,
-            "persona_id": 1,
-            "ballot_id": 3,
-            "has_voted": false
+            "assembly_id": null,
+            "ballot_id": 16
+        }
+    ],
+    "assembly.attachment_versions": [
+        {
+            "id": 1,
+            "attachment_id": 1,
+            "version": 1,
+            "title": "Rechenschaftsbericht",
+            "authors": "Farin",
+            "filename": "rechen.pdf",
+            "ctime": "---now---",
+            "dtime": null,
+            "file_hash": "abc"
+        },
+        {
+            "id": 2,
+            "attachment_id": 2,
+            "version": 1,
+            "title": "Kassenprüferbericht",
+            "authors": "Berta",
+            "filename": "kasse.pdf",
+            "ctime": "---now---",
+            "dtime": null,
+            "file_hash": "bcd"
+        },
+        {
+            "id": 3,
+            "attachment_id": 2,
+            "version": 2,
+            "title": null,
+            "authors": null,
+            "filename": null,
+            "ctime": "---now---",
+            "dtime": "---now---",
+            "file_hash": "del"
         },
         {
             "id": 4,
-            "persona_id": 1,
-            "ballot_id": 4,
-            "has_voted": false
+            "attachment_id": 2,
+            "version": 3,
+            "title": "Kassenprüferbericht 2",
+            "authors": "Garcia",
+            "filename": "kasse.pdf",
+            "ctime": "---now---",
+            "dtime": null,
+            "file_hash": "cde"
         },
         {
             "id": 5,
-            "persona_id": 1,
-            "ballot_id": 5,
-            "has_voted": false
-        },
-        {
-            "id": 6,
-            "persona_id": 2,
-            "ballot_id": 1,
-            "has_voted": true
-        },
-        {
-            "id": 7,
-            "persona_id": 2,
-            "ballot_id": 2,
-            "has_voted": false
-        },
-        {
-            "id": 8,
-            "persona_id": 2,
-            "ballot_id": 3,
-            "has_voted": true
-        },
-        {
-            "id": 9,
-            "persona_id": 2,
-            "ballot_id": 4,
-            "has_voted": false
-        },
-        {
-            "id": 10,
-            "persona_id": 2,
-            "ballot_id": 5,
-            "has_voted": false
-        },
-        {
-            "id": 11,
-            "persona_id": 9,
-            "ballot_id": 1,
-            "has_voted": true
-        },
-        {
-            "id": 12,
-            "persona_id": 9,
-            "ballot_id": 2,
-            "has_voted": false
-        },
-        {
-            "id": 13,
-            "persona_id": 9,
-            "ballot_id": 3,
-            "has_voted": false
-        },
-        {
-            "id": 14,
-            "persona_id": 9,
-            "ballot_id": 4,
-            "has_voted": false
-        },
-        {
-            "id": 15,
-            "persona_id": 9,
-            "ballot_id": 5,
-            "has_voted": false
-        },
-        {
-            "id": 16,
-            "persona_id": 11,
-            "ballot_id": 1,
-            "has_voted": true
-        },
-        {
-            "id": 17,
-            "persona_id": 11,
-            "ballot_id": 2,
-            "has_voted": false
-        },
-        {
-            "id": 18,
-            "persona_id": 11,
-            "ballot_id": 3,
-            "has_voted": false
-        },
-        {
-            "id": 19,
-            "persona_id": 11,
-            "ballot_id": 4,
-            "has_voted": false
-        },
-        {
-            "id": 20,
-            "persona_id": 11,
-            "ballot_id": 5,
-            "has_voted": false
-        },
-        {
-            "id": 21,
-            "persona_id": 23,
-            "ballot_id": 1,
-            "has_voted": false
-        },
-        {
-            "id": 22,
-            "persona_id": 23,
-            "ballot_id": 2,
-            "has_voted": false
-        },
-        {
-            "id": 23,
-            "persona_id": 23,
-            "ballot_id": 3,
-            "has_voted": false
-        },
-        {
-            "id": 24,
-            "persona_id": 23,
-            "ballot_id": 4,
-            "has_voted": false
-        },
-        {
-            "id": 25,
-            "persona_id": 23,
-            "ballot_id": 5,
-            "has_voted": false
-        },
-        {
-            "id": 26,
-            "persona_id": 100,
-            "ballot_id": 1,
-            "has_voted": false
-        },
-        {
-            "id": 27,
-            "persona_id": 100,
-            "ballot_id": 2,
-            "has_voted": false
-        },
-        {
-            "id": 28,
-            "persona_id": 100,
-            "ballot_id": 3,
-            "has_voted": false
-        },
-        {
-            "id": 29,
-            "persona_id": 100,
-            "ballot_id": 4,
-            "has_voted": false
-        },
-        {
-            "id": 30,
-            "persona_id": 100,
-            "ballot_id": 5,
-            "has_voted": false
-        },
-        {
-            "id": 31,
-            "persona_id": 1,
-            "ballot_id": 11,
-            "has_voted": false
-        },
-        {
-            "id": 32,
-            "persona_id": 1,
-            "ballot_id": 12,
-            "has_voted": false
-        },
-        {
-            "id": 33,
-            "persona_id": 1,
-            "ballot_id": 13,
-            "has_voted": false
-        },
-        {
-            "id": 34,
-            "persona_id": 1,
-            "ballot_id": 14,
-            "has_voted": false
-        },
-        {
-            "id": 35,
-            "persona_id": 2,
-            "ballot_id": 11,
-            "has_voted": false
-        },
-        {
-            "id": 36,
-            "persona_id": 2,
-            "ballot_id": 12,
-            "has_voted": false
-        },
-        {
-            "id": 37,
-            "persona_id": 2,
-            "ballot_id": 13,
-            "has_voted": false
-        },
-        {
-            "id": 38,
-            "persona_id": 2,
-            "ballot_id": 14,
-            "has_voted": false
-        },
-        {
-            "id": 39,
-            "persona_id": 9,
-            "ballot_id": 11,
-            "has_voted": false
-        },
-        {
-            "id": 40,
-            "persona_id": 9,
-            "ballot_id": 12,
-            "has_voted": false
-        },
-        {
-            "id": 41,
-            "persona_id": 9,
-            "ballot_id": 13,
-            "has_voted": false
-        },
-        {
-            "id": 42,
-            "persona_id": 9,
-            "ballot_id": 14,
-            "has_voted": false
-        },
-        {
-            "id": 43,
-            "persona_id": 11,
-            "ballot_id": 11,
-            "has_voted": false
-        },
-        {
-            "id": 44,
-            "persona_id": 11,
-            "ballot_id": 12,
-            "has_voted": false
-        },
-        {
-            "id": 45,
-            "persona_id": 11,
-            "ballot_id": 13,
-            "has_voted": false
-        },
-        {
-            "id": 46,
-            "persona_id": 11,
-            "ballot_id": 14,
-            "has_voted": false
-        },
-        {
-            "id": 47,
-            "persona_id": 23,
-            "ballot_id": 11,
-            "has_voted": false
-        },
-        {
-            "id": 48,
-            "persona_id": 23,
-            "ballot_id": 12,
-            "has_voted": false
-        },
-        {
-            "id": 49,
-            "persona_id": 23,
-            "ballot_id": 13,
-            "has_voted": false
-        },
-        {
-            "id": 50,
-            "persona_id": 23,
-            "ballot_id": 14,
-            "has_voted": false
-        },
-        {
-            "id": 51,
-            "persona_id": 100,
-            "ballot_id": 11,
-            "has_voted": false
-        },
-        {
-            "id": 52,
-            "persona_id": 100,
-            "ballot_id": 12,
-            "has_voted": false
-        },
-        {
-            "id": 53,
-            "persona_id": 100,
-            "ballot_id": 13,
-            "has_voted": false
-        },
-        {
-            "id": 54,
-            "persona_id": 100,
-            "ballot_id": 14,
-            "has_voted": false
-        },
-        {
-            "id": 55,
-            "persona_id": 1,
-            "ballot_id": 15,
-            "has_voted": false
-        },
-        {
-            "id": 56,
-            "persona_id": 2,
-            "ballot_id": 15,
-            "has_voted": false
-        },
-        {
-            "id": 57,
-            "persona_id": 9,
-            "ballot_id": 15,
-            "has_voted": false
-        },
-        {
-            "id": 58,
-            "persona_id": 11,
-            "ballot_id": 15,
-            "has_voted": false
-        },
-        {
-            "id": 59,
-            "persona_id": 23,
-            "ballot_id": 15,
-            "has_voted": false
-        },
-        {
-            "id": 60,
-            "persona_id": 100,
-            "ballot_id": 15,
-            "has_voted": false
-        },
-        {
-            "id": 61,
-            "persona_id": 18,
-            "ballot_id": 7,
-            "has_voted": true
-        },
-        {
-            "id": 62,
-            "persona_id": 18,
-            "ballot_id": 8,
-            "has_voted": true
-        },
-        {
-            "id": 63,
-            "persona_id": 18,
-            "ballot_id": 9,
-            "has_voted": true
-        },
-        {
-            "id": 64,
-            "persona_id": 18,
-            "ballot_id": 10,
-            "has_voted": true
+            "attachment_id": 3,
+            "version": 1,
+            "title": "Liste der Kanditaten",
+            "authors": "Wahlleitung",
+            "filename": "kandidaten.pdf",
+            "ctime": "---now---",
+            "dtime": null,
+            "file_hash": "xyz"
         }
     ],
-    "assembly.log": [],
+    "assembly.log": [
+        {
+            "ctime": "---now---",
+            "code": 30,
+            "submitted_by": 1,
+            "assembly_id": 2,
+            "persona_id": 18,
+            "change_note": null
+        },
+        {
+            "ctime": "---now---",
+            "code": 30,
+            "submitted_by": 1,
+            "assembly_id": 2,
+            "persona_id": 1,
+            "change_note": null
+        },
+        {
+            "ctime": "---now---",
+            "code": 30,
+            "submitted_by": 3,
+            "assembly_id": 2,
+            "persona_id": 3,
+            "change_note": null
+        },
+        {
+            "ctime": "---now---",
+            "code": 30,
+            "submitted_by": 32,
+            "assembly_id": 2,
+            "persona_id": 32,
+            "change_note": null
+        },
+        {
+            "ctime": "---now---",
+            "code": 30,
+            "submitted_by": 7,
+            "assembly_id": 2,
+            "persona_id": 7,
+            "change_note": null
+        },
+        {
+            "ctime": "---now---",
+            "code": 30,
+            "submitted_by": 9,
+            "assembly_id": 2,
+            "persona_id": 9,
+            "change_note": null
+        },
+        {
+            "ctime": "---now---",
+            "code": 30,
+            "submitted_by": 1,
+            "assembly_id": 2,
+            "persona_id": 17,
+            "change_note": null
+        },
+        {
+            "ctime": "---now---",
+            "code": 30,
+            "submitted_by": 1,
+            "assembly_id": 2,
+            "persona_id": 22,
+            "change_note": null
+        }
+    ],
     "ml.mailinglists": [
         {
             "id": 1,
-            "title": "Verk\u00fcndungen",
+            "title": "Verkündungen",
             "address": "announce@lists.cde-ev.de",
             "local_part": "announce",
             "domain": 1,
@@ -6022,7 +6514,7 @@
             "mod_policy": 3,
             "attachment_policy": 3,
             "ml_type": 1,
-            "subject_prefix": "H\u00f6rt, h\u00f6rt",
+            "subject_prefix": "Hört, hört",
             "maxsize": null,
             "is_active": true,
             "notes": null,
@@ -6037,7 +6529,7 @@
             "address": "werbung@lists.cde-ev.de",
             "local_part": "werbung",
             "domain": 1,
-            "description": "Wir werden auch gut bezahlt daf\u00fcr",
+            "description": "Wir werden auch gut bezahlt dafür",
             "mod_policy": 3,
             "attachment_policy": 1,
             "ml_type": 2,
@@ -6227,19 +6719,76 @@
             "assembly_id": null
         },
         {
+            "id": 12,
+            "title": "Moderatoren-Liste",
+            "address": "moderatoren@lists.cde-ev.de",
+            "local_part": "moderatoren",
+            "domain": 1,
+            "description": "Für alle Moderatoren von Mailinglisten.",
+            "mod_policy": 3,
+            "attachment_policy": 1,
+            "ml_type": 45,
+            "subject_prefix": "mod",
+            "maxsize": null,
+            "is_active": true,
+            "notes": "Moderatoren haben Spam verdient!",
+            "gateway": null,
+            "event_id": null,
+            "registration_stati": [],
+            "assembly_id": null
+        },
+        {
+            "id": 13,
+            "title": "Allumfassende Liste",
+            "address": "everyone@lists.cde-ev.de",
+            "local_part": "everyone",
+            "domain": 1,
+            "description": "Für alle und jeden. Übersteigt Zeit und Baum.",
+            "mod_policy": 3,
+            "attachment_policy": 1,
+            "ml_type": 38,
+            "subject_prefix": "all",
+            "maxsize": 64,
+            "is_active": true,
+            "notes": "",
+            "gateway": null,
+            "event_id": null,
+            "registration_stati": [],
+            "assembly_id": null
+        },
+        {
+            "id": 14,
+            "title": "Lokalgruppen-Liste",
+            "address": "lokalgruppen@lists.cde-ev.de",
+            "local_part": "lokalgruppen",
+            "domain": 1,
+            "description": "Für alle Moderatoren von CdELokal-Mailinglisten.",
+            "mod_policy": 3,
+            "attachment_policy": 1,
+            "ml_type": 46,
+            "subject_prefix": "lokalgruppen",
+            "maxsize": null,
+            "is_active": true,
+            "notes": null,
+            "gateway": null,
+            "event_id": null,
+            "registration_stati": [],
+            "assembly_id": null
+        },
+        {
             "id": 51,
             "title": "CdE-All",
             "address": "all@lists.cde-ev.de",
             "local_part": "all",
             "domain": 1,
-            "description": "F\u00fcr alle CdEler.",
+            "description": "Für alle CdEler.",
             "mod_policy": 3,
             "attachment_policy": 1,
             "ml_type": 1,
             "subject_prefix": "all",
             "maxsize": null,
             "is_active": true,
-            "notes": "Auf keinen Fall l\u00f6schen!",
+            "notes": "Auf keinen Fall löschen!",
             "gateway": null,
             "event_id": null,
             "registration_stati": [],
@@ -6251,7 +6800,7 @@
             "address": "info@lists.cde-ev.de",
             "local_part": "info",
             "domain": 1,
-            "description": "Hier werden Veranstaltungsank\u00fcndigungen etc. verschickt.",
+            "description": "Hier werden Veranstaltungsankündigungen etc. verschickt.",
             "mod_policy": 3,
             "attachment_policy": 2,
             "ml_type": 2,
@@ -6353,7 +6902,7 @@
             "subject_prefix": "psst",
             "maxsize": null,
             "is_active": true,
-            "notes": "Sollten wir im Auge behalten, k\u00f6nnten zur Bedrohung werden - gut, das wir mitlesen.",
+            "notes": "Sollten wir im Auge behalten, könnten zur Bedrohung werden - gut, das wir mitlesen.",
             "gateway": null,
             "event_id": null,
             "registration_stati": [],
@@ -6361,11 +6910,11 @@
         },
         {
             "id": 58,
-            "title": "Testakademie 2222, G\u00e4ste",
+            "title": "Testakademie 2222, Gäste",
             "address": "test-gast@aka.cde-ev.de",
             "local_part": "test-gast",
             "domain": 2,
-            "description": "... f\u00fcr unsere besonderen G\u00e4ste.",
+            "description": "... für unsere besonderen Gäste.",
             "mod_policy": 1,
             "attachment_policy": 3,
             "ml_type": 20,
@@ -6386,7 +6935,7 @@
             "address": "party50@aka.cde-ev.de",
             "local_part": "party50",
             "domain": 2,
-            "description": "Bitte wende dich bei Fragen oder Problemen, die mit unserer Veranstaltung zusammenh\u00e4ngen, \u00fcber diese Liste an uns.",
+            "description": "Bitte wende dich bei Fragen oder Problemen, die mit unserer Veranstaltung zusammenhängen, über diese Liste an uns.",
             "mod_policy": 1,
             "attachment_policy": 1,
             "ml_type": 21,
@@ -6405,7 +6954,7 @@
             "address": "party50-all@aka.cde-ev.de",
             "local_part": "party50-all",
             "domain": 2,
-            "description": "Dieser Liste kannst du nur beitreten, indem du dich zu unserer [Veranstaltung anmeldest](/db/event/event/2/register) und den Status *Teilnehmer* erh\u00e4lst. Auf dieser Liste stehen alle Teilnehmer unserer Veranstaltung; sie kann im Vorfeld zum Austausch untereinander genutzt werden.",
+            "description": "Dieser Liste kannst du nur beitreten, indem du dich zu unserer [Veranstaltung anmeldest](/db/event/event/2/register) und den Status *Teilnehmer* erhälst. Auf dieser Liste stehen alle Teilnehmer unserer Veranstaltung; sie kann im Vorfeld zum Austausch untereinander genutzt werden.",
             "mod_policy": 2,
             "attachment_policy": 2,
             "ml_type": 20,
@@ -6426,7 +6975,7 @@
             "address": "kanonisch@lists.cde-ev.de",
             "local_part": "kanonisch",
             "domain": 1,
-            "description": "Wir schie\u00dfen auch auf Spatzen.",
+            "description": "Wir schießen auch auf Spatzen.",
             "mod_policy": 2,
             "attachment_policy": 2,
             "ml_type": 30,
@@ -6445,7 +6994,7 @@
             "address": "wal@lists.cde-ev.de",
             "local_part": "wal",
             "domain": 1,
-            "description": "Helft bei der Wal-z\u00e4hlung!",
+            "description": "Helft bei der Wal-zählung!",
             "mod_policy": 1,
             "attachment_policy": 1,
             "ml_type": 31,
@@ -6502,14 +7051,14 @@
             "address": "hogwarts@cdelokal.cde-ev.de",
             "local_part": "hogwarts",
             "domain": 4,
-            "description": "Kommt doch einfach mal zum w\u00f6chentlichen Treff nach Hogsmead.",
+            "description": "Kommt doch einfach mal zum wöchentlichen Treff nach Hogsmead.",
             "mod_policy": 2,
             "attachment_policy": 1,
             "ml_type": 60,
             "subject_prefix": "hogwarts",
             "maxsize": null,
             "is_active": true,
-            "notes": "gegr\u00fcndet von DA",
+            "notes": "gegründet von DA",
             "gateway": null,
             "event_id": null,
             "registration_stati": [],
@@ -6552,6 +7101,975 @@
             "event_id": null,
             "registration_stati": [],
             "assembly_id": null
+        }
+    ],
+    "ml.subscription_states": [
+        {
+            "mailinglist_id": 1,
+            "persona_id": 1,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 1,
+            "persona_id": 2,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 1,
+            "persona_id": 3,
+            "subscription_state": 1
+        },
+        {
+            "mailinglist_id": 1,
+            "persona_id": 6,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 1,
+            "persona_id": 7,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 1,
+            "persona_id": 9,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 1,
+            "persona_id": 13,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 1,
+            "persona_id": 15,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 1,
+            "persona_id": 16,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 1,
+            "persona_id": 17,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 1,
+            "persona_id": 22,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 1,
+            "persona_id": 23,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 1,
+            "persona_id": 27,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 1,
+            "persona_id": 32,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 1,
+            "persona_id": 100,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 2,
+            "persona_id": 1,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 2,
+            "persona_id": 2,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 2,
+            "persona_id": 3,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 2,
+            "persona_id": 6,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 2,
+            "persona_id": 7,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 2,
+            "persona_id": 9,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 2,
+            "persona_id": 13,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 2,
+            "persona_id": 15,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 2,
+            "persona_id": 16,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 2,
+            "persona_id": 17,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 2,
+            "persona_id": 22,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 2,
+            "persona_id": 23,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 2,
+            "persona_id": 27,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 2,
+            "persona_id": 32,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 2,
+            "persona_id": 100,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 3,
+            "persona_id": 1,
+            "subscription_state": 1
+        },
+        {
+            "mailinglist_id": 3,
+            "persona_id": 2,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 3,
+            "persona_id": 10,
+            "subscription_state": 1
+        },
+        {
+            "mailinglist_id": 4,
+            "persona_id": 1,
+            "subscription_state": 1
+        },
+        {
+            "mailinglist_id": 4,
+            "persona_id": 2,
+            "subscription_state": 1
+        },
+        {
+            "mailinglist_id": 4,
+            "persona_id": 3,
+            "subscription_state": 1
+        },
+        {
+            "mailinglist_id": 4,
+            "persona_id": 7,
+            "subscription_state": 11
+        },
+        {
+            "mailinglist_id": 4,
+            "persona_id": 100,
+            "subscription_state": 1
+        },
+        {
+            "mailinglist_id": 5,
+            "persona_id": 1,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 5,
+            "persona_id": 2,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 5,
+            "persona_id": 3,
+            "subscription_state": 10
+        },
+        {
+            "mailinglist_id": 5,
+            "persona_id": 9,
+            "subscription_state": 11
+        },
+        {
+            "mailinglist_id": 5,
+            "persona_id": 11,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 5,
+            "persona_id": 14,
+            "subscription_state": 10
+        },
+        {
+            "mailinglist_id": 5,
+            "persona_id": 23,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 5,
+            "persona_id": 100,
+            "subscription_state": 10
+        },
+        {
+            "mailinglist_id": 6,
+            "persona_id": 1,
+            "subscription_state": 1
+        },
+        {
+            "mailinglist_id": 6,
+            "persona_id": 2,
+            "subscription_state": 1
+        },
+        {
+            "mailinglist_id": 6,
+            "persona_id": 4,
+            "subscription_state": 1
+        },
+        {
+            "mailinglist_id": 7,
+            "persona_id": 1,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 7,
+            "persona_id": 3,
+            "subscription_state": 1
+        },
+        {
+            "mailinglist_id": 7,
+            "persona_id": 6,
+            "subscription_state": 20
+        },
+        {
+            "mailinglist_id": 8,
+            "persona_id": 7,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 9,
+            "persona_id": 1,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 9,
+            "persona_id": 2,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 9,
+            "persona_id": 5,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 9,
+            "persona_id": 7,
+            "subscription_state": 1
+        },
+        {
+            "mailinglist_id": 9,
+            "persona_id": 9,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 9,
+            "persona_id": 100,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 10,
+            "persona_id": 5,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 11,
+            "persona_id": 3,
+            "subscription_state": 1
+        },
+        {
+            "mailinglist_id": 11,
+            "persona_id": 4,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 11,
+            "persona_id": 9,
+            "subscription_state": 11
+        },
+        {
+            "mailinglist_id": 11,
+            "persona_id": 11,
+            "subscription_state": 1
+        },
+        {
+            "mailinglist_id": 11,
+            "persona_id": 23,
+            "subscription_state": 1
+        },
+        {
+            "mailinglist_id": 11,
+            "persona_id": 100,
+            "subscription_state": 11
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 1,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 2,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 3,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 4,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 5,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 7,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 9,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 10,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 11,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 15,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 23,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 27,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 100,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 1,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 2,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 3,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 4,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 5,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 6,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 7,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 9,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 10,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 11,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 13,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 14,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 15,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 16,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 17,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 18,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 22,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 23,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 27,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 32,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 48,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 100,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 14,
+            "persona_id": 5,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 51,
+            "persona_id": 1,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 51,
+            "persona_id": 2,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 51,
+            "persona_id": 3,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 51,
+            "persona_id": 6,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 51,
+            "persona_id": 7,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 51,
+            "persona_id": 9,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 51,
+            "persona_id": 13,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 51,
+            "persona_id": 15,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 51,
+            "persona_id": 16,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 51,
+            "persona_id": 17,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 51,
+            "persona_id": 22,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 51,
+            "persona_id": 23,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 51,
+            "persona_id": 27,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 51,
+            "persona_id": 32,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 51,
+            "persona_id": 100,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 52,
+            "persona_id": 1,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 52,
+            "persona_id": 2,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 52,
+            "persona_id": 3,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 52,
+            "persona_id": 6,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 52,
+            "persona_id": 7,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 52,
+            "persona_id": 9,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 52,
+            "persona_id": 13,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 52,
+            "persona_id": 15,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 52,
+            "persona_id": 16,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 52,
+            "persona_id": 17,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 52,
+            "persona_id": 22,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 52,
+            "persona_id": 23,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 52,
+            "persona_id": 27,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 52,
+            "persona_id": 32,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 52,
+            "persona_id": 100,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 53,
+            "persona_id": 1,
+            "subscription_state": 1
+        },
+        {
+            "mailinglist_id": 53,
+            "persona_id": 2,
+            "subscription_state": 1
+        },
+        {
+            "mailinglist_id": 53,
+            "persona_id": 7,
+            "subscription_state": 1
+        },
+        {
+            "mailinglist_id": 53,
+            "persona_id": 9,
+            "subscription_state": 1
+        },
+        {
+            "mailinglist_id": 54,
+            "persona_id": 2,
+            "subscription_state": 20
+        },
+        {
+            "mailinglist_id": 54,
+            "persona_id": 3,
+            "subscription_state": 11
+        },
+        {
+            "mailinglist_id": 54,
+            "persona_id": 7,
+            "subscription_state": 11
+        },
+        {
+            "mailinglist_id": 54,
+            "persona_id": 11,
+            "subscription_state": 10
+        },
+        {
+            "mailinglist_id": 54,
+            "persona_id": 100,
+            "subscription_state": 1
+        },
+        {
+            "mailinglist_id": 55,
+            "persona_id": 1,
+            "subscription_state": 1
+        },
+        {
+            "mailinglist_id": 55,
+            "persona_id": 11,
+            "subscription_state": 10
+        },
+        {
+            "mailinglist_id": 55,
+            "persona_id": 22,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 55,
+            "persona_id": 23,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 55,
+            "persona_id": 27,
+            "subscription_state": 2
+        },
+        {
+            "mailinglist_id": 55,
+            "persona_id": 32,
+            "subscription_state": 11
+        },
+        {
+            "mailinglist_id": 55,
+            "persona_id": 100,
+            "subscription_state": 1
+        },
+        {
+            "mailinglist_id": 56,
+            "persona_id": 7,
+            "subscription_state": 20
+        },
+        {
+            "mailinglist_id": 56,
+            "persona_id": 9,
+            "subscription_state": 1
+        },
+        {
+            "mailinglist_id": 57,
+            "persona_id": 15,
+            "subscription_state": 1
+        },
+        {
+            "mailinglist_id": 58,
+            "persona_id": 5,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 59,
+            "persona_id": 1,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 59,
+            "persona_id": 2,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 59,
+            "persona_id": 100,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 61,
+            "persona_id": 1,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 61,
+            "persona_id": 3,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 61,
+            "persona_id": 7,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 61,
+            "persona_id": 9,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 61,
+            "persona_id": 10,
+            "subscription_state": 10
+        },
+        {
+            "mailinglist_id": 61,
+            "persona_id": 17,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 61,
+            "persona_id": 18,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 61,
+            "persona_id": 22,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 61,
+            "persona_id": 32,
+            "subscription_state": 30
+        },
+        {
+            "mailinglist_id": 62,
+            "persona_id": 4,
+            "subscription_state": 1
+        },
+        {
+            "mailinglist_id": 62,
+            "persona_id": 11,
+            "subscription_state": 1
+        },
+        {
+            "mailinglist_id": 62,
+            "persona_id": 23,
+            "subscription_state": 1
+        },
+        {
+            "mailinglist_id": 63,
+            "persona_id": 2,
+            "subscription_state": 1
+        },
+        {
+            "mailinglist_id": 63,
+            "persona_id": 6,
+            "subscription_state": 1
+        },
+        {
+            "mailinglist_id": 63,
+            "persona_id": 9,
+            "subscription_state": 1
+        },
+        {
+            "mailinglist_id": 63,
+            "persona_id": 11,
+            "subscription_state": 1
+        },
+        {
+            "mailinglist_id": 63,
+            "persona_id": 13,
+            "subscription_state": 1
+        },
+        {
+            "mailinglist_id": 64,
+            "persona_id": 3,
+            "subscription_state": 1
+        },
+        {
+            "mailinglist_id": 64,
+            "persona_id": 9,
+            "subscription_state": 1
+        },
+        {
+            "mailinglist_id": 64,
+            "persona_id": 10,
+            "subscription_state": 1
+        },
+        {
+            "mailinglist_id": 65,
+            "persona_id": 1,
+            "subscription_state": 11
+        },
+        {
+            "mailinglist_id": 65,
+            "persona_id": 10,
+            "subscription_state": 1
+        },
+        {
+            "mailinglist_id": 65,
+            "persona_id": 14,
+            "subscription_state": 1
+        },
+        {
+            "mailinglist_id": 65,
+            "persona_id": 100,
+            "subscription_state": 11
+        },
+        {
+            "mailinglist_id": 66,
+            "persona_id": 23,
+            "subscription_state": 30
+        }
+    ],
+    "ml.subscription_addresses": [
+        {
+            "mailinglist_id": 3,
+            "persona_id": 10,
+            "address": "janis-spam@example.cde"
+        },
+        {
+            "mailinglist_id": 3,
+            "persona_id": 1,
+            "address": "new-anton@example.cde"
+        },
+        {
+            "mailinglist_id": 4,
+            "persona_id": 6,
+            "address": "ferdinand-unterhaltung@example.cde"
+        }
+    ],
+    "ml.whitelist": [
+        {
+            "mailinglist_id": 2,
+            "address": "honeypot@example.cde"
+        },
+        {
+            "mailinglist_id": 6,
+            "address": "aliens@example.cde"
+        },
+        {
+            "mailinglist_id": 6,
+            "address": "drwho@example.cde"
+        },
+        {
+            "mailinglist_id": 7,
+            "address": "aliens@example.cde"
+        },
+        {
+            "mailinglist_id": 7,
+            "address": "drwho@example.cde"
+        },
+        {
+            "mailinglist_id": 7,
+            "address": "captiankirk@example.cde"
+        },
+        {
+            "mailinglist_id": 54,
+            "address": "dagobert@example.cde"
+        },
+        {
+            "mailinglist_id": 55,
+            "address": "v.brandt@example.cde"
+        },
+        {
+            "mailinglist_id": 64,
+            "address": "dent@example.cde"
+        },
+        {
+            "mailinglist_id": 64,
+            "address": "prefect@example.cde"
+        },
+        {
+            "mailinglist_id": 65,
+            "address": "sproud@example.cde"
+        },
+        {
+            "mailinglist_id": 65,
+            "address": "hagrid@example.cde"
         }
     ],
     "ml.moderators": [
@@ -6616,12 +8134,32 @@
             "persona_id": 7
         },
         {
-            "mailinglist_id": 52,
-            "persona_id": 3
+            "mailinglist_id": 11,
+            "persona_id": 2
+        },
+        {
+            "mailinglist_id": 12,
+            "persona_id": 1
+        },
+        {
+            "mailinglist_id": 13,
+            "persona_id": 1
+        },
+        {
+            "mailinglist_id": 14,
+            "persona_id": 1
+        },
+        {
+            "mailinglist_id": 51,
+            "persona_id": 27
         },
         {
             "mailinglist_id": 52,
             "persona_id": 2
+        },
+        {
+            "mailinglist_id": 52,
+            "persona_id": 3
         },
         {
             "mailinglist_id": 53,
@@ -6653,7 +8191,7 @@
         },
         {
             "mailinglist_id": 57,
-            "persona_id": 12
+            "persona_id": 15
         },
         {
             "mailinglist_id": 58,
@@ -6666,6 +8204,10 @@
         {
             "mailinglist_id": 59,
             "persona_id": 2
+        },
+        {
+            "mailinglist_id": 59,
+            "persona_id": 27
         },
         {
             "mailinglist_id": 59,
@@ -6708,803 +8250,12 @@
             "persona_id": 5
         },
         {
-            "mailinglist_id": 51,
-            "persona_id": 27
-        },
-        {
-            "mailinglist_id": 59,
-            "persona_id": 27
-        },
-        {
-            "mailinglist_id": 11,
-            "persona_id": 2
-        },
-        {
             "mailinglist_id": 66,
             "persona_id": 23
         },
         {
             "mailinglist_id": 99,
             "persona_id": 1
-        }
-    ],
-    "ml.whitelist": [
-        {
-            "id": 1,
-            "mailinglist_id": 2,
-            "address": "honeypot@example.cde"
-        },
-        {
-            "id": 2,
-            "mailinglist_id": 6,
-            "address": "aliens@example.cde"
-        },
-        {
-            "id": 3,
-            "mailinglist_id": 6,
-            "address": "drwho@example.cde"
-        },
-        {
-            "id": 4,
-            "mailinglist_id": 7,
-            "address": "aliens@example.cde"
-        },
-        {
-            "id": 5,
-            "mailinglist_id": 7,
-            "address": "drwho@example.cde"
-        },
-        {
-            "id": 6,
-            "mailinglist_id": 7,
-            "address": "captiankirk@example.cde"
-        },
-        {
-            "id": 7,
-            "mailinglist_id": 54,
-            "address": "dagobert@example.cde"
-        },
-        {
-            "id": 8,
-            "mailinglist_id": 55,
-            "address": "v.brandt@example.cde"
-        },
-        {
-            "id": 9,
-            "mailinglist_id": 64,
-            "address": "dent@example.cde"
-        },
-        {
-            "id": 10,
-            "mailinglist_id": 64,
-            "address": "prefect@example.cde"
-        },
-        {
-            "id": 11,
-            "mailinglist_id": 65,
-            "address": "sproud@example.cde"
-        },
-        {
-            "id": 12,
-            "mailinglist_id": 65,
-            "address": "hagrid@example.cde"
-        }
-    ],
-    "ml.subscription_states": [
-        {
-            "mailinglist_id": 1,
-            "persona_id": 1,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 1,
-            "persona_id": 2,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 1,
-            "persona_id": 3,
-            "subscription_state": 1
-        },
-        {
-            "mailinglist_id": 1,
-            "persona_id": 6,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 1,
-            "persona_id": 7,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 1,
-            "persona_id": 9,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 1,
-            "persona_id": 12,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 1,
-            "persona_id": 13,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 1,
-            "persona_id": 15,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 1,
-            "persona_id": 22,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 1,
-            "persona_id": 23,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 1,
-            "persona_id": 27,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 1,
-            "persona_id": 32,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 1,
-            "persona_id": 100,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 2,
-            "persona_id": 1,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 2,
-            "persona_id": 2,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 2,
-            "persona_id": 3,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 2,
-            "persona_id": 6,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 2,
-            "persona_id": 7,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 2,
-            "persona_id": 9,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 2,
-            "persona_id": 12,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 2,
-            "persona_id": 13,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 2,
-            "persona_id": 15,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 2,
-            "persona_id": 22,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 2,
-            "persona_id": 23,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 2,
-            "persona_id": 27,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 2,
-            "persona_id": 32,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 2,
-            "persona_id": 100,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 3,
-            "persona_id": 1,
-            "subscription_state": 1
-        },
-        {
-            "mailinglist_id": 3,
-            "persona_id": 2,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 3,
-            "persona_id": 10,
-            "subscription_state": 1
-        },
-        {
-            "mailinglist_id": 4,
-            "persona_id": 1,
-            "subscription_state": 1
-        },
-        {
-            "mailinglist_id": 4,
-            "persona_id": 2,
-            "subscription_state": 1
-        },
-        {
-            "mailinglist_id": 4,
-            "persona_id": 3,
-            "subscription_state": 1
-        },
-        {
-            "mailinglist_id": 4,
-            "persona_id": 7,
-            "subscription_state": 11
-        },
-        {
-            "mailinglist_id": 4,
-            "persona_id": 100,
-            "subscription_state": 1
-        },
-        {
-            "mailinglist_id": 5,
-            "persona_id": 1,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 5,
-            "persona_id": 2,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 5,
-            "persona_id": 3,
-            "subscription_state": 10
-        },
-        {
-            "mailinglist_id": 5,
-            "persona_id": 9,
-            "subscription_state": 11
-        },
-        {
-            "mailinglist_id": 5,
-            "persona_id": 11,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 5,
-            "persona_id": 14,
-            "subscription_state": 10
-        },
-        {
-            "mailinglist_id": 5,
-            "persona_id": 23,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 5,
-            "persona_id": 100,
-            "subscription_state": 10
-        },
-        {
-            "mailinglist_id": 6,
-            "persona_id": 1,
-            "subscription_state": 1
-        },
-        {
-            "mailinglist_id": 6,
-            "persona_id": 2,
-            "subscription_state": 1
-        },
-        {
-            "mailinglist_id": 7,
-            "persona_id": 1,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 7,
-            "persona_id": 3,
-            "subscription_state": 1
-        },
-        {
-            "mailinglist_id": 7,
-            "persona_id": 6,
-            "subscription_state": 20
-        },
-        {
-            "mailinglist_id": 8,
-            "persona_id": 7,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 9,
-            "persona_id": 1,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 9,
-            "persona_id": 5,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 9,
-            "persona_id": 7,
-            "subscription_state": 1
-        },
-        {
-            "mailinglist_id": 9,
-            "persona_id": 9,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 9,
-            "persona_id": 100,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 10,
-            "persona_id": 5,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 11,
-            "persona_id": 3,
-            "subscription_state": 1
-        },
-        {
-            "mailinglist_id": 11,
-            "persona_id": 4,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 11,
-            "persona_id": 9,
-            "subscription_state": 11
-        },
-        {
-            "mailinglist_id": 11,
-            "persona_id": 11,
-            "subscription_state": 1
-        },
-        {
-            "mailinglist_id": 11,
-            "persona_id": 23,
-            "subscription_state": 1
-        },
-        {
-            "mailinglist_id": 11,
-            "persona_id": 100,
-            "subscription_state": 11
-        },
-        {
-            "mailinglist_id": 51,
-            "persona_id": 32,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 51,
-            "persona_id": 1,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 51,
-            "persona_id": 2,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 51,
-            "persona_id": 3,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 51,
-            "persona_id": 100,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 51,
-            "persona_id": 6,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 51,
-            "persona_id": 7,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 51,
-            "persona_id": 9,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 51,
-            "persona_id": 12,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 51,
-            "persona_id": 13,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 51,
-            "persona_id": 15,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 51,
-            "persona_id": 22,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 51,
-            "persona_id": 23,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 51,
-            "persona_id": 27,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 52,
-            "persona_id": 32,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 52,
-            "persona_id": 1,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 52,
-            "persona_id": 2,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 52,
-            "persona_id": 3,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 52,
-            "persona_id": 100,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 52,
-            "persona_id": 6,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 52,
-            "persona_id": 7,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 52,
-            "persona_id": 9,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 52,
-            "persona_id": 12,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 52,
-            "persona_id": 13,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 52,
-            "persona_id": 15,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 52,
-            "persona_id": 22,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 52,
-            "persona_id": 23,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 52,
-            "persona_id": 27,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 53,
-            "persona_id": 1,
-            "subscription_state": 1
-        },
-        {
-            "mailinglist_id": 53,
-            "persona_id": 2,
-            "subscription_state": 1
-        },
-        {
-            "mailinglist_id": 53,
-            "persona_id": 7,
-            "subscription_state": 1
-        },
-        {
-            "mailinglist_id": 53,
-            "persona_id": 9,
-            "subscription_state": 1
-        },
-        {
-            "mailinglist_id": 54,
-            "persona_id": 3,
-            "subscription_state": 11
-        },
-        {
-            "mailinglist_id": 54,
-            "persona_id": 11,
-            "subscription_state": 10
-        },
-        {
-            "mailinglist_id": 54,
-            "persona_id": 100,
-            "subscription_state": 1
-        },
-        {
-            "mailinglist_id": 54,
-            "persona_id": 2,
-            "subscription_state": 20
-        },
-        {
-            "mailinglist_id": 54,
-            "persona_id": 7,
-            "subscription_state": 11
-        },
-        {
-            "mailinglist_id": 55,
-            "persona_id": 100,
-            "subscription_state": 1
-        },
-        {
-            "mailinglist_id": 55,
-            "persona_id": 1,
-            "subscription_state": 1
-        },
-        {
-            "mailinglist_id": 55,
-            "persona_id": 23,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 55,
-            "persona_id": 27,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 55,
-            "persona_id": 22,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 55,
-            "persona_id": 32,
-            "subscription_state": 11
-        },
-        {
-            "mailinglist_id": 55,
-            "persona_id": 11,
-            "subscription_state": 10
-        },
-        {
-            "mailinglist_id": 56,
-            "persona_id": 7,
-            "subscription_state": 20
-        },
-        {
-            "mailinglist_id": 56,
-            "persona_id": 9,
-            "subscription_state": 1
-        },
-        {
-            "mailinglist_id": 57,
-            "persona_id": 12,
-            "subscription_state": 1
-        },
-        {
-            "mailinglist_id": 58,
-            "persona_id": 5,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 59,
-            "persona_id": 1,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 59,
-            "persona_id": 2,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 59,
-            "persona_id": 100,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 62,
-            "persona_id": 23,
-            "subscription_state": 1
-        },
-        {
-            "mailinglist_id": 62,
-            "persona_id": 11,
-            "subscription_state": 1
-        },
-        {
-            "mailinglist_id": 62,
-            "persona_id": 4,
-            "subscription_state": 1
-        },
-        {
-            "mailinglist_id": 63,
-            "persona_id": 2,
-            "subscription_state": 1
-        },
-        {
-            "mailinglist_id": 63,
-            "persona_id": 9,
-            "subscription_state": 1
-        },
-        {
-            "mailinglist_id": 63,
-            "persona_id": 6,
-            "subscription_state": 1
-        },
-        {
-            "mailinglist_id": 63,
-            "persona_id": 13,
-            "subscription_state": 1
-        },
-        {
-            "mailinglist_id": 63,
-            "persona_id": 11,
-            "subscription_state": 1
-        },
-        {
-            "mailinglist_id": 64,
-            "persona_id": 3,
-            "subscription_state": 1
-        },
-        {
-            "mailinglist_id": 64,
-            "persona_id": 10,
-            "subscription_state": 1
-        },
-        {
-            "mailinglist_id": 64,
-            "persona_id": 9,
-            "subscription_state": 1
-        },
-        {
-            "mailinglist_id": 65,
-            "persona_id": 10,
-            "subscription_state": 1
-        },
-        {
-            "mailinglist_id": 65,
-            "persona_id": 14,
-            "subscription_state": 1
-        },
-        {
-            "mailinglist_id": 65,
-            "persona_id": 1,
-            "subscription_state": 11
-        },
-        {
-            "mailinglist_id": 65,
-            "persona_id": 100,
-            "subscription_state": 11
-        },
-        {
-            "mailinglist_id": 52,
-            "persona_id": 17,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 51,
-            "persona_id": 17,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 2,
-            "persona_id": 17,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 1,
-            "persona_id": 17,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 9,
-            "persona_id": 2,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 1,
-            "persona_id": 16,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 2,
-            "persona_id": 16,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 51,
-            "persona_id": 16,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 52,
-            "persona_id": 16,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 61,
-            "persona_id": 18,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 66,
-            "persona_id": 23,
-            "subscription_state": 30
-        }
-    ],
-    "ml.subscription_addresses": [
-        {
-            "id": 1,
-            "mailinglist_id": 3,
-            "persona_id": 10,
-            "address": "janis-spam@example.cde"
-        },
-        {
-            "id": 2,
-            "mailinglist_id": 3,
-            "persona_id": 1,
-            "address": "new-anton@example.cde"
-        },
-        {
-            "id": 3,
-            "mailinglist_id": 4,
-            "persona_id": 6,
-            "address": "ferdinand-unterhaltung@example.cde"
         }
     ],
     "ml.log": []

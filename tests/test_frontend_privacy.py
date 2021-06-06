@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
 import datetime
-import unittest
+from typing import Dict, Set
 import urllib.parse
 
-from cdedb.common import encode_parameter
+from cdedb.common import CdEDBObject
 from tests.common import (
-    ADMIN_VIEWS_COOKIE_NAME, USER_DICT, FrontendTest, admin_views, as_users,
+    FrontendTest, UserIdentifier, UserObject, USER_DICT, admin_views, as_users,
 )
 
 # TODO Profilfoto
@@ -34,13 +34,13 @@ class TestPrivacyFrontend(FrontendTest):
 
     ALL_FIELDS = set(FIELD_TO_DIV.keys())
 
-    def _profile_base_view(self, inspected):
+    def _profile_base_view(self, inspected: UserObject) -> Set[str]:
         expected = {"Name", "CdEDB-ID", "E-Mail"}
         for field in expected:
             self.assertPresence(field, div=self.FIELD_TO_DIV[field])
         return expected
 
-    def _profile_relative_admin_view(self, inspected):
+    def _profile_relative_admin_view(self, inspected: UserObject) -> Set[str]:
         expected = {
             "Account aktiv", "Bereiche", "Admin-Privilegien", "Admin-Notizen"
         }
@@ -51,17 +51,17 @@ class TestPrivacyFrontend(FrontendTest):
         checked = self._profile_base_view(inspected)
         return expected | checked
 
-    def _profile_ml_admin_view(self, inspected):
-        expected = set()
+    def _profile_ml_admin_view(self, inspected: UserObject) -> Set[str]:
+        expected: Set[str] = set()
         checked = self._profile_relative_admin_view(inspected)
         return expected | checked
 
-    def _profile_assembly_admin_view(self, inspected):
-        expected = set()
+    def _profile_assembly_admin_view(self, inspected: UserObject) -> Set[str]:
+        expected: Set[str] = set()
         checked = self._profile_relative_admin_view(inspected)
         return expected | checked
 
-    def _profile_event_context_view(self, inspected):
+    def _profile_event_context_view(self, inspected: UserObject) -> Set[str]:
         expected = {
             "Geburtsdatum", "Geschlecht", "Telefon", "Mobiltelefon", "Adresse"
         }
@@ -72,15 +72,15 @@ class TestPrivacyFrontend(FrontendTest):
         checked = self._profile_base_view(inspected)
         return expected | checked
 
-    def _profile_event_admin_view(self, inspected):
-        expected = set()
+    def _profile_event_admin_view(self, inspected: UserObject) -> Set[str]:
+        expected: Set[str] = set()
         for field in expected:
             self.assertPresence(field, div=self.FIELD_TO_DIV[field])
         checked = self._profile_relative_admin_view(inspected)
         checked.update(self._profile_event_context_view(inspected))
         return expected | checked
 
-    def _profile_cde_context_view(self, inspected):
+    def _profile_cde_context_view(self, inspected: UserObject) -> Set[str]:
         expected = {
             "Geburtsname", "Geburtsdatum", "Telefon", "Mobiltelefon", "WWW",
             "Adresse", "Zweitadresse", "Fachgebiet", "Schule, Uni, …",
@@ -94,7 +94,7 @@ class TestPrivacyFrontend(FrontendTest):
         self.assertPresence(inspected['username'], div='contact-email')
         return expected | checked
 
-    def _profile_cde_admin_view(self, inspected):
+    def _profile_cde_admin_view(self, inspected: UserObject) -> Set[str]:
         expected = {
             "Geschlecht", "Mitgliedschaft", "Guthaben", "Sichtbarkeit",
             "Gedruckter exPuls"
@@ -105,7 +105,7 @@ class TestPrivacyFrontend(FrontendTest):
         checked.update(self._profile_cde_context_view(inspected))
         return expected | checked
 
-    def _profile_core_admin_view(self, inspected):
+    def _profile_core_admin_view(self, inspected: UserObject) -> Set[str]:
         # Core Admins should view all Fields. This is used, to test if any field
         # was forgotten to test
         checked = set()
@@ -117,7 +117,7 @@ class TestPrivacyFrontend(FrontendTest):
         checked.update(self._profile_meta_admin_view(inspected))
         return checked
 
-    def _profile_meta_admin_view(self, inspected):
+    def _profile_meta_admin_view(self, inspected: UserObject) -> Set[str]:
         expected = {"Bereiche", "Account aktiv", "Admin-Privilegien", "E-Mail",
                     "Admin-Notizen"}
         for field in expected:
@@ -127,29 +127,29 @@ class TestPrivacyFrontend(FrontendTest):
         checked = self._profile_base_view(inspected)
         return expected | checked
 
-    def _profile_member_view(self, inspected):
+    def _profile_member_view(self, inspected: UserObject) -> Set[str]:
         # Note that event context is no subset of this, because missing gender
-        expected = set()
+        expected: Set[str] = set()
         for field in expected:
             self.assertPresence(field, div=self.FIELD_TO_DIV[field])
         checked = self._profile_cde_context_view(inspected)
         return expected | checked
 
-    def _profile_orga_view(self, inspected):
-        expected = set()
+    def _profile_orga_view(self, inspected: UserObject) -> Set[str]:
+        expected: Set[str] = set()
         for field in expected:
             self.assertPresence(field, div=self.FIELD_TO_DIV[field])
         checked = self._profile_event_context_view(inspected)
         return expected | checked
 
-    def _profile_moderator_view(self, inspected):
-        expected = set()
+    def _profile_moderator_view(self, inspected: UserObject) -> Set[str]:
+        expected: Set[str] = set()
         # actual username should be displayed
         self.assertPresence(inspected['username'], div='contact-email')
         checked = self._profile_base_view(inspected)
         return expected | checked
 
-    def _profile_of_archived(self, inspected):
+    def _profile_of_archived(self, inspected: UserObject) -> Set[str]:
         expected = {
             "Account aktiv", "Bereiche", "Admin-Privilegien", "Admin-Notizen",
             "Gedruckter exPuls", "Guthaben", "Mitgliedschaft", "Geburtsname",
@@ -162,24 +162,28 @@ class TestPrivacyFrontend(FrontendTest):
         checked = self._profile_base_view(inspected)
         return expected | checked
 
-    def _disable_searchability(self, user):
+    def _disable_searchability(self, user: UserIdentifier) -> None:
         """ To avoid gaining more viewing rights through being a member"""
-        self.logout()
-        self.login(USER_DICT['anton'])
+        old_user = self.user["id"]
+        if old_user:
+            self.logout()
+        self.login('anton')
         self.admin_view_profile(user)
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['changedataform']
         f['is_searchable'].checked = False
         self.submit(f)
         self.logout()
+        if old_user:
+            self.login(old_user)
 
-    def show_user_link(self, persona_id):
+    def show_user_link(self, persona_id: int) -> str:
         confirm_id = urllib.parse.quote_plus(self.app.app.encode_parameter(
             "core/show_user", "confirm_id", persona_id,
             persona_id=None, timeout=datetime.timedelta(hours=12)))
         return f'/core/persona/{persona_id}/show?confirm_id={confirm_id}'
 
-    def test_profile_base_information(self):
+    def test_profile_base_information(self) -> None:
         # non-searchable user views normal account
         case1 = {
             'viewer': USER_DICT['charly'],
@@ -213,7 +217,7 @@ class TestPrivacyFrontend(FrontendTest):
             self.logout()
 
     @as_users("nina")
-    def test_profile_as_ml_admin(self, user):
+    def test_profile_as_ml_admin(self) -> None:
         # on ml only users, ml admins get full view
         inspected = USER_DICT['janis']
         self.get(self.show_user_link(inspected['id']))
@@ -242,11 +246,10 @@ class TestPrivacyFrontend(FrontendTest):
                                    check_div=False)
 
     @as_users("viktor")
-    def test_profile_as_assembly_admin(self, user):
+    def test_profile_as_assembly_admin(self) -> None:
         self._disable_searchability('werner')
 
         # on (assembly and ml) only users, assembly admins get full view
-        self.login(user)
         inspected = USER_DICT['kalif']
         self.get(self.show_user_link(inspected['id']))
         found = self._profile_assembly_admin_view(inspected)
@@ -255,11 +258,10 @@ class TestPrivacyFrontend(FrontendTest):
                                    check_div=False)
 
     @as_users("annika")
-    def test_profile_as_event_admin(self, user):
+    def test_profile_as_event_admin(self) -> None:
         self._disable_searchability('annika')
 
         # on event but not cde users, event admins get full view
-        self.login(user)
         inspected = USER_DICT['emilia']
         self.get(self.show_user_link(inspected['id']))
         found = self._profile_event_admin_view(inspected)
@@ -286,7 +288,7 @@ class TestPrivacyFrontend(FrontendTest):
                                    check_div=False)
 
     @as_users("quintus")
-    def test_profile_as_cde_admin(self, user):
+    def test_profile_as_cde_admin(self) -> None:
         # Quintus in not searchable.
 
         # on cde users, cde admins get full view ...
@@ -299,7 +301,6 @@ class TestPrivacyFrontend(FrontendTest):
 
         # ... even if they are not searchable
         self._disable_searchability('berta')
-        self.login(user)
         inspected = USER_DICT['berta']
         self.get(self.show_user_link(inspected['id']))
         found = self._profile_cde_admin_view(inspected)
@@ -308,11 +309,10 @@ class TestPrivacyFrontend(FrontendTest):
                                    check_div=False)
 
     @as_users("paul")
-    def test_profile_as_core_admin(self, user):
+    def test_profile_as_core_admin(self) -> None:
         self._disable_searchability('paul')
 
         # core admin gets full access to all users...
-        self.login(user)
         inspected = USER_DICT['berta']
         self.get(self.show_user_link(inspected['id']))
         found = self._profile_core_admin_view(inspected)
@@ -327,7 +327,7 @@ class TestPrivacyFrontend(FrontendTest):
                                    check_div=False)
 
     @as_users("martin")
-    def test_profile_as_meta_admin(self, user):
+    def test_profile_as_meta_admin(self) -> None:
         # meta admins get the same view for every user
         inspected = USER_DICT['berta']
         self.get(self.show_user_link(inspected['id']))
@@ -337,7 +337,7 @@ class TestPrivacyFrontend(FrontendTest):
                                    check_div=False)
 
     @as_users("inga")
-    def test_profile_as_member(self, user):
+    def test_profile_as_member(self) -> None:
         inspected = USER_DICT['berta']
         self.get(self.show_user_link(inspected['id']))
 
@@ -356,8 +356,19 @@ class TestPrivacyFrontend(FrontendTest):
             self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
                                    check_div=False)
 
+    @as_users("inga")
+    def test_ex_profile_as_member(self) -> None:
+        # See #1821
+        inspected = USER_DICT['martin']
+        self.get(self.show_user_link(inspected['id']))
+        # members got first an un-quoted view on a profile, showing the basics
+        found = self._profile_base_view(inspected)
+        # The username must not be visible, although "Email" occurs as field
+        self.assertNonPresence(inspected['username'])
+        self.assertNonPresence("Gesamtes Profil anzeigen")
+
     @as_users("garcia")
-    def test_profile_as_orga(self, user):
+    def test_profile_as_orga(self) -> None:
         # orgas get a closer view on users associated to their event
         inspected = USER_DICT['berta']
         self.get(self.show_user_link(inspected['id']) + "&event_id=1")
@@ -387,7 +398,7 @@ class TestPrivacyFrontend(FrontendTest):
                                    check_div=False)
 
     @as_users("janis")
-    def test_profile_as_moderator(self, user):
+    def test_profile_as_moderator(self) -> None:
         # moderators get a closer view on users associated to their mailinglist
         inspected = USER_DICT['berta']
         self.get(self.show_user_link(inspected['id']) + "&ml_id=2")
@@ -420,8 +431,8 @@ class TestPrivacyFrontend(FrontendTest):
     @as_users("annika", "inga", "nina", "quintus", "viktor")
     @admin_views("ml_mod", "ml_mod_cde", "ml_mod_event", "ml_mod_assembly",
                  "ml_mod_cdelokal")
-    def test_profile_as_relevant_ml_admin(self, user):
-        ml_admin = USER_DICT['nina']['id']
+    def test_profile_as_relevant_ml_admin(self) -> None:
+        ml_admin = 'nina'
         all_ml = (
             (64, 'janis', 'nina'),  # public
             (65, 'janis', 'inga'),  # cdelokal
@@ -434,7 +445,7 @@ class TestPrivacyFrontend(FrontendTest):
             inspected = USER_DICT[profile]
             self.get(
                 self.show_user_link(inspected['id']) + f"&ml_id={ml_id}")
-            if user['id'] == USER_DICT[admin]['id'] or user['id'] == ml_admin:
+            if self.user_in(admin, ml_admin):
                 found = self._profile_moderator_view(inspected)
             else:
                 found = self._profile_base_view(inspected)
@@ -445,89 +456,72 @@ class TestPrivacyFrontend(FrontendTest):
                 self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
                                        check_div=False)
 
-    @as_users("annika", "berta", "emilia", "janis", "kalif", "nina", "quintus",
-              "paul", "rowena", "viktor")
-    def test_profile_of_realm_user(self, user):
+    def test_profile_of_realm_user(self) -> None:
+        users = ("annika", "berta", "emilia", "janis", "kalif", "nina", "quintus",
+                 "paul", "rowena", "viktor")
 
-        def get_id(name: str) -> int:
-            return USER_DICT[name]['id']
-
-        cases = {
+        cases: Dict[str, CdEDBObject] = {
             'ml': {
                 'inspected': USER_DICT['janis'],
-                'access': {get_id(u) for u in ("janis", "nina", "paul")},
-                'no_access': {
-                    get_id(u) for u in ("annika", "quintus", "viktor", "berta",
-                                        "kalif", "emilia", "rowena")},
+                'access': ("janis", "nina", "paul"),
+                'no_access': ("annika", "quintus", "viktor", "berta", "kalif",
+                              "emilia", "rowena"),
             },
             'assembly': {
                 'inspected': USER_DICT['kalif'],
-                'access': {get_id(u) for u in ("kalif", "paul", "viktor")},
-                'no_access': {
-                    get_id(u) for u in ("annika", "nina", "quintus", "berta",
-                                        "janis", "emilia", "rowena")},
+                'access': ("kalif", "paul", "viktor"),
+                'no_access': ("annika", "nina", "quintus", "berta", "janis",
+                              "emilia", "rowena"),
             },
             'event': {
                 'inspected': USER_DICT['emilia'],
-                'access': {get_id(u) for u in ("emilia", "annika", "paul")},
-                'no_access': {
-                    get_id(u) for u in ("quintus", "nina", "viktor", "berta",
-                                        "kalif", "janis", "rowena")},
+                'access': ("emilia", "annika", "paul"),
+                'no_access': ("quintus", "nina", "viktor", "berta", "kalif",
+                              "janis", "rowena"),
             },
             'a_e': {
                 'inspected': USER_DICT['rowena'],
-                'access': {get_id(u) for u in ("rowena", "annika", "viktor",
-                                               "paul")},
-                'no_access': {
-                    get_id(u) for u in ("quintus", "nina", "janis", "berta",
-                                        "kalif", "emilia")},
+                'access': ("rowena", "annika", "viktor", "paul"),
+                'no_access': ("quintus", "nina", "janis", "berta", "kalif", "emilia"),
             },
             'cde': {
                 'inspected': USER_DICT['berta'],
-                'access': {get_id(u) for u in ("berta", "quintus", "paul")},
-                'no_access': {
-                    get_id(u) for u in ("annika", "nina", "viktor", "emilia",
-                                        "kalif", "janis", "rowena")},
+                'access': ("berta", "quintus", "paul"),
+                'no_access': ("annika", "nina", "viktor", "emilia", "kalif", "janis",
+                              "rowena"),
             }
         }
 
         # now the actual testing
-        for realm, case in cases.items():
-            inspected = case['inspected']
-            self.get(self.show_user_link(inspected['id']))
-            if user['id'] in case['access']:
-                # username is only visible on extended profile views
-                self.assertPresence(inspected['username'], div='contact-email')
-            elif user['id'] in case['no_access']:
-                found = self._profile_base_view(inspected)
-                # username must not be visible on base profiles
-                self.assertNonPresence(inspected['username'])
-                for field in self.ALL_FIELDS - found:
-                    self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
-                                           check_div=False)
-            else:
-                msg = "Forget {} in case {}.".format(user['given_names'], realm)
-                raise RuntimeError(msg)
+        for user in users:
+            with self.subTest(u=user):
+                self.login(user)
+                for realm, case in cases.items():
+                    inspected = case['inspected']
+                    self.get(self.show_user_link(inspected['id']))
+                    if self.user_in(*case['access']):
+                        # username is only visible on extended profile views
+                        self.assertPresence(inspected['username'], div='contact-email')
+                    elif self.user_in(*case['no_access']):
+                        found = self._profile_base_view(inspected)
+                        # username must not be visible on base profiles
+                        self.assertNonPresence(inspected['username'])
+                        for field in self.ALL_FIELDS - found:
+                            self.assertNonPresence(field, div=self.FIELD_TO_DIV[field],
+                                                   check_div=False)
+                    else:
+                        msg = f"Forget {self.user['given_name']} in case {realm}."
+                        raise RuntimeError(msg)
+                self.logout()
 
-    def test_profile_of_disabled_user(self):
+    def test_profile_of_disabled_user(self) -> None:
         # a disabled user should be viewable as an equal non-disabled user
         # TODO maybe add all above tests as subtests?
         self.skipTest("Test not yet implemented.")
 
-    @as_users("ferdinand", "martin", "paul")
-    def test_profile_of_archived_user(self, user):
-        inspected = USER_DICT['hades']
-
-        # they should be visible to core admins only ...
-        if user == USER_DICT['paul']:
-            self.get(self.show_user_link(inspected['id']))
-        # ... not for any other admin type
-        elif user in [USER_DICT['ferdinand'], USER_DICT['martin']]:
-            self.get(self.show_user_link(inspected['id']), status="403 FORBIDDEN")
-
-    @as_users("annika", "berta", "farin", "martin", "nina", "quintus", "paul",
-              "viktor")
-    def test_user_search(self, user):
+    def test_user_search(self) -> None:
+        users = ("annika", "berta", "farin", "martin", "nina", "quintus", "paul",
+                 "viktor")
         # users who should have access to the specific user search
         core = {
             USER_DICT['farin']['id'], USER_DICT['paul']['id']
@@ -548,50 +542,56 @@ class TestPrivacyFrontend(FrontendTest):
             USER_DICT['farin']['id'], USER_DICT['viktor']['id']
         }
 
-        if user['id'] in core:
-            self.get('/core/search/user')
-            self.assertTitle("Allgemeine Nutzerverwaltung")
-        else:
-            self.get('/core/search/user', status="403 FORBIDDEN")
-            self.assertTitle("403: Forbidden")
+        for user in users:
+            with self.subTest(u=user):
+                self.login(user)
 
-        if user['id'] in archive:
-            self.get('/core/search/archiveduser')
-            self.assertTitle("Archivsuche")
-        else:
-            self.get('/core/search/archiveduser', status="403 FORBIDDEN")
-            self.assertTitle("403: Forbidden")
+                if self.user_in(*core):
+                    self.get('/core/search/user')
+                    self.assertTitle("Allgemeine Nutzerverwaltung")
+                else:
+                    self.get('/core/search/user', status="403 FORBIDDEN")
+                    self.assertTitle("403: Forbidden")
 
-        if user['id'] in core | cde:
-            self.get('/cde/search/user')
-            self.assertTitle("CdE-Nutzerverwaltung")
-        else:
-            self.get('/cde/search/user', status="403 FORBIDDEN")
-            self.assertTitle("403: Forbidden")
+                if self.user_in(*archive):
+                    self.get('/core/search/archiveduser')
+                    self.assertTitle("Archivsuche")
+                else:
+                    self.get('/core/search/archiveduser', status="403 FORBIDDEN")
+                    self.assertTitle("403: Forbidden")
 
-        if user['id'] in core | event:
-            self.get('/event/search/user')
-            self.assertTitle("Veranstaltungs-Nutzerverwaltung")
-        else:
-            self.get('/event/search/user', status="403 FORBIDDEN")
-            self.assertTitle("403: Forbidden")
+                if self.user_in(*(core | cde)):
+                    self.get('/cde/search/user')
+                    self.assertTitle("CdE-Nutzerverwaltung")
+                else:
+                    self.get('/cde/search/user', status="403 FORBIDDEN")
+                    self.assertTitle("403: Forbidden")
 
-        if user['id'] in core | ml:
-            self.get('/ml/search/user')
-            self.assertTitle("Mailinglisten-Nutzerverwaltung")
-        else:
-            self.get('/ml/search/user', status="403 FORBIDDEN")
-            self.assertTitle("403: Forbidden")
+                if self.user_in(*(core | event)):
+                    self.get('/event/search/user')
+                    self.assertTitle("Veranstaltungsnutzerverwaltung")
+                else:
+                    self.get('/event/search/user', status="403 FORBIDDEN")
+                    self.assertTitle("403: Forbidden")
 
-        if user['id'] in core | assembly:
-            self.get('/assembly/search/user')
-            self.assertTitle("Versammlungs-Nutzerverwaltung")
-        else:
-            self.get('/assembly/search/user', status="403 FORBIDDEN")
-            self.assertTitle("403: Forbidden")
+                if self.user_in(*(core | ml)):
+                    self.get('/ml/search/user')
+                    self.assertTitle("Mailinglistennutzerverwaltung")
+                else:
+                    self.get('/ml/search/user', status="403 FORBIDDEN")
+                    self.assertTitle("403: Forbidden")
+
+                if self.user_in(*(core | assembly)):
+                    self.get('/assembly/search/user')
+                    self.assertTitle("Versammlungsnutzerverwaltung")
+                else:
+                    self.get('/assembly/search/user', status="403 FORBIDDEN")
+                    self.assertTitle("403: Forbidden")
+
+                self.logout()
 
     @as_users("anton")
-    def test_member_search_result(self, user):
+    def test_member_search_result(self) -> None:
         # test berta is accessible
         self.traverse({'description': "Mitglieder"})
         f = self.response.forms['membersearchform']
@@ -631,14 +631,14 @@ class TestPrivacyFrontend(FrontendTest):
         self.assertPresence("Keine Mitglieder gefunden.")
 
     @as_users("charly", "daniel", "garcia", "inga")
-    def test_show_past_event(self, user):
+    def test_show_past_event(self) -> None:
         akira = "Akira Abukara"
         berta = "Bertålotta Beispie"
         charly = "Charly C. Clown"
         emilia = "Emilia E. Eventis"
         ferdinand = "Ferdinand F. Findus"
         # non-members should not have access if they are no cde admin
-        if user == USER_DICT['daniel']:
+        if self.user_in('daniel'):
             self.get('/cde/past/event/list', status="403 FORBIDDEN")
         else:
             self.traverse({'description': 'Mitglieder'},
@@ -646,13 +646,13 @@ class TestPrivacyFrontend(FrontendTest):
                           {'description': 'PfingstAkademie 2014'})
 
         # non-searchable users which did not participate should not see any user
-        if user == USER_DICT['garcia']:
+        if self.user_in('garcia'):
             invisible = [akira, berta, charly, emilia, ferdinand]
             for participant in invisible:
                 self.assertNonPresence(participant)
 
         # non-cde admin who doesnt participate should see searchable members only
-        elif user == USER_DICT['inga']:
+        elif self.user_in('inga'):
             visible = [akira, berta, ferdinand]
             invisible = [charly, emilia]
             for participant in visible:
@@ -662,19 +662,19 @@ class TestPrivacyFrontend(FrontendTest):
 
         # ... and every participant can see every participant. But if they are
         # not searchable, they should not see any profile links.
-        elif user == USER_DICT['charly']:
+        elif self.user_in('charly'):
             visible = [akira, berta, charly, emilia, ferdinand]
             for participant in visible:
                 self.assertPresence(participant, div='list-participants')
                 self.assertNoLink(participant)
 
     @as_users("charly", "daniel", "garcia", "inga")
-    def test_show_past_course(self, user):
+    def test_show_past_course(self) -> None:
         akira = "Akira Abukara"
         emilia = "Emilia E. Eventis"
         ferdinand = "Ferdinand F. Findus"
         # non-members should not have access if they are no cde admin
-        if user == USER_DICT['daniel']:
+        if self.user_in('daniel'):
             self.get('/cde/past/event/1/course/2/show', status="403 FORBIDDEN")
         else:
             self.traverse({'description': 'Mitglieder'},
@@ -683,13 +683,13 @@ class TestPrivacyFrontend(FrontendTest):
                           {'description': 'Goethe zum Anfassen'})
 
         # non-searchable users which did not participate should not see any user
-        if user == USER_DICT['garcia']:
+        if self.user_in('garcia'):
             invisible = [akira, emilia, ferdinand]
             for participant in invisible:
                 self.assertNonPresence(participant)
 
         # non-cde admin who doesnt participate should see searchable members only
-        elif user == USER_DICT['inga']:
+        elif self.user_in('inga'):
             visible = [akira, ferdinand]
             invisible = [emilia]
             for participant in visible:
@@ -699,7 +699,7 @@ class TestPrivacyFrontend(FrontendTest):
 
         # ... and every participant can see every participant. But if they are
         # not searchable, they should not see any profile links.
-        elif user == USER_DICT['charly']:
+        elif self.user_in('charly'):
             visible = [akira, emilia, ferdinand]
             for participant in visible:
                 self.assertPresence(participant, div='list-participants')

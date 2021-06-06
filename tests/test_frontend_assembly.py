@@ -4,17 +4,21 @@ import datetime
 import json
 import re
 import time
-import unittest
+from typing import List
 
 import webtest
 
 import cdedb.database.constants as const
 from cdedb.common import (
-    ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, ASSEMBLY_BAR_SHORTNAME, now,
+    CdEDBObject, ADMIN_VIEWS_COOKIE_NAME, ASSEMBLY_BAR_SHORTNAME, now, NearlyNow
 )
-from cdedb.frontend.common import datetime_filter, staticurl
+from cdedb.frontend.common import datetime_filter
 from cdedb.query import QueryOperators
-from tests.common import USER_DICT, FrontendTest, MultiAppFrontendTest, as_users
+from cdedb.validation import parse_datetime
+from tests.common import (
+    FrontendTest, MultiAppFrontendTest, UserIdentifier, USER_DICT, as_users,
+    get_user, storage,
+)
 
 
 class AssemblyTestHelpers(FrontendTest):
@@ -48,7 +52,14 @@ class AssemblyTestHelpers(FrontendTest):
         10,  # archived, preferential
     }
 
-    def _create_assembly(self, adata=None, delta=None):
+    def _create_assembly(self, adata: CdEDBObject = None,
+                         delta: CdEDBObject = None) -> None:
+        """Helper function to automatically create a new asembly.
+
+        :param adata: This can be a full set of assembly data. If this is None
+            sensible defaults will be used instead.
+        :param delta: If given, modify the given (or default) data set before creation.
+        """
         if not adata:
             adata = {
                 'title': 'Drittes CdE-Konzil',
@@ -58,6 +69,8 @@ class AssemblyTestHelpers(FrontendTest):
                 'notes': "Nur ein Aprilscherz",
                 'presider_ids': "DB-23-X",
             }
+        else:
+            adata = adata.copy()
         if delta:
             adata.update(delta)
         self.traverse({'description': 'Versammlungen'},
@@ -72,28 +85,36 @@ class AssemblyTestHelpers(FrontendTest):
         self.submit(f)
         self.assertTitle(adata['title'])
 
-    def _signup(self):
-        f = self.response.forms['signupform']
-        self.submit(f)
-        self.assertNotIn('signupform', self.response.forms)
-        mail = self.fetch_mail()[0]
-        text = mail.get_body().get_content()
-        secret = text.split(
+    def _fetch_secret(self) -> str:
+        content = self.fetch_mail_content()
+        secret = content.split(
             "Versammlung lautet", 1)[1].split("ohne Leerzeichen.", 1)[0].strip()
         return secret
 
-    def _external_signup(self, user):
+    def _signup(self) -> str:
+        f = self.response.forms['signupform']
+        self.submit(f)
+        self.assertNotIn('signupform', self.response.forms)
+        return self._fetch_secret()
+
+    def _external_signup(self, user: UserIdentifier) -> str:
+        user = get_user(user)
         self.traverse({'description': 'Teilnehmer'})
         f = self.response.forms['addattendeeform']
         f['persona_id'] = user['DB-ID']
         self.submit(f)
-        mail = self.fetch_mail()[0]
-        text = mail.get_body().get_content()
-        secret = text.split(
-            "Versammlung lautet", 1)[1].split("ohne Leerzeichen.", 1)[0].strip()
-        return secret
+        return self._fetch_secret()
 
-    def _create_ballot(self, bdata, candidates=None, atitle=None):
+    def _create_ballot(self, bdata: CdEDBObject, candidates: List[CdEDBObject] = None,
+                       atitle: str = None) -> None:
+        """Helper to create a new ballot.
+
+        In order to use this you must have already navigated to somewhere inside the
+        assembly to which the ballot will belong.
+
+        :param atitle: The Title of the assembly. If given check the page title of the
+            newly created ballot using the ballot's and the assembly's titles.
+        """
         self.traverse({"description": "Abstimmungen"},
                       {"description": "Abstimmung anlegen"})
         f = self.response.forms["createballotform"]
@@ -105,7 +126,6 @@ class AssemblyTestHelpers(FrontendTest):
         self.traverse({"description": "Abstimmungen"},
                       {"description": bdata['title']})
         if candidates:
-
             for candidate in candidates:
                 f = self.response.forms["candidatessummaryform"]
                 for k, v in candidate.items():
@@ -116,22 +136,22 @@ class AssemblyTestHelpers(FrontendTest):
 
 class TestAssemblyFrontend(AssemblyTestHelpers):
     @as_users("werner", "berta", "kalif")
-    def test_index(self, user):
+    def test_index(self) -> None:
         self.traverse({'href': '/assembly/'})
         self.assertPresence("Internationaler Kongress", div='active-assemblies')
         self.assertPresence("(bereits angemeldet)", div='active-assemblies')
         # Werner and Kalif can only see assemblies he is signed up to
-        if user['id'] == USER_DICT["kalif"]['id']:
+        if self.user_in("kalif"):
             self.assertNonPresence("Archiv-Sammlung")
         else:
             self.assertPresence("Archiv-Sammlung", div='active-assemblies')
-        if user['id'] == USER_DICT["berta"]['id']:
+        if self.user_in("berta"):
             self.assertPresence("Kanonische Beispielversammlung",
                                 div='inactive-assemblies')
         else:
             self.assertNonPresence("Kanonische Beispielversammlung")
         # Only Werner is presider
-        if user['id'] == USER_DICT["werner"]['id']:
+        if self.user_in("werner"):
             self.assertPresence("Geleitete Versammlungen")
             self.assertPresence("Archiv-Sammlung", div='presided-assemblies')
             self.assertPresence("Internationaler Kongress", div='presided-assemblies')
@@ -143,38 +163,37 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence("Inaktive Versammlungen")
 
     @as_users("annika", "martin", "vera", "werner", "anton")
-    def test_sidebar(self, user):
+    def test_sidebar(self) -> None:
         self.traverse({'description': 'Versammlungen'})
-        everyone = ["Versammlungen", "Übersicht"]
+        everyone = {"Versammlungen", "Übersicht"}
 
         # not assembly admins
-        if user['id'] in {USER_DICT["annika"]['id'], USER_DICT["martin"]['id'],
-                          USER_DICT["werner"]['id']}:
+        if self.user_in("annika", "martin", "werner"):
             ins = everyone
-            out = ["Nutzer verwalten", "Log"]
+            out = {"Nutzer verwalten", "Archivsuche", "Log"}
         # core admins
-        elif user['id'] == USER_DICT["vera"]['id']:
-            ins = everyone + ["Nutzer verwalten"]
-            out = ["Log"]
+        elif self.user_in("vera"):
+            ins = everyone | {"Nutzer verwalten", "Archivsuche"}
+            out = {"Log"}
         # assembly admins
-        elif user['id'] == USER_DICT["anton"]['id']:
-            ins = everyone + ["Nutzer verwalten", "Log"]
-            out = []
+        elif self.user_in("anton"):
+            ins = everyone | {"Nutzer verwalten", "Archivsuche", "Log"}
+            out = set()
         else:
             self.fail("Please adjust users for this tests.")
 
         self.check_sidebar(ins, out)
 
     @as_users("kalif")
-    def test_showuser(self, user):
-        self.traverse({'description': user['display_name']})
+    def test_showuser(self) -> None:
+        self.traverse({'description': self.user['display_name']})
         self.assertPresence("Versammlungen", div="has-realm")
-        self.assertTitle("{} {}".format(user['given_names'],
-                                        user['family_name']))
+        self.assertTitle("{} {}".format(self.user['given_names'],
+                                        self.user['family_name']))
 
     @as_users("kalif")
-    def test_changeuser(self, user):
-        self.traverse({'description': user['display_name']},
+    def test_changeuser(self) -> None:
+        self.traverse({'description': self.user['display_name']},
                       {'description': 'Bearbeiten'})
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
@@ -185,7 +204,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                 'displayname').text_content().strip())
 
     @as_users("ferdinand")
-    def test_adminchangeuser(self, user):
+    def test_adminchangeuser(self) -> None:
         self.realm_admin_view_profile('kalif', 'assembly')
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['changedataform']
@@ -197,18 +216,18 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertTitle("Kalif ibn al-Ḥasan Karabatschi")
 
     @as_users("ferdinand")
-    def test_toggleactivity(self, user):
+    def test_toggleactivity(self) -> None:
         self.realm_admin_view_profile('kalif', 'assembly')
         self.assertPresence('Ja', div='account-active')
         f = self.response.forms['activitytoggleform']
         self.submit(f)
         self.assertPresence('Nein', div='account-active')
 
-    @as_users("ferdinand", "vera")
-    def test_user_search(self, user):
+    @as_users("paul", "viktor")
+    def test_user_search(self) -> None:
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Nutzer verwalten'})
-        self.assertTitle("Versammlungs-Nutzerverwaltung")
+        self.assertTitle("Versammlungsnutzerverwaltung")
         f = self.response.forms['queryform']
         f['qop_username'] = QueryOperators.match.value
         f['qval_username'] = 'f@'
@@ -216,31 +235,17 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             if field and field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
-        self.assertTitle("Versammlungs-Nutzerverwaltung")
+        self.assertTitle("Versammlungsnutzerverwaltung")
         self.assertPresence("Ergebnis [1]", div="query-results")
         self.assertPresence("Karabatschi", div="result-container")
 
-    @as_users("ferdinand", "vera")
-    def test_create_user(self, user):
-        self.traverse({'description': 'Versammlungen'},
-                      {'description': 'Nutzer verwalten'},
-                      {'description': 'Nutzer anlegen'})
-        self.assertTitle("Neuen Versammlungsnutzer anlegen")
-        data = {
-            "username": 'zelda@example.cde',
-            "given_names": "Zelda",
-            "family_name": "Zeruda-Hime",
-            "display_name": 'Zelda',
-            "notes": "some fancy talk",
-        }
-        f = self.response.forms['newuserform']
-        for key, value in data.items():
-            f.set(key, value)
-        self.submit(f)
-        self.assertTitle("Zelda Zeruda-Hime")
+    @as_users("paul", "viktor")
+    def test_create_archive_user(self) -> None:
+        self.check_create_archive_user('assembly')
 
+    @storage
     @as_users("anton")
-    def test_assembly_admin_views(self, user):
+    def test_assembly_admin_views(self) -> None:
         self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, '')
 
         self.traverse({'href': '/assembly/'})
@@ -302,16 +307,17 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence("TeX-Liste")
 
     @as_users("annika", "martin", "vera", "werner")
-    def test_sidebar_one_assembly(self, user):
+    def test_sidebar_one_assembly(self) -> None:
+        user = self.user
         self.traverse({'description': 'Versammlungen'})
 
         # they are no member and not yet signed up
-        if user in [USER_DICT['annika'], USER_DICT['martin'], USER_DICT['vera']]:
+        if self.user_in('annika', 'martin', 'vera'):
             self.assertNonPresence("Internationaler Kongress")
 
             # now, sign them up
             self.logout()
-            self.login(USER_DICT['werner'])
+            self.login('werner')
             self.traverse({'description': 'Versammlungen'},
                           {'description': 'Internationaler Kongress'})
             self._external_signup(user)
@@ -320,25 +326,25 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self.traverse({'description': 'Versammlungen'})
 
         self.traverse({'description': 'Internationaler Kongress'})
-        attendee = ["Versammlungs-Übersicht", "Übersicht", "Teilnehmer",
-                    "Abstimmungen", "Zusammenfassung", "Datei-Übersicht"]
-        admin = ["Konfiguration", "Log"]
+        attendee = {"Versammlungs-Übersicht", "Übersicht", "Teilnehmer",
+                    "Abstimmungen", "Zusammenfassung", "Datei-Übersicht"}
+        admin = {"Konfiguration", "Log"}
 
         # not assembly admins
-        if user in [USER_DICT['annika'], USER_DICT['martin'], USER_DICT['vera']]:
+        if self.user_in('annika', 'martin', 'vera'):
             ins = attendee
             out = admin
         # assembly admin
-        elif user == USER_DICT['werner']:
-            ins = attendee + admin
-            out = []
+        elif self.user_in('werner'):
+            ins = attendee | admin
+            out = set()
         else:
             self.fail("Please adjust users for this tests.")
 
         self.check_sidebar(ins, out)
 
     @as_users("werner")
-    def test_change_assembly(self, user):
+    def test_change_assembly(self) -> None:
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Internationaler Kongress'},)
         self.assertTitle("Internationaler Kongress")
@@ -346,12 +352,20 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f = self.response.forms['changeassemblyform']
         f['title'] = 'Drittes CdE-Konzil'
         f['description'] = "Wir werden alle Häretiker exkommunizieren."
+        f['presider_address'] = "drittes konzil@example.cde"
+        self.submit(f, check_notification=False)
+        self.assertValidationError('presider_address',
+                                   "Muss eine valide E-Mail-Adresse sein.")
+        f['presider_address'] = "Konzil@example.cde"
         self.submit(f)
         self.assertTitle("Drittes CdE-Konzil")
         self.assertPresence("Häretiker", div='description')
+        self.traverse({'description': 'Konfiguration'},)
+        f = self.response.forms['changeassemblyform']
+        self.assertEqual(f['presider_address'].value, 'konzil@example.cde')
 
     @as_users("werner")
-    def test_past_assembly(self, user):
+    def test_past_assembly(self) -> None:
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Archiv-Sammlung'},
                       {'description': 'Konfiguration'}, )
@@ -365,12 +379,16 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
 
     # Use ferdinand since viktor is not a member and may not signup.
     @as_users("ferdinand")
-    def test_create_delete_assembly(self, user):
-        self._create_assembly(delta={'create_presider_list': True})
+    def test_create_delete_assembly(self) -> None:
+        presider_address = "presider@lists.cde-ev.de"
+        self._create_assembly(delta={'create_presider_list': True,
+                                     'presider_address': presider_address})
         self.assertPresence("Häretiker", div='description')
         self.assertPresence("Aprilscherz", div='notes')
         self.assertPresence("Versammlungsleitungs-Mailingliste angelegt.",
                             div="notifications")
+        self.assertPresence("Versammlungsleitungs-E-Mail-Adresse durch Adresse der"
+                            " neuen Mailingliste ersetzt.", div="notifications")
         self.assertNotIn('createpresiderlistform', self.response.forms)
         f = self.response.forms['createattendeelistform']
         self.submit(f)
@@ -388,8 +406,51 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertTitle("Versammlungen")
         self.assertNonPresence("Drittes CdE-Konzil")
 
+        self._create_assembly(delta={'presider_address': presider_address})
+        self.traverse("Konfiguration")
+        f = self.response.forms['changeassemblyform']
+        self.assertEqual(f['presider_address'].value, presider_address)
+
+    @as_users("viktor")
+    def test_show_assembly_admin(self) -> None:
+        self.traverse("Versammlungen", "Archiv-Sammlung")
+        self.assertTitle("Archiv-Sammlung")
+
+        self.assertPresence("Datei hinzufügen", div='attachmentspanel')
+        self.submit(
+            self.response.forms[f"removepresiderform{ USER_DICT['werner']['id'] }"])
+        f = self.response.forms['createpresiderlistform']
+        self.assertIn('disabled', f.fields['submitform'][0].attrs)
+        self.submit(f, check_notification=False)
+        self.assertPresence(
+            "Mailingliste kann nur mit Versammlungsleitern erstellt werden.",
+            div='notifications')
+        f = self.response.forms['addpresidersform']
+        f['presider_ids'] = USER_DICT['werner']['DB-ID']
+        self.submit(f)
+        self.submit(self.response.forms['createattendeelistform'])
+        self.submit(self.response.forms['createpresiderlistform'])
+
+    @as_users("werner")
+    def test_show_assembly_presider(self) -> None:
+        self.traverse("Versammlungen", "Archiv-Sammlung")
+        self.assertTitle("Archiv-Sammlung")
+
+        self.assertPresence("Datei hinzufügen", div='attachmentspanel')
+        self.assertNotIn('addpresidersform', self.response.forms)
+        self.assertNotIn('createattendeelistform', self.response.forms)
+
+    @as_users("kalif")
+    def test_show_assembly_attendee(self) -> None:
+        self.traverse("Versammlungen", "Internationaler Kongress")
+        self.assertTitle("Internationaler Kongress")
+
+        self.assertNonPresence("Datei hinzufügen")
+        self.assertNotIn('addpresidersform', self.response.forms)
+        self.assertNotIn('createattendeelistform', self.response.forms)
+
     @as_users("charly")
-    def test_signup(self, user):
+    def test_signup(self) -> None:
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Internationaler Kongress'},)
         self.assertTitle("Internationaler Kongress")
@@ -399,14 +460,14 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertNotIn('signupform', self.response.forms)
 
     @as_users("kalif")
-    def test_no_signup(self, user):
+    def test_no_signup(self) -> None:
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Internationaler Kongress'}, )
         self.assertTitle("Internationaler Kongress")
         self.assertNotIn('signupform', self.response.forms)
 
     @as_users("werner", "ferdinand")
-    def test_external_signup(self, user):
+    def test_external_signup(self) -> None:
         self.get("/assembly/assembly/3/show")
         self.traverse({'description': "Teilnehmer"})
         self.assertTitle("Anwesenheitsliste (Archiv-Sammlung)")
@@ -421,14 +482,14 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f = self.response.forms['addattendeeform']
         f['persona_id'] = "DB-8-6"
         self.submit(f, check_notification=False)
-        self.assertValidationError("persona_id",
-            "Dieser Benutzer existiert nicht oder ist archiviert.")
+        self.assertValidationError(
+            "persona_id", "Dieser Benutzer existiert nicht oder ist archiviert.")
         # Member
         f = self.response.forms['addattendeeform']
         f['persona_id'] = "DB-2-7"
         self.submit(f, check_notification=False)
-        self.assertValidationError("persona_id",
-            "Mitglieder müssen sich selbst anmelden.")
+        self.assertValidationError(
+            "persona_id", "Mitglieder müssen sich selbst anmelden.")
         # Event user
         f = self.response.forms['addattendeeform']
         f['persona_id'] = "DB-5-1"
@@ -438,7 +499,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         # TODO: add a check for a non-existant user and an invalid DB-ID.
 
     @as_users("werner", "viktor", "kalif")
-    def test_list_attendees(self, user):
+    def test_list_attendees(self) -> None:
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Internationaler Kongress'},
                       {'description': 'Teilnehmer'})
@@ -449,16 +510,17 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence(
             f"Insgesamt {len(attendees)} Anwesende.", div='attendees-count')
         self.assertNonPresence("Charly")
-        if user['id'] in {USER_DICT['kalif']['id']}:
+        if self.user_in('kalif'):
             self.assertNonPresence("Download")
-        elif user['id'] in {USER_DICT['viktor']['id'], USER_DICT['werner']['id']}:
+        elif self.user_in('viktor', 'werner'):
             self.assertPresence("Download")
             self.traverse("TeX-Liste")
             for attendee in attendees:
                 self.assertIn(attendee, self.response.text)
 
+    @storage
     @as_users("rowena")
-    def test_summary_ballots(self, user):
+    def test_summary_ballots(self) -> None:
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Kanonische Beispielversammlung'},
                       {'description': 'Zusammenfassung'})
@@ -466,8 +528,9 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence("Entlastung des Vorstands")
         self.assertPresence("Wir kaufen den Eisenberg!")
 
+    @storage
     @as_users("ferdinand")
-    def test_conclude_assembly(self, user):
+    def test_conclude_assembly(self) -> None:
         self._create_assembly()
         # werner is no member, so he must signup external
         secret = self._signup()
@@ -481,7 +544,8 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         farfuture = now() + datetime.timedelta(seconds=2 * wait_time)
         bdata = {
             'title': 'Maximale Länge der Satzung',
-            'description': "Dann muss man halt eine alte Regel rauswerfen, wenn man eine neue will.",
+            'description': "Dann muss man halt eine alte Regel rauswerfen,"
+                           " wenn man eine neue will.",
             'vote_begin': future.isoformat(),
             'vote_end': farfuture.isoformat(),
             'abs_quorum': "0",
@@ -504,19 +568,22 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertNotIn("addpresidersform", self.response.forms)
         self.assertNotIn("removepresiderform1", self.response.forms)
 
+    @storage
     @as_users("anton")
-    def test_preferential_vote_result(self, user):
+    def test_preferential_vote_result(self) -> None:
         self.get('/assembly/assembly/1/ballot/1/show')
         self.follow()  # Redirect because ballot has not been tallied yet.
         self.assertTitle("Antwort auf die letzte aller Fragen "
                          "(Internationaler Kongress)")
         self.assertPresence("Nach dem Leben, dem Universum und dem ganzen Rest")
         self.traverse({'description': 'Ergebnisdetails'})
-        self.assertPresence("Du hast mit der folgenden Präferenz abgestimmt: 2>3>_bar_>1=4",
-                            div='own-vote', exact=True)
+        own_vote = ("Du hast mit der folgenden Präferenz abgestimmt:"
+                    " 23 > 42 > Ablehnungsgrenze > Ich = Philosophie")
+        self.assertPresence(own_vote, div='own-vote', exact=True)
 
+    @storage
     @as_users("garcia")
-    def test_show_ballot_without_vote(self, user):
+    def test_show_ballot_without_vote(self) -> None:
         self.get('/assembly/assembly/1/show')
         f = self.response.forms['signupform']
         self.submit(f)
@@ -529,45 +596,66 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence("Du hast nicht abgestimmt.", div='own-vote',
                             exact=True)
 
+    @storage
     @as_users("berta")
-    def test_show_ballot_status(self, user):
-        reference_time = now()
-        for ballot_id in self.CANONICAL_BALLOTS:
-            ballot = self.sample_data['assembly.ballots'][ballot_id]
-            assembly = self.sample_data['assembly.assemblies'][ballot['assembly_id']]
-            self.get(f'/assembly/assembly/{assembly["id"]}/ballot/{ballot_id}/show')
-            # redirect in case of tallying, extending etc
-            self.follow()
-            self.assertTitle(f"{ballot['title']} ({assembly['title']})")
+    def test_show_ballot_status(self) -> None:
+        ballots = self.get_sample_data(
+            'assembly.ballots', self.CANONICAL_BALLOTS,
+            ('vote_begin', 'vote_end', 'assembly_id', 'title', 'abs_quorum',
+             'vote_extension_end'))
+        assemblies = self.get_sample_data(
+            'assembly.assemblies', set(b['assembly_id'] for b in ballots.values()),
+            ('title', 'id'))
+        for ballot_id, ballot in ballots.items():
+            with self.subTest(ballot=ballot_id):
+                assembly = assemblies[ballot['assembly_id']]
+                self.get(f"/assembly/assembly/{assembly['id']}/ballot/{ballot_id}/show")
+                # redirect in case of tallying, extending etc
+                self.follow()
+                self.assertTitle(f"{ballot['title']} ({assembly['title']})")
 
-            # check ballot status
-            # TODO convert datestring into datetime.datetime
-            # vote_begin = datetime_filter(reference_time if ballot['vote_begin'] == "---now---" else datetime.datetime.fromisoformat(ballot['vote_begin']), lang='de')
-            # vote_end = datetime_filter(reference_time if ballot['vote_end'] == "---now---" else datetime.datetime.fromisoformat(ballot['vote_end']), lang='de')
-            # TODO how to use nearly_now here?
-            # self.assertPresence(f"{vote_begin} bis {vote_end}", div='ballot-status')
-            # # TODO process quorum right
-            # if ballot_id in self.BALLOT_STATES['extended']:
-            #     vote_extension_end = datetime_filter(reference_time if ballot['vote_extension_end'] == "---now---" else datetime.datetime.fromisoformat(ballot['vote_extension_end']), lang='de')
-            # else:
-            #     vote_extension_end = None
-            # self.assertPresence(
-            #     f"Wurde bis {vote_extension_end} verlängert, da {ballot['abs_quorum']} Stimmen nicht erreicht wurden.",
-            #     div='ballot-status', condition=ballot_id in self.BALLOT_STATES['extended'])
-            msg = "Diese Abstimmung hat noch nicht begonnen."
-            if ballot_id in self.BALLOT_STATES['edit']:
-                self.assertPresence(msg, div='ballot-status')
-            else:
-                self.assertNonPresence(msg, div='ballot-status')
-            if (ballot_id in self.BALLOT_STATES['voting']
-                    or ballot_id in self.BALLOT_STATES['extended']
-                    and ballot_id not in self.BALLOT_STATES['tallied']):
-                self.assertPresence("Die Abstimmung läuft.", div='ballot-status')
-            else:
-                self.assertNonPresence("Die Abstimmung läuft.", div='ballot-status')
+                # Check display of regular voting period.
+                raw = self.get_content('regular-voting-period').strip()
+                date_pattern = r"\d{2}\.\d{2}\.\d{3,4}"
+                time_pattern = r"\d{2}:\d{2}:\d{2}"
+                pattern = re.compile(f"(?P<start_date>{date_pattern})"
+                                     f", (?P<start_time>{time_pattern})"
+                                     f" bis (?P<end_date>{date_pattern})"
+                                     f", (?P<end_time>{time_pattern})")
+                result = re.search(pattern, raw)
+                assert result is not None
+                self.assertEqual(
+                    parse_datetime(f"{result.group('start_date')}"
+                                   f" {result.group('start_time')}"),
+                    NearlyNow.from_datetime(ballot['vote_begin']))
+                self.assertEqual(
+                    parse_datetime(f"{result.group('end_date')}"
+                                   f" {result.group('end_time')}"),
+                    NearlyNow.from_datetime(ballot['vote_end']))
 
+                # Check display of extension time.
+                if ballot_id in self.BALLOT_STATES['extended']:
+                    date_str = datetime_filter(ballot['vote_extension_end'], lang='de')
+                    self.assertPresence(
+                        f"Wurde bis {date_str} verlängert, da"
+                        f" {ballot['abs_quorum']} Stimmen nicht erreicht wurden.",
+                        div='extension-period')
+
+                msg = "Diese Abstimmung hat noch nicht begonnen."
+                if ballot_id in self.BALLOT_STATES['edit']:
+                    self.assertPresence(msg, div='ballot-status')
+                else:
+                    self.assertNonPresence(msg, div='ballot-status')
+                if (ballot_id in self.BALLOT_STATES['voting']
+                        or ballot_id in self.BALLOT_STATES['extended']
+                        and ballot_id not in self.BALLOT_STATES['tallied']):
+                    self.assertPresence("Die Abstimmung läuft.", div='ballot-status')
+                else:
+                    self.assertNonPresence("Die Abstimmung läuft.", div='ballot-status')
+
+    @storage
     @as_users("garcia")
-    def test_show_ballot_without_attendance(self, user):
+    def test_show_ballot_without_attendance(self) -> None:
         self.get('/assembly/assembly/1/ballot/1/show')
         self.follow()  # Redirect because ballot has not been tallied yet.
         self.assertTitle("Antwort auf die letzte aller Fragen "
@@ -577,8 +665,9 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence("Du nimmst nicht an der Versammlung teil.",
                             div='own-vote', exact=True)
 
+    @storage
     @as_users("werner")
-    def test_entity_ballot_simple(self, user):
+    def test_entity_ballot_simple(self) -> None:
         self.traverse({'description': 'Versammlungen$'},
                       {'description': 'Internationaler Kongress'},
                       {'description': 'Abstimmungen'},)
@@ -587,7 +676,8 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertNonPresence("Es wurden noch keine Abstimmungen angelegt")
         bdata = {
             'title': 'Maximale Länge der Satzung',
-            'description': "Dann muss man halt eine alte Regel rauswerfen, wenn man eine neue will.",
+            'description': "Dann muss man halt eine alte Regel rauswerfen,"
+                           " wenn man eine neue will.",
             'vote_begin': "2222-4-1 00:00:00",
             'vote_end': "2222-5-1 00:00:00",
             'votes': "",
@@ -625,8 +715,9 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertTitle("Abstimmungen (Internationaler Kongress)")
         self.assertNonPresence("Maximale Länge der Satzung")
 
+    @storage
     @as_users("werner")
-    def test_delete_ballot(self, user):
+    def test_delete_ballot(self) -> None:
         self.get("/assembly/assembly/1/ballot/2/show")
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
         self.assertPresence("Diese Abstimmung hat noch nicht begonnen.",
@@ -644,19 +735,21 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertNotIn("deleteballotform", self.response.forms)
         self.get("/assembly/assembly/1/ballot/list")
         self.traverse({"description": "Antwort auf die letzte aller Fragen"})
-        self.assertTitle("Antwort auf die letzte aller Fragen (Internationaler Kongress)")
+        self.assertTitle(
+            "Antwort auf die letzte aller Fragen (Internationaler Kongress)")
         self.assertPresence("Die Abstimmung ist beendet.", div='status')
         self.assertNonPresence("Löschen")
         self.assertNotIn("deleteballotform", self.response.forms)
 
+    @storage
     @as_users("werner", "ferdinand")
-    def test_attachments(self, user):
-        with open("/tmp/cdedb-store/testfiles/form.pdf", 'rb') as datafile:
+    def test_attachments(self) -> None:
+        with open(self.testfile_dir / "form.pdf", 'rb') as datafile:
             data = datafile.read()
         self.traverse({'description': 'Versammlungen$'},
                       {'description': 'Internationaler Kongress'},
                       {'description': 'Datei-Übersicht'})
-        if user['id'] in {6}:
+        if self.user_in(6):
             f = self.response.forms['adminviewstoggleform']
             self.submit(f, button="view_specifier", value="-assembly_presider")
             self.assertTitle("Datei-Übersicht (Internationaler Kongress)")
@@ -672,13 +765,15 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f['title'] = "Maßgebliche Beschlussvorlage"
         f['attachment'] = webtest.Upload("form….pdf", data, "application/octet-stream")
         self.submit(f, check_notification=False)
-        self.assertValidationError("filename", "Darf nur aus druckbaren ASCII-Zeichen bestehen")
+        self.assertValidationError(
+            "filename", "Darf nur aus druckbaren ASCII-Zeichen bestehen")
         # Now, add an correct override filename
         f = self.response.forms['addattachmentform']
         f['attachment'] = webtest.Upload("form….pdf", data, "application/octet-stream")
         f['filename'] = "beschluss.pdf"
         self.submit(f)
-        self.assertTitle("Datei-Details (Internationaler Kongress) – Maßgebliche Beschlussvorlage")
+        self.assertTitle(
+            "Datei-Details (Internationaler Kongress) – Maßgebliche Beschlussvorlage")
 
         # Check file content.
         saved_response = self.response
@@ -688,37 +783,45 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
 
         # Change version data.
         self.traverse({'href': '/assembly/assembly/1/attachment/1001/version/1/edit'})
-        self.assertTitle("Version bearbeiten (Internationaler Kongress) – Maßgebliche Beschlussvorlage (Version 1)")
+        self.assertTitle("Version bearbeiten (Internationaler Kongress)"
+                         " – Maßgebliche Beschlussvorlage (Version 1)")
         f = self.response.forms['editattachmentversionform']
         f['title'] = "Insignifikante Beschlussvorlage"
         f['authors'] = "Der Vorstand"
         self.submit(f)
-        self.assertTitle("Datei-Details (Internationaler Kongress) – Insignifikante Beschlussvorlage")
+        self.assertTitle("Datei-Details (Internationaler Kongress)"
+                         " – Insignifikante Beschlussvorlage")
         self.traverse({'description': 'Datei-Verknüpfung ändern'})
-        self.assertTitle("Datei-Verknüpfung ändern (Internationaler Kongress) – Insignifikante Beschlussvorlage")
+        self.assertTitle("Datei-Verknüpfung ändern (Internationaler Kongress)"
+                         " – Insignifikante Beschlussvorlage")
         f = self.response.forms['changeattachmentlinkform']
         f['new_ballot_id'] = 2
         self.submit(f)
-        self.assertTitle("Datei-Details (Internationaler Kongress/Farbe des Logos) – Insignifikante Beschlussvorlage")
+        self.assertTitle("Datei-Details (Internationaler Kongress/Farbe des Logos)"
+                         " – Insignifikante Beschlussvorlage")
         self.traverse({'description': 'Version hinzufügen'})
-        self.assertTitle("Version hinzufügen (Internationaler Kongress/Farbe des Logos) – Insignifikante Beschlussvorlage")
+        self.assertTitle("Version hinzufügen (Internationaler Kongress/Farbe des Logos)"
+                         " – Insignifikante Beschlussvorlage")
         f = self.response.forms['addattachmentform']
         f['title'] = "Alternative Beschlussvorlage"
         f['authors'] = "Die Wahlleitung"
-        f['attachment'] = webtest.Upload("beschluss2.pdf", data + b'123', "application/octet-stream")
+        f['attachment'] = webtest.Upload("beschluss2.pdf", data + b'123',
+                                         "application/octet-stream")
         self.submit(f)
-        self.assertTitle("Datei-Details (Internationaler Kongress/Farbe des Logos) – Alternative Beschlussvorlage")
+        self.assertTitle("Datei-Details (Internationaler Kongress/Farbe des Logos)"
+                         " – Alternative Beschlussvorlage")
         self.assertPresence("Insignifikante Beschlussvorlage (Version 1)")
         self.assertPresence("Alternative Beschlussvorlage (Version 2)")
         f = self.response.forms['removeattachmentversionform1001_1']
         f['attachment_ack_delete'].checked = True
         self.submit(f)
-        self.assertTitle("Datei-Details (Internationaler Kongress/Farbe des Logos) – Alternative Beschlussvorlage")
+        self.assertTitle("Datei-Details (Internationaler Kongress/Farbe des Logos)"
+                         " – Alternative Beschlussvorlage")
         self.assertPresence("Version 1 wurde gelöscht")
 
         # Now check the attachment over view without the presider admin view.
         self.traverse({'description': "Datei-Übersicht"})
-        if user['id'] in {6}:
+        if self.user_in(6):
             f = self.response.forms['adminviewstoggleform']
             self.submit(f, button="view_specifier", value="-assembly_presider")
             self.assertTitle("Datei-Übersicht (Internationaler Kongress)")
@@ -732,8 +835,9 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.submit(f)
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
 
+    @storage
     @as_users("werner", "inga", "kalif")
-    def test_preferential_vote(self, user):
+    def test_preferential_vote(self) -> None:
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Internationaler Kongress'},
                       {'description': 'Abstimmungen'},
@@ -752,8 +856,9 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f = self.response.forms['voteform']
         self.assertEqual("1=i>pi>e=0", f['vote'].value)
 
+    @storage
     @as_users("werner", "inga", "kalif")
-    def test_classical_vote_radio(self, user):
+    def test_classical_vote_radio(self) -> None:
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Internationaler Kongress'},
                       {'description': 'Abstimmungen'},
@@ -782,8 +887,9 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f = self.response.forms['voteform']
         self.assertEqual("St", f['vote'].value)
 
+    @storage
     @as_users("werner", "inga", "kalif")
-    def test_classical_vote_select(self, user):
+    def test_classical_vote_select(self) -> None:
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Internationaler Kongress'},
                       {'description': 'Abstimmungen'},
@@ -819,8 +925,9 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertEqual(None, f.get('vote', index=1).value)
         self.assertEqual(None, f.get('vote', index=2).value)
 
+    @storage
     @as_users("werner")
-    def test_classical_voting_all_choices(self, user):
+    def test_classical_voting_all_choices(self) -> None:
         # This test asserts that in classical voting, we can distinguish
         # between abstaining and voting for all candidates
         self.traverse({'description': 'Versammlungen'},
@@ -887,30 +994,32 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                               {'description': bdata['title']},
                               {'description': 'Ergebnisdetails'})
                 self.assertPresence("Du hast für die folgenden Kandidaten "
-                                    "gestimmt: arthur, ford",
+                                    "gestimmt: Arthur Dent = Ford Prefect",
                                     div='own-vote', exact=True)
 
+    @storage
     @as_users("werner", "inga", "kalif")
-    def test_tally_and_get_result(self, user):
+    def test_tally_and_get_result(self) -> None:
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Internationaler Kongress'},
                       {'description': 'Abstimmungen'},)
         self.assertTitle("Abstimmungen (Internationaler Kongress)")
-        mail = self.fetch_mail()[0]
-        text = mail.get_body().get_content()
+        text = self.fetch_mail_content()
         self.assertIn('"Antwort auf die letzte aller Fragen"', text)
         self.assertIn('"Internationaler Kongress"', text)
         self.traverse({'description': 'Antwort auf die letzte aller Fragen'},
                       {'description': 'Ergebnisdetails'},
                       {'description': 'Ergebnisdatei herunterladen'},)
-        with open("/tmp/cdedb-store/testfiles/ballot_result.json", 'rb') as f:
+        with open(self.testfile_dir / "ballot_result.json", 'rb') as f:
             self.assertEqual(json.load(f), json.loads(self.response.body))
 
+    @storage
     @as_users("anton")
-    def test_ballot_result_page(self, user):
+    def test_ballot_result_page(self) -> None:
         for ballot_id in self.CANONICAL_BALLOTS:
-            ballot = self.sample_data['assembly.ballots'][ballot_id]
-            assembly = self.sample_data['assembly.assemblies'][ballot['assembly_id']]
+            ballot = self.get_sample_datum('assembly.ballots', ballot_id)
+            assembly = self.get_sample_datum(
+                'assembly.assemblies', ballot['assembly_id'])
             self.get(f'/assembly/assembly/{assembly["id"]}/ballot/{ballot_id}/result')
             # redirect in case of tallying, extending etc
             self.follow()
@@ -920,7 +1029,8 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                 self.assertTitle(f"Ergebnis ({assembly['title']}/{ballot['title']})")
             else:
                 self.assertTitle(f"{ballot['title']} ({assembly['title']})")
-                self.assertPresence("Abstimmung wurde noch nicht ausgezählt.", div='notifications')
+                self.assertPresence("Abstimmung wurde noch nicht ausgezählt.",
+                                    div='notifications')
                 continue
 
             save = self.response
@@ -928,7 +1038,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             # check the download result file
             self.traverse({'description': 'Ergebnisdatei herunterladen'})
             self.assertPresence(f'"assembly": "{assembly["title"]}",')
-            #self.assertPresence(f'"ballot": "{ballot["title"]}",')
+            # self.assertPresence(f'"ballot": "{ballot["title"]}",')
             self.assertPresence('"result": ')
             self.assertPresence('"candidates": ')
             self.assertPresence('"use_bar": ')
@@ -939,23 +1049,28 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             # TODO expose the static files in our test suite
             # self.response = save
             # self.traverse({'description': 'Download Result Verification Script'})
-            # self.assertPresence("Skript um die Auszählung in Ergebnisdateien von Wahlen zu verifizieren.")
+            # self.assertPresence("Skript um die Auszählung in Ergebnisdateien"
+            #                     " von Wahlen zu verifizieren.")
             # self.response = save
             # self.traverse({'description': 'Download Own Vote Verification Script'})
-            # self.assertPresence("Skript um Stimmen in Ergebnisdateien von Wahlen zu verifizieren.")
+            # self.assertPresence("Skript um Stimmen in Ergebnisdateien"
+            #                     " von Wahlen zu verifizieren.")
 
             self.response = save
 
             # check pagination
             if ballot_id == 7:
                 self.traverse({'description': 'Vorherige'})
-                self.assertTitle("Ergebnis (Kanonische Beispielversammlung/Eine damals wichtige Frage)")
+                self.assertTitle("Ergebnis (Kanonische Beispielversammlung"
+                                 "/Eine damals wichtige Frage)")
                 self.response = save
                 self.traverse({'description': 'Nächste'})
-                self.assertTitle("Ergebnis (Kanonische Beispielversammlung/Wahl des Finanzvorstands)")
+                self.assertTitle("Ergebnis (Kanonische Beispielversammlung"
+                                 "/Wahl des Finanzvorstands)")
             elif ballot_id == 10:
                 self.traverse({'description': 'Vorherige'})
-                self.assertTitle("Ergebnis (Kanonische Beispielversammlung/Wahl des Finanzvorstands)")
+                self.assertTitle("Ergebnis (Kanonische Beispielversammlung"
+                                 "/Wahl des Finanzvorstands)")
                 self.response = save
                 self.assertNonPresence("Nächste")
             elif ballot_id == 1:
@@ -966,8 +1081,83 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
 
             self.response = save
 
+    @storage
+    @as_users("anton")
+    def test_ballot_result_page_extended(self) -> None:
+        # classical vote with bar
+        self.traverse({'description': 'Versammlung'},
+                      {'description': 'Kanonische Beispielversammlung'},
+                      {'description': 'Zusammenfassung'},
+                      {'description': 'Eine damals wichtige Frage'},
+                      {'description': 'Ergebnisdetails'})
+        self.assertTitle("Ergebnis (Kanonische Beispielversammlung/Eine damals wichtige Frage)")
+
+        # test if the overall result is displayed correctly
+        result = "CdE Wappen > CdE Glühbirne = Baum & Blätter = Gegen alle Kandidaten"
+        self.assertPresence(result, div='combined-preference', exact=True)
+
+        # test if the sorting of the single votes is correct
+        self.assertPresence("CdE Wappen 3", div='vote-1', exact=True)
+        self.assertPresence("CdE Glühbirne 1 ", div='vote-2', exact=True)
+        self.assertPresence("Baum & Blätter 1", div='vote-3', exact=True)
+        self.assertPresence("Gegen alle Kandidaten 1", div='vote-4', exact=True)
+        self.assertNonPresence("", div='vote-5', check_div=False)
+
+        # test the list of all voters
+        self.assertPresence("Anton Armin A. Administrator", div='voters-list')
+        self.assertPresence("Rowena Ravenclaw", div='voters-list')
+        self.assertNonPresence("Vera", div='voters-list')
+
+
+        # classical vote without bar
+        self.traverse({'description': 'Abstimmungen'},
+                      {'description': 'Entlastung des Vorstands'},
+                      {'description': 'Ergebnisdetails'})
+        self.assertTitle("Ergebnis (Kanonische Beispielversammlung/Entlastung des Vorstands)")
+
+        # test if the overall result is displayed correctly
+        result = "Ja > Nein"
+        self.assertPresence(result, div='combined-preference', exact=True)
+
+        # test if abstentions are rendered correctly
+        self.assertPresence("Enthalten 1", div='vote-3', exact=True)
+
+
+        # preferential vote without bar
+        self.traverse({'description': 'Abstimmungen'},
+                      {'description': 'Wie soll der CdE mit seinem Vermögen umgehen?'},
+                      {'description': 'Ergebnisdetails'})
+        self.assertTitle("Ergebnis (Kanonische Beispielversammlung/Wie soll der CdE mit seinem Vermögen umgehen?)")
+
+        # test if the overall result is displayed correctly
+        result = "Wir kaufen den Eisenberg! = Kostenlose Akademien für alle. > Investieren in Aktien und Fonds."
+        self.assertPresence(result, div='combined-preference', exact=True)
+
+        # test a vote string
+        vote = "Kostenlose Akademien für alle. > Investieren in Aktien und Fonds. = Wir kaufen den Eisenberg! 3"
+        self.assertPresence(vote, div='vote-1', exact=True)
+
+
+        # preferential vote with bar
+        self.traverse({'description': 'Versammlung'},
+                      {'description': 'Internationaler Kongress'},
+                      {'description': 'Abstimmungen'},
+                      {'description': 'Antwort auf die letzte aller Fragen'},
+                      {'description': 'Ergebnisdetails'})
+        self.assertTitle(
+            "Ergebnis (Internationaler Kongress/Antwort auf die letzte aller Fragen)")
+
+        # test if the overall result is displayed correctly
+        result = "42 > 23 = Philosophie > Ablehnungsgrenze > Ich"
+        self.assertPresence(result, div='combined-preference', exact=True)
+
+        # test a vote string
+        self.assertPresence("42 > 23 = Philosophie > Ablehnungsgrenze > Ich 1",
+                            div='vote-1', exact=True)
+
+    @storage
     @as_users("werner")
-    def test_extend(self, user):
+    def test_extend(self) -> None:
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Internationaler Kongress'},
                       {'description': 'Abstimmungen'},
@@ -978,25 +1168,26 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         farfuture = now() + datetime.timedelta(seconds=1)
         f['vote_begin'] = future.isoformat()
         f['vote_end'] = farfuture.isoformat()
-        f['vote_extension_end'] = "2222-5-1 00:00:00"
+        f['vote_extension_end'] = "2037-5-1 00:00:00"
         f['abs_quorum'] = "0"
         f['rel_quorum'] = "100"
         f['votes'] = ""
         self.submit(f)
         self.assertTitle("Maximale Länge der Verfassung (Internationaler Kongress)")
         self.assertPresence(
-            "Verlängerung bis 01.05.2222, 00:00:00, falls 11 Stimmen nicht "
+            "Verlängerung bis 01.05.2037, 00:00:00, falls 10 Stimmen nicht "
             "erreicht werden.", div='voting-period')
         time.sleep(1)
         self.traverse({'href': '/assembly/1/ballot/list'},
                       {'description': 'Maximale Länge der Verfassung'},)
         self.assertTitle("Maximale Länge der Verfassung (Internationaler Kongress)")
-        s = ("Wurde bis 01.05.2222, 00:00:00 verlängert, da 11 Stimmen nicht "
+        s = ("Wurde bis 01.05.2037, 00:00:00 verlängert, da 10 Stimmen nicht "
              "erreicht wurden.")
         self.assertPresence(s, div='voting-period')
 
+    @storage
     @as_users("werner")
-    def test_candidate_manipulation(self, user):
+    def test_candidate_manipulation(self) -> None:
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Internationaler Kongress'},
                       {'description': 'Abstimmungen'},
@@ -1041,8 +1232,9 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertEqual("aqua", f['shortname_1001'].value)
         self.assertNotIn("gelb", f.fields)
 
+    @storage
     @as_users("werner")
-    def test_has_voted(self, user):
+    def test_has_voted(self) -> None:
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Archiv-Sammlung'},
                       {'description': 'Abstimmungen'},
@@ -1055,7 +1247,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
 
         self.traverse({'description': 'Archiv-Sammlung'})
         # werner is no member, so he must signup external
-        secret = self._external_signup(user)
+        secret = self._external_signup(self.user)
         self.traverse({'description': 'Abstimmungen'},
                       {'description': 'Test-Abstimmung – bitte ignorieren'},
                       {'description': 'Ergebnisdetails'})
@@ -1064,7 +1256,8 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence("Du hast nicht abgestimmt.", div='own-vote',
                             exact=True)
 
-    def test_provide_secret(self):
+    @storage
+    def test_provide_secret(self) -> None:
         user = USER_DICT["werner"]
         self.login(user)
         self.traverse({'description': 'Versammlungen'},
@@ -1102,7 +1295,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.traverse({'description': 'Abstimmungen'},
                       {'description': bdata['title']},
                       {'description': 'Ergebnisdetails'})
-        self.assertPresence("Du hast für die folgenden Kandidaten gestimmt: ja",
+        self.assertPresence("Du hast für die folgenden Kandidaten gestimmt: Ja",
                             div='own-vote', exact=True)
 
         self.traverse({'description': 'Abstimmungen'},
@@ -1146,10 +1339,11 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.submit(f, check_notification=False)
         self.assertNonPresence("Die Versammlung wurde beendet und die "
                                "Stimmen sind nun verschlüsselt.")
-        self.assertPresence("Du hast für die folgenden Kandidaten gestimmt: ja",
+        self.assertPresence("Du hast für die folgenden Kandidaten gestimmt: Ja",
                             div='own-vote', exact=True)
 
-    def test_log(self):
+    @storage
+    def test_log(self) -> None:
         # First: generate data
         self.test_entity_ballot_simple()
         self.logout()
@@ -1167,7 +1361,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.login(USER_DICT['anton'])
         self.traverse({'description': 'Versammlungen'},
                       {'description': 'Log'})
-        self.assertTitle("Versammlungs-Log [1–18 von 18]")
+        self.assertTitle("Versammlungs-Log [1–26 von 26]")
         self.assertNonPresence("LogCodes")
         f = self.response.forms['logshowform']
         codes = [const.AssemblyLogCodes.assembly_created.value,
@@ -1200,7 +1394,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
 class TestMultiAssemblyFrontend(MultiAppFrontendTest, AssemblyTestHelpers):
     n = 2
 
-    def test_presiders(self):
+    def test_presiders(self) -> None:
         self.login("anton")
         self._create_assembly()
         self._external_signup(USER_DICT["werner"])

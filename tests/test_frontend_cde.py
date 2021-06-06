@@ -6,23 +6,59 @@ import decimal
 import itertools
 import json
 import re
-import unittest
+from typing import Set, Tuple
 
 import webtest
 
 import cdedb.database.constants as const
-from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, extract_roles, now
+from cdedb.common import (
+    CdEDBObject, ADMIN_VIEWS_COOKIE_NAME, Role, extract_roles, now, LineResolutions
+)
 from cdedb.query import QueryOperators
-from tests.common import USER_DICT, FrontendTest, as_users
+from tests.common import (
+    FrontendTest, UserIdentifier, USER_DICT, as_users, get_user, prepsql, storage,
+)
+
+
+PERSONA_TEMPLATE = {
+        "username": 'zelda@example.cde',
+        "title": "Dr.",
+        "given_names": "Zelda",
+        "family_name": "Zeruda-Hime",
+        "name_supplement": 'von und zu',
+        "display_name": 'Zelda',
+        "birthday": "1987-06-05",
+        "specialisation": "oehm",
+        "affiliation": "Hogwarts",
+        "timeline": "tja",
+        "interests": "hmmmm",
+        "free_form": "jaaah",
+        "gender": "1",
+        "telephone": "030456790",
+        "mobile": "01602047",
+        "weblink": "www.zzz.cc",
+        "address": "Street 7",
+        "address_supplement": "on the left",
+        "postal_code": "12345",
+        "location": "Lynna",
+        "country": "HY",
+        "address2": "Ligusterweg 4",
+        "address_supplement2": "Im Schrank unter der Treppe",
+        "postal_code2": "00AA",
+        "location2": "Little Whinging",
+        "country2": "GB",
+        "notes": "some talk",
+    }
 
 
 class TestCdEFrontend(FrontendTest):
     @as_users("vera", "berta")
-    def test_index(self, user):
+    def test_index(self) -> None:
         self.traverse({'description': 'Mitglieder'})
 
-    def test_ejection_date(self):
-        def _calculate_ejection_deadline(persona_data, period):
+    def test_ejection_date(self) -> None:
+        def _calculate_ejection_deadline(persona_data: CdEDBObject,
+                                         period: CdEDBObject) -> datetime.datetime:
             """Clone of `CdEFrontend._calculate_ejection_deadline`."""
             periods_left = persona_data['balance'] // decimal.Decimal("2.50")
             if persona_data['trial_member']:
@@ -97,56 +133,58 @@ class TestCdEFrontend(FrontendTest):
                              persona_data, period_data))
 
     @as_users("annika", "berta", "charly", "farin", "martin", "vera", "werner")
-    def test_sidebar(self, user):
+    def test_sidebar(self) -> None:
         self.traverse({'description': 'Mitglieder'})
-        everyone = ["Mitglieder", "Übersicht"]
-        past_event = ["Verg. Veranstaltungen"]
-        member = ["Sonstiges", "Datenschutzerklärung", "Kurssuche"]
-        searchable = ["CdE-Mitglied suchen"]
-        cde_admin = ["Nutzer verwalten", "Organisationen verwalten",
-                     "Verg.-Veranstaltungen-Log"]
-        finance_admin = [
+        everyone = {"Mitglieder", "Übersicht"}
+        past_event = {"Verg. Veranstaltungen", "Kurssuche"}
+        member = {"Sonstiges", "Datenschutzerklärung"}
+        searchable = {"CdE-Mitglied suchen"}
+        cde_admin_or_member = {"Mitglieder-Statistik"}
+        cde_admin = {"Nutzer verwalten", "Archivsuche", "Organisationen verwalten",
+                     "Verg.-Veranstaltungen-Log"}
+        finance_admin = {
             "Einzugsermächtigungen", "Kontoauszug parsen", "Finanz-Log",
-            "Überweisungen eintragen", "Semesterverwaltung", "CdE-Log"]
+            "Überweisungen eintragen", "Semesterverwaltung", "CdE-Log"}
 
         # non-members
-        if user in [USER_DICT['annika'], USER_DICT['werner'], USER_DICT['martin']]:
+        if self.user_in('annika', 'werner', 'martin'):
             ins = everyone
-            out = past_event + member + searchable + cde_admin + finance_admin
+            out = past_event | member | searchable | cde_admin | finance_admin
         # searchable member
-        elif user == USER_DICT['berta']:
-            ins = everyone + past_event + member + searchable
-            out = cde_admin + finance_admin
+        elif self.user_in('berta'):
+            ins = everyone | past_event | member | cde_admin_or_member | searchable
+            out = cde_admin | finance_admin
         # not-searchable member
-        elif user == USER_DICT['charly']:
-            ins = everyone + past_event + member
-            out = searchable + cde_admin + finance_admin
+        elif self.user_in('charly'):
+            ins = everyone | past_event | member | cde_admin_or_member
+            out = searchable | cde_admin | finance_admin
         # cde but not finance admin (vera is no member)
-        elif user == USER_DICT['vera']:
-            ins = everyone + past_event + cde_admin
-            out = member + searchable + finance_admin
+        elif self.user_in('vera'):
+            ins = everyone | past_event | cde_admin_or_member | cde_admin
+            out = member | searchable | finance_admin
         # cde and finance admin (farin is no member)
-        elif user == USER_DICT['farin']:
-            ins = everyone + past_event + cde_admin + finance_admin
-            out = member + searchable
+        elif self.user_in('farin'):
+            ins = everyone | past_event | cde_admin_or_member | cde_admin | finance_admin
+            out = member | searchable
         else:
             self.fail("Please adjust users for this tests.")
 
         self.check_sidebar(ins, out)
 
     @as_users("vera", "berta")
-    def test_showuser(self, user):
-        self.traverse({'description': user['display_name']},)
-        self.assertTitle("{} {}".format(user['given_names'],
-                                        user['family_name']))
+    def test_showuser(self) -> None:
+        self.traverse({'description': self.user['display_name']},)
+        self.assertTitle(f"{self.user['given_names']} {self.user['family_name']}")
         # TODO extend
-        if user['id'] == 2:
+        if self.user_in("berta"):
             self.assertPresence('PfingstAkademie')
 
     @as_users("berta")
-    def test_changedata(self, user):
-        self.traverse({'description': user['display_name']},
+    def test_changedata(self) -> None:
+        self.traverse({'description': self.user['display_name']},
                       {'description': 'Bearbeiten'})
+        # Make sure all country codes are translated
+        self.assertNonPresence("CountryCode")
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
         f['location2'] = "Hyrule"
@@ -159,7 +197,7 @@ class TestCdEFrontend(FrontendTest):
             self.response.lxml.get_element_by_id('displayname').text_content().strip())
 
     @as_users("quintus", "vera")
-    def test_adminchangedata(self, user):
+    def test_adminchangedata(self) -> None:
         self.realm_admin_view_profile('berta', "cde")
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['changedataform']
@@ -173,7 +211,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Jabberwocky for the win.", div='additional')
 
     @as_users("anton")
-    def test_cde_admin_views(self, user):
+    def test_cde_admin_views(self) -> None:
         self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, '')
 
         self.traverse({'href': '/cde'})
@@ -226,7 +264,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertIn('deletepasteventform', self.response.forms)
 
     @as_users("vera")
-    def test_validation(self, user):
+    def test_validation(self) -> None:
         self.admin_view_profile('berta')
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['changedataform']
@@ -239,23 +277,24 @@ class TestCdEFrontend(FrontendTest):
         self.assertEqual("Zelda", f['display_name'].value)
 
     @as_users("garcia")
-    def test_consent(self, user):
+    def test_consent(self) -> None:
         self.assertTitle("Einwilligung zur Mitgliedersuche")
         self.traverse({'description': 'Index'})
         self.assertTitle("CdE-Datenbank")
-        self.traverse({'description': user['display_name']})
+        self.traverse({'description': self.user['display_name']})
         self.assertPresence("Noch nicht entschieden", div='searchability')
         self.traverse({'description': 'Entscheiden'})
         f = self.response.forms['ackconsentform']
         self.submit(f)
-        self.traverse({'description': user['display_name']})
+        self.traverse({'description': self.user['display_name']})
         self.assertPresence("Daten sind für andere Mitglieder sichtbar.",
                             div='searchability', exact=True)
 
     @as_users("garcia")
-    def test_consent_decline(self, user):
+    def test_consent_decline(self) -> None:
 
-        def _roles(user):
+        def _roles(user: UserIdentifier) -> Set[Role]:
+            user = get_user(user)
             return extract_roles(self.core.get_persona(self.key, user['id']))
 
         # First, do not change anything
@@ -266,7 +305,7 @@ class TestCdEFrontend(FrontendTest):
         self.login(USER_DICT["garcia"])
         f = self.response.forms['nackconsentform']
         self.submit(f)
-        self.assertNotIn("searchable", _roles(user))
+        self.assertNotIn("searchable", _roles(self.user))
         self.logout()
         # Now check, that you are not redirected to form, and search is not shown
         self.login(USER_DICT["garcia"])
@@ -277,23 +316,23 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Datenschutzerklärung'})
         self.assertTitle("Einwilligung zur Mitgliedersuche")
         self.traverse({'description': 'Nichts ändern'})
-        self.assertNotIn("searchable", _roles(user))
+        self.assertNotIn("searchable", _roles(self.user))
         # Now, finally agree to consent
         self.traverse({'description': 'Datenschutzerklärung'})
         self.assertTitle("Einwilligung zur Mitgliedersuche")
         f = self.response.forms['ackconsentform']
         self.submit(f)
-        self.assertIn("searchable", _roles(user))
+        self.assertIn("searchable", _roles(self.user))
 
     @as_users("berta")
-    def test_consent_noop(self, user):
+    def test_consent_noop(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Datenschutzerklärung'})
         self.assertTitle("Einwilligung zur Mitgliedersuche")
         self.assertNotIn('ackconsentform', self.response.forms)
         self.assertNotIn('nackconsentform', self.response.forms)
 
-    def test_consent_change(self):
+    def test_consent_change(self) -> None:
         # Remove searchability of Bertalotta Beispiel
         self.login(USER_DICT["vera"])
         self.admin_view_profile('berta')
@@ -315,7 +354,7 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
 
     @as_users("berta")
-    def test_quota(self, user):
+    def test_quota(self) -> None:
         self.traverse({'description': 'Mitglieder'})
         f = self.response.forms['membersearchform']
         save = "/"
@@ -342,11 +381,24 @@ class TestCdEFrontend(FrontendTest):
                 # Check that the redirect from a previous search now also fails.
                 self.get(save, status=429)
                 self.assertPresence("Limit für Zugriffe")
+                self.assertNonPresence("unbekannter Fehler")
                 self.assertPresence("automatisch zurückgesetzt")
+                # Check that own profile remains accessible
+                self.traverse({'href': '/core/self/show'})
                 break
 
+        # Check if all of this has been logged properly
+        self.logout()
+        self.login(USER_DICT['anton'])
+        self.traverse({'description': 'Account-Log'})
+        self.assertTitle("Account-Log [1–2 von 2]")
+        self.assertPresence("Quota überschritten", div='1-1001')
+        self.assertPresence("Quota überschritten", div='2-1002')
+        self.assertPresence("Bertålotta Beispiel", div='1-1001')
+        self.assertPresence("Bertålotta Beispiel", div='2-1002')
+
     @as_users("anton", "berta", "inga")
-    def test_member_search(self, user):
+    def test_member_search(self) -> None:
         # by family_name and birth_name
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'CdE-Mitglied suchen'})
@@ -446,8 +498,17 @@ class TestCdEFrontend(FrontendTest):
             self.assertValidationError("qval_" + field,
                                        "Darf keine verbotenen Zeichen enthalten")
 
+        # Test too many separators
+        # See #1816
+        self.traverse({'description': 'Mitglieder'},
+                      {'description': 'CdE-Mitglied suchen'})
+        f = self.response.forms["membersearchform"]
+        f["qval_fulltext"] = "Inga  Iota"
+        self.submit(f)
+        self.assertTitle("Inga Iota")
+
     @as_users("inga")
-    def test_member_search_restrictions(self, user):
+    def test_member_search_restrictions(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'CdE-Mitglied suchen'})
         # len(entry) <= 3 must equal the column entry in the database
@@ -465,7 +526,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'CdE-Mitglied suchen'})
 
-        # Fulltext search is a bit special: This handel every word individual
+        # Fulltext search is a bit special: This handles every word individually
         # len(word) <= 3 must be a word (add word boundaries in the query)
         f = self.response.forms['membersearchform']
         f['qval_fulltext'] = "sta"
@@ -494,7 +555,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Inga Iota")
 
     @as_users("charly")
-    def test_member_search_non_searchable(self, user):
+    def test_member_search_non_searchable(self) -> None:
         self.traverse({'description': 'Mitglieder'})
         self.assertPresence("Mitglieder-Schnellsuche",
                             div='member-quick-search')
@@ -509,7 +570,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertNonPresence("Suchmaske")
 
     @as_users("daniel", "janis")
-    def test_member_search_non_member(self, user):
+    def test_member_search_non_member(self) -> None:
         self.get("/cde/search/member")
         self.assertTitle("CdE-Mitglied suchen")
         self.assertPresence("Um die Mitgliedersuche verwenden zu können")
@@ -517,7 +578,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertNonPresence("Suchmaske")
 
     @as_users("inga")
-    def test_member_profile_gender_privacy(self, user):
+    def test_member_profile_gender_privacy(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'CdE-Mitglied suchen'})
         self.assertTitle("CdE-Mitglied suchen")
@@ -527,8 +588,8 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Bertålotta Beispiel")
         self.assertNonPresence("weiblich")
 
-    @as_users("inga")
-    def test_past_course_search(self, user):
+    @as_users("inga", "farin")
+    def test_past_course_search(self) -> None:
         # by description
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Kurssuche'})
@@ -605,8 +666,8 @@ class TestCdEFrontend(FrontendTest):
             self.assertValidationError("qval_" + field,
                                        "Darf keine verbotenen Zeichen enthalten")
 
-    @as_users("vera")
-    def test_user_search(self, user):
+    @as_users("paul", "quintus")
+    def test_user_search(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Nutzer verwalten'})
         self.assertTitle("CdE-Nutzerverwaltung")
@@ -619,10 +680,12 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("CdE-Nutzerverwaltung")
         self.assertPresence("Ergebnis [1]", div='query-results')
-        self.assertEqual(self.response.lxml.xpath("//*[@id='query-result']/tbody/tr[1]/@data-id")[0], "2")
+        self.assertEqual(
+            "2",
+            self.response.lxml.xpath("//*[@id='query-result']/tbody/tr[1]/@data-id")[0])
 
     @as_users("vera")
-    def test_user_search_csv(self, user):
+    def test_user_search_csv(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Nutzer verwalten'})
         self.assertTitle("CdE-Nutzerverwaltung")
@@ -636,16 +699,21 @@ class TestCdEFrontend(FrontendTest):
         f['qsel_given_names'].checked = True
         f['qord_primary'] = "personas.id"
         self.response = f.submit("download", value="csv")
-        expectation = '''personas.id;given_names;family_name;username;birthday;decided_search;free_form
-2;Bertålotta;Beispiel;berta@example.cde;1981-02-11;True;"Jede Menge Gefasel  \nGut verteilt  \nÜber mehrere Zeilen"
-3;Charly C.;Clown;charly@example.cde;1984-05-13;True;"Ich bin ein ""Künstler""; im weiteren Sinne."
-4;Daniel D.;Dino;daniel@example.cde;1963-02-19;False;
-6;Ferdinand F.;Findus;ferdinand@example.cde;1988-01-01;True;
-'''.encode('utf-8-sig')
+        expectation = "\n".join((
+            'personas.id;given_names;family_name;username;birthday;decided_search;'
+            'free_form',
+            '2;Bertålotta;Beispiel;berta@example.cde;1981-02-11;True;'
+            '"Jede Menge Gefasel  \nGut verteilt  \nÜber mehrere Zeilen"',
+            '3;Charly C.;Clown;charly@example.cde;1984-05-13;True;'
+            '"Ich bin ein ""Künstler""; im weiteren Sinne."',
+            '4;Daniel D.;Dino;daniel@example.cde;1963-02-19;False;',
+            '6;Ferdinand F.;Findus;ferdinand@example.cde;1988-01-01;True;',
+            ''
+        )).encode('utf-8-sig')
         self.assertEqual(expectation, self.response.body)
 
     @as_users("vera")
-    def test_user_search_json(self, user):
+    def test_user_search_json(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Nutzer verwalten'})
         self.assertTitle("CdE-Nutzerverwaltung")
@@ -691,7 +759,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertEqual(expectation, json.loads(self.response.body.decode('utf-8')))
 
     @as_users("vera")
-    def test_toggle_activity(self, user):
+    def test_toggle_activity(self) -> None:
         self.admin_view_profile('berta')
         self.assertPresence("Ja", div='account-active', exact=True)
         f = self.response.forms['activitytoggleform']
@@ -699,7 +767,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Nein", div='account-active', exact=True)
 
     @as_users("vera")
-    def test_modify_membership(self, user):
+    def test_modify_membership(self) -> None:
         self.admin_view_profile('berta')
         self.assertPresence("CdE-Mitglied", div='membership')
         self.assertPresence("Daten sind für andere Mitglieder sichtbar.",
@@ -720,7 +788,7 @@ class TestCdEFrontend(FrontendTest):
                             div='searchability')
 
     @as_users("farin")
-    def test_iban_visibility(self, user):
+    def test_iban_visibility(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Einzugsermächtigungen'},
                       {'description': 'Bertålotta Beispiel'})
@@ -731,14 +799,13 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['generatetransactionform']
         self.submit(f)
 
-        mail = self.fetch_mail()[0]
-        text = mail.get_body().get_content()
+        text = self.fetch_mail_content()
         # but in the notification mail there should be only the hidden iban version
         self.assertNotIn("DE12 5001 0517 0648 4898 90", text)
         self.assertIn("DE12 **** **** **** **98 90", text)
 
     @as_users("berta")
-    def test_iban_non_visibility(self, user):
+    def test_iban_non_visibility(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Einzugsermächtigung'})
         self.assertTitle('Einzugsermächtigung Bertålotta Beispiel')
@@ -748,7 +815,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("DE12 **** **** **** **98 90", div='iban', exact=True)
 
     @as_users("farin")
-    def test_double_lastschrift_revoke(self, user):
+    def test_double_lastschrift_revoke(self) -> None:
         self.admin_view_profile('berta')
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Einzugsermächtigungen'},
@@ -764,44 +831,19 @@ class TestCdEFrontend(FrontendTest):
             "Mehrere aktive Einzugsermächtigungen sind unzulässig.",
             div="notifications")
 
-    @as_users("vera")
-    def test_create_user(self, user):
+    @as_users("paul", "quintus")
+    def test_create_user(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Nutzer verwalten'},
                       {'description': 'Nutzer anlegen'})
         self.assertTitle("Neues Mitglied anlegen")
-        data = {
-            "username": 'zelda@example.cde',
-            "title": "Dr.",
-            "given_names": "Zelda",
-            "family_name": "Zeruda-Hime",
-            "name_supplement": 'von und zu',
-            "display_name": 'Zelda',
-            "birthday": "1987-06-05",
-            "specialisation": "oehm",
-            "affiliation": "Hogwarts",
-            "timeline": "tja",
-            "interests": "hmmmm",
-            "free_form": "jaaah",
-            "gender": "1",
-            "telephone": "030456790",
-            "mobile": "01602047",
-            "weblink": "www.zzz.cc",
-            "address": "Street 7",
-            "address_supplement": "on the left",
-            "postal_code": "12345",
-            "location": "Lynna",
-            "country": "Hyrule",
-            "address2": "Ligusterweg 4",
-            "address_supplement2": "Im Schrank unter der Treppe",
-            "postal_code2": "00AA",
-            "location2": "Little Whinging",
-            "country2": "United Kingdom",
-            "notes": "some talk",
-        }
+        data = PERSONA_TEMPLATE.copy()
         f = self.response.forms['newuserform']
-        self.assertEqual(None, self.response.lxml.get_element_by_id('input_checkbox_is_searchable').value)
-        self.assertFalse(self.response.lxml.get_element_by_id('input_checkbox_trial_member').checked)
+        self.assertEqual(f['country'].value, self.conf["DEFAULT_COUNTRY"])
+        self.assertIsNone(
+            self.response.lxml.get_element_by_id('input_checkbox_is_searchable').value)
+        self.assertFalse(
+            self.response.lxml.get_element_by_id('input_checkbox_trial_member').checked)
         f['is_searchable'].checked = True
         f['is_member'].checked = True
         f['trial_member'].checked = True
@@ -825,6 +867,7 @@ class TestCdEFrontend(FrontendTest):
         mail = self.fetch_mail()[0]
         self.logout()
         link = self.fetch_link(mail)
+        assert link is not None
         self.get(link)
         self.assertTitle("Neues Passwort setzen")
         new_password = "krce63koLe#$e"
@@ -838,16 +881,20 @@ class TestCdEFrontend(FrontendTest):
         self.login(data)
         self.assertLogin(data['display_name'])
 
+    @as_users("paul", "quintus")
+    def test_create_archive_user(self) -> None:
+        self.check_create_archive_user('cde', PERSONA_TEMPLATE.copy())
+
     @as_users("farin")
-    def test_lastschrift_index(self, user):
+    def test_lastschrift_index(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Einzugsermächtigungen'})
         self.assertTitle("Übersicht Einzugsermächtigungen")
         self.assertIn("generatetransactionform2", self.response.forms)
 
     @as_users("farin", "berta")
-    def test_lastschrift_show(self, user):
-        if user == USER_DICT['berta']:
+    def test_lastschrift_show(self) -> None:
+        if self.user_in("berta"):
             self.traverse({'description': 'Mitglieder'},
                           {'description': 'CdE-Mitglied suchen'})
             f = self.response.forms['membersearchform']
@@ -858,14 +905,14 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Bertålotta Beispiel")
         self.traverse({'description': 'Einzugsermächtigung'})
         self.assertTitle("Einzugsermächtigung Bertålotta Beispiel")
-        if user['id'] == 32:
+        if self.user_in("farin"):
             self.assertIn("revokeform", self.response.forms)
             self.assertIn("receiptform3", self.response.forms)
         else:
             self.assertNotIn("revokeform", self.response.forms)
             self.assertNotIn("receiptform3", self.response.forms)
 
-    def test_membership_lastschrift_revoke(self):
+    def test_membership_lastschrift_revoke(self) -> None:
         self.login(USER_DICT["vera"])
         self.admin_view_profile('berta')
         self.assertPresence("Einzugsermächtigung", div="balance")
@@ -882,7 +929,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Keine aktive Einzugsermächtigung")
 
     @as_users("farin")
-    def test_lastschrift_subject_limit(self, user):
+    def test_lastschrift_subject_limit(self) -> None:
         self.admin_view_profile('anton')
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms["changedataform"]
@@ -902,8 +949,9 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Es liegen noch unbearbeitete Transaktionen vor.",
                             div="notifications")
 
+    @storage
     @as_users("farin")
-    def test_lastschrift_generate_transactions(self, user):
+    def test_lastschrift_generate_transactions(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Einzugsermächtigungen'})
         self.assertTitle("Übersicht Einzugsermächtigungen")
@@ -914,7 +962,7 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['downloadsepapainform']
         g = self.response.forms['generatetransactionsform']
         self.submit(f, check_notification=False)
-        with open("/tmp/cdedb-store/testfiles/sepapain.xml", 'rb') as f:
+        with open(self.testfile_dir / "sepapain.xml", 'rb') as f:
             expectation = f.read().split(b'\n')
         exceptions = (5, 6, 14, 28, 66,)
         for index, line in enumerate(self.response.body.split(b'\n')):
@@ -929,8 +977,9 @@ class TestCdEFrontend(FrontendTest):
         self.assertNonPresence("Aktuell befinden sich keine Einzüge in der "
                                "Schwebe.")
 
+    @storage
     @as_users("farin")
-    def test_lastschrift_generate_single_transaction(self, user):
+    def test_lastschrift_generate_single_transaction(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Einzugsermächtigungen'})
         self.assertTitle("Übersicht Einzugsermächtigungen")
@@ -941,7 +990,7 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['downloadsepapainform2']
         g = self.response.forms['generatetransactionform2']
         self.submit(f, check_notification=False)
-        with open("/tmp/cdedb-store/testfiles/sepapain.xml", 'rb') as f:
+        with open(self.testfile_dir / "sepapain.xml", 'rb') as f:
             expectation = f.read().split(b'\n')
         exceptions = (5, 6, 14, 28, 66,)
         for index, line in enumerate(self.response.body.split(b'\n')):
@@ -957,7 +1006,7 @@ class TestCdEFrontend(FrontendTest):
                                "Schwebe.")
 
     @as_users("farin")
-    def test_lastschrift_transaction_rollback(self, user):
+    def test_lastschrift_transaction_rollback(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Einzugsermächtigungen'})
         self.assertTitle("Übersicht Einzugsermächtigungen")
@@ -978,12 +1027,12 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.assertPresence("Keine aktive Einzugsermächtigung – Anlegen",
                             div='active-permit', exact=True)
-        #self.traverse({'href': '^/$'})
+        self.traverse({'href': '^/$'})
         self.admin_view_profile('berta')
         self.assertPresence("12,50 €")
 
     @as_users("farin")
-    def test_lastschrift_transaction_cancel(self, user):
+    def test_lastschrift_transaction_cancel(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Einzugsermächtigungen'})
         self.assertTitle("Übersicht Einzugsermächtigungen")
@@ -1001,7 +1050,7 @@ class TestCdEFrontend(FrontendTest):
                             "Schwebe.", div='open-dd', exact=True)
 
     @as_users("farin")
-    def test_lastschrift_transaction_failure(self, user):
+    def test_lastschrift_transaction_failure(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Einzugsermächtigungen'})
         self.assertTitle("Übersicht Einzugsermächtigungen")
@@ -1019,7 +1068,7 @@ class TestCdEFrontend(FrontendTest):
                             "Schwebe.", div='open-dd', exact=True)
 
     @as_users("farin")
-    def test_lastschrift_skip(self, user):
+    def test_lastschrift_skip(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Einzugsermächtigungen'})
         self.assertTitle("Übersicht Einzugsermächtigungen")
@@ -1030,7 +1079,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertNotIn('transactionsuccessform', self.response.forms)
 
     @as_users("farin")
-    def test_lastschrift_create(self, user):
+    def test_lastschrift_create(self) -> None:
         self.admin_view_profile('charly')
         self.traverse({'description': 'Neue Einzugsermächtigung …'})
         self.assertPresence("Keine aktive Einzugsermächtigung – Anlegen",
@@ -1054,7 +1103,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertEqual("grosze Siebte: Take on me", f['notes'].value)
 
     @as_users("farin")
-    def test_lastschrift_change(self, user):
+    def test_lastschrift_change(self) -> None:
         self.admin_view_profile('berta')
         self.traverse({'description': 'Einzugsermächtigung'},
                       {'description': 'Bearbeiten'})
@@ -1073,7 +1122,7 @@ class TestCdEFrontend(FrontendTest):
                             exact=True)
 
     @as_users("farin")
-    def test_lastschrift_receipt(self, user):
+    def test_lastschrift_receipt(self) -> None:
         self.admin_view_profile('berta')
         self.traverse({'description': 'Einzugsermächtigung'})
         self.assertTitle("Einzugsermächtigung Bertålotta Beispiel")
@@ -1082,17 +1131,17 @@ class TestCdEFrontend(FrontendTest):
         self.assertTrue(self.response.body.startswith(b"%PDF"))
 
     @as_users("vera")
-    def test_lastschrift_subscription_form(self, user):
+    def test_lastschrift_subscription_form(self) -> None:
         # as user
         self.get("/cde/lastschrift/form/download")
         self.assertTrue(self.response.body.startswith(b"%PDF"))
 
-    def test_lastschrift_subscription_form_anonymous(self):
+    def test_lastschrift_subscription_form_anonymous(self) -> None:
         self.get("/cde/lastschrift/form/download")
         self.assertTrue(self.response.body.startswith(b"%PDF"))
 
     @as_users("vera", "charly")
-    def test_lastschrift_subscription_form_fill(self, user):
+    def test_lastschrift_subscription_form_fill(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Einzugsermächtigung'})
         self.assertTitle("Einzugsermächtigung ausfüllen")
@@ -1101,7 +1150,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTrue(self.response.body.startswith(b"%PDF"))
 
     @as_users("inga")
-    def test_lastschrift_subscription_form_fill_fail(self, user):
+    def test_lastschrift_subscription_form_fill_fail(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Weitere Informationen'},
                       {'description': 'dieses Formular'})
@@ -1115,7 +1164,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Ungültige Postleitzahl")
         self.assertPresence("Ungültige Checksumme")
 
-    def test_lastschrift_subscription_form_fill_anonymous(self):
+    def test_lastschrift_subscription_form_fill_anonymous(self) -> None:
         self.get("/cde/lastschrift/form/fill")
         self.assertTitle("Einzugsermächtigung ausfüllen")
         f = self.response.forms['filllastschriftform']
@@ -1123,35 +1172,36 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.assertTrue(self.response.body.startswith(b"%PDF"))
 
+    @storage
     @as_users("vera")
-    def test_batch_admission(self, user):
+    def test_batch_admission(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Nutzer verwalten'},
                       {'description': 'Massenaufnahme'})
         self.assertTitle("Accounts anlegen")
         f = self.response.forms['admissionform']
-        with open("/tmp/cdedb-store/testfiles/batch_admission.csv") as datafile:
+        with open(self.testfile_dir / "batch_admission.csv") as datafile:
             tmp = datafile.read()
             placeholder_birthday = "03.10.9999"
-            wandering_birthday = "03.10.{}".format(now().year - 5)
-            unproblematic_birthday = "03.10.{}".format(now().year - 15)
+            wandering_birthday = f"03.10.{now().year - 5}"
+            unproblematic_birthday = f"03.10.{now().year - 15}"
             tmp = tmp.replace(placeholder_birthday, wandering_birthday)
             f['accounts'] = tmp
         self.submit(f, check_notification=False)
 
-        ## first round
+        # first round
         self.assertPresence("Erneut validieren")
         self.assertNonPresence("Anlegen")
         f = self.response.forms['admissionform']
-        content = self.response.lxml.xpath("//div[@id='{}']".format("content"))[0].text_content()
+        content = self.get_content()
         _, content = content.split(" Zeile 1:")
         output = []
         for i in range(2, 16):
-            head, content = content.split(" Zeile {}:".format(i))
+            head, content = content.split(f" Zeile {i}:")
             output.append(head)
         head, _ = content.split("Erneut validieren")
         output.append(head)
-        expectation = (
+        expectation: Tuple[Tuple[str, ...], ...] = (
             (r"given_names:\W*Darf nicht leer sein.",
              r"pevent_id:\W*Keine Eingabe vorhanden."),
             tuple(),
@@ -1164,8 +1214,7 @@ class TestCdEFrontend(FrontendTest):
             (r"pevent_id:\W*Keine Veranstaltung gefunden.",
              r"course:\W*Kein Kurs verfügbar.",),
             (r"pcourse_id:\W*Kein Kurs gefunden.",),
-            (r"birthday:\W*Ungültige Eingabe für ein Datum.",
-             r"birthday:\W*Notwendige Angabe fehlt."),
+            (r"birthday:\W*Ungültige Eingabe für ein Datum.",),
             (r"postal_code:\W*Ungültige Postleitzahl.",),
             (r"Zeilen 13 und 14 sind identisch.",),
             (r"Zeilen 13 und 14 sind identisch.",
@@ -1178,49 +1227,52 @@ class TestCdEFrontend(FrontendTest):
         for ex, out in zip(expectation, output):
             for piece in ex:
                 self.assertTrue(re.search(piece, out))
-        for i in range(15):
+        for i in range(0, 15):
             if i in (1, 7):
-                expectation = '1'
+                exp = str(LineResolutions.create.value)
             else:
-                expectation = ''
-            self.assertEqual(expectation, f['resolution{}'.format(i)].value)
+                exp = ''
+            self.assertEqual(exp, f[f'resolution{i}'].value)
         inputdata = f['accounts'].value
-        f['resolution0'] = 2
-        f['resolution2'] = 2
-        f['resolution3'] = 2
-        f['resolution4'] = 5
+        f['resolution0'] = LineResolutions.skip.value
+        f['resolution2'] = LineResolutions.skip.value
+        f['resolution3'] = LineResolutions.skip.value
+        f['resolution4'] = LineResolutions.renew_and_update.value
         f['doppelganger_id4'] = '2'
-        f['resolution5'] = 4
+        f['resolution5'] = LineResolutions.update.value
         f['doppelganger_id5'] = '4'
-        f['resolution6'] = 5
+        f['resolution6'] = LineResolutions.renew_and_update.value
         f['doppelganger_id6'] = '5'
         inputdata = inputdata.replace("pa99", "pa14")
-        inputdata = inputdata.replace("Doomed course from hell", "Swish -- und alles ist gut")
+        inputdata = inputdata.replace(
+            "Doomed course from hell", "Swish -- und alles ist gut")
         inputdata = inputdata.replace("31.02.1981", "21.02.1981")
         inputdata = inputdata.replace("00000", "07751")
         inputdata = inputdata.replace("fPingst", "Pfingst")
         inputdata = inputdata.replace("wSish", "Swish")
+        f['is_orga9'] = True
         inputdata = inputdata.replace(wandering_birthday, unproblematic_birthday)
-        f['resolution12'] = 2
-        f['resolution13'] = 2
-        f['resolution15'] = 5
+        f['resolution12'] = LineResolutions.skip.value
+        f['resolution13'] = LineResolutions.skip.value
+        f['resolution15'] = LineResolutions.renew_and_update.value
+        f['is_instructor15'] = True
         f['doppelganger_id15'] = '10'
         f['accounts'] = inputdata
         self.submit(f, check_notification=False)
 
-        ## second round
+        # second round
         self.assertPresence("Erneut validieren")
         self.assertNonPresence("Anlegen")
         f = self.response.forms['admissionform']
-        content = self.response.lxml.xpath("//div[@id='{}']".format("content"))[0].text_content()
+        content = self.get_content()
         _, content = content.split(" Zeile 1:")
         output = []
         for i in range(2, 16):
-            head, content = content.split(" Zeile {}:".format(i))
+            head, content = content.split(f" Zeile {i}:")
             output.append(head)
-        head, _ = content.split("Erneut validieren".format(i))
+        head, _ = content.split("Erneut validieren")
         output.append(head)
-        expectation = (
+        expectation: Tuple[Tuple[str, ...], ...] = (
             tuple(),
             tuple(),
             tuple(),
@@ -1241,7 +1293,7 @@ class TestCdEFrontend(FrontendTest):
         for ex, out in zip(expectation, output):
             for piece in ex:
                 self.assertTrue(re.search(piece, out))
-        nonexpectation = (
+        nonexpectation: Tuple[Tuple[str, ...], ...] = (
             tuple(),
             tuple(),
             tuple(),
@@ -1270,30 +1322,30 @@ class TestCdEFrontend(FrontendTest):
         inputdata = inputdata.replace('"1a";"Beispiel";"Bertålotta"',
                                       '"Ω";"Beispiel";"Bertålotta"')
         f['accounts'] = inputdata
-        f['resolution4'] = 5
+        f['resolution4'] = LineResolutions.renew_and_update.value
         f['doppelganger_id4'] = '2'
-        f['resolution6'] = 1
-        f['resolution8'] = 1
-        f['resolution9'] = 1
-        f['resolution10'] = 1
-        f['resolution11'] = 1
-        f['resolution14'] = 1
+        f['resolution6'] = LineResolutions.create.value
+        f['resolution8'] = LineResolutions.create.value
+        f['resolution9'] = LineResolutions.create.value
+        f['resolution10'] = LineResolutions.create.value
+        f['resolution11'] = LineResolutions.create.value
+        f['resolution14'] = LineResolutions.create.value
         self.submit(f, check_notification=False)
 
-        ## third round
+        # third round
         self.assertPresence("Erneut validieren")
         self.assertNonPresence("Anlegen")
         f = self.response.forms['admissionform']
         self.assertEqual('', f['resolution4'].value)
-        content = self.response.lxml.xpath("//div[@id='{}']".format("content"))[0].text_content()
+        content = self.get_content()
         _, content = content.split(" Zeile 1:")
         output = []
         for i in range(2, 16):
-            head, content = content.split(" Zeile {}:".format(i))
+            head, content = content.split(f" Zeile {i}:")
             output.append(head)
-        head, _ = content.split("Erneut validieren".format(i))
+        head, _ = content.split("Erneut validieren")
         output.append(head)
-        expectation = (
+        expectation: Tuple[Tuple[str, ...], ...] = (
             tuple(),
             tuple(),
             tuple(),
@@ -1313,7 +1365,7 @@ class TestCdEFrontend(FrontendTest):
         for ex, out in zip(expectation, output):
             for piece in ex:
                 self.assertTrue(re.search(piece, out))
-        nonexpectation = (
+        nonexpectation: Tuple[Tuple[str, ...], ...] = (
             tuple(),
             tuple(),
             tuple(),
@@ -1333,22 +1385,22 @@ class TestCdEFrontend(FrontendTest):
         for nonex, out in zip(nonexpectation, output):
             for piece in nonex:
                 self.assertFalse(re.search(piece, out))
-        f['resolution4'] = 5
+        f['resolution4'] = LineResolutions.renew_and_update.value
         f['doppelganger_id4'] = '2'
-        f['resolution6'] = 5
-        self.assertEqual('', f['finalized'].value)
+        f['resolution6'] = LineResolutions.renew_and_update.value
+        self.assertEqual('False', f['finalized'].value)
         self.submit(f, check_notification=False)
 
-        ## fourth round
+        # fourth round
         self.assertPresence("Anlegen")
         self.assertNonPresence("Erneut validieren")
         f = self.response.forms['admissionform']
-        self.assertEqual('5', f['resolution4'].value)
+        self.assertEqual(str(LineResolutions.renew_and_update.value), f['resolution4'].value)
         self.assertEqual('True', f['finalized'].value)
         self.submit(f, check_notification=False)
         self.assertPresence("7 Accounts erstellt.", div="notifications")
 
-        ## validate
+        # validate
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Verg. Veranstaltungen'})
         self.assertTitle("Vergangene Veranstaltungen")
@@ -1357,6 +1409,11 @@ class TestCdEFrontend(FrontendTest):
         self.assertNonPresence("Willy Brandt")
         self.assertPresence("Gerhard Schröder", div='list-participants')
         self.assertPresence("Angela Merkel", div='list-participants')
+        self.assertPresence("Gustav Heinemann (1a. Swish -- und alles ist gut) (Orga)",
+                            div='list-participants')
+
+        self.traverse({'description': 'Swish -- und alles ist gut'})
+        self.assertPresence("Janis Jalapeño (Kursleiter)")
 
         self.traverse({'description': 'Angela Merkel'})
         self.assertPresence("0,00 €", div='balance')
@@ -1364,13 +1421,121 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("CdE-Mitglied (Probemitgliedschaft)",
                             div="membership")
 
+    @as_users("vera")
+    def test_batch_admission_review(self) -> None:
+        # check that we force a review if an existing data set is been upgraded
+        data = (
+            '"pa14";"1a";"Dino";"Daniel";"lustiger Titel";"";"";"1";"";"";"";"";"";"";"";"daniel@example.cde";"1.01.1900"\n'
+            '"pa14";"1a";"Jalapeño";"Janis";"";"komischer Namenszusatz";"";"1";"";"Chilliallee 23";"56767";"Scoville";"";"+49 (5432) 321321";"";"janis@example.cde";"04.01.2001"'
+        )
+
+        self.traverse({'description': 'Mitglieder'},
+                      {'description': 'Nutzer verwalten'},
+                      {'description': 'Massenaufnahme'})
+        self.assertTitle("Accounts anlegen")
+        f = self.response.forms['admissionform']
+        f['accounts'] = data
+        self.submit(f, check_notification=False)
+
+        self.assertTitle("Accounts anlegen")
+        f = self.response.forms['admissionform']
+        f['resolution0'] = LineResolutions.update.value
+        f['doppelganger_id0'] = "4"
+        f['resolution1'] = LineResolutions.update.value
+        f['doppelganger_id1'] = "10"
+        self.submit(f, check_notification=False)
+
+        self.assertTitle("Accounts anlegen")
+        f = self.response.forms['admissionform']
+        self.submit(f)
+
+        # now, lets check the reviews exists
+        self.traverse({"description": "Index"},
+                      {"description": "Änderungen prüfen"})
+        self.assertPresence("Daniel Dino")
+        self.assertPresence("Janis")
+
+        # take special care that no fields were silently updated during realm transition
+        self.admin_view_profile("janis")
+        self.assertNonPresence("komischer Namenszusatz", div='personal-information')
+        self.admin_view_profile("daniel")
+        self.assertPresence("19.02.1963", div='personal-information')
+        self.assertPresence("Am Denkmal 91", div='address-information')
+
+    @as_users("vera")
+    def test_batch_admission_username_taken(self) -> None:
+        # check that we do not allow to create an account with already taken mail adress
+        data = ('"pa14";"1a";"Dino";"Daniel";"";"";"";"1";"";"";"";"";"";"";"";'
+                '"daniel@example.cde";"19.02.1963"')
+
+        self.traverse({'description': 'Mitglieder'},
+                      {'description': 'Nutzer verwalten'},
+                      {'description': 'Massenaufnahme'})
+        self.assertTitle("Accounts anlegen")
+        f = self.response.forms['admissionform']
+        f['accounts'] = data
+        self.submit(f, check_notification=False)
+
+        self.assertTitle("Accounts anlegen")
+        f = self.response.forms['admissionform']
+        f['resolution0'] = LineResolutions.create.value
+        self.submit(f, check_notification=False)
+
+        self.assertTitle("Accounts anlegen")
+        # check a already taken mailadress is not a warning but an error, since
+        # it would otherwise violate our postgres integrity
+        self.assertPresence("Fehler persona: Emailadresse bereits vergeben.")
+        f = self.response.forms['admissionform']
+        f['resolution0'] = LineResolutions.update.value
+        f['doppelganger_id0'] = "4"
+        self.submit(f, check_notification=False)
+
+        self.assertTitle("Accounts anlegen")
+        # but updating a persona is ok
+        self.assertNonPresence("Emailadresse bereits vergeben.")
+        f = self.response.forms['admissionform']
+        self.submit(f)
+
+    @as_users("vera")
+    def test_batch_admission_reset_finalized(self) -> None:
+        # check that we reset the "finalized" parameter every time a new change comes up
+        data = ["pa14", "1a", "Dino", "Daniel", "", "", "", "1", "", "", "", "", "", "",
+                "", "daniel@example.cde", "19.02.1963"]
+
+        self.traverse({'description': 'Mitglieder'},
+                      {'description': 'Nutzer verwalten'},
+                      {'description': 'Massenaufnahme'})
+        self.assertTitle("Accounts anlegen")
+        f = self.response.forms['admissionform']
+        f['accounts'] = ";".join(data)
+        self.submit(f, check_notification=False)
+
+        self.assertTitle("Accounts anlegen")
+        f = self.response.forms['admissionform']
+        f['resolution0'] = LineResolutions.skip.value
+        self.submit(f, check_notification=False)
+
+        self.assertTitle("Accounts anlegen")
+        f = self.response.forms['admissionform']
+        self.assertEqual('True', f['finalized'].value)
+        # now change the data in the data field
+        data[4] = "eine kleine Änderung"
+        f['accounts'] = ";".join(data)
+        self.submit(f, check_notification=False)
+
+        self.assertTitle("Accounts anlegen")
+        f = self.response.forms['admissionform']
+        self.assertEqual('False', f['finalized'].value)
+        self.assertPresence("Warnung Eintrag geändert.")
+
+    @storage
     @as_users("farin")
-    def test_money_transfers(self, user):
+    def test_money_transfers(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Überweisungen eintragen'})
         self.assertTitle("Überweisungen eintragen")
         f = self.response.forms['transfersform']
-        with open("/tmp/cdedb-store/testfiles/money_transfers.csv") as datafile:
+        with open(self.testfile_dir / "money_transfers.csv") as datafile:
             f['transfers'] = datafile.read()
         self.submit(f, check_notification=False)
 
@@ -1388,7 +1553,7 @@ class TestCdEFrontend(FrontendTest):
             output.append(head)
         head, _ = content.split("Validieren")
         output.append(head)
-        expectation = (
+        expectation: Tuple[Tuple[str, ...], ...] = (
             (r"persona_id:\W*Darf nicht leer sein.",
              r"family_name:\W*Darf nicht leer sein.",
              r"given_names:\W*Darf nicht leer sein.",
@@ -1453,7 +1618,7 @@ class TestCdEFrontend(FrontendTest):
                             " (Überwiesen am 16.03.2019)")
 
     @as_users("farin")
-    def test_money_transfers_regex(self, user):
+    def test_money_transfers_regex(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Überweisungen eintragen'})
         self.assertTitle("Überweisungen eintragen")
@@ -1462,24 +1627,27 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         # Here the active regex chars where successfully neutralised
 
+    @storage
     @as_users("farin")
-    def test_money_transfers_file(self, user):
+    def test_money_transfers_file(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Überweisungen eintragen'})
         f = self.response.forms['transfersform']
         # This file has a newline at the end, which needs to be stripped or it
         # causes the checksum to differ and require a third round.
-        with open("/tmp/cdedb-store/testfiles/money_transfers_valid.csv", 'rb') as datafile:
+
+        with open(self.testfile_dir / "money_transfers_valid.csv", 'rb') as datafile:
             data = datafile.read().replace(b"\r", b"").replace(b"\n", b"\r\n")
 
         self.assertIn(b"\r\n", data)
-        f['transfers_file'] = webtest.Upload("money_transfers_valid.csv", data, "text/csv")
+        f['transfers_file'] = webtest.Upload(
+            "money_transfers_valid.csv", data, "text/csv")
         self.submit(f, check_notification=False)
         f = self.response.forms['transfersform']
         self.submit(f)
 
     @as_users("farin")
-    def test_money_transfer_low_balance(self, user):
+    def test_money_transfer_low_balance(self) -> None:
         self.admin_view_profile("daniel")
         self.assertPresence("0,00 €", div='balance')
         self.assertNonPresence("CdE-Mitglied", div='membership')
@@ -1493,8 +1661,10 @@ class TestCdEFrontend(FrontendTest):
         self.admin_view_profile("daniel")
         self.assertNonPresence("CdE-Mitglied", div='membership')
 
+    @prepsql(f"UPDATE core.changelog SET ctime ="
+             f" '{now() - datetime.timedelta(days=365 * 2 + 1)}' WHERE persona_id = 18")
     @as_users("farin")
-    def test_semester(self, user):
+    def test_semester(self) -> None:
         link = {'description': 'Semesterverwaltung'}
         self.traverse({'description': 'Mitglieder'}, link)
         self.assertTitle("Semesterverwaltung")
@@ -1518,14 +1688,14 @@ class TestCdEFrontend(FrontendTest):
 
         # 1.2 Remove Inactive Members
         self.assertPresence("Erledigt am", div='payment-request')
-        self.assertPresence("9 E-Mails versandt", div='payment-request')
+        self.assertPresence("8 E-Mails versandt", div='payment-request')
         self.assertPresence("Später zu erledigen.", div='balance-update')
         self.assertPresence("Später zu erledigen.", div='next-semester')
 
         self.assertPresence(
             "Derzeit haben 0 Mitglieder ein zu niedriges Guthaben "
             "(insgesamt 0,00 €, davon 0 mit einer aktiven Einzugsermächtigung)."
-            " Zusätzlich gibt es 3 Probemitglieder.", div='eject-members')
+            " Zusätzlich gibt es 2 Probemitglieder.", div='eject-members')
         # Check error handling for bill
         self.submit(f, check_notification=False)
         self.assertPresence('Zahlungserinnerung bereits erledigt',
@@ -1542,7 +1712,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Erledigt am", div='eject-members')
         self.assertPresence("Später zu erledigen.", div='next-semester')
 
-        self.assertPresence("Insgesamt 9 Mitglieder, 3 davon haben eine "
+        self.assertPresence("Insgesamt 8 Mitglieder, 2 davon haben eine "
                             "Probemitgliedschaft", div='balance-update')
         # Check error handling for eject
         self.submit(f, check_notification=False)
@@ -1597,7 +1767,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Semesterverwaltung")
 
         # 2.3 Update Balances
-        self.assertPresence("Insgesamt 6 Mitglieder, 0 davon haben eine "
+        self.assertPresence("Insgesamt 5 Mitglieder, 0 davon haben eine "
                             "Probemitgliedschaft", div='balance-update')
 
         f = self.response.forms['balanceform']
@@ -1617,17 +1787,19 @@ class TestCdEFrontend(FrontendTest):
 
         # Verify Log
         self.traverse({'description': 'CdE-Log'})
-        self.assertTitle("CdE-Log [1–8 von 8]")
-        self.assertPresence("0 inaktive Mitglieder gestrichen.", div="2-1002")
-        self.assertPresence("3 Probemitgliedschaften beendet", div="3-1003")
-        self.assertPresence("15.00 € Guthaben abgebucht.", div="3-1003")
+        self.assertTitle("CdE-Log [1–12 von 12]")
+        self.assertPresence("1 E-Mails versandt.", div="2-1002")
+        self.assertPresence("0 inaktive Mitglieder gestrichen.", div="3-1003")
+        self.assertPresence("1 Accounts archiviert.", div="4-1004")
+        self.assertPresence("2 Probemitgliedschaften beendet", div="5-1005")
+        self.assertPresence("15.00 € Guthaben abgebucht.", div="5-1005")
 
-        self.assertPresence("3 inaktive Mitglieder gestrichen.", div="6-1006")
-        self.assertPresence("0 Probemitgliedschaften beendet", div="7-1007")
-        self.assertPresence("15.00 € Guthaben abgebucht.", div="7-1007")
+        self.assertPresence("3 inaktive Mitglieder gestrichen.", div="9-1009")
+        self.assertPresence("0 Probemitgliedschaften beendet", div="11-1011")
+        self.assertPresence("12.50 € Guthaben abgebucht.", div="11-1011")
 
     @as_users("farin")
-    def test_expuls(self, user):
+    def test_expuls(self) -> None:
         link = {'description': 'Semesterverwaltung'}
         self.traverse({'description': 'Mitglieder'}, link)
         self.assertTitle("Semesterverwaltung")
@@ -1710,7 +1882,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("CdE-Log [1–1 von 1]")
 
     @as_users("vera")
-    def test_institutions(self, user):
+    def test_institutions(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Organisationen verwalten'})
         self.assertTitle("Organisationen der verg. Veranstaltungen verwalten")
@@ -1744,7 +1916,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertNotIn("title_1001", f.fields)
 
     @as_users("berta")
-    def test_list_past_events(self, user):
+    def test_list_past_events(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Verg. Veranstaltungen'})
         self.assertTitle("Vergangene Veranstaltungen")
@@ -1775,7 +1947,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("DdE", div='navigation')
 
     @as_users("vera")
-    def test_list_past_events_admin(self, user):
+    def test_list_past_events_admin(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Verg. Veranstaltungen'})
         self.assertTitle("Vergangene Veranstaltungen")
@@ -1800,7 +1972,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertNonPresence("PfingstAkademie")
 
     @as_users("charly", "inga")
-    def test_show_past_event_course(self, user):
+    def test_show_past_event_course(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Verg. Veranstaltungen'})
         self.assertTitle("Vergangene Veranstaltungen")
@@ -1817,13 +1989,13 @@ class TestCdEFrontend(FrontendTest):
                             exact=True)
 
     @as_users("vera", "berta", "charly", "ferdinand", "inga")
-    def test_show_past_event_gallery(self, user):
+    def test_show_past_event_gallery(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Verg. Veranstaltungen'})
         self.assertTitle("Vergangene Veranstaltungen")
         self.traverse({'description': 'PfingstAkademie 2014'})
         self.assertTitle("PfingstAkademie 2014")
-        if user['id'] == 22:
+        if self.user_in(22):
             self.assertPresence(
                 "Du bist kein Teilnehmer dieser vergangenen Veranstaltung und "
                 "kannst diesen Link nur in Deiner Eigenschaft als Admin sehen.",
@@ -1833,7 +2005,7 @@ class TestCdEFrontend(FrontendTest):
                 "Du bist kein Teilnehmer dieser vergangenen Veranstaltung und "
                 "kannst diesen Link nur in Deiner Eigenschaft als Admin sehen.")
         # inga is no participant nor admin
-        if user['id'] == 9:
+        if self.user_in(9):
             self.assertNonPresence("Mediensammlung "
                                    "https://pa14:secret@example.cde/pa14/")
         else:
@@ -1842,9 +2014,9 @@ class TestCdEFrontend(FrontendTest):
                 div='gallery-link')
 
     @as_users("vera", "berta", "charly", "garcia", "inga")
-    def test_show_past_event_privacy(self, user):
+    def test_show_past_event_privacy(self) -> None:
 
-        def _traverse_back():
+        def _traverse_back() -> None:
             self.traverse({'description': 'Mitglieder'},
                           {'description': 'Verg. Veranstaltungen'},
                           {'description': 'PfingstAkademie 2014'})
@@ -1853,7 +2025,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("PfingstAkademie 2014")
         # Check list privacy
         # non-searchable non-participants can not see anything interesting
-        if user['id'] == 7:
+        if self.user_in("garcia"):
             self.assertPresence("5 Teilnehmer", div='count-extra-participants')
             self.assertNonPresence("Bertå")
             self.assertNonPresence("Ferdinand")
@@ -1863,13 +2035,13 @@ class TestCdEFrontend(FrontendTest):
             self.assertPresence("Ferdinand", div='list-participants')
 
         # non-searchable users are only visible to admins and participants
-        if user['id'] in {2, 3, 22}:
+        if self.user_in("berta", "charly", "vera"):
             # members and participants
             self.assertPresence("Charly", div='list-participants')
             self.assertPresence("Emilia", div='list-participants')
             self.assertNonPresence("weitere")
             # no links are displayed to non-searchable users
-            if user['id'] != 3:
+            if not self.user_in("charly"):
                 # searchable member
                 self.traverse({'description': 'Ferdinand F. Findus'})
                 _traverse_back()
@@ -1880,11 +2052,11 @@ class TestCdEFrontend(FrontendTest):
         else:
             self.assertNonPresence("Charly")
             self.assertNonPresence("Emilia")
-            if user['id'] not in {7}:
+            if not self.user_in("garcia"):
                 self.assertPresence("2 weitere", div='count-extra-participants')
 
         # links to non-searchable users are only displayed for admins
-        if user['id'] == 22:
+        if self.user_in("vera"):
             # admin
             self.traverse({'description': 'Charly C. Clown'})
             _traverse_back()
@@ -1893,27 +2065,57 @@ class TestCdEFrontend(FrontendTest):
         else:
             # normal members
             self.assertNoLink('/core/persona/5/show')
-            if user['id'] != 3:
+            if not self.user_in("charly"):
                 self.assertNoLink('/core/persona/3/show')
 
     @as_users("daniel")
-    def test_show_past_event_unprivileged(self, user):
+    def test_show_past_event_unprivileged(self) -> None:
         self.traverse({'description': 'Mitglieder'})
         self.assertNoLink('cde/past/event/list')
         self.get("/cde/past/event/list", status=403)
         self.get("/cde/past/event/1/show", status=403)
 
     @as_users("berta", "charly")
-    def test_show_past_event_own_link(self, user):
+    def test_show_past_event_own_link(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Verg. Veranstaltungen'},
                       {'description': 'PfingstAkademie 2014'})
         self.assertTitle("PfingstAkademie 2014")
-        self.traverse({'description': '{} {}'.format(user['given_names'],
-                                                     user['family_name'])})
+        self.traverse({'description': '{} {}'.format(self.user['given_names'],
+                                                     self.user['family_name'])})
+
+    @as_users("anton", "charly", "garcia", "inga")
+    def test_show_past_event_orgas(self) -> None:
+        self.traverse({'description': 'Mitglieder'},
+                      {'description': 'Verg. Veranstaltungen'},
+                      {'description': 'FingerAkademie 2020'})
+        self.assertTitle("FingerAkademie 2020")
+        self.assertPresence("Ferdinand F. Findus", div="orgas")
+        if self.user_in("inga"):
+            # no patricipant, but searchable.
+            self.assertPresence("und 2 weitere", div="orgas")
+            self.assertNonPresence("Charly")
+            self.assertNonPresence("Emilia")
+            self.assertNonPresence("Garcia", div="orgas")
+            self.traverse({'description': 'Ferdinand'})
+        else:
+            self.assertPresence("Charly C. Clown", div="orgas")
+            self.assertPresence("Emilia E. Eventis", div="orgas")
+            self.assertPresence("Ferdinand F. Findus", div="orgas")
+            self.assertNonPresence("Garcia", div="orgas")
+            self.assertNonPresence("weitere")
+            if self.user_in("anton"):
+                self.traverse({'description': 'Emilia'})
+            else:
+                # requesting user not searchable / no member
+                self.assertNoLink(content="Emilia")
+                self.assertNoLink(content="Ferdindand")
+                if not self.user_in("charly"):
+                    # requested user not searchable.
+                    self.assertNoLink(content="Charly")
 
     @as_users("vera")
-    def test_past_event_addresslist(self, user):
+    def test_past_event_addresslist(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Verg. Veranstaltungen'},
                       {'description': 'PfingstAkademie 2014'})
@@ -1945,7 +2147,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertEqual(expectation, given_names)
 
     @as_users("vera")
-    def test_change_past_event(self, user):
+    def test_change_past_event(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Verg. Veranstaltungen'},
                       {'description': 'PfingstAkademie 2014'},
@@ -1955,7 +2157,7 @@ class TestCdEFrontend(FrontendTest):
         f['title'] = "Link Academy"
         f['institution'] = 2
         f['description'] = "Ganz ohne Minderjährige."
-        f['notes'] = "<https://zelda:hyrule@link.cde>"
+        f['participant_info'] = "<https://zelda:hyrule@link.cde>"
         self.submit(f)
         self.assertTitle("Link Academy")
         self.assertPresence("Disco des Ehemaligen", div='institution')
@@ -1964,7 +2166,7 @@ class TestCdEFrontend(FrontendTest):
                             exact=True)
 
     @as_users("vera")
-    def test_create_past_event(self, user):
+    def test_create_past_event(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Verg. Veranstaltungen'},
                       {'description': 'Verg. Veranstaltung anlegen'})
@@ -1974,7 +2176,7 @@ class TestCdEFrontend(FrontendTest):
         f['shortname'] = "link"
         f['institution'] = 2
         f['description'] = "Ganz ohne Minderjährige."
-        f['notes'] = "<https://zelda:hyrule@link.cde>"
+        f['participant_info'] = "<https://zelda:hyrule@link.cde>"
         f['tempus'] = "1.1.2000"
         self.submit(f)
         self.assertTitle("Link Academy II")
@@ -1985,7 +2187,7 @@ class TestCdEFrontend(FrontendTest):
                             exact=True)
 
     @as_users("vera")
-    def test_create_past_event_with_courses(self, user):
+    def test_create_past_event_with_courses(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Verg. Veranstaltungen'},
                       {'description': 'Verg. Veranstaltung anlegen'})
@@ -2010,7 +2212,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("3. Tretbootfahren", div='list-courses')
 
     @as_users("vera")
-    def test_delete_past_event(self, user):
+    def test_delete_past_event(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Verg. Veranstaltungen'})
         self.assertTitle("Vergangene Veranstaltungen")
@@ -2026,7 +2228,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertNonPresence("PfingstAkademie 2014")
 
     @as_users("vera")
-    def test_change_past_course(self, user):
+    def test_change_past_course(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Verg. Veranstaltungen'},
                       {'description': 'PfingstAkademie 2014'},
@@ -2043,7 +2245,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Bertålotta Beispiel", div='list-participants')
 
     @as_users("vera")
-    def test_create_past_course(self, user):
+    def test_create_past_course(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Verg. Veranstaltungen'},
                       {'description': 'PfingstAkademie 2014'},
@@ -2058,7 +2260,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Lots of arrows.", div='description')
 
     @as_users("vera")
-    def test_delete_past_course(self, user):
+    def test_delete_past_course(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Verg. Veranstaltungen'},
                       {'description': 'PfingstAkademie 2014'},
@@ -2076,7 +2278,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertNonPresence("Abstract Nonsense")
 
     @as_users("vera")
-    def test_participant_manipulation(self, user):
+    def test_participant_manipulation(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Verg. Veranstaltungen'},
                       {'description': 'PfingstAkademie 2014'},
@@ -2096,7 +2298,7 @@ class TestCdEFrontend(FrontendTest):
             'persona_ids',
             "Einige dieser Nutzer sind keine Veranstaltungsnutzer.")
         f = self.response.forms['addparticipantform']
-        f['persona_ids'] = "DB-7-8, DB-8-6, DB-5-1"
+        f['persona_ids'] = "DB-7-8, DB-8-6, DB-5-1, DB-3-5"
         f['is_orga'].checked = True
         f['is_instructor'].checked = True
         self.submit(f)
@@ -2110,10 +2312,17 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
         self.assertNonPresence("Garcia")
 
+        f = self.response.forms['removeparticipantform3']
+        self.submit(f)
+        self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
+        self.assertNonPresence("Garcia")
+
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Verg. Veranstaltungen'},
                       {'description': 'PfingstAkademie 2014'})
         self.assertNonPresence("Garcia")
+        # See #1458
+        self.assertNonPresence("Charly")
         f = self.response.forms['addparticipantform']
         f['persona_ids'] = "DB-7-8"
         f['is_orga'].checked = True
@@ -2125,8 +2334,40 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("PfingstAkademie 2014")
         self.assertNonPresence("Garcia")
 
+    @as_users("farin", "inga")
+    def test_member_stats(self) -> None:
+        self.traverse("Mitglieder", "Mitglieder-Statistik")
+        self.assertPresence("Mitglieder", div="cde-simple-stats")
+        self.assertPresence("davon suchbar", div="cde-simple-stats")
+        self.assertPresence("Inaktive Mitglieder", div="cde-simple-stats")
+        self.assertPresence("Mitglieder nach Land",
+                            div="complex-stats-members_by_country")
+        self.assertPresence("Deutschland",
+                            div="complex-stats-members_by_country")
+        self.assertPresence("Japan",
+                            div="complex-stats-members_by_country")
+        self.assertNonPresence("DE")
+        self.assertNonPresence("JP")
+        self.assertPresence("Mitglieder nach Stadt",
+                            div="complex-stats-members_by_city")
+        self.assertNonPresence("Burokratia")
+        self.assertNonPresence("Liliput")
+        self.assertPresence("Mitglieder nach Geburtsjahr",
+                            div="complex-stats-members_by_birthday")
+        self.assertPresence("1991", div="complex-stats-members_by_birthday")
+        self.assertPresence("2222", div="complex-stats-members_by_birthday")
+        self.assertNonPresence("2014", div="complex-stats-members_by_birthday")
+        self.assertPresence("Mitglieder nach erster Akademieteilnahme",
+                            div="complex-stats-members_by_first_event")
+        self.assertPresence("2014", div="complex-stats-members_by_first_event")
+        self.assertNonPresence("2010", div="complex-stats-members_by_first_event")
+        self.assertPresence("Verschiedene Akademie-Teilnehmer nach Jahr",
+                            div="complex-stats-unique_participants_per_year")
+        self.assertPresence("2010", div="complex-stats-unique_participants_per_year")
+        self.assertPresence("2014", div="complex-stats-unique_participants_per_year")
+
     @as_users("vera")
-    def test_past_log(self, user):
+    def test_past_log(self) -> None:
         # First: generate data
         logs = []
 
@@ -2154,7 +2395,7 @@ class TestCdEFrontend(FrontendTest):
         f['shortname'] = "Arrr"
         f['institution'] = 2
         f['description'] = "Alle Mann an Deck!"
-        f['notes'] = "<https://piraten:schiff@ahoi.cde>"
+        f['participant_info'] = "<https://piraten:schiff@ahoi.cde>"
         f['tempus'] = "1.1.2000"
         self.submit(f)
         logs.append((1003, const.PastEventLogCodes.event_created))
@@ -2229,10 +2470,11 @@ class TestCdEFrontend(FrontendTest):
 
         # Now check it
         self.traverse({'description': 'Verg.-Veranstaltungen-Log'})
-        self.log_pagination("Verg.-Veranstaltungen-Log", logs)
+        self.log_pagination("Verg.-Veranstaltungen-Log", tuple(logs))
+        self.assertPresence("Piraten Arrrkademie", div="4-1004")
 
     @as_users("farin")
-    def test_cde_log(self, user):
+    def test_cde_log(self) -> None:
         # First: generate data
         logs = []
 
@@ -2242,61 +2484,64 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['billform']
         self.submit(f)
         logs.append((1001, const.CdeLogCodes.semester_bill))
+        logs.append((1002, const.CdeLogCodes.automated_archival_notification_done))
 
         # Remove Inactive Members
         self.reload_and_check_form('ejectform', link)
         f = self.response.forms['ejectform']
         self.submit(f)
-        logs.append((1002, const.CdeLogCodes.semester_ejection))
+        logs.append((1003, const.CdeLogCodes.semester_ejection))
+        logs.append((1004, const.CdeLogCodes.automated_archival_done))
 
         # Update Balances
         self.reload_and_check_form('balanceform', link)
         f = self.response.forms['balanceform']
         self.submit(f)
-        logs.append((1003, const.CdeLogCodes.semester_balance_update))
+        logs.append((1005, const.CdeLogCodes.semester_balance_update))
 
         # Next Semester
         self.reload_and_check_form('proceedform', link)
         f = self.response.forms['proceedform']
         self.submit(f)
-        logs.append((1004, const.CdeLogCodes.semester_advance))
+        logs.append((1006, const.CdeLogCodes.semester_advance))
 
         # Payment Request with addresscheck
         self.reload_and_check_form('billform', link)
         f = self.response.forms['billform']
         f['addresscheck'].checked = True
         self.submit(f)
-        logs.append((1005, const.CdeLogCodes.semester_bill_with_addresscheck))
+        logs.append((1007, const.CdeLogCodes.semester_bill_with_addresscheck))
+        logs.append((1008, const.CdeLogCodes.automated_archival_notification_done))
 
         # exPuls with addresscheck
         self.reload_and_check_form('addresscheckform', link)
         f = self.response.forms['addresscheckform']
         self.submit(f)
-        logs.append((1006, const.CdeLogCodes.expuls_addresscheck))
+        logs.append((1009, const.CdeLogCodes.expuls_addresscheck))
 
         # Next exPuls
         self.reload_and_check_form('proceedexpulsform', link)
         f = self.response.forms['proceedexpulsform']
         self.submit(f)
-        logs.append((1007, const.CdeLogCodes.expuls_advance))
+        logs.append((1010, const.CdeLogCodes.expuls_advance))
 
         # exPuls without addresscheck
         self.reload_and_check_form('noaddresscheckform', link)
         f = self.response.forms['noaddresscheckform']
         self.submit(f)
-        logs.append((1008, const.CdeLogCodes.expuls_addresscheck_skipped))
+        logs.append((1011, const.CdeLogCodes.expuls_addresscheck_skipped))
 
         # Next exPuls
         self.reload_and_check_form('proceedexpulsform', link)
         f = self.response.forms['proceedexpulsform']
         self.submit(f)
-        logs.append((1009, const.CdeLogCodes.expuls_advance))
+        logs.append((1012, const.CdeLogCodes.expuls_advance))
 
         # Now check it
         self.traverse({'description': "CdE-Log"})
-        self.log_pagination("CdE-Log", logs)
+        self.log_pagination("CdE-Log", tuple(logs))
 
-    def test_finance_log(self):
+    def test_finance_log(self) -> None:
         # First: generate data
         pass
 
@@ -2308,7 +2553,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertNonPresence("LogCodes")
 
     @as_users("vera")
-    def test_changelog_meta(self, user):
+    def test_changelog_meta(self) -> None:
         self.traverse({'description': 'Nutzerdaten-Log'})
         self.assertTitle("Nutzerdaten-Log [1–31 von 31]")
         f = self.response.forms['logshowform']

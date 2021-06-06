@@ -181,7 +181,7 @@
                     </div>
                 </nav>
                 <div class="col-md-9">
-                    {% if self.breadcrumb %}
+                    {% if self.breadcrumb() %}
                         <h6 id="bc-title" class="sr-only">{% trans %}You are here:{% endtrans %}</h6>
                         <nav>
                             <ol class="breadcrumb breadcrumb-hanging" aria-labelledby="bc-title">
@@ -200,7 +200,7 @@
 
                     <div role="main">
                         {% block heading %}
-                            <h1 class="title" id="title">{{ gettext(self.title()) }}</h1>
+                            <h1 class="title" id="title">{{ self.title() }}</h1>
                         {% endblock %}
 
                         <div id="static-notifications">

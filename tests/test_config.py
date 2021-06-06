@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import os
 import unittest
 
 import pytz
@@ -8,12 +8,12 @@ from cdedb.config import BasicConfig, Config, SecretsConfig
 
 
 class TestConfig(unittest.TestCase):
-    def test_override(self):
+    def test_override(self) -> None:
         basic = BasicConfig()
         self.assertEqual(pytz.timezone('CET'), basic["DEFAULT_TIMEZONE"])
         config = Config(None)
         self.assertEqual(6432, config["DB_PORT"])
-        self.assertEqual("cdb_test", config["CDB_DATABASE_NAME"])
+        self.assertEqual(os.environ['CDEDB_TEST_DATABASE'], config["CDB_DATABASE_NAME"])
         extraconfig = Config("tests/ancillary_files/extra_config.py")
         self.assertEqual(42, extraconfig["DB_PORT"])
         self.assertEqual("skynet", extraconfig["CDB_DATABASE_NAME"])
@@ -22,8 +22,8 @@ class TestConfig(unittest.TestCase):
         extrasecret = SecretsConfig("tests/ancillary_files/extra_config.py")
         self.assertEqual("matrix", extrasecret["URL_PARAMETER_SALT"])
 
-    def test_caching(self):
-        ## this is a regression test
+    def test_caching(self) -> None:
+        # this is a regression test
         basic = BasicConfig()
         extrasecret = SecretsConfig("tests/ancillary_files/extra_config.py")
         self.assertEqual("matrix", extrasecret["URL_PARAMETER_SALT"])

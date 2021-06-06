@@ -31,9 +31,6 @@ def template_url(name: str) -> str:
 
     The handling of templates in mailman is a bit tricky involving a
     separate URI for each template which we construct here.
-
-    :type name: str
-    :rtype: str
     """
     return "https://db.cde-ev.de/mailman_templates/{}".format(name)
 
@@ -45,6 +42,8 @@ class MailmanMixin(MlBaseFrontend):
         prefix = ""
         if db_list['subject_prefix']:
             prefix = "[{}] ".format(db_list['subject_prefix'] or "")
+
+        # First, specify the generally desired settings, templates and header matches.
         desired_settings = {
             'send_welcome_message': False,
             # Available only in mailman-3.3
@@ -58,7 +57,10 @@ class MailmanMixin(MlBaseFrontend):
             'convert_html_to_plaintext': True,
             'dmarc_mitigate_action': 'wrap_message',
             'dmarc_mitigate_unconditionally': False,
-            'dmarc_wrapped_message_text': 'Nachricht wegen DMARC eingepackt.',
+            'dmarc_wrapped_message_text': (
+                "Diese Nachricht wurde mit modifizierter Senderadresse weitergeleitet,"
+                " da die DMARC-Sicherheitsrichtlinien des initialen Mailproviders"
+                " mit Maillinglisten inkompatibel sind."),
             'administrivia': True,
             'member_roster_visibility': 'moderators',
             'advertised': True,
@@ -77,45 +79,7 @@ class MailmanMixin(MlBaseFrontend):
             # 'pass_extensions': ['pdf'],
             # 'pass_types': ['multipart', 'text/plain', 'application/pdf'],
         }
-        desired_templates = {}
-        if not db_list['is_active']:
-            desired_settings.update({
-                'advertised': False,
-                'default_member_action': 'reject',
-                'default_nonmember_action': 'reject',
-            })
-            desired_templates['list:user:notice:rejected'] = """
-Your message to the $listname mailing-list was rejected for the following
-reasons:
-
-The list is currently inactive and does not process messages.
-
-The original message as received by Mailman is attached.
-""".strip()
-        changed = False
-        for key, val in desired_settings.items():
-            if mm_list.settings[key] != val:
-                mm_list.settings[key] = val
-                changed = True
-        if changed:
-            mm_list.settings.save()
-
-        desired_header_matches = {
-            ('x-spam-flag', 'YES', 'hold'),
-        }
-        existing_header_matches = {
-            (match.rest_data['header'], match.rest_data['pattern'],
-             match.rest_data['action'])
-            for match in mm_list.header_matches
-        }
-        if desired_header_matches != existing_header_matches:
-            header_matches = mm_list.header_matches
-            for match in header_matches:
-                match.delete()
-            for header, pattern, action in desired_header_matches:
-                mm_list.header_matches.add(header, pattern, action)
-
-        desired_templates.update({
+        desired_templates = {
             # Funny split to protect trailing whitespace
             'list:member:regular:footer': '-- ' + f"""
 Dies ist eine Mailingliste des CdE e.V.
@@ -136,9 +100,51 @@ At your convenience, visit the CdEDB [1] to approve or deny the request. Note
 that the paragraph below about email moderation is wrong. Sending mails will
 do nothing.
 
-[1] { cdedburl(rs, 'ml/message_moderation', {'mailinglist_id': db_list['id']}, force_external=True) }
+[1] {cdedburl(rs, 'ml/message_moderation', {'mailinglist_id': db_list['id']}, force_external=True)}
 """.strip(),
-        })
+        }
+        desired_header_matches = {
+            ('x-spam-flag', 'YES', 'hold'),
+        }
+        if not db_list['is_active']:
+            desired_settings.update({
+                'advertised': False,
+                'default_member_action': 'reject',
+                'default_nonmember_action': 'reject',
+            })
+            desired_templates['list:user:notice:rejected'] = """
+Your message to the $listname mailing-list was rejected for the following
+reasons:
+
+The list is currently inactive and does not process messages.
+
+The original message as received by Mailman is attached.
+""".strip()
+            desired_header_matches = {
+                ('x-spam-flag', 'YES', 'discard'),
+            }
+
+        # Second, update values to mailman if changed
+        changed = False
+        for key, val in desired_settings.items():
+            if mm_list.settings[key] != val:
+                mm_list.settings[key] = val
+                changed = True
+        if changed:
+            mm_list.settings.save()
+
+        existing_header_matches = {
+            (match.rest_data['header'], match.rest_data['pattern'],
+             match.rest_data['action'])
+            for match in mm_list.header_matches
+        }
+        if desired_header_matches != existing_header_matches:
+            header_matches = mm_list.header_matches
+            for match in header_matches:
+                match.delete()
+            for header, pattern, action in desired_header_matches:
+                mm_list.header_matches.add(header, pattern, action)
+
         existing_templates = {
             t.name: t for t in mm_list.templates
         }
@@ -172,7 +178,7 @@ do nothing.
     def mailman_sync_list_subs(self, rs: RequestState, mailman: Client,
                                db_list: CdEDBObject,
                                mm_list: MailingList) -> None:
-        subscribing_states = const.SubscriptionStates.subscribing_states()
+        subscribing_states = const.SubscriptionState.subscribing_states()
         persona_ids = set(self.mlproxy.get_subscription_states(
             rs, db_list['id'], states=subscribing_states))
         db_addresses = self.mlproxy.get_subscription_addresses(
@@ -277,18 +283,13 @@ do nothing.
         mailman = self.get_mailman()
         # noinspection PyBroadException
         try:
-            _ = mailman.system  # cause the client to connect
-        except Exception as e:  # sadly this throws many different exceptions
+            _ = mailman.system  # cause the client to connect # noqa
+        except Exception:  # sadly this throws many different exceptions
             self.logger.exception("Mailman client connection failed!")
             return store
         db_lists = self.mlproxy.get_mailinglists(
             rs, self.mlproxy.list_mailinglists(rs, active_only=False))
-        # Exclude CdE-München and Dokuforge lists as they are not managed by
-        # our mail server
-        external_domains = {const.MailinglistDomain.cdemuenchen,
-                            const.MailinglistDomain.dokuforge}
-        db_lists = {lst['address']: lst for lst in db_lists.values()
-                    if lst['domain'] not in external_domains}
+        db_lists = {lst['address']: lst for lst in db_lists.values()}
         mm_lists = {lst.fqdn_listname: lst for lst in mailman.lists}
         new_lists = set(db_lists) - set(mm_lists)
         current_lists = set(db_lists) - new_lists

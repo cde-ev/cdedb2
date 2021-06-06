@@ -5,7 +5,7 @@ import unittest
 
 
 class TestVerificationScript(unittest.TestCase):
-    def test_verify_vote(self):
+    def test_verify_vote(self) -> None:
         output = subprocess.check_output([
             "bin/verify_vote.py", "snthdiueoa",
             "tests/ancillary_files/ballot_result.json"])
@@ -16,7 +16,7 @@ Eigene Stimme: 3>2=4>_bar_>1
 """
         self.assertEqual(expectation, output)
 
-    def test_verify_result(self):
+    def test_verify_result(self) -> None:
         output = subprocess.check_output(
             ["bin/verify_result.py", "tests/ancillary_files/ballot_result.json"],
         )

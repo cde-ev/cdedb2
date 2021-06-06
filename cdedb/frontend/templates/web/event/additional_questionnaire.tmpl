@@ -27,7 +27,7 @@
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
     {{ util.breadcrumb_link(cdedblink("event/configure_additional_questionnaire"), gettext("Configure Questionnaire")) }}
     {{ util.breadcrumb_link(cdedblink("event/additional_questionnaire", {"preview": True}),
-                            gettext("Preview Questionnaire"), active=True) }}
+                            gettext("Questionnaire Preview"), active=True) }}
 {% endif %}
 {% endblock %}
 {% block heading %}
@@ -52,7 +52,7 @@
             {{ util.print_questionnaire_entry(entry) }}
         {% endfor %}
         {% if not preview %}
-            {{ util.form_input_submit(value="Abschicken", cancellink=cdedblink("event/registration_status"),
+            {{ util.form_input_submit(label="Abschicken", cancellink=cdedblink("event/registration_status"),
                                       readonly=is_locked or ambience['event']['is_archived']) }}
         {% endif %}
     {% if preview %}

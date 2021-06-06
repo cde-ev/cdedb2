@@ -62,7 +62,7 @@
             {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone"), type="tel") }}
         {% endif %}
         {% if "weblink" in shown_fields and 'cde' in admin_bits %}
-            {{ util.form_input_text(name="weblink", label=gettext("WWW")) }}
+            {{ util.form_input_text(name="weblink", label=gettext("WWW"), info=util.markdownhint) }}
         {% endif %}
 
         {% if "address" in shown_fields and 'event' in admin_bits %}
@@ -78,13 +78,14 @@
             {{ util.form_input_text(name="address_supplement", label=gettext("Address Supplement")) }}
             {{ util.form_input_text(name="postal_code", label=gettext("Zipcode")) }}
             {{ util.form_input_text(name="location", label=gettext("City")) }}
-            {{ util.form_input_text(name="country", label=gettext("Country")) }}
+            {{ util.form_input_select(name="country", label=gettext("Country"), entries=COUNTRY_CODES,
+                                      defaultvalue=DEFAULT_COUNTRY) }}
         {% endif %}
         {% if "address2" in shown_fields and 'cde' in admin_bits %}
             <h4 class="heading-underline">{% trans %}Second Address{% endtrans %}</h4>
             <p>
             {% trans %}
-                This address is meant to be a “backup”,, should the primary address not work. Please give an address where
+                This address is meant to be a “backup”, should the primary address not work. Please give an address where
                 you can be reached long-term, e.g. your parents' address.
             {% endtrans %}
             </p>
@@ -92,7 +93,8 @@
             {{ util.form_input_text(name="address_supplement2", label=gettext("Address Supplement")) }}
             {{ util.form_input_text(name="postal_code2", label=gettext("Zipcode")) }}
             {{ util.form_input_text(name="location2", label=gettext("City")) }}
-            {{ util.form_input_text(name="country2", label=gettext("Country")) }}
+            {{ util.form_input_select(name="country2", label=gettext("Country"), entries=COUNTRY_CODES,
+                                      defaultvalue=DEFAULT_COUNTRY) }}
         {% endif %}
 
         {% if "specialisation" in shown_fields and 'cde' in admin_bits %}
@@ -113,6 +115,6 @@
                 {{ util.form_input_textarea(name="change_note", label=gettext("Changenotes")) }}
             </div>
         </div>
-        {{ util.form_input_submit(value=gettext("Save"), cancellink=show_user_link(user, values['persona_id']), differentiate_warnings=True) }}
+        {{ util.form_input_submit(label=gettext("Save"), cancellink=show_user_link(user, values['persona_id']), differentiate_warnings=True) }}
     </form>
 {% endblock %}

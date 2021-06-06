@@ -253,7 +253,7 @@
 		}
 	},
         "EVENT_SCHEMA_VERSION": [
-			14,
-			1
+			15,
+			2
 		]
 }

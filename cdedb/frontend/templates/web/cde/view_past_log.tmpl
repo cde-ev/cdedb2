@@ -21,7 +21,7 @@
                 {% set link = util.href(cdedblink("cde/show_past_event", {"pevent_id": entry['pevent_id']}),
                                     pevents[entry['pevent_id']]['title']) %}
             {% endif %}
-            {{ logging.row(entry, enums['PastEventLogCodes'], loop.index, link) }}
+            {{ logging.row(entry, enums['PastEventLogCodes'], loop.index, 'pevent_id', link) }}
         {% endfor %}
     {% endcall %}
 

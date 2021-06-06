@@ -5,11 +5,9 @@
 This expects a period of 15 minutes.
 """
 
-import cgitb
 import gettext
 import inspect
 import pathlib
-import sys
 from typing import Any, Callable, Collection, Dict, Iterator
 
 from cdedb.common import ALL_ROLES, PathLike, RequestState, User, glue, n_, now
@@ -107,6 +105,7 @@ class CronFrontend(BaseApp):
                             or self.conf["CDEDB_DEV"]):
                         rs.begin = now()
                         state = self.core.get_cron_store(rs, hook.cron['name'])
+                        self.logger.info(f"Starting execution of {hook.cron['name']}:")
                         # noinspection PyBroadException
                         try:
                             tmp = hook(rs, state)
@@ -114,24 +113,22 @@ class CronFrontend(BaseApp):
                             self.logger.error(banner.format(hook.cron['name']))
                             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
                             self.logger.error("SECOND TRY CGITB")
-                            # noinspection PyBroadException
-                            try:
-                                self.logger.error(cgitb.text(sys.exc_info(),
-                                                             context=7))
-                            except Exception:
-                                pass
-
+                            self.cgitb_log()
                             if self.conf["CDEDB_TEST"]:
                                 raise
                         else:
-                            self.core.set_cron_store(rs, hook.cron['name'],
-                                                     tmp)
+                            self.core.set_cron_store(rs, hook.cron['name'], tmp)
+                        finally:
+                            time_taken = now() - rs.begin
+                            self.logger.info(
+                                f"Finished execution of {hook.cron['name']}."
+                                f" Time taken: {time_taken}.")
         finally:
             self.core.set_cron_store(rs, "_base", base_state)
         return True
 
     @staticmethod
     def find_periodics(frontend: AbstractFrontend) -> Iterator[PeriodicJob]:
-        for name, func in inspect.getmembers(frontend, inspect.ismethod):
+        for _, func in inspect.getmembers(frontend, inspect.ismethod):
             if hasattr(func, "cron"):
                 yield func

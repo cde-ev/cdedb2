@@ -15,24 +15,22 @@ import json
 import os
 import pathlib
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
 import time
 import unittest
 import urllib.parse
-from types import TracebackType
 from typing import (
-    Any, AnyStr, Callable, ClassVar, Collection, Dict, Iterable, List, MutableMapping,
-    NamedTuple, Optional, Sequence, Set, TextIO, Tuple, Type, TypeVar, Union, cast,
+    Any, AnyStr, Callable, ClassVar, Dict, Iterable, List, Mapping, MutableMapping,
+    NamedTuple, Optional, Pattern, Sequence, Set, Tuple, Type, TypeVar, Union, cast,
     no_type_check,
 )
 
 import PIL.Image
-import pytz
 import webtest
 import webtest.utils
-
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.common import AbstractBackend
@@ -43,7 +41,7 @@ from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.common import (
     ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, CdEDBObject, CdEDBObjectMap, PathLike,
-    PrivilegeError, RequestState, n_, now, roles_to_db_role,
+    PrivilegeError, RequestState, nearly_now, now, roles_to_db_role, merge_dicts,
 )
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -52,40 +50,16 @@ from cdedb.frontend.application import Application
 from cdedb.frontend.common import AbstractFrontend
 from cdedb.frontend.cron import CronFrontend
 from cdedb.query import QueryOperators
+from cdedb.script import setup
 
 _BASICCONF = BasicConfig()
+_SECRETSCONF = SecretsConfig()
 
-ExceptionInfo = Union[
-    Tuple[Type[BaseException], BaseException, TracebackType],
-    Tuple[None, None, None]
-]
+# TODO: use TypedDict to specify UserObject.
+UserObject = Mapping[str, Any]
 
-def check_test_setup() -> None:
-    """Raise a RuntimeError if the vm is ill-equipped for performing tests."""
-    if pathlib.Path("/OFFLINEVM").exists():
-        raise RuntimeError("Cannot run tests in an Offline-VM.")
-    if pathlib.Path("/PRODUCTIONVM").exists():
-        raise RuntimeError("Cannot run tests in Production-VM.")
-    if not os.environ.get('CDEDB_TEST'):
-        raise RuntimeError("Not configured for test (CDEDB_TEST unset).")
-
-
-class NearlyNow(datetime.datetime):
-    """This is something, that equals an automatically generated timestamp.
-
-    Since automatically generated timestamp are not totally predictible,
-    we use this to avoid nasty work arounds.
-    """
-
-    def __eq__(self, other: Any) -> bool:
-        if isinstance(other, datetime.datetime):
-            delta = self - other
-            return (datetime.timedelta(minutes=10) > delta
-                    > datetime.timedelta(minutes=-10))
-        return False
-
-    def __ne__(self, other: Any) -> bool:
-        return not self.__eq__(other)
+# This is to be used in place of `self.key` for anonymous requests. It makes mypy happy.
+ANONYMOUS = cast(RequestState, None)
 
 
 def create_mock_image(file_type: str = "png") -> bytes:
@@ -98,14 +72,6 @@ def create_mock_image(file_type: str = "png") -> bytes:
     image.save(afile, file_type)
     afile.seek(0)
     return afile.read()
-
-
-def nearly_now() -> NearlyNow:
-    """Create a NearlyNow."""
-    now = datetime.datetime.now(pytz.utc)
-    return NearlyNow(
-        year=now.year, month=now.month, day=now.day, hour=now.hour,
-        minute=now.minute, second=now.second, tzinfo=pytz.utc)
 
 
 T = TypeVar("T")
@@ -154,6 +120,8 @@ def read_sample_data(filename: PathLike = "/cdedb2/tests/ancillary_files/"
         ret[table] = data
     return ret
 
+
+SAMPLE_DATA = read_sample_data()
 
 B = TypeVar("B", bound=AbstractBackend)
 
@@ -227,16 +195,18 @@ def make_backend_shim(backend: B, internal: bool = False) -> B:
 
         def __getattr__(self, name: str) -> Callable[..., Any]:
             attr = getattr(backend, name)
+            # Special case for the `subman.SubscriptionManager`.
+            if name == "subman":
+                return attr
             if any([
                 not getattr(attr, "access", False),
                 getattr(attr, "internal", False) and not internal,
                 not callable(attr)
             ]):
-                raise PrivilegeError(
-                    n_("Attribute %(name)s not public"), {"name": name})
+                raise PrivilegeError(f"Attribute {name} not public")
 
             @functools.wraps(attr)
-            def wrapper(key: str, *args: Any, **kwargs: Any) -> Any:
+            def wrapper(key: Optional[str], *args: Any, **kwargs: Any) -> Any:
                 rs = setup_requeststate(key)
                 return attr(rs, *args, **kwargs)
 
@@ -248,109 +218,32 @@ def make_backend_shim(backend: B, internal: bool = False) -> B:
     return cast(B, Proxy())
 
 
-class MyTextTestRunner(unittest.TextTestRunner):
-    stream: TextIO
-
-    def run(
-        self, test: Union[unittest.TestSuite, unittest.TestCase]
-    ) -> unittest.TestResult:
-        result = super().run(test)
-        failed = map(
-            lambda error: error[0].id(),
-            result.errors + result.failures + result.unexpectedSuccesses  # type: ignore
-        )
-        if not result.wasSuccessful():
-            print("To rerun failed tests execute the following:", file=self.stream)
-            print(f"/cdedb2/bin/singlecheck.sh {' '.join(failed)}", file=self.stream)
-        return result
-
-
-class MyTextTestResult(unittest.TextTestResult):
-    """Subclass the TextTestResult object to fix the CLI reporting.
-
-    We keep track of the errors, failures and skips occurring in SubTests,
-    and print a summary at the end of the TestCase itself.
-    """
-
-    def __init__(self, stream: TextIO, descriptions: bool, verbosity: int) -> None:
-        self.showAll: bool
-        self.stream: TextIO
-        super().__init__(stream, descriptions, verbosity)
-        self._subTestErrors: List[ExceptionInfo] = []
-        self._subTestFailures: List[ExceptionInfo] = []
-        self._subTestSkips: List[str] = []
-
-    def startTest(self, test: unittest.TestCase) -> None:
-        super().startTest(test)
-        self._subTestErrors = []
-        self._subTestFailures = []
-        self._subTestSkips = []
-
-    def addSubTest(self, test: unittest.TestCase, subtest: unittest.TestCase,
-                   err: Optional[ExceptionInfo]) -> None:
-        super().addSubTest(test, subtest, err)
-        if err is not None and err[0] is not None:
-            if issubclass(err[0], subtest.failureException):
-                errors = self._subTestFailures
-            else:
-                errors = self._subTestErrors
-            errors.append(err)
-
-    def stopTest(self, test: unittest.TestCase) -> None:
-        super().stopTest(test)
-        # Print a comprehensive list of failures and errors in subTests.
-        output = []
-        if self._subTestErrors:
-            length = len(self._subTestErrors)
-            if self.showAll:
-                s = "ERROR" + (f"({length})" if length > 1 else "")
-            else:
-                s = "E" * length
-            output.append(s)
-        if self._subTestFailures:
-            length = len(self._subTestFailures)
-            if self.showAll:
-                s = "FAIL" + (f"({length})" if length > 1 else "")
-            else:
-                s = "F" * length
-            output.append(s)
-        if self._subTestSkips:
-            if self.showAll:
-                s = "skipped {}".format(", ".join(
-                    "{0!r}".format(r) for r in self._subTestSkips))
-            else:
-                s = "s" * len(self._subTestSkips)
-            output.append(s)
-        if output:
-            if self.showAll:
-                self.stream.writeln(", ".join(output))  # type: ignore
-            else:
-                self.stream.write("".join(output))
-                self.stream.flush()
-
-    def addSkip(self, test: unittest.TestCase, reason: str) -> None:
-        # Purposely override the parents method, to not print the skip here.
-        super(unittest.TextTestResult, self).addSkip(test, reason)
-        self._subTestSkips.append(reason)
-
-
 class BasicTest(unittest.TestCase):
     """Provide some basic useful test functionalities."""
-    testfile_dir = pathlib.Path("/tmp/cdedb-store/testfiles")
-    _clean_sample_data: ClassVar[Dict[str, CdEDBObjectMap]]
+    storage_dir: ClassVar[pathlib.Path]
+    testfile_dir: ClassVar[pathlib.Path]
+    needs_storage_marker = "_needs_storage"
     conf: ClassVar[Config]
 
     @classmethod
     def setUpClass(cls) -> None:
-        # Keep a clean copy of sample data that should not be messed with.
-        cls._clean_sample_data = read_sample_data()
         cls.conf = Config()
+        cls.storage_dir = cls.conf['STORAGE_DIR']
+        cls.testfile_dir = cls.storage_dir / "testfiles"
 
     def setUp(self) -> None:
-        # Provide a fresh copy of clean sample data.
-        self.sample_data = copy.deepcopy(self._clean_sample_data)
+        test_method = getattr(self, self._testMethodName)
+        if getattr(test_method, self.needs_storage_marker, False):
+            subprocess.run(("make", "storage-test"), stdout=subprocess.DEVNULL,
+                           check=True, start_new_session=True)
 
-    def get_sample_data(self, table: str, ids: Iterable[int],
+    def tearDown(self) -> None:
+        test_method = getattr(self, self._testMethodName)
+        if getattr(test_method, self.needs_storage_marker, False):
+            shutil.rmtree(self.storage_dir)
+
+    @staticmethod
+    def get_sample_data(table: str, ids: Iterable[int],
                         keys: Iterable[str]) -> CdEDBObjectMap:
         """This mocks a select request against the sample data.
 
@@ -361,8 +254,10 @@ class BasicTest(unittest.TestCase):
 
         :returns: The result of the above "query" mapping id to entry.
         """
-        def parse_datetime(s: str) -> datetime.datetime:
+        def parse_datetime(s: Optional[str]) -> Optional[datetime.datetime]:
             # Magic placeholder that is replaced with the current time.
+            if s is None:
+                return None
             if s == "---now---":
                 return nearly_now()
             return datetime.datetime.fromisoformat(s)
@@ -374,34 +269,48 @@ class BasicTest(unittest.TestCase):
             if keys:
                 r = {}
                 for k in keys:
-                    r[k] = copy.deepcopy(self.sample_data[table][anid][k])
+                    r[k] = copy.deepcopy(SAMPLE_DATA[table][anid][k])
                     if table == 'core.personas':
                         if k == 'balance':
                             r[k] = decimal.Decimal(r[k])
                         if k == 'birthday':
                             r[k] = datetime.date.fromisoformat(r[k])
-                    elif table == 'core.changelog':
-                        if k == 'ctime':
-                            r[k] = parse_datetime(r[k])
+                    if k in {'ctime', 'atime', 'vote_begin', 'vote_end',
+                             'vote_extension_end'}:
+                        r[k] = parse_datetime(r[k])
                 ret[anid] = r
             else:
-                ret[anid] = copy.deepcopy(self.sample_data[table][anid])
+                ret[anid] = copy.deepcopy(SAMPLE_DATA[table][anid])
         return ret
+
+    def get_sample_datum(self, table: str, id_: int) -> CdEDBObject:
+        return self.get_sample_data(table, [id_], [])[id_]
 
 
 class CdEDBTest(BasicTest):
     """Reset the DB for every test."""
-    testfile_dir = pathlib.Path("/tmp/cdedb-store/testfiles")
-    _clean_sample_data: ClassVar[Dict[str, CdEDBObjectMap]]
-    conf: ClassVar[Config]
 
     def setUp(self) -> None:
-        subprocess.check_call(("make", "sample-data-test-shallow"),
-                              stdout=subprocess.DEVNULL,
-                              stderr=subprocess.DEVNULL)
-        super(CdEDBTest, self).setUp()
+        with setup(
+            persona_id=-1,
+            dbuser="cdb",
+            dbpassword=_SECRETSCONF["CDB_DATABASE_ROLES"]["cdb"],
+            dbname=self.conf["CDB_DATABASE_NAME"],
+            check_system_user=False,
+        )().conn as conn:
+            conn.set_session(autocommit=True)
+            with conn.cursor() as curr:
+                with open("tests/ancillary_files/clean_data.sql") as f:
+                    sql_input = f.read()
+                curr.execute(sql_input)
+                with open("tests/ancillary_files/sample_data.sql") as f:
+                    sql_input = f.read()
+                curr.execute(sql_input)
 
-UserIdentifier = Union[CdEDBObject, str]
+        super().setUp()
+
+
+UserIdentifier = Union[UserObject, str, int]
 
 
 class BackendTest(CdEDBTest):
@@ -416,7 +325,8 @@ class BackendTest(CdEDBTest):
     pastevent: ClassVar[PastEventBackend]
     ml: ClassVar[MlBackend]
     assembly: ClassVar[AssemblyBackend]
-    key: Optional[str]
+    user: UserObject
+    key: RequestState
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -435,15 +345,31 @@ class BackendTest(CdEDBTest):
     def setUp(self) -> None:
         """Reset login state."""
         super().setUp()
-        self.key = None
+        self.user = USER_DICT["anonymous"]
+        self.key = ANONYMOUS
 
     def login(self, user: UserIdentifier, *, ip: str = "127.0.0.0") -> Optional[str]:
-        if isinstance(user, str):
-            user = USER_DICT[user]
-        assert isinstance(user, dict)
-        self.key = self.core.login(
-            None, user['username'], user['password'], ip)  # type: ignore
-        return self.key
+        user = get_user(user)
+        if user["id"] is None:
+            raise RuntimeError("Anonymous users not supported for backend tests."
+                               " Pass `ANONYMOUS` in place of `self.key` instead.")
+        self.key = cast(RequestState, self.core.login(
+            ANONYMOUS, user['username'], user['password'], ip))
+        if self.key:
+            self.user = user
+        else:
+            self.user = USER_DICT["anonymous"]
+        return self.key  # type: ignore
+
+    def logout(self) -> None:
+        self.core.logout(self.key)
+        self.key = ANONYMOUS
+        self.user = USER_DICT["anonymous"]
+
+    def user_in(self, *identifiers: UserIdentifier) -> bool:
+        """Check whether the current user is any of the given users."""
+        users = {get_user(i)["id"] for i in identifiers}
+        return self.user.get("id", -1) in users
 
     @staticmethod
     def initialize_raw_backend(backendcls: Type[SessionBackend]
@@ -458,7 +384,7 @@ class BackendTest(CdEDBTest):
 # A reference of the most important attributes for all users. This is used for
 # logging in and the `as_user` decorator.
 # Make sure not to alter this during testing.
-USER_DICT = {
+USER_DICT: Dict[str, UserObject] = {
     "anton": {
         'id': 1,
         'DB-ID': "DB-1-9",
@@ -675,15 +601,34 @@ USER_DICT = {
         'given_names': "Akira",
         'family_name': "Abukara",
     },
+    "anonymous": {
+        'id': None,
+        'DB-ID': None,
+        'username': None,
+        'password': None,
+        'display_name': None,
+        'given_names': None,
+        'family_name': None,
+    },
 }
+_PERSONA_ID_TO_USER = {user["id"]: user for user in USER_DICT.values()}
+
+
+def get_user(user: UserIdentifier) -> UserObject:
+    if isinstance(user, str):
+        user = USER_DICT[user]
+    elif isinstance(user, int):
+        user = _PERSONA_ID_TO_USER[user]
+    return user
 
 
 F = TypeVar("F", bound=Callable[..., Any])
 
 
-def as_users(*users: str) -> Callable[[F], F]:
+def as_users(*users: UserIdentifier) -> Callable[[Callable[..., None]],
+                                                 Callable[..., None]]:
     """Decorate a test to run it as the specified user(s)."""
-    def wrapper(fun: F) -> F:
+    def wrapper(fun: Callable[..., None]) -> Callable[..., None]:
         @functools.wraps(fun)
         def new_fun(self: Union[BackendTest, FrontendTest], *args: Any, **kwargs: Any
                     ) -> None:
@@ -691,18 +636,9 @@ def as_users(*users: str) -> Callable[[F], F]:
                 with self.subTest(user=user):
                     if i > 0:
                         self.setUp()
-                    if user is "anonymous":
-                        if not isinstance(self, FrontendTest):
-                            raise RuntimeError(
-                                "Anonymous testing not supported for backend tests."
-                                " Use `key=None` instead.")
-                        kwargs['user'] = None
-                        self.get('/')
-                    else:
-                        kwargs['user'] = USER_DICT[user]
-                        self.login(USER_DICT[user])
+                    self.login(user)
                     fun(self, *args, **kwargs)
-        return cast(F, new_fun)
+        return new_fun
     return wrapper
 
 
@@ -728,18 +664,24 @@ def prepsql(sql: AnyStr) -> Callable[[F], F]:
     return decorator
 
 
+# TODO: should this better be named needs_storage?
+def storage(fun: F) -> F:
+    """Decorate a test which needs some of the test files on the local drive."""
+    setattr(fun, BasicTest.needs_storage_marker, True)
+    return fun
+
+
 def execsql(sql: AnyStr) -> None:
     """Execute arbitrary SQL-code on the test database."""
-    path = pathlib.Path("/tmp/test-cdedb-sql-commands.sql")
     psql = ("/cdedb2/bin/execute_sql_script.py",
-            "--username", "cdb", "--dbname", "cdb_test")
-    null = subprocess.DEVNULL
-    mode = "w"
-    if isinstance(sql, bytes):
-        mode = "wb"
-    with open(path, mode) as f:
-        f.write(sql)
-    subprocess.check_call(psql + ("--file", str(path)), stdout=null)
+            "--username", "cdb", "--dbname", os.environ['CDEDB_TEST_DATABASE'])
+    # TODO: remove the type: ignore in a newer mypy version (0.800 or higher)
+    mode = 'wb' if isinstance(sql, bytes) else 'w'  # type: ignore[unreachable]
+    with tempfile.NamedTemporaryFile(mode=mode, suffix='.sql') as sql_file:
+        sql_file.write(sql)
+        sql_file.flush()
+        subprocess.run(psql + ("--file", sql_file.name), stdout=subprocess.DEVNULL,
+                       start_new_session=True, check=True)
 
 
 class FrontendTest(BackendTest):
@@ -771,11 +713,14 @@ class FrontendTest(BackendTest):
         cls.app = webtest.TestApp(app, extra_environ=cls.app_extra_environ)
 
         # set `do_scrap` to True to capture a snapshot of all visited pages
-        cls.do_scrap = "SCRAP_ENCOUNTERED_PAGES" in os.environ
+        cls.do_scrap = 'CDEDB_TEST_DUMP_DIR' in os.environ
         if cls.do_scrap:
+            # create a parent directory for all dumps
+            dump_root = pathlib.Path(os.environ['CDEDB_TEST_DUMP_DIR'])
+            dump_root.mkdir(exist_ok=True)
             # create a temporary directory and print it
-            cls.scrap_path = tempfile.mkdtemp()
-            print(cls.scrap_path, file=sys.stderr)
+            cls.scrap_path = tempfile.mkdtemp(dir=dump_root, prefix=f'{cls.__name__}.')
+            print(f'\n\n{cls.scrap_path}\n', file=sys.stderr)
 
     @classmethod
     def tearDownClass(cls) -> None:
@@ -806,11 +751,15 @@ class FrontendTest(BackendTest):
     def scrap(self) -> None:
         if self.do_scrap and self.response.status_int // 100 == 2:
             # path without host but with query string - capped at 64 chars
-            url = urllib.parse.quote_plus(self.response.request.path_qs)[:64]
-            with tempfile.NamedTemporaryFile(dir=self.scrap_path, suffix=url,
+            # To enhance readability, we mark most chars as safe. All special chars are
+            # allowed in linux file paths, but sadly windows is more restrictive...
+            url = urllib.parse.quote(self.response.request.path_qs, safe='/;@&=+$,~')[:64]
+            # since / chars are forbidden in file paths, we replace them by _
+            url = url.replace('/', '_')
+            # create a temporary file in scrap_path with url as a prefix
+            # persisting after process completion and dump the response.
+            with tempfile.NamedTemporaryFile(dir=self.scrap_path, prefix=f'{url}.',
                                              delete=False) as f:
-                # create a temporary file in scrap_path with url as a suffix
-                # persisting after process completion and dump the response.
                 f.write(self.response.body)
 
     def log_generation_time(self, response: webtest.TestResponse = None) -> None:
@@ -845,9 +794,9 @@ class FrontendTest(BackendTest):
         self.follow()
         self.basic_validate(verbose=verbose)
 
-    def submit(self, form: webtest.Form, button: str = "submitform",
+    def submit(self, form: webtest.Form, button: Optional[str] = "submitform",
                check_notification: bool = True, verbose: bool = False,
-               value: bool = None) -> None:
+               value: str = None) -> None:
         """Submit a form.
 
         If the form has multiple submit buttons, they can be differentiated
@@ -912,15 +861,18 @@ class FrontendTest(BackendTest):
 
         :param verbose: If True display additional debug information.
         """
-        if isinstance(user, str):
-            user = USER_DICT[user]
+        user = get_user(user)
+        self.user = user
         self.get("/", verbose=verbose)
-        f = self.response.forms['loginform']
-        f['username'] = user['username']
-        f['password'] = user['password']
-        self.submit(f, check_notification=False, verbose=verbose)
+        if not self.user_in("anonymous"):
+            f = self.response.forms['loginform']
+            f['username'] = user['username']
+            f['password'] = user['password']
+            self.submit(f, check_notification=False, verbose=verbose)
         self.key = self.app.cookies.get('sessionkey', None)
-        return self.key
+        if not self.key:
+            self.user = USER_DICT["anonymous"]
+        return self.key  # type: ignore
 
     def logout(self, verbose: bool = False) -> None:
         """Log out. Raises a KeyError if not currently logged in.
@@ -929,9 +881,10 @@ class FrontendTest(BackendTest):
         """
         f = self.response.forms['logoutform']
         self.submit(f, check_notification=False, verbose=verbose)
-        self.key = None
+        self.key = ANONYMOUS
+        self.user = USER_DICT["anonymous"]
 
-    def admin_view_profile(self, user: str, check: bool = True,
+    def admin_view_profile(self, user: UserIdentifier, check: bool = True,
                            verbose: bool = False) -> None:
         """Shortcut to use the admin quicksearch to navigate to a user profile.
 
@@ -941,7 +894,7 @@ class FrontendTest(BackendTest):
         :param check: If True check that the Profile was reached.
         :param verbose: If True display additional debug information.
         """
-        u = USER_DICT[user]
+        u = get_user(user)
         self.traverse({'href': '^/$'}, verbose=verbose)
         f = self.response.forms['adminshowuserform']
         f['phrase'] = u["DB-ID"]
@@ -1000,6 +953,12 @@ class FrontendTest(BackendTest):
                 ret.append(msg)
         return ret
 
+    def fetch_mail_content(self, index: int = 0) -> str:
+        mail = self.fetch_mail()[index]
+        body = mail.get_body()
+        assert isinstance(body, email.message.EmailMessage)
+        return body.get_content()
+
     @staticmethod
     def fetch_link(msg: email.message.EmailMessage, num: int = 1) -> Optional[str]:
         ret = None
@@ -1034,15 +993,20 @@ class FrontendTest(BackendTest):
 
     def assertCheckbox(self, status: bool, anid: str) -> None:
         """Assert that the checkbox with the given id is checked (or not)."""
-        tmp = self.response.html.find_all(id=anid)
+        tmp = (self.response.html.find_all(id=anid)
+               or self.response.html.find_all(attrs={'name': anid}))
         if not tmp:
-            raise AssertionError("Id not found.", id)
+            raise AssertionError("Id not found.", anid)
         if len(tmp) != 1:
             raise AssertionError("More or less then one hit.", anid)
         checkbox = tmp[0]
-        if "data-checked" not in checkbox.attrs:
+        if "data-checked" in checkbox.attrs:
+            self.assertEqual(str(status), checkbox['data-checked'])
+        elif "type" in checkbox.attrs:
+            self.assertEqual("checkbox", checkbox['type'])
+            self.assertEqual(status, 'checked' == checkbox.get('checked'))
+        else:
             raise ValueError("Id doesnt belong to a checkbox", anid)
-        self.assertEqual(str(status), checkbox['data-checked'])
 
     def assertPresence(self, s: str, *, div: str = "content", regex: bool = False,
                        exact: bool = False) -> None:
@@ -1062,12 +1026,15 @@ class FrontendTest(BackendTest):
         else:
             self.assertIn(s.strip(), normalized)
 
-    def assertNonPresence(self, s: str, *, div: str = "content",
+    def assertNonPresence(self, s: Optional[str], *, div: str = "content",
                           check_div: bool = True) -> None:
         """Assert that a string is not present in the element with the given id.
 
         :param check_div: If True, this assertion fails if the div is not found.
         """
+        if s is None:
+            # Allow short-circuiting via dict.get()
+            return
         if self.response.content_type == "text/plain":
             self.assertNotIn(s.strip(), self.response.text)
         else:
@@ -1139,8 +1106,8 @@ class FrontendTest(BackendTest):
         msg = f"Expected error message not found near input with name {f!r}."
         self.assertIn(message, container[0].text_content(), msg)
 
-    def assertNoLink(self, href_pattern: str = None, tag: str = 'a',
-                     href_attr: str = 'href', content: str = None,
+    def assertNoLink(self, href_pattern: Union[str, Pattern[str]] = None,
+                     tag: str = 'a', href_attr: str = 'href', content: str = None,
                      verbose: bool = False) -> None:
         """Assert that no tag that matches specific criteria is found. Possible
         criteria include:
@@ -1176,7 +1143,8 @@ class FrontendTest(BackendTest):
                 "{} tag with {} == {} and content \"{}\" has been found."
                 .format(tag, href_attr, element[href_attr], el_content))
 
-    def log_pagination(self, title: str, logs: List[Tuple[int, enum.IntEnum]]) -> None:
+    def log_pagination(self, title: str, logs: Tuple[Tuple[int, enum.IntEnum], ...]
+                       ) -> None:
         """Helper function to test the logic of the log pagination.
 
         This should be called from every frontend log, to ensure our pagination
@@ -1191,7 +1159,7 @@ class FrontendTest(BackendTest):
         self._log_subroutine(title, logs, start=1,
                              end=total if total < 50 else 50)
         # check if the log page numbers are proper (no 0th page, no last+1 page)
-        self.assertNonPresence("", div="pagination-0", check_div=False)
+        self.assertNonPresence("", check_div=False, div="pagination-0")
         self.assertNonPresence("", check_div=False,
                                div=f"pagination-{str(total // 50 + 2)}")
         # check translations
@@ -1256,7 +1224,21 @@ class FrontendTest(BackendTest):
         f["length"] = None
         self.submit(f)
 
-    def _log_subroutine(self, title: str, all_logs: List[Tuple[int, enum.IntEnum]],
+        # check multi-checkbox selections
+        f = self.response.forms['logshowform']
+        # use internal value property as I don't see a way to get the
+        # checkbox value otherwise
+        codes = [field._value for field in f.fields['codes']]
+        f['codes'] = codes
+        self.assertGreater(len(codes), 1)
+        self.submit(f)
+        self.traverse({'linkid': 'pagination-first'})
+        f = self.response.forms['logshowform']
+        for field in f.fields['codes']:
+            self.assertTrue(field.checked)
+
+    def _log_subroutine(self, title: str,
+                        all_logs: Tuple[Tuple[int, enum.IntEnum], ...],
                         start: int, end: int) -> None:
         total = len(all_logs)
         self.assertTitle(f"{title} [{start}–{end} von {total}]")
@@ -1271,10 +1253,11 @@ class FrontendTest(BackendTest):
             log_code_str = self.gettext(str(log_code))  # type: ignore
             self.assertPresence(log_code_str, div=f"{index}-{log_id}")
 
-    def check_sidebar(self, ins: Collection[str], out: Collection[str]) -> None:
+    def check_sidebar(self, ins: Set[str], out: Set[str]) -> None:
         """Helper function to check the (in)visibility of sidebar elements.
 
-        Raise an error if an element is in the sidebar and not in ins.
+        Raise an error if an element is in the sidebar and not in ins or
+        if an element is in the sidebar and in out.
 
         :param ins: elements which are in the sidebar
         :param out: elements which are not in the sidebar
@@ -1292,7 +1275,81 @@ class FrontendTest(BackendTest):
             raise AssertionError(
                 f"Unexpected sidebar elements '{present}' found.")
 
-    def _click_admin_view_button(self, label: str, current_state: bool = None) -> None:
+    def check_create_archive_user(self, realm: str, data: CdEDBObject = None) -> None:
+        """Basic check for the user creation and archival functionality of each realm.
+
+        :param data: realm-dependent data to use for the persona to be created
+        """
+        if data is None:
+            data = {}
+
+        def _check_deleted_data() -> None:
+            assert data is not None
+            self.assertNonPresence(data['username'])
+            self.assertNonPresence(data.get('location'))
+            self.assertNonPresence(data.get('address'))
+            self.assertNonPresence(data.get('postal_code'))
+            self.assertNonPresence(data.get('telephone'))
+            self.assertNonPresence(data.get('country'))
+
+        self.traverse({'href': '/' + realm + '/$'},
+                      {'href': '/search/user'},
+                      {'href': '/user/create'})
+        merge_dicts(data, {
+            "username": 'zelda@example.cde',
+            "given_names": "Zelda",
+            "family_name": "Zeruda-Hime",
+            "display_name": 'Zelda',
+            "notes": "some fancy talk",
+        })
+        f = self.response.forms['newuserform']
+        if f.get('country', default=None):
+            self.assertEqual(f['country'].value, self.conf["DEFAULT_COUNTRY"])
+        for key, value in data.items():
+            f.set(key, value)
+        self.submit(f)
+        self.assertTitle("Zelda Zeruda-Hime")
+        for key, value in data.items():
+            if key not in {'birthday', 'telephone', 'mobile', 'country', 'country2'}:
+                # Omit values with heavy formatting in the frontend here
+                self.assertPresence(value)
+        # Now test archival
+        # 1. Archive user
+        f = self.response.forms['archivepersonaform']
+        f['ack_delete'].checked = True
+        f['note'] = "Archived for testing."
+        self.submit(f)
+        self.assertTitle("Zelda Zeruda-Hime")
+        self.assertPresence("Der Benutzer ist archiviert.", div='archived')
+        _check_deleted_data()
+        # 2. Find user via archived search
+        self.traverse({'href': '/' + realm + '/$'})
+        self.traverse({'description': 'Archivsuche'})
+        self.assertTitle("Archivsuche")
+        f = self.response.forms['queryform']
+        f['qop_given_names'] = QueryOperators.match.value
+        f['qval_given_names'] = 'Zelda'
+        self.submit(f)
+        self.assertTitle("Archivsuche")
+        self.assertPresence("Ergebnis [1]", div='query-results')
+        self.assertPresence("Zeruda", div='query-result')
+        self.traverse({'description': 'Profil', 'href': '/core/persona/1001/show'})
+        # 3: Dearchive user
+        self.assertTitle("Zelda Zeruda-Hime")
+        self.assertPresence("Der Benutzer ist archiviert.", div='archived')
+        self.traverse({'description': "Account wiederherstellen"})
+        f = self.response.forms['dearchivepersonaform']
+        self.submit(f, check_notification=False)
+        self.assertValidationError('new_username', "Darf nicht leer sein.")
+        f = self.response.forms['dearchivepersonaform']
+        f['new_username'] = "zeruda@example.cde"
+        self.submit(f)
+        self.assertTitle("Zelda Zeruda-Hime")
+        self.assertPresence('zeruda@example.cde')
+        _check_deleted_data()
+
+    def _click_admin_view_button(self, label: Union[str, Pattern[str]],
+                                 current_state: bool = None) -> None:
         """
         Helper function for checking the disableable admin views
 
@@ -1408,7 +1465,7 @@ def make_cron_backend_proxy(cron: CronFrontend, backend: B) -> B:
             attr = getattr(backend, name)
 
             @functools.wraps(attr)
-            def wrapper(*args: Any, **kwargs: Any) -> Any:
+            def wrapper(rs: RequestState, *args: Any, **kwargs: Any) -> Any:
                 rs = cron.make_request_state()
                 return attr(rs, *args, **kwargs)
             return wrapper
@@ -1416,9 +1473,9 @@ def make_cron_backend_proxy(cron: CronFrontend, backend: B) -> B:
     return cast(B, CronBackendProxy())
 
 
-class CronTest(unittest.TestCase):
-    _all_periodics: Set[str]
-    _run_periodics: Set[str]
+class CronTest(CdEDBTest):
+    _remaining_periodics: Set[str]
+    _remaining_tests: Set[str]
     cron: ClassVar[CronFrontend]
     core: ClassVar[CoreBackend]
     cde: ClassVar[CdEBackend]
@@ -1434,31 +1491,32 @@ class CronTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        super().setUpClass()
         cls.cron = CronFrontend()
         cls.core = make_cron_backend_proxy(cls.cron, cls.cron.core.coreproxy)
         cls.cde = make_cron_backend_proxy(cls.cron, cls.cron.core.cdeproxy)
         cls.event = make_cron_backend_proxy(cls.cron, cls.cron.core.eventproxy)
         cls.assembly = make_cron_backend_proxy(cls.cron, cls.cron.core.assemblyproxy)
         cls.ml = make_cron_backend_proxy(cls.cron, cls.cron.core.mlproxy)
-        cls._all_periodics = {
+        cls._remaining_periodics = {
             job.cron['name']
             for frontend in (cls.cron.core, cls.cron.cde, cls.cron.event,
                              cls.cron.assembly, cls.cron.ml)
             for job in cls.cron.find_periodics(frontend)
         }
-        cls._run_periodics = set()
+        cls._remaining_tests = {x for x in dir(cls) if x.startswith("test_")}
 
     @classmethod
     def tearDownClass(cls) -> None:
-        if (any(job not in cls._run_periodics for job in cls._all_periodics)
-                and not os.environ.get('CDEDB_TEST_SINGULAR')):
+        super().tearDownClass()
+        if not cls._remaining_tests and cls._remaining_periodics:
             raise AssertionError(f"The following cron-periodics never ran:"
-                                 f" {cls._all_periodics - cls._run_periodics}")
+                                 f" {cls._remaining_periodics}")
 
     def setUp(self) -> None:
-        subprocess.check_call(("make", "sql-test-shallow"),
-                              stdout=subprocess.DEVNULL,
-                              stderr=subprocess.DEVNULL)
+        super().setUp()
+
+        self._remaining_tests.remove(self._testMethodName)
         self.stores = []
         self.mails = []
 
@@ -1490,7 +1548,7 @@ class CronTest(unittest.TestCase):
     def execute(self, *args: Any, check_stores: bool = True) -> None:
         if not args:
             raise ValueError("Must specify jobs to run.")
-        self._run_periodics.update(args)
+        self._remaining_periodics.difference_update(args)
         self.cron.execute(args)
         if check_stores:
             expectation = set(args) | {"_base"}

@@ -53,11 +53,11 @@
                 </button>
             </p>
         </div>
-        {{ util.input_submit(value=gettext("Save"), readonly=is_locked) }}
+        {{ util.input_submit(label=gettext("Save"), readonly=is_locked) }}
     </form>
     <script type="text/javascript" nonce="{{ csp_nonce }}">
         (function() {
-            var field_list = {{ registration_fields|json|s }};
+            var field_list = {{ registration_fields|tojson }};
             var translations = {
                 'true': "{{ gettext("true") }}",
                 'false': "{{ gettext("false") }}"};

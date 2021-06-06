@@ -1,6 +1,7 @@
 {% set sidenav_active='event_configure_registration' if preview else 'event_register' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/event/generic.tmpl" as generic with context %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% block title %}
     {% if preview %}
@@ -15,11 +16,18 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher",
-                        readonly=not (ambience['event']['is_visible']
-                                      or ambience['event']['id'] in user.orga
-                                      or user.admin_views.intersection(('event_orga', 'event_mgmt')))) }}
-{{ util.breadcrumb_link(cdedblink("event/register"), gettext("Register"), active=True) }}
+{% if not preview %}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher",
+                            readonly=not (ambience['event']['is_visible']
+                                          or ambience['event']['id'] in user.orga
+                                          or user.admin_views.intersection(('event_orga', 'event_mgmt')))) }}
+    {{ util.breadcrumb_link(cdedblink("event/register"), gettext("Register"), active=True) }}
+{% else %}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+    {{ util.breadcrumb_link(cdedblink("event/configure_registration"), gettext("Configure Registration")) }}
+    {{ util.breadcrumb_link(cdedblink("event/register", {"preview": True}),
+                            gettext("Registration Preview"), active=True) }}
+{% endif %}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
@@ -48,7 +56,9 @@
         {% endif %}
     </p>
 
-    {% if not preview %}
+    {% if preview %}
+    <form class="form-horizontal">
+    {% else %}
     <form action="{{ cdedblink('event/register') }}" method="POST" id="registerform" class="form-horizontal">
         {{ util.anti_csrf_token('event/register') }}
     {% endif %}
@@ -86,7 +96,7 @@
             <dt>{% trans %}City{% endtrans %}</dt>
             <dd>{{ persona['postal_code'] }} {{ persona['location'] }}</dd>
             <dt>{% trans %}Country{% endtrans %}</dt>
-            <dd>{{ persona['country'] }}</dd>
+            <dd>{{ util.gettext_country(persona['country']) }}</dd>
         </dl>
         <p>
             {% trans link=util.href(cdedblink('core/change_user'), gettext("form to edit your profile")) %}
@@ -125,77 +135,13 @@
             </div>
         {% endif %}
 
-        {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
-            {% set course_list = course_choices[track_id] %}
-            {% if track['num_choices'] %}
-                <div id="course_choice_container-{{ track_id }}" class="course_choice_container"
-                     data-part="{{ track['part_id'] }}">
-                    <h4>
-                        {% trans %}Course Choices{% endtrans %}
-                        {% if course_choices|length > 1 %}
-                            {% trans track=track['title'] %}
-                            	for {{ track }}
-                            {% endtrans %}
-                        {% endif %}
-                    </h4>
-
-                    {% set course_entries = courses|keydictsort(EntitySorter.course)
-                                            |xdict_entries('{id}', '{nr}. {title}', include=course_list) %}
-                    {% for i in range(track['num_choices']) %}
-                        {{ util.form_input_select(name="course_choice{}_{}".format(track_id, i), nulloption=nbsp,
-                                                  label=gettext("%s. Choice")|format(i + 1), entries=course_entries) }}
-                    {% endfor %}
-
-                    {{ util.form_input_select(name="course_instructor{}".format(track_id), entries=course_entries,
-                                              nulloption=gettext("– I am not an Instructor –"), label=gettext("Instructor"),
-                                              info=gettext("If you are instructing a course, please specify which one.")) }}
-                </div>
-            {% endif %}
+        <h3 class="sr-only">{% trans %}Course Choices{% endtrans %}</h3>
+        {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) if track['num_choices'] %}
+            {{ generic.select_course_choice(track, courses, course_choices) }}
         {% endfor %}
 
         <h3 class="heading-underline">{% trans %}Additional Information{% endtrans %}</h3>
-
-        {% if not age.may_mix() %}
-            {{ util.input_hidden(name="mixed_lodging", value=False) }}
-            {{ util.form_input_static(label=gettext("Mixed Lodging"), value=gettext("Mixed Lodging not possible.")) }}
-        {% else %}
-            {% if age.is_minor() %}
-                {% set mix_info = gettext("The selection must be compatible with the parental consent form.") %}
-            {% else %}
-                {% set mix_info = "" %}
-            {% endif %}
-            {{ util.form_input_select(name="mixed_lodging", entries=(
-                (True, gettext("I agree to mixed lodging.")),
-                (False, gettext("I want to be lodged separated by gender."))),
-                label=gettext("Mixed Lodging"), info=mix_info) }}
-        {% endif %}
-        {% call util.form_input_general(displayerrors=False) %}
-            <p class="nosp">
-                {% trans %}
-                    In the context of this event, photos and recordings will be made to be used for the
-                    event-documentation and a CdE-internal, password protected media collection. Individual photos and
-                    recordings can be excluded from this by request.
-                {% endtrans %}
-            </p>
-        {% endcall %}
-        {{ util.form_input_checkbox(name="list_consent", defaultvalue='True', label=gettext(
-                "I agree that my data, including my name, address and my email, may be sent "
-                "to other participants of this event beforehand.")) }}
-
-        {% if reg_questionnaire %}
-            <div id="registrationquestionnaire">
-                {% for entry in reg_questionnaire %}
-                    {{ util.print_questionnaire_entry(entry) }}
-                {% endfor %}
-            </div>
-        {% endif %}
-
-        {%- if course_list %}
-            {%- set noteslabel = gettext("Notes for Orgas and Instructors") %}
-        {%- else %}
-            {%- set noteslabel = gettext("Notes for Orgas") %}
-        {%- endif %}
-        {{ util.form_input_textarea(name="notes", label=noteslabel, rows="5") }}
+        {{ generic.additional_registration_choices(age, reg_questionnaire) }}
 
         {% call util.form_input_general(displayerrors=False) %}
             {% if ambience['event']['use_additional_questionnaire'] %}
@@ -216,9 +162,10 @@
             {% endif %}
         {% endcall %}
         {% if not preview %}
-        {{ util.form_input_submit(value=gettext("Register"), cancellink=cdedblink('event/show_event')) }}
+        {{ util.form_input_submit(label=gettext("Register"), cancellink=cdedblink('event/show_event')) }}
         {% endif %}
     </form>
+
     <script nonce="{{ csp_nonce }}">
         var $form = $('#registerform');
         $form.cdedbProtectChanges();

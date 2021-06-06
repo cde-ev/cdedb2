@@ -14,7 +14,8 @@ import gettext
 import tempfile
 import time
 from types import TracebackType
-from typing import Any, Callable, Optional, Set, Type, cast
+from typing import Any, Optional, Set, Type, cast
+from typing_extensions import Protocol
 
 import psycopg2
 import psycopg2.extensions
@@ -22,7 +23,6 @@ import psycopg2.extras
 
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
-from cdedb.backend.common import AbstractBackend
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
@@ -41,6 +41,7 @@ class User:
         self.roles = ALL_ROLES
         self.orga: Set[int] = set()
         self.moderator: Set[int] = set()
+        self.presider: Set[int] = set()
         self.username = None
         self.display_name = None
         self.given_names = None
@@ -74,9 +75,14 @@ class MockRequestState:
         self.csrf_alert = False
 
 
+class _RSFactory(Protocol):
+    # pylint: disable=pointless-statement
+    def __call__(self, persona_id: int = -1) -> RequestState: ...
+
+
 def setup(persona_id: int, dbuser: str, dbpassword: str,
           check_system_user: bool = True, dbname: str = 'cdb'
-          ) -> Callable[[int], MockRequestState]:
+          ) -> _RSFactory:
     """This sets up the database.
 
     :param persona_id: default ID for the owner of the generated request state
@@ -101,14 +107,14 @@ def setup(persona_id: int, dbuser: str, dbpassword: str,
     }
     try:
         cdb = psycopg2.connect(**connection_parameters, host="localhost")
-    except psycopg2.OperationalError as e: # DB inside Docker listens on "cdb"
+    except psycopg2.OperationalError as e:  # DB inside Docker listens on "cdb"
         if "Passwort-Authentifizierung" in e.args[0]:
-            raise # fail fast if wrong password is the problem
+            raise  # fail fast if wrong password is the problem
         cdb = psycopg2.connect(**connection_parameters, host="cdb")
     cdb.set_client_encoding("UTF8")
 
-    def rs(pid: int = persona_id) -> MockRequestState:
-        return MockRequestState(pid, cdb)
+    def rs(persona_id: int = persona_id) -> RequestState:
+        return cast(RequestState, MockRequestState(persona_id, cdb))
 
     return rs
 
@@ -131,7 +137,6 @@ def make_backend(realm: str, proxy: bool = True, *,  # type: ignore
             for k, v in config.items():
                 f.write(f"{k} = {v}\n")
             f.flush()
-            filename = f.name
             backend = backend_map[realm](f.name)
     else:
         backend = backend_map[realm](configpath)
@@ -156,7 +161,6 @@ class DryRunError(Exception):
     Signify that the script ran successfully, but no changes should be
     committed.
     """
-    pass
 
 
 class Script(Atomizer):
@@ -165,12 +169,14 @@ class Script(Atomizer):
     :param dry_run: If True, do not commit changes if script ran successfully,
         instead roll back.
     """
-    def __init__(self, rs: MockRequestState, *, dry_run: bool = True) -> None:
+    start_time: float
+
+    def __init__(self, rs: RequestState, *, dry_run: bool = True) -> None:
         self.dry_run = dry_run
-        super().__init__(cast(RequestState, rs))
+        super().__init__(rs)
 
     def __enter__(self) -> IrradiatedConnection:
-        self.start_time = time.time()
+        self.start_time = time.monotonic()
         return super().__enter__()
 
     def __exit__(self, exc_type: Optional[Type[Exception]],  # type: ignore
@@ -182,9 +188,11 @@ class Script(Atomizer):
 
         Suppress traceback for DryRunErrors by returning True.
         """
-        self.end_time = time.time()
-        time_diff = self.end_time - self.start_time
-        formatmsg = lambda msg: f"{msg} Time taken: {time_diff:.0f} seconds."
+        time_diff = time.monotonic() - self.start_time
+
+        def formatmsg(msg: str) -> str:
+            return f"{msg} Time taken: {time_diff:.3f} seconds."
+
         if exc_type is None:
             if self.dry_run:
                 msg = "Aborting Dry Run!"

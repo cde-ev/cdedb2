@@ -133,17 +133,21 @@ class EventBackend(AbstractBackend):
 
     def event_log(self, rs: RequestState, code: const.EventLogCodes,
                   event_id: Optional[int], persona_id: int = None,
-                  change_note: str = None) -> DefaultReturnCode:
+                  change_note: str = None, atomized: bool = True) -> DefaultReturnCode:
         """Make an entry in the log.
 
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
 
-        :param persona_id: ID of affected user
-        :param change_note: Infos not conveyed by other columns.
+        :param atomized: Whether this function should enforce an atomized context
+            to be present.
         """
         if rs.is_quiet:
             return 0
+        # To ensure logging is done if and only if the corresponding action happened,
+        # we require atomization by default.
+        if atomized:
+            self.affirm_atomized_context(rs)
         data = {
             "code": code,
             "event_id": event_id,
@@ -302,15 +306,16 @@ class EventBackend(AbstractBackend):
             )
             if lodge_field_columns:
                 lodge_field_columns += ", "
-            lodge_view = """SELECT
+            lodgement_view = f"""SELECT
                 {lodge_field_columns}
-                title, notes, id
+                title, notes, id, group_id
             FROM
                 event.lodgements
             WHERE
-                event_id = {event_id}""".format(
-                event_id=event_id, lodge_field_columns=lodge_field_columns)
-
+                event_id = {event_id}"""
+            lodgement_group_view = (f"SELECT title, id"
+                                    f" FROM event.lodgement_groups"
+                                    f" WHERE event_id = {event_id}")
             # The template for registration part and lodgement information.
             part_table = lambda part_id: \
                 f"""LEFT OUTER JOIN (
@@ -322,9 +327,14 @@ class EventBackend(AbstractBackend):
                         part_id = {part_id}
                 ) AS part{part_id} ON reg.id = part{part_id}.registration_id
                 LEFT OUTER JOIN (
-                    {lodge_view}
+                    {lodgement_view}
                 ) AS lodgement{part_id}
-                ON part{part_id}.lodgement_id = lodgement{part_id}.id"""
+                ON part{part_id}.lodgement_id = lodgement{part_id}.id
+                LEFT OUTER JOIN (
+                    {lodgement_group_view}
+                ) AS lodgement_group{part_id}
+                ON lodgement{part_id}.group_id = lodgement_group{part_id}.id
+                """
 
             part_tables = " ".join(
                 part_table(part['id'])
@@ -471,14 +481,14 @@ class EventBackend(AbstractBackend):
             query.constraints.append(("event_id", QueryOperators.equal,
                                       event_id))
             query.spec['event_id'] = "id"
-        elif query.scope == "qview_event_user":
+        elif query.scope in {"qview_event_user", "qview_archived_past_event_user"}:
             if not self.is_admin(rs) and "core_admin" not in rs.user.roles:
                 raise PrivilegeError(n_("Admin only."))
             # Include only un-archived event-users
             query.constraints.append(("is_event_realm", QueryOperators.equal,
                                       True))
             query.constraints.append(("is_archived", QueryOperators.equal,
-                                      False))
+                                      query.scope == "qview_archived_past_event_user"))
             query.spec["is_event_realm"] = "bool"
             query.spec["is_archived"] = "bool"
             # Exclude users of any higher realm (implying event)
@@ -1003,10 +1013,7 @@ class EventBackend(AbstractBackend):
         Helper function to retrieve the custom field definitions of an event.
         This is required by multiple backend functions.
 
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type event_id: int
         :return: A dict mapping each event id to the dict of its fields
-        :rtype: {int: {str: object}}
         """
         data = self.sql_select(
             rs, "event.field_definitions", FIELD_DEFINITION_FIELDS,
@@ -1118,12 +1125,12 @@ class EventBackend(AbstractBackend):
         ret = 1
         if not data:
             return ret
-        # implicit Atomizer by caller
+        # implicit atomized context.
         self.affirm_atomized_context(rs)
-        current = self.sql_select(
-            rs, "event.course_tracks", COURSE_TRACK_FIELDS, (part_id,),
-            entity_key="part_id")
-        current = {e['id']: e for e in current}
+        current = self.sql_select(rs, "event.course_tracks", COURSE_TRACK_FIELDS,
+                                  (part_id,), entity_key="part_id")
+        current = {e['id']: {k: v for k, v in e.items()if k not in {'id', 'part_id'}}
+                   for e in current}
         existing = set(current)
         if not (existing >= {x for x in data if x > 0}):
             raise ValueError(n_("Non-existing tracks specified."))
@@ -1163,9 +1170,8 @@ class EventBackend(AbstractBackend):
                     **track_data
                 }
                 ret *= self.sql_update(rs, "event.course_tracks", update)
-                self.event_log(
-                    rs, const.EventLogCodes.track_updated, event_id,
-                    change_note=track_data['title'])
+                self.event_log(rs, const.EventLogCodes.track_updated, event_id,
+                               change_note=track_data['title'])
 
         # deleted
         if deleted:
@@ -1495,15 +1501,20 @@ class EventBackend(AbstractBackend):
         if minor_form is None:
             if path.exists():
                 path.unlink()
-                self.event_log(rs, const.EventLogCodes.minor_form_removed,
-                               event_id)
+                # Since this is not acting on our database, do not demand an atomized
+                # context.
+                self.event_log(rs, const.EventLogCodes.minor_form_removed, event_id,
+                               atomized=False)
                 return -1
             else:
                 return 0
         else:
             with open(path, "wb") as f:
                 f.write(minor_form)
-            self.event_log(rs, const.EventLogCodes.minor_form_updated, event_id)
+            # Since this is not acting on our database, do not demand an atomized
+            # context.
+            self.event_log(rs, const.EventLogCodes.minor_form_updated, event_id,
+                           atomized=False)
             return 1
 
     @access("event")
@@ -1536,52 +1547,59 @@ class EventBackend(AbstractBackend):
                            data['id'])
 
     @access("event_admin")
-    def set_event_orgas(self, rs: RequestState, event_id: int,
-                        ids: Collection[int]) -> DefaultReturnCode:
-        """Set the orgas of an event.
+    def add_event_orgas(self, rs: RequestState, event_id: int,
+                        persona_ids: Collection[int]) -> DefaultReturnCode:
+        """Add orgas to an event.
 
         This is basically un-inlined code from `set_event`, but may also be
         called separately.
 
         Note that this is only available to admins in contrast to `set_event`.
-
-        A complete set of orga IDs needs to be passed, since this will
-        overwrite the current set.
         """
         event_id = affirm(vtypes.ID, event_id)
-        ids = affirm_set(vtypes.ID, ids)
-        if not self.core.verify_ids(rs, ids, is_archived=False):
-            raise ValueError(n_(
-                "Some of these orgas do not exist or are archived."))
-        if not self.core.verify_personas(rs, ids, {"event"}):
-            raise ValueError(n_("Some of these orgas are not event users."))
-        self.assert_offline_lock(rs, event_id=event_id)
+        persona_ids = affirm_set(vtypes.ID, persona_ids)
 
         ret = 1
         with Atomizer(rs):
-            current = self.sql_select(rs, "event.orgas", ("persona_id",),
-                                      (event_id,), entity_key="event_id")
-            existing = {unwrap(e) for e in current}
-            new = ids - existing
-            deleted = existing - ids
-            if not new and not deleted:
-                return -1
-            if new:
-                for anid in mixed_existence_sorter(new):
-                    new_orga = {
-                        'persona_id': anid,
-                        'event_id': event_id,
-                    }
-                    ret *= self.sql_insert(rs, "event.orgas", new_orga)
-                    self.event_log(rs, const.EventLogCodes.orga_added,
-                                   event_id, persona_id=anid)
-            if deleted:
-                query = ("DELETE FROM event.orgas"
-                         " WHERE persona_id = ANY(%s) AND event_id = %s")
-                ret *= self.query_exec(rs, query, (deleted, event_id))
-                for anid in mixed_existence_sorter(deleted):
-                    self.event_log(rs, const.EventLogCodes.orga_removed,
-                                   event_id, persona_id=anid)
+            if not self.core.verify_ids(rs, persona_ids, is_archived=False):
+                raise ValueError(n_(
+                    "Some of these orgas do not exist or are archived."))
+            if not self.core.verify_personas(rs, persona_ids, {"event"}):
+                raise ValueError(n_("Some of these orgas are not event users."))
+            self.assert_offline_lock(rs, event_id=event_id)
+
+            for anid in xsorted(persona_ids):
+                new_orga = {
+                    'persona_id': anid,
+                    'event_id': event_id,
+                }
+                # on conflict do nothing
+                r = self.sql_insert(rs, "event.orgas", new_orga,
+                                    drop_on_conflict=True)
+                if r:
+                    self.event_log(rs, const.EventLogCodes.orga_added, event_id,
+                                   persona_id=anid)
+                ret *= r
+        return ret
+
+    @access("event_admin")
+    def remove_event_orga(self, rs: RequestState, event_id: int,
+                          persona_id: int) -> DefaultReturnCode:
+        """Remove a single orga of an event.
+
+        Note that this is only available to admins in contrast to `set_event`.
+        """
+        event_id = affirm(vtypes.ID, event_id)
+        persona_id = affirm(vtypes.ID, persona_id)
+        self.assert_offline_lock(rs, event_id=event_id)
+
+        query = ("DELETE FROM event.orgas"
+                 " WHERE persona_id = %s AND event_id = %s")
+        with Atomizer(rs):
+            ret = self.query_exec(rs, query, (persona_id, event_id))
+            if ret:
+                self.event_log(rs, const.EventLogCodes.orga_removed,
+                               event_id, persona_id=persona_id)
         return ret
 
     @access("event")
@@ -1592,8 +1610,6 @@ class EventBackend(AbstractBackend):
         The syntax for updating the associated data on orgas, parts and
         fields is as follows:
 
-        * If the key 'orgas' is present you have to pass the complete set
-          of orga IDs, which will superseed the current list of orgas.
         * If the keys 'parts', 'fee_modifiers' or 'fields' are present,
           the associated dict mapping the part, fee_modifier or field ids to
           the respective data sets can contain an arbitrary number of entities,
@@ -1672,7 +1688,7 @@ class EventBackend(AbstractBackend):
                                data['id'])
 
             if 'orgas' in data:
-                ret *= self.set_event_orgas(rs, data['id'], data['orgas'])
+                ret *= self.add_event_orgas(rs, data['id'], data['orgas'])
             if 'parts' in data:
                 parts = data['parts']
                 has_registrations = self.has_registrations(rs, data['id'])
@@ -1715,8 +1731,9 @@ class EventBackend(AbstractBackend):
                         rs, const.EventLogCodes.part_created, data['id'],
                         change_note=new_part['title'])
                 current = self.sql_select(
-                    rs, "event.event_parts", ("id", "title"), updated | deleted)
-                titles = {e['id']: e['title'] for e in current}
+                    rs, "event.event_parts", EVENT_PART_FIELDS, updated | deleted)
+                current_data = {e['id']: {k: v for k, v in e.items()
+                                          if k not in {'event_id'}} for e in current}
                 for x in mixed_existence_sorter(updated):
                     update = copy.deepcopy(parts[x])
                     update['id'] = x
@@ -1734,11 +1751,11 @@ class EventBackend(AbstractBackend):
                                 or field['association'] not in legal_assocs):
                             raise ValueError(n_("Unfit field for %(field)s"),
                                              {'field': 'waitlist_field'})
-                    ret *= self.sql_update(rs, "event.event_parts", update)
                     ret *= self._set_tracks(rs, data['id'], x, tracks)
-                    self.event_log(
-                        rs, const.EventLogCodes.part_changed, data['id'],
-                        change_note=titles[x])
+                    if current_data[x] != update:
+                        ret *= self.sql_update(rs, "event.event_parts", update)
+                        self.event_log(rs, const.EventLogCodes.part_changed, data['id'],
+                                       change_note=current_data[x]['title'])
                 if deleted:
                     for x in mixed_existence_sorter(deleted):
                         # Implicitly delete fee modifiers and course tracks.
@@ -1778,6 +1795,9 @@ class EventBackend(AbstractBackend):
                 for x in mixed_existence_sorter(updated):
                     update = copy.deepcopy(fields[x])
                     update['id'] = x
+                    if field_data[x]['entries'] is not None:
+                        field_data[x]['entries'] = [
+                            tuple(e) for e in field_data[x]['entries']]
                     if all(field_data[x][k] == update[k] for k in update):
                         continue
                     if self.sql_select_one(
@@ -1786,12 +1806,10 @@ class EventBackend(AbstractBackend):
                         raise ValueError(n_(
                             "Cannot change field that is "
                             "associated with a fee modifier."))
-                    if ('kind' in update
-                            and update['kind'] != field_data[x]['kind']):
-                        self._cast_field_values(rs, field_data[x],
-                                                update['kind'])
-                    ret *= self.sql_update(rs, "event.field_definitions",
-                                           update)
+                    kind = field_data[x]['kind']
+                    if update.get('kind', kind) != kind:
+                        self._cast_field_values(rs, field_data[x], update['kind'])
+                    ret *= self.sql_update(rs, "event.field_definitions", update)
                     self.event_log(
                         rs, const.EventLogCodes.field_updated, data['id'],
                         change_note=field_data[x]['field_name'])
@@ -1832,7 +1850,8 @@ class EventBackend(AbstractBackend):
                 current = self.sql_select(
                     rs, "event.fee_modifiers", FEE_MODIFIER_FIELDS, part_ids,
                     entity_key="part_id")
-                existing = {e['id'] for e in current}
+                current_data = {e['id']: e for e in current}
+                existing = set(current_data)
                 if not (existing >= {x for x in fee_modifiers if x > 0}):
                     raise ValueError(n_("Non-existing fee modifier specified."))
                 new = {x for x in fee_modifiers if x < 0}
@@ -1840,7 +1859,6 @@ class EventBackend(AbstractBackend):
                            if x > 0 and fee_modifiers[x] is not None}
                 deleted = {x for x in fee_modifiers
                            if x > 0 and fee_modifiers[x] is None}
-                fee_modifier_data = {e['id']: e for e in current}
                 elc = const.EventLogCodes
                 for x in mixed_existence_sorter(new):
                     ret *= self.sql_insert(
@@ -1849,18 +1867,18 @@ class EventBackend(AbstractBackend):
                         rs, elc.fee_modifier_created, data['id'],
                         change_note=fee_modifiers[x]['modifier_name'])
                 for x in mixed_existence_sorter(updated):
-                    ret *= self.sql_update(
-                        rs, "event.fee_modifiers", fee_modifiers[x])
-                    self.event_log(
-                        rs, elc.fee_modifier_changed, data['id'],
-                        change_note=fee_modifier_data[x]['modifier_name'])
+                    if fee_modifiers[x] != current_data[x]:
+                        ret *= self.sql_update(
+                            rs, "event.fee_modifiers", fee_modifiers[x])
+                        self.event_log(
+                            rs, elc.fee_modifier_changed, data['id'],
+                            change_note=current_data[x]['modifier_name'])
                 if deleted:
                     ret *= self.sql_delete(rs, "event.fee_modifiers", deleted)
                     for x in mixed_existence_sorter(deleted):
-                        modifier_name = fee_modifier_data[x]['modifier_name']
                         self.event_log(
                             rs, elc.fee_modifier_deleted,
-                            data['id'], change_note=modifier_name)
+                            data['id'], change_note=current_data[x]['modifier_name'])
 
         return ret
 
@@ -2255,8 +2273,8 @@ class EventBackend(AbstractBackend):
                 if 'active_segments' in data:
                     pdata['active_segments'] = data['active_segments']
                 self.set_course(rs, pdata)
-        self.event_log(rs, const.EventLogCodes.course_created,
-                       data['event_id'], change_note=data['title'])
+            self.event_log(rs, const.EventLogCodes.course_created,
+                           data['event_id'], change_note=data['title'])
         return new_id
 
     @access("event")
@@ -2456,7 +2474,6 @@ class EventBackend(AbstractBackend):
             raise PrivilegeError(n_("Not privileged."))
         return ret
 
-    @internal
     @access("persona")
     def check_registration_status(
             self, rs: RequestState, persona_id: int, event_id: int,
@@ -2547,7 +2564,7 @@ class EventBackend(AbstractBackend):
                 data = self.query_all(rs, query, (part_id, waitlist))
                 ret[part_id] = xsorted(
                     (reg['id'] for reg in data), key=lambda r_id:
-                    (fields_by_id[r_id].get(field['field_name'], 0), r_id))
+                    (fields_by_id[r_id].get(field['field_name'], 0), r_id))  # pylint: disable=cell-var-from-loop; # noqa
             return ret
 
     @access("event")
@@ -2593,7 +2610,7 @@ class EventBackend(AbstractBackend):
     @access("event")
     def registrations_by_course(
             self, rs: RequestState, event_id: int, course_id: int = None,
-            track_id: int = None, position: InfiniteEnum = None,
+            track_id: int = None, position: InfiniteEnum[CourseFilterPositions] = None,
             reg_ids: Collection[int] = None,
             reg_states: Collection[const.RegistrationPartStati] =
             (const.RegistrationPartStati.participant,)) -> Dict[int, int]:
@@ -2607,7 +2624,7 @@ class EventBackend(AbstractBackend):
         event_id = affirm(vtypes.ID, event_id)
         track_id = affirm_optional(vtypes.ID, track_id)
         course_id = affirm_optional(vtypes.ID, course_id)
-        position = affirm_optional(CourseFilterPositions, position)
+        position = affirm_optional(InfiniteEnum[CourseFilterPositions], position)
         reg_ids = reg_ids or set()
         reg_ids = affirm_set(vtypes.ID, reg_ids)
         reg_states = affirm_set(const.RegistrationPartStati, reg_states)
@@ -2640,23 +2657,22 @@ class EventBackend(AbstractBackend):
         if position is not None:
             cfp = CourseFilterPositions
             sub_conditions = []
-            if position.enum in (cfp.instructor, cfp.anywhere):  # type: ignore
+            if position.enum in (cfp.instructor, cfp.anywhere):
                 if course_id:
                     sub_conditions.append("rtracks.course_instructor = %s")
                     params.append(course_id)
                 else:
                     sub_conditions.append("rtracks.course_instructor IS NULL")
-            if position.enum in (  # type: ignore
-                cfp.any_choice, cfp.anywhere) and course_id:
+            if position.enum in (cfp.any_choice, cfp.anywhere) and course_id:
                 sub_conditions.append(
                     "(choices.course_id = %s AND "
                     " choices.rank < course_tracks.num_choices)")
                 params.append(course_id)
-            if position.enum == cfp.specific_rank and course_id:  # type: ignore
+            if position.enum == cfp.specific_rank and course_id:
                 sub_conditions.append(
                     "(choices.course_id = %s AND choices.rank = %s)")
-                params.extend((course_id, position.int))  # type: ignore
-            if position.enum in (cfp.assigned, cfp.anywhere):  # type: ignore
+                params.extend((course_id, position.int))
+            if position.enum in (cfp.assigned, cfp.anywhere):
                 if course_id:
                     sub_conditions.append("rtracks.course_id = %s")
                     params.append(course_id)
@@ -2927,8 +2943,7 @@ class EventBackend(AbstractBackend):
                     raise NotImplementedError(n_("This is not useful."))
             if 'tracks' in data:
                 tracks = data['tracks']
-                all_tracks = set(event['tracks'])
-                if not (all_tracks >= set(tracks)):
+                if not set(tracks).issubset(event['tracks']):
                     raise ValueError(n_("Non-existing tracks specified."))
                 existing = {e['track_id']: e['id'] for e in self.sql_select(
                     rs, "event.registration_tracks", ("id", "track_id"),
@@ -3033,9 +3048,9 @@ class EventBackend(AbstractBackend):
                 new_track['registration_id'] = new_id
                 new_track['track_id'] = track_id
                 self.sql_insert(rs, "event.registration_tracks", new_track)
-        self.event_log(
-            rs, const.EventLogCodes.registration_created, data['event_id'],
-            persona_id=data['persona_id'])
+            self.event_log(
+                rs, const.EventLogCodes.registration_created, data['event_id'],
+                persona_id=data['persona_id'])
         return new_id
 
     @access("event")
@@ -3610,7 +3625,7 @@ class EventBackend(AbstractBackend):
             # noinspection PyArgumentList
             row['kind'] = const.QuestionnaireUsages(row['kind'])
         ret = {
-            k: sorted([e for e in d if e['kind'] == k], key=lambda x: x['pos'])
+            k: xsorted([e for e in d if e['kind'] == k], key=lambda x: x['pos'])
             for k in kinds or const.QuestionnaireUsages
         }
         return ret
@@ -3631,7 +3646,7 @@ class EventBackend(AbstractBackend):
         if data is not None:
             current = self.get_questionnaire(rs, event_id)
             current.update(data)
-            for k, v in current.items():
+            for v in current.values():
                 for e in v:
                     if 'pos' in e:
                         del e['pos']
@@ -3679,8 +3694,9 @@ class EventBackend(AbstractBackend):
             'id': event_id,
             'offline_lock': not self.conf["CDEDB_OFFLINE_DEPLOYMENT"],
         }
-        ret = self.sql_update(rs, "event.events", update)
-        self.event_log(rs, const.EventLogCodes.event_locked, event_id)
+        with Atomizer(rs):
+            ret = self.sql_update(rs, "event.events", update)
+            self.event_log(rs, const.EventLogCodes.event_locked, event_id)
         return ret
 
     @access("event")
@@ -4299,9 +4315,11 @@ class EventBackend(AbstractBackend):
             cmap: IDMap = {}
             cdelta: CdEDBOptionalMap = {}
             cprevious: CdEDBOptionalMap = {}
-            check_seg = lambda track_id, delta, original: (
-                 (track_id in delta and delta[track_id] is not None)
-                 or (track_id not in delta and track_id in original))
+
+            def check_seg(track_id, delta, original) -> bool:  # type: ignore
+                return ((track_id in delta and delta[track_id] is not None)
+                        or (track_id not in delta and track_id in original))
+
             for course_id in mes(data.get('courses', {}).keys()):
                 new_course = data['courses'][course_id]
                 current = all_current_data['courses'].get(course_id)

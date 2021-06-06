@@ -32,7 +32,7 @@
                 {% if "member" in user.roles and now() < ambience['assembly']['signup_end'] %}
                     <form action="{{ cdedblink('assembly/signup') }}" method="POST" id="signupform">
                         {{ util.anti_csrf_token('assembly/signup') }}
-                        {{ util.input_submit(value=gettext("Participate"), icon="sign-in-alt") }}
+                        {{ util.input_submit(label=gettext("Participate"), icon="sign-in-alt") }}
                     </form>
                 {% endif %}
             {% endif %}
@@ -59,7 +59,7 @@
                                 id="removepresiderform{{ anid }}" class="hide-hover display-inline">
                             {{ util.anti_csrf_token('assembly/remove_presider') }}
                             {{ util.input_hidden(name="presider_id", value=anid) }}
-                            {{ util.input_submit(value="", title=gettext("Remove Presider"), icon='minus',
+                            {{ util.input_submit(label="", title=gettext("Remove Presider"), icon='minus',
                                                  aclass='btn btn-xs btn-danger list-button-float') }}
                         </form>
                     </li>
@@ -75,12 +75,12 @@
                         <script nonce="{{ csp_nonce }}">
                             $('#input-add-presiders').cdedbSearchPerson(
                                 '{{ (cdedblink('core/select_persona')|e) + ('?kind=assembly_user&phrase=%s'|s) }}',
-                                {{ ambience['assembly']['presiders']|list|json|s }}, false, true,
+                                {{ ambience['assembly']['presiders']|list|tojson }}, false, true,
                                 "{{ gettext("ID, name, email") }}"
                             );
                         </script>
                         <div class="input-group-btn">
-                            {{ util.input_submit(value=gettext("Add"), aclass='btn btn-success') }}
+                            {{ util.input_submit(label=gettext("Add"), aclass='btn btn-success') }}
                         </div>
                     </div>
                 {% endcall %}
@@ -101,7 +101,7 @@
 
     {% if attachments or has_ballot_attachments or ("assembly_presider" in user.admin_views
                                                     or ambience['assembly']['id'] in user.presider) %}
-        {% call util.bootstrap_panel(title=gettext("Files"), icon='file') %}
+        {% call util.bootstrap_panel(title=gettext("Files"), icon='file', anid='attachmentspanel') %}
         <div class="row">
             {% if attachments or ("assembly_presider" in user.admin_views
                                   or ambience['assembly']['id'] in user.presider) %}
@@ -161,10 +161,11 @@
                                         {{ util.anti_csrf_token('assembly/create_assembly_mailinglist') }}
                                         {{ util.input_hidden('presider_list', value=True) }}
                                         {{ util.input_submit(
-                                                value=gettext("Create Presider Mailinglist"), aclass="btn btn-success",
+                                                label=gettext("Create presider mailinglist"), aclass="btn btn-success",
                                                 icon="plus", readonly=not ambience['assembly']['presiders'],
                                                 title=("" if ambience['assembly']['presiders']
-                                                       else "Must have presiders to create mailinglist.")) }}
+                                                       else gettext("Must have presiders in order to"
+                                                                    " create a mailinglist."))) }}
                                     </form>
                                 </div>
                             </div>
@@ -186,10 +187,11 @@
                                         {{ util.anti_csrf_token('assembly/create_assembly_mailinglist') }}
                                         {{ util.input_hidden('presider_list', value=False) }}
                                         {{ util.input_submit(
-                                                value=gettext("Create Attendee Mailinglist"), aclass="btn btn-success",
+                                                label=gettext("Create attendee mailinglist"), aclass="btn btn-success",
                                                 icon="plus", readonly=not ambience['assembly']['presiders'],
                                                 title=("" if ambience['assembly']['presiders']
-                                                       else "Must have presiders to create mailinglist.")) }}
+                                                       else gettext("Must have presiders in order to"
+                                                                    " create a mailinglist."))) }}
                                     </form>
                                 </div>
                             </div>
@@ -207,7 +209,7 @@
                             <div class="p">
                                 <form action="{{ cdedblink('assembly/conclude_assembly') }}" method="POST" id="concludeassemblyform" style="display: inline;">
                                     {{ util.anti_csrf_token('assembly/conclude_assembly') }}
-                                    {{ util.input_submit(value=gettext("Archive"), readonly="ballot" in conclude_blockers, aclass="btn btn-danger",
+                                    {{ util.input_submit(label=gettext("Archive"), readonly="ballot" in conclude_blockers, aclass="btn btn-danger",
                                             icon="folder", title=gettext("Assembly still has open ballots.") if "ballot" in conclude_blockers else "") }}
                                     {{ util.input_checkbox(name="ack_conclude", label=gettext("Are you sure?")) }}
                                 </form>
@@ -231,7 +233,7 @@
                             <div class="p">
                                 <form action="{{ cdedblink('assembly/delete_assembly') }}" method="POST" id="deleteassemblyform" style="display: inline;">
                                     {{ util.anti_csrf_token('assembly/delete_assembly') }}
-                                    {{ util.input_submit(value=gettext("Delete"), aclass="btn btn-danger", icon="trash-alt") }}
+                                    {{ util.input_submit(label=gettext("Delete"), aclass="btn btn-danger", icon="trash-alt") }}
                                     {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
                                 </form>
                             </div>

@@ -36,7 +36,7 @@
         </div>
         {% if "event_mgmt" in user.admin_views %}
         <div class="col-sm-3 small">
-            <a href="{{ cdedblink('event/registration_query', {'event_id': event['id']}) }}">
+            <a href="{{ querylink(event['id']) }}">
                 {% trans count=event['registrations'] %}
                 	{{ count }} Registrations
                 {% endtrans -%}

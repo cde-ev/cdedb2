@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 import datetime
 import secrets
-from typing import NamedTuple, Sequence
+from typing import List, NamedTuple, Sequence, Optional, cast
 
-from cdedb.common import User, now
-from tests.common import USER_DICT, BackendTest, MultiAppFrontendTest, execsql, prepsql
+from cdedb.common import RequestState, User, now
+from tests.common import (
+    UserIdentifier, USER_DICT, BackendTest, MultiAppFrontendTest, execsql, get_user,
+)
 
 SessionEntry = NamedTuple(
     "SessionEntry", [("persona_id", int), ("is_active", bool), ("ip", str),
-                     ("sessionkey", str), ("ctime", datetime.datetime),
-                     ("atime", datetime.datetime)])
+                     ("sessionkey", str), ("ctime", Optional[datetime.datetime]),
+                     ("atime", Optional[datetime.datetime])])
 
 
 def make_session_entry(persona_id: int, is_active: bool = True, ip: str = "127.0.0.1",
@@ -32,7 +34,7 @@ def insert_sessions_template(data: Sequence[SessionEntry]) -> str:
 class TestSessionBackend(BackendTest):
     used_backends = ("core", "session")
 
-    def test_sessionlookup(self):
+    def test_sessionlookup(self) -> None:
         user = self.session.lookupsession("random key", "127.0.0.0")
         self.assertIsNone(user.persona_id)
         self.assertEqual({"anonymous"}, user.roles)
@@ -41,7 +43,7 @@ class TestSessionBackend(BackendTest):
         self.assertIsInstance(user, User)
         self.assertEqual(USER_DICT["anton"]['id'], user.persona_id)
 
-    def test_ip_mismatch(self):
+    def test_ip_mismatch(self) -> None:
         key = self.login(USER_DICT["anton"], ip="1.2.3.4")
         user = self.session.lookupsession(key, "1.2.3.4")
         self.assertIsInstance(user, User)
@@ -51,7 +53,7 @@ class TestSessionBackend(BackendTest):
         user = self.session.lookupsession(key, "1.2.3.4")
         self.assertEqual(None, user.persona_id)
 
-    def test_multiple_sessions(self):
+    def test_multiple_sessions(self) -> None:
         # Logging out only works with the ip "127.0.0.0", which is the
         # default value from `setup_requeststate`.
         ips = ["127.0.0.0", "4.3.2.1", "127.0.0.0"]
@@ -68,7 +70,7 @@ class TestSessionBackend(BackendTest):
             self.assertEqual(user.__dict__, users[i+1].__dict__)
 
         # Terminate a single session.
-        self.core.logout(keys[0])
+        self.core.logout(cast(RequestState, keys[0]))
         # Check termination.
         self.assertEqual(
             {"anonymous"},
@@ -80,14 +82,14 @@ class TestSessionBackend(BackendTest):
                 self.session.lookupsession(keys[i], ips[i]).__dict__)
 
         # Terminate all sessions.
-        self.core.logout(keys[2], other_sessions=True)
+        self.core.logout(cast(RequestState, keys[2]), other_sessions=True)
         # Check that all sessions have been terminated.
         for i in (0, 1, 2):
             self.assertEqual(
                 {"anonymous"},
                 self.session.lookupsession(keys[i], ips[i]).roles)
 
-    def test_max_active_sessions(self):
+    def test_max_active_sessions(self) -> None:
         user_data = USER_DICT["anton"]
         ip = "1.2.3.4"
         # Create and check the maximum number of allowed sessions.
@@ -108,12 +110,12 @@ class TestSessionBackend(BackendTest):
         self.assertIsNone(user.persona_id)
         self.assertEqual({"anonymous"}, user.roles)
 
-    def test_logout_everywhere(self):
+    def test_logout_everywhere(self) -> None:
         ip = "1.2.3.4."
 
         # Create some sessions for some different users.
         keys = {u: self.login(u, ip=ip) for u in USER_DICT
-                if u not in {"hades", "lisa", "olaf"}}
+                if u not in {"hades", "lisa", "olaf", "anonymous"}}
         for u, key in keys.items():
             with self.subTest(user=u, key=key):
                 user = self.session.lookupsession(key, ip)
@@ -124,7 +126,7 @@ class TestSessionBackend(BackendTest):
         logout_user = "anton"
         # This will only work with this specific ip:
         key = self.login(logout_user, ip="127.0.0.0")
-        self.core.logout(key, other_sessions=True)
+        self.core.logout(cast(RequestState, key), other_sessions=True)
 
         # Check that the other sessions (from other users) are still active.
         for u, key in keys.items():
@@ -137,7 +139,7 @@ class TestSessionBackend(BackendTest):
                     self.assertEqual(user.persona_id, USER_DICT[u]["id"])
                     self.assertLess({"anonymous"}, user.roles)
 
-    def test_old_sessions(self):
+    def test_old_sessions(self) -> None:
         old_time = now() - datetime.timedelta(days=50)
         delta = datetime.timedelta(minutes=1)
         entries = [
@@ -168,7 +170,9 @@ class TestSessionBackend(BackendTest):
 class TestMultiSessionFrontend(MultiAppFrontendTest):
     n = 3  # Needs to be at least 3 for the following test to work correctly.
 
-    def _setup_multisessions(self, user, session_cookie: str):
+    def _setup_multisessions(self, user: UserIdentifier, session_cookie: str
+                             ) -> List[Optional[str]]:
+        user = get_user(user)
         self.assertGreaterEqual(self.n, 3, "This test will only work correctly"
                                            " with 3 or more apps.")
         # Set up multiple sessions.
@@ -185,7 +189,7 @@ class TestMultiSessionFrontend(MultiAppFrontendTest):
 
         return keys
 
-    def test_logout_all(self):
+    def test_logout_all(self) -> None:
         user = USER_DICT["anton"]
         session_cookie = "sessionkey"
         self._setup_multisessions(user, session_cookie)
@@ -217,7 +221,7 @@ class TestMultiSessionFrontend(MultiAppFrontendTest):
                 self.assertTitle("CdE-Datenbank")
                 self.assertIn('loginform', self.response.forms)
 
-    def test_change_password(self):
+    def test_change_password(self) -> None:
         user = USER_DICT["inga"]
         session_cookie = "sessionkey"
         self._setup_multisessions(user, session_cookie)
@@ -241,7 +245,7 @@ class TestMultiSessionFrontend(MultiAppFrontendTest):
                 self.assertTitle("CdE-Datenbank")
                 self.assertIn('loginform', self.response.forms)
 
-    def test_basics(self):
+    def test_basics(self) -> None:
         self.login(USER_DICT["anton"])
         self.switch_app(1)
         self.login(USER_DICT["berta"])

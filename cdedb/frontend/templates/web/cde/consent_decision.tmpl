@@ -28,7 +28,7 @@
             {% trans %}
                 You have decided to be visible in this index.
             {% endtrans %}
-            {% trans link=util.href(util.mailto(verwaltung), verwaltung) %}
+            {% trans link=util.href(util.mailto(MANAGEMENT_ADDRESS), MANAGEMENT_ADDRESS) %}
                 If you would like to revoke this consent, please contact {{ link }}.
             {% endtrans %}
         </p>
@@ -47,7 +47,7 @@
         {{ util.href(docurl('Realm_Core_Privacy'), gettext("Who can see my data?"), aclass="btn btn-info btn-default", icon="question-circle") }}
     </p>
 
-    <h1>{% trans %}Consent{% endtrans %}</h1>
+    <h2>{% trans %}Consent{% endtrans %}</h2>
 
         {% if "searchable" in user.roles and not decided_search %}
             <p>
@@ -104,7 +104,7 @@
         <form action="{{ cdedblink('cde/consent_decision') }}" method="POST" id="ackconsentform" style="display: inline;">
             {{ util.anti_csrf_token('cde/consent_decision') }}
             {{ util.input_hidden(name="ack", value="True") }}
-            {{ util.input_submit(value=gettext("Give consent"), aclass="btn btn-success") }}
+            {{ util.input_submit(label=gettext("Give consent"), aclass="btn btn-success") }}
         </form>
     {% endif %}
 
@@ -113,7 +113,7 @@
                 style="display: inline;">
             {{ util.anti_csrf_token('cde/consent_decision') }}
             {{ util.input_hidden(name="ack", value="False") }}
-            {{ util.input_submit(value=gettext("Refuse consent"), icon="times-circle", aclass="btn btn-danger") }}
+            {{ util.input_submit(label=gettext("Refuse consent"), icon="times-circle", aclass="btn btn-danger") }}
         </form>
 
         {{ util.href(cdedblink("core/index"), gettext("Decide later"), icon="clock", aclass="btn btn-default") }}

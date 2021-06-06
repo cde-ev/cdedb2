@@ -13,6 +13,8 @@
             {% if error.description %}({{ gettext(error.description) }}){% endif %}
         {% elif error.code == 405 %}
             {% trans %}This HTTP method is not allowed for this URL.{% endtrans %}
+        {% elif error.code == 429 %}
+            {% trans %}Quota exceeded.{% endtrans %}
         {% elif error.code == 500 %}
             {% trans %}An internal error occured:{% endtrans %}
             {% if error.description %}
@@ -29,7 +31,7 @@
 {% block content %}
     {% set maillink = util.href(util.mailto("cdedb@lists.cde-ev.de", gettext("CdE-Datenbank development team")), "cdedb@lists.cde-ev.de") %}
     {% if error.code == 403 %}
-        {% if not help is none %}
+        {% if help is not none %}
             <p>{{ gettext(help) }}</p>
         {% endif %}
         <p>
@@ -54,7 +56,7 @@
             {% endtrans %}
         </p>
     {% else %}
-            {% if not help is none %}
+            {% if help is not none %}
                 <p>{{ gettext(help) }}</p>
             {% else %}
                 <p>{% trans %}First try reloading this page.{% endtrans %}</p>

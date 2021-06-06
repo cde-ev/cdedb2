@@ -29,7 +29,7 @@
             {{ util.anti_csrf_token('core/modify_membership') }}
             <div>
                 {{ util.input_hidden(name="is_member", value=False) }}
-                {{ util.input_submit(value=gettext("Terminate Membership"), aclass="btn btn-warning") }}&emsp;
+                {{ util.input_submit(label=gettext("Terminate Membership"), aclass="btn btn-warning") }}&emsp;
                 {{ util.href(show_user_link(user, ambience['persona']['id']), gettext("Cancel"), icon="times-circle",
                         aclass="btn btn-default") }}
             </div>
@@ -39,7 +39,7 @@
             {{ util.anti_csrf_token('core/modify_membership') }}
             <div>
                 {{ util.input_hidden(name="is_member", value=True) }}
-                {{ util.input_submit(value=gettext("Make a Member")) }}&emsp;
+                {{ util.input_submit(label=gettext("Make a Member")) }}&emsp;
                 {{ util.href(show_user_link(user, ambience['persona']['id']), "Abbrechen", icon="times-circle",
                         aclass="btn btn-default") }}
             </div>

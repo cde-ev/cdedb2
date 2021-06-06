@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import os
 import pathlib
 import shutil
 import subprocess
@@ -13,7 +13,7 @@ from tests.common import FrontendTest
 
 
 class TestOffline(FrontendTest):
-    def test_offline_vm(self):
+    def test_offline_vm(self) -> None:
         base = pathlib.Path(__file__).parent.parent
         user = {
             'username': "garcia@example.cde",
@@ -22,27 +22,26 @@ class TestOffline(FrontendTest):
         existing_config = base / "cdedb/localconfig.py"
         config_backup = base / "cdedb/localconfig.copy"
         if existing_config.exists():
-            shutil.copyfile(
-                existing_config, config_backup)
+            shutil.copyfile(existing_config, config_backup)
         subprocess.run(
-            ['bin/execute_sql_script.py', '-U', 'cdb', '-d', 'cdb_test',
+            ['bin/execute_sql_script.py', '-U', 'cdb',
+             '-d', os.environ['CDEDB_TEST_DATABASE'],
              '-f', 'tests/ancillary_files/clean_data.sql'],
             cwd=base, check=True, stdout=subprocess.DEVNULL)
         try:
             subprocess.run(
                 ['bin/make_offline_vm.py', '--test', '--no-extra-packages',
                  'tests/ancillary_files/event_export.json'],
-                cwd=base, check=True, stdout=subprocess.DEVNULL)
+                cwd=base, check=True, stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL)
             # Reset web test app for changed configuration
             try:
                 del sys.modules['cdedb.localconfig']
             except AttributeError:
                 pass
             new_app = Application()
-            self.app = webtest.TestApp(new_app, extra_environ={
-                'REMOTE_ADDR': "127.0.0.0",
-                'SERVER_PROTOCOL': "HTTP/1.1",
-                'wsgi.url_scheme': 'https'})
+            self.app = webtest.TestApp(  # type: ignore
+                new_app, extra_environ=self.app_extra_environ)
             self.app.reset()
             self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME,
                                 ",".join(ALL_ADMIN_VIEWS))
@@ -104,12 +103,11 @@ class TestOffline(FrontendTest):
             # be split out.
         finally:
             if config_backup.exists():
-                shutil.move(
-                    config_backup, existing_config)
+                shutil.move(str(config_backup), existing_config)
             else:
                 subprocess.run(
                     ["cp", "related/auto-build/files/stage3/localconfig.py",
-                    "cdedb/localconfig.py"], check=True)
+                     "cdedb/localconfig.py"], check=True)
             subprocess.run(["sudo", "rm", "-f", "/OFFLINEVM"], check=True)
             subprocess.run(
                 ["make", "reload"], check=True, cwd=base,

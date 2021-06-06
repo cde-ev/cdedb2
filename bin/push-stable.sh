@@ -13,7 +13,9 @@ then
     }
 else
     function push_stable () {
-        git push origin stable
+        git tag release/$(date +'%Y-%m-%d')
+        git push origin stable --tags
+        git push mirror stable
     }
 fi
 

@@ -11,8 +11,9 @@ from typing import Tuple, Type
 import cdedb.database.constants as const
 from cdedb.common import (
     Accounts, AgeClasses, CourseChoiceToolActions, CourseFilterPositions,
-    LineResolutions, LodgementsSortkeys, SubscriptionActions, TransactionType,
+    LineResolutions, LodgementsSortkeys, TransactionType,
 )
+from cdedb.subman.machine import SubscriptionAction, SubscriptionPolicy
 from cdedb.query import QueryOperators
 
 #: The list of normal enums
@@ -22,8 +23,7 @@ ALL_ENUMS: Tuple[Type[Enum], ...] = (
     const.RegistrationPartStati,
     const.PrivilegeChangeStati,
     const.GenesisStati,
-    const.SubscriptionStates,
-    const.MailinglistInteractionPolicy,
+    const.SubscriptionState,
     const.ModerationPolicy,
     const.AttachmentPolicy,
     const.LastschriftTransactionStati,
@@ -42,7 +42,8 @@ ALL_ENUMS: Tuple[Type[Enum], ...] = (
     QueryOperators,
     AgeClasses,
     LineResolutions,
-    SubscriptionActions,
+    SubscriptionAction,
+    SubscriptionPolicy,
     LodgementsSortkeys,
     Accounts,
     TransactionType,

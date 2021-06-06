@@ -15,7 +15,7 @@ import functools
 import logging
 from types import TracebackType
 from typing import (
-    Any, Callable, ClassVar, Collection, Dict, Iterable, KeysView, List, Mapping,
+    Any, Callable, ClassVar, Collection, Dict, Iterable, List, Mapping,
     Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast, overload,
 )
 
@@ -39,6 +39,21 @@ from cdedb.validation import parse_date, parse_datetime
 F = TypeVar('F', bound=Callable[..., Any])
 T = TypeVar('T')
 S = TypeVar('S')
+
+# The following are meant to be used for type hinting the sql backend methods.
+# DatabaseValue is for any singular value that should be written into the database or
+# compared to something already stored.
+DatabaseValue = Union[int, str, enum.IntEnum, float, datetime.date, datetime.datetime,
+                      None]
+# DatabaseValue_s is either a singular value or a collection of such values, e.g. to be
+# used with an "ANY(%s)" like comparison.
+DatabaseValue_s = Union[DatabaseValue, Collection[DatabaseValue]]
+# EntityKey is the value of an identifier, most often an id, given to retrieve or
+# delete the corresponding entity from the database.
+EntityKey = Union[int, str]
+# EntityKeys is a collection of identifiers, i.e. ids, given for retrieval or deletion
+# of the corresponding entities. Note that we do not use string identifiers for this.
+EntityKeys = Collection[int]
 
 
 @overload
@@ -72,7 +87,7 @@ def singularize(function: Callable[..., Union[T, Mapping[Any, T]]],
         directly. If this is false, the output is assumed to be a dict with the
         singular param as a key.
     """
-
+    # pylint: disable=used-before-assignment
     @functools.wraps(function)
     def singularized(self: AbstractBackend, rs: RequestState, *args: Any,
                      **kwargs: Any) -> T:
@@ -150,7 +165,7 @@ def access(*roles: Role) -> Callable[[F], F]:
                 )
             return function(self, rs, *args, **kwargs)
 
-        wrapper.access = True  # type: ignore
+        wrapper.access = True  # type: ignore[attr-defined]
         return cast(F, wrapper)
 
     return decorator
@@ -163,8 +178,15 @@ def internal(function: F) -> F:
     internal mode.
     """
 
-    function.internal = True  # type: ignore
+    function.internal = True  # type: ignore[attr-defined]
     return function
+
+
+def _affirm_atomized_context(rs: RequestState) -> None:
+    """Make sure that we are operating in a atomized transaction."""
+
+    if not rs.conn.is_contaminated:
+        raise RuntimeError(n_("No contamination!"))
 
 
 class AbstractBackend(metaclass=abc.ABCMeta):
@@ -206,6 +228,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         else:
             self.core = make_proxy(CoreBackend(configpath), internal=True)
 
+    affirm_atomized_context = staticmethod(_affirm_atomized_context)
+
     def affirm_realm(self, rs: RequestState, ids: Collection[int],
                      realms: Set[Realm] = None) -> None:
         """Check that all personas corresponding to the ids are in the
@@ -218,7 +242,6 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         actual_realms = self.core.get_realms_multi(rs, ids)
         if any(not x >= realms for x in actual_realms.values()):
             raise ValueError(n_("Wrong realm for personas."))
-        return
 
     @classmethod
     @abc.abstractmethod
@@ -230,17 +253,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         """
         return "{}_admin".format(cls.realm) in rs.user.roles
 
-    # mypy treats all imports from `psycopg2` as `Any`, so we have overlap
-    # with `None`.
-    @staticmethod
-    @overload
-    def _sanitize_db_output(output: None) -> None: ...  # type: ignore
-
-    @staticmethod
-    @overload
-    def _sanitize_db_output(output: psycopg2.extras.RealDictRow
-                            ) -> CdEDBObject: ...
-
+    # mypy treats all imports from psycopg2 as `Any`, so we do not gain anything by
+    # overloading the definition.
     @staticmethod
     def _sanitize_db_output(output: Optional[psycopg2.extras.RealDictRow]
                             ) -> Optional[CdEDBObject]:
@@ -256,30 +270,10 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             return None
         return dict(output)
 
-    # mypy unfortunately does not allow annotations for treating some iterables
-    # differently than others, so we just ignore everything here.
+    # mypy cannot really understand the intricacies of what this function does, so
+    # we keep this simple. instead of overloading the definition.
     @staticmethod
-    @overload
-    def _sanitize_db_input(obj: Mapping[S, T]) -> Mapping[S, T]: ...  # type: ignore
-
-    @staticmethod
-    @overload
-    def _sanitize_db_input(obj: str) -> str: ...  # type: ignore
-
-    @staticmethod
-    @overload
-    def _sanitize_db_input(obj: Iterable[T]) -> List[T]: ...  # type: ignore
-
-    @staticmethod
-    @overload
-    def _sanitize_db_input(obj: enum.Enum) -> int: ...  # type: ignore
-
-    @staticmethod
-    @overload
-    def _sanitize_db_input(obj: T) -> T: ...
-
-    @staticmethod
-    def _sanitize_db_input(obj: Any) -> Any:
+    def _sanitize_db_input(obj: Any) -> Union[Any, List[Any]]:
         """Mangle data to make psycopg happy.
 
         Convert :py:class:`tuple`s (and all other iterables, but not strings
@@ -299,15 +293,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         else:
             return obj
 
-    @staticmethod
-    def affirm_atomized_context(rs: RequestState) -> None:
-        """Make sure that we are operating in a atomized transaction."""
-
-        if not rs.conn.is_contaminated:
-            raise RuntimeError(n_("No contamination!"))
-
     def execute_db_query(self, cur: psycopg2.extensions.cursor, query: str,
-                         params: Sequence[Any]) -> None:
+                         params: Sequence[DatabaseValue_s]) -> None:
         """Perform a database query. This low-level wrapper should be used
         for all explicit database queries, mostly because it invokes
         :py:meth:`_sanitize_db_input`. However in nearly all cases you want to
@@ -319,19 +306,20 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         This doesn't return anything, but has a side-effect on ``cur``.
         """
         sanitized_params = tuple(
-            self._sanitize_db_input(p) for p in params)  # type: ignore
+            self._sanitize_db_input(p) for p in params)
         self.logger.debug("Execute PostgreSQL query {}.".format(cur.mogrify(
             query, sanitized_params)))
         cur.execute(query, sanitized_params)
 
-    def query_exec(self, rs: RequestState, query: str, params: Sequence[Any]) -> int:
+    def query_exec(self, rs: RequestState, query: str,
+                   params: Sequence[DatabaseValue_s]) -> int:
         """Execute a query in a safe way (inside a transaction)."""
         with rs.conn as conn:
             with conn.cursor() as cur:
                 self.execute_db_query(cur, query, params)
                 return cur.rowcount
 
-    def query_one(self, rs: RequestState, query: str, params: Sequence[Any]
+    def query_one(self, rs: RequestState, query: str, params: Sequence[DatabaseValue_s]
                   ) -> Optional[CdEDBObject]:
         """Execute a query in a safe way (inside a transaction).
 
@@ -340,9 +328,9 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         with rs.conn as conn:
             with conn.cursor() as cur:
                 self.execute_db_query(cur, query, params)
-                return self._sanitize_db_output(cur.fetchone())  # type: ignore
+                return self._sanitize_db_output(cur.fetchone())
 
-    def query_all(self, rs: RequestState, query: str, params: Sequence[Any]
+    def query_all(self, rs: RequestState, query: str, params: Sequence[DatabaseValue_s]
                   ) -> Tuple[CdEDBObject, ...]:
         """Execute a query in a safe way (inside a transaction).
 
@@ -352,20 +340,24 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             with conn.cursor() as cur:
                 self.execute_db_query(cur, query, params)
                 return tuple(
-                    self._sanitize_db_output(x)  # type: ignore
+                    cast(CdEDBObject, self._sanitize_db_output(x))
                     for x in cur.fetchall())
 
     def sql_insert(self, rs: RequestState, table: str, data: CdEDBObject,
-                   entity_key: str = "id") -> int:
+                   entity_key: str = "id", drop_on_conflict: bool = False) -> int:
         """Generic SQL insertion query.
 
         See :py:meth:`sql_select` for thoughts on this.
 
+        :param unique: Whether to do nothing if conflicting with a constraint
         :returns: id of inserted row
         """
         keys = tuple(key for key in data)
         query = (f"INSERT INTO {table} ({', '.join(keys)}) VALUES"
-                 f" ({', '.join(('%s',) * len(keys))}) RETURNING {entity_key}")
+                 f" ({', '.join(('%s',) * len(keys))})")
+        if drop_on_conflict:
+            query += " ON CONFLICT DO NOTHING"
+        query += f" RETURNING {entity_key}"
         params = tuple(data[key] for key in keys)
         return unwrap(self.query_one(rs, query, params)) or 0
 
@@ -381,7 +373,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             return 0
         keys = tuple(data[0].keys())
         key_set = set(keys)
-        params: List[Any] = []
+        params: List[DatabaseValue] = []
         for entry in data:
             if entry.keys() != key_set:
                 raise ValueError(n_("Dict keys do not match."))
@@ -393,7 +385,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         return self.query_exec(rs, query, params)
 
     def sql_select(self, rs: RequestState, table: str, columns: Sequence[str],
-                   entities: Collection[Any], entity_key: str = "id"
+                   entities: EntityKeys, entity_key: str = "id"
                    ) -> Tuple[CdEDBObject, ...]:
         """Generic SQL select query.
 
@@ -409,9 +401,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                  f" WHERE {entity_key} = ANY(%s)")
         return self.query_all(rs, query, (entities,))
 
-    def sql_select_one(self, rs: RequestState, table: str,
-                       columns: Sequence[str], entity: Any,
-                       entity_key: str = "id") -> Optional[CdEDBObject]:
+    def sql_select_one(self, rs: RequestState, table: str, columns: Sequence[str],
+                       entity: EntityKey, entity_key: str = "id") -> Optional[CdEDBObject]:
         """Generic SQL select query for one row.
 
         See :py:meth:`sql_select` for thoughts on this.
@@ -460,8 +451,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         params += (data[entity_key],)
         return self.query_exec(rs, query, params)
 
-    def sql_delete(self, rs: RequestState, table: str,
-                   entities: Collection[Any], entity_key: str = "id") -> int:
+    def sql_delete(self, rs: RequestState, table: str, entities: EntityKeys,
+                   entity_key: str = "id") -> int:
         """Generic SQL deletion query.
 
         See :py:meth:`sql_select` for thoughts on this.
@@ -471,7 +462,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         query = f"DELETE FROM {table} WHERE {entity_key} = ANY(%s)"
         return self.query_exec(rs, query, (entities,))
 
-    def sql_delete_one(self, rs: RequestState, table: str, entity: Any,
+    def sql_delete_one(self, rs: RequestState, table: str, entity: EntityKey,
                        entity_key: str = "id") -> int:
         """Generic SQL deletion query for a single row.
 
@@ -510,7 +501,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         select = glue(select, ',', QUERY_PRIMARIES[query.scope])
         view = view or QUERY_VIEWS[query.scope]
         q = f"SELECT {'DISTINCT' if distinct else ''} {select} FROM {view}"
-        params: List[Any] = []
+        params: List[DatabaseValue] = []
         constraints = []
         _ops = QueryOperators
         for field, operator, value in query.constraints:
@@ -519,10 +510,12 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                 # the following should be used with operators which are allowed
                 # for str as well as for other types
                 sql_param_str = "lower({0})"
-                caser = lambda x: x.lower()
+
+                def caser(x: T) -> T: return x.lower()  # type: ignore[attr-defined]
             else:
                 sql_param_str = "{0}"
-                caser = lambda x: x
+
+                def caser(x: T) -> T: return x
             columns = field.split(',')
             # Treat containsall and friends special since they want to find
             # each value in any column, without caring that the columns are
@@ -572,7 +565,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                     phrase = "{0} = ANY(%s)".format(sql_param_str)
                 else:
                     phrase = "NOT({0} = ANY(%s))".format(sql_param_str)
-                params.extend((tuple(caser(x) for x in value),) * len(columns))
+                params.extend((tuple(caser(x) for x in value),) * len(columns))  # type: ignore[arg-type] # noqa
             elif operator in (_ops.match, _ops.unmatch):
                 if operator == _ops.match:
                     phrase = "{} ~* %s"
@@ -629,7 +622,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
     def generic_retrieve_log(self, rs: RequestState, code_validator: Type[T],
                              entity_name: str, table: str,
                              codes: Collection[int] = None,
-                             entity_ids: Collection[Any] = None,
+                             entity_ids: Collection[int] = None,
                              offset: int = None, length: int = None,
                              additional_columns: Collection[str] = None,
                              persona_id: int = None,
@@ -670,6 +663,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         :param time_start: lower bound for ctime columns
         :param time_stop: upper bound for ctime column
         """
+        assert issubclass(code_validator, enum.IntEnum)
         codes = affirm_set_validation(code_validator, codes or set())
         entity_ids = affirm_set_validation(vtypes.ID, entity_ids or set())
         offset: Optional[int] = affirm_validation_typed_optional(
@@ -690,7 +684,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
 
         # First, define the common WHERE filter clauses
         conditions = []
-        params: List[Any] = []
+        params: List[DatabaseValue_s] = []
         if codes:
             conditions.append("code = ANY(%s)")
             params.append(codes)
@@ -773,6 +767,7 @@ class Silencer:
 
     def __enter__(self) -> None:
         self.rs.is_quiet = True
+        _affirm_atomized_context(self.rs)
 
     def __exit__(self, atype: Type[Exception], value: Exception,
                  tb: TracebackType) -> None:
@@ -794,7 +789,8 @@ def affirm_validation_typed_optional(
     assertion: Type[T], value: Any, **kwargs: Any
 ) -> Optional[T]:
     """Wrapper to call asserts in :py:mod:`cdedb.validation`."""
-    return validate.validate_assert_optional(assertion, value, **kwargs)
+    return validate.validate_assert(
+        Optional[assertion], value, **kwargs)  # type: ignore
 
 
 def affirm_array_validation(

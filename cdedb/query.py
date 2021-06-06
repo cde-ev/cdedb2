@@ -107,19 +107,14 @@ class Query:
                  constraints: Collection[QueryConstraint],
                  order: Collection[QueryOrder], name: str = None):
         """
-        :type scope: str
         :param scope: target of FROM clause; key for :py:data:`QUERY_VIEWS`.
             We would like to use SQL views for this, but they are not flexible
             enough.
-        :type fields_of_interest: [str]
         :param fields_of_interest: column names to be SELECTed.
-        :type spec: {str: str}
         :param spec: Keys are field names and values are validator names. See
             :py:const:`QUERY_SPECS`.
-        :type constraints: [(str, QueryOperators, object)]
         :param constraints: clauses for WHERE, they are concatenated with AND
             and each comma in the first component causes an OR
-        :type order: [(str, bool)]
         :param order: First components are the column names to be used for
             ORDER BY and the second component toggles ascending sorting order.
         """
@@ -157,10 +152,22 @@ class Query:
                       for atom in entry.split(".")),
              ascending)
             for entry, ascending in self.order]
-        for field, _, _ in self.constraints:
-            if '"' in field:
-                self.spec[field] = self.spec[field.replace('"', '')]
-                del self.spec[field.replace('"', '')]
+        # Fix our fix
+        changed_fields = set()
+        for column in self.fields_of_interest:
+            for moniker in column.split(","):
+                if '"' in moniker:
+                    changed_fields.add(moniker)
+        for column, _, _ in self.constraints:
+            for moniker in column.split(","):
+                if '"' in moniker:
+                    changed_fields.add(moniker)
+        for moniker, _ in self.order:
+            if '"' in moniker:
+                changed_fields.add(moniker)
+        for field in changed_fields:
+            self.spec[field] = self.spec[field.replace('"', '')]
+            del self.spec[field.replace('"', '')]
 
 
 #: Available query templates. These may be enriched by ext-fields. Order is
@@ -170,7 +177,9 @@ class Query:
 #:           the schema part does not survive querying and needs to be stripped
 #:           before output.
 if TYPE_CHECKING:
-    QUERY_SPECS: Dict[str, collections.OrderedDict[str, str]]
+    QUERY_SPECS: Dict[
+        str, collections.OrderedDict[str, str]  # pylint: disable=unsubscriptable-object
+    ]
 QUERY_SPECS = {
     "qview_cde_member":
         collections.OrderedDict([
@@ -240,7 +249,7 @@ QUERY_SPECS = {
             ("lastschrift.active_lastschrift", "bool"),
             ("lastschrift.amount", "float"),
         ]),
-    "qview_archived_persona":
+    "qview_archived_core_user":
         collections.OrderedDict([
             ("personas.id", "id"),
             ("given_names", "str"),
@@ -250,6 +259,30 @@ QUERY_SPECS = {
             ("gender", "int"),
             ("birthday", "date"),
             ("pevent_id", "id"),
+            ("notes", "str"),
+            ("is_ml_realm", "bool"),
+            ("is_event_realm", "bool"),
+            ("is_assembly_realm", "bool"),
+            ("is_cde_realm", "bool"),
+        ]),
+    "qview_archived_past_event_user":
+        collections.OrderedDict([
+            ("personas.id", "id"),
+            ("given_names", "str"),
+            ("family_name", "str"),
+            ("display_name", "str"),
+            ("birth_name", "str"),
+            ("gender", "int"),
+            ("birthday", "date"),
+            ("pevent_id", "id"),
+            ("notes", "str"),
+        ]),
+    "qview_archived_persona":
+        collections.OrderedDict([
+            ("personas.id", "id"),
+            ("given_names", "str"),
+            ("family_name", "str"),
+            ("display_name", "str"),
             ("notes", "str"),
         ]),
     "qview_past_event_user":
@@ -473,10 +506,15 @@ QUERY_VIEWS = {
         "LEFT OUTER JOIN past_event.participants",
         "ON personas.id = participants.persona_id"),
     "qview_persona": "core.personas",
-    "qview_archived_persona": glue(
+    "qview_archived_core_user": glue(
         "core.personas",
         "LEFT OUTER JOIN past_event.participants",
         "ON personas.id = participants.persona_id"),
+    "qview_archived_past_event_user": glue(
+        "core.personas",
+        "LEFT OUTER JOIN past_event.participants",
+        "ON personas.id = participants.persona_id"),
+    "qview_archived_persona": "core.personas",
 }
 
 #: This is the primary key for the query and allows access to the
@@ -494,7 +532,9 @@ QUERY_PRIMARIES = {
     "qview_pevent_course": "courses.id",
     "qview_core_user": "personas.id",
     "qview_persona": "id",
-    "qview_archived_persona": "personas.id",
+    "qview_archived_core_user": "personas.id",
+    "qview_archived_past_event_user": "personas.id",
+    "qview_archived_persona": "id",
 }
 
 
@@ -507,13 +547,9 @@ def mangle_query_input(rs: RequestState, spec: Dict[str, str],
     This has to be careful to treat checkboxes and selects correctly
     (which are partly handled by an absence of data).
 
-    :type rs: :py:class:`cdedb.common.RequestState`
-    :type spec: {str: str}
     :param spec: one of :py:data:`QUERY_SPECS`
-    :type defaults: {str: str}
     :param defaults: Default values which appear like they have been submitted,
       if nothing has been submitted for this paramater.
-    :rtype: {str: str}
     :returns: The raw data associated to the query described by the spec
         extracted from the request data saved in the request state.
     """
