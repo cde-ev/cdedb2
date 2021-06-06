@@ -26,11 +26,9 @@
             approve that change.
         {% endtrans %}
     </div>
-    <ul id="meta">
-        {% for admin in admins["meta"] %}
-            <li>{{ util.persona_anchor(personas[admin]) }}</li>
-        {% endfor %}
-    </ul>
+    <div id="meta" class="row">
+        {{ slice_admins(admins["meta"]) }}
+    </div>
 
     {# Everyone can see coreadmins #}
     <h3>{% trans %}Core-Admins{% endtrans %}</h3>
@@ -41,11 +39,9 @@
             approve pending changes of data fields needing review (address, birthday and name).
         {% endtrans %}
     </div>
-    <ul id="core">
-        {% for admin in admins["core"] %}
-            <li>{{ util.persona_anchor(personas[admin]) }}</li>
-        {% endfor %}
-    </ul>
+    <div id="core" class="row">
+        {{ slice_admins(admins["core"]) }}
+    </div>
 
     {% if "cde" in user.roles %}
         <h3>{% trans %}CdE-Admins{% endtrans %}</h3>
@@ -55,11 +51,9 @@
                 They may also manage past events that are displayed on profiles.
             {% endtrans %}
         </div>
-        <ul id="cde">
-            {% for admin in admins["cde"] %}
-                <li>{{ util.persona_anchor(personas[admin]) }}</li>
-            {% endfor %}
-        </ul>
+        <div id="cde" class="row">
+            {{ slice_admins(admins["cde"]) }}
+        </div>
     {% endif %}
 
     {% if "member" in user.roles %}
@@ -71,11 +65,9 @@
                 as the removal of inactive members and the updating of balances.
             {% endtrans %}
         </div>
-        <ul id="finance">
-            {% for admin in admins["finance"] %}
-                <li>{{ util.persona_anchor(personas[admin]) }}</li>
-            {% endfor %}
-        </ul>
+        <div id="finance" class="row">
+            {{ slice_admins(admins["finance"]) }}
+        </div>
     {% endif %}
 
     {% if "event" in user.roles %}
@@ -89,11 +81,9 @@
                 They may manage and create event related mailinglists.
             {% endtrans %}
         </div>
-        <ul id="event">
-            {% for admin in admins["event"] %}
-                <li>{{ util.persona_anchor(personas[admin]) }}</li>
-            {% endfor %}
-        </ul>
+        <div id="event" class="row">
+            {{ slice_admins(admins["event"]) }}
+        </div>
     {% endif %}
 
     {% if "ml" in user.roles %}
@@ -104,11 +94,9 @@
                 They may create, manage and approve requests for Mailinglist-Users, i.e. users that may only access mailinglists.
             {% endtrans %}
         </div>
-        <ul id="ml">
-            {% for admin in admins["ml"] %}
-                <li>{{ util.persona_anchor(personas[admin]) }}</li>
-            {% endfor %}
-        </ul>
+        <div id="ml" class="row">
+            {{ slice_admins(admins["ml"]) }}
+        </div>
 
         <h3>{% trans %}CdElokal-Admins{% endtrans %}</h3>
         <div class="p">
@@ -117,11 +105,9 @@
                 They do not automatically have access to any user management, like creating and managing accounts.
             {% endtrans %}
         </div>
-        <ul id="cdelokal">
-            {% for admin in admins["cdelokal"] %}
-                <li>{{ util.persona_anchor(personas[admin]) }}</li>
-            {% endfor %}
-        </ul>
+        <div id="cdelokal" class="row">
+            {{ slice_admins(admins["cdelokal"]) }}
+        </div>
     {% endif %}
 
     {% if "assembly" in user.roles %}
@@ -133,11 +119,22 @@
                 They may also add these users as participants of assemblies.
             {% endtrans %}
         </div>
-        <ul id="assembly">
-            {% for admin in admins["assembly"] %}
-                <li>{{ util.persona_anchor(personas[admin]) }}</li>
-            {% endfor %}
-        </ul>
+        <div id="assembly" class="row">
+            {{ slice_admins(admins["assembly"]) }}
+        </div>
     {% endif %}
 
 {% endblock %}
+
+{% macro slice_admins(list) %}
+    {% set col_width = 4 if list|length > 10 else (6 if list|length > 5 else 12) %}
+    {% for sublist in list | slice(3 if list|length > 10 else (2 if list|length > 5 else 1)) %}
+        <div class="col-sm-{{ col_width }}">
+            <ul class="nosp slim">
+                {% for admin in sublist %}
+                    <li>{{ util.persona_anchor(personas[admin]) }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endfor %}
+{% endmacro %}
