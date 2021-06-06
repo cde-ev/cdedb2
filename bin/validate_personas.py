@@ -29,7 +29,6 @@ with Script(rs, dry_run=False):
             break
 
         persona = core.get_total_persona(rs, persona_id)
-        del persona['is_purged']
 
         try:
             affirm(vtypes.Persona, persona, _ignore_warnings=True)
