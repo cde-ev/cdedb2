@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2021-06-06 16:01+0200\n"
+"POT-Creation-Date: 2021-06-07 00:49+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -2982,27 +2982,27 @@ msgstr ""
 msgid "Active characters found in search."
 msgstr ""
 
-#: cdedb/frontend/ml.py:38
+#: cdedb/frontend/ml.py:43
 msgid "Invalid moderation action."
 msgstr ""
 
-#: cdedb/frontend/ml.py:46
+#: cdedb/frontend/ml.py:57
 msgid "Skipping mailman request in dev/offline mode."
 msgstr ""
 
-#: cdedb/frontend/ml.py:51
+#: cdedb/frontend/ml.py:62
 msgid "List unavailable."
 msgstr ""
 
-#: cdedb/frontend/ml.py:58
+#: cdedb/frontend/ml.py:69
 msgid "Message unavailable."
 msgstr ""
 
-#: cdedb/frontend/ml.py:61
+#: cdedb/frontend/ml.py:72
 msgid "Message moderated."
 msgstr ""
 
-#: cdedb/frontend/ml.py:65 cdedb/frontend/ml.py:67
+#: cdedb/frontend/ml.py:76 cdedb/frontend/ml.py:78
 msgid "Message not moderated."
 msgstr ""
 
@@ -7378,7 +7378,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/genesis_list_cases.tmpl:57
 #: cdedb/frontend/templates/web/core/genesis_show_case.tmpl:121
 #: cdedb/frontend/templates/web/ml/management.tmpl:123
-#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:55
+#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:58
 msgid "Reject"
 msgstr ""
 
@@ -11964,7 +11964,7 @@ msgid "Subscription Requests of other users to this mailinglist."
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/management.tmpl:122
-#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:54
+#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:57
 msgid "Accept"
 msgstr ""
 
@@ -12044,18 +12044,23 @@ msgstr ""
 msgid ""
 "If you reject a message, its author will recieve a notification message. If "
 "you discard a message, no notification message will be sent. The latter is "
-"preferred for spam messages."
+"preferred for spam messages. If you whitelist a message, it is not only "
+"accepted, but its author can write emails without moderation in the future."
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/message_moderation.tmpl:56
+msgid "Whitelist_[[verb]]"
+msgstr ""
+
+#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:59
 msgid "Discard"
 msgstr ""
 
-#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:65
+#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:68
 msgid "Message details"
 msgstr ""
 
-#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:72
+#: cdedb/frontend/templates/web/ml/message_moderation.tmpl:75
 msgid "No held messages."
 msgstr ""
 
