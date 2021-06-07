@@ -30,7 +30,7 @@
         {% for registration_id, registration in registrations.items() %}
         <div class="selectee list-group-item">
             <div class="row">
-                <div class="col-sm-8">
+                <div class="col-sm-9">
                 <div class="row">
                     <div class="col-sm-6">
                         <span class="searchname">
@@ -57,7 +57,7 @@
                             ({{ gettext(enums['RegistrationPartStati'].guest|string) }})
                         {% endif %}
                     </div>
-                    <div class="col-sm-6 hide-xs">
+                    <div class="col-sm-6">
                         <small class="text-info">
                             {% trans %}Lodgement{% endtrans %}:
                             {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part)
@@ -96,7 +96,7 @@
                     </div>
                 {% endif %}
                 </div>
-                    <div class="col-sm-2">
+                    <div class="col-sm-3 col-xs-12">
                         {{ util.href(cdedblink('event/change_registration',
                                                {'registration_id': registration_id, 'skip': 'reg.checkin'}),
                                      title=gettext("Edit"), icon='pen', aclass="btn btn-sm btn-warning") }}
@@ -104,8 +104,6 @@
                                                {'registration_id': registration_id}),
                                      title=gettext("Details"), icon='user', aclass="btn btn-sm btn-info") }}
 
-                    </div>
-                    <div class="col-sm-2">
                         <form action="{{ cdedblink('event/checkin') }}" method="POST" id="checkinform{{ registration_id }}"
                               style="display: inline;" class="checkinform">
                             {{ util.anti_csrf_token('event/checkin') }}
