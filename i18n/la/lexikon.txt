@@ -8,6 +8,9 @@
 Abbrechen (Knopf-Beschriftung)
 Desine (Philipp findet den Imperativ passend, es wird ja dem Computer eine Anweisung erteilt)
 
+Abmelden
+denutiare (analog zu "anmelden")
+
 Abstimmung
 suffragatio (can. 699 § 1 CIC "per secretam suffragationem"; nach Stowasser "Begünstigung, Empfehlung")
 
@@ -20,6 +23,12 @@ administrator, -oris, m. (PONS: "Verwalter", Philipp findet das passend)
 Adresse, Anschrift
 inscriptio (NLL)
 
+Anmelden
+siehe "einloggen"
+
+Ausloggen
+siehe "abmelden"
+
 Bearbeiten
 tractare (PONS)
 
@@ -28,6 +37,9 @@ siehe "Nutzer"
 
 Bestätigen (Knopf-Beschriftung)
 Confirmo (Philipp findet die erste Person passend, weil der Nutzer ja etwas bestätigt.)
+
+Browser
+perscrutator (Eigenkreation Philipp, wörtl. so etwas wie "Durchsucher")
 
 Button
 siehe "Knopf"
@@ -53,7 +65,7 @@ tabularium (PONS)
 Datenbank
 collectio datorum (PONS)
 
-einloggen, anmelden
+einloggen
 (se) annuntiare (PONS)
 
 entfernen (Informatik)
@@ -86,11 +98,17 @@ notitia (Philipps Favorit unter den Vorschlägen des NLL)
 Knopf
 bulla (PONS)
 
+Kurs
+curriculum (PONS)
+
 löschen (Informatik)
 delere (Philipp findet das am passendsten. Siehe auch "entfernen")
 
 Mailingliste
 tabella epistularum electronicarum (Eigenkreation Philipp)
+
+Menu
+facultatum index (Eigenkreation Philipp, "Verzeichnis der Möglichkeiten", Analog zu NLL "Speisekarte")
 
 Meta-Admin
 administrator administratorum
@@ -115,6 +133,9 @@ siehe "Knopf"
 
 Stimme (bei einer Abstimmung)
 suffragium (PONS, Stowasser; identisch mit Abstimmung; auch in can. 119 n. 2, 171ff CIC)
+
+Übersicht
+conspectus (PONS)
 
 Veranstaltung
 eventus, -us, m. ("Ereignis", womöglich nur ein eher halb-richtiger Freund aus dem Englischen, Philipp findet's aber okay)

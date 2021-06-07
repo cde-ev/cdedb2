@@ -4085,11 +4085,11 @@ msgstr ""
 #: cdedb/frontend/templates/web/generic.tmpl:244
 #: cdedb/frontend/templates/web/generic.tmpl:248
 msgid "Assemblies"
-msgstr ""
+msgstr "coetus"
 
 #: cdedb/frontend/templates/web/assembly/base.tmpl:42
 msgid "Assembly-Overview"
-msgstr ""
+msgstr "conspectus coetus"
 
 #: cdedb/frontend/templates/web/assembly/base.tmpl:57
 #: cdedb/frontend/templates/web/assembly/user_search.tmpl:10
@@ -4854,54 +4854,55 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/base.tmpl:32
 msgid "View E-Mail in Browser"
-msgstr ""
+msgstr "spectare epistulam electronicam in perscrutatore"
 
 #: cdedb/frontend/templates/web/base.tmpl:81
 msgid "Doc"
-msgstr ""
+msgstr "doc"
 
 #: cdedb/frontend/templates/web/base.tmpl:81
 msgid "Documentation"
-msgstr ""
+msgstr "documentatio"
 
 #: cdedb/frontend/templates/web/base.tmpl:90
 msgid "This site provides additional functionality with JavaScript enabled."
-msgstr ""
+msgstr "hac in pagina JavaScripte activata plus fieri potest."
 
 #: cdedb/frontend/templates/web/base.tmpl:95
 msgid "This site can be used more easily with JavaScript enabled."
-msgstr ""
+msgstr "hac pagina melius uti potes, si JavaScriptem activas."
 
 #: cdedb/frontend/templates/web/base.tmpl:102
 #: cdedb/frontend/templates/web/base.tmpl:104
 msgid "Main Menu"
-msgstr ""
+msgstr "faclutatum index principalis"
 
 #: cdedb/frontend/templates/web/base.tmpl:107
 msgid "Display Main Menu"
-msgstr ""
+msgstr "ostende facultatum indicem principalem"
 
 #: cdedb/frontend/templates/web/base.tmpl:121
 msgid "Logged-In as"
-msgstr ""
+msgstr "annuntiatus/a/um"
+#TODO: Geschlecht
 
 #: cdedb/frontend/templates/web/base.tmpl:126
 #: cdedb/frontend/templates/web/base.tmpl:127
 #: cdedb/frontend/templates/web/base.tmpl:129
 msgid "Logout"
-msgstr ""
+msgstr "denuntiatio"
 
 #: cdedb/frontend/templates/web/base.tmpl:136
 #: cdedb/frontend/templates/web/core/login.tmpl:33
 msgid "Login"
-msgstr ""
+msgstr "annuntiatio"
 
 #: cdedb/frontend/templates/web/base.tmpl:144
 #: cdedb/frontend/templates/web/core/base.tmpl:9
 #: cdedb/frontend/templates/web/core/index.tmpl:13
 #: cdedb/frontend/templates/web/core/login.tmpl:14
 msgid "Index"
-msgstr ""
+msgstr "index"
 
 #: cdedb/frontend/templates/web/base.tmpl:148
 #: cdedb/frontend/templates/web/cde/base.tmpl:5
@@ -4914,7 +4915,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/genesis_show_case.tmpl:31
 #: cdedb/frontend/templates/web/core/show_user.tmpl:312
 msgid "Members"
-msgstr ""
+msgstr "consocii"
 
 #: cdedb/frontend/templates/web/base.tmpl:152
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:35
@@ -4930,7 +4931,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/generic.tmpl:243
 #: cdedb/frontend/templates/web/generic.tmpl:247
 msgid "Events"
-msgstr ""
+msgstr "eventus"
 
 #: cdedb/frontend/templates/web/base.tmpl:156
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:34
@@ -4947,23 +4948,23 @@ msgstr ""
 #: cdedb/frontend/templates/web/ml/index.tmpl:6
 #: cdedb/frontend/templates/web/ml/index.tmpl:9
 msgid "Mailinglists"
-msgstr ""
+msgstr "tabellae epistularum electronicarum"
 
 #: cdedb/frontend/templates/web/base.tmpl:173
 msgid "Sub Menu"
-msgstr ""
+msgstr "facultatum index inferior"
 
 #: cdedb/frontend/templates/web/base.tmpl:185
 msgid "You are here:"
-msgstr ""
+msgstr "hic ades:"
 
 #: cdedb/frontend/templates/web/base.tmpl:216
 msgid "This should not be visible."
-msgstr ""
+msgstr "haec videri non possit."
 
 #: cdedb/frontend/templates/web/base.tmpl:225
 msgid "Club der Ehemaligen e.V."
-msgstr ""
+msgstr "Club der Ehemaligen e.V."
 
 #: cdedb/frontend/templates/web/base.tmpl:227
 #: cdedb/frontend/templates/web/base.tmpl:228
@@ -4972,30 +4973,30 @@ msgstr ""
 #: cdedb/frontend/templates/web/error.tmpl:47
 #: cdedb/frontend/templates/web/error.tmpl:65
 msgid "CdE-Datenbank development team"
-msgstr ""
+msgstr "communio CdE-Datenbankem excolendam"
 
 #: cdedb/frontend/templates/web/base.tmpl:232
 msgid "Version"
-msgstr ""
+msgstr "editio"
 
 #: cdedb/frontend/templates/web/cde/base.tmpl:14
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:5
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:9
 msgid "CdE-Member Search"
-msgstr ""
+msgstr "quaesitio consociorum CdEi"
 
 #: cdedb/frontend/templates/web/cde/base.tmpl:18
 #: cdedb/frontend/templates/web/cde/consent_decision.tmpl:11
 #: cdedb/frontend/templates/web/cde/index.tmpl:30
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:16
 msgid "Privacy Policy"
-msgstr ""
+msgstr "declaratio protectionis datorum"
 
 #: cdedb/frontend/templates/web/cde/base.tmpl:22
 #: cdedb/frontend/templates/web/cde/member_stats.tmpl:4
 #: cdedb/frontend/templates/web/cde/member_stats.tmpl:10
 msgid "Member Stats"
-msgstr ""
+msgstr "statistica consociorum"
 
 #: cdedb/frontend/templates/web/cde/base.tmpl:36
 #: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:8
@@ -5043,12 +5044,12 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/show_past_event.tmpl:16
 #: cdedb/frontend/templates/web/core/show_user.tmpl:415
 msgid "Past Events"
-msgstr ""
+msgstr "eventus praeteriti"
 
 #: cdedb/frontend/templates/web/cde/base.tmpl:57
 #: cdedb/frontend/templates/web/cde/past_course_search.tmpl:9
 msgid "Course Search"
-msgstr ""
+msgstr "quaesitio curriculorum"
 
 #: cdedb/frontend/templates/web/cde/base.tmpl:61
 #: cdedb/frontend/templates/web/cde/institution_summary.tmpl:12
@@ -5081,7 +5082,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/generic.tmpl:161
 #: cdedb/frontend/templates/web/generic.tmpl:232
 msgid "Miscellaneous"
-msgstr ""
+msgstr "varia"
 
 #: cdedb/frontend/templates/web/cde/base.tmpl:80
 msgid "Past Event Administration"
