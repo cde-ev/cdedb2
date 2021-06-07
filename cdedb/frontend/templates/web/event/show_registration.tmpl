@@ -76,10 +76,12 @@
     </p>
     {% endif %}
 
-    {% call util.bootstrap_panel(title=gettext("Orga-Notes"), icon="tag",
-                                 aclass="panel-default panel-condensed") %}
-        {{ ambience['registration']['orga_notes']|md }}
-    {% endcall %}
+    {% if ambience['registration']['orga_notes'] %}
+        {% call util.bootstrap_panel(title=gettext("Orga-Notes"), icon="tag",
+                                     aclass="panel-default panel-condensed") %}
+            {{ ambience['registration']['orga_notes']|md }}
+        {% endcall %}
+    {% endif %}
 
     <h3 class="heading-underline">{% trans %}Status{% endtrans %}</h3>
     <dl class="dl-horizontal">
@@ -119,8 +121,9 @@
         </dd>
     </dl>
 
-    <div class="row">
-        {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
+    {% for batch in ambience['event']['parts']|keydictsort(EntitySorter.event_part)|batch(2) %}
+        <div class="row">
+        {% for part_id, part in batch %}
             <div class="col-md-6">
                 {% if ambience['event']['parts']|length > 1 %}
                     <h4>{{ part['title'] }}</h4>
@@ -175,7 +178,8 @@
                 </dl>
             </div>
         {% endfor %}
-    </div>
+        </div>
+    {% endfor %}
 
     <h3 class="heading-underline">{% trans %}Registration Data{% endtrans %}</h3>
         <dl class="dl-horizontal">
@@ -190,8 +194,9 @@
         </dl>
         <h4>{% trans %}Course Choices{% endtrans %}</h4>
         {% if ambience['event']['tracks']|length > 0 %}
-            <div class="row">
-                {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
+            {% for batch in ambience['event']['tracks']|keydictsort(EntitySorter.course_track)|batch(2) %}
+                <div class="row">
+                {% for track_id, track in batch %}
                     <div class="col-md-6">
                         {% if ambience['event']['tracks']|length > 1 %}
                             <h5>{{ track['title'] }}</h5>
@@ -221,7 +226,8 @@
                         </dl>
                     </div>
                 {% endfor %}
-            </div>
+                </div>
+            {% endfor %}
         {% endif %}
     {% call util.bootstrap_panel(title=gettext("Notes"), aclass="panel-default panel-condensed") %}
         {{ ambience['registration']['notes']|md }}

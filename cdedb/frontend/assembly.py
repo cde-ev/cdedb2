@@ -259,10 +259,9 @@ class AssemblyFrontend(AbstractUserFrontend):
                 "Some of these users are not assembly users."))))
         if rs.has_validation_errors():
             return self.show_assembly(rs, assembly_id)
-        presider_ids = set(presider_ids) | rs.ambience['assembly']['presiders']
-        code = self.assemblyproxy.set_assembly_presiders(
+        code = self.assemblyproxy.add_assembly_presiders(
             rs, assembly_id, presider_ids)
-        self.notify_return_code(rs, code, info=n_("Action had no effect."))
+        self.notify_return_code(rs, code, error=n_("Action had no effect."))
         return self.redirect(rs, "assembly/show_assembly")
 
     @access("assembly_admin", modi={"POST"})
@@ -275,9 +274,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             rs.notify("info", n_(
                 "This user is not a presider for this assembly."))
             return self.redirect(rs, "assembly/show")
-        ids = rs.ambience['assembly']['presiders'] - {presider_id}
-        code = self.assemblyproxy.set_assembly_presiders(rs, assembly_id, ids)
-        self.notify_return_code(rs, code, info=n_("Action had no effect."))
+        code = self.assemblyproxy.remove_assembly_presider(rs, assembly_id, presider_id)
+        self.notify_return_code(rs, code, error=n_("Action had no effect."))
         return self.redirect(rs, "assembly/show_assembly")
 
     @access("assembly")

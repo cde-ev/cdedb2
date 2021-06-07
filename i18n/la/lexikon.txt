@@ -1,0 +1,105 @@
+# Diese Datei dient als Wörterbuch für "Fachbegriffe", damit diese einheitlich verwendet werden können.
+# Quellen sind hilfreich.
+# Es wird alphabetische Sortierung nach deutschen Lemmata angestrebt; dennoch sollte man Volltextsuche verwenden (wenn z.B. mehrere Synonyme im Deutschen angegeben sind)
+# Abkürzungen:
+## NLL -- Neues Latein Lexikon (Das gibt der Vatikan heraus)
+## CIC -- Codex iuris canonici (1983)
+
+Abbrechen (Knopf-Beschriftung)
+Desine (Philipp findet den Imperativ passend, es wird ja dem Computer eine Anweisung erteilt)
+
+Abstimmung
+suffragatio (can. 699 § 1 CIC "per secretam suffragationem"; nach Stowasser "Begünstigung, Empfehlung")
+
+Admin
+administrator, -oris, m. (PONS: "Verwalter", Philipp findet das passend)
+
+Adresse, Anschrift
+inscriptio (NLL)
+
+Bestätigen (Knopf-Beschriftung)
+Confirmo (Philipp findet die erste Person passend, weil der Nutzer ja etwas bestätigt.)
+
+CdE
+CdEs, CdEi, f. (Vorschlag Philipp)
+
+CdElokal
+CdElocalia (Neutrum Plural des Adjektivs, siehe CdElokal-...)
+
+CdElokal-...
+... CdElocalis, e (Adjektiv der i-Deklination, Eigenkreation Philipp)
+
+CdE-Admin
+administrator CdEi
+
+Core-Admin
+administrator capitis
+
+Datei
+tabularium (PONS)
+
+Datenbank
+collectio datorum (PONS)
+
+einloggen, anmelden
+(se) annuntiare (PONS)
+
+entfernen (Informatik)
+removere (Philipp findet das am passendsten. Siehe auch "löschen")
+
+exPuls
+exPulsus
+
+E-Mail (einzelne Mail)
+epistula electronica (PONS, Philipp mag keine Pluralwörter, daher nicht "litterae")
+
+E-Mail (Service)
+cursus electronicus (https://la.wikipedia.org/wiki/Cursus_electronicus)
+
+E-Mail-Adresse
+inscriptio electronica (https://la.wikipedia.org/wiki/Cursus_electronicus)
+
+Finanz-...
+... pecuniae
+
+Fragebogen (für eine Veranstaltung)
+interrogatio, -onis, f. ("Befragung, Verhör", aber kurz & knackig und daher besser als eine wörtliche Übersetzung, findet Philipp)
+
+löschen (Informatik)
+delere (Philipp findet das am passendsten. Siehe auch "entfernen")
+
+Mailingliste
+tabella epistularum electronicarum (Eigenkreation Philipp)
+
+Meta-Admin
+administrator administratorum
+
+Mitglied (d. Vereins)
+consocius (Diskussionsergebnis Philipp & Kilian, Stowasser)
+
+Passwort
+signum arcanum (PONS, wörtl. "geheimes Zeichen")
+
+Stimme (bei einer Abstimmung)
+suffragium (PONS, Stowasser; identisch mit Abstimmung; auch in can. 119 n. 2, 171ff CIC)
+
+Veranstaltung
+eventus, -us, m. ("Ereignis", womöglich nur ein eher halb-richtiger Freund aus dem Englischen, Philipp findet's aber okay)
+
+Verein
+consociatio (Diskussionsergebnis Philipp & Kilian, Kirchenrecht)
+
+Versammlung
+coetus [celebrare] (can. 342, 345ff. CIC für die Bischofssynoden; can. 460 Diözesansynode; personarum coetus ganz allgemein in can. 358 CIC)
+
+Vorstand (einer)
+princeps (Diskussionsergebnis Philipp & Kilian)
+
+Vorstand (Gesamt-Organ)
+collegium principium (Diskussionsergebnis Philipp & Kilian)
+
+Wahlleiter
+praeses elegendi (Diskuissionsergebnis Philipp & Kilian, praeses gemäß can. 173 § 2 CIC)
+
+zurücksetzen (z.B. Passwort)
+reportare (Philipp ist nicht gänzlich überzeugt, aber findet nichts besseres)

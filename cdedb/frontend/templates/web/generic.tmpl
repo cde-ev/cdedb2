@@ -450,7 +450,7 @@
                     {
                         $('#qf_tablist').css('display', 'block');
                         var $qf = $('#queryform');
-                        $qf.cdedbQueryForm({"choices" : {{ choices_lists|json|s }},
+                        $qf.cdedbQueryForm({"choices" : {{ choices_lists|tojson }},
                                             "labels": {{ {'add_field': gettext('– add displayed field –'),
                                                           'add_filter': gettext('– add filter –'),
                                                           'add_sort': gettext('– add sort key –'),
@@ -468,7 +468,7 @@
                                                           'range_ids': gettext("<id>,<id>,…"),
                                                           'true': gettext("true"),
                                                           'false': gettext("false"),
-                                                         }|json|s }}});
+                                                         }|tojson }}});
                         $('#tab_link_qf_js')
                             .on('show.bs.tab', function() {
                                 $qf.data('cdedbQueryForm').initFromForm();

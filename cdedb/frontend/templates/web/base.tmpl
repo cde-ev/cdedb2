@@ -64,7 +64,8 @@
                                         timeout=(None if user.persona_id else UNCRITICAL_PARAMETER_TIMEOUT))) }}
                                 {% endif %}
                                 {% with TITLES = {'de': ("Deutsch", "Auf Deutsch umschalten"),
-                                                'en': ("English", "Switch to English"),} %}
+                                                  'en': ("English", "Switch to English"),
+                                                  'la': ("Latina", "Ad Latinam mutare"),} %}
                                     {% for l in I18N_LANGUAGES if l != lang %}
                                         <button type="submit" class="btn-lang-change" name="locale" value="{{ l }}"
                                                 title="{{ TITLES.get(l, (None, None))[1] }}">

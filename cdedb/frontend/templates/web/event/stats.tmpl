@@ -65,7 +65,7 @@
                             <th colspan="2">{{ HEADINGS.get(key, key) }}</th>
                         {% endif %}
                         {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
-                            <td id="part_{{ key.replace(" ","") }}_{{ part_id }}">
+                            <td id="part_{{ key.replace(" ","") }}_{{ part_id }}" class="text-right">
                                 {% set query = get_query(key, part_id) %}
                                 {% set datum = row[part_id] %}
                                 {% if query %}
@@ -110,7 +110,7 @@
                         <tr>
                             <th>{{ HEADINGS.get(key, key) }}</th>
                             {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
-                                <td id="track_{{ key|replace(' ', '_') }}_{{ track_id }}">
+                                <td id="track_{{ key|replace(' ', '_') }}_{{ track_id }}" class="text-right">
                                     {% if row[track_id] is none %}
                                         –
                                     {% else %}

@@ -508,9 +508,6 @@ class AssemblyBackend(AbstractBackend):
         In addition to the keys in `cdedb.common.ASSEMBLY_FIELDS`, which is
         possible for presiders of this the assembly, this can overwrite the
         set of presiders for the assembly.
-
-        Updating the presiders is delegated to `set_assembly_presiders`, and
-        requires admin privileges.
         """
         data = affirm(vtypes.Assembly, data)
         if not self.is_presider(rs, assembly_id=data['id']):
@@ -527,17 +524,16 @@ class AssemblyBackend(AbstractBackend):
                 ret *= self.sql_update(rs, "assembly.assemblies", assembly_data)
                 self.assembly_log(rs, const.AssemblyLogCodes.assembly_changed,
                                   data['id'])
-            if 'presiders' in data:
-                ret *= self.set_assembly_presiders(
-                    rs, data['id'], data['presiders'])
         return ret
 
     @access("assembly_admin")
-    def set_assembly_presiders(self, rs: RequestState, assembly_id: int,
+    def add_assembly_presiders(self, rs: RequestState, assembly_id: int,
                                persona_ids: Collection[int]) -> DefaultReturnCode:
-        """Overwrite the set of presiders for an assembly."""
+        """Add a collection of presiders for an assembly."""
         assembly_id = affirm(vtypes.ID, assembly_id)
         persona_ids = affirm_set(vtypes.ID, persona_ids)
+
+        ret = 1
         with Atomizer(rs):
             assembly = self.get_assembly(rs, assembly_id)
             if not assembly['is_active']:
@@ -549,32 +545,36 @@ class AssemblyBackend(AbstractBackend):
             if not self.core.verify_personas(rs, persona_ids, {"assembly"}):
                 raise ValueError(n_(
                     "Some of these users are not assembly users."))
-            current = self.sql_select(rs, "assembly.presiders", ("persona_id",),
-                                      (assembly_id,), entity_key="assembly_id")
-            existing = {unwrap(e) for e in current}
-            new = persona_ids - existing
-            deleted = existing - persona_ids
-            ret = 1
-            if not new and not deleted:
-                return -1
-            if new:
-                inserts = [{
-                        'persona_id': anid,
-                        'assembly_id': assembly_id,
-                } for anid in mixed_existence_sorter(new)]
-                ret *= self.sql_insert_many(rs, "assembly.presiders", inserts)
-                for anid in mixed_existence_sorter(new):
+
+            for anid in xsorted(persona_ids):
+                new_presider = {
+                    'persona_id': anid,
+                    'assembly_id': assembly_id,
+                }
+                # on conflict do nothing
+                r = self.sql_insert(rs, "assembly.presiders", new_presider,
+                                    drop_on_conflict=True)
+                if r:
                     self.assembly_log(
                         rs, const.AssemblyLogCodes.assembly_presider_added,
                         assembly_id, anid)
-            if deleted:
-                query = ("DELETE FROM assembly.presiders"
-                         " WHERE persona_id = ANY(%s) AND assembly_id = %s")
-                ret *= self.query_exec(rs, query, (deleted, assembly_id))
-                for anid in mixed_existence_sorter(deleted):
-                    self.assembly_log(
-                        rs, const.AssemblyLogCodes.assembly_presider_removed,
-                        assembly_id, anid)
+                ret *= r
+        return ret
+
+    @access("assembly_admin")
+    def remove_assembly_presider(self, rs: RequestState, assembly_id: int,
+                                persona_id: int) -> DefaultReturnCode:
+        """Remove a single presiders for an assembly."""
+        assembly_id = affirm(vtypes.ID, assembly_id)
+        persona_id = affirm(vtypes.ID, persona_id)
+
+        query = ("DELETE FROM assembly.presiders"
+                 " WHERE persona_id = %s AND assembly_id = %s")
+        with Atomizer(rs):
+            ret = self.query_exec(rs, query, (persona_id, assembly_id))
+            if ret:
+                self.assembly_log(rs, const.AssemblyLogCodes.assembly_presider_removed,
+                                  assembly_id, persona_id)
         return ret
 
     @internal
@@ -602,7 +602,7 @@ class AssemblyBackend(AbstractBackend):
             self.assembly_log(
                 rs, const.AssemblyLogCodes.assembly_created, new_id)
             if 'presiders' in data:
-                self.set_assembly_presiders(rs, new_id, data['presiders'])
+                self.add_assembly_presiders(rs, new_id, data['presiders'])
         return new_id
 
     @access("assembly_admin")
