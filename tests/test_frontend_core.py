@@ -1282,7 +1282,7 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("N. N.")
         self.assertNonPresence("Hades")
-        self.assertPresence("Name N. N. Geburtsdatum 01.01.1 Geschlecht keine Angabe",
+        self.assertPresence("Name N. N. Geburtsdatum N/A Geschlecht keine Angabe",
                             div='personal-information', exact=True)
         self.assertNonPresence("archiviert")
         self.assertPresence("Der Benutzer wurde geleert.", div='purged')

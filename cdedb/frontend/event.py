@@ -490,9 +490,8 @@ class EventFrontend(AbstractUserFrontend):
                 ('orga_id', ValueError(n_("This user is not an event user."))))
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
-        new = rs.ambience['event']['orgas'] | {orga_id}
-        code = self.eventproxy.set_event_orgas(rs, event_id, new)
-        self.notify_return_code(rs, code, info=n_("Action had no effect."))
+        code = self.eventproxy.add_event_orgas(rs, event_id, {orga_id})
+        self.notify_return_code(rs, code, error=n_("Action had no effect."))
         return self.redirect(rs, "event/show_event")
 
     @access("event_admin", modi={"POST"})
@@ -506,9 +505,8 @@ class EventFrontend(AbstractUserFrontend):
         """
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
-        new = rs.ambience['event']['orgas'] - {orga_id}
-        code = self.eventproxy.set_event_orgas(rs, event_id, new)
-        self.notify_return_code(rs, code, info=n_("Action had no effect."))
+        code = self.eventproxy.remove_event_orga(rs, event_id, orga_id)
+        self.notify_return_code(rs, code, error=n_("Action had no effect."))
         return self.redirect(rs, "event/show_event")
 
     @access("event_admin", modi={"POST"})

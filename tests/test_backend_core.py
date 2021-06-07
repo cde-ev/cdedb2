@@ -1009,7 +1009,8 @@ class TestCoreBackend(BackendTest):
                                     new_username="charly@example.cde")
 
         # Check that sole moderators cannot be archived.
-        self.ml.set_moderators(self.key, 2, {persona_id})
+        self.ml.add_moderators(self.key, 2, {persona_id})
+        self.ml.remove_moderator(self.key, 2, 10)
         with self.assertRaises(ArchiveError) as cm:
             self.core.archive_persona(self.key, persona_id, "Testing")
         self.assertIn("Sole moderator of a mailinglist", cm.exception.args[0])

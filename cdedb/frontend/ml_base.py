@@ -702,7 +702,6 @@ class MlBaseFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
 
-        moderators = set(moderators)
         if not self.coreproxy.verify_ids(rs, moderators, is_archived=False):
             rs.append_validation_error(
                 ("moderators", ValueError(n_(
@@ -714,9 +713,8 @@ class MlBaseFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
 
-        moderators |= set(rs.ambience['mailinglist']['moderators'])
-        code = self.mlproxy.set_moderators(rs, mailinglist_id, moderators)
-        self.notify_return_code(rs, code, info=n_("Action had no effect."))
+        code = self.mlproxy.add_moderators(rs, mailinglist_id, moderators)
+        self.notify_return_code(rs, code, error=n_("Action had no effect."))
         return self.redirect(rs, "ml/management")
 
     @access("ml", modi={"POST"})
@@ -726,7 +724,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                          moderator_id: vtypes.ID) -> Response:
         """Demote persona from moderator status."""
         moderators = set(rs.ambience['mailinglist']['moderators'])
-        if moderator_id is not None and moderator_id not in moderators:  # type: ignore
+        if moderator_id not in moderators:
             rs.append_validation_error(
                 ("moderator_id", ValueError(n_("User is no moderator."))))
         if rs.has_validation_errors():
@@ -737,11 +735,10 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs.notify("error", n_("Not allowed to remove yourself as moderator."))
             return self.management(rs, mailinglist_id)
 
-        moderators -= {moderator_id}
-        if not moderators:
+        if {moderator_id} == moderators:
             rs.notify("error", n_("Cannot remove last moderator."))
         else:
-            code = self.mlproxy.set_moderators(rs, mailinglist_id, moderators)
+            code = self.mlproxy.remove_moderator(rs, mailinglist_id, moderator_id)
             self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/management")
 
@@ -754,9 +751,8 @@ class MlBaseFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.advanced_management(rs, mailinglist_id)
 
-        whitelist = set(rs.ambience['mailinglist']['whitelist']) | {email}
-        code = self.mlproxy.set_whitelist(rs, mailinglist_id, whitelist)
-        self.notify_return_code(rs, code)
+        code = self.mlproxy.add_whitelist_entry(rs, mailinglist_id, email)
+        self.notify_return_code(rs, code, error=n_("Action had no effect."))
         return self.redirect(rs, "ml/advanced_management")
 
     @access("ml", modi={"POST"})
@@ -768,8 +764,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.advanced_management(rs, mailinglist_id)
 
-        whitelist = set(rs.ambience['mailinglist']['whitelist']) - {email}
-        code = self.mlproxy.set_whitelist(rs, mailinglist_id, whitelist)
+        code = self.mlproxy.remove_whitelist_entry(rs, mailinglist_id, email)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/advanced_management")
 
