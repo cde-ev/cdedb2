@@ -87,7 +87,7 @@
                                         {% set field_key = ambience['event']['fields'][field_id]['field_name'] %}
                                         <dt>{{ field['field_name'] }}</dt>
                                         <dd>
-                                            {{ generic.display_field(field, registration['fields'][field_key]) }}
+                                            {{ generic.display_field(field, registration['fields'].get(field_key)) }}
                                         </dd>
                                     {% endfor %}
                                 </dl>
