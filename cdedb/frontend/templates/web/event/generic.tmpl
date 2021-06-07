@@ -92,14 +92,21 @@
 
     field       A dict containing all information of a custom event field.
     entry       The value of the field of the current entity.
+    otherwise   Display this string if the field has no value set.
 #}
-{% macro display_field(field, entry) %}
+{% macro display_field(field, entry, otherwise='—') %}
     {% if field['entries'] %}
+        {% set hit = [] %}
         {% for value, description in field['entries'] %}
             {% if value == entry|string %}
-                {{ description }}
+                {% do hit.append(description) %}
             {% endif %}
         {% endfor %}
+        {% if hit %}
+            {{ hit[0] }}
+        {% else %}
+            {{ otherwise }}
+        {% endif %}
     {% else %}
         {% if field['kind'] == enums['FieldDatatypes'].bool %}
             {{ util.deko_checkbox(checked=entry) }}
@@ -110,7 +117,7 @@
         {% elif field['kind'] == enums['FieldDatatypes'].float %}
             {{ entry|decimal(lang=lang) }}
         {% else %}
-            {{ entry|linebreaks }}
+            {{ entry|linebreaks or otherwise }}
         {% endif %}
     {% endif %}
 {% endmacro %}
