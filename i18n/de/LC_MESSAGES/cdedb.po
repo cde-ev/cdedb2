@@ -12749,7 +12749,7 @@ msgstr ""
 "Wenn du eine Nachricht ablehnst, erhält ihr Autor eine Benachrichtigung. "
 "Wenn du eine Nachricht verwirfst, wird hingegen keine Nachricht versendet. "
 "Letzteres wird für Spam empfohlen. Wenn du eine Nachricht whitelistest, wird "
-"sie nicht nur genemigt, sondern Nachrichten desselben Autors müssen in "
+"sie nicht nur genehmigt, sondern Nachrichten desselben Autors müssen in "
 "Zukunft nicht mehr moderiert werden."
 
 #: cdedb/frontend/templates/web/ml/message_moderation.tmpl:56

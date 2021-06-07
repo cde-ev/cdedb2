@@ -20,7 +20,6 @@ class TestMlFrontend(FrontendTest):
     def test_index(self) -> None:
         self.traverse({'href': '/ml/'})
 
-
     @as_users("nina", "berta", "annika")
     def test_manually_write_subscription_states(self) -> None:
         self.traverse({'description': 'Mailinglisten'})
