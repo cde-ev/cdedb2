@@ -3112,6 +3112,7 @@ def _serialized_partial_event(
         'lodgement_groups': Mapping,
         'lodgements': Mapping,
         'registrations': Mapping,
+        'summary': str,
     }
 
     val = _examine_dictionary_fields(
