@@ -5,6 +5,7 @@ import csv
 import datetime
 import json
 import re
+import tempfile
 from typing import Sequence
 
 import webtest
@@ -13,7 +14,7 @@ import cdedb.database.constants as const
 from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, CdEDBObject, now
 from cdedb.frontend.common import CustomCSVDialect, iban_filter
 from cdedb.query import QueryOperators
-from tests.common import UserObject, USER_DICT, FrontendTest, as_users, prepsql
+from tests.common import UserObject, USER_DICT, FrontendTest, as_users, prepsql, storage
 
 
 class TestEventFrontend(FrontendTest):
@@ -1021,18 +1022,19 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.assertPresence("Other Text")
 
+    @storage
     @as_users("annika", "garcia")
     def test_change_minor_form(self) -> None:
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'})
         self.assertTitle("Große Testakademie 2222")
         f = self.response.forms['changeminorformform']
-        with open("/tmp/cdedb-store/testfiles/form.pdf", 'rb') as datafile:
+        with open(self.testfile_dir / "form.pdf", 'rb') as datafile:
             data = datafile.read()
         f['minor_form'] = webtest.Upload("form.pdf", data, "application/octet-stream")
         self.submit(f)
         self.traverse({'href': '/event/event/1/minorform'})
-        with open("/tmp/cdedb-store/testfiles/form.pdf", 'rb') as f:
+        with open(self.testfile_dir / "form.pdf", 'rb') as f:
             self.assertEqual(f.read(), self.response.body)
         # Remove the form again
         self.get("/event/event/1/show")
@@ -1857,7 +1859,7 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'description': r"\sE-Mail-Adresse$"})
         self._sort_appearance([akira, anton, berta, emilia])
         self.traverse({'description': r"\sPostleitzahl, Stadt$"})
-        self._sort_appearance([akira, anton, berta, emilia])
+        self._sort_appearance([anton, berta, emilia, akira])
 
         self.traverse({'description': r"^Zweite Hälfte$"})
         self.traverse({'description': r"\sVorname\(n\)"})
@@ -1867,7 +1869,7 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'description': r"\sE-Mail-Adresse$"})
         self._sort_appearance([akira, anton, emilia])
         self.traverse({'description': r"\sPostleitzahl, Stadt$"})
-        self._sort_appearance([akira, anton, emilia])
+        self._sort_appearance([anton, emilia, akira])
         self.traverse({'description': r"\sKurs$"})
         self._sort_appearance([anton, akira, emilia])
 
@@ -2784,6 +2786,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("α", div='problem_instructor_wrong_course')
         self.assertPresence("δ", div='problem_instructor_wrong_course')
 
+    @storage
     @as_users("garcia")
     def test_downloads(self) -> None:
         magic_bytes = {
@@ -2803,7 +2806,7 @@ etc;anything else""", f['entries_2'].value)
         self.response = save.click(href='/event/event/1/download/nametag\\?runs=0')
         self.assertTrue(self.response.body.startswith(magic_bytes['targz']))
         self.assertLess(1000, len(self.response.body))
-        with open("/tmp/output.tar.gz", 'wb') as f:
+        with tempfile.TemporaryFile() as f:
             f.write(self.response.body)
         self.response = save.click(href='/event/event/1/download/nametag\\?runs=2')
         self.assertTrue(self.response.body.startswith(magic_bytes['pdf']))
@@ -2877,10 +2880,6 @@ etc;anything else""", f['entries_2'].value)
         self.response = save.click(href='/event/event/1/download/csv_lodgements')
         self.assertIn(
             'lodgement.id;lodgement.lodgement_id;lodgement.title;', self.response.text)
-        # courselist for exPuls
-        self.response = save.click(href='/event/event/1/download/expuls')
-        self.assertPresence('\\kurs')
-        self.assertPresence('Planetenretten für Anfänger')
         # dokuteam courselist
         self.response = save.click(href='/event/event/1/download/dokuteam_course')
         self.assertPresence('|cde')
@@ -2889,6 +2888,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertTrue(self.response.body.startswith(magic_bytes['zip']))
         self.assertLess(500, len(self.response.body))
 
+    @storage
     @as_users("garcia")
     def test_download_export(self) -> None:
         self.traverse({'href': '/event/$'},
@@ -2905,7 +2905,7 @@ etc;anything else""", f['entries_2'].value)
 
         f['agree_unlocked_download'].checked = True
         self.submit(f)
-        with open("/tmp/cdedb-store/testfiles/event_export.json") as datafile:
+        with open(self.testfile_dir / "event_export.json") as datafile:
             expectation = json.load(datafile)
         result = json.loads(self.response.text)
         expectation['timestamp'] = result['timestamp']  # nearly_now() won't do
@@ -2960,8 +2960,6 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/2/download/csv_courses'})
         self.assertPresence('Leere Datei.', div='notifications')
         self.traverse({'href': '/event/event/2/download/csv_lodgements'})
-        self.assertPresence('Leere Datei.', div='notifications')
-        self.traverse({'href': '/event/event/2/download/expuls'})
         self.assertPresence('Leere Datei.', div='notifications')
 
         # now check empty pdfs
@@ -3160,22 +3158,99 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/lodgement/overview'},
                       {'href': '/event/event/1/lodgement/2/show'})
         self.assertTitle("Unterkunft Kalte Kammer (Große Testakademie 2222)")
-        self.assertPresence("Inga")
+        self.assertPresence("Inga", div='inhabitants-3')
+        self.assertPresence("Garcia", div='inhabitants-3')
+        self.assertPresence("Garcia", div='inhabitants-1')
         self.assertNonPresence("Emilia")
-        self.traverse({'href': '/event/event/1/lodgement/2/manage'})
+        self.traverse({'description': 'Bewohner verwalten'})
         self.assertTitle("\nBewohner der Unterkunft Kalte Kammer verwalten"
                          " (Große Testakademie 2222)\n")
+        self.assertCheckbox(False, "is_camping_mat_3_3")
+        self.assertCheckbox(True, "is_camping_mat_3_4")
         f = self.response.forms['manageinhabitantsform']
         f['new_1'] = ""
         f['delete_1_3'] = True
         f['new_2'] = ""
         f['new_3'].force_value(2)
-        f['delete_3_4'] = True
         self.submit(f)
         self.assertTitle("Unterkunft Kalte Kammer (Große Testakademie 2222)")
-        self.assertPresence("Emilia")
-        self.assertPresence("Garcia")
-        self.assertNonPresence("Inga")
+        self.assertPresence("Emilia", div='inhabitants-3')
+        self.assertPresence("Garcia", div='inhabitants-3')
+        self.assertPresence("Inga", div='inhabitants-3')
+        # check the status of the camping mat checkbox was not overridden
+        self.traverse({'description': 'Bewohner verwalten'})
+        self.assertTitle("\nBewohner der Unterkunft Kalte Kammer verwalten"
+                         " (Große Testakademie 2222)\n")
+        self.assertCheckbox(False, "is_camping_mat_3_3")
+        self.assertCheckbox(True, "is_camping_mat_3_4")
+
+    @as_users("garcia")
+    def test_lodgements_swap_inhabitants(self) -> None:
+        # check current inhabitants
+        self.traverse({'description': 'Veranstaltungen'},
+                      {'description': 'Große Testakademie 2222'},
+                      {'description': 'Unterkünfte'},
+                      {'description': 'Einzelzelle'},
+                      {'description': 'Bewohner verwalten'})
+        self.assertPresence('Akira', div='inhabitant-1-5')
+        self.assertCheckbox(False, "is_camping_mat_1_5")
+        self.assertPresence('Akira', div='inhabitant-2-5')
+        self.assertCheckbox(False, "is_camping_mat_2_5")
+        self.assertPresence('Emilia', div='inhabitant-2-2')
+        self.assertCheckbox(False, "is_camping_mat_2_2")
+        self.assertPresence('Emilia', div='inhabitant-3-2')
+        self.assertCheckbox(False, "is_camping_mat_3_2")
+        self.assertNonPresence('Garcia', div="inhabitants-1")
+        self.assertNonPresence('Garcia', div="inhabitants-3")
+        self.assertNonPresence('Inga', div="inhabitants-3")
+
+        self.traverse({'description': 'Unterkünfte'},
+                      {'description': 'Kalte Kammer'},
+                      {'description': 'Bewohner verwalten'})
+        self.assertPresence('Garcia', div='inhabitant-1-3')
+        self.assertCheckbox(False, "is_camping_mat_1_3")
+        self.assertPresence('Zur Zeit keine Bewohner eingeteilt.', div='inhabitants-2')
+        self.assertPresence('Garcia', div='inhabitant-3-3')
+        self.assertCheckbox(False, "is_camping_mat_3_3")
+        self.assertPresence('Inga', div='inhabitant-3-4')
+        self.assertCheckbox(True, "is_camping_mat_3_4")
+        self.assertNonPresence('Akira', div='inhabitants-1')
+        self.assertNonPresence('Emilia', div="inhabitants-3")
+
+        # swap inhabitants of both lodgements in part 1 and 3
+        f = self.response.forms['swapinhabitantsform']
+        f['swap_with_1'] = 4
+        f['swap_with_3'] = 4
+        self.submit(f)
+
+        # check the inhabitants of both lodgements
+        self.traverse({'description': 'Unterkünfte'},
+                      {'description': 'Einzelzelle'},
+                      {'description': 'Bewohner verwalten'})
+        self.assertPresence('Garcia', div='inhabitant-1-3')
+        self.assertCheckbox(False, "is_camping_mat_1_3")
+        self.assertPresence('Akira', div='inhabitant-2-5')
+        self.assertCheckbox(False, "is_camping_mat_2_5")
+        self.assertPresence('Emilia', div='inhabitant-2-2')
+        self.assertCheckbox(False, "is_camping_mat_2_2")
+        self.assertPresence('Garcia', div='inhabitant-3-3')
+        self.assertCheckbox(False, "is_camping_mat_3_3")
+        self.assertPresence('Inga', div='inhabitant-3-4')
+        self.assertCheckbox(True, "is_camping_mat_3_4")
+        self.assertNonPresence('Akira', div="inhabitants-1")
+        self.assertNonPresence('Emilia', div="inhabitants-3")
+
+        self.traverse({'description': 'Unterkünfte'},
+                      {'description': 'Kalte Kammer'},
+                      {'description': 'Bewohner verwalten'})
+        self.assertPresence('Akira', div='inhabitant-1-5')
+        self.assertCheckbox(False, "is_camping_mat_1_5")
+        self.assertPresence('Zur Zeit keine Bewohner eingeteilt.', div='inhabitants-2')
+        self.assertPresence('Emilia', div='inhabitant-3-2')
+        self.assertCheckbox(False, "is_camping_mat_3_2")
+        self.assertNonPresence('Garcia', div="inhabitants-1")
+        self.assertNonPresence('Garcia', div="inhabitants-3")
+        self.assertNonPresence('Inga', div="inhabitants-3")
 
     @as_users("annika", "garcia")
     def test_lock_event(self) -> None:
@@ -3211,6 +3286,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Mittelgroße Testakademie 2222")
         self.assertPresence("Die Veranstaltung ist nicht gesperrt.")
 
+    @storage
     @as_users("annika", "garcia")
     def test_partial_import_normal(self) -> None:
         self.traverse({'href': '/event/$'},
@@ -3274,6 +3350,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Geheime Etage")
         self.assertPresence("Geheimkabinett")
 
+    @storage
     @as_users("annika", "garcia")
     def test_partial_import_interleaved(self) -> None:
         self.traverse({'href': '/event/$'},
@@ -3369,6 +3446,7 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.assertTitle("Anmeldung von Emilia E. Eventis (Große Testakademie 2222)")
 
+    @storage
     @as_users("annika", "garcia")
     def test_partial_export(self) -> None:
         self.traverse({'href': '/event/$'},

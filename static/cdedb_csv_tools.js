@@ -27,7 +27,7 @@
     /**
      * jQuery plugin to jump to a specific position (row, column) in a textarea with CSV data.
      *
-     * @param row The CSV row to jump to (1-indexed)
+     * @param row The CSV row to jump to (0-indexed)
      * @param col The CSV column to jump to (0-indexed)
      */
     $.fn.jumpCsvPosition = function (row,col) {
@@ -37,7 +37,7 @@
         var matches = text.match(/("(""|[^"])*"|[^";\n]*)([;\n]|$)/g);
 
         // search row
-        var r = 1;
+        var r = 0;
         var i = 0;
         var pos = 0;
         while(r < row) {

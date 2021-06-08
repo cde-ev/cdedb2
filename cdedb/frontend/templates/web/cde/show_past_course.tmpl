@@ -49,7 +49,7 @@
                                 <script nonce="{{ csp_nonce }}">
                                     $('#input-add-participant').cdedbSearchPerson(
                                         '{{ cdedblink('core/select_persona') + '?kind=past_event_user&phrase=%s'|s }}',
-                                        {{ participants.keys()|list|json|s }}, false, true, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
+                                        {{ participants.keys()|list|tojson }}, false, true, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                                     );
                                 </script>
                             {% endcall %}
@@ -82,6 +82,7 @@
                         {{ personas[anid]['given_names'] }} {{ personas[anid]['family_name'] }}
                     {% endif %}
                     {% if participant['is_instructor'] %}</strong>{% endif %}
+                    {% if participant['is_instructor'] %}({% trans %}Course instructor{% endtrans %}){% endif %}
                     {% if "past_event" in user.admin_views %}
                         <form action="{{ cdedblink('cde/remove_participant') }}" method="POST"
                               id="removeparticipantform{{ anid }}" style="display: inline;"

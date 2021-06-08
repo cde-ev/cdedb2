@@ -14,6 +14,7 @@ from cdedb.common import (
 from cdedb.validation import PERSONA_CDE_CREATION
 from tests.common import (
     ANONYMOUS, BackendTest, USER_DICT, as_users, create_mock_image, execsql, prepsql,
+    storage
 )
 
 PERSONA_TEMPLATE = {
@@ -112,6 +113,7 @@ class TestCoreBackend(BackendTest):
         self.login(newuser)
         self.assertTrue(self.key)
 
+    @storage
     # Martin may do this in the backend, but not manually via the frontend.
     @as_users("anton", "martin", "vera")
     def test_invalidate_session(self) -> None:
@@ -165,6 +167,7 @@ class TestCoreBackend(BackendTest):
         _, log_entry = self.core.retrieve_log(self.key)
         self.assertIn(expected_log, log_entry)
 
+    @storage
     @as_users("vera", "berta")
     def test_set_foto(self) -> None:
         new_foto = create_mock_image('png')
@@ -826,8 +829,9 @@ class TestCoreBackend(BackendTest):
         self.assertFalse(self.core.genesis_attachment_usage(
             self.key, attachment_hash))
 
+    @storage
     def test_genesis_attachments(self) -> None:
-        pdffile = Path("/tmp/cdedb-store/testfiles/form.pdf")
+        pdffile = self.testfile_dir / "form.pdf"
         with open(pdffile, 'rb') as f:
             pdfdata = f.read()
         pdfhash = get_hash(pdfdata)
@@ -959,7 +963,8 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(True, data['is_cde_realm'])
         data = self.core.get_total_persona(self.key, persona_id)
         self.assertEqual(True, data['is_archived'])
-        ret = self.core.dearchive_persona(self.key, persona_id)
+        ret = self.core.dearchive_persona(self.key, persona_id,
+                                          new_username="charly@example.cde")
         self.assertLess(0, ret)
         data = self.core.get_total_persona(self.key, persona_id)
         self.assertEqual(False, data['is_archived'])
@@ -1000,10 +1005,12 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(old_ls["account_address"], "")
         self.assertEqual(old_ls["amount"], 0)
         self.assertEqual(old_ls["notes"], ls_data["notes"])
-        self.core.dearchive_persona(self.key, persona_id)
+        self.core.dearchive_persona(self.key, persona_id,
+                                    new_username="charly@example.cde")
 
         # Check that sole moderators cannot be archived.
-        self.ml.set_moderators(self.key, 2, {persona_id})
+        self.ml.add_moderators(self.key, 2, {persona_id})
+        self.ml.remove_moderator(self.key, 2, 10)
         with self.assertRaises(ArchiveError) as cm:
             self.core.archive_persona(self.key, persona_id, "Testing")
         self.assertIn("Sole moderator of a mailinglist", cm.exception.args[0])
@@ -1014,7 +1021,7 @@ class TestCoreBackend(BackendTest):
     @as_users("vera")
     def test_archive_activate_bug(self) -> None:
         self.core.archive_persona(self.key, 4, "Archived for testing.")
-        self.core.dearchive_persona(self.key, 4)
+        self.core.dearchive_persona(self.key, 4, new_username="daniel@example.cde")
         # The following call sometimes failed with the error "editing
         # archived members impossbile". The solution may be to add some
         # sleep to let the DB settle, but this seems kind of bogus.
@@ -1227,15 +1234,15 @@ class TestCoreBackend(BackendTest):
     @as_users("janis")
     def test_list_personas(self) -> None:
         reality = self.core.list_all_personas(self.key, is_active=True)
-        active_personas = {1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 16, 17, 18, 22,
+        active_personas = {1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 13, 14, 16, 17, 18, 22,
                            23, 27, 32, 48, 100}
         self.assertEqual(active_personas, reality)
         reality = self.core.list_all_personas(self.key, is_active=False)
         self.assertEqual(active_personas | {15}, reality)
         reality = self.core.list_current_members(self.key, is_active=True)
-        self.assertEqual({1, 2, 3, 6, 7, 9, 12, 100}, reality)
+        self.assertEqual({1, 2, 3, 6, 7, 9, 100}, reality)
         reality = self.core.list_current_members(self.key, is_active=False)
-        self.assertEqual({1, 2, 3, 6, 7, 9, 12, 15, 100}, reality)
+        self.assertEqual({1, 2, 3, 6, 7, 9, 15, 100}, reality)
         reality = self.core.list_all_moderators(self.key)
         self.assertEqual({1, 2, 3, 4, 5, 7, 9, 10, 11, 15, 23, 27, 100}, reality)
         MT = const.MailinglistTypes

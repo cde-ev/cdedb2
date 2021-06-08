@@ -98,21 +98,30 @@
                 <div class="tab-pane active" role="tabpanel" id="tab_{{ association.name }}"
                         data-association-id="{{ association.value }}">
                     <h3 class="heading-underline">{{ util.make_icon(association.get_icon()) }} {{ gettext(association|string) }}</h3>
-                    <div class="row">
-                        {# Old items, already stored in the database #}
-                        {% for field_id, entry in ambience['event']['fields']|keydictsort(EntitySorter.event_field) %}
-                            {% if entry['association'] == association %}
-                                {{ print_field(field_id, association, field_id not in referenced, field_id not in fee_modifiers, 'drow-row') }}
-                            {% endif %}
-                        {% endfor %}
+                    {% set relevant_fields = [] %}
+                    {# Old items, already stored in the database #}
+                    {% for field_id, entry in ambience['event']['fields']|keydictsort(EntitySorter.event_field)
+                            if entry['association'] == association %}
+                        {% do relevant_fields.append((field_id, entry)) %}
+                    {% endfor %}
 
-                        {# Items that were added by the user but failed validation. They are still new and have no official id. #}
-                        {% for i in range(1, values.get('create_last_index', 0) + 1) %}
-                            {% if values.get("association_{}".format(-i), '')|int == association.value %}
-                                {{ print_field(-i, association, False, True, 'drow-new', newrow=True) }}
+                    {# Items that were added by the user but failed validation. They are still new and have no official id. #}
+                    {% for i in range(1, values.get('create_last_index', 0) + 1)
+                            if values.get("association_{}".format(-i), '')|int == association.value %}
+                        {% do relevant_fields.append((-i, None)) %}
+                    {% endfor %}
+
+                    {% for batch in relevant_fields|batch(2) %}
+                        <div class="row">
+                        {% for field_id, entry in batch %}
+                            {% if field_id > 0 %}
+                                {{ print_field(field_id, association, field_id not in referenced, field_id not in fee_modifiers, 'drow-row') }}
+                            {% else %}
+                                {{ print_field(field_id, association, False, True, 'drow-new', newrow=True) }}
                             {% endif %}
                         {% endfor %}
-                    </div>
+                        </div>
+                    {% endfor %}
                 </div>
             {% endfor %}
         </div>
@@ -169,7 +178,7 @@
             callback: function() {
                 var container = $('#associations_tabcontent').children('.tab-pane.active');
                 /* Move new row to currently active tab */
-                $(this).appendTo(container.children('.row'));
+                $(this).appendTo(container.children('.row').last());
                 /* Select association according to active tab and hide select box */
                 $(this).find('.association-input').val(container.attr('data-association-id'));
                 $(this).find('.association-input-container').hide();

@@ -17,7 +17,7 @@ from cdedb.common import (
     CourseFilterPositions, nearly_now
 )
 from cdedb.query import QUERY_SPECS, Query, QueryOperators
-from tests.common import USER_DICT, BackendTest, as_users, json_keys_to_int
+from tests.common import USER_DICT, BackendTest, as_users, json_keys_to_int, storage
 
 
 class TestEventBackend(BackendTest):
@@ -192,7 +192,6 @@ class TestEventBackend(BackendTest):
         self.assertEqual(data,
                          self.event.get_event(self.key, new_id))
         data['title'] = "Alternate Universe Academy"
-        data['orgas'] = {2, 7}
         newpart = {
             'tracks': {
                 -1: {'title': "Third lecture",
@@ -392,6 +391,7 @@ class TestEventBackend(BackendTest):
              "orgas", "lodgement_groups", "lodgements", "registrations",
              "questionnaire", "log", "mailinglists", "fee_modifiers")))
 
+    @storage
     @as_users("annika", "garcia")
     def test_change_minor_form(self) -> None:
         event_id = 1
@@ -1939,6 +1939,7 @@ class TestEventBackend(BackendTest):
 
         return ret
 
+    @storage
     @as_users("annika", "garcia")
     def test_export_event(self) -> None:
         with open(self.testfile_dir / "event_export.json", "r") as f:
@@ -2387,6 +2388,7 @@ class TestEventBackend(BackendTest):
 
         self.assertEqual(stored_data, result)
 
+    @storage
     @as_users("annika")
     def test_partial_export_event(self) -> None:
         with open(self.testfile_dir / "TestAka_partial_export_event.json") as f:
@@ -2396,11 +2398,12 @@ class TestEventBackend(BackendTest):
         export = self.event.partial_export_event(self.key, 1)
         self.assertEqual(expectation, export)
 
+    @storage
     @as_users("annika")
     def test_partial_import_event(self) -> None:
         event = self.event.get_event(self.key, 1)
         previous = self.event.partial_export_event(self.key, 1)
-        with open("/tmp/cdedb-store/testfiles/partial_event_import.json") \
+        with open(self.testfile_dir / "partial_event_import.json") \
                 as datafile:
             data = json.load(datafile)
 
@@ -2502,10 +2505,10 @@ class TestEventBackend(BackendTest):
             expectation['EVENT_SCHEMA_VERSION'])
         self.assertEqual(expectation, updated)
 
+    @storage
     @as_users("annika")
     def test_partial_import_integrity(self) -> None:
-        with open("/tmp/cdedb-store/testfiles/partial_event_import.json") \
-                as datafile:
+        with open(self.testfile_dir / "partial_event_import.json") as datafile:
             orig_data = json.load(datafile)
 
         base_data = {
@@ -2557,10 +2560,10 @@ class TestEventBackend(BackendTest):
         self.assertIn("Referential integrity of lodgement groups violated.",
                       cm.exception.args)
 
+    @storage
     @as_users("annika")
     def test_partial_import_event_twice(self) -> None:
-        with open("/tmp/cdedb-store/testfiles/partial_event_import.json") \
-                as datafile:
+        with open(self.testfile_dir / "partial_event_import.json") as datafile:
             data = json.load(datafile)
 
         # first a test run
@@ -2926,22 +2929,24 @@ class TestEventBackend(BackendTest):
     def test_set_event_orgas(self) -> None:
         event_id = 1
         self.assertEqual({7}, self.event.get_event(self.key, event_id)['orgas'])
-        self.assertLess(0, self.event.set_event_orgas(self.key, event_id, {1}))
-        self.assertEqual({1}, self.event.get_event(self.key, event_id)['orgas'])
+        self.assertLess(0, self.event.add_event_orgas(self.key, event_id, {1}))
+        self.assertEqual({1, 7}, self.event.get_event(self.key, event_id)['orgas'])
         self.assertLess(
-            0, self.event.set_event(self.key, {'id': event_id, 'orgas': {7}}))
-        self.assertEqual({7}, self.event.get_event(self.key, event_id)['orgas'])
+            0, self.event.remove_event_orga(self.key, event_id, 1))
+        self.assertLess(
+            0, self.event.add_event_orgas(self.key, event_id, {1}))
+        self.assertEqual({1, 7}, self.event.get_event(self.key, event_id)['orgas'])
 
         with self.assertRaises(ValueError) as cm:
-            self.event.set_event_orgas(self.key, event_id, {8})
+            self.event.add_event_orgas(self.key, event_id, {8})
         self.assertIn("Some of these orgas do not exist or are archived.",
                       cm.exception.args)
         with self.assertRaises(ValueError) as cm:
-            self.event.set_event_orgas(self.key, event_id, {1000})
+            self.event.add_event_orgas(self.key, event_id, {1000})
         self.assertIn("Some of these orgas do not exist or are archived.",
                       cm.exception.args)
         with self.assertRaises(ValueError) as cm:
-            self.event.set_event_orgas(self.key, event_id, {11})
+            self.event.add_event_orgas(self.key, event_id, {11})
         self.assertIn("Some of these orgas are not event users.",
                       cm.exception.args)
 
@@ -3075,7 +3080,6 @@ class TestEventBackend(BackendTest):
                     break
 
         data['title'] = "Alternate Universe Academy"
-        data['orgas'] = {1, 7}
         newpart = {
             'tracks': {
                 -1: {'title': "Third lecture",
@@ -3116,10 +3120,11 @@ class TestEventBackend(BackendTest):
                 ["2110-8-17", "late second coming"],
             ],
         }
+        self.event.add_event_orgas(self.key, new_id, {2, 1})
+        self.event.remove_event_orga(self.key, new_id, 2)
         self.event.set_event(self.key, {
             'id': new_id,
             'title': data['title'],
-            'orgas': data['orgas'],
             'parts': {
                 part_map["First coming"]: None,
                 part_map["Second coming"]: changed_part,
@@ -3350,24 +3355,24 @@ class TestEventBackend(BackendTest):
              'submitted_by': self.user['id']},
             {'id': 1010,
              'change_note': None,
-             'code': 2,
-             'ctime': nearly_now(),
-             'event_id': 1001,
-             'persona_id': None,
-             'submitted_by': self.user['id']},
-            {'id': 1011,
-             'change_note': None,
              'code': 10,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': 1,
              'submitted_by': self.user['id']},
-            {'id': 1012,
+            {'id': 1011,
              'change_note': None,
              'code': 11,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': 2,
+             'submitted_by': self.user['id']},
+            {'id': 1012,
+             'change_note': None,
+             'code': 2,
+             'ctime': nearly_now(),
+             'event_id': 1001,
+             'persona_id': None,
              'submitted_by': self.user['id']},
             {'id': 1013,
              'change_note': 'Third lecture',

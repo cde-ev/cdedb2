@@ -39,7 +39,7 @@ from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import Atomizer, connection_pool_factory
 from cdedb.query import Query, QueryOperators
-from cdedb.validation import validate_check, validate_is
+from cdedb.validation import validate_check
 
 
 class CoreBackend(AbstractBackend):
@@ -271,7 +271,8 @@ class CoreBackend(AbstractBackend):
 
     def changelog_submit_change(self, rs: RequestState, data: CdEDBObject,
                                 generation: Optional[int], may_wait: bool,
-                                change_note: str) -> DefaultReturnCode:
+                                change_note: str, force_review: bool = False
+                                ) -> DefaultReturnCode:
         """Insert an entry in the changelog.
 
         This is an internal helper, that takes care of all the small
@@ -286,6 +287,8 @@ class CoreBackend(AbstractBackend):
           this is ``False`` and there is a pending change in the changelog,
           the new change is slipped in between.
         :param change_note: Comment to record in the changelog entry.
+        :param force_review: force a change to be reviewed, even if it may be committed
+          without.
         :returns: number of changed entries, however if changes were only
           written to changelog and are waiting for review, the negative number
           of changes written to changelog is returned
@@ -382,7 +385,8 @@ class CoreBackend(AbstractBackend):
             self.sql_insert(rs, "core.changelog", insert)
 
             # resolve change if it doesn't require review
-            if not requires_review or self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
+            if (self.conf["CDEDB_OFFLINE_DEPLOYMENT"]
+                    or (not force_review and not requires_review)):
                 ret = self._changelog_resolve_change_unsafe(
                     rs, data['id'], next_generation, ack=True, reviewed=False)
             else:
@@ -553,20 +557,17 @@ class CoreBackend(AbstractBackend):
 
     @internal
     @access("ml")
-    def list_all_personas(self, rs: RequestState, is_active: bool = False,
-                          valid_email: bool = False) -> Set[int]:
+    def list_all_personas(self, rs: RequestState, is_active: bool = False) -> Set[int]:
         query = "SELECT id from core.personas WHERE is_archived = False"
         if is_active:
             query += " AND is_active = True"
-        if valid_email:
-            query += " AND username IS NOT NULL"
         data = self.query_all(rs, query, params=tuple())
         return {e["id"] for e in data}
 
     @internal
     @access("ml")
-    def list_current_members(self, rs: RequestState, is_active: bool = False,
-                             valid_email: bool = False) -> Set[int]:
+    def list_current_members(self, rs: RequestState, is_active: bool = False
+                             ) -> Set[int]:
         """Helper to list all current members.
 
         Used to determine subscribers of mandatory/opt-out member mailinglists.
@@ -574,8 +575,6 @@ class CoreBackend(AbstractBackend):
         query = "SELECT id from core.personas WHERE is_member = True"
         if is_active:
             query += " AND is_active = True"
-        if valid_email:
-            query += " AND username IS NOT NULL"
         data = self.query_all(rs, query, params=tuple())
         return {e["id"] for e in data}
 
@@ -652,7 +651,8 @@ class CoreBackend(AbstractBackend):
     def set_persona(self, rs: RequestState, data: CdEDBObject,
                     generation: int = None, change_note: str = None,
                     may_wait: bool = True,
-                    allow_specials: Tuple[str, ...] = tuple()
+                    allow_specials: Tuple[str, ...] = tuple(),
+                    force_review: bool = False
                     ) -> DefaultReturnCode:
         """Internal helper for modifying a persona data set.
 
@@ -672,6 +672,8 @@ class CoreBackend(AbstractBackend):
           prerequisites are met.
         :param change_note: Comment to record in the changelog entry. This
           is ignored if the persona is not in the changelog.
+        :param force_review: force a change to be reviewed, even if it may be committed
+          without.
         """
         if not change_note:
             self.logger.info(
@@ -740,7 +742,8 @@ class CoreBackend(AbstractBackend):
         with Atomizer(rs):
             ret = self.changelog_submit_change(
                 rs, data, generation=generation,
-                may_wait=may_wait, change_note=change_note)
+                may_wait=may_wait, change_note=change_note,
+                force_review=force_review)
             if allow_specials and ret < 0:
                 raise RuntimeError(n_("Special change not committed."))
             return ret
@@ -749,7 +752,8 @@ class CoreBackend(AbstractBackend):
     def change_persona(self, rs: RequestState, data: CdEDBObject,
                        generation: int = None, may_wait: bool = True,
                        change_note: str = None,
-                       ignore_warnings: bool = False) -> DefaultReturnCode:
+                       ignore_warnings: bool = False,
+                       force_review: bool = False) -> DefaultReturnCode:
         """Change a data set. Note that you need privileges to edit someone
         elses data set.
 
@@ -759,13 +763,16 @@ class CoreBackend(AbstractBackend):
         :param may_wait: override for system requests (which may not wait)
         :param change_note: Descriptive line for changelog
         :param ignore_warnings: Ignore errors of type ValidationWarning.
+        :param force_review: force a change to be reviewed, even if it may be committed
+          without.
         """
         data = affirm(vtypes.Persona, data, _ignore_warnings=ignore_warnings)
         generation = affirm_optional(int, generation)
         may_wait = affirm(bool, may_wait)
         change_note = affirm_optional(str, change_note)
         return self.set_persona(rs, data, generation=generation,
-                                may_wait=may_wait, change_note=change_note)
+                                may_wait=may_wait, change_note=change_note,
+                                force_review=force_review)
 
     @access("core_admin")
     def change_persona_realms(self, rs: RequestState,
@@ -1371,7 +1378,7 @@ class CoreBackend(AbstractBackend):
             query = "UPDATE core.personas SET password_hash = %s WHERE id = %s"
             self.query_exec(rs, query, (password_hash, persona_id))
             #
-            # 3. Strip all unnecessary attributes
+            # 3. Strip all unnecessary attributes and mark as archived
             #
             update = {
                 'id': persona_id,
@@ -1395,7 +1402,7 @@ class CoreBackend(AbstractBackend):
                 # 'is_assembly_realm'
                 # 'is_member' already adjusted
                 'is_searchable': False,
-                # 'is_archived' will be done later
+                'is_archived': True,
                 # 'is_purged' not relevant here
                 # 'display_name' kept for later recognition
                 # 'given_names' kept for later recognition
@@ -1470,19 +1477,8 @@ class CoreBackend(AbstractBackend):
                 raise ArchiveError(n_("Involved in unfinished event."))
             self.sql_delete(rs, "event.orgas", (persona_id,), "persona_id")
             #
-            # 7. Handle assembly realm
+            # 7. Assembly realm is handled via assembly archival.
             #
-            query = glue(
-                "SELECT ass.id FROM assembly.assemblies as ass",
-                "JOIN assembly.attendees as att ON att.assembly_id = ass.id",
-                "WHERE att.persona_id = %s AND ass.is_active = True")
-            ass_active = self.query_all(rs, query, (persona_id,))
-            if ass_active:
-                raise ArchiveError(n_("Involved in unfinished assembly."))
-            query = glue(
-                "UPDATE assembly.attendees SET secret = NULL",
-                "WHERE persona_id = %s")
-            self.query_exec(rs, query, (persona_id,))
             #
             # 8. Handle ml realm
             #
@@ -1507,7 +1503,7 @@ class CoreBackend(AbstractBackend):
                 unmodearated_mailinglists = moderated_mailinglists - ml_ids
                 if unmodearated_mailinglists:
                     raise ArchiveError(
-                        n_("Sole moderator of a mailinglist {ml_ids}."),
+                        n_("Sole moderator of a mailinglist %(ml_ids)s."),
                         {'ml_ids': unmodearated_mailinglists})
             #
             # 9. Clear logs
@@ -1520,16 +1516,8 @@ class CoreBackend(AbstractBackend):
             # assembly log stays since assemblies have a separate life cycle
             self.sql_delete(rs, "ml.log", (persona_id,), "persona_id")
             #
-            # 10. Mark archived
+            # 10. Create archival log entry
             #
-            update = {
-                'id': persona_id,
-                'is_archived': True,
-            }
-            self.set_persona(
-                rs, update, generation=None, may_wait=False,
-                change_note="Benutzer archiviert.",
-                allow_specials=("archive",))
             self.core_log(rs, const.CoreLogCodes.persona_archived, persona_id)
             #
             # 11. Clear changelog
@@ -1551,24 +1539,27 @@ class CoreBackend(AbstractBackend):
             return ret
 
     @access(*REALM_ADMINS)
-    def dearchive_persona(self, rs: RequestState,
-                          persona_id: int) -> DefaultReturnCode:
+    def dearchive_persona(self, rs: RequestState, persona_id: int, new_username: str
+                          ) -> DefaultReturnCode:
         """Return a persona from the attic to activity.
 
-        This does nothing but flip the archiving bit.
+        This does nothing but flip the archiving bit and set a new username,
+        which makes sure the resulting persona will pass validation.
         """
         persona_id = affirm(vtypes.ID, persona_id)
+        new_username = affirm(vtypes.Email, new_username)
         with Atomizer(rs):
             update = {
                 'id': persona_id,
                 'is_archived': False,
+                'username': new_username,
             }
             code = self.set_persona(
                 rs, update, generation=None, may_wait=False,
                 change_note="Benutzer aus dem Archiv wiederhergestellt.",
-                allow_specials=("archive",))
+                allow_specials=("archive", "username"))
             self.core_log(rs, const.CoreLogCodes.persona_dearchived, persona_id)
-            return code
+        return code
 
     @access("core_admin")
     def purge_persona(self, rs: RequestState, persona_id: int) -> DefaultReturnCode:
@@ -1634,7 +1625,7 @@ class CoreBackend(AbstractBackend):
 
     @access("persona")
     def change_username(self, rs: RequestState, persona_id: int,
-                        new_username: Optional[str], password: Optional[str]
+                        new_username: str, password: Optional[str]
                         ) -> Tuple[bool, str]:
         """Since usernames are used for login, this needs a bit of care.
 
@@ -1642,12 +1633,10 @@ class CoreBackend(AbstractBackend):
             is an error message or the new username on success.
         """
         persona_id = affirm(vtypes.ID, persona_id)
-        new_username = affirm_optional(vtypes.Email, new_username)
+        new_username = affirm(vtypes.Email, new_username)
         password = affirm_optional(str, password)
-        if new_username is None and not self.is_relative_admin(rs, persona_id):
-            return False, n_("Only admins may unset an email address.")
         with Atomizer(rs):
-            if new_username and self.verify_existence(rs, new_username):
+            if self.verify_existence(rs, new_username):
                 # abort if there is already an account with this address
                 return False, n_("Name collision.")
             authorized = False
@@ -1668,10 +1657,7 @@ class CoreBackend(AbstractBackend):
                     self.core_log(
                         rs, const.CoreLogCodes.username_change, persona_id,
                         change_note=new_username)
-                    if new_username:
-                        return True, new_username
-                    else:
-                        return True, n_("Username removed.")
+                    return True, new_username
         return False, n_("Failed.")
 
     @access("persona")
@@ -2130,7 +2116,7 @@ class CoreBackend(AbstractBackend):
 
     @internal
     @access("anonymous")
-    def get_roles_multi(self, rs: RequestState, persona_ids: Collection[Optional[int]],
+    def get_roles_multi(self, rs: RequestState, persona_ids: Collection[int],
                         introspection_only: bool = False
                         ) -> Dict[Optional[int], Set[Role]]:
         """Resolve ids into roles.
@@ -2360,7 +2346,8 @@ class CoreBackend(AbstractBackend):
                 return False, msg  # type: ignore
         if not new_password:
             return False, n_("No new password provided.")
-        if not validate_is(vtypes.PasswordStrength, new_password):
+        _val, errs = validate_check(vtypes.PasswordStrength, new_password)
+        if errs:
             return False, n_("Password too weak.")
         # escalate db privilege role in case of resetting passwords
         orig_conn = None
@@ -2422,6 +2409,7 @@ class CoreBackend(AbstractBackend):
         if email:
             persona_id = unwrap(self.sql_select_one(
                 rs, "core.personas", ("id",), email, entity_key="username"))
+        assert persona_id is not None
 
         columns_of_interest = [
             "is_cde_realm", "is_meta_admin", "is_core_admin", "is_cde_admin",

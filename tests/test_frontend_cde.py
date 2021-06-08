@@ -11,10 +11,12 @@ from typing import Set, Tuple
 import webtest
 
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, ADMIN_VIEWS_COOKIE_NAME, Role, extract_roles, now
+from cdedb.common import (
+    CdEDBObject, ADMIN_VIEWS_COOKIE_NAME, Role, extract_roles, now, LineResolutions
+)
 from cdedb.query import QueryOperators
 from tests.common import (
-    FrontendTest, UserIdentifier, USER_DICT, as_users, get_user, prepsql,
+    FrontendTest, UserIdentifier, USER_DICT, as_users, get_user, prepsql, storage,
 )
 
 
@@ -947,6 +949,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Es liegen noch unbearbeitete Transaktionen vor.",
                             div="notifications")
 
+    @storage
     @as_users("farin")
     def test_lastschrift_generate_transactions(self) -> None:
         self.traverse({'description': 'Mitglieder'},
@@ -959,7 +962,7 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['downloadsepapainform']
         g = self.response.forms['generatetransactionsform']
         self.submit(f, check_notification=False)
-        with open("/tmp/cdedb-store/testfiles/sepapain.xml", 'rb') as f:
+        with open(self.testfile_dir / "sepapain.xml", 'rb') as f:
             expectation = f.read().split(b'\n')
         exceptions = (5, 6, 14, 28, 66,)
         for index, line in enumerate(self.response.body.split(b'\n')):
@@ -974,6 +977,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertNonPresence("Aktuell befinden sich keine Einzüge in der "
                                "Schwebe.")
 
+    @storage
     @as_users("farin")
     def test_lastschrift_generate_single_transaction(self) -> None:
         self.traverse({'description': 'Mitglieder'},
@@ -986,7 +990,7 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['downloadsepapainform2']
         g = self.response.forms['generatetransactionform2']
         self.submit(f, check_notification=False)
-        with open("/tmp/cdedb-store/testfiles/sepapain.xml", 'rb') as f:
+        with open(self.testfile_dir / "sepapain.xml", 'rb') as f:
             expectation = f.read().split(b'\n')
         exceptions = (5, 6, 14, 28, 66,)
         for index, line in enumerate(self.response.body.split(b'\n')):
@@ -1168,6 +1172,7 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.assertTrue(self.response.body.startswith(b"%PDF"))
 
+    @storage
     @as_users("vera")
     def test_batch_admission(self) -> None:
         self.traverse({'description': 'Mitglieder'},
@@ -1175,11 +1180,11 @@ class TestCdEFrontend(FrontendTest):
                       {'description': 'Massenaufnahme'})
         self.assertTitle("Accounts anlegen")
         f = self.response.forms['admissionform']
-        with open("/tmp/cdedb-store/testfiles/batch_admission.csv") as datafile:
+        with open(self.testfile_dir / "batch_admission.csv") as datafile:
             tmp = datafile.read()
             placeholder_birthday = "03.10.9999"
-            wandering_birthday = "03.10.{}".format(now().year - 5)
-            unproblematic_birthday = "03.10.{}".format(now().year - 15)
+            wandering_birthday = f"03.10.{now().year - 5}"
+            unproblematic_birthday = f"03.10.{now().year - 15}"
             tmp = tmp.replace(placeholder_birthday, wandering_birthday)
             f['accounts'] = tmp
         self.submit(f, check_notification=False)
@@ -1192,7 +1197,7 @@ class TestCdEFrontend(FrontendTest):
         _, content = content.split(" Zeile 1:")
         output = []
         for i in range(2, 16):
-            head, content = content.split(" Zeile {}:".format(i))
+            head, content = content.split(f" Zeile {i}:")
             output.append(head)
         head, _ = content.split("Erneut validieren")
         output.append(head)
@@ -1222,21 +1227,21 @@ class TestCdEFrontend(FrontendTest):
         for ex, out in zip(expectation, output):
             for piece in ex:
                 self.assertTrue(re.search(piece, out))
-        for i in range(15):
+        for i in range(0, 15):
             if i in (1, 7):
-                exp = '1'
+                exp = str(LineResolutions.create.value)
             else:
                 exp = ''
-            self.assertEqual(exp, f['resolution{}'.format(i)].value)
+            self.assertEqual(exp, f[f'resolution{i}'].value)
         inputdata = f['accounts'].value
-        f['resolution0'] = 2
-        f['resolution2'] = 2
-        f['resolution3'] = 2
-        f['resolution4'] = 5
+        f['resolution0'] = LineResolutions.skip.value
+        f['resolution2'] = LineResolutions.skip.value
+        f['resolution3'] = LineResolutions.skip.value
+        f['resolution4'] = LineResolutions.renew_and_update.value
         f['doppelganger_id4'] = '2'
-        f['resolution5'] = 4
+        f['resolution5'] = LineResolutions.update.value
         f['doppelganger_id5'] = '4'
-        f['resolution6'] = 5
+        f['resolution6'] = LineResolutions.renew_and_update.value
         f['doppelganger_id6'] = '5'
         inputdata = inputdata.replace("pa99", "pa14")
         inputdata = inputdata.replace(
@@ -1245,10 +1250,12 @@ class TestCdEFrontend(FrontendTest):
         inputdata = inputdata.replace("00000", "07751")
         inputdata = inputdata.replace("fPingst", "Pfingst")
         inputdata = inputdata.replace("wSish", "Swish")
+        f['is_orga9'] = True
         inputdata = inputdata.replace(wandering_birthday, unproblematic_birthday)
-        f['resolution12'] = 2
-        f['resolution13'] = 2
-        f['resolution15'] = 5
+        f['resolution12'] = LineResolutions.skip.value
+        f['resolution13'] = LineResolutions.skip.value
+        f['resolution15'] = LineResolutions.renew_and_update.value
+        f['is_instructor15'] = True
         f['doppelganger_id15'] = '10'
         f['accounts'] = inputdata
         self.submit(f, check_notification=False)
@@ -1261,7 +1268,7 @@ class TestCdEFrontend(FrontendTest):
         _, content = content.split(" Zeile 1:")
         output = []
         for i in range(2, 16):
-            head, content = content.split(" Zeile {}:".format(i))
+            head, content = content.split(f" Zeile {i}:")
             output.append(head)
         head, _ = content.split("Erneut validieren")
         output.append(head)
@@ -1315,14 +1322,14 @@ class TestCdEFrontend(FrontendTest):
         inputdata = inputdata.replace('"1a";"Beispiel";"Bertålotta"',
                                       '"Ω";"Beispiel";"Bertålotta"')
         f['accounts'] = inputdata
-        f['resolution4'] = 5
+        f['resolution4'] = LineResolutions.renew_and_update.value
         f['doppelganger_id4'] = '2'
-        f['resolution6'] = 1
-        f['resolution8'] = 1
-        f['resolution9'] = 1
-        f['resolution10'] = 1
-        f['resolution11'] = 1
-        f['resolution14'] = 1
+        f['resolution6'] = LineResolutions.create.value
+        f['resolution8'] = LineResolutions.create.value
+        f['resolution9'] = LineResolutions.create.value
+        f['resolution10'] = LineResolutions.create.value
+        f['resolution11'] = LineResolutions.create.value
+        f['resolution14'] = LineResolutions.create.value
         self.submit(f, check_notification=False)
 
         # third round
@@ -1334,7 +1341,7 @@ class TestCdEFrontend(FrontendTest):
         _, content = content.split(" Zeile 1:")
         output = []
         for i in range(2, 16):
-            head, content = content.split(" Zeile {}:".format(i))
+            head, content = content.split(f" Zeile {i}:")
             output.append(head)
         head, _ = content.split("Erneut validieren")
         output.append(head)
@@ -1378,17 +1385,17 @@ class TestCdEFrontend(FrontendTest):
         for nonex, out in zip(nonexpectation, output):
             for piece in nonex:
                 self.assertFalse(re.search(piece, out))
-        f['resolution4'] = 5
+        f['resolution4'] = LineResolutions.renew_and_update.value
         f['doppelganger_id4'] = '2'
-        f['resolution6'] = 5
-        self.assertEqual('', f['finalized'].value)
+        f['resolution6'] = LineResolutions.renew_and_update.value
+        self.assertEqual('False', f['finalized'].value)
         self.submit(f, check_notification=False)
 
         # fourth round
         self.assertPresence("Anlegen")
         self.assertNonPresence("Erneut validieren")
         f = self.response.forms['admissionform']
-        self.assertEqual('5', f['resolution4'].value)
+        self.assertEqual(str(LineResolutions.renew_and_update.value), f['resolution4'].value)
         self.assertEqual('True', f['finalized'].value)
         self.submit(f, check_notification=False)
         self.assertPresence("7 Accounts erstellt.", div="notifications")
@@ -1402,6 +1409,11 @@ class TestCdEFrontend(FrontendTest):
         self.assertNonPresence("Willy Brandt")
         self.assertPresence("Gerhard Schröder", div='list-participants')
         self.assertPresence("Angela Merkel", div='list-participants')
+        self.assertPresence("Gustav Heinemann (1a. Swish -- und alles ist gut) (Orga)",
+                            div='list-participants')
+
+        self.traverse({'description': 'Swish -- und alles ist gut'})
+        self.assertPresence("Janis Jalapeño (Kursleiter)")
 
         self.traverse({'description': 'Angela Merkel'})
         self.assertPresence("0,00 €", div='balance')
@@ -1409,13 +1421,121 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("CdE-Mitglied (Probemitgliedschaft)",
                             div="membership")
 
+    @as_users("vera")
+    def test_batch_admission_review(self) -> None:
+        # check that we force a review if an existing data set is been upgraded
+        data = (
+            '"pa14";"1a";"Dino";"Daniel";"lustiger Titel";"";"";"1";"";"";"";"";"";"";"";"daniel@example.cde";"1.01.1900"\n'
+            '"pa14";"1a";"Jalapeño";"Janis";"";"komischer Namenszusatz";"";"1";"";"Chilliallee 23";"56767";"Scoville";"";"+49 (5432) 321321";"";"janis@example.cde";"04.01.2001"'
+        )
+
+        self.traverse({'description': 'Mitglieder'},
+                      {'description': 'Nutzer verwalten'},
+                      {'description': 'Massenaufnahme'})
+        self.assertTitle("Accounts anlegen")
+        f = self.response.forms['admissionform']
+        f['accounts'] = data
+        self.submit(f, check_notification=False)
+
+        self.assertTitle("Accounts anlegen")
+        f = self.response.forms['admissionform']
+        f['resolution0'] = LineResolutions.update.value
+        f['doppelganger_id0'] = "4"
+        f['resolution1'] = LineResolutions.update.value
+        f['doppelganger_id1'] = "10"
+        self.submit(f, check_notification=False)
+
+        self.assertTitle("Accounts anlegen")
+        f = self.response.forms['admissionform']
+        self.submit(f)
+
+        # now, lets check the reviews exists
+        self.traverse({"description": "Index"},
+                      {"description": "Änderungen prüfen"})
+        self.assertPresence("Daniel Dino")
+        self.assertPresence("Janis")
+
+        # take special care that no fields were silently updated during realm transition
+        self.admin_view_profile("janis")
+        self.assertNonPresence("komischer Namenszusatz", div='personal-information')
+        self.admin_view_profile("daniel")
+        self.assertPresence("19.02.1963", div='personal-information')
+        self.assertPresence("Am Denkmal 91", div='address-information')
+
+    @as_users("vera")
+    def test_batch_admission_username_taken(self) -> None:
+        # check that we do not allow to create an account with already taken mail adress
+        data = ('"pa14";"1a";"Dino";"Daniel";"";"";"";"1";"";"";"";"";"";"";"";'
+                '"daniel@example.cde";"19.02.1963"')
+
+        self.traverse({'description': 'Mitglieder'},
+                      {'description': 'Nutzer verwalten'},
+                      {'description': 'Massenaufnahme'})
+        self.assertTitle("Accounts anlegen")
+        f = self.response.forms['admissionform']
+        f['accounts'] = data
+        self.submit(f, check_notification=False)
+
+        self.assertTitle("Accounts anlegen")
+        f = self.response.forms['admissionform']
+        f['resolution0'] = LineResolutions.create.value
+        self.submit(f, check_notification=False)
+
+        self.assertTitle("Accounts anlegen")
+        # check a already taken mailadress is not a warning but an error, since
+        # it would otherwise violate our postgres integrity
+        self.assertPresence("Fehler persona: Emailadresse bereits vergeben.")
+        f = self.response.forms['admissionform']
+        f['resolution0'] = LineResolutions.update.value
+        f['doppelganger_id0'] = "4"
+        self.submit(f, check_notification=False)
+
+        self.assertTitle("Accounts anlegen")
+        # but updating a persona is ok
+        self.assertNonPresence("Emailadresse bereits vergeben.")
+        f = self.response.forms['admissionform']
+        self.submit(f)
+
+    @as_users("vera")
+    def test_batch_admission_reset_finalized(self) -> None:
+        # check that we reset the "finalized" parameter every time a new change comes up
+        data = ["pa14", "1a", "Dino", "Daniel", "", "", "", "1", "", "", "", "", "", "",
+                "", "daniel@example.cde", "19.02.1963"]
+
+        self.traverse({'description': 'Mitglieder'},
+                      {'description': 'Nutzer verwalten'},
+                      {'description': 'Massenaufnahme'})
+        self.assertTitle("Accounts anlegen")
+        f = self.response.forms['admissionform']
+        f['accounts'] = ";".join(data)
+        self.submit(f, check_notification=False)
+
+        self.assertTitle("Accounts anlegen")
+        f = self.response.forms['admissionform']
+        f['resolution0'] = LineResolutions.skip.value
+        self.submit(f, check_notification=False)
+
+        self.assertTitle("Accounts anlegen")
+        f = self.response.forms['admissionform']
+        self.assertEqual('True', f['finalized'].value)
+        # now change the data in the data field
+        data[4] = "eine kleine Änderung"
+        f['accounts'] = ";".join(data)
+        self.submit(f, check_notification=False)
+
+        self.assertTitle("Accounts anlegen")
+        f = self.response.forms['admissionform']
+        self.assertEqual('False', f['finalized'].value)
+        self.assertPresence("Warnung Eintrag geändert.")
+
+    @storage
     @as_users("farin")
     def test_money_transfers(self) -> None:
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Überweisungen eintragen'})
         self.assertTitle("Überweisungen eintragen")
         f = self.response.forms['transfersform']
-        with open("/tmp/cdedb-store/testfiles/money_transfers.csv") as datafile:
+        with open(self.testfile_dir / "money_transfers.csv") as datafile:
             f['transfers'] = datafile.read()
         self.submit(f, check_notification=False)
 
@@ -1507,6 +1627,7 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         # Here the active regex chars where successfully neutralised
 
+    @storage
     @as_users("farin")
     def test_money_transfers_file(self) -> None:
         self.traverse({'description': 'Mitglieder'},
@@ -1567,14 +1688,14 @@ class TestCdEFrontend(FrontendTest):
 
         # 1.2 Remove Inactive Members
         self.assertPresence("Erledigt am", div='payment-request')
-        self.assertPresence("9 E-Mails versandt", div='payment-request')
+        self.assertPresence("8 E-Mails versandt", div='payment-request')
         self.assertPresence("Später zu erledigen.", div='balance-update')
         self.assertPresence("Später zu erledigen.", div='next-semester')
 
         self.assertPresence(
             "Derzeit haben 0 Mitglieder ein zu niedriges Guthaben "
             "(insgesamt 0,00 €, davon 0 mit einer aktiven Einzugsermächtigung)."
-            " Zusätzlich gibt es 3 Probemitglieder.", div='eject-members')
+            " Zusätzlich gibt es 2 Probemitglieder.", div='eject-members')
         # Check error handling for bill
         self.submit(f, check_notification=False)
         self.assertPresence('Zahlungserinnerung bereits erledigt',
@@ -1591,7 +1712,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Erledigt am", div='eject-members')
         self.assertPresence("Später zu erledigen.", div='next-semester')
 
-        self.assertPresence("Insgesamt 9 Mitglieder, 3 davon haben eine "
+        self.assertPresence("Insgesamt 8 Mitglieder, 2 davon haben eine "
                             "Probemitgliedschaft", div='balance-update')
         # Check error handling for eject
         self.submit(f, check_notification=False)
@@ -1646,7 +1767,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Semesterverwaltung")
 
         # 2.3 Update Balances
-        self.assertPresence("Insgesamt 6 Mitglieder, 0 davon haben eine "
+        self.assertPresence("Insgesamt 5 Mitglieder, 0 davon haben eine "
                             "Probemitgliedschaft", div='balance-update')
 
         f = self.response.forms['balanceform']
@@ -1670,12 +1791,12 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("1 E-Mails versandt.", div="2-1002")
         self.assertPresence("0 inaktive Mitglieder gestrichen.", div="3-1003")
         self.assertPresence("1 Accounts archiviert.", div="4-1004")
-        self.assertPresence("3 Probemitgliedschaften beendet", div="5-1005")
+        self.assertPresence("2 Probemitgliedschaften beendet", div="5-1005")
         self.assertPresence("15.00 € Guthaben abgebucht.", div="5-1005")
 
         self.assertPresence("3 inaktive Mitglieder gestrichen.", div="9-1009")
         self.assertPresence("0 Probemitgliedschaften beendet", div="11-1011")
-        self.assertPresence("15.00 € Guthaben abgebucht.", div="11-1011")
+        self.assertPresence("12.50 € Guthaben abgebucht.", div="11-1011")
 
     @as_users("farin")
     def test_expuls(self) -> None:
@@ -2350,6 +2471,7 @@ class TestCdEFrontend(FrontendTest):
         # Now check it
         self.traverse({'description': 'Verg.-Veranstaltungen-Log'})
         self.log_pagination("Verg.-Veranstaltungen-Log", tuple(logs))
+        self.assertPresence("Piraten Arrrkademie", div="4-1004")
 
     @as_users("farin")
     def test_cde_log(self) -> None:

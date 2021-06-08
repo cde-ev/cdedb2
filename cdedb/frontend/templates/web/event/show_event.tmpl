@@ -192,7 +192,7 @@
                             $('#input-add-orga').cdedbSearchPerson(
                                 '{{ (cdedblink('core/select_persona')|e) + ('?kind=event_user&phrase=%s&aux='|s) +
                                     (ambience['event']['id']|string|e) }}',
-                                {{ ambience['event']['orgas']|list|json|s }}, false, false,
+                                {{ ambience['event']['orgas']|list|tojson }}, false, false,
                                 "{{ gettext("ID, name, email") }}"
                             );
                         </script>
@@ -263,6 +263,10 @@
                                 {{ util.input_submit(label=gettext("JSON file"), icon='download') }}
                                 {{ util.input_checkbox(name="agree_unlocked_download", label=gettext("Are you sure to download a full export before locking?")) }}
                             </form>
+                            <script nonce="{{ csp_nonce }}">
+                                $('#fullexportform').cdedbProtectAction("{{ gettext("Are you sure to download a full export before locking?") }}");
+                                $('#fullexportform').find('[name="agree_unlocked_download"]').prop('checked', true).parent().hide();
+                            </script>
                         {% endif %}
                     </div>
                     {% if ambience['event']['offline_lock'] != CDEDB_OFFLINE_DEPLOYMENT %}

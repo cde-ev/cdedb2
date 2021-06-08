@@ -3,7 +3,10 @@
 {% import "web/util.tmpl" as util with context %}
 {% import "web/generic.tmpl" as generic with context %}
 {% set jshint='strong' %}
-{% block scripts %}{{ util.cdedb_script('cdedb_queryform.js') }}{% endblock %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_queryform.js') }}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+{% endblock %}
 {% block title %}
     {% trans %}
         Search Archived Users

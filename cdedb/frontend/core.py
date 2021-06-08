@@ -1938,7 +1938,7 @@ class CoreFrontend(AbstractFrontend):
     @access(*REALM_ADMINS, modi={"POST"})
     @REQUESTdata("new_username")
     def admin_username_change(self, rs: RequestState, persona_id: int,
-                              new_username: Optional[vtypes.Email]) -> Response:
+                              new_username: vtypes.Email) -> Response:
         """Change username without verification."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
@@ -2421,13 +2421,25 @@ class CoreFrontend(AbstractFrontend):
         self.notify_return_code(rs, code)
         return self.redirect_show_user(rs, persona_id)
 
-    @access(*REALM_ADMINS, modi={"POST"})
-    def dearchive_persona(self, rs: RequestState, persona_id: int) -> Response:
-        """Reinstate a persona from the attic."""
-        if rs.has_validation_errors():
-            return self.redirect_show_user(rs, persona_id)
+    @access(*REALM_ADMINS)
+    def dearchive_persona_form(self, rs: RequestState, persona_id: int) -> Response:
+        """Render form."""
+        if not self.coreproxy.is_relative_admin(rs, persona_id):
+            raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
+        data = self.coreproxy.get_persona(rs, persona_id)
+        return self.render(rs, "dearchive_user", {'data': data})
 
-        code = self.coreproxy.dearchive_persona(rs, persona_id)
+    @access(*REALM_ADMINS, modi={"POST"})
+    @REQUESTdata("new_username")
+    def dearchive_persona(self, rs: RequestState, persona_id: int,
+                          new_username: vtypes.Email) -> Response:
+        """Reinstate a persona from the attic."""
+        if not self.coreproxy.is_relative_admin(rs, persona_id):
+            raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
+        if rs.has_validation_errors():
+            return self.dearchive_persona_form(rs, persona_id)
+
+        code = self.coreproxy.dearchive_persona(rs, persona_id, new_username)
         self.notify_return_code(rs, code)
         return self.redirect_show_user(rs, persona_id)
 

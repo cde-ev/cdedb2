@@ -57,7 +57,7 @@
     </form>
     <script type="text/javascript" nonce="{{ csp_nonce }}">
         (function() {
-            var field_list = {{ registration_fields|json|s }};
+            var field_list = {{ registration_fields|tojson }};
             var translations = {
                 'true': "{{ gettext("true") }}",
                 'false': "{{ gettext("false") }}"};
