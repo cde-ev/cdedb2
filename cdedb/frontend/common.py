@@ -47,9 +47,8 @@ from typing import (
     Set, Tuple, Type, TypeVar, Union, cast, overload,
 )
 
-import babel.dates
-import babel.numbers
 import bleach
+import icu
 import jinja2
 import mailmanclient.restobjects.mailinglist
 import mailmanclient.restobjects.held_message
@@ -271,34 +270,52 @@ def date_filter(val: Union[datetime.date, str, None],
         if passthrough and isinstance(val, str) and val:
             return val
         return None
+
+    if val == datetime.date.min:
+        return "N/A"
+
     if lang:
-        return babel.dates.format_date(val, locale=lang, format=verbosity)
+        verbosity_mapping = {
+            "short": icu.DateFormat.SHORT,
+            "medium": icu.DateFormat.MEDIUM,
+            "long": icu.DateFormat.LONG,
+            "full": icu.DateFormat.FULL,
+        }
+        locale = icu.Locale(lang)
+        date_formatter = icu.DateFormat.createDateInstance(
+            verbosity_mapping[verbosity], locale
+        )
+        return date_formatter.format(datetime.datetime.combine(val, datetime.time()))
     else:
         return val.strftime(formatstr)
 
 
 def datetime_filter(val: Union[datetime.datetime, str, None],
                     formatstr: str = "%Y-%m-%d %H:%M (%Z)", lang: str = None,
-                    verbosity: str = "medium",
                     passthrough: bool = False) -> Optional[str]:
     """Custom jinja filter to format ``datetime.datetime`` objects.
 
     :param formatstr: Formatting used, if no l10n happens.
     :param lang: If not None, then localize to the passed language.
-    :param verbosity: Controls localized formatting. Takes one of the
-      following values: short, medium, long and full.
     :param passthrough: If True return strings unmodified.
     """
     if val is None or val == '' or not isinstance(val, datetime.datetime):
         if passthrough and isinstance(val, str) and val:
             return val
         return None
+
     if val.tzinfo is not None:
         val = val.astimezone(_BASICCONF["DEFAULT_TIMEZONE"])
     else:
         _LOGGER.warning("Found naive datetime object {}.".format(val))
+
     if lang:
-        return babel.dates.format_datetime(val, locale=lang, format=verbosity)
+        locale = icu.Locale(lang)
+        datetime_formatter = icu.DateFormat.createDateTimeInstance(
+            icu.DateFormat.MEDIUM, icu.DateFormat.MEDIUM, locale)
+        zone = _BASICCONF["DEFAULT_TIMEZONE"].zone
+        datetime_formatter.setTimeZone(icu.TimeZone.createTimeZone(zone))
+        return datetime_formatter.format(val)
     else:
         return val.strftime(formatstr)
 
@@ -322,7 +339,9 @@ def money_filter(val: Optional[decimal.Decimal], currency: str = "EUR",
     if val is None:
         return None
 
-    return babel.numbers.format_currency(val, currency, locale=lang)
+    locale = icu.Locale(lang)
+    formatter = icu.NumberFormatter.withLocale(locale).unit(icu.CurrencyUnit(currency))
+    return formatter.formatDecimal(str(val).encode())
 
 
 @overload
@@ -338,7 +357,9 @@ def decimal_filter(val: Optional[float], lang: str) -> Optional[str]:
     if val is None:
         return None
 
-    return babel.numbers.format_decimal(val, locale=lang)
+    locale = icu.Locale(lang)
+    formatter = icu.NumberFormatter.withLocale(locale)
+    return formatter.formatDouble(val)
 
 
 @overload

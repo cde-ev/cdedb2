@@ -74,7 +74,7 @@ DeletionBlockers = Dict[str, List[int]]
 
 # Pseudo error objects used to display errors in the frontend. First argument
 # is the field that contains the error, second argument is the error itself.
-Error = Tuple[str, Exception]
+Error = Tuple[Optional[str], Exception]
 
 # A notification to be displayed. First argument ist the notification type
 # (warning, info, error, success, question). Second argument is the message.
@@ -1086,6 +1086,7 @@ class LineResolutions(enum.IntEnum):
     renew_trial = 3  #: Renew the trial membership of an existing account.
     update = 4  #: Update an existing account with this data.
     renew_and_update = 5  #: A combination of renew_trial and update.
+    none = 10  #: No resolution was chosen.
 
     def do_trial(self) -> bool:
         """Whether to grant a trial membership."""

@@ -271,7 +271,8 @@ class CoreBackend(AbstractBackend):
 
     def changelog_submit_change(self, rs: RequestState, data: CdEDBObject,
                                 generation: Optional[int], may_wait: bool,
-                                change_note: str) -> DefaultReturnCode:
+                                change_note: str, force_review: bool = False
+                                ) -> DefaultReturnCode:
         """Insert an entry in the changelog.
 
         This is an internal helper, that takes care of all the small
@@ -286,6 +287,8 @@ class CoreBackend(AbstractBackend):
           this is ``False`` and there is a pending change in the changelog,
           the new change is slipped in between.
         :param change_note: Comment to record in the changelog entry.
+        :param force_review: force a change to be reviewed, even if it may be committed
+          without.
         :returns: number of changed entries, however if changes were only
           written to changelog and are waiting for review, the negative number
           of changes written to changelog is returned
@@ -382,7 +385,8 @@ class CoreBackend(AbstractBackend):
             self.sql_insert(rs, "core.changelog", insert)
 
             # resolve change if it doesn't require review
-            if not requires_review or self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
+            if (self.conf["CDEDB_OFFLINE_DEPLOYMENT"]
+                    or (not force_review and not requires_review)):
                 ret = self._changelog_resolve_change_unsafe(
                     rs, data['id'], next_generation, ack=True, reviewed=False)
             else:
@@ -647,7 +651,8 @@ class CoreBackend(AbstractBackend):
     def set_persona(self, rs: RequestState, data: CdEDBObject,
                     generation: int = None, change_note: str = None,
                     may_wait: bool = True,
-                    allow_specials: Tuple[str, ...] = tuple()
+                    allow_specials: Tuple[str, ...] = tuple(),
+                    force_review: bool = False
                     ) -> DefaultReturnCode:
         """Internal helper for modifying a persona data set.
 
@@ -667,6 +672,8 @@ class CoreBackend(AbstractBackend):
           prerequisites are met.
         :param change_note: Comment to record in the changelog entry. This
           is ignored if the persona is not in the changelog.
+        :param force_review: force a change to be reviewed, even if it may be committed
+          without.
         """
         if not change_note:
             self.logger.info(
@@ -735,7 +742,8 @@ class CoreBackend(AbstractBackend):
         with Atomizer(rs):
             ret = self.changelog_submit_change(
                 rs, data, generation=generation,
-                may_wait=may_wait, change_note=change_note)
+                may_wait=may_wait, change_note=change_note,
+                force_review=force_review)
             if allow_specials and ret < 0:
                 raise RuntimeError(n_("Special change not committed."))
             return ret
@@ -744,7 +752,8 @@ class CoreBackend(AbstractBackend):
     def change_persona(self, rs: RequestState, data: CdEDBObject,
                        generation: int = None, may_wait: bool = True,
                        change_note: str = None,
-                       ignore_warnings: bool = False) -> DefaultReturnCode:
+                       ignore_warnings: bool = False,
+                       force_review: bool = False) -> DefaultReturnCode:
         """Change a data set. Note that you need privileges to edit someone
         elses data set.
 
@@ -754,13 +763,16 @@ class CoreBackend(AbstractBackend):
         :param may_wait: override for system requests (which may not wait)
         :param change_note: Descriptive line for changelog
         :param ignore_warnings: Ignore errors of type ValidationWarning.
+        :param force_review: force a change to be reviewed, even if it may be committed
+          without.
         """
         data = affirm(vtypes.Persona, data, _ignore_warnings=ignore_warnings)
         generation = affirm_optional(int, generation)
         may_wait = affirm(bool, may_wait)
         change_note = affirm_optional(str, change_note)
         return self.set_persona(rs, data, generation=generation,
-                                may_wait=may_wait, change_note=change_note)
+                                may_wait=may_wait, change_note=change_note,
+                                force_review=force_review)
 
     @access("core_admin")
     def change_persona_realms(self, rs: RequestState,
@@ -1491,7 +1503,7 @@ class CoreBackend(AbstractBackend):
                 unmodearated_mailinglists = moderated_mailinglists - ml_ids
                 if unmodearated_mailinglists:
                     raise ArchiveError(
-                        n_("Sole moderator of a mailinglist {ml_ids}."),
+                        n_("Sole moderator of a mailinglist %(ml_ids)s."),
                         {'ml_ids': unmodearated_mailinglists})
             #
             # 9. Clear logs

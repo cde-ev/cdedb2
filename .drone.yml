@@ -67,19 +67,25 @@ steps:
   pull: never # do not try to pull image from docker hub
   depends_on:
   - cdb # only needs db allowing mypy and lint to run parallel to this
+  volumes:
+  - name: tmp_dir
+    path: /tmp
   commands:
   - sleep 5 # wait for db to come online
   - make i18n-compile # required for sample-data target
   - make sample-data # this creates the sql schema and copies the localconfig.py
-  - THREADID=1 make check
+  - make check
 - name: xss
   image: cdedb
   pull: never
   depends_on:
     - cdb
+  volumes:
+  - name: tmp_dir
+    path: /tmp
   commands:
     - sleep 15 # wait for make sample-data in testsuite to finish
-    - THREADID=2 make xss-check
+    - make xss-check
 - name: check for merge conflicts
   image: docker:20.10-git
   pull: never # do not try to pull image from docker hub
@@ -103,6 +109,8 @@ volumes:
 - name: database
   temp:
     medium: memory
+- name: tmp_dir
+  temp: {}
 
 trigger:
   branch:
