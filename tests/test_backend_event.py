@@ -2507,7 +2507,7 @@ class TestEventBackend(BackendTest):
         self.assertEqual(expectation, updated)
 
         # Test logging
-        expectation = (27, (
+        log_expectation = (27, (
             {'change_note': 'Geheime Etage',
              'code': 70,
              'ctime': nearly_now(),
@@ -2670,7 +2670,7 @@ class TestEventBackend(BackendTest):
              'persona_id': None,
              'submitted_by': 27}))
         result = self.event.retrieve_log(self.key, offset=4)
-        self.assertEqual(expectation, result)
+        self.assertEqual(log_expectation, result)
 
     @storage
     @as_users("annika")
