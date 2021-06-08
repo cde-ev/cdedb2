@@ -35,8 +35,9 @@
         <p class="text-info">
          {{ util.make_icon('info-circle') }}
          {% trans %}
-            If you reject a message, its author will recieve a notification message. If you discard a message, no
-            notification message will be sent. The latter is preferred for spam messages.
+             If you reject a message, its author will recieve a notification message. If you discard a message, no
+             notification message will be sent. The latter is preferred for spam messages. If you whitelist a message,
+             it is not only accepted, but its author can write emails without moderation in the future.
          {% endtrans %}
     </p>
         {% if held %}
@@ -49,8 +50,10 @@
                                   class="hide-hover display-inline">
                             {{ util.anti_csrf_token('ml/message_moderation') }}
                             {{ util.input_hidden(name="request_id", value=email.request_id) }}
+                            {{ util.input_hidden(name="sender", value=email.sender) }}
                             <div class="pull-right">
                                 {% for action, label, icon, coloring in (
+                                        ('whitelist', gettext('Whitelist_[[verb]]'), 'plus', 'success'),
                                         ('accept', gettext('Accept'), 'check', 'success'),
                                         ('reject', gettext('Reject'), 'reply', 'warning'),
                                         ('discard', gettext('Discard'), 'trash-alt', 'danger')) %}

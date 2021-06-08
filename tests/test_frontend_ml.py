@@ -3,11 +3,13 @@
 import csv
 import re
 import unittest.mock
+from typing import Any, List, Tuple
 
 import cdedb.database.constants as const
+import cdedb.frontend.common
 import cdedb.ml_type_aux as ml_type
 from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, CdEDBObject
-from cdedb.devsamples import HELD_MESSAGE_SAMPLE
+from cdedb.devsamples import MockHeldMessage, HELD_MESSAGE_SAMPLE
 from cdedb.frontend.common import CustomCSVDialect
 from cdedb.query import QueryOperators
 from tests.common import USER_DICT, FrontendTest, as_users, prepsql
@@ -1317,12 +1319,8 @@ class TestMlFrontend(FrontendTest):
         tmp = {f.get("registration_stati", index=i).value for i in range(7)}
         self.assertEqual({str(x) for x in stati} | {None}, tmp)
 
-    @unittest.mock.patch("cdedb.frontend.common.CdEMailmanClient")
-    @as_users("anton")
-    def test_mailman_moderation(self, client_class: unittest.mock.Mock) -> None:
-        #
-        # Prepare
-        #
+    def _prepare_moderation_mock(self, client_class: unittest.mock.Mock) -> Tuple[
+        List[MockHeldMessage], unittest.mock.MagicMock, Any]:
         messages = HELD_MESSAGE_SAMPLE
         mmlist = unittest.mock.MagicMock()
         moderation_response = unittest.mock.MagicMock()
@@ -1332,12 +1330,22 @@ class TestMlFrontend(FrontendTest):
         client.get_held_messages.return_value = messages
         client.get_list_safe.return_value = mmlist
 
+        return messages, mmlist, client
+
+    @unittest.mock.patch("cdedb.frontend.common.CdEMailmanClient")
+    @as_users("anton")
+    def test_mailman_moderation(self, client_class: unittest.mock.Mock) -> None:
+        #
+        # Prepare
+        #
+        messages, mmlist, client = self._prepare_moderation_mock(client_class)
+
         #
         # Run
         #
-        self.traverse({'href': '/ml/$'})
-        self.traverse({'href': '/ml/mailinglist/99'})
-        self.traverse({'href': '/ml/mailinglist/99/moderate'})
+        self.traverse({'href': '/ml/$'},
+                      {'href': '/ml/mailinglist/99'},
+                      {'href': '/ml/mailinglist/99/moderate'})
         self.assertTitle("Mailman-Migration – Nachrichtenmoderation")
         self.assertPresence("Finanzbericht")
         self.assertPresence("Verschwurbelung")
@@ -1369,6 +1377,31 @@ class TestMlFrontend(FrontendTest):
         self.assertEqual(
             mmlist.moderate_message.call_args_list,
             [umcall(1, 'accept'), umcall(2, 'reject'), umcall(3, 'discard')])
+
+    @unittest.mock.patch("cdedb.frontend.common.CdEMailmanClient")
+    @as_users("anton")
+    def test_mailman_whitelist(self, client_class: unittest.mock.Mock) -> None:
+        #
+        # Prepare
+        #
+        messages, mmlist, client = self._prepare_moderation_mock(client_class)
+
+        #
+        # Run
+        #
+        self.traverse({'href': '/ml/$'},
+                      {'href': '/ml/mailinglist/list'},
+                      {'href': '/ml/mailinglist/99/moderate'})
+        self.assertTitle("Mailman-Migration – Nachrichtenmoderation")
+        self.assertPresence("Finanzbericht")
+        self.assertPresence("kassenwart@example.cde")
+        client.get_held_messages.return_value = messages[1:]
+        f = self.response.forms['msg1']
+        self.submit(f, button='action', value='whitelist')
+        self.assertNonPresence("Finanzbericht")
+        self.traverse({'description': "Log"})
+        self.assertPresence("Whitelist-Eintrag hinzugefügt", div="1-1001")
+        self.assertPresence("kassenwart@example.cde", div="1-1001")
 
     def test_log(self) -> None:
         # First: generate data
