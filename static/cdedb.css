@@ -77,12 +77,6 @@ body{
 .table-slim {
     width: auto;
 }
-.table-wide {
-    background-color: #fff;
-}
-.table-wide>thead>tr>th {
-    white-space: nowrap;
-}
 .table-layout-fixed {
     table-layout: fixed;
 }
@@ -582,6 +576,7 @@ span.result-separator, code.result-separator {
 /* Wide table container */
 .table-container {
     padding: 5px 10px 5px 0;
+    margin-right: -5px;
     background: #fff;
     display: inline-block;
     min-width: 100%;
