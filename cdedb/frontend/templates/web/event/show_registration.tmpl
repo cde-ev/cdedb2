@@ -84,7 +84,8 @@
     {% endif %}
 
     <h3 class="heading-underline">{% trans %}Status{% endtrans %}</h3>
-    <dl class="dl-horizontal">
+    <div class="row">
+    <dl class="dl-horizontal col-md-6">
         <dt>{% trans %}Participation Fee{% endtrans %}</dt>
         <dd>
             {% if ambience['registration']['payment'] %}
@@ -109,21 +110,23 @@
             {% endif %}
         </dd>
 
-        <dt>{% trans %}Registered at{% endtrans %}</dt>
-        <dd>
-            {{ ambience['registration']['ctime']|datetime(lang=lang) or "—" }}
-        </dd>
-
         <dt>{% trans %}Checked-In at{% endtrans %}</dt>
         <dd>
             {{ ambience['registration']['checkin']|datetime(lang=lang) or "—" }}
         </dd>
+    </dl>
 
+    <dl class="dl-horizontal col-md-6">
+        <dt>{% trans %}Registered at{% endtrans %}</dt>
+        <dd>
+            {{ ambience['registration']['ctime']|datetime(lang=lang) or "—" }}
+        </dd>
         <dt>{% trans %}Last modified at{% endtrans %}</dt>
         <dd>
             {{ ambience['registration']['mtime']|datetime(lang=lang) or "—" }}
         </dd>
     </dl>
+    </div>
 
     {% for batch in ambience['event']['parts']|keydictsort(EntitySorter.event_part)|batch(2) %}
         <div class="row">
