@@ -5,7 +5,7 @@ from werkzeug.serving import run_simple
 
 from cdedb.frontend.application import Application
 
-static_directory = Path(__file__).parent.parent / "static"
+static_directory = Path(__file__).resolve().parent.parent / "static"
 configpath = Path("/etc/cdedb-application-config.py")
 
 if __name__ == "__main__":
