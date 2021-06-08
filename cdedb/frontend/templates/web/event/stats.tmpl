@@ -47,7 +47,7 @@
                     {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
                         <th>
                             {% if ambience['event']['parts']|length > 1 %}
-                                {{ part['title'] }}
+                                {{ part['shortname'] }}
                             {% else %}
                                 {% trans %}Count{% endtrans %}
                             {% endif %}
@@ -97,7 +97,7 @@
                         {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
                             <th>
                                 {% if ambience['event']['tracks']|length > 1 %}
-                                    {{ track['title'] }}
+                                    {{ track['shortname'] }}
                                 {% else %}
                                     {% trans %}Count{% endtrans %}
                                 {% endif %}

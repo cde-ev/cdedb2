@@ -139,7 +139,7 @@
                         {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track)
                                 if track['part_id'] == part_id %}
                             <dt>
-                                {% trans track=track['title'] if ambience['event']['tracks']|length > 1 else "" %}
+                                {% trans track=track['shortname'] if ambience['event']['tracks']|length > 1 else "" %}
                                 	Course {{ track }}
                                 {% endtrans %}
                             </dt>
@@ -194,7 +194,7 @@
                 {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
                     <div class="col-md-6">
                         {% if ambience['event']['tracks']|length > 1 %}
-                            <h5>{{ track['title'] }}</h5>
+                            <h5>{{ track['shortname'] }}</h5>
                         {% endif %}
 
                         <dl class="dl-horizontal">

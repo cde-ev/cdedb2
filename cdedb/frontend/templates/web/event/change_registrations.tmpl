@@ -154,7 +154,7 @@
                 {% set course_entries = courses|keydictsort(EntitySorter.course)
                                         |xdict_entries('{id}', '{nr}. {shortname}', include=course_choices[track_id]) %}
                 {% call form_input_optional("track{}.course_id".format(track_id),
-                                            label=gettext("Course %s")|format(track['title'])
+                                            label=gettext("Course %s")|format(track['shortname'])
                                                   if ambience['event']['tracks']|length > 1  else gettext("Course"),
                                             anid="track{}_course_id".format(track_id)) %}
                     {{ util.input_select(name="track{}.course_id".format(track_id), entries=course_entries,
@@ -183,7 +183,7 @@
             {% set course_entries = courses|keydictsort(EntitySorter.course)
                                     |xdict_entries('{id}', '{nr}. {shortname}', include=course_choices[track_id]) %}
             {% call form_input_optional("track{}.course_instructor".format(track_id),
-                                        label=gettext("%s: Instructor of")|format(track['title'])
+                                        label=gettext("%s: Instructor of")|format(track['shortname'])
                                               if ambience['event']['tracks']|length > 1  else gettext("Instructor of"),
                                         anid="input_track{}_course_instructor".format(track_id)) %}
                 {{ util.input_select(name="track{}.course_instructor".format(track_id),

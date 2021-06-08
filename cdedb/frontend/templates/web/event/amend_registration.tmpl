@@ -33,7 +33,7 @@
             <h4>
                 {% trans %}Course Choices{% endtrans %}
                 {% if course_choices|length > 1 %}
-                    {% trans title=track['title'] %}for {{ title }}{% endtrans %}
+                    {% trans title=track['shortname'] %}for {{ title }}{% endtrans %}
                 {% endif %}
             </h4>
 
