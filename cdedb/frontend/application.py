@@ -4,6 +4,7 @@
 
 import gettext
 import json
+import os
 import pathlib
 import types
 from typing import Any, Callable, Dict, Optional, Set
@@ -321,7 +322,10 @@ class Application(BaseApp):
 
             # Raise exceptions when in TEST environment to let the test runner
             # catch them.
-            if self.conf["CDEDB_TEST"]:
+            if (
+                self.conf["CDEDB_TEST"]
+                or (self.conf["CDEDB_DEV"] and os.environ.get("INTERACTIVE_DEBUGGER"))
+            ):
                 raise
 
             # debug output if applicable

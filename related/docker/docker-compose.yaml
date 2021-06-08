@@ -20,7 +20,8 @@ services:
       - files:/var/lib/cdedb # attachments etc
       - ../..:/cdedb2
     ports:
-      - 8443:443
+      - 5000:5000 # werkzeug server including interactive debugger
+      - 8443:443 # apache
     depends_on:
       - cdb
   adminer:
