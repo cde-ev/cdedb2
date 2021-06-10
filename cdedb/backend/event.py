@@ -2860,8 +2860,8 @@ class EventBackend(AbstractBackend):
             rs, "event.registrations", ("persona_id", "event_id"), reg_id)
 
     @access("event")
-    def set_registration(self, rs: RequestState,
-                         data: CdEDBObject) -> DefaultReturnCode:
+    def set_registration(self, rs: RequestState, data: CdEDBObject,
+                         change_note: str = None) -> DefaultReturnCode:
         """Update some keys of a registration.
 
         The syntax for updating the non-trivial keys fields, parts and
@@ -2881,6 +2881,7 @@ class EventBackend(AbstractBackend):
           the current list of course choices.
         """
         data = affirm(vtypes.Registration, data)
+        change_note = affirm_optional(str, change_note)
         with Atomizer(rs):
             # Retrieve some basic data about the registration.
             current = self._get_registration_info(rs, reg_id=data['id'])
@@ -2983,7 +2984,7 @@ class EventBackend(AbstractBackend):
             ret *= self.sql_update(rs, "event.registrations", update)
             self.event_log(
                 rs, const.EventLogCodes.registration_changed, event_id,
-                persona_id=persona_id)
+                persona_id=persona_id, change_note=change_note)
         return ret
 
     @access("event")
@@ -4458,7 +4459,12 @@ class EventBackend(AbstractBackend):
                                             tmp_id = part['lodgement_id']
                                             part['lodgement_id'] = lmap[tmp_id]
                             changed_reg['id'] = registration_id
-                            self.set_registration(rs, changed_reg)
+                            # change_note for log entry for registrations
+                            change_note = "Partieller Import."
+                            if data.get('summary'):
+                                change_note = ("Partieller Import: "
+                                               + data['summary'])
+                            self.set_registration(rs, changed_reg, change_note)
             if rdelta:
                 total_delta['registrations'] = rdelta
                 total_previous['registrations'] = rprevious
@@ -4471,5 +4477,5 @@ class EventBackend(AbstractBackend):
                 raise PartialImportError("The delta changed.")
             if not dryrun:
                 self.event_log(rs, const.EventLogCodes.event_partial_import,
-                               data['id'])
+                               data['id'], change_note=data.get('summary'))
             return result, total_delta

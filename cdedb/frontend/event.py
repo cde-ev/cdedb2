@@ -58,6 +58,7 @@ LodgementProblem = NamedTuple(
     "LodgementProblem", [("description", str), ("lodgement_id", int),
                          ("part_id", int), ("reg_ids", Collection[int]),
                          ("severeness", int)])
+EntitySetter = Callable[[RequestState, Dict[str, Any]], int]
 
 
 class EventFrontend(AbstractUserFrontend):
@@ -6215,7 +6216,7 @@ class EventFrontend(AbstractUserFrontend):
                 rs, event_id, kind=kind, internal=True)
 
         if kind == const.FieldAssociations.registration:
-            entity_setter = self.eventproxy.set_registration
+            entity_setter: EntitySetter = self.eventproxy.set_registration
         elif kind == const.FieldAssociations.course:
             entity_setter = self.eventproxy.set_course
         elif kind == const.FieldAssociations.lodgement:
