@@ -2881,7 +2881,7 @@ class EventBackend(AbstractBackend):
           the current list of course choices.
         """
         data = affirm(vtypes.Registration, data)
-        change_note = affirm(str, change_note)
+        change_note = affirm_optional(str, change_note)
         with Atomizer(rs):
             # Retrieve some basic data about the registration.
             current = self._get_registration_info(rs, reg_id=data['id'])
