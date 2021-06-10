@@ -32,10 +32,10 @@ with Script(rs, dry_run=False):
         try:
             affirm(vtypes.Persona, persona, _ignore_warnings=True)
         except Exception as e:
+            print("-" * 80)
             print(f"Error for persona {persona_id}:")
             print(e.__class__)
             print(e)
-            print("--------------------------------------------------------------------------------")
             continue
 
         # Validate event data if applicable
@@ -46,10 +46,10 @@ with Script(rs, dry_run=False):
         try:
             affirm(vtypes.Persona, persona, _ignore_warnings=True)
         except Exception as e:
+            print("-" * 80)
             print(f"Error for persona {persona_id}:")
             print(e.__class__)
             print(e)
-            print("--------------------------------------------------------------------------------")
             continue
 
         # Validate cde/total data if applicable
@@ -60,8 +60,8 @@ with Script(rs, dry_run=False):
         try:
             affirm(vtypes.Persona, persona, _ignore_warnings=True)
         except Exception as e:
+            print("-" * 80)
             print(f"Error for persona {persona_id}:")
             print(e.__class__)
             print(e)
-            print("--------------------------------------------------------------------------------")
             continue
