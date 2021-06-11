@@ -45,6 +45,7 @@ Wesentlichen enthält der Export die folgenden Elemente::
       "id": <numeric event id>,
       "kind": "partial",
       "timestamp": <ISO 8601 encoded timestamp>,
+      "summary": <String summarizing your changes>,
       "courses": {<numeric course id stringified>:
                       <dict with course properties>},
       "event": {<event attribute>: <associated value>},
@@ -75,6 +76,11 @@ gleichzeitig stattfindenden manuellen Änderungen anderer Orgas zu
 kommen. Das einzige was sich nicht granular ändern lässt sind die
 Kurswünsche, hier ersetzt die übermittelte Liste immer die kompletten
 Kurswünsche.
+
+Die Angabe einer ``summary`` ist optional, wird jedoch empfohlen. Sie wird
+im Log als Anmerkung zum Logeintrag des Partiellen Imports hinterlegt.
+Darüber hinaus erhalten Anmeldungen, die durch den Partiellen Import
+bearbeitet wurden, automatisch diese Lognachricht.
 
 Die möglichen Operationen sind wie folgt.
 

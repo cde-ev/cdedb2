@@ -116,6 +116,8 @@ CREATE TABLE core.personas (
             CHECK((NOT is_cde_realm AND NOT is_event_realm) OR gender IS NOT NULL),
         -- may be NULL in historical cases; we try to minimize these occurences
         birthday                date,
+        CONSTRAINT personas_birthday
+            CHECK(NOT is_event_realm OR birthday is NOT NULL),
         telephone               varchar,
         mobile                  varchar,
         address_supplement      varchar,

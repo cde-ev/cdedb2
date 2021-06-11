@@ -2735,9 +2735,26 @@ class EventBackend(AbstractBackend):
                     # Permission check is done later when we know more
                     stati = {const.RegistrationPartStati.participant}
 
-            ret = {e['id']: e for e in self.sql_select(
-                rs, "event.registrations", REGISTRATION_FIELDS, registration_ids)}
-            event_fields = self._get_event_fields(rs, event_id)
+            query = f"""
+                SELECT {", ".join(REGISTRATION_FIELDS)}, ctime, mtime
+                FROM event.registrations
+                LEFT OUTER JOIN (
+                    SELECT persona_id AS log_persona_id, MAX(ctime) AS ctime
+                    FROM event.log WHERE code = %s GROUP BY log_persona_id
+                ) AS ctime
+                ON event.registrations.persona_id = ctime.log_persona_id
+                LEFT OUTER JOIN (
+                    SELECT persona_id AS log_persona_id, MAX(ctime) AS mtime
+                    FROM event.log WHERE code = %s GROUP BY log_persona_id
+                ) AS mtime
+                ON event.registrations.persona_id = mtime.log_persona_id
+                WHERE event.registrations.id = ANY(%s)
+                """
+            params = (const.EventLogCodes.registration_created,
+                      const.EventLogCodes.registration_changed, registration_ids)
+            rdata = self.query_all(rs, query, params)
+            ret = {reg['id']: reg for reg in rdata}
+
             pdata = self.sql_select(
                 rs, "event.registration_parts", REGISTRATION_PART_FIELDS,
                 registration_ids, entity_key="registration_id")
@@ -2750,6 +2767,7 @@ class EventBackend(AbstractBackend):
                 # Limit to registrations matching stati filter in any part.
                 if not any(e['status'] in stati for e in ret[anid]['parts'].values()):
                     del ret[anid]
+
             # Here comes the promised permission check
             if not is_privileged and all(reg['persona_id'] != rs.user.persona_id
                                          for reg in ret.values()):
@@ -2762,6 +2780,7 @@ class EventBackend(AbstractBackend):
                 rs, "event.course_choices",
                 ("registration_id", "track_id", "course_id", "rank"), registration_ids,
                 entity_key="registration_id")
+            event_fields = self._get_event_fields(rs, event_id)
             for anid in ret:
                 if 'tracks' in ret[anid]:
                     raise RuntimeError()
@@ -2774,6 +2793,7 @@ class EventBackend(AbstractBackend):
                     tracks[track_id]['choices'] = xsorted(tmp.keys(), key=tmp.get)
                 ret[anid]['tracks'] = tracks
                 ret[anid]['fields'] = cast_fields(ret[anid]['fields'], event_fields)
+
         return ret
 
     class _GetRegistrationProtocol(Protocol):
@@ -2860,8 +2880,8 @@ class EventBackend(AbstractBackend):
             rs, "event.registrations", ("persona_id", "event_id"), reg_id)
 
     @access("event")
-    def set_registration(self, rs: RequestState,
-                         data: CdEDBObject) -> DefaultReturnCode:
+    def set_registration(self, rs: RequestState, data: CdEDBObject,
+                         change_note: str = None) -> DefaultReturnCode:
         """Update some keys of a registration.
 
         The syntax for updating the non-trivial keys fields, parts and
@@ -2881,6 +2901,7 @@ class EventBackend(AbstractBackend):
           the current list of course choices.
         """
         data = affirm(vtypes.Registration, data)
+        change_note = affirm_optional(str, change_note)
         with Atomizer(rs):
             # Retrieve some basic data about the registration.
             current = self._get_registration_info(rs, reg_id=data['id'])
@@ -2983,7 +3004,7 @@ class EventBackend(AbstractBackend):
             ret *= self.sql_update(rs, "event.registrations", update)
             self.event_log(
                 rs, const.EventLogCodes.registration_changed, event_id,
-                persona_id=persona_id)
+                persona_id=persona_id, change_note=change_note)
         return ret
 
     @access("event")
@@ -4458,7 +4479,12 @@ class EventBackend(AbstractBackend):
                                             tmp_id = part['lodgement_id']
                                             part['lodgement_id'] = lmap[tmp_id]
                             changed_reg['id'] = registration_id
-                            self.set_registration(rs, changed_reg)
+                            # change_note for log entry for registrations
+                            change_note = "Partieller Import."
+                            if data.get('summary'):
+                                change_note = ("Partieller Import: "
+                                               + data['summary'])
+                            self.set_registration(rs, changed_reg, change_note)
             if rdelta:
                 total_delta['registrations'] = rdelta
                 total_previous['registrations'] = rprevious
@@ -4471,5 +4497,5 @@ class EventBackend(AbstractBackend):
                 raise PartialImportError("The delta changed.")
             if not dryrun:
                 self.event_log(rs, const.EventLogCodes.event_partial_import,
-                               data['id'])
+                               data['id'], change_note=data.get('summary'))
             return result, total_delta

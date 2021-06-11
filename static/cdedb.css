@@ -95,7 +95,7 @@ body{
 }
 .table>tbody>tr>td.indent, .table>tbody>tr>th.indent {
     border-top-style: none;
-    min-width: 20px;
+    width: 20px;
 }
 table>tbody>tr.no-upper-border>td {
     padding-top: 0 ;

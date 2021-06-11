@@ -794,6 +794,7 @@ class TestEventBackend(BackendTest):
             'amount_paid': decimal.Decimal("0.00"),
             'amount_owed': decimal.Decimal("589.49"),
             'checkin': None,
+            'ctime': datetime.datetime(2014, 1, 1, 2, 5, 6, tzinfo=pytz.utc),
             'event_id': 1,
             'fields': {
                 'anzahl_GROSSBUCHSTABEN': 3,
@@ -804,6 +805,7 @@ class TestEventBackend(BackendTest):
             'list_consent': True,
             'id': 2,
             'mixed_lodging': True,
+            'mtime': None,
             'orga_notes': 'Unbedingt in die Einzelzelle.',
             'notes': 'Extrawünsche: Meerblick, Weckdienst und Frühstück am Bett',
             'parental_agreement': True,
@@ -869,6 +871,7 @@ class TestEventBackend(BackendTest):
         expectation['tracks'][2]['choices'] = [2, 3, 4]
         expectation['fields']['transportation'] = 'etc'
         expectation['mixed_lodging'] = False
+        expectation['mtime'] = nearly_now()
         self.assertEqual(expectation,
                          self.event.get_registration(self.key, 2))
 
@@ -940,6 +943,8 @@ class TestEventBackend(BackendTest):
             new_reg['tracks'][3]['track_id'] = 3
             new_reg['tracks'][3]['registration_id'] = new_id
             new_reg['tracks'][3]['choices'] = []
+            new_reg['ctime'] = nearly_now()
+            new_reg['mtime'] = None
             self.assertEqual(new_reg,
                              self.event.get_registration(self.key, new_id))
         else:
@@ -955,6 +960,7 @@ class TestEventBackend(BackendTest):
             1: {'amount_owed': decimal.Decimal("573.99"),
                 'amount_paid': decimal.Decimal("0.00"),
                 'checkin': None,
+                'ctime': datetime.datetime(2014, 1, 1, 1, 4, 5, tzinfo=pytz.utc),
                 'event_id': 1,
                 'fields': {
                     'anzahl_GROSSBUCHSTABEN': 4,
@@ -964,6 +970,7 @@ class TestEventBackend(BackendTest):
                 'list_consent': True,
                 'id': 1,
                 'mixed_lodging': True,
+                'mtime': None,
                 'orga_notes': None,
                 'notes': None,
                 'parental_agreement': True,
@@ -1005,6 +1012,7 @@ class TestEventBackend(BackendTest):
             2: {'amount_owed': decimal.Decimal("589.49"),
                 'amount_paid': decimal.Decimal("0.00"),
                 'checkin': None,
+                'ctime': datetime.datetime(2014, 1, 1, 2, 5, 6, tzinfo=pytz.utc),
                 'event_id': 1,
                 'fields': {
                     'anzahl_GROSSBUCHSTABEN': 3,
@@ -1015,6 +1023,7 @@ class TestEventBackend(BackendTest):
                 'list_consent': True,
                 'id': 2,
                 'mixed_lodging': True,
+                'mtime': None,
                 'orga_notes': 'Unbedingt in die Einzelzelle.',
                 'notes': 'Extrawünsche: Meerblick, Weckdienst und Frühstück am Bett',
                 'parental_agreement': True,
@@ -1056,6 +1065,7 @@ class TestEventBackend(BackendTest):
             4: {'amount_owed': decimal.Decimal("431.99"),
                 'amount_paid': decimal.Decimal("0.00"),
                 'checkin': None,
+                'ctime': datetime.datetime(2014, 1, 1, 4, 7, 8, tzinfo=pytz.utc),
                 'event_id': 1,
                 'fields': {
                     'anzahl_GROSSBUCHSTABEN': 2,
@@ -1067,6 +1077,7 @@ class TestEventBackend(BackendTest):
                 'list_consent': False,
                 'id': 4,
                 'mixed_lodging': False,
+                'mtime': None,
                 'orga_notes': None,
                 'notes': None,
                 'parental_agreement': False,
@@ -1141,6 +1152,7 @@ class TestEventBackend(BackendTest):
         expectation[4]['fields'].update(data['fields'])
         expectation[4]['mixed_lodging'] = data['mixed_lodging']
         expectation[4]['checkin'] = nearly_now()
+        expectation[4]['mtime'] = nearly_now()
         expectation[4]['amount_owed'] = decimal.Decimal("5.50")
         for key, value in expectation[4]['parts'].items():
             if key in data['parts']:
@@ -1229,6 +1241,8 @@ class TestEventBackend(BackendTest):
         new_reg['tracks'][3]['track_id'] = 3
         new_reg['tracks'][3]['registration_id'] = new_id
         new_reg['tracks'][3]['choices'] = []
+        new_reg['ctime'] = nearly_now()
+        new_reg['mtime'] = None
         self.assertEqual(new_reg,
                          self.event.get_registration(self.key, new_id))
         self.assertEqual({1: 1, 2: 5, 3: 7, 4: 9, 5: 100, 6: 2, new_id: 3},
@@ -2494,6 +2508,7 @@ class TestEventBackend(BackendTest):
             old.update(new)
 
         recursive_update(expectation, delta)
+        del expectation['summary']
         del expectation['timestamp']
         del updated['timestamp']
         del updated['registrations'][1002]['persona']  # ignore additional info
@@ -2504,6 +2519,172 @@ class TestEventBackend(BackendTest):
         expectation['EVENT_SCHEMA_VERSION'] = tuple(
             expectation['EVENT_SCHEMA_VERSION'])
         self.assertEqual(expectation, updated)
+
+        # Test logging
+        log_expectation = (27, (
+            {'change_note': 'Geheime Etage',
+             'code': 70,
+             'ctime': nearly_now(),
+             'event_id': 1,
+             'id': 1023,
+             'persona_id': None,
+             'submitted_by': 27},
+            {'change_note': 'Warme Stube',
+             'code': 25,
+             'ctime': nearly_now(),
+             'event_id': 1,
+             'id': 1024,
+             'persona_id': None,
+             'submitted_by': 27},
+            {'change_note': 'Kalte Kammer',
+             'code': 25,
+             'ctime': nearly_now(),
+             'event_id': 1,
+             'id': 1025,
+             'persona_id': None,
+             'submitted_by': 27},
+            {'change_note': 'Kellerverlies',
+             'code': 27,
+             'ctime': nearly_now(),
+             'event_id': 1,
+             'id': 1026,
+             'persona_id': None,
+             'submitted_by': 27},
+            {'change_note': 'Einzelzelle',
+             'code': 25,
+             'ctime': nearly_now(),
+             'event_id': 1,
+             'id': 1027,
+             'persona_id': None,
+             'submitted_by': 27},
+            {'change_note': 'Geheimkabinett',
+             'code': 26,
+             'ctime': nearly_now(),
+             'event_id': 1,
+             'id': 1028,
+             'persona_id': None,
+             'submitted_by': 27},
+            {'change_note': 'Handtuchraum',
+             'code': 26,
+             'ctime': nearly_now(),
+             'event_id': 1,
+             'id': 1029,
+             'persona_id': None,
+             'submitted_by': 27},
+            {'change_note': 'Planetenretten für Anfänger',
+             'code': 41,
+             'ctime': nearly_now(),
+             'event_id': 1,
+             'id': 1030,
+             'persona_id': None,
+             'submitted_by': 27},
+            {'change_note': 'Planetenretten für Anfänger',
+             'code': 42,
+             'ctime': nearly_now(),
+             'event_id': 1,
+             'id': 1031,
+             'persona_id': None,
+             'submitted_by': 27},
+            {'change_note': 'Planetenretten für Anfänger',
+             'code': 43,
+             'ctime': nearly_now(),
+             'event_id': 1,
+             'id': 1032,
+             'persona_id': None,
+             'submitted_by': 27},
+            {'change_note': 'Lustigsein für Fortgeschrittene',
+             'code': 41,
+             'ctime': nearly_now(),
+             'event_id': 1,
+             'id': 1033,
+             'persona_id': None,
+             'submitted_by': 27},
+            {'change_note': 'Kurzer Kurs',
+             'code': 44,
+             'ctime': nearly_now(),
+             'event_id': 1,
+             'id': 1034,
+             'persona_id': None,
+             'submitted_by': 27},
+            {'change_note': 'Langer Kurs',
+             'code': 42,
+             'ctime': nearly_now(),
+             'event_id': 1,
+             'id': 1035,
+             'persona_id': None,
+             'submitted_by': 27},
+            {'change_note': 'Backup-Kurs',
+             'code': 43,
+             'ctime': nearly_now(),
+             'event_id': 1,
+             'id': 1036,
+             'persona_id': None,
+             'submitted_by': 27},
+            {'change_note': 'Blitzkurs',
+             'code': 42,
+             'ctime': nearly_now(),
+             'event_id': 1,
+             'id': 1037,
+             'persona_id': None,
+             'submitted_by': 27},
+            {'change_note': 'Blitzkurs',
+             'code': 43,
+             'ctime': nearly_now(),
+             'event_id': 1,
+             'id': 1038,
+             'persona_id': None,
+             'submitted_by': 27},
+            {'change_note': 'Blitzkurs',
+             'code': 40,
+             'ctime': nearly_now(),
+             'event_id': 1,
+             'id': 1039,
+             'persona_id': None,
+             'submitted_by': 27},
+            {'change_note': 'Partieller Import: Sehr wichtiger Import',
+             'code': 51,
+             'ctime': nearly_now(),
+             'event_id': 1,
+             'id': 1040,
+             'persona_id': 1,
+             'submitted_by': 27},
+            {'change_note': 'Partieller Import: Sehr wichtiger Import',
+             'code': 51,
+             'ctime': nearly_now(),
+             'event_id': 1,
+             'id': 1041,
+             'persona_id': 5,
+             'submitted_by': 27},
+            {'change_note': 'Partieller Import: Sehr wichtiger Import',
+             'code': 51,
+             'ctime': nearly_now(),
+             'event_id': 1,
+             'id': 1042,
+             'persona_id': 7,
+             'submitted_by': 27},
+            {'change_note': None,
+             'code': 52,
+             'ctime': nearly_now(),
+             'event_id': 1,
+             'id': 1043,
+             'persona_id': 9,
+             'submitted_by': 27},
+            {'change_note': None,
+             'code': 50,
+             'ctime': nearly_now(),
+             'event_id': 1,
+             'id': 1044,
+             'persona_id': 3,
+             'submitted_by': 27},
+            {'change_note': 'Sehr wichtiger Import',
+             'code': 62,
+             'ctime': nearly_now(),
+             'event_id': 1,
+             'id': 1045,
+             'persona_id': None,
+             'submitted_by': 27}))
+        result = self.event.retrieve_log(self.key, offset=4)
+        self.assertEqual(log_expectation, result)
 
     @storage
     @as_users("annika")
@@ -3224,7 +3405,7 @@ class TestEventBackend(BackendTest):
                 }
             }
         }
-        self.event.set_registration(self.key, data)
+        self.event.set_registration(self.key, data, change_note="Boring change.")
         new = {
             'regular_capacity': 42,
             'event_id': 1,
@@ -3473,7 +3654,7 @@ class TestEventBackend(BackendTest):
              'persona_id': 3,
              'submitted_by': self.user['id']},
             {'id': 1027,
-             'change_note': None,
+             'change_note': "Boring change.",
              'code': 51,
              'ctime': nearly_now(),
              'event_id': 1,
