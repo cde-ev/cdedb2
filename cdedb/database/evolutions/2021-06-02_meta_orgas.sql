@@ -6,5 +6,5 @@ BEGIN;
     ALTER TABLE ml.moderators ADD CONSTRAINT mailinglist_unique_moderators
         UNIQUE(persona_id, mailinglist_id);
     ALTER TABLE ml.whitelist ADD CONSTRAINT mailinglist_unique_whitelist
-        UNIQUE(address, mailinglist_id)
+        UNIQUE(address, mailinglist_id);
 COMMIT;
