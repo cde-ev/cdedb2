@@ -578,6 +578,7 @@ span.result-separator, code.result-separator {
 /* Wide table container */
 .table-container {
     padding: 5px 10px 5px 0;
+    margin-right: -5px;
     background: #fff;
     display: inline-block;
     min-width: 100%;

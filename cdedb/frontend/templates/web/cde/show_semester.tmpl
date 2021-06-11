@@ -1,7 +1,10 @@
 {% set sidenav_active='cde_semester' %}
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_queryform.js') }}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+{% endblock %}
 {% set jshint = 'weak' %}
 {% block title %}{% trans %}Semester Management{% endtrans %}{% endblock %}
 {% block breadcrumb %}
@@ -206,8 +209,11 @@
         </div>
     </div>
 
-    <h2>{% trans %}Semester History{% endtrans %}</h2>
-    <table id="period-history" class="table table-condensed">
+    <h2 style="display: inline-block">{% trans %}Semester History{% endtrans %}</h2>
+    <button type="button" class="btn btn-sm btn-trigger-wide" title="{% trans %}widen semester history{% endtrans %}">
+                {{ util.make_icon('arrows-alt-h', arialabel=gettext("widen semester history")) }}
+    </button>
+    <table id="period-history" class="table" style="background: #fff">
         <thead>
             <tr>
                 <th>{% trans %}Semester{% endtrans %}</th>
@@ -247,6 +253,12 @@
             {% endfor %}
         </tbody>
     </table>
+
+    <script nonce="{{ csp_nonce }}">
+        $(function(){
+            $('#period-history').cdedbMoveToWidePage($('.btn-trigger-wide'));
+        });
+    </script>
 
     <hr>
 
