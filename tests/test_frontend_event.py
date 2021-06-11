@@ -1992,21 +1992,21 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Anmeldung von Anton Armin A. Administrator"
                          " (Große Testakademie 2222)")
         self.assertPresence("Teilnehmerbeitrag ausstehend")
-        self.assertPresence("Bereits bezahlter Betrag 573,98 €")
+        self.assertPresence("Bereits Bezahlt 573,98 €")
         self.traverse({'href': '/event/event/1/show'},
                       {'href': '/event/event/1/registration/query'},
                       {'description': 'Alle Anmeldungen'},
                       {'href': '/event/event/1/registration/2/show'})
         self.assertTitle("Anmeldung von Emilia E. Eventis (Große Testakademie 2222)")
         self.assertPresence("Bezahlt am 04.01.2018")
-        self.assertPresence("Bereits bezahlter Betrag 589,49 €")
+        self.assertPresence("Bereits Bezahlt 589,49 €")
         self.traverse({'href': '/event/event/1/show'},
                       {'href': '/event/event/1/registration/query'},
                       {'description': 'Alle Anmeldungen'},
                       {'href': '/event/event/1/registration/4/show'})
         self.assertTitle("Anmeldung von Inga Iota (Große Testakademie 2222)")
         self.assertPresence("Bezahlt am 30.12.2019")
-        self.assertPresence("Bereits bezahlter Betrag 451,00 €")
+        self.assertPresence("Bereits Bezahlt 451,00 €")
 
     @as_users("garcia")
     def test_batch_fee_regex(self) -> None:
@@ -3131,7 +3131,7 @@ etc;anything else""", f['entries_2'].value)
         # Check that the change to lodgement was committed ...
         self.assertPresence("Kellerverlies")
         # ... but the checkin is still valid
-        self.assertPresence("eingecheckt:")
+        self.assertNonPresence("—", div="checkin-time")
 
     @as_users("garcia")
     def test_manage_attendees(self) -> None:

@@ -794,6 +794,7 @@ class TestEventBackend(BackendTest):
             'amount_paid': decimal.Decimal("0.00"),
             'amount_owed': decimal.Decimal("589.49"),
             'checkin': None,
+            'ctime': datetime.datetime(2014, 1, 1, 2, 5, 6, tzinfo=pytz.utc),
             'event_id': 1,
             'fields': {
                 'anzahl_GROSSBUCHSTABEN': 3,
@@ -804,6 +805,7 @@ class TestEventBackend(BackendTest):
             'list_consent': True,
             'id': 2,
             'mixed_lodging': True,
+            'mtime': None,
             'orga_notes': 'Unbedingt in die Einzelzelle.',
             'notes': 'Extrawünsche: Meerblick, Weckdienst und Frühstück am Bett',
             'parental_agreement': True,
@@ -869,6 +871,7 @@ class TestEventBackend(BackendTest):
         expectation['tracks'][2]['choices'] = [2, 3, 4]
         expectation['fields']['transportation'] = 'etc'
         expectation['mixed_lodging'] = False
+        expectation['mtime'] = nearly_now()
         self.assertEqual(expectation,
                          self.event.get_registration(self.key, 2))
 
@@ -940,6 +943,8 @@ class TestEventBackend(BackendTest):
             new_reg['tracks'][3]['track_id'] = 3
             new_reg['tracks'][3]['registration_id'] = new_id
             new_reg['tracks'][3]['choices'] = []
+            new_reg['ctime'] = nearly_now()
+            new_reg['mtime'] = None
             self.assertEqual(new_reg,
                              self.event.get_registration(self.key, new_id))
         else:
@@ -955,6 +960,7 @@ class TestEventBackend(BackendTest):
             1: {'amount_owed': decimal.Decimal("573.99"),
                 'amount_paid': decimal.Decimal("0.00"),
                 'checkin': None,
+                'ctime': datetime.datetime(2014, 1, 1, 1, 4, 5, tzinfo=pytz.utc),
                 'event_id': 1,
                 'fields': {
                     'anzahl_GROSSBUCHSTABEN': 4,
@@ -964,6 +970,7 @@ class TestEventBackend(BackendTest):
                 'list_consent': True,
                 'id': 1,
                 'mixed_lodging': True,
+                'mtime': None,
                 'orga_notes': None,
                 'notes': None,
                 'parental_agreement': True,
@@ -1005,6 +1012,7 @@ class TestEventBackend(BackendTest):
             2: {'amount_owed': decimal.Decimal("589.49"),
                 'amount_paid': decimal.Decimal("0.00"),
                 'checkin': None,
+                'ctime': datetime.datetime(2014, 1, 1, 2, 5, 6, tzinfo=pytz.utc),
                 'event_id': 1,
                 'fields': {
                     'anzahl_GROSSBUCHSTABEN': 3,
@@ -1015,6 +1023,7 @@ class TestEventBackend(BackendTest):
                 'list_consent': True,
                 'id': 2,
                 'mixed_lodging': True,
+                'mtime': None,
                 'orga_notes': 'Unbedingt in die Einzelzelle.',
                 'notes': 'Extrawünsche: Meerblick, Weckdienst und Frühstück am Bett',
                 'parental_agreement': True,
@@ -1056,6 +1065,7 @@ class TestEventBackend(BackendTest):
             4: {'amount_owed': decimal.Decimal("431.99"),
                 'amount_paid': decimal.Decimal("0.00"),
                 'checkin': None,
+                'ctime': datetime.datetime(2014, 1, 1, 4, 7, 8, tzinfo=pytz.utc),
                 'event_id': 1,
                 'fields': {
                     'anzahl_GROSSBUCHSTABEN': 2,
@@ -1067,6 +1077,7 @@ class TestEventBackend(BackendTest):
                 'list_consent': False,
                 'id': 4,
                 'mixed_lodging': False,
+                'mtime': None,
                 'orga_notes': None,
                 'notes': None,
                 'parental_agreement': False,
@@ -1141,6 +1152,7 @@ class TestEventBackend(BackendTest):
         expectation[4]['fields'].update(data['fields'])
         expectation[4]['mixed_lodging'] = data['mixed_lodging']
         expectation[4]['checkin'] = nearly_now()
+        expectation[4]['mtime'] = nearly_now()
         expectation[4]['amount_owed'] = decimal.Decimal("5.50")
         for key, value in expectation[4]['parts'].items():
             if key in data['parts']:
@@ -1229,6 +1241,8 @@ class TestEventBackend(BackendTest):
         new_reg['tracks'][3]['track_id'] = 3
         new_reg['tracks'][3]['registration_id'] = new_id
         new_reg['tracks'][3]['choices'] = []
+        new_reg['ctime'] = nearly_now()
+        new_reg['mtime'] = None
         self.assertEqual(new_reg,
                          self.event.get_registration(self.key, new_id))
         self.assertEqual({1: 1, 2: 5, 3: 7, 4: 9, 5: 100, 6: 2, new_id: 3},
