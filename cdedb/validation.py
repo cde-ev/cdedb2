@@ -1048,6 +1048,7 @@ PERSONA_COMMON_FIELDS: Mapping[str, Any] = {
     'is_member': bool,
     'is_searchable': bool,
     'is_archived': bool,
+    'is_purged': bool,
     'is_active': bool,
     'display_name': str,
     'given_names': str,
@@ -1114,6 +1115,7 @@ def _persona(
         temp.update({
             'is_meta_admin': False,
             'is_archived': False,
+            'is_purged': False,
             'is_assembly_admin': False,
             'is_cde_admin': False,
             'is_finance_admin': False,
@@ -1209,6 +1211,8 @@ def _date(
 
 @_add_typed_validator
 def _birthday(val: Any, argname: str = None, **kwargs: Any) -> Birthday:
+    if not val:
+        val = datetime.date.min
     val = _date(val, argname=argname, **kwargs)
     if now().date() < val:
         raise ValidationSummary(ValueError(

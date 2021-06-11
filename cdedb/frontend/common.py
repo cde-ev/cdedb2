@@ -267,7 +267,7 @@ def date_filter(val: Union[datetime.date, str, None],
     :param passthrough: If True return strings unmodified.
     """
     if val is None or val == '' or not isinstance(val, datetime.date):
-        if passthrough and isinstance(val, str) and val:
+        if passthrough and isinstance(val, str) and val and val != datetime.date.min:
             return val
         return None
 
