@@ -21,3 +21,7 @@ found in the ``bin`` subdirectory.
 * ``isolated-evolution.sh``: Launch a one-time use container for testing a
   set of database evolutions (like ``evolution-trial.sh``, but more thorough).
 * ``isolated-test.sh``: Launch a one-time use container running the test suite.
+
+There is also a development server running at port 5000
+which bypasses Apache and provides an interactive traceback explorer
+including a console in which expressions can be evaluated in the respective namespace.

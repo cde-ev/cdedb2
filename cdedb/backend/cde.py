@@ -898,11 +898,12 @@ class CdEBackend(AbstractBackend):
             return ret
 
     @access("member", "cde_admin")
-    def get_member_stats(self, rs: RequestState) -> CdEDBObject:
+    def get_member_stats(self, rs: RequestState
+                         ) -> Tuple[CdEDBObject, CdEDBObject, CdEDBObject]:
         """Retrieve some generic statistics about members."""
         # Simple stats first.
         query = """SELECT
-            num_members, num_searchable, num_ex_members
+            num_members, num_of_searchable, num_of_trial, num_ex_members, num_all
         FROM
             (
                 SELECT COUNT(*) AS num_members
@@ -910,24 +911,31 @@ class CdEBackend(AbstractBackend):
                 WHERE is_member = True
             ) AS member_count,
             (
-                SELECT COUNT(*) AS num_searchable
+                SELECT COUNT(*) AS num_of_searchable
                 FROM core.personas
                 WHERE is_member = True AND is_searchable = True
             ) AS searchable_count,
             (
+                SELECT COUNT(*) AS num_of_trial
+                FROM core.personas
+                WHERE is_member = True AND trial_member = True
+            ) AS trial_count,
+            (
                 SELECT COUNT(*) AS num_ex_members
                 FROM core.personas
                 WHERE is_cde_realm = True AND is_member = False
-                    AND is_archived = False
-            ) AS ex_member_count
+            ) AS ex_member_count,
+            (
+                SELECT COUNT(*) AS num_all
+                FROM core.personas
+            ) AS all_count
         """
         data = self.query_one(rs, query, ())
         assert data is not None
 
-        ret: CdEDBObject = {
-            'simple_stats': OrderedDict((k, data[k]) for k in (
-                n_("num_members"), n_("num_searchable"), n_("num_ex_members")))
-        }
+        simple_stats = OrderedDict((k, data[k]) for k in (
+            n_("num_members"), n_("num_of_searchable"), n_("num_of_trial"),
+            n_("num_ex_members"), n_("num_all")))
 
         # TODO: improve this type annotation with a new mypy version.
         def query_stats(select: str, condition: str, order: str, limit: int = 0
@@ -939,33 +947,26 @@ class CdEBackend(AbstractBackend):
             data = self.query_all(rs, query, ())
             return OrderedDict((e['datum'], e['num']) for e in data)
 
-        # Members by country.
-        ret[n_("members_by_country")] = query_stats(
-            select="country",
-            condition="location",
-            order="num DESC, datum ASC")
+        # Members by locations.
+        other_stats: CdEDBObject = {
+            n_("members_by_country"): query_stats(
+                select="country",
+                condition="location",
+                order="num DESC, datum ASC"),
+            n_("members_by_city"): query_stats(
+                select="location",
+                condition="location",
+                order="num DESC, datum ASC",
+                limit=9),
+        }
 
-        # Members by PLZ.
-        # We don't want the PLZ stats for now. See #380.
-        # ret[n_("members_by_plz")] = query_stats(
-        #   select="postal_code",
-        #   condition="postal_code",
-        #   order="num DESC, datum ASC")
-
-        # Members by city.
-        # We want to cutoff the list due to privacy and readability concerns.
-        ret[n_("members_by_city")] = query_stats(
-            select="location",
-            condition="location",
-            order="num DESC, datum ASC",
-            limit=9)
-
-        # Members by birthday.
-        ret[n_("members_by_birthday")] = query_stats(
-            select="EXTRACT(year FROM birthday)::integer",
-            condition="birthday",
-            order="datum ASC"
-        )
+        # Members by date.
+        year_stats: CdEDBObject = {
+            n_("members_by_birthday"): query_stats(
+                select="EXTRACT(year FROM birthday)::integer",
+                condition="birthday",
+                order="datum ASC"),
+        }
 
         # Members by first event.
         query = """SELECT
@@ -997,7 +998,7 @@ class CdEBackend(AbstractBackend):
             -- num DESC,
             datum ASC
         """
-        ret[n_("members_by_first_event")] = OrderedDict(
+        year_stats[n_("members_by_first_event")] = OrderedDict(
             (e['datum'], e['num']) for e in self.query_all(rs, query, ()))
 
         # Unique event attendees per year:
@@ -1020,10 +1021,10 @@ class CdEBackend(AbstractBackend):
         ORDER BY
             datum ASC
         """
-        ret[n_("unique_participants_per_year")] = dict(
+        year_stats[n_("unique_participants_per_year")] = dict(
             (e['datum'], e['num']) for e in self.query_all(rs, query, ()))
 
-        return ret
+        return simple_stats, other_stats, year_stats
 
     @access("searchable", "core_admin", "cde_admin")
     def submit_general_query(self, rs: RequestState,

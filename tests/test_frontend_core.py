@@ -1231,8 +1231,10 @@ class TestCoreFrontend(FrontendTest):
                 f[field].checked = True
         self.submit(f)
         self.assertTitle("Archivsuche")
-        self.assertPresence("Ergebnis [1]", div='query-results')
+        self.assertPresence("Ergebnis [2]", div='query-results')
         self.assertPresence("Hell", div='query-result')
+        self.assertPresence("Lost", div='query-result')
+        self.assertPresence("N/A", div='query-result')
 
     @as_users("vera")
     def test_show_archived_user(self) -> None:

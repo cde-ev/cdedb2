@@ -1585,7 +1585,7 @@ class CoreBackend(AbstractBackend):
                 'display_name': "N.",
                 'given_names': "N.",
                 'family_name': "N.",
-                'birthday': "-Infinity",
+                'birthday': datetime.date.min,
                 'birth_name': None,
                 'gender': const.Genders.not_specified,
                 'is_cde_realm': True,
