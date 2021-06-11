@@ -3957,7 +3957,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "show_registration", {
             'persona': persona, 'age': age, 'courses': courses,
             'lodgements': lodgements, 'meta_info': meta_info, 'fee': fee,
-            'reference': reference, 'waitlist_position': waitlist_position
+            'reference': reference, 'waitlist_position': waitlist_position,
         })
 
     @access("event")

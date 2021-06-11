@@ -2735,9 +2735,26 @@ class EventBackend(AbstractBackend):
                     # Permission check is done later when we know more
                     stati = {const.RegistrationPartStati.participant}
 
-            ret = {e['id']: e for e in self.sql_select(
-                rs, "event.registrations", REGISTRATION_FIELDS, registration_ids)}
-            event_fields = self._get_event_fields(rs, event_id)
+            query = f"""
+                SELECT {", ".join(REGISTRATION_FIELDS)}, ctime, mtime
+                FROM event.registrations
+                LEFT OUTER JOIN (
+                    SELECT persona_id AS log_persona_id, MAX(ctime) AS ctime
+                    FROM event.log WHERE code = %s GROUP BY log_persona_id
+                ) AS ctime
+                ON event.registrations.persona_id = ctime.log_persona_id
+                LEFT OUTER JOIN (
+                    SELECT persona_id AS log_persona_id, MAX(ctime) AS mtime
+                    FROM event.log WHERE code = %s GROUP BY log_persona_id
+                ) AS mtime
+                ON event.registrations.persona_id = mtime.log_persona_id
+                WHERE event.registrations.id = ANY(%s)
+                """
+            params = (const.EventLogCodes.registration_created,
+                      const.EventLogCodes.registration_changed, registration_ids)
+            rdata = self.query_all(rs, query, params)
+            ret = {reg['id']: reg for reg in rdata}
+
             pdata = self.sql_select(
                 rs, "event.registration_parts", REGISTRATION_PART_FIELDS,
                 registration_ids, entity_key="registration_id")
@@ -2750,6 +2767,7 @@ class EventBackend(AbstractBackend):
                 # Limit to registrations matching stati filter in any part.
                 if not any(e['status'] in stati for e in ret[anid]['parts'].values()):
                     del ret[anid]
+
             # Here comes the promised permission check
             if not is_privileged and all(reg['persona_id'] != rs.user.persona_id
                                          for reg in ret.values()):
@@ -2762,6 +2780,7 @@ class EventBackend(AbstractBackend):
                 rs, "event.course_choices",
                 ("registration_id", "track_id", "course_id", "rank"), registration_ids,
                 entity_key="registration_id")
+            event_fields = self._get_event_fields(rs, event_id)
             for anid in ret:
                 if 'tracks' in ret[anid]:
                     raise RuntimeError()
@@ -2774,6 +2793,7 @@ class EventBackend(AbstractBackend):
                     tracks[track_id]['choices'] = xsorted(tmp.keys(), key=tmp.get)
                 ret[anid]['tracks'] = tracks
                 ret[anid]['fields'] = cast_fields(ret[anid]['fields'], event_fields)
+
         return ret
 
     class _GetRegistrationProtocol(Protocol):
