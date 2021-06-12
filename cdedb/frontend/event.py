@@ -3763,7 +3763,7 @@ class EventFrontend(AbstractUserFrontend):
 
         change_note = "Fragebogen durch Teilnehmer bearbeitet."
         code = self.eventproxy.set_registration(rs,
-            {'id': registration_id, 'fields': data,}, change_note)
+            {'id': registration_id, 'fields': data}, change_note)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/additional_questionnaire_form")
 
