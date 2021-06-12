@@ -2009,6 +2009,15 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Anmeldung von Inga Iota (Große Testakademie 2222)")
         self.assertPresence("Bezahlt am 30.12.2019")
         self.assertPresence("Bereits Bezahlt 451,00 €")
+        # Check log
+        self.traverse({'href': '/event/event/1/log'})
+        self.assertPresence("573,98 € am 01.04.2018 gezahlt.",
+                            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
+        self.assertPresence("589,49 € am 04.01.2018 gezahlt.",
+                            div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
+        self.assertPresence("451,00 € am 30.12.2019 gezahlt.",
+                            div=str(self.EVENT_LOG_OFFSET + 3) + "-1003")
+
 
     @as_users("garcia")
     def test_batch_fee_regex(self) -> None:
@@ -3143,6 +3152,10 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.assertTitle("Checkin (Große Testakademie 2222)")
         self.assertNotIn('checkinform2', self.response.forms)
+        # Check log
+        self.traverse({'href': '/event/event/1/log'})
+        self.assertPresence("Eingecheckt.",
+                            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
         # single-part
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/3/show'},
@@ -3154,6 +3167,9 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.assertTitle("Checkin (CyberTestAkademie)")
         self.assertNotIn('checkinform7', self.response.forms)
+        # Check log
+        self.traverse({'href': '/event/event/3/log'})
+        self.assertPresence("Eingecheckt.", div="1-1002")
 
     @as_users("garcia")
     def test_checkin_concurrent_modification(self) -> None:

@@ -41,9 +41,9 @@ from cdedb.frontend.common import (
     AbstractUserFrontend, CustomCSVDialect, RequestConstraint, REQUESTdata,
     REQUESTdatadict, REQUESTfile, access, calculate_db_logparams, calculate_loglinks,
     cdedbid_filter, cdedburl, check_validation as check,
-    check_validation_optional as check_optional, enum_entries_filter, event_guard,
-    keydictsort_filter, make_event_fee_reference, process_dynamic_input,
-    querytoparams_filter, request_extractor, safe_filter,
+    check_validation_optional as check_optional, date_filter, enum_entries_filter,
+    event_guard, keydictsort_filter, make_event_fee_reference, money_filter,
+    process_dynamic_input, querytoparams_filter, request_extractor, safe_filter,
 )
 from cdedb.query import (
     QUERY_SPECS, Query, QueryConstraint, QueryOperators, mangle_query_input,
@@ -2212,6 +2212,7 @@ class EventFrontend(AbstractUserFrontend):
         problems.extend(p)
 
         registration_id = None
+        original_date = date
         if persona_id:
             try:
                 persona = self.coreproxy.get_persona(rs, persona_id)
@@ -2264,6 +2265,7 @@ class EventFrontend(AbstractUserFrontend):
             'persona_id': persona_id,
             'registration_id': registration_id,
             'date': date,
+            'original_date': original_date,
             'amount': amount,
             'warnings': warnings,
             'problems': problems,
@@ -2296,7 +2298,10 @@ class EventFrontend(AbstractUserFrontend):
                         'amount_paid': all_regs[reg_id]['amount_paid']
                                        + datum['amount'],
                     }
-                    count += self.eventproxy.set_registration(rs, update)
+                    info = "{} am {} gezahlt.".format(
+                        money_filter(datum['amount']),
+                        date_filter(datum['original_date'], lang="de"))
+                    count += self.eventproxy.set_registration(rs, update, info)
         except psycopg2.extensions.TransactionRollbackError:
             # We perform a rather big transaction, so serialization errors
             # could happen.
@@ -4369,7 +4374,7 @@ class EventFrontend(AbstractUserFrontend):
         registration = self.process_orga_registration_input(
             rs, rs.ambience['event'], check_enabled=True)
         if rs.has_validation_errors():
-            return self.change_registrations_form(rs, event_id, reg_ids)
+            return self.change_registrations_form(rs, event_id, reg_ids, change_note)
 
         code = 1
         self.logger.info(
@@ -6062,7 +6067,7 @@ class EventFrontend(AbstractUserFrontend):
             'id': registration_id,
             'checkin': now(),
         }
-        code = self.eventproxy.set_registration(rs, new_reg)
+        code = self.eventproxy.set_registration(rs, new_reg, "Eingecheckt.")
         self.notify_return_code(rs, code)
         return self.redirect(rs, 'event/checkin')
 
