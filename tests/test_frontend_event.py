@@ -1331,6 +1331,15 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Große Testakademie 2222")
         self.assertPresence("Kein Teilnehmer der Veranstaltung", div='notifications')
 
+        # check log
+        self.logout()
+        self.login("garcia")
+        self.get('/event/event/1/log')
+        self.assertPresence("Anmeldung erstellt",
+                            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
+        self.assertPresence("Anmeldung durch Teilnehmer bearbeitet.",
+                            div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
+
     @as_users("anton")
     def test_registration_status(self) -> None:
         self.traverse({'href': '/event/$'},
@@ -1566,6 +1575,13 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['questionnaireform']
         self.assertEqual("etc", f['transportation'].value)
         self.assertEqual("Bitte in ruhiger Lage.\nEcht.", f['lodge'].value)
+
+        # check log
+        self.traverse({'href': '/event/event/1/log'})
+        self.assertPresence("Veranstaltung geändert",
+                            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
+        self.assertPresence("Fragebogen durch Teilnehmer bearbeitet.",
+                            div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
 
     def _create_event_field(self, fdata: CdEDBObject) -> None:
         self.traverse({'description': "Datenfelder konfigurieren"})

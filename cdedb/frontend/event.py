@@ -3582,7 +3582,8 @@ class EventFrontend(AbstractUserFrontend):
             persona['birthday'], rs.ambience['event']['begin'])
         registration['mixed_lodging'] = (registration['mixed_lodging']
                                          and age.may_mix())
-        code = self.eventproxy.set_registration(rs, registration)
+        change_note = "Anmeldung durch Teilnehmer bearbeitet."
+        code = self.eventproxy.set_registration(rs, registration, change_note)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/registration_status")
 
@@ -3760,9 +3761,9 @@ class EventFrontend(AbstractUserFrontend):
             return self.additional_questionnaire_form(
                 rs, event_id, internal=True)
 
-        code = self.eventproxy.set_registration(rs, {
-            'id': registration_id, 'fields': data,
-        })
+        change_note = "Fragebogen durch Teilnehmer bearbeitet."
+        code = self.eventproxy.set_registration(rs,
+            {'id': registration_id, 'fields': data,}, change_note)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/additional_questionnaire_form")
 
