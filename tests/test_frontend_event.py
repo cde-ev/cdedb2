@@ -2527,6 +2527,7 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['fieldform']
         self.assertEqual("pedes", f['input2'].value)
         f['input2'] = "etc"
+        f['change_note'] = "We need to fill missing entries…"
         self.submit(f)
         self.traverse({'href': '/event/event/1/field/setselect'})
         self.assertTitle("Datenfeld auswählen (Große Testakademie 2222)")
@@ -2594,6 +2595,25 @@ etc;anything else""", f['entries_2'].value)
         f['input1'] = "medium"
         self.submit(f)
         self.assertPresence("elevated level of radiation ")
+
+        # Check log
+        self.traverse({'href': '/event/event/1/log'})
+        self.assertPresence("Anmeldung geändert",
+                            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
+        self.assertPresence("transportation gesetzt: We need to fill missing entries…",
+                            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
+        self.assertPresence("Anmeldung geändert",
+                            div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
+        self.assertPresence("lodge gesetzt.",
+                            div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
+        self.assertPresence("Kurs geändert",
+                            div=str(self.EVENT_LOG_OFFSET + 3) + "-1003")
+        self.assertPresence("Backup-Kurs",
+                            div=str(self.EVENT_LOG_OFFSET + 3) + "-1003")
+        self.assertPresence("Unterkunft geändert",
+                            div=str(self.EVENT_LOG_OFFSET + 4) + "-1004")
+        self.assertPresence("Warme Stube",
+                            div=str(self.EVENT_LOG_OFFSET + 4) + "-1004")
 
     @as_users("garcia")
     def test_stats(self) -> None:

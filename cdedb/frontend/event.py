@@ -6176,10 +6176,11 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard(check_offline=True)
-    @REQUESTdata("field_id", "ids", "kind")
+    @REQUESTdata("field_id", "ids", "kind", "change_note")
     def field_set_form(self, rs: RequestState, event_id: int, field_id: vtypes.ID,
                        ids: Optional[vtypes.IntCSVList], kind: const.FieldAssociations,
-                       internal: bool = False) -> Response:
+                       change_note: Optional[str] = None, internal: bool = False
+                       ) -> Response:
         """Render form.
 
         The internal flag is used if the call comes from another frontend
@@ -6205,20 +6206,28 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdata("field_id", "ids", "kind")
+    @REQUESTdata("field_id", "ids", "kind", "change_note")
     def field_set(self, rs: RequestState, event_id: int, field_id: vtypes.ID,
-                  ids: Optional[vtypes.IntCSVList],
-                  kind: const.FieldAssociations) -> Response:
+                  ids: Optional[vtypes.IntCSVList], kind: const.FieldAssociations,
+                  change_note: Optional[str] = None) -> Response:
         """Modify a specific field on the given entities."""
         if rs.has_validation_errors():
             return self.field_set_form(  # type: ignore
-                rs, event_id, kind=kind, internal=True)
+                rs, event_id, kind=kind, change_note=change_note, internal=True)
         if ids is None:
             ids = cast(vtypes.IntCSVList, [])
 
         entities, _, _, field = self.field_set_aux(
             rs, event_id, field_id, ids, kind)
         assert field is not None  # to make mypy happy
+
+        if kind == const.FieldAssociations.registration:
+            if change_note:
+                change_note = f"{field['field_name']} gesetzt: " + change_note
+            else:
+                change_note = f"{field['field_name']} gesetzt."
+        elif change_note:
+            raise RuntimeError("change_note only supoorted for registrations.")
 
         data_params: TypeMapping = {
             f"input{anid}": Optional[  # type: ignore
@@ -6247,7 +6256,10 @@ class EventFrontend(AbstractUserFrontend):
                     'id': anid,
                     'fields': {field['field_name']: data[f"input{anid}"]}
                 }
-                code *= entity_setter(rs, new)
+                if change_note:
+                    code *= entity_setter(rs, new, change_note)  # type: ignore
+                else:
+                    code *= entity_setter(rs, new)
         self.notify_return_code(rs, code)
 
         if kind == const.FieldAssociations.registration:
