@@ -18,6 +18,8 @@ from tests.common import UserObject, USER_DICT, FrontendTest, as_users, prepsql,
 
 
 class TestEventFrontend(FrontendTest):
+    EVENT_LOG_OFFSET = 4
+
     @as_users("emilia")
     def test_index(self) -> None:
         self.traverse({'description': 'Veranstaltungen'})
@@ -2127,6 +2129,28 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("2", f['part2.status'].value)
         self.assertEqual("5", f['part3.status'].value)
         self.assertEqual("pedes", f['fields.transportation'].value)
+        # Check log
+        self.traverse({'href': '/event/event/1/log'})
+        self.assertPresence("Multi-Edit",
+                            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
+        self.assertPresence("Multi-Edit",
+                            div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
+        self.assertNonPresence("Mult-Edit:")
+
+    @as_users("garcia")
+    def test_multiedit_with_note(self) -> None:
+        self.get("/event/event/1/registration/multiedit?reg_ids=2,3")
+        self.assertTitle("Anmeldungen bearbeiten (Große Testakademie 2222)")
+        f = self.response.forms['changeregistrationform']
+        f['fields.transportation'] = "pedes"
+        f['change_note'] = "Muss laufen."
+        self.submit(f)
+        # Check log
+        self.traverse({'href': '/event/event/1/log'})
+        self.assertPresence("Multi-Edit: Muss laufen.",
+                            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
+        self.assertPresence("Multi-Edit: Muss laufen.",
+                            div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
 
     @as_users("garcia")
     def test_show_registration(self) -> None:
@@ -2205,6 +2229,23 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("5", f['track3.course_choice_1'].value)
         self.assertEqual("etc", f['fields.transportation'].value)
         self.assertEqual("Om nom nom nom", f['fields.lodge'].value)
+
+    @as_users("garcia")
+    def test_change_registration_with_note(self) -> None:
+        self.get('/event/event/1/registration/2/change')
+        self.assertTitle(
+            "Anmeldung von Emilia E. Eventis bearbeiten (Große Testakademie 2222)")
+        f = self.response.forms['changeregistrationform']
+        self.assertEqual("Unbedingt in die Einzelzelle.", f['reg.orga_notes'].value)
+        f['reg.orga_notes'] = "Wir wollen mal nicht so sein."
+        f['change_note'] = "Orga-Notizen geändert."
+        self.submit(f)
+        self.assertTitle("Anmeldung von Emilia E. Eventis (Große Testakademie 2222)")
+        self.assertNonPresence("Orga-Notizen geändert")
+        # Check log
+        self.traverse({'href': '/event/event/1/log'})
+        self.assertPresence("Orga-Notizen geändert.",
+                            div=str(self.EVENT_LOG_OFFSET +1) + "-1001")
 
     @as_users("garcia")
     def test_add_registration(self) -> None:

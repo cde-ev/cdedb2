@@ -3962,10 +3962,11 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard(check_offline=True)
-    @REQUESTdata("skip")
+    @REQUESTdata("skip", "change_note")
     def change_registration_form(self, rs: RequestState, event_id: int,
                                  registration_id: int, skip: Collection[str],
-                                 internal: bool = False) -> Response:
+                                 change_note: Optional[str], internal: bool = False
+                                 ) -> Response:
         """Render form.
 
         The skip parameter is meant to hide certain fields and skip them when
@@ -4150,10 +4151,10 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdata("skip")
+    @REQUESTdata("skip", "change_note")
     def change_registration(self, rs: RequestState, event_id: int,
-                            registration_id: int, skip: Collection[str]
-                            ) -> Response:
+                            registration_id: int, skip: Collection[str],
+                            change_note: Optional[str]) -> Response:
         """Make privileged changes to any information pertaining to a
         registration.
 
@@ -4166,9 +4167,10 @@ class EventFrontend(AbstractUserFrontend):
             do_real_persona_id=self.conf["CDEDB_OFFLINE_DEPLOYMENT"])
         if rs.has_validation_errors():
             return self.change_registration_form(
-                rs, event_id, registration_id, skip=(), internal=True)
+                rs, event_id, registration_id, skip=(), internal=True,
+                change_note=change_note)
         registration['id'] = registration_id
-        code = self.eventproxy.set_registration(rs, registration)
+        code = self.eventproxy.set_registration(rs, registration, change_note)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/show_registration")
 
@@ -4265,9 +4267,10 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard(check_offline=True)
-    @REQUESTdata("reg_ids")
+    @REQUESTdata("reg_ids", "change_note")
     def change_registrations_form(self, rs: RequestState, event_id: int,
-                                  reg_ids: vtypes.IntCSVList) -> Response:
+                                  reg_ids: vtypes.IntCSVList,
+                                  change_note: Optional[str]) -> Response:
         """Render form for changing multiple registrations."""
 
         # Redirect, if the reg_ids parameters is error-prone, to avoid backend
@@ -4356,9 +4359,10 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdata("reg_ids")
+    @REQUESTdata("reg_ids", "change_note")
     def change_registrations(self, rs: RequestState, event_id: int,
-                             reg_ids: vtypes.IntCSVList) -> Response:
+                             reg_ids: vtypes.IntCSVList,
+                             change_note: Optional[str]) -> Response:
         """Make privileged changes to any information pertaining to multiple
         registrations.
         """
@@ -4370,9 +4374,14 @@ class EventFrontend(AbstractUserFrontend):
         code = 1
         self.logger.info(
             f"Updating registrations {reg_ids} with data {registration}")
+        if change_note:
+            change_note = "Multi-Edit: " + change_note
+        else:
+            change_note = "Multi-Edit"
+
         for reg_id in reg_ids:
             registration['id'] = reg_id
-            code *= self.eventproxy.set_registration(rs, registration)
+            code *= self.eventproxy.set_registration(rs, registration, change_note)
         self.notify_return_code(rs, code)
 
         # redirect to query filtered by reg_ids
