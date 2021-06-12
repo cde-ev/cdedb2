@@ -7,7 +7,7 @@ automatically, while JavaScript and CSS are tested manually.
 
 For backend and other basic testing, we are just calling the functions we want
 to test directly, while for frontend testing, we are using webtest to emulate a
-webserver. Here, we use German as default locale, so be wary vor test failures
+webserver. Here, we use German as default locale, so be wary for test failures
 when touching translations.
 
 How to write a good integration test
@@ -15,8 +15,6 @@ How to write a good integration test
 This aims at providing a brief list of points one should take into account
 while writing integration tests (often incorrectly called unit tests).
 
-* Get familiar with our testing facilities in ``tests/common.py``. There, many
-  helpers are defined which simplify common testing tasks.
 * Failure cases are important. Always test that validation errors are handled
   correctly, especially in the frontend.
 * Test with the least privileged user possible. If there is reason to believe
@@ -28,18 +26,23 @@ while writing integration tests (often incorrectly called unit tests).
   lifecycle of simple entities. This reduces the total runtime of the tests.
 * Avoid raw IDs. They are hard to recognize. Use terms like
   ``USER_DICT["inga"]["id"]`` or ``const.EventLogCodes.event_changed`` instead.
+  The ``self.user_in`` function simplifies this for users since it accepts full
+  user objects (``USER_DICT["inga"]``), user ids (``9``) or names (``"inga"``).
 * Do not imitate the existing ``test_log`` tests. Those represent an
   anti-pattern. Instead, test the presence of log entries together with their
-  generation. For backend tests, ``pprint`` is helpful to create an
-  expectation. For frontend tests, it suffices to check ``id``, ``code`` and
-  potentially ``change_note`` are a match.
+  generation. For backend tests, copying ``pprint`` output is helpful
+  to compile an expectation. For frontend tests, it usually suffices to check
+  that ``id``, ``code`` and potentially ``change_note`` are a match.
 * Remember to add the ``@storage`` decorator when accessing storage.
+  Otherwise, your test will fail.
 
 If you require as much time to write a unit test as you needed to write the
 original functionality, you are doing it right.
 
 For frontend tests, additionally take into account the following points:
 
+* Get familiar with the ``FrontendTest`` class inside ``tests/common.py``.
+  There, many helpers are defined which simplify common testing tasks.
 * If you check whether things are present, be precise. Specify as precise as
   possible where a string should be, and make it as long as possible.
 * If you check whether things are **not** present, be vague. Do not specify
