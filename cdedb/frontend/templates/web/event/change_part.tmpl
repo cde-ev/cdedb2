@@ -1,0 +1,73 @@
+{% set sidenav_active='event_parts' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% set jshint='strong' %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+    {{ util.cdedb_script('cdedb_dynamicrow.js') }}
+{% endblock %}
+{% block title %}
+    {% trans part_title=ambience['event']['parts'][part_id]['title'], event_title=ambience['event']['title'] %}
+    	Change {{ part_title }} ({{ event_title }})
+    {% endtrans %}
+{% endblock %}
+{% block heading %}
+    <h1 class="title">
+        {% trans %}
+        	Configure Event-Parts
+        {% endtrans %}
+        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
+    </h1>
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+    {{ util.breadcrumb_link(cdedblink("event/part_summary"), gettext("Event-Parts"), active=True) }}
+{% endblock %}
+
+{% block content %}
+    {% set tracks = ambience['event']['parts'][part_id]['tracks'] %}
+
+    <p class="text-warning">{{ util.make_icon('exclamation-triangle') }}
+        {% trans %}
+            Event parts and course tracks can only be created or deleted if no
+            registrations are present yet. Course tracks can only be deleted, if
+            there are no courses associated with them.
+        {% endtrans %}
+    </p>
+
+<form action="{{ cdedblink('event/part_summary') }}" method="POST" id="partsummaryform" class="form-horizontal">
+    {{ util.anti_csrf_token('event/part_summary') }}
+    {{ util.form_input_text(name="shortname", label=gettext("Shortname"), aclass='drow-input') }}
+    {{ util.form_input_text(name="part_begin", label=gettext("Begin"), type='date',
+                            aclass='drow-input', placeholder="YYYY-MM-DD") }}
+    {{ util.form_input_text(name="part_end", label=gettext("End"), type='date',
+                            aclass='drow-input', placeholder="YYYY-MM-DD") }}
+    {{ util.form_input_text(name="fee", label=gettext("Event-Part Fee"), aclass='drow-input form-control',
+                            anid="input-text-fee", addon='€') }}
+    {{ util.form_input_select(name="waitlist_field", entries=waitlist_fields,
+                              label=gettext("Field for Waitlist"),nulloption=nbsp,
+                              info=gettext("Field to store the %(link)s ranking of this part."
+                                           " Fieldtype: Integer")|format(
+                                           link=util.href(docurl("Handbuch_Orga_Warteliste"),
+                                                          gettext("Waitlist")))|s
+                              ) }}
+
+    <hr/>
+    {% set fee_columns = [dict(name="fee_modifier_modifier_name", label=gettext("Fee Modifier"), func=util.input_text),
+                          dict(name="fee_modifier_amount", label=gettext("Amount"), func=util.input_text),
+                          dict(name="fee_modifier_field_id", label=gettext("Linked Field"), func=util.input_select, func_additional_input = {'entries': fee_modifier_fields})] %}
+    {% set locked_fee_modifiers = fee_modifiers.values() if has_registrations else [] %}
+    {{ util.dynamic_row_table("Fee Modifier", fee_columns, fee_modifiers, locked=locked_fee_modifiers, sortkey=EntitySorter.fee_modifiers) }}
+
+    <hr/>
+    {% set track_columns = [dict(name="track_title", label=gettext("Coursetrack"), func=util.input_text),
+                            dict(name="track_shortname", label=gettext("Shortname"), func=util.input_text),
+                            dict(name="track_num_choices", label=gettext("Course Choices"), func=util.input_text, func_additional_input = {'defaultvalue': DEFAULT_NUM_COURSE_CHOICES}),
+                            dict(name="track_min_choices", label=gettext("Req. Choices"), func=util.input_text, func_additional_input = {'defaultvalue': DEFAULT_NUM_COURSE_CHOICES}),
+                            dict(name="track_sortkey", label=gettext("Sortkey"), func=util.input_text)] %}
+    {% set tracks = ambience['event']['parts'][part_id]['tracks'] %}
+    {{ util.dynamic_row_table("Fee Modifier", track_columns, tracks, locked=referenced_tracks, sortkey=EntitySorter.event_tracks) }}
+
+    {{ util.input_submit(label=gettext("Save"), readonly=has_registrations) }}
+</form>

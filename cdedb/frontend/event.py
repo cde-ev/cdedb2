@@ -639,7 +639,7 @@ class EventFrontend(AbstractUserFrontend):
             (field['id'], field['field_name']) for field in sorted_fields
             if field['association'] in legal_assocs and field['kind'] in legal_datatypes
         ]
-        return self.render(rs, "part_summary", {
+        return self.render(rs, "change_part", {
             'fee_modifier_fields': fee_modifier_fields,
             'fee_modifiers': fee_modifiers,
             'waitlist_fields': waitlist_fields,
