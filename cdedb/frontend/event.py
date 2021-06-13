@@ -4731,8 +4731,9 @@ class EventFrontend(AbstractUserFrontend):
                                 ) -> Response:
         """Manipulate groups of lodgements."""
         group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
-        groups = process_dynamic_input(rs, group_ids.keys(), {'title': str},
-                                       {'event_id': event_id})
+        spec = {'title': str}
+        groups = process_dynamic_input(
+            rs, group_ids.keys(), spec, additional={'event_id': event_id})
         if rs.has_validation_errors():
             return self.lodgement_group_summary_form(rs, event_id)
         code = 1
