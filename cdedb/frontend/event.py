@@ -4029,7 +4029,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "change_registration", {
             'persona': persona, 'courses': courses,
             'course_choices': course_choices, 'lodgements': lodgements,
-            'skip': skip or []})
+            'skip': skip or [], 'change_note': change_note})
 
     @staticmethod
     def process_orga_registration_input(
@@ -4361,7 +4361,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "change_registrations", {
             'registrations': registrations, 'personas': personas,
             'courses': courses, 'course_choices': course_choices,
-            'lodgements': lodgements})
+            'lodgements': lodgements, 'change_note': change_note})
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
@@ -6202,7 +6202,8 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "field_set", {
             'ids': (','.join(str(i) for i in ids) if ids else None),
             'entities': entities, 'labels': labels, 'ordered': ordered_ids,
-            'kind': kind.value, 'cancellink': self.FIELD_REDIRECT[kind]})
+            'kind': kind.value, 'change_note': change_note,
+            'cancellink': self.FIELD_REDIRECT[kind]})
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
