@@ -1574,7 +1574,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         """Create, edit and delete candidates of a ballot."""
 
         # TODO add request constraint as return type hint
-        def constrain_maker(candidate_id: int):
+        def constrain_maker(candidate_id: int, prefix: str):
             """Create constraints for each individual candidate"""
             constraints = [
                 (lambda c: c[f'shortname_{candidate_id}'] != ASSEMBLY_BAR_SHORTNAME,

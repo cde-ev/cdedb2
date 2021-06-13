@@ -2673,8 +2673,8 @@ def make_event_fee_reference(persona: CdEDBObject, event: CdEDBObject) -> str:
 
 def process_dynamic_input(
     rs: RequestState, existing: Collection[int], spec: validate.TypeMapping, *,
-    additional: CdEDBObject = None, prefix: str = None,
-    constraint_maker: Callable[[int], Collection[RequestConstraint]] = None
+    additional: CdEDBObject = None, prefix: str = "",
+    constraint_maker: Callable[[int, str], Collection[RequestConstraint]] = None
 ) -> Dict[int, Optional[CdEDBObject]]:
     """Retrieve information provided by flux tables.
 
@@ -2686,7 +2686,8 @@ def process_dynamic_input(
     :param existing: ids of already existent objects
     :param spec: name of input fields, mapped to their validation
     :param constraint_maker: a function accepting the id of a non-deleted entry and
-        gives back all constraints for this entry, which are passed to request_extractor
+        the string prefix and gives back all constraints for this entry, which are
+        further passed to request_extractor
     :param additional: additional keys added to each output object
     :param prefix: prefix in front of all concerned fields. Usable if more then one
         dynamic input table is present on the same page
@@ -2704,7 +2705,7 @@ def process_dynamic_input(
     }
     # generate the constraints for each existing entry which will not be deleted
     constraints = list(itertools.chain.from_iterable(
-        constraint_maker(anid) for anid in existing if anid not in deletes)
+        constraint_maker(anid, prefix) for anid in existing if anid not in deletes)
     ) if constraint_maker else None
     data = request_extractor(rs, params, constraints)
 
@@ -2725,7 +2726,7 @@ def process_dynamic_input(
         will_create = unwrap(request_extractor(rs, {f"{prefix}create_-{marker}": bool}))
         if will_create:
             params = {f"{prefix}{key}_-{marker}": value for key, value in spec.items()}
-            constraints = constraint_maker(-marker) if constraint_maker else None
+            constraints = constraint_maker(-marker, prefix) if constraint_maker else None
             data = request_extractor(rs, params, constraints)
             ret[-marker] = {key: data[f"{prefix}{key}_-{marker}"] for key in spec}
             if additional:

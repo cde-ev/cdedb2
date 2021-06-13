@@ -612,12 +612,13 @@ class EventFrontend(AbstractUserFrontend):
         part_data = check(rs, vtypes.EventPart, part_data)
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
 
-        def track_constraint_maker(track_id: int) -> List[RequestConstraint]:
-            # pylint: disable=redefined-builtin
-            min = f"track_min_choices_{track_id}"
-            num = f"track_num_choices_{track_id}"
+        def track_constraint_maker(track_id: int, prefix: str) -> List[RequestConstraint]:
+            min_choice = f"{prefix}min_choices_{track_id}"
+            num_choice = f"{prefix}num_choices_{track_id}"
             msg = n_("Must be less or equal than total Course Choices.")
-            return [(lambda d: d[min] <= d[num], (min, ValueError(msg)))]
+            return [(
+                lambda d: d[min_choice] <= d[num_choice], (min_choice, ValueError(msg))
+            )]
 
         #
         # process the dynamic track input
@@ -637,9 +638,9 @@ class EventFrontend(AbstractUserFrontend):
         if any(track is None for track in track_data.values()) and has_registrations:
             raise ValueError(n_("Registrations exist, no deletion."))
 
-        def fee_modifier_constraint_maker(fee_modifier_id: int
-                                          ) -> List[RequestConstraint]:
-            key = f"fee_modifier_field_id_{fee_modifier_id}"
+        def fee_modifier_constraint_maker(
+                fee_modifier_id: int, prefix: str) -> List[RequestConstraint]:
+            key = f"{prefix}field_id_{fee_modifier_id}"
             fields = rs.ambience['event']['fields']
             legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['fee_modifier']
             msg = n_("Fee Modifier linked to non-fitting field.")
