@@ -664,7 +664,6 @@ def prepsql(sql: AnyStr) -> Callable[[F], F]:
     return decorator
 
 
-# TODO: should this better be named needs_storage?
 def storage(fun: F) -> F:
     """Decorate a test which needs some of the test files on the local drive."""
     setattr(fun, BasicTest.needs_storage_marker, True)
@@ -745,10 +744,10 @@ class FrontendTest(BackendTest):
             texts = self.response.lxml.xpath('/html/head/title/text()')
             self.assertNotEqual(0, len(texts))
             self.assertNotEqual('CdEDB – Fehler', texts[0])
-            self.scrap()
-        self.log_generation_time()
+            self._scrap()
+        self._log_generation_time()
 
-    def scrap(self) -> None:
+    def _scrap(self) -> None:
         if self.do_scrap and self.response.status_int // 100 == 2:
             # path without host but with query string - capped at 64 chars
             # To enhance readability, we mark most chars as safe. All special chars are
@@ -762,7 +761,7 @@ class FrontendTest(BackendTest):
                                              delete=False) as f:
                 f.write(self.response.body)
 
-    def log_generation_time(self, response: webtest.TestResponse = None) -> None:
+    def _log_generation_time(self, response: webtest.TestResponse = None) -> None:
         if response is None:
             response = self.response
         if _BASICCONF["TIMING_LOG"]:
@@ -784,7 +783,7 @@ class FrontendTest(BackendTest):
         oldresponse = self.response
         self.response = self.response.maybe_follow(**kwargs)
         if self.response != oldresponse:
-            self.log_generation_time(oldresponse)
+            self._log_generation_time(oldresponse)
 
     def post(self, url: str, *args: Any, verbose: bool = False, **kwargs: Any) -> None:
         """Directly send a POST-request.
