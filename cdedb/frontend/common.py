@@ -2671,10 +2671,11 @@ def make_event_fee_reference(persona: CdEDBObject, event: CdEDBObject) -> str:
     )
 
 
-def process_dynamic_input(rs: RequestState, existing: Collection[int],
-                          spec: validate.TypeMapping, additional: CdEDBObject = None,
-                          constraint_maker: Callable[[int], Collection[RequestConstraint]] = None
-                          ) -> Dict[int, Optional[CdEDBObject]]:
+def process_dynamic_input(
+    rs: RequestState, existing: Collection[int], spec: validate.TypeMapping, *,
+    additional: CdEDBObject = None, prefix: str = None,
+    constraint_maker: Callable[[int], Collection[RequestConstraint]] = None
+) -> Dict[int, Optional[CdEDBObject]]:
     """Retrieve information provided by flux tables.
 
     This returns a data dict to update the database, which includes:
@@ -2687,11 +2688,17 @@ def process_dynamic_input(rs: RequestState, existing: Collection[int],
     :param constraint_maker: a function accepting the id of a non-deleted entry and
         gives back all constraints for this entry, which are passed to request_extractor
     :param additional: additional keys added to each output object
+    :param prefix: prefix in front of all concerned fields. Usable if more then one
+        dynamic input table is present on the same page
     """
-    delete_flags = request_extractor(rs, {f"delete_{anid}": bool for anid in existing})
-    deletes = {anid for anid in existing if delete_flags[f"delete_{anid}"]}
+    prefix = prefix + "_" if prefix else ""
+
+    delete_spec = {f"{prefix}delete_{anid}": bool for anid in existing}
+    delete_flags = request_extractor(rs, delete_spec)
+    deletes = {anid for anid in existing if delete_flags[f"{prefix}delete_{anid}"]}
+
     params: validate.TypeMapping = {
-        f"{key}_{anid}": value
+        f"{prefix}{key}_{anid}": value
         for anid in existing if anid not in deletes
         for key, value in spec.items()
     }
@@ -2703,7 +2710,7 @@ def process_dynamic_input(rs: RequestState, existing: Collection[int],
 
     # build the return dict of all existing entries
     ret: Dict[int, Optional[CdEDBObject]] = {
-        anid: {key: data[f"{key}_{anid}"] for key in spec}
+        anid: {key: data[f"{prefix}{key}_{anid}"] for key in spec}
         for anid in existing if anid not in deletes
     }
     for anid in existing:
@@ -2715,18 +2722,18 @@ def process_dynamic_input(rs: RequestState, existing: Collection[int],
     # extract the new entries which shall be created
     marker = 1
     while marker < 2 ** 10:
-        will_create = unwrap(request_extractor(rs, {f"create_-{marker}": bool}))
+        will_create = unwrap(request_extractor(rs, {f"{prefix}create_-{marker}": bool}))
         if will_create:
-            params = {f"{key}_-{marker}": value for key, value in spec.items()}
+            params = {f"{prefix}{key}_-{marker}": value for key, value in spec.items()}
             constraints = constraint_maker(-marker) if constraint_maker else None
             data = request_extractor(rs, params, constraints)
-            ret[-marker] = {key: data[f"{key}_-{marker}"] for key in spec}
+            ret[-marker] = {key: data[f"{prefix}{key}_-{marker}"] for key in spec}
             if additional:
                 ret[-marker].update(additional)  # type: ignore
         else:
             break
         marker += 1
-    rs.values['create_last_index'] = marker - 1
+    rs.values[f'{prefix}create_last_index'] = marker - 1
     return ret
 
 
