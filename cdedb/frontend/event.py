@@ -601,8 +601,51 @@ class EventFrontend(AbstractUserFrontend):
             'has_registrations': has_registrations,
             'DEFAULT_NUM_COURSE_CHOICES': DEFAULT_NUM_COURSE_CHOICES})
 
-    def show_part(self, rs: RequestState, event_id: int) -> Response:
-        ...
+    def change_part_form(self, rs: RequestState, event_id: int, part_id: int) -> Response:
+        part = rs.ambience['event']['parts'][part_id]
+
+        current = copy.deepcopy(part)
+        del current['id']
+        del current['tracks']
+        for track_id, track in part['tracks'].items():
+            for k in ('title', 'shortname', 'num_choices', 'min_choices', 'sortkey'):
+                current[f"track_{k}_{track_id}"] = track[k]
+        for m in rs.ambience['event']['fee_modifiers'].values():
+            for k in ('modifier_name', 'amount', 'field_id'):
+                current[f"fee_modifier_{k}_{m['id']}"] = m[k]
+        merge_dicts(rs.values, current)
+
+        referenced_tracks: Set[int] = set()
+        has_registrations = self.eventproxy.has_registrations(rs, event_id)
+        course_ids = self.eventproxy.list_courses(rs, event_id)
+        courses = self.eventproxy.get_courses(rs, course_ids.keys())
+        for course in courses.values():
+            referenced_tracks.update(course['segments'])
+
+        sorted_fields = xsorted(rs.ambience['event']['fields'].values(),
+                                key=EntitySorter.event_field)
+        legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['fee_modifier']
+        fee_modifier_fields = [
+            (field['id'], field['field_name']) for field in sorted_fields
+            if field['association'] in legal_assocs and field['kind'] in legal_datatypes
+        ]
+        fee_modifiers = {
+            e['id']: e
+            for e in rs.ambience['event']['fee_modifiers'].values()
+            if e['part_id'] == part_id
+        }
+        legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['waitlist']
+        waitlist_fields = [
+            (field['id'], field['field_name']) for field in sorted_fields
+            if field['association'] in legal_assocs and field['kind'] in legal_datatypes
+        ]
+        return self.render(rs, "part_summary", {
+            'fee_modifier_fields': fee_modifier_fields,
+            'fee_modifiers': fee_modifiers,
+            'waitlist_fields': waitlist_fields,
+            'referenced_tracks': referenced_tracks,
+            'has_registrations': has_registrations,
+            'DEFAULT_NUM_COURSE_CHOICES': DEFAULT_NUM_COURSE_CHOICES})
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
@@ -699,7 +742,7 @@ class EventFrontend(AbstractUserFrontend):
                 rs.add_validation_error((key2, ValueError(name_msg)))
 
         if rs.has_validation_errors():
-            return self.show_part(rs, event_id)
+            return self.change_part_form(rs, event_id)
 
         #
         # put it all together
