@@ -710,36 +710,25 @@ class EventFrontend(AbstractUserFrontend):
         if any(mod is None for mod in fee_modifier_data.values()) and has_registrations:
             raise ValueError(n_("Registrations exist, no deletion."))
 
-        # Check for duplicate fields in the same part.
+        # Check if each linked field and fee modifier name is unique.
+        used_fields: Set[int] = set()
+        used_names: Set[str] = set()
         field_msg = n_("Must not have multiple fee modifiers linked to the same"
                        " field in one event part.")
-        name_msg = n_("Must not have multiple fee modifiers witht he same name "
+        name_msg = n_("Must not have multiple fee modifiers with he same name "
                       "in one event part.")
-        used_fields = {}
-        used_names = {}
-        if len(fee_modifier_data) == 1:
-            f = unwrap(fee_modifier_data)
-            if f:
-                used_fields = {f['field_id']}
-                used_names = {f['modifier_name']}
-        for e1, e2 in itertools.combinations(
-                filter(None, fee_modifier_data.values()), 2):
-            used_fields.add(e1['field_id'])
-            used_fields.add(e2['field_id'])
-            used_names.add(e1['modifier_name'])
-            used_names.add(e2['modifier_name'])
-            if e1['field_id'] == e2['field_id']:
-                base_key = "fee_modifier_field_id_{}"
-                key1 = base_key.format(e1['id'])
-                rs.add_validation_error((key1, ValueError(field_msg)))
-                key2 = base_key.format(e2['id'])
-                rs.add_validation_error((key2, ValueError(field_msg)))
-            if e1['modifier_name'] == e2['modifier_name']:
-                base_key = "fee_modifier_modifier_name_{}"
-                key1 = base_key.format(e1['id'])
-                rs.add_validation_error((key1, ValueError(name_msg)))
-                key2 = base_key.format(e2['id'])
-                rs.add_validation_error((key2, ValueError(name_msg)))
+        for modifier_id, modifier in fee_modifier_data.items():
+            if modifier and modifier['field_id'] in used_fields:
+                rs.append_validation_error(
+                    (f"field_id_{modifier_id}", ValueError(field_msg))
+                )
+            if modifier and modifier['modifier_name'] in used_fields:
+                rs.append_validation_error(
+                    (f"modifier_name_{modifier_id}", ValueError(name_msg))
+                )
+            if modifier:
+                used_fields.add(modifier['field_name'])
+                used_names.add(modifier['modifier_name'])
 
         if rs.has_validation_errors():
             return self.change_part_form(rs, event_id)
