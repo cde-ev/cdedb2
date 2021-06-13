@@ -654,7 +654,8 @@
                 {{ func(name=name,
                         aclass='drow-input form-control',
                         attributes=('data-basename="{}_"'.format(column['name'])|s if newrow else ''),
-                        arialabel=gettext(column['label'])
+                        arialabel=gettext(column['label']),
+                        **column.get('func_additional_input', {})
                         ) }}
                 {{ util.output_errors(name) }}
             </td>
