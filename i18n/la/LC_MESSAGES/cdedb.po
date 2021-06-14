@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2021-06-11 02:24+0200\n"
+"POT-Creation-Date: 2021-06-14 18:13+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -2408,6 +2408,7 @@ msgstr ""
 #: cdedb/frontend/event.py:3187
 #: cdedb/frontend/templates/web/event/add_registration.tmpl:77
 #: cdedb/frontend/templates/web/event/amend_registration.tmpl:38
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:220
 #: cdedb/frontend/templates/web/event/change_registration.tmpl:94
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:18
 #: cdedb/frontend/templates/web/event/generic.tmpl:12
@@ -2442,13 +2443,12 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/change_registrations.tmpl:139
 #: cdedb/frontend/templates/web/event/checkin.tmpl:58
 #: cdedb/frontend/templates/web/event/create_lodgement.tmpl:27
-#: cdedb/frontend/templates/web/event/lodgements.tmpl:53
+#: cdedb/frontend/templates/web/event/lodgements.tmpl:54
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:169
 msgid "Lodgement"
 msgstr ""
 
 #: cdedb/frontend/event.py:3217
-#: cdedb/frontend/templates/web/event/lodgements.tmpl:77
 #: cdedb/frontend/templates/web/event/manage_inhabitants.tmpl:45
 #: cdedb/frontend/templates/web/event/show_lodgement.tmpl:126
 msgid "Camping Mat"
@@ -2863,6 +2863,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/create_past_event.tmpl:33
 #: cdedb/frontend/templates/web/event/change_event.tmpl:29
 #: cdedb/frontend/templates/web/event/change_lodgement.tmpl:28
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:82
 #: cdedb/frontend/templates/web/event/create_event.tmpl:21
 #: cdedb/frontend/templates/web/event/create_lodgement.tmpl:28
 #: cdedb/frontend/templates/web/event/part_summary.tmpl:82
@@ -3180,7 +3181,7 @@ msgid "Third choice"
 msgstr ""
 
 #: cdedb/frontend/templates/tex/event/lodgement_puzzle.tmpl:9
-#: cdedb/frontend/templates/web/event/lodgements.tmpl:57
+#: cdedb/frontend/templates/web/event/lodgements.tmpl:58
 msgid "Capacity"
 msgstr ""
 
@@ -3778,6 +3779,9 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/show_past_event.tmpl:30
 #: cdedb/frontend/templates/web/event/change_course.tmpl:33
 #: cdedb/frontend/templates/web/event/change_event.tmpl:34
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:91
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:163
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:219
 #: cdedb/frontend/templates/web/event/create_course.tmpl:30
 #: cdedb/frontend/templates/web/event/create_event.tmpl:24
 #: cdedb/frontend/templates/web/event/part_summary.tmpl:91
@@ -3804,6 +3808,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/change_course.tmpl:90
 #: cdedb/frontend/templates/web/event/change_event.tmpl:111
 #: cdedb/frontend/templates/web/event/change_lodgement.tmpl:42
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:257
 #: cdedb/frontend/templates/web/event/change_registration.tmpl:120
 #: cdedb/frontend/templates/web/event/change_registrations.tmpl:207
 #: cdedb/frontend/templates/web/event/configure_additional_questionnaire.tmpl:56
@@ -4185,7 +4190,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/checkin.tmpl:73
 #: cdedb/frontend/templates/web/event/course_list.tmpl:59
 #: cdedb/frontend/templates/web/event/course_stats.tmpl:146
-#: cdedb/frontend/templates/web/event/lodgements.tmpl:132
+#: cdedb/frontend/templates/web/event/lodgements.tmpl:138
 #: cdedb/frontend/templates/web/event/registration_query.tmpl:100
 #: cdedb/frontend/templates/web/event/show_course.tmpl:33
 #: cdedb/frontend/templates/web/event/show_lodgement.tmpl:26
@@ -4365,6 +4370,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/show_past_course.tmpl:68
 #: cdedb/frontend/templates/web/cde/show_past_event.tmpl:125
 #: cdedb/frontend/templates/web/event/add_registration.tmpl:94
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:61
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:127
 #: cdedb/frontend/templates/web/event/create_course.tmpl:60
 #: cdedb/frontend/templates/web/event/field_summary.tmpl:54
 #: cdedb/frontend/templates/web/event/part_summary.tmpl:61
@@ -5025,8 +5032,8 @@ msgid "Enter Bank Transfers"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/base.tmpl:42
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:6
 #: cdedb/frontend/templates/web/cde/show_semester.tmpl:9
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:12
 msgid "Semester Management"
 msgstr ""
 
@@ -5425,7 +5432,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/money_transfers.tmpl:63
 #: cdedb/frontend/templates/web/cde/parse_statement.tmpl:56
 #: cdedb/frontend/templates/web/event/batch_fees.tmpl:81
-#: cdedb/frontend/templates/web/event/lodgements.tmpl:163
+#: cdedb/frontend/templates/web/event/lodgements.tmpl:173
 msgid "Warning"
 msgstr ""
 
@@ -5901,6 +5908,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/money_transfers.tmpl:29
 #: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:25
 #: cdedb/frontend/templates/web/event/batch_fees.tmpl:40
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:189
 #: cdedb/frontend/templates/web/event/part_summary.tmpl:200
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:66
 msgid "Amount"
@@ -6133,7 +6141,7 @@ msgid "Finalized"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:134
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:213
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:219
 msgid "Semester"
 msgstr ""
 
@@ -6552,6 +6560,8 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/cde/show_past_course.tmpl:94
 #: cdedb/frontend/templates/web/cde/show_past_event.tmpl:164
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:65
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:130
 #: cdedb/frontend/templates/web/event/field_summary.tmpl:57
 #: cdedb/frontend/templates/web/event/manage_attendees.tmpl:47
 #: cdedb/frontend/templates/web/event/manage_inhabitants.tmpl:48
@@ -6642,90 +6652,90 @@ msgstr ""
 msgid "The Participant will be removed from the Event."
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:13
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:16
 msgid ""
 "The actions on this site affect all Members, therefore they are basically "
 "irreversibel. Only use them, if You are absolutely sure what You are doing."
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:20
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:23
 msgid "CdE-Semester"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:23
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:26
 #, python-format
 msgid "We are currently in Semester %(number)s."
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:31
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:34
 msgid "Payment Requests will be sent."
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:36
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:39
 msgid ""
 "All inactive Members will be removed. This cannot be undone and it can only "
 "be done once per Semester."
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:38
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:41
 msgid "The Balance of all Members will be updated. This cannot be undone."
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:40
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:43
 msgid "The new Semester will be created."
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:42
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:45
 msgid "Address-Check-Mails will be sent."
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:47
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:50
 msgid "The new exPuls-Semester will be created."
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:56
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:59
 msgid "Send Payment Requests/Information"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:62
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:277
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:65
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:289
 #, python-format
 msgid "Done up until %(state)s. %(count)s emails have been sent so far."
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:71
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:286
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:74
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:298
 msgid "Only one Test-Mail"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:74
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:77
 msgid "Include Address-Check"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:76
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:289
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:79
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:301
 msgid "Send Mails"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:80
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:270
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:83
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:282
 #, python-format
 msgid "Done on the %(date)s. %(count)s emails were sent."
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:91
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:119
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:94
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:122
 msgid "Remove inactive Members"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:97
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:100
 #, python-format
 msgid ""
 "Done up until %(state)s. %(count)s memberships have been ended so far. A "
 "total of %(balance)s has been deducted so far."
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:107
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:110
 #, python-format
 msgid ""
 "%(low_count)s members have insufficient balance (total of %(low_total)s) "
@@ -6733,144 +6743,149 @@ msgid ""
 "Additionally we have %(trial_count)s trial members."
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:122
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:145
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:202
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:315
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:125
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:148
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:205
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:327
 msgid "To be done later."
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:125
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:128
 #, python-format
 msgid ""
 "Done on the %(date)s. %(count)s memberships were ended. A total of "
 "%(balance)s was deducted."
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:141
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:168
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:144
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:171
 msgid "Update Balances"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:149
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:152
 #, python-format
 msgid ""
 "Done up until %(state)s. %(count)s trial meberships have been ended so far. "
 "A total of %(total)s has been deducted so far."
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:160
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:163
 #, python-format
 msgid ""
 "%(total_count)s Members total, %(trial_count)s of which have a Trial-"
 "Membership right now."
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:172
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:175
 #, python-format
 msgid ""
 "Done on the %(date)s. %(count)s trial memberships were ended. A total of "
 "%(total)s was deducted."
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:187
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:199
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:190
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:202
 msgid "Next Semester"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:191
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:194
 msgid ""
 "The Semesterstate influences the display of Balances. This button should be "
 "pressed at the target date (give or take three weeks)."
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:209
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:212
 msgid "Semester History"
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:213
 #: cdedb/frontend/templates/web/cde/show_semester.tmpl:214
-msgid "Billing Mails Sent"
-msgstr ""
-
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:215
-msgid "Billing Done"
-msgstr ""
-
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:216
-msgid "Archival Notifications Sent"
-msgstr ""
-
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:217
-msgid "Archival Notifications Done"
-msgstr ""
-
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:218
-msgid "Members Ejected"
-msgstr ""
-
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:219
-msgid "Ejection Balance"
+msgid "widen semester history"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/show_semester.tmpl:220
-msgid "Ejection Done"
+msgid "Billing Mails Sent"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/show_semester.tmpl:221
-msgid "Accounts Archived"
+msgid "Billing Done"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/show_semester.tmpl:222
-msgid "Automated Archival Done"
+msgid "Archival Notifications Sent"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/show_semester.tmpl:223
-msgid "Trialmemberships Ended"
+msgid "Archival Notifications Done"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/show_semester.tmpl:224
-msgid "Balance Deducted"
+msgid "Members Ejected"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/show_semester.tmpl:225
-msgid "Balance Update Done"
+msgid "Ejection Balance"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/show_semester.tmpl:226
+msgid "Ejection Done"
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:227
+msgid "Accounts Archived"
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:228
+msgid "Automated Archival Done"
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:229
+msgid "Trialmemberships Ended"
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:230
+msgid "Balance Deducted"
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:231
+msgid "Balance Update Done"
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:232
 msgid "Semester Done"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:253
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:265
 msgid "exPuls-Semester"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:256
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:268
 #, python-format
 msgid "The next exPuls will be number %(number)s."
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:265
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:277
 msgid "Send Address-Checks"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:296
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:308
 msgid "Mark as done"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:306
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:312
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:318
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:324
 msgid "Next exPuls"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:322
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:334
 msgid "exPuls History"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:326
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:338
 msgid "Issue"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:327
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:339
 msgid "Addresscheck Mails Sent"
 msgstr ""
 
@@ -8688,6 +8703,7 @@ msgid "Partial Import"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/base.tmpl:64
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:25
 #: cdedb/frontend/templates/web/event/part_summary.tmpl:25
 #: cdedb/frontend/templates/web/event/register.tmpl:113
 msgid "Event-Parts"
@@ -9108,6 +9124,160 @@ msgstr ""
 msgid "No custom fields for lodgements available."
 msgstr ""
 
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:10
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:10
+#, python-format
+msgid "Configure Event-Parts (%(title)s)"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:16
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:16
+msgid "Configure Event-Parts"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:35
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:35
+msgid "Modifier Name"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:37
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:37
+msgid "Name of Fee Modifier"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:44
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:44
+msgid "Fee Modifier Amount"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:54
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:54
+msgid "Linked Field for Fee Modifier"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:83
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:83
+msgid "Name of Coursetrack"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:92
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:92
+msgid "Shortname of Coursetrack"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:103
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:113
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:103
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:113
+msgid "Number of Course Choices"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:120
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:120
+msgid "Sortkey of Coursetrack"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:143
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:266
+msgid ""
+"Event parts and course tracks can only be created or deleted if no "
+"registrations are present yet. Course tracks can only be deleted, if there "
+"are no courses associated with them."
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:156
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:157
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:147
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:148
+msgid "Name of Event-Part"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:165
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:158
+msgid "Begin"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:167
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:161
+msgid "End"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:171
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:180
+msgid "Event-Part Fee"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:175
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:185
+msgid "Field for Waitlist"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:176
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:186
+#, python-format
+msgid "Field to store the %(link)s ranking of this part. Fieldtype: Integer"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:179
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:189
+msgid "Waitlist"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:188
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:199
+msgid "Fee Modifier"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:190
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:201
+msgid "Linked Field"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:211
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:223
+msgid "Add Fee Modifier"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:218
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:231
+msgid "Coursetrack"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:221
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:234
+msgid "Req. Choices"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:222
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:235
+msgid "Sortkey"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:244
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:257
+msgid "Add Coursetrack"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:253
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:293
+msgid "Add Event-Part"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:263
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:303
+msgid "Remove Coursetrack"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:270
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:310
+msgid "Remove Fee Modifier"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/change_part-old.tmpl:277
+#: cdedb/frontend/templates/web/event/part_summary.tmpl:317
+msgid "Remove Event-Part"
+msgstr ""
+
 #: cdedb/frontend/templates/web/event/change_registration.tmpl:7
 #, python-format
 msgid "Edit Registration by %(given_names)s %(family_name)s (%(title)s)"
@@ -9438,7 +9608,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:283
 #: cdedb/frontend/templates/web/event/course_stats.tmpl:172
-#: cdedb/frontend/templates/web/event/lodgements.tmpl:162
+#: cdedb/frontend/templates/web/event/lodgements.tmpl:172
 msgid "Color Guide"
 msgstr ""
 
@@ -10112,58 +10282,58 @@ msgstr ""
 msgid "Add Lodgement"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/lodgements.tmpl:56
+#: cdedb/frontend/templates/web/event/lodgements.tmpl:57
 #: cdedb/frontend/templates/web/event/show_lodgement.tmpl:84
 #: cdedb/frontend/templates/web/event/show_lodgement.tmpl:96
 msgid "Inhabitants"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/lodgements.tmpl:64
-#: cdedb/frontend/templates/web/event/lodgements.tmpl:74
+#: cdedb/frontend/templates/web/event/lodgements.tmpl:67
+#: cdedb/frontend/templates/web/event/lodgements.tmpl:77
 msgid "Regular"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/lodgements.tmpl:88
+#: cdedb/frontend/templates/web/event/lodgements.tmpl:91
 msgid "Ungrouped Lodgements"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/lodgements.tmpl:135
+#: cdedb/frontend/templates/web/event/lodgements.tmpl:141
 #: cdedb/frontend/templates/web/event/manage_inhabitants.tmpl:16
 #: cdedb/frontend/templates/web/event/show_lodgement.tmpl:28
 msgid "Manage Inhabitants"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/lodgements.tmpl:164
+#: cdedb/frontend/templates/web/event/lodgements.tmpl:174
 msgid "Overfull"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/lodgements.tmpl:165
+#: cdedb/frontend/templates/web/event/lodgements.tmpl:175
 msgid "Illegal Gendermix"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/lodgements.tmpl:168
+#: cdedb/frontend/templates/web/event/lodgements.tmpl:178
 msgid "Sorting:"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/lodgements.tmpl:169
+#: cdedb/frontend/templates/web/event/lodgements.tmpl:179
 msgid ""
 "The lodgements may be sorted according to the following criteria inside "
 "their lodgement groups."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/lodgements.tmpl:174
+#: cdedb/frontend/templates/web/event/lodgements.tmpl:184
 msgid ""
 "The names of the <strong>event parts</strong> sort by the number of regular "
 "spaces used in this part."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/lodgements.tmpl:179
+#: cdedb/frontend/templates/web/event/lodgements.tmpl:189
 msgid ""
 "The <strong>+x</strong> sort by the number of camping mat spaces used in the "
 "associated part."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/lodgements.tmpl:184
+#: cdedb/frontend/templates/web/event/lodgements.tmpl:194
 msgid ""
 "The columns <strong>regular</strong> and <strong>camping mat</strong> sort "
 "numerically."
@@ -10233,129 +10403,6 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/manage_inhabitants.tmpl:90
 msgid "Swap inhabitants with"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:10
-#, python-format
-msgid "Configure Event-Parts (%(title)s)"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:16
-msgid "Configure Event-Parts"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:35
-msgid "Modifier Name"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:37
-msgid "Name of Fee Modifier"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:44
-msgid "Fee Modifier Amount"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:54
-msgid "Linked Field for Fee Modifier"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:83
-msgid "Name of Coursetrack"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:92
-msgid "Shortname of Coursetrack"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:103
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:113
-msgid "Number of Course Choices"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:120
-msgid "Sortkey of Coursetrack"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:147
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:148
-msgid "Name of Event-Part"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:158
-msgid "Begin"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:161
-msgid "End"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:180
-msgid "Event-Part Fee"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:185
-msgid "Field for Waitlist"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:186
-#, python-format
-msgid "Field to store the %(link)s ranking of this part. Fieldtype: Integer"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:189
-msgid "Waitlist"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:199
-msgid "Fee Modifier"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:201
-msgid "Linked Field"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:223
-msgid "Add Fee Modifier"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:231
-msgid "Coursetrack"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:234
-msgid "Req. Choices"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:235
-msgid "Sortkey"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:257
-msgid "Add Coursetrack"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:266
-msgid ""
-"Event parts and course tracks can only be created or deleted if no "
-"registrations are present yet. Course tracks can only be deleted, if there "
-"are no courses associated with them."
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:293
-msgid "Add Event-Part"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:303
-msgid "Remove Coursetrack"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:310
-msgid "Remove Fee Modifier"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/part_summary.tmpl:317
-msgid "Remove Event-Part"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/partial_import.tmpl:5
