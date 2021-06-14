@@ -659,14 +659,12 @@ class TestCoreFrontend(FrontendTest):
                     f['email'] = user['username']
                     self.submit(f)
                     self.assertTitle("CdE-Datenbank")
-                    mail = self.fetch_mail()[0]
                     if u in {"anton", "ferdinand"}:
                         text = self.fetch_mail_content()
                         self.assertNotIn('[1]', text)
                         self.assertIn('Sicherheitsgründe', text)
                         continue
-                    link = self.fetch_link(mail)
-                    assert link is not None
+                    link = self.fetch_link()
                     self.get(link)
                     self.follow()
                     self.assertTitle("Neues Passwort setzen")
@@ -699,9 +697,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['passwordresetform']
         f['email'] = user['username']
         self.submit(f)
-        mail = self.fetch_mail()[0]
-        link = self.fetch_link(mail)
-        assert link is not None
+        link = self.fetch_link()
         # First reset should work
         self.get(link)
         self.follow()
@@ -729,10 +725,8 @@ class TestCoreFrontend(FrontendTest):
         self.admin_view_profile('ferdinand')
         f = self.response.forms['sendpasswordresetform']
         self.submit(f)
-        mail = self.fetch_mail()[0]
         self.logout()
-        link = self.fetch_link(mail)
-        assert link is not None
+        link = self.fetch_link()
         self.get(link)
         self.follow()
         self.assertTitle("Neues Passwort setzen")
@@ -785,9 +779,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['usernamechangeform']
         f['new_username'] = new_username
         self.submit(f)
-        mail = self.fetch_mail()[0]
-        link = self.fetch_link(mail)
-        assert link is not None
+        link = self.fetch_link()
         self.get(link)
         f = self.response.forms['usernamechangeform']
         f['password'] = self.user['password']
@@ -1060,9 +1052,7 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         self.assertPresence("Änderung wurde übernommen.", div="notifications")
         if new_password:
-            mail = self.fetch_mail()[0]
-            link = self.fetch_link(mail, num=2)
-            assert link is not None
+            link = self.fetch_link(num=2)
             self.get(link)
             f = self.response.forms["passwordresetform"]
             f["new_password"] = new_password
@@ -1563,9 +1553,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Warnungen ignorieren")
         f = self.response.forms['genesisform']
         self.submit(f, button="ignore_warnings")
-        mail = self.fetch_mail()[0]
-        link = self.fetch_link(mail)
-        assert link is not None
+        link = self.fetch_link()
         self.get(link)
         self.follow()
         self.traverse({'description': 'Accountanfragen'},
@@ -1592,9 +1580,7 @@ class TestCoreFrontend(FrontendTest):
         for field, entry in data.items():
             f[field] = entry
         self.submit(f)
-        mail = self.fetch_mail()[0]
-        link = self.fetch_link(mail)
-        assert link is not None
+        link = self.fetch_link()
         self.get(link)
         self.follow()
 
@@ -1660,9 +1646,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
         f = self.response.forms['genesiseventapprovalform']
         self.submit(f)
-        mail = self.fetch_mail()[0]
-        link = self.fetch_link(mail)
-        assert link is not None
+        link = self.fetch_link()
         self.logout()
         self.get(link)
         self.assertTitle("Neues Passwort setzen")
@@ -1698,9 +1682,7 @@ class TestCoreFrontend(FrontendTest):
             "Aktuell stehen keine Mailinglisten-Account-Anfragen zur Bestätigung aus.")
         f = self.response.forms['genesismlapprovalform1']
         self.submit(f)
-        mail = self.fetch_mail()[0]
-        link = self.fetch_link(mail)
-        assert link is not None
+        link = self.fetch_link()
         self.logout()
         self.get(link)
         self.assertTitle("Neues Passwort setzen")
@@ -1741,9 +1723,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesisform']
         f['notes'] = "Gimme!"
         self.submit(f)
-        mail = self.fetch_mail()[0]
-        link = self.fetch_link(mail)
-        assert link is not None
+        link = self.fetch_link()
         self.get(link)
         self.follow()
         self.login(USER_DICT["vera"])
@@ -1807,9 +1787,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
         f = self.response.forms['genesiseventapprovalform']
         self.submit(f)
-        mail = self.fetch_mail()[0]
-        link = self.fetch_link(mail)
-        assert link is not None
+        link = self.fetch_link()
         self.traverse({'href': '^/$'})
         f = self.response.forms['adminshowuserform']
         f['phrase'] = "Zelda Zeruda-Hime"
@@ -1886,10 +1864,10 @@ class TestCoreFrontend(FrontendTest):
         for field, entry in self.ML_GENESIS_DATA.items():
             f[field] = entry
         self.submit(f)
-        self.assertGreater(len(self.fetch_mail()), 0)
+        self.assertTrue(self.fetch_mail_content())
         self.submit(f)
         self.assertPresence("Bestätigungsmail erneut versendet.", div="notifications")
-        self.assertGreater(len(self.fetch_mail()), 0)
+        self.assertTrue(self.fetch_mail_content())
 
     def test_genesis_postal_code(self) -> None:
         self.get('/')

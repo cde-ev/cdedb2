@@ -1979,8 +1979,6 @@ etc;anything else""", f['entries_2'].value)
         # submit again because of checksum
         f = self.response.forms['batchfeesform']
         self.submit(f)
-        mails = self.fetch_mail()
-        self.assertEqual(3, len(mails))
         for i in range(3):
             text = self.fetch_mail_content(i)
             self.assertIn("Überweisung für die Veranstaltung", text)

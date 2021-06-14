@@ -1024,8 +1024,7 @@ class TestMlFrontend(FrontendTest):
         f['email'] = "pepper@example.cde"
         self.submit(f, check_notification=False)
         self.assertTitle("Klatsch und Tratsch")
-        link = self.fetch_link(self.fetch_mail()[0])
-        assert link is not None
+        link = self.fetch_link()
         self.get(link)
         self.follow()
         self.assertTitle("Klatsch und Tratsch")

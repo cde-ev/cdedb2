@@ -864,10 +864,8 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Daten sind für andere Mitglieder sichtbar.",
                             div='searchability')
         self.assertCheckbox(True, "paper_expuls_checkbox")
-        mail = self.fetch_mail()[0]
         self.logout()
-        link = self.fetch_link(mail)
-        assert link is not None
+        link = self.fetch_link()
         self.get(link)
         self.assertTitle("Neues Passwort setzen")
         new_password = "krce63koLe#$e"

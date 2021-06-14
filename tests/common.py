@@ -928,7 +928,7 @@ class FrontendTest(BackendTest):
             self.assertTitle("{} {}".format(u['given_names'],
                                             u['family_name']))
 
-    def fetch_mail(self) -> List[email.message.EmailMessage]:
+    def _fetch_mail(self) -> List[email.message.EmailMessage]:
         """
         Get the content of mails that were sent, using the E-Mail-notification.
         """
@@ -953,20 +953,16 @@ class FrontendTest(BackendTest):
         return ret
 
     def fetch_mail_content(self, index: int = 0) -> str:
-        mail = self.fetch_mail()[index]
+        mail = self._fetch_mail()[index]
         body = mail.get_body()
         assert isinstance(body, email.message.EmailMessage)
         return body.get_content()
 
-    @staticmethod
-    def fetch_link(msg: email.message.EmailMessage, num: int = 1) -> Optional[str]:
-        ret = None
-        body = msg.get_body()
-        assert isinstance(body, email.message.EmailMessage)
-        for line in body.get_content().splitlines():
-            if line.startswith('[{}] '.format(num)):
-                ret = line.split(maxsplit=1)[-1]
-        return ret
+    def fetch_link(self, index: int = 0, num: int = 1) -> str:
+        for line in self.fetch_mail_content(index).splitlines():
+            if line.startswith(f'[{num}] '):
+                return line.split(maxsplit=1)[-1]
+        raise ValueError(f"Link [{num}] not found in mail [{index}].")
 
     def assertTitle(self, title: str) -> None:
         """
