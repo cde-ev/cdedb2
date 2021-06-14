@@ -15,6 +15,9 @@ How to write a good integration test
 This aims at providing a brief list of points one should take into account
 while writing integration tests (often incorrectly called unit tests).
 
+* Make creative use of the different ``unittest.TestCase.assert*`` functions.
+  In contrast, plain ``assert`` statements should only be used for mypy to
+  have failure reporting work as intended.
 * Failure cases are important. Always test that validation errors are handled
   correctly, especially in the frontend.
 * Test with the least privileged user possible. If there is reason to believe
@@ -33,6 +36,9 @@ while writing integration tests (often incorrectly called unit tests).
   generation. For backend tests, copying ``pprint`` output is helpful
   to compile an expectation. For frontend tests, it usually suffices to check
   that ``id``, ``code`` and potentially ``change_note`` are a match.
+* The ``@prepsql`` decorator may be used to perform some sql queries to the
+  database before the actual test. Needs to be speficied after ``@as_users``
+  to work correctly.
 * Remember to add the ``@storage`` decorator when accessing storage.
   Otherwise, your test will fail.
 
@@ -47,8 +53,23 @@ For frontend tests, additionally take into account the following points:
   possible where a string should be, and make it as long as possible.
 * If you check whether things are **not** present, be vague. Do not specify
   where a string should be, and make it as short as possible.
+* It is possible to access the backend directly inside frontend tests, but this
+  should usually be avoided. However, it is acceptable if you really want to
+  check if data has been written to the database correctly if there is no
+  simple frontend way to do so.
 * If you would like to test something, but you do not know how, it is usually
   possible. Look into ``tests/common.py``, into webtest internals, or ask
   people. Writing additional helpers can be quite tedious, but is usually
   worth it in the long run. ``assertNoLink`` and ``assertValidationError``
   are some examples.
+
+Coverage
+--------
+In general, we aim at 100 % test coverage for our Python code. This means that
+ideally, not only every statement, but also every control structure branch
+should be tested.
+
+Regarding statement coverage, we are at about 90 % and aim to increase this
+amount in the future.
+
+To run coverage checks, take a look at the :ref:`coverage`.
