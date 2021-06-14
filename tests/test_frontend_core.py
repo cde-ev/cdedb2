@@ -725,8 +725,8 @@ class TestCoreFrontend(FrontendTest):
         self.admin_view_profile('ferdinand')
         f = self.response.forms['sendpasswordresetform']
         self.submit(f)
-        self.logout()
         link = self.fetch_link()
+        self.logout()
         self.get(link)
         self.follow()
         self.assertTitle("Neues Passwort setzen")
