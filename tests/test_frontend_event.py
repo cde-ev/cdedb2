@@ -2154,28 +2154,27 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("2", f['part2.status'].value)
         self.assertEqual("5", f['part3.status'].value)
         self.assertEqual("pedes", f['fields.transportation'].value)
-        # Check log
-        self.traverse({'href': '/event/event/1/log'})
-        self.assertPresence("Multi-Edit",
-                            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
-        self.assertPresence("Multi-Edit",
-                            div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
-        self.assertNonPresence("Mult-Edit:")
 
-    @as_users("garcia")
-    def test_multiedit_with_note(self) -> None:
+        # Now, check with change_note
         self.get("/event/event/1/registration/multiedit?reg_ids=2,3")
         self.assertTitle("Anmeldungen bearbeiten (Große Testakademie 2222)")
         f = self.response.forms['changeregistrationform']
-        f['fields.transportation'] = "pedes"
-        f['change_note'] = "Muss laufen."
+        f['fields.transportation'] = "etc"
+        f['change_note'] = "Muss doch nicht laufen."
         self.submit(f)
+
         # Check log
         self.traverse({'href': '/event/event/1/log'})
-        self.assertPresence("Multi-Edit: Muss laufen.",
+        self.assertPresence("Multi-Edit",
                             div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
-        self.assertPresence("Multi-Edit: Muss laufen.",
+        self.assertPresence("Multi-Edit",
                             div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
+        self.assertNonPresence("Mult-Edit:",
+                               div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
+        self.assertPresence("Multi-Edit: Muss doch nicht laufen.",
+                            div=str(self.EVENT_LOG_OFFSET + 3) + "-1003")
+        self.assertPresence("Multi-Edit: Muss doch nicht laufen.",
+                            div=str(self.EVENT_LOG_OFFSET + 4) + "-1004")
 
     @as_users("garcia")
     def test_show_registration(self) -> None:
