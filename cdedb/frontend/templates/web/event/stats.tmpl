@@ -95,7 +95,7 @@
                     <tr>
                         <th></th>
                         {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
-                            <th>
+                            <th class="text-right">
                                 {% if ambience['event']['tracks']|length > 1 %}
                                     {{ track['shortname'] }}
                                 {% else %}
