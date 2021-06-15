@@ -530,7 +530,7 @@ msgstr "Members by Birthyear"
 
 #: cdedb/backend/cde.py:1000 cdedb/backend/cde.py:1001
 msgid "members_by_first_event"
-msgstr "Members by First CdE Event"
+msgstr "Members by First Event"
 
 #: cdedb/backend/cde.py:1023 cdedb/backend/cde.py:1024
 msgid "unique_participants_per_year"

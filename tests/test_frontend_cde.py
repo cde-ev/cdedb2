@@ -2352,6 +2352,7 @@ class TestCdEFrontend(FrontendTest):
                             div="complex-stats-members_by_city")
         self.assertNonPresence("Burokratia")
         self.assertNonPresence("Liliput")
+        self.assertDivNotExists(div="year-stats-members_by_birthday-1")
         self.assertNonPresence("–", div="year-stats-members_by_birthday-1991")
         self.assertNonPresence("–", div="year-stats-members_by_birthday-2222")
         self.assertPresence("–", div="year-stats-members_by_birthday-2014")
