@@ -48,7 +48,7 @@
                 </tr>
             </thead>
             <tbody>
-            {% for year in all_years|sort %}
+            {% for year in all_years|sort if year > 1900 %}
                 <tr>
                     <th>{{ year }}</th>
                     {% for key, value in year_stats.items() %}

@@ -991,6 +991,13 @@ class FrontendTest(BackendTest):
         content = tmp[0]
         return content.text_content()
 
+    def assertIdNotExists(self, div: str):
+        """Assert that the given id is not used by any element on the page."""
+        if not self.response.content_type == "text/html":
+            raise AssertionError("No valid html document.")
+        if self.response.lxml.xpath("//*[@id='{}']".format(div)):
+            raise AssertionError("Element with id {} found".format(div))
+
     def assertCheckbox(self, status: bool, anid: str) -> None:
         """Assert that the checkbox with the given id is checked (or not)."""
         tmp = (self.response.html.find_all(id=anid)
