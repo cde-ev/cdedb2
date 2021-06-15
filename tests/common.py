@@ -991,7 +991,7 @@ class FrontendTest(BackendTest):
         content = tmp[0]
         return content.text_content()
 
-    def assertIdNotExists(self, div: str):
+    def assertIdNotExists(self, div: str) -> None:
         """Assert that the given id is not used by any element on the page."""
         if not self.response.content_type == "text/html":
             raise AssertionError("No valid html document.")
