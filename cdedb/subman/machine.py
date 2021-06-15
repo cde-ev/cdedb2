@@ -343,12 +343,12 @@ SUBSCRIPTION_ERROR_MATRIX: ActionStateErrorMatrix = {
         # (Unless the list is mandatory).
         SubscriptionState.subscription_override: None,
         SubscriptionState.unsubscription_override: SubscriptionInfo(_(
-            "subman_self_is-subscribed")),
+            "subman_self_is-unsubscribed")),
         SubscriptionState.pending: SubscriptionInfo(_(
-            "subman_self_is-subscribed")),
+            "subman_self_is-unsubscribed")),
         SubscriptionState.implicit: None,
         SubscriptionState.none: SubscriptionInfo(_(
-            "subman_self_is-subscribed")),
+            "subman_self_is-unsubscribed")),
     },
     SubscriptionAction.reset: {
         SubscriptionState.subscribed: None,
