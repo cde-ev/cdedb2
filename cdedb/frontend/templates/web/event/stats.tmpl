@@ -40,12 +40,12 @@
         'cancelled': gettext("Registration Cancelled"),
         'rejected': gettext("Rejected"),
     } %}
-        <table class="table table-slim table-condensed">
+        <table class="table table-slim table-condensed table-stats">
             <thead>
                 <tr>
                     <th colspan="2"></th>
                     {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
-                        <th>
+                        <th class="text-right">
                             {% if ambience['event']['parts']|length > 1 %}
                                 {{ part['shortname'] }}
                             {% else %}
@@ -90,12 +90,12 @@
             'attendees': gettext("Attendees"),
             'no course': gettext("No Course"),
         } %} {# The 'In x. Choice' labels are already translated #}
-            <table class="table table-condensed table-slim">
+            <table class="table table-condensed table-slim table-stats">
                 <thead>
                     <tr>
                         <th></th>
                         {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
-                            <th>
+                            <th class="text-right">
                                 {% if ambience['event']['tracks']|length > 1 %}
                                     {{ track['shortname'] }}
                                 {% else %}
