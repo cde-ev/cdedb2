@@ -40,12 +40,12 @@
         'cancelled': gettext("Registration Cancelled"),
         'rejected': gettext("Rejected"),
     } %}
-        <table class="table table-slim table-condensed">
+        <table class="table table-slim table-condensed table-stats">
             <thead>
                 <tr>
                     <th colspan="2"></th>
                     {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
-                        <th>
+                        <th class="text-right">
                             {% if ambience['event']['parts']|length > 1 %}
                                 {{ part['shortname'] }}
                             {% else %}
