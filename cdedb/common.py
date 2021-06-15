@@ -1575,9 +1575,9 @@ def extract_roles(session: CdEDBObject, introspection_only: bool = False
             ret.add("member")
             if session.get("is_searchable"):
                 ret.add("searchable")
-        if "ml" in ret:
-            if session.get("is_cdelokal_admin"):
-                ret.add("cdelokal_admin")
+    if "ml" in ret:
+        if session.get("is_cdelokal_admin"):
+            ret.add("cdelokal_admin")
     if "cde_admin" in ret:
         if session.get("is_finance_admin"):
             ret.add("finance_admin")
