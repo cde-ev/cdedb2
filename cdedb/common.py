@@ -1556,7 +1556,7 @@ def extract_roles(session: CdEDBObject, introspection_only: bool = False
       level of the data set passed.
     """
     ret = {"anonymous"}
-    if session['is_active']:
+    if session['is_active'] or introspection_only:
         ret.add("persona")
     elif not introspection_only:
         return ret

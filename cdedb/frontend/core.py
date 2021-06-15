@@ -1105,8 +1105,7 @@ class CoreFrontend(AbstractFrontend):
         return ret
 
     @access(*REALM_ADMINS)
-    def admin_change_user_form(self, rs: RequestState, persona_id: int
-                               ) -> Response:
+    def admin_change_user_form(self, rs: RequestState, persona_id: int) -> Response:
         """Render form."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
@@ -1122,8 +1121,8 @@ class CoreFrontend(AbstractFrontend):
         merge_dicts(rs.values, data)
         if data['code'] == const.MemberChangeStati.pending:
             rs.notify("info", n_("Change pending."))
-        shown_fields = get_persona_fields_by_realm(
-            extract_roles(rs.ambience['persona']), restricted=False)
+        roles = extract_roles(rs.ambience['persona'], introspection_only=True)
+        shown_fields = get_persona_fields_by_realm(roles, restricted=False)
         return self.render(rs, "admin_change_user", {
             'admin_bits': self.admin_bits(rs),
             'shown_fields': shown_fields,
@@ -1138,7 +1137,7 @@ class CoreFrontend(AbstractFrontend):
         if not self.coreproxy.is_relative_admin(rs, persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
         # Assure we don't accidently change the original.
-        roles = extract_roles(rs.ambience['persona'])
+        roles = extract_roles(rs.ambience['persona'], introspection_only=True)
         attributes = get_persona_fields_by_realm(roles, restricted=False)
         data = request_dict_extractor(rs, attributes)
         data['id'] = persona_id
