@@ -792,16 +792,22 @@
                         'value': $(this).attr('value')
                     }));
                 }
+                if ($(this).attr('formaction')) {
+                    $form.attr('action', $(this).attr('formaction'));
+                }
+                if ($(this).attr('formmethod')) {
+                    $form.attr('method', $(this).attr('formmethod'));
+                }
             });
 
             obj.initFieldSelects();
         });
         return this;
     };
-    
+
     /**
      * jQuery plugin to move results list into wide content container.
-     * 
+     *
      * This plugin must be applied on the box containing the result list. The 'triggers' parameters should contain all
      * buttons triggering the change. A click on one of these buttons will move the contents of the containing box into
      * a special wide container underneath the #maincontainer and add class 'active' to the trigger buttons.
@@ -809,12 +815,12 @@
      */
     $.fn.cdedbMoveToWidePage = function($triggers) {
         var $box = $(this);
-        
+
         // Construct wide page container
         var $widecontainer = $('<div></div>',{'class': 'wide-content-page'});
         $widecontainer.css('display', 'none');
         $('#maincontainer').after($widecontainer);
-        
+
         // Add event handlers
         $triggers.click(function() {
             if (!$(this).hasClass('active')) {
@@ -827,7 +833,7 @@
                 $triggers.removeClass('active');
             }
         });
-        
+
         return this;
     }
 })(jQuery);

@@ -9,8 +9,8 @@ framework, thus this module. This module is especially useful in setting
 up an environment for passing a query from frontend to backend.
 """
 
-import copy
 import collections
+import copy
 import enum
 from typing import Any, Collection, Dict, Tuple
 
@@ -494,7 +494,7 @@ class Query:
                  fields_of_interest: Collection[str],
                  constraints: Collection[QueryConstraint],
                  order: Collection[QueryOrder],
-                 name: str = "",
+                 name: str = None, query_id: int = None,
                  ):
         """
         :param scope: target of FROM clause; key for :py:data:`QUERY_VIEWS`.
@@ -507,6 +507,8 @@ class Query:
             and each comma in the first component causes an OR
         :param order: First components are the column names to be used for
             ORDER BY and the second component toggles ascending sorting order.
+        :param query_id: If the Query was retrieved from the database, this should be
+            the id of the entry in the corresponding table.
         """
         self.scope = scope
         self.spec = spec
@@ -514,6 +516,7 @@ class Query:
         self.constraints = list(constraints)
         self.order = list(order)
         self.name = name
+        self.query_id = query_id
 
     def __repr__(self) -> str:
         return (f"Query(scope={self.scope},"

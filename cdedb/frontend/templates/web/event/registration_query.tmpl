@@ -33,7 +33,7 @@
             </div>
         </div>
         <div class="col-md-8">
-            {{ generic.place_default_queries("event/registration_query", default_queries) }}
+            {{ generic.place_default_queries("event/registration_query", default_queries, stored_queries) }}
         </div>
     </div>
 
@@ -83,11 +83,11 @@
                     {% do usernames.append(entry["persona.username"]) %}
                 {% endfor %}
                 {{ util.href(util.mailto(bcc=";".join(usernames)), gettext("bcc email to all"),
-                             icon="envelope", aclass="btn btn-sm btn-default",
+                             icon="envelope", aclass="btn btn-default",
                              title=gettext("Send Mail to all registrations listed below as BCC.")) }}
             {% else %}
                 {{ util.href("#", gettext("bcc email to all"), readonly=True,
-                             icon="envelope", aclass="btn btn-sm btn-default",
+                             icon="envelope", aclass="btn btn-default",
                              title=gettext("Email button is only available, if the email field is shown.")) }}
             {% endif %}
         </div>

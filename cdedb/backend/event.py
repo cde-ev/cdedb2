@@ -19,7 +19,7 @@ from typing_extensions import Protocol
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
-    PYTHON_TO_SQL_MAP, AbstractBackend, Silencer, access,
+    PYTHON_TO_SQL_MAP, AbstractBackend, Silencer, DatabaseValue_s, access,
     affirm_set_validation as affirm_set, affirm_validation_typed as affirm,
     affirm_validation_typed_optional as affirm_optional, cast_fields, internal,
     singularize,
@@ -34,7 +34,7 @@ from cdedb.common import (
     CourseFilterPositions, DefaultReturnCode, DeletionBlockers, InfiniteEnum,
     PartialImportError, PathLike, PrivilegeError, PsycoJson, RequestState, get_hash,
     glue, implying_realms, json_serialize, mixed_existence_sorter, n_, now, unwrap,
-    xsorted,
+    xsorted, STORED_EVENT_QUERY_FIELDS,
 )
 from cdedb.database.connection import Atomizer
 from cdedb.query import Query, QueryOperators, QueryScope
@@ -1532,6 +1532,115 @@ class EventBackend(AbstractBackend):
                 ret = f.read()
         return ret
 
+    @access("event")
+    def get_event_queries(self, rs: RequestState, event_id: int,
+                          scopes: Collection[QueryScope] = None
+                          ) -> Dict[str, Query]:
+        """Retrieve all stored queries for the given event and scope.
+
+        If no scopes are given, all queries are returned instead.
+        """
+        event_id = affirm(vtypes.ID, event_id)
+        scopes = affirm_set(QueryScope, scopes or set())
+        with Atomizer(rs):
+            if not (self.is_admin(rs) or self.is_orga(rs, event_id=event_id)):
+                raise PrivilegeError(n_("Must be orga to retrieve stored queries."))
+            event = self.get_event(rs, event_id)
+            select = (f"SELECT {', '.join(STORED_EVENT_QUERY_FIELDS)}"
+                      f" FROM event.stored_queries"
+                      f" WHERE event_id = %s")
+            params: List[DatabaseValue_s] = [event_id]
+            if scopes:
+                select += " AND scope = ANY(%s)"
+                params.append({str(s) for s in scopes})
+            query_data = self.query_all(rs, select, params)
+            ret = {}
+            count = fail_count = 0
+            for qd in query_data:
+                qd["serialized_query"]["query_id"] = qd["id"]
+                scope = affirm(QueryScope, qd["scope"])
+                spec = scope.get_spec(event=event)
+                try:
+                    # The QueryInput takes care of deserialization.
+                    q: Query = affirm(vtypes.QueryInput, qd["serialized_query"],
+                                      spec=spec, allow_empty=False)
+                    assert q.name is not None and q.query_id is not None
+                except (ValueError, TypeError):
+                    fail_count += 1
+                    continue
+                ret[q.name] = q
+                count += 1
+        if fail_count:
+            rs.notify(
+                "info", n_("%(count)s stored queries could not be retrieved."),
+                {'count': fail_count})
+        return ret
+
+    @access("event")
+    def delete_event_query(self, rs: RequestState, query_id: int) -> DefaultReturnCode:
+        """Delete the stored query with the given event and query name."""
+        query_id = affirm(vtypes.ID, query_id)
+        with Atomizer(rs):
+            q = self.sql_select_one(
+                rs, "event.stored_queries", ("event_id", "query_name"), query_id)
+            assert q is not None
+            if not (self.is_admin(rs) or self.is_orga(rs, event_id=q['event_id'])):
+                raise PrivilegeError(n_(
+                    "Must be orga to delete queries for an event."))
+
+            ret = self.sql_delete_one(rs, "event.stored_queries", query_id)
+            if ret:
+                ret *= self.event_log(
+                    rs, const.EventLogCodes.query_deleted,
+                    event_id=q['event_id'], change_note=q['query_name'])
+            return ret
+
+    @access("event")
+    def store_event_query(self, rs: RequestState, event_id: int,
+                          query: Query) -> DefaultReturnCode:
+        """Store a single event query in the database."""
+        event_id = affirm(vtypes.ID, event_id)
+        query = affirm(Query, query)
+
+        if not (self.is_admin(rs) or self.is_orga(rs, event_id=event_id)):
+            raise PrivilegeError(n_(
+                "Must be orga to store queries for an event."))
+        if not query.scope.supports_storing():
+            raise ValueError(n_("Cannot store this kind of query."))
+        if not query.name:
+            rs.notify("error", n_("Query must have a name"))
+            return 0
+        data = {
+            'event_id': event_id,
+            'query_name': query.name,
+            'scope': str(query.scope),
+            'serialized_query': json_serialize(query.serialize()),
+        }
+        with Atomizer(rs):
+            new_id = self.sql_insert(
+                rs, "event.stored_queries", data, drop_on_conflict=True)
+            if not new_id:
+                rs.notify("error", n_("Query with name '%(query)s' already exists."),
+                          {"query": query.name})
+                return 0
+            self.event_log(rs, const.EventLogCodes.query_stored,
+                           event_id=event_id, change_note=query.name)
+        return new_id
+
+    @access("event")
+    def get_query_scope(self, rs: RequestState, query_id: int) -> Optional[QueryScope]:
+        """Retrieve the scope associated with a stored event query.
+
+        Returns None if the scope is invalid.
+        """
+        query_id = affirm(vtypes.ID, query_id)
+        scope = unwrap(
+            self.sql_select_one(rs, "event.stored_queries", ("scope",), query_id))
+        try:
+            return affirm(QueryScope, scope)
+        except KeyError:
+            return None
+
     @internal
     @access("event")
     def set_event_archived(self, rs: RequestState, data: CdEDBObject) -> None:
@@ -1921,6 +2030,7 @@ class EventBackend(AbstractBackend):
         * registrations: A registration associated with the event. This can
                          have it's own blockers.
         * questionnaire: A questionnaire row configured for the event.
+        * stored_queries: A stored query for the event.
         * log: A log entry for the event.
         * mailinglists: A mailinglist associated with the event. This
                         reference will be removed but the mailinglist will
@@ -1980,6 +2090,11 @@ class EventBackend(AbstractBackend):
             entity_key="event_id")
         if questionnaire_rows:
             blockers["questionnaire"] = [e["id"] for e in questionnaire_rows]
+
+        stored_queries = self.sql_select(
+            rs, "event.stored_queries", ("id",), (event_id,), entity_key="event_id")
+        if stored_queries:
+            blockers["stored_queries"] = [e["id"] for e in stored_queries]
 
         log = self.sql_select(
             rs, "event.log", ("id",), (event_id,), entity_key="event_id")
@@ -2063,6 +2178,9 @@ class EventBackend(AbstractBackend):
                                 rs, anid, field_cascade)
                 if "orgas" in cascade:
                     ret *= self.sql_delete(rs, "event.orgas", blockers["orgas"])
+                if "stored_queries" in cascade:
+                    ret *= self.sql_delete(
+                        rs, "event.stored_queries", blockers["stored_queries"])
                 if "log" in cascade:
                     ret *= self.sql_delete(
                         rs, "event.log", blockers["log"])

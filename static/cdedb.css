@@ -1101,3 +1101,17 @@ ul.styleless {
 .button-group-below-text {
     margin-top: 5px
 }
+
+/*
+ * the following should be replaced with
+ * display: inline-flex; width: auto;
+ * in Bootstrap 5
+ */
+.input-group-inline {
+    display: inline-table !important;
+    vertical-align: middle !important;
+}
+
+.input-group-inline .form-control, .input-group-inline .input-group-btn {
+    width: auto !important;
+}

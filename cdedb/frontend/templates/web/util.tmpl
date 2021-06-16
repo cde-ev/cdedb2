@@ -539,7 +539,7 @@
 {%- endmacro %}
 
 {% macro input_submit(label="Save", value="True", name="submitform", anid=none, aclass='btn btn-primary', icon="check",
-        readonly=False, title=none, ariahidden=false) %}
+        readonly=False, title=none, ariahidden=false, formmethod=none, formaction=none) %}
     <button{{ dict(
         type="submit",
         name=name,
@@ -548,6 +548,8 @@
         title=title,
         value=value,
         disabled="disabled" if readonly,
+        formmethod=formmethod,
+        formaction=formaction,
         **{ "aria-hidden": "true" if ariahidden }
     )|xmlattr }}>
         {{ make_icon(icon) if icon }}

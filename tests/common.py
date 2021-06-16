@@ -794,7 +794,7 @@ class FrontendTest(BackendTest):
         self.follow()
         self.basic_validate(verbose=verbose)
 
-    def submit(self, form: webtest.Form, button: Optional[str] = "submitform",
+    def submit(self, form: webtest.Form, button: str = "",
                check_notification: bool = True, verbose: bool = False,
                value: str = None) -> None:
         """Submit a form.
@@ -808,6 +808,12 @@ class FrontendTest(BackendTest):
         :param button: The name of the button to use.
         :param value: The value of the button to use.
         """
+        if button:
+            tmp_button: webtest.forms.Submit = form[button]
+            if "formaction" in tmp_button.attrs:
+                form.action = tmp_button.attrs["formaction"]
+            if "formmethod" in tmp_button.attrs:
+                form.method = tmp_button.attrs["formmethod"]
         method = form.method
         self.response = form.submit(button, value=value)
         self.follow()

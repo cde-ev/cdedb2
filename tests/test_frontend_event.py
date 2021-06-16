@@ -2047,6 +2047,25 @@ etc;anything else""", f['entries_2'].value)
             "",
             self.response.lxml.xpath('//*[@id="query-result"]//tr[2]/td[@data-col='
                                      '"lodgement2.title"]')[0].text.strip())
+        f["query_name"] = query_name = "My registration query"
+        self.submit(f, button="store_query")
+        self.assertPresence("Ergebnis [3]")
+        self.assertPresence("Beispiel")
+        self.assertPresence("Emilia")
+        self.assertPresence("Garcia")
+        self.assertPresence(query_name, div="default_queries_container")
+        self.traverse("Anmeldungen", query_name)
+        self.assertPresence("Ergebnis [3]")
+        self.assertPresence("Beispiel")
+        self.assertPresence("Emilia")
+        self.assertPresence("Garcia")
+        self.submit(f, button="store_query", check_notification=False)
+        self.assertPresence(
+            f"Suchabfrage mit dem Namen '{query_name}' existiert bereits.",
+            div="notifications")
+        f = self.response.forms["deletequeryform1001"]
+        self.submit(f)
+        self.assertNonPresence(query_name, div="default_queries_container")
 
     @as_users("annika")
     def test_course_query(self) -> None:
@@ -2071,6 +2090,27 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Seminarraum 23", div="result-container")
         self.assertPresence("Kabarett", div="result-container")
         self.assertPresence("Theater", div="result-container")
+        f["query_name"] = query_name = "custom_course_query"
+        self.submit(f, button="store_query")
+        self.assertPresence("Ergebnis [2]", div="query-results")
+        self.assertPresence("Lang", div="result-container")
+        self.assertPresence("Seminarraum 23", div="result-container")
+        self.assertPresence("Kabarett", div="result-container")
+        self.assertPresence("Theater", div="result-container")
+        self.assertPresence(query_name, div="default_queries_container")
+        self.traverse("Kurse", "Kurssuche", query_name)
+        self.assertPresence("Ergebnis [2]", div="query-results")
+        self.assertPresence("Lang", div="result-container")
+        self.assertPresence("Seminarraum 23", div="result-container")
+        self.assertPresence("Kabarett", div="result-container")
+        self.assertPresence("Theater", div="result-container")
+        self.submit(f, button="store_query", check_notification=False)
+        self.assertPresence(
+            f"Suchabfrage mit dem Namen '{query_name}' existiert bereits.",
+            div="notifications")
+        f = self.response.forms["deletequeryform1001"]
+        self.submit(f)
+        self.assertNonPresence(query_name, div="default_queries_container")
 
     @as_users("garcia")
     def test_lodgement_query(self) -> None:
@@ -2090,6 +2130,24 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Ergebnis [2]", div="query-results")
         self.assertPresence("Kalte Kammer", div="result-container")
         self.assertPresence("Warme Stube", div="result-container")
+        f["query_name"] = query_name = "My lodgement query with a funny symbol: 🏠"
+        self.submit(f, button="store_query")
+        self.assertPresence("Ergebnis [2]", div="query-results")
+        self.assertPresence("Kalte Kammer", div="result-container")
+        self.assertPresence("Warme Stube", div="result-container")
+        self.assertPresence(query_name, div="default_queries_container")
+        self.traverse("Unterkünfte", "Unterkunftssuche", query_name)
+        self.assertPresence("Ergebnis [2]", div="query-results")
+        self.assertPresence("Kalte Kammer", div="result-container")
+        self.assertPresence("Warme Stube", div="result-container")
+        self.submit(f, button="store_query", check_notification=False)
+        self.assertPresence(
+            f"Suchabfrage mit dem Namen '{query_name}' existiert bereits.",
+            div="notifications")
+        f = self.response.forms["deletequeryform1001"]
+        self.submit(f)
+        self.assertNonPresence(query_name, div="default_queries_container",
+                               check_div=False)
 
     @as_users("garcia")
     def test_multiedit(self) -> None:

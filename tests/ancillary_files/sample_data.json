@@ -4995,6 +4995,25 @@
             "kind": 2
         }
     ],
+    "event.stored_queries": [
+        {
+            "event_id": 1,
+            "query_name": "Test-Query",
+            "scope": "QueryScope.registration",
+            "serialized_query": {
+                "is_search": true,
+                "query_name": "Test-Query",
+                "scope": "QueryScope.registration",
+                "qsel_reg.id": true,
+                "qsel_persona.id": true,
+                "qsel_persona.birthday": true,
+                "qop_persona.birthday": 20,
+                "qval_persona.birthday": "2000-01-01",
+                "qord_primary": "persona.birthday",
+                "qord_primary_ascending": true
+            }
+        }
+    ],
     "event.log": [
         {
             "ctime": "2014-01-01T01:04:05+00:00",

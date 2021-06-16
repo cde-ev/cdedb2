@@ -2099,6 +2099,10 @@ LODGEMENT_FIELDS = ("id", "event_id", "title", "regular_capacity",
 QUESTIONNAIRE_ROW_FIELDS = ("field_id", "pos", "title", "info",
                             "input_size", "readonly", "default_value", "kind")
 
+#: Fields for a stored event query.
+STORED_EVENT_QUERY_FIELDS = (
+    "id", "event_id", "query_name", "scope", "serialized_query")
+
 #: Fields of a mailing list entry (that is one mailinglist)
 MAILINGLIST_FIELDS = (
     "id", "title", "address", "local_part", "domain", "description",

@@ -439,15 +439,36 @@
                     </div>
                 </div>
 
-                <p class="pull-right nosp">
-                    {{ util.input_submit(label=gettext("Search"), icon="search") }}
-                    <span class="btn-group">
-                        {{ util.input_submit(label=gettext("CSV file"), value="csv", name="download", icon="download",
-                            aclass="btn btn-default") }}
-                        {{ util.input_submit(label=gettext("JSON file"), value="json", name="download", icon="download",
-                            aclass="btn btn-default") }}
-                    </span>
-                </p>
+                <div class="row">
+                    <div class="col-sm-6">
+                        {% if scope.supports_storing() %}
+                            <h4 class="filter-title">
+                                {{ util.make_icon('far fa-bookmark') }} {% trans %}Store query{% endtrans %}</h4>
+                            <div class="pull-left input-group-inline">
+                                {{ util.input_text("query_name", placeholder="Query name") }}
+                                {{ util.input_hidden("query_scope", scope) }}
+                                <div class="input-group-btn">
+                                    {{ util.input_submit(gettext("Save"), name="store_query", formmethod="POST",
+                                        formaction=cdedblink("event/store_event_query"),
+                                        icon="far fa-bookmark", aclass="btn btn-default") }}
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-sm-6">
+                        <h4 class="filter-title">
+                            {{ util.make_icon('search') }} {% trans %}Search{% endtrans %}</h4>
+                        <div class="">
+                            {{ util.input_submit(label=gettext("Search"), icon="search") }}
+                            <div class="btn-group">
+                                {{ util.input_submit(label=gettext("CSV file"), value="csv", name="download", icon="download",
+                                    aclass="btn btn-default") }}
+                                {{ util.input_submit(label=gettext("JSON file"), value="json", name="download", icon="download",
+                                    aclass="btn btn-default") }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 {{ util.output_errors('query', wrapper=True) }}
                 <script nonce="{{ csp_nonce }}">
                     {
@@ -493,18 +514,28 @@
     </form>
 {% endmacro %}
 
-{% macro place_default_queries(target, queries) %}
+{% macro place_default_queries(target, queries, stored_queries) %}
     {% if queries %}
-        {% call util.bootstrap_panel(title=gettext("Default Queries")) %}
+        {% call util.bootstrap_panel(title=gettext("Default Queries"), anid="default_queries_container") %}
             <div class="row">
                 {% for list in queries | sort | slice(2) %}
                 <div class="col-sm-6">
                     <ul>
                         {% for query_name in list %}
-                            {% with query = queries[query_name] %}<li>
-                                {{ util.href(cdedblink(target, query.serialize()) + '#query-results',
-                                        query.name if query.name else gettext(query_name), aclass="default-query") }}
-                            </li>{% endwith %}
+                            {% with query = queries[query_name] -%}
+                                <li>
+                                    {{ util.href(cdedblink(target, query.serialize()) + '#query-results',
+                                            query.name if query.name else gettext(query_name), aclass="default-query") }}
+                                    {% if query_name in stored_queries %}{# TODO generalize for non-event realm? #}
+                                        <form action="{{ cdedblink('event/delete_event_query') }}" method="post" class="display-inline" id="deletequeryform{{ query.query_id }}">
+                                            {{ util.anti_csrf_token('event/delete_event_query') }}
+                                            {{ util.input_hidden("query_id", value=query.query_id) }}
+                                            {{ util.input_hidden("query_scope", value=query.scope) }}
+                                            {{ util.input_submit(label="", aclass='btn btn-xs btn-danger', icon="trash-alt", title=gettext('Delete query')) }}
+                                        </form>
+                                    {% endif %}
+                                </li>
+                            {%- endwith %}
                         {% endfor %}
                     </ul>
                 </div>

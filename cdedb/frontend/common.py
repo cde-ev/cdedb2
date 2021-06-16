@@ -71,9 +71,9 @@ from cdedb.common import (
     ANTI_CSRF_TOKEN_PAYLOAD, REALM_SPECIFIC_GENESIS_FIELDS, PERSONA_DEFAULTS,
     CdEDBMultiDict, CdEDBObject, CustomJSONEncoder, EntitySorter, Error, Notification,
     NotificationType, PathLike, PrivilegeError, RequestState, Role, User,
-    ValidationWarning, _tdelta, asciificator, decode_parameter,
-    encode_parameter, glue, json_serialize, make_proxy, make_root_logger, merge_dicts,
-    n_, now, roles_to_db_role, unwrap, xsorted,
+    ValidationWarning, _tdelta, asciificator, decode_parameter, encode_parameter,
+    glue, json_serialize, make_proxy, make_root_logger, merge_dicts, n_, now,
+    roles_to_db_role, unwrap, xsorted,
 )
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES

@@ -34,10 +34,10 @@
             </div>
         </div>
         <div class="col-md-8">
-            {{ generic.place_default_queries("event/course_query", default_queries) }}
+            {{ generic.place_default_queries("event/course_query", default_queries, stored_queries) }}
         </div>
     </div>
-
+i
     {{ generic.format_query(enums['QueryScope'].event_course, spec, titles, choices, cdedblink('event/course_query'),
                             selection_default=selection_default) }}
 

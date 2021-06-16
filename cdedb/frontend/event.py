@@ -17,8 +17,8 @@ import shutil
 import tempfile
 from collections import Counter, OrderedDict
 from typing import (
-    Any, Callable, Collection, Dict, List, Mapping, NamedTuple, Optional, Set,
-    Tuple, Union, cast,
+    Any, Callable, Collection, Dict, List, Mapping, NamedTuple, Optional, Set, Tuple,
+    Union, cast,
 )
 
 import psycopg2.extensions
@@ -47,7 +47,7 @@ from cdedb.frontend.common import (
 )
 from cdedb.query import (
     Query, QueryConstraint, QueryOperators, QueryScope, make_registration_query_aux,
-    make_lodgement_query_aux, make_course_query_aux
+    make_lodgement_query_aux, make_course_query_aux,
 )
 from cdedb.validation import (
     COURSE_COMMON_FIELDS, EVENT_EXPOSED_FIELDS, LODGEMENT_COMMON_FIELDS,
@@ -5220,11 +5220,15 @@ class EventFrontend(AbstractUserFrontend):
 
         default_queries = self.conf["DEFAULT_QUERIES_REGISTRATION"](
             rs.gettext, rs.ambience['event'], spec)
+        stored_queries = self.eventproxy.get_event_queries(
+            rs, event_id, scopes=(scope,))
+        default_queries.update(stored_queries)
 
         params = {
             'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
             'query': query, 'default_queries': default_queries,
-            'titles': titles, 'has_registrations': has_registrations,
+            'stored_queries': stored_queries, 'titles': titles,
+            'has_registrations': has_registrations,
         }
         # Tricky logic: In case of no validation errors we perform a query
         if not rs.has_validation_errors() and is_search and query:
@@ -5237,21 +5241,63 @@ class EventFrontend(AbstractUserFrontend):
             rs.values['is_search'] = is_search = False
             return self.render(rs, "registration_query", params)
 
+    @access("event", modi={"POST"}, check_anti_csrf=False)
+    @event_guard()
+    @REQUESTdata("query_name", "query_scope")
+    def store_event_query(self, rs: RequestState, event_id: int, query_name: str,
+                          query_scope: QueryScope) -> Response:
+        """Store an event query."""
+        if not query_scope or not query_scope.get_target():
+            rs.ignore_validation_errors()
+            return self.redirect(rs, "event/show_event")
+        if rs.has_validation_errors() or not query_name:
+            rs.notify("error", n_("Invalid query name."))
+
+        spec = query_scope.get_spec(event=rs.ambience["event"])
+        query_input = query_scope.mangle_query_input(rs)
+        query: Optional[Query] = check(
+            rs, vtypes.QueryInput, query_input, "query", spec=spec, allow_empty=False)
+        if not rs.has_validation_errors() and query:
+            query_input["is_search"] = True
+            query_id = self.eventproxy.store_event_query(
+                rs, rs.ambience["event"]["id"], query)
+            self.notify_return_code(rs, query_id)
+            if query_id:
+                query.query_id = query_id
+                del query_input["query_name"]
+        else:
+            rs.ignore_validation_errors()
+        return self.redirect(rs, query_scope.get_target(), query_input)
+
+    @access("event", modi={"POST"})
+    @event_guard()
+    @REQUESTdata("query_id", "query_scope")
+    def delete_event_query(self, rs: RequestState, event_id: int,
+                           query_id: int, query_scope: QueryScope) -> Response:
+        """Delete a stored event query."""
+        if not rs.has_validation_errors():
+            code = self.eventproxy.delete_event_query(rs, query_id)
+            self.notify_return_code(rs, code)
+        if query_scope and query_scope.get_target():
+            return self.redirect(rs, query_scope.get_target())
+        return self.redirect(rs, "event/show_event")
+
     make_course_query_aux = staticmethod(make_course_query_aux)
 
     @access("event")
     @event_guard()
     @REQUESTdata("download", "is_search")
     def course_query(self, rs: RequestState, event_id: int,
-                     download: Optional[str], is_search: bool) -> Response:
+                     download: Optional[str], is_search: bool,
+                     ) -> Response:
 
         scope = QueryScope.event_course
         spec = scope.get_spec(event=rs.ambience['event'])
         query_input = scope.mangle_query_input(rs)
         query: Optional[Query] = None
         if is_search:
-            query = check(rs, vtypes.QueryInput,
-                          query_input, "query", spec=spec, allow_empty=False)
+            query = check(rs, vtypes.QueryInput, query_input,
+                          "query", spec=spec, allow_empty=False)
 
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
@@ -5265,14 +5311,19 @@ class EventFrontend(AbstractUserFrontend):
         for col in ("is_offered", "takes_place", "attendees"):
             selection_default += list("track{}.{}".format(t_id, col)
                                       for t_id in tracks)
-
+        stored_queries = self.eventproxy.get_event_queries(
+            rs, event_id, scopes=(scope,))
+        for q in stored_queries.values():
+            q.spec = spec
         default_queries = self.conf["DEFAULT_QUERIES_COURSE"](
             rs.gettext, rs.ambience['event'], spec)
+        default_queries.update(stored_queries)
 
         params = {
             'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
             'query': query, 'default_queries': default_queries,
-            'titles': titles, 'selection_default': selection_default,
+            'stored_queries': stored_queries, 'titles': titles,
+            'selection_default': selection_default,
         }
 
         if not rs.has_validation_errors() and is_search and query:
@@ -5291,10 +5342,11 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard()
     @REQUESTdata("download", "is_search")
     def lodgement_query(self, rs: RequestState, event_id: int,
-                        download: Optional[str], is_search: bool) -> Response:
+                        download: Optional[str], is_search: bool,
+                        ) -> Response:
 
         scope = QueryScope.lodgement
-        spec = scope.get_spec(event=rs.ambience['event'])
+        spec = scope.get_spec(event=rs.ambience["event"])
         query_input = scope.mangle_query_input(rs)
         query: Optional[Query] = None
         if is_search:
@@ -5319,12 +5371,17 @@ class EventFrontend(AbstractUserFrontend):
             if field['association'] == const.FieldAssociations.lodgement]
         for col in ("regular_inhabitants",):
             selection_default += list(f"part{p_id}_{col}" for p_id in parts)
-        default_queries: List[Query] = []
+
+        default_queries = {}
+        stored_queries = self.eventproxy.get_event_queries(
+            rs, event_id, scopes=(scope,))
+        default_queries.update(stored_queries)
 
         params = {
             'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
-            'query': query, 'defualt_queries': default_queries,
-            'titles': titles, 'selection_default': selection_default,
+            'query': query, 'default_queries': default_queries,
+            'stored_queries': stored_queries, 'titles': titles,
+            'selection_default': selection_default,
         }
 
         if not rs.has_validation_errors() and is_search and query:
@@ -5707,9 +5764,9 @@ class EventFrontend(AbstractUserFrontend):
         blockers = self.eventproxy.delete_event_blockers(rs, event_id)
         cascade = {"registrations", "courses", "lodgement_groups", "lodgements",
                    "field_definitions", "course_tracks", "event_parts", "orgas",
-                   "questionnaire", "log", "mailinglists"} & blockers.keys()
+                   "questionnaire", "stored_queries", "log", "mailinglists"}
 
-        code = self.eventproxy.delete_event(rs, event_id, cascade)
+        code = self.eventproxy.delete_event(rs, event_id, cascade & blockers.keys())
         if not code:
             return self.show_event(rs, event_id)
         else:

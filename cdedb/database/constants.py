@@ -345,6 +345,8 @@ class EventLogCodes(enum.IntEnum):
     fee_modifier_deleted = 82  #:
     minor_form_updated = 85  #:
     minor_form_removed = 86  #:
+    query_stored = 90  #:
+    query_deleted = 91  #:
 
 
 @enum.unique
