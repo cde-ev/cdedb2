@@ -7,9 +7,9 @@ import string
 import pytz
 
 import cdedb.enums
+from cdedb.filter import date_filter, tex_escape_filter
 from cdedb.frontend.common import (
-    cdedbid_filter, date_filter, datetime_filter, decode_parameter, encode_parameter,
-    tex_escape_filter,
+    cdedbid_filter, datetime_filter, decode_parameter, encode_parameter,
 )
 from tests.common import FrontendTest
 

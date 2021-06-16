@@ -37,13 +37,13 @@ from cdedb.common import (
     json_serialize, merge_dicts, mixed_existence_sorter, n_, now, unwrap, xsorted,
 )
 from cdedb.database.connection import Atomizer
+from cdedb.filter import enum_entries_filter, keydictsort_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, CustomCSVDialect, RequestConstraint, REQUESTdata,
     REQUESTdatadict, REQUESTfile, access, calculate_db_logparams, calculate_loglinks,
     cdedbid_filter, cdedburl, check_validation as check,
-    check_validation_optional as check_optional, enum_entries_filter, event_guard,
-    keydictsort_filter, make_event_fee_reference, process_dynamic_input,
-    querytoparams_filter, request_extractor, safe_filter,
+    check_validation_optional as check_optional, event_guard, make_event_fee_reference,
+    process_dynamic_input, request_extractor, safe_filter,
 )
 from cdedb.query import (
     QUERY_SPECS, Query, QueryConstraint, QueryOperators, mangle_query_input,
@@ -211,8 +211,7 @@ class EventFrontend(AbstractUserFrontend):
                 ("persona.given_names", "persona.family_name"),
                 (),
                 (("persona.family_name", True), ("persona.given_names", True)))
-            params = querytoparams_filter(query)
-            params['is_search'] = True
+            params = query.serialize()
             params['event_id'] = event_id
             return cdedburl(rs, 'event/registration_query', params)
 
@@ -4384,8 +4383,7 @@ class EventFrontend(AbstractUserFrontend):
             (("reg.id", QueryOperators.oneof, reg_ids),),
             (("persona.family_name", True), ("persona.given_names", True),)
         )
-        return self.redirect(rs, "event/registration_query",
-                             querytoparams_filter(query))
+        return self.redirect(rs, "event/registration_query", query.serialize())
 
     @staticmethod
     def calculate_groups(entity_ids: Collection[int], event: CdEDBObject,
@@ -6267,7 +6265,7 @@ class EventFrontend(AbstractUserFrontend):
             raise NotImplementedError(f"Unknown kind {kind}.")
 
         redirect = self.FIELD_REDIRECT[kind]
-        return self.redirect(rs, redirect, querytoparams_filter(query))
+        return self.redirect(rs, redirect, query.serialize())
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
@@ -6573,7 +6571,7 @@ class EventFrontend(AbstractUserFrontend):
                 return self.redirect(rs, "event/show_registration",
                                      {'registration_id': result[0]['id']})
             elif result:
-                params = querytoparams_filter(query)
+                params = query.serialize()
                 return self.redirect(rs, "event/registration_query",
                                      params)
         rs.notify("warning", n_("No registration found."))

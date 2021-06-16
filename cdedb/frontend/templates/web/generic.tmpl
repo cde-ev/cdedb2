@@ -499,7 +499,7 @@
                     <ul>
                         {% for query_name in list %}
                             {% with query = queries[query_name] %}<li>
-                                {{ util.href(cdedblink(target, query|querytoparams) + '#query-results',
+                                {{ util.href(cdedblink(target, query.serialize()) + '#query-results',
                                         query.name if query.name else gettext(query_name), aclass="default-query") }}
                             </li>{% endwith %}
                         {% endfor %}

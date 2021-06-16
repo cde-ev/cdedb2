@@ -18,10 +18,11 @@ from cdedb.common import (
 )
 from cdedb.subman.exceptions import SubscriptionError
 from cdedb.subman.machine import SubscriptionAction
+from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access, calculate_db_logparams,
     calculate_loglinks, cdedbid_filter as cdedbid, check_validation as check,
-    csv_output, keydictsort_filter, mailinglist_guard, periodic,
+    csv_output, mailinglist_guard, periodic,
 )
 from cdedb.ml_type_aux import (
     ADDITIONAL_TYPE_FIELDS, TYPE_MAP, MailinglistGroup, get_type

@@ -3,7 +3,6 @@
 """Services for the core realm."""
 
 import collections
-import copy
 import datetime
 import itertools
 import operator
@@ -30,12 +29,12 @@ from cdedb.common import (
 )
 
 from cdedb.database.connection import Atomizer
+from cdedb.filter import date_filter, enum_entries_filter, markdown_parse_safe
 from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, access, basic_redirect,
     calculate_db_logparams, calculate_loglinks, check_validation as check,
-    check_validation_optional as check_optional, date_filter, enum_entries_filter,
-    make_membership_fee_reference, markdown_parse_safe, periodic, querytoparams_filter,
-    request_dict_extractor, request_extractor,
+    check_validation_optional as check_optional, make_membership_fee_reference,
+    periodic, request_dict_extractor, request_extractor,
 )
 from cdedb.query import QUERY_SPECS, Query, QueryOperators
 from cdedb.subman.machine import SubscriptionPolicy
@@ -785,7 +784,7 @@ class CoreFrontend(AbstractFrontend):
         if len(result) == 1:
             return self.redirect_show_user(rs, result[0]["id"])
         elif result:
-            params = querytoparams_filter(query)
+            params = query.serialize()
             rs.values.update(params)
             return self.user_search(rs, is_search=True, download=None,
                                     query=query)
