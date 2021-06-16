@@ -101,10 +101,14 @@ msgstr "Nicht berechtigt auf Veranstaltungstabellen zuzugreifen"
 #: cdedb/frontend/core.py:852 cdedb/frontend/core.py:858
 #: cdedb/frontend/core.py:866 cdedb/frontend/core.py:872
 #: cdedb/frontend/core.py:880 cdedb/frontend/core.py:885
-#: cdedb/frontend/core.py:897 cdedb/frontend/core.py:1605
-#: cdedb/frontend/core.py:1620 cdedb/frontend/core.py:2218
-#: cdedb/frontend/core.py:2232 cdedb/frontend/core.py:2264
+#: cdedb/frontend/core.py:897 cdedb/frontend/core.py:1604
+#: cdedb/frontend/core.py:1605 cdedb/frontend/core.py:1619
+#: cdedb/frontend/core.py:1620 cdedb/frontend/core.py:2217
+#: cdedb/frontend/core.py:2218 cdedb/frontend/core.py:2231
+#: cdedb/frontend/core.py:2232 cdedb/frontend/core.py:2263
+#: cdedb/frontend/core.py:2264 cdedb/frontend/core.py:2287
 #: cdedb/frontend/core.py:2288 cdedb/frontend/event.py:6414
+#: cdedb/subman/subman.py:154
 msgid "Not privileged."
 msgstr "Nicht die nötige Zugriffsberechtigung."
 
@@ -518,7 +522,8 @@ msgid "Modification failed."
 msgstr "Modifikation fehlgeschlagen."
 
 #: cdedb/backend/core.py:638 cdedb/backend/core.py:2475
-#: cdedb/backend/core.py:2498 cdedb/frontend/core.py:1729
+#: cdedb/backend/core.py:2498 cdedb/frontend/core.py:1728
+#: cdedb/frontend/core.py:1729
 msgid "Nonexistent user."
 msgstr "Nutzer existiert nicht."
 
@@ -576,7 +581,8 @@ msgid "Special change not committed."
 msgstr "Spezialänderung nicht vollzogen."
 
 #: cdedb/backend/core.py:876 cdedb/backend/core.py:951
-#: cdedb/frontend/core.py:1277 cdedb/frontend/core.py:1359
+#: cdedb/frontend/core.py:1276 cdedb/frontend/core.py:1277
+#: cdedb/frontend/core.py:1358 cdedb/frontend/core.py:1359
 msgid "Cannot modify own meta admin privileges."
 msgstr "Die eigenen Meta-Admin-Privilegien können nicht bearbeitet werden."
 
@@ -594,7 +600,8 @@ msgstr ""
 msgid "Invalid privilege change state: %(status)s."
 msgstr "Ungültiger Status für Änderung der Admin-Privilegien: %(status)s."
 
-#: cdedb/backend/core.py:954 cdedb/frontend/core.py:1362
+#: cdedb/backend/core.py:954 cdedb/frontend/core.py:1361
+#: cdedb/frontend/core.py:1362
 msgid ""
 "Only a different admin than the submitter may approve a privilege change."
 msgstr ""
@@ -657,11 +664,13 @@ msgstr "Benutzer ist nicht archiviert."
 msgid "Cannot purge silently."
 msgstr "Kann nicht still geleert werden."
 
-#: cdedb/backend/core.py:1641 cdedb/frontend/core.py:1878
+#: cdedb/backend/core.py:1641 cdedb/frontend/core.py:1877
+#: cdedb/frontend/core.py:1878
 msgid "Name collision."
 msgstr "E-Mail-Adresse bereits vorhanden."
 
-#: cdedb/backend/core.py:1661 cdedb/frontend/core.py:2066
+#: cdedb/backend/core.py:1661 cdedb/frontend/core.py:2065
+#: cdedb/frontend/core.py:2066 cdedb/frontend/core.py:2303
 #: cdedb/frontend/core.py:2304
 msgid "Failed."
 msgstr "Aktion fehlgeschlagen."
@@ -739,7 +748,8 @@ msgstr "Passwort ist falsch."
 msgid "No new password provided."
 msgstr "Kein neues Password angegeben."
 
-#: cdedb/backend/core.py:2351 cdedb/frontend/core.py:1685
+#: cdedb/backend/core.py:2351 cdedb/frontend/core.py:1684
+#: cdedb/frontend/core.py:1685 cdedb/frontend/core.py:1846
 #: cdedb/frontend/core.py:1847 cdedb/validation.py:887
 msgid "Password too weak."
 msgstr "Passwort ist zu schwach."
@@ -1361,7 +1371,8 @@ msgstr "Versammlung angelegt."
 #: cdedb/frontend/assembly.py:468 cdedb/frontend/assembly.py:625
 #: cdedb/frontend/assembly.py:1026 cdedb/frontend/assembly.py:1481
 #: cdedb/frontend/cde.py:2686 cdedb/frontend/cde.py:2746
-#: cdedb/frontend/core.py:2408 cdedb/frontend/core.py:2453
+#: cdedb/frontend/core.py:2407 cdedb/frontend/core.py:2408
+#: cdedb/frontend/core.py:2452 cdedb/frontend/core.py:2453
 #: cdedb/frontend/event.py:1386 cdedb/frontend/event.py:4255
 #: cdedb/frontend/event.py:4871 cdedb/frontend/event.py:6321
 #: cdedb/frontend/event.py:6353 cdedb/frontend/ml_base.py:535
@@ -1592,11 +1603,15 @@ msgid "No Member with ID %(p_id)s found."
 msgstr "Kein Account mit ID %(p_id)s gefunden."
 
 #: cdedb/frontend/cde.py:1153 cdedb/frontend/core.py:669
-#: cdedb/frontend/core.py:1114 cdedb/frontend/core.py:1190
-#: cdedb/frontend/core.py:1439 cdedb/frontend/core.py:1503
-#: cdedb/frontend/core.py:1560 cdedb/frontend/core.py:1583
-#: cdedb/frontend/core.py:1607 cdedb/frontend/core.py:1933
-#: cdedb/frontend/core.py:1967
+#: cdedb/frontend/core.py:1113 cdedb/frontend/core.py:1114
+#: cdedb/frontend/core.py:1189 cdedb/frontend/core.py:1190
+#: cdedb/frontend/core.py:1438 cdedb/frontend/core.py:1439
+#: cdedb/frontend/core.py:1502 cdedb/frontend/core.py:1503
+#: cdedb/frontend/core.py:1559 cdedb/frontend/core.py:1560
+#: cdedb/frontend/core.py:1582 cdedb/frontend/core.py:1583
+#: cdedb/frontend/core.py:1606 cdedb/frontend/core.py:1607
+#: cdedb/frontend/core.py:1932 cdedb/frontend/core.py:1933
+#: cdedb/frontend/core.py:1966 cdedb/frontend/core.py:1967
 msgid "Persona is archived."
 msgstr "Account ist archiviert."
 
@@ -1628,7 +1643,8 @@ msgstr ""
 msgid "Committed %(num)s transfers. There were %(new_members)s new members."
 msgstr "%(num)s Überweisungen gebucht. %(new_members)s neue Mitglieder."
 
-#: cdedb/frontend/cde.py:1498 cdedb/frontend/core.py:1551
+#: cdedb/frontend/cde.py:1498 cdedb/frontend/core.py:1550
+#: cdedb/frontend/core.py:1551
 msgid "Permit revoked."
 msgstr "Lastschriftmandat widerrufen."
 
@@ -1833,13 +1849,14 @@ msgstr ""
 msgid "Stored email to hard drive at %(path)s"
 msgstr "E-Mail als %(path)s auf der Festplatte gespeichert."
 
-#: cdedb/frontend/common.py:1514 cdedb/frontend/core.py:1366
+#: cdedb/frontend/common.py:1514 cdedb/frontend/core.py:1365
+#: cdedb/frontend/core.py:1366 cdedb/frontend/core.py:2396
 #: cdedb/frontend/core.py:2397
 msgid "Change committed."
 msgstr "Die Änderung wurde übernommen."
 
 #: cdedb/frontend/common.py:1515 cdedb/frontend/core.py:1002
-#: cdedb/frontend/core.py:1124
+#: cdedb/frontend/core.py:1123 cdedb/frontend/core.py:1124
 msgid "Change pending."
 msgstr "Die Änderung wartet auf Bestätigung."
 
@@ -1954,7 +1971,8 @@ msgstr "CdE-Mailingliste"
 msgid "Login failure."
 msgstr "Login fehlgeschlagen."
 
-#: cdedb/frontend/core.py:269 cdedb/frontend/core.py:1705
+#: cdedb/frontend/core.py:269 cdedb/frontend/core.py:1704
+#: cdedb/frontend/core.py:1705
 #, python-format
 msgid "%(count)s session(s) terminated."
 msgstr "%(count)s Sitzung(en) beendet."
@@ -1975,10 +1993,14 @@ msgstr "Zugriff auf Mitgliedsdatensatz ohne Datenschutz-Einwilligung."
 msgid "Only admins may view archived datasets."
 msgstr "Zugriff auf archivierte Datensätze nur für Admins."
 
-#: cdedb/frontend/core.py:667 cdedb/frontend/core.py:1112
-#: cdedb/frontend/core.py:1139 cdedb/frontend/core.py:1779
-#: cdedb/frontend/core.py:1931 cdedb/frontend/core.py:1944
-#: cdedb/frontend/core.py:1962 cdedb/frontend/core.py:2428
+#: cdedb/frontend/core.py:667 cdedb/frontend/core.py:1111
+#: cdedb/frontend/core.py:1112 cdedb/frontend/core.py:1138
+#: cdedb/frontend/core.py:1139 cdedb/frontend/core.py:1778
+#: cdedb/frontend/core.py:1779 cdedb/frontend/core.py:1930
+#: cdedb/frontend/core.py:1931 cdedb/frontend/core.py:1943
+#: cdedb/frontend/core.py:1944 cdedb/frontend/core.py:1961
+#: cdedb/frontend/core.py:1962 cdedb/frontend/core.py:2427
+#: cdedb/frontend/core.py:2428 cdedb/frontend/core.py:2437
 #: cdedb/frontend/core.py:2438
 msgid "Not a relative admin."
 msgstr "Nicht genug Adminprivilegien für diesen Account."
@@ -1997,22 +2019,23 @@ msgstr ""
 msgid "No valid realm."
 msgstr "Kein gültiger Bereich."
 
-#: cdedb/frontend/core.py:1197 cdedb/frontend/core.py:1223
+#: cdedb/frontend/core.py:1196 cdedb/frontend/core.py:1197
+#: cdedb/frontend/core.py:1222 cdedb/frontend/core.py:1223
 msgid "Resolve pending privilege change first."
 msgstr "Schließe erst die ausstehende Änderung der Admin-Privlilegien ab."
 
-#: cdedb/frontend/core.py:1248
+#: cdedb/frontend/core.py:1247 cdedb/frontend/core.py:1248
 msgid ""
 "Cannot grant meta, core, CdE or CdElokal admin privileges to non CdE users."
 msgstr ""
 "Ein nicht-CdE-Nutzer kann keine Meta-, Core-, CdE- oder CdElokaladminrechte "
 "erhalten."
 
-#: cdedb/frontend/core.py:1256
+#: cdedb/frontend/core.py:1255 cdedb/frontend/core.py:1256
 msgid "Cannot grant finance admin privileges to non CdE admins."
 msgstr "Nur CdE Admins können Finanz Admin werden."
 
-#: cdedb/frontend/core.py:1261
+#: cdedb/frontend/core.py:1260 cdedb/frontend/core.py:1261
 msgid ""
 "Cannot grant mailinglist or CdElokal admin privileges to non mailinglist "
 "users."
@@ -2020,29 +2043,30 @@ msgstr ""
 "Ein Nutzer ohne Mailinglistenprivilegien kann nicht Malinglisten- oder "
 "CdElokaladmin sein."
 
-#: cdedb/frontend/core.py:1267
+#: cdedb/frontend/core.py:1266 cdedb/frontend/core.py:1267
 msgid "Cannot grant event admin privileges to non event users."
 msgstr "Nur Veranstaltungs Nutzer können Veranstaltungs Admin werden."
 
-#: cdedb/frontend/core.py:1272
+#: cdedb/frontend/core.py:1271 cdedb/frontend/core.py:1272
 msgid "Cannot grant assembly admin privileges to non assembly users."
 msgstr "Nur Versammlungs Nutzer können Versammlungs Admin werden."
 
-#: cdedb/frontend/core.py:1287
+#: cdedb/frontend/core.py:1286 cdedb/frontend/core.py:1287
 msgid "Privilege change waiting for approval by another Meta-Admin."
 msgstr ""
 "Änderung der Admin-Privilegien wartet auf Bestätigung durch einen anderen "
 "Meta-Admin."
 
-#: cdedb/frontend/core.py:1292
+#: cdedb/frontend/core.py:1291 cdedb/frontend/core.py:1292
 msgid "No changes were made."
 msgstr "Es wurden keine Änderungen gemacht."
 
-#: cdedb/frontend/core.py:1319 cdedb/frontend/core.py:1350
+#: cdedb/frontend/core.py:1318 cdedb/frontend/core.py:1319
+#: cdedb/frontend/core.py:1349 cdedb/frontend/core.py:1350
 msgid "Privilege change not pending."
 msgstr "Änderung der Admin-Privilegien nicht ausstehend."
 
-#: cdedb/frontend/core.py:1325
+#: cdedb/frontend/core.py:1324 cdedb/frontend/core.py:1325
 msgid ""
 "This privilege change is affecting your Meta-Admin privileges, so it has to "
 "be approved by another Meta-Admin."
@@ -2050,7 +2074,7 @@ msgstr ""
 "Diese Änderung betrifft Deine Meta-Admin-Privilegien und muss daher von "
 "einem anderen Meta-Admin bestätigt werden."
 
-#: cdedb/frontend/core.py:1330
+#: cdedb/frontend/core.py:1329 cdedb/frontend/core.py:1330
 msgid ""
 "This privilege change was submitted by you, so it has to be approved by "
 "another Meta-Admin."
@@ -2058,136 +2082,141 @@ msgstr ""
 "Diese Änderung der Admin-Privilegien wurde von Dir angestoßen und muss daher "
 "von einem anderen Meta-Admin bestätigt werden."
 
-#: cdedb/frontend/core.py:1366
+#: cdedb/frontend/core.py:1365 cdedb/frontend/core.py:1366
 msgid "Change rejected."
 msgstr "Änderung abgelehnt."
 
-#: cdedb/frontend/core.py:1367
+#: cdedb/frontend/core.py:1366 cdedb/frontend/core.py:1367
 msgid "Password reset issued for new admin."
 msgstr "Passwort eines neuen Admins ungültig gemacht."
 
-#: cdedb/frontend/core.py:1444
+#: cdedb/frontend/core.py:1443 cdedb/frontend/core.py:1444
 msgid "No promotion necessary."
 msgstr "Keine Änderung erforderlich."
 
-#: cdedb/frontend/core.py:1580
+#: cdedb/frontend/core.py:1579 cdedb/frontend/core.py:1580
 msgid "Nothing changed."
 msgstr "Keine Änderungen."
 
-#: cdedb/frontend/core.py:1628
+#: cdedb/frontend/core.py:1627 cdedb/frontend/core.py:1628
 msgid "Foto updated."
 msgstr "Bild aktualisiert."
 
-#: cdedb/frontend/core.py:1629
+#: cdedb/frontend/core.py:1628 cdedb/frontend/core.py:1629
 msgid "Foto removed."
 msgstr "Profilbild entfernt."
 
-#: cdedb/frontend/core.py:1640
+#: cdedb/frontend/core.py:1639 cdedb/frontend/core.py:1640
 msgid "Please provide the user's email address."
 msgstr "Bitte gib die Emailadresse des Nutzers an."
 
-#: cdedb/frontend/core.py:1646
+#: cdedb/frontend/core.py:1645 cdedb/frontend/core.py:1646
 msgid "Password invalidated."
 msgstr "Passwort ungültig gemacht."
 
-#: cdedb/frontend/core.py:1671 cdedb/frontend/core.py:1672
-#: cdedb/frontend/core.py:1674 cdedb/frontend/core.py:1835
-#: cdedb/frontend/core.py:1836 cdedb/frontend/core.py:1838
+#: cdedb/frontend/core.py:1670 cdedb/frontend/core.py:1671
+#: cdedb/frontend/core.py:1672 cdedb/frontend/core.py:1673
+#: cdedb/frontend/core.py:1674 cdedb/frontend/core.py:1834
+#: cdedb/frontend/core.py:1835 cdedb/frontend/core.py:1836
+#: cdedb/frontend/core.py:1837 cdedb/frontend/core.py:1838
 msgid "Passwords don’t match."
 msgstr "Passwörter stimmen nicht überein."
 
-#: cdedb/frontend/core.py:1692
+#: cdedb/frontend/core.py:1691 cdedb/frontend/core.py:1692
 msgid "Password changed."
 msgstr "Passwort geändert."
 
-#: cdedb/frontend/core.py:1696
+#: cdedb/frontend/core.py:1695 cdedb/frontend/core.py:1696
 msgid "Wrong password."
 msgstr "Passwort falsch."
 
-#: cdedb/frontend/core.py:1752 cdedb/frontend/core.py:1760
-#: cdedb/frontend/core.py:1800
+#: cdedb/frontend/core.py:1751 cdedb/frontend/core.py:1752
+#: cdedb/frontend/core.py:1759 cdedb/frontend/core.py:1760
+#: cdedb/frontend/core.py:1799 cdedb/frontend/core.py:1800
 msgid "Email sent."
 msgstr "E-Mail abgeschickt."
 
-#: cdedb/frontend/core.py:1819
+#: cdedb/frontend/core.py:1818 cdedb/frontend/core.py:1819
 msgid "Please try again."
 msgstr "Bitte versuche es erneut."
 
-#: cdedb/frontend/core.py:1854
+#: cdedb/frontend/core.py:1853 cdedb/frontend/core.py:1854
 msgid "Password reset."
 msgstr "Passwort zurückgesetzt."
 
-#: cdedb/frontend/core.py:1873
+#: cdedb/frontend/core.py:1872 cdedb/frontend/core.py:1873
 msgid "Must be different from current email address."
 msgstr "Muss sich von der aktuellen E-Mail-Adresse unterscheiden."
 
-#: cdedb/frontend/core.py:1915 cdedb/frontend/core.py:1949
+#: cdedb/frontend/core.py:1914 cdedb/frontend/core.py:1915
+#: cdedb/frontend/core.py:1948 cdedb/frontend/core.py:1949
 msgid "Email address changed."
 msgstr "E-Mail-Adresse geändert."
 
-#: cdedb/frontend/core.py:2026
+#: cdedb/frontend/core.py:2025 cdedb/frontend/core.py:2026
 msgid "It seems like you took too long and your previous upload was deleted."
 msgstr ""
 "Es scheint als hättest Du Dir zu viel Zeit gelassen und Deine Datei wurde "
 "mittlerweile wieder gelöscht."
 
-#: cdedb/frontend/core.py:2037
+#: cdedb/frontend/core.py:2036 cdedb/frontend/core.py:2037
 msgid "Rationale too long."
 msgstr "Begründung zu lang."
 
-#: cdedb/frontend/core.py:2043
+#: cdedb/frontend/core.py:2042 cdedb/frontend/core.py:2043
 #, python-format
 msgid "Must specify gender for %(realm)s realm."
 msgstr "Muss Geschlecht angeben für %(realm)s Bereich."
 
-#: cdedb/frontend/core.py:2056
+#: cdedb/frontend/core.py:2055 cdedb/frontend/core.py:2056
 msgid "Confirmation email has been resent."
 msgstr "Bestätigungsmail erneut versendet."
 
-#: cdedb/frontend/core.py:2060
+#: cdedb/frontend/core.py:2059 cdedb/frontend/core.py:2060
 msgid "Email address already in DB. Reset password."
 msgstr "E-Mail-Adresse bereits vorhanden. Bitte das Passwort zurücksetzen."
 
-#: cdedb/frontend/core.py:2085
+#: cdedb/frontend/core.py:2084 cdedb/frontend/core.py:2085
 msgid "Email sent. Please follow the link contained in the email."
 msgstr "E-Mail verschickt. Bitte den enthaltenen Link besuchen."
 
-#: cdedb/frontend/core.py:2101
+#: cdedb/frontend/core.py:2100 cdedb/frontend/core.py:2101
 msgid "Verification failed. Please contact the administrators."
 msgstr "Verifikation fehlgeschlagen. Bitte an die Verwaltung wenden."
 
-#: cdedb/frontend/core.py:2102
+#: cdedb/frontend/core.py:2101 cdedb/frontend/core.py:2102
 msgid "Email verified. Wait for moderation. You will be notified by mail."
 msgstr ""
 "E-Mail-Adresse verifiziert. Deine Anfrage wird bald bearbeitet und Du wirst "
 "dann per E-Mail informiert."
 
-#: cdedb/frontend/core.py:2104
+#: cdedb/frontend/core.py:2103 cdedb/frontend/core.py:2104
 msgid "This account request was already verified."
 msgstr "Diese Accountanfrage wurde bereits bestätigt."
 
-#: cdedb/frontend/core.py:2234 cdedb/frontend/core.py:2266
-#: cdedb/frontend/core.py:2290
+#: cdedb/frontend/core.py:2233 cdedb/frontend/core.py:2234
+#: cdedb/frontend/core.py:2265 cdedb/frontend/core.py:2266
+#: cdedb/frontend/core.py:2289 cdedb/frontend/core.py:2290
 msgid "Case not to review."
 msgstr "Anfrage befindet sich nicht in der Begutachtung."
 
-#: cdedb/frontend/core.py:2322
+#: cdedb/frontend/core.py:2321 cdedb/frontend/core.py:2322
 msgid "Case approved."
 msgstr "Antrag genehmigt."
 
-#: cdedb/frontend/core.py:2329
+#: cdedb/frontend/core.py:2328 cdedb/frontend/core.py:2329
 msgid "Case rejected."
 msgstr "Anfrage abgewiesen."
 
-#: cdedb/frontend/core.py:2378
+#: cdedb/frontend/core.py:2377 cdedb/frontend/core.py:2378
 msgid "Persona has no pending change."
 msgstr "Account hat keine zu begutachtenden Änderungen."
 
-#: cdedb/frontend/core.py:2397
+#: cdedb/frontend/core.py:2396 cdedb/frontend/core.py:2397
 msgid "Change dropped."
 msgstr "Änderung unterdrückt."
 
-#: cdedb/frontend/core.py:2410
+#: cdedb/frontend/core.py:2409 cdedb/frontend/core.py:2410
 msgid "Must supply archival note."
 msgstr "Archivierungsnotiz muss angegeben werden."
 
@@ -15309,24 +15338,57 @@ msgstr "%(ml_type)s ist kein geeigneter Typ für diese Mailingliste."
 #: cdedb/subman/machine.py:215 cdedb/subman/machine.py:217
 #: cdedb/subman/machine.py:219 cdedb/subman/machine.py:221
 #: cdedb/subman/machine.py:224 cdedb/subman/machine.py:226
+msgid "Not a pending subscription request."
+msgstr "Keine Abonnement-Anfrage."
+
+#: cdedb/subman/machine.py:215 cdedb/subman/machine.py:217
+#: cdedb/subman/machine.py:219 cdedb/subman/machine.py:221
+#: cdedb/subman/machine.py:224 cdedb/subman/machine.py:226
 msgid "subman_managing_not-pending"
 msgstr "Keine Abonnement-Anfrage."
+
+#: cdedb/subman/machine.py:230 cdedb/subman/machine.py:232
+#: cdedb/subman/machine.py:238
+msgid "User already subscribed."
+msgstr "Der Nutzer ist bereits Abonnent."
 
 #: cdedb/subman/machine.py:231 cdedb/subman/machine.py:234
 #: cdedb/subman/machine.py:240
 msgid "subman_managing_is-subscribed"
 msgstr "Der Nutzer ist bereits Abonnent."
 
+#: cdedb/subman/machine.py:234
+msgid "User has been blocked. Remove override before subscribe."
+msgstr ""
+"Der Nutzer wurde blockiert. Entferne die Ausnahme, bevor du ihn hinzufügst."
+
+#: cdedb/subman/machine.py:236 cdedb/subman/machine.py:249
+#: cdedb/subman/machine.py:260 cdedb/subman/machine.py:285
+msgid "User has pending subscription request."
+msgstr "Der Nutzer hat bereits eine Abonnement-Anfrage gestellt."
+
 #: cdedb/subman/machine.py:236 cdedb/subman/machine.py:288
 #: cdedb/subman/machine.py:358
 msgid "subman_managing_is-unsubscription-overridden"
-msgstr "Der Nutzer wurde blockiert. Entferne die Ausnahme, bevor du ihn hinzufügst."
+msgstr ""
+"Der Nutzer wurde blockiert. Entferne die Ausnahme, bevor du ihn hinzufügst."
 
 #: cdedb/subman/machine.py:238 cdedb/subman/machine.py:252
 #: cdedb/subman/machine.py:264 cdedb/subman/machine.py:290
 #: cdedb/subman/machine.py:360
 msgid "subman_managing_is-pending"
 msgstr "Der Nutzer hat bereits eine Abonnement-Anfrage gestellt."
+
+#: cdedb/subman/machine.py:243 cdedb/subman/machine.py:247
+#: cdedb/subman/machine.py:252
+msgid "User already unsubscribed."
+msgstr "Der Nutzer hat die Liste bereits deabonniert."
+
+#: cdedb/subman/machine.py:245
+msgid "User cannot be removed. Remove override to change this."
+msgstr ""
+"Der Nutzer kann nicht entfernt werden. Entferne die Ausnahme, um die zu "
+"ändern."
 
 #: cdedb/subman/machine.py:246 cdedb/subman/machine.py:250
 #: cdedb/subman/machine.py:255
@@ -15338,17 +15400,47 @@ msgstr "Der Nutzer hat die Liste bereits deabonniert."
 msgid "subman_managing_is-subscription-overridden"
 msgstr "Nutzer ist bereits fixierter Abonnent."
 
+#: cdedb/subman/machine.py:257
+msgid "User is already force-subscribed."
+msgstr "Nutzer ist bereits fixierter Abonnent"
+
+#: cdedb/subman/machine.py:266 cdedb/subman/machine.py:268
+#: cdedb/subman/machine.py:271 cdedb/subman/machine.py:273
+#: cdedb/subman/machine.py:275 cdedb/subman/machine.py:277
+msgid "User is not force-subscribed."
+msgstr "Nutzer ist kein fixierter Abonnent."
+
 #: cdedb/subman/machine.py:270 cdedb/subman/machine.py:272
 #: cdedb/subman/machine.py:275 cdedb/subman/machine.py:277
 #: cdedb/subman/machine.py:279 cdedb/subman/machine.py:281
 msgid "subman_managing_not-subscription-overridden"
 msgstr "User is not force-subscribed."
 
+#: cdedb/subman/machine.py:283
+msgid "User has already been blocked."
+msgstr "Nutzer ist bereits gebloockt."
+
+#: cdedb/subman/machine.py:291 cdedb/subman/machine.py:293
+#: cdedb/subman/machine.py:295 cdedb/subman/machine.py:298
+#: cdedb/subman/machine.py:300 cdedb/subman/machine.py:302
+msgid "User is not force-unsubscribed."
+msgstr "Nutzer ist nicht geblockt."
+
 #: cdedb/subman/machine.py:296 cdedb/subman/machine.py:298
 #: cdedb/subman/machine.py:300 cdedb/subman/machine.py:303
 #: cdedb/subman/machine.py:305 cdedb/subman/machine.py:307
 msgid "subman_managing_not-unsubscription-overridden"
 msgstr "Nutzer ist kein fixierter Abonnent."
+
+#: cdedb/subman/machine.py:305 cdedb/subman/machine.py:308
+#: cdedb/subman/machine.py:313 cdedb/subman/machine.py:317
+#: cdedb/subman/machine.py:320 cdedb/subman/machine.py:326
+msgid "You are already subscribed."
+msgstr "Du bist bereits Abonnent."
+
+#: cdedb/subman/machine.py:311
+msgid "Can not change subscription because you are blocked."
+msgstr "Keine Abonnement-Änderung möglich, da Du geblockt bist."
 
 #: cdedb/subman/machine.py:311 cdedb/subman/machine.py:314
 #: cdedb/subman/machine.py:319 cdedb/subman/machine.py:324
@@ -15362,13 +15454,36 @@ msgstr "Du bist bereits Abonnent."
 msgid "subman_self_is-unsubscription-overridden"
 msgstr "User has already been blocked."
 
+#: cdedb/subman/machine.py:322
+msgid "Can not request subscription because you are blocked."
+msgstr "Keine Abonnement-Anfrage möglich, da Du geblockt bist."
+
+#: cdedb/subman/machine.py:324
+msgid "You already requested subscription"
+msgstr "Es existiert bereits eine Abonnement-Anfrage."
+
 #: cdedb/subman/machine.py:331
 msgid "subman_self_is-pending"
 msgstr "Nutzer ist bereits geblockt."
 
+#: cdedb/subman/machine.py:332 cdedb/subman/machine.py:338
+#: cdedb/subman/machine.py:340 cdedb/subman/machine.py:343
+msgid "You are already unsubscribed."
+msgstr "Du bist gar kein Abonnent."
+
 #: cdedb/subman/machine.py:339
 msgid "subman_self_is-unsubscribed"
 msgstr "Du bist gar kein Abonnent."
+
+#: cdedb/subman/machine.py:348 cdedb/subman/machine.py:350
+msgid "User is in override state. Remove them before reset."
+msgstr ""
+"Der Nutzer ist eine Ausnahme oder blockiert. Entferne diese, bevor du ihn "
+"zurücksetzt."
+
+#: cdedb/subman/machine.py:352
+msgid "User is not unsubscribed."
+msgstr "Nutzer hat nicht abbestellt."
 
 #: cdedb/subman/machine.py:366 cdedb/subman/machine.py:368
 #: cdedb/subman/machine.py:370 cdedb/subman/machine.py:372
@@ -15376,17 +15491,41 @@ msgstr "Du bist gar kein Abonnent."
 msgid "subman_self_not-pending"
 msgstr "Keine Abonnement-Anfrage."
 
+#: cdedb/subman/subman.py:61
+msgid "Explicit core actions must be written."
+msgstr "Explizite Core Actions müssen geschrieben werden."
+
+#: cdedb/subman/subman.py:111
+msgid "User has no means to access this list."
+msgstr "Der Nutzer hat keine Berechtigung auf dieser Liste zu stehen."
+
 #: cdedb/subman/subman.py:111
 msgid "subman_managing_not-subscribable"
 msgstr "Der Nutzer hat keine Berechtigung auf dieser Liste zu stehen."
+
+#: cdedb/subman/subman.py:113
+msgid "Can not subscribe."
+msgstr "Abonnement nicht möglich."
 
 #: cdedb/subman/subman.py:113
 msgid "subman_self_not-self-subscribable"
 msgstr "Du kannst diese Liste nicht abbonieren."
 
 #: cdedb/subman/subman.py:115
+msgid "Can not request subscription."
+msgstr "Abonnementanfrage nicht möglich."
+
+#: cdedb/subman/subman.py:115
 msgid "subman_self_not-requestable"
 msgstr "Du kannst keine Abbonement Anfrage stellen."
+
+#: cdedb/subman/subman.py:147
+msgid "allow_unsub is incompatible with explicitly unsubscribed states."
+msgstr "allow_unsub ist inkompatibel mit expliziten Abbestellungen."
+
+#: cdedb/subman/subman.py:152
+msgid "Can not unsubscribe."
+msgstr "Abbestellung nicht möglich."
 
 #: cdedb/subman/subman.py:152
 msgid "subman_managing_no-unsubscribe-possible"
@@ -15395,6 +15534,10 @@ msgstr "Abbestellung nicht möglich."
 #: cdedb/subman/subman.py:154
 msgid "subman_managing_not-privileged"
 msgstr "Nicht die nötige Zugriffsberechtigung."
+
+#: cdedb/subman/subman.py:185 cdedb/subman/subman.py:196
+msgid "No cleanup necessary."
+msgstr "Keine Säuberung erforderlich."
 
 #: cdedb/subman/subman.py:185 cdedb/subman/subman.py:196
 msgid "subman_managing_no-cleanup-necessary"
