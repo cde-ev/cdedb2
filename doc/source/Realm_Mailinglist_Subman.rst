@@ -3,7 +3,7 @@ Subman
 
 Subman uses a fairly complex state schema to manage subscription states
 internally. Its behavior can be configured using the ``SubscriptionManager``,
-which is also the main interface to wor with.
+which is also the main interface of the library.
 
 .. figure:: SubscriptionStates.png
     :width: 70 %
@@ -14,7 +14,7 @@ which is also the main interface to wor with.
     This graphic was created using `Draw.io <https://draw.io>`_.
     To edit it, upload the SubscriptionState.png file there.
 
-Subman uses total of seven distinct states, which allow a consistent and
+Subman uses a total of seven distinct states, which allow a consistent and
 useful subscription management, even if the condition for list membership change.
 Of these, four states are so-called core states, without which the software can not
 function properly, while the other states are optional.
@@ -30,16 +30,18 @@ Subman includes a distinction between action which require additional privileges
 In addition to the manual actions which can be performed, it is required to
 regularly perform cleanup actions to react to changes in implicators.
 This actually does not make use of the ``SubscriptionAction`` enum, but makes use of
-its own internal state transitioning logic given in .
+its own internal state transitioning logic given in
+``SubscriptionManager._apply_cleanup()``.
 
-In subman, we distinct between subscribing (shown in green in the graph)
-and other states (shown in red, respectively), where users
-listed in subscribing states receive information sent to the list.
+In subman, we differentiate between subscribing (shown in green in the graph)
+and non-subscribing states (shown in red), where users
+listed in subscribing states are considered to be subscribed in the usual sense.
 For subscribers, there is no visible distinction between the different
-subscribing states intended. Subscribing states are:
+subscribing states intended.
 
 List of states
 --------------
+Subscribing states are:
 
 Explicitly Subscribed (Core)
     Users, which have been actively subscribed to a list, either by
@@ -51,10 +53,10 @@ Explicitly Subscribed (Core)
 
 Subscription Override (Optional)
     Subscription Overrides are a special kind of explicit subscriptions, which are
-    kept even if the user should not be able to access a list anymore. However,
-    except for mandatory lists, they do not prevent a user from unsubscribing
-    themselves.
-    The list of Subscribe Overrides should be accessible for moderators.
+    kept even if the user should not be able to access a list. However,
+    if a list allows unsubscribing in general, they do not prevent a user from
+    unsubscribing themselves.
+    The list of Subscription Overrides should be accessible for moderators.
 
 Implicitly Subscribed (Core)
     Users, which are subscribed to a list, because they meet some condition,
@@ -63,9 +65,10 @@ Implicitly Subscribed (Core)
     lose the automatic implicator that subscribes them to the list, they are
     removed even if they would still be able to access it.
 
-    It is optional to store implicit subscribers explicitly.
+    It is optional to store implicit subscribers explicitly. Otherwise, they have to
+    be calculated at runtime.
 
-Other states are:
+Non-subscribing states are:
 
 Implicitly Unsubscribed (Core)
     This is the standard state for users having no relationship to a list
@@ -76,7 +79,7 @@ Implicitly Unsubscribed (Core)
 .. _Explicitly_Unsubscribed:
 
 Explicitly Unsubscribed (Core)
-    Users, which have stated do not want to receive information from a
+    Users, who have stated to not want to receive information from a
     specific list anymore. This decision is permanent, until manually
     reverted by them or a moderator. Even if they lose access to a list, this
     information is kept. Thus, if they regain access later on, these users
@@ -100,8 +103,7 @@ Unsubscription Override (Optional)
     Unsubscription Overrides are a special kind of explicit unsubscriptions, which
     can not be removed by the affected user. Except for mandatory lists, they
     can be used to block a specific user from any kind of subscription or
-    subscription request and are displayed to a user when accessing the
-    mailinglist information page.
+    subscription request.
     The list of Unsubscription Overrides should be accessible for moderators.
 
 Request Pending (Optional)
@@ -112,17 +114,17 @@ Request Pending (Optional)
     deny their request. It is also possible to block further requests by this
     user.
 
-The only case, where a list configuration change explicitly changes subscription
-states (Explicit and implicit subscriptions can still be removed if the
-configuration change makes them lose their means of access!) is a conversion to
-a mandatory list. In this case, all explicit unsubscriptions, including
-Unsubscription Overrides, are deleted.
+When changing the ``SubscriptionPolicy`` associated to a certain list, subman
+can handle updating its subscribers automatically. However, if the list is set
+to ``allow_unsub = False``, all users with explicit unsubscriptions,
+including Unsubscription Overrides, need to be cleaned up during the transition.
+If subman detects this has not been done, it will raise an error.
 
 Usage example
 -------------
 
 Internationalization
 --------------------
-As the CdEDBv2, subman is internationalized using GNU gettext. By adding
-translations for the respective strings, users can customize error messages to
-their hearts content.
+Like the CdEDBv2, subman is internationalized using GNU gettext. By adding
+translations for the respective strings, users of the library can customize error
+messages to their heart's content.

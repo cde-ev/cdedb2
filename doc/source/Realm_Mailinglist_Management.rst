@@ -2,7 +2,7 @@ Mailinglist Management
 ======================
 
 To manage subscriptions, we use *Subman*, a fairly complex library to
-manage subscriptions from out own creation. While it can in principle be
+manage subscriptions of our own creation. While it can in principle be
 used for general subscriptions, we are only using it for mailinglists
 internally.
 
@@ -14,7 +14,7 @@ Use of subman
 -------------
 In our use of subman, we choose to store implicit subscribers to the database
 explicitly. This ensures the subscriber list displayed is always identical to
-the list of users emails are actually sent to. Otherwise, the Implicitly
+the list of users emails are actually sent to. In contrast, the Implicitly
 Unsubscribed state is not saved explicitly.
 
 To maintain the correct states, we use a cron job running every 15 minutes to
