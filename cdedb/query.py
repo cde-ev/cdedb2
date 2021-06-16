@@ -9,12 +9,13 @@ framework, thus this module. This module is especially useful in setting
 up an environment for passing a query from frontend to backend.
 """
 
+import copy
 import collections
 import enum
-from typing import TYPE_CHECKING, Any, Collection, Dict, Tuple
+from typing import Any, Collection, Dict, Tuple
 
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, RequestState, EntitySorter, glue, n_, xsorted,
+    CdEDBObject, CdEDBObjectMap, RequestState, EntitySorter, n_, xsorted,
 )
 import cdedb.database.constants as const
 from cdedb.filter import enum_entries_filter, keydictsort_filter
@@ -96,6 +97,389 @@ QueryConstraint = Tuple[str, QueryOperators, Any]
 QueryOrder = Tuple[str, bool]
 
 
+class QueryScope(enum.Enum):
+    persona = "qview_persona"
+    core_user = "qview_core_user"
+    assembly_user = "qview_assembly_user"
+    cde_user = "qview_cde_user"
+    event_user = "qview_event_user"
+    ml_user = "qview_ml_user"
+    past_event_user = "qview_past_event_user"
+    archived_persona = "qview_archived_persona"
+    archived_core_user = "qview_archivend_core_user"
+    archived_past_event_user = "qview_archived_past_event_user"
+    cde_member = "qview_cde_member"
+    registration = "qview_registration"
+    quick_registration = "qview_quick_registration"
+    lodgement = "qview_event_lodgement"
+    event_course = "qview_event_course"
+    past_event_course = "qview_pevent_course"
+
+    def get_view(self) -> str:
+        """Return the SQL FROM target associated with this scope.
+
+        Supstitute for SQL views. We cannot use SQL views since they do not allow
+        multiple columns with the same name, but each join brings in an id column.
+        """
+        default_view = ("core.personas LEFT OUTER JOIN past_event.participants"
+                        " ON personas.id = participants.persona_id")
+        QUERY_VIEWS = {
+            QueryScope.persona:
+                "core.personas",
+            QueryScope.cde_user:
+                """core.personas
+                LEFT OUTER JOIN past_event.participants
+                    ON personas.id = participants.persona_id
+                LEFT OUTER JOIN (
+                    SELECT
+                        id, granted_at, revoked_at,
+                        revoked_at IS NOT NULL AS active_lastschrift,
+                        amount, persona_id
+                    FROM cde.lastschrift
+                    WHERE (granted_at, persona_id) IN (
+                        SELECT MAX(granted_at) AS granted_at, persona_id
+                        FROM cde.lastschrift GROUP BY persona_id
+                    )
+                ) AS lastschrift ON personas.id = lastschrift.persona_id
+                """,
+            QueryScope.archived_persona:
+                "core.personas",
+            QueryScope.registration:
+                None,  # This will be generated on the fly.
+            QueryScope.quick_registration:
+                "core.personas INNER JOIN event.registrations"
+                " ON personas.id = registrations.persona_id",
+            QueryScope.lodgement:
+                None,  # This will be generated on the fly.
+            QueryScope.event_course:
+                None,  # This will be generated on the fly.
+            QueryScope.past_event_course:
+                "past_event.courses LEFT OUTER JOIN past_event.events"
+                " ON courses.pevent_id = events.id",
+        }
+        return QUERY_VIEWS.get(self, default_view)  # type: ignore[return-value]
+
+    def get_primary_key(self) -> str:
+        """Return the primary key of the view associated with the scope.
+
+        This should always be selected, to avoid any pathologies.
+        """
+        # This dict contains the special cases. For everything else use personas.id.
+        PRIMARY_KEYS = {
+            QueryScope.registration: "reg.id",
+            QueryScope.quick_registration: "registrations.id",
+            QueryScope.lodgement: "lodgement.id",
+            QueryScope.event_course: "course.id",
+            QueryScope.past_event_course: "courses.id",
+        }
+        return PRIMARY_KEYS.get(self, "personas.id")
+
+    def get_spec(self, *, event: CdEDBObject = None) -> Dict[str, str]:
+        """Return the query spec for this scope.
+
+        These may be enriched by ext-fields. Order is important for UI purposes.
+
+        Note that for schema specified columns (like ``personas.id``) the schema
+        part does not survive querying and needs to be stripped before output.
+        """
+        event_spec_map = {
+            QueryScope.registration: make_registration_query_spec,
+            QueryScope.lodgement: make_lodgement_query_spec,
+            QueryScope.event_course: make_course_query_spec,
+        }
+        if self in event_spec_map:
+            if not event:
+                raise ValueError(n_("Constructing the query spec for %(scope)s"
+                                    " requires additional event information."),
+                                 {"scope": self})
+            return event_spec_map[self](event)
+
+        return copy.deepcopy(_QUERY_SPECS[self])
+
+    def supports_storing(self) -> bool:
+        """Whether or not storing queries with this scope is supported."""
+        return self in {QueryScope.registration, QueryScope.lodgement,
+                        QueryScope.event_course}
+
+    def get_target(self, *, prepend_realm: bool = True) -> str:
+        """For scopes that support storing, where to redirect to after storing."""
+        if self == QueryScope.registration:
+            realm, target = "event", "registration_query"
+        elif self == QueryScope.lodgement:
+            realm, target = "event", "lodgement_query"
+        elif self == QueryScope.event_course:
+            realm, target = "event", "course_query"
+        else:
+            realm, target = "", ""
+        if prepend_realm:
+            return f"{realm}/{target}"
+        return target
+
+    def mangle_query_input(self, rs: RequestState, defaults: CdEDBObject = None,
+                           ) -> Dict[str, str]:
+        """This is to be used in conjunction with the ``query_input`` validator,
+        which is exceptional since it is not used via a decorator. To take
+        care of the differences this function exists.
+
+        This has to be careful to treat checkboxes and selects correctly
+        (which are partly handled by an absence of data).
+
+        :param defaults: Default values which appear like they have been submitted,
+          if nothing has been submitted for this paramater.
+        :returns: The raw data associated to the query described by the spec
+            extracted from the request data saved in the request state.
+        """
+        defaults = defaults or {}
+        params = {"scope": str(self)}
+        if "query_name" in rs.request.values:
+            rs.values["query_name"] = rs.request.values["query_name"]
+            params["query_name"] = rs.values["query_name"]
+        spec = self.get_spec(event=rs.ambience.get("event"))
+        for field in spec:
+            for prefix in ("qval_", "qsel_", "qop_"):
+                name = prefix + field
+                if name in rs.request.values:
+                    params[name] = rs.values[name] = rs.request.values[name]
+        for postfix in ("primary", "secondary", "tertiary"):
+            name = "qord_" + postfix
+            if name in rs.request.values:
+                params[name] = rs.values[name] = rs.request.values[name]
+            name = "qord_" + postfix + "_ascending"
+            if name in rs.request.values:
+                params[name] = rs.values[name] = rs.request.values[name]
+        for key, value in defaults.items():
+            if key not in params:
+                params[key] = rs.values[key] = value
+        return params
+
+
+_QUERY_SPECS = {
+    QueryScope.persona:  # query for a persona without past event infos
+        collections.OrderedDict([
+            ("personas.id", "id"),
+            ("given_names", "str"),
+            ("family_name", "str"),
+            ("username", "str"),
+            ("display_name", "str"),
+            ("is_active", "bool"),
+            ("is_ml_realm", "bool"),
+            ("is_event_realm", "bool"),
+            ("is_assembly_realm", "bool"),
+            ("is_cde_realm", "bool"),
+            ("is_member", "bool"),
+            ("is_searchable", "bool"),
+            ("is_ml_admin", "bool"),
+            ("is_event_admin", "bool"),
+            ("is_assembly_admin", "bool"),
+            ("is_cde_admin", "bool"),
+            ("is_core_admin", "bool"),
+            ("is_meta_admin", "bool"),
+            ("notes", "str"),
+            ("fulltext", "str"),
+        ]),
+    QueryScope.core_user:  # query for a general user including past event infos
+        collections.OrderedDict([
+            ("personas.id", "id"),
+            ("given_names", "str"),
+            ("family_name", "str"),
+            ("username", "str"),
+            ("display_name", "str"),
+            ("is_active", "bool"),
+            ("is_ml_realm", "bool"),
+            ("is_assembly_realm", "bool"),
+            ("is_event_realm", "bool"),
+            ("is_cde_realm", "bool"),
+            ("is_member", "bool"),
+            ("is_searchable", "bool"),
+            ("is_ml_admin", "bool"),
+            ("is_event_admin", "bool"),
+            ("is_assembly_admin", "bool"),
+            ("is_cde_admin", "bool"),
+            ("is_core_admin", "bool"),
+            ("is_meta_admin", "bool"),
+            ("is_ml_admin,is_event_admin,is_assembly_admin,is_cde_admin,"
+             "is_core_admin,is_meta_admin", "bool"),
+            ("pevent_id", "id"),
+            ("notes", "str"),
+            ("fulltext", "str"),
+        ]),
+    QueryScope.cde_user:
+        collections.OrderedDict([
+            ("personas.id", "id"),
+            ("given_names", "str"),
+            ("family_name", "str"),
+            ("username", "str"),
+            ("display_name", "str"),
+            ("title", "str"),
+            ("name_supplement", "str"),
+            ("birth_name", "str"),
+            ("gender", "int"),
+            ("birthday", "date"),
+            ("telephone", "str"),
+            ("mobile", "str"),
+            ("address", "str"),
+            ("address_supplement", "str"),
+            ("postal_code", "str"),
+            ("location", "str"),
+            ("country", "str"),
+            ("address2", "str"),
+            ("address_supplement2", "str"),
+            ("postal_code2", "str"),
+            ("location2", "str"),
+            ("country2", "str"),
+            ("is_active", "bool"),
+            ("is_member", "bool"),
+            ("trial_member", "bool"),
+            ("paper_expuls", "bool"),
+            ("is_searchable", "bool"),
+            ("decided_search", "bool"),
+            ("balance", "float"),
+            ("is_ml_admin", "bool"),
+            ("is_event_admin", "bool"),
+            ("is_assembly_admin", "bool"),
+            ("is_cde_admin", "bool"),
+            ("is_core_admin", "bool"),
+            ("is_meta_admin", "bool"),
+            ("weblink", "str"),
+            ("specialisation", "str"),
+            ("affiliation", "str"),
+            ("timeline", "str"),
+            ("interests", "str"),
+            ("free_form", "str"),
+            ("pevent_id", "id"),
+            ("pcourse_id", "id"),
+            ("notes", "str"),
+            ("fulltext", "str"),
+            ("lastschrift.granted_at", "datetime"),
+            ("lastschrift.revoked_at", "datetime"),
+            ("lastschrift.active_lastschrift", "bool"),
+            ("lastschrift.amount", "float"),
+        ]),
+    QueryScope.event_user:
+        collections.OrderedDict([
+            ("personas.id", "id"),
+            ("given_names", "str"),
+            ("family_name", "str"),
+            ("username", "str"),
+            ("display_name", "str"),
+            ("title", "str"),
+            ("name_supplement", "str"),
+            ("gender", "int"),
+            ("birthday", "date"),
+            ("telephone", "str"),
+            ("mobile", "str"),
+            ("address", "str"),
+            ("address_supplement", "str"),
+            ("postal_code", "str"),
+            ("location", "str"),
+            ("country", "str"),
+            ("is_active", "bool"),
+            ("is_cde_realm", "bool"),
+            ("is_member", "bool"),
+            ("is_searchable", "bool"),
+            ("is_event_admin", "bool"),
+            ("is_ml_admin", "bool"),
+            ("notes", "str"),
+            ("fulltext", "str"),
+        ]),
+    QueryScope.past_event_user:
+        collections.OrderedDict([
+            ("personas.id", "id"),
+            ("given_names", "str"),
+            ("family_name", "str"),
+            ("username", "str"),
+            ("display_name", "str"),
+            ("title", "str"),
+            ("name_supplement", "str"),
+            ("birthday", "date"),
+            ("telephone", "str"),
+            ("mobile", "str"),
+            ("address", "str"),
+            ("address_supplement", "str"),
+            ("postal_code", "str"),
+            ("location", "str"),
+            ("country", "str"),
+            ("pevent_id", "id"),
+            ("pcourse_id", "id"),
+        ]),
+    QueryScope.archived_persona:
+        collections.OrderedDict([
+            ("personas.id", "id"),
+            ("given_names", "str"),
+            ("family_name", "str"),
+            ("display_name", "str"),
+            ("notes", "str"),
+        ]),
+    QueryScope.archived_core_user:
+        collections.OrderedDict([
+            ("personas.id", "id"),
+            ("given_names", "str"),
+            ("family_name", "str"),
+            ("display_name", "str"),
+            ("birth_name", "str"),
+            ("gender", "int"),
+            ("birthday", "date"),
+            ("pevent_id", "id"),
+            ("notes", "str"),
+            ("is_ml_realm", "bool"),
+            ("is_event_realm", "bool"),
+            ("is_assembly_realm", "bool"),
+            ("is_cde_realm", "bool"),
+        ]),
+    QueryScope.archived_past_event_user:
+        collections.OrderedDict([
+            ("personas.id", "id"),
+            ("given_names", "str"),
+            ("family_name", "str"),
+            ("display_name", "str"),
+            ("birth_name", "str"),
+            ("gender", "int"),
+            ("birthday", "date"),
+            ("pevent_id", "id"),
+            ("notes", "str"),
+        ]),
+    QueryScope.cde_member:
+        collections.OrderedDict([
+            ("personas.id", "id"),
+            ("given_names,display_name", "str"),
+            ("family_name,birth_name", "str"),
+            ("username", "str"),
+            ("address,address_supplement,address2,address_supplement2", "str"),
+            ("postal_code,postal_code2", "str"),
+            ("telephone,mobile", "str"),
+            ("location,location2", "str"),
+            ("country,country2", "str"),
+            ("weblink,specialisation,affiliation,timeline,interests,free_form",
+             "str"),
+            ("pevent_id", "id"),
+            ("pcourse_id", "id"),
+            ("fulltext", "str"),
+        ]),
+    QueryScope.quick_registration:
+        collections.OrderedDict([
+            ("registrations.id", "id"),
+            ("given_names", "str"),
+            ("family_name", "str"),
+            ("username", "str"),
+            ("display_name", "str"),
+            ("title", "str"),
+            ("name_supplement", "str"),
+        ]),
+    QueryScope.past_event_course:
+        collections.OrderedDict([
+            ("courses.id", "id"),
+            ("courses.pcourse_id", "id"),
+            ("courses.pevent_id", "id"),
+            ("courses.nr", "str"),
+            ("courses.title", "str"),
+            ("courses.description", "str"),
+            ("events.title", "str"),
+            ("events.tempus", "date")
+        ]),
+}
+_QUERY_SPECS[QueryScope.ml_user] = _QUERY_SPECS[QueryScope.persona]
+
+
 class Query:
     """General purpose abstraction for an SQL query.
 
@@ -106,10 +490,12 @@ class Query:
     everything.
     """
 
-    def __init__(self, scope: str, spec: CdEDBObject,
+    def __init__(self, scope: QueryScope, spec: CdEDBObject,
                  fields_of_interest: Collection[str],
                  constraints: Collection[QueryConstraint],
-                 order: Collection[QueryOrder], name: str = None):
+                 order: Collection[QueryOrder],
+                 name: str = "",
+                 ):
         """
         :param scope: target of FROM clause; key for :py:data:`QUERY_VIEWS`.
             We would like to use SQL views for this, but they are not flexible
@@ -173,405 +559,731 @@ class Query:
             self.spec[field] = self.spec[field.replace('"', '')]
             del self.spec[field.replace('"', '')]
 
+    def serialize(self) -> CdEDBObject:
+        """
+        Serialize a query into a dict.
 
-#: Available query templates. These may be enriched by ext-fields. Order is
-#: important for UI purposes, hence the ordered dicts.
-#:
-#: .. note:: For schema specified columns (like ``personas.id``)
-#:           the schema part does not survive querying and needs to be stripped
-#:           before output.
-if TYPE_CHECKING:
-    QUERY_SPECS: Dict[
-        str, collections.OrderedDict[str, str]  # pylint: disable=unsubscriptable-object
-    ]
-QUERY_SPECS = {
-    "qview_cde_member":
-        collections.OrderedDict([
-            ("personas.id", "id"),
-            ("given_names,display_name", "str"),
-            ("family_name,birth_name", "str"),
-            ("username", "str"),
-            ("address,address_supplement,address2,address_supplement2", "str"),
-            ("postal_code,postal_code2", "str"),
-            ("telephone,mobile", "str"),
-            ("location,location2", "str"),
-            ("country,country2", "str"),
-            ("weblink,specialisation,affiliation,timeline,interests,free_form", "str"),
-            ("pevent_id", "id"),
-            ("pcourse_id", "id"),
-            ("fulltext", "str"),
-        ]),
-    "qview_cde_user":
-        collections.OrderedDict([
-            ("personas.id", "id"),
-            ("given_names", "str"),
-            ("family_name", "str"),
-            ("username", "str"),
-            ("display_name", "str"),
-            ("title", "str"),
-            ("name_supplement", "str"),
-            ("birth_name", "str"),
-            ("gender", "int"),
-            ("birthday", "date"),
-            ("telephone", "str"),
-            ("mobile", "str"),
-            ("address", "str"),
-            ("address_supplement", "str"),
-            ("postal_code", "str"),
-            ("location", "str"),
-            ("country", "str"),
-            ("address2", "str"),
-            ("address_supplement2", "str"),
-            ("postal_code2", "str"),
-            ("location2", "str"),
-            ("country2", "str"),
-            ("is_active", "bool"),
-            ("is_member", "bool"),
-            ("trial_member", "bool"),
-            ("paper_expuls", "bool"),
-            ("is_searchable", "bool"),
-            ("decided_search", "bool"),
-            ("balance", "float"),
-            ("is_ml_admin", "bool"),
-            ("is_event_admin", "bool"),
-            ("is_assembly_admin", "bool"),
-            ("is_cde_admin", "bool"),
-            ("is_core_admin", "bool"),
-            ("is_meta_admin", "bool"),
-            ("weblink", "str"),
-            ("specialisation", "str"),
-            ("affiliation", "str"),
-            ("timeline", "str"),
-            ("interests", "str"),
-            ("free_form", "str"),
-            ("pevent_id", "id"),
-            ("pcourse_id", "id"),
-            ("notes", "str"),
-            ("fulltext", "str"),
-            ("lastschrift.granted_at", "datetime"),
-            ("lastschrift.revoked_at", "datetime"),
-            ("lastschrift.active_lastschrift", "bool"),
-            ("lastschrift.amount", "float"),
-        ]),
-    "qview_archived_core_user":
-        collections.OrderedDict([
-            ("personas.id", "id"),
-            ("given_names", "str"),
-            ("family_name", "str"),
-            ("display_name", "str"),
-            ("birth_name", "str"),
-            ("gender", "int"),
-            ("birthday", "date"),
-            ("pevent_id", "id"),
-            ("notes", "str"),
-            ("is_ml_realm", "bool"),
-            ("is_event_realm", "bool"),
-            ("is_assembly_realm", "bool"),
-            ("is_cde_realm", "bool"),
-        ]),
-    "qview_archived_past_event_user":
-        collections.OrderedDict([
-            ("personas.id", "id"),
-            ("given_names", "str"),
-            ("family_name", "str"),
-            ("display_name", "str"),
-            ("birth_name", "str"),
-            ("gender", "int"),
-            ("birthday", "date"),
-            ("pevent_id", "id"),
-            ("notes", "str"),
-        ]),
-    "qview_archived_persona":
-        collections.OrderedDict([
-            ("personas.id", "id"),
-            ("given_names", "str"),
-            ("family_name", "str"),
-            ("display_name", "str"),
-            ("notes", "str"),
-        ]),
-    "qview_past_event_user":
-        collections.OrderedDict([
-            ("personas.id", "id"),
-            ("given_names", "str"),
-            ("family_name", "str"),
-            ("username", "str"),
-            ("display_name", "str"),
-            ("title", "str"),
-            ("name_supplement", "str"),
-            ("birthday", "date"),
-            ("telephone", "str"),
-            ("mobile", "str"),
-            ("address", "str"),
-            ("address_supplement", "str"),
-            ("postal_code", "str"),
-            ("location", "str"),
-            ("country", "str"),
-            ("pevent_id", "id"),
-            ("pcourse_id", "id"),
-        ]),
-    "qview_event_user":
-        collections.OrderedDict([
-            ("personas.id", "id"),
-            ("given_names", "str"),
-            ("family_name", "str"),
-            ("username", "str"),
-            ("display_name", "str"),
-            ("title", "str"),
-            ("name_supplement", "str"),
-            ("gender", "int"),
-            ("birthday", "date"),
-            ("telephone", "str"),
-            ("mobile", "str"),
-            ("address", "str"),
-            ("address_supplement", "str"),
-            ("postal_code", "str"),
-            ("location", "str"),
-            ("country", "str"),
-            ("is_active", "bool"),
-            ("is_cde_realm", "bool"),
-            ("is_member", "bool"),
-            ("is_searchable", "bool"),
-            ("is_event_admin", "bool"),
-            ("is_ml_admin", "bool"),
-            ("notes", "str"),
-            ("fulltext", "str"),
-        ]),
-    "qview_registration":
-        collections.OrderedDict([
-            ("reg.id", "id"),
-            ("persona.id", "id"),
-            ("persona.given_names", "str"),
-            ("persona.family_name", "str"),
-            ("persona.username", "str"),
-            ("persona.is_member", "bool"),
-            ("persona.display_name", "str"),
-            ("persona.title", "str"),
-            ("persona.name_supplement", "str"),
-            ("persona.gender", "int"),
-            ("persona.birthday", "date"),
-            ("persona.telephone", "str"),
-            ("persona.mobile", "str"),
-            ("persona.address", "str"),
-            ("persona.address_supplement", "str"),
-            ("persona.postal_code", "str"),
-            ("persona.location", "str"),
-            ("persona.country", "str"),
-            ("reg.payment", "date"),
-            ("reg.amount_paid", "float"),
-            ("reg.amount_owed", "float"),
-            ("reg.parental_agreement", "bool"),
-            ("reg.mixed_lodging", "bool"),
-            ("reg.list_consent", "bool"),
-            ("reg.notes", "str"),
-            ("reg.orga_notes", "str"),
-            ("reg.checkin", "datetime"),
-            ("ctime.creation_time", "datetime"),
-            ("mtime.modification_time", "datetime"),
-            # This will be augmented with additional fields on the fly.
-        ]),
-    "qview_quick_registration":
-        collections.OrderedDict([
-            ("registrations.id", "id"),
-            ("given_names", "str"),
-            ("family_name", "str"),
-            ("username", "str"),
-            ("display_name", "str"),
-            ("title", "str"),
-            ("name_supplement", "str"),
-        ]),
-    "qview_event_course":
-        collections.OrderedDict([
-            ("course.id", "id"),
-            ("course.course_id", "id"),
-            ("course.nr", "str"),
-            ("course.title", "str"),
-            ("course.description", "str"),
-            ("course.shortname", "str"),
-            ("course.instructors", "str"),
-            ("course.min_size", "int"),
-            ("course.max_size", "int"),
-            ("course.notes", "str"),
-            # This will be augmented with additional fields in the fly.
-        ]),
-    "qview_event_lodgement":
-        collections.OrderedDict([
-            ("lodgement.id", "id"),
-            ("lodgement.lodgement_id", "id"),
-            ("lodgement.title", "str"),
-            ("lodgement.regular_capacity", "int"),
-            ("lodgement.camping_mat_capacity", "int"),
-            ("lodgement.notes", "str"),
-            ("lodgement.group_id", "int"),
-            ("lodgement_group.title", "int"),
-            # This will be augmented with additional fields in the fly.
-        ]),
-    "qview_pevent_course":
-        collections.OrderedDict([
-            ("courses.id", "id"),
-            ("courses.pcourse_id", "id"),
-            ("courses.pevent_id", "id"),
-            ("courses.nr", "str"),
-            ("courses.title", "str"),
-            ("courses.description", "str"),
-            ("events.title", "str"),
-            ("events.tempus", "date")
-        ]),
-    "qview_core_user":  # query for a general user including past event infos
-        collections.OrderedDict([
-            ("personas.id", "id"),
-            ("given_names", "str"),
-            ("family_name", "str"),
-            ("username", "str"),
-            ("display_name", "str"),
-            ("is_active", "bool"),
-            ("is_ml_realm", "bool"),
-            ("is_assembly_realm", "bool"),
-            ("is_event_realm", "bool"),
-            ("is_cde_realm", "bool"),
-            ("is_member", "bool"),
-            ("is_searchable", "bool"),
-            ("is_ml_admin", "bool"),
-            ("is_event_admin", "bool"),
-            ("is_assembly_admin", "bool"),
-            ("is_cde_admin", "bool"),
-            ("is_core_admin", "bool"),
-            ("is_meta_admin", "bool"),
-            ("is_ml_admin,is_event_admin,is_assembly_admin,is_cde_admin,"
-             "is_core_admin,is_meta_admin", "bool"),
-            ("pevent_id", "id"),
-            ("notes", "str"),
-            ("fulltext", "str"),
-        ]),
-    "qview_persona":  # query for a persona without past event infos
-        collections.OrderedDict([
-            ("personas.id", "id"),
-            ("given_names", "str"),
-            ("family_name", "str"),
-            ("username", "str"),
-            ("display_name", "str"),
-            ("is_active", "bool"),
-            ("is_ml_realm", "bool"),
-            ("is_event_realm", "bool"),
-            ("is_assembly_realm", "bool"),
-            ("is_cde_realm", "bool"),
-            ("is_member", "bool"),
-            ("is_searchable", "bool"),
-            ("is_ml_admin", "bool"),
-            ("is_event_admin", "bool"),
-            ("is_assembly_admin", "bool"),
-            ("is_cde_admin", "bool"),
-            ("is_core_admin", "bool"),
-            ("is_meta_admin", "bool"),
-            ("notes", "str"),
-            ("fulltext", "str"),
-        ]),
-}
-
-#: Supstitute for SQL views, this is the target of the FROM clause of the
-#: respective query. We cannot use SQL views since they do not allow multiple
-#: columns with the same name, but each join brings in an id column.
-QUERY_VIEWS = {
-    "qview_cde_member": glue(
-        "core.personas",
-        "LEFT OUTER JOIN past_event.participants",
-        "ON personas.id = participants.persona_id"),
-    "qview_cde_user": """core.personas
-    LEFT OUTER JOIN past_event.participants ON personas.id = participants.persona_id
-    LEFT OUTER JOIN (
-        SELECT
-            id, granted_at, revoked_at, revoked_at IS NOT NULL AS active_lastschrift,
-            amount, persona_id
-        FROM cde.lastschrift
-        WHERE (granted_at, persona_id) IN (
-            SELECT MAX(granted_at) AS granted_at, persona_id
-            FROM cde.lastschrift GROUP BY persona_id
-        )
-    ) AS lastschrift ON personas.id = lastschrift.persona_id
-    """,
-    "qview_past_event_user": glue(
-        "core.personas",
-        "LEFT OUTER JOIN past_event.participants",
-        "ON personas.id = participants.persona_id"),
-    "qview_event_user": glue(
-        "core.personas",
-        "LEFT OUTER JOIN past_event.participants",
-        "ON personas.id = participants.persona_id"),
-    "qview_registration": None,  # dummy -- value will be generated on the fly
-    "qview_quick_registration": glue(
-        "core.personas",
-        "INNER JOIN event.registrations",
-        "ON personas.id = registrations.persona_id"),
-    "qview_pevent_course": glue(
-        "past_event.courses",
-        "LEFT OUTER JOIN past_event.events",
-        "ON courses.pevent_id = events.id"),
-    "qview_core_user": glue(
-        "core.personas",
-        "LEFT OUTER JOIN past_event.participants",
-        "ON personas.id = participants.persona_id"),
-    "qview_persona": "core.personas",
-    "qview_archived_core_user": glue(
-        "core.personas",
-        "LEFT OUTER JOIN past_event.participants",
-        "ON personas.id = participants.persona_id"),
-    "qview_archived_past_event_user": glue(
-        "core.personas",
-        "LEFT OUTER JOIN past_event.participants",
-        "ON personas.id = participants.persona_id"),
-    "qview_archived_persona": "core.personas",
-}
-
-#: This is the primary key for the query and allows access to the
-#: corresponding data set. We always select this key to avoid any
-#: pathologies.
-QUERY_PRIMARIES = {
-    "qview_cde_member": "personas.id",
-    "qview_cde_user": "personas.id",
-    "qview_past_event_user": "personas.id",
-    "qview_event_user": "personas.id",
-    "qview_registration": "reg.id",
-    "qview_quick_registration": "registrations.id",
-    "qview_event_course": "course.id",
-    "qview_event_lodgement": "lodgement.id",
-    "qview_pevent_course": "courses.id",
-    "qview_core_user": "personas.id",
-    "qview_persona": "id",
-    "qview_archived_core_user": "personas.id",
-    "qview_archived_past_event_user": "personas.id",
-    "qview_archived_persona": "id",
-}
+        The format is compatible with QueryInput and search params
+        """
+        params: CdEDBObject = {}
+        for field in self.fields_of_interest:
+            params['qsel_{}'.format(field)] = True
+        for field, op, value in self.constraints:
+            params['qop_{}'.format(field)] = op.value
+            if (isinstance(value, collections.Iterable)
+                    and not isinstance(value, str)):
+                # TODO: Get separator from central place
+                #  (also used in validation._query_input)
+                params['qval_{}'.format(field)] = ','.join(str(x) for x in value)
+            else:
+                params['qval_{}'.format(field)] = value
+        for entry, postfix in zip(self.order, ("primary", "secondary", "tertiary")):
+            field, ascending = entry
+            params['qord_{}'.format(postfix)] = field
+            params['qord_{}_ascending'.format(postfix)] = ascending
+        params['is_search'] = True
+        params['scope'] = str(self.scope)
+        params['query_name'] = self.name
+        return params
 
 
-def mangle_query_input(rs: RequestState, spec: Dict[str, str],
-                       defaults: CdEDBObject = None) -> Dict[str, str]:
-    """This is to be used in conjunction with the ``query_input`` validator,
-    which is exceptional since it is not used via a decorator. To take
-    care of the differences this function exists.
+def make_registration_query_spec(event: CdEDBObject) -> Dict[str, str]:
+    """Helper to generate ``QueryScope.registration``'s spec.
 
-    This has to be careful to treat checkboxes and selects correctly
-    (which are partly handled by an absence of data).
-
-    :param spec: one of :py:data:`QUERY_SPECS`
-    :param defaults: Default values which appear like they have been submitted,
-      if nothing has been submitted for this paramater.
-    :returns: The raw data associated to the query described by the spec
-        extracted from the request data saved in the request state.
+    Since each event has dynamic columns for parts and extra fields we
+    have amend the query spec on the fly.
     """
-    defaults = defaults or {}
-    params = {}
-    for field in spec:
-        for prefix in ("qval_", "qsel_", "qop_"):
-            name = prefix + field
-            if name in rs.request.values:
-                params[name] = rs.values[name] = rs.request.values[name]
-    for postfix in ("primary", "secondary", "tertiary"):
-        name = "qord_" + postfix
-        if name in rs.request.values:
-            params[name] = rs.values[name] = rs.request.values[name]
-        name = "qord_" + postfix + "_ascending"
-        if name in rs.request.values:
-            params[name] = rs.values[name] = rs.request.values[name]
-    for key, value in defaults.items():
-        if key not in params:
-            params[key] = rs.values[key] = value
-    return params
+
+    tracks = event['tracks']
+    spec = collections.OrderedDict([
+        ("reg.id", "id"),
+        ("persona.id", "id"),
+        ("persona.given_names", "str"),
+        ("persona.family_name", "str"),
+        ("persona.username", "str"),
+        ("persona.is_member", "bool"),
+        ("persona.display_name", "str"),
+        ("persona.title", "str"),
+        ("persona.name_supplement", "str"),
+        ("persona.gender", "int"),
+        ("persona.birthday", "date"),
+        ("persona.telephone", "str"),
+        ("persona.mobile", "str"),
+        ("persona.address", "str"),
+        ("persona.address_supplement", "str"),
+        ("persona.postal_code", "str"),
+        ("persona.location", "str"),
+        ("persona.country", "str"),
+        ("reg.payment", "date"),
+        ("reg.amount_paid", "float"),
+        ("reg.amount_owed", "float"),
+        ("reg.parental_agreement", "bool"),
+        ("reg.mixed_lodging", "bool"),
+        ("reg.list_consent", "bool"),
+        ("reg.notes", "str"),
+        ("reg.orga_notes", "str"),
+        ("reg.checkin", "datetime"),
+        ("ctime.creation_time", "datetime"),
+        ("mtime.modification_time", "datetime"),
+    ])
+    # note that spec is an ordered dict and we should respect the order
+    for part_id, part in keydictsort_filter(event['parts'],
+                                            EntitySorter.event_part):
+        spec["part{0}.status".format(part_id)] = "int"
+        spec["part{0}.is_camping_mat".format(part_id)] = "bool"
+        spec["part{0}.lodgement_id".format(part_id)] = "id"
+        spec["lodgement{0}.id".format(part_id)] = "id"
+        spec["lodgement{0}.group_id".format(part_id)] = "id"
+        spec["lodgement{0}.title".format(part_id)] = "str"
+        spec["lodgement{0}.notes".format(part_id)] = "str"
+        for f in xsorted(event['fields'].values(),
+                            key=EntitySorter.event_field):
+            if f['association'] == const.FieldAssociations.lodgement:
+                temp = "lodgement{0}.xfield_{1}"
+                kind = const.FieldDatatypes(f['kind']).name
+                spec[temp.format(part_id, f['field_name'])] = kind
+        spec["lodgement_group{0}.id".format(part_id)] = "id"
+        spec["lodgement_group{0}.title".format(part_id)] = "str"
+        ordered_tracks = keydictsort_filter(
+            part['tracks'], EntitySorter.course_track)
+        for track_id, track in ordered_tracks:
+            spec["track{0}.is_course_instructor".format(track_id)] \
+                = "bool"
+            spec["track{0}.course_id".format(track_id)] = "int"
+            spec["track{0}.course_instructor".format(track_id)] = "int"
+            for temp in ("course", "course_instructor",):
+                spec["{1}{0}.id".format(track_id, temp)] = "id"
+                spec["{1}{0}.nr".format(track_id, temp)] = "str"
+                spec["{1}{0}.title".format(track_id, temp)] = "str"
+                spec["{1}{0}.shortname".format(track_id, temp)] = "str"
+                spec["{1}{0}.notes".format(track_id, temp)] = "str"
+                for f in xsorted(event['fields'].values(),
+                                    key=EntitySorter.event_field):
+                    if f['association'] == const.FieldAssociations.course:
+                        key = "{1}{0}.xfield_{2}".format(
+                            track_id, temp, f['field_name'])
+                        kind = const.FieldDatatypes(f['kind']).name
+                        spec[key] = kind
+            for i in range(track['num_choices']):
+                spec[f"course_choices{track_id}.rank{i}"] = "int"
+            if track['num_choices'] > 1:
+                spec[",".join(f"course_choices{track_id}.rank{i}"
+                                for i in range(track['num_choices']))] = "int"
+    if len(event['parts']) > 1:
+        spec[",".join("part{0}.status".format(part_id)
+                        for part_id in event['parts'])] = "int"
+        spec[",".join("part{0}.is_camping_mat".format(part_id)
+                        for part_id in event['parts'])] = "bool"
+        spec[",".join("part{0}.lodgement_id".format(part_id)
+                        for part_id in event['parts'])] = "id"
+        spec[",".join("lodgement{0}.id".format(part_id)
+                        for part_id in event['parts'])] = "id"
+        spec[",".join("lodgement{0}.group_id".format(part_id)
+                        for part_id in event['parts'])] = "id"
+        spec[",".join("lodgement{0}.title".format(part_id)
+                        for part_id in event['parts'])] = "str"
+        spec[",".join("lodgement{0}.notes".format(part_id)
+                        for part_id in event['parts'])] = "str"
+        spec[",".join("lodgement_group{0}.id".format(part_id)
+                        for part_id in event['parts'])] = "id"
+        spec[",".join("lodgement_group{0}.title".format(part_id)
+                        for part_id in event['parts'])] = "str"
+        for f in xsorted(event['fields'].values(),
+                            key=EntitySorter.event_field):
+            if f['association'] == const.FieldAssociations.lodgement:
+                key = ",".join(
+                    "lodgement{0}.xfield_{1}".format(
+                        part_id, f['field_name'])
+                    for part_id in event['parts'])
+                kind = const.FieldDatatypes(f['kind']).name
+                spec[key] = kind
+    if len(tracks) > 1:
+        spec[",".join("track{0}.is_course_instructor".format(track_id)
+                        for track_id in tracks)] = "bool"
+        spec[",".join("track{0}.course_id".format(track_id)
+                        for track_id in tracks)] = "bool"
+        spec[",".join("track{0}.course_instructor".format(track_id)
+                        for track_id in tracks)] = "int"
+        for temp in ("course", "course_instructor",):
+            spec[",".join("{1}{0}.id".format(track_id, temp)
+                            for track_id in tracks)] = "id"
+            spec[",".join("{1}{0}.nr".format(track_id, temp)
+                            for track_id in tracks)] = "str"
+            spec[",".join("{1}{0}.title".format(track_id, temp)
+                            for track_id in tracks)] = "str"
+            spec[",".join("{1}{0}.shortname".format(track_id, temp)
+                            for track_id in tracks)] = "str"
+            spec[",".join("{1}{0}.notes".format(track_id, temp)
+                            for track_id in tracks)] = "str"
+            for f in xsorted(event['fields'].values(),
+                                key=EntitySorter.event_field):
+                if f['association'] == const.FieldAssociations.course:
+                    key = ",".join("{1}{0}.xfield_{2}".format(
+                        track_id, temp, f['field_name'])
+                                    for track_id in tracks)
+                    kind = const.FieldDatatypes(f['kind']).name
+                    spec[key] = kind
+        if sum(track['num_choices'] for track in tracks.values()) > 1:
+            spec[",".join(f"course_choices{track_id}.rank{i}"
+                            for track_id, track in tracks.items()
+                            for i in range(track['num_choices']))] = "int"
+    for f in xsorted(event['fields'].values(),
+                        key=EntitySorter.event_field):
+        if f['association'] == const.FieldAssociations.registration:
+            kind = const.FieldDatatypes(f['kind']).name
+            spec["reg_fields.xfield_{}".format(f['field_name'])] = kind
+    return spec
+
+
+# TODO specify return type as OrderedDict.
+def make_registration_query_aux(
+    rs: RequestState, event: CdEDBObject, courses: CdEDBObjectMap,
+    lodgements: CdEDBObjectMap, lodgement_groups: CdEDBObjectMap,
+    fixed_gettext: bool = False
+) -> Tuple[Dict[str, Dict[int, str]], Dict[str, str]]:
+    """Un-inlined code to prepare input for template.
+    :param fixed_gettext: whether or not to use a fixed translation
+        function. True means static, False means localized.
+    :returns: Choices for select inputs and titles for columns.
+    """
+    tracks = event['tracks']
+
+    if fixed_gettext:
+        gettext = rs.default_gettext
+        enum_gettext = lambda x: x.name
+    else:
+        gettext = rs.gettext
+        enum_gettext = rs.gettext
+
+    course_identifier = lambda c: "{}. {}".format(c["nr"], c["shortname"])
+    course_choices = collections.OrderedDict(
+        (c_id, course_identifier(c))
+        for c_id, c in keydictsort_filter(courses, EntitySorter.course))
+    lodge_identifier = lambda l: l["title"]
+    lodgement_choices = collections.OrderedDict(
+        (l_id, lodge_identifier(l))
+        for l_id, l in keydictsort_filter(lodgements,
+                                          EntitySorter.lodgement))
+    lodgement_group_identifier = lambda g: g["title"]
+    lodgement_group_choices = collections.OrderedDict(
+        (g_id, lodgement_group_identifier(g))
+        for g_id, g in keydictsort_filter(lodgement_groups,
+                                          EntitySorter.lodgement_group))
+    # First we construct the choices
+    choices: Dict[str, Dict[int, str]] = {
+        # Genders enum
+        'persona.gender': collections.OrderedDict(
+            enum_entries_filter(
+                const.Genders, enum_gettext, raw=fixed_gettext)),
+    }
+
+    # Precompute some choices
+    reg_part_stati_choices = collections.OrderedDict(
+        enum_entries_filter(
+            const.RegistrationPartStati, enum_gettext, raw=fixed_gettext))
+    lodge_fields = {
+        field_id: field for field_id, field in event['fields'].items()
+        if field['association'] == const.FieldAssociations.lodgement
+        }
+    course_fields = {
+        field_id: field for field_id, field in event['fields'].items()
+        if field['association'] == const.FieldAssociations.course
+        }
+    reg_fields = {
+        field_id: field for field_id, field in event['fields'].items()
+        if field['association'] == const.FieldAssociations.registration
+        }
+
+    for part_id in event['parts']:
+        choices.update({
+            # RegistrationPartStati enum
+            "part{0}.status".format(part_id): reg_part_stati_choices,
+            # Lodgement choices for the JS selector
+            "part{0}.lodgement_id".format(part_id): lodgement_choices,
+            "lodgement{0}.group_id".format(part_id): lodgement_group_choices,
+        })
+        if not fixed_gettext:
+            # Lodgement fields value -> description
+            key = "lodgement{0}.xfield_{1}"
+            choices.update({
+                key.format(part_id, field['field_name']):
+                    collections.OrderedDict(field['entries'])
+                for field in lodge_fields.values() if field['entries']
+            })
+    for track_id, track in tracks.items():
+        choices.update({
+            # Course choices for the JS selector
+            "track{0}.course_id".format(track_id): course_choices,
+            "track{0}.course_instructor".format(track_id): course_choices,
+        })
+        for i in range(track['num_choices']):
+            choices[f"course_choices{track_id}.rank{i}"] = course_choices
+        if track['num_choices'] > 1:
+            choices[",".join(
+                f"course_choices{track_id}.rank{i}"
+                for i in range(track['num_choices']))] = course_choices
+        if not fixed_gettext:
+            # Course fields value -> description
+            for temp in ("course", "course_instructor"):
+                for field in course_fields.values():
+                    key = f"{temp}{track_id}.xfield_{field['field_name']}"
+                    if field['entries']:
+                        choices[key] = collections.OrderedDict(field['entries'])
+    if len(event['parts']) > 1:
+        choices.update({
+            # RegistrationPartStati enum
+            ",".join("part{0}.status".format(part_id)
+                     for part_id in event['parts']): reg_part_stati_choices,
+            ",".join("part{0}.lodgement_id".format(part_id)
+                     for part_id in event['parts']): lodgement_choices,
+            ",".join("lodgement{0}.group_id".format(part_id)
+                     for part_id in event['parts']): lodgement_group_choices,
+        })
+    if len(tracks) > 1:
+        choices[",".join(f"course_choices{track_id}.rank{i}"
+                for track_id, track in tracks.items()
+                for i in range(track['num_choices']))] = course_choices
+    if not fixed_gettext:
+        # Registration fields value -> description
+        choices.update({
+            "reg_fields.xfield_{}".format(field['field_name']):
+                collections.OrderedDict(field['entries'])
+            for field in reg_fields.values() if field['entries']
+        })
+
+    # Second we construct the titles
+    titles: Dict[str, str] = {
+        "reg_fields.xfield_{}".format(field['field_name']):
+            field['field_name']
+        for field in reg_fields.values()
+    }
+    for track_id, track in tracks.items():
+        if len(tracks) > 1:
+            prefix = "{shortname}: ".format(shortname=track['shortname'])
+        else:
+            prefix = ""
+        titles.update({
+            "track{0}.is_course_instructor".format(track_id):
+                prefix + gettext("instructs their course"),
+            "track{0}.course_id".format(track_id):
+                prefix + gettext("course"),
+            "track{0}.course_instructor".format(track_id):
+                prefix + gettext("instructed course"),
+            "course{0}.id".format(track_id):
+                prefix + gettext("course ID"),
+            "course{0}.nr".format(track_id):
+                prefix + gettext("course nr"),
+            "course{0}.title".format(track_id):
+                prefix + gettext("course title"),
+            "course{0}.shortname".format(track_id):
+                prefix + gettext("course shortname"),
+            "course{0}.notes".format(track_id):
+                prefix + gettext("course notes"),
+            "course_instructor{0}.id".format(track_id):
+                prefix + gettext("instructed course ID"),
+            "course_instructor{0}.nr".format(track_id):
+                prefix + gettext("instructed course nr"),
+            "course_instructor{0}.title".format(track_id):
+                prefix + gettext("instructed course title"),
+            "course_instructor{0}.shortname".format(track_id):
+                prefix + gettext("instructed course shortname"),
+            "course_instructor{0}.notes".format(track_id):
+                prefix + gettext("instructed courese notes"),
+        })
+        key = "course{0}.xfield_{1}"
+        titles.update({
+            key.format(track_id, field['field_name']):
+                prefix + gettext("course {field}").format(
+                    field=field['field_name'])
+            for field in course_fields.values()
+        })
+        key = "course_instructor{0}.xfield_{1}"
+        titles.update({
+            key.format(track_id, field['field_name']):
+                prefix + gettext("instructed course {field}").format(
+                    field=field['field_name'])
+            for field in course_fields.values()
+        })
+        for i in range(track['num_choices']):
+            titles[f"course_choices{track_id}.rank{i}"] = \
+                prefix + gettext("%s. Choice") % (i + 1)
+        if track['num_choices'] > 1:
+            titles[",".join(f"course_choices{track_id}.rank{i}"
+                            for i in range(track['num_choices']))] = \
+                prefix + gettext("Any Choice")
+    if len(event['tracks']) > 1:
+        titles.update({
+            ",".join("track{0}.is_course_instructor".format(track_id)
+                     for track_id in tracks):
+                gettext("any track: instructs their course"),
+            ",".join("track{0}.course_id".format(track_id)
+                     for track_id in tracks):
+                gettext("any track: course"),
+            ",".join("track{0}.course_instructor".format(track_id)
+                     for track_id in tracks):
+                gettext("any track: instructed course"),
+            ",".join("course{0}.id".format(track_id)
+                     for track_id in tracks):
+                gettext("any track: course ID"),
+            ",".join("course{0}.nr".format(track_id)
+                     for track_id in tracks):
+                gettext("any track: course nr"),
+            ",".join("course{0}.title".format(track_id)
+                     for track_id in tracks):
+                gettext("any track: course title"),
+            ",".join("course{0}.shortname".format(track_id)
+                     for track_id in tracks):
+                gettext("any track: course shortname"),
+            ",".join("course{0}.notes".format(track_id)
+                     for track_id in tracks):
+                gettext("any track: course notes"),
+            ",".join("course_instructor{0}.id".
+                     format(track_id) for track_id in tracks):
+                gettext("any track: instructed course ID"),
+            ",".join("course_instructor{0}.nr".
+                     format(track_id) for track_id in tracks):
+                gettext("any track: instructed course nr"),
+            ",".join("course_instructor{0}.title".
+                     format(track_id) for track_id in tracks):
+                gettext("any track: instructed course title"),
+            ",".join("course_instructor{0}.shortname".
+                     format(track_id) for track_id in tracks):
+                gettext("any track: instructed course shortname"),
+            ",".join("course_instructor{0}.notes".format(track_id)
+                     for track_id in tracks):
+                gettext("any track: instructed course notes"),
+        })
+        key = "course{0}.xfield_{1}"
+        titles.update({
+            ",".join(key.format(track_id, field['field_name'])
+                     for track_id in tracks):
+                gettext("any track: course {field}").format(
+                    field=field['field_name'])
+            for field in course_fields.values()
+        })
+        key = "course_instructor{0}.xfield_{1}"
+        titles.update({
+            ",".join(key.format(track_id, field['field_name'])
+                     for track_id in tracks):
+                gettext("any track: instructed course {field}").format(
+                    field=field['field_name'])
+            for field in course_fields.values()
+        })
+        key = ",".join(f"course_choices{track_id}.rank{i}"
+                       for track_id, track in tracks.items()
+                       for i in range(track['num_choices']))
+        titles[key] = gettext("any track: Any Choice")
+    for part_id, part in event['parts'].items():
+        if len(event['parts']) > 1:
+            prefix = "{shortname}: ".format(shortname=part['shortname'])
+        else:
+            prefix = ""
+        titles.update({
+            "part{0}.status".format(part_id):
+                prefix + gettext("registration status"),
+            "part{0}.is_camping_mat".format(part_id):
+                prefix + gettext("camping mat user"),
+            "part{0}.lodgement_id".format(part_id):
+                prefix + gettext("lodgement"),
+            "lodgement{0}.id".format(part_id):
+                prefix + gettext("lodgement ID"),
+            "lodgement{0}.group_id".format(part_id):
+                prefix + gettext("lodgement group"),
+            "lodgement{0}.title".format(part_id):
+                prefix + gettext("lodgement title"),
+            "lodgement{0}.notes".format(part_id):
+                prefix + gettext("lodgement notes"),
+            "lodgement_group{0}.id".format(part_id):
+                prefix + gettext("lodgement group ID"),
+            "lodgement_group{0}.title".format(part_id):
+                prefix + gettext("lodgement group title"),
+        })
+        key = "lodgement{0}.xfield_{1}"
+        titles.update({
+            key.format(part_id, field['field_name']):
+                prefix + gettext("lodgement {field}").format(
+                    field=field['field_name'])
+            for field in lodge_fields.values()
+        })
+    if len(event['parts']) > 1:
+        titles.update({
+            ",".join("part{0}.status".format(part_id)
+                     for part_id in event['parts']):
+                gettext("any part: registration status"),
+            ",".join("part{0}.is_camping_mat".format(part_id)
+                     for part_id in event['parts']):
+                gettext("any part: camping mat user"),
+            ",".join("part{0}.lodgement_id".format(part_id)
+                     for part_id in event['parts']):
+                gettext("any part: lodgement"),
+            ",".join("lodgement{0}.id".format(part_id)
+                     for part_id in event['parts']):
+                gettext("any part: lodgement ID"),
+            ",".join("lodgement{0}.group_id".format(part_id)
+                     for part_id in event['parts']):
+                gettext("any part: lodgement group"),
+            ",".join("lodgement{0}.title".format(part_id)
+                     for part_id in event['parts']):
+                gettext("any part: lodgement title"),
+            ",".join("lodgement{0}.notes".format(part_id)
+                     for part_id in event['parts']):
+                gettext("any part: lodgement notes"),
+            ",".join("lodgement_group{0}.id".format(part_id)
+                     for part_id in event['parts']):
+                gettext("any part: lodgement group ID"),
+            ",".join("lodgement_group{0}.title".format(part_id)
+                     for part_id in event['parts']):
+                gettext("any part: lodgement group title"),
+        })
+        key = "lodgement{0}.xfield_{1}"
+        titles.update({
+            ",".join(key.format(part_id, field['field_name'])
+                     for part_id in event['parts']):
+                gettext("any part: lodgement {field}").format(
+                    field=field['field_name'])
+            for field in lodge_fields.values()
+        })
+    return choices, titles
+
+
+def make_course_query_spec(event: CdEDBObject) -> Dict[str, str]:
+    """Helper to generate ``QueryScope.event_course``'s spec.
+
+    Since each event has custom course fields we have to amend the query
+    spec on the fly.
+    """
+    tracks = event['tracks']
+    course_fields = {
+        field_id: field for field_id, field in event['fields'].items()
+        if field['association'] == const.FieldAssociations.course
+    }
+
+    # This is an OrderedDict, so order should be respected.
+    spec = collections.OrderedDict([
+                    ("course.id", "id"),
+                    ("course.course_id", "id"),
+                    ("course.nr", "str"),
+                    ("course.title", "str"),
+                    ("course.description", "str"),
+                    ("course.shortname", "str"),
+                    ("course.instructors", "str"),
+                    ("course.min_size", "int"),
+                    ("course.max_size", "int"),
+                    ("course.notes", "str"),
+                    # This will be augmented with additional fields in the fly.
+                ])
+    spec.update({
+        "course_fields.xfield_{0}".format(field['field_name']):
+            const.FieldDatatypes(field['kind']).name
+        for field in course_fields.values()
+    })
+
+    for track_id, track in tracks.items():
+        spec["track{0}.is_offered".format(track_id)] = "bool"
+        spec["track{0}.takes_place".format(track_id)] = "bool"
+        spec["track{0}.attendees".format(track_id)] = "int"
+        spec["track{0}.instructors".format(track_id)] = "int"
+        for rank in range(track['num_choices']):
+            spec["track{0}.num_choices{1}".format(track_id, rank)] = "int"
+
+    return spec
+
+
+# TODO specify return type as OrderedDict.
+def make_course_query_aux(rs: RequestState, event: CdEDBObject,
+                          courses: CdEDBObjectMap,
+                          fixed_gettext: bool = False
+                          ) -> Tuple[Dict[str, Dict[int, str]],
+                                     Dict[str, str]]:
+    """Un-inlined code to prepare input for template.
+
+    :param fixed_gettext: whether or not to use a fixed translation
+        function. True means static, False means localized.
+    :returns: Choices for select inputs and titles for columns.
+    """
+
+    tracks = event['tracks']
+    gettext = rs.default_gettext if fixed_gettext else rs.gettext
+
+    # Construct choices.
+    course_identifier = lambda c: "{}. {}".format(c["nr"], c["shortname"])
+    course_choices = collections.OrderedDict(
+        xsorted((c["id"], course_identifier(c)) for c in courses.values()))
+    choices: Dict[str, Dict[int, str]] = {
+        "course.course_id": course_choices
+    }
+    course_fields = {
+        field_id: field for field_id, field in event['fields'].items()
+        if field['association'] == const.FieldAssociations.course
+        }
+    if not fixed_gettext:
+        # Course fields value -> description
+        choices.update({
+            "course_fields.xfield_{0}".format(field['field_name']):
+                collections.OrderedDict(field['entries'])
+            for field in course_fields.values() if field['entries']
+        })
+
+    # Construct titles.
+    titles: Dict[str, str] = {
+        "course.id": gettext("course id"),
+        "course.course_id": gettext("course"),
+        "course.nr": gettext("course nr"),
+        "course.title": gettext("course title"),
+        "course.description": gettext("course description"),
+        "course.shortname": gettext("course shortname"),
+        "course.instructors": gettext("course instructors"),
+        "course.min_size": gettext("course min size"),
+        "course.max_size": gettext("course max size"),
+        "course.notes": gettext("course notes"),
+    }
+    titles.update({
+        "course_fields.xfield_{}".format(field['field_name']):
+            field['field_name']
+        for field in course_fields.values()
+    })
+    for track_id, track in tracks.items():
+        if len(tracks) > 1:
+            prefix = "{shortname}: ".format(shortname=track['shortname'])
+        else:
+            prefix = ""
+        titles.update({
+            "track{0}.takes_place".format(track_id):
+                prefix + gettext("takes place"),
+            "track{0}.is_offered".format(track_id):
+                prefix + gettext("is offered"),
+            "track{0}.attendees".format(track_id):
+                prefix + gettext("attendees"),
+            "track{0}.instructors".format(track_id):
+                prefix + gettext("instructors"),
+        })
+        for rank in range(track['num_choices']):
+            titles.update({
+                "track{0}.num_choices{1}".format(track_id, rank):
+                    prefix + gettext("{}. choices").format(
+                        rank+1),
+            })
+
+    return choices, titles
+
+
+def make_lodgement_query_spec(event: CdEDBObject) -> Dict[str, str]:
+    parts = event["parts"]
+    lodgement_fields = {
+        field_id: field for field_id, field in event['fields'].items()
+        if field['association'] == const.FieldAssociations.lodgement
+    }
+
+    # This is an OrderedDcit, so order should be respected.
+    spec = collections.OrderedDict([
+                    ("lodgement.id", "id"),
+                    ("lodgement.lodgement_id", "id"),
+                    ("lodgement.title", "str"),
+                    ("lodgement.regular_capacity", "int"),
+                    ("lodgement.camping_mat_capacity", "int"),
+                    ("lodgement.notes", "str"),
+                    ("lodgement.group_id", "int"),
+                    ("lodgement_group.title", "int"),
+                    # This will be augmented with additional fields in the fly.
+                ])
+    spec.update({
+        f"lodgement_fields.xfield_{field['field_name']}":
+            const.FieldDatatypes(field['kind']).name
+        for field in lodgement_fields.values()
+    })
+
+    for part_id, part in parts.items():
+        spec[f"part{part_id}.regular_inhabitants"] = "int"
+        spec[f"part{part_id}.camping_mat_inhabitants"] = "int"
+        spec[f"part{part_id}.total_inhabitants"] = "int"
+        spec[f"part{part_id}.group_regular_inhabitants"] = "int"
+        spec[f"part{part_id}.group_camping_mat_inhabitants"] = "int"
+        spec[f"part{part_id}.group_total_inhabitants"] = "int"
+
+    return spec
+
+
+def make_lodgement_query_aux(rs: RequestState, event: CdEDBObject,
+                             lodgements: CdEDBObjectMap,
+                             lodgement_groups: CdEDBObjectMap,
+                             fixed_gettext: bool = False
+                             ) -> Tuple[Dict[str, Dict[int, str]],
+                                        Dict[str, str]]:
+    """Un-inlined code to prepare input for template.
+
+    :param fixed_gettext: whether or not to use a fixed translation
+        function. True means static, False means localized.
+    :returns: Choices for select inputs and titles for columns.
+    """
+
+    parts = event['parts']
+    gettext = rs.default_gettext if fixed_gettext else rs.gettext
+
+    # Construct choices.
+    lodgement_choices = collections.OrderedDict(
+        (l_id, l['title'])
+        for l_id, l in keydictsort_filter(lodgements,
+                                          EntitySorter.lodgement))
+    lodgement_group_choices = collections.OrderedDict({-1: gettext(n_("--no group--"))})
+    lodgement_group_choices.update(
+        [(lg_id, lg['title']) for lg_id, lg in keydictsort_filter(
+            lodgement_groups, EntitySorter.lodgement_group)])
+    choices: Dict[str, Dict[int, str]] = {
+        "lodgement.lodgement_id": lodgement_choices,
+        "lodgement_group.id": lodgement_group_choices,
+    }
+    lodgement_fields = {
+        field_id: field for field_id, field in event['fields'].items()
+        if field['association'] == const.FieldAssociations.lodgement
+    }
+    if not fixed_gettext:
+        # Lodgement fields value -> description
+        choices.update({
+            f"lodgement_fields.xfield_{field['field_name']}":
+                collections.OrderedDict(field['entries'])
+            for field in lodgement_fields.values() if field['entries']
+        })
+
+    # Construct titles.
+    titles: Dict[str, str] = {
+        "lodgement.id": gettext(n_("Lodgement ID")),
+        "lodgement.lodgement_id": gettext(n_("Lodgement")),
+        "lodgement.title": gettext(n_("Title_[[name of an entity]]")),
+        "lodgement.regular_capacity": gettext(n_("Regular Capacity")),
+        "lodgement.camping_mat_capacity":
+            gettext(n_("Camping Mat Capacity")),
+        "lodgement.notes": gettext(n_("Lodgement Notes")),
+        "lodgement.group_id": gettext(n_("Lodgement Group ID")),
+        "lodgement_group.tmp_id": gettext(n_("Lodgement Group")),
+        "lodgement_group.title": gettext(n_("Lodgement Group Title")),
+        "lodgement_group.regular_capacity":
+            gettext(n_("Lodgement Group Regular Capacity")),
+        "lodgement_group.camping_mat_capacity":
+            gettext(n_("Lodgement Group Camping Mat Capacity")),
+    }
+    titles.update({
+        f"lodgement_fields.xfield_{field['field_name']}":
+            field['field_name']
+        for field in lodgement_fields.values()
+    })
+    for part_id, part in parts.items():
+        if len(parts) > 1:
+            prefix = f"{part['shortname']}: "
+        else:
+            prefix = ""
+        titles.update({
+            f"part{part_id}.regular_inhabitants":
+                prefix + gettext(n_("Regular Inhabitants")),
+            f"part{part_id}.camping_mat_inhabitants":
+                prefix + gettext(n_("Reserve Inhabitants")),
+            f"part{part_id}.total_inhabitants":
+                prefix + gettext(n_("Total Inhabitants")),
+            f"part{part_id}.group_regular_inhabitants":
+                prefix + gettext(n_("Group Regular Inhabitants")),
+            f"part{part_id}.group_camping_mat_inhabitants":
+                prefix + gettext(n_("Group Reserve Inhabitants")),
+            f"part{part_id}.group_total_inhabitants":
+                prefix + gettext(n_("Group Total Inhabitants")),
+        })
+
+    return choices, titles

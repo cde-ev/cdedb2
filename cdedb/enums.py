@@ -14,7 +14,7 @@ from cdedb.common import (
     LineResolutions, LodgementsSortkeys, TransactionType,
 )
 from cdedb.subman.machine import SubscriptionAction, SubscriptionPolicy
-from cdedb.query import QueryOperators
+from cdedb.query import QueryOperators, QueryScope
 
 #: The list of normal enums
 ALL_ENUMS: Tuple[Type[Enum], ...] = (
@@ -40,6 +40,7 @@ ALL_ENUMS: Tuple[Type[Enum], ...] = (
     const.MailinglistDomain,
     const.QuestionnaireUsages,
     QueryOperators,
+    QueryScope,
     AgeClasses,
     LineResolutions,
     SubscriptionAction,

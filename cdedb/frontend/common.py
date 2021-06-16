@@ -738,18 +738,14 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         msg["Date"] = email.utils.format_datetime(now())
         return msg
 
-    def generic_user_search(self, rs: RequestState,
-                            download: Optional[str],
-                            is_search: bool,
-                            qview: str,
-                            default_qview: str,
+    def generic_user_search(self, rs: RequestState, download: Optional[str],
+                            is_search: bool, scope: query_mod.QueryScope,
+                            default_scope: query_mod.QueryScope,
                             submit_general_query: Callable[[RequestState, Query],
-                                                  Tuple[CdEDBObject, ...]],
-                            *,
+                                                           Tuple[CdEDBObject, ...]], *,
                             endpoint: str = "user_search",
                             choices: Dict[str, collections.OrderedDict] = None,  # type: ignore
-                            query: Query = None
-                            ) -> werkzeug.Response:
+                            query: Query = None) -> werkzeug.Response:
         """Perform user search.
 
         :param download: signals whether the output should be a file. It can either
@@ -757,8 +753,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             is served.
         :param is_search: signals whether the page was requested by an actual
             query or just to display the search form.
-        :param qview: which query view to user see `QUERY_VIEWS` in `cdedb.query`.
-        :param default_qview: the default query list of which "dummy" query view to use
+        :param scope: The query scope of the search.
+        :param default_scope: Use the default queries associated with this scope.
         :param endpoint: Name of the template family to use to render search. To be
             changed for archived user searches.
         :param choices: Mapping of replacements of primary keys by human-readable
@@ -769,15 +765,17 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :param query: if this is specified the query is executed instead. This is meant
             for calling this function programmatically.
         """
-        spec = copy.deepcopy(QUERY_SPECS[qview])
+        spec = scope.get_spec()
         if query:
             query = check_validation(rs, vtypes.Query, query, "query")
+            if query and query.scope != scope:
+                raise ValueError(n_("Scope mismatch."))
         elif is_search:
             # mangle the input, so we can prefill the form
-            query_input = mangle_query_input(rs, spec)
+            query_input = scope.mangle_query_input(rs)
             query = check_validation(rs, vtypes.QueryInput, query_input, "query",
                                      spec=spec, allow_empty=False)
-        default_queries = self.conf["DEFAULT_QUERIES"][default_qview]
+        default_queries = self.conf["DEFAULT_QUERIES"][default_scope]
         if not choices:
             choices = {}
         choices_lists = {k: list(v.items()) for k, v in choices.items()}
@@ -786,7 +784,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'default_queries': default_queries, 'query': query}
         # Tricky logic: In case of no validation errors we perform a query
         if not rs.has_validation_errors() and is_search and query:
-            query.scope = qview
             result = submit_general_query(rs, query)
             params['result'] = result
             if download:

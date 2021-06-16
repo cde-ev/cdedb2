@@ -136,6 +136,7 @@ class TestFrontendCommon(FrontendTest):
             cdedb.enums.Accounts,
             cdedb.enums.CourseChoiceToolActions,
             cdedb.enums.CourseFilterPositions,
+            cdedb.enums.QueryScope,
         }
         for lang, translation in self.app.app.translations.items():
             # Not all Latin enum members are translated yet

@@ -68,7 +68,8 @@
             "ctime.creation_time": gettext("Registration Time"),
             "mtime.modification_time": gettext("Last Modification Time"),}) %}
 
-    {{ generic.format_query(spec, titles, choices, cdedblink('event/registration_query') + '#query-results',
+    {{ generic.format_query(enums['QueryScope'].registration, spec, titles, choices,
+                            cdedblink('event/registration_query') + '#query-results',
                             selection_default=('persona.username', 'persona.family_name', 'persona.given_names')) }}
 
     {% if values['is_search'] %}
