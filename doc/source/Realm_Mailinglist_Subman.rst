@@ -122,6 +122,16 @@ If subman detects this has not been done, it will raise an error.
 
 Usage example
 -------------
+For a comprehensive example of the use of subman, we recommend taking a look at
+the ml realm of the CdEDBv2. There, subman is used to support complex mailinglist
+management by subscribers and moderators.
+The subscription state data is saved into a SQL database, except for
+``SubscriptionState.none``, and includes a logging of each ``SubscriptionAction``.
+
+However, a minimal example class can be realized as follows. This is basically
+a really streamlined version of the CdEDBv2 MlBackend.
+
+.. literalinclude:: subman_example.py
 
 Internationalization
 --------------------
