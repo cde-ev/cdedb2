@@ -1,7 +1,7 @@
 Testing
 =======
 
-To ensure our code keeps working properly, every code written should be tested.
+To ensure our code keeps working properly, all code written should be tested.
 Due to practicality reasons, we restrict ourselves to testing Python and Jinja
 automatically, while JavaScript and CSS are tested manually.
 
@@ -23,6 +23,8 @@ while writing integration tests (often incorrectly called unit tests).
 * Test with the least privileged user possible. If there is reason to believe
   code might behave differently for other users, add them as well, otherwise
   omit them to save runtime.
+  Since logging in and out during a test is possible, it is possible to switch
+  privileges during a test. This is e.g. useful to test logging.
 * If you write a regression test, always check that your test actually fails
   if the fix is not in place. Otherwise, it is worthless.
 * Join related tests together, if possible. For example, go through the whole
@@ -31,6 +33,7 @@ while writing integration tests (often incorrectly called unit tests).
   ``USER_DICT["inga"]["id"]`` or ``const.EventLogCodes.event_changed`` instead.
   The ``self.user_in`` function simplifies this for users since it accepts full
   user objects (``USER_DICT["inga"]``), user ids (``9``) or names (``"inga"``).
+  Beware that for enums, in frontend tests you need to use the `.value` attribute.
 * Do not imitate the existing ``test_log`` tests. Those represent an
   anti-pattern. Instead, test the presence of log entries together with their
   generation. For backend tests, copying ``pprint`` output is helpful
