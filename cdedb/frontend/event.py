@@ -5258,7 +5258,7 @@ class EventFrontend(AbstractUserFrontend):
         query: Optional[Query] = check(
             rs, vtypes.QueryInput, query_input, "query", spec=spec, allow_empty=False)
         if not rs.has_validation_errors() and query:
-            query_input["is_search"] = True
+            query_input["is_search"] = "True"
             query_id = self.eventproxy.store_event_query(
                 rs, rs.ambience["event"]["id"], query)
             self.notify_return_code(rs, query_id)

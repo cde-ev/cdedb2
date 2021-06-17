@@ -1953,7 +1953,7 @@ class TestEventBackend(BackendTest):
         self.assertEqual(expectation, result)
 
     @as_users("garcia")
-    def test_store_event_query(self):
+    def test_store_event_query(self) -> None:
         event_id = 1
         event = self.event.get_event(self.key, event_id)
         # Try storing valid queries.
@@ -2002,12 +2002,13 @@ class TestEventBackend(BackendTest):
                 self.assertEqual(set(q.constraints), set(query.constraints))
                 self.assertEqual(set(q.order), set(query.order))
                 self.assertEqual(q.query_id, query.query_id)
+            assert query.query_id is not None
             self.assertTrue(self.event.delete_event_query(self.key, query.query_id))
         self.assertEqual({}, self.event.get_event_queries(self.key, event_id))
 
         # Now try some invalid things.
         query = Query(
-            None, {},
+            None, {},  # type: ignore[arg-type]
             fields_of_interest=[],
             constraints=[],
             order=[],
@@ -2021,7 +2022,7 @@ class TestEventBackend(BackendTest):
         with self.assertRaises(ValueError) as cm:
             self.event.store_event_query(self.key, event_id, query)
         self.assertIn("Must not be empty. (fields_of_interest)", cm.exception.args)
-        query.fields_of_interest = ("persona.id",)
+        query.fields_of_interest = ["persona.id"]
         with self.assertRaises(ValueError) as cm:
             self.event.store_event_query(self.key, event_id, query)
         self.assertIn("Cannot store this kind of query.", cm.exception.args)

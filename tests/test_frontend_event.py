@@ -2048,7 +2048,7 @@ etc;anything else""", f['entries_2'].value)
             self.response.lxml.xpath('//*[@id="query-result"]//tr[2]/td[@data-col='
                                      '"lodgement2.title"]')[0].text.strip())
         f["query_name"] = query_name = "My registration query"
-        self.submit(f, button="store_query")
+        self.submit(f, button="store_query", check_button_attrs=True)
         self.assertPresence("Ergebnis [3]")
         self.assertPresence("Beispiel")
         self.assertPresence("Emilia")
@@ -2059,7 +2059,8 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Beispiel")
         self.assertPresence("Emilia")
         self.assertPresence("Garcia")
-        self.submit(f, button="store_query", check_notification=False)
+        self.submit(f, button="store_query", check_notification=False,
+                    check_button_attrs=True)
         self.assertPresence(
             f"Suchabfrage mit dem Namen '{query_name}' existiert bereits.",
             div="notifications")
@@ -2091,7 +2092,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Kabarett", div="result-container")
         self.assertPresence("Theater", div="result-container")
         f["query_name"] = query_name = "custom_course_query"
-        self.submit(f, button="store_query")
+        self.submit(f, button="store_query", check_button_attrs=True)
         self.assertPresence("Ergebnis [2]", div="query-results")
         self.assertPresence("Lang", div="result-container")
         self.assertPresence("Seminarraum 23", div="result-container")
@@ -2104,7 +2105,8 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Seminarraum 23", div="result-container")
         self.assertPresence("Kabarett", div="result-container")
         self.assertPresence("Theater", div="result-container")
-        self.submit(f, button="store_query", check_notification=False)
+        self.submit(f, button="store_query", check_notification=False,
+                    check_button_attrs=True)
         self.assertPresence(
             f"Suchabfrage mit dem Namen '{query_name}' existiert bereits.",
             div="notifications")
@@ -2131,7 +2133,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Kalte Kammer", div="result-container")
         self.assertPresence("Warme Stube", div="result-container")
         f["query_name"] = query_name = "My lodgement query with a funny symbol: 🏠"
-        self.submit(f, button="store_query")
+        self.submit(f, button="store_query", check_button_attrs=True)
         self.assertPresence("Ergebnis [2]", div="query-results")
         self.assertPresence("Kalte Kammer", div="result-container")
         self.assertPresence("Warme Stube", div="result-container")
@@ -2140,7 +2142,8 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Ergebnis [2]", div="query-results")
         self.assertPresence("Kalte Kammer", div="result-container")
         self.assertPresence("Warme Stube", div="result-container")
-        self.submit(f, button="store_query", check_notification=False)
+        self.submit(f, button="store_query", check_notification=False,
+                    check_button_attrs=True)
         self.assertPresence(
             f"Suchabfrage mit dem Namen '{query_name}' existiert bereits.",
             div="notifications")

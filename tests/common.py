@@ -794,9 +794,9 @@ class FrontendTest(BackendTest):
         self.follow()
         self.basic_validate(verbose=verbose)
 
-    def submit(self, form: webtest.Form, button: str = "",
-               check_notification: bool = True, verbose: bool = False,
-               value: str = None) -> None:
+    def submit(self, form: webtest.Form, button: str = "", *,
+               check_notification: bool = True, check_button_attrs: bool = False,
+               verbose: bool = False, value: str = None) -> None:
         """Submit a form.
 
         If the form has multiple submit buttons, they can be differentiated
@@ -804,11 +804,13 @@ class FrontendTest(BackendTest):
 
         :param check_notification: If True and this is a POST-request, check
             that the submission produces a notification indicating success.
+        :param check_button_attrs: If True and button is given, check whether the
+            button specifies a different form action and/or method.
         :param verbose: If True, offer additional debug output.
         :param button: The name of the button to use.
         :param value: The value of the button to use.
         """
-        if button:
+        if check_button_attrs and button:
             tmp_button: webtest.forms.Submit = form[button]
             if "formaction" in tmp_button.attrs:
                 form.action = tmp_button.attrs["formaction"]
@@ -1391,7 +1393,8 @@ class FrontendTest(BackendTest):
                 self.assertIn("active", button['class'])
             else:
                 self.assertNotIn("active", button['class'])
-        self.submit(f, 'view_specifier', False, value=button['value'])
+        self.submit(f, button='view_specifier', check_button_attrs=False,
+                    value=button['value'])
         return button
 
     def reload_and_check_form(self, form: webtest.Form, link: Union[CdEDBObject, str],
