@@ -792,6 +792,8 @@
                         'value': $(this).attr('value')
                     }));
                 }
+                // Because we don't actually submit the button, we have to transfer the
+                // formaction and formmethod attributes to the form, if they are set.
                 if ($(this).attr('formaction')) {
                     $form.attr('action', $(this).attr('formaction'));
                 }
