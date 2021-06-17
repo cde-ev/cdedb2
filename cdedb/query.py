@@ -144,6 +144,10 @@ class QueryScope(enum.Enum):
 
         Note that for schema specified columns (like ``personas.id``) the schema
         part does not survive querying and needs to be stripped before output.
+
+        :param event: For some scopes, the spec is dependent on specific event data.
+            For these scopes (see `event_spec_map` below) this must be provided.
+            The format should be like the return of `EventBackend.get_event()`.
         """
         event_spec_map = {
             QueryScope.registration: make_registration_query_spec,
