@@ -245,21 +245,21 @@ def tex_escape_filter(val: Optional[str]) -> Optional[str]:
 
 
 @overload
-def enum_filter(val: None, enum: Type[enum.Enum]) -> None: ...
+def enum_filter(val: None, enum_: Type[enum.Enum]) -> None: ...
 
 
 @overload
-def enum_filter(val: int, enum: Type[enum.Enum]) -> str: ...
+def enum_filter(val: int, enum_: Type[enum.Enum]) -> str: ...
 
 
-def enum_filter(val: Optional[int], enum: Type[enum.Enum]) -> Optional[str]:
+def enum_filter(val: Optional[int], enum_: Type[enum.Enum]) -> Optional[str]:
     """Custom jinja filter to convert enums to something printable.
 
     This exists mainly because of the possibility of None values.
     """
     if val is None:
         return None
-    return str(enum(val))
+    return str(enum_(val))
 
 
 @overload
