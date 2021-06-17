@@ -1824,6 +1824,9 @@ class EventBackend(AbstractBackend):
             if 'fee_modifiers' in data:
                 fee_modifiers = data['fee_modifiers']
                 # Do some dynamic validation.
+                part_ids = {e['id'] for e in self.sql_select(
+                    rs, "event.event_parts", ("id",), (data['id'],),
+                    entity_key="event_id")}
                 event_fields = {e['id']: e for e in self.sql_select(
                     rs, "event.field_definitions", FIELD_DEFINITION_FIELDS,
                     (data['id'],), entity_key="event_id")}
@@ -1843,10 +1846,10 @@ class EventBackend(AbstractBackend):
                             raise ValueError(n_(
                                 "Fee Modifier linked to non-registration "
                                 "field."))
+                    if 'part_id' in fee_modifier:
+                        if fee_modifier['part_id'] not in part_ids:
+                            raise ValueError(n_("Unknown part for the given event."))
                 # Do the actual work.
-                part_ids = {e['id'] for e in self.sql_select(
-                    rs, "event.event_parts", ("id",), (data['id'],),
-                    entity_key="event_id")}
                 current = self.sql_select(
                     rs, "event.fee_modifiers", FEE_MODIFIER_FIELDS, part_ids,
                     entity_key="part_id")

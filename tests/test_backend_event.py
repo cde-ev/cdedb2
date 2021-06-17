@@ -520,6 +520,7 @@ class TestEventBackend(BackendTest):
 
     @as_users("anton")
     def test_event_field_double_link(self) -> None:
+        event_id = 1
         questionnaire = {
             const.QuestionnaireUsages.additional:
                 [
@@ -542,13 +543,19 @@ class TestEventBackend(BackendTest):
           ],
         }
         with self.assertRaises(ValueError) as cm:
-            self.event.set_questionnaire(self.key, 1, questionnaire)
+            self.event.set_questionnaire(self.key, event_id, questionnaire)
         self.assertIn("Must not duplicate field. (field_id)", cm.exception.args)
 
-        old_event = self.event.get_event(self.key, 1)
-        self.event.set_questionnaire(self.key, old_event['id'], None)
+        # Event mustn't have registrations to alter fee modifiers.
+        reg_ids = self.event.list_registrations(self.key, event_id)
+        for reg_id in reg_ids:
+            self.event.delete_registration(
+                self.key, reg_id,
+                cascade=self.event.delete_registration_blockers(self.key, reg_id))
+        old_event = self.event.get_event(self.key, event_id)
+        self.event.set_questionnaire(self.key, event_id, None)
         data = {
-            'id': old_event['id'],
+            'id': event_id,
             'fee_modifiers':
                 {
                     anid: None
@@ -558,7 +565,7 @@ class TestEventBackend(BackendTest):
         self.event.set_event(self.key, data)
 
         data = {
-            'id': old_event['id'],
+            'id': event_id,
             'fee_modifiers': {
                 -1: {
                     'field_id': 7,
@@ -2894,9 +2901,10 @@ class TestEventBackend(BackendTest):
         self.assertEqual(reg['parts'][3]['status'],
                          const.RegistrationPartStati.rejected)
 
-    @as_users("garcia")
+    @as_users("berta")
     def test_uniqueness(self) -> None:
-        event_id = 1
+        event_id = 2
+        part_id = 4
         unique_name = 'unique_name'
         data = {
             'id': event_id,
@@ -2933,7 +2941,7 @@ class TestEventBackend(BackendTest):
                     'amount': decimal.Decimal("1.00"),
                     'field_id': 1001,
                     'modifier_name': unique_name,
-                    'part_id': 1,
+                    'part_id': part_id,
                 },
             },
         }
@@ -2945,7 +2953,7 @@ class TestEventBackend(BackendTest):
                     'amount': decimal.Decimal("1.00"),
                     'field_id': 1001,
                     'modifier_name': unique_name + "2",
-                    'part_id': 1,
+                    'part_id': part_id,
                 },
             },
         }
@@ -2959,7 +2967,7 @@ class TestEventBackend(BackendTest):
                     'amount': decimal.Decimal("1.00"),
                     'field_id': 1003,
                     'modifier_name': unique_name,
-                    'part_id': 1,
+                    'part_id': part_id,
                 },
             },
         }
@@ -2973,7 +2981,7 @@ class TestEventBackend(BackendTest):
                     'amount': decimal.Decimal("1.00"),
                     'field_id': 1003,
                     'modifier_name': unique_name + "2",
-                    'part_id': 1,
+                    'part_id': part_id,
                 },
             },
         }
@@ -2981,30 +2989,38 @@ class TestEventBackend(BackendTest):
 
     @as_users("annika")
     def test_fee_modifiers(self) -> None:
-        event_id = 1
-        field_name = 'is_child'
+        event_id = 2
         event = self.event.get_event(self.key, event_id)
-        self.assertEqual(event['fields'][7]['field_name'], field_name)
-        data = {
+        field_data = {
             'id': event_id,
             'fields': {
-                5: {
-                    'kind': const.FieldDatatypes.bool,
-                   },
                 -1: {
                     'association': const.FieldAssociations.registration,
                     'field_name': 'solidarity',
                     'kind': const.FieldDatatypes.bool,
                     'entries': None,
-                }
+                },
+                -2: {
+                    'association': const.FieldAssociations.registration,
+                    'field_name': 'solidarity_int',
+                    'kind': const.FieldDatatypes.int,
+                    'entries': None,
+                },
+                -3: {
+                    'association': const.FieldAssociations.course,
+                    'field_name': 'solidarity_course',
+                    'kind': const.FieldDatatypes.bool,
+                    'entries': None,
+                },
             }
         }
-        self.event.set_event(self.key, data)
+        self.event.set_event(self.key, field_data)
         field_links = (
-            (2, ValueError, "Fee Modifier linked to non-bool field."),
-            (5, ValueError, "Fee Modifier linked to non-registration field."),
-            (7, psycopg2.IntegrityError, None),
-            (1001, None, None))
+            (1001, None, None),
+            (1001, psycopg2.IntegrityError, None),
+            (1002, ValueError, "Fee Modifier linked to non-bool field."),
+            (1003, ValueError, "Fee Modifier linked to non-registration field."),
+        )
         for field_id, error, error_msg in field_links:
             data = {
                 'id': event_id,
@@ -3013,7 +3029,7 @@ class TestEventBackend(BackendTest):
                         'modifier_name': 'solidarity',
                         'amount': decimal.Decimal("-12.50"),
                         'field_id': field_id,
-                        'part_id': 2,
+                        'part_id': list(event["parts"])[0],
                     }
                 }
             }
@@ -3024,18 +3040,33 @@ class TestEventBackend(BackendTest):
                     self.assertEqual(error_msg, cm.exception.args[0])
             else:
                 self.assertTrue(self.event.set_event(self.key, data))
-        reg_id = 2
+        reg_data = {
+            "persona_id": 1,
+            "event_id": event_id,
+            "parts": {
+                4: {
+                    "status": const.RegistrationPartStati.applied,
+                }
+            },
+            "tracks": {
+
+            },
+            "mixed_lodging": True,
+            "list_consent": True,
+            "notes": None,
+        }
+        reg_id = self.event.create_registration(self.key, reg_data)
         self.assertEqual(self.event.calculate_fee(self.key, reg_id),
-                         decimal.Decimal("589.49"))
+                         decimal.Decimal("15"))
         data = {
             'id': reg_id,
             'fields': {
-                field_name: True,
+                field_data["fields"][-1]["field_name"]: True,
             }
         }
         self.assertTrue(self.event.set_registration(self.key, data))
         self.assertEqual(self.event.calculate_fee(self.key, reg_id),
-                         decimal.Decimal("553.49"))
+                         decimal.Decimal("2.50"))
 
     @as_users("garcia")
     def test_waitlist(self) -> None:

@@ -863,6 +863,13 @@ msgstr "Beitragsmodifikator mit Nicht-Anmeldungsfeld verbunden."
 msgid "Non-existing fee modifier specified."
 msgstr "Nicht existierende Beitragsmodifikator angegeben."
 
+#: cdedb/backend/event.py:1868 cdedb/backend/event.py:1878
+#: cdedb/backend/event.py:1887
+msgid "Cannot alter fee modifier once registrations exist."
+msgstr ""
+"Beitragsmodifikatoren können nicht mehr bearbeitet werden, "
+"da es bereits Anmeldungen gibt."
+
 #: cdedb/backend/event.py:2107
 msgid "Only courses from one event allowed."
 msgstr "Alle Kurse müssen zur gleichen Veranstaltung gehören."
