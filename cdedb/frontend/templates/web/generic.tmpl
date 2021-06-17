@@ -188,10 +188,13 @@
 
             {% if archived %}
                 {% set target=cdedblink('{}/archived_user_search'.format(realm)) %}
+                {% set scope=enums['QueryScope'].archived_persona %}
             {% else %}
                 {% set target=cdedblink('{}/user_search'.format(realm)) %}
+                {% set scope=enums['QueryScope'].persona %}
             {% endif %}
-            {{ format_query(spec, TITLES, choices, target + '#query-results', selection_blacklist=selection_blacklist,
+            {{ format_query(scope, spec, TITLES, choices,
+                            target + '#query-results', selection_blacklist=selection_blacklist,
                             selection_default=('personas.id', 'username', 'family_name', 'given_names')) }}
 
     {% endwith %}
@@ -262,7 +265,7 @@
 
 
 
-{% macro format_query(spec, titles, choices, target, output_selection=True, selection_blacklist=[],
+{% macro format_query(scope, spec, titles, choices, target, output_selection=True, selection_blacklist=[],
                       selection_default=[]) %}
     <form action="{{ target }}" method="GET" id="queryform" aria-labelledby="qf_title">
         {{ util.input_hidden(name="is_search", value=True) }}
@@ -301,7 +304,7 @@
                             <tbody>
                                 {% for field in spec %}
                                     <tr class="query_field {% if field in errors %}errorInput{% endif %}
-                                               {% if field == query_mod.QUERY_PRIMARIES[query.scope] %}id-field{% endif %}"
+                                               {% if field == scope.get_primary_key() %}id-field{% endif %}"
                                             data-type="{{ spec[field] }}" data-id="{{ field }}">
                                         <td>
                                             {# multi-fields are not reliably selectable, so we disable selection #}
@@ -499,7 +502,7 @@
                     <ul>
                         {% for query_name in list %}
                             {% with query = queries[query_name] %}<li>
-                                {{ util.href(cdedblink(target, query|querytoparams) + '#query-results',
+                                {{ util.href(cdedblink(target, query.serialize()) + '#query-results',
                                         query.name if query.name else gettext(query_name), aclass="default-query") }}
                             </li>{% endwith %}
                         {% endfor %}
@@ -609,7 +612,8 @@
                 </tr>
             </thead>
             <tbody>
-            {% set primary_field = query_mod.QUERY_PRIMARIES[query.scope].split('.')[-1] %}
+            {% set primary_field = query.scope.get_primary_key().split('.')[-1] %}
+            {% set QueryScope = enums['QueryScope'] %}
             {% for row in result %}
                 {% set outerloopindex = loop.index0 %}
                 <tr class="ls-item" data-id="{{ row[primary_field] }}">
@@ -618,13 +622,13 @@
                                                aclass="rowSelector", arialabel=gettext("row %s")|format(outerloopindex)) }}
                     </td>
                     <td>
-                        {%- if query.scope == 'qview_registration' -%}
+                        {%- if query.scope == QueryScope.registration -%}
                             {{ util.href(cdedblink("event/show_registration", {'registration_id': row[primary_field]}),
                                          gettext('Details'), icon='user', aclass='btn btn-xs btn-info', rel='noreferrer') }}
-                        {%- elif query.scope == 'qview_event_course' -%}
+                        {%- elif query.scope == QueryScope.event_course -%}
                             {{ util.href(cdedblink("event/show_course", {'course_id': row[primary_field]}),
                                          gettext('Details'), icon='book', aclass='btn btn-xs btn-info', rel='noreferrer') }}
-                        {%- elif query.scope == 'qview_event_lodgement' -%}
+                        {%- elif query.scope == QueryScope.lodgement -%}
                             {{ util.href(cdedblink("event/show_lodgement", {'lodgement_id': row[primary_field]}),
                                          gettext('Details'), icon='home', aclass='btn btn-xs btn-info', rel='noreferrer') }}
                         {%- else -%}
@@ -638,7 +642,7 @@
                                     by the query #}
                                 <td data-col="{{ field }}">  {# The data-col attribute is mainly used for testing #}
                                     {% if field in ("personas.id", "persona.id")
-                                            or (query.scope == "qview_persona" and field == "id") %}
+                                            or (query.scope == QueryScope.persona and field == "id") %}
                                         <span class="nowrap">{{ row[field]|cdedbid }}</span>
                                     {% elif field == "persona.username" %}
                                         {{ util.username_mailto(row, "persona.") }}
