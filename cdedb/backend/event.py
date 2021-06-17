@@ -1861,6 +1861,9 @@ class EventBackend(AbstractBackend):
                            if x > 0 and fee_modifiers[x] is None}
                 elc = const.EventLogCodes
                 for x in mixed_existence_sorter(new):
+                    if self.has_registrations(rs, data['id']):
+                        raise ValueError(n_(
+                            "Cannot alter fee modifier once registrations exist."))
                     ret *= self.sql_insert(
                         rs, "event.fee_modifiers", fee_modifiers[x])
                     self.event_log(
@@ -1868,12 +1871,18 @@ class EventBackend(AbstractBackend):
                         change_note=fee_modifiers[x]['modifier_name'])
                 for x in mixed_existence_sorter(updated):
                     if fee_modifiers[x] != current_data[x]:
+                        if self.has_registrations(rs, data['id']):
+                            raise ValueError(n_(
+                                "Cannot alter fee modifier once registrations exist."))
                         ret *= self.sql_update(
                             rs, "event.fee_modifiers", fee_modifiers[x])
                         self.event_log(
                             rs, elc.fee_modifier_changed, data['id'],
                             change_note=current_data[x]['modifier_name'])
                 if deleted:
+                    if self.has_registrations(rs, data['id']):
+                        raise ValueError(n_(
+                            "Cannot alter fee modifier once registrations exist."))
                     ret *= self.sql_delete(rs, "event.fee_modifiers", deleted)
                     for x in mixed_existence_sorter(deleted):
                         self.event_log(
