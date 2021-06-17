@@ -24,7 +24,7 @@ import cdedb.database.constants as const
 from cdedb.common import (
     CdEDBObject, EntitySorter, PathLike, deduct_years, n_, now, xsorted,
 )
-from cdedb.query import QUERY_SPECS, Query, QueryOperators
+from cdedb.query import Query, QueryOperators, QueryScope
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -105,66 +105,66 @@ def generate_event_registration_default_queries(
 
     queries = {
         n_("00_query_event_registration_all"): Query(
-            "qview_registration", spec,
+            QueryScope.registration, spec,
             ("persona.given_names", "persona.family_name"),
             tuple(),
             (("reg.id", True),)),
         n_("02_query_event_registration_orgas"): Query(
-            "qview_registration", spec,
+            QueryScope.registration, spec,
             ("persona.given_names", "persona.family_name"),
             (("persona.id", QueryOperators.oneof, event['orgas']),),
             default_sort),
         n_("10_query_event_registration_not_paid"): Query(
-            "qview_registration", spec,
+            QueryScope.registration, spec,
             ("persona.given_names", "persona.family_name"),
             (("reg.payment", QueryOperators.empty, None),),
             default_sort),
         n_("12_query_event_registration_paid"): Query(
-            "qview_registration", spec,
+            QueryScope.registration, spec,
             ("persona.given_names", "persona.family_name", "reg.payment"),
             (("reg.payment", QueryOperators.nonempty, None),),
             (("reg.payment", False), ("persona.family_name", True),
              ("persona.given_names", True),)),
         n_("14_query_event_registration_participants"): Query(
-            "qview_registration", spec,
+            QueryScope.registration, spec,
             all_part_stati_column.split(",") +
             ["persona.given_names", "persona.family_name"],
             ((all_part_stati_column, QueryOperators.equal,
               const.RegistrationPartStati.participant.value),),
             default_sort),
         n_("20_query_event_registration_non_members"): Query(
-            "qview_registration", spec,
+            QueryScope.registration, spec,
             ("persona.given_names", "persona.family_name"),
             (("persona.is_member", QueryOperators.equal, False),),
             default_sort),
         n_("30_query_event_registration_orga_notes"): Query(
-            "qview_registration", spec,
+            QueryScope.registration, spec,
             ("persona.given_names", "persona.family_name", "reg.orga_notes"),
             (("reg.orga_notes", QueryOperators.nonempty, None),),
             default_sort),
         n_("40_query_event_registration_u18"): Query(
-            "qview_registration", spec,
+            QueryScope.registration, spec,
             ("persona.given_names", "persona.family_name", "persona.birthday"),
             (("persona.birthday", QueryOperators.greater,
               deduct_years(event['begin'], 18)),),
             (("persona.birthday", True), ("persona.family_name", True),
              ("persona.given_names", True),)),
         n_("42_query_event_registration_u16"): Query(
-            "qview_registration", spec,
+            QueryScope.registration, spec,
             ("persona.given_names", "persona.family_name", "persona.birthday"),
             (("persona.birthday", QueryOperators.greater,
               deduct_years(event['begin'], 16)),),
             (("persona.birthday", True), ("persona.family_name", True),
              ("persona.given_names", True))),
         n_("44_query_event_registration_u14"): Query(
-            "qview_registration", spec,
+            QueryScope.registration, spec,
             ("persona.given_names", "persona.family_name", "persona.birthday"),
             (("persona.birthday", QueryOperators.greater,
               deduct_years(event['begin'], 14)),),
             (("persona.birthday", True), ("persona.family_name", True),
              ("persona.given_names", True))),
         n_("50_query_event_registration_minors_no_consent"): Query(
-            "qview_registration", spec,
+            QueryScope.registration, spec,
             ("persona.given_names", "persona.family_name", "persona.birthday"),
             (("persona.birthday", QueryOperators.greater,
               deduct_years(event['begin'], 18)),
@@ -172,16 +172,16 @@ def generate_event_registration_default_queries(
             (("persona.birthday", True), ("persona.family_name", True),
              ("persona.given_names", True))),
         n_("60_query_dokuteam_course_picture"): Query(
-            "qview_registration", spec, dokuteam_course_picture_fields_of_interest,
+            QueryScope.registration, spec, dokuteam_course_picture_fields_of_interest,
             ((all_part_stati_column, QueryOperators.equal,
               const.RegistrationPartStati.participant.value),), default_sort),
         n_("61_query_dokuteam_dokuforge"): Query(
-            "qview_registration", spec, dokuteam_dokuforge_fields_of_interest,
+            QueryScope.registration, spec, dokuteam_dokuforge_fields_of_interest,
             ((all_part_stati_column, QueryOperators.equal,
               const.RegistrationPartStati.participant.value),
              ("reg.list_consent", QueryOperators.equal, True),), default_sort),
         n_("62_query_dokuteam_address_export"): Query(
-            "qview_registration", spec, dokuteam_address_fields_of_interest,
+            QueryScope.registration, spec, dokuteam_address_fields_of_interest,
             ((all_part_stati_column, QueryOperators.equal,
               const.RegistrationPartStati.participant.value),), default_sort),
     }
@@ -201,7 +201,7 @@ def generate_event_registration_default_queries(
     if len(event['parts']) > 1:
         queries.update({
             n_("16_query_event_registration_waitlist"): Query(
-                "qview_registration", spec,
+                QueryScope.registration, spec,
                 all_part_stati_column.split(",") +
                 ["persona.given_names", "persona.family_name",
                  "ctime.creation_time", "reg.payment"],
@@ -213,7 +213,7 @@ def generate_event_registration_default_queries(
     queries.update({
         n_("17_query_event_registration_waitlist") + f"_{i}_part{part['id']}":
             Query(
-                "qview_registration", spec,
+                QueryScope.registration, spec,
                 ("persona.given_names", "persona.family_name"),
                 ((f"part{part['id']}.status", QueryOperators.equal,
                   const.RegistrationPartStati.waitlist.value),),
@@ -244,7 +244,7 @@ def generate_event_course_default_queries(
 
     queries = {
         n_("50_query_dokuteam_courselist"): Query(
-            "qview_event_course", spec,
+            QueryScope.event_course, spec,
             ("course.nr", "course.shortname", "course.title"),
             tuple(),
             (("course.nr", True),)),
@@ -476,27 +476,27 @@ _DEFAULTS = {
     # dict where the values are dicts mapping titles to queries for "speed
     # dialing"
     "DEFAULT_QUERIES": {
-        "qview_cde_user": {
+        QueryScope.cde_user: {
             n_("00_query_cde_user_all"): Query(
-                "qview_cde_user", QUERY_SPECS['qview_cde_user'],
+                QueryScope.cde_user, QueryScope.cde_user.get_spec(),
                 ("personas.id", "given_names", "family_name"),
                 (),
                 (("family_name", True), ("given_names", True),
                  ("personas.id", True))),
             n_("02_query_cde_members"): Query(
-                "qview_cde_user", QUERY_SPECS['qview_cde_user'],
+                QueryScope.cde_user, QueryScope.cde_user.get_spec(),
                 ("personas.id", "given_names", "family_name"),
                 (("is_member", QueryOperators.equal, True),),
                 (("family_name", True), ("given_names", True),
                  ("personas.id", True))),
             n_("10_query_cde_user_trial_members"): Query(
-                "qview_cde_user", QUERY_SPECS['qview_cde_user'],
+                QueryScope.cde_user, QueryScope.cde_user.get_spec(),
                 ("personas.id", "given_names", "family_name"),
                 (("trial_member", QueryOperators.equal, True),),
                 (("family_name", True), ("given_names", True),
                  ("personas.id", True))),
             n_("20_query_cde_user_expuls"): Query(
-                "qview_cde_user", QUERY_SPECS['qview_cde_user'],
+                QueryScope.cde_user, QueryScope.cde_user.get_spec(),
                 ("personas.id", "given_names", "family_name", "address",
                  "address_supplement", "postal_code", "location", "country"),
                 (("is_member", QueryOperators.equal, True),
@@ -504,24 +504,24 @@ _DEFAULTS = {
                 (("family_name", True), ("given_names", True),
                  ("personas.id", True))),
         },
-        "qview_archived_persona": {
+        QueryScope.archived_persona: {
             n_("00_query_archived_persona_all"): Query(
-                "qview_archived_persona",
-                QUERY_SPECS['qview_archived_persona'],
+                QueryScope.archived_persona,
+                QueryScope.archived_persona.get_spec(),
                 ("personas.id", "given_names", "family_name", "notes"),
                 tuple(),
                 (("family_name", True), ("given_names", True),
                  ("personas.id", True))),
         },
-        "qview_event_user": {
+        QueryScope.event_user: {
             n_("00_query_event_user_all"): Query(
-                "qview_event_user", QUERY_SPECS['qview_event_user'],
+                QueryScope.event_user, QueryScope.event_user.get_spec(),
                 ("personas.id", "given_names", "family_name", "birth_name"),
                 tuple(),
                 (("family_name", True), ("given_names", True),
                  ("personas.id", True))),
             n_("10_query_event_user_minors"): Query(
-                "qview_event_user", QUERY_SPECS['qview_event_user'],
+                QueryScope.event_user, QueryScope.event_user.get_spec(),
                 ("personas.id", "given_names", "family_name",
                  "birthday"),
                 (("birthday", QueryOperators.greater,
@@ -529,15 +529,15 @@ _DEFAULTS = {
                 (("birthday", True), ("family_name", True),
                  ("given_names", True))),
         },
-        "qview_core_user": {
+        QueryScope.core_user: {
             n_("00_query_core_user_all"): Query(
-                "qview_persona", QUERY_SPECS['qview_core_user'],
+                QueryScope.persona, QueryScope.core_user.get_spec(),
                 ("personas.id", "given_names", "family_name"),
                 tuple(),
                 (("family_name", True), ("given_names", True),
                  ("personas.id", True))),
             n_("10_query_core_any_admin"): Query(
-                "qview_persona", QUERY_SPECS['qview_core_user'],
+                QueryScope.persona, QueryScope.core_user.get_spec(),
                 ("personas.id", "given_names", "family_name", "is_ml_admin",
                  "is_event_admin", "is_assembly_admin", "is_cde_admin",
                  "is_core_admin", "is_meta_admin"),
@@ -547,30 +547,30 @@ _DEFAULTS = {
                 (("family_name", True), ("given_names", True),
                  ("personas.id", True))),
         },
-        "qview_assembly_user": {
+        QueryScope.assembly_user: {
             n_("00_query_assembly_user_all"): Query(
-                "qview_persona", QUERY_SPECS['qview_persona'],
+                QueryScope.persona, QueryScope.persona.get_spec(),
                 ("personas.id", "given_names", "family_name"),
                 tuple(),
                 (("family_name", True), ("given_names", True),
                  ("personas.id", True))),
             n_("02_query_assembly_user_admin"): Query(
-                "qview_persona", QUERY_SPECS['qview_persona'],
+                QueryScope.persona, QueryScope.persona.get_spec(),
                 ("personas.id", "given_names", "family_name",
                  "is_assembly_admin"),
                 (("is_assembly_admin", QueryOperators.equal, True),),
                 (("family_name", True), ("given_names", True),
                  ("personas.id", True))),
         },
-        "qview_ml_user": {
+        QueryScope.ml_user: {
             n_("00_query_ml_user_all"): Query(
-                "qview_persona", QUERY_SPECS['qview_persona'],
+                QueryScope.persona, QueryScope.persona.get_spec(),
                 ("personas.id", "given_names", "family_name"),
                 tuple(),
                 (("family_name", True), ("given_names", True),
                  ("personas.id", True))),
             n_("02_query_ml_user_admin"): Query(
-                "qview_persona", QUERY_SPECS['qview_persona'],
+                QueryScope.persona, QueryScope.persona.get_spec(),
                 ("personas.id", "given_names", "family_name",
                  "is_ml_admin"),
                 (("is_ml_admin", QueryOperators.equal, True),),
