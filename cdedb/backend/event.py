@@ -2816,10 +2816,8 @@ class EventBackend(AbstractBackend):
         event_id = affirm(vtypes.ID, event_id)
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
-        with Atomizer(rs):
-            query = glue("SELECT COUNT(*) FROM event.registrations",
-                         "WHERE event_id = %s LIMIT 1")
-            return bool(unwrap(self.query_one(rs, query, (event_id,))))
+        query = "SELECT COUNT(*) FROM event.registrations WHERE event_id = %s LIMIT 1"
+        return bool(unwrap(self.query_one(rs, query, (event_id,))))
 
     def _get_event_course_segments(self, rs: RequestState,
                                    event_id: int) -> Dict[int, List[int]]:
