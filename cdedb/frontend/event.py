@@ -5241,7 +5241,7 @@ class EventFrontend(AbstractUserFrontend):
             rs.values['is_search'] = is_search = False
             return self.render(rs, "registration_query", params)
 
-    @access("event", modi={"POST"}, check_anti_csrf=False)
+    @access("event", modi={"POST"}, anti_csrf_token_name="store_query")
     @event_guard()
     @REQUESTdata("query_name", "query_scope")
     def store_event_query(self, rs: RequestState, event_id: int, query_name: str,

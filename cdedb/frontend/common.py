@@ -1356,10 +1356,22 @@ def reconnoitre_ambience(obj: AbstractFrontend,
 
 
 F = TypeVar('F', bound=Callable[..., Any])
+AntiCSRFMarker = NamedTuple(
+    "AntiCSRFMarker", (("check", bool), ("name", str), ("payload", str)))
+
+
+class FrontendEndpoint(Protocol):
+    access_list: AbstractSet[Role]
+    anti_csrf: AntiCSRFMarker
+    modi: AbstractSet[str]
+
+    def __call__(self, rs: RequestState, *args: Any, **kwargs: Any
+                 ) -> werkzeug.Response: ...
 
 
 def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
-           check_anti_csrf: bool = None) -> Callable[[F], F]:
+           check_anti_csrf: bool = None, anti_csrf_token_name: str = None,
+           anti_csrf_token_payload: str = None) -> Callable[[F], F]:
     """The @access decorator marks a function of a frontend for publication and
     adds initialization code around each call.
 
@@ -1368,13 +1380,17 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
     :param check_anti_csrf: Control if the anti csrf check should be enabled
         on this endpoint. If not specified, it will be enabled, if "POST" is in
         the allowed methods.
+    :param anti_csrf_token_name: If given, use this as the name of the anti csrf token.
+        Otherwise a sensible default will be used.
+    :param anti_csrf_token_payload: If given, use this as the payload of the anti csrf
+        token. Otherwise a sensible default will be used.
     """
     access_list = set(roles)
 
     def decorator(fun: F) -> F:
         @functools.wraps(fun)
         def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
-                    **kwargs: Any) -> Any:
+                    **kwargs: Any) -> werkzeug.Response:
             if rs.user.roles & access_list:
                 rs.ambience = reconnoitre_ambience(obj, rs)
                 return fun(obj, rs, *args, **kwargs)
@@ -1399,11 +1415,15 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
                     rs.gettext("Access denied to {realm}/{endpoint}.").format(
                         realm=obj.__class__.__name__, endpoint=fun.__name__))
 
-        new_fun.access_list = access_list  # type: ignore
-        new_fun.modi = modi  # type: ignore
-        new_fun.check_anti_csrf = (  # type: ignore
+        new_fun.access_list = access_list  # type: ignore[attr-defined]
+        new_fun.modi = modi  # type: ignore[attr-defined]
+        new_fun.anti_csrf = AntiCSRFMarker(  # type: ignore[attr-defined]
             check_anti_csrf if check_anti_csrf is not None
-            else not modi <= {'GET', 'HEAD'} and "anonymous" not in roles)
+            else not modi <= {'GET', 'HEAD'} and "anonymous" not in roles,
+            anti_csrf_token_name or ANTI_CSRF_TOKEN_NAME,
+            anti_csrf_token_payload or ANTI_CSRF_TOKEN_PAYLOAD,
+        )
+
         return cast(F, new_fun)
 
     return decorator

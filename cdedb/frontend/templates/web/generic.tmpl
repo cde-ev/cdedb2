@@ -449,6 +449,8 @@
                                 {{ util.input_hidden("query_scope", scope) }}
                                 <div class="input-group-btn">
                                     {{ util.input_submit(gettext("Save"), name="store_query", formmethod="POST",
+                                        value=encode_parameter("event/store_event_query", "store_query",
+                                                               ANTI_CSRF_TOKEN_PAYLOAD, persona_id=user.persona_id),
                                         formaction=cdedblink("event/store_event_query"),
                                         icon="far fa-bookmark", aclass="btn btn-default") }}
                                 </div>
