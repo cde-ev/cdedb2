@@ -641,9 +641,11 @@
 {# Macro for a general row, used in a dynamic row table.
 
    non-deletable rows have a disabled 'delete'-checkbox,
+   readonly rows have all fields disabled
    aclass is used to pass classes to the row, such as drow-row, drow-prototype, drow-new
-   newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes #}
-{% macro dynamic_row(id, tablename, columns, deletable, readonly=False, aclass="", newrow=False, prefix="") %}
+   newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes
+   prefix is used to specify a string inserting before every parameter name #}
+{% macro dynamic_row(id, tablename, columns, deletable=True, readonly=False, aclass="", newrow=False, prefix="") %}
     <tr class="{{ aclass }}" role="group" aria-label="{{ tablename }} {{ id }}">
         {% for column in columns %}
             {% set func = column['func'] %}
@@ -684,7 +686,9 @@
              the 'name' (mapping the input to a db field) and a 'label'.
    existing: a dict of already existing entries.
    locked:   iterable which contains all id of existing entries which must not be modified or deleted by the user
-   sortkey:  to sort existing #}
+   readonly: if true, all input fields are disabled and no new row is shown
+   sortkey:  to sort existing
+   prefix is used to specify a string inserting before every parameter name #}
 {% macro dynamic_row_table(name, columns, existing, locked=[], readonly=False, sortkey=none, prefix="") %}
     <table class="table table-condensed" id="drow-table">
         <thead>
