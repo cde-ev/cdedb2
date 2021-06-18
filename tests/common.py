@@ -101,8 +101,8 @@ def json_keys_to_int(obj: T) -> T:
     return ret
 
 
-def read_sample_data(filename: PathLike = "/cdedb2/tests/ancillary_files/"
-                                          "sample_data.json"
+def _read_sample_data(filename: PathLike = "/cdedb2/tests/ancillary_files/"
+                                           "sample_data.json"
                      ) -> Dict[str, CdEDBObjectMap]:
     """Helper to turn the sample data from the JSON file into usable format."""
     with open(filename, "r", encoding="utf8") as f:
@@ -121,12 +121,12 @@ def read_sample_data(filename: PathLike = "/cdedb2/tests/ancillary_files/"
     return ret
 
 
-SAMPLE_DATA = read_sample_data()
+_SAMPLE_DATA = _read_sample_data()
 
 B = TypeVar("B", bound=AbstractBackend)
 
 
-def make_backend_shim(backend: B, internal: bool = False) -> B:
+def _make_backend_shim(backend: B, internal: bool = False) -> B:
     """Wrap a backend to only expose functions with an access decorator.
 
     If we used an actual RPC mechanism, this would do some additional
@@ -269,7 +269,7 @@ class BasicTest(unittest.TestCase):
             if keys:
                 r = {}
                 for k in keys:
-                    r[k] = copy.deepcopy(SAMPLE_DATA[table][anid][k])
+                    r[k] = copy.deepcopy(_SAMPLE_DATA[table][anid][k])
                     if table == 'core.personas':
                         if k == 'balance':
                             r[k] = decimal.Decimal(r[k])
@@ -280,7 +280,7 @@ class BasicTest(unittest.TestCase):
                         r[k] = parse_datetime(r[k])
                 ret[anid] = r
             else:
-                ret[anid] = copy.deepcopy(SAMPLE_DATA[table][anid])
+                ret[anid] = copy.deepcopy(_SAMPLE_DATA[table][anid])
         return ret
 
     def get_sample_datum(self, table: str, id_: int) -> CdEDBObject:
@@ -378,7 +378,7 @@ class BackendTest(CdEDBTest):
 
     @classmethod
     def initialize_backend(cls, backendcls: Type[B]) -> B:
-        return make_backend_shim(backendcls(), internal=True)
+        return _make_backend_shim(backendcls(), internal=True)
 
 
 # A reference of the most important attributes for all users. This is used for
