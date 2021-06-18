@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2021-06-17 01:50+0200\n"
+"POT-Creation-Date: 2021-06-18 19:05+0000\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -2381,7 +2381,7 @@ msgstr ""
 msgid "cancelled"
 msgstr ""
 
-#: cdedb/frontend/event.py:3171 cdedb/query.py:1152
+#: cdedb/frontend/event.py:3171 cdedb/query.py:1166
 msgid "takes place"
 msgstr ""
 
@@ -2448,7 +2448,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/create_lodgement.tmpl:27
 #: cdedb/frontend/templates/web/event/lodgements.tmpl:54
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:169
-#: cdedb/query.py:1250
+#: cdedb/query.py:1264
 msgid "Lodgement"
 msgstr ""
 
@@ -3455,7 +3455,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:82
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:60
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:34
-#: cdedb/frontend/templates/web/util.tmpl:823 cdedb/query.py:1251
+#: cdedb/frontend/templates/web/util.tmpl:823 cdedb/query.py:1265
 msgid "Title_[[name of an entity]]"
 msgstr ""
 
@@ -6460,7 +6460,6 @@ msgid "Semester History"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/show_semester.tmpl:213
-#: cdedb/frontend/templates/web/cde/show_semester.tmpl:214
 msgid "widen semester history"
 msgstr ""
 
@@ -8247,7 +8246,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/change_registration.tmpl:106
 #: cdedb/frontend/templates/web/event/generic.tmpl:24
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:223
-#: cdedb/query.py:909
+#: cdedb/query.py:923
 #, python-format
 msgid "%s. Choice"
 msgstr ""
@@ -8792,7 +8791,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/create_lodgement.tmpl:29
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:83
 #: cdedb/frontend/templates/web/event/show_lodgement.tmpl:33
-#: cdedb/query.py:1252
+#: cdedb/query.py:1266
 msgid "Regular Capacity"
 msgstr ""
 
@@ -8800,14 +8799,14 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/create_lodgement.tmpl:30
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:84
 #: cdedb/frontend/templates/web/event/show_lodgement.tmpl:35
-#: cdedb/query.py:1254
+#: cdedb/query.py:1268
 msgid "Camping Mat Capacity"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/change_lodgement.tmpl:31
 #: cdedb/frontend/templates/web/event/create_lodgement.tmpl:32
 #: cdedb/frontend/templates/web/event/show_lodgement.tmpl:37
-#: cdedb/query.py:1257
+#: cdedb/query.py:1271
 msgid "Lodgement Group"
 msgstr ""
 
@@ -10441,7 +10440,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:181
 #, python-format
-msgid "Changes can be made until the registration end(%(date)s)."
+msgid "Changes can be made until the registration end (%(date)s)."
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/registration_status.tmpl:188
@@ -11828,6 +11827,10 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:76
 msgid "Your email address"
+msgstr ""
+
+#: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:81
+msgid "(default)"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:92
@@ -14263,306 +14266,306 @@ msgstr ""
 msgid "%(ml_type)s is not an appropriate type for this mailinglist."
 msgstr ""
 
-#: cdedb/query.py:192
+#: cdedb/query.py:159
 #, python-format
 msgid ""
 "Constructing the query spec for %(scope)s requires additional event "
 "information."
 msgstr ""
 
-#: cdedb/query.py:867
+#: cdedb/query.py:881
 msgid "instructs their course"
 msgstr ""
 
-#: cdedb/query.py:869 cdedb/query.py:1130
+#: cdedb/query.py:883 cdedb/query.py:1144
 msgid "course"
 msgstr ""
 
-#: cdedb/query.py:871
+#: cdedb/query.py:885
 msgid "instructed course"
 msgstr ""
 
-#: cdedb/query.py:873
+#: cdedb/query.py:887
 msgid "course ID"
 msgstr ""
 
-#: cdedb/query.py:875 cdedb/query.py:1131
+#: cdedb/query.py:889 cdedb/query.py:1145
 msgid "course nr"
 msgstr ""
 
-#: cdedb/query.py:877 cdedb/query.py:1132
+#: cdedb/query.py:891 cdedb/query.py:1146
 msgid "course title"
 msgstr ""
 
-#: cdedb/query.py:879 cdedb/query.py:1134
+#: cdedb/query.py:893 cdedb/query.py:1148
 msgid "course shortname"
 msgstr ""
 
-#: cdedb/query.py:881 cdedb/query.py:1138
+#: cdedb/query.py:895 cdedb/query.py:1152
 msgid "course notes"
 msgstr ""
 
-#: cdedb/query.py:883
+#: cdedb/query.py:897
 msgid "instructed course ID"
 msgstr ""
 
-#: cdedb/query.py:885
+#: cdedb/query.py:899
 msgid "instructed course nr"
 msgstr ""
 
-#: cdedb/query.py:887
+#: cdedb/query.py:901
 msgid "instructed course title"
 msgstr ""
 
-#: cdedb/query.py:889
+#: cdedb/query.py:903
 msgid "instructed course shortname"
 msgstr ""
 
-#: cdedb/query.py:891
+#: cdedb/query.py:905
 msgid "instructed courese notes"
 msgstr ""
 
-#: cdedb/query.py:896
+#: cdedb/query.py:910
 msgid "course {field}"
 msgstr ""
 
-#: cdedb/query.py:903
+#: cdedb/query.py:917
 msgid "instructed course {field}"
 msgstr ""
 
-#: cdedb/query.py:913
+#: cdedb/query.py:927
 msgid "Any Choice"
 msgstr ""
 
-#: cdedb/query.py:918
+#: cdedb/query.py:932
 msgid "any track: instructs their course"
 msgstr ""
 
-#: cdedb/query.py:921
+#: cdedb/query.py:935
 msgid "any track: course"
 msgstr ""
 
-#: cdedb/query.py:924
+#: cdedb/query.py:938
 msgid "any track: instructed course"
 msgstr ""
 
-#: cdedb/query.py:927
+#: cdedb/query.py:941
 msgid "any track: course ID"
 msgstr ""
 
-#: cdedb/query.py:930
+#: cdedb/query.py:944
 msgid "any track: course nr"
 msgstr ""
 
-#: cdedb/query.py:933
+#: cdedb/query.py:947
 msgid "any track: course title"
 msgstr ""
 
-#: cdedb/query.py:936
+#: cdedb/query.py:950
 msgid "any track: course shortname"
 msgstr ""
 
-#: cdedb/query.py:939
+#: cdedb/query.py:953
 msgid "any track: course notes"
 msgstr ""
 
-#: cdedb/query.py:942
+#: cdedb/query.py:956
 msgid "any track: instructed course ID"
 msgstr ""
 
-#: cdedb/query.py:945
+#: cdedb/query.py:959
 msgid "any track: instructed course nr"
 msgstr ""
 
-#: cdedb/query.py:948
+#: cdedb/query.py:962
 msgid "any track: instructed course title"
 msgstr ""
 
-#: cdedb/query.py:951
+#: cdedb/query.py:965
 msgid "any track: instructed course shortname"
 msgstr ""
 
-#: cdedb/query.py:954
+#: cdedb/query.py:968
 msgid "any track: instructed course notes"
 msgstr ""
 
-#: cdedb/query.py:960
+#: cdedb/query.py:974
 msgid "any track: course {field}"
 msgstr ""
 
-#: cdedb/query.py:968
+#: cdedb/query.py:982
 msgid "any track: instructed course {field}"
 msgstr ""
 
-#: cdedb/query.py:975
+#: cdedb/query.py:989
 msgid "any track: Any Choice"
 msgstr ""
 
-#: cdedb/query.py:983
+#: cdedb/query.py:997
 msgid "registration status"
 msgstr ""
 
-#: cdedb/query.py:985
+#: cdedb/query.py:999
 msgid "camping mat user"
 msgstr ""
 
-#: cdedb/query.py:987
+#: cdedb/query.py:1001
 msgid "lodgement"
 msgstr ""
 
-#: cdedb/query.py:989
+#: cdedb/query.py:1003
 msgid "lodgement ID"
 msgstr ""
 
-#: cdedb/query.py:991
+#: cdedb/query.py:1005
 msgid "lodgement group"
 msgstr ""
 
-#: cdedb/query.py:993
+#: cdedb/query.py:1007
 msgid "lodgement title"
 msgstr ""
 
-#: cdedb/query.py:995
+#: cdedb/query.py:1009
 msgid "lodgement notes"
 msgstr ""
 
-#: cdedb/query.py:997
+#: cdedb/query.py:1011
 msgid "lodgement group ID"
 msgstr ""
 
-#: cdedb/query.py:999
+#: cdedb/query.py:1013
 msgid "lodgement group title"
 msgstr ""
 
-#: cdedb/query.py:1004
+#: cdedb/query.py:1018
 msgid "lodgement {field}"
 msgstr ""
 
-#: cdedb/query.py:1012
+#: cdedb/query.py:1026
 msgid "any part: registration status"
 msgstr ""
 
-#: cdedb/query.py:1015
+#: cdedb/query.py:1029
 msgid "any part: camping mat user"
 msgstr ""
 
-#: cdedb/query.py:1018
+#: cdedb/query.py:1032
 msgid "any part: lodgement"
 msgstr ""
 
-#: cdedb/query.py:1021
+#: cdedb/query.py:1035
 msgid "any part: lodgement ID"
 msgstr ""
 
-#: cdedb/query.py:1024
+#: cdedb/query.py:1038
 msgid "any part: lodgement group"
 msgstr ""
 
-#: cdedb/query.py:1027
+#: cdedb/query.py:1041
 msgid "any part: lodgement title"
 msgstr ""
 
-#: cdedb/query.py:1030
+#: cdedb/query.py:1044
 msgid "any part: lodgement notes"
 msgstr ""
 
-#: cdedb/query.py:1033
+#: cdedb/query.py:1047
 msgid "any part: lodgement group ID"
 msgstr ""
 
-#: cdedb/query.py:1036
+#: cdedb/query.py:1050
 msgid "any part: lodgement group title"
 msgstr ""
 
-#: cdedb/query.py:1042
+#: cdedb/query.py:1056
 msgid "any part: lodgement {field}"
 msgstr ""
 
-#: cdedb/query.py:1129
+#: cdedb/query.py:1143
 msgid "course id"
 msgstr ""
 
-#: cdedb/query.py:1133
+#: cdedb/query.py:1147
 msgid "course description"
 msgstr ""
 
-#: cdedb/query.py:1135
+#: cdedb/query.py:1149
 msgid "course instructors"
 msgstr ""
 
-#: cdedb/query.py:1136
+#: cdedb/query.py:1150
 msgid "course min size"
 msgstr ""
 
-#: cdedb/query.py:1137
+#: cdedb/query.py:1151
 msgid "course max size"
 msgstr ""
 
-#: cdedb/query.py:1154
+#: cdedb/query.py:1168
 msgid "is offered"
 msgstr ""
 
-#: cdedb/query.py:1156
+#: cdedb/query.py:1170
 msgid "attendees"
 msgstr ""
 
-#: cdedb/query.py:1158
+#: cdedb/query.py:1172
 msgid "instructors"
 msgstr ""
 
-#: cdedb/query.py:1163
+#: cdedb/query.py:1177
 msgid "{}. choices"
 msgstr ""
 
-#: cdedb/query.py:1227
+#: cdedb/query.py:1241
 msgid "--no group--"
 msgstr ""
 
-#: cdedb/query.py:1249
+#: cdedb/query.py:1263
 msgid "Lodgement ID"
 msgstr ""
 
-#: cdedb/query.py:1255
+#: cdedb/query.py:1269
 msgid "Lodgement Notes"
 msgstr ""
 
-#: cdedb/query.py:1256
+#: cdedb/query.py:1270
 msgid "Lodgement Group ID"
 msgstr ""
 
-#: cdedb/query.py:1258
+#: cdedb/query.py:1272
 msgid "Lodgement Group Title"
 msgstr ""
 
-#: cdedb/query.py:1260
+#: cdedb/query.py:1274
 msgid "Lodgement Group Regular Capacity"
 msgstr ""
 
-#: cdedb/query.py:1262
+#: cdedb/query.py:1276
 msgid "Lodgement Group Camping Mat Capacity"
 msgstr ""
 
-#: cdedb/query.py:1276
+#: cdedb/query.py:1290
 msgid "Regular Inhabitants"
 msgstr ""
 
-#: cdedb/query.py:1278
+#: cdedb/query.py:1292
 msgid "Reserve Inhabitants"
 msgstr ""
 
-#: cdedb/query.py:1280
+#: cdedb/query.py:1294
 msgid "Total Inhabitants"
 msgstr ""
 
-#: cdedb/query.py:1282
+#: cdedb/query.py:1296
 msgid "Group Regular Inhabitants"
 msgstr ""
 
-#: cdedb/query.py:1284
+#: cdedb/query.py:1298
 msgid "Group Reserve Inhabitants"
 msgstr ""
 
-#: cdedb/query.py:1286
+#: cdedb/query.py:1300
 msgid "Group Total Inhabitants"
 msgstr ""
 
