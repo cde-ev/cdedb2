@@ -54,14 +54,14 @@
                                                           gettext("Waitlist")))|s
                               ) }}
 
-    <hr/>
+    <h3 class="mosp">{% trans %}Fee Modifiers{% endtrans %}</h3>
     {% set fee_columns = [dict(name="modifier_name", label=gettext("Fee Modifier"), func=util.input_text),
                           dict(name="amount", label=gettext("Amount"), func=util.input_text),
                           dict(name="field_id", label=gettext("Linked Field"), func=util.input_select, func_additional_input = {'entries': fee_modifier_fields})] %}
     {% set locked_fee_modifiers = fee_modifiers.values() if has_registrations else [] %}
     {{ util.dynamic_row_table("Fee Modifier", fee_columns, fee_modifiers, locked=locked_fee_modifiers, readonly=has_registrations, sortkey=EntitySorter.fee_modifiers, prefix="fee_modifier") }}
 
-    <hr/>
+    <h3 class="mosp">{% trans %}Coursetracks{% endtrans %}</h3>
     {% set track_columns = [dict(name="title", label=gettext("Coursetrack"), func=util.input_text),
                             dict(name="shortname", label=gettext("Shortname"), func=util.input_text),
                             dict(name="num_choices", label=gettext("Course Choices"), func=util.input_text, func_additional_input = {'defaultvalue': DEFAULT_NUM_COURSE_CHOICES}),

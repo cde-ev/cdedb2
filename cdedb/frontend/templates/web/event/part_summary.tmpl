@@ -36,7 +36,7 @@
     </p>
 
     {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
-        <div class="panel panel-default {{ aclass }}">
+        <div class="panel panel-info {{ aclass }}">
             <div class="panel-heading">
                 {{ part['title'] }}
                 {{ util.href(cdedblink('event/change_part_form', {'part_id' : part_id}), gettext("Change Part"),
