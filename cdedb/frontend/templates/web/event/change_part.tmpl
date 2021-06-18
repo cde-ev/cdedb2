@@ -59,7 +59,7 @@
                           dict(name="amount", label=gettext("Amount"), func=util.input_text),
                           dict(name="field_id", label=gettext("Linked Field"), func=util.input_select, func_additional_input = {'entries': fee_modifier_fields})] %}
     {% set locked_fee_modifiers = fee_modifiers.values() if has_registrations else [] %}
-    {{ util.dynamic_row_table("Fee Modifier", fee_columns, fee_modifiers, locked=locked_fee_modifiers, sortkey=EntitySorter.fee_modifiers, prefix="fee_modifier") }}
+    {{ util.dynamic_row_table("Fee Modifier", fee_columns, fee_modifiers, locked=locked_fee_modifiers, readonly=has_registrations, sortkey=EntitySorter.fee_modifiers, prefix="fee_modifier") }}
 
     <hr/>
     {% set track_columns = [dict(name="title", label=gettext("Coursetrack"), func=util.input_text),
@@ -70,6 +70,6 @@
     {% set tracks = ambience['event']['parts'][part_id]['tracks'] %}
     {{ util.dynamic_row_table("Fee Modifier", track_columns, tracks, locked=referenced_tracks, sortkey=EntitySorter.event_tracks, prefix="track") }}
 
-    {{ util.input_submit(label=gettext("Save"), readonly=has_registrations) }}
+    {{ util.input_submit(label=gettext("Save")) }}
 </form>
 {% endblock %}

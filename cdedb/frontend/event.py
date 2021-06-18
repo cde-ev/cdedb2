@@ -709,10 +709,14 @@ class EventFrontend(AbstractUserFrontend):
             'amount': decimal.Decimal,
             'field_id': vtypes.ID,
         }
-        fee_modifier_data = process_dynamic_input(
-            rs, fee_modifier_existing, fee_modifier_spec, prefix="fee_modifier",
-            additional={'part_id': part_id},
-            constraint_maker=fee_modifier_constraint_maker)
+        # do not change fee modifiers once registrations exist
+        if has_registrations:
+            fee_modifier_data = dict()
+        else:
+            fee_modifier_data = process_dynamic_input(
+                rs, fee_modifier_existing, fee_modifier_spec, prefix="fee_modifier",
+                additional={'part_id': part_id},
+                constraint_maker=fee_modifier_constraint_maker)
 
         if any(mod is None for mod in fee_modifier_data.values()) and has_registrations:
             raise ValueError(n_("Registrations exist, no deletion."))
