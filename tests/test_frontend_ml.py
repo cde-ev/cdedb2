@@ -324,9 +324,9 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/1/show'},)
         self.assertTitle("Verkündungen")
         if self.user_in('anton'):
-            self.assertPresence("anton@example.cde (default)")
+            self.assertPresence("anton@example.cde (Standard)")
         else:
-            self.assertPresence("inga@example.cde (default)")
+            self.assertPresence("inga@example.cde (Standard)")
         self.assertNotIn("resetaddressform", self.response.forms)
         self.assertNotIn("unsubscribeform", self.response.forms)
         self.assertNotIn("changeaddressform", self.response.forms)
