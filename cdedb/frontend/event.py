@@ -601,6 +601,8 @@ class EventFrontend(AbstractUserFrontend):
             'has_registrations': has_registrations,
             'DEFAULT_NUM_COURSE_CHOICES': DEFAULT_NUM_COURSE_CHOICES})
 
+    @access("event")
+    @event_guard()
     def change_part_form(self, rs: RequestState, event_id: int, part_id: int) -> Response:
         part = rs.ambience['event']['parts'][part_id]
 
@@ -640,6 +642,7 @@ class EventFrontend(AbstractUserFrontend):
             if field['association'] in legal_assocs and field['kind'] in legal_datatypes
         ]
         return self.render(rs, "change_part", {
+            'part_id': part_id,
             'fee_modifier_fields': fee_modifier_fields,
             'fee_modifiers': fee_modifiers,
             'waitlist_fields': waitlist_fields,
@@ -650,9 +653,12 @@ class EventFrontend(AbstractUserFrontend):
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
     @REQUESTdatadict(*EVENT_PART_COMMON_FIELDS)
-    def change_part(self, rs: RequestState, event_id: int, part_id: int, part_data: CdEDBObject) -> Response:
+    def change_part(self, rs: RequestState, event_id: int, part_id: int, data: CdEDBObject) -> Response:
         """Change one part, including the associated tracks and fee modifiers."""
-        part_data = check(rs, vtypes.EventPart, part_data)
+        # this will be added at the end after processing the dynamic input and will only
+        # yield false validation errors
+        del data['tracks']
+        data = check(rs, vtypes.EventPart, data)
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
 
         def track_constraint_maker(track_id: int, prefix: str) -> List[RequestConstraint]:
@@ -696,8 +702,8 @@ class EventFrontend(AbstractUserFrontend):
         #
         # process the dynamic fee modifier input
         #
-        fee_modifier_existing = {mod for mod in rs.ambience['event']['fee_modifier']
-                                 if mod['part_id'] == part_id}
+        fee_modifier_existing = [mod['id'] for mod in rs.ambience['event']['fee_modifiers'].values()
+                                 if mod['part_id'] == part_id]
         fee_modifier_spec = {
             'modifier_name': vtypes.RestrictiveIdentifier,
             'amount': decimal.Decimal,
@@ -705,6 +711,7 @@ class EventFrontend(AbstractUserFrontend):
         }
         fee_modifier_data = process_dynamic_input(
             rs, fee_modifier_existing, fee_modifier_spec, prefix="fee_modifier",
+            additional={'part_id': part_id},
             constraint_maker=fee_modifier_constraint_maker)
 
         if any(mod is None for mod in fee_modifier_data.values()) and has_registrations:
@@ -727,21 +734,21 @@ class EventFrontend(AbstractUserFrontend):
                     (f"modifier_name_{modifier_id}", ValueError(name_msg))
                 )
             if modifier:
-                used_fields.add(modifier['field_name'])
+                used_fields.add(modifier['field_id'])
                 used_names.add(modifier['modifier_name'])
 
         if rs.has_validation_errors():
-            return self.change_part_form(rs, event_id)
+            return self.change_part_form(rs, event_id, part_id)
 
         #
         # put it all together
         #
-        part_data['tracks'] = track_data
-        fee_modifiers = rs.ambience['event']['fee_modifier']
+        data['tracks'] = track_data
+        fee_modifiers = rs.ambience['event']['fee_modifiers']
         fee_modifiers.update(fee_modifier_data)
         event = {
             'id': event_id,
-            'parts': {part_id: part_data},
+            'parts': {part_id: data},
             'fee_modifiers': fee_modifiers,
         }
         code = self.eventproxy.set_event(rs, event)

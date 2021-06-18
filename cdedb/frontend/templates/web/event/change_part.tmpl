@@ -36,8 +36,9 @@
         {% endtrans %}
     </p>
 
-<form action="{{ cdedblink('event/part_summary') }}" method="POST" id="partsummaryform" class="form-horizontal">
-    {{ util.anti_csrf_token('event/part_summary') }}
+<form action="{{ cdedblink('event/change_part') }}" method="POST" id="partsummaryform" class="form-horizontal">
+    {{ util.anti_csrf_token('event/change_part') }}
+    {{ util.form_input_text(name="title", label=gettext("Title")) }}
     {{ util.form_input_text(name="shortname", label=gettext("Shortname"), aclass='drow-input') }}
     {{ util.form_input_text(name="part_begin", label=gettext("Begin"), type='date',
                             aclass='drow-input', placeholder="YYYY-MM-DD") }}
@@ -71,3 +72,4 @@
 
     {{ util.input_submit(label=gettext("Save"), readonly=has_registrations) }}
 </form>
+{% endblock %}
