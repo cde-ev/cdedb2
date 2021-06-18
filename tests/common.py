@@ -57,6 +57,7 @@ _SECRETSCONF = SecretsConfig()
 
 # TODO: use TypedDict to specify UserObject.
 UserObject = Mapping[str, Any]
+UserIdentifier = Union[UserObject, str, int]
 
 # This is to be used in place of `self.key` for anonymous requests. It makes mypy happy.
 ANONYMOUS = cast(RequestState, None)
@@ -308,9 +309,6 @@ class CdEDBTest(BasicTest):
                 curr.execute(sql_input)
 
         super().setUp()
-
-
-UserIdentifier = Union[UserObject, str, int]
 
 
 class BackendTest(CdEDBTest):
