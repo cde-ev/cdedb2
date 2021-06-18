@@ -37,7 +37,6 @@ it right away.
 * Behaviour should be defined once.
 * Values should be configurable and not be hard coded
 * Use tuples instead of lists where feasible.
-* Unittests where sensible, high level testing otherwise.
 * Use fail2ban for preventing brute force.
 * All time stamps must have a time zone associated to them. For everything
   used internally this time zone has to be UTC.
