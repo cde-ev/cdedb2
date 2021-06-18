@@ -1542,9 +1542,9 @@ class EventBackend(AbstractBackend):
         """
         event_id = affirm(vtypes.ID, event_id)
         scopes = affirm_set(QueryScope, scopes or set())
+        if not (self.is_admin(rs) or self.is_orga(rs, event_id=event_id)):
+            raise PrivilegeError(n_("Must be orga to retrieve stored queries."))
         with Atomizer(rs):
-            if not (self.is_admin(rs) or self.is_orga(rs, event_id=event_id)):
-                raise PrivilegeError(n_("Must be orga to retrieve stored queries."))
             event = self.get_event(rs, event_id)
             select = (f"SELECT {', '.join(STORED_EVENT_QUERY_FIELDS)}"
                       f" FROM event.stored_queries"
@@ -1578,7 +1578,7 @@ class EventBackend(AbstractBackend):
 
     @access("event")
     def delete_event_query(self, rs: RequestState, query_id: int) -> DefaultReturnCode:
-        """Delete the stored query with the given event and query name."""
+        """Delete the stored query with the given query id."""
         query_id = affirm(vtypes.ID, query_id)
         with Atomizer(rs):
             q = self.sql_select_one(
@@ -1590,9 +1590,8 @@ class EventBackend(AbstractBackend):
 
             ret = self.sql_delete_one(rs, "event.stored_queries", query_id)
             if ret:
-                ret *= self.event_log(
-                    rs, const.EventLogCodes.query_deleted,
-                    event_id=q['event_id'], change_note=q['query_name'])
+                self.event_log(rs, const.EventLogCodes.query_deleted,
+                               event_id=q['event_id'], change_note=q['query_name'])
             return ret
 
     @access("event")
@@ -1620,26 +1619,12 @@ class EventBackend(AbstractBackend):
             new_id = self.sql_insert(
                 rs, "event.stored_queries", data, drop_on_conflict=True)
             if not new_id:
-                rs.notify("error", n_("Query with name '%(query)s' already exists."),
-                          {"query": query.name})
+                rs.notify("error", n_("Query with name '%(query)s' already exists"
+                                      " for this event."), {"query": query.name})
                 return 0
             self.event_log(rs, const.EventLogCodes.query_stored,
                            event_id=event_id, change_note=query.name)
         return new_id
-
-    @access("event")
-    def get_query_scope(self, rs: RequestState, query_id: int) -> Optional[QueryScope]:
-        """Retrieve the scope associated with a stored event query.
-
-        Returns None if the scope is invalid.
-        """
-        query_id = affirm(vtypes.ID, query_id)
-        scope = unwrap(
-            self.sql_select_one(rs, "event.stored_queries", ("scope",), query_id))
-        try:
-            return affirm(QueryScope, scope)
-        except KeyError:
-            return None
 
     @internal
     @access("event")

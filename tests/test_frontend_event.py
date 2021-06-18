@@ -2062,8 +2062,8 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f, button="store_query", check_notification=False,
                     check_button_attrs=True)
         self.assertPresence(
-            f"Suchabfrage mit dem Namen '{query_name}' existiert bereits.",
-            div="notifications")
+            f"Suchabfrage mit dem Namen '{query_name}' existiert bereits"
+            f" für diese Veranstaltung.", div="notifications")
         f = self.response.forms["deletequeryform1001"]
         self.submit(f)
         self.assertNonPresence(query_name, div="default_queries_container")
@@ -2108,8 +2108,8 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f, button="store_query", check_notification=False,
                     check_button_attrs=True)
         self.assertPresence(
-            f"Suchabfrage mit dem Namen '{query_name}' existiert bereits.",
-            div="notifications")
+            f"Suchabfrage mit dem Namen '{query_name}' existiert bereits für"
+            f" diese Veranstaltung.", div="notifications")
         f = self.response.forms["deletequeryform1001"]
         self.submit(f)
         self.assertNonPresence(query_name, div="default_queries_container")
@@ -2145,8 +2145,8 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f, button="store_query", check_notification=False,
                     check_button_attrs=True)
         self.assertPresence(
-            f"Suchabfrage mit dem Namen '{query_name}' existiert bereits.",
-            div="notifications")
+            f"Suchabfrage mit dem Namen '{query_name}' existiert bereits"
+            f" für diese Veranstaltung.", div="notifications")
         f = self.response.forms["deletequeryform1001"]
         self.submit(f)
         self.assertNonPresence(query_name, div="default_queries_container",

@@ -830,8 +830,8 @@ msgstr "Suchabfage muss einen Name besitzen"
 
 #: cdedb/backend/event.py:1623
 #, python-format
-msgid "Query with name '%(query)s' already exists."
-msgstr "Suchabfrage mit dem Namen '%(query)s' existiert bereits."
+msgid "Query with name '%(query)s' already exists for this event."
+msgstr "Suchabfrage mit dem Namen '%(query)s' existiert bereits für diese Veranstaltung."
 
 #: cdedb/backend/event.py:1674
 msgid "Some of these orgas do not exist or are archived."
