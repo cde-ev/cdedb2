@@ -643,11 +643,11 @@
    non-deletable rows have a disabled 'delete'-checkbox,
    aclass is used to pass classes to the row, such as drow-row, drow-prototype, drow-new
    newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes #}
-{% macro dynamic_row(id, tablename, columns, deletable, aclass="", newrow=False) %}
+{% macro dynamic_row(id, tablename, columns, deletable, aclass="", newrow=False, prefix="") %}
     <tr class="{{ aclass }}" role="group" aria-label="{{ tablename }} {{ id }}">
         {% for column in columns %}
             {% set func = column['func'] %}
-            {% set name = '{}_{}'.format(column['name'], id) %}
+            {% set name = '{}{}_{}'.format(prefix+"_" if prefix else "", column['name'], id) %}
             <td {% if name in errors %}class="has-error"{% endif %}>
                 {# TODO set the remaining items of colum as attributes to func #}
                 {# this is a call for a generic util.input_* macro specified by the caller #}
@@ -664,11 +664,11 @@
         <td>
             <span class="drow-buttonspace">
                 {% if newrow %}
-                    {{ util.input_checkbox("create_{}".format(id), label=gettext("Add"),
+                    {{ util.input_checkbox("{}create_{}".format(prefix+"_" if prefix else "", id), label=gettext("Add"),
                                            attributes='data-basename="create_"'|s,
                                            aclass='drow-indicator') }}
                 {% else %}
-                    {{ util.input_checkbox("delete_{}".format(id), label=gettext("Delete"),
+                    {{ util.input_checkbox("{}delete_{}".format(prefix+"_" if prefix else "", id), label=gettext("Delete"),
                                            readonly=not deletable, aclass='drow-indicator') }}
                 {% endif %}
             </span>
@@ -684,7 +684,7 @@
    existing: a dict of already existing entries.
    locked:   iterable which contains all id of existing entries which must not be modified or deleted by the user
    sortkey:  to sort existing #}
-{% macro dynamic_row_table(name, columns, existing, locked=[], sortkey=none) %}
+{% macro dynamic_row_table(name, columns, existing, locked=[], sortkey=none, prefix="") %}
     <table class="table table-condensed" id="drow-table">
         <thead>
             <tr>
@@ -697,14 +697,15 @@
             {% set sorted_existing = existing|keydictsort(sortkey) if sortkey else existing|dictsort %}
             {# Old items, already stored in the database #}
             {% for id, entry in sorted_existing %}
-                {{ dynamic_row(id, name, columns, id not in locked, 'drow-row') }}
+                {{ dynamic_row(id, name, columns, deletable=id not in locked, aclass='drow-row', prefix=prefix) }}
             {% endfor %}
             {# Items that were added by the user but failed validation. They are still new and have no official id. #}
-            {% for i in range(1, values.get('create_last_index', 0) + 1) %}
-                {{ dynamic_row(-i, name, columns, False, 'drow-new', newrow=True) }}
+            {% set last_index_key = "{}_{}".format(prefix, "create_last_index") if prefix else "create_last_index"  %}
+            {% for i in range(1, values.get(last_index_key, 0) + 1) %}
+                {{ dynamic_row(-i, name, columns, deletable=False, aclass='drow-new', newrow=True, prefix=prefix) }}
             {% endfor %}
             {# Prototype row. For non-JS users: an empty row with 'create'-checkbox, for JS: prototype for new rows. #}
-            {{ dynamic_row(-values.get('create_last_index', 0) - 1, name, columns, False, 'drow-prototype', newrow=True) }}
+            {{ dynamic_row(-values.get(last_index_key, 0) - 1, name, columns, deletable=False, aclass='drow-prototype', newrow=True, prefix=prefix) }}
         </tbody>
     </table>
     <p>
