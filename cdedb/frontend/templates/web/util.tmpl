@@ -723,9 +723,8 @@
    token.
 
    For protection against replay attacks, we use the default timeout of config.PARAMETER_TIMEOUT #}
-{% macro anti_csrf_token(target) %}
-    {{ input_hidden(ANTI_CSRF_TOKEN_NAME, encode_parameter(target, ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD,
-                                                           persona_id=user.persona_id)) }}
+{% macro anti_csrf_token(target, token_name = ANTI_CSRF_TOKEN_NAME, token_payload = ANTI_CSRF_TOKEN_PAYLOAD) %}
+    {{ input_hidden(token_name, encode_anti_csrf(target, token_name, token_payload, persona_id=user.persona_id)) }}
 {% endmacro %}
 
 

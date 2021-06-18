@@ -213,6 +213,12 @@ class BaseApp(metaclass=abc.ABCMeta):
             ret.set_cookie("displaynote", json_serialize(notifications))
         return ret
 
+    def encode_anti_csrf_token(self, target: str,
+                               token_name: str = ANTI_CSRF_TOKEN_NAME,
+                               token_payload: str = ANTI_CSRF_TOKEN_PAYLOAD,
+                               *, persona_id: int) -> str:
+        return self.encode_parameter(target, token_name, token_payload, persona_id)
+
 
 # This needs acces to config, and cannot be moved to filter.py
 def datetime_filter(val: Union[datetime.datetime, str, None],
@@ -269,6 +275,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'glue': glue,
             'enums': ENUMS_DICT,
             'encode_parameter': self.encode_parameter,
+            'encode_anti_csrf': self.encode_anti_csrf_token,
             'staticurl': functools.partial(staticurl,
                                            version=self.conf["GIT_COMMIT"][:8]),
             'docurl': docurl,
