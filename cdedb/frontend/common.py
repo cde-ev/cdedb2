@@ -2692,6 +2692,7 @@ def process_dynamic_input(
     :param prefix: prefix in front of all concerned fields. Usable if more then one
         dynamic input table is present on the same page
     """
+    additional = additional or dict()
     prefix = prefix + "_" if prefix else ""
 
     delete_spec = {f"{prefix}delete_{anid}": bool for anid in existing}
@@ -2719,6 +2720,7 @@ def process_dynamic_input(
             ret[anid] = None
         else:
             ret[anid]['id'] = anid  # type: ignore
+            ret[anid].update(additional)
 
     # extract the new entries which shall be created
     marker = 1
