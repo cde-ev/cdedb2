@@ -1539,6 +1539,10 @@ class EventBackend(AbstractBackend):
         """Retrieve all stored queries for the given event and scope.
 
         If no scopes are given, all queries are returned instead.
+
+        If a stored query references a custom datafield, that has been deleted, it can
+        still be retrieved, and the reference to the field remains, it will just be
+        omitted, so if the field is added again, it will appear in the query again.
         """
         event_id = affirm(vtypes.ID, event_id)
         scopes = affirm_set(QueryScope, scopes or set())

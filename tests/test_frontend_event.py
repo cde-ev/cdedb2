@@ -2068,6 +2068,39 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.assertNonPresence(query_name, div="default_queries_container")
 
+        # Store query using the 'anzahl_GROSSBUUCHSTABEN' field.
+        self.traverse("Anmeldungen")
+        f = self.response.forms["queryform"]
+        f["qsel_reg.id"].checked = True
+        f["qsel_persona.given_names"] = False
+        f["qsel_persona.family_name"] = False
+        f["qsel_persona.username"] = False
+        f["qsel_reg_fields.xfield_anzahl_GROSSBUCHSTABEN"].checked = True
+        f["query_name"] = "Großbuchstaben"
+        self.submit(f, button="store_query", check_button_attrs=True)
+        self.assertPresence("anzahl_GROSSBUCHSTABEN", div="query-result")
+
+        # Delete that field.
+        self.traverse("Datenfelder konfigurieren")
+        f = self.response.forms["fieldsummaryform"]
+        f["delete_8"].checked = True
+        self.submit(f)
+
+        self.traverse("Anmeldungen", "Großbuchstaben")
+        self.assertNonPresence("anzahl_GROSSBUCHSTABEN", div="query-result")
+
+        # Add the field again.
+        self.traverse("Datenfelder konfigurieren")
+        f = self.response.forms["fieldsummaryform"]
+        f["create_-1"].checked = True
+        f["field_name_-1"] = "anzahl_GROSSBUCHSTABEN"
+        f["association_-1"] = const.FieldAssociations.registration.value
+        f["kind_-1"] = const.FieldDatatypes.int.value
+        self.submit(f)
+
+        self.traverse("Anmeldungen", "Großbuchstaben")
+        self.assertPresence("anzahl_GROSSBUCHSTABEN", div="query-result")
+
     @as_users("annika")
     def test_course_query(self) -> None:
         self.traverse({'description': 'Veranstaltungen'},
