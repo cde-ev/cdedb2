@@ -35,15 +35,16 @@ msgid "Must have privileged access to view assembly log."
 msgstr "Keine Zugriffsrechte auf Veranstaltungs-Log."
 
 #: cdedb/backend/assembly.py:295 cdedb/backend/cde.py:1068
-#: cdedb/backend/core.py:2883 cdedb/backend/event.py:924
-#: cdedb/backend/ml.py:304 cdedb/backend/past_event.py:787
+#: cdedb/backend/cde.py:1069 cdedb/backend/core.py:2883
+#: cdedb/backend/event.py:924 cdedb/backend/ml.py:304
+#: cdedb/backend/past_event.py:787
 msgid "Bad scope."
 msgstr "Unzulässiger Bereich."
 
 #: cdedb/backend/assembly.py:343 cdedb/backend/assembly.py:366
 #: cdedb/backend/assembly.py:1930 cdedb/backend/event.py:67
 #: cdedb/backend/event.py:98 cdedb/backend/past_event.py:568
-#: cdedb/frontend/common.py:1166
+#: cdedb/frontend/common.py:527 cdedb/frontend/common.py:1166
 msgid "No input specified."
 msgstr "Keine Eingabe gemacht."
 
@@ -92,19 +93,32 @@ msgstr "Nicht berechtigt auf Veranstaltungstabellen zuzugreifen"
 #: cdedb/backend/ml.py:697 cdedb/backend/ml.py:851 cdedb/backend/ml.py:895
 #: cdedb/backend/ml.py:921 cdedb/backend/ml.py:954 cdedb/backend/ml.py:1023
 #: cdedb/backend/ml.py:1049 cdedb/backend/ml.py:1090
-#: cdedb/frontend/assembly.py:194 cdedb/frontend/assembly.py:597
-#: cdedb/frontend/assembly.py:678 cdedb/frontend/assembly.py:735
-#: cdedb/frontend/assembly.py:755 cdedb/frontend/assembly.py:1084
-#: cdedb/frontend/assembly.py:1152 cdedb/frontend/assembly.py:1409
-#: cdedb/frontend/assembly.py:1506 cdedb/frontend/assembly.py:1562
-#: cdedb/frontend/core.py:844 cdedb/frontend/core.py:847
-#: cdedb/frontend/core.py:852 cdedb/frontend/core.py:858
-#: cdedb/frontend/core.py:866 cdedb/frontend/core.py:872
-#: cdedb/frontend/core.py:880 cdedb/frontend/core.py:885
-#: cdedb/frontend/core.py:897 cdedb/frontend/core.py:1604
-#: cdedb/frontend/core.py:1619 cdedb/frontend/core.py:2217
-#: cdedb/frontend/core.py:2231 cdedb/frontend/core.py:2263
-#: cdedb/frontend/core.py:2287 cdedb/frontend/event.py:6414
+#: cdedb/frontend/assembly.py:194 cdedb/frontend/assembly.py:195
+#: cdedb/frontend/assembly.py:597 cdedb/frontend/assembly.py:598
+#: cdedb/frontend/assembly.py:678 cdedb/frontend/assembly.py:679
+#: cdedb/frontend/assembly.py:735 cdedb/frontend/assembly.py:736
+#: cdedb/frontend/assembly.py:755 cdedb/frontend/assembly.py:756
+#: cdedb/frontend/assembly.py:1084 cdedb/frontend/assembly.py:1085
+#: cdedb/frontend/assembly.py:1152 cdedb/frontend/assembly.py:1153
+#: cdedb/frontend/assembly.py:1409 cdedb/frontend/assembly.py:1410
+#: cdedb/frontend/assembly.py:1506 cdedb/frontend/assembly.py:1507
+#: cdedb/frontend/assembly.py:1562 cdedb/frontend/assembly.py:1563
+#: cdedb/frontend/core.py:843 cdedb/frontend/core.py:844
+#: cdedb/frontend/core.py:846 cdedb/frontend/core.py:847
+#: cdedb/frontend/core.py:851 cdedb/frontend/core.py:852
+#: cdedb/frontend/core.py:857 cdedb/frontend/core.py:858
+#: cdedb/frontend/core.py:865 cdedb/frontend/core.py:866
+#: cdedb/frontend/core.py:871 cdedb/frontend/core.py:872
+#: cdedb/frontend/core.py:879 cdedb/frontend/core.py:880
+#: cdedb/frontend/core.py:884 cdedb/frontend/core.py:885
+#: cdedb/frontend/core.py:896 cdedb/frontend/core.py:897
+#: cdedb/frontend/core.py:1603 cdedb/frontend/core.py:1604
+#: cdedb/frontend/core.py:1618 cdedb/frontend/core.py:1619
+#: cdedb/frontend/core.py:2216 cdedb/frontend/core.py:2217
+#: cdedb/frontend/core.py:2230 cdedb/frontend/core.py:2231
+#: cdedb/frontend/core.py:2262 cdedb/frontend/core.py:2263
+#: cdedb/frontend/core.py:2286 cdedb/frontend/core.py:2287
+#: cdedb/frontend/event.py:5760 cdedb/frontend/event.py:6414
 #: cdedb/subman/subman.py:154
 msgid "Not privileged."
 msgstr "Nicht die nötige Zugriffsberechtigung."
@@ -118,7 +132,8 @@ msgid "Must have privileged access to change assembly."
 msgstr "Keine Zugriffsrechte zum Ändern der Versammlung."
 
 #: cdedb/backend/assembly.py:520 cdedb/backend/assembly.py:903
-#: cdedb/frontend/assembly.py:287 cdedb/frontend/assembly.py:708
+#: cdedb/frontend/assembly.py:287 cdedb/frontend/assembly.py:288
+#: cdedb/frontend/assembly.py:708 cdedb/frontend/assembly.py:709
 msgid "Assembly already concluded."
 msgstr "Die Versammlung ist bereits beendet."
 
@@ -129,19 +144,24 @@ msgstr ""
 "Versammlung beendet wurde."
 
 #: cdedb/backend/assembly.py:543 cdedb/backend/ml.py:424
-#: cdedb/frontend/assembly.py:255 cdedb/frontend/assembly.py:424
+#: cdedb/frontend/assembly.py:255 cdedb/frontend/assembly.py:256
+#: cdedb/frontend/assembly.py:424 cdedb/frontend/assembly.py:425
 #: cdedb/frontend/event.py:1195 cdedb/frontend/ml_base.py:248
-#: cdedb/frontend/ml_base.py:707 cdedb/frontend/ml_base.py:795
+#: cdedb/frontend/ml_base.py:249 cdedb/frontend/ml_base.py:707
+#: cdedb/frontend/ml_base.py:708 cdedb/frontend/ml_base.py:795
+#: cdedb/frontend/ml_base.py:796
 msgid "Some of these users do not exist or are archived."
 msgstr "Einige dieser Nutzer existieren nicht oder sind archiviert."
 
 #: cdedb/backend/assembly.py:546 cdedb/frontend/assembly.py:258
-#: cdedb/frontend/assembly.py:428
+#: cdedb/frontend/assembly.py:259 cdedb/frontend/assembly.py:428
+#: cdedb/frontend/assembly.py:429
 msgid "Some of these users are not assembly users."
 msgstr "Einige dieser Nutzer sind keine Versammlungsnutzer."
 
 #: cdedb/backend/assembly.py:686 cdedb/frontend/assembly.py:473
-#: cdedb/frontend/assembly.py:1486
+#: cdedb/frontend/assembly.py:474 cdedb/frontend/assembly.py:1486
+#: cdedb/frontend/assembly.py:1487
 msgid "Unable to remove active ballot."
 msgstr "Eine aktive Abstimmung kann nicht gelöscht werden."
 
@@ -176,6 +196,7 @@ msgid "Must have privileged access to change ballot."
 msgstr "Fehlende Zugriffsrechte zur Änderung der Abstimmung."
 
 #: cdedb/backend/assembly.py:841 cdedb/frontend/assembly.py:1433
+#: cdedb/frontend/assembly.py:1434
 msgid "Unable to modify active ballot."
 msgstr "Eine aktive Abstimmung kann nicht mehr verändert werden."
 
@@ -207,7 +228,8 @@ msgid "Normal voting still going on."
 msgstr "Der normale Abstimmungszeitraum ist noch nicht zu Ende."
 
 #: cdedb/backend/assembly.py:1104 cdedb/frontend/assembly.py:547
-#: cdedb/frontend/assembly.py:561
+#: cdedb/frontend/assembly.py:548 cdedb/frontend/assembly.py:561
+#: cdedb/frontend/assembly.py:562
 msgid "Signup already ended."
 msgstr "Der Anmeldezeitraum ist vorbei."
 
@@ -325,20 +347,24 @@ msgid "Must have privileged access to remove attachment version."
 msgstr "Fehlende Zugriffsrechte zum Löschen einer Dateiversion."
 
 #: cdedb/backend/assembly.py:1870 cdedb/frontend/assembly.py:1042
+#: cdedb/frontend/assembly.py:1043
 msgid "This version does not exist."
 msgstr "Diese Version der Datei existiert nicht."
 
 #: cdedb/backend/assembly.py:1872 cdedb/frontend/assembly.py:1045
+#: cdedb/frontend/assembly.py:1046
 msgid "This version has already been deleted."
 msgstr "Diese Version der Datei wurde beireits gelöscht."
 
 #: cdedb/backend/assembly.py:1875 cdedb/frontend/assembly.py:1049
+#: cdedb/frontend/assembly.py:1050
 #: cdedb/frontend/templates/web/assembly/util.tmpl:109
 msgid "Cannot remove the last remaining version of an attachment."
 msgstr ""
 "Die letzte verbleibende Version einer Datei kann nicht gelöscht werden."
 
 #: cdedb/backend/cde.py:179 cdedb/frontend/cde.py:1476
+#: cdedb/frontend/cde.py:1477
 msgid "Multiple active permits are disallowed."
 msgstr "Mehrere aktive Einzugsermächtigungen sind unzulässig."
 
@@ -347,7 +373,8 @@ msgid "Lastschrift already revoked."
 msgstr "Lastschriftmandat bereits widerrufen."
 
 #: cdedb/backend/cde.py:359 cdedb/frontend/cde.py:1616
-#: cdedb/frontend/cde.py:1685
+#: cdedb/frontend/cde.py:1617 cdedb/frontend/cde.py:1685
+#: cdedb/frontend/cde.py:1686
 msgid "Existing pending transaction."
 msgstr "Es liegen noch unbearbeitete Transaktionen vor."
 
@@ -364,8 +391,9 @@ msgid "Missing tally for failed transaction."
 msgstr "Kein Saldo für fehlgeschlagene Transaktion angegeben."
 
 #: cdedb/backend/cde.py:451 cdedb/backend/common.py:603
-#: cdedb/frontend/cde.py:657 cdedb/frontend/cde.py:823
-#: cdedb/frontend/common.py:1535
+#: cdedb/frontend/cde.py:657 cdedb/frontend/cde.py:658
+#: cdedb/frontend/cde.py:823 cdedb/frontend/cde.py:824
+#: cdedb/frontend/common.py:893 cdedb/frontend/common.py:1535
 msgid "Impossible."
 msgstr "Unmöglich."
 
@@ -485,7 +513,7 @@ msgid "Too many queries."
 msgstr "Zu viele Anfragen."
 
 #: cdedb/backend/cde.py:1049 cdedb/backend/cde.py:1062
-#: cdedb/backend/event.py:486
+#: cdedb/backend/cde.py:1063 cdedb/backend/event.py:486
 msgid "Admin only."
 msgstr "Nur für Admins erlaubt."
 
@@ -519,7 +547,8 @@ msgid "Modification failed."
 msgstr "Modifikation fehlgeschlagen."
 
 #: cdedb/backend/core.py:638 cdedb/backend/core.py:2475
-#: cdedb/backend/core.py:2498 cdedb/frontend/core.py:1728
+#: cdedb/backend/core.py:2498 cdedb/frontend/core.py:1727
+#: cdedb/frontend/core.py:1728
 msgid "Nonexistent user."
 msgstr "Nutzer existiert nicht."
 
@@ -577,7 +606,8 @@ msgid "Special change not committed."
 msgstr "Spezialänderung nicht vollzogen."
 
 #: cdedb/backend/core.py:876 cdedb/backend/core.py:951
-#: cdedb/frontend/core.py:1276 cdedb/frontend/core.py:1358
+#: cdedb/frontend/core.py:1275 cdedb/frontend/core.py:1276
+#: cdedb/frontend/core.py:1357 cdedb/frontend/core.py:1358
 msgid "Cannot modify own meta admin privileges."
 msgstr "Die eigenen Meta-Admin-Privilegien können nicht bearbeitet werden."
 
@@ -595,7 +625,8 @@ msgstr ""
 msgid "Invalid privilege change state: %(status)s."
 msgstr "Ungültiger Status für Änderung der Admin-Privilegien: %(status)s."
 
-#: cdedb/backend/core.py:954 cdedb/frontend/core.py:1361
+#: cdedb/backend/core.py:954 cdedb/frontend/core.py:1360
+#: cdedb/frontend/core.py:1361
 msgid ""
 "Only a different admin than the submitter may approve a privilege change."
 msgstr ""
@@ -658,11 +689,13 @@ msgstr "Benutzer ist nicht archiviert."
 msgid "Cannot purge silently."
 msgstr "Kann nicht still geleert werden."
 
-#: cdedb/backend/core.py:1641 cdedb/frontend/core.py:1877
+#: cdedb/backend/core.py:1641 cdedb/frontend/core.py:1876
+#: cdedb/frontend/core.py:1877
 msgid "Name collision."
 msgstr "E-Mail-Adresse bereits vorhanden."
 
-#: cdedb/backend/core.py:1661 cdedb/frontend/core.py:2065
+#: cdedb/backend/core.py:1661 cdedb/frontend/core.py:2064
+#: cdedb/frontend/core.py:2065 cdedb/frontend/core.py:2302
 #: cdedb/frontend/core.py:2303
 msgid "Failed."
 msgstr "Aktion fehlgeschlagen."
@@ -712,7 +745,8 @@ msgstr "Fehler bei verschachtelten Transaktionen."
 msgid "Preventing reset of admin."
 msgstr "Zurücksetzen von Admin-Account verhindert."
 
-#: cdedb/backend/core.py:2307 cdedb/frontend/common.py:2283
+#: cdedb/backend/core.py:2307 cdedb/frontend/common.py:1641
+#: cdedb/frontend/common.py:2283
 msgid "Link expired."
 msgstr "Link abgelaufen."
 
@@ -740,12 +774,14 @@ msgstr "Passwort ist falsch."
 msgid "No new password provided."
 msgstr "Kein neues Password angegeben."
 
-#: cdedb/backend/core.py:2351 cdedb/frontend/core.py:1684
+#: cdedb/backend/core.py:2351 cdedb/frontend/core.py:1683
+#: cdedb/frontend/core.py:1684 cdedb/frontend/core.py:1845
 #: cdedb/frontend/core.py:1846 cdedb/validation.py:887
 msgid "Password too weak."
 msgstr "Passwort ist zu schwach."
 
 #: cdedb/backend/core.py:2406 cdedb/frontend/cde.py:1292
+#: cdedb/frontend/cde.py:1293 cdedb/frontend/common.py:806
 #: cdedb/frontend/common.py:1448 cdedb/frontend/event.py:2358
 msgid "No input provided."
 msgstr "Keine Eingabe gefunden."
@@ -867,8 +903,8 @@ msgstr "Nicht existierende Beitragsmodifikator angegeben."
 #: cdedb/backend/event.py:1887
 msgid "Cannot alter fee modifier once registrations exist."
 msgstr ""
-"Beitragsmodifikatoren können nicht mehr bearbeitet werden, "
-"da es bereits Anmeldungen gibt."
+"Beitragsmodifikatoren können nicht mehr bearbeitet werden, da es bereits "
+"Anmeldungen gibt."
 
 #: cdedb/backend/event.py:2107
 msgid "Only courses from one event allowed."
@@ -920,7 +956,8 @@ msgid "This is not useful."
 msgstr "Dies ist nicht unterstützt."
 
 #: cdedb/backend/event.py:3030 cdedb/frontend/assembly.py:569
-#: cdedb/frontend/event.py:488 cdedb/frontend/event.py:4216
+#: cdedb/frontend/assembly.py:570 cdedb/frontend/event.py:488
+#: cdedb/frontend/event.py:4216
 msgid "This user does not exist or is archived."
 msgstr "Dieser Benutzer existiert nicht oder ist archiviert."
 
@@ -978,7 +1015,8 @@ msgid "Different mailinglists specified."
 msgstr "Unterschiedliche Mailinglisten angegeben."
 
 #: cdedb/backend/ml.py:427 cdedb/frontend/ml_base.py:252
-#: cdedb/frontend/ml_base.py:711
+#: cdedb/frontend/ml_base.py:253 cdedb/frontend/ml_base.py:711
+#: cdedb/frontend/ml_base.py:712
 msgid "Some of these users are not ml users."
 msgstr "Einige dieser Nutzer sind keine Mailinglistenutzer."
 
@@ -1027,6 +1065,7 @@ msgid "Target User is not accessible."
 msgstr "Zielnutzer ist nicht aufrufbar."
 
 #: cdedb/backend/ml.py:1334 cdedb/frontend/ml_base.py:307
+#: cdedb/frontend/ml_base.py:308
 msgid "Can not merge user into himself."
 msgstr "Nutzer kann nicht mit sich selbst verschmolzen werden."
 
@@ -1276,15 +1315,16 @@ msgstr "Unterdrückte Exception gefunden."
 msgid "This domain is not supported."
 msgstr "Diese Domain wird nicht unterstützt."
 
-#: cdedb/frontend/application.py:97 cdedb/frontend/cron.py:47
+#: cdedb/frontend/application.py:97 cdedb/frontend/application.py:98
+#: cdedb/frontend/cron.py:47
 msgid "Refusing to start in debug/offline mode."
 msgstr "Start im Entwicklungs- oder Offlinemodus ist unzulässig."
 
-#: cdedb/frontend/application.py:194
+#: cdedb/frontend/application.py:194 cdedb/frontend/application.py:195
 msgid "Session expired."
 msgstr "Die Sitzung ist abgelaufen."
 
-#: cdedb/frontend/application.py:292
+#: cdedb/frontend/application.py:292 cdedb/frontend/application.py:293
 msgid ""
 "You reached the internal limit for user profile views. This is a privacy "
 "feature to prevent users from cloning the address database. Unfortunatetly, "
@@ -1296,7 +1336,7 @@ msgstr ""
 "es leider auch zu ungewollten Beschränkungen kommen. Deine Limitierung wird "
 "im Laufe der nächsten Tage automatisch zurückgesetzt."
 
-#: cdedb/frontend/application.py:311
+#: cdedb/frontend/application.py:311 cdedb/frontend/application.py:312
 msgid ""
 "A modification to the database could not be executed due to simultaneous "
 "access. Please reload the page to try again."
@@ -1304,376 +1344,411 @@ msgstr ""
 "Eine Änderung an der Datenbank konnte wegen eines gleichzeitigen Zugriffs "
 "nicht ausgeführt werden. Bitte lade die Seite neu, um es erneut zu versuchen."
 
-#: cdedb/frontend/application.py:374
+#: cdedb/frontend/application.py:374 cdedb/frontend/application.py:375
 msgid "Anti CSRF token is required for this form."
 msgstr "Dieses Formular benötigt einen Anti-CSRF-Token."
 
-#: cdedb/frontend/application.py:381
+#: cdedb/frontend/application.py:381 cdedb/frontend/application.py:382
 msgid "Anti CSRF token expired. Please try again."
 msgstr "Der Anti-CSRF-Token ist abgelaufen. Probiere es erneut."
 
-#: cdedb/frontend/application.py:383
+#: cdedb/frontend/application.py:383 cdedb/frontend/application.py:384
 msgid "Anti CSRF token is forged."
 msgstr "Der Anti-CSRF-Token wurde gefälscht."
 
-#: cdedb/frontend/application.py:385
+#: cdedb/frontend/application.py:385 cdedb/frontend/application.py:386
 msgid "Anti CSRF token is invalid."
 msgstr "Der Anti-CSRF-Token is ungültig."
 
-#: cdedb/frontend/assembly.py:264 cdedb/frontend/assembly.py:278
+#: cdedb/frontend/assembly.py:264 cdedb/frontend/assembly.py:265
+#: cdedb/frontend/assembly.py:278 cdedb/frontend/assembly.py:279
 #: cdedb/frontend/event.py:495 cdedb/frontend/event.py:510
-#: cdedb/frontend/ml_base.py:717 cdedb/frontend/ml_base.py:755
-#: cdedb/frontend/ml_base.py:823
+#: cdedb/frontend/ml_base.py:717 cdedb/frontend/ml_base.py:718
+#: cdedb/frontend/ml_base.py:755 cdedb/frontend/ml_base.py:756
+#: cdedb/frontend/ml_base.py:823 cdedb/frontend/ml_base.py:824
 msgid "Action had no effect."
 msgstr "Aktion hatte keinen Effekt."
 
-#: cdedb/frontend/assembly.py:274
+#: cdedb/frontend/assembly.py:274 cdedb/frontend/assembly.py:275
 msgid "This user is not a presider for this assembly."
 msgstr "Dieser Nutzer ist kein Wahlleiter für diese Versammlung."
 
-#: cdedb/frontend/assembly.py:367
+#: cdedb/frontend/assembly.py:367 cdedb/frontend/assembly.py:368
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:167
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:193
 msgid "Must have presiders in order to create a mailinglist."
 msgstr "Mailingliste kann nur mit Versammlungsleitern erstellt werden."
 
-#: cdedb/frontend/assembly.py:378 cdedb/frontend/assembly.py:444
+#: cdedb/frontend/assembly.py:378 cdedb/frontend/assembly.py:379
+#: cdedb/frontend/assembly.py:444 cdedb/frontend/assembly.py:445
 msgid "Presider mailinglist created."
 msgstr "Versammlungsleitungs-Mailingliste angelegt."
 
-#: cdedb/frontend/assembly.py:379 cdedb/frontend/assembly.py:455
+#: cdedb/frontend/assembly.py:379 cdedb/frontend/assembly.py:380
+#: cdedb/frontend/assembly.py:455 cdedb/frontend/assembly.py:456
 msgid "Attendee mailinglist created."
 msgstr "Versammlungsteilnehmer-Mailingliste angelegt."
 
-#: cdedb/frontend/assembly.py:385 cdedb/frontend/assembly.py:416
-#: cdedb/frontend/assembly.py:457 cdedb/frontend/event.py:539
-#: cdedb/frontend/event.py:1224 cdedb/frontend/event.py:1247
+#: cdedb/frontend/assembly.py:385 cdedb/frontend/assembly.py:386
+#: cdedb/frontend/assembly.py:416 cdedb/frontend/assembly.py:417
+#: cdedb/frontend/assembly.py:457 cdedb/frontend/assembly.py:458
+#: cdedb/frontend/event.py:539 cdedb/frontend/event.py:1224
+#: cdedb/frontend/event.py:1247
 #, python-format
 msgid "Mailinglist %(address)s already exists."
 msgstr "Mailingliste %(address)s existiert bereits."
 
-#: cdedb/frontend/assembly.py:407
+#: cdedb/frontend/assembly.py:407 cdedb/frontend/assembly.py:408
 msgid "Given presider address ignored in favor of newly created mailinglist."
 msgstr ""
 "Angegebene Versammlungsleitungs-E-Mail-Adresse durch Adresse der neuen "
 "Mailingliste ersetzt."
 
-#: cdedb/frontend/assembly.py:435 cdedb/frontend/event.py:1209
+#: cdedb/frontend/assembly.py:435 cdedb/frontend/assembly.py:436
+#: cdedb/frontend/event.py:1209
 msgid "Must not be empty in order to create a mailinglist."
 msgstr "Darf nicht leer sein, damit eine Mailingliste erstellt werden kann."
 
-#: cdedb/frontend/assembly.py:459
+#: cdedb/frontend/assembly.py:459 cdedb/frontend/assembly.py:460
 msgid "Assembly created."
 msgstr "Versammlung angelegt."
 
-#: cdedb/frontend/assembly.py:468 cdedb/frontend/assembly.py:625
-#: cdedb/frontend/assembly.py:1026 cdedb/frontend/assembly.py:1481
-#: cdedb/frontend/cde.py:2686 cdedb/frontend/cde.py:2746
-#: cdedb/frontend/core.py:2407 cdedb/frontend/core.py:2452
+#: cdedb/frontend/assembly.py:468 cdedb/frontend/assembly.py:469
+#: cdedb/frontend/assembly.py:625 cdedb/frontend/assembly.py:626
+#: cdedb/frontend/assembly.py:1026 cdedb/frontend/assembly.py:1027
+#: cdedb/frontend/assembly.py:1481 cdedb/frontend/assembly.py:1482
+#: cdedb/frontend/cde.py:2686 cdedb/frontend/cde.py:2688
+#: cdedb/frontend/cde.py:2746 cdedb/frontend/cde.py:2748
+#: cdedb/frontend/core.py:2406 cdedb/frontend/core.py:2407
+#: cdedb/frontend/core.py:2451 cdedb/frontend/core.py:2452
 #: cdedb/frontend/event.py:1386 cdedb/frontend/event.py:4255
-#: cdedb/frontend/event.py:4871 cdedb/frontend/event.py:6321
-#: cdedb/frontend/event.py:6353 cdedb/frontend/ml_base.py:535
+#: cdedb/frontend/event.py:4870 cdedb/frontend/event.py:4871
+#: cdedb/frontend/event.py:5667 cdedb/frontend/event.py:5699
+#: cdedb/frontend/event.py:6321 cdedb/frontend/event.py:6353
+#: cdedb/frontend/ml_base.py:535 cdedb/frontend/ml_base.py:536
 msgid "Must be checked."
 msgstr "Muss markiert sein."
 
-#: cdedb/frontend/assembly.py:489
+#: cdedb/frontend/assembly.py:489 cdedb/frontend/assembly.py:490
 msgid "May not access attachments for this assembly."
 msgstr "Keine Berechtigung auf die Dateien dieser Versammlung zuzugreifen."
 
-#: cdedb/frontend/assembly.py:530
+#: cdedb/frontend/assembly.py:530 cdedb/frontend/assembly.py:531
 msgid "Signed up."
 msgstr "Angemeldet."
 
-#: cdedb/frontend/assembly.py:541
+#: cdedb/frontend/assembly.py:541 cdedb/frontend/assembly.py:542
 msgid "Already signed up."
 msgstr "Bereits angemeldet."
 
-#: cdedb/frontend/assembly.py:572
+#: cdedb/frontend/assembly.py:572 cdedb/frontend/assembly.py:573
 msgid "This user is not an assembly user."
 msgstr "Dieser Nutzer ist kein Versammlungsnutzer."
 
-#: cdedb/frontend/assembly.py:575
+#: cdedb/frontend/assembly.py:575 cdedb/frontend/assembly.py:576
 msgid "Members must sign up themselves."
 msgstr "Mitglieder müssen sich selbst anmelden."
 
-#: cdedb/frontend/assembly.py:608 cdedb/frontend/event.py:2733
-#: cdedb/frontend/event.py:2807 cdedb/frontend/event.py:2830
-#: cdedb/frontend/event.py:2858 cdedb/frontend/event.py:2881
-#: cdedb/frontend/event.py:2895 cdedb/frontend/ml_base.py:663
+#: cdedb/frontend/assembly.py:608 cdedb/frontend/assembly.py:609
+#: cdedb/frontend/event.py:2733 cdedb/frontend/event.py:2807
+#: cdedb/frontend/event.py:2830 cdedb/frontend/event.py:2858
+#: cdedb/frontend/event.py:2881 cdedb/frontend/event.py:2895
+#: cdedb/frontend/ml_base.py:663 cdedb/frontend/ml_base.py:664
 msgid "Empty File."
 msgstr "Leere Datei."
 
-#: cdedb/frontend/assembly.py:634
+#: cdedb/frontend/assembly.py:634 cdedb/frontend/assembly.py:635
 msgid "Unable to conclude assembly with open ballot."
 msgstr "Kann Versammlung mit offenen Abstimmungen nicht abschließen."
 
-#: cdedb/frontend/assembly.py:670
+#: cdedb/frontend/assembly.py:670 cdedb/frontend/assembly.py:671
 msgid "Grouping ballots by status failed."
 msgstr "Gruppierung der Abstimmungen nach Status fehlgeschlagen."
 
-#: cdedb/frontend/assembly.py:743
+#: cdedb/frontend/assembly.py:743 cdedb/frontend/assembly.py:744
 msgid "File not found."
 msgstr "Datei wurde nicht gefunden."
 
-#: cdedb/frontend/assembly.py:771 cdedb/frontend/assembly.py:864
-#: cdedb/frontend/assembly.py:902 cdedb/frontend/assembly.py:915
-#: cdedb/frontend/assembly.py:950 cdedb/frontend/assembly.py:983
+#: cdedb/frontend/assembly.py:771 cdedb/frontend/assembly.py:772
+#: cdedb/frontend/assembly.py:864 cdedb/frontend/assembly.py:865
+#: cdedb/frontend/assembly.py:902 cdedb/frontend/assembly.py:903
+#: cdedb/frontend/assembly.py:915 cdedb/frontend/assembly.py:916
+#: cdedb/frontend/assembly.py:950 cdedb/frontend/assembly.py:951
+#: cdedb/frontend/assembly.py:983 cdedb/frontend/assembly.py:984
 msgid "Voting has already begun."
 msgstr "Die Abstimmung hat bereits begonnen."
 
-#: cdedb/frontend/assembly.py:780 cdedb/frontend/assembly.py:855
-#: cdedb/frontend/assembly.py:897 cdedb/frontend/assembly.py:941
-#: cdedb/frontend/assembly.py:988
+#: cdedb/frontend/assembly.py:780 cdedb/frontend/assembly.py:781
+#: cdedb/frontend/assembly.py:855 cdedb/frontend/assembly.py:856
+#: cdedb/frontend/assembly.py:897 cdedb/frontend/assembly.py:898
+#: cdedb/frontend/assembly.py:941 cdedb/frontend/assembly.py:942
+#: cdedb/frontend/assembly.py:988 cdedb/frontend/assembly.py:989
 msgid "Invalid attachment specified."
 msgstr "Ungpltige Datei angefordert."
 
-#: cdedb/frontend/assembly.py:840
+#: cdedb/frontend/assembly.py:840 cdedb/frontend/assembly.py:841
 msgid "Attachment added."
 msgstr "Anhang hinzugefügt."
 
-#: cdedb/frontend/assembly.py:911
+#: cdedb/frontend/assembly.py:911 cdedb/frontend/assembly.py:912
 msgid "Invalid ballot specified."
 msgstr "Ungü"
 
-#: cdedb/frontend/assembly.py:1056
+#: cdedb/frontend/assembly.py:1056 cdedb/frontend/assembly.py:1057
 msgid "Unknown version."
 msgstr "Unbekannte Version angegeben."
 
-#: cdedb/frontend/assembly.py:1159
+#: cdedb/frontend/assembly.py:1159 cdedb/frontend/assembly.py:1160
 msgid "Ballot has not been tallied."
 msgstr "Abstimmung wurde noch nicht ausgezählt."
 
-#: cdedb/frontend/assembly.py:1195
+#: cdedb/frontend/assembly.py:1195 cdedb/frontend/assembly.py:1196
 #: cdedb/frontend/templates/web/assembly/list_ballots.tmpl:43
 #: cdedb/frontend/templates/web/assembly/show_ballot_result.tmpl:164
 msgid "Abstained"
 msgstr "Enthalten"
 
-#: cdedb/frontend/assembly.py:1198
+#: cdedb/frontend/assembly.py:1198 cdedb/frontend/assembly.py:1199
 #: cdedb/frontend/templates/web/assembly/_ballot_voting.tmpl:28
 msgid "Against all Candidates"
 msgstr "Gegen alle Kandidaten"
 
-#: cdedb/frontend/assembly.py:1201
+#: cdedb/frontend/assembly.py:1201 cdedb/frontend/assembly.py:1202
 msgid "Rejection limit"
 msgstr "Ablehnungsgrenze"
 
-#: cdedb/frontend/assembly.py:1250
+#: cdedb/frontend/assembly.py:1250 cdedb/frontend/assembly.py:1251
 msgid "Entered invalid secret"
 msgstr "Ungültiges Geheimniss eingegeben."
 
-#: cdedb/frontend/assembly.py:1461
+#: cdedb/frontend/assembly.py:1461 cdedb/frontend/assembly.py:1462
 msgid "Force starting a ballot is only possible in dev mode."
 msgstr "Forcieren eines Abstimmungsstarts ist nur im Entwicklermodus möglich."
 
-#: cdedb/frontend/assembly.py:1517
+#: cdedb/frontend/assembly.py:1517 cdedb/frontend/assembly.py:1518
 msgid "Option not available."
 msgstr "Option nicht verfügbar."
 
-#: cdedb/frontend/assembly.py:1526
+#: cdedb/frontend/assembly.py:1526 cdedb/frontend/assembly.py:1527
 msgid "Rejection is exclusive."
 msgstr "Ablehnung kann nur exklusiv gewählt werden."
 
-#: cdedb/frontend/assembly.py:1565
+#: cdedb/frontend/assembly.py:1565 cdedb/frontend/assembly.py:1566
 msgid "Ballot not yet tallied."
 msgstr "Abstimmung noch nicht ausgezählt."
 
-#: cdedb/frontend/assembly.py:1584 cdedb/validation.py:3799
+#: cdedb/frontend/assembly.py:1584 cdedb/frontend/assembly.py:1585
+#: cdedb/validation.py:3799
 msgid "Mustn’t be the bar shortname."
 msgstr "Darf nicht der Bezeichner der Ablehnungsoption sein."
 
-#: cdedb/frontend/assembly.py:1589
+#: cdedb/frontend/assembly.py:1589 cdedb/frontend/assembly.py:1590
 msgid "Duplicate shortname."
 msgstr "Option doppelt gefunden."
 
-#: cdedb/frontend/cde.py:194
+#: cdedb/frontend/cde.py:194 cdedb/frontend/cde.py:195
 msgid "Consent noted."
 msgstr "Zustimmung gespeichert."
 
-#: cdedb/frontend/cde.py:194
+#: cdedb/frontend/cde.py:194 cdedb/frontend/cde.py:195
 msgid "Decision noted."
 msgstr "Entscheidung gespeichert."
 
-#: cdedb/frontend/cde.py:259 cdedb/frontend/cde.py:306
+#: cdedb/frontend/cde.py:259 cdedb/frontend/cde.py:261
+#: cdedb/frontend/cde.py:306 cdedb/frontend/cde.py:308
 msgid "You have to specify some filters."
 msgstr "Du musst Suchkriterien eingeben."
 
-#: cdedb/frontend/cde.py:282
+#: cdedb/frontend/cde.py:282 cdedb/frontend/cde.py:283
 msgid "Too many query results."
 msgstr "Zu viele Treffer."
 
-#: cdedb/frontend/cde.py:455
+#: cdedb/frontend/cde.py:455 cdedb/frontend/cde.py:456
 msgid "Entry changed."
 msgstr "Eintrag geändert."
 
-#: cdedb/frontend/cde.py:491
+#: cdedb/frontend/cde.py:491 cdedb/frontend/cde.py:492
 msgid "Persona is younger than 10 years."
 msgstr "Person ist jünger als 10 Jahre."
 
-#: cdedb/frontend/cde.py:503
+#: cdedb/frontend/cde.py:503 cdedb/frontend/cde.py:504
 msgid "No course available."
 msgstr "Kein Kurs verfügbar."
 
-#: cdedb/frontend/cde.py:511 cdedb/frontend/cde.py:533
+#: cdedb/frontend/cde.py:511 cdedb/frontend/cde.py:512
+#: cdedb/frontend/cde.py:533 cdedb/frontend/cde.py:534
 msgid "Email address already taken."
 msgstr "Emailadresse bereits vergeben."
 
-#: cdedb/frontend/cde.py:516
+#: cdedb/frontend/cde.py:516 cdedb/frontend/cde.py:517
 msgid "Doppelgangers found."
 msgstr "Ähnlicher Account gefunden."
 
-#: cdedb/frontend/cde.py:520
+#: cdedb/frontend/cde.py:520 cdedb/frontend/cde.py:521
 msgid "Doppelganger choice doesn’t fit resolution."
 msgstr "Accountzusammenführung inkonsistent mit Aktion."
 
-#: cdedb/frontend/cde.py:524
+#: cdedb/frontend/cde.py:524 cdedb/frontend/cde.py:525
 msgid "Doppelganger unavailable."
 msgstr "Accountzusammenführung nicht möglich."
 
-#: cdedb/frontend/cde.py:537
+#: cdedb/frontend/cde.py:537 cdedb/frontend/cde.py:538
 msgid "Doppelganger will upgrade to CdE."
 msgstr "Accountzusammenführung mit nicht-CdE Account."
 
-#: cdedb/frontend/cde.py:542
+#: cdedb/frontend/cde.py:542 cdedb/frontend/cde.py:543
 msgid "Unmodified realm upgrade."
 msgstr "Übergang in CdE-Bereich ohne Datenübernahme."
 
-#: cdedb/frontend/cde.py:546
+#: cdedb/frontend/cde.py:546 cdedb/frontend/cde.py:547
 msgid "Missing data for realm upgrade."
 msgstr "Fehlende Datengrundlage für Bereichswechsel."
 
-#: cdedb/frontend/cde.py:551
+#: cdedb/frontend/cde.py:551 cdedb/frontend/cde.py:552
 msgid "Participation already recorded."
 msgstr "Teilnahme bereits erfasst."
 
-#: cdedb/frontend/cde.py:619
+#: cdedb/frontend/cde.py:619 cdedb/frontend/cde.py:620
 msgid "Need extra data."
 msgstr "Weitere Daten benötigt."
 
-#: cdedb/frontend/cde.py:810
+#: cdedb/frontend/cde.py:810 cdedb/frontend/cde.py:811
 #, python-format
 msgid "Lines %(first)s and %(second)s are the same."
 msgstr "Zeilen %(first)s und %(second)s sind identisch."
 
-#: cdedb/frontend/cde.py:816
+#: cdedb/frontend/cde.py:816 cdedb/frontend/cde.py:817
 #, python-format
 msgid "Lines %(first)s and %(second)s look the same."
 msgstr "Zeilen %(first)s und %(second)s sehen gleich aus."
 
-#: cdedb/frontend/cde.py:836 cdedb/frontend/cde.py:1311
+#: cdedb/frontend/cde.py:836 cdedb/frontend/cde.py:837
+#: cdedb/frontend/cde.py:1311 cdedb/frontend/cde.py:1312
 #: cdedb/frontend/event.py:2377
 msgid "Lines didn’t match up."
 msgstr "Daten wurden geändert."
 
-#: cdedb/frontend/cde.py:839
+#: cdedb/frontend/cde.py:839 cdedb/frontend/cde.py:840
 msgid "Only member admission supported."
 msgstr "Nur Aufnahme von Mitglieder unterstützt."
 
-#: cdedb/frontend/cde.py:856
+#: cdedb/frontend/cde.py:856 cdedb/frontend/cde.py:857
 #, python-format
 msgid "Created %(num)s accounts."
 msgstr "%(num)s Accounts erstellt."
 
-#: cdedb/frontend/cde.py:860 cdedb/frontend/cde.py:1335
+#: cdedb/frontend/cde.py:860 cdedb/frontend/cde.py:861
+#: cdedb/frontend/cde.py:1335 cdedb/frontend/cde.py:1336
 #: cdedb/frontend/event.py:2400
 msgid "DB serialization error."
 msgstr "Datenbank-Transaktions-Fehler."
 
-#: cdedb/frontend/cde.py:862 cdedb/frontend/cde.py:1337
+#: cdedb/frontend/cde.py:862 cdedb/frontend/cde.py:863
+#: cdedb/frontend/cde.py:1337 cdedb/frontend/cde.py:1338
 #, python-format
 msgid "Unexpected error on line %(num)s."
 msgstr "Unerwarteter Fehler in Zeile %(num)s."
 
-#: cdedb/frontend/cde.py:987
+#: cdedb/frontend/cde.py:987 cdedb/frontend/cde.py:988
 #, python-format
 msgid "Line %(lineno)s does not have the correct number of columns."
 msgstr "Zeile %(lineno)s hat nicht die korrekte Anzahl Spalten."
 
-#: cdedb/frontend/cde.py:1089
+#: cdedb/frontend/cde.py:1089 cdedb/frontend/cde.py:1090
 msgid "Unknown action."
 msgstr "Unbekannte Aktion."
 
-#: cdedb/frontend/cde.py:1148 cdedb/frontend/event.py:2221
-#: cdedb/frontend/parse_statement.py:626 cdedb/frontend/parse_statement.py:783
+#: cdedb/frontend/cde.py:1148 cdedb/frontend/cde.py:1149
+#: cdedb/frontend/event.py:2221 cdedb/frontend/parse_statement.py:626
+#: cdedb/frontend/parse_statement.py:783
 #, python-format
 msgid "No Member with ID %(p_id)s found."
 msgstr "Kein Account mit ID %(p_id)s gefunden."
 
-#: cdedb/frontend/cde.py:1153 cdedb/frontend/core.py:669
-#: cdedb/frontend/core.py:1113 cdedb/frontend/core.py:1189
-#: cdedb/frontend/core.py:1438 cdedb/frontend/core.py:1502
-#: cdedb/frontend/core.py:1559 cdedb/frontend/core.py:1582
-#: cdedb/frontend/core.py:1606 cdedb/frontend/core.py:1932
-#: cdedb/frontend/core.py:1966
+#: cdedb/frontend/cde.py:1153 cdedb/frontend/cde.py:1154
+#: cdedb/frontend/core.py:668 cdedb/frontend/core.py:669
+#: cdedb/frontend/core.py:1112 cdedb/frontend/core.py:1113
+#: cdedb/frontend/core.py:1188 cdedb/frontend/core.py:1189
+#: cdedb/frontend/core.py:1437 cdedb/frontend/core.py:1438
+#: cdedb/frontend/core.py:1501 cdedb/frontend/core.py:1502
+#: cdedb/frontend/core.py:1558 cdedb/frontend/core.py:1559
+#: cdedb/frontend/core.py:1581 cdedb/frontend/core.py:1582
+#: cdedb/frontend/core.py:1605 cdedb/frontend/core.py:1606
+#: cdedb/frontend/core.py:1931 cdedb/frontend/core.py:1932
+#: cdedb/frontend/core.py:1965 cdedb/frontend/core.py:1966
 msgid "Persona is archived."
 msgstr "Account ist archiviert."
 
-#: cdedb/frontend/cde.py:1157
+#: cdedb/frontend/cde.py:1157 cdedb/frontend/cde.py:1158
 msgid "Persona is not in CdE realm."
 msgstr "Account ist kein CdE-Account"
 
-#: cdedb/frontend/cde.py:1165 cdedb/frontend/event.py:2254
+#: cdedb/frontend/cde.py:1165 cdedb/frontend/cde.py:1166
+#: cdedb/frontend/event.py:2254
 msgid "Family name doesn’t match."
 msgstr "Nachname passt nicht."
 
-#: cdedb/frontend/cde.py:1173 cdedb/frontend/event.py:2262
+#: cdedb/frontend/cde.py:1173 cdedb/frontend/cde.py:1174
+#: cdedb/frontend/event.py:2262
 msgid "Given names don’t match."
 msgstr "Vornamen passen nicht zusammen."
 
-#: cdedb/frontend/cde.py:1283 cdedb/frontend/event.py:2349
+#: cdedb/frontend/cde.py:1283 cdedb/frontend/cde.py:1284
+#: cdedb/frontend/event.py:2349
 msgid "Only one input method allowed."
 msgstr "Nur eine Eingabe-Methode erlaubt."
 
-#: cdedb/frontend/cde.py:1304
+#: cdedb/frontend/cde.py:1304 cdedb/frontend/cde.py:1305
 #, python-format
 msgid ""
 "More than one transfer for this account (lines %(first)s and %(second)s)."
 msgstr ""
 "Mehrere Überweisungen für diesen Account (Zeilen %(first)s und %(second)s)."
 
-#: cdedb/frontend/cde.py:1329
+#: cdedb/frontend/cde.py:1329 cdedb/frontend/cde.py:1330
 #, python-format
 msgid "Committed %(num)s transfers. There were %(new_members)s new members."
 msgstr "%(num)s Überweisungen gebucht. %(new_members)s neue Mitglieder."
 
-#: cdedb/frontend/cde.py:1498 cdedb/frontend/core.py:1550
+#: cdedb/frontend/cde.py:1498 cdedb/frontend/cde.py:1499
+#: cdedb/frontend/core.py:1549 cdedb/frontend/core.py:1550
 msgid "Permit revoked."
 msgstr "Lastschriftmandat widerrufen."
 
-#: cdedb/frontend/cde.py:1660
+#: cdedb/frontend/cde.py:1660 cdedb/frontend/cde.py:1661
 msgid "Creation of SEPA-PAIN-file failed."
 msgstr "Erstellung der SEPA-PAIN-Datei fehlgeschlagen."
 
-#: cdedb/frontend/cde.py:1721
+#: cdedb/frontend/cde.py:1721 cdedb/frontend/cde.py:1722
 #, python-format
 msgid "%(num)s Direct Debits issued. Notification mails sent."
 msgstr ""
 "%(num)s Lastschriften initialisiert. Benachrichtigungsmails wurden "
 "verschickt."
 
-#: cdedb/frontend/cde.py:1739
+#: cdedb/frontend/cde.py:1739 cdedb/frontend/cde.py:1740
 msgid "Unable to skip transaction."
 msgstr "Einzug kann nicht pausiert werden."
 
-#: cdedb/frontend/cde.py:1741
+#: cdedb/frontend/cde.py:1741 cdedb/frontend/cde.py:1742
 msgid "Skipped."
 msgstr "Pausiert."
 
-#: cdedb/frontend/cde.py:1789
+#: cdedb/frontend/cde.py:1789 cdedb/frontend/cde.py:1790
 msgid "Wrong number of actions."
 msgstr "Falsche Anzahl an Aktionen."
 
-#: cdedb/frontend/cde.py:1793
+#: cdedb/frontend/cde.py:1793 cdedb/frontend/cde.py:1794
 msgid "No transactions selected."
 msgstr "Keine Transaktionen ausgewählt."
 
-#: cdedb/frontend/cde.py:1877
+#: cdedb/frontend/cde.py:1877 cdedb/frontend/cde.py:1878
 msgid "LaTeX compiliation failed. This might be due to special characters."
 msgstr ""
 "Der LaTeX-Code konnte nicht kompiliert werden. Das liegt wahrscheinlich an "
 "nicht unterstützten Sonderzeichen."
 
-#: cdedb/frontend/cde.py:1938
+#: cdedb/frontend/cde.py:1938 cdedb/frontend/cde.py:1939
 msgid ""
 "Form could not be created. Please refrain from using special characters if "
 "possible."
@@ -1681,181 +1756,192 @@ msgstr ""
 "Formular konnte nicht erstellt werden. Bitte wenn möglich Sonderzeichen "
 "vermeiden."
 
-#: cdedb/frontend/cde.py:1993
+#: cdedb/frontend/cde.py:1993 cdedb/frontend/cde.py:1994
 msgid "Inconsistent semester state."
 msgstr "Inkonsistenter Semesterzustand."
 
-#: cdedb/frontend/cde.py:2017
+#: cdedb/frontend/cde.py:2017 cdedb/frontend/cde.py:2018
 msgid "Billing already done."
 msgstr "Zahlungserinnerung bereits erledigt."
 
-#: cdedb/frontend/cde.py:2120
+#: cdedb/frontend/cde.py:2120 cdedb/frontend/cde.py:2121
 msgid "Started sending billing mails."
 msgstr "Versand der Zahlungsauffordderungen begonnen."
 
-#: cdedb/frontend/cde.py:2121
+#: cdedb/frontend/cde.py:2121 cdedb/frontend/cde.py:2122
 msgid "Started sending archival notifications."
 msgstr "Versand der Archivierungsbenachrichtigungen begonnen."
 
-#: cdedb/frontend/cde.py:2129
+#: cdedb/frontend/cde.py:2129 cdedb/frontend/cde.py:2130
 msgid "Wrong timing for ejection."
 msgstr "Falscher Zeitpunkt für Bereinigung."
 
-#: cdedb/frontend/cde.py:2226
+#: cdedb/frontend/cde.py:2226 cdedb/frontend/cde.py:2227
 msgid "Started ejection."
 msgstr "Streichung inaktiver Mitglieder gestartet."
 
-#: cdedb/frontend/cde.py:2227
+#: cdedb/frontend/cde.py:2227 cdedb/frontend/cde.py:2228
 msgid "Started automated archival."
 msgstr "Automatische Archivierung inaktiveer Accounts begonnen."
 
-#: cdedb/frontend/cde.py:2235
+#: cdedb/frontend/cde.py:2235 cdedb/frontend/cde.py:2236
 msgid "Wrong timing for balance update."
 msgstr "Falscher Zeitpunkt für Guthabenaktualisierung."
 
-#: cdedb/frontend/cde.py:2260
+#: cdedb/frontend/cde.py:2260 cdedb/frontend/cde.py:2261
 msgid "Balance too low."
 msgstr "Guthaben zu niedrig."
 
-#: cdedb/frontend/cde.py:2289
+#: cdedb/frontend/cde.py:2289 cdedb/frontend/cde.py:2290
 msgid "Started updating balance."
 msgstr "Aktualisierung der Guthaben gestartet."
 
-#: cdedb/frontend/cde.py:2298
+#: cdedb/frontend/cde.py:2298 cdedb/frontend/cde.py:2299
 msgid "Wrong timing for advancing the semester."
 msgstr "Falscher Zeitpunkt für Beendigung des Semesters."
 
-#: cdedb/frontend/cde.py:2301
+#: cdedb/frontend/cde.py:2301 cdedb/frontend/cde.py:2302
 msgid "New period started."
 msgstr "Nächstes Semester initialisiert."
 
-#: cdedb/frontend/cde.py:2319
+#: cdedb/frontend/cde.py:2319 cdedb/frontend/cde.py:2320
 msgid "Addresscheck already done."
 msgstr "Adressabfrage bereits erledigt."
 
-#: cdedb/frontend/cde.py:2357
+#: cdedb/frontend/cde.py:2357 cdedb/frontend/cde.py:2358
 msgid "Not sending mail."
 msgstr "Keine E-Mail verschickt."
 
-#: cdedb/frontend/cde.py:2362
+#: cdedb/frontend/cde.py:2362 cdedb/frontend/cde.py:2363
 msgid "Started sending mail."
 msgstr "E-Mail-Versand hat begonnen."
 
-#: cdedb/frontend/cde.py:2373
+#: cdedb/frontend/cde.py:2373 cdedb/frontend/cde.py:2374
 msgid "Addresscheck not done."
 msgstr "Adressabfrage noch nicht erledigt."
 
-#: cdedb/frontend/cde.py:2376
+#: cdedb/frontend/cde.py:2376 cdedb/frontend/cde.py:2377
 msgid "New expuls started."
 msgstr "Nächster exPuls initialisiert."
 
-#: cdedb/frontend/cde.py:2574
+#: cdedb/frontend/cde.py:2574 cdedb/frontend/cde.py:2576
 msgid "Institution parameter got lost."
 msgstr "Organisationsangabe ist verlorengegangen."
 
-#: cdedb/frontend/cde.py:2584
+#: cdedb/frontend/cde.py:2584 cdedb/frontend/cde.py:2586
 msgid "Invalid institution id."
 msgstr "Nicht-existente Institution."
 
-#: cdedb/frontend/cde.py:2666
+#: cdedb/frontend/cde.py:2666 cdedb/frontend/cde.py:2668
 #, python-format
 msgid "Line %(lineno)s is faulty."
 msgstr "Zeile %(lineno)s ist fehlerhaft."
 
-#: cdedb/frontend/cde.py:2676 cdedb/frontend/event.py:1249
+#: cdedb/frontend/cde.py:2676 cdedb/frontend/cde.py:2678
+#: cdedb/frontend/event.py:1249
 msgid "Event created."
 msgstr "Veranstaltung erstellt."
 
-#: cdedb/frontend/cde.py:2733 cdedb/frontend/event.py:1375
+#: cdedb/frontend/cde.py:2733 cdedb/frontend/cde.py:2735
+#: cdedb/frontend/event.py:1375
 msgid "Course created."
 msgstr "Kurs erstellt"
 
-#: cdedb/frontend/cde.py:2772
+#: cdedb/frontend/cde.py:2772 cdedb/frontend/cde.py:2774
 msgid "Some of these users do not exist."
 msgstr "Einige dieser Nutzer existieren nicht."
 
-#: cdedb/frontend/cde.py:2776 cdedb/frontend/event.py:1201
+#: cdedb/frontend/cde.py:2776 cdedb/frontend/cde.py:2778
+#: cdedb/frontend/event.py:1201
 msgid "Some of these users are not event users."
 msgstr "Einige dieser Nutzer sind keine Veranstaltungsnutzer."
 
-#: cdedb/frontend/cde.py:2817
+#: cdedb/frontend/cde.py:2817 cdedb/frontend/cde.py:2819
 msgid "*Nothing here yet.*"
 msgstr "*Hier gibt es noch nichts.*"
 
-#: cdedb/frontend/common.py:209 cdedb/frontend/common.py:1267
+#: cdedb/frontend/common.py:204 cdedb/frontend/common.py:209
+#: cdedb/frontend/common.py:628 cdedb/frontend/common.py:1267
 msgid "Failed validation."
 msgstr "Validierung fehlgeschlagen."
 
+#: cdedb/frontend/common.py:367 cdedb/frontend/common.py:377
 #: cdedb/frontend/common.py:1006 cdedb/frontend/common.py:1016
 msgid "Must not be used in web templates."
 msgstr "Darf nicht in Web-Templates verwendet werden."
 
-#: cdedb/frontend/common.py:1068
+#: cdedb/frontend/common.py:429 cdedb/frontend/common.py:1068
 msgid "Given method is not callable."
 msgstr "Die fragliche Methode ist nicht aufrufbar."
 
-#: cdedb/frontend/common.py:1106
+#: cdedb/frontend/common.py:467 cdedb/frontend/common.py:1106
 #, python-format
 msgid "Default values cannot be overridden: %(keys)s"
 msgstr "Standardwerte können nicht überschrieben werden: %(keys)s"
 
-#: cdedb/frontend/common.py:1119
+#: cdedb/frontend/common.py:480 cdedb/frontend/common.py:1119
 #, python-format
 msgid "Requested modus does not exists: %(modus)s"
 msgstr "Angefordeter modus existiert nicht: %(modus)s"
 
-#: cdedb/frontend/common.py:1124
+#: cdedb/frontend/common.py:485 cdedb/frontend/common.py:1124
 #, python-format
 msgid "Template not found: %(file)s"
 msgstr "Template nicht gefunden: %(file)s"
 
-#: cdedb/frontend/common.py:1168
+#: cdedb/frontend/common.py:529 cdedb/frontend/common.py:1168
 msgid "Ambiguous input."
 msgstr "Uneindeutige Eingabe."
 
-#: cdedb/frontend/common.py:1184
+#: cdedb/frontend/common.py:545 cdedb/frontend/common.py:1184
 msgid "Invalid datatype read from file."
 msgstr "Ungültiger Datentyp aus Datei eingelesen."
 
-#: cdedb/frontend/common.py:1191
+#: cdedb/frontend/common.py:552 cdedb/frontend/common.py:1191
 msgid "Invalid input type."
 msgstr "Ungültiger Eingabetyp."
 
-#: cdedb/frontend/common.py:1230
+#: cdedb/frontend/common.py:591 cdedb/frontend/common.py:1230
 msgid "Cannot download query result without fields of interest."
 msgstr ""
 "Download eines Abfrageergebnis nicht möglich ohne selektierte Ausgabefelder."
 
-#: cdedb/frontend/common.py:1245
+#: cdedb/frontend/common.py:606 cdedb/frontend/common.py:1245
 msgid "Unknown download kind {kind}."
 msgstr "Unbekannte Downloadart {kind}."
 
-#: cdedb/frontend/common.py:1269
+#: cdedb/frontend/common.py:630 cdedb/frontend/common.py:1269
 msgid "The database currently undergoes maintenance and is unavailable."
 msgstr ""
 "Es werden derzeit Wartungsarbeiten an der Datenbank vorgenommen und diese "
 "ist daher leider nicht verfügbar."
 
-#: cdedb/frontend/common.py:1324
+#: cdedb/frontend/common.py:685 cdedb/frontend/common.py:1324
 #, python-format
 msgid "Stored email to hard drive at %(path)s"
 msgstr "E-Mail als %(path)s auf der Festplatte gespeichert."
 
-#: cdedb/frontend/common.py:1514 cdedb/frontend/core.py:1365
-#: cdedb/frontend/core.py:2396
+#: cdedb/frontend/common.py:772
+msgid "Scope mismatch."
+msgstr "Scope passt nicht."
+
+#: cdedb/frontend/common.py:872 cdedb/frontend/common.py:1514
+#: cdedb/frontend/core.py:1364 cdedb/frontend/core.py:1365
+#: cdedb/frontend/core.py:2395 cdedb/frontend/core.py:2396
 msgid "Change committed."
 msgstr "Die Änderung wurde übernommen."
 
-#: cdedb/frontend/common.py:1515 cdedb/frontend/core.py:1002
-#: cdedb/frontend/core.py:1123
+#: cdedb/frontend/common.py:873 cdedb/frontend/common.py:1515
+#: cdedb/frontend/core.py:1001 cdedb/frontend/core.py:1002
+#: cdedb/frontend/core.py:1122 cdedb/frontend/core.py:1123
 msgid "Change pending."
 msgstr "Die Änderung wartet auf Bestätigung."
 
-#: cdedb/frontend/common.py:1516
+#: cdedb/frontend/common.py:874 cdedb/frontend/common.py:1516
 msgid "Change failed."
 msgstr "Änderung fehlgeschlagen."
 
-#: cdedb/frontend/common.py:1575
+#: cdedb/frontend/common.py:933 cdedb/frontend/common.py:1575
 msgid ""
 "LaTeX compilation failed. Try downloading the source files and compiling "
 "them manually."
@@ -1863,62 +1949,62 @@ msgstr ""
 "Der LaTeX-Code konnte nicht kompiliert werden. Du kannst die Quelldateien "
 "herunterladen und versuchen sie manuell zu kompilieren."
 
-#: cdedb/frontend/common.py:1748
+#: cdedb/frontend/common.py:1106 cdedb/frontend/common.py:1748
 msgid "User created."
 msgstr "Account erstellt."
 
-#: cdedb/frontend/common.py:1906
+#: cdedb/frontend/common.py:1264 cdedb/frontend/common.py:1906
 msgid "Inconsistent request."
 msgstr "Inkonsistente Anfrage."
 
-#: cdedb/frontend/common.py:1984
+#: cdedb/frontend/common.py:1342 cdedb/frontend/common.py:1984
 msgid "Object {param}={value} not found"
 msgstr "Objekt {param}={value} wurde nicht gefunden."
 
-#: cdedb/frontend/common.py:2037
+#: cdedb/frontend/common.py:1395 cdedb/frontend/common.py:2037
 msgid "You must login."
 msgstr "Login benötigt."
 
-#: cdedb/frontend/common.py:2041
+#: cdedb/frontend/common.py:1399 cdedb/frontend/common.py:2041
 msgid "Access denied to {realm}/{endpoint}."
 msgstr "Zugriff auf {realm}/{endpoint} verweigert."
 
-#: cdedb/frontend/common.py:2129
+#: cdedb/frontend/common.py:1487 cdedb/frontend/common.py:2129
 msgid "Magic URL parameter replacement failed."
 msgstr "Ersetzung magischer URL-Parameter fehlgeschlagen."
 
-#: cdedb/frontend/common.py:2285
+#: cdedb/frontend/common.py:1643 cdedb/frontend/common.py:2285
 msgid "Link invalid."
 msgstr "Link ungültig."
 
-#: cdedb/frontend/common.py:2355
+#: cdedb/frontend/common.py:1713 cdedb/frontend/common.py:2355
 msgid "Invalid argtype {t} found."
 msgstr "Ungültiger Argumenttyp {t}."
 
-#: cdedb/frontend/common.py:2468
+#: cdedb/frontend/common.py:1826 cdedb/frontend/common.py:2468
 msgid "This page can only be accessed by orgas."
 msgstr "Auf diese Seite können nur Orgas zugreifen."
 
-#: cdedb/frontend/common.py:2473
+#: cdedb/frontend/common.py:1831 cdedb/frontend/common.py:2473
 msgid "This event is locked for offline usage."
 msgstr "Diese Veranstaltung ist für die Offline-Nutzung gesperrt."
 
-#: cdedb/frontend/common.py:2505
+#: cdedb/frontend/common.py:1863 cdedb/frontend/common.py:2505
 msgid "This page can only be accessed by the mailinglist’s moderators."
 msgstr "Auf diese Seite können nur Moderatoren der Mailingliste zugreifen."
 
-#: cdedb/frontend/common.py:2510
+#: cdedb/frontend/common.py:1868 cdedb/frontend/common.py:2510
 msgid ""
 "You only have restricted moderator access and may not change subscriptions."
 msgstr ""
 "Du hast nur eingeschränkten Moderator-Zugriff und darfst keine Abbonements "
 "ändern."
 
-#: cdedb/frontend/common.py:2515
+#: cdedb/frontend/common.py:1873 cdedb/frontend/common.py:2515
 msgid "This page can only be accessed by appropriate admins."
 msgstr "Auf diese Seite können nur Administratoren zugreifen."
 
-#: cdedb/frontend/common.py:2537
+#: cdedb/frontend/common.py:1895 cdedb/frontend/common.py:2537
 msgid ""
 "This page may only be accessed by the assembly's presiders or assembly "
 "admins."
@@ -1926,101 +2012,108 @@ msgstr ""
 "Diese Seite ist nur für die Versammlungsleitung und Administratoren "
 "zugänglich."
 
-#: cdedb/frontend/core.py:51
+#: cdedb/frontend/core.py:50 cdedb/frontend/core.py:51
 msgid "CdE user / Member"
 msgstr "CdE-Nutzer / Mitglied"
 
-#: cdedb/frontend/core.py:52
+#: cdedb/frontend/core.py:51 cdedb/frontend/core.py:52
 msgid "Event user"
 msgstr "Veranstaltungsnutzer"
 
-#: cdedb/frontend/core.py:53
+#: cdedb/frontend/core.py:52 cdedb/frontend/core.py:53
 msgid "Assembly user"
 msgstr "Versammlungsnutzer"
 
-#: cdedb/frontend/core.py:54
+#: cdedb/frontend/core.py:53 cdedb/frontend/core.py:54
 msgid "Mailinglist user"
 msgstr "Mailinglistennutzer"
 
-#: cdedb/frontend/core.py:61
+#: cdedb/frontend/core.py:60 cdedb/frontend/core.py:61
 msgid "CdE event"
 msgstr "CdE-Veranstaltung"
 
-#: cdedb/frontend/core.py:62
+#: cdedb/frontend/core.py:61 cdedb/frontend/core.py:62
 msgid "CdE membership"
 msgstr "CdE-Mitgliedschaft"
 
-#: cdedb/frontend/core.py:63
+#: cdedb/frontend/core.py:62 cdedb/frontend/core.py:63
 msgid "CdE members' assembly"
 msgstr "CdE-Mitgliederversammlung"
 
-#: cdedb/frontend/core.py:64
+#: cdedb/frontend/core.py:63 cdedb/frontend/core.py:64
 msgid "CdE mailinglist"
 msgstr "CdE-Mailingliste"
 
-#: cdedb/frontend/core.py:232
+#: cdedb/frontend/core.py:231 cdedb/frontend/core.py:232
 msgid "Login failure."
 msgstr "Login fehlgeschlagen."
 
-#: cdedb/frontend/core.py:269 cdedb/frontend/core.py:1704
+#: cdedb/frontend/core.py:268 cdedb/frontend/core.py:269
+#: cdedb/frontend/core.py:1703 cdedb/frontend/core.py:1704
 #, python-format
 msgid "%(count)s session(s) terminated."
 msgstr "%(count)s Sitzung(en) beendet."
 
-#: cdedb/frontend/core.py:313
+#: cdedb/frontend/core.py:312 cdedb/frontend/core.py:313
 msgid "Unsupported locale"
 msgstr "Nicht unterstützte Sprache"
 
-#: cdedb/frontend/core.py:406
+#: cdedb/frontend/core.py:405 cdedb/frontend/core.py:406
 msgid "No cde access to profile."
 msgstr "Kein CdE-Zugriff auf das Profil."
 
-#: cdedb/frontend/core.py:411 cdedb/frontend/core.py:548
+#: cdedb/frontend/core.py:410 cdedb/frontend/core.py:411
+#: cdedb/frontend/core.py:547 cdedb/frontend/core.py:548
 msgid "Access to non-searchable member data."
 msgstr "Zugriff auf Mitgliedsdatensatz ohne Datenschutz-Einwilligung."
 
-#: cdedb/frontend/core.py:512
+#: cdedb/frontend/core.py:511 cdedb/frontend/core.py:512
 msgid "Only admins may view archived datasets."
 msgstr "Zugriff auf archivierte Datensätze nur für Admins."
 
-#: cdedb/frontend/core.py:667 cdedb/frontend/core.py:1111
-#: cdedb/frontend/core.py:1138 cdedb/frontend/core.py:1778
-#: cdedb/frontend/core.py:1930 cdedb/frontend/core.py:1943
-#: cdedb/frontend/core.py:1961 cdedb/frontend/core.py:2427
-#: cdedb/frontend/core.py:2437
+#: cdedb/frontend/core.py:666 cdedb/frontend/core.py:667
+#: cdedb/frontend/core.py:1110 cdedb/frontend/core.py:1111
+#: cdedb/frontend/core.py:1137 cdedb/frontend/core.py:1138
+#: cdedb/frontend/core.py:1777 cdedb/frontend/core.py:1778
+#: cdedb/frontend/core.py:1929 cdedb/frontend/core.py:1930
+#: cdedb/frontend/core.py:1942 cdedb/frontend/core.py:1943
+#: cdedb/frontend/core.py:1960 cdedb/frontend/core.py:1961
+#: cdedb/frontend/core.py:2426 cdedb/frontend/core.py:2427
+#: cdedb/frontend/core.py:2436 cdedb/frontend/core.py:2437
 msgid "Not a relative admin."
 msgstr "Nicht genug Adminprivilegien für diesen Account."
 
-#: cdedb/frontend/core.py:793
+#: cdedb/frontend/core.py:792 cdedb/frontend/core.py:793
 msgid "No account found."
 msgstr "Kein Account gefunden."
 
-#: cdedb/frontend/core.py:892
+#: cdedb/frontend/core.py:891 cdedb/frontend/core.py:892
 msgid "Must provide id of the associated mailinglist to use this kind."
 msgstr ""
 "Um diese Art Anfrage zu benutzen muss die zugehörige Mailinglisten-ID "
 "angegeben werden."
 
-#: cdedb/frontend/core.py:1064
+#: cdedb/frontend/core.py:1063 cdedb/frontend/core.py:1064
 msgid "No valid realm."
 msgstr "Kein gültiger Bereich."
 
-#: cdedb/frontend/core.py:1196 cdedb/frontend/core.py:1222
+#: cdedb/frontend/core.py:1195 cdedb/frontend/core.py:1196
+#: cdedb/frontend/core.py:1221 cdedb/frontend/core.py:1222
 msgid "Resolve pending privilege change first."
 msgstr "Schließe erst die ausstehende Änderung der Admin-Privlilegien ab."
 
-#: cdedb/frontend/core.py:1247
+#: cdedb/frontend/core.py:1246 cdedb/frontend/core.py:1247
 msgid ""
 "Cannot grant meta, core, CdE or CdElokal admin privileges to non CdE users."
 msgstr ""
 "Ein nicht-CdE-Nutzer kann keine Meta-, Core-, CdE- oder CdElokaladminrechte "
 "erhalten."
 
-#: cdedb/frontend/core.py:1255
+#: cdedb/frontend/core.py:1254 cdedb/frontend/core.py:1255
 msgid "Cannot grant finance admin privileges to non CdE admins."
 msgstr "Nur CdE Admins können Finanz Admin werden."
 
-#: cdedb/frontend/core.py:1260
+#: cdedb/frontend/core.py:1259 cdedb/frontend/core.py:1260
 msgid ""
 "Cannot grant mailinglist or CdElokal admin privileges to non mailinglist "
 "users."
@@ -2028,29 +2121,30 @@ msgstr ""
 "Ein Nutzer ohne Mailinglistenprivilegien kann nicht Malinglisten- oder "
 "CdElokaladmin sein."
 
-#: cdedb/frontend/core.py:1266
+#: cdedb/frontend/core.py:1265 cdedb/frontend/core.py:1266
 msgid "Cannot grant event admin privileges to non event users."
 msgstr "Nur Veranstaltungs Nutzer können Veranstaltungs Admin werden."
 
-#: cdedb/frontend/core.py:1271
+#: cdedb/frontend/core.py:1270 cdedb/frontend/core.py:1271
 msgid "Cannot grant assembly admin privileges to non assembly users."
 msgstr "Nur Versammlungs Nutzer können Versammlungs Admin werden."
 
-#: cdedb/frontend/core.py:1286
+#: cdedb/frontend/core.py:1285 cdedb/frontend/core.py:1286
 msgid "Privilege change waiting for approval by another Meta-Admin."
 msgstr ""
 "Änderung der Admin-Privilegien wartet auf Bestätigung durch einen anderen "
 "Meta-Admin."
 
-#: cdedb/frontend/core.py:1291
+#: cdedb/frontend/core.py:1290 cdedb/frontend/core.py:1291
 msgid "No changes were made."
 msgstr "Es wurden keine Änderungen gemacht."
 
-#: cdedb/frontend/core.py:1318 cdedb/frontend/core.py:1349
+#: cdedb/frontend/core.py:1317 cdedb/frontend/core.py:1318
+#: cdedb/frontend/core.py:1348 cdedb/frontend/core.py:1349
 msgid "Privilege change not pending."
 msgstr "Änderung der Admin-Privilegien nicht ausstehend."
 
-#: cdedb/frontend/core.py:1324
+#: cdedb/frontend/core.py:1323 cdedb/frontend/core.py:1324
 msgid ""
 "This privilege change is affecting your Meta-Admin privileges, so it has to "
 "be approved by another Meta-Admin."
@@ -2058,7 +2152,7 @@ msgstr ""
 "Diese Änderung betrifft Deine Meta-Admin-Privilegien und muss daher von "
 "einem anderen Meta-Admin bestätigt werden."
 
-#: cdedb/frontend/core.py:1329
+#: cdedb/frontend/core.py:1328 cdedb/frontend/core.py:1329
 msgid ""
 "This privilege change was submitted by you, so it has to be approved by "
 "another Meta-Admin."
@@ -2066,136 +2160,141 @@ msgstr ""
 "Diese Änderung der Admin-Privilegien wurde von Dir angestoßen und muss daher "
 "von einem anderen Meta-Admin bestätigt werden."
 
-#: cdedb/frontend/core.py:1365
+#: cdedb/frontend/core.py:1364 cdedb/frontend/core.py:1365
 msgid "Change rejected."
 msgstr "Änderung abgelehnt."
 
-#: cdedb/frontend/core.py:1366
+#: cdedb/frontend/core.py:1365 cdedb/frontend/core.py:1366
 msgid "Password reset issued for new admin."
 msgstr "Passwort eines neuen Admins ungültig gemacht."
 
-#: cdedb/frontend/core.py:1443
+#: cdedb/frontend/core.py:1442 cdedb/frontend/core.py:1443
 msgid "No promotion necessary."
 msgstr "Keine Änderung erforderlich."
 
-#: cdedb/frontend/core.py:1579
+#: cdedb/frontend/core.py:1578 cdedb/frontend/core.py:1579
 msgid "Nothing changed."
 msgstr "Keine Änderungen."
 
-#: cdedb/frontend/core.py:1627
+#: cdedb/frontend/core.py:1626 cdedb/frontend/core.py:1627
 msgid "Foto updated."
 msgstr "Bild aktualisiert."
 
-#: cdedb/frontend/core.py:1628
+#: cdedb/frontend/core.py:1627 cdedb/frontend/core.py:1628
 msgid "Foto removed."
 msgstr "Profilbild entfernt."
 
-#: cdedb/frontend/core.py:1639
+#: cdedb/frontend/core.py:1638 cdedb/frontend/core.py:1639
 msgid "Please provide the user's email address."
 msgstr "Bitte gib die Emailadresse des Nutzers an."
 
-#: cdedb/frontend/core.py:1645
+#: cdedb/frontend/core.py:1644 cdedb/frontend/core.py:1645
 msgid "Password invalidated."
 msgstr "Passwort ungültig gemacht."
 
-#: cdedb/frontend/core.py:1670 cdedb/frontend/core.py:1671
-#: cdedb/frontend/core.py:1673 cdedb/frontend/core.py:1834
-#: cdedb/frontend/core.py:1835 cdedb/frontend/core.py:1837
+#: cdedb/frontend/core.py:1669 cdedb/frontend/core.py:1670
+#: cdedb/frontend/core.py:1671 cdedb/frontend/core.py:1672
+#: cdedb/frontend/core.py:1673 cdedb/frontend/core.py:1833
+#: cdedb/frontend/core.py:1834 cdedb/frontend/core.py:1835
+#: cdedb/frontend/core.py:1836 cdedb/frontend/core.py:1837
 msgid "Passwords don’t match."
 msgstr "Passwörter stimmen nicht überein."
 
-#: cdedb/frontend/core.py:1691
+#: cdedb/frontend/core.py:1690 cdedb/frontend/core.py:1691
 msgid "Password changed."
 msgstr "Passwort geändert."
 
-#: cdedb/frontend/core.py:1695
+#: cdedb/frontend/core.py:1694 cdedb/frontend/core.py:1695
 msgid "Wrong password."
 msgstr "Passwort falsch."
 
-#: cdedb/frontend/core.py:1751 cdedb/frontend/core.py:1759
-#: cdedb/frontend/core.py:1799
+#: cdedb/frontend/core.py:1750 cdedb/frontend/core.py:1751
+#: cdedb/frontend/core.py:1758 cdedb/frontend/core.py:1759
+#: cdedb/frontend/core.py:1798 cdedb/frontend/core.py:1799
 msgid "Email sent."
 msgstr "E-Mail abgeschickt."
 
-#: cdedb/frontend/core.py:1818
+#: cdedb/frontend/core.py:1817 cdedb/frontend/core.py:1818
 msgid "Please try again."
 msgstr "Bitte versuche es erneut."
 
-#: cdedb/frontend/core.py:1853
+#: cdedb/frontend/core.py:1852 cdedb/frontend/core.py:1853
 msgid "Password reset."
 msgstr "Passwort zurückgesetzt."
 
-#: cdedb/frontend/core.py:1872
+#: cdedb/frontend/core.py:1871 cdedb/frontend/core.py:1872
 msgid "Must be different from current email address."
 msgstr "Muss sich von der aktuellen E-Mail-Adresse unterscheiden."
 
-#: cdedb/frontend/core.py:1914 cdedb/frontend/core.py:1948
+#: cdedb/frontend/core.py:1913 cdedb/frontend/core.py:1914
+#: cdedb/frontend/core.py:1947 cdedb/frontend/core.py:1948
 msgid "Email address changed."
 msgstr "E-Mail-Adresse geändert."
 
-#: cdedb/frontend/core.py:2025
+#: cdedb/frontend/core.py:2024 cdedb/frontend/core.py:2025
 msgid "It seems like you took too long and your previous upload was deleted."
 msgstr ""
 "Es scheint als hättest Du Dir zu viel Zeit gelassen und Deine Datei wurde "
 "mittlerweile wieder gelöscht."
 
-#: cdedb/frontend/core.py:2036
+#: cdedb/frontend/core.py:2035 cdedb/frontend/core.py:2036
 msgid "Rationale too long."
 msgstr "Begründung zu lang."
 
-#: cdedb/frontend/core.py:2042
+#: cdedb/frontend/core.py:2041 cdedb/frontend/core.py:2042
 #, python-format
 msgid "Must specify gender for %(realm)s realm."
 msgstr "Muss Geschlecht angeben für %(realm)s Bereich."
 
-#: cdedb/frontend/core.py:2055
+#: cdedb/frontend/core.py:2054 cdedb/frontend/core.py:2055
 msgid "Confirmation email has been resent."
 msgstr "Bestätigungsmail erneut versendet."
 
-#: cdedb/frontend/core.py:2059
+#: cdedb/frontend/core.py:2058 cdedb/frontend/core.py:2059
 msgid "Email address already in DB. Reset password."
 msgstr "E-Mail-Adresse bereits vorhanden. Bitte das Passwort zurücksetzen."
 
-#: cdedb/frontend/core.py:2084
+#: cdedb/frontend/core.py:2083 cdedb/frontend/core.py:2084
 msgid "Email sent. Please follow the link contained in the email."
 msgstr "E-Mail verschickt. Bitte den enthaltenen Link besuchen."
 
-#: cdedb/frontend/core.py:2100
+#: cdedb/frontend/core.py:2099 cdedb/frontend/core.py:2100
 msgid "Verification failed. Please contact the administrators."
 msgstr "Verifikation fehlgeschlagen. Bitte an die Verwaltung wenden."
 
-#: cdedb/frontend/core.py:2101
+#: cdedb/frontend/core.py:2100 cdedb/frontend/core.py:2101
 msgid "Email verified. Wait for moderation. You will be notified by mail."
 msgstr ""
 "E-Mail-Adresse verifiziert. Deine Anfrage wird bald bearbeitet und Du wirst "
 "dann per E-Mail informiert."
 
-#: cdedb/frontend/core.py:2103
+#: cdedb/frontend/core.py:2102 cdedb/frontend/core.py:2103
 msgid "This account request was already verified."
 msgstr "Diese Accountanfrage wurde bereits bestätigt."
 
-#: cdedb/frontend/core.py:2233 cdedb/frontend/core.py:2265
-#: cdedb/frontend/core.py:2289
+#: cdedb/frontend/core.py:2232 cdedb/frontend/core.py:2233
+#: cdedb/frontend/core.py:2264 cdedb/frontend/core.py:2265
+#: cdedb/frontend/core.py:2288 cdedb/frontend/core.py:2289
 msgid "Case not to review."
 msgstr "Anfrage befindet sich nicht in der Begutachtung."
 
-#: cdedb/frontend/core.py:2321
+#: cdedb/frontend/core.py:2320 cdedb/frontend/core.py:2321
 msgid "Case approved."
 msgstr "Antrag genehmigt."
 
-#: cdedb/frontend/core.py:2328
+#: cdedb/frontend/core.py:2327 cdedb/frontend/core.py:2328
 msgid "Case rejected."
 msgstr "Anfrage abgewiesen."
 
-#: cdedb/frontend/core.py:2377
+#: cdedb/frontend/core.py:2376 cdedb/frontend/core.py:2377
 msgid "Persona has no pending change."
 msgstr "Account hat keine zu begutachtenden Änderungen."
 
-#: cdedb/frontend/core.py:2396
+#: cdedb/frontend/core.py:2395 cdedb/frontend/core.py:2396
 msgid "Change dropped."
 msgstr "Änderung unterdrückt."
 
-#: cdedb/frontend/core.py:2409
+#: cdedb/frontend/core.py:2408 cdedb/frontend/core.py:2409
 msgid "Must supply archival note."
 msgstr "Archivierungsnotiz muss angegeben werden."
 
@@ -2211,7 +2310,8 @@ msgstr "Die Kursliste ist noch nicht öffentlich."
 msgid "Participant list not published yet."
 msgstr "Die Teilnehmerliste ist noch nicht veröffentlicht."
 
-#: cdedb/frontend/event.py:314 cdedb/frontend/event.py:4650
+#: cdedb/frontend/event.py:314 cdedb/frontend/event.py:4649
+#: cdedb/frontend/event.py:4650
 msgid "Invalid part id."
 msgstr "Nicht-existenter Veranstaltungsteil."
 
@@ -2221,6 +2321,7 @@ msgstr "Lediglich die Id eines Teils ist zulässig."
 
 #: cdedb/frontend/event.py:467 cdedb/validation.py:577 cdedb/validation.py:719
 #: cdedb/validation.py:820 cdedb/validation.py:3514 cdedb/validation.py:4163
+#: cdedb/validation.py:4164
 msgid "Must not be empty."
 msgstr "Darf nicht leer sein."
 
@@ -2384,7 +2485,8 @@ msgstr "Nicht genug Geld."
 msgid "Too much money."
 msgstr "Zu viel Geld."
 
-#: cdedb/frontend/event.py:2246 cdedb/frontend/event.py:6579
+#: cdedb/frontend/event.py:2246 cdedb/frontend/event.py:5925
+#: cdedb/frontend/event.py:6579
 msgid "No registration found."
 msgstr "Keine Anmeldung gefunden."
 
@@ -2410,7 +2512,8 @@ msgstr ""
 "Bestätige, das du einen Export herunterladen willst, obwohl die "
 "Veranstaltung nicht gesperrt ist."
 
-#: cdedb/frontend/event.py:2957 cdedb/frontend/event.py:6292
+#: cdedb/frontend/event.py:2957 cdedb/frontend/event.py:5638
+#: cdedb/frontend/event.py:6292
 msgid "Data from wrong event."
 msgstr "Daten passen nicht zur Veranstaltung."
 
@@ -2469,6 +2572,7 @@ msgid "cancelled"
 msgstr "fällt aus"
 
 #: cdedb/frontend/event.py:3171 cdedb/frontend/event.py:5761
+#: cdedb/query.py:1152
 msgid "takes place"
 msgstr "findet statt"
 
@@ -2536,6 +2640,7 @@ msgstr "Status"
 #: cdedb/frontend/templates/web/event/create_lodgement.tmpl:27
 #: cdedb/frontend/templates/web/event/lodgements.tmpl:54
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:169
+#: cdedb/query.py:1250
 msgid "Lodgement"
 msgstr "Unterkunft"
 
@@ -2619,6 +2724,7 @@ msgid "Must not duplicate field."
 msgstr "Felder dürfen nicht doppelt auftreten."
 
 #: cdedb/frontend/event.py:3815 cdedb/validation.py:4180
+#: cdedb/validation.py:4181
 msgid "Invalid field."
 msgstr "Unzulässiges Feld."
 
@@ -2659,88 +2765,106 @@ msgstr "Limit erreicht."
 msgid "No participants found to edit."
 msgstr "Keine Teilnehmer zur Bearbeitung ausgewählt."
 
-#: cdedb/frontend/event.py:4413
+#: cdedb/frontend/event.py:4412 cdedb/frontend/event.py:4413
 msgid "Invalid key. Expected 'course_id' or 'lodgement_id"
 msgstr ""
 "Ungültiger Schlüssel. Mögliche Werte sind 'course_id' und 'lodgement_id'."
 
-#: cdedb/frontend/event.py:4478
+#: cdedb/frontend/event.py:4477 cdedb/frontend/event.py:4478
 msgid "Mixed lodgement with non-mixing participants."
 msgstr "Gemischte Unterkunft mit konfligierenden Teilnehmern."
 
-#: cdedb/frontend/event.py:4495
+#: cdedb/frontend/event.py:4494 cdedb/frontend/event.py:4495
 msgid "Too many camping mats used."
 msgstr "Zu viele Isomattenplätze genutzt."
 
-#: cdedb/frontend/event.py:4510
+#: cdedb/frontend/event.py:4509 cdedb/frontend/event.py:4510
 msgid "Overful lodgement."
 msgstr "Überfüllte Unterkunft"
 
-#: cdedb/frontend/event.py:4515
+#: cdedb/frontend/event.py:4514 cdedb/frontend/event.py:4515
 msgid "Too few camping mats used."
 msgstr "Zu wenige Isomattenplätze genutzt."
 
-#: cdedb/frontend/event.py:4529
+#: cdedb/frontend/event.py:4528 cdedb/frontend/event.py:4529
 msgid "Non-Binary Participant."
 msgstr "nicht-binärer Teilnehmer"
 
-#: cdedb/frontend/event.py:5438
+#: cdedb/frontend/event.py:5393 cdedb/frontend/event.py:5470
+#: cdedb/frontend/event.py:6047 cdedb/frontend/event.py:6124
+msgid "Wrong associated event."
+msgstr "Falsche Veranstaltung referenziert."
+
+#: cdedb/frontend/event.py:5395 cdedb/frontend/event.py:6049
+msgid "Already checked in."
+msgstr "Bereits eingecheckt."
+
+#: cdedb/frontend/event.py:5438 cdedb/query.py:867
 msgid "instructs their course"
 msgstr "Hält seinen/ihren Kurs"
 
-#: cdedb/frontend/event.py:5440 cdedb/frontend/event.py:5739
+#: cdedb/frontend/event.py:5440 cdedb/frontend/event.py:5739 cdedb/query.py:869
+#: cdedb/query.py:1130
 msgid "course"
 msgstr "Kurs"
 
-#: cdedb/frontend/event.py:5442
+#: cdedb/frontend/event.py:5442 cdedb/query.py:871
 msgid "instructed course"
 msgstr "geleiteter Kurs"
 
-#: cdedb/frontend/event.py:5444
+#: cdedb/frontend/event.py:5444 cdedb/query.py:873
 msgid "course ID"
 msgstr "Kurs-ID"
 
-#: cdedb/frontend/event.py:5446 cdedb/frontend/event.py:5740
+#: cdedb/frontend/event.py:5446 cdedb/frontend/event.py:5740 cdedb/query.py:875
+#: cdedb/query.py:1131
 msgid "course nr"
 msgstr "Kursnummer"
 
-#: cdedb/frontend/event.py:5448 cdedb/frontend/event.py:5741
+#: cdedb/frontend/event.py:5448 cdedb/frontend/event.py:5741 cdedb/query.py:877
+#: cdedb/query.py:1132
 msgid "course title"
 msgstr "Kurstitel"
 
-#: cdedb/frontend/event.py:5450 cdedb/frontend/event.py:5743
+#: cdedb/frontend/event.py:5450 cdedb/frontend/event.py:5743 cdedb/query.py:879
+#: cdedb/query.py:1134
 msgid "course shortname"
 msgstr "Kurzname"
 
-#: cdedb/frontend/event.py:5452 cdedb/frontend/event.py:5747
+#: cdedb/frontend/event.py:5452 cdedb/frontend/event.py:5747 cdedb/query.py:881
+#: cdedb/query.py:1138
 msgid "course notes"
 msgstr "Kursnotizen"
 
-#: cdedb/frontend/event.py:5454
+#: cdedb/frontend/event.py:5454 cdedb/query.py:883
 msgid "instructed course ID"
 msgstr "ID geleiteter Kurs"
 
-#: cdedb/frontend/event.py:5456
+#: cdedb/frontend/event.py:5456 cdedb/query.py:885
 msgid "instructed course nr"
 msgstr "Nummer geleiteter Kurs"
 
-#: cdedb/frontend/event.py:5458
+#: cdedb/frontend/event.py:5458 cdedb/query.py:887
 msgid "instructed course title"
 msgstr "Titel geleiteter Kurs"
 
-#: cdedb/frontend/event.py:5460
+#: cdedb/frontend/event.py:5460 cdedb/query.py:889
 msgid "instructed course shortname"
 msgstr "Kurzname geleiteter Kurs"
 
-#: cdedb/frontend/event.py:5462
+#: cdedb/frontend/event.py:5462 cdedb/query.py:891
 msgid "instructed courese notes"
 msgstr "Notizen geleiteter Kurs"
 
-#: cdedb/frontend/event.py:5467
+#: cdedb/frontend/event.py:5467 cdedb/query.py:896
 msgid "course {field}"
 msgstr "Kurs {field}"
 
-#: cdedb/frontend/event.py:5474
+#: cdedb/frontend/event.py:5473 cdedb/frontend/event.py:6127
+msgid "Wrong associated field."
+msgstr "Feld einer anderen Veranstaltung angegeben."
+
+#: cdedb/frontend/event.py:5474 cdedb/query.py:903
 msgid "instructed course {field}"
 msgstr "{field} geleiteter Kurs"
 
@@ -2749,199 +2873,235 @@ msgstr "{field} geleiteter Kurs"
 #: cdedb/frontend/templates/web/event/change_registration.tmpl:106
 #: cdedb/frontend/templates/web/event/generic.tmpl:24
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:223
+#: cdedb/query.py:909
 #, python-format
 msgid "%s. Choice"
 msgstr "%s. Wahl"
 
-#: cdedb/frontend/event.py:5484
+#: cdedb/frontend/event.py:5484 cdedb/query.py:913
 msgid "Any Choice"
 msgstr "Beliebige Kurswahl"
 
-#: cdedb/frontend/event.py:5489
+#: cdedb/frontend/event.py:5489 cdedb/query.py:918
 msgid "any track: instructs their course"
 msgstr "Bel. Schiene: Hält seinen/ihren Kurs"
 
-#: cdedb/frontend/event.py:5492
+#: cdedb/frontend/event.py:5492 cdedb/query.py:921
 msgid "any track: course"
 msgstr "Bel. Schiene: Kurs"
 
-#: cdedb/frontend/event.py:5495
+#: cdedb/frontend/event.py:5495 cdedb/query.py:924
 msgid "any track: instructed course"
 msgstr "Bel. Schiene: geleiteter Kurs"
 
-#: cdedb/frontend/event.py:5498
+#: cdedb/frontend/event.py:5498 cdedb/query.py:927
 msgid "any track: course ID"
 msgstr "Bel. Schiene: Kurs-ID"
 
-#: cdedb/frontend/event.py:5501
+#: cdedb/frontend/event.py:5501 cdedb/query.py:930
 msgid "any track: course nr"
 msgstr "Bel. Schiene: Kursnummer"
 
-#: cdedb/frontend/event.py:5504
+#: cdedb/frontend/event.py:5504 cdedb/query.py:933
 msgid "any track: course title"
 msgstr "Bel. Schiene: Kurstitel"
 
-#: cdedb/frontend/event.py:5507
+#: cdedb/frontend/event.py:5507 cdedb/query.py:936
 msgid "any track: course shortname"
 msgstr "Bel. Schiene: Kurskurzname"
 
-#: cdedb/frontend/event.py:5510
+#: cdedb/frontend/event.py:5510 cdedb/query.py:939
 msgid "any track: course notes"
 msgstr "Bel. Schiene: Kursnotizen"
 
-#: cdedb/frontend/event.py:5513
+#: cdedb/frontend/event.py:5513 cdedb/query.py:942
 msgid "any track: instructed course ID"
 msgstr "Bel. Schiene: ID geleiteter Kurs"
 
-#: cdedb/frontend/event.py:5516
+#: cdedb/frontend/event.py:5516 cdedb/query.py:945
 msgid "any track: instructed course nr"
 msgstr "Bel. Schiene: Nummer geleiteter Kurs"
 
-#: cdedb/frontend/event.py:5519
+#: cdedb/frontend/event.py:5519 cdedb/query.py:948
 msgid "any track: instructed course title"
 msgstr "Bel. Schiene: Titel geleiteter Kurs"
 
-#: cdedb/frontend/event.py:5522
+#: cdedb/frontend/event.py:5522 cdedb/query.py:951
 msgid "any track: instructed course shortname"
 msgstr "Bel. Schiene: Kurzname geleiteter Kurs"
 
-#: cdedb/frontend/event.py:5525
+#: cdedb/frontend/event.py:5525 cdedb/query.py:954
 msgid "any track: instructed course notes"
 msgstr "Bel. Schiene: Notizen geleiteter Kurs"
 
-#: cdedb/frontend/event.py:5531
+#: cdedb/frontend/event.py:5531 cdedb/query.py:960
 msgid "any track: course {field}"
 msgstr "Bel. Schiene: Kurs {field}"
 
-#: cdedb/frontend/event.py:5539
+#: cdedb/frontend/event.py:5539 cdedb/query.py:968
 msgid "any track: instructed course {field}"
 msgstr "Bel. Schiene: {field} geleiteter Kurs"
 
-#: cdedb/frontend/event.py:5546
+#: cdedb/frontend/event.py:5546 cdedb/query.py:975
 msgid "any track: Any Choice"
 msgstr "Bel. Schiene: Beliebige Kurswahl"
 
-#: cdedb/frontend/event.py:5554
+#: cdedb/frontend/event.py:5554 cdedb/query.py:983
 msgid "registration status"
 msgstr "Status"
 
-#: cdedb/frontend/event.py:5556
+#: cdedb/frontend/event.py:5556 cdedb/query.py:985
 msgid "camping mat user"
 msgstr "Isomattenschläfer"
 
-#: cdedb/frontend/event.py:5558
+#: cdedb/frontend/event.py:5558 cdedb/query.py:987
 msgid "lodgement"
 msgstr "Unterkunft"
 
-#: cdedb/frontend/event.py:5560
+#: cdedb/frontend/event.py:5560 cdedb/query.py:989
 msgid "lodgement ID"
 msgstr "Unterkunfts-ID"
 
-#: cdedb/frontend/event.py:5562
+#: cdedb/frontend/event.py:5562 cdedb/query.py:991
 msgid "lodgement group"
 msgstr "Unterkunftsgruppe"
 
-#: cdedb/frontend/event.py:5564
+#: cdedb/frontend/event.py:5564 cdedb/query.py:993
 msgid "lodgement title"
 msgstr "Unterkunftskurzname"
 
-#: cdedb/frontend/event.py:5566
+#: cdedb/frontend/event.py:5566 cdedb/query.py:995
 msgid "lodgement notes"
 msgstr "Unterkunftsnotizen"
 
-#: cdedb/frontend/event.py:5568
+#: cdedb/frontend/event.py:5568 cdedb/query.py:997
 msgid "lodgement group ID"
 msgstr "Unterkunftgruppen-ID"
 
-#: cdedb/frontend/event.py:5570
+#: cdedb/frontend/event.py:5570 cdedb/query.py:999
 msgid "lodgement group title"
 msgstr "Unterkunftsgruppen-Bezeichnung"
 
-#: cdedb/frontend/event.py:5575
+#: cdedb/frontend/event.py:5575 cdedb/query.py:1004
 msgid "lodgement {field}"
 msgstr "Unterkunft {field}"
 
-#: cdedb/frontend/event.py:5583
+#: cdedb/frontend/event.py:5583 cdedb/query.py:1012
 msgid "any part: registration status"
 msgstr "Bel. Teil: Status"
 
-#: cdedb/frontend/event.py:5586
+#: cdedb/frontend/event.py:5586 cdedb/query.py:1015
 msgid "any part: camping mat user"
 msgstr "Bel. Teil: Isomattenschläfer"
 
-#: cdedb/frontend/event.py:5589
+#: cdedb/frontend/event.py:5589 cdedb/query.py:1018
 msgid "any part: lodgement"
 msgstr "Bel. Teil: Unterkunft"
 
-#: cdedb/frontend/event.py:5592
+#: cdedb/frontend/event.py:5592 cdedb/query.py:1021
 msgid "any part: lodgement ID"
 msgstr "Bel. Teil: Unterkunfts-ID"
 
-#: cdedb/frontend/event.py:5595
+#: cdedb/frontend/event.py:5595 cdedb/query.py:1024
 msgid "any part: lodgement group"
 msgstr "Bel. Teil: Unterkunftsgruppe"
 
-#: cdedb/frontend/event.py:5598
+#: cdedb/frontend/event.py:5598 cdedb/query.py:1027
 msgid "any part: lodgement title"
 msgstr "Bel. Teil: Unterkunftskurzname"
 
-#: cdedb/frontend/event.py:5601
+#: cdedb/frontend/event.py:5601 cdedb/query.py:1030
 msgid "any part: lodgement notes"
 msgstr "Bel. Teil: Unterkunftsnotizen"
 
-#: cdedb/frontend/event.py:5604
+#: cdedb/frontend/event.py:5604 cdedb/query.py:1033
 msgid "any part: lodgement group ID"
 msgstr "Bel. Teil: Unterkunftgruppen-ID"
 
-#: cdedb/frontend/event.py:5607
+#: cdedb/frontend/event.py:5607 cdedb/query.py:1036
 msgid "any part: lodgement group title"
 msgstr "Bel. Teil: Unterkunftsgruppen-Bezeichnung"
 
-#: cdedb/frontend/event.py:5613
+#: cdedb/frontend/event.py:5613 cdedb/query.py:1042
 msgid "any part: lodgement {field}"
 msgstr "Bel. Teil: Unterkunft {field}"
 
-#: cdedb/frontend/event.py:5738
+#: cdedb/frontend/event.py:5645 cdedb/frontend/event.py:6299
+msgid "There exist unmigrated personas."
+msgstr "Unmigrierte Accounts gefunden."
+
+#: cdedb/frontend/event.py:5663 cdedb/frontend/event.py:6317
+msgid "Event already archived."
+msgstr "Veranstaltung bereits archiviert."
+
+#: cdedb/frontend/event.py:5672 cdedb/frontend/event.py:5704
+#: cdedb/frontend/event.py:6326 cdedb/frontend/event.py:6358
+#: cdedb/frontend/templates/web/event/show_event.tmpl:399
+#: cdedb/frontend/templates/web/event/show_event.tmpl:428
+msgid "Event is not concluded yet."
+msgstr "Veranstaltung ist noch nicht abgeschlossen."
+
+#: cdedb/frontend/event.py:5680 cdedb/frontend/event.py:6334
+msgid "Event archived."
+msgstr "Veranstaltung archiviert."
+
+#: cdedb/frontend/event.py:5684 cdedb/frontend/event.py:6338
+msgid "Created past event."
+msgstr "Vergangene Veranstaltung erstellt."
+
+#: cdedb/frontend/event.py:5688 cdedb/frontend/event.py:6342
+msgid "Created multiple past events."
+msgstr "Mehrere vergangene Veranstaltungen erstellt."
+
+#: cdedb/frontend/event.py:5716 cdedb/frontend/event.py:6370
+msgid "Event deleted."
+msgstr "Veranstaltung gelöscht."
+
+#: cdedb/frontend/event.py:5738 cdedb/query.py:1129
 msgid "course id"
 msgstr "Kurs ID"
 
-#: cdedb/frontend/event.py:5742
+#: cdedb/frontend/event.py:5742 cdedb/query.py:1133
 msgid "course description"
 msgstr "Kursbeschreibung"
 
-#: cdedb/frontend/event.py:5744
+#: cdedb/frontend/event.py:5744 cdedb/query.py:1135
 msgid "course instructors"
 msgstr "Kursleiter"
 
-#: cdedb/frontend/event.py:5745
+#: cdedb/frontend/event.py:5745 cdedb/query.py:1136
 msgid "course min size"
 msgstr "Minimalgröße"
 
-#: cdedb/frontend/event.py:5746
+#: cdedb/frontend/event.py:5746 cdedb/query.py:1137
 msgid "course max size"
 msgstr "Maximalgröße"
 
-#: cdedb/frontend/event.py:5763
+#: cdedb/frontend/event.py:5763 cdedb/query.py:1154
 msgid "is offered"
 msgstr "wird angeboten"
 
-#: cdedb/frontend/event.py:5765
+#: cdedb/frontend/event.py:5765 cdedb/query.py:1156
 msgid "attendees"
 msgstr "Teilnehmer"
 
-#: cdedb/frontend/event.py:5767
+#: cdedb/frontend/event.py:5767 cdedb/query.py:1158
 msgid "instructors"
 msgstr "Kursleiter"
 
-#: cdedb/frontend/event.py:5772
+#: cdedb/frontend/event.py:5772 cdedb/query.py:1163
 msgid "{}. choices"
 msgstr "{}. Wahlen"
 
-#: cdedb/frontend/event.py:5872
+#: cdedb/frontend/event.py:5872 cdedb/query.py:1227
 msgid "--no group--"
 msgstr "--Keine Unterkunftsgruppe--"
 
-#: cdedb/frontend/event.py:5894
+#: cdedb/frontend/event.py:5877 cdedb/frontend/event.py:6531
+msgid "Active characters found in search."
+msgstr "Aktive Zeichen in der Eingabe gefunden."
+
+#: cdedb/frontend/event.py:5894 cdedb/query.py:1249
 msgid "Lodgement ID"
 msgstr "Unterkunfts-ID"
 
@@ -2964,7 +3124,7 @@ msgstr "Unterkunfts-ID"
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:82
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:60
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:34
-#: cdedb/frontend/templates/web/util.tmpl:823
+#: cdedb/frontend/templates/web/util.tmpl:823 cdedb/query.py:1251
 msgid "Title_[[name of an entity]]"
 msgstr "Bezeichnung"
 
@@ -2973,6 +3133,7 @@ msgstr "Bezeichnung"
 #: cdedb/frontend/templates/web/event/create_lodgement.tmpl:29
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:83
 #: cdedb/frontend/templates/web/event/show_lodgement.tmpl:33
+#: cdedb/query.py:1252
 msgid "Regular Capacity"
 msgstr "Reguläre Kapazität"
 
@@ -2981,14 +3142,15 @@ msgstr "Reguläre Kapazität"
 #: cdedb/frontend/templates/web/event/create_lodgement.tmpl:30
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:84
 #: cdedb/frontend/templates/web/event/show_lodgement.tmpl:35
+#: cdedb/query.py:1254
 msgid "Camping Mat Capacity"
 msgstr "Isomattenplätze"
 
-#: cdedb/frontend/event.py:5900
+#: cdedb/frontend/event.py:5900 cdedb/query.py:1255
 msgid "Lodgement Notes"
 msgstr "Unterkunftsnotizen"
 
-#: cdedb/frontend/event.py:5901
+#: cdedb/frontend/event.py:5901 cdedb/query.py:1256
 msgid "Lodgement Group ID"
 msgstr "Unterkunftsgruppe: ID"
 
@@ -2996,94 +3158,49 @@ msgstr "Unterkunftsgruppe: ID"
 #: cdedb/frontend/templates/web/event/change_lodgement.tmpl:31
 #: cdedb/frontend/templates/web/event/create_lodgement.tmpl:32
 #: cdedb/frontend/templates/web/event/show_lodgement.tmpl:37
+#: cdedb/query.py:1257
 msgid "Lodgement Group"
 msgstr "Unterkunftgruppe"
 
-#: cdedb/frontend/event.py:5903
+#: cdedb/frontend/event.py:5903 cdedb/query.py:1258
 msgid "Lodgement Group Title"
 msgstr "Unterkunftsgruppe: Bezeichner"
 
-#: cdedb/frontend/event.py:5905
+#: cdedb/frontend/event.py:5905 cdedb/query.py:1260
 msgid "Lodgement Group Regular Capacity"
 msgstr "Unterkunftsgruppe: Reguläre Kapazität"
 
-#: cdedb/frontend/event.py:5907
+#: cdedb/frontend/event.py:5907 cdedb/query.py:1262
 msgid "Lodgement Group Camping Mat Capacity"
 msgstr "Unterkunftsgruppe: Isomatten-Kapazität"
 
-#: cdedb/frontend/event.py:5921
+#: cdedb/frontend/event.py:5921 cdedb/query.py:1276
 msgid "Regular Inhabitants"
 msgstr "Reguläre Bewohner"
 
-#: cdedb/frontend/event.py:5923
+#: cdedb/frontend/event.py:5923 cdedb/query.py:1278
 msgid "Reserve Inhabitants"
 msgstr "Isomattenschläfer"
 
-#: cdedb/frontend/event.py:5925
+#: cdedb/frontend/event.py:5925 cdedb/query.py:1280
 msgid "Total Inhabitants"
 msgstr "Gesamtbewohner"
 
-#: cdedb/frontend/event.py:5927
+#: cdedb/frontend/event.py:5927 cdedb/query.py:1282
 msgid "Group Regular Inhabitants"
 msgstr "Unterkunftsgruppe: Reguläre Bewohner"
 
-#: cdedb/frontend/event.py:5929
+#: cdedb/frontend/event.py:5929 cdedb/query.py:1284
 msgid "Group Reserve Inhabitants"
 msgstr "Unterkufntsgruppe: Isomattenschläfer"
 
-#: cdedb/frontend/event.py:5931
+#: cdedb/frontend/event.py:5931 cdedb/query.py:1286
 msgid "Group Total Inhabitants"
 msgstr "Unterkunftsgruppe: Gesamtbewohner"
 
 #: cdedb/frontend/event.py:6003
 msgid "Unknown query scope."
 msgstr "Unbekanntes Abfragen-Ziel."
-
-#: cdedb/frontend/event.py:6047 cdedb/frontend/event.py:6124
-msgid "Wrong associated event."
-msgstr "Falsche Veranstaltung referenziert."
-
-#: cdedb/frontend/event.py:6049
-msgid "Already checked in."
-msgstr "Bereits eingecheckt."
-
-#: cdedb/frontend/event.py:6127
-msgid "Wrong associated field."
-msgstr "Feld einer anderen Veranstaltung angegeben."
-
-#: cdedb/frontend/event.py:6299
-msgid "There exist unmigrated personas."
-msgstr "Unmigrierte Accounts gefunden."
-
-#: cdedb/frontend/event.py:6317
-msgid "Event already archived."
-msgstr "Veranstaltung bereits archiviert."
-
-#: cdedb/frontend/event.py:6326 cdedb/frontend/event.py:6358
-#: cdedb/frontend/templates/web/event/show_event.tmpl:399
-#: cdedb/frontend/templates/web/event/show_event.tmpl:428
-msgid "Event is not concluded yet."
-msgstr "Veranstaltung ist noch nicht abgeschlossen."
-
-#: cdedb/frontend/event.py:6334
-msgid "Event archived."
-msgstr "Veranstaltung archiviert."
-
-#: cdedb/frontend/event.py:6338
-msgid "Created past event."
-msgstr "Vergangene Veranstaltung erstellt."
-
-#: cdedb/frontend/event.py:6342
-msgid "Created multiple past events."
-msgstr "Mehrere vergangene Veranstaltungen erstellt."
-
-#: cdedb/frontend/event.py:6370
-msgid "Event deleted."
-msgstr "Veranstaltung gelöscht."
-
-#: cdedb/frontend/event.py:6531
-msgid "Active characters found in search."
-msgstr "Aktive Zeichen in der Eingabe gefunden."
 
 #: cdedb/frontend/ml.py:42
 msgid "Invalid moderation action."
@@ -3109,51 +3226,56 @@ msgstr "Nachricht moderiert."
 msgid "Message not moderated."
 msgstr "Nachricht moderiert."
 
-#: cdedb/frontend/ml_base.py:216
+#: cdedb/frontend/ml_base.py:216 cdedb/frontend/ml_base.py:217
 msgid "May not create mailinglist of this type."
 msgstr "Kann keine Mailingliste des gewünschten Typs erstellen."
 
-#: cdedb/frontend/ml_base.py:295 cdedb/frontend/ml_base.py:299
-#: cdedb/frontend/ml_base.py:841 cdedb/frontend/ml_base.py:881
-#: cdedb/frontend/ml_base.py:897 cdedb/frontend/ml_base.py:924
-#: cdedb/frontend/ml_base.py:957 cdedb/frontend/ml_base.py:991
+#: cdedb/frontend/ml_base.py:295 cdedb/frontend/ml_base.py:296
+#: cdedb/frontend/ml_base.py:299 cdedb/frontend/ml_base.py:300
+#: cdedb/frontend/ml_base.py:841 cdedb/frontend/ml_base.py:842
+#: cdedb/frontend/ml_base.py:881 cdedb/frontend/ml_base.py:882
+#: cdedb/frontend/ml_base.py:897 cdedb/frontend/ml_base.py:898
+#: cdedb/frontend/ml_base.py:924 cdedb/frontend/ml_base.py:925
+#: cdedb/frontend/ml_base.py:957 cdedb/frontend/ml_base.py:958
+#: cdedb/frontend/ml_base.py:991 cdedb/frontend/ml_base.py:992
 msgid "User does not exist or is archived."
 msgstr "Dieser Benutzer existiert nicht oder ist archiviert."
 
-#: cdedb/frontend/ml_base.py:303
+#: cdedb/frontend/ml_base.py:303 cdedb/frontend/ml_base.py:304
 msgid "Source persona must be a ml-only user and no admin."
 msgstr ""
 "Der Quellnutzer muss ein reiner Mailinglistennutzer und darf kein Admin sein."
 
-#: cdedb/frontend/ml_base.py:347
+#: cdedb/frontend/ml_base.py:347 cdedb/frontend/ml_base.py:348
 msgid "Not privileged to view log for all these mailinglists."
 msgstr "Keine Berechtigung um auf die Logs aller Mailinglisten zuzugreifen."
 
-#: cdedb/frontend/ml_base.py:729
+#: cdedb/frontend/ml_base.py:729 cdedb/frontend/ml_base.py:730
 msgid "User is no moderator."
 msgstr "Person ist kein Moderator."
 
-#: cdedb/frontend/ml_base.py:735
+#: cdedb/frontend/ml_base.py:735 cdedb/frontend/ml_base.py:736
 msgid "Not allowed to remove yourself as moderator."
 msgstr "Du kannst Dich nicht selbst als Moderator entfernen."
 
-#: cdedb/frontend/ml_base.py:739
+#: cdedb/frontend/ml_base.py:739 cdedb/frontend/ml_base.py:740
 msgid "Cannot remove last moderator."
 msgstr "Der letzte Moderator kann nicht entfernt werden."
 
-#: cdedb/frontend/ml_base.py:780 cdedb/frontend/ml_base.py:821
+#: cdedb/frontend/ml_base.py:780 cdedb/frontend/ml_base.py:781
+#: cdedb/frontend/ml_base.py:821 cdedb/frontend/ml_base.py:822
 msgid "Not privileged to change subscriptions."
 msgstr "Darf Abonnements nicht ändern."
 
-#: cdedb/frontend/ml_base.py:1072
+#: cdedb/frontend/ml_base.py:1072 cdedb/frontend/ml_base.py:1073
 msgid "Confirmation email sent."
 msgstr "Verifizierungsmail verschickt."
 
-#: cdedb/frontend/ml_base.py:1105
+#: cdedb/frontend/ml_base.py:1105 cdedb/frontend/ml_base.py:1106
 msgid "Not subscribed."
 msgstr "Nicht abonniert."
 
-#: cdedb/frontend/ml_base.py:1108
+#: cdedb/frontend/ml_base.py:1108 cdedb/frontend/ml_base.py:1109
 msgid "Disallowed to change address."
 msgstr "Adressänderung unzulässig."
 
@@ -3343,6 +3465,7 @@ msgstr "Vorname"
 #: cdedb/frontend/templates/web/generic.tmpl:12
 #: cdedb/frontend/templates/web/generic.tmpl:136
 #: cdedb/frontend/templates/web/generic.tmpl:207
+#: cdedb/frontend/templates/web/generic.tmpl:210
 msgid "Family Name"
 msgstr "Nachname"
 
@@ -3560,6 +3683,7 @@ msgstr "Bis jetzt haben %(count)s Teilnehmer über diesen Punkt abgestimmt."
 #: cdedb/frontend/templates/web/core/show_user.tmpl:231
 #: cdedb/frontend/templates/web/generic.tmpl:168
 #: cdedb/frontend/templates/web/generic.tmpl:239
+#: cdedb/frontend/templates/web/generic.tmpl:242
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:76
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:51
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:60
@@ -4269,7 +4393,9 @@ msgstr "Log"
 #: cdedb/frontend/templates/web/generic.tmpl:173
 #: cdedb/frontend/templates/web/generic.tmpl:177
 #: cdedb/frontend/templates/web/generic.tmpl:244
+#: cdedb/frontend/templates/web/generic.tmpl:247
 #: cdedb/frontend/templates/web/generic.tmpl:248
+#: cdedb/frontend/templates/web/generic.tmpl:251
 msgid "Assemblies"
 msgstr "Versammlungen"
 
@@ -4368,6 +4494,7 @@ msgstr "%(ballot)s bearbeiten %(assembly)s"
 #: cdedb/frontend/templates/web/event/course_stats.tmpl:146
 #: cdedb/frontend/templates/web/event/lodgements.tmpl:138
 #: cdedb/frontend/templates/web/event/registration_query.tmpl:100
+#: cdedb/frontend/templates/web/event/registration_query.tmpl:101
 #: cdedb/frontend/templates/web/event/show_course.tmpl:33
 #: cdedb/frontend/templates/web/event/show_lodgement.tmpl:26
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:26
@@ -4763,6 +4890,7 @@ msgstr "Abstimmung starten"
 #: cdedb/frontend/templates/web/event/course_query.tmpl:45
 #: cdedb/frontend/templates/web/event/lodgement_query.tmpl:45
 #: cdedb/frontend/templates/web/event/registration_query.tmpl:75
+#: cdedb/frontend/templates/web/event/registration_query.tmpl:76
 #: cdedb/frontend/templates/web/generic.tmpl:104
 #: cdedb/frontend/templates/web/generic.tmpl:124
 msgid "Result"
@@ -5175,7 +5303,9 @@ msgstr "Mitglieder"
 #: cdedb/frontend/templates/web/generic.tmpl:172
 #: cdedb/frontend/templates/web/generic.tmpl:176
 #: cdedb/frontend/templates/web/generic.tmpl:243
+#: cdedb/frontend/templates/web/generic.tmpl:246
 #: cdedb/frontend/templates/web/generic.tmpl:247
+#: cdedb/frontend/templates/web/generic.tmpl:250
 msgid "Events"
 msgstr "Veranstaltungen"
 
@@ -5189,7 +5319,9 @@ msgstr "Veranstaltungen"
 #: cdedb/frontend/templates/web/generic.tmpl:171
 #: cdedb/frontend/templates/web/generic.tmpl:175
 #: cdedb/frontend/templates/web/generic.tmpl:242
+#: cdedb/frontend/templates/web/generic.tmpl:245
 #: cdedb/frontend/templates/web/generic.tmpl:246
+#: cdedb/frontend/templates/web/generic.tmpl:249
 #: cdedb/frontend/templates/web/ml/base.tmpl:33
 #: cdedb/frontend/templates/web/ml/index.tmpl:6
 #: cdedb/frontend/templates/web/ml/index.tmpl:9
@@ -5327,6 +5459,7 @@ msgstr "Verg.-Veranstaltungen-Log"
 #: cdedb/frontend/templates/web/generic.tmpl:23
 #: cdedb/frontend/templates/web/generic.tmpl:161
 #: cdedb/frontend/templates/web/generic.tmpl:232
+#: cdedb/frontend/templates/web/generic.tmpl:235
 msgid "Miscellaneous"
 msgstr "Sonstiges"
 
@@ -5414,6 +5547,7 @@ msgstr "Akademie"
 #: cdedb/frontend/templates/web/generic.tmpl:11
 #: cdedb/frontend/templates/web/generic.tmpl:138
 #: cdedb/frontend/templates/web/generic.tmpl:209
+#: cdedb/frontend/templates/web/generic.tmpl:212
 msgid "Given Names"
 msgstr "Vorname(n)"
 
@@ -5426,6 +5560,7 @@ msgstr "Vorname(n)"
 #: cdedb/frontend/templates/web/generic.tmpl:16
 #: cdedb/frontend/templates/web/generic.tmpl:141
 #: cdedb/frontend/templates/web/generic.tmpl:212
+#: cdedb/frontend/templates/web/generic.tmpl:215
 msgid "Name Affix"
 msgstr "Namenszusatz"
 
@@ -5438,6 +5573,7 @@ msgstr "Namenszusatz"
 #: cdedb/frontend/templates/web/generic.tmpl:10
 #: cdedb/frontend/templates/web/generic.tmpl:140
 #: cdedb/frontend/templates/web/generic.tmpl:211
+#: cdedb/frontend/templates/web/generic.tmpl:214
 msgid "Title_[[of a persona]]"
 msgstr "Titel"
 
@@ -5460,6 +5596,7 @@ msgstr "Titel"
 #: cdedb/frontend/templates/web/generic.tmpl:53
 #: cdedb/frontend/templates/web/generic.tmpl:147
 #: cdedb/frontend/templates/web/generic.tmpl:218
+#: cdedb/frontend/templates/web/generic.tmpl:221
 msgid "Address Supplement"
 msgstr "Adresszusatz"
 
@@ -5475,6 +5612,7 @@ msgstr "Adresszusatz"
 #: cdedb/frontend/templates/web/generic.tmpl:14
 #: cdedb/frontend/templates/web/generic.tmpl:137
 #: cdedb/frontend/templates/web/generic.tmpl:208
+#: cdedb/frontend/templates/web/generic.tmpl:211
 msgid "Birth Name"
 msgstr "Geburtsname"
 
@@ -5498,6 +5636,7 @@ msgstr "Geburtsname"
 #: cdedb/frontend/templates/web/generic.tmpl:55
 #: cdedb/frontend/templates/web/generic.tmpl:149
 #: cdedb/frontend/templates/web/generic.tmpl:220
+#: cdedb/frontend/templates/web/generic.tmpl:223
 msgid "City"
 msgstr "Ort"
 
@@ -5519,6 +5658,7 @@ msgstr "Ort"
 #: cdedb/frontend/templates/web/generic.tmpl:27
 #: cdedb/frontend/templates/web/generic.tmpl:142
 #: cdedb/frontend/templates/web/generic.tmpl:213
+#: cdedb/frontend/templates/web/generic.tmpl:216
 msgid "Gender"
 msgstr "Geschlecht"
 
@@ -5566,6 +5706,7 @@ msgstr "Postleitzahl"
 #: cdedb/frontend/templates/web/generic.tmpl:28
 #: cdedb/frontend/templates/web/generic.tmpl:143
 #: cdedb/frontend/templates/web/generic.tmpl:214
+#: cdedb/frontend/templates/web/generic.tmpl:217
 msgid "Birthday"
 msgstr "Geburtsdatum"
 
@@ -5587,6 +5728,7 @@ msgstr "Geburtsdatum"
 #: cdedb/frontend/templates/web/generic.tmpl:56
 #: cdedb/frontend/templates/web/generic.tmpl:150
 #: cdedb/frontend/templates/web/generic.tmpl:221
+#: cdedb/frontend/templates/web/generic.tmpl:224
 msgid "Country"
 msgstr "Land"
 
@@ -5610,6 +5752,7 @@ msgstr "Land"
 #: cdedb/frontend/templates/web/generic.tmpl:32
 #: cdedb/frontend/templates/web/generic.tmpl:134
 #: cdedb/frontend/templates/web/generic.tmpl:205
+#: cdedb/frontend/templates/web/generic.tmpl:208
 msgid "E-Mail"
 msgstr "E-Mail"
 
@@ -6049,6 +6192,7 @@ msgstr "Suchbegriff"
 #: cdedb/frontend/templates/web/core/index.tmpl:39
 #: cdedb/frontend/templates/web/event/show_event.tmpl:146
 #: cdedb/frontend/templates/web/generic.tmpl:440
+#: cdedb/frontend/templates/web/generic.tmpl:443
 msgid "Search"
 msgstr "Suche"
 
@@ -6408,6 +6552,7 @@ msgstr "Alle aktiven Einzugsermächtigungen"
 
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:209
 #: cdedb/frontend/templates/web/generic.tmpl:632
+#: cdedb/frontend/templates/web/generic.tmpl:636
 msgid "Profile"
 msgstr "Profil"
 
@@ -6524,6 +6669,7 @@ msgstr "Anschrift (des Kontoinhabers)"
 #: cdedb/frontend/templates/web/generic.tmpl:42
 #: cdedb/frontend/templates/web/generic.tmpl:146
 #: cdedb/frontend/templates/web/generic.tmpl:217
+#: cdedb/frontend/templates/web/generic.tmpl:220
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:61
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:35
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:40
@@ -6607,12 +6753,14 @@ msgstr "Keine Mitglieder gefunden."
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:75
 #: cdedb/frontend/templates/web/cde/past_course_search.tmpl:57
 #: cdedb/frontend/templates/web/generic.tmpl:271
+#: cdedb/frontend/templates/web/generic.tmpl:274
 msgid "Search Mask"
 msgstr "Suchmaske"
 
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:80
 #: cdedb/frontend/templates/web/generic.tmpl:132
 #: cdedb/frontend/templates/web/generic.tmpl:203
+#: cdedb/frontend/templates/web/generic.tmpl:206
 msgid "Fulltext"
 msgstr "Volltext"
 
@@ -6625,6 +6773,7 @@ msgstr "Volltext"
 #: cdedb/frontend/templates/web/generic.tmpl:22
 #: cdedb/frontend/templates/web/generic.tmpl:160
 #: cdedb/frontend/templates/web/generic.tmpl:231
+#: cdedb/frontend/templates/web/generic.tmpl:234
 msgid "Interests"
 msgstr "Interessen"
 
@@ -6648,6 +6797,7 @@ msgstr "Kursauswahl wird nach der ersten Suche angezeigt."
 #: cdedb/frontend/templates/web/generic.tmpl:34
 #: cdedb/frontend/templates/web/generic.tmpl:144
 #: cdedb/frontend/templates/web/generic.tmpl:215
+#: cdedb/frontend/templates/web/generic.tmpl:218
 msgid "Phone"
 msgstr "Telefon"
 
@@ -6657,6 +6807,7 @@ msgstr "Telefon"
 #: cdedb/frontend/templates/web/event/registration_query.tmpl:65
 #: cdedb/frontend/templates/web/generic.tmpl:148
 #: cdedb/frontend/templates/web/generic.tmpl:219
+#: cdedb/frontend/templates/web/generic.tmpl:222
 msgid "ZIP"
 msgstr "PLZ"
 
@@ -6736,6 +6887,7 @@ msgstr "Kommentar"
 #: cdedb/frontend/templates/web/event/registration_query.tmpl:41
 #: cdedb/frontend/templates/web/generic.tmpl:133
 #: cdedb/frontend/templates/web/generic.tmpl:204
+#: cdedb/frontend/templates/web/generic.tmpl:207
 msgid "ID"
 msgstr "ID"
 
@@ -7316,6 +7468,7 @@ msgstr "Nutzerdaten bearbeiten"
 #: cdedb/frontend/templates/web/generic.tmpl:17
 #: cdedb/frontend/templates/web/generic.tmpl:139
 #: cdedb/frontend/templates/web/generic.tmpl:210
+#: cdedb/frontend/templates/web/generic.tmpl:213
 msgid "First Given Name"
 msgstr "Rufname"
 
@@ -7324,6 +7477,7 @@ msgstr "Rufname"
 #: cdedb/frontend/templates/web/generic.tmpl:66
 #: cdedb/frontend/templates/web/generic.tmpl:170
 #: cdedb/frontend/templates/web/generic.tmpl:241
+#: cdedb/frontend/templates/web/generic.tmpl:244
 msgid "Searchable"
 msgstr "Sichtbarkeit"
 
@@ -7333,6 +7487,7 @@ msgstr "Sichtbarkeit"
 #: cdedb/frontend/templates/web/generic.tmpl:68
 #: cdedb/frontend/templates/web/generic.tmpl:167
 #: cdedb/frontend/templates/web/generic.tmpl:238
+#: cdedb/frontend/templates/web/generic.tmpl:241
 msgid "Printed exPuls"
 msgstr "Gedruckter exPuls"
 
@@ -7364,6 +7519,7 @@ msgstr "Kontakt"
 #: cdedb/frontend/templates/web/generic.tmpl:35
 #: cdedb/frontend/templates/web/generic.tmpl:145
 #: cdedb/frontend/templates/web/generic.tmpl:216
+#: cdedb/frontend/templates/web/generic.tmpl:219
 msgid "Mobile Phone"
 msgstr "Mobiltelefon"
 
@@ -7375,6 +7531,7 @@ msgstr "Mobiltelefon"
 #: cdedb/frontend/templates/web/generic.tmpl:38
 #: cdedb/frontend/templates/web/generic.tmpl:156
 #: cdedb/frontend/templates/web/generic.tmpl:227
+#: cdedb/frontend/templates/web/generic.tmpl:230
 msgid "WWW"
 msgstr "WWW"
 
@@ -7414,6 +7571,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/generic.tmpl:19
 #: cdedb/frontend/templates/web/generic.tmpl:157
 #: cdedb/frontend/templates/web/generic.tmpl:228
+#: cdedb/frontend/templates/web/generic.tmpl:231
 msgid "Specialisation"
 msgstr "Fachgebiet"
 
@@ -7425,6 +7583,7 @@ msgstr "Fachgebiet"
 #: cdedb/frontend/templates/web/generic.tmpl:20
 #: cdedb/frontend/templates/web/generic.tmpl:158
 #: cdedb/frontend/templates/web/generic.tmpl:229
+#: cdedb/frontend/templates/web/generic.tmpl:232
 msgid "School, University, …"
 msgstr "Schule, Uni, …"
 
@@ -7436,6 +7595,7 @@ msgstr "Schule, Uni, …"
 #: cdedb/frontend/templates/web/generic.tmpl:21
 #: cdedb/frontend/templates/web/generic.tmpl:159
 #: cdedb/frontend/templates/web/generic.tmpl:230
+#: cdedb/frontend/templates/web/generic.tmpl:233
 msgid "Year(s) of Graduation"
 msgstr "Jahrgang, Matrikel, …"
 
@@ -7691,6 +7851,9 @@ msgstr "Nutzer anlegen"
 #: cdedb/frontend/templates/web/generic.tmpl:243
 #: cdedb/frontend/templates/web/generic.tmpl:244
 #: cdedb/frontend/templates/web/generic.tmpl:245
+#: cdedb/frontend/templates/web/generic.tmpl:246
+#: cdedb/frontend/templates/web/generic.tmpl:247
+#: cdedb/frontend/templates/web/generic.tmpl:248
 msgid "Realm"
 msgstr "Bereich"
 
@@ -7782,7 +7945,10 @@ msgstr "Mailinglisten-Account-Anfragen"
 #: cdedb/frontend/templates/web/event/course_list.tmpl:57
 #: cdedb/frontend/templates/web/generic.tmpl:623
 #: cdedb/frontend/templates/web/generic.tmpl:626
+#: cdedb/frontend/templates/web/generic.tmpl:627
 #: cdedb/frontend/templates/web/generic.tmpl:629
+#: cdedb/frontend/templates/web/generic.tmpl:630
+#: cdedb/frontend/templates/web/generic.tmpl:633
 msgid "Details"
 msgstr "Details"
 
@@ -8273,7 +8439,9 @@ msgstr "Bereich hinzufügen"
 #: cdedb/frontend/templates/web/generic.tmpl:174
 #: cdedb/frontend/templates/web/generic.tmpl:178
 #: cdedb/frontend/templates/web/generic.tmpl:245
+#: cdedb/frontend/templates/web/generic.tmpl:248
 #: cdedb/frontend/templates/web/generic.tmpl:249
+#: cdedb/frontend/templates/web/generic.tmpl:252
 msgid "cde_realm"
 msgstr "CdE"
 
@@ -8445,6 +8613,7 @@ msgstr "Probemitgliedschaft"
 #: cdedb/frontend/templates/web/generic.tmpl:62
 #: cdedb/frontend/templates/web/generic.tmpl:169
 #: cdedb/frontend/templates/web/generic.tmpl:240
+#: cdedb/frontend/templates/web/generic.tmpl:243
 msgid "CdE-Member"
 msgstr "CdE-Mitglied"
 
@@ -8576,6 +8745,7 @@ msgstr "Account aktiv"
 #: cdedb/frontend/templates/web/core/show_user.tmpl:307
 #: cdedb/frontend/templates/web/event/show_event.tmpl:107
 #: cdedb/frontend/templates/web/generic.tmpl:350
+#: cdedb/frontend/templates/web/generic.tmpl:353
 msgid "No"
 msgstr "Nein"
 
@@ -8583,6 +8753,7 @@ msgstr "Nein"
 #: cdedb/frontend/templates/web/core/show_user.tmpl:307
 #: cdedb/frontend/templates/web/event/show_event.tmpl:107
 #: cdedb/frontend/templates/web/generic.tmpl:350
+#: cdedb/frontend/templates/web/generic.tmpl:353
 msgid "Yes"
 msgstr "Ja"
 
@@ -9150,6 +9321,7 @@ msgstr "Teilnehmerliste"
 #: cdedb/frontend/templates/web/event/course_assignment_checks.tmpl:12
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:14
 #: cdedb/frontend/templates/web/event/registration_query.tmpl:96
+#: cdedb/frontend/templates/web/event/registration_query.tmpl:97
 msgid "Course Assignment"
 msgstr "Kurseinteilung"
 
@@ -9292,6 +9464,7 @@ msgstr "Kurs %(course)s bearbeiten"
 #: cdedb/frontend/templates/web/event/create_course.tmpl:27
 #: cdedb/frontend/templates/web/generic.tmpl:182
 #: cdedb/frontend/templates/web/generic.tmpl:251
+#: cdedb/frontend/templates/web/generic.tmpl:254
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:58
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:32
 msgid "Meta"
@@ -9362,6 +9535,7 @@ msgstr "Findet statt in"
 #: cdedb/frontend/templates/web/event/create_course.tmpl:47
 #: cdedb/frontend/templates/web/event/create_lodgement.tmpl:35
 #: cdedb/frontend/templates/web/generic.tmpl:297
+#: cdedb/frontend/templates/web/generic.tmpl:300
 msgid "Fields"
 msgstr "Felder"
 
@@ -9939,14 +10113,18 @@ msgstr "Teil hinzufügen"
 #: cdedb/frontend/templates/web/event/configure_additional_questionnaire.tmpl:62
 #: cdedb/frontend/templates/web/event/configure_registration.tmpl:62
 #: cdedb/frontend/templates/web/generic.tmpl:469
+#: cdedb/frontend/templates/web/generic.tmpl:472
 #: cdedb/frontend/templates/web/generic.tmpl:653
+#: cdedb/frontend/templates/web/generic.tmpl:657
 msgid "true"
 msgstr "wahr"
 
 #: cdedb/frontend/templates/web/event/configure_additional_questionnaire.tmpl:63
 #: cdedb/frontend/templates/web/event/configure_registration.tmpl:63
 #: cdedb/frontend/templates/web/generic.tmpl:470
+#: cdedb/frontend/templates/web/generic.tmpl:473
 #: cdedb/frontend/templates/web/generic.tmpl:652
+#: cdedb/frontend/templates/web/generic.tmpl:656
 msgid "false"
 msgstr "falsch"
 
@@ -10040,7 +10218,9 @@ msgstr "%(count)s Tn."
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:64
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:66
 #: cdedb/frontend/templates/web/generic.tmpl:298
+#: cdedb/frontend/templates/web/generic.tmpl:301
 #: cdedb/frontend/templates/web/generic.tmpl:403
+#: cdedb/frontend/templates/web/generic.tmpl:406
 #: cdedb/frontend/templates/web/logging.tmpl:80
 msgid "Filter"
 msgstr "Filter"
@@ -10234,6 +10414,7 @@ msgstr "Kurssuche"
 #: cdedb/frontend/templates/web/event/lodgement_query.tmpl:31
 #: cdedb/frontend/templates/web/event/registration_query.tmpl:30
 #: cdedb/frontend/templates/web/generic.tmpl:671
+#: cdedb/frontend/templates/web/generic.tmpl:675
 msgid "Set Field"
 msgstr "Datenfeld setzen"
 
@@ -10508,6 +10689,7 @@ msgstr "zur Verwendung mit externen Werkzeugen"
 #: cdedb/frontend/templates/web/event/show_event.tmpl:260
 #: cdedb/frontend/templates/web/event/show_event.tmpl:263
 #: cdedb/frontend/templates/web/generic.tmpl:444
+#: cdedb/frontend/templates/web/generic.tmpl:447
 msgid "JSON file"
 msgstr "JSON-Datei"
 
@@ -11327,15 +11509,19 @@ msgid "Last Modification Time"
 msgstr "Zeitpunkt der letzten Änderung"
 
 #: cdedb/frontend/templates/web/event/registration_query.tmpl:84
+#: cdedb/frontend/templates/web/event/registration_query.tmpl:85
 #: cdedb/frontend/templates/web/event/registration_query.tmpl:88
+#: cdedb/frontend/templates/web/event/registration_query.tmpl:89
 msgid "bcc email to all"
 msgstr "BCC-E-Mail an alle"
 
 #: cdedb/frontend/templates/web/event/registration_query.tmpl:86
+#: cdedb/frontend/templates/web/event/registration_query.tmpl:87
 msgid "Send Mail to all registrations listed below as BCC."
 msgstr "E-Mail an alle unten aufgeführten Anmeldungen als BCC senden."
 
 #: cdedb/frontend/templates/web/event/registration_query.tmpl:90
+#: cdedb/frontend/templates/web/event/registration_query.tmpl:91
 msgid "Email button is only available, if the email field is shown."
 msgstr "E-Mail-Button ist nur verfügbar, wenn das E-Mail-Feld angezeigt wird."
 
@@ -11928,56 +12114,67 @@ msgstr "Veranstaltungen-Log"
 #: cdedb/frontend/templates/web/generic.tmpl:64
 #: cdedb/frontend/templates/web/generic.tmpl:166
 #: cdedb/frontend/templates/web/generic.tmpl:237
+#: cdedb/frontend/templates/web/generic.tmpl:240
 msgid "Trial Member"
 msgstr "Probemitgliedschaft"
 
 #: cdedb/frontend/templates/web/generic.tmpl:135
 #: cdedb/frontend/templates/web/generic.tmpl:206
+#: cdedb/frontend/templates/web/generic.tmpl:209
 msgid "Active Account"
 msgstr "Aktiver Account"
 
 #: cdedb/frontend/templates/web/generic.tmpl:151
 #: cdedb/frontend/templates/web/generic.tmpl:222
+#: cdedb/frontend/templates/web/generic.tmpl:225
 msgid "Address (2)"
 msgstr "Anschrift (2)"
 
 #: cdedb/frontend/templates/web/generic.tmpl:152
 #: cdedb/frontend/templates/web/generic.tmpl:223
+#: cdedb/frontend/templates/web/generic.tmpl:226
 msgid "Address Supplement (2)"
 msgstr "Adresszusatz (2)"
 
 #: cdedb/frontend/templates/web/generic.tmpl:153
 #: cdedb/frontend/templates/web/generic.tmpl:224
+#: cdedb/frontend/templates/web/generic.tmpl:227
 msgid "ZIP (2)"
 msgstr "PLZ (2)"
 
 #: cdedb/frontend/templates/web/generic.tmpl:154
 #: cdedb/frontend/templates/web/generic.tmpl:225
+#: cdedb/frontend/templates/web/generic.tmpl:228
 msgid "City (2)"
 msgstr "Ort (2)"
 
 #: cdedb/frontend/templates/web/generic.tmpl:155
 #: cdedb/frontend/templates/web/generic.tmpl:226
+#: cdedb/frontend/templates/web/generic.tmpl:229
 msgid "Country (2)"
 msgstr "Land (2)"
 
 #: cdedb/frontend/templates/web/generic.tmpl:162
 #: cdedb/frontend/templates/web/generic.tmpl:233
+#: cdedb/frontend/templates/web/generic.tmpl:236
 msgid "Past Event"
 msgstr "verg. Veranstaltung"
 
 #: cdedb/frontend/templates/web/generic.tmpl:163
 #: cdedb/frontend/templates/web/generic.tmpl:234
+#: cdedb/frontend/templates/web/generic.tmpl:237
 msgid "Past Course"
 msgstr "verg. Kurs"
 
 #: cdedb/frontend/templates/web/generic.tmpl:164
 #: cdedb/frontend/templates/web/generic.tmpl:235
+#: cdedb/frontend/templates/web/generic.tmpl:238
 msgid "Membership-Fee Balance"
 msgstr "Mitgliedsbeitrag-Guthaben"
 
 #: cdedb/frontend/templates/web/generic.tmpl:165
 #: cdedb/frontend/templates/web/generic.tmpl:236
+#: cdedb/frontend/templates/web/generic.tmpl:239
 msgid "Searchability Decided"
 msgstr "Suchbarkeit entschieden"
 
@@ -11994,11 +12191,15 @@ msgstr "Suchbarkeit entschieden"
 #: cdedb/frontend/templates/web/generic.tmpl:249
 #: cdedb/frontend/templates/web/generic.tmpl:250
 #: cdedb/frontend/templates/web/generic.tmpl:251
+#: cdedb/frontend/templates/web/generic.tmpl:252
+#: cdedb/frontend/templates/web/generic.tmpl:253
+#: cdedb/frontend/templates/web/generic.tmpl:254
 msgid "Admin"
 msgstr "Admin"
 
 #: cdedb/frontend/templates/web/generic.tmpl:179
 #: cdedb/frontend/templates/web/generic.tmpl:250
+#: cdedb/frontend/templates/web/generic.tmpl:253
 msgid "Core"
 msgstr "Core"
 
@@ -12008,217 +12209,271 @@ msgstr "bel."
 
 #: cdedb/frontend/templates/web/generic.tmpl:183
 #: cdedb/frontend/templates/web/generic.tmpl:252
+#: cdedb/frontend/templates/web/generic.tmpl:255
 msgid "Lastschrift Granted"
 msgstr "Lastschrift erteilt"
 
 #: cdedb/frontend/templates/web/generic.tmpl:184
 #: cdedb/frontend/templates/web/generic.tmpl:253
+#: cdedb/frontend/templates/web/generic.tmpl:256
 msgid "Lastschrift Revoked"
 msgstr "Lastsrift widerrufen"
 
 #: cdedb/frontend/templates/web/generic.tmpl:185
 #: cdedb/frontend/templates/web/generic.tmpl:254
+#: cdedb/frontend/templates/web/generic.tmpl:257
 msgid "Active Lastschrift"
 msgstr "Aktive Lastschrift"
 
 #: cdedb/frontend/templates/web/generic.tmpl:186
 #: cdedb/frontend/templates/web/generic.tmpl:255
+#: cdedb/frontend/templates/web/generic.tmpl:258
 msgid "Lastschrift Amount"
 msgstr "Lastschrift Betrag"
 
 #: cdedb/frontend/templates/web/generic.tmpl:277
+#: cdedb/frontend/templates/web/generic.tmpl:280
 msgid "Tabular"
 msgstr "Tabellarisch"
 
 #: cdedb/frontend/templates/web/generic.tmpl:282
+#: cdedb/frontend/templates/web/generic.tmpl:285
 msgid "Magic"
 msgstr "Magisch"
 
 #: cdedb/frontend/templates/web/generic.tmpl:296
+#: cdedb/frontend/templates/web/generic.tmpl:299
 msgid "show field"
 msgstr "Feld anzeigen"
 
 #: cdedb/frontend/templates/web/generic.tmpl:315
+#: cdedb/frontend/templates/web/generic.tmpl:318
 #, python-format
 msgid "show %s"
 msgstr "%s anzeigen"
 
 #: cdedb/frontend/templates/web/generic.tmpl:337
+#: cdedb/frontend/templates/web/generic.tmpl:340
 #, python-format
 msgid "filter operator for %s"
 msgstr "Filteroperator für %s"
 
 #: cdedb/frontend/templates/web/generic.tmpl:351
+#: cdedb/frontend/templates/web/generic.tmpl:354
 #: cdedb/frontend/templates/web/generic.tmpl:356
+#: cdedb/frontend/templates/web/generic.tmpl:359
 #, python-format
 msgid "compare value for %s"
 msgstr "Vergleichswert für %s"
 
 #: cdedb/frontend/templates/web/generic.tmpl:385
+#: cdedb/frontend/templates/web/generic.tmpl:388
 #, python-format
 msgid "%s sort key"
 msgstr "%s Sortierkriterium"
 
 #: cdedb/frontend/templates/web/generic.tmpl:391
+#: cdedb/frontend/templates/web/generic.tmpl:394
 #, python-format
 msgid "%s sort order"
 msgstr "%s Sortierreihenfolge"
 
 #: cdedb/frontend/templates/web/generic.tmpl:406
+#: cdedb/frontend/templates/web/generic.tmpl:409
 msgid "add filter"
 msgstr "Filter hinzufügen"
 
 #: cdedb/frontend/templates/web/generic.tmpl:408
+#: cdedb/frontend/templates/web/generic.tmpl:411
 msgid "field to filter on"
 msgstr "neues Filter-Feld"
 
 #: cdedb/frontend/templates/web/generic.tmpl:413
+#: cdedb/frontend/templates/web/generic.tmpl:416
 msgid "Displayed Fields"
 msgstr "Angezeigte Felder"
 
 #: cdedb/frontend/templates/web/generic.tmpl:417
+#: cdedb/frontend/templates/web/generic.tmpl:420
 msgid "add displayed field"
 msgstr "Feld hinzufügen"
 
 #: cdedb/frontend/templates/web/generic.tmpl:420
+#: cdedb/frontend/templates/web/generic.tmpl:423
 msgid "field to add"
 msgstr "Neues Feld"
 
 #: cdedb/frontend/templates/web/generic.tmpl:425
+#: cdedb/frontend/templates/web/generic.tmpl:428
 msgid "Sorting"
 msgstr "Sortierung"
 
 #: cdedb/frontend/templates/web/generic.tmpl:429
+#: cdedb/frontend/templates/web/generic.tmpl:432
 msgid "add sort key"
 msgstr "Sortierkriterium hinzufügen"
 
 #: cdedb/frontend/templates/web/generic.tmpl:432
+#: cdedb/frontend/templates/web/generic.tmpl:435
 msgid "sort key to add"
 msgstr "Neues Sortierkriterium"
 
 #: cdedb/frontend/templates/web/generic.tmpl:442
+#: cdedb/frontend/templates/web/generic.tmpl:445
 msgid "CSV file"
 msgstr "CSV-Datei"
 
 #: cdedb/frontend/templates/web/generic.tmpl:454
+#: cdedb/frontend/templates/web/generic.tmpl:457
 msgid "– add displayed field –"
 msgstr "– Angezeigtes Feld hinzufügen –"
 
 #: cdedb/frontend/templates/web/generic.tmpl:455
+#: cdedb/frontend/templates/web/generic.tmpl:458
 msgid "– add filter –"
 msgstr "– Filter hinzufügen –"
 
 #: cdedb/frontend/templates/web/generic.tmpl:456
+#: cdedb/frontend/templates/web/generic.tmpl:459
 msgid "– add sort key –"
 msgstr "– Sortierung hinzufügen –"
 
 #: cdedb/frontend/templates/web/generic.tmpl:457
+#: cdedb/frontend/templates/web/generic.tmpl:460
 msgid "remove filter"
 msgstr "– Filter entfernen –"
 
 #: cdedb/frontend/templates/web/generic.tmpl:458
+#: cdedb/frontend/templates/web/generic.tmpl:461
 msgid "remove field"
 msgstr "– Feld entfernen –"
 
 #: cdedb/frontend/templates/web/generic.tmpl:459
+#: cdedb/frontend/templates/web/generic.tmpl:462
 msgid "remove sort key"
 msgstr "– Sortierung entfernen –"
 
 #: cdedb/frontend/templates/web/generic.tmpl:460
+#: cdedb/frontend/templates/web/generic.tmpl:463
 msgid "filter operation"
 msgstr "Filteroperation"
 
 #: cdedb/frontend/templates/web/generic.tmpl:461
+#: cdedb/frontend/templates/web/generic.tmpl:464
 msgid "compare value"
 msgstr "Vergleichswert"
 
 #: cdedb/frontend/templates/web/generic.tmpl:462
+#: cdedb/frontend/templates/web/generic.tmpl:465
 msgid "range start"
 msgstr "Bereichs-Anfang"
 
 #: cdedb/frontend/templates/web/generic.tmpl:463
+#: cdedb/frontend/templates/web/generic.tmpl:466
 msgid "range end"
 msgstr "Bereichs-Ende"
 
 #: cdedb/frontend/templates/web/generic.tmpl:464
+#: cdedb/frontend/templates/web/generic.tmpl:467
 msgid "&ensp;and&ensp;"
 msgstr "&ensp;und&ensp;"
 
 #: cdedb/frontend/templates/web/generic.tmpl:465
+#: cdedb/frontend/templates/web/generic.tmpl:468
 msgid "compare values"
 msgstr "Vergleichswerte"
 
 #: cdedb/frontend/templates/web/generic.tmpl:466
+#: cdedb/frontend/templates/web/generic.tmpl:469
 msgid "sort order"
 msgstr "Sortierreihenfolge"
 
 #: cdedb/frontend/templates/web/generic.tmpl:467
+#: cdedb/frontend/templates/web/generic.tmpl:470
 msgid "<value>,<value>,…"
 msgstr "<wert>,<wert>,…"
 
 #: cdedb/frontend/templates/web/generic.tmpl:468
+#: cdedb/frontend/templates/web/generic.tmpl:471
 msgid "<id>,<id>,…"
 msgstr "<id>,<id>,…"
 
 #: cdedb/frontend/templates/web/generic.tmpl:495
+#: cdedb/frontend/templates/web/generic.tmpl:498
 msgid "Default Queries"
 msgstr "Standardabfragen"
 
 #: cdedb/frontend/templates/web/generic.tmpl:515
 #: cdedb/frontend/templates/web/generic.tmpl:516
+#: cdedb/frontend/templates/web/generic.tmpl:518
+#: cdedb/frontend/templates/web/generic.tmpl:519
 msgid "show in search mask"
 msgstr "In Suchmaske anzeigen"
 
 #: cdedb/frontend/templates/web/generic.tmpl:531
+#: cdedb/frontend/templates/web/generic.tmpl:534
 msgid "No search results!"
 msgstr "Keine Ergebnisse!"
 
 #: cdedb/frontend/templates/web/generic.tmpl:566
+#: cdedb/frontend/templates/web/generic.tmpl:569
 msgid "select all"
 msgstr "Alle auswählen"
 
 #: cdedb/frontend/templates/web/generic.tmpl:567
+#: cdedb/frontend/templates/web/generic.tmpl:570
 msgid "all"
 msgstr "alle"
 
 #: cdedb/frontend/templates/web/generic.tmpl:569
+#: cdedb/frontend/templates/web/generic.tmpl:572
 msgid "select none"
 msgstr "Keines auswählen"
 
 #: cdedb/frontend/templates/web/generic.tmpl:570
+#: cdedb/frontend/templates/web/generic.tmpl:573
 msgid "none"
 msgstr "keines"
 
 #: cdedb/frontend/templates/web/generic.tmpl:572
+#: cdedb/frontend/templates/web/generic.tmpl:575
 msgid "invert selection"
 msgstr "Auswahl umkehren"
 
 #: cdedb/frontend/templates/web/generic.tmpl:573
+#: cdedb/frontend/templates/web/generic.tmpl:576
 msgid "invert"
 msgstr "umkehren"
 
 #: cdedb/frontend/templates/web/generic.tmpl:576
+#: cdedb/frontend/templates/web/generic.tmpl:579
 msgid "filter for selected rows"
 msgstr "Nach ausgewählten Zeilen filtern"
 
 #: cdedb/frontend/templates/web/generic.tmpl:578
+#: cdedb/frontend/templates/web/generic.tmpl:581
 msgid "selected only"
 msgstr "nur ausgewählte"
 
 #: cdedb/frontend/templates/web/generic.tmpl:580
 #: cdedb/frontend/templates/web/generic.tmpl:581
+#: cdedb/frontend/templates/web/generic.tmpl:583
+#: cdedb/frontend/templates/web/generic.tmpl:584
 msgid "widen results table"
 msgstr "Ergebnis-Tabelle breiter anzeigen"
 
 #: cdedb/frontend/templates/web/generic.tmpl:595
+#: cdedb/frontend/templates/web/generic.tmpl:598
 msgid "filtered column"
 msgstr "Gefilterte Spalte"
 
 #: cdedb/frontend/templates/web/generic.tmpl:602
+#: cdedb/frontend/templates/web/generic.tmpl:605
 msgid "sorted column"
 msgstr "Sortierte Spalte"
 
 #: cdedb/frontend/templates/web/generic.tmpl:618
+#: cdedb/frontend/templates/web/generic.tmpl:622
 #, python-format
 msgid "row %s"
 msgstr "Zeile %s"
@@ -15314,6 +15569,15 @@ msgstr "Kann aus {} keinen ml_type bestimmen"
 msgid "%(ml_type)s is not an appropriate type for this mailinglist."
 msgstr "%(ml_type)s ist kein geeigneter Typ für diese Mailingliste."
 
+#: cdedb/query.py:192
+#, python-format
+msgid ""
+"Constructing the query spec for %(scope)s requires additional event "
+"information."
+msgstr ""
+"Benötige zusätzliche Informationen um die Qbfragespezifikation für %(scope)s "
+"zu konstruieren."
+
 #: cdedb/subman/machine.py:215 cdedb/subman/machine.py:217
 #: cdedb/subman/machine.py:219 cdedb/subman/machine.py:221
 #: cdedb/subman/machine.py:224 cdedb/subman/machine.py:226
@@ -15907,19 +16171,19 @@ msgstr ""
 "Darf keine verbotenen Zeichen enthalten (diese sind %(forbidden_chars)s) "
 "wohingegen .^$ erlaubt sind."
 
-#: cdedb/validation.py:4004
+#: cdedb/validation.py:4004 cdedb/validation.py:4009
 msgid "Invalid operator for this field."
 msgstr "Unzulässiger Operator für dieses Feld."
 
-#: cdedb/validation.py:4052
+#: cdedb/validation.py:4052 cdedb/validation.py:4057
 msgid "Two endpoints required."
 msgstr "Zwei Werte für Intervall benötigt."
 
-#: cdedb/validation.py:4086
+#: cdedb/validation.py:4086 cdedb/validation.py:4091
 msgid "Selection may not be empty."
 msgstr "Es muss etwas ausgewählt werden."
 
-#: cdedb/validation.py:4133
+#: cdedb/validation.py:4133 cdedb/validation.py:4138
 msgid "Not a Query."
 msgstr "Muss eine Query sein."
 
@@ -15927,25 +16191,26 @@ msgstr "Muss eine Query sein."
 msgid "Must start with “qview_”."
 msgstr "Muss mit „qview_“ beginnen."
 
-#: cdedb/validation.py:4170
+#: cdedb/validation.py:4170 cdedb/validation.py:4171
 #, python-format
 msgid "Invalid constraint number %(index)s"
 msgstr "Ungültige Einschränkung bei Index %(index)s."
 
-#: cdedb/validation.py:4192
+#: cdedb/validation.py:4192 cdedb/validation.py:4193
 msgid "Invalid operator."
 msgstr "Unzulässiger Operator."
 
-#: cdedb/validation.py:4231
+#: cdedb/validation.py:4231 cdedb/validation.py:4232
 #, python-format
 msgid "Invalid ordering condition number %(index)s"
 msgstr "Ungültige Ordnungsrelation bei Index %(index)s."
 
-#: cdedb/validation.py:4261 cdedb/validation.py:4323
+#: cdedb/validation.py:4261 cdedb/validation.py:4262 cdedb/validation.py:4323
+#: cdedb/validation.py:4324
 #, python-format
 msgid "Invalid input for the enumeration %(enum)s"
 msgstr "Ungültige Eingabe für Enumeration %(enum)s."
 
-#: cdedb/validation.py:4307
+#: cdedb/validation.py:4307 cdedb/validation.py:4308
 msgid "SubscriptionState.none is not written into the database."
 msgstr "SubscriptionState.none wird nicht in die Datenbank geschrieben."

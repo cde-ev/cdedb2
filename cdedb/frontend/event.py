@@ -37,16 +37,17 @@ from cdedb.common import (
     json_serialize, merge_dicts, mixed_existence_sorter, n_, now, unwrap, xsorted,
 )
 from cdedb.database.connection import Atomizer
+from cdedb.filter import enum_entries_filter, keydictsort_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, CustomCSVDialect, RequestConstraint, REQUESTdata,
     REQUESTdatadict, REQUESTfile, access, calculate_db_logparams, calculate_loglinks,
     cdedbid_filter, cdedburl, check_validation as check,
-    check_validation_optional as check_optional, enum_entries_filter, event_guard,
-    keydictsort_filter, make_event_fee_reference, process_dynamic_input,
-    querytoparams_filter, request_extractor, safe_filter,
+    check_validation_optional as check_optional, event_guard, make_event_fee_reference,
+    process_dynamic_input, request_extractor, safe_filter,
 )
 from cdedb.query import (
-    QUERY_SPECS, Query, QueryConstraint, QueryOperators, mangle_query_input,
+    Query, QueryConstraint, QueryOperators, QueryScope, make_registration_query_aux,
+    make_lodgement_query_aux, make_course_query_aux
 )
 from cdedb.validation import (
     COURSE_COMMON_FIELDS, EVENT_EXPOSED_FIELDS, LODGEMENT_COMMON_FIELDS,
@@ -167,7 +168,7 @@ class EventFrontend(AbstractUserFrontend):
                     rs.gettext if download is None else rs.default_gettext))
         }
         return self.generic_user_search(
-            rs, download, is_search, 'qview_event_user', 'qview_event_user',
+            rs, download, is_search, QueryScope.event_user, QueryScope.event_user,
             self.eventproxy.submit_general_query, choices=choices)
 
     @access("core_admin", "event_admin")
@@ -190,7 +191,7 @@ class EventFrontend(AbstractUserFrontend):
         }
         return self.generic_user_search(
             rs, download, is_search,
-            'qview_archived_past_event_user', 'qview_archived_persona',
+            QueryScope.archived_past_event_user, QueryScope.archived_persona,
             self.eventproxy.submit_general_query, choices=choices,
             endpoint="archived_user_search")
 
@@ -206,13 +207,12 @@ class EventFrontend(AbstractUserFrontend):
 
         def querylink(event_id: int) -> str:
             query = Query(
-                "qview_registration",
-                self.make_registration_query_spec(events[event_id]),
+                QueryScope.registration,
+                QueryScope.registration.get_spec(event=events[event_id]),
                 ("persona.given_names", "persona.family_name"),
                 (),
                 (("persona.family_name", True), ("persona.given_names", True)))
-            params = querytoparams_filter(query)
-            params['is_search'] = True
+            params = query.serialize()
             params['event_id'] = event_id
             return cdedburl(rs, 'event/registration_query', params)
 
@@ -1553,16 +1553,16 @@ class EventFrontend(AbstractUserFrontend):
 
         # The base query object to use for links to event/registration_query
         base_registration_query = Query(
-            "qview_registration",
-            self.make_registration_query_spec(rs.ambience['event']),
+            QueryScope.registration,
+            QueryScope.registration.get_spec(event=rs.ambience['event']),
             ["reg.id", "persona.given_names", "persona.family_name",
              "persona.username"],
             [],
             (("persona.family_name", True), ("persona.given_names", True),)
         )
         base_course_query = Query(
-            "qview_course",
-            self.make_course_query_spec(rs.ambience['event']),
+            QueryScope.event_course,
+            QueryScope.event_course.get_spec(event=rs.ambience['event']),
             ["course.nr", "course.shortname"],
             [],
             (("course.nr", True), ("course.shortname", True),)
@@ -1929,8 +1929,8 @@ class EventFrontend(AbstractUserFrontend):
                     'is_happening': track_id in course['segments'],
                 }
         corresponding_query = Query(
-            "qview_registration",
-            self.make_registration_query_spec(rs.ambience['event']),
+            QueryScope.registration,
+            QueryScope.registration.get_spec(event=rs.ambience['event']),
             ["reg.id", "persona.given_names", "persona.family_name",
              "persona.username"] + [
                 "course{0}.id".format(track_id)
@@ -2747,7 +2747,7 @@ class EventFrontend(AbstractUserFrontend):
         event = self.eventproxy.get_event(rs, event_id)
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
-        spec = self.make_registration_query_spec(event)
+        spec = QueryScope.registration.get_spec(event=event)
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             work_dir = pathlib.Path(tmp_dir, rs.ambience['event']['shortname'])
@@ -2761,7 +2761,7 @@ class EventFrontend(AbstractUserFrontend):
                     constrains = [(f"track{track_id}.course_id",
                                    QueryOperators.nonempty, None)]
                     order = [("persona.given_names", True)]
-                    query = Query("qview_registration", spec, fields_of_interest,
+                    query = Query(QueryScope.registration, spec, fields_of_interest,
                                   constrains, order)
                     query_res = self.eventproxy.submit_general_query(rs, query, event_id)
                     course_key = f"track{track_id}.course_id"
@@ -2797,11 +2797,11 @@ class EventFrontend(AbstractUserFrontend):
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
 
-        spec = self.make_course_query_spec(rs.ambience['event'])
+        spec = QueryScope.event_course.get_spec(event=rs.ambience['event'])
         choices, _ = self.make_course_query_aux(
             rs, rs.ambience['event'], courses, fixed_gettext=True)
         fields_of_interest = list(spec.keys())
-        query = Query('qview_event_course', spec, fields_of_interest, [], [])
+        query = Query(QueryScope.event_course, spec, fields_of_interest, [], [])
         result = self.eventproxy.submit_general_query(rs, query, event_id)
         if not result:
             rs.notify("info", n_("Empty File."))
@@ -2820,11 +2820,11 @@ class EventFrontend(AbstractUserFrontend):
         group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
         groups = self.eventproxy.get_lodgement_groups(rs, group_ids)
 
-        spec = self.make_lodgement_query_spec(rs.ambience['event'])
+        spec = QueryScope.lodgement.get_spec(event=rs.ambience['event'])
         choices, _ = self.make_lodgement_query_aux(
             rs, rs.ambience['event'], lodgements, groups, fixed_gettext=True)
         fields_of_interest = list(spec.keys())
-        query = Query('qview_event_lodgement', spec, fields_of_interest, [], [])
+        query = Query(QueryScope.lodgement, spec, fields_of_interest, [], [])
         result = self.eventproxy.submit_general_query(rs, query, event_id)
         if not result:
             rs.notify("info", n_("Empty File."))
@@ -2846,12 +2846,12 @@ class EventFrontend(AbstractUserFrontend):
         lodgement_group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
         lodgement_groups = self.eventproxy.get_lodgement_groups(rs, lodgement_group_ids)
 
-        spec = self.make_registration_query_spec(rs.ambience['event'])
+        spec = QueryScope.registration.get_spec(event=rs.ambience['event'])
         fields_of_interest = list(spec.keys())
         choices, _ = self.make_registration_query_aux(
             rs, rs.ambience['event'], courses, lodgements, lodgement_groups,
             fixed_gettext=True)
-        query = Query('qview_registration', spec, fields_of_interest, [], [])
+        query = Query(QueryScope.registration, spec, fields_of_interest, [], [])
         result = self.eventproxy.submit_general_query(
             rs, query, event_id=event_id)
         if not result:
@@ -4376,16 +4376,15 @@ class EventFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
 
         # redirect to query filtered by reg_ids
+        scope = QueryScope.registration
         query = Query(
-            "qview_registration",
-            self.make_registration_query_spec(rs.ambience['event']),
+            scope, scope.get_spec(event=rs.ambience['event']),
             ("reg.id", "persona.given_names", "persona.family_name",
              "persona.username"),
             (("reg.id", QueryOperators.oneof, reg_ids),),
             (("persona.family_name", True), ("persona.given_names", True),)
         )
-        return self.redirect(rs, "event/registration_query",
-                             querytoparams_filter(query))
+        return self.redirect(rs, scope.get_target(), query.serialize())
 
     @staticmethod
     def calculate_groups(entity_ids: Collection[int], event: CdEDBObject,
@@ -5186,453 +5185,26 @@ class EventFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/show_course")
 
-    @staticmethod
-    def make_registration_query_spec(event: CdEDBObject) -> Dict[str, str]:
-        """Helper to enrich ``QUERY_SPECS['qview_registration']``.
-
-        Since each event has dynamic columns for parts and extra fields we
-        have amend the query spec on the fly.
-        """
-        tracks = event['tracks']
-        spec = copy.deepcopy(QUERY_SPECS['qview_registration'])
-        # note that spec is an ordered dict and we should respect the order
-        for part_id, part in keydictsort_filter(event['parts'],
-                                                EntitySorter.event_part):
-            spec["part{0}.status".format(part_id)] = "int"
-            spec["part{0}.is_camping_mat".format(part_id)] = "bool"
-            spec["part{0}.lodgement_id".format(part_id)] = "id"
-            spec["lodgement{0}.id".format(part_id)] = "id"
-            spec["lodgement{0}.group_id".format(part_id)] = "id"
-            spec["lodgement{0}.title".format(part_id)] = "str"
-            spec["lodgement{0}.notes".format(part_id)] = "str"
-            for f in xsorted(event['fields'].values(),
-                             key=EntitySorter.event_field):
-                if f['association'] == const.FieldAssociations.lodgement:
-                    temp = "lodgement{0}.xfield_{1}"
-                    kind = const.FieldDatatypes(f['kind']).name
-                    spec[temp.format(part_id, f['field_name'])] = kind
-            spec["lodgement_group{0}.id".format(part_id)] = "id"
-            spec["lodgement_group{0}.title".format(part_id)] = "str"
-            ordered_tracks = keydictsort_filter(
-                part['tracks'], EntitySorter.course_track)
-            for track_id, track in ordered_tracks:
-                spec["track{0}.is_course_instructor".format(track_id)] \
-                    = "bool"
-                spec["track{0}.course_id".format(track_id)] = "int"
-                spec["track{0}.course_instructor".format(track_id)] = "int"
-                for temp in ("course", "course_instructor",):
-                    spec["{1}{0}.id".format(track_id, temp)] = "id"
-                    spec["{1}{0}.nr".format(track_id, temp)] = "str"
-                    spec["{1}{0}.title".format(track_id, temp)] = "str"
-                    spec["{1}{0}.shortname".format(track_id, temp)] = "str"
-                    spec["{1}{0}.notes".format(track_id, temp)] = "str"
-                    for f in xsorted(event['fields'].values(),
-                                     key=EntitySorter.event_field):
-                        if f['association'] == const.FieldAssociations.course:
-                            key = "{1}{0}.xfield_{2}".format(
-                                track_id, temp, f['field_name'])
-                            kind = const.FieldDatatypes(f['kind']).name
-                            spec[key] = kind
-                for i in range(track['num_choices']):
-                    spec[f"course_choices{track_id}.rank{i}"] = "int"
-                if track['num_choices'] > 1:
-                    spec[",".join(f"course_choices{track_id}.rank{i}"
-                                  for i in range(track['num_choices']))] = "int"
-        if len(event['parts']) > 1:
-            spec[",".join("part{0}.status".format(part_id)
-                          for part_id in event['parts'])] = "int"
-            spec[",".join("part{0}.is_camping_mat".format(part_id)
-                          for part_id in event['parts'])] = "bool"
-            spec[",".join("part{0}.lodgement_id".format(part_id)
-                          for part_id in event['parts'])] = "id"
-            spec[",".join("lodgement{0}.id".format(part_id)
-                          for part_id in event['parts'])] = "id"
-            spec[",".join("lodgement{0}.group_id".format(part_id)
-                          for part_id in event['parts'])] = "id"
-            spec[",".join("lodgement{0}.title".format(part_id)
-                          for part_id in event['parts'])] = "str"
-            spec[",".join("lodgement{0}.notes".format(part_id)
-                          for part_id in event['parts'])] = "str"
-            spec[",".join("lodgement_group{0}.id".format(part_id)
-                          for part_id in event['parts'])] = "id"
-            spec[",".join("lodgement_group{0}.title".format(part_id)
-                          for part_id in event['parts'])] = "str"
-            for f in xsorted(event['fields'].values(),
-                             key=EntitySorter.event_field):
-                if f['association'] == const.FieldAssociations.lodgement:
-                    key = ",".join(
-                        "lodgement{0}.xfield_{1}".format(
-                            part_id, f['field_name'])
-                        for part_id in event['parts'])
-                    kind = const.FieldDatatypes(f['kind']).name
-                    spec[key] = kind
-        if len(tracks) > 1:
-            spec[",".join("track{0}.is_course_instructor".format(track_id)
-                          for track_id in tracks)] = "bool"
-            spec[",".join("track{0}.course_id".format(track_id)
-                          for track_id in tracks)] = "bool"
-            spec[",".join("track{0}.course_instructor".format(track_id)
-                          for track_id in tracks)] = "int"
-            for temp in ("course", "course_instructor",):
-                spec[",".join("{1}{0}.id".format(track_id, temp)
-                              for track_id in tracks)] = "id"
-                spec[",".join("{1}{0}.nr".format(track_id, temp)
-                              for track_id in tracks)] = "str"
-                spec[",".join("{1}{0}.title".format(track_id, temp)
-                              for track_id in tracks)] = "str"
-                spec[",".join("{1}{0}.shortname".format(track_id, temp)
-                              for track_id in tracks)] = "str"
-                spec[",".join("{1}{0}.notes".format(track_id, temp)
-                              for track_id in tracks)] = "str"
-                for f in xsorted(event['fields'].values(),
-                                 key=EntitySorter.event_field):
-                    if f['association'] == const.FieldAssociations.course:
-                        key = ",".join("{1}{0}.xfield_{2}".format(
-                            track_id, temp, f['field_name'])
-                                       for track_id in tracks)
-                        kind = const.FieldDatatypes(f['kind']).name
-                        spec[key] = kind
-            if sum(track['num_choices'] for track in tracks.values()) > 1:
-                spec[",".join(f"course_choices{track_id}.rank{i}"
-                              for track_id, track in tracks.items()
-                              for i in range(track['num_choices']))] = "int"
-        for f in xsorted(event['fields'].values(),
-                         key=EntitySorter.event_field):
-            if f['association'] == const.FieldAssociations.registration:
-                kind = const.FieldDatatypes(f['kind']).name
-                spec["reg_fields.xfield_{}".format(f['field_name'])] = kind
-        return spec
-
-    # TODO specify return type as OrderedDict.
-    @staticmethod
-    def make_registration_query_aux(rs: RequestState, event: CdEDBObject,
-                                    courses: CdEDBObjectMap,
-                                    lodgements: CdEDBObjectMap,
-                                    lodgement_groups: CdEDBObjectMap,
-                                    fixed_gettext: bool = False
-                                    ) -> Tuple[Dict[str, Dict[int, str]],
-                                               Dict[str, str]]:
-        """Un-inlined code to prepare input for template.
-        :param fixed_gettext: whether or not to use a fixed translation
-            function. True means static, False means localized.
-        :returns: Choices for select inputs and titles for columns.
-        """
-        tracks = event['tracks']
-
-        if fixed_gettext:
-            gettext = rs.default_gettext
-            enum_gettext = lambda x: x.name
-        else:
-            gettext = rs.gettext
-            enum_gettext = rs.gettext
-
-        course_identifier = lambda c: "{}. {}".format(c["nr"], c["shortname"])
-        course_choices = OrderedDict(
-            (c_id, course_identifier(c))
-            for c_id, c in keydictsort_filter(courses, EntitySorter.course))
-        lodge_identifier = lambda l: l["title"]
-        lodgement_choices = OrderedDict(
-            (l_id, lodge_identifier(l))
-            for l_id, l in keydictsort_filter(lodgements,
-                                              EntitySorter.lodgement))
-        lodgement_group_identifier = lambda g: g["title"]
-        lodgement_group_choices = OrderedDict(
-            (g_id, lodgement_group_identifier(g))
-            for g_id, g in keydictsort_filter(lodgement_groups,
-                                              EntitySorter.lodgement_group))
-        # First we construct the choices
-        choices: Dict[str, Dict[int, str]] = {
-            # Genders enum
-            'persona.gender': OrderedDict(
-                enum_entries_filter(
-                    const.Genders, enum_gettext, raw=fixed_gettext)),
-        }
-
-        # Precompute some choices
-        reg_part_stati_choices = OrderedDict(
-            enum_entries_filter(
-                const.RegistrationPartStati, enum_gettext, raw=fixed_gettext))
-        lodge_fields = {
-            field_id: field for field_id, field in event['fields'].items()
-            if field['association'] == const.FieldAssociations.lodgement
-            }
-        course_fields = {
-            field_id: field for field_id, field in event['fields'].items()
-            if field['association'] == const.FieldAssociations.course
-            }
-        reg_fields = {
-            field_id: field for field_id, field in event['fields'].items()
-            if field['association'] == const.FieldAssociations.registration
-            }
-
-        for part_id in event['parts']:
-            choices.update({
-                # RegistrationPartStati enum
-                "part{0}.status".format(part_id): reg_part_stati_choices,
-                # Lodgement choices for the JS selector
-                "part{0}.lodgement_id".format(part_id): lodgement_choices,
-                "lodgement{0}.group_id".format(part_id): lodgement_group_choices,
-            })
-            if not fixed_gettext:
-                # Lodgement fields value -> description
-                key = "lodgement{0}.xfield_{1}"
-                choices.update({
-                    key.format(part_id, field['field_name']):
-                        OrderedDict(field['entries'])
-                    for field in lodge_fields.values() if field['entries']
-                })
-        for track_id, track in tracks.items():
-            choices.update({
-                # Course choices for the JS selector
-                "track{0}.course_id".format(track_id): course_choices,
-                "track{0}.course_instructor".format(track_id): course_choices,
-            })
-            for i in range(track['num_choices']):
-                choices[f"course_choices{track_id}.rank{i}"] = course_choices
-            if track['num_choices'] > 1:
-                choices[",".join(
-                    f"course_choices{track_id}.rank{i}"
-                    for i in range(track['num_choices']))] = course_choices
-            if not fixed_gettext:
-                # Course fields value -> description
-                for temp in ("course", "course_instructor"):
-                    for field in course_fields.values():
-                        key = f"{temp}{track_id}.xfield_{field['field_name']}"
-                        if field['entries']:
-                            choices[key] = OrderedDict(field['entries'])
-        if len(event['parts']) > 1:
-            choices.update({
-                # RegistrationPartStati enum
-                ",".join("part{0}.status".format(part_id)
-                         for part_id in event['parts']): reg_part_stati_choices,
-                ",".join("part{0}.lodgement_id".format(part_id)
-                         for part_id in event['parts']): lodgement_choices,
-                ",".join("lodgement{0}.group_id".format(part_id)
-                         for part_id in event['parts']): lodgement_group_choices,
-            })
-        if len(tracks) > 1:
-            choices[",".join(f"course_choices{track_id}.rank{i}"
-                    for track_id, track in tracks.items()
-                    for i in range(track['num_choices']))] = course_choices
-        if not fixed_gettext:
-            # Registration fields value -> description
-            choices.update({
-                "reg_fields.xfield_{}".format(field['field_name']):
-                    OrderedDict(field['entries'])
-                for field in reg_fields.values() if field['entries']
-            })
-
-        # Second we construct the titles
-        titles: Dict[str, str] = {
-            "reg_fields.xfield_{}".format(field['field_name']):
-                field['field_name']
-            for field in reg_fields.values()
-        }
-        for track_id, track in tracks.items():
-            if len(tracks) > 1:
-                prefix = "{shortname}: ".format(shortname=track['shortname'])
-            else:
-                prefix = ""
-            titles.update({
-                "track{0}.is_course_instructor".format(track_id):
-                    prefix + gettext("instructs their course"),
-                "track{0}.course_id".format(track_id):
-                    prefix + gettext("course"),
-                "track{0}.course_instructor".format(track_id):
-                    prefix + gettext("instructed course"),
-                "course{0}.id".format(track_id):
-                    prefix + gettext("course ID"),
-                "course{0}.nr".format(track_id):
-                    prefix + gettext("course nr"),
-                "course{0}.title".format(track_id):
-                    prefix + gettext("course title"),
-                "course{0}.shortname".format(track_id):
-                    prefix + gettext("course shortname"),
-                "course{0}.notes".format(track_id):
-                    prefix + gettext("course notes"),
-                "course_instructor{0}.id".format(track_id):
-                    prefix + gettext("instructed course ID"),
-                "course_instructor{0}.nr".format(track_id):
-                    prefix + gettext("instructed course nr"),
-                "course_instructor{0}.title".format(track_id):
-                    prefix + gettext("instructed course title"),
-                "course_instructor{0}.shortname".format(track_id):
-                    prefix + gettext("instructed course shortname"),
-                "course_instructor{0}.notes".format(track_id):
-                    prefix + gettext("instructed courese notes"),
-            })
-            key = "course{0}.xfield_{1}"
-            titles.update({
-                key.format(track_id, field['field_name']):
-                    prefix + gettext("course {field}").format(
-                        field=field['field_name'])
-                for field in course_fields.values()
-            })
-            key = "course_instructor{0}.xfield_{1}"
-            titles.update({
-                key.format(track_id, field['field_name']):
-                    prefix + gettext("instructed course {field}").format(
-                        field=field['field_name'])
-                for field in course_fields.values()
-            })
-            for i in range(track['num_choices']):
-                titles[f"course_choices{track_id}.rank{i}"] = \
-                    prefix + gettext("%s. Choice") % (i + 1)
-            if track['num_choices'] > 1:
-                titles[",".join(f"course_choices{track_id}.rank{i}"
-                                for i in range(track['num_choices']))] = \
-                    prefix + gettext("Any Choice")
-        if len(event['tracks']) > 1:
-            titles.update({
-                ",".join("track{0}.is_course_instructor".format(track_id)
-                         for track_id in tracks):
-                    gettext("any track: instructs their course"),
-                ",".join("track{0}.course_id".format(track_id)
-                         for track_id in tracks):
-                    gettext("any track: course"),
-                ",".join("track{0}.course_instructor".format(track_id)
-                         for track_id in tracks):
-                    gettext("any track: instructed course"),
-                ",".join("course{0}.id".format(track_id)
-                         for track_id in tracks):
-                    gettext("any track: course ID"),
-                ",".join("course{0}.nr".format(track_id)
-                         for track_id in tracks):
-                    gettext("any track: course nr"),
-                ",".join("course{0}.title".format(track_id)
-                         for track_id in tracks):
-                    gettext("any track: course title"),
-                ",".join("course{0}.shortname".format(track_id)
-                         for track_id in tracks):
-                    gettext("any track: course shortname"),
-                ",".join("course{0}.notes".format(track_id)
-                         for track_id in tracks):
-                    gettext("any track: course notes"),
-                ",".join("course_instructor{0}.id".
-                         format(track_id) for track_id in tracks):
-                    gettext("any track: instructed course ID"),
-                ",".join("course_instructor{0}.nr".
-                         format(track_id) for track_id in tracks):
-                    gettext("any track: instructed course nr"),
-                ",".join("course_instructor{0}.title".
-                         format(track_id) for track_id in tracks):
-                    gettext("any track: instructed course title"),
-                ",".join("course_instructor{0}.shortname".
-                         format(track_id) for track_id in tracks):
-                    gettext("any track: instructed course shortname"),
-                ",".join("course_instructor{0}.notes".format(track_id)
-                         for track_id in tracks):
-                    gettext("any track: instructed course notes"),
-            })
-            key = "course{0}.xfield_{1}"
-            titles.update({
-                ",".join(key.format(track_id, field['field_name'])
-                         for track_id in tracks):
-                    gettext("any track: course {field}").format(
-                        field=field['field_name'])
-                for field in course_fields.values()
-            })
-            key = "course_instructor{0}.xfield_{1}"
-            titles.update({
-                ",".join(key.format(track_id, field['field_name'])
-                         for track_id in tracks):
-                    gettext("any track: instructed course {field}").format(
-                        field=field['field_name'])
-                for field in course_fields.values()
-            })
-            key = ",".join(f"course_choices{track_id}.rank{i}"
-                           for track_id, track in tracks.items()
-                           for i in range(track['num_choices']))
-            titles[key] = gettext("any track: Any Choice")
-        for part_id, part in event['parts'].items():
-            if len(event['parts']) > 1:
-                prefix = "{shortname}: ".format(shortname=part['shortname'])
-            else:
-                prefix = ""
-            titles.update({
-                "part{0}.status".format(part_id):
-                    prefix + gettext("registration status"),
-                "part{0}.is_camping_mat".format(part_id):
-                    prefix + gettext("camping mat user"),
-                "part{0}.lodgement_id".format(part_id):
-                    prefix + gettext("lodgement"),
-                "lodgement{0}.id".format(part_id):
-                    prefix + gettext("lodgement ID"),
-                "lodgement{0}.group_id".format(part_id):
-                    prefix + gettext("lodgement group"),
-                "lodgement{0}.title".format(part_id):
-                    prefix + gettext("lodgement title"),
-                "lodgement{0}.notes".format(part_id):
-                    prefix + gettext("lodgement notes"),
-                "lodgement_group{0}.id".format(part_id):
-                    prefix + gettext("lodgement group ID"),
-                "lodgement_group{0}.title".format(part_id):
-                    prefix + gettext("lodgement group title"),
-            })
-            key = "lodgement{0}.xfield_{1}"
-            titles.update({
-                key.format(part_id, field['field_name']):
-                    prefix + gettext("lodgement {field}").format(
-                        field=field['field_name'])
-                for field in lodge_fields.values()
-            })
-        if len(event['parts']) > 1:
-            titles.update({
-                ",".join("part{0}.status".format(part_id)
-                         for part_id in event['parts']):
-                    gettext("any part: registration status"),
-                ",".join("part{0}.is_camping_mat".format(part_id)
-                         for part_id in event['parts']):
-                    gettext("any part: camping mat user"),
-                ",".join("part{0}.lodgement_id".format(part_id)
-                         for part_id in event['parts']):
-                    gettext("any part: lodgement"),
-                ",".join("lodgement{0}.id".format(part_id)
-                         for part_id in event['parts']):
-                    gettext("any part: lodgement ID"),
-                ",".join("lodgement{0}.group_id".format(part_id)
-                         for part_id in event['parts']):
-                    gettext("any part: lodgement group"),
-                ",".join("lodgement{0}.title".format(part_id)
-                         for part_id in event['parts']):
-                    gettext("any part: lodgement title"),
-                ",".join("lodgement{0}.notes".format(part_id)
-                         for part_id in event['parts']):
-                    gettext("any part: lodgement notes"),
-                ",".join("lodgement_group{0}.id".format(part_id)
-                         for part_id in event['parts']):
-                    gettext("any part: lodgement group ID"),
-                ",".join("lodgement_group{0}.title".format(part_id)
-                         for part_id in event['parts']):
-                    gettext("any part: lodgement group title"),
-            })
-            key = "lodgement{0}.xfield_{1}"
-            titles.update({
-                ",".join(key.format(part_id, field['field_name'])
-                         for part_id in event['parts']):
-                    gettext("any part: lodgement {field}").format(
-                        field=field['field_name'])
-                for field in lodge_fields.values()
-            })
-        return choices, titles
+    make_registration_query_aux = staticmethod(make_registration_query_aux)
 
     @access("event")
     @event_guard()
     @REQUESTdata("download", "is_search")
     def registration_query(self, rs: RequestState, event_id: int,
-                           download: Optional[str], is_search: bool
+                           download: Optional[str], is_search: bool,
                            ) -> Response:
         """Generate custom data sets from registration data.
 
         This is a pretty versatile method building on the query module.
         """
-        spec = self.make_registration_query_spec(rs.ambience['event'])
+        scope = QueryScope.registration
+        spec = scope.get_spec(event=rs.ambience["event"])
         # mangle the input, so we can prefill the form
-        query_input = mangle_query_input(rs, spec)
+        query_input = scope.mangle_query_input(rs)
         query: Optional[Query] = None
         if is_search:
             query = check(rs, vtypes.QueryInput,
-                query_input, "query", spec=spec, allow_empty=False)
+                          query_input, "query", spec=spec, allow_empty=False)
 
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
@@ -5655,7 +5227,6 @@ class EventFrontend(AbstractUserFrontend):
             'titles': titles, 'has_registrations': has_registrations,
         }
         # Tricky logic: In case of no validation errors we perform a query
-        scope = "qview_registration"
         if not rs.has_validation_errors() and is_search and query:
             query.scope = scope
             params['result'] = self.eventproxy.submit_general_query(
@@ -5666,114 +5237,7 @@ class EventFrontend(AbstractUserFrontend):
             rs.values['is_search'] = is_search = False
             return self.render(rs, "registration_query", params)
 
-    @staticmethod
-    def make_course_query_spec(event: CdEDBObject) -> Dict[str, str]:
-        """Helper to enrich ``QUERY_SPECS['qview_event_course']``.
-
-        Since each event has custom course fields we have to amend the query
-        spec on the fly.
-        """
-        tracks = event['tracks']
-        course_fields = {
-            field_id: field for field_id, field in event['fields'].items()
-            if field['association'] == const.FieldAssociations.course
-        }
-
-        # This is an OrderedDict, so order should be respected.
-        spec = copy.deepcopy(QUERY_SPECS["qview_event_course"])
-        spec.update({
-            "course_fields.xfield_{0}".format(field['field_name']):
-                const.FieldDatatypes(field['kind']).name
-            for field in course_fields.values()
-        })
-
-        for track_id, track in tracks.items():
-            spec["track{0}.is_offered".format(track_id)] = "bool"
-            spec["track{0}.takes_place".format(track_id)] = "bool"
-            spec["track{0}.attendees".format(track_id)] = "int"
-            spec["track{0}.instructors".format(track_id)] = "int"
-            for rank in range(track['num_choices']):
-                spec["track{0}.num_choices{1}".format(track_id, rank)] = "int"
-
-        return spec
-
-    # TODO specify return type as OrderedDict.
-    @staticmethod
-    def make_course_query_aux(rs: RequestState, event: CdEDBObject,
-                              courses: CdEDBObjectMap,
-                              fixed_gettext: bool = False
-                              ) -> Tuple[Dict[str, Dict[int, str]],
-                                         Dict[str, str]]:
-        """Un-inlined code to prepare input for template.
-
-        :param fixed_gettext: whether or not to use a fixed translation
-            function. True means static, False means localized.
-        :returns: Choices for select inputs and titles for columns.
-        """
-
-        tracks = event['tracks']
-        gettext = rs.default_gettext if fixed_gettext else rs.gettext
-
-        # Construct choices.
-        course_identifier = lambda c: "{}. {}".format(c["nr"], c["shortname"])
-        course_choices = OrderedDict(
-            xsorted((c["id"], course_identifier(c)) for c in courses.values()))
-        choices: Dict[str, Dict[int, str]] = {
-            "course.course_id": course_choices
-        }
-        course_fields = {
-            field_id: field for field_id, field in event['fields'].items()
-            if field['association'] == const.FieldAssociations.course
-            }
-        if not fixed_gettext:
-            # Course fields value -> description
-            choices.update({
-                "course_fields.xfield_{0}".format(field['field_name']):
-                    OrderedDict(field['entries'])
-                for field in course_fields.values() if field['entries']
-            })
-
-        # Construct titles.
-        titles: Dict[str, str] = {
-            "course.id": gettext("course id"),
-            "course.course_id": gettext("course"),
-            "course.nr": gettext("course nr"),
-            "course.title": gettext("course title"),
-            "course.description": gettext("course description"),
-            "course.shortname": gettext("course shortname"),
-            "course.instructors": gettext("course instructors"),
-            "course.min_size": gettext("course min size"),
-            "course.max_size": gettext("course max size"),
-            "course.notes": gettext("course notes"),
-        }
-        titles.update({
-            "course_fields.xfield_{}".format(field['field_name']):
-                field['field_name']
-            for field in course_fields.values()
-        })
-        for track_id, track in tracks.items():
-            if len(tracks) > 1:
-                prefix = "{shortname}: ".format(shortname=track['shortname'])
-            else:
-                prefix = ""
-            titles.update({
-                "track{0}.takes_place".format(track_id):
-                    prefix + gettext("takes place"),
-                "track{0}.is_offered".format(track_id):
-                    prefix + gettext("is offered"),
-                "track{0}.attendees".format(track_id):
-                    prefix + gettext("attendees"),
-                "track{0}.instructors".format(track_id):
-                    prefix + gettext("instructors"),
-            })
-            for rank in range(track['num_choices']):
-                titles.update({
-                    "track{0}.num_choices{1}".format(track_id, rank):
-                        prefix + gettext("{}. choices").format(
-                            rank+1),
-                })
-
-        return choices, titles
+    make_course_query_aux = staticmethod(make_course_query_aux)
 
     @access("event")
     @event_guard()
@@ -5781,12 +5245,13 @@ class EventFrontend(AbstractUserFrontend):
     def course_query(self, rs: RequestState, event_id: int,
                      download: Optional[str], is_search: bool) -> Response:
 
-        spec = self.make_course_query_spec(rs.ambience['event'])
-        query_input = mangle_query_input(rs, spec)
+        scope = QueryScope.event_course
+        spec = scope.get_spec(event=rs.ambience['event'])
+        query_input = scope.mangle_query_input(rs)
         query: Optional[Query] = None
         if is_search:
             query = check(rs, vtypes.QueryInput,
-                query_input, "query", spec=spec, allow_empty=False)
+                          query_input, "query", spec=spec, allow_empty=False)
 
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
@@ -5810,7 +5275,6 @@ class EventFrontend(AbstractUserFrontend):
             'titles': titles, 'selection_default': selection_default,
         }
 
-        scope = "qview_event_course"
         if not rs.has_validation_errors() and is_search and query:
             query.scope = scope
             params['result'] = self.eventproxy.submit_general_query(
@@ -5821,117 +5285,7 @@ class EventFrontend(AbstractUserFrontend):
             rs.values['is_search'] = is_search = False
             return self.render(rs, "course_query", params)
 
-    @staticmethod
-    def make_lodgement_query_spec(event: CdEDBObject) -> Dict[str, str]:
-        parts = event["parts"]
-        lodgement_fields = {
-            field_id: field for field_id, field in event['fields'].items()
-            if field['association'] == const.FieldAssociations.lodgement
-        }
-
-        # This is an OrderedDcit, so order should be respected.
-        spec = copy.deepcopy(QUERY_SPECS["qview_event_lodgement"])
-        spec.update({
-            f"lodgement_fields.xfield_{field['field_name']}":
-                const.FieldDatatypes(field['kind']).name
-            for field in lodgement_fields.values()
-        })
-
-        for part_id, part in parts.items():
-            spec[f"part{part_id}.regular_inhabitants"] = "int"
-            spec[f"part{part_id}.camping_mat_inhabitants"] = "int"
-            spec[f"part{part_id}.total_inhabitants"] = "int"
-            spec[f"part{part_id}.group_regular_inhabitants"] = "int"
-            spec[f"part{part_id}.group_camping_mat_inhabitants"] = "int"
-            spec[f"part{part_id}.group_total_inhabitants"] = "int"
-
-        return spec
-
-    @staticmethod
-    def make_lodgement_query_aux(rs: RequestState, event: CdEDBObject,
-                                 lodgements: CdEDBObjectMap,
-                                 lodgement_groups: CdEDBObjectMap,
-                                 fixed_gettext: bool = False
-                                 ) -> Tuple[Dict[str, Dict[int, str]],
-                                            Dict[str, str]]:
-        """Un-inlined code to prepare input for template.
-
-        :param fixed_gettext: whether or not to use a fixed translation
-            function. True means static, False means localized.
-        :returns: Choices for select inputs and titles for columns.
-        """
-
-        parts = event['parts']
-        gettext = rs.default_gettext if fixed_gettext else rs.gettext
-
-        # Construct choices.
-        lodgement_choices = OrderedDict(
-            (l_id, l['title'])
-            for l_id, l in keydictsort_filter(lodgements,
-                                              EntitySorter.lodgement))
-        lodgement_group_choices = OrderedDict({-1: gettext(n_("--no group--"))})
-        lodgement_group_choices.update(
-            [(lg_id, lg['title']) for lg_id, lg in keydictsort_filter(
-                lodgement_groups, EntitySorter.lodgement_group)])
-        choices: Dict[str, Dict[int, str]] = {
-            "lodgement.lodgement_id": lodgement_choices,
-            "lodgement_group.id": lodgement_group_choices,
-        }
-        lodgement_fields = {
-            field_id: field for field_id, field in event['fields'].items()
-            if field['association'] == const.FieldAssociations.lodgement
-        }
-        if not fixed_gettext:
-            # Lodgement fields value -> description
-            choices.update({
-                f"lodgement_fields.xfield_{field['field_name']}":
-                    OrderedDict(field['entries'])
-                for field in lodgement_fields.values() if field['entries']
-            })
-
-        # Construct titles.
-        titles: Dict[str, str] = {
-            "lodgement.id": gettext(n_("Lodgement ID")),
-            "lodgement.lodgement_id": gettext(n_("Lodgement")),
-            "lodgement.title": gettext(n_("Title_[[name of an entity]]")),
-            "lodgement.regular_capacity": gettext(n_("Regular Capacity")),
-            "lodgement.camping_mat_capacity":
-                gettext(n_("Camping Mat Capacity")),
-            "lodgement.notes": gettext(n_("Lodgement Notes")),
-            "lodgement.group_id": gettext(n_("Lodgement Group ID")),
-            "lodgement_group.tmp_id": gettext(n_("Lodgement Group")),
-            "lodgement_group.title": gettext(n_("Lodgement Group Title")),
-            "lodgement_group.regular_capacity":
-                gettext(n_("Lodgement Group Regular Capacity")),
-            "lodgement_group.camping_mat_capacity":
-                gettext(n_("Lodgement Group Camping Mat Capacity")),
-        }
-        titles.update({
-            f"lodgement_fields.xfield_{field['field_name']}":
-                field['field_name']
-            for field in lodgement_fields.values()
-        })
-        for part_id, part in parts.items():
-            if len(parts) > 1:
-                prefix = f"{part['shortname']}: "
-            else:
-                prefix = ""
-            titles.update({
-                f"part{part_id}.regular_inhabitants":
-                    prefix + gettext(n_("Regular Inhabitants")),
-                f"part{part_id}.camping_mat_inhabitants":
-                    prefix + gettext(n_("Reserve Inhabitants")),
-                f"part{part_id}.total_inhabitants":
-                    prefix + gettext(n_("Total Inhabitants")),
-                f"part{part_id}.group_regular_inhabitants":
-                    prefix + gettext(n_("Group Regular Inhabitants")),
-                f"part{part_id}.group_camping_mat_inhabitants":
-                    prefix + gettext(n_("Group Reserve Inhabitants")),
-                f"part{part_id}.group_total_inhabitants":
-                    prefix + gettext(n_("Group Total Inhabitants")),
-            })
-
-        return choices, titles
+    make_lodgement_query_aux = staticmethod(make_lodgement_query_aux)
 
     @access("event")
     @event_guard()
@@ -5939,12 +5293,13 @@ class EventFrontend(AbstractUserFrontend):
     def lodgement_query(self, rs: RequestState, event_id: int,
                         download: Optional[str], is_search: bool) -> Response:
 
-        spec = self.make_lodgement_query_spec(rs.ambience['event'])
-        query_input = mangle_query_input(rs, spec)
+        scope = QueryScope.lodgement
+        spec = scope.get_spec(event=rs.ambience['event'])
+        query_input = scope.mangle_query_input(rs)
         query: Optional[Query] = None
         if is_search:
             query = check(rs, vtypes.QueryInput,
-                query_input, "query", spec=spec, allow_empty=False)
+                          query_input, "query", spec=spec, allow_empty=False)
 
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
@@ -5972,7 +5327,6 @@ class EventFrontend(AbstractUserFrontend):
             'titles': titles, 'selection_default': selection_default,
         }
 
-        scope = "qview_event_lodgement"
         if not rs.has_validation_errors() and is_search and query:
             query.scope = scope
             params['result'] = self.eventproxy.submit_general_query(
@@ -5984,7 +5338,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.render(rs, "lodgement_query", params)
 
     def _send_query_result(self, rs: RequestState, download: Optional[str],
-                           filename: str, scope: str, query: Query,
+                           filename: str, scope: QueryScope, query: Query,
                            params: CdEDBObject) -> Response:
         if download:
             shortname = rs.ambience['event']['shortname']
@@ -5993,15 +5347,7 @@ class EventFrontend(AbstractUserFrontend):
                 filename=f"{shortname}_{filename}",
                 substitutions=params['choices'])
         else:
-            if scope == "qview_registration":
-                page = "registration_query"
-            elif scope == "qview_event_course":
-                page = "course_query"
-            elif scope == "qview_event_lodgement":
-                page = "lodgement_query"
-            else:
-                raise RuntimeError(n_("Unknown query scope."))
-            return self.render(rs, page, params)
+            return self.render(rs, scope.get_target(prepend_realm=False), params)
 
     @access("event")
     @event_guard(check_offline=True)
@@ -6237,8 +5583,8 @@ class EventFrontend(AbstractUserFrontend):
 
         if kind == const.FieldAssociations.registration:
             query = Query(
-                "qview_registration",
-                self.make_registration_query_spec(rs.ambience['event']),
+                QueryScope.registration,
+                QueryScope.registration.get_spec(event=rs.ambience['event']),
                 ("persona.given_names", "persona.family_name", "persona.username",
                  "reg.id", f"reg_fields.xfield_{field['field_name']}"),
                 (("reg.id", QueryOperators.oneof, entities),),
@@ -6246,8 +5592,8 @@ class EventFrontend(AbstractUserFrontend):
             )
         elif kind == const.FieldAssociations.course:
             query = Query(
-                "qview_event_course",
-                self.make_course_query_spec(rs.ambience['event']),
+                QueryScope.lodgement,
+                QueryScope.lodgement.get_spec(event=rs.ambience['event']),
                 ("course.nr", "course.shortname", "course.title", "course.id",
                  f"course_fields.xfield_{field['field_name']}"),
                 (("course.id", QueryOperators.oneof, entities),),
@@ -6255,8 +5601,8 @@ class EventFrontend(AbstractUserFrontend):
             )
         elif kind == const.FieldAssociations.lodgement:
             query = Query(
-                "qview_event_lodgement",
-                self.make_lodgement_query_spec(rs.ambience['event']),
+                QueryScope.lodgement,
+                QueryScope.lodgement.get_spec(event=rs.ambience['event']),
                 ("lodgement.title", "lodgement_group.title", "lodgement.id",
                  f"lodgement_fields.xfield_{field['field_name']}"),
                 (("lodgement.id", QueryOperators.oneof, entities),),
@@ -6267,7 +5613,7 @@ class EventFrontend(AbstractUserFrontend):
             raise NotImplementedError(f"Unknown kind {kind}.")
 
         redirect = self.FIELD_REDIRECT[kind]
-        return self.redirect(rs, redirect, querytoparams_filter(query))
+        return self.redirect(rs, redirect, query.serialize())
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
@@ -6444,11 +5790,11 @@ class EventFrontend(AbstractUserFrontend):
                 search = [("username,family_name,given_names,display_name",
                            QueryOperators.match, t) for t in terms]
                 search.extend(search_additions)
-                spec = copy.deepcopy(QUERY_SPECS["qview_quick_registration"])
+                spec = QueryScope.quick_registration.get_spec()
                 spec["username,family_name,given_names,display_name"] = "str"
                 spec.update(spec_additions)
                 query = Query(
-                    "qview_quick_registration", spec,
+                    QueryScope.quick_registration, spec,
                     ("registrations.id", "username", "family_name",
                      "given_names", "display_name"),
                     search, (("registrations.id", True),))
@@ -6533,10 +5879,10 @@ class EventFrontend(AbstractUserFrontend):
 
         search = [("username,family_name,given_names,display_name",
                    QueryOperators.match, t) for t in terms]
-        spec = copy.deepcopy(QUERY_SPECS["qview_quick_registration"])
+        spec = QueryScope.quick_registration.get_spec()
         spec["username,family_name,given_names,display_name"] = "str"
         query = Query(
-            "qview_quick_registration", spec,
+            QueryScope.quick_registration, spec,
             ("registrations.id", "username", "family_name",
              "given_names", "display_name"),
             search, (("registrations.id", True),))
@@ -6549,8 +5895,8 @@ class EventFrontend(AbstractUserFrontend):
             # TODO make this accessible
             pass
         base_query = Query(
-            "qview_registration",
-            self.make_registration_query_spec(rs.ambience['event']),
+            QueryScope.registration,
+            QueryScope.registration.get_spec(event=rs.ambience['event']),
             ["reg.id", "persona.given_names", "persona.family_name",
              "persona.username"],
             [],
@@ -6573,7 +5919,7 @@ class EventFrontend(AbstractUserFrontend):
                 return self.redirect(rs, "event/show_registration",
                                      {'registration_id': result[0]['id']})
             elif result:
-                params = querytoparams_filter(query)
+                params = query.serialize()
                 return self.redirect(rs, "event/registration_query",
                                      params)
         rs.notify("warning", n_("No registration found."))
