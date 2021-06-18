@@ -1630,6 +1630,18 @@ class EventBackend(AbstractBackend):
                            event_id=event_id, change_note=query.name)
         return new_id
 
+    @access("event_admin")
+    def validate_stored_event_queries(self, rs: RequestState, event_id: int
+                                      ) -> CdEDBObjectMap:
+        """Return stored queries for an event, that cannot be successfully retrieved."""
+        q = (f"SELECT {', '.join(STORED_EVENT_QUERY_FIELDS)}"
+             f" FROM event.stored_queries WHERE event_id = %s AND NOT(id = ANY(%s))")
+        with Atomizer(rs):
+            retrievable_queries = self.get_event_queries(rs, event_id)
+            params = (event_id, [q.query_id for q in retrievable_queries.values()])
+            data = self.query_all(rs, q, params)
+            return {e["id"]: e for e in data}
+
     @internal
     @access("event")
     def set_event_archived(self, rs: RequestState, data: CdEDBObject) -> None:

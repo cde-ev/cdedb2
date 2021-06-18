@@ -12,6 +12,7 @@ import itertools
 import json
 import operator
 import pathlib
+import pprint
 import re
 import shutil
 import tempfile
@@ -43,7 +44,7 @@ from cdedb.frontend.common import (
     REQUESTdatadict, REQUESTfile, access, calculate_db_logparams, calculate_loglinks,
     cdedbid_filter, cdedburl, check_validation as check,
     check_validation_optional as check_optional, event_guard, make_event_fee_reference,
-    process_dynamic_input, request_extractor, safe_filter,
+    periodic, process_dynamic_input, request_extractor, safe_filter,
 )
 from cdedb.query import (
     Query, QueryConstraint, QueryOperators, QueryScope, make_registration_query_aux,
@@ -5280,6 +5281,23 @@ class EventFrontend(AbstractUserFrontend):
         if query_scope and query_scope.get_target():
             return self.redirect(rs, query_scope.get_target())
         return self.redirect(rs, "event/show_event")
+
+    @periodic("validate_stored_event_queries", 4 * 24)
+    def validate_stored_event_queries(self, rs: RequestState, state: CdEDBObject
+                                      ) -> CdEDBObject:
+        """Validate all stored event queries, to ensure nothing went wrong."""
+        data = {}
+        event_ids = self.eventproxy.list_events(rs, archived=False)
+        for event_id in event_ids:
+            data.update(self.eventproxy.validate_stored_event_queries(rs, event_id))
+        text = "Liebes Datenbankteam, einige gespeicherte Event-Queries sind ungültig:"
+        if data:
+            msg = self._create_mail(text + "\n" + pprint.pformat(data),
+                                    {"To": ("cdedb@lists.cde-ev.de",),
+                                     "Subject": "Ungültige Event-Queries"},
+                                    attachments=None)
+            self._send_mail(msg)
+        return state
 
     make_course_query_aux = staticmethod(make_course_query_aux)
 
