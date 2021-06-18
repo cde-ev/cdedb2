@@ -217,15 +217,17 @@ class QueryScope(enum.Enum):
 
     def mangle_query_input(self, rs: RequestState, defaults: CdEDBObject = None,
                            ) -> Dict[str, str]:
-        """This is to be used in conjunction with the ``query_input`` validator,
-        which is exceptional since it is not used via a decorator. To take
-        care of the differences this function exists.
+        """Helper to bundle the extraction of submitted form data for a query.
 
-        This has to be careful to treat checkboxes and selects correctly
-        (which are partly handled by an absence of data).
+        This simply extracts all the values expected according to the spec of the
+        scope, while taking care of the fact that empty values may be omitted.
+
+        This does not do any validation however, to this needs to validated afterwards
+        using the `vtypes.QueryInput` validator which will turn this into a
+        `Query` object.
 
         :param defaults: Default values which appear like they have been submitted,
-          if nothing has been submitted for this paramater.
+            if nothing has been submitted for this paramater.
         :returns: The raw data associated to the query described by the spec
             extracted from the request data saved in the request state.
         """
