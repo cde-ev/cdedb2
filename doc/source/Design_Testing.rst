@@ -33,7 +33,8 @@ while writing integration tests (often incorrectly called unit tests).
   ``USER_DICT["inga"]["id"]`` or ``const.EventLogCodes.event_changed`` instead.
   The ``self.user_in`` function simplifies this for users since it accepts full
   user objects (``USER_DICT["inga"]``), user ids (``9``) or names (``"inga"``).
-  Beware that for enums, in frontend tests you need to use the `.value` attribute.
+  Beware that for filling in a webtest form field with an enum, you need to use
+  the `.value` attribute.
 * Do not imitate the existing ``test_log`` tests. Those represent an
   anti-pattern. Instead, test the presence of log entries together with their
   generation. For backend tests, copying ``pprint`` output is helpful
