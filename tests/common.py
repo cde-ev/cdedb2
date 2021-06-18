@@ -810,6 +810,8 @@ class FrontendTest(BackendTest):
         :param button: The name of the button to use.
         :param value: The value of the button to use.
         """
+        # This is a workaround for the fact, that webtest does not care about the
+        # `formaction` and `formmethod` atributes on submit buttons.
         if check_button_attrs and button:
             tmp_button: webtest.forms.Submit = form[button]
             if "formaction" in tmp_button.attrs:
