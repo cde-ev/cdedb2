@@ -516,7 +516,7 @@
     </form>
 {% endmacro %}
 
-{% macro place_default_queries(target, queries, stored_queries) %}
+{% macro place_default_queries(target, queries) %}
     {% if queries %}
         {% call util.bootstrap_panel(title=gettext("Default Queries"), anid="default_queries_container") %}
             <div class="row">
@@ -528,7 +528,7 @@
                                 <li>
                                     {{ util.href(cdedblink(target, query.serialize()) + '#query-results',
                                             query.name if query.name else gettext(query_name), aclass="default-query") }}
-                                    {% if query_name in stored_queries %}{# TODO generalize for non-event realm? #}
+                                    {% if query.query_id %}
                                         <form action="{{ cdedblink('event/delete_event_query') }}" method="post" class="display-inline" id="deletequeryform{{ query.query_id }}">
                                             {{ util.anti_csrf_token('event/delete_event_query') }}
                                             {{ util.input_hidden("query_id", value=query.query_id) }}

@@ -5226,8 +5226,7 @@ class EventFrontend(AbstractUserFrontend):
 
         params = {
             'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
-            'query': query, 'default_queries': default_queries,
-            'stored_queries': stored_queries, 'titles': titles,
+            'query': query, 'default_queries': default_queries, 'titles': titles,
             'has_registrations': has_registrations,
         }
         # Tricky logic: In case of no validation errors we perform a query
@@ -5313,16 +5312,13 @@ class EventFrontend(AbstractUserFrontend):
                                       for t_id in tracks)
         stored_queries = self.eventproxy.get_event_queries(
             rs, event_id, scopes=(scope,))
-        for q in stored_queries.values():
-            q.spec = spec
         default_queries = self.conf["DEFAULT_QUERIES_COURSE"](
             rs.gettext, rs.ambience['event'], spec)
         default_queries.update(stored_queries)
 
         params = {
             'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
-            'query': query, 'default_queries': default_queries,
-            'stored_queries': stored_queries, 'titles': titles,
+            'query': query, 'default_queries': default_queries, 'titles': titles,
             'selection_default': selection_default,
         }
 
@@ -5379,8 +5375,7 @@ class EventFrontend(AbstractUserFrontend):
 
         params = {
             'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
-            'query': query, 'default_queries': default_queries,
-            'stored_queries': stored_queries, 'titles': titles,
+            'query': query, 'default_queries': default_queries, 'titles': titles,
             'selection_default': selection_default,
         }
 
