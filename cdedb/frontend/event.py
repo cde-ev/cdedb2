@@ -545,39 +545,8 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard()
     def part_summary_form(self, rs: RequestState, event_id: int) -> Response:
         """Render form."""
-        tracks = rs.ambience['event']['tracks']
-        current = {
-            f"{key}_{part_id}": value
-            for part_id, part in rs.ambience['event']['parts'].items()
-            for key, value in part.items() if key not in ('id', 'tracks')}
-        for part_id, part in rs.ambience['event']['parts'].items():
-            for track_id, track in part['tracks'].items():
-                for k in ('title', 'shortname', 'num_choices', 'min_choices',
-                          'sortkey'):
-                    current[f"track_{k}_{part_id}_{track_id}"] = track[k]
-        for m in rs.ambience['event']['fee_modifiers'].values():
-            for k in ('modifier_name', 'amount', 'field_id'):
-                current[f"fee_modifier_{k}_{m['part_id']}_{m['id']}"] = m[k]
-        merge_dicts(rs.values, current)
-        referenced_parts: Set[int] = set()
-        referenced_tracks: Set[int] = set()
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
-        course_ids = self.eventproxy.list_courses(rs, event_id)
-        courses = self.eventproxy.get_courses(rs, course_ids.keys())
-        for course in courses.values():
-            referenced_tracks.update(course['segments'])
-        # referenced tracks block part deletion
-        for track_id in referenced_tracks:
-            referenced_parts.add(tracks[track_id]['part_id'])
 
-        sorted_fields = xsorted(rs.ambience['event']['fields'].values(),
-                                key=EntitySorter.event_field)
-        legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['fee_modifier']
-        fee_modifier_fields = [
-            (field['id'], field['field_name']) for field in sorted_fields
-            if field['association'] in legal_assocs
-            and field['kind'] in legal_datatypes
-        ]
         fee_modifiers_by_part = {
             part_id: {
                 e['id']: e
@@ -586,20 +555,10 @@ class EventFrontend(AbstractUserFrontend):
             }
             for part_id in rs.ambience['event']['parts']
         }
-        legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['waitlist']
-        waitlist_fields = [
-            (field['id'], field['field_name']) for field in sorted_fields
-            if field['association'] in legal_assocs
-            and field['kind'] in legal_datatypes
-        ]
+
         return self.render(rs, "part_summary", {
-            'fee_modifier_fields': fee_modifier_fields,
             'fee_modifiers_by_part': fee_modifiers_by_part,
-            'waitlist_fields': waitlist_fields,
-            'referenced_parts': referenced_parts,
-            'referenced_tracks': referenced_tracks,
-            'has_registrations': has_registrations,
-            'DEFAULT_NUM_COURSE_CHOICES': DEFAULT_NUM_COURSE_CHOICES})
+            'has_registrations': has_registrations})
 
     @access("event")
     @event_guard()
