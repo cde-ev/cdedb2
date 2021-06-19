@@ -1,11 +1,6 @@
 {% set sidenav_active='event_parts' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% set jshint='strong' %}
-{% block scripts %}
-    {{ util.cdedb_script('cdedb_helper.js') }}
-    {{ util.cdedb_script('cdedb_dynamicrow.js') }}
-{% endblock %}
 {% block title %}
     {% trans title=ambience['event']['title'] %}
     	Configure Event-Parts ({{ title }})
@@ -36,11 +31,11 @@
     </p>
 
     {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
-        <div class="panel panel-info {{ aclass }}">
+        <div class="panel panel-info">
             <div class="panel-heading">
                 {{ part['title'] }}
                 {{ util.href(cdedblink('event/change_part_form', {'part_id' : part_id}), gettext("Change Part"),
-                                         icon='pen', aclass='btn btn-xs btn-warning pull-right') }}
+                                       icon='pen', aclass='btn btn-xs btn-warning pull-right') }}
             </div>
 
             <div class="panel-body">
@@ -50,10 +45,10 @@
                         <dd>{{ part['shortname'] }}</dd>
 
                         <dt>{% trans %}Begin{% endtrans %}</dt>
-                        <dd>{{ part['part_begin'] }}</dd>
+                        <dd>{{ part['part_begin']|date(lang=lang) }}</dd>
 
                         <dt>{% trans %}End{% endtrans %}</dt>
-                        <dd>{{ part['part_end'] }}</dd>
+                        <dd>{{ part['part_end']|date(lang=lang) }}</dd>
                     </dl>
 
                     <dl class="dl-horizontal col-md-6">
@@ -75,7 +70,7 @@
                             <th>{% trans %}Linked Field{% endtrans %}</th>
                         </tr>
                     </thead>
-                    <tbody class="drow-container1 fee-modifiers-container" data-outerid0="{{ part_id }}">
+                    <tbody>
                         {% for fee_modifier in fee_modifiers_by_part[part_id].values() %}
                             <tr id="feemodifierrow_{{ part_id }}_{{ fee_modifier['id'] }}">
                                 <td>{{ fee_modifier['modifier_name'] }}</td>
@@ -98,9 +93,9 @@
                             <th>{% trans %}Sortkey{% endtrans %}</th>
                         </tr>
                     </thead>
-                    <tbody class="drow-container1 course-tracks-container" data-outerid0="{{ part_id }}">
+                    <tbody>
                         {% for track_id, track in part['tracks']|keydictsort(EntitySorter.course_track) %}
-                            <tr>
+                            <tr id="trackrow{{ part_id }}_{{ track }}">
                                 <td>{{ track['title'] }}</td>
                                 <td>{{ track['shortname'] }}</td>
                                 <td>{{ track['num_choices'] }}</td>

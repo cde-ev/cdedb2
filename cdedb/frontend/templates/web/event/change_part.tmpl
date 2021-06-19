@@ -13,8 +13,8 @@
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans %}
-        	Configure Event-Parts
+        {% trans part_title=ambience['event']['parts'][part_id]['title'] %}
+            Change {{ part_title }}
         {% endtrans %}
         <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
@@ -22,12 +22,12 @@
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
-    {{ util.breadcrumb_link(cdedblink("event/part_summary"), gettext("Event-Parts"), active=True) }}
+    {{ util.breadcrumb_link(cdedblink("event/part_summary"), gettext("Event-Parts")) }}
+    {{ util.breadcrumb_link(cdedblink("event/change_part_form"),
+                            gettext("Change {}".format(ambience['event']['parts'][part_id]['title'])), active=True) }}
 {% endblock %}
 
 {% block content %}
-    {% set tracks = ambience['event']['parts'][part_id]['tracks'] %}
-
     <p class="text-warning">{{ util.make_icon('exclamation-triangle') }}
         {% trans %}
             Event parts and course tracks can only be created or deleted if no
@@ -36,18 +36,15 @@
         {% endtrans %}
     </p>
 
-    <form action="{{ cdedblink('event/change_part') }}" method="POST" id="partsummaryform" class="form-horizontal">
+    <form action="{{ cdedblink('event/change_part') }}" method="POST" id="changepartform" class="form-horizontal">
         {{ util.anti_csrf_token('event/change_part') }}
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
-        {{ util.form_input_text(name="shortname", label=gettext("Shortname"), aclass='drow-input') }}
-        {{ util.form_input_text(name="part_begin", label=gettext("Begin"), type='date',
-                                aclass='drow-input', placeholder="YYYY-MM-DD") }}
-        {{ util.form_input_text(name="part_end", label=gettext("End"), type='date',
-                                aclass='drow-input', placeholder="YYYY-MM-DD") }}
-        {{ util.form_input_text(name="fee", label=gettext("Event-Part Fee"), aclass='drow-input form-control',
-                                anid="input-text-fee", addon='€') }}
+        {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
+        {{ util.form_input_text(name="part_begin", label=gettext("Begin"), type='date', placeholder="YYYY-MM-DD") }}
+        {{ util.form_input_text(name="part_end", label=gettext("End"), type='date', placeholder="YYYY-MM-DD") }}
+        {{ util.form_input_text(name="fee", label=gettext("Event-Part Fee"), anid="input-text-fee", addon='€') }}
         {{ util.form_input_select(name="waitlist_field", entries=waitlist_fields,
-                                  label=gettext("Field for Waitlist"),nulloption=nbsp,
+                                  label=gettext("Field for Waitlist"), nulloption=nbsp,
                                   info=gettext("Field to store the %(link)s ranking of this part."
                                                " Fieldtype: Integer")|format(
                                                link=util.href(docurl("Handbuch_Orga_Warteliste"),
@@ -68,7 +65,7 @@
                                 dict(name="min_choices", label=gettext("Req. Choices"), func=util.input_text, func_additional_input = {'defaultvalue': DEFAULT_NUM_COURSE_CHOICES}),
                                 dict(name="sortkey", label=gettext("Sortkey"), func=util.input_text)] %}
         {% set tracks = ambience['event']['parts'][part_id]['tracks'] %}
-        {{ util.dynamic_row_table("Fee Modifier", track_columns, tracks, locked=referenced_tracks, sortkey=EntitySorter.event_tracks, prefix="track") }}
+        {{ util.dynamic_row_table("Coursetrack", track_columns, tracks, locked=referenced_tracks, sortkey=EntitySorter.event_tracks, prefix="track") }}
 
         {{ util.input_submit(label=gettext("Save")) }}
     </form>
