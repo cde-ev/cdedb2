@@ -25,6 +25,7 @@ from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, AbstractUserFrontend, access,
     assembly_guard, calculate_db_logparams, calculate_loglinks, cdedburl,
     check_validation as check, periodic, process_dynamic_input, request_extractor,
+    RequestConstraint
 )
 from cdedb.validation import (
     ASSEMBLY_COMMON_FIELDS, BALLOT_EXPOSED_FIELDS, PERSONA_FULL_ASSEMBLY_CREATION,
@@ -1573,8 +1574,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                         ballot_id: int) -> Response:
         """Create, edit and delete candidates of a ballot."""
 
-        # TODO add request constraint as return type hint
-        def constrain_maker(candidate_id: int, prefix: str):
+        def constraint_maker(candidate_id: int, prefix: str) -> List[RequestConstraint]:
             """Create constraints for each individual candidate"""
             constraints = [
                 (lambda c: c[f'shortname_{candidate_id}'] != ASSEMBLY_BAR_SHORTNAME,
@@ -1586,7 +1586,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         spec = {'shortname': vtypes.RestrictiveIdentifier, 'title': str}
         candidates = process_dynamic_input(
             rs, rs.ambience['ballot']['candidates'].keys(), spec,
-            constraint_maker=constrain_maker)
+            constraint_maker=constraint_maker)
 
         shortnames: Set[str] = set()
         for candidate_id, candidate in candidates.items():

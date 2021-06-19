@@ -612,7 +612,8 @@ class EventFrontend(AbstractUserFrontend):
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
     @REQUESTdatadict(*EVENT_PART_COMMON_FIELDS)
-    def change_part(self, rs: RequestState, event_id: int, part_id: int, data: CdEDBObject) -> Response:
+    def change_part(self, rs: RequestState, event_id: int, part_id: int,
+                    data: CdEDBObject) -> Response:
         """Change one part, including the associated tracks and fee modifiers."""
         # this will be added at the end after processing the dynamic input and will only
         # yield false validation errors
@@ -661,8 +662,10 @@ class EventFrontend(AbstractUserFrontend):
         #
         # process the dynamic fee modifier input
         #
-        fee_modifier_existing = [mod['id'] for mod in rs.ambience['event']['fee_modifiers'].values()
-                                 if mod['part_id'] == part_id]
+        fee_modifier_existing = [
+            mod['id'] for mod in rs.ambience['event']['fee_modifiers'].values()
+            if mod['part_id'] == part_id
+        ]
         fee_modifier_spec = {
             'modifier_name': vtypes.RestrictiveIdentifier,
             'amount': decimal.Decimal,
@@ -687,18 +690,17 @@ class EventFrontend(AbstractUserFrontend):
                        " field in one event part.")
         name_msg = n_("Must not have multiple fee modifiers with he same name "
                       "in one event part.")
-        for modifier_id, modifier in fee_modifier_data.items():
-            if modifier and modifier['field_id'] in used_fields:
+        for modifier in filter(lambda e: e is not None, fee_modifier_data.values()):
+            if modifier['field_id'] in used_fields:
                 rs.append_validation_error(
-                    (f"fee_modifier_field_id_{modifier_id}", ValueError(field_msg))
+                    (f"fee_modifier_field_id_{modifier['id']}", ValueError(field_msg))
                 )
-            if modifier and modifier['modifier_name'] in used_fields:
+            if modifier['modifier_name'] in used_fields:
                 rs.append_validation_error(
-                    (f"fee_modifier_modifier_name_{modifier_id}", ValueError(name_msg))
+                    (f"fee_modifier_modifier_name_{modifier['id']}", ValueError(name_msg))
                 )
-            if modifier:
-                used_fields.add(modifier['field_id'])
-                used_names.add(modifier['modifier_name'])
+            used_fields.add(modifier['field_id'])
+            used_names.add(modifier['modifier_name'])
 
         if rs.has_validation_errors():
             return self.change_part_form(rs, event_id, part_id)
