@@ -687,10 +687,11 @@
    existing: a dict of already existing entries.
    locked:   iterable which contains all id of existing entries which must not be modified or deleted by the user
    readonly: if true, all input fields are disabled and no new row is shown
+   modification_only: if true, no rows can be added or deleted, but they may be modified
    sortkey:  to sort existing
    prefix is used to specify a string inserting before every parameter name #}
-{% macro dynamic_row_table(name, columns, existing, locked=[], readonly=False, sortkey=none, prefix="") %}
-    <table class="table table-condensed" id="drow-table">
+{% macro dynamic_row_table(name, columns, existing, locked=[], readonly=False, modification_only=False, sortkey=none, prefix="") %}
+    <table class="table table-condensed" id="drow-table{{ '-' + prefix if prefix else '' }}">
         <thead>
             <tr>
                 {% for column in columns %}
@@ -702,7 +703,8 @@
             {% set sorted_existing = existing|keydictsort(sortkey) if sortkey else existing|dictsort %}
             {# Old items, already stored in the database #}
             {% for id, entry in sorted_existing %}
-                {{ dynamic_row(id, name, columns, deletable=id not in locked, readonly=readonly, aclass='drow-row', prefix=prefix) }}
+                {{ dynamic_row(id, name, columns, deletable=id not in locked and not modification_only,
+                               readonly=readonly, aclass='drow-row', prefix=prefix) }}
             {% endfor %}
             {# Items that were added by the user but failed validation. They are still new and have no official id. #}
             {% set last_index_key = "{}_{}".format(prefix, "create_last_index") if prefix else "create_last_index"  %}
@@ -710,7 +712,7 @@
                 {{ dynamic_row(-i, name, columns, deletable=False, readonly=readonly, aclass='drow-new', newrow=True, prefix=prefix) }}
             {% endfor %}
             {# Prototype row. For non-JS users: an empty row with 'create'-checkbox, for JS: prototype for new rows. #}
-            {% if not readonly %}
+            {% if not readonly and not modification_only %}
                 {{ dynamic_row(-values.get(last_index_key, 0) - 1, name, columns, deletable=False, aclass='drow-prototype', newrow=True, prefix=prefix) }}
             {% endif %}
         </tbody>

@@ -65,7 +65,7 @@
                                 dict(name="min_choices", label=gettext("Req. Choices"), func=util.input_text, func_additional_input = {'defaultvalue': DEFAULT_NUM_COURSE_CHOICES}),
                                 dict(name="sortkey", label=gettext("Sortkey"), func=util.input_text)] %}
         {% set tracks = ambience['event']['parts'][part_id]['tracks'] %}
-        {{ util.dynamic_row_table("Coursetrack", track_columns, tracks, locked=referenced_tracks, sortkey=EntitySorter.event_tracks, prefix="track") }}
+        {{ util.dynamic_row_table("Coursetrack", track_columns, tracks, locked=referenced_tracks, modification_only=has_registrations, sortkey=EntitySorter.event_tracks, prefix="track") }}
 
         {{ util.input_submit(label=gettext("Save")) }}
     </form>
