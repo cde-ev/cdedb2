@@ -34,8 +34,19 @@
         <div class="panel panel-info">
             <div class="panel-heading">
                 {{ part['title'] }}
-                {{ util.href(cdedblink('event/change_part_form', {'part_id' : part_id}), gettext("Change Part"),
-                                       icon='pen', aclass='btn btn-xs btn-warning pull-right') }}
+                <div class="pull-right">
+                    {% if not has_registrations and part_id not in referenced_parts %}
+                        <form action="{{ cdedblink('event/delete_part', {'part_id' : part_id}) }}"
+                              method="POST"
+                              id="removepartform{{ part_id }}"
+                              class="display-inline">
+                            {{ util.anti_csrf_token('event/delete_part') }}
+                            {{ util.input_submit(label=gettext("Delete Part"), aclass="btn btn-xs btn-danger", icon="trash") }}
+                        </form>
+                    {% endif %}
+                    {{ util.href(cdedblink('event/change_part_form', {'part_id' : part_id}), gettext("Change Part"),
+                                           icon='pen', aclass='btn btn-xs btn-warning') }}
+                </div>
             </div>
 
             <div class="panel-body">

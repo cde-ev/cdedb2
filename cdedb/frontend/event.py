@@ -566,6 +566,7 @@ class EventFrontend(AbstractUserFrontend):
     def part_summary_form(self, rs: RequestState, event_id: int) -> Response:
         """Render form."""
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
+        referenced_parts = self._deletion_blocked_parts(rs, event_id)
 
         fee_modifiers_by_part = {
             part_id: {
@@ -578,7 +579,26 @@ class EventFrontend(AbstractUserFrontend):
 
         return self.render(rs, "part_summary", {
             'fee_modifiers_by_part': fee_modifiers_by_part,
+            'referenced_parts': referenced_parts,
             'has_registrations': has_registrations})
+
+    @access("event", modi={"POST"})
+    @event_guard()
+    def delete_part(self, rs: RequestState, event_id: int, part_id: int) -> Response:
+        """Delete a given part."""
+        if self.eventproxy.has_registrations(rs, event_id):
+            raise ValueError(n_("Registrations exist, no deletion."))
+        if part_id in self._deletion_blocked_parts(rs, event_id):
+            raise ValueError(n_("This part can not be deleted."))
+
+        event = {
+            'id': event_id,
+            'parts': {part_id: None},
+        }
+        code = self.eventproxy.set_event(rs, event)
+        self.notify_return_code(rs, code)
+
+        return self.redirect(rs, "event/part_summary_form")
 
     @access("event")
     @event_guard()
@@ -740,10 +760,6 @@ class EventFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
 
         return self.redirect(rs, "event/part_summary_form")
-
-    # TODO forbid deletion if there are registrations
-    def delete_part(self, rs: RequestState, event_id: int) -> Response:
-        ...
 
     @access("event")
     @event_guard()
