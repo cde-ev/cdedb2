@@ -6228,7 +6228,8 @@ class EventFrontend(AbstractUserFrontend):
             else:
                 change_note = f"{field['field_name']} gesetzt."
         elif change_note:
-            raise RuntimeError("change_note only supoorted for registrations.")
+            rs.append_validation_error(
+                (None, ValueError(n_("change_note only supoorted for registrations."))))
 
         data_params: TypeMapping = {
             f"input{anid}": Optional[  # type: ignore
