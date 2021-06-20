@@ -616,12 +616,8 @@ class EventFrontend(AbstractUserFrontend):
                 current[f"fee_modifier_{k}_{m['id']}"] = m[k]
         merge_dicts(rs.values, current)
 
-        referenced_tracks: Set[int] = set()
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
-        course_ids = self.eventproxy.list_courses(rs, event_id)
-        courses = self.eventproxy.get_courses(rs, course_ids.keys())
-        for course in courses.values():
-            referenced_tracks.update(course['segments'])
+        referenced_tracks = self._deletion_blocked_tracks(rs, event_id)
 
         sorted_fields = xsorted(rs.ambience['event']['fields'].values(),
                                 key=EntitySorter.event_field)
@@ -684,8 +680,14 @@ class EventFrontend(AbstractUserFrontend):
             rs, track_existing, track_spec, prefix="track",
             constraint_maker=track_constraint_maker)
 
-        if any(track is None for track in track_data.values()) and has_registrations:
-            raise ValueError(n_("Registrations exist, no deletion."))
+        deleted_tracks = {anid for anid in track_data if track_data[anid] is None}
+        new_tracks = {anid for anid in track_data if anid < 0}
+        if deleted_tracks and has_registrations:
+            raise ValueError(n_("Registrations exist, no track deletion possible."))
+        if deleted_tracks & self._deletion_blocked_tracks(rs, event_id):
+            raise ValueError(n_("Some tracks can not be deleted."))
+        if new_tracks and has_registrations:
+            raise ValueError(n_("Registrations exist, no track creation possible."))
 
         def fee_modifier_constraint_maker(
                 fee_modifier_id: int, prefix: str) -> List[RequestConstraint]:
@@ -719,9 +721,6 @@ class EventFrontend(AbstractUserFrontend):
                 rs, fee_modifier_existing, fee_modifier_spec, prefix="fee_modifier",
                 additional={'part_id': part_id},
                 constraint_maker=fee_modifier_constraint_maker)
-
-        if any(mod is None for mod in fee_modifier_data.values()) and has_registrations:
-            raise ValueError(n_("Registrations exist, no deletion."))
 
         # Check if each linked field and fee modifier name is unique.
         used_fields: Set[int] = set()
