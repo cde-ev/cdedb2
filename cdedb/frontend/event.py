@@ -563,8 +563,8 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard()
-    def part_summary_form(self, rs: RequestState, event_id: int) -> Response:
-        """Render form."""
+    def part_summary(self, rs: RequestState, event_id: int) -> Response:
+        """Display a comprehensive overview of all parts of a given event."""
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
         referenced_parts = self._deletion_blocked_parts(rs, event_id)
 
@@ -598,7 +598,7 @@ class EventFrontend(AbstractUserFrontend):
         code = self.eventproxy.set_event(rs, event)
         self.notify_return_code(rs, code)
 
-        return self.redirect(rs, "event/part_summary_form")
+        return self.redirect(rs, "event/part_summary")
 
     @access("event")
     @event_guard()
@@ -758,7 +758,7 @@ class EventFrontend(AbstractUserFrontend):
         code = self.eventproxy.set_event(rs, event)
         self.notify_return_code(rs, code)
 
-        return self.redirect(rs, "event/part_summary_form")
+        return self.redirect(rs, "event/part_summary")
 
     @access("event")
     @event_guard()
