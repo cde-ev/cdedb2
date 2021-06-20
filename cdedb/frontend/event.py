@@ -541,6 +541,26 @@ class EventFrontend(AbstractUserFrontend):
                       {'address': ml_address})
         return self.redirect(rs, "event/show_event")
 
+    def _deletion_blocked_parts(self, rs: RequestState, event_id: int) -> Set[int]:
+        """All parts of a given event which must not be deleted."""
+        blocked_parts: Set[int] = set()
+        course_ids = self.eventproxy.list_courses(rs, event_id)
+        courses = self.eventproxy.get_courses(rs, course_ids.keys())
+        # referenced tracks block part deletion
+        for course in courses.values():
+            for track_id in course['segments']:
+                blocked_parts.add(rs.ambience['event']['tracks'][track_id]['part_id'])
+        return blocked_parts
+
+    def _deletion_blocked_tracks(self, rs: RequestState, event_id: int) -> Set[int]:
+        """All tracks of a given event which must not be deleted."""
+        blocked_tracks: Set[int] = set()
+        course_ids = self.eventproxy.list_courses(rs, event_id)
+        courses = self.eventproxy.get_courses(rs, course_ids.keys())
+        for course in courses.values():
+            blocked_tracks.update(course['segments'])
+        return blocked_tracks
+
     @access("event")
     @event_guard()
     def part_summary_form(self, rs: RequestState, event_id: int) -> Response:
