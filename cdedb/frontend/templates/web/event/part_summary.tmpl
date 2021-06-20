@@ -67,7 +67,13 @@
                         <dd>{{ part['fee']|money }}</dd>
 
                         <dt>{% trans %}Field for Waitlist{% endtrans %}</dt>
-                        <dd>{{ part['waitlist_field'] }}</dd>
+                        <dd>
+                            {% if part['waitlist_field'] %}
+                                {{ ambience['event']['fields'][part['waitlist_field']]['field_name'] }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </dd>
                     </dl>
                 </div>
 
@@ -86,7 +92,7 @@
                             <tr id="feemodifierrow_{{ part_id }}_{{ fee_modifier['id'] }}">
                                 <td>{{ fee_modifier['modifier_name'] }}</td>
                                 <td>{{ fee_modifier['amount']|money }}</td>
-                                <td>{{ fee_modifier['field_id'] }}</td>
+                                <td>{{ ambience['event']['fields'][fee_modifier['field_id']]['field_name'] }}</td>
                             </tr>
                         {% endfor %}
                     </tbody>
