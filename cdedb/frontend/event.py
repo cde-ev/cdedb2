@@ -5265,8 +5265,6 @@ class EventFrontend(AbstractUserFrontend):
             if query_id:
                 query.query_id = query_id
                 del query_input["query_name"]
-        else:
-            rs.ignore_validation_errors()
         return self.redirect(rs, query_scope.get_target(), query_input)
 
     @access("event", modi={"POST"})
