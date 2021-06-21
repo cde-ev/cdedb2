@@ -1548,32 +1548,42 @@ class EventBackend(AbstractBackend):
         scopes = affirm_set(QueryScope, scopes or set())
         if not (self.is_admin(rs) or self.is_orga(rs, event_id=event_id)):
             raise PrivilegeError(n_("Must be orga to retrieve stored queries."))
-        with Atomizer(rs):
-            event = self.get_event(rs, event_id)
-            select = (f"SELECT {', '.join(STORED_EVENT_QUERY_FIELDS)}"
-                      f" FROM event.stored_queries"
-                      f" WHERE event_id = %s")
-            params: List[DatabaseValue_s] = [event_id]
-            if scopes:
-                select += " AND scope = ANY(%s)"
-                params.append(scopes)
-            query_data = self.query_all(rs, select, params)
-            ret = {}
-            count = fail_count = 0
-            for qd in query_data:
-                qd["serialized_query"]["query_id"] = qd["id"]
-                scope = affirm(QueryScope, qd["scope"])
-                spec = scope.get_spec(event=event)
-                try:
-                    # The QueryInput takes care of deserialization.
-                    q: Query = affirm(vtypes.QueryInput, qd["serialized_query"],
-                                      spec=spec, allow_empty=False)
-                    assert q.name is not None and q.query_id is not None
-                except (ValueError, TypeError):
-                    fail_count += 1
-                    continue
-                ret[q.name] = q
-                count += 1
+        try:
+            with Atomizer(rs):
+                event = self.get_event(rs, event_id)
+                select = (f"SELECT {', '.join(STORED_EVENT_QUERY_FIELDS)}"
+                          f" FROM event.stored_queries"
+                          f" WHERE event_id = %s")
+                params: List[DatabaseValue_s] = [event_id]
+                if scopes:
+                    select += " AND scope = ANY(%s)"
+                    params.append(scopes)
+                query_data = self.query_all(rs, select, params)
+                ret = {}
+                count = fail_count = 0
+                for qd in query_data:
+                    qd["serialized_query"]["query_id"] = qd["id"]
+                    scope = affirm(QueryScope, qd["scope"])
+                    spec = scope.get_spec(event=event)
+                    try:
+                        # The QueryInput takes care of deserialization.
+                        q: Query = affirm(vtypes.QueryInput, qd["serialized_query"],
+                                          spec=spec, allow_empty=False)
+                        assert q.name is not None and q.query_id is not None
+                    except (ValueError, TypeError):
+                        fail_count += 1
+                        continue
+                    ret[q.name] = q
+                    count += 1
+        except PrivilegeError:
+            raise
+        # Failsafe in case something very unexpected goes wrong, so we don't break
+        # the query pages.
+        except Exception:
+            self.logger.exception(
+                f"Fatal error during retrieval of stored event queries for"
+                f" event_id={event_id} and scopes={scopes}.")
+            return {}
         if fail_count:
             rs.notify(
                 "info", n_("%(count)s stored queries could not be retrieved."),
