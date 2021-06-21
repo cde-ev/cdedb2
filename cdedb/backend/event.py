@@ -1631,9 +1631,9 @@ class EventBackend(AbstractBackend):
         return new_id
 
     @access("event_admin")
-    def validate_stored_event_queries(self, rs: RequestState, event_id: int
-                                      ) -> CdEDBObjectMap:
-        """Return stored queries for an event, that cannot be successfully retrieved."""
+    def get_invalid_stored_event_queries(self, rs: RequestState, event_id: int
+                                         ) -> CdEDBObjectMap:
+        """Retrieve raw data for stored event queries that cannot be deserialized."""
         q = (f"SELECT {', '.join(STORED_EVENT_QUERY_FIELDS)}"
              f" FROM event.stored_queries WHERE event_id = %s AND NOT(id = ANY(%s))")
         with Atomizer(rs):
