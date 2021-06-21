@@ -97,23 +97,23 @@ QueryConstraint = Tuple[str, QueryOperators, Any]
 QueryOrder = Tuple[str, bool]
 
 
-class QueryScope(enum.Enum):
-    persona = "qview_persona"
-    core_user = "qview_core_user"
-    assembly_user = "qview_assembly_user"
-    cde_user = "qview_cde_user"
-    event_user = "qview_event_user"
-    ml_user = "qview_ml_user"
-    past_event_user = "qview_past_event_user"
-    archived_persona = "qview_archived_persona"
-    archived_core_user = "qview_archivend_core_user"
-    archived_past_event_user = "qview_archived_past_event_user"
-    cde_member = "qview_cde_member"
-    registration = "qview_registration"
-    quick_registration = "qview_quick_registration"
-    lodgement = "qview_event_lodgement"
-    event_course = "qview_event_course"
-    past_event_course = "qview_pevent_course"
+class QueryScope(enum.IntEnum):
+    persona = 1
+    core_user = 2
+    assembly_user = 3
+    cde_user = 4
+    event_user = 5
+    ml_user = 5
+    past_event_user = 7
+    archived_persona = 10
+    archived_core_user = 11
+    archived_past_event_user = 12
+    cde_member = 20
+    registration = 30
+    quick_registration = 31
+    lodgement = 32
+    event_course = 33
+    past_event_course = 40
 
     def get_view(self) -> str:
         """Return the SQL FROM target associated with this scope.

@@ -4999,11 +4999,11 @@
         {
             "event_id": 1,
             "query_name": "Test-Query",
-            "scope": "QueryScope.registration",
+            "scope": 30,
             "serialized_query": {
                 "is_search": true,
                 "query_name": "Test-Query",
-                "scope": "QueryScope.registration",
+                "scope": 30,
                 "qsel_reg.id": true,
                 "qsel_persona.id": true,
                 "qsel_persona.birthday": true,

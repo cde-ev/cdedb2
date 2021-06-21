@@ -1556,7 +1556,7 @@ class EventBackend(AbstractBackend):
             params: List[DatabaseValue_s] = [event_id]
             if scopes:
                 select += " AND scope = ANY(%s)"
-                params.append({str(s) for s in scopes})
+                params.append(scopes)
             query_data = self.query_all(rs, select, params)
             ret = {}
             count = fail_count = 0
@@ -1616,7 +1616,7 @@ class EventBackend(AbstractBackend):
         data = {
             'event_id': event_id,
             'query_name': query.name,
-            'scope': str(query.scope),
+            'scope': query.scope,
             'serialized_query': json_serialize(query.serialize()),
         }
         with Atomizer(rs):

@@ -3,7 +3,7 @@ BEGIN;
             id                      bigserial PRIMARY KEY,
             event_id                integer NOT NULL REFERENCES event.events,
             query_name              varchar NOT NULL,
-            scope                   varchar NOT NULL,
+            scope                   integer NOT NULL,
             serialized_query        jsonb NOT NULL DEFAULT '{}'::jsonb,
             CONSTRAINT event_unique_query UNIQUE(event_id, query_name)
     );
