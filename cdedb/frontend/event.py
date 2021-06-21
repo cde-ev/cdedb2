@@ -5287,7 +5287,7 @@ class EventFrontend(AbstractUserFrontend):
         data = {}
         event_ids = self.eventproxy.list_events(rs, archived=False)
         for event_id in event_ids:
-            data.update(self.eventproxy.validate_stored_event_queries(rs, event_id))
+            data.update(self.eventproxy.get_invalid_stored_event_queries(rs, event_id))
         text = "Liebes Datenbankteam, einige gespeicherte Event-Queries sind ungültig:"
         if data:
             self.logger.warning("Invalid stroed event queries: " + pprint.pformat(data))
