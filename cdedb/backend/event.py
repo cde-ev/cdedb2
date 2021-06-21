@@ -1597,7 +1597,8 @@ class EventBackend(AbstractBackend):
         with Atomizer(rs):
             q = self.sql_select_one(
                 rs, "event.stored_queries", ("event_id", "query_name"), query_id)
-            assert q is not None
+            if q is None:
+                return 0
             if not (self.is_admin(rs) or self.is_orga(rs, event_id=q['event_id'])):
                 raise PrivilegeError(n_(
                     "Must be orga to delete queries for an event."))
