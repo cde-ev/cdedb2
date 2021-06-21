@@ -2694,7 +2694,6 @@ msgid "Wrong associated field."
 msgstr "Feld einer anderen Veranstaltung angegeben."
 
 #: cdedb/frontend/event.py:5580
-#, fuzzy
 msgid "change_note only supoorted for registrations."
 msgstr "Änderungskommentare werden nur für Anmeldungen unterstützt."
 
