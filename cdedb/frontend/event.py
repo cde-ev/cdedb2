@@ -5290,8 +5290,9 @@ class EventFrontend(AbstractUserFrontend):
             data.update(self.eventproxy.get_invalid_stored_event_queries(rs, event_id))
         text = "Liebes Datenbankteam, einige gespeicherte Event-Queries sind ungültig:"
         if data:
-            self.logger.warning("Invalid stroed event queries: " + pprint.pformat(data))
-            msg = self._create_mail(text + "\n" + pprint.pformat(data),
+            pdata = pprint.pformat(data)
+            self.logger.warning(f"Invalid stroed event queries: {pdata}")
+            msg = self._create_mail(f"{text}\n{pdata}",
                                     {"To": ("cdedb@lists.cde-ev.de",),
                                      "Subject": "Ungültige Event-Queries"},
                                     attachments=None)
