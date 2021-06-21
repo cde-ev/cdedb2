@@ -1,7 +1,9 @@
 Test Suite
 ==========
 
-.. todo:: Explanation of our testing principles, sample data, special test functions etc
+This page describes the technical details reagrding the test suite.
+To get a high-level overview of our testing philosophy,
+take a look at :doc:`Design_Testing` instead.
 
 .. _sample-data:
 
@@ -99,10 +101,13 @@ Pattern matching is performed by unittest, which uses ``fnmatch.fnmatchcase``
 internally [#fnmatch]_.
 If a pattern without an asterisk is passed it will be wrapped with one on both ends.
 
+
+.. _coverage:
+
 Code coverage
 ^^^^^^^^^^^^^
 
-.. todo:: Implement coverage in ``bin/check.py`` script an document this here.
+.. todo:: Implement coverage in ``bin/check.py`` script and document this here.
 
 The coverage html reports for easier inspection are accessible on the local dev
 instance via Apache at `localhost:8443/coverage <https://localhost:8443/coverage>`_ for

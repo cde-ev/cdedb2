@@ -179,7 +179,7 @@
                          icon='pen') }}
             {% if not ambience['event']['registration_soft_limit'] is none %}
                 {% trans date=ambience['event']['registration_soft_limit']|datetime(lang=lang)%}
-                    Changes can be made until the registration end({{ date }}).
+                    Changes can be made until the registration end ({{ date }}).
                 {% endtrans %}
             {% endif %}
         </p>

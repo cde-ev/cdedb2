@@ -98,6 +98,11 @@ QueryOrder = Tuple[str, bool]
 
 
 class QueryScope(enum.IntEnum):
+    """Enum that contains the different kinds of generalized queries.
+
+    This is used in conjunction with the `Query` class and bundles together a lot of
+    constant and some dynamic things for the individual scopes.
+    """
     persona = 1
     core_user = 2
     assembly_user = 3
@@ -123,55 +128,13 @@ class QueryScope(enum.IntEnum):
         """
         default_view = ("core.personas LEFT OUTER JOIN past_event.participants"
                         " ON personas.id = participants.persona_id")
-        QUERY_VIEWS = {
-            QueryScope.persona:
-                "core.personas",
-            QueryScope.cde_user:
-                """core.personas
-                LEFT OUTER JOIN past_event.participants
-                    ON personas.id = participants.persona_id
-                LEFT OUTER JOIN (
-                    SELECT
-                        id, granted_at, revoked_at,
-                        revoked_at IS NOT NULL AS active_lastschrift,
-                        amount, persona_id
-                    FROM cde.lastschrift
-                    WHERE (granted_at, persona_id) IN (
-                        SELECT MAX(granted_at) AS granted_at, persona_id
-                        FROM cde.lastschrift GROUP BY persona_id
-                    )
-                ) AS lastschrift ON personas.id = lastschrift.persona_id
-                """,
-            QueryScope.archived_persona:
-                "core.personas",
-            QueryScope.registration:
-                None,  # This will be generated on the fly.
-            QueryScope.quick_registration:
-                "core.personas INNER JOIN event.registrations"
-                " ON personas.id = registrations.persona_id",
-            QueryScope.lodgement:
-                None,  # This will be generated on the fly.
-            QueryScope.event_course:
-                None,  # This will be generated on the fly.
-            QueryScope.past_event_course:
-                "past_event.courses LEFT OUTER JOIN past_event.events"
-                " ON courses.pevent_id = events.id",
-        }
-        return QUERY_VIEWS.get(self, default_view)  # type: ignore[return-value]
+        return _QUERY_VIEWS.get(self, default_view)  # type: ignore[return-value]
 
     def get_primary_key(self) -> str:
         """Return the primary key of the view associated with the scope.
 
         This should always be selected, to avoid any pathologies.
         """
-        # This dict contains the special cases. For everything else use personas.id.
-        PRIMARY_KEYS = {
-            QueryScope.registration: "reg.id",
-            QueryScope.quick_registration: "registrations.id",
-            QueryScope.lodgement: "lodgement.id",
-            QueryScope.event_course: "course.id",
-            QueryScope.past_event_course: "courses.id",
-        }
         return PRIMARY_KEYS.get(self, "personas.id")
 
     def get_spec(self, *, event: CdEDBObject = None) -> Dict[str, str]:
@@ -181,6 +144,10 @@ class QueryScope(enum.IntEnum):
 
         Note that for schema specified columns (like ``personas.id``) the schema
         part does not survive querying and needs to be stripped before output.
+
+        :param event: For some scopes, the spec is dependent on specific event data.
+            For these scopes (see `event_spec_map` below) this must be provided.
+            The format should be like the return of `EventBackend.get_event()`.
         """
         event_spec_map = {
             QueryScope.registration: make_registration_query_spec,
@@ -255,6 +222,53 @@ class QueryScope(enum.IntEnum):
         return params
 
 
+# See `QueryScope.get_view().
+_QUERY_VIEWS = {
+    QueryScope.persona:
+        "core.personas",
+    QueryScope.cde_user:
+        """core.personas
+        LEFT OUTER JOIN past_event.participants
+            ON personas.id = participants.persona_id
+        LEFT OUTER JOIN (
+            SELECT
+                id, granted_at, revoked_at,
+                revoked_at IS NOT NULL AS active_lastschrift,
+                amount, persona_id
+            FROM cde.lastschrift
+            WHERE (granted_at, persona_id) IN (
+                SELECT MAX(granted_at) AS granted_at, persona_id
+                FROM cde.lastschrift GROUP BY persona_id
+            )
+        ) AS lastschrift ON personas.id = lastschrift.persona_id
+        """,
+    QueryScope.archived_persona:
+        "core.personas",
+    QueryScope.registration:
+        None,  # This will be generated on the fly.
+    QueryScope.quick_registration:
+        "core.personas INNER JOIN event.registrations"
+        " ON personas.id = registrations.persona_id",
+    QueryScope.lodgement:
+        None,  # This will be generated on the fly.
+    QueryScope.event_course:
+        None,  # This will be generated on the fly.
+    QueryScope.past_event_course:
+        "past_event.courses LEFT OUTER JOIN past_event.events"
+        " ON courses.pevent_id = events.id",
+}
+
+# See QueryScope.get_primary_key().
+# This dict contains the special cases. For everything else use personas.id.
+PRIMARY_KEYS = {
+    QueryScope.registration: "reg.id",
+    QueryScope.quick_registration: "registrations.id",
+    QueryScope.lodgement: "lodgement.id",
+    QueryScope.event_course: "course.id",
+    QueryScope.past_event_course: "courses.id",
+}
+
+# See QueryScope.get_spec().
 _QUERY_SPECS = {
     QueryScope.persona:  # query for a persona without past event infos
         collections.OrderedDict([
