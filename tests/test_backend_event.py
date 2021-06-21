@@ -16,7 +16,7 @@ from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, InfiniteEnum, PartialImportError, PrivilegeError,
     CourseFilterPositions, nearly_now
 )
-from cdedb.query import QUERY_SPECS, Query, QueryOperators
+from cdedb.query import Query, QueryOperators, QueryScope
 from tests.common import USER_DICT, BackendTest, as_users, json_keys_to_int, storage
 
 
@@ -241,13 +241,13 @@ class TestEventBackend(BackendTest):
                 part_map["First coming"]: None,
                 part_map["Second coming"]: changed_part,
                 -1: newpart,
-                },
+            },
             'fields': {
                 field_map["instrument"]: None,
                 field_map["preferred_excursion_date"]: changed_field,
                 -1: newfield,
-                },
-            })
+            },
+        })
         # fixup parts and fields
         tmp = self.event.get_event(self.key, new_id)
         for part in tmp['parts']:
@@ -523,23 +523,23 @@ class TestEventBackend(BackendTest):
         questionnaire = {
             const.QuestionnaireUsages.additional:
                 [
-            {
-                'field_id': 1,
-                'title': None,
-                'info': None,
-                'input_size': None,
-                'readonly': False,
-                'default_value': None,
-            },
-            {
-                'field_id': 1,
-                'title': None,
-                'info': None,
-                'input_size': None,
-                'readonly': False,
-                'default_value': None,
-            },
-          ],
+                    {
+                        'field_id': 1,
+                        'title': None,
+                        'info': None,
+                        'input_size': None,
+                        'readonly': False,
+                        'default_value': None,
+                    },
+                    {
+                        'field_id': 1,
+                        'title': None,
+                        'info': None,
+                        'input_size': None,
+                        'readonly': False,
+                        'default_value': None,
+                    },
+                ],
         }
         with self.assertRaises(ValueError) as cm:
             self.event.set_questionnaire(self.key, 1, questionnaire)
@@ -1433,68 +1433,68 @@ class TestEventBackend(BackendTest):
                      },
                 ],
             const.QuestionnaireUsages.additional: [
-                    {
-                        'field_id': None,
-                        'default_value': None,
-                        'info': 'mit Text darunter',
-                        'pos': 0,
-                        'readonly': None,
-                        'input_size': None,
-                        'title': 'Unterüberschrift',
-                        'kind': const.QuestionnaireUsages.additional,
-                    },
-                    {
-                        'field_id': 1,
-                        'default_value': 'True',
-                        'info': 'Du bringst genug Bälle mit um einen ganzen Kurs'
-                                ' abzuwerfen.',
-                        'pos': 1,
-                        'readonly': False,
-                        'input_size': None,
-                        'title': 'Bälle',
-                        'kind': const.QuestionnaireUsages.additional,
-                    },
-                    {
-                        'field_id': None,
-                        'default_value': None,
-                        'info': 'nur etwas Text',
-                        'pos': 2,
-                        'readonly': None,
-                        'input_size': None,
-                        'title': None,
-                        'kind': const.QuestionnaireUsages.additional,
-                    },
-                    {
-                        'field_id': None,
-                        'default_value': None,
-                        'info': None,
-                        'pos': 3,
-                        'readonly': None,
-                        'input_size': None,
-                        'title': 'Weitere Überschrift',
-                        'kind': const.QuestionnaireUsages.additional,
-                    },
-                    {
-                        'field_id': 2,
-                        'default_value': 'etc',
-                        'info': None,
-                        'pos': 4,
-                        'readonly': False,
-                        'input_size': None,
-                        'title': 'Vehikel',
-                        'kind': const.QuestionnaireUsages.additional,
-                    },
-                    {
-                        'field_id': 3,
-                        'default_value': None,
-                        'info': None,
-                        'pos': 5,
-                        'readonly': False,
-                        'input_size': 3,
-                        'title': 'Hauswunsch',
-                        'kind': const.QuestionnaireUsages.additional,
-                    },
-                ],
+                {
+                    'field_id': None,
+                    'default_value': None,
+                    'info': 'mit Text darunter',
+                    'pos': 0,
+                    'readonly': None,
+                    'input_size': None,
+                    'title': 'Unterüberschrift',
+                    'kind': const.QuestionnaireUsages.additional,
+                },
+                {
+                    'field_id': 1,
+                    'default_value': 'True',
+                    'info': 'Du bringst genug Bälle mit um einen ganzen Kurs'
+                            ' abzuwerfen.',
+                    'pos': 1,
+                    'readonly': False,
+                    'input_size': None,
+                    'title': 'Bälle',
+                    'kind': const.QuestionnaireUsages.additional,
+                },
+                {
+                    'field_id': None,
+                    'default_value': None,
+                    'info': 'nur etwas Text',
+                    'pos': 2,
+                    'readonly': None,
+                    'input_size': None,
+                    'title': None,
+                    'kind': const.QuestionnaireUsages.additional,
+                },
+                {
+                    'field_id': None,
+                    'default_value': None,
+                    'info': None,
+                    'pos': 3,
+                    'readonly': None,
+                    'input_size': None,
+                    'title': 'Weitere Überschrift',
+                    'kind': const.QuestionnaireUsages.additional,
+                },
+                {
+                    'field_id': 2,
+                    'default_value': 'etc',
+                    'info': None,
+                    'pos': 4,
+                    'readonly': False,
+                    'input_size': None,
+                    'title': 'Vehikel',
+                    'kind': const.QuestionnaireUsages.additional,
+                },
+                {
+                    'field_id': 3,
+                    'default_value': None,
+                    'info': None,
+                    'pos': 5,
+                    'readonly': False,
+                    'input_size': 3,
+                    'title': 'Hauswunsch',
+                    'kind': const.QuestionnaireUsages.additional,
+                },
+            ],
         }
         self.assertEqual(expectation,
                          self.event.get_questionnaire(self.key, event_id))
@@ -1579,9 +1579,10 @@ class TestEventBackend(BackendTest):
 
     @as_users("annika", "garcia")
     def test_registration_query(self) -> None:
+        scope = QueryScope.registration
         query = Query(
-            scope="qview_registration",
-            spec=dict(QUERY_SPECS["qview_registration"]),
+            scope=scope,
+            spec=scope.get_spec(event=self.event.get_event(self.key, 1)),
             fields_of_interest=(
                 "reg.id", "reg.payment", "is_cde_realm", "persona.family_name",
                 "birthday", "lodgement1.id", "part3.status",
@@ -1607,7 +1608,7 @@ class TestEventBackend(BackendTest):
             'reg_fields.xfield_brings_balls': "bool",
             'reg_fields.xfield_transportation': "str",
             'part2.status': "int",
-            })
+        })
         result = self.event.submit_general_query(self.key, query, event_id=1)
         expectation = (
             {'birthday': datetime.date(2012, 6, 2),
@@ -1670,8 +1671,8 @@ class TestEventBackend(BackendTest):
         event = self.event.get_event(self.key, 2)
         self.assertFalse(event["fields"])
         query = Query(
-            scope="qview_registration",
-            spec=dict(QUERY_SPECS["qview_registration"]),
+            scope=QueryScope.registration,
+            spec=QueryScope.registration.get_spec(event=event),
             fields_of_interest=["reg.id"],
             constraints=[],
             order=[],
@@ -1679,8 +1680,8 @@ class TestEventBackend(BackendTest):
         result = self.event.submit_general_query(self.key, query, event_id=2)
         self.assertEqual(tuple(), result)
         query = Query(
-            scope="qview_event_course",
-            spec=dict(QUERY_SPECS["qview_event_course"]),
+            scope=QueryScope.event_course,
+            spec=QueryScope.event_course.get_spec(event=event),
             fields_of_interest=["course.id"],
             constraints=[],
             order=[],
@@ -1688,8 +1689,8 @@ class TestEventBackend(BackendTest):
         result = self.event.submit_general_query(self.key, query, event_id=2)
         self.assertEqual(tuple(), result)
         query = Query(
-            scope="qview_event_lodgement",
-            spec=dict(QUERY_SPECS["qview_event_lodgement"]),
+            scope=QueryScope.lodgement,
+            spec=QueryScope.lodgement.get_spec(event=event),
             fields_of_interest=["lodgement.id"],
             constraints=[],
             order=[],
@@ -1700,8 +1701,8 @@ class TestEventBackend(BackendTest):
     @as_users("garcia")
     def test_lodgement_query(self) -> None:
         query = Query(
-            scope="qview_event_lodgement",
-            spec=dict(QUERY_SPECS['qview_event_lodgement']),
+            scope=QueryScope.lodgement,
+            spec=QueryScope.lodgement.get_spec(event=self.event.get_event(self.key, 1)),
             fields_of_interest=[
                 "lodgement.regular_capacity",
                 "lodgement.group_id",
@@ -1767,8 +1768,9 @@ class TestEventBackend(BackendTest):
     @as_users("garcia")
     def test_course_query(self) -> None:
         query = Query(
-            scope="qview_event_course",
-            spec=dict(QUERY_SPECS['qview_event_course']),
+            scope=QueryScope.event_course,
+            spec=QueryScope.event_course.get_spec(
+                event=self.event.get_event(self.key, 1)),
             fields_of_interest=[
                 "course.id",
                 "track1.attendees",
@@ -1888,8 +1890,9 @@ class TestEventBackend(BackendTest):
             self.assertLess(0, self.event.set_registration(self.key, reg))
 
         query = Query(
-            scope="qview_registration",
-            spec=dict(QUERY_SPECS["qview_registration"]),
+            scope=QueryScope.registration,
+            spec=QueryScope.registration.get_spec(
+                event=self.event.get_event(self.key, 1)),
             fields_of_interest=("reg.id", "track1.is_course_instructor"),
             constraints=[],
             order=(("reg.id", True),)
@@ -2417,8 +2420,7 @@ class TestEventBackend(BackendTest):
     def test_partial_import_event(self) -> None:
         event = self.event.get_event(self.key, 1)
         previous = self.event.partial_export_event(self.key, 1)
-        with open(self.testfile_dir / "partial_event_import.json") \
-                as datafile:
+        with open(self.testfile_dir / "partial_event_import.json") as datafile:
             data = json.load(datafile)
 
         # first a test run
@@ -2461,8 +2463,7 @@ class TestEventBackend(BackendTest):
             deletions = [key for key, val in new.items()
                          if val is None and key in old]
             for key in deletions:
-                if (isinstance(old[key], collections.abc.Mapping)
-                        or hint == 'segments'):
+                if isinstance(old[key], collections.abc.Mapping) or hint == 'segments':
                     del old[key]
                     del new[key]
             recursions = [key for key, val in new.items()
@@ -2990,7 +2991,7 @@ class TestEventBackend(BackendTest):
             'fields': {
                 5: {
                     'kind': const.FieldDatatypes.bool,
-                   },
+                },
                 -1: {
                     'association': const.FieldAssociations.registration,
                     'field_name': 'solidarity',
@@ -3310,13 +3311,13 @@ class TestEventBackend(BackendTest):
                 part_map["First coming"]: None,
                 part_map["Second coming"]: changed_part,
                 -1: newpart,
-                },
+            },
             'fields': {
                 field_map["instrument"]: None,
                 field_map["preferred_excursion_date"]: changed_field,
                 -1: newfield,
-                },
-            })
+            },
+        })
         data = {
             'event_id': 1,
             'title': "Topos theory for the kindergarden",

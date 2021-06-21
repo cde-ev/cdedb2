@@ -23,7 +23,7 @@ from cdedb.common import (
     PrivilegeError, RequestState, glue, make_proxy, n_, now, unwrap, xsorted,
 )
 from cdedb.database.connection import Atomizer
-from cdedb.query import Query
+from cdedb.query import Query, QueryScope
 
 
 class PastEventBackend(AbstractBackend):
@@ -781,7 +781,7 @@ class PastEventBackend(AbstractBackend):
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
         """
         query = affirm(Query, query)
-        if query.scope == "qview_pevent_course":
+        if query.scope == QueryScope.past_event_course:
             pass
         else:
             raise RuntimeError(n_("Bad scope."))

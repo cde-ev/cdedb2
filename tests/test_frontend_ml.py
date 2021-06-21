@@ -324,9 +324,9 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/1/show'},)
         self.assertTitle("Verkündungen")
         if self.user_in('anton'):
-            self.assertPresence("anton@example.cde (default)")
+            self.assertPresence("anton@example.cde (Standard)")
         else:
-            self.assertPresence("inga@example.cde (default)")
+            self.assertPresence("inga@example.cde (Standard)")
         self.assertNotIn("resetaddressform", self.response.forms)
         self.assertNotIn("unsubscribeform", self.response.forms)
         self.assertNotIn("changeaddressform", self.response.forms)
@@ -579,13 +579,13 @@ class TestMlFrontend(FrontendTest):
 
         # remove Annikas unsubscription
         f = self.response.forms['resetunsubscriberform27']
-        assert 'addsubscriberform27' not in self.response.forms
+        self.assertNotIn('addsubscriberform27', self.response.forms)
         self.submit(f)
         self.assertNonPresence("Annika", div='unsubscriber-list')
 
         # re-add Ferdinand, he got implicit subscribing rights
         f = self.response.forms['addsubscriberform6']
-        assert 'resetunsubscriberform6' not in self.response.forms
+        self.assertNotIn('resetunsubscriberform6', self.response.forms)
         self.submit(f)
         self.assertNonPresence("Ferdinand", div='unsubscriber-list')
 
@@ -605,10 +605,10 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("Annika", div='unsubscriber-list')
         self.assertPresence("Ferdinand", div='unsubscriber-list')
 
-        assert 'resetunsubscriberform27' not in self.response.forms
-        assert 'addsubscriberform27' not in self.response.forms
-        assert 'addsubscriberform6' not in self.response.forms
-        assert 'resetunsubscriberform6' not in self.response.forms
+        self.assertNotIn('resetunsubscriberform27', self.response.forms)
+        self.assertNotIn('addsubscriberform27', self.response.forms)
+        self.assertNotIn('addsubscriberform6', self.response.forms)
+        self.assertNotIn('resetunsubscriberform6', self.response.forms)
 
     # TODO add a presider as moderator and use him too in this test
     @as_users("nina")
@@ -1024,8 +1024,7 @@ class TestMlFrontend(FrontendTest):
         f['email'] = "pepper@example.cde"
         self.submit(f, check_notification=False)
         self.assertTitle("Klatsch und Tratsch")
-        link = self.fetch_link(self.fetch_mail()[0])
-        assert link is not None
+        link = self.fetch_link()
         self.get(link)
         self.follow()
         self.assertTitle("Klatsch und Tratsch")

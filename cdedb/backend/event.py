@@ -37,7 +37,7 @@ from cdedb.common import (
     xsorted,
 )
 from cdedb.database.connection import Atomizer
-from cdedb.query import Query, QueryOperators
+from cdedb.query import Query, QueryOperators, QueryScope
 from cdedb.validation import parse_date, parse_datetime
 
 
@@ -241,7 +241,7 @@ class EventBackend(AbstractBackend):
         """
         query = affirm(Query, query)
         view = None
-        if query.scope == "qview_registration":
+        if query.scope == QueryScope.registration:
             event_id = affirm(vtypes.ID, event_id)
             assert event_id is not None
             # ml_admins are allowed to do this to be able to manage
@@ -473,7 +473,7 @@ class EventBackend(AbstractBackend):
             query.constraints.append(("event_id", QueryOperators.equal,
                                       event_id))
             query.spec['event_id'] = "id"
-        elif query.scope == "qview_quick_registration":
+        elif query.scope == QueryScope.quick_registration:
             event_id = affirm(vtypes.ID, event_id)
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)):
@@ -481,14 +481,14 @@ class EventBackend(AbstractBackend):
             query.constraints.append(("event_id", QueryOperators.equal,
                                       event_id))
             query.spec['event_id'] = "id"
-        elif query.scope in {"qview_event_user", "qview_archived_past_event_user"}:
+        elif query.scope in {QueryScope.event_user, QueryScope.archived_past_event_user}:
             if not self.is_admin(rs) and "core_admin" not in rs.user.roles:
                 raise PrivilegeError(n_("Admin only."))
             # Include only un-archived event-users
             query.constraints.append(("is_event_realm", QueryOperators.equal,
                                       True))
             query.constraints.append(("is_archived", QueryOperators.equal,
-                                      query.scope == "qview_archived_past_event_user"))
+                                      query.scope == QueryScope.archived_past_event_user))
             query.spec["is_event_realm"] = "bool"
             query.spec["is_archived"] = "bool"
             # Exclude users of any higher realm (implying event)
@@ -496,7 +496,7 @@ class EventBackend(AbstractBackend):
                 query.constraints.append(
                     ("is_{}_realm".format(realm), QueryOperators.equal, False))
                 query.spec["is_{}_realm".format(realm)] = "bool"
-        elif query.scope == "qview_event_course":
+        elif query.scope == QueryScope.event_course:
             event_id = affirm(vtypes.ID, event_id)
             assert event_id is not None
             if (not self.is_orga(rs, event_id=event_id)
@@ -715,7 +715,7 @@ class EventBackend(AbstractBackend):
             query.constraints.append(
                 ("event_id", QueryOperators.equal, event_id))
             query.spec['event_id'] = "id"
-        elif query.scope == "qview_event_lodgement":
+        elif query.scope == QueryScope.lodgement:
             event_id = affirm(vtypes.ID, event_id)
             assert event_id is not None
             if (not self.is_orga(rs, event_id=event_id)

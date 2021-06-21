@@ -77,7 +77,7 @@ from cdedb.database.constants import FieldAssociations, FieldDatatypes
 from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS
 from cdedb.query import (
     MULTI_VALUE_OPERATORS, NO_VALUE_OPERATORS, VALID_QUERY_OPERATORS, QueryOperators,
-    QueryOrder,
+    QueryOrder, QueryScope,
 )
 from cdedb.validationdata import (
     COUNTRY_CODES, FREQUENCY_LISTS, GERMAN_PHONE_CODES, GERMAN_POSTAL_CODES,
@@ -3968,10 +3968,15 @@ def _query_input(
 
     val = _mapping(val, argname, **kwargs)
 
+    scope = _ALL_TYPED[QueryScope](val["scope"], "scope", **kwargs)
+    name = ""
+    if val.get("query_name"):
+        name = _ALL_TYPED[str](val["query_name"], "query_name", **kwargs)
     fields_of_interest = []
     constraints = []
     order: List[QueryOrder] = []
     errs = ValidationSummary()
+
     for field, validator in spec.items():
         # First the selection of fields of interest
         try:
@@ -4113,8 +4118,8 @@ def _query_input(
     if errs:
         raise errs
 
-    return QueryInput(
-        Query(None, spec, fields_of_interest, constraints, order))  # type: ignore
+    return QueryInput(Query(
+        scope, dict(spec), fields_of_interest, constraints, order, name))
 
 
 # TODO ignore _ignore_warnings here too?
@@ -4135,11 +4140,7 @@ def _query(
     errs = ValidationSummary()
 
     # scope
-    # TODO why no convert here?
-    _identifier(val.scope, "scope", **kwargs)
-
-    if not val.scope.startswith("qview_"):
-        errs.append(ValueError("scope", n_("Must start with “qview_”.")))
+    _ALL_TYPED[QueryScope](val.scope, "scope", **kwargs)
 
     # spec
     for field, validator in val.spec.items():

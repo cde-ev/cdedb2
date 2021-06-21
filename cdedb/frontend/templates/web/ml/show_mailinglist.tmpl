@@ -78,7 +78,7 @@
                             {% if sub_address %}
                                 {{ sub_address }}
                             {% else %}
-                                {{ user.username }} (default)
+                                {{ user.username }} {% trans %}(default){% endtrans %}
                             {% endif %}
                         </dd>
                     </dl>

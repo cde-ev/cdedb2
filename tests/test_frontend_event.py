@@ -12,7 +12,8 @@ import webtest
 
 import cdedb.database.constants as const
 from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, CdEDBObject, now
-from cdedb.frontend.common import CustomCSVDialect, iban_filter
+from cdedb.filter import iban_filter
+from cdedb.frontend.common import CustomCSVDialect
 from cdedb.query import QueryOperators
 from tests.common import UserObject, USER_DICT, FrontendTest, as_users, prepsql, storage
 
@@ -1997,8 +1998,6 @@ etc;anything else""", f['entries_2'].value)
         # submit again because of checksum
         f = self.response.forms['batchfeesform']
         self.submit(f)
-        mails = self.fetch_mail()
-        self.assertEqual(3, len(mails))
         for i in range(3):
             text = self.fetch_mail_content(i)
             self.assertIn("Überweisung für die Veranstaltung", text)

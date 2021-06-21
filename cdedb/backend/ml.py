@@ -29,7 +29,7 @@ from cdedb.common import (
 from cdedb.subman.machine import SubscriptionAction, SubscriptionPolicy
 from cdedb.database.connection import Atomizer
 from cdedb.ml_type_aux import MLType, MLTypeLike
-from cdedb.query import Query, QueryOperators
+from cdedb.query import Query, QueryOperators, QueryScope
 
 SubStates = Collection[const.SubscriptionState]
 
@@ -287,12 +287,12 @@ class MlBackend(AbstractBackend):
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
         """
         query = affirm(Query, query)
-        if query.scope in {"qview_persona", "qview_archived_persona"}:
+        if query.scope in {QueryScope.persona, QueryScope.archived_persona}:
             # Include only un-archived ml users.
             query.constraints.append(("is_ml_realm", QueryOperators.equal,
                                       True))
             query.constraints.append(("is_archived", QueryOperators.equal,
-                                      query.scope == "qview_archived_persona"))
+                                      query.scope == QueryScope.archived_persona))
             query.spec["is_ml_realm"] = "bool"
             query.spec["is_archived"] = "bool"
             # Exclude users of any higher realm (implying event)

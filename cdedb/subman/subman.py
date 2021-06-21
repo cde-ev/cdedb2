@@ -120,7 +120,7 @@ class SubscriptionManager:
                      old_state: SubscriptionState,
                      allow_unsub: bool = True,
                      is_privileged: bool = True,
-                     ) -> Optional[SubscriptionState]:
+                     ) -> SubscriptionState:
         """Apply a SubscriptionAction to a SubscriptionState according to a SubscriptionPolicy.
 
         This is the main interface for performing subscription actions. To decide if the

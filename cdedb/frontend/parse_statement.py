@@ -11,7 +11,7 @@ from cdedb.common import (
     Accounts, CdEDBObject, CdEDBObjectMap, Error, TransactionType, diacritic_patterns,
     n_, now, EntitySorter, xsorted,
 )
-from cdedb.frontend.common import cdedbid_filter
+from cdedb.filter import cdedbid_filter
 from cdedb.validation import validate_check
 
 # This is the specification of the order of the fields in the input.

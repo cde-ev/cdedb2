@@ -33,7 +33,7 @@ from cdedb.frontend.assembly import AssemblyFrontend
 from cdedb.frontend.cde import CdEFrontend
 from cdedb.frontend.common import (
     JINJA_FILTERS, BaseApp, Response, construct_redirect, docurl, sanitize_None,
-    staticurl,
+    staticurl, datetime_filter,
 )
 from cdedb.frontend.core import CoreFrontend
 from cdedb.frontend.event import EventFrontend
@@ -84,6 +84,7 @@ class Application(BaseApp):
             'glue': glue,
         })
         self.jinja_env.filters.update(JINJA_FILTERS)
+        self.jinja_env.filters.update({'datetime': datetime_filter})
         self.jinja_env.policies['ext.i18n.trimmed'] = True  # type: ignore
         self.translations = {
             lang: gettext.translation(

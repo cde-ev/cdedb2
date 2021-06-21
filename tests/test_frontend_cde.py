@@ -198,6 +198,7 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("quintus", "vera")
     def test_adminchangedata(self) -> None:
+        # Berta
         self.realm_admin_view_profile('berta', "cde")
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['changedataform']
@@ -209,6 +210,19 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Bertålotta Beispiel")
         self.assertPresence("03.04.1933", div='personal-information')
         self.assertPresence("Jabberwocky for the win.", div='additional')
+
+        # Olaf, disabled
+        self.realm_admin_view_profile('olaf', "cde")
+        self.traverse({'description': 'Bearbeiten'})
+        f = self.response.forms['changedataform']
+        f['display_name'] = "Link"
+        f['birthday'] = "21.11.1998"
+        f['free_form'] = "Spiele gerne Okarina."
+        self.submit(f)
+        self.assertPresence("Link", div='personal-information')
+        self.assertTitle("Olafson Olaf")
+        self.assertPresence("21.11.1998", div='personal-information')
+        self.assertPresence("Spiele gerne Okarina.", div='additional')
 
     @as_users("anton")
     def test_cde_admin_views(self) -> None:
@@ -864,10 +878,8 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Daten sind für andere Mitglieder sichtbar.",
                             div='searchability')
         self.assertCheckbox(True, "paper_expuls_checkbox")
-        mail = self.fetch_mail()[0]
+        link = self.fetch_link()
         self.logout()
-        link = self.fetch_link(mail)
-        assert link is not None
         self.get(link)
         self.assertTitle("Neues Passwort setzen")
         new_password = "krce63koLe#$e"
@@ -2352,6 +2364,7 @@ class TestCdEFrontend(FrontendTest):
                             div="complex-stats-members_by_city")
         self.assertNonPresence("Burokratia")
         self.assertNonPresence("Liliput")
+        self.assertDivNotExists(div="year-stats-members_by_birthday-1")
         self.assertNonPresence("–", div="year-stats-members_by_birthday-1991")
         self.assertNonPresence("–", div="year-stats-members_by_birthday-2222")
         self.assertPresence("–", div="year-stats-members_by_birthday-2014")

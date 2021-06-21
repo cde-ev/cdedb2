@@ -37,15 +37,16 @@ from cdedb.common import (
     lastschrift_reference, merge_dicts, n_, now, unwrap, xsorted,
 )
 from cdedb.database.connection import Atomizer
+from cdedb.filter import enum_entries_filter, money_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, CustomCSVDialect, REQUESTdata, REQUESTdatadict, REQUESTfile,
     Worker, access, calculate_db_logparams, calculate_loglinks, cdedbid_filter,
     check_validation as check, check_validation_optional as check_optional, csv_output,
-    enum_entries_filter, make_membership_fee_reference, make_postal_address,
-    money_filter, periodic, process_dynamic_input, request_extractor,
+    make_membership_fee_reference, make_postal_address, periodic,
+    process_dynamic_input, request_extractor,
 )
 from cdedb.query import (
-    QUERY_SPECS, Query, QueryConstraint, QueryOperators, mangle_query_input,
+    Query, QueryConstraint, QueryOperators, QueryScope,
 )
 from cdedb.validation import (
     LASTSCHRIFT_COMMON_FIELDS, PAST_EVENT_FIELDS, PAST_COURSE_COMMON_FIELDS,
@@ -231,9 +232,10 @@ class CdEFrontend(AbstractUserFrontend):
                 pu)
         else:
             defaults['qop_postal_code,postal_code2'] = QueryOperators.match
-        spec = copy.deepcopy(QUERY_SPECS['qview_cde_member'])
+        scope = QueryScope.cde_member
+        spec = scope.get_spec()
         query = check(rs, vtypes.QueryInput,
-                      mangle_query_input(rs, spec, defaults), "query", spec=spec,
+                      scope.mangle_query_input(rs, defaults), "query", spec=spec,
                       allow_empty=not is_search, separator=" ")
 
         events = self.pasteventproxy.list_past_events(rs)
@@ -271,7 +273,6 @@ class CdEFrontend(AbstractUserFrontend):
 
                 query.constraints = [restrict(constrain)
                                      for constrain in query.constraints]
-                query.scope = "qview_cde_member"
                 query.fields_of_interest.append('personas.id')
                 result = self.cdeproxy.submit_general_query(rs, query)
                 count = len(result)
@@ -291,9 +292,10 @@ class CdEFrontend(AbstractUserFrontend):
     def past_course_search(self, rs: RequestState, is_search: bool) -> Response:
         """Search for past courses."""
         defaults = copy.deepcopy(COURSESEARCH_DEFAULTS)
-        spec = copy.deepcopy(QUERY_SPECS['qview_pevent_course'])
+        scope = QueryScope.past_event_course
+        spec = scope.get_spec()
         query = check(rs, vtypes.QueryInput,
-                      mangle_query_input(rs, spec, defaults), "query", spec=spec,
+                      scope.mangle_query_input(rs, defaults), "query", spec=spec,
                       allow_empty=not is_search, separator=" ")
         result: Optional[Sequence[CdEDBObject]] = None
         count = 0
@@ -305,7 +307,6 @@ class CdEFrontend(AbstractUserFrontend):
             if is_search and not query.constraints:
                 rs.notify("error", n_("You have to specify some filters."))
             elif is_search:
-                query.scope = "qview_pevent_course"
                 query.fields_of_interest.append('courses.id')
                 result = self.pasteventproxy.submit_general_query(rs, query)
                 count = len(result)
@@ -344,7 +345,7 @@ class CdEFrontend(AbstractUserFrontend):
                     rs.gettext if download is None else rs.default_gettext))
         }
         return self.generic_user_search(
-            rs, download, is_search, 'qview_cde_user', 'qview_cde_user',
+            rs, download, is_search, QueryScope.cde_user, QueryScope.cde_user,
             self.cdeproxy.submit_general_query, choices=choices)
 
     @access("core_admin", "cde_admin")
@@ -367,7 +368,7 @@ class CdEFrontend(AbstractUserFrontend):
         }
         return self.generic_user_search(
             rs, download, is_search,
-            'qview_archived_past_event_user', 'qview_archived_persona',
+            QueryScope.archived_past_event_user, QueryScope.archived_persona,
             self.cdeproxy.submit_general_query, choices=choices,
             endpoint="archived_user_search")
 
@@ -2508,8 +2509,9 @@ class CdEFrontend(AbstractUserFrontend):
     def download_past_event_participantlist(self, rs: RequestState,
                                             pevent_id: int) -> Response:
         """Provide a download of a participant list for a past event."""
+        scope = QueryScope.past_event_user
         query = Query(
-            "qview_past_event_user", QUERY_SPECS['qview_past_event_user'],
+            scope, scope.get_spec(),
             ("personas.id", "given_names", "family_name", "address",
              "address_supplement", "postal_code", "location", "country"),
             [("pevent_id", QueryOperators.equal, pevent_id), ],
