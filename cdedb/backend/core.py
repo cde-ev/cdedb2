@@ -739,14 +739,13 @@ class CoreBackend(AbstractBackend):
                 and "purge" not in allow_specials):
             raise RuntimeError(n_("Editing archived member impossible."))
 
-        with Atomizer(rs):
-            ret = self.changelog_submit_change(
-                rs, data, generation=generation,
-                may_wait=may_wait, change_note=change_note,
-                force_review=force_review)
-            if allow_specials and ret < 0:
-                raise RuntimeError(n_("Special change not committed."))
-            return ret
+        ret = self.changelog_submit_change(
+            rs, data, generation=generation,
+            may_wait=may_wait, change_note=change_note,
+            force_review=force_review)
+        if allow_specials and ret < 0:
+            raise RuntimeError(n_("Special change not committed."))
+        return ret
 
     @access("persona")
     def change_persona(self, rs: RequestState, data: CdEDBObject,
@@ -796,7 +795,7 @@ class CoreBackend(AbstractBackend):
             self.core_log(
                 rs, const.CoreLogCodes.realm_change, data['id'],
                 change_note="Bereiche geändert.")
-            return ret
+        return ret
 
     @access("persona")
     def change_foto(self, rs: RequestState, persona_id: int,
@@ -870,11 +869,12 @@ class CoreBackend(AbstractBackend):
         data['status'] = const.PrivilegeChangeStati.pending
         data = affirm(vtypes.PrivilegeChange, data)
 
+        if ("is_meta_admin" in data
+                and data['persona_id'] == rs.user.persona_id):
+            raise PrivilegeError(n_(
+                "Cannot modify own meta admin privileges."))
+
         with Atomizer(rs):
-            if ("is_meta_admin" in data
-                    and data['persona_id'] == rs.user.persona_id):
-                raise PrivilegeError(n_(
-                    "Cannot modify own meta admin privileges."))
             if self.list_privilege_changes(
                     rs, persona_id=data['persona_id'],
                     stati=(const.PrivilegeChangeStati.pending,)):
@@ -1147,7 +1147,7 @@ class CoreBackend(AbstractBackend):
                 change_note="Mitgliedschaftsstatus geändert.",
                 allow_specials=("membership",))
             self.finance_log(rs, code, persona_id, delta, new_balance)
-            return ret
+        return ret
 
     @access("core_admin", "meta_admin")
     def invalidate_password(self, rs: RequestState,
@@ -1857,7 +1857,8 @@ class CoreBackend(AbstractBackend):
                                   and not e['is_searchable'])
                                  for e in ret.values()))):
                 raise RuntimeError(n_("Improper access to member data."))
-            return ret
+        return ret
+
     get_cde_user: _GetPersonaProtocol = singularize(
         get_cde_users, "persona_ids", "persona_id")
 
@@ -2261,21 +2262,20 @@ class CoreBackend(AbstractBackend):
 
         The cookie depends on the inputs as well as a server side secret.
         """
-        with Atomizer(rs):
-            if not self.is_admin(rs) and "meta_admin" not in rs.user.roles:
-                roles = self.get_roles_single(rs, persona_id)
-                if any("admin" in role for role in roles):
-                    raise PrivilegeError(n_("Preventing reset of admin."))
-            password_hash = unwrap(self.sql_select_one(
-                rs, "core.personas", ("password_hash",), persona_id))
-            if password_hash is None:
-                # A personas password hash cannot be empty.
-                raise ValueError(n_("Persona does not exist."))
-            # This defines a specific account/password combination as purpose
-            cookie = encode_parameter(
-                salt, str(persona_id), password_hash,
-                self.RESET_COOKIE_PAYLOAD, persona_id=None, timeout=timeout)
-            return cookie
+        if not self.is_admin(rs) and "meta_admin" not in rs.user.roles:
+            roles = self.get_roles_single(rs, persona_id)
+            if any("admin" in role for role in roles):
+                raise PrivilegeError(n_("Preventing reset of admin."))
+        password_hash = unwrap(self.sql_select_one(
+            rs, "core.personas", ("password_hash",), persona_id))
+        if password_hash is None:
+            # A personas password hash cannot be empty.
+            raise ValueError(n_("Persona does not exist."))
+        # This defines a specific account/password combination as purpose
+        cookie = encode_parameter(
+            salt, str(persona_id), password_hash,
+            self.RESET_COOKIE_PAYLOAD, persona_id=None, timeout=timeout)
+        return cookie
 
     # # This should work but Literal seems to be broken.
     # # https://github.com/python/mypy/issues/7399
@@ -2294,22 +2294,21 @@ class CoreBackend(AbstractBackend):
         :returns: The bool signals success, the str is an error message or
             None if successful.
         """
-        with Atomizer(rs):
-            password_hash = unwrap(self.sql_select_one(
-                rs, "core.personas", ("password_hash",), persona_id))
-            if password_hash is None:
-                # A personas password hash cannot be empty.
-                raise ValueError(n_("Persona does not exist."))
-            timeout, msg = decode_parameter(
-                salt, str(persona_id), password_hash, cookie, persona_id=None)
-            if msg is None:
-                if timeout:
-                    return False, n_("Link expired.")
-                else:
-                    return False, n_("Link invalid or already used.")
-            if msg != self.RESET_COOKIE_PAYLOAD:
+        password_hash = unwrap(self.sql_select_one(
+            rs, "core.personas", ("password_hash",), persona_id))
+        if password_hash is None:
+            # A personas password hash cannot be empty.
+            raise ValueError(n_("Persona does not exist."))
+        timeout, msg = decode_parameter(
+            salt, str(persona_id), password_hash, cookie, persona_id=None)
+        if msg is None:
+            if timeout:
+                return False, n_("Link expired.")
+            else:
                 return False, n_("Link invalid or already used.")
-            return True, None
+        if msg != self.RESET_COOKIE_PAYLOAD:
+            return False, n_("Link invalid or already used.")
+        return True, None
 
     def modify_password(self, rs: RequestState, new_password: str,
                         old_password: str = None, reset_cookie: str = None,
@@ -2656,7 +2655,7 @@ class CoreBackend(AbstractBackend):
                 self.core_log(
                     rs, const.CoreLogCodes.genesis_verified, persona_id=None,
                     change_note=data["username"])
-            return ret, data["realm"]
+        return ret, data["realm"]
 
     @access(*REALM_ADMINS)
     def genesis_list_cases(self, rs: RequestState,
@@ -2776,7 +2775,7 @@ class CoreBackend(AbstractBackend):
                 'case_status': const.GenesisStati.successful,
             }
             self.sql_update(rs, "core.genesis_cases", update)
-            return ret
+        return ret
 
     @access("core_admin")
     def find_doppelgangers(self, rs: RequestState,
@@ -2867,7 +2866,7 @@ class CoreBackend(AbstractBackend):
                                   entity_key='title')
             if not ret:
                 ret = self.sql_insert(rs, "core.cron_store", update)
-            return ret
+        return ret
 
     def _submit_general_query(self, rs: RequestState,
                               query: Query) -> Tuple[CdEDBObject, ...]:

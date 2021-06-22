@@ -1120,7 +1120,7 @@ class AssemblyBackend(AbstractBackend):
                     'ballot_id': ballot,
                 }
                 self.sql_insert(rs, "assembly.voter_register", entry)
-            return secret
+        return secret
 
     @access("assembly")
     def external_signup(self, rs: RequestState, assembly_id: int,
@@ -1399,7 +1399,7 @@ class AssemblyBackend(AbstractBackend):
             data = json_serialize(result)
             with open(path, 'w') as f:
                 f.write(data)
-            ret = data.encode()
+        ret = data.encode()
         return ret
 
     @access("assembly_admin")
@@ -1540,7 +1540,7 @@ class AssemblyBackend(AbstractBackend):
                     return True
             assembly_id = self.get_assembly_id(rs, attachment_id=attachment_id)
             assembly = self.get_assembly(rs, assembly_id)
-            return not assembly['is_active']
+        return not assembly['is_active']
 
     @access("assembly")
     def get_attachment_histories(self, rs: RequestState,
@@ -1556,8 +1556,8 @@ class AssemblyBackend(AbstractBackend):
                 rs, "assembly.attachment_versions",
                 ASSEMBLY_ATTACHMENT_VERSION_FIELDS, attachment_ids,
                 entity_key="attachment_id")
-            for entry in data:
-                ret[entry["attachment_id"]][entry["version"]] = entry
+        for entry in data:
+            ret[entry["attachment_id"]][entry["version"]] = entry
 
         return ret
 
@@ -1577,15 +1577,15 @@ class AssemblyBackend(AbstractBackend):
         :returns: The id of the new attachment.
         """
         data = affirm(vtypes.AssemblyAttachment, data, creation=True)
+        if not self.is_presider(rs, assembly_id=data.get('assembly_id'),
+                                ballot_id=data.get('ballot_id')):
+            raise PrivilegeError(n_("Must have privileged access to add"
+                                    " attachment."))
+        locked_msg = n_("Unable to change attachment once voting has begun"
+                        " or the assembly has been concluded.")
+        attachment = {k: v for k, v in data.items()
+                      if k in ASSEMBLY_ATTACHMENT_FIELDS}
         with Atomizer(rs):
-            if not self.is_presider(rs, assembly_id=data.get('assembly_id'),
-                                    ballot_id=data.get('ballot_id')):
-                raise PrivilegeError(n_("Must have privileged access to add"
-                                        " attachment."))
-            locked_msg = n_("Unable to change attachment once voting has begun"
-                            " or the assembly has been concluded.")
-            attachment = {k: v for k, v in data.items()
-                          if k in ASSEMBLY_ATTACHMENT_FIELDS}
             if attachment.get('ballot_id'):
                 ballot = self.get_ballot(rs, attachment['ballot_id'])
                 if ballot['vote_begin'] < now():
@@ -1617,7 +1617,7 @@ class AssemblyBackend(AbstractBackend):
             self.assembly_log(rs, const.AssemblyLogCodes.attachment_added,
                               assembly_id=assembly_id,
                               change_note=version['title'])
-            return new_id
+        return new_id
 
     @access("assembly")
     def change_attachment_link(self, rs: RequestState,
@@ -1773,7 +1773,7 @@ class AssemblyBackend(AbstractBackend):
                 data = self.query_all(
                     rs, query.format(" AND ".join(constraints)), params)
                 ret.update({e["attachment_id"]: e["version"] for e in data})
-            return ret
+        return ret
 
     class _GetCurrentVersionProtocol(Protocol):
         def __call__(self, rs: RequestState, attachment_id: int,
@@ -1845,7 +1845,7 @@ class AssemblyBackend(AbstractBackend):
             self.assembly_log(
                 rs, const.AssemblyLogCodes.attachment_version_changed,
                 assembly_id, change_note=f"{data['title']}: Version {version}")
-            return ret
+        return ret
 
     @access("assembly")
     def remove_attachment_version(self, rs: RequestState, attachment_id: int,
@@ -1899,7 +1899,7 @@ class AssemblyBackend(AbstractBackend):
                 self.assembly_log(
                     rs, const.AssemblyLogCodes.attachment_version_removed,
                     assembly_id, change_note=change_note)
-            return ret
+        return ret
 
     @access("assembly")
     def get_attachment_content(self, rs: RequestState, attachment_id: int,
