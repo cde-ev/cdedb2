@@ -1965,16 +1965,16 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Vergangene Veranstaltungen")
 
         # Overview
-        self.assertPresence("PfingstAkademie 2014 [pa14] (CdE) 2 Kurse, 5 "
-                            "Teilnehmer", div='events-2014')
+        self.assertPresence("PfingstAkademie 2014 [pa14] (CdE) 2 Kurse, 6 Teilnehmer",
+                            div='events-2014')
         self.assertPresence(
             "Geburtstagsfete [gebi] (DdE) 0 Kurse, 0 Teilnehmer",
             div='events-2019')
 
         # Institution CdE
         self.traverse({'description': '^CdE$'})
-        self.assertPresence("PfingstAkademie 2014 [pa14] 2 Kurse, 5 "
-                            "Teilnehmer", div='events-2014')
+        self.assertPresence("PfingstAkademie 2014 [pa14] 2 Kurse, 6 Teilnehmer",
+                            div='events-2014')
         self.assertNonPresence("Geburtstagsfete")
 
         # Institution DdE
@@ -2038,11 +2038,11 @@ class TestCdEFrontend(FrontendTest):
         # Check list privacy
         # non-searchable non-participants can not see anything interesting
         if self.user_in("garcia"):
-            self.assertPresence("5 Teilnehmer", div='count-extra-participants')
-            self.assertNonPresence("Bertå")
+            self.assertPresence("6 Teilnehmer", div='count-extra-participants')
+            self.assertNonPresence("Bert")
             self.assertNonPresence("Ferdinand")
         else:
-            self.assertNonPresence("5 Teilnehmer")
+            self.assertNonPresence("6 Teilnehmer")
             self.assertPresence("Bertå", div='list-participants')
             self.assertPresence("Ferdinand", div='list-participants')
 
@@ -2065,7 +2065,7 @@ class TestCdEFrontend(FrontendTest):
             self.assertNonPresence("Charly")
             self.assertNonPresence("Emilia")
             if not self.user_in("garcia"):
-                self.assertPresence("2 weitere", div='count-extra-participants')
+                self.assertPresence("und 3 weitere", div='count-extra-participants')
 
         # links to non-searchable users are only displayed for admins
         if self.user_in("vera"):
@@ -2154,7 +2154,7 @@ class TestCdEFrontend(FrontendTest):
                                      dialect=dialect))
         given_names = {e["given_names"] for e in result}
         expectation = {
-            "Bertålotta", "Charly C.", "Emilia E.", "Ferdinand F.", "Akira"
+            "Bertålotta", "Charly C.", "Daniel D.", "Emilia E.", "Ferdinand F.", "Akira"
         }
         self.assertEqual(expectation, given_names)
 
