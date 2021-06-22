@@ -1,6 +1,7 @@
 {% set sidenav_active='ml_index' %}
 {% extends "web/ml/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/ml/generic.tmpl" as generic_ml with context %}
 
 {% block title %}
     {% trans %}Mailinglists{% endtrans %}
@@ -11,7 +12,7 @@
 
 {% macro format_entry(mailinglist_id, title) %}
     <li class="hide-hover-container clearfix-after">
-        {{ util.deko_checkbox(mailinglist_id in subscriptions, titles=[gettext("not subscribed"), gettext("subscribed")]) }}
+        {{ generic_ml.state_checkbox(state) }}
         {{ util.href(cdedblink("ml/show_mailinglist", {'mailinglist_id': mailinglist_id}), title) }}
         {% if user.persona_id in mailinglist_infos[mailinglist_id]['moderators'] %}
             {{ util.href(cdedblink('ml/management',{'mailinglist_id' : mailinglist_id}), gettext("Manage"), icon='list',
