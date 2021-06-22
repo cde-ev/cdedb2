@@ -2607,7 +2607,7 @@ msgid "Wrong associated field."
 msgstr ""
 
 #: cdedb/frontend/event.py:5580
-msgid "change_note only supoorted for registrations."
+msgid "change_note only supported for registrations."
 msgstr ""
 
 #: cdedb/frontend/event.py:5676
