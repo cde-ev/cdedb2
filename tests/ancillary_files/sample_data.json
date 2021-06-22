@@ -3515,6 +3515,13 @@
             "is_instructor": false,
             "is_orga": false
         },
+         {
+            "persona_id": 4,
+            "pevent_id": 1,
+            "pcourse_id": 2,
+            "is_instructor": false,
+            "is_orga": false
+        },
         {
             "persona_id": 5,
             "pevent_id": 1,

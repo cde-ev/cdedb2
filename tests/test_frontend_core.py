@@ -256,10 +256,11 @@ class TestCoreFrontend(FrontendTest):
                       {'description': "Swish -- und alles ist gut"})
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
 
-    @as_users("emilia")
+    @as_users("daniel", "emilia")
     def test_event_profile_past_events(self) -> None:
         self.traverse({'href': '/core/self/show'})
         self.assertPresence("PfingstAkademie 2014")
+        self.assertPresence("Goethe zum Anfassen")
         self.assertNoLink(content="PfingstAkademie 2014")
         self.assertNoLink(content="Goethe zum Anfassen")
 
