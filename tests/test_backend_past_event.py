@@ -115,6 +115,10 @@ class TestPastEventBackend(BackendTest):
                 'pcourse_id': None, 'is_instructor': False,
                 'is_orga': False, 'persona_id': 3,
             },
+            (4, 2): {
+                'pcourse_id': 2, 'is_instructor': False,
+                'is_orga': False, 'persona_id': 4,
+            },
             (5, 2): {
                 'pcourse_id': 2, 'is_instructor': False,
                 'is_orga': False, 'persona_id': 5,

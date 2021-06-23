@@ -57,6 +57,7 @@ _SECRETSCONF = SecretsConfig()
 
 # TODO: use TypedDict to specify UserObject.
 UserObject = Mapping[str, Any]
+UserIdentifier = Union[UserObject, str, int]
 
 # This is to be used in place of `self.key` for anonymous requests. It makes mypy happy.
 ANONYMOUS = cast(RequestState, None)
@@ -101,8 +102,8 @@ def json_keys_to_int(obj: T) -> T:
     return ret
 
 
-def read_sample_data(filename: PathLike = "/cdedb2/tests/ancillary_files/"
-                                          "sample_data.json"
+def _read_sample_data(filename: PathLike = "/cdedb2/tests/ancillary_files/"
+                                           "sample_data.json"
                      ) -> Dict[str, CdEDBObjectMap]:
     """Helper to turn the sample data from the JSON file into usable format."""
     with open(filename, "r", encoding="utf8") as f:
@@ -121,12 +122,12 @@ def read_sample_data(filename: PathLike = "/cdedb2/tests/ancillary_files/"
     return ret
 
 
-SAMPLE_DATA = read_sample_data()
+_SAMPLE_DATA = _read_sample_data()
 
 B = TypeVar("B", bound=AbstractBackend)
 
 
-def make_backend_shim(backend: B, internal: bool = False) -> B:
+def _make_backend_shim(backend: B, internal: bool = False) -> B:
     """Wrap a backend to only expose functions with an access decorator.
 
     If we used an actual RPC mechanism, this would do some additional
@@ -269,7 +270,7 @@ class BasicTest(unittest.TestCase):
             if keys:
                 r = {}
                 for k in keys:
-                    r[k] = copy.deepcopy(SAMPLE_DATA[table][anid][k])
+                    r[k] = copy.deepcopy(_SAMPLE_DATA[table][anid][k])
                     if table == 'core.personas':
                         if k == 'balance':
                             r[k] = decimal.Decimal(r[k])
@@ -280,7 +281,7 @@ class BasicTest(unittest.TestCase):
                         r[k] = parse_datetime(r[k])
                 ret[anid] = r
             else:
-                ret[anid] = copy.deepcopy(SAMPLE_DATA[table][anid])
+                ret[anid] = copy.deepcopy(_SAMPLE_DATA[table][anid])
         return ret
 
     def get_sample_datum(self, table: str, id_: int) -> CdEDBObject:
@@ -308,9 +309,6 @@ class CdEDBTest(BasicTest):
                 curr.execute(sql_input)
 
         super().setUp()
-
-
-UserIdentifier = Union[UserObject, str, int]
 
 
 class BackendTest(CdEDBTest):
@@ -378,7 +376,7 @@ class BackendTest(CdEDBTest):
 
     @classmethod
     def initialize_backend(cls, backendcls: Type[B]) -> B:
-        return make_backend_shim(backendcls(), internal=True)
+        return _make_backend_shim(backendcls(), internal=True)
 
 
 # A reference of the most important attributes for all users. This is used for
@@ -664,7 +662,6 @@ def prepsql(sql: AnyStr) -> Callable[[F], F]:
     return decorator
 
 
-# TODO: should this better be named needs_storage?
 def storage(fun: F) -> F:
     """Decorate a test which needs some of the test files on the local drive."""
     setattr(fun, BasicTest.needs_storage_marker, True)
@@ -745,10 +742,10 @@ class FrontendTest(BackendTest):
             texts = self.response.lxml.xpath('/html/head/title/text()')
             self.assertNotEqual(0, len(texts))
             self.assertNotEqual('CdEDB – Fehler', texts[0])
-            self.scrap()
-        self.log_generation_time()
+            self._scrap()
+        self._log_generation_time()
 
-    def scrap(self) -> None:
+    def _scrap(self) -> None:
         if self.do_scrap and self.response.status_int // 100 == 2:
             # path without host but with query string - capped at 64 chars
             # To enhance readability, we mark most chars as safe. All special chars are
@@ -762,7 +759,7 @@ class FrontendTest(BackendTest):
                                              delete=False) as f:
                 f.write(self.response.body)
 
-    def log_generation_time(self, response: webtest.TestResponse = None) -> None:
+    def _log_generation_time(self, response: webtest.TestResponse = None) -> None:
         if response is None:
             response = self.response
         if _BASICCONF["TIMING_LOG"]:
@@ -784,7 +781,7 @@ class FrontendTest(BackendTest):
         oldresponse = self.response
         self.response = self.response.maybe_follow(**kwargs)
         if self.response != oldresponse:
-            self.log_generation_time(oldresponse)
+            self._log_generation_time(oldresponse)
 
     def post(self, url: str, *args: Any, verbose: bool = False, **kwargs: Any) -> None:
         """Directly send a POST-request.
@@ -929,7 +926,7 @@ class FrontendTest(BackendTest):
             self.assertTitle("{} {}".format(u['given_names'],
                                             u['family_name']))
 
-    def fetch_mail(self) -> List[email.message.EmailMessage]:
+    def _fetch_mail(self) -> List[email.message.EmailMessage]:
         """
         Get the content of mails that were sent, using the E-Mail-notification.
         """
@@ -954,20 +951,16 @@ class FrontendTest(BackendTest):
         return ret
 
     def fetch_mail_content(self, index: int = 0) -> str:
-        mail = self.fetch_mail()[index]
+        mail = self._fetch_mail()[index]
         body = mail.get_body()
         assert isinstance(body, email.message.EmailMessage)
         return body.get_content()
 
-    @staticmethod
-    def fetch_link(msg: email.message.EmailMessage, num: int = 1) -> Optional[str]:
-        ret = None
-        body = msg.get_body()
-        assert isinstance(body, email.message.EmailMessage)
-        for line in body.get_content().splitlines():
-            if line.startswith('[{}] '.format(num)):
-                ret = line.split(maxsplit=1)[-1]
-        return ret
+    def fetch_link(self, index: int = 0, num: int = 1) -> str:
+        for line in self.fetch_mail_content(index).splitlines():
+            if line.startswith(f'[{num}] '):
+                return line.split(maxsplit=1)[-1]
+        raise ValueError(f"Link [{num}] not found in mail [{index}].")
 
     def assertTitle(self, title: str) -> None:
         """
