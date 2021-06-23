@@ -15370,7 +15370,7 @@ msgstr "Der Nutzer hat bereits eine Abonnement-Anfrage gestellt."
 #: cdedb/subman/machine.py:236 cdedb/subman/machine.py:288
 #: cdedb/subman/machine.py:358
 msgid "subman_managing_is-unsubscription-overridden"
-msgstr "Der Nutzer ist aktuell blockiert."
+msgstr "Der Nutzer ist aktuell blockiert. Um dies zu ändern kannst du die 'Erweiterte Verwaltung' Seite nutzen."
 
 #: cdedb/subman/machine.py:238 cdedb/subman/machine.py:252
 #: cdedb/subman/machine.py:264 cdedb/subman/machine.py:290
@@ -15397,7 +15397,7 @@ msgstr "Der Nutzer hat die Liste aktuell deabonniert."
 #: cdedb/subman/machine.py:248 cdedb/subman/machine.py:261
 #: cdedb/subman/machine.py:356
 msgid "subman_managing_is-subscription-overridden"
-msgstr "Der Nutzer ist aktuell fixierter Abonnent."
+msgstr "Der Nutzer ist aktuell fixierter Abonnent. Um dies zu ändern kannst du die 'Erweiterte Verwaltung' Seite nutzen."
 
 #: cdedb/subman/machine.py:257
 msgid "User is already force-subscribed."

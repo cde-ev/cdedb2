@@ -14643,7 +14643,7 @@ msgstr ""
 #: cdedb/subman/machine.py:236 cdedb/subman/machine.py:288
 #: cdedb/subman/machine.py:358
 msgid "subman_managing_is-unsubscription-overridden"
-msgstr "User is currently blocked."
+msgstr "User is currently blocked. To change this, you may use the 'Advanced Management' page."
 
 #: cdedb/subman/machine.py:238 cdedb/subman/machine.py:252
 #: cdedb/subman/machine.py:264 cdedb/subman/machine.py:290
@@ -14668,7 +14668,7 @@ msgstr "User is currently unsubscribed."
 #: cdedb/subman/machine.py:248 cdedb/subman/machine.py:261
 #: cdedb/subman/machine.py:356
 msgid "subman_managing_is-subscription-overridden"
-msgstr "User is currently force-subscribed."
+msgstr "User is currently force-subscribed. To change this, you may use the 'Advanced Management' page."
 
 #: cdedb/subman/machine.py:257
 msgid "User is already force-subscribed."
