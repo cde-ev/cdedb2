@@ -38,7 +38,7 @@
         /**
          * Private function to generate delete button with appropriate onclick handler and append to a given row.
          * Also corrects the visual delete state of the row.
-         * 
+         *
          * @param $row jQuery object of row.
          * @param newrow boolean, indicating if this is a new row. In this case the delete button will detach the row
          *               instead of toggling the indicator.
@@ -50,7 +50,7 @@
                                                  'aria-pressed': 'false',
                                                  'class': 'btn btn-danger btn-sm' })
                     .append($('<span></span>', {'class': 'fas fa-trash-alt'}));
-                    
+
             if (newrow) {
                 $deleteButton.click(function() {
                     $row.detach();
@@ -60,13 +60,13 @@
                 var $indicator = $row.find('.drow-indicator' + class_sfx);
                 if ($indicator.prop('disabled'))
                     return;
-                    
+
                 if ($indicator.prop("checked")) {
                     $row.addClass('drow-delete' + class_sfx);
                     $deleteButton.addClass('active')
                         .attr('aria-pressed','true');
                 }
-                    
+
                 $deleteButton.click(function() {
                     var check = $indicator.prop("checked");
                     $indicator.prop("checked", !check);
@@ -83,23 +83,23 @@
             }
             $row.find('.drow-buttonspace' + class_sfx).after($deleteButton);
         };
-        
+
         /**
          * Init function.
-         * 
+         *
          * Hides prototype row and indicator checkboxes and adds delete buttons. Shows the add button and adds event
          * handler.
          */
         this.init = function() {
             $element.find('.drow-prototype' + class_sfx).hide();
             $element.find('.drow-buttonspace' + class_sfx).hide();
-            
+
             settings.addButton
                     .click(function() {
                         obj.addRow();
                     })
                     .css('display', 'block');
-            
+
             $element.find('.drow-row' + class_sfx).each(function() {
                 var $row = $(this);
                 addDeleteButton($row, false);
@@ -111,7 +111,7 @@
             /* Remove names from prototype row to avoid interference with new rows */
             $element.find('.drow-prototype' + class_sfx + ' .drow-input' + class_sfx).removeAttr('name');
         };
-        
+
         /**
          * Add a new row to formular based on the prototype row.
          */
@@ -121,15 +121,15 @@
             $row.addClass('drow-new' + class_sfx)
                 .removeClass('drow-prototype' + class_sfx);
             $row.find('.drow-indicator' + class_sfx).prop("checked", true);
-            
-            addDeleteButton($row, true);            
+
+            addDeleteButton($row, true);
             $row.css('display', ''); /* instead of show() to preserve display attribute and be faster */
             $prototype.before($row);
             $row.find('.drow-input' + class_sfx).first().focus();
             settings.callback.call($row);
             obj.refreshInputNames();
         };
-        
+
         /**
          * Refresh the names of inputs of new rows based on their basename and their position in the list.
          *
@@ -167,7 +167,7 @@
             });
         };
     };
-    
+
     /**
      * The actual "jQuery plugin" - a function to be used on the jQuery object of form table or list.
      * It constructs and initializes the above defined object which does everything neccessary for the fancy js form.
@@ -183,11 +183,11 @@
         $(this).each(function() {
             if ($(this).data('cdedbDynamicRow'))
                 return;
-            
+
             var obj = new DynamicRow(this, options);
             $(this).data('cdedbDynamicRow',obj);
-            
-            
+
+
             obj.init();
         });
         return this;
