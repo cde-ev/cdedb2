@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2021-06-21 22:35+0200\n"
+"POT-Creation-Date: 2021-06-23 20:35+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -104,7 +104,6 @@ msgstr ""
 #: cdedb/frontend/core.py:1618 cdedb/frontend/core.py:2216
 #: cdedb/frontend/core.py:2230 cdedb/frontend/core.py:2262
 #: cdedb/frontend/core.py:2286 cdedb/frontend/event.py:5791
-#: cdedb/subman/subman.py:154
 msgid "Not privileged."
 msgstr ""
 
@@ -14592,109 +14591,94 @@ msgstr ""
 #: cdedb/subman/machine.py:215 cdedb/subman/machine.py:217
 #: cdedb/subman/machine.py:219 cdedb/subman/machine.py:221
 #: cdedb/subman/machine.py:224 cdedb/subman/machine.py:226
-msgid "Not a pending subscription request."
+msgid "subman_managing_not-pending"
 msgstr ""
 
-#: cdedb/subman/machine.py:230 cdedb/subman/machine.py:232
-#: cdedb/subman/machine.py:238
-msgid "User already subscribed."
+#: cdedb/subman/machine.py:231 cdedb/subman/machine.py:234
+#: cdedb/subman/machine.py:240
+msgid "subman_managing_is-subscribed"
 msgstr ""
 
-#: cdedb/subman/machine.py:234
-msgid "User has been blocked. Remove override before subscribe."
+#: cdedb/subman/machine.py:236 cdedb/subman/machine.py:288
+#: cdedb/subman/machine.py:358
+msgid "subman_managing_is-unsubscription-overridden"
 msgstr ""
 
-#: cdedb/subman/machine.py:236 cdedb/subman/machine.py:249
-#: cdedb/subman/machine.py:260 cdedb/subman/machine.py:285
-msgid "User has pending subscription request."
+#: cdedb/subman/machine.py:238 cdedb/subman/machine.py:252
+#: cdedb/subman/machine.py:264 cdedb/subman/machine.py:290
+#: cdedb/subman/machine.py:360
+msgid "subman_managing_is-pending"
 msgstr ""
 
-#: cdedb/subman/machine.py:243 cdedb/subman/machine.py:247
-#: cdedb/subman/machine.py:252
-msgid "User already unsubscribed."
+#: cdedb/subman/machine.py:246 cdedb/subman/machine.py:250
+#: cdedb/subman/machine.py:255
+msgid "subman_managing_is-unsubscribed"
 msgstr ""
 
-#: cdedb/subman/machine.py:245
-msgid "User cannot be removed. Remove override to change this."
+#: cdedb/subman/machine.py:248 cdedb/subman/machine.py:261
+#: cdedb/subman/machine.py:356
+msgid "subman_managing_is-subscription-overridden"
 msgstr ""
 
-#: cdedb/subman/machine.py:257
-msgid "User is already force-subscribed."
-msgstr ""
-
-#: cdedb/subman/machine.py:266 cdedb/subman/machine.py:268
-#: cdedb/subman/machine.py:271 cdedb/subman/machine.py:273
+#: cdedb/subman/machine.py:270 cdedb/subman/machine.py:272
 #: cdedb/subman/machine.py:275 cdedb/subman/machine.py:277
-msgid "User is not force-subscribed."
+#: cdedb/subman/machine.py:279 cdedb/subman/machine.py:281
+msgid "subman_managing_not-subscription-overridden"
 msgstr ""
 
-#: cdedb/subman/machine.py:283
-msgid "User has already been blocked."
+#: cdedb/subman/machine.py:296 cdedb/subman/machine.py:298
+#: cdedb/subman/machine.py:300 cdedb/subman/machine.py:303
+#: cdedb/subman/machine.py:305 cdedb/subman/machine.py:307
+msgid "subman_managing_not-unsubscription-overridden"
 msgstr ""
 
-#: cdedb/subman/machine.py:291 cdedb/subman/machine.py:293
-#: cdedb/subman/machine.py:295 cdedb/subman/machine.py:298
-#: cdedb/subman/machine.py:300 cdedb/subman/machine.py:302
-msgid "User is not force-unsubscribed."
+#: cdedb/subman/machine.py:311 cdedb/subman/machine.py:314
+#: cdedb/subman/machine.py:319 cdedb/subman/machine.py:324
+#: cdedb/subman/machine.py:327 cdedb/subman/machine.py:333
+msgid "subman_self_is-subscribed"
 msgstr ""
 
-#: cdedb/subman/machine.py:305 cdedb/subman/machine.py:308
-#: cdedb/subman/machine.py:313 cdedb/subman/machine.py:317
-#: cdedb/subman/machine.py:320 cdedb/subman/machine.py:326
-msgid "You are already subscribed."
+#: cdedb/subman/machine.py:316 cdedb/subman/machine.py:329
+msgid "subman_self_is-unsubscription-overridden"
 msgstr ""
 
-#: cdedb/subman/machine.py:311
-msgid "Can not change subscription because you are blocked."
+#: cdedb/subman/machine.py:331
+msgid "subman_self_is-pending"
 msgstr ""
 
-#: cdedb/subman/machine.py:322
-msgid "Can not request subscription because you are blocked."
+#: cdedb/subman/machine.py:339 cdedb/subman/machine.py:345
+#: cdedb/subman/machine.py:347 cdedb/subman/machine.py:350
+msgid "subman_self_is-unsubscribed"
 msgstr ""
 
-#: cdedb/subman/machine.py:324
-msgid "You already requested subscription"
-msgstr ""
-
-#: cdedb/subman/machine.py:332 cdedb/subman/machine.py:338
-#: cdedb/subman/machine.py:340 cdedb/subman/machine.py:343
-msgid "You are already unsubscribed."
-msgstr ""
-
-#: cdedb/subman/machine.py:348 cdedb/subman/machine.py:350
-msgid "User is in override state. Remove them before reset."
-msgstr ""
-
-#: cdedb/subman/machine.py:352
-msgid "User is not unsubscribed."
-msgstr ""
-
-#: cdedb/subman/subman.py:61
-msgid "Explicit core actions must be written."
+#: cdedb/subman/machine.py:366 cdedb/subman/machine.py:368
+#: cdedb/subman/machine.py:370 cdedb/subman/machine.py:372
+#: cdedb/subman/machine.py:375 cdedb/subman/machine.py:377
+msgid "subman_self_not-pending"
 msgstr ""
 
 #: cdedb/subman/subman.py:111
-msgid "User has no means to access this list."
+msgid "subman_managing_not-subscribable"
 msgstr ""
 
 #: cdedb/subman/subman.py:113
-msgid "Can not subscribe."
+msgid "subman_self_not-self-subscribable"
 msgstr ""
 
 #: cdedb/subman/subman.py:115
-msgid "Can not request subscription."
-msgstr ""
-
-#: cdedb/subman/subman.py:147
-msgid "allow_unsub is incompatible with explicitly unsubscribed states."
+msgid "subman_self_not-requestable"
 msgstr ""
 
 #: cdedb/subman/subman.py:152
-msgid "Can not unsubscribe."
+msgid "subman_managing_no-unsubscribe-possible"
+msgstr ""
+
+#: cdedb/subman/subman.py:154
+msgid "subman_managing_not-privileged"
 msgstr ""
 
 #: cdedb/subman/subman.py:185 cdedb/subman/subman.py:196
-msgid "No cleanup necessary."
+msgid "subman_managing_no-cleanup-necessary"
 msgstr ""
 
 #: cdedb/validation.py:269
