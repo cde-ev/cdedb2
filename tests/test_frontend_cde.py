@@ -486,6 +486,14 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Inga Iota")
         self.assertPresence("Ich war ein Jahr in Südafrika.", div='additional')
 
+        # by country
+        self.traverse({'description': 'Mitglieder'},
+                      {'description': 'CdE-Mitglied suchen'})
+        f = self.response.forms["membersearchform"]
+        f["qval_country,country2"] = "JP"
+        self.submit(f)
+        self.assertTitle("Akira Abukara")
+
         # by phone number
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'CdE-Mitglied suchen'})
@@ -504,7 +512,7 @@ class TestCdEFrontend(FrontendTest):
             "weblink,specialisation,affiliation,timeline,interests,free_form",
             "username", "telephone,mobile",
             "address,address_supplement,address2,address_supplement2",
-            "location,location2", "country,country2"]
+            "location,location2"]
         for field in fields:
             f['qval_' + field] = "[a]"
         self.submit(f, check_notification=False)
