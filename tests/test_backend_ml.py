@@ -637,6 +637,11 @@ class TestMlBackend(BackendTest):
                          state=SS.unsubscription_override, kind="info")
         self._change_sub(self.user['id'], mailinglist_id, SA.remove_subscriber,
                          state=SS.unsubscription_override, kind="info")
+        # transition between non-core states are forbidden
+        self._change_sub(self.user['id'], mailinglist_id, SA.add_subscription_override,
+                         state=SS.unsubscription_override, kind="error")
+        self._change_sub(self.user['id'], mailinglist_id, SA.remove_unsubscription_override,
+                         state=SS.unsubscribed)
         self._change_sub(self.user['id'], mailinglist_id, SA.add_subscription_override,
                          state=SS.subscription_override)
         self._change_sub(self.user['id'], mailinglist_id, SA.remove_subscriber,
