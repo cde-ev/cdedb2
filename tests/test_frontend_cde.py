@@ -512,9 +512,9 @@ class TestCdEFrontend(FrontendTest):
             "weblink,specialisation,affiliation,timeline,interests,free_form",
             "username", "telephone,mobile",
             "address,address_supplement,address2,address_supplement2",
-            "location,location2"]
+            "location,location2", "country,country2"]
         for field in fields:
-            f['qval_' + field] = "[a]"
+            f['qval_' + field].force_value("[a]")
         self.submit(f, check_notification=False)
         for field in fields:
             self.assertValidationError("qval_" + field,
