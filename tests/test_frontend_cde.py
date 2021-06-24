@@ -705,6 +705,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertEqual(
             "2",
             self.response.lxml.xpath("//*[@id='query-result']/tbody/tr[1]/@data-id")[0])
+        self.assertPresence("Vereinigtes Königreich")
 
     @as_users("vera")
     def test_user_search_csv(self) -> None:
