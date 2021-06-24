@@ -30,9 +30,11 @@
             addButton : $(),
             callback : function () {},
             delButtonTitle: "delete row",
+            prefix: '',
             nestingLevel : 0
         }, options || {});
         var class_sfx = settings['nestingLevel'] ? String(settings['nestingLevel']) : '';
+        var prefix = settings.prefix ? String(settings.prefix) + '_' : '';
 
 
         /**
@@ -141,7 +143,7 @@
             $element.find('.drow-new' + class_sfx).each(function() {
                 var $row = $(this);
                 $(this).find('.drow-input'  + class_sfx + ',.drow-indicator' + class_sfx).each(function() {
-                    var name = $(this).attr('data-basename');
+                    var name = prefix + $(this).attr('data-basename');
                     for (var j = 1; j <= settings['nestingLevel']; j++) {
                         name += $element.attr('data-outerid' + String(j-1)) + '_';
                     }
@@ -150,7 +152,7 @@
 
                     var id = $(this).attr('id');
                     if (id) {
-                        var new_id = 'drow-input-' + name;
+                        var new_id = prefix + 'drow-input-' + name;
                         $(this).attr('id', new_id);
                         $row.find('label[for="' + id + '"]').attr('for', new_id);
                     }
@@ -177,6 +179,7 @@
      * callback: A callback method to be called after adding a new row. It will be bound to a jQuery object wrapping the
      *           new row. It may be used to initialize inner dynamic row blocks.
      * delButtonTitle: A string to be used as title attribute on the delete row button. Defaults to "delete row".
+     * prefix: A string to be used as prefix for all inputs of this DynamicRow
      * nestingLevel: If this is a nested dynamic row object,
      */
     $.fn.cdedbDynamicRow = function(options) {
