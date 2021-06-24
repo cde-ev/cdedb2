@@ -69,4 +69,18 @@
 
         {{ util.input_submit(label=gettext("Save")) }}
     </form>
+
+    <script nonce="{{ csp_nonce }}">
+        $(function() {
+            $('#fee_modifier_drow-table').cdedbDynamicRow({
+                addButton: $('#fee_modifier_drow-addbutton'),
+                delButtonTitle: "{{ gettext("Delete line") }}",
+                prefix: "fee_modifier"});
+            $('#track_drow-table').cdedbDynamicRow({
+                addButton: $('#track_drow-addbutton'),
+                delButtonTitle: "{{ gettext("Delete line") }}",
+                prefix: "track"});
+            $('#changepartform').cdedbProtectChanges();
+        });
+    </script>
 {% endblock %}
