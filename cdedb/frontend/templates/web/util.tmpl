@@ -649,7 +649,7 @@
     <tr class="{{ aclass }}" role="group" aria-label="{{ tablename }} {{ id }}">
         {% for column in columns %}
             {% set func = column['func'] %}
-            {% set name = '{}{}_{}'.format(prefix+"_" if prefix else "", column['name'], id) %}
+            {% set name = '{}{}_{}'.format(prefix, column['name'], id) %}
             <td {% if name in errors %}class="has-error"{% endif %}>
                 {# TODO set the remaining items of colum as attributes to func #}
                 {# this is a call for a generic util.input_* macro specified by the caller #}
@@ -667,11 +667,11 @@
         <td>
             <span class="drow-buttonspace">
                 {% if newrow %}
-                    {{ util.input_checkbox("{}create_{}".format(prefix+"_" if prefix else "", id), label=gettext("Add"),
+                    {{ util.input_checkbox("{}create_{}".format(prefix, id), label=gettext("Add"),
                                            attributes='data-basename="create_"'|s, readonly=readonly,
                                            aclass='drow-indicator') }}
                 {% else %}
-                    {{ util.input_checkbox("{}delete_{}".format(prefix+"_" if prefix else "", id), label=gettext("Delete"),
+                    {{ util.input_checkbox("{}delete_{}".format(prefix, id), label=gettext("Delete"),
                                            readonly=not deletable or readonly, aclass='drow-indicator') }}
                 {% endif %}
             </span>
@@ -691,7 +691,8 @@
    sortkey:  to sort existing
    prefix is used to specify a string inserting before every parameter name #}
 {% macro dynamic_row_table(name, columns, existing, locked=[], readonly=False, modification_only=False, sortkey=none, prefix="") %}
-    <table class="table table-condensed" id="drow-table{{ '-' + prefix if prefix else '' }}">
+    {% set prefix = prefix + '_' if prefix else '' %}
+    <table class="table table-condensed" id="{{ prefix }}drow-table">
         <thead>
             <tr>
                 {% for column in columns %}
@@ -707,7 +708,7 @@
                                readonly=readonly, aclass='drow-row', prefix=prefix) }}
             {% endfor %}
             {# Items that were added by the user but failed validation. They are still new and have no official id. #}
-            {% set last_index_key = "{}_{}".format(prefix, "create_last_index") if prefix else "create_last_index"  %}
+            {% set last_index_key = prefix+"create_last_index"  %}
             {% for i in range(1, values.get(last_index_key, 0) + 1) %}
                 {{ dynamic_row(-i, name, columns, deletable=False, readonly=readonly, aclass='drow-new', newrow=True, prefix=prefix) }}
             {% endfor %}
@@ -718,7 +719,7 @@
         </tbody>
     </table>
     <p>
-        <button type="button" class="btn btn-success softhide pull-right" id="drow-addbutton">
+        <button type="button" class="btn btn-success softhide pull-right" id="{{ prefix }}drow-addbutton">
             {{ util.make_icon('plus') }} {% trans %}Add {{ name }}{% endtrans %}
         </button>
     </p>
