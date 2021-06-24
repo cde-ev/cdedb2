@@ -82,5 +82,17 @@
                 prefix: "track"});
             $('#changepartform').cdedbProtectChanges();
         });
+        /* TODO this does not work yet... */
+        /* Update maximum number of required choices with total number of choices */
+        function update_min_choices_max() {
+            var $input_min_choices = $(this).closest('tr').find('.input-min-choices');
+            $input_min_choices.attr('max', $(this).val());
+            if (parseInt($(this).val()) < parseInt($input_min_choices.val())) {
+                $input_min_choices.val($(this).val());
+            }
+        }
+        $('.input-num-choices')
+            .change(update_min_choices_max)
+            .each(update_min_choices_max);
     </script>
 {% endblock %}
