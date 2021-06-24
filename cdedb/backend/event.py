@@ -1860,12 +1860,15 @@ class EventBackend(AbstractBackend):
                 deleted = {x for x in fee_modifiers
                            if x > 0 and fee_modifiers[x] is None}
                 elc = const.EventLogCodes
-                for x in mixed_existence_sorter(new):
-                    ret *= self.sql_insert(
-                        rs, "event.fee_modifiers", fee_modifiers[x])
-                    self.event_log(
-                        rs, elc.fee_modifier_created, data['id'],
-                        change_note=fee_modifiers[x]['modifier_name'])
+                # the order of deleting, updating and creating matters: The field of a
+                # deleted modifier may be used in an other existing or a new modifier
+                # at the same request.
+                if deleted:
+                    ret *= self.sql_delete(rs, "event.fee_modifiers", deleted)
+                    for x in mixed_existence_sorter(deleted):
+                        self.event_log(
+                            rs, elc.fee_modifier_deleted,
+                            data['id'], change_note=current_data[x]['modifier_name'])
                 for x in mixed_existence_sorter(updated):
                     if fee_modifiers[x] != current_data[x]:
                         ret *= self.sql_update(
@@ -1873,12 +1876,12 @@ class EventBackend(AbstractBackend):
                         self.event_log(
                             rs, elc.fee_modifier_changed, data['id'],
                             change_note=current_data[x]['modifier_name'])
-                if deleted:
-                    ret *= self.sql_delete(rs, "event.fee_modifiers", deleted)
-                    for x in mixed_existence_sorter(deleted):
-                        self.event_log(
-                            rs, elc.fee_modifier_deleted,
-                            data['id'], change_note=current_data[x]['modifier_name'])
+                for x in mixed_existence_sorter(new):
+                    ret *= self.sql_insert(
+                        rs, "event.fee_modifiers", fee_modifiers[x])
+                    self.event_log(
+                        rs, elc.fee_modifier_created, data['id'],
+                        change_note=fee_modifiers[x]['modifier_name'])
 
         return ret
 
