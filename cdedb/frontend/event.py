@@ -729,14 +729,16 @@ class EventFrontend(AbstractUserFrontend):
                        " field in one event part.")
         name_msg = n_("Must not have multiple fee modifiers with he same name "
                       "in one event part.")
-        for modifier in filter(lambda e: e is not None, fee_modifier_data.values()):
+        for modifier_id, modifier in fee_modifier_data.items():
+            if modifier is None:
+                continue
             if modifier['field_id'] in used_fields:
                 rs.append_validation_error(
-                    (f"fee_modifier_field_id_{modifier['id']}", ValueError(field_msg))
+                    (f"fee_modifier_field_id_{modifier_id}", ValueError(field_msg))
                 )
             if modifier['modifier_name'] in used_fields:
                 rs.append_validation_error(
-                    (f"fee_modifier_modifier_name_{modifier['id']}", ValueError(name_msg))
+                    (f"fee_modifier_modifier_name_{modifier_id}", ValueError(name_msg))
                 )
             used_fields.add(modifier['field_id'])
             used_names.add(modifier['modifier_name'])
