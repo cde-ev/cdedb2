@@ -7055,7 +7055,7 @@ msgstr "commentarium mutationis"
 #: cdedb/frontend/templates/web/core/admin_username_change.tmpl:4
 #, python-format
 msgid "Edit Email Address for %(given_names)s %(family_name)s"
-msgstr "insriptionem electronicam %given_names)sis %(family_name)sis tracta"
+msgstr "insriptionem electronicam %(given_names)sis %(family_name)sis tracta"
 # TODO: Genitiv
 
 #: cdedb/frontend/templates/web/core/admin_username_change.tmpl:11
