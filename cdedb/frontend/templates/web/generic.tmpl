@@ -444,15 +444,15 @@
                         {% if scope.supports_storing() %}
                             <h4 class="filter-title">
                                 {{ util.make_icon('far fa-bookmark') }} {% trans %}Store query{% endtrans %}</h4>
-                            <div class="pull-left input-group-inline">
-                                {{ util.input_text("query_name", placeholder="Query name") }}
+                            <div class="input-group">
+                                {{ util.input_text("query_name", placeholder=gettext("query name")) }}
                                 {{ util.input_hidden("query_scope", scope) }}
                                 <div class="input-group-btn">
                                     {{ util.input_submit(gettext("Save"), name="store_query", formmethod="POST",
                                         value=encode_anti_csrf("event/store_event_query", "store_query",
                                                                persona_id=user.persona_id),
                                         formaction=cdedblink("event/store_event_query"),
-                                        icon="far fa-bookmark", aclass="btn btn-default") }}
+                                        icon="far fa-bookmark", aclass="btn btn-primary") }}
                                 </div>
                             </div>
                         {% endif %}
@@ -460,14 +460,14 @@
                     <div class="col-sm-6">
                         <h4 class="filter-title">
                             {{ util.make_icon('search') }} {% trans %}Search{% endtrans %}</h4>
-                        <div class="">
-                            {{ util.input_submit(label=gettext("Search"), icon="search") }}
+                        <div class="pull-right">
                             <div class="btn-group">
                                 {{ util.input_submit(label=gettext("CSV file"), value="csv", name="download", icon="download",
                                     aclass="btn btn-default") }}
                                 {{ util.input_submit(label=gettext("JSON file"), value="json", name="download", icon="download",
                                     aclass="btn btn-default") }}
                             </div>
+                            {{ util.input_submit(label=gettext("Search"), icon="search") }}
                         </div>
                     </div>
                 </div>
