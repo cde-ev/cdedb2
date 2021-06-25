@@ -2031,6 +2031,46 @@ class TestEventBackend(BackendTest):
         query.name = "test"
         self.assertTrue(self.event.store_event_query(self.key, event_id, query))
 
+        # Store a query using a custom datafield using a datatype specific comparison.
+        field_data = {
+            "field_name": "foo",
+            "kind": const.FieldDatatypes.str,
+            "association": const.FieldAssociations.registration,
+            "entries": None,
+        }
+        event_data = {
+            "id": event_id,
+            "fields": {
+                -1: field_data,
+            },
+        }
+        self.event.set_event(self.key, event_data)
+        event = self.event.get_event(self.key, event_id)
+        query = Query(
+            QueryScope.registration, QueryScope.registration.get_spec(event=event),
+            ["reg_fields.xfield_foo"],
+            [("reg_fields.xfield_foo", QueryOperators.equal, "foo")],
+            [],
+            name="foo_string"
+        )
+        self.assertTrue(self.event.store_event_query(self.key, event_id, query))
+        self.assertIn(query.name, self.event.get_event_queries(self.key, event_id))
+
+        # Now change the datatype of that field.
+        field_data["kind"] = const.FieldDatatypes.date
+        del field_data["field_name"]
+        event_data["fields"] = {1001: field_data}
+        self.event.set_event(self.key, event_data)
+
+        # The query can no longer be retrieved.
+        self.assertNotIn(query.name, self.event.get_event_queries(self.key, event_id))
+
+        # Change the field back.
+        field_data["kind"] = const.FieldDatatypes.str
+        self.event.set_event(self.key, event_data)
+
+        # The query is valid again.
+        self.assertIn(query.name, self.event.get_event_queries(self.key, event_id))
 
     @as_users("annika", "garcia")
     def test_lock_event(self) -> None:
