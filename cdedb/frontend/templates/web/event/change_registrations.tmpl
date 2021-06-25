@@ -204,6 +204,13 @@
             {% endfor %}
         {% endif %}
 
+        <div class="panel panel-primary">
+            <div class="panel-body">
+                {{ util.form_input_textarea(name="change_note", label=gettext("Changenotes"),
+                    info=gettext("Summary to be added to the log entries. This is prefixed with \"Multi-Edit: \"")) }}
+            </div>
+        </div>
+
         {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("event/registration_query")) }}
     </form>
     <script nonce="{{ csp_nonce }}">

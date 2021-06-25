@@ -418,8 +418,8 @@
                 {% for pevent_id, pevent in past_events|keydictsort(EntitySorter.past_event, reverse=True) %}
                     <tr>
                         <td>
-                            {{ util.href(cdedblink("cde/show_past_event", {"pevent_id": pevent_id}),
-                                         pevent['title'], readonly='member' not in user.roles) -}}
+                            {{ util.href(cdedblink("cde/show_past_event", {"pevent_id": pevent_id}), pevent['title'],
+                                                   readonly='member' not in user.roles and 'cde_admin' not in user.roles) -}}
                         </td>
                         <td>
                             {% if pevent['is_orga'] %}
@@ -430,7 +430,7 @@
                                     {{ pcourse['nr'] }}.
                                     {{ util.href(cdedblink("cde/show_past_course", {"pevent_id": pevent_id,
                                                                                     "pcourse_id": pcourse_id}),
-                                                 pcourse['title'], readonly='cde' not in user.roles) }}
+                                                 pcourse['title'], readonly='member' not in user.roles and 'cde_admin' not in user.roles) }}
                                     {%- if pcourse['is_instructor'] %}
                                         {% trans %}(Instructor){% endtrans %}
                                     {%- endif -%}
