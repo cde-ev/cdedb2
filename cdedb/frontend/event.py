@@ -544,6 +544,8 @@ class EventFrontend(AbstractUserFrontend):
     def _deletion_blocked_parts(self, rs: RequestState, event_id: int) -> Set[int]:
         """All parts of a given event which must not be deleted."""
         blocked_parts: Set[int] = set()
+        if len(rs.ambience['event']['parts']) == 1:
+            blocked_parts.add(unwrap(rs.ambience['event']['parts'].keys()))
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         # referenced tracks block part deletion

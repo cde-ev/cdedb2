@@ -39,7 +39,7 @@
             <div class="panel-heading">
                 {{ part['title'] }}
                 <div class="pull-right">
-                    {% if not has_registrations and part_id not in referenced_parts and ambience['event']['parts']|length > 1 %}
+                    {% if not has_registrations and part_id not in referenced_parts %}
                         <form action="{{ cdedblink('event/delete_part', {'part_id' : part_id}) }}"
                               method="POST"
                               id="deletepartform{{ part_id }}"
