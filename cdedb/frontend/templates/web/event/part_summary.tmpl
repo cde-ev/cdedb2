@@ -1,6 +1,10 @@
 {% set sidenav_active='event_parts' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+{% endblock %}
+{% set jshint = 'weak' %}
 {% block title %}
     {% trans title=ambience['event']['title'] %}
     	Configure Event-Parts ({{ title }})
@@ -35,14 +39,21 @@
             <div class="panel-heading">
                 {{ part['title'] }}
                 <div class="pull-right">
-                    {% if not has_registrations and part_id not in referenced_parts %}
+                    {% if not has_registrations and part_id not in referenced_parts and ambience['event']['parts']|length > 1 %}
                         <form action="{{ cdedblink('event/delete_part', {'part_id' : part_id}) }}"
                               method="POST"
-                              id="removepartform{{ part_id }}"
+                              id="deletepartform{{ part_id }}"
                               class="display-inline">
                             {{ util.anti_csrf_token('event/delete_part') }}
+                            {# I don't know how to make these error not display in a horribly broken way. #}
+                            {{ util.output_errors("ack_delete", wrapper=True) }}
+                            {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
                             {{ util.input_submit(label=gettext("Delete Part"), aclass="btn btn-xs btn-danger", icon="trash") }}
                         </form>
+                        <script nonce="{{ csp_nonce }}">
+                            $('#deletepartform{{ part_id }}').cdedbProtectAction("{{ gettext("The event part will be permanently deleted.") }}");
+                            $('#deletepartform{{ part_id }}').find('[name="ack_delete"]').prop('checked', true).parent().hide();
+                        </script>
                     {% endif %}
                     {{ util.href(cdedblink('event/change_part_form', {'part_id' : part_id}), gettext("Change Part"),
                                            icon='pen', aclass='btn btn-xs btn-warning') }}

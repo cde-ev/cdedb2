@@ -584,8 +584,15 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @event_guard()
-    def delete_part(self, rs: RequestState, event_id: int, part_id: int) -> Response:
+    @REQUESTdata("ack_delete")
+    def delete_part(self, rs: RequestState, event_id: int, part_id: int,
+                    ack_delete: bool) -> Response:
         """Delete a given part."""
+        if not ack_delete:
+            rs.append_validation_error(
+                ("ack_delete", ValueError(n_("Must be checked."))))
+        if rs.has_validation_errors():
+            return self.part_summary(rs, event_id)
         if self.eventproxy.has_registrations(rs, event_id):
             raise ValueError(n_("Registrations exist, no deletion."))
         if part_id in self._deletion_blocked_parts(rs, event_id):
