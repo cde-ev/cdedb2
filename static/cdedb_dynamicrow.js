@@ -22,9 +22,7 @@
             addButton : $(),
             callback : function () {},
             delButtonTitle: "delete row",
-            prefix: ''
         }, options || {});
-        var prefix = settings.prefix ? String(settings.prefix) + '_' : '';
 
 
         /**
@@ -134,13 +132,13 @@
             $element.find('.drow-new').each(function() {
                 var $row = $(this);
                 $(this).find('.drow-input,.drow-indicator').each(function() {
-                    var name = prefix + $(this).attr('data-basename');
+                    var name = $(this).attr('data-basename');
                     name += String(i);
                     $(this).attr('name', name);
 
                     var id = $(this).attr('id');
                     if (id) {
-                        var new_id = prefix + 'drow-input-' + name;
+                        var new_id = 'drow-input-' + name;
                         $(this).attr('id', new_id);
                         $row.find('label[for="' + id + '"]').attr('for', new_id);
                     }
@@ -159,7 +157,6 @@
      * callback: A callback method to be called after adding a new row. It will be bound to a jQuery object wrapping the
      *           new row. It may be used to initialize inner dynamic row blocks.
      * delButtonTitle: A string to be used as title attribute on the delete row button. Defaults to "delete row".
-     * prefix: A string to be used as prefix for all inputs of this DynamicRow
      */
     $.fn.cdedbDynamicRow = function(options) {
         $(this).each(function() {

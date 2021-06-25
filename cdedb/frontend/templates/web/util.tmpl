@@ -655,7 +655,7 @@
                 {# this is a call for a generic util.input_* macro specified by the caller #}
                 {{ func(name=name,
                         aclass='drow-input form-control',
-                        attributes=('data-basename="{}_"'.format(column['name'])|s if newrow else ''),
+                        attributes=('data-basename="{}{}_"'.format(prefix, column['name'])|s if newrow else ''),
                         arialabel=gettext(column['label']),
                         readonly=readonly,
                         **column.get('func_additional_input', {})
@@ -668,7 +668,7 @@
             <span class="drow-buttonspace">
                 {% if newrow %}
                     {{ util.input_checkbox("{}create_{}".format(prefix, id), label=gettext("Add"),
-                                           attributes='data-basename="create_"'|s, readonly=readonly,
+                                           attributes='data-basename="{}create_"'.format(prefix)|s, readonly=readonly,
                                            aclass='drow-indicator') }}
                 {% else %}
                     {{ util.input_checkbox("{}delete_{}".format(prefix, id), label=gettext("Delete"),
