@@ -745,7 +745,7 @@ class EventFrontend(AbstractUserFrontend):
                 rs.append_validation_error(
                     (f"fee_modifier_field_id_{modifier_id}", ValueError(field_msg))
                 )
-            if modifier['modifier_name'] in used_fields:
+            if modifier['modifier_name'] in used_names:
                 rs.append_validation_error(
                     (f"fee_modifier_modifier_name_{modifier_id}", ValueError(name_msg))
                 )
