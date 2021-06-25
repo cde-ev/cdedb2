@@ -7454,7 +7454,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/genesis_request.tmpl:70
 msgid "Example: Dream Alley 1"
-msgstr "exemlo: Via Appia 753"
+msgstr "exemplo: Via Appia 753"
 
 #: cdedb/frontend/templates/web/core/genesis_request.tmpl:73
 msgid "Example: Apartment 4, c/o Doc Brown"
