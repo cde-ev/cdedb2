@@ -210,151 +210,174 @@ _ACTION_TARGET_STATE_MAP: Mapping[SubscriptionAction, SubscriptionState] = {
     SubscriptionAction.reset: SubscriptionState.none,
 }
 
-# Errors are identical for all actions handling a subscription request.
+# Errors are identical for all managing actions handling a subscription request.
 _SUBSCRIPTION_REQUEST_ERROR_MAPPING: _StateErrorMapping = {
     SubscriptionState.subscribed: SubscriptionError(_(
-        "Not a pending subscription request.")),
+        "subman_managing_not-pending")),
     SubscriptionState.unsubscribed: SubscriptionError(_(
-        "Not a pending subscription request.")),
+        "subman_managing_not-pending")),
     SubscriptionState.subscription_override: SubscriptionError(_(
-        "Not a pending subscription request.")),
+        "subman_managing_not-pending")),
     SubscriptionState.unsubscription_override: SubscriptionError(_(
-        "Not a pending subscription request.")),
+        "subman_managing_not-pending")),
     SubscriptionState.pending: None,
     SubscriptionState.implicit: SubscriptionError(_(
-        "Not a pending subscription request.")),
-    SubscriptionState.none: SubscriptionError(_("Not a pending subscription request.")),
+        "subman_managing_not-pending")),
+    SubscriptionState.none: SubscriptionError(_(
+        "subman_managing_not-pending")),
 }
 SUBSCRIPTION_ERROR_MATRIX: ActionStateErrorMatrix = {
     SubscriptionAction.add_subscriber: {
-        SubscriptionState.subscribed: SubscriptionInfo(_("User already subscribed.")),
+        SubscriptionState.subscribed: SubscriptionInfo(_(
+            "subman_managing_is-subscribed")),
         SubscriptionState.unsubscribed: None,
         SubscriptionState.subscription_override: SubscriptionInfo(_(
-            "User already subscribed.")),
+            "subman_managing_is-subscribed")),
         SubscriptionState.unsubscription_override: SubscriptionError(_(
-            "User has been blocked. Remove override before subscribe.")),
+            "subman_managing_is-unsubscription-overridden")),
         SubscriptionState.pending: SubscriptionError(_(
-            "User has pending subscription request.")),
-        SubscriptionState.implicit: SubscriptionInfo(_("User already subscribed.")),
+            "subman_managing_is-pending")),
+        SubscriptionState.implicit: SubscriptionInfo(_(
+            "subman_managing_is-subscribed")),
         SubscriptionState.none: None
     },
     SubscriptionAction.remove_subscriber: {
         SubscriptionState.subscribed: None,
         SubscriptionState.unsubscribed: SubscriptionInfo(_(
-            "User already unsubscribed.")),
+            "subman_managing_is-unsubscribed")),
         SubscriptionState.subscription_override: SubscriptionError(_(
-            "User cannot be removed. Remove override to change this.")),
+            "subman_managing_is-subscription-overridden")),
         SubscriptionState.unsubscription_override: SubscriptionInfo(_(
-            "User already unsubscribed.")),
+            "subman_managing_is-unsubscribed")),
         SubscriptionState.pending: SubscriptionError(_(
-            "User has pending subscription request.")),
+            "subman_managing_is-pending")),
         SubscriptionState.implicit: None,
-        SubscriptionState.none: SubscriptionInfo(_("User already unsubscribed.")),
+        SubscriptionState.none: SubscriptionInfo(_(
+            "subman_managing_is-unsubscribed")),
     },
     SubscriptionAction.add_subscription_override: {
         SubscriptionState.subscribed: None,
         SubscriptionState.unsubscribed: None,
         SubscriptionState.subscription_override: SubscriptionInfo(_(
-            "User is already force-subscribed.")),
+            "subman_managing_is-subscription-overridden")),
         SubscriptionState.unsubscription_override: None,
         SubscriptionState.pending: SubscriptionError(_(
-            "User has pending subscription request.")),
+            "subman_managing_is-pending")),
         SubscriptionState.implicit: None,
         SubscriptionState.none: None,
     },
     SubscriptionAction.remove_subscription_override: {
         SubscriptionState.subscribed: SubscriptionError(_(
-            "User is not force-subscribed.")),
+            "subman_managing_not-subscription-overridden")),
         SubscriptionState.unsubscribed: SubscriptionError(_(
-            "User is not force-subscribed.")),
+            "subman_managing_not-subscription-overridden")),
         SubscriptionState.subscription_override: None,
         SubscriptionState.unsubscription_override: SubscriptionError(_(
-            "User is not force-subscribed.")),
+            "subman_managing_not-subscription-overridden")),
         SubscriptionState.pending: SubscriptionError(_(
-            "User is not force-subscribed.")),
+            "subman_managing_not-subscription-overridden")),
         SubscriptionState.implicit: SubscriptionError(_(
-            "User is not force-subscribed.")),
-        SubscriptionState.none: SubscriptionError(_("User is not force-subscribed.")),
+            "subman_managing_not-subscription-overridden")),
+        SubscriptionState.none: SubscriptionError(_(
+            "subman_managing_not-subscription-overridden")),
     },
     SubscriptionAction.add_unsubscription_override: {
         SubscriptionState.subscribed: None,
         SubscriptionState.unsubscribed: None,
         SubscriptionState.subscription_override: None,
         SubscriptionState.unsubscription_override: SubscriptionInfo(_(
-            "User has already been blocked.")),
+            "subman_managing_is-unsubscription-overridden")),
         SubscriptionState.pending: SubscriptionError(_(
-            "User has pending subscription request.")),
+            "subman_managing_is-pending")),
         SubscriptionState.implicit: None,
         SubscriptionState.none: None,
     },
     SubscriptionAction.remove_unsubscription_override: {
         SubscriptionState.subscribed: SubscriptionError(_(
-            "User is not force-unsubscribed.")),
+            "subman_managing_not-unsubscription-overridden")),
         SubscriptionState.unsubscribed: SubscriptionError(_(
-            "User is not force-unsubscribed.")),
+            "subman_managing_not-unsubscription-overridden")),
         SubscriptionState.subscription_override: SubscriptionError(_(
-            "User is not force-unsubscribed.")),
+            "subman_managing_not-unsubscription-overridden")),
         SubscriptionState.unsubscription_override: None,
         SubscriptionState.pending: SubscriptionError(_(
-            "User is not force-unsubscribed.")),
+            "subman_managing_not-unsubscription-overridden")),
         SubscriptionState.implicit: SubscriptionError(_(
-            "User is not force-unsubscribed.")),
-        SubscriptionState.none: SubscriptionError(_("User is not force-unsubscribed.")),
+            "subman_managing_not-unsubscription-overridden")),
+        SubscriptionState.none: SubscriptionError(_(
+            "subman_managing_not-unsubscription-overridden")),
     },
     SubscriptionAction.subscribe: {
         SubscriptionState.subscribed: SubscriptionInfo(_(
-            "You are already subscribed.")),
+            "subman_self_is-subscribed")),
         SubscriptionState.unsubscribed: None,
         SubscriptionState.subscription_override: SubscriptionInfo(_(
-            "You are already subscribed.")),
-        SubscriptionState.unsubscription_override: SubscriptionError(
-            _("Can not change subscription because you are blocked.")),
+            "subman_self_is-subscribed")),
+        SubscriptionState.unsubscription_override: SubscriptionError(_(
+            "subman_self_is-unsubscription-overridden")),
         SubscriptionState.pending: None,
-        SubscriptionState.implicit: SubscriptionInfo(_("You are already subscribed.")),
+        SubscriptionState.implicit: SubscriptionInfo(_(
+            "subman_self_is-subscribed")),
         SubscriptionState.none: None,
     },
     SubscriptionAction.request_subscription: {
         SubscriptionState.subscribed: SubscriptionInfo(_(
-            "You are already subscribed.")),
+            "subman_self_is-subscribed")),
         SubscriptionState.unsubscribed: None,
         SubscriptionState.subscription_override: SubscriptionInfo(_(
-            "You are already subscribed.")),
+            "subman_self_is-subscribed")),
         SubscriptionState.unsubscription_override: SubscriptionError(_(
-            "Can not request subscription because you are blocked.")),
+            "subman_self_is-unsubscription-overridden")),
         SubscriptionState.pending: SubscriptionInfo(_(
-            "You already requested subscription")),
+            "subman_self_is-pending")),
         SubscriptionState.implicit: SubscriptionInfo(_(
-            "You are already subscribed.")),
+            "subman_self_is-subscribed")),
         SubscriptionState.none: None,
     },
     SubscriptionAction.unsubscribe: {
         SubscriptionState.subscribed: None,
         SubscriptionState.unsubscribed: SubscriptionInfo(_(
-            "You are already unsubscribed.")),
+            "subman_self_is-unsubscribed")),
         # subscription_override should only block you from being unsubscribed
         # automatically. A user is still able to unsubscribe manually.
         # (Unless the list is mandatory).
         SubscriptionState.subscription_override: None,
         SubscriptionState.unsubscription_override: SubscriptionInfo(_(
-            "You are already unsubscribed.")),
+            "subman_self_is-unsubscribed")),
         SubscriptionState.pending: SubscriptionInfo(_(
-            "You are already unsubscribed.")),
+            "subman_self_is-unsubscribed")),
         SubscriptionState.implicit: None,
-        SubscriptionState.none: SubscriptionInfo(_("You are already unsubscribed.")),
+        SubscriptionState.none: SubscriptionInfo(_(
+            "subman_self_is-unsubscribed")),
     },
     SubscriptionAction.reset: {
         SubscriptionState.subscribed: None,
         SubscriptionState.unsubscribed: None,
         SubscriptionState.subscription_override: SubscriptionError(_(
-            "User is in override state. Remove them before reset.")),
+            "subman_managing_is-subscription-overridden")),
         SubscriptionState.unsubscription_override: SubscriptionError(_(
-            "User is in override state. Remove them before reset.")),
-        SubscriptionState.pending: SubscriptionError(_("User is not unsubscribed.")),
+            "subman_managing_is-unsubscription-overridden")),
+        SubscriptionState.pending: SubscriptionError(_(
+            "subman_managing_is-pending")),
         SubscriptionState.implicit: None,
         SubscriptionState.none: None,
     },
+    SubscriptionAction.cancel_request: {
+        SubscriptionState.subscribed: SubscriptionError(_(
+            "subman_self_not-pending")),
+        SubscriptionState.unsubscribed: SubscriptionError(_(
+            "subman_self_not-pending")),
+        SubscriptionState.subscription_override: SubscriptionError(_(
+            "subman_self_not-pending")),
+        SubscriptionState.unsubscription_override: SubscriptionError(_(
+            "subman_self_not-pending")),
+        SubscriptionState.pending: None,
+        SubscriptionState.implicit: SubscriptionError(_(
+            "subman_self_not-pending")),
+        SubscriptionState.none: SubscriptionError(_(
+            "subman_self_not-pending")),
+},
     SubscriptionAction.approve_request: _SUBSCRIPTION_REQUEST_ERROR_MAPPING,
     SubscriptionAction.block_request: _SUBSCRIPTION_REQUEST_ERROR_MAPPING,
     SubscriptionAction.deny_request: _SUBSCRIPTION_REQUEST_ERROR_MAPPING,
-    SubscriptionAction.cancel_request: _SUBSCRIPTION_REQUEST_ERROR_MAPPING,
 }

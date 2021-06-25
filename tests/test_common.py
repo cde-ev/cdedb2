@@ -353,4 +353,4 @@ class TestCommon(BasicTest):
                          datetime.datetime.fromisoformat("2012-12-21T12:40:00"))
 
     def test_datetime_min(self) -> None:
-        assert datetime.date.min == datetime.date(1, 1, 1)
+        self.assertEquals(datetime.date.min, datetime.date(1, 1, 1))

@@ -37,13 +37,15 @@ from cdedb.common import (
     json_serialize, merge_dicts, mixed_existence_sorter, n_, now, unwrap, xsorted,
 )
 from cdedb.database.connection import Atomizer
-from cdedb.filter import enum_entries_filter, keydictsort_filter
+from cdedb.filter import (
+    date_filter, enum_entries_filter, keydictsort_filter, money_filter, safe_filter,
+)
 from cdedb.frontend.common import (
     AbstractUserFrontend, CustomCSVDialect, RequestConstraint, REQUESTdata,
     REQUESTdatadict, REQUESTfile, access, calculate_db_logparams, calculate_loglinks,
     cdedbid_filter, cdedburl, check_validation as check,
     check_validation_optional as check_optional, event_guard, make_event_fee_reference,
-    process_dynamic_input, request_extractor, safe_filter,
+    process_dynamic_input, request_extractor,
 )
 from cdedb.query import (
     Query, QueryConstraint, QueryOperators, QueryScope, make_registration_query_aux,
@@ -2212,6 +2214,7 @@ class EventFrontend(AbstractUserFrontend):
         problems.extend(p)
 
         registration_id = None
+        original_date = date
         if persona_id:
             try:
                 persona = self.coreproxy.get_persona(rs, persona_id)
@@ -2264,6 +2267,7 @@ class EventFrontend(AbstractUserFrontend):
             'persona_id': persona_id,
             'registration_id': registration_id,
             'date': date,
+            'original_date': original_date,
             'amount': amount,
             'warnings': warnings,
             'problems': problems,
@@ -2296,7 +2300,10 @@ class EventFrontend(AbstractUserFrontend):
                         'amount_paid': all_regs[reg_id]['amount_paid']
                                        + datum['amount'],
                     }
-                    count += self.eventproxy.set_registration(rs, update)
+                    info = "{} am {} gezahlt.".format(
+                        money_filter(datum['amount']),
+                        date_filter(datum['original_date'], lang="de"))
+                    count += self.eventproxy.set_registration(rs, update, info)
         except psycopg2.extensions.TransactionRollbackError:
             # We perform a rather big transaction, so serialization errors
             # could happen.
@@ -3577,7 +3584,8 @@ class EventFrontend(AbstractUserFrontend):
             persona['birthday'], rs.ambience['event']['begin'])
         registration['mixed_lodging'] = (registration['mixed_lodging']
                                          and age.may_mix())
-        code = self.eventproxy.set_registration(rs, registration)
+        change_note = "Anmeldung durch Teilnehmer bearbeitet."
+        code = self.eventproxy.set_registration(rs, registration, change_note)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/registration_status")
 
@@ -3755,9 +3763,9 @@ class EventFrontend(AbstractUserFrontend):
             return self.additional_questionnaire_form(
                 rs, event_id, internal=True)
 
-        code = self.eventproxy.set_registration(rs, {
-            'id': registration_id, 'fields': data,
-        })
+        change_note = "Fragebogen durch Teilnehmer bearbeitet."
+        code = self.eventproxy.set_registration(rs,
+            {'id': registration_id, 'fields': data}, change_note)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/additional_questionnaire_form")
 
@@ -3962,10 +3970,11 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard(check_offline=True)
-    @REQUESTdata("skip")
+    @REQUESTdata("skip", "change_note")
     def change_registration_form(self, rs: RequestState, event_id: int,
                                  registration_id: int, skip: Collection[str],
-                                 internal: bool = False) -> Response:
+                                 change_note: Optional[str], internal: bool = False
+                                 ) -> Response:
         """Render form.
 
         The skip parameter is meant to hide certain fields and skip them when
@@ -4022,7 +4031,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "change_registration", {
             'persona': persona, 'courses': courses,
             'course_choices': course_choices, 'lodgements': lodgements,
-            'skip': skip or []})
+            'skip': skip or [], 'change_note': change_note})
 
     @staticmethod
     def process_orga_registration_input(
@@ -4150,10 +4159,10 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdata("skip")
+    @REQUESTdata("skip", "change_note")
     def change_registration(self, rs: RequestState, event_id: int,
-                            registration_id: int, skip: Collection[str]
-                            ) -> Response:
+                            registration_id: int, skip: Collection[str],
+                            change_note: Optional[str]) -> Response:
         """Make privileged changes to any information pertaining to a
         registration.
 
@@ -4166,9 +4175,10 @@ class EventFrontend(AbstractUserFrontend):
             do_real_persona_id=self.conf["CDEDB_OFFLINE_DEPLOYMENT"])
         if rs.has_validation_errors():
             return self.change_registration_form(
-                rs, event_id, registration_id, skip=(), internal=True)
+                rs, event_id, registration_id, skip=(), internal=True,
+                change_note=change_note)
         registration['id'] = registration_id
-        code = self.eventproxy.set_registration(rs, registration)
+        code = self.eventproxy.set_registration(rs, registration, change_note)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/show_registration")
 
@@ -4265,9 +4275,10 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard(check_offline=True)
-    @REQUESTdata("reg_ids")
+    @REQUESTdata("reg_ids", "change_note")
     def change_registrations_form(self, rs: RequestState, event_id: int,
-                                  reg_ids: vtypes.IntCSVList) -> Response:
+                                  reg_ids: vtypes.IntCSVList,
+                                  change_note: Optional[str]) -> Response:
         """Render form for changing multiple registrations."""
 
         # Redirect, if the reg_ids parameters is error-prone, to avoid backend
@@ -4352,27 +4363,33 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "change_registrations", {
             'registrations': registrations, 'personas': personas,
             'courses': courses, 'course_choices': course_choices,
-            'lodgements': lodgements})
+            'lodgements': lodgements, 'change_note': change_note})
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdata("reg_ids")
+    @REQUESTdata("reg_ids", "change_note")
     def change_registrations(self, rs: RequestState, event_id: int,
-                             reg_ids: vtypes.IntCSVList) -> Response:
+                             reg_ids: vtypes.IntCSVList,
+                             change_note: Optional[str]) -> Response:
         """Make privileged changes to any information pertaining to multiple
         registrations.
         """
         registration = self.process_orga_registration_input(
             rs, rs.ambience['event'], check_enabled=True)
         if rs.has_validation_errors():
-            return self.change_registrations_form(rs, event_id, reg_ids)
+            return self.change_registrations_form(rs, event_id, reg_ids, change_note)
 
         code = 1
         self.logger.info(
             f"Updating registrations {reg_ids} with data {registration}")
+        if change_note:
+            change_note = "Multi-Edit: " + change_note
+        else:
+            change_note = "Multi-Edit"
+
         for reg_id in reg_ids:
             registration['id'] = reg_id
-            code *= self.eventproxy.set_registration(rs, registration)
+            code *= self.eventproxy.set_registration(rs, registration, change_note)
         self.notify_return_code(rs, code)
 
         # redirect to query filtered by reg_ids
@@ -5399,7 +5416,7 @@ class EventFrontend(AbstractUserFrontend):
             'id': registration_id,
             'checkin': now(),
         }
-        code = self.eventproxy.set_registration(rs, new_reg)
+        code = self.eventproxy.set_registration(rs, new_reg, "Eingecheckt.")
         self.notify_return_code(rs, code)
         return self.redirect(rs, 'event/checkin')
 
@@ -5507,10 +5524,11 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard(check_offline=True)
-    @REQUESTdata("field_id", "ids", "kind")
+    @REQUESTdata("field_id", "ids", "kind", "change_note")
     def field_set_form(self, rs: RequestState, event_id: int, field_id: vtypes.ID,
                        ids: Optional[vtypes.IntCSVList], kind: const.FieldAssociations,
-                       internal: bool = False) -> Response:
+                       change_note: Optional[str] = None, internal: bool = False
+                       ) -> Response:
         """Render form.
 
         The internal flag is used if the call comes from another frontend
@@ -5532,24 +5550,34 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "field_set", {
             'ids': (','.join(str(i) for i in ids) if ids else None),
             'entities': entities, 'labels': labels, 'ordered': ordered_ids,
-            'kind': kind.value, 'cancellink': self.FIELD_REDIRECT[kind]})
+            'kind': kind.value, 'change_note': change_note,
+            'cancellink': self.FIELD_REDIRECT[kind]})
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdata("field_id", "ids", "kind")
+    @REQUESTdata("field_id", "ids", "kind", "change_note")
     def field_set(self, rs: RequestState, event_id: int, field_id: vtypes.ID,
-                  ids: Optional[vtypes.IntCSVList],
-                  kind: const.FieldAssociations) -> Response:
+                  ids: Optional[vtypes.IntCSVList], kind: const.FieldAssociations,
+                  change_note: Optional[str] = None) -> Response:
         """Modify a specific field on the given entities."""
         if rs.has_validation_errors():
             return self.field_set_form(  # type: ignore
-                rs, event_id, kind=kind, internal=True)
+                rs, event_id, kind=kind, change_note=change_note, internal=True)
         if ids is None:
             ids = cast(vtypes.IntCSVList, [])
 
         entities, _, _, field = self.field_set_aux(
             rs, event_id, field_id, ids, kind)
         assert field is not None  # to make mypy happy
+
+        if kind == const.FieldAssociations.registration:
+            if change_note:
+                change_note = f"{field['field_name']} gesetzt: " + change_note
+            else:
+                change_note = f"{field['field_name']} gesetzt."
+        elif change_note:
+            rs.append_validation_error(
+                (None, ValueError(n_("change_note only supported for registrations."))))
 
         data_params: TypeMapping = {
             f"input{anid}": Optional[  # type: ignore
@@ -5578,7 +5606,10 @@ class EventFrontend(AbstractUserFrontend):
                     'id': anid,
                     'fields': {field['field_name']: data[f"input{anid}"]}
                 }
-                code *= entity_setter(rs, new)
+                if change_note:
+                    code *= entity_setter(rs, new, change_note)  # type: ignore
+                else:
+                    code *= entity_setter(rs, new)
         self.notify_return_code(rs, code)
 
         if kind == const.FieldAssociations.registration:
