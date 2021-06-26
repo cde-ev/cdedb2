@@ -678,7 +678,7 @@
                                             or (query.scope == QueryScope.persona and field == "id") %}
                                         <span class="nowrap">{{ row[field]|cdedbid }}</span>
                                     {% elif field == "persona.username" %}
-                                        {{ util.username_mailto(row, "persona.") }}
+                                        {{ util.username_mailto(row, prefix="persona.") }}
                                     {% elif field == "username" %}
                                         {{ util.username_mailto(row) }}
                                     {% elif query.spec[csvfield] == "date" %}
@@ -687,7 +687,7 @@
                                         {{ row.get(field, None)|datetime(lang=lang) }}
                                     {% elif query.spec[csvfield] == "bool" %}
                                         {{ util.deko_checkbox(row.get(field, None), titles=(gettext('false'),
-                                                                                             gettext('true'))) }}
+                                                                                            gettext('true'))) }}
                                     {% else %}
                                         {{ choices.get(csvfield, {}).get(row.get(field),
                                                                          row.get(field, "UNDEFINED")) }}

@@ -335,6 +335,18 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         """
         return "{}_admin".format(cls.realm) in rs.user.roles
 
+    @staticmethod
+    def get_localized_country_codes(rs: RequestState) -> List[Tuple[str, str]]:
+        """Generate a list of country code - name tupes in current language."""
+
+        def _format_country_code(code: str) -> str:
+            """Helper to make string hidden to pybabel."""
+            return f'CountryCodes.{code}'
+
+        return xsorted(
+            [(v, rs.gettext(_format_country_code(v))) for v in COUNTRY_CODES],
+            key=lambda x: x[1])
+
     def fill_template(self, rs: RequestState, modus: str, templatename: str,
                       params: CdEDBObject) -> str:
         """Central function for generating output from a template. This
@@ -435,18 +447,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             else:
                 raise AttributeError(n_("Given method is not callable."))
 
-        def _format_country_code(code: str) -> str:
-            """Helper to make string hidden to pybabel."""
-            return f'CountryCodes.{code}'
-
         errorsdict: Dict[Optional[str], List[Exception]] = {}
         for key, value in rs.retrieve_validation_errors():
             errorsdict.setdefault(key, []).append(value)
 
         # here come the always accessible things promised above
         data = {
-            'COUNTRY_CODES': xsorted([(v, rs.gettext(_format_country_code(v)))
-                                      for v in COUNTRY_CODES], key=lambda x: x[1]),
+            'COUNTRY_CODES': self.get_localized_country_codes(rs),
             'ambience': rs.ambience,
             'cdedblink': _cdedblink,
             'doclink': _doclink,

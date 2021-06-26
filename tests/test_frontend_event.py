@@ -134,6 +134,7 @@ class TestEventFrontend(FrontendTest):
         self.assertTitle("Veranstaltungsnutzerverwaltung")
         self.assertPresence("Ergebnis [2]", div='query-results')
         self.assertPresence("Hohle Gasse 13", div='query-result')
+        self.assertPresence("Vereinigtes Königreich")
 
     @as_users("annika", "paul")
     def test_create_archive_user(self) -> None:

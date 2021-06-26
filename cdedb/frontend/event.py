@@ -162,13 +162,14 @@ class EventFrontend(AbstractUserFrontend):
                     is_search: bool) -> Response:
         """Perform search."""
         events = self.pasteventproxy.list_past_events(rs)
-        choices = {
+        choices: Dict[str, OrderedDict[Any, str]] = {
             'pevent_id': OrderedDict(
                 xsorted(events.items(), key=operator.itemgetter(1))),
             'gender': OrderedDict(
                 enum_entries_filter(
                     const.Genders,
-                    rs.gettext if download is None else rs.default_gettext))
+                    rs.gettext if download is None else rs.default_gettext)),
+            'country': OrderedDict(self.get_localized_country_codes(rs)),
         }
         return self.generic_user_search(
             rs, download, is_search, QueryScope.event_user, QueryScope.event_user,
