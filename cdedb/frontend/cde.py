@@ -336,9 +336,12 @@ class CdEFrontend(AbstractUserFrontend):
                     ) -> Response:
         """Perform search."""
         events = self.pasteventproxy.list_past_events(rs)
+        courses = self.pasteventproxy.list_past_courses(rs)
         choices: Dict[str, OrderedDict[Any, str]] = {
             'pevent_id': OrderedDict(
                 xsorted(events.items(), key=operator.itemgetter(1))),
+            'pcourse_id': OrderedDict(
+                xsorted(courses.items(), key=operator.itemgetter(1))),
             'gender': OrderedDict(
                 enum_entries_filter(
                     const.Genders,
