@@ -710,6 +710,8 @@
             for (var i = 0; i < sortInputs.length; i++) {
                 if (parameters[sortInputs[i].input_field.attr('name')]) {
                     sortInputs[i].input_field.val(parameters[sortInputs[i].input_field.attr('name')]);
+                    var order_value = parameters[sortInputs[i].input_order.attr('name')];
+                    sortInputs[i].input_order.val(order_value);
                     //Search field in fieldList
                     var field = -1;
                     for (var j = 0; j < fieldList.length; j++) {
@@ -721,7 +723,7 @@
                     if (field == -1)
                         continue;
                     // Add field to sort list
-                    this.addSortRow(field, sortInputs[i].input_order.val());
+                    this.addSortRow(field, order_value);
                 }
             }
             this.updateSortInputs();
