@@ -51,7 +51,7 @@ from cdedb.query import (
 from cdedb.validation import (
     COURSE_COMMON_FIELDS, EVENT_EXPOSED_FIELDS, LODGEMENT_COMMON_FIELDS,
     PERSONA_FULL_EVENT_CREATION, TypeMapping, filter_none, validate_check,
-    EVENT_PART_COMMON_FIELDS
+    EVENT_PART_COMMON_FIELDS, EVENT_PART_CREATION_FIELDS
 )
 from cdedb.validationtypes import VALIDATOR_LOOKUP
 
@@ -604,6 +604,37 @@ class EventFrontend(AbstractUserFrontend):
             'id': event_id,
             'parts': {part_id: None},
         }
+        code = self.eventproxy.set_event(rs, event)
+        self.notify_return_code(rs, code)
+
+        return self.redirect(rs, "event/part_summary")
+
+    @access("event")
+    @event_guard()
+    def add_part_form(self, rs: RequestState, event_id: int) -> Response:
+        sorted_fields = xsorted(rs.ambience['event']['fields'].values(),
+                                key=EntitySorter.event_field)
+        legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['waitlist']
+        waitlist_fields = [
+            (field['id'], field['field_name']) for field in sorted_fields
+            if field['association'] in legal_assocs and field['kind'] in legal_datatypes
+        ]
+        return self.render(rs, "add_part", {
+            'waitlist_fields': waitlist_fields,
+            'DEFAULT_NUM_COURSE_CHOICES': DEFAULT_NUM_COURSE_CHOICES})
+
+    @access("event", modi={"POST"})
+    @event_guard()
+    @REQUESTdatadict(*EVENT_PART_CREATION_FIELDS)
+    def add_part(self, rs: RequestState, event_id: int, data: CdEDBObject) -> Response:
+        if self.eventproxy.has_registrations(rs, event_id):
+            raise ValueError(n_("Registrations exist, no part creation possible."))
+
+        data = check(rs, vtypes.EventPart, data)
+        if rs.has_validation_errors():
+            return self.add_part_form(rs, event_id)
+
+        event = {'id': event_id, 'parts': {-1: data}}
         code = self.eventproxy.set_event(rs, event)
         self.notify_return_code(rs, code)
 

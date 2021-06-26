@@ -137,4 +137,9 @@
             </div>
         </div>
     {% endfor %}
+
+    {% if not has_registrations %}
+        {{ util.href(cdedblink('event/add_part_form'), gettext("Add Part"),
+                               icon='plus', aclass='btn btn-success pull-right') }}
+    {% endif %}
 {% endblock %}
