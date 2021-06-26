@@ -5291,12 +5291,18 @@ class EventFrontend(AbstractUserFrontend):
     def delete_event_query(self, rs: RequestState, event_id: int,
                            query_id: int, query_scope: QueryScope) -> Response:
         """Delete a stored event query."""
+        query_input = None
         if not rs.has_validation_errors():
+            stored_query = unwrap(
+                self.eventproxy.get_event_queries(rs, event_id, query_ids=(query_id,))
+                or None)
+            if stored_query:
+                query_input = stored_query.serialize()
             code = self.eventproxy.delete_event_query(rs, query_id)
             self.notify_return_code(rs, code)
         if query_scope and query_scope.get_target():
-            return self.redirect(rs, query_scope.get_target())
-        return self.redirect(rs, "event/show_event")
+            return self.redirect(rs, query_scope.get_target(), query_input)
+        return self.redirect(rs, "event/show_event", query_input)
 
     @periodic("validate_stored_event_queries", 4 * 24)
     def validate_stored_event_queries(self, rs: RequestState, state: CdEDBObject
