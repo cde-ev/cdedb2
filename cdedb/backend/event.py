@@ -1534,7 +1534,8 @@ class EventBackend(AbstractBackend):
 
     @access("event")
     def get_event_queries(self, rs: RequestState, event_id: int,
-                          scopes: Collection[QueryScope] = None
+                          scopes: Collection[QueryScope] = None,
+                          query_ids: Collection[int] = None,
                           ) -> Dict[str, Query]:
         """Retrieve all stored queries for the given event and scope.
 
@@ -1546,6 +1547,7 @@ class EventBackend(AbstractBackend):
         """
         event_id = affirm(vtypes.ID, event_id)
         scopes = affirm_set(QueryScope, scopes or set())
+        query_ids = affirm_set(vtypes.ID, query_ids or set())
         if not (self.is_admin(rs) or self.is_orga(rs, event_id=event_id)):
             raise PrivilegeError(n_("Must be orga to retrieve stored queries."))
         try:
@@ -1558,6 +1560,9 @@ class EventBackend(AbstractBackend):
                 if scopes:
                     select += " AND scope = ANY(%s)"
                     params.append(scopes)
+                if query_ids:
+                    select += " AND id = ANY(%s)"
+                    params.append(query_ids)
                 query_data = self.query_all(rs, select, params)
                 ret = {}
                 count = fail_count = 0
