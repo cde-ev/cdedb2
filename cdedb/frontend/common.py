@@ -71,9 +71,9 @@ from cdedb.common import (
     ANTI_CSRF_TOKEN_PAYLOAD, REALM_SPECIFIC_GENESIS_FIELDS, PERSONA_DEFAULTS,
     CdEDBMultiDict, CdEDBObject, CustomJSONEncoder, EntitySorter, Error, Notification,
     NotificationType, PathLike, PrivilegeError, RequestState, Role, User,
-    ValidationWarning, _tdelta, asciificator, decode_parameter,
-    encode_parameter, glue, json_serialize, make_proxy, make_root_logger, merge_dicts,
-    n_, now, roles_to_db_role, unwrap, xsorted,
+    ValidationWarning, _tdelta, asciificator, decode_parameter, encode_parameter,
+    glue, json_serialize, make_proxy, make_root_logger, merge_dicts, n_, now,
+    roles_to_db_role, unwrap, xsorted,
 )
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -213,6 +213,12 @@ class BaseApp(metaclass=abc.ABCMeta):
             ret.set_cookie("displaynote", json_serialize(notifications))
         return ret
 
+    def encode_anti_csrf_token(self, target: str,
+                               token_name: str = ANTI_CSRF_TOKEN_NAME,
+                               token_payload: str = ANTI_CSRF_TOKEN_PAYLOAD,
+                               *, persona_id: int) -> str:
+        return self.encode_parameter(target, token_name, token_payload, persona_id)
+
 
 # This needs acces to config, and cannot be moved to filter.py
 def datetime_filter(val: Union[datetime.datetime, str, None],
@@ -269,6 +275,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'glue': glue,
             'enums': ENUMS_DICT,
             'encode_parameter': self.encode_parameter,
+            'encode_anti_csrf': self.encode_anti_csrf_token,
             'staticurl': functools.partial(staticurl,
                                            version=self.conf["GIT_COMMIT"][:8]),
             'docurl': docurl,
@@ -788,7 +795,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         choices_lists = {k: list(v.items()) for k, v in choices.items()}
         params = {
             'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
-            'default_queries': default_queries, 'query': query}
+            'default_queries': default_queries, 'query': query, 'scope': scope}
         # Tricky logic: In case of no validation errors we perform a query
         if not rs.has_validation_errors() and is_search and query:
             result = submit_general_query(rs, query)
@@ -1363,10 +1370,22 @@ def reconnoitre_ambience(obj: AbstractFrontend,
 
 
 F = TypeVar('F', bound=Callable[..., Any])
+AntiCSRFMarker = NamedTuple(
+    "AntiCSRFMarker", (("check", bool), ("name", str), ("payload", str)))
+
+
+class FrontendEndpoint(Protocol):
+    access_list: AbstractSet[Role]
+    anti_csrf: AntiCSRFMarker
+    modi: AbstractSet[str]
+
+    def __call__(self, rs: RequestState, *args: Any, **kwargs: Any
+                 ) -> werkzeug.Response: ...
 
 
 def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
-           check_anti_csrf: bool = None) -> Callable[[F], F]:
+           check_anti_csrf: bool = None, anti_csrf_token_name: str = None,
+           anti_csrf_token_payload: str = None) -> Callable[[F], F]:
     """The @access decorator marks a function of a frontend for publication and
     adds initialization code around each call.
 
@@ -1375,13 +1394,17 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
     :param check_anti_csrf: Control if the anti csrf check should be enabled
         on this endpoint. If not specified, it will be enabled, if "POST" is in
         the allowed methods.
+    :param anti_csrf_token_name: If given, use this as the name of the anti csrf token.
+        Otherwise a sensible default will be used.
+    :param anti_csrf_token_payload: If given, use this as the payload of the anti csrf
+        token. Otherwise a sensible default will be used.
     """
     access_list = set(roles)
 
     def decorator(fun: F) -> F:
         @functools.wraps(fun)
         def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
-                    **kwargs: Any) -> Any:
+                    **kwargs: Any) -> werkzeug.Response:
             if rs.user.roles & access_list:
                 rs.ambience = reconnoitre_ambience(obj, rs)
                 return fun(obj, rs, *args, **kwargs)
@@ -1406,11 +1429,15 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
                     rs.gettext("Access denied to {realm}/{endpoint}.").format(
                         realm=obj.__class__.__name__, endpoint=fun.__name__))
 
-        new_fun.access_list = access_list  # type: ignore
-        new_fun.modi = modi  # type: ignore
-        new_fun.check_anti_csrf = (  # type: ignore
+        new_fun.access_list = access_list  # type: ignore[attr-defined]
+        new_fun.modi = modi  # type: ignore[attr-defined]
+        new_fun.anti_csrf = AntiCSRFMarker(  # type: ignore[attr-defined]
             check_anti_csrf if check_anti_csrf is not None
-            else not modi <= {'GET', 'HEAD'} and "anonymous" not in roles)
+            else not modi <= {'GET', 'HEAD'} and "anonymous" not in roles,
+            anti_csrf_token_name or ANTI_CSRF_TOKEN_NAME,
+            anti_csrf_token_payload or ANTI_CSRF_TOKEN_PAYLOAD,
+        )
+
         return cast(F, new_fun)
 
     return decorator

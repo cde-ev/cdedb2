@@ -12,7 +12,7 @@ from tests.common import FrontendTest, as_users, storage
 
 
 class TestParseFrontend(FrontendTest):
-    def csv_submit(self, form: webtest.Form, button: str = None, value: str = None
+    def csv_submit(self, form: webtest.Form, button: str = "", value: str = None
                    ) -> None:
         super().submit(form, button=button, value=value, check_notification=False)
         try:
