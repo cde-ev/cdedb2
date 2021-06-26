@@ -375,7 +375,10 @@ class PastEventBackend(AbstractBackend):
     @access("persona")
     def list_past_courses(self, rs: RequestState, pevent_id: Optional[int] = None
                           ) -> Dict[int, str]:
-        """List all courses of a concluded event.
+        """List all relevant past courses.
+
+        If a `pevent_id` is given, list only courses from a concluded event,
+        otherwise, return the full list.
 
         :returns: Mapping of course ids to titles.
         """
@@ -384,7 +387,7 @@ class PastEventBackend(AbstractBackend):
             data = self.sql_select(rs, "past_event.courses", ("id", "title"),
                                    (pevent_id,), entity_key="pevent_id")
         else:
-            query = "SELECT id, title FROM past_event.events"
+            query = "SELECT id, title FROM past_event.courses"
             data = self.query_all(rs, query, tuple())
         return {e['id']: e['title'] for e in data}
 
