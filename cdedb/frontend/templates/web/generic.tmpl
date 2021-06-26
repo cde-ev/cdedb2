@@ -441,6 +441,19 @@
 
                 <div class="row">
                     <div class="col-sm-6">
+                        <h4 class="filter-title">
+                            {{ util.make_icon('search') }} {% trans %}Search{% endtrans %}</h4>
+                        <div class="">
+                            {{ util.input_submit(label=gettext("Search"), icon="search") }}
+                            <div class="btn-group">
+                                {{ util.input_submit(label=gettext("CSV file"), value="csv", name="download", icon="download",
+                                    aclass="btn btn-default") }}
+                                {{ util.input_submit(label=gettext("JSON file"), value="json", name="download", icon="download",
+                                    aclass="btn btn-default") }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
                         {% if scope.supports_storing() %}
                             <h4 class="filter-title">
                                 {{ util.make_icon('far fa-bookmark') }} {% trans %}Store query{% endtrans %}</h4>
@@ -456,19 +469,6 @@
                                 </div>
                             </div>
                         {% endif %}
-                    </div>
-                    <div class="col-sm-6">
-                        <h4 class="filter-title">
-                            {{ util.make_icon('search') }} {% trans %}Search{% endtrans %}</h4>
-                        <div class="pull-right">
-                            <div class="btn-group">
-                                {{ util.input_submit(label=gettext("CSV file"), value="csv", name="download", icon="download",
-                                    aclass="btn btn-default") }}
-                                {{ util.input_submit(label=gettext("JSON file"), value="json", name="download", icon="download",
-                                    aclass="btn btn-default") }}
-                            </div>
-                            {{ util.input_submit(label=gettext("Search"), icon="search") }}
-                        </div>
                     </div>
                 </div>
                 {{ util.output_errors('query', wrapper=True) }}
