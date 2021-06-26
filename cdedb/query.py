@@ -108,7 +108,7 @@ class QueryScope(enum.IntEnum):
     assembly_user = 3
     cde_user = 4
     event_user = 5
-    ml_user = 5
+    ml_user = 6
     past_event_user = 7
     archived_persona = 10
     archived_core_user = 11
@@ -494,6 +494,7 @@ _QUERY_SPECS = {
         ]),
 }
 _QUERY_SPECS[QueryScope.ml_user] = _QUERY_SPECS[QueryScope.persona]
+_QUERY_SPECS[QueryScope.assembly_user] = _QUERY_SPECS[QueryScope.persona]
 
 
 class Query:

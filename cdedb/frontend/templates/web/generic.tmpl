@@ -78,12 +78,14 @@
     </script>
 {% endmacro %}
 
-{% macro user_search(realm, info="") %}
+{% macro user_search(realm, info="", archived=False) %}
     <div class="row">
         <div class="col-md-4">
             <div class="p button-par">
-                {{ util.href(cdedblink("{}/create_user_form".format(realm)), gettext("Create User"),
-                        icon="plus", aclass="btn btn-success btn-sm") }}
+                {% if not archived %}
+                    {{ util.href(cdedblink("{}/create_user_form".format(realm)), gettext("Create User"),
+                            icon="plus", aclass="btn btn-success btn-sm") }}
+                {% endif %}
                 {% if realm == 'cde' %}
                     {{ util.href(cdedblink('cde/batch_admission'), gettext("Batch Admission"), icon="file-import",
                              aclass="btn btn-default btn-sm") }}
@@ -94,31 +96,15 @@
             {% endif %}
         </div>
         <div class="col-md-8">
-            {{ place_default_queries("{}/user_search".format(realm), default_queries) }}
-        </div>
-    </div>
-
-    {{ user_search_mask(realm, archived=False, selection_blacklist=("pevent_id",)) }}
-
-    {% if values['is_search'] %}
-        <h3 id="query-results">{% trans %}Result{% endtrans %} [{{ result|length }}]</h3>
-        {{ user_search_result(result) }}
-    {% endif %}
-{% endmacro %}
-
-{% macro archived_user_search(realm, info="") %}
-    <div class="row">
-        <div class="col-md-4">
-            {% if info %}
-                <p class="text-muted">{{ util.make_icon('info-circle') }} {{ info }}</p>
+            {% if archived %}
+                {{ place_default_queries("{}/archived_user_search".format(realm), default_queries) }}
+            {% else %}
+                {{ place_default_queries("{}/user_search".format(realm), default_queries) }}
             {% endif %}
         </div>
-        <div class="col-md-8">
-            {{ place_default_queries("{}/archived_user_search".format(realm), default_queries) }}
-        </div>
     </div>
 
-    {{ user_search_mask(realm, archived=True, selection_blacklist=("pevent_id",)) }}
+    {{ user_search_mask(realm, archived=archived, selection_blacklist=("pevent_id",)) }}
 
     {% if values['is_search'] %}
         <h3 id="query-results">{% trans %}Result{% endtrans %} [{{ result|length }}]</h3>
@@ -188,10 +174,8 @@
 
             {% if archived %}
                 {% set target=cdedblink('{}/archived_user_search'.format(realm)) %}
-                {% set scope=enums['QueryScope'].archived_persona %}
             {% else %}
                 {% set target=cdedblink('{}/user_search'.format(realm)) %}
-                {% set scope=enums['QueryScope'].persona %}
             {% endif %}
             {{ format_query(scope, spec, TITLES, choices,
                             target + '#query-results', selection_blacklist=selection_blacklist,

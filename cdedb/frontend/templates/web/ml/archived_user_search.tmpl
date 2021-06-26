@@ -17,5 +17,5 @@
     {{ util.breadcrumb_link(cdedblink("ml/archived_user_search"), gettext("Search Archived Users"), active="True") }}
 {% endblock %}
 {% block content %}
-    {{ generic.archived_user_search("ml", info=gettext("This search will only show archived pure Mailinglist-Users.")) }}
+    {{ generic.user_search("ml", archived=True, info=gettext("This search will only show archived pure Mailinglist-Users.")) }}
 {% endblock %}

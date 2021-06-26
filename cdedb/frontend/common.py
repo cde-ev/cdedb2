@@ -795,7 +795,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         choices_lists = {k: list(v.items()) for k, v in choices.items()}
         params = {
             'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
-            'default_queries': default_queries, 'query': query}
+            'default_queries': default_queries, 'query': query, 'scope': scope}
         # Tricky logic: In case of no validation errors we perform a query
         if not rs.has_validation_errors() and is_search and query:
             result = submit_general_query(rs, query)

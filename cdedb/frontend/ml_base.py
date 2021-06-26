@@ -115,7 +115,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                     is_search: bool) -> Response:
         """Perform search."""
         return self.generic_user_search(
-            rs, download, is_search, QueryScope.persona, QueryScope.ml_user,
+            rs, download, is_search, QueryScope.ml_user, QueryScope.ml_user,
             self.mlproxy.submit_general_query)
 
     @access("core_admin", "ml_admin")
@@ -128,9 +128,9 @@ class MlBaseFrontend(AbstractUserFrontend):
         otherwise.
         """
         return self.generic_user_search(
-            rs, download, is_search, QueryScope.archived_persona,
-            QueryScope.archived_persona, self.mlproxy.submit_general_query,
-            endpoint="archived_user_search")
+            rs, download, is_search,
+            QueryScope.archived_persona, QueryScope.archived_persona,
+            self.mlproxy.submit_general_query, endpoint="archived_user_search")
 
     @access("ml")
     def list_mailinglists(self, rs: RequestState) -> Response:
