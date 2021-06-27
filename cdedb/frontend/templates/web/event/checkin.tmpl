@@ -30,8 +30,7 @@
                 <div class="selectee list-group-item row">
                     <div class="col-sm-4">
                         <span class="searchname">
-                            {{ personas[registration['persona_id']]['given_names'] }}
-                            {{ personas[registration['persona_id']]['family_name'] }}
+                            {{ util.persona_name(personas[registration['persona_id']], display_and_given_names=True) }}
                         </span>
                         {% if registration['age'].is_minor() %}
                             {{ gettext(registration['age']|string) }}

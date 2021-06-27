@@ -106,8 +106,7 @@
                                 {% if affected_regs %}
                                     (
                                         {%- for reg_id in affected_regs -%}
-                                            {{ personas[registrations[reg_id]['persona_id']]['given_names'] }}
-                                            {{ personas[registrations[reg_id]['persona_id']]['family_name'] }}
+                                            {{ util.persona_name(personas[registrations[reg_id]['persona_id']]) }}
                                             {%- if not loop.last %}, {% endif %}
                                         {%- endfor -%}
                                     )
@@ -120,8 +119,8 @@
                                 <li>
                                     {{ util.href(cdedblink('event/show_registration',
                                                            {'registration_id': registration_id}),
-                                                 "{} {}".format(personas[registrations[registration_id]['persona_id']]['given_names'],
-                                                                personas[registrations[registration_id]['persona_id']]['family_name'])) }}
+                                                 util.persona_name(personas[registrations[registration_id]
+                                                        ['persona_id']])) }}
                                     {% if registrations[registration_id]['parts'][part_id]['is_camping_mat'] %}
                                         {{ util.make_icon('campground', title=gettext("Camping Mat")) }}
                                     {% endif %}

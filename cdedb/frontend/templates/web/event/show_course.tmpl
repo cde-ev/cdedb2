@@ -141,10 +141,8 @@
                                 <li>
                                     {{ util.href(cdedblink('event/show_registration',
                                                            {'registration_id': registration_id}),
-                                                 "{} {}".format(personas[registrations[registration_id]
-                                                        ['persona_id']]['given_names'],
-                                                                personas[registrations[registration_id]
-                                                        ['persona_id']]['family_name'])) }}
+                                                 util.persona_name(personas[registrations[registration_id]
+                                                        ['persona_id']])) }}
                                     {% if registrations[registration_id]['tracks'][track_id]['course_instructor']
                                             == ambience['course']['id'] %}
                                         ({% trans %}Instr.{% endtrans %})

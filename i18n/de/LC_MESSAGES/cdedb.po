@@ -7111,10 +7111,14 @@ msgid "Overall Balance"
 msgstr "Gesamtguthaben"
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:7
-#: cdedb/frontend/templates/web/event/change_registration.tmpl:21
 #, python-format
 msgid "Edit %(given_names)s %(family_name)s"
 msgstr "%(given_names)s %(family_name)s bearbeiten"
+
+#: cdedb/frontend/templates/web/event/change_registration.tmpl:21
+#, python-format
+msgid "Edit %(name)s"
+msgstr "%(name)s bearbeiten"
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:15
 msgid "Edit Userdata"
@@ -9509,8 +9513,8 @@ msgstr "Keine Datenfelder für Unterkünfte verfügbar."
 
 #: cdedb/frontend/templates/web/event/change_registration.tmpl:7
 #, python-format
-msgid "Edit Registration by %(given_names)s %(family_name)s (%(title)s)"
-msgstr "Anmeldung von %(given_names)s %(family_name)s bearbeiten (%(title)s)"
+msgid "Edit Registration by %(name)s (%(title)s)"
+msgstr "Anmeldung von %(name)s bearbeiten (%(title)s)"
 
 #: cdedb/frontend/templates/web/event/change_registration.tmpl:42
 #: cdedb/frontend/templates/web/event/change_registrations.tmpl:85
@@ -11605,8 +11609,8 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:6
 #, python-format
-msgid "Registration by %(given_names)s %(family_name)s (%(title)s)"
-msgstr "Anmeldung von %(given_names)s %(family_name)s (%(title)s)"
+msgid "Registration by %(name)s (%(title)s)"
+msgstr "Anmeldung von %(name)s (%(title)s)"
 
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:73
 #, python-format
