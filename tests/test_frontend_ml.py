@@ -3,11 +3,13 @@
 import csv
 import re
 import unittest.mock
+from typing import Any, List, Tuple
 
 import cdedb.database.constants as const
+import cdedb.frontend.common
 import cdedb.ml_type_aux as ml_type
 from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, CdEDBObject
-from cdedb.devsamples import HELD_MESSAGE_SAMPLE
+from cdedb.devsamples import MockHeldMessage, HELD_MESSAGE_SAMPLE
 from cdedb.frontend.common import CustomCSVDialect
 from cdedb.query import QueryOperators
 from tests.common import USER_DICT, FrontendTest, as_users, prepsql
@@ -322,9 +324,9 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/1/show'},)
         self.assertTitle("Verkündungen")
         if self.user_in('anton'):
-            self.assertPresence("anton@example.cde (default)")
+            self.assertPresence("anton@example.cde (Standard)")
         else:
-            self.assertPresence("inga@example.cde (default)")
+            self.assertPresence("inga@example.cde (Standard)")
         self.assertNotIn("resetaddressform", self.response.forms)
         self.assertNotIn("unsubscribeform", self.response.forms)
         self.assertNotIn("changeaddressform", self.response.forms)
@@ -577,13 +579,13 @@ class TestMlFrontend(FrontendTest):
 
         # remove Annikas unsubscription
         f = self.response.forms['resetunsubscriberform27']
-        assert 'addsubscriberform27' not in self.response.forms
+        self.assertNotIn('addsubscriberform27', self.response.forms)
         self.submit(f)
         self.assertNonPresence("Annika", div='unsubscriber-list')
 
         # re-add Ferdinand, he got implicit subscribing rights
         f = self.response.forms['addsubscriberform6']
-        assert 'resetunsubscriberform6' not in self.response.forms
+        self.assertNotIn('resetunsubscriberform6', self.response.forms)
         self.submit(f)
         self.assertNonPresence("Ferdinand", div='unsubscriber-list')
 
@@ -603,10 +605,10 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("Annika", div='unsubscriber-list')
         self.assertPresence("Ferdinand", div='unsubscriber-list')
 
-        assert 'resetunsubscriberform27' not in self.response.forms
-        assert 'addsubscriberform27' not in self.response.forms
-        assert 'addsubscriberform6' not in self.response.forms
-        assert 'resetunsubscriberform6' not in self.response.forms
+        self.assertNotIn('resetunsubscriberform27', self.response.forms)
+        self.assertNotIn('addsubscriberform27', self.response.forms)
+        self.assertNotIn('addsubscriberform6', self.response.forms)
+        self.assertNotIn('resetunsubscriberform6', self.response.forms)
 
     # TODO add a presider as moderator and use him too in this test
     @as_users("nina")
@@ -642,7 +644,7 @@ class TestMlFrontend(FrontendTest):
         f = self.response.forms['addsubscriberform']
         f['subscriber_ids'] = "DB-1-9, DB-9-4"
         self.submit(f)
-        self.assertPresence("Der Nutzer ist bereits Abonnent.",
+        self.assertPresence("Der Nutzer ist aktuell Abonnent.",
                             div='notifications')
         # One user archived. Action aborted.
         self.assertTitle("Aktivenforum 2001 – Verwaltung")
@@ -667,7 +669,7 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("Der Nutzer hat keine Berechtigung auf "
                             "dieser Liste zu stehen.",
                             div='notifications')
-        self.assertPresence("Der Nutzer ist bereits Abonnent.",
+        self.assertPresence("Der Nutzer ist aktuell Abonnent.",
                             div='notifications')
         self.assertPresence("Änderung fehlgeschlagen.", div='notifications')
 
@@ -695,7 +697,7 @@ class TestMlFrontend(FrontendTest):
             f = self.response.forms[form]
             f[field] = "DB-1-9, DB-9-4"
             self.submit(f)
-            self.assertPresence("Info! Nutzer ist ", div='notifications')
+            self.assertPresence("Info! Der Nutzer ist ", div='notifications')
             # One user archived. Action aborted.
             self.assertTitle("Aktivenforum 2001 – Erweiterte Verwaltung")
             f = self.response.forms[form]
@@ -1022,8 +1024,7 @@ class TestMlFrontend(FrontendTest):
         f['email'] = "pepper@example.cde"
         self.submit(f, check_notification=False)
         self.assertTitle("Klatsch und Tratsch")
-        link = self.fetch_link(self.fetch_mail()[0])
-        assert link is not None
+        link = self.fetch_link()
         self.get(link)
         self.follow()
         self.assertTitle("Klatsch und Tratsch")
@@ -1060,7 +1061,7 @@ class TestMlFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertIn("alert alert-danger", self.response.text)
         self.assertPresence(
-            "Der Nutzer hat bereits eine Abonnement-Anfrage gestellt.",
+            "Der Nutzer hat aktuell eine Abonnement-Anfrage gestellt.",
             div="notifications")
         # as mod subscriber
         self.traverse({'href': '/ml/mailinglist/4/management/advanced'}, )
@@ -1069,7 +1070,7 @@ class TestMlFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertIn("alert alert-danger", self.response.text)
         self.assertPresence(
-            "Der Nutzer hat bereits eine Abonnement-Anfrage gestellt.",
+            "Der Nutzer hat aktuell eine Abonnement-Anfrage gestellt.",
             div="notifications")
         # as mod unsubscribe
         f = self.response.forms['addmodunsubscriberform']
@@ -1077,7 +1078,7 @@ class TestMlFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertIn("alert alert-danger", self.response.text)
         self.assertPresence(
-            "Der Nutzer hat bereits eine Abonnement-Anfrage gestellt.",
+            "Der Nutzer hat aktuell eine Abonnement-Anfrage gestellt.",
             div="notifications")
 
         # testing: mod subscribe and unsubscribe
@@ -1094,18 +1095,14 @@ class TestMlFrontend(FrontendTest):
         f = self.response.forms['removesubscriberform1']
         self.submit(f, check_notification=False)
         self.assertIn("alert alert-danger", self.response.text)
-        self.assertPresence(
-            "Der Nutzer kann nicht entfernt werden. "
-            "Entferne die Ausnahme, um die zu ändern.",
-            div="notifications")
+        self.assertPresence("Der Nutzer ist aktuell fixierter Abonnent.",
+                            div="notifications")
         # try to add a mod unsubscribed user
         f = self.response.forms['addsubscriberform']
         f['subscriber_ids'] = USER_DICT["garcia"]["DB-ID"]
         self.submit(f, check_notification=False)
         self.assertIn("alert alert-danger", self.response.text)
-        self.assertPresence("Der Nutzer wurde blockiert. "
-                            "Entferne die Ausnahme, bevor du ihn hinzufügst.",
-                            div="notifications")
+        self.assertPresence("Der Nutzer ist aktuell blockiert.", div="notifications")
 
     @as_users("berta", "janis")
     def test_moderator_access(self) -> None:
@@ -1317,12 +1314,8 @@ class TestMlFrontend(FrontendTest):
         tmp = {f.get("registration_stati", index=i).value for i in range(7)}
         self.assertEqual({str(x) for x in stati} | {None}, tmp)
 
-    @unittest.mock.patch("cdedb.frontend.common.CdEMailmanClient")
-    @as_users("anton")
-    def test_mailman_moderation(self, client_class: unittest.mock.Mock) -> None:
-        #
-        # Prepare
-        #
+    def _prepare_moderation_mock(self, client_class: unittest.mock.Mock) -> Tuple[
+        List[MockHeldMessage], unittest.mock.MagicMock, Any]:
         messages = HELD_MESSAGE_SAMPLE
         mmlist = unittest.mock.MagicMock()
         moderation_response = unittest.mock.MagicMock()
@@ -1332,12 +1325,22 @@ class TestMlFrontend(FrontendTest):
         client.get_held_messages.return_value = messages
         client.get_list_safe.return_value = mmlist
 
+        return messages, mmlist, client
+
+    @unittest.mock.patch("cdedb.frontend.common.CdEMailmanClient")
+    @as_users("anton")
+    def test_mailman_moderation(self, client_class: unittest.mock.Mock) -> None:
+        #
+        # Prepare
+        #
+        messages, mmlist, client = self._prepare_moderation_mock(client_class)
+
         #
         # Run
         #
-        self.traverse({'href': '/ml/$'})
-        self.traverse({'href': '/ml/mailinglist/99'})
-        self.traverse({'href': '/ml/mailinglist/99/moderate'})
+        self.traverse({'href': '/ml/$'},
+                      {'href': '/ml/mailinglist/99'},
+                      {'href': '/ml/mailinglist/99/moderate'})
         self.assertTitle("Mailman-Migration – Nachrichtenmoderation")
         self.assertPresence("Finanzbericht")
         self.assertPresence("Verschwurbelung")
@@ -1369,6 +1372,31 @@ class TestMlFrontend(FrontendTest):
         self.assertEqual(
             mmlist.moderate_message.call_args_list,
             [umcall(1, 'accept'), umcall(2, 'reject'), umcall(3, 'discard')])
+
+    @unittest.mock.patch("cdedb.frontend.common.CdEMailmanClient")
+    @as_users("anton")
+    def test_mailman_whitelist(self, client_class: unittest.mock.Mock) -> None:
+        #
+        # Prepare
+        #
+        messages, mmlist, client = self._prepare_moderation_mock(client_class)
+
+        #
+        # Run
+        #
+        self.traverse({'href': '/ml/$'},
+                      {'href': '/ml/mailinglist/list'},
+                      {'href': '/ml/mailinglist/99/moderate'})
+        self.assertTitle("Mailman-Migration – Nachrichtenmoderation")
+        self.assertPresence("Finanzbericht")
+        self.assertPresence("kassenwart@example.cde")
+        client.get_held_messages.return_value = messages[1:]
+        f = self.response.forms['msg1']
+        self.submit(f, button='action', value='whitelist')
+        self.assertNonPresence("Finanzbericht")
+        self.traverse({'description': "Log"})
+        self.assertPresence("Whitelist-Eintrag hinzugefügt", div="1-1001")
+        self.assertPresence("kassenwart@example.cde", div="1-1001")
 
     def test_log(self) -> None:
         # First: generate data

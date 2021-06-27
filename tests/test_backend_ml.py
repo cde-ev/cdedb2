@@ -1056,21 +1056,21 @@ class TestMlBackend(BackendTest):
         with self.assertRaises(SubscriptionError) as cm:
             self.ml.do_subscription_action(
                 self.key, SA.remove_subscriber, mailinglist_id=2, persona_id=6)
-        self.assertIn("User already unsubscribed.", cm.exception.args)
+        self.assertIn("subman_managing_is-unsubscribed", cm.exception.args)
         self._check_state(
             mailinglist_id=2, persona_id=6, expected_state=SS.unsubscribed)
 
         with self.assertRaises(SubscriptionError) as cm:
             self.ml.do_subscription_action(
                 self.key, SA.remove_subscriber, mailinglist_id=3, persona_id=2)
-        self.assertIn("User already unsubscribed.", cm.exception.args)
+        self.assertIn("subman_managing_is-unsubscribed", cm.exception.args)
         self._check_state(
             mailinglist_id=3, persona_id=2, expected_state=SS.unsubscribed)
 
         with self.assertRaises(SubscriptionError) as cm:
             self.ml.do_subscription_action(
                 self.key, SA.remove_subscriber, mailinglist_id=3, persona_id=3)
-        self.assertIn("User already unsubscribed.", cm.exception.args)
+        self.assertIn("subman_managing_is-unsubscribed", cm.exception.args)
         self._check_state(
             mailinglist_id=3, persona_id=3, expected_state=SS.none)
 

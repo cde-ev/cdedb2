@@ -4,6 +4,7 @@
 
 import gettext
 import json
+import os
 import pathlib
 import types
 from typing import Any, Callable, Dict, Optional, Set
@@ -21,9 +22,8 @@ from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.common import (
-    ADMIN_VIEWS_COOKIE_NAME, ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD, CdEDBObject,
-    PathLike, QuotaException, RequestState, User, glue, make_proxy, make_root_logger,
-    n_, now, roles_to_db_role,
+    ADMIN_VIEWS_COOKIE_NAME, CdEDBObject, PathLike, QuotaException, RequestState,
+    User, glue, make_proxy, make_root_logger, n_, now, roles_to_db_role,
 )
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -31,8 +31,8 @@ from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.assembly import AssemblyFrontend
 from cdedb.frontend.cde import CdEFrontend
 from cdedb.frontend.common import (
-    JINJA_FILTERS, BaseApp, Response, construct_redirect, docurl, sanitize_None,
-    staticurl,
+    JINJA_FILTERS, BaseApp, FrontendEndpoint, Response, construct_redirect, docurl,
+    sanitize_None, staticurl, datetime_filter,
 )
 from cdedb.frontend.core import CoreFrontend
 from cdedb.frontend.event import EventFrontend
@@ -83,6 +83,7 @@ class Application(BaseApp):
             'glue': glue,
         })
         self.jinja_env.filters.update(JINJA_FILTERS)
+        self.jinja_env.filters.update({'datetime': datetime_filter})
         self.jinja_env.policies['ext.i18n.trimmed'] = True  # type: ignore
         self.translations = {
             lang: gettext.translation(
@@ -235,7 +236,7 @@ class Application(BaseApp):
                     # they can be manipulated by the client side, so
                     # we can not assume anything.
                     self.logger.debug(f"Invalid raw notification '{raw_notifications}'")
-            handler = getattr(getattr(self, component), action)
+            handler: FrontendEndpoint = getattr(getattr(self, component), action)
             if request.method not in handler.modi:
                 raise werkzeug.exceptions.MethodNotAllowed(
                     handler.modi,
@@ -243,12 +244,13 @@ class Application(BaseApp):
                         request.method))
 
             # Check anti CSRF token (if required by the endpoint)
-            if handler.check_anti_csrf and 'droid' not in user.roles:
-                error = check_anti_csrf(rs, component, action)
+            if handler.anti_csrf.check and 'droid' not in user.roles:
+                error = check_anti_csrf(rs, component, action, handler.anti_csrf.name,
+                                        handler.anti_csrf.payload)
                 if error is not None:
                     rs.csrf_alert = True
                     rs.extend_validation_errors(
-                        ((ANTI_CSRF_TOKEN_NAME, ValueError(error)),))
+                        ((handler.anti_csrf.name, ValueError(error)),))
                     rs.notify('error', error)
 
             # Store database connection as private attribute.
@@ -321,7 +323,10 @@ class Application(BaseApp):
 
             # Raise exceptions when in TEST environment to let the test runner
             # catch them.
-            if self.conf["CDEDB_TEST"]:
+            if (
+                self.conf["CDEDB_TEST"]
+                or (self.conf["CDEDB_DEV"] and os.environ.get("INTERACTIVE_DEBUGGER"))
+            ):
                 raise
 
             # debug output if applicable
@@ -347,8 +352,8 @@ class Application(BaseApp):
             self.conf["I18N_LANGUAGES"], default="de")
 
 
-def check_anti_csrf(rs: RequestState, component: str, action: str
-                    ) -> Optional[str]:
+def check_anti_csrf(rs: RequestState, component: str, action: str,
+                    token_name: str, token_payload: str) -> Optional[str]:
     """
     A helper function to check the anti CSRF token
 
@@ -363,20 +368,21 @@ def check_anti_csrf(rs: RequestState, component: str, action: str
 
     :param action: The name of the endpoint, checked by 'decode_parameter'
     :param component: The name of the realm, checked by 'decode_parameter'
+    :param token_name: The name of the anti CSRF token.
+    :param token_payload: The expected payload of the anti CSRF token.
     :return: None if everything is ok, or an error message otherwise.
     """
-    val = rs.request.values.get(ANTI_CSRF_TOKEN_NAME, "").strip()
+    val = rs.request.values.get(token_name, "").strip()
     if not val:
         return n_("Anti CSRF token is required for this form.")
     # noinspection PyProtectedMember
     timeout, val = rs._coders['decode_parameter'](
-        "{}/{}".format(component, action), ANTI_CSRF_TOKEN_NAME, val,
-        rs.user.persona_id)
+        "{}/{}".format(component, action), token_name, val, rs.user.persona_id)
     if not val:
         if timeout:
             return n_("Anti CSRF token expired. Please try again.")
         else:
             return n_("Anti CSRF token is forged.")
-    if val != ANTI_CSRF_TOKEN_PAYLOAD:
+    if val != token_payload:
         return n_("Anti CSRF token is invalid.")
     return None

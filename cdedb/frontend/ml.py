@@ -24,11 +24,15 @@ class MlFrontend(MailmanMixin, MlBaseFrontend):
 
     @access("ml", modi={"POST"})
     @mailinglist_guard()
-    @REQUESTdata("request_id", "action")
-    def message_moderation(self, rs: RequestState, mailinglist_id: int,
-                           request_id: int, action: str) -> Response:
-        """Moderate a held message."""
+    @REQUESTdata("request_id", "action", "sender")
+    def message_moderation(self, rs: RequestState, mailinglist_id: int, request_id: int,
+                           action: str, sender: str) -> Response:
+        """Moderate a held message.
+
+        Valid actions are: whitelist, accept, reject, discard
+        """
         logcode = {
+            "whitelist": const.MlLogCodes.moderate_accept,
             "accept": const.MlLogCodes.moderate_accept,
             "reject": const.MlLogCodes.moderate_reject,
             "discard": const.MlLogCodes.moderate_discard,
@@ -40,6 +44,12 @@ class MlFrontend(MailmanMixin, MlBaseFrontend):
             return self.message_moderation_form(rs, mailinglist_id)
         assert logcode is not None
         dblist = rs.ambience['mailinglist']
+
+        # Add to whitelist if requested
+        if action == "whitelist":
+            self.mlproxy.add_whitelist_entry(rs, dblist['id'], sender)
+            action = "accept"
+
         if (self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or (
                 self.conf["CDEDB_DEV"] and not self.conf["CDEDB_TEST"])):
             self.logger.info("Skipping mailman request in dev/offline mode.")

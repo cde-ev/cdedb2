@@ -77,7 +77,7 @@ from cdedb.database.constants import FieldAssociations, FieldDatatypes
 from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS
 from cdedb.query import (
     MULTI_VALUE_OPERATORS, NO_VALUE_OPERATORS, VALID_QUERY_OPERATORS, QueryOperators,
-    QueryOrder,
+    QueryOrder, QueryScope,
 )
 from cdedb.validationdata import (
     COUNTRY_CODES, FREQUENCY_LISTS, GERMAN_PHONE_CODES, GERMAN_POSTAL_CODES,
@@ -1048,6 +1048,7 @@ PERSONA_COMMON_FIELDS: Mapping[str, Any] = {
     'is_member': bool,
     'is_searchable': bool,
     'is_archived': bool,
+    'is_purged': bool,
     'is_active': bool,
     'display_name': str,
     'given_names': str,
@@ -1114,6 +1115,7 @@ def _persona(
         temp.update({
             'is_meta_admin': False,
             'is_archived': False,
+            'is_purged': False,
             'is_assembly_admin': False,
             'is_cde_admin': False,
             'is_finance_admin': False,
@@ -1209,6 +1211,8 @@ def _date(
 
 @_add_typed_validator
 def _birthday(val: Any, argname: str = None, **kwargs: Any) -> Birthday:
+    if not val:
+        val = datetime.date.min
     val = _date(val, argname=argname, **kwargs)
     if now().date() < val:
         raise ValidationSummary(ValueError(
@@ -3112,6 +3116,7 @@ def _serialized_partial_event(
         'lodgement_groups': Mapping,
         'lodgements': Mapping,
         'registrations': Mapping,
+        'summary': str,
     }
 
     val = _examine_dictionary_fields(
@@ -3944,7 +3949,7 @@ def _query_input(
     separator: str = ',', escape: str = '\\',
     **kwargs: Any
 ) -> QueryInput:
-    """This is for the queries coming from the web.
+    """This is for the queries coming from the web and the database.
 
     It is not usable with decorators since the spec is often only known at
     runtime. To alleviate this circumstance there is the
@@ -3963,10 +3968,18 @@ def _query_input(
 
     val = _mapping(val, argname, **kwargs)
 
+    scope = _ALL_TYPED[QueryScope](val["scope"], "scope", **kwargs)
+    name = ""
+    if val.get("query_name"):
+        name = _ALL_TYPED[str](val["query_name"], "query_name", **kwargs)
+    query_id: Optional[ID] = None
+    if val.get("query_id"):
+        query_id = _ALL_TYPED[ID](val["query_id"], "query_id", **kwargs)
     fields_of_interest = []
     constraints = []
     order: List[QueryOrder] = []
     errs = ValidationSummary()
+
     for field, validator in spec.items():
         # First the selection of fields of interest
         try:
@@ -4108,8 +4121,8 @@ def _query_input(
     if errs:
         raise errs
 
-    return QueryInput(
-        Query(None, spec, fields_of_interest, constraints, order))  # type: ignore
+    return QueryInput(Query(
+        scope, dict(spec), fields_of_interest, constraints, order, name, query_id))
 
 
 # TODO ignore _ignore_warnings here too?
@@ -4129,12 +4142,10 @@ def _query(
 
     errs = ValidationSummary()
 
-    # scope
-    # TODO why no convert here?
-    _identifier(val.scope, "scope", **kwargs)
-
-    if not val.scope.startswith("qview_"):
-        errs.append(ValueError("scope", n_("Must start with “qview_”.")))
+    # scope and name
+    _ALL_TYPED[QueryScope](val.scope, "scope", **kwargs)
+    _ALL_TYPED[Optional[str]](  # type: ignore
+        val.name, "name", **kwargs)
 
     # spec
     for field, validator in val.spec.items():

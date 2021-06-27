@@ -11,7 +11,7 @@ from cdedb.common import (
     CdEDBObject, PERSONA_CDE_FIELDS, PERSONA_CORE_FIELDS, PERSONA_EVENT_FIELDS,
     QuotaException, CdEDBLog
 )
-from cdedb.query import QUERY_SPECS, Query, QueryOperators
+from cdedb.query import Query, QueryOperators, QueryScope
 from tests.common import USER_DICT, BackendTest, as_users, nearly_now
 
 
@@ -50,7 +50,7 @@ class TestCdEBackend(BackendTest):
         # ID and not counted in general.
         self.core.get_cde_users(self.key, (1, 6))
 
-        query = Query(scope="qview_cde_member", spec={},
+        query = Query(scope=QueryScope.cde_member, spec=QueryScope.cde_member.get_spec(),
                       fields_of_interest=["id"], constraints=[], order=[])
         with self.assertRaises(QuotaException):
             self.cde.submit_general_query(self.key, query)
@@ -112,8 +112,8 @@ class TestCdEBackend(BackendTest):
     @as_users("berta")
     def test_member_search(self) -> None:
         query = Query(
-            scope="qview_cde_member",
-            spec=dict(QUERY_SPECS["qview_cde_member"]),
+            scope=QueryScope.cde_member,
+            spec=QueryScope.cde_member.get_spec(),
             fields_of_interest=("personas.id", "family_name", "birthday"),
             constraints=[
                 ("given_names,display_name", QueryOperators.regex, '[ae]'),
@@ -125,8 +125,8 @@ class TestCdEBackend(BackendTest):
     @as_users("vera")
     def test_user_search(self) -> None:
         query = Query(
-            scope="qview_cde_user",
-            spec=dict(QUERY_SPECS["qview_cde_user"]),
+            scope=QueryScope.cde_user,
+            spec=QueryScope.cde_user.get_spec(),
             fields_of_interest=("personas.id", "family_name", "birthday"),
             constraints=[
                 ("given_names", QueryOperators.regex, '[ae]'),
@@ -139,8 +139,8 @@ class TestCdEBackend(BackendTest):
     @as_users("vera")
     def test_user_search_operators(self) -> None:
         query = Query(
-            scope="qview_cde_user",
-            spec=dict(QUERY_SPECS["qview_cde_user"]),
+            scope=QueryScope.cde_user,
+            spec=QueryScope.cde_user.get_spec(),
             fields_of_interest=("personas.id", "family_name",
                                    "birthday"),
             constraints=[
@@ -156,8 +156,8 @@ class TestCdEBackend(BackendTest):
     @as_users("vera")
     def test_user_search_collation(self) -> None:
         query = Query(
-            scope="qview_cde_user",
-            spec=dict(QUERY_SPECS["qview_cde_user"]),
+            scope=QueryScope.cde_user,
+            spec=QueryScope.cde_user.get_spec(),
             fields_of_interest=("personas.id", "family_name",
                                 "address", "location"),
             constraints=[("location", QueryOperators.match, 'Musterstadt')],

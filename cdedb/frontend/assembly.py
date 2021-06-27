@@ -31,6 +31,7 @@ from cdedb.validation import (
     filter_none,
 )
 from cdedb.validationtypes import CdedbID, Email
+from cdedb.query import QueryScope
 
 #: Magic value to signal abstention during voting. Used during the emulation
 #: of classical voting. This can not occur as a shortname since it contains
@@ -97,7 +98,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                     is_search: bool) -> Response:
         """Perform search."""
         return self.generic_user_search(
-            rs, download, is_search, 'qview_persona', 'qview_assembly_user',
+            rs, download, is_search, QueryScope.assembly_user, QueryScope.assembly_user,
             self.assemblyproxy.submit_general_query)
 
     @access("core_admin", "assembly_admin")
@@ -111,7 +112,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         """
         return self.generic_user_search(
             rs, download, is_search,
-            'qview_archived_persona', 'qview_archived_persona',
+            QueryScope.archived_persona, QueryScope.archived_persona,
             self.assemblyproxy.submit_general_query,
             endpoint="archived_user_search")
 

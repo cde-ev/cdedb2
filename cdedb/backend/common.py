@@ -33,7 +33,7 @@ from cdedb.common import (
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
 from cdedb.database.constants import FieldDatatypes
-from cdedb.query import QUERY_PRIMARIES, QUERY_VIEWS, Query, QueryOperators
+from cdedb.query import Query, QueryOperators
 from cdedb.validation import parse_date, parse_datetime
 
 F = TypeVar('F', bound=Callable[..., Any])
@@ -498,8 +498,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                 else:
                     orders.append(entry.split(',')[0])
             select += ", " + ", ".join(orders)
-        select = glue(select, ',', QUERY_PRIMARIES[query.scope])
-        view = view or QUERY_VIEWS[query.scope]
+        select += ', ' + query.scope.get_primary_key()
+        view = view or query.scope.get_view()
         q = f"SELECT {'DISTINCT' if distinct else ''} {select} FROM {view}"
         params: List[DatabaseValue] = []
         constraints = []

@@ -89,13 +89,16 @@ body{
 .input-slim {
     display: inline-block;
 }
+.table-stats>tbody>tr>td, .table-stats>tfoot>tr>td, .table-stats>thead>tr>td {
+    min-width: 4em;
+}
 .table-superdense>tbody>tr>td, .table-superdense>tbody>tr>th, .table-superdense>tfoot>tr>td,
 .table-superdense>tfoot>tr>th, .table-superdense>thead>tr>td, .table-superdense>thead>tr>th {
     padding: 3px;
 }
 .table>tbody>tr>td.indent, .table>tbody>tr>th.indent {
     border-top-style: none;
-    min-width: 20px;
+    width: 20px;
 }
 table>tbody>tr.no-upper-border>td {
     padding-top: 0 ;
@@ -575,9 +578,14 @@ span.result-separator, code.result-separator {
     margin: -10px 0 10px 0;
 }
 
+table {
+    background: #fff;
+}
+
 /* Wide table container */
 .table-container {
     padding: 5px 10px 5px 0;
+    margin-right: -5px;
     background: #fff;
     display: inline-block;
     min-width: 100%;
@@ -1096,4 +1104,18 @@ ul.styleless {
 
 .button-group-below-text {
     margin-top: 5px
+}
+
+/*
+ * the following should be replaced with
+ * display: inline-flex; width: auto;
+ * in Bootstrap 5
+ */
+.input-group-inline {
+    display: inline-table !important;
+    vertical-align: middle !important;
+}
+
+.input-group-inline .form-control, .input-group-inline .input-group-btn {
+    width: auto !important;
 }

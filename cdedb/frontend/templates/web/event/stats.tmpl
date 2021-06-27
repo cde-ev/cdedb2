@@ -40,14 +40,14 @@
         'cancelled': gettext("Registration Cancelled"),
         'rejected': gettext("Rejected"),
     } %}
-        <table class="table table-slim table-condensed">
+        <table class="table table-slim table-condensed table-stats">
             <thead>
                 <tr>
                     <th colspan="2"></th>
                     {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
-                        <th>
+                        <th class="text-right">
                             {% if ambience['event']['parts']|length > 1 %}
-                                {{ part['title'] }}
+                                {{ part['shortname'] }}
                             {% else %}
                                 {% trans %}Count{% endtrans %}
                             {% endif %}
@@ -69,7 +69,7 @@
                                 {% set query = get_query(key, part_id) %}
                                 {% set datum = row[part_id] %}
                                 {% if query %}
-                                    {{ util.href(cdedblink('event/registration_query', query|querytoparams), datum) }}
+                                    {{ util.href(cdedblink('event/registration_query', query.serialize()), datum) }}
                                 {% else %}
                                     {{ datum }}
                                 {% endif %}
@@ -90,14 +90,14 @@
             'attendees': gettext("Attendees"),
             'no course': gettext("No Course"),
         } %} {# The 'In x. Choice' labels are already translated #}
-            <table class="table table-condensed table-slim">
+            <table class="table table-condensed table-slim table-stats">
                 <thead>
                     <tr>
                         <th></th>
                         {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
-                            <th>
+                            <th class="text-right">
                                 {% if ambience['event']['tracks']|length > 1 %}
-                                    {{ track['title'] }}
+                                    {{ track['shortname'] }}
                                 {% else %}
                                     {% trans %}Count{% endtrans %}
                                 {% endif %}
@@ -117,7 +117,7 @@
                                         {% set query = get_query(key, track['part_id'], track_id) %}
                                         {% set page = get_query_page(key) %}
                                         {% if query %}
-                                            {{ util.href(cdedblink(page, query|querytoparams),
+                                            {{ util.href(cdedblink(page, query.serialize()),
                                                          row[track_id]) }}
                                         {% else %}
                                             {{ row[track_id] }}

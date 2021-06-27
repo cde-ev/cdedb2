@@ -116,6 +116,8 @@ CREATE TABLE core.personas (
             CHECK((NOT is_cde_realm AND NOT is_event_realm) OR gender IS NOT NULL),
         -- may be NULL in historical cases; we try to minimize these occurences
         birthday                date,
+        CONSTRAINT personas_birthday
+            CHECK(NOT is_event_realm OR birthday is NOT NULL),
         telephone               varchar,
         mobile                  varchar,
         address_supplement      varchar,
@@ -669,7 +671,7 @@ CREATE TABLE event.events (
         -- reference to special purpose custom data fields
         lodge_field                  integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
         camping_mat_field            integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
-        course_room_field            integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
+        course_room_field            integer DEFAULT NULL  -- REFERENCES event.field_definitions(id)
         -- The references above are not yet possible, but will be added later on.
 );
 GRANT SELECT, UPDATE ON event.events TO cdb_persona;
@@ -917,6 +919,19 @@ CREATE TABLE event.questionnaire_rows (
 CREATE INDEX idx_questionnaire_rows_event_id ON event.questionnaire_rows(event_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.questionnaire_rows TO cdb_persona;
 GRANT SELECT, UPDATE ON event.questionnaire_rows_id_seq TO cdb_persona;
+
+CREATE TABLE event.stored_queries (
+        id                      bigserial PRIMARY KEY,
+        event_id                integer NOT NULL REFERENCES event.events,
+        query_name              varchar NOT NULL,
+        -- See cdedb.query.QueryScope:
+        scope                   integer NOT NULL,
+        serialized_query        jsonb NOT NULL DEFAULT '{}'::jsonb,
+        CONSTRAINT event_unique_query UNIQUE(event_id, query_name)
+);
+CREATE INDEX idx_stored_queries_event_id ON event.stored_queries(event_id);
+GRANT SELECT, INSERT, UPDATE, DELETE ON event.stored_queries TO cdb_persona;
+GRANT SELECT, UPDATE ON event.stored_queries_id_seq TO cdb_persona;
 
 CREATE TABLE event.log (
         id                      bigserial PRIMARY KEY,

@@ -27,7 +27,7 @@ from cdedb.common import (
     merge_dicts, n_, now, unwrap,
 )
 from cdedb.database.connection import Atomizer
-from cdedb.query import Query, QueryOperators
+from cdedb.query import Query, QueryOperators, QueryScope
 
 
 class CdEBackend(AbstractBackend):
@@ -898,11 +898,12 @@ class CdEBackend(AbstractBackend):
             return ret
 
     @access("member", "cde_admin")
-    def get_member_stats(self, rs: RequestState) -> CdEDBObject:
+    def get_member_stats(self, rs: RequestState
+                         ) -> Tuple[CdEDBObject, CdEDBObject, CdEDBObject]:
         """Retrieve some generic statistics about members."""
         # Simple stats first.
         query = """SELECT
-            num_members, num_searchable, num_ex_members
+            num_members, num_of_searchable, num_of_trial, num_ex_members, num_all
         FROM
             (
                 SELECT COUNT(*) AS num_members
@@ -910,24 +911,31 @@ class CdEBackend(AbstractBackend):
                 WHERE is_member = True
             ) AS member_count,
             (
-                SELECT COUNT(*) AS num_searchable
+                SELECT COUNT(*) AS num_of_searchable
                 FROM core.personas
                 WHERE is_member = True AND is_searchable = True
             ) AS searchable_count,
             (
+                SELECT COUNT(*) AS num_of_trial
+                FROM core.personas
+                WHERE is_member = True AND trial_member = True
+            ) AS trial_count,
+            (
                 SELECT COUNT(*) AS num_ex_members
                 FROM core.personas
                 WHERE is_cde_realm = True AND is_member = False
-                    AND is_archived = False
-            ) AS ex_member_count
+            ) AS ex_member_count,
+            (
+                SELECT COUNT(*) AS num_all
+                FROM core.personas
+            ) AS all_count
         """
         data = self.query_one(rs, query, ())
         assert data is not None
 
-        ret: CdEDBObject = {
-            'simple_stats': OrderedDict((k, data[k]) for k in (
-                n_("num_members"), n_("num_searchable"), n_("num_ex_members")))
-        }
+        simple_stats = OrderedDict((k, data[k]) for k in (
+            n_("num_members"), n_("num_of_searchable"), n_("num_of_trial"),
+            n_("num_ex_members"), n_("num_all")))
 
         # TODO: improve this type annotation with a new mypy version.
         def query_stats(select: str, condition: str, order: str, limit: int = 0
@@ -939,33 +947,26 @@ class CdEBackend(AbstractBackend):
             data = self.query_all(rs, query, ())
             return OrderedDict((e['datum'], e['num']) for e in data)
 
-        # Members by country.
-        ret[n_("members_by_country")] = query_stats(
-            select="country",
-            condition="location",
-            order="num DESC, datum ASC")
+        # Members by locations.
+        other_stats: CdEDBObject = {
+            n_("members_by_country"): query_stats(
+                select="country",
+                condition="location",
+                order="num DESC, datum ASC"),
+            n_("members_by_city"): query_stats(
+                select="location",
+                condition="location",
+                order="num DESC, datum ASC",
+                limit=9),
+        }
 
-        # Members by PLZ.
-        # We don't want the PLZ stats for now. See #380.
-        # ret[n_("members_by_plz")] = query_stats(
-        #   select="postal_code",
-        #   condition="postal_code",
-        #   order="num DESC, datum ASC")
-
-        # Members by city.
-        # We want to cutoff the list due to privacy and readability concerns.
-        ret[n_("members_by_city")] = query_stats(
-            select="location",
-            condition="location",
-            order="num DESC, datum ASC",
-            limit=9)
-
-        # Members by birthday.
-        ret[n_("members_by_birthday")] = query_stats(
-            select="EXTRACT(year FROM birthday)::integer",
-            condition="birthday",
-            order="datum ASC"
-        )
+        # Members by date.
+        year_stats: CdEDBObject = {
+            n_("members_by_birthday"): query_stats(
+                select="EXTRACT(year FROM birthday)::integer",
+                condition="birthday",
+                order="datum ASC"),
+        }
 
         # Members by first event.
         query = """SELECT
@@ -997,7 +998,7 @@ class CdEBackend(AbstractBackend):
             -- num DESC,
             datum ASC
         """
-        ret[n_("members_by_first_event")] = OrderedDict(
+        year_stats[n_("members_by_first_event")] = OrderedDict(
             (e['datum'], e['num']) for e in self.query_all(rs, query, ()))
 
         # Unique event attendees per year:
@@ -1020,10 +1021,10 @@ class CdEBackend(AbstractBackend):
         ORDER BY
             datum ASC
         """
-        ret[n_("unique_participants_per_year")] = dict(
+        year_stats[n_("unique_participants_per_year")] = dict(
             (e['datum'], e['num']) for e in self.query_all(rs, query, ()))
 
-        return ret
+        return simple_stats, other_stats, year_stats
 
     @access("searchable", "core_admin", "cde_admin")
     def submit_general_query(self, rs: RequestState,
@@ -1032,7 +1033,7 @@ class CdEBackend(AbstractBackend):
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
         """
         query = affirm(Query, query)
-        if query.scope == "qview_cde_member":
+        if query.scope == QueryScope.cde_member:
             if self.core.check_quota(rs, num=1):
                 raise QuotaException(n_("Too many queries."))
             query.constraints.append(("is_cde_realm", QueryOperators.equal, True))
@@ -1043,12 +1044,13 @@ class CdEBackend(AbstractBackend):
             query.spec['is_member'] = "bool"
             query.spec['is_searchable'] = "bool"
             query.spec["is_archived"] = "bool"
-        elif query.scope in {"qview_cde_user", "qview_archived_past_event_user"}:
+        elif query.scope in {QueryScope.cde_user, QueryScope.archived_past_event_user}:
             if not {'core_admin', 'cde_admin'} & rs.user.roles:
                 raise PrivilegeError(n_("Admin only."))
             query.constraints.append(("is_cde_realm", QueryOperators.equal, True))
-            query.constraints.append(("is_archived", QueryOperators.equal,
-                                      query.scope == "qview_archived_past_event_user"))
+            query.constraints.append(
+                ("is_archived", QueryOperators.equal,
+                 query.scope == QueryScope.archived_past_event_user))
             query.spec['is_cde_realm'] = "bool"
             query.spec["is_archived"] = "bool"
             # Exclude users of any higher realm (implying event)
@@ -1056,7 +1058,7 @@ class CdEBackend(AbstractBackend):
                 query.constraints.append(
                     ("is_{}_realm".format(realm), QueryOperators.equal, False))
                 query.spec["is_{}_realm".format(realm)] = "bool"
-        elif query.scope == "qview_past_event_user":
+        elif query.scope == QueryScope.past_event_user:
             if not self.is_admin(rs):
                 raise PrivilegeError(n_("Admin only."))
             query.constraints.append(("is_event_realm", QueryOperators.equal, True))

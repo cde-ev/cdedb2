@@ -351,3 +351,6 @@ class TestCommon(BasicTest):
                             nearly_now(datetime.timedelta(minutes=1)))
         self.assertEqual(NearlyNow.fromisoformat("2012-12-21T12:34:56"),
                          datetime.datetime.fromisoformat("2012-12-21T12:40:00"))
+
+    def test_datetime_min(self) -> None:
+        self.assertEquals(datetime.date.min, datetime.date(1, 1, 1))

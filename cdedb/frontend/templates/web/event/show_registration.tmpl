@@ -84,7 +84,8 @@
     {% endif %}
 
     <h3 class="heading-underline">{% trans %}Status{% endtrans %}</h3>
-    <dl class="dl-horizontal">
+    <div class="row">
+    <dl class="dl-horizontal col-md-6">
         <dt>{% trans %}Participation Fee{% endtrans %}</dt>
         <dd>
             {% if ambience['registration']['payment'] %}
@@ -95,7 +96,7 @@
                 <em>{% trans %}Pending{% endtrans %}</em>
             {% endif %}
         </dd>
-        <dt>{% trans %}Amount Paid{% endtrans %}</dt>
+        <dt>{% trans %}Already Paid{% endtrans %}</dt>
         <dd>
             {{ ambience['registration']['amount_paid']|money(lang=lang) }}
         </dd>
@@ -109,17 +110,23 @@
             {% endif %}
         </dd>
 
-        <dt>{% trans %}Checked-In{% endtrans %}</dt>
-        <dd>
-            {% if ambience['registration']['checkin'] %}
-                {% trans datetime=ambience['registration']['checkin']|datetime(lang=lang) %}
-                	Checked-In: {{ datetime }}
-                {% endtrans %}
-            {% else %}
-                —
-            {% endif %}
+        <dt>{% trans %}Checked-In at{% endtrans %}</dt>
+        <dd id="checkin-time">
+            {{ ambience['registration']['checkin']|datetime(lang=lang) or "—" }}
         </dd>
     </dl>
+
+    <dl class="dl-horizontal col-md-6">
+        <dt>{% trans %}Registered at{% endtrans %}</dt>
+        <dd>
+            {{ ambience['registration']['ctime']|datetime(lang=lang) or "—" }}
+        </dd>
+        <dt>{% trans %}Last modified at{% endtrans %}</dt>
+        <dd>
+            {{ ambience['registration']['mtime']|datetime(lang=lang) or "—" }}
+        </dd>
+    </dl>
+    </div>
 
     {% for batch in ambience['event']['parts']|keydictsort(EntitySorter.event_part)|batch(2) %}
         <div class="row">
@@ -142,7 +149,7 @@
                         {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track)
                                 if track['part_id'] == part_id %}
                             <dt>
-                                {% trans track=track['title'] if ambience['event']['tracks']|length > 1 else "" %}
+                                {% trans track=track['shortname'] if ambience['event']['tracks']|length > 1 else "" %}
                                 	Course {{ track }}
                                 {% endtrans %}
                             </dt>
@@ -199,7 +206,7 @@
                 {% for track_id, track in batch %}
                     <div class="col-md-6">
                         {% if ambience['event']['tracks']|length > 1 %}
-                            <h5>{{ track['title'] }}</h5>
+                            <h5>{{ track['shortname'] }}</h5>
                         {% endif %}
 
                         <dl class="dl-horizontal">
