@@ -64,7 +64,7 @@
             <div class="col-sm-4">
                 <ul class="slim nosp">
                     {% for persona in list %}
-                        <li>{{ persona['given_names'] }} {{ persona['family_name'] }}</li>
+                        <li>{{ util.persona_name(persona, only_given_names=True, include_titles=True) }}</li>
                     {% endfor %}
                 </ul>
             </div>
