@@ -126,9 +126,27 @@
     {% if title %}<span class="sr-only">{{ title }}</span>{% endif %}
 {%- endmacro %}
 
-{% macro persona_anchor(persona, verbose=False, quote_me=False, event_id=none, ml_id=none, aclass='', readonly=False) %}
+{# Create a link to a persona's profile page, labeled with some variant of their name
+
+   persona:                 The persona data. Must be a dict containing (at least) the following keys:
+                            'id', 'title', 'given_names', 'display_name', 'family_name', 'name_supplement'.
+   only_given_names:        see 'persona_name' macro
+   only_display_name:       see 'persona_name' macro
+   given_and_display_names: see 'persona_name' macro
+   with_family_name:        see 'persona_name' macro
+   include_titles:          see 'persona_name' macro
+   quote_me:                see show_user_link()
+   event_id:                see show_user_link()
+   ml_id:                   see show_user_link()
+   aclass:                  see 'href' macro
+   readonly:                see 'href' macro
+#}
+{% macro persona_anchor(persona, only_given_names=False, only_display_name=False, given_and_display_names=False,
+                        with_family_name=True, include_titles=False, quote_me=False, event_id=none, ml_id=none,
+                        aclass='', readonly=False) %}
     {{ href(show_user_link(user, persona['id'], quote_me, event_id=event_id, ml_id=ml_id),
-            persona_name(persona, only_given_names=True, include_titles=verbose), aclass=aclass, readonly=readonly) }}
+            persona_name(persona, only_given_names, only_display_name, given_and_display_names, with_family_name),
+            aclass=aclass, readonly=readonly) }}
 {% endmacro %}
 
 {# Display the name of a given persona
