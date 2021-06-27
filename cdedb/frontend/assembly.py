@@ -98,7 +98,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                     is_search: bool) -> Response:
         """Perform search."""
         return self.generic_user_search(
-            rs, download, is_search, QueryScope.persona, QueryScope.assembly_user,
+            rs, download, is_search, QueryScope.assembly_user, QueryScope.assembly_user,
             self.assemblyproxy.submit_general_query)
 
     @access("core_admin", "assembly_admin")

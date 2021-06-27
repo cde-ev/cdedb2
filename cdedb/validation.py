@@ -3949,7 +3949,7 @@ def _query_input(
     separator: str = ',', escape: str = '\\',
     **kwargs: Any
 ) -> QueryInput:
-    """This is for the queries coming from the web.
+    """This is for the queries coming from the web and the database.
 
     It is not usable with decorators since the spec is often only known at
     runtime. To alleviate this circumstance there is the
@@ -3972,6 +3972,9 @@ def _query_input(
     name = ""
     if val.get("query_name"):
         name = _ALL_TYPED[str](val["query_name"], "query_name", **kwargs)
+    query_id: Optional[ID] = None
+    if val.get("query_id"):
+        query_id = _ALL_TYPED[ID](val["query_id"], "query_id", **kwargs)
     fields_of_interest = []
     constraints = []
     order: List[QueryOrder] = []
@@ -4119,7 +4122,7 @@ def _query_input(
         raise errs
 
     return QueryInput(Query(
-        scope, dict(spec), fields_of_interest, constraints, order, name))
+        scope, dict(spec), fields_of_interest, constraints, order, name, query_id))
 
 
 # TODO ignore _ignore_warnings here too?
@@ -4139,8 +4142,10 @@ def _query(
 
     errs = ValidationSummary()
 
-    # scope
+    # scope and name
     _ALL_TYPED[QueryScope](val.scope, "scope", **kwargs)
+    _ALL_TYPED[Optional[str]](  # type: ignore
+        val.name, "name", **kwargs)
 
     # spec
     for field, validator in val.spec.items():

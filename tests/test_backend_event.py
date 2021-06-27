@@ -384,12 +384,31 @@ class TestEventBackend(BackendTest):
         new_reg_id = self.event.create_registration(self.key, new_reg)
         self.assertLess(0, new_reg_id)
 
+        scope = QueryScope.registration
+        query = Query(scope, scope.get_spec(event=data),
+                      ['reg.notes'], [('reg.notes', QueryOperators.nonempty, None)],
+                      [('reg.notes', True)], name="test_query")
+        self.assertTrue(self.event.store_event_query(self.key, new_id, query))
+        self.assertEqual(
+            self.event.get_event_queries(self.key, new_id)["test_query"].serialize(),
+            query.serialize())
+        self.assertEqual(
+            self.event.get_event_queries(
+                self.key, new_id, scopes={QueryScope.registration}
+            )["test_query"].serialize(),
+            query.serialize())
+        self.assertEqual(
+            self.event.get_event_queries(
+                self.key, new_id, scopes={QueryScope.persona}),
+            {}
+        )
+
         self.login(USER_DICT["annika"])
         self.assertLess(0, self.event.delete_event(
             self.key, new_id,
             ("event_parts", "course_tracks", "field_definitions", "courses",
-             "orgas", "lodgement_groups", "lodgements", "registrations",
-             "questionnaire", "log", "mailinglists", "fee_modifiers")))
+             "orgas", "lodgement_groups", "lodgements", "registrations", "log",
+             "questionnaire", "stored_queries", "mailinglists", "fee_modifiers")))
 
     @storage
     @as_users("annika", "garcia")
@@ -1939,6 +1958,126 @@ class TestEventBackend(BackendTest):
             }
         )
         self.assertEqual(expectation, result)
+
+    @as_users("garcia")
+    def test_store_event_query(self) -> None:
+        event_id = 1
+        event = self.event.get_event(self.key, event_id)
+        # Try storing valid queries.
+        expectation = {}
+        query = Query(
+            QueryScope.registration, QueryScope.registration.get_spec(event=event),
+            fields_of_interest=["persona.family_name", "reg.payment",
+                                "ctime.creation_time", "part1.status", "course2.title",
+                                "lodgement3.title", "reg_fields.xfield_brings_balls",
+                                ],
+            constraints=[],
+            order=[],
+            name="My registration query :)",
+        )
+        query.query_id = self.event.store_event_query(self.key, event_id, query)
+        expectation[query.name] = query
+        query = Query(
+            QueryScope.lodgement, QueryScope.lodgement.get_spec(event=event),
+            fields_of_interest=["lodgement.title", "lodgement_group.title",
+                                "part1.total_inhabitants",
+                                "lodgement_fields.xfield_contamination"],
+            constraints=[],
+            order=[],
+            name="Lodgement Query with funny symbol: 🏠",
+        )
+        query.query_id = self.event.store_event_query(self.key, event_id, query)
+        expectation[query.name] = query
+        query = Query(
+            QueryScope.event_course, QueryScope.event_course.get_spec(event=event),
+            fields_of_interest=["course.title", "track1.is_offered",
+                                "course_fields.xfield_room",
+                                ],
+            constraints=[],
+            order=[],
+            name="custom_course_query",
+        )
+        query.query_id = self.event.store_event_query(self.key, event_id, query)
+        expectation[query.name] = query
+
+        result = self.event.get_event_queries(self.key, event_id)
+        for name, query in result.items():
+            if name != "Test-Query":
+                self.assertIn(name, expectation)
+                q = expectation[name]
+                self.assertEqual(set(q.fields_of_interest), set(query.fields_of_interest))
+                self.assertEqual(set(q.constraints), set(query.constraints))
+                self.assertEqual(set(q.order), set(query.order))
+                self.assertEqual(q.query_id, query.query_id)
+            assert query.query_id is not None
+            self.assertTrue(self.event.delete_event_query(self.key, query.query_id))
+        self.assertEqual({}, self.event.get_event_queries(self.key, event_id))
+
+        # Now try some invalid things.
+        query = Query(
+            None, {},  # type: ignore[arg-type]
+            fields_of_interest=[],
+            constraints=[],
+            order=[],
+            name="",
+        )
+        with self.assertRaises(ValueError) as cm:
+            self.event.store_event_query(self.key, event_id, query)
+        self.assertIn("Invalid input for the enumeration %(enum)s (scope)",
+                      cm.exception.args)
+        query.scope = QueryScope.persona
+        with self.assertRaises(ValueError) as cm:
+            self.event.store_event_query(self.key, event_id, query)
+        self.assertIn("Must not be empty. (fields_of_interest)", cm.exception.args)
+        query.fields_of_interest = ["persona.id"]
+        with self.assertRaises(ValueError) as cm:
+            self.event.store_event_query(self.key, event_id, query)
+        self.assertIn("Cannot store this kind of query.", cm.exception.args)
+        query.scope = QueryScope.registration
+        self.assertFalse(self.event.store_event_query(self.key, event_id, query))
+        query.name = "test"
+        self.assertTrue(self.event.store_event_query(self.key, event_id, query))
+
+        # Store a query using a custom datafield using a datatype specific comparison.
+        field_data = {
+            "field_name": "foo",
+            "kind": const.FieldDatatypes.str,
+            "association": const.FieldAssociations.registration,
+            "entries": None,
+        }
+        event_data = {
+            "id": event_id,
+            "fields": {
+                -1: field_data,
+            },
+        }
+        self.event.set_event(self.key, event_data)
+        event = self.event.get_event(self.key, event_id)
+        query = Query(
+            QueryScope.registration, QueryScope.registration.get_spec(event=event),
+            ["reg_fields.xfield_foo"],
+            [("reg_fields.xfield_foo", QueryOperators.equal, "foo")],
+            [],
+            name="foo_string"
+        )
+        self.assertTrue(self.event.store_event_query(self.key, event_id, query))
+        self.assertIn(query.name, self.event.get_event_queries(self.key, event_id))
+
+        # Now change the datatype of that field.
+        field_data["kind"] = const.FieldDatatypes.date
+        del field_data["field_name"]
+        event_data["fields"] = {1001: field_data}
+        self.event.set_event(self.key, event_data)
+
+        # The query can no longer be retrieved.
+        self.assertNotIn(query.name, self.event.get_event_queries(self.key, event_id))
+
+        # Change the field back.
+        field_data["kind"] = const.FieldDatatypes.str
+        self.event.set_event(self.key, event_data)
+
+        # The query is valid again.
+        self.assertIn(query.name, self.event.get_event_queries(self.key, event_id))
 
     @as_users("annika", "garcia")
     def test_lock_event(self) -> None:

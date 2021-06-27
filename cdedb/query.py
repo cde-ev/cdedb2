@@ -9,8 +9,8 @@ framework, thus this module. This module is especially useful in setting
 up an environment for passing a query from frontend to backend.
 """
 
-import copy
 import collections
+import copy
 import enum
 from typing import Any, Collection, Dict, Tuple
 
@@ -97,28 +97,28 @@ QueryConstraint = Tuple[str, QueryOperators, Any]
 QueryOrder = Tuple[str, bool]
 
 
-class QueryScope(enum.Enum):
+class QueryScope(enum.IntEnum):
     """Enum that contains the different kinds of generalized queries.
 
     This is used in conjunction with the `Query` class and bundles together a lot of
     constant and some dynamic things for the individual scopes.
     """
-    persona = "qview_persona"
-    core_user = "qview_core_user"
-    assembly_user = "qview_assembly_user"
-    cde_user = "qview_cde_user"
-    event_user = "qview_event_user"
-    ml_user = "qview_ml_user"
-    past_event_user = "qview_past_event_user"
-    archived_persona = "qview_archived_persona"
-    archived_core_user = "qview_archivend_core_user"
-    archived_past_event_user = "qview_archived_past_event_user"
-    cde_member = "qview_cde_member"
-    registration = "qview_registration"
-    quick_registration = "qview_quick_registration"
-    lodgement = "qview_event_lodgement"
-    event_course = "qview_event_course"
-    past_event_course = "qview_pevent_course"
+    persona = 1
+    core_user = 2
+    assembly_user = 3
+    cde_user = 4
+    event_user = 5
+    ml_user = 6
+    past_event_user = 7
+    archived_persona = 10
+    archived_core_user = 11
+    archived_past_event_user = 12
+    cde_member = 20
+    registration = 30
+    quick_registration = 31
+    lodgement = 32
+    event_course = 33
+    past_event_course = 40
 
     def get_view(self) -> str:
         """Return the SQL FROM target associated with this scope.
@@ -184,15 +184,17 @@ class QueryScope(enum.Enum):
 
     def mangle_query_input(self, rs: RequestState, defaults: CdEDBObject = None,
                            ) -> Dict[str, str]:
-        """This is to be used in conjunction with the ``query_input`` validator,
-        which is exceptional since it is not used via a decorator. To take
-        care of the differences this function exists.
+        """Helper to bundle the extraction of submitted form data for a query.
 
-        This has to be careful to treat checkboxes and selects correctly
-        (which are partly handled by an absence of data).
+        This simply extracts all the values expected according to the spec of the
+        scope, while taking care of the fact that empty values may be omitted.
+
+        This does not do any validation however, to this needs to validated afterwards
+        using the `vtypes.QueryInput` validator which will turn this into a
+        `Query` object.
 
         :param defaults: Default values which appear like they have been submitted,
-          if nothing has been submitted for this paramater.
+            if nothing has been submitted for this paramater.
         :returns: The raw data associated to the query described by the spec
             extracted from the request data saved in the request state.
         """
@@ -492,6 +494,7 @@ _QUERY_SPECS = {
         ]),
 }
 _QUERY_SPECS[QueryScope.ml_user] = _QUERY_SPECS[QueryScope.persona]
+_QUERY_SPECS[QueryScope.assembly_user] = _QUERY_SPECS[QueryScope.persona]
 
 
 class Query:
@@ -508,7 +511,7 @@ class Query:
                  fields_of_interest: Collection[str],
                  constraints: Collection[QueryConstraint],
                  order: Collection[QueryOrder],
-                 name: str = "",
+                 name: str = None, query_id: int = None,
                  ):
         """
         :param scope: target of FROM clause; key for :py:data:`QUERY_VIEWS`.
@@ -521,6 +524,8 @@ class Query:
             and each comma in the first component causes an OR
         :param order: First components are the column names to be used for
             ORDER BY and the second component toggles ascending sorting order.
+        :param query_id: If the Query was retrieved from the database, this should be
+            the id of the entry in the corresponding table.
         """
         self.scope = scope
         self.spec = spec
@@ -528,6 +533,7 @@ class Query:
         self.constraints = list(constraints)
         self.order = list(order)
         self.name = name
+        self.query_id = query_id
 
     def __repr__(self) -> str:
         return (f"Query(scope={self.scope},"
