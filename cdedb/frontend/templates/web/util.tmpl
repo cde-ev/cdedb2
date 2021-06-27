@@ -984,11 +984,14 @@ mailto:
 {%- endmacro %}
 
 {% macro username_mailto(persona, prefix="") -%}
+    {% set given_names = persona.get("{}given_names".format(prefix), "") %}
+    {% set display_name = persona.get("{}display_name".format(prefix), "") %}
+    {% set forename = display_name if display_name in given_names else given_names %}
 {{ href(
     mailto(
         address=persona.get("{}username".format(prefix), ""),
         name="{} {}".format(
-            persona.get("{}given_names".format(prefix), ""),
+            forename,
             persona.get("{}family_name".format(prefix), "")
         )
     ),
