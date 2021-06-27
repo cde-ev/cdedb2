@@ -84,9 +84,8 @@
                                 {{ util.anti_csrf_token('ml/remove_moderator') }}
                                 {{ util.input_hidden(name="moderator_id", value=moderator) }}
                                 {{ util.input_submit(label='', aclass="btn btn-xs btn-danger list-button-float", icon="minus",
-                                        title=gettext("Remove %(given_names)s %(family_name)s as moderator")|format(
-                                            given_names=persona['given_names'],
-                                            family_name=persona['family_name'])) }}
+                                        title=gettext("Remove %(name)s as moderator")|format(
+                                            name=util.persona_name(persona))) }}
                             </form>
                         {% else %}
                             {{ util.input_submit(label="", aclass="btn btn-xs btn-danger list-button-float dummy", icon="minus", ariahidden=True) }}
@@ -187,9 +186,8 @@
                                     {{ util.anti_csrf_token('ml/remove_subscriber') }}
                                     {{ util.input_hidden(name="subscriber_id", value=subscriber) }}
                                     {{ util.input_submit(label="", icon="minus", aclass="btn btn-xs btn-danger list-button-float",
-                                            title=gettext("Remove %(given_names)s %(family_name)s as subscriber")|format(
-                                                given_names=subscribers[subscriber]['given_names'],
-                                                family_name=subscribers[subscriber]['family_name'])) }}
+                                            title=gettext("Remove %(name)s as subscriber")|format(
+                                                name=util.persona_name(persona))) }}
                                 </form>
                             {% endif %}
                         </li>

@@ -12214,8 +12214,8 @@ msgstr "ID des neuen fixierten Abonnenten"
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:85
 #, python-format
-msgid "Remove %(given_names)s %(family_name)s as forced subscriber"
-msgstr "%(given_names)s %(family_name)s als fixierten Abonnent entfernen"
+msgid "Remove %(name)s as forced subscriber"
+msgstr "%(name)s als fixierten Abonnent entfernen"
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:96
 msgid "Blocked Users"
@@ -12235,8 +12235,8 @@ msgstr "ID des neuen geblockten Nutzers"
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:137
 #, python-format
-msgid "Remove %(given_names)s %(family_name)s as blocked subscriber"
-msgstr "%(given_names)s %(family_name)s als geblockten Nutzer entfernen"
+msgid "Remove %(name)s as blocked subscriber"
+msgstr "%(name)s als geblockten Nutzer entfernen"
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:148
 msgid "Whitelist"
@@ -12290,13 +12290,13 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:230
 #, python-format
-msgid "Reset %(given_names)s %(family_name)s explicit unsubscription"
-msgstr "%(given_names)s %(family_name)s als expliziten Abbesteller entfernen"
+msgid "Reset %(name)s explicit unsubscription"
+msgstr "%(name)s als expliziten Abbesteller entfernen"
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:242
 #, python-format
-msgid "Subscribe %(given_names)s %(family_name)s"
-msgstr "%(given_names)s %(family_name)s als Abonnent hinzufügen"
+msgid "Subscribe %(name)s"
+msgstr "%(name)s als Abonnent hinzufügen"
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:249
 msgid "Explicit unsubscribition has currently no effect."
@@ -12609,8 +12609,8 @@ msgstr "IDs der neuen Moderatoren"
 
 #: cdedb/frontend/templates/web/ml/management.tmpl:87
 #, python-format
-msgid "Remove %(given_names)s %(family_name)s as moderator"
-msgstr "%(given_names)s %(family_name)s als Moderator entfernen"
+msgid "Remove %(name)s as moderator"
+msgstr "%(name)s als Moderator entfernen"
 
 #: cdedb/frontend/templates/web/ml/management.tmpl:100
 msgid "Subscription Requests"
@@ -12658,8 +12658,8 @@ msgstr "ID des neuen Abonnenten"
 
 #: cdedb/frontend/templates/web/ml/management.tmpl:190
 #, python-format
-msgid "Remove %(given_names)s %(family_name)s as subscriber"
-msgstr "%(given_names)s %(family_name)s als Abonnent entfernen"
+msgid "Remove %(name)s as subscriber"
+msgstr "%(name)s als Abonnent entfernen"
 
 #: cdedb/frontend/templates/web/ml/merge_accounts.tmpl:22
 msgid ""
