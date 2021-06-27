@@ -32,7 +32,11 @@
             {{ util.form_input_text(name="birth_name", label=gettext("Birth Name")) }}
         {% endif %}
         {{ util.form_input_text(name="name_supplement", label=gettext("Name Affix")) }}
-        {{ util.form_input_text(name="display_name", label=gettext("Known as (Forename)")) }}
+        {{ util.form_input_text(name="display_name", label=gettext("Known as (Forename)"), info=gettext(
+               "The name you want others and the CdE Datenbank to call you by. "
+               "It will, for example, be used for directly addressing you and on nametags at CdE events. "
+               "If it is part of your official given name(s), it will also be used instead of your full given names in "
+               "most other places in the CdE Datenbank.")) }}
 
         {% if "paper_expuls" in shown_fields and values['is_member'] %}
             <h4 class="heading-underline">{% trans %}Membership{% endtrans %}</h4>

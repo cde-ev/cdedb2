@@ -7450,6 +7450,20 @@ msgstr "Versammlungs-Admin"
 msgid "Edit Your Data"
 msgstr "Eigene Daten bearbeiten"
 
+#: cdedb/frontend/templates/web/core/change_user.tmpl:35
+msgid ""
+"The name you want others and the CdE Datenbank to call you by. It will, for "
+"example, be used for directly addressing you and on nametags at CdE events. "
+"If it is part of your official given name(s), it will also be used instead "
+"of your full given names in most other places in the CdE Datenbank."
+msgstr ""
+"Der Name, bei dem Du von anderen und der CdE-Datenbank genannt werden "
+"möchtest. Dieser wird z.B. für Namensschilder auf CdE-Veranstaltungen und, "
+"um Dich direkt anzureden, verwendet. Falls er Teil Deines/Deiner offiziellen "
+"Vornamen ist, wird er auch an den meisten anderen Stellen in der "
+"CdE-Datenbank anstelle Deiner vollständigen Vornamen verwendet."
+
+#: cdedb/frontend/templates/web/core/change_user.tmpl:42
 #: cdedb/frontend/templates/web/core/change_user.tmpl:38
 #: cdedb/frontend/templates/web/core/show_user.tmpl:241
 msgid "Membership"
