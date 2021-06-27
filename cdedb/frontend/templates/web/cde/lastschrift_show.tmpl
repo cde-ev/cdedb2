@@ -12,7 +12,7 @@
 
 {% block title -%}
     {% trans %}Direct Debit Authorization{% endtrans %}
-    {{ ambience['persona']['given_names'] }} {{ ambience['persona']['family_name'] }}
+    {{ util.persona_name(ambience['persona'], only_given_names=True) }}
 {%- endblock %}
 
 {% block breadcrumb %}
@@ -21,7 +21,7 @@
         {{ util.breadcrumb_link(cdedblink("cde/lastschrift_index"), gettext("Direct Debit Authorization")) }}
     {% endif %}
     {{ util.breadcrumb_link(cdedblink("cde/lastschrift_show", {'persona_id': values['persona_id']}),
-        "{} {}".format(ambience['persona']['given_names'], ambience['persona']['family_name']), active=True, icon="euro-sign") }}
+                            persona_name(ambience['persona'], only_given_names=True), active=True, icon="euro-sign") }}
 {% endblock %}
 
 {% block content %}

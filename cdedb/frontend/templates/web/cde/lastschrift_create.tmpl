@@ -8,7 +8,7 @@
         New Direct Debit Authorization
     {% endtrans %}
     {% if ambience['persona'] %}
-        ({{ ambience['persona']['given_names'] }} {{ ambience['persona']['family_name'] }})
+        {{ util.persona_name(ambience['persona'], only_given_names=True) }}
     {% endif %}
 {%- endblock %}
 {% block heading -%}
@@ -16,8 +16,7 @@
         {% trans %}New Direct Debit Authorization{% endtrans %}
         {% if ambience['persona'] %}
             <small>
-                {{ util.make_icon('user') }} {{ ambience['persona']['given_names'] }}
-                {{ ambience['persona']['family_name'] }}
+                {{ util.make_icon('user') }} {{ util.persona_name(ambience['persona'], only_given_names=True) }}
             </small>
         {% endif %}
     </h1>
@@ -30,8 +29,7 @@
                             readonly="finance" not in user.admin_views) }}
     {% if ambience['persona'] %}
         {{ util.breadcrumb_link(cdedblink("cde/lastschrift_show", {'persona_id': values['persona_id']}),
-                                "{} {}".format(ambience['persona']['given_names'],
-                                               ambience['persona']['family_name']),
+                                util.persona_name(ambience['persona'], only_given_names=True),
                                 icon="euro-sign",
                                 readonly="finance" not in user.admin_views) }}
     {% endif %}
