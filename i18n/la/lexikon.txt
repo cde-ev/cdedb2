@@ -8,8 +8,14 @@
 Abbrechen (Knopf-Beschriftung)
 Desine (Philipp findet den Imperativ passend, es wird ja dem Computer eine Anweisung erteilt)
 
+Abmelden
+denutiare (analog zu "anmelden")
+
 Abstimmung
 suffragatio (can. 699 § 1 CIC "per secretam suffragationem"; nach Stowasser "Begünstigung, Empfehlung")
+
+Account
+siehe "Profil"
 
 Admin
 administrator, -oris, m. (PONS: "Verwalter", Philipp findet das passend)
@@ -17,8 +23,26 @@ administrator, -oris, m. (PONS: "Verwalter", Philipp findet das passend)
 Adresse, Anschrift
 inscriptio (NLL)
 
+Anmelden
+siehe "einloggen"
+
+Ausloggen
+siehe "abmelden"
+
+Bearbeiten
+tractare (PONS)
+
+Benutzer
+siehe "Nutzer"
+
 Bestätigen (Knopf-Beschriftung)
 Confirmo (Philipp findet die erste Person passend, weil der Nutzer ja etwas bestätigt.)
+
+Browser
+perscrutator (Eigenkreation Philipp, wörtl. so etwas wie "Durchsucher")
+
+Button
+siehe "Knopf"
 
 CdE
 CdEs, CdEi, f. (Vorschlag Philipp)
@@ -41,7 +65,7 @@ tabularium (PONS)
 Datenbank
 collectio datorum (PONS)
 
-einloggen, anmelden
+einloggen
 (se) annuntiare (PONS)
 
 entfernen (Informatik)
@@ -62,8 +86,20 @@ inscriptio electronica (https://la.wikipedia.org/wiki/Cursus_electronicus)
 Finanz-...
 ... pecuniae
 
+Formular
+formularium (PONS)
+
 Fragebogen (für eine Veranstaltung)
 interrogatio, -onis, f. ("Befragung, Verhör", aber kurz & knackig und daher besser als eine wörtliche Übersetzung, findet Philipp)
+
+Information
+notitia (Philipps Favorit unter den Vorschlägen des NLL)
+
+Knopf
+bulla (PONS)
+
+Kurs
+curriculum (PONS)
 
 löschen (Informatik)
 delere (Philipp findet das am passendsten. Siehe auch "entfernen")
@@ -71,17 +107,35 @@ delere (Philipp findet das am passendsten. Siehe auch "entfernen")
 Mailingliste
 tabella epistularum electronicarum (Eigenkreation Philipp)
 
+Menu
+facultatum index (Eigenkreation Philipp, "Verzeichnis der Möglichkeiten", Analog zu NLL "Speisekarte")
+
 Meta-Admin
 administrator administratorum
 
 Mitglied (d. Vereins)
 consocius (Diskussionsergebnis Philipp & Kilian, Stowasser)
 
+Mitglied sein
+consocietare (Vorschlag Philipp, nötig für Konstruktionen wie "Mitgliedschaft")
+
+Nutzer
+utens (Vorschlag Philipp, NLL sagt für den Plural (die Gesamtheit der Nutzer): utentium corpus / universitas)
+
 Passwort
 signum arcanum (PONS, wörtl. "geheimes Zeichen")
 
+Profil (eines Nutzers)
+vestigium (Vorschlag Philipp, Diskussionsbedarf)
+
+Schaltfläche
+siehe "Knopf"
+
 Stimme (bei einer Abstimmung)
 suffragium (PONS, Stowasser; identisch mit Abstimmung; auch in can. 119 n. 2, 171ff CIC)
+
+Übersicht
+conspectus (PONS)
 
 Veranstaltung
 eventus, -us, m. ("Ereignis", womöglich nur ein eher halb-richtiger Freund aus dem Englischen, Philipp findet's aber okay)
