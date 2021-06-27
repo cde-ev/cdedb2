@@ -19,10 +19,11 @@ The following shall give a guideline on this topic, based on our discussion on `
 * | *if* a person is addressed in a legal context (including postal addresses)
   | *then* use only the given names: "{given_names} {family_name}"
   | examples: letter address fields, assembly attendee list
-  | (TODO macro?)
+  | → ``util.persona_name(persona, only_given_names=True)``
 * | *else if* a user is directly addressed
   | *then* use only the display name
   | examples: salutation in a event participation letter, login info in the main navigation bar
+  | → ``util.persona_name(persona, only_display_name=True, with_family_name=False)``
 * | *else if* a person's name is presented to other users *and* the display name shall be emphasized
   | *then*
 
@@ -32,16 +33,8 @@ The following shall give a guideline on this topic, based on our discussion on `
 
   example: paper nametags for events
 
-* | *else if* a person's name is presented to other users and we don't have space for given names and display name or we don't can or want to do complex formatting
+* | *else if* a person's name is presented to other users and we explicitly want to display all their names (as on a business card)
   | *then*
-
-  * | *if* the display name is part of the given names (or equal)
-    | *then* only show the display name
-  * | *else* only show the given names
-
-  | example: event participation lists, email "To" headers, mailinglist subscriber lists
-  | (TODO macro?)
-* | *else*
 
   * | *if* the display name is equal to the given names
     | *then* only show the given names
@@ -49,5 +42,13 @@ The following shall give a guideline on this topic, based on our discussion on `
     | *then* only show the given names, but emphasise the display name within the given names (e.g. via italic font)
   * | *else* show the given names and the display name in parentheses: "{given_names} ({display_name"}) {family_name}"
 
-  | example: user profile page, orga realm (where not in lists)
-  | (TODO macro)
+  | example: user profile page, orga realm (if not in lists)
+  | → ``util.persona_name(persona, given_and_display_names=True, include_titles=True)``
+* | *else*
+
+  * | *if* the display name is part of the given names (or equal)
+    | *then* only show the display name
+  * | *else* only show the given names
+
+  | example: event participation lists, email "To" headers, mailinglist subscriber lists
+  | → ``util.persona_name(persona)``
