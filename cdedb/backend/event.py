@@ -1950,6 +1950,9 @@ class EventBackend(AbstractBackend):
             if 'fee_modifiers' in data:
                 fee_modifiers = data['fee_modifiers']
                 # Do some dynamic validation.
+                part_ids = {e['id'] for e in self.sql_select(
+                    rs, "event.event_parts", ("id",), (data['id'],),
+                    entity_key="event_id")}
                 event_fields = {e['id']: e for e in self.sql_select(
                     rs, "event.field_definitions", FIELD_DEFINITION_FIELDS,
                     (data['id'],), entity_key="event_id")}
@@ -1969,10 +1972,10 @@ class EventBackend(AbstractBackend):
                             raise ValueError(n_(
                                 "Fee Modifier linked to non-registration "
                                 "field."))
+                    if 'part_id' in fee_modifier:
+                        if fee_modifier['part_id'] not in part_ids:
+                            raise ValueError(n_("Unknown part for the given event."))
                 # Do the actual work.
-                part_ids = {e['id'] for e in self.sql_select(
-                    rs, "event.event_parts", ("id",), (data['id'],),
-                    entity_key="event_id")}
                 current = self.sql_select(
                     rs, "event.fee_modifiers", FEE_MODIFIER_FIELDS, part_ids,
                     entity_key="part_id")
@@ -1987,6 +1990,9 @@ class EventBackend(AbstractBackend):
                            if x > 0 and fee_modifiers[x] is None}
                 elc = const.EventLogCodes
                 for x in mixed_existence_sorter(new):
+                    if self.has_registrations(rs, data['id']):
+                        raise ValueError(n_(
+                            "Cannot alter fee modifier once registrations exist."))
                     ret *= self.sql_insert(
                         rs, "event.fee_modifiers", fee_modifiers[x])
                     self.event_log(
@@ -1994,12 +2000,18 @@ class EventBackend(AbstractBackend):
                         change_note=fee_modifiers[x]['modifier_name'])
                 for x in mixed_existence_sorter(updated):
                     if fee_modifiers[x] != current_data[x]:
+                        if self.has_registrations(rs, data['id']):
+                            raise ValueError(n_(
+                                "Cannot alter fee modifier once registrations exist."))
                         ret *= self.sql_update(
                             rs, "event.fee_modifiers", fee_modifiers[x])
                         self.event_log(
                             rs, elc.fee_modifier_changed, data['id'],
                             change_note=current_data[x]['modifier_name'])
                 if deleted:
+                    if self.has_registrations(rs, data['id']):
+                        raise ValueError(n_(
+                            "Cannot alter fee modifier once registrations exist."))
                     ret *= self.sql_delete(rs, "event.fee_modifiers", deleted)
                     for x in mixed_existence_sorter(deleted):
                         self.event_log(
@@ -2942,10 +2954,8 @@ class EventBackend(AbstractBackend):
         event_id = affirm(vtypes.ID, event_id)
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
-        with Atomizer(rs):
-            query = glue("SELECT COUNT(*) FROM event.registrations",
-                         "WHERE event_id = %s LIMIT 1")
-            return bool(unwrap(self.query_one(rs, query, (event_id,))))
+        query = "SELECT COUNT(*) FROM event.registrations WHERE event_id = %s LIMIT 1"
+        return bool(unwrap(self.query_one(rs, query, (event_id,))))
 
     def _get_event_course_segments(self, rs: RequestState,
                                    event_id: int) -> Dict[int, List[int]]:
