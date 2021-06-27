@@ -53,7 +53,7 @@
         {{ show_diff('given_names', gettext("Given Names"), True) }}
         {{ show_diff('family_name', gettext("Family Name"), True) }}
         {{ show_diff('name_supplement', gettext("Name Affix"), True) }}
-        {{ show_diff('display_name', gettext("First Given Name")) }}
+        {{ show_diff('display_name', gettext("Known as (Forename)")) }}
         {{ show_diff('birth_name', gettext("Birth Name")) }}
         {% call(next) show_diff('birthday', gettext("Birthday"), True) %}
             {% if next %}{{ pending['birthday']|date(lang=lang) }}{% else %}{{ current['birthday']|date(lang=lang) }}{% endif %}

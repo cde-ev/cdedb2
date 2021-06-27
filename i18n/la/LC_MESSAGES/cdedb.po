@@ -6777,7 +6777,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/generic.tmpl:17
 #: cdedb/frontend/templates/web/generic.tmpl:139
 #: cdedb/frontend/templates/web/generic.tmpl:213
-msgid "First Given Name"
+msgid "Known as (Forename)"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:49
