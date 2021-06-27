@@ -4881,10 +4881,10 @@ msgstr "faclutatum index principalis"
 msgid "Display Main Menu"
 msgstr "ostende facultatum indicem principalem"
 
+# TODO: Geschlecht
 #: cdedb/frontend/templates/web/base.tmpl:121
 msgid "Logged-In as"
 msgstr "annuntiatus/a/um"
-#TODO: Geschlecht
 
 #: cdedb/frontend/templates/web/base.tmpl:126
 #: cdedb/frontend/templates/web/base.tmpl:127
@@ -6919,6 +6919,7 @@ msgstr "%(given_names)s %(family_name)s tracta"
 msgid "Edit Userdata"
 msgstr "data utentis tracta"
 
+# TODO: Geschlecht
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:35
 #: cdedb/frontend/templates/web/core/change_user.tmpl:35
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:56
@@ -6928,7 +6929,6 @@ msgstr "data utentis tracta"
 #: cdedb/frontend/templates/web/generic.tmpl:210
 msgid "First Given Name"
 msgstr "nomen, quo vocandus/a/um es"
-# TODO: Geschlecht
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:49
 #: cdedb/frontend/templates/web/core/show_history.tmpl:196
@@ -7052,11 +7052,11 @@ msgstr "anni erudentionis perficiendae"
 msgid "Changenotes"
 msgstr "commentarium mutationis"
 
+# TODO: Genitiv
 #: cdedb/frontend/templates/web/core/admin_username_change.tmpl:4
 #, python-format
 msgid "Edit Email Address for %(given_names)s %(family_name)s"
 msgstr "insriptionem electronicam %(given_names)sis %(family_name)sis tracta"
-# TODO: Genitiv
 
 #: cdedb/frontend/templates/web/core/admin_username_change.tmpl:11
 #: cdedb/frontend/templates/web/core/admin_username_change.tmpl:20
