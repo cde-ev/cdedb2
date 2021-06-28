@@ -12,6 +12,7 @@ up an environment for passing a query from frontend to backend.
 import collections
 import copy
 import enum
+import re
 from typing import Any, Collection, Dict, Tuple
 
 from cdedb.common import (
@@ -605,6 +606,36 @@ class Query:
         params['scope'] = str(self.scope)
         params['query_name'] = self.name
         return params
+
+    # TODO: Pre compile all patterns at top level.
+    # TODO: Use enum instead of strings?
+    def get_field_format_spec(self, field: str) -> str:
+        if self.spec[field] in {"date", "datetime", "bool"}:
+            return self.spec[field]
+        if self.scope == QueryScope.registration:
+            if field == "persona.id":
+                return "persona"
+            if field == "persona.username":
+                return "username"
+            if re.match(r"track\d+\.course_(id|instructor)", field):
+                return "course"
+            if re.match(r"course_choices\d+\.rank\d+", field):
+                return "course"
+            if re.match(r"part\d+\.lodgement_id", field):
+                return "lodgement"
+        elif self.scope == QueryScope.event_course:
+            if field == "course.course_id":
+                # TODO: This is already linked. Do we need this?
+                return "course"
+        elif self.scope == QueryScope.lodgement:
+            if field == "lodgement.lodgement_id":
+                # TODO: This is already linked. Do we need this?
+                return "lodgement"
+        elif field == "personas.id":
+            return "persona"
+        elif field == "username":
+            return "username"
+        return ""
 
 
 def make_registration_query_spec(event: CdEDBObject) -> Dict[str, str]:

@@ -629,7 +629,7 @@
                 </tr>
             </thead>
             <tbody>
-            {% set primary_field = query.scope.get_primary_key().split('.')[-1] %}
+            {% set primary_field = query.scope.get_primary_key() %}
             {% set QueryScope = enums['QueryScope'] %}
             {% for row in result %}
                 {% set outerloopindex = loop.index0 %}
@@ -640,13 +640,13 @@
                     </td>
                     <td>
                         {%- if query.scope == QueryScope.registration -%}
-                            {{ util.href(cdedblink("event/show_registration", {'registration_id': row[primary_field]}),
+                            {{ util.href(cdedblink("event/show_registration", {'registration_id': row['id']}),
                                          gettext('Details'), icon='user', aclass='btn btn-xs btn-info', rel='noreferrer') }}
                         {%- elif query.scope == QueryScope.event_course -%}
-                            {{ util.href(cdedblink("event/show_course", {'course_id': row[primary_field]}),
+                            {{ util.href(cdedblink("event/show_course", {'course_id': row['id']}),
                                          gettext('Details'), icon='book', aclass='btn btn-xs btn-info', rel='noreferrer') }}
                         {%- elif query.scope == QueryScope.lodgement -%}
-                            {{ util.href(cdedblink("event/show_lodgement", {'lodgement_id': row[primary_field]}),
+                            {{ util.href(cdedblink("event/show_lodgement", {'lodgement_id': row['id']}),
                                          gettext('Details'), icon='home', aclass='btn btn-xs btn-info', rel='noreferrer') }}
                         {%- else -%}
                             {{ util.href(show_user_link(user, row[primary_field]),
@@ -658,23 +658,32 @@
                             {# NOTE that we split off any possible schema specification since they're not preserved
                                     by the query #}
                                 <td data-col="{{ field }}">  {# The data-col attribute is mainly used for testing #}
-                                    {% if field in ("personas.id", "persona.id")
-                                            or (query.scope == QueryScope.persona and field == "id") %}
-                                        <span class="nowrap">{{ row[field]|cdedbid }}</span>
-                                    {% elif field == "persona.username" %}
-                                        {{ util.username_mailto(row, prefix="persona.") }}
-                                    {% elif field == "username" %}
+                                    {% set format_spec = query.get_field_format_spec(field) %}
+                                    {% set text = choices.get(csvfield, {}).get(row.get(field),
+                                                                                row.get(field, "UNDEFINED")) %}
+                                    {% if format_spec == "persona" %}
+                                        <span class="nowrap">
+                                            {% if primary_field == "personas.id" %}
+                                                {{ row[field]|cdedbid }}
+                                            {% else %}
+                                                {{ util.href(show_user_link(user, row[field]), row[field]|cdedbid) }}
+                                            {% endif %}
+                                        </span>
+                                    {% elif format_spec == "username" %}
                                         {{ util.username_mailto(row) }}
-                                    {% elif query.spec[csvfield] == "date" %}
+                                    {% elif format_spec == "date" %}
                                         {{ row.get(field, None)|date(lang=lang) }}
-                                    {% elif query.spec[csvfield] == "datetime" %}
+                                    {% elif format_spec == "datetime" %}
                                         {{ row.get(field, None)|datetime(lang=lang) }}
-                                    {% elif query.spec[csvfield] == "bool" %}
+                                    {% elif format_spec == "bool" %}
                                         {{ util.deko_checkbox(row.get(field, None), titles=(gettext('false'),
                                                                                             gettext('true'))) }}
+                                    {% elif format_spec == "course" and row[field] %}
+                                        {{ util.href(cdedblink("event/show_course", {'course_id': row[field]}), text) }}
+                                    {% elif format_spec == "lodgement" and row[field] %}
+                                        {{ util.href(cdedblink("event/show_lodgement", {'lodgement_id': row[field]}), text) }}
                                     {% else %}
-                                        {{ choices.get(csvfield, {}).get(row.get(field),
-                                                                         row.get(field, "UNDEFINED")) }}
+                                        {{ text }}
                                     {% endif %}
                                 </td>
                         {% endfor %}
