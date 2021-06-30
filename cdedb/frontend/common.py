@@ -2676,15 +2676,36 @@ def process_dynamic_input(
     additional: CdEDBObject = None, prefix: str = "",
     constraint_maker: Callable[[int, str], Collection[RequestConstraint]] = None
 ) -> Dict[int, Optional[CdEDBObject]]:
-    """Retrieve information provided by flux tables.
+    """Retrieve data from rs provided by 'dynamic_row_table' makro.
+
+    This takes a 'spec' of field_names mapped to their validation. Each field_name is
+    prepended with the 'prefix' and appended with the entity_id in the form of
+    "{prefix}{field_name}_{entity_id}" before extracted from the RequestState.
+
+    During extraction with `request_extractor`, it is possible to pass some additional
+    constraints in. To dynamically create them for each not-deleted entry, a
+    'constraint_maker' function is needed. It might look like the following:
+
+        def int_constraint_maker(field_id: int, prefix: str) -> List[RequestConstraint]:
+            # the field_name present in spec is assumed to be 'int' in this example
+            rs_field_name = f"{prefix}int_{field_id}"
+            msg = n_("Must be greater than zero.")
+            return [(
+                lambda d: d[rs_field_name] > 0, (rs_field_name, ValueError(msg))
+            )]
 
     This returns a data dict to update the database, which includes:
     - existing entries, mapped to their (validated) input fields (from spec)
     - existing entries, mapped to None (if they were marked to be deleted)
     - new entries, mapped to their (validated) input fields (from spec)
 
+    This adds some additional keys to some entities of the return dict:
+    - To each existing, not deleted entry: the 'id' of the entry.
+    - To each new and each existing, not deleted entry: all entries of 'additional'
+
     :param existing: ids of already existent objects
-    :param spec: name of input fields, mapped to their validation
+    :param spec: name of input fields, mapped to their validation. This uses the same
+        format as the `request_extractor`, but adds the 'prefix' to each key if present.
     :param constraint_maker: a function accepting the id of a non-deleted entry and
         the string prefix and gives back all constraints for this entry, which are
         further passed to request_extractor
