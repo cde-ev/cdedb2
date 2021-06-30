@@ -2870,7 +2870,7 @@ msgstr "Unsicher über Transaktionstyp."
 
 #: cdedb/frontend/parse_statement.py:755
 msgid "Not confident about event match."
-msgstr "Unwischer über Veranstaltungszuordnung."
+msgstr "Unsicher über Veranstaltungszuordnung."
 
 #: cdedb/frontend/parse_statement.py:759
 msgid "Needs event match."
