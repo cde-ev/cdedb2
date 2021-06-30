@@ -717,7 +717,7 @@ class EventFrontend(AbstractUserFrontend):
             'sortkey': int
         }
         track_data = process_dynamic_input(
-            rs, track_existing, track_spec, prefix="track",
+            rs, track_existing, track_spec, prefix="track_",
             constraint_maker=track_constraint_maker)
 
         deleted_tracks = {anid for anid in track_data if track_data[anid] is None}
@@ -758,7 +758,7 @@ class EventFrontend(AbstractUserFrontend):
             fee_modifier_data = dict()
         else:
             fee_modifier_data = process_dynamic_input(
-                rs, fee_modifier_existing, fee_modifier_spec, prefix="fee_modifier",
+                rs, fee_modifier_existing, fee_modifier_spec, prefix="fee_modifier_",
                 additional={'part_id': part_id},
                 constraint_maker=fee_modifier_constraint_maker)
 

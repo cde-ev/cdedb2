@@ -2714,7 +2714,6 @@ def process_dynamic_input(
         dynamic input table is present on the same page
     """
     additional = additional or dict()
-    prefix = prefix + "_" if prefix else ""
 
     delete_spec = {f"{prefix}delete_{anid}": bool for anid in existing}
     delete_flags = request_extractor(rs, delete_spec)
