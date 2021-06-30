@@ -2719,7 +2719,7 @@ def process_dynamic_input(
     delete_flags = request_extractor(rs, delete_spec)
     deletes = {anid for anid in existing if delete_flags[f"{prefix}delete_{anid}"]}
 
-    params: validate.TypeMapping = {
+    existing_data_spec: validate.TypeMapping = {
         f"{prefix}{key}_{anid}": value
         for anid in existing if anid not in deletes
         for key, value in spec.items()
@@ -2728,7 +2728,7 @@ def process_dynamic_input(
     constraints = list(itertools.chain.from_iterable(
         constraint_maker(anid, prefix) for anid in existing if anid not in deletes)
     ) if constraint_maker else None
-    data = request_extractor(rs, params, constraints)
+    data = request_extractor(rs, existing_data_spec, constraints)
 
     # build the return dict of all existing entries
     ret: Dict[int, Optional[CdEDBObject]] = {
