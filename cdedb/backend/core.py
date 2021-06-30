@@ -38,7 +38,7 @@ from cdedb.common import (
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import Atomizer, connection_pool_factory
-from cdedb.query import Query, QueryOperators
+from cdedb.query import Query, QueryOperators, QueryScope
 from cdedb.validation import validate_check
 
 
@@ -144,8 +144,8 @@ class CoreBackend(AbstractBackend):
             "title", "username", "display_name", "given_names",
             "family_name", "birth_name", "name_supplement", "birthday",
             "telephone", "mobile", "address_supplement", "address",
-            "postal_code", "location", "country", "address_supplement2",
-            "address2", "postal_code2", "location2", "country2", "weblink",
+            "postal_code", "location", "address_supplement2",
+            "address2", "postal_code2", "location2", "weblink",
             "specialisation", "affiliation", "timeline", "interests",
             "free_form")
         values = (str(persona[a]) for a in attributes if persona[a] is not None)
@@ -2875,9 +2875,9 @@ class CoreBackend(AbstractBackend):
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.
         """
         query = affirm(Query, query)
-        if query.scope in {"qview_core_user", "qview_archived_core_user"}:
+        if query.scope in {QueryScope.core_user, QueryScope.archived_core_user}:
             query.constraints.append(("is_archived", QueryOperators.equal,
-                                      query.scope == "qview_archived_core_user"))
+                                      query.scope == QueryScope.archived_core_user))
             query.spec["is_archived"] = "bool"
         else:
             raise RuntimeError(n_("Bad scope."))

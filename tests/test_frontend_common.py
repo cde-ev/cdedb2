@@ -7,9 +7,9 @@ import string
 import pytz
 
 import cdedb.enums
+from cdedb.filter import date_filter, tex_escape_filter
 from cdedb.frontend.common import (
-    cdedbid_filter, date_filter, datetime_filter, decode_parameter, encode_parameter,
-    tex_escape_filter,
+    cdedbid_filter, datetime_filter, decode_parameter, encode_parameter,
 )
 from tests.common import FrontendTest
 
@@ -136,6 +136,7 @@ class TestFrontendCommon(FrontendTest):
             cdedb.enums.Accounts,
             cdedb.enums.CourseChoiceToolActions,
             cdedb.enums.CourseFilterPositions,
+            cdedb.enums.QueryScope,
         }
         for lang, translation in self.app.app.translations.items():
             # Not all Latin enum members are translated yet

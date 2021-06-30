@@ -19,7 +19,7 @@ from typing_extensions import Protocol
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
-    PYTHON_TO_SQL_MAP, AbstractBackend, Silencer, access,
+    PYTHON_TO_SQL_MAP, AbstractBackend, Silencer, DatabaseValue_s, access,
     affirm_set_validation as affirm_set, affirm_validation_typed as affirm,
     affirm_validation_typed_optional as affirm_optional, cast_fields, internal,
     singularize,
@@ -34,10 +34,10 @@ from cdedb.common import (
     CourseFilterPositions, DefaultReturnCode, DeletionBlockers, InfiniteEnum,
     PartialImportError, PathLike, PrivilegeError, PsycoJson, RequestState, get_hash,
     glue, implying_realms, json_serialize, mixed_existence_sorter, n_, now, unwrap,
-    xsorted,
+    xsorted, STORED_EVENT_QUERY_FIELDS,
 )
 from cdedb.database.connection import Atomizer
-from cdedb.query import Query, QueryOperators
+from cdedb.query import Query, QueryOperators, QueryScope
 from cdedb.validation import parse_date, parse_datetime
 
 
@@ -241,7 +241,7 @@ class EventBackend(AbstractBackend):
         """
         query = affirm(Query, query)
         view = None
-        if query.scope == "qview_registration":
+        if query.scope == QueryScope.registration:
             event_id = affirm(vtypes.ID, event_id)
             assert event_id is not None
             # ml_admins are allowed to do this to be able to manage
@@ -473,7 +473,7 @@ class EventBackend(AbstractBackend):
             query.constraints.append(("event_id", QueryOperators.equal,
                                       event_id))
             query.spec['event_id'] = "id"
-        elif query.scope == "qview_quick_registration":
+        elif query.scope == QueryScope.quick_registration:
             event_id = affirm(vtypes.ID, event_id)
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)):
@@ -481,14 +481,14 @@ class EventBackend(AbstractBackend):
             query.constraints.append(("event_id", QueryOperators.equal,
                                       event_id))
             query.spec['event_id'] = "id"
-        elif query.scope in {"qview_event_user", "qview_archived_past_event_user"}:
+        elif query.scope in {QueryScope.event_user, QueryScope.archived_past_event_user}:
             if not self.is_admin(rs) and "core_admin" not in rs.user.roles:
                 raise PrivilegeError(n_("Admin only."))
             # Include only un-archived event-users
             query.constraints.append(("is_event_realm", QueryOperators.equal,
                                       True))
             query.constraints.append(("is_archived", QueryOperators.equal,
-                                      query.scope == "qview_archived_past_event_user"))
+                                      query.scope == QueryScope.archived_past_event_user))
             query.spec["is_event_realm"] = "bool"
             query.spec["is_archived"] = "bool"
             # Exclude users of any higher realm (implying event)
@@ -496,7 +496,7 @@ class EventBackend(AbstractBackend):
                 query.constraints.append(
                     ("is_{}_realm".format(realm), QueryOperators.equal, False))
                 query.spec["is_{}_realm".format(realm)] = "bool"
-        elif query.scope == "qview_event_course":
+        elif query.scope == QueryScope.event_course:
             event_id = affirm(vtypes.ID, event_id)
             assert event_id is not None
             if (not self.is_orga(rs, event_id=event_id)
@@ -715,7 +715,7 @@ class EventBackend(AbstractBackend):
             query.constraints.append(
                 ("event_id", QueryOperators.equal, event_id))
             query.spec['event_id'] = "id"
-        elif query.scope == "qview_event_lodgement":
+        elif query.scope == QueryScope.lodgement:
             event_id = affirm(vtypes.ID, event_id)
             assert event_id is not None
             if (not self.is_orga(rs, event_id=event_id)
@@ -1532,6 +1532,132 @@ class EventBackend(AbstractBackend):
                 ret = f.read()
         return ret
 
+    @access("event")
+    def get_event_queries(self, rs: RequestState, event_id: int,
+                          scopes: Collection[QueryScope] = None,
+                          query_ids: Collection[int] = None,
+                          ) -> Dict[str, Query]:
+        """Retrieve all stored queries for the given event and scope.
+
+        If no scopes are given, all queries are returned instead.
+
+        If a stored query references a custom datafield, that has been deleted, it can
+        still be retrieved, and the reference to the field remains, it will just be
+        omitted, so if the field is added again, it will appear in the query again.
+        """
+        event_id = affirm(vtypes.ID, event_id)
+        scopes = affirm_set(QueryScope, scopes or set())
+        query_ids = affirm_set(vtypes.ID, query_ids or set())
+        if not (self.is_admin(rs) or self.is_orga(rs, event_id=event_id)):
+            raise PrivilegeError(n_("Must be orga to retrieve stored queries."))
+        try:
+            with Atomizer(rs):
+                event = self.get_event(rs, event_id)
+                select = (f"SELECT {', '.join(STORED_EVENT_QUERY_FIELDS)}"
+                          f" FROM event.stored_queries"
+                          f" WHERE event_id = %s")
+                params: List[DatabaseValue_s] = [event_id]
+                if scopes:
+                    select += " AND scope = ANY(%s)"
+                    params.append(scopes)
+                if query_ids:
+                    select += " AND id = ANY(%s)"
+                    params.append(query_ids)
+                query_data = self.query_all(rs, select, params)
+                ret = {}
+                count = fail_count = 0
+                for qd in query_data:
+                    qd["serialized_query"]["query_id"] = qd["id"]
+                    scope = affirm(QueryScope, qd["scope"])
+                    spec = scope.get_spec(event=event)
+                    try:
+                        # The QueryInput takes care of deserialization.
+                        q: Query = affirm(vtypes.QueryInput, qd["serialized_query"],
+                                          spec=spec, allow_empty=False)
+                        assert q.name is not None and q.query_id is not None
+                    except (ValueError, TypeError):
+                        fail_count += 1
+                        continue
+                    ret[q.name] = q
+                    count += 1
+        except PrivilegeError:
+            raise
+        # Failsafe in case something very unexpected goes wrong, so we don't break
+        # the query pages.
+        except Exception:
+            self.logger.exception(
+                f"Fatal error during retrieval of stored event queries for"
+                f" event_id={event_id} and scopes={scopes}.")
+            return {}
+        if fail_count:
+            rs.notify(
+                "info", n_("%(count)s stored queries could not be retrieved."),
+                {'count': fail_count})
+        return ret
+
+    @access("event")
+    def delete_event_query(self, rs: RequestState, query_id: int) -> DefaultReturnCode:
+        """Delete the stored query with the given query id."""
+        query_id = affirm(vtypes.ID, query_id)
+        with Atomizer(rs):
+            q = self.sql_select_one(
+                rs, "event.stored_queries", ("event_id", "query_name"), query_id)
+            if q is None:
+                return 0
+            if not (self.is_admin(rs) or self.is_orga(rs, event_id=q['event_id'])):
+                raise PrivilegeError(n_(
+                    "Must be orga to delete queries for an event."))
+
+            ret = self.sql_delete_one(rs, "event.stored_queries", query_id)
+            if ret:
+                self.event_log(rs, const.EventLogCodes.query_deleted,
+                               event_id=q['event_id'], change_note=q['query_name'])
+            return ret
+
+    @access("event")
+    def store_event_query(self, rs: RequestState, event_id: int,
+                          query: Query) -> DefaultReturnCode:
+        """Store a single event query in the database."""
+        event_id = affirm(vtypes.ID, event_id)
+        query = affirm(Query, query)
+
+        if not (self.is_admin(rs) or self.is_orga(rs, event_id=event_id)):
+            raise PrivilegeError(n_(
+                "Must be orga to store queries for an event."))
+        if not query.scope.supports_storing():
+            raise ValueError(n_("Cannot store this kind of query."))
+        if not query.name:
+            rs.notify("error", n_("Query must have a name"))
+            return 0
+        data = {
+            'event_id': event_id,
+            'query_name': query.name,
+            'scope': query.scope,
+            'serialized_query': json_serialize(query.serialize()),
+        }
+        with Atomizer(rs):
+            new_id = self.sql_insert(
+                rs, "event.stored_queries", data, drop_on_conflict=True)
+            if not new_id:
+                rs.notify("error", n_("Query with name '%(query)s' already exists"
+                                      " for this event."), {"query": query.name})
+                return 0
+            self.event_log(rs, const.EventLogCodes.query_stored,
+                           event_id=event_id, change_note=query.name)
+        return new_id
+
+    @access("event_admin")
+    def get_invalid_stored_event_queries(self, rs: RequestState, event_id: int
+                                         ) -> CdEDBObjectMap:
+        """Retrieve raw data for stored event queries that cannot be deserialized."""
+        q = (f"SELECT {', '.join(STORED_EVENT_QUERY_FIELDS)}"
+             f" FROM event.stored_queries WHERE event_id = %s AND NOT(id = ANY(%s))")
+        with Atomizer(rs):
+            retrievable_queries = self.get_event_queries(rs, event_id)
+            params = (event_id, [q.query_id for q in retrievable_queries.values()])
+            data = self.query_all(rs, q, params)
+            return {e["id"]: e for e in data}
+
     @internal
     @access("event")
     def set_event_archived(self, rs: RequestState, data: CdEDBObject) -> None:
@@ -1824,6 +1950,9 @@ class EventBackend(AbstractBackend):
             if 'fee_modifiers' in data:
                 fee_modifiers = data['fee_modifiers']
                 # Do some dynamic validation.
+                part_ids = {e['id'] for e in self.sql_select(
+                    rs, "event.event_parts", ("id",), (data['id'],),
+                    entity_key="event_id")}
                 event_fields = {e['id']: e for e in self.sql_select(
                     rs, "event.field_definitions", FIELD_DEFINITION_FIELDS,
                     (data['id'],), entity_key="event_id")}
@@ -1843,10 +1972,10 @@ class EventBackend(AbstractBackend):
                             raise ValueError(n_(
                                 "Fee Modifier linked to non-registration "
                                 "field."))
+                    if 'part_id' in fee_modifier:
+                        if fee_modifier['part_id'] not in part_ids:
+                            raise ValueError(n_("Unknown part for the given event."))
                 # Do the actual work.
-                part_ids = {e['id'] for e in self.sql_select(
-                    rs, "event.event_parts", ("id",), (data['id'],),
-                    entity_key="event_id")}
                 current = self.sql_select(
                     rs, "event.fee_modifiers", FEE_MODIFIER_FIELDS, part_ids,
                     entity_key="part_id")
@@ -1864,6 +1993,9 @@ class EventBackend(AbstractBackend):
                 # deleted modifier may be used in an other existing or a new modifier
                 # at the same request.
                 if deleted:
+                    if self.has_registrations(rs, data['id']):
+                        raise ValueError(n_(
+                            "Cannot alter fee modifier once registrations exist."))
                     ret *= self.sql_delete(rs, "event.fee_modifiers", deleted)
                     for x in mixed_existence_sorter(deleted):
                         self.event_log(
@@ -1871,12 +2003,18 @@ class EventBackend(AbstractBackend):
                             data['id'], change_note=current_data[x]['modifier_name'])
                 for x in mixed_existence_sorter(updated):
                     if fee_modifiers[x] != current_data[x]:
+                        if self.has_registrations(rs, data['id']):
+                            raise ValueError(n_(
+                                "Cannot alter fee modifier once registrations exist."))
                         ret *= self.sql_update(
                             rs, "event.fee_modifiers", fee_modifiers[x])
                         self.event_log(
                             rs, elc.fee_modifier_changed, data['id'],
                             change_note=current_data[x]['modifier_name'])
                 for x in mixed_existence_sorter(new):
+                    if self.has_registrations(rs, data['id']):
+                        raise ValueError(n_(
+                            "Cannot alter fee modifier once registrations exist."))
                     ret *= self.sql_insert(
                         rs, "event.fee_modifiers", fee_modifiers[x])
                     self.event_log(
@@ -1924,6 +2062,7 @@ class EventBackend(AbstractBackend):
         * registrations: A registration associated with the event. This can
                          have it's own blockers.
         * questionnaire: A questionnaire row configured for the event.
+        * stored_queries: A stored query for the event.
         * log: A log entry for the event.
         * mailinglists: A mailinglist associated with the event. This
                         reference will be removed but the mailinglist will
@@ -1983,6 +2122,11 @@ class EventBackend(AbstractBackend):
             entity_key="event_id")
         if questionnaire_rows:
             blockers["questionnaire"] = [e["id"] for e in questionnaire_rows]
+
+        stored_queries = self.sql_select(
+            rs, "event.stored_queries", ("id",), (event_id,), entity_key="event_id")
+        if stored_queries:
+            blockers["stored_queries"] = [e["id"] for e in stored_queries]
 
         log = self.sql_select(
             rs, "event.log", ("id",), (event_id,), entity_key="event_id")
@@ -2066,6 +2210,9 @@ class EventBackend(AbstractBackend):
                                 rs, anid, field_cascade)
                 if "orgas" in cascade:
                     ret *= self.sql_delete(rs, "event.orgas", blockers["orgas"])
+                if "stored_queries" in cascade:
+                    ret *= self.sql_delete(
+                        rs, "event.stored_queries", blockers["stored_queries"])
                 if "log" in cascade:
                     ret *= self.sql_delete(
                         rs, "event.log", blockers["log"])
@@ -2810,10 +2957,8 @@ class EventBackend(AbstractBackend):
         event_id = affirm(vtypes.ID, event_id)
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
-        with Atomizer(rs):
-            query = glue("SELECT COUNT(*) FROM event.registrations",
-                         "WHERE event_id = %s LIMIT 1")
-            return bool(unwrap(self.query_one(rs, query, (event_id,))))
+        query = "SELECT COUNT(*) FROM event.registrations WHERE event_id = %s LIMIT 1"
+        return bool(unwrap(self.query_one(rs, query, (event_id,))))
 
     def _get_event_course_segments(self, rs: RequestState,
                                    event_id: int) -> Dict[int, List[int]]:

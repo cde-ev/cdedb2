@@ -539,7 +539,7 @@
 {%- endmacro %}
 
 {% macro input_submit(label="Save", value="True", name="submitform", anid=none, aclass='btn btn-primary', icon="check",
-        readonly=False, title=none, ariahidden=false) %}
+        readonly=False, title=none, ariahidden=false, formmethod=none, formaction=none) %}
     <button{{ dict(
         type="submit",
         name=name,
@@ -548,6 +548,8 @@
         title=title,
         value=value,
         disabled="disabled" if readonly,
+        formmethod=formmethod,
+        formaction=formaction,
         **{ "aria-hidden": "true" if ariahidden }
     )|xmlattr }}>
         {{ make_icon(icon) if icon }}
@@ -733,9 +735,8 @@
    token.
 
    For protection against replay attacks, we use the default timeout of config.PARAMETER_TIMEOUT #}
-{% macro anti_csrf_token(target) %}
-    {{ input_hidden(ANTI_CSRF_TOKEN_NAME, encode_parameter(target, ANTI_CSRF_TOKEN_NAME, ANTI_CSRF_TOKEN_PAYLOAD,
-                                                           persona_id=user.persona_id)) }}
+{% macro anti_csrf_token(target, token_name = ANTI_CSRF_TOKEN_NAME, token_payload = ANTI_CSRF_TOKEN_PAYLOAD) %}
+    {{ input_hidden(token_name, encode_anti_csrf(target, token_name, token_payload, persona_id=user.persona_id)) }}
 {% endmacro %}
 
 

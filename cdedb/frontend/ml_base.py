@@ -18,10 +18,11 @@ from cdedb.common import (
 )
 from cdedb.subman.exceptions import SubscriptionError
 from cdedb.subman.machine import SubscriptionAction
+from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access, calculate_db_logparams,
     calculate_loglinks, cdedbid_filter as cdedbid, check_validation as check,
-    csv_output, keydictsort_filter, mailinglist_guard, periodic,
+    csv_output, mailinglist_guard, periodic,
 )
 from cdedb.ml_type_aux import (
     ADDITIONAL_TYPE_FIELDS, TYPE_MAP, MailinglistGroup, get_type
@@ -29,6 +30,7 @@ from cdedb.ml_type_aux import (
 from cdedb.validation import (
     ALL_MAILINGLIST_FIELDS, PERSONA_FULL_ML_CREATION, filter_none
 )
+from cdedb.query import QueryScope
 
 
 class MlBaseFrontend(AbstractUserFrontend):
@@ -113,7 +115,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                     is_search: bool) -> Response:
         """Perform search."""
         return self.generic_user_search(
-            rs, download, is_search, 'qview_persona', 'qview_ml_user',
+            rs, download, is_search, QueryScope.ml_user, QueryScope.ml_user,
             self.mlproxy.submit_general_query)
 
     @access("core_admin", "ml_admin")
@@ -127,9 +129,8 @@ class MlBaseFrontend(AbstractUserFrontend):
         """
         return self.generic_user_search(
             rs, download, is_search,
-            'qview_archived_persona', 'qview_archived_persona',
-            self.mlproxy.submit_general_query,
-            endpoint="archived_user_search")
+            QueryScope.archived_persona, QueryScope.archived_persona,
+            self.mlproxy.submit_general_query, endpoint="archived_user_search")
 
     @access("ml")
     def list_mailinglists(self, rs: RequestState) -> Response:
