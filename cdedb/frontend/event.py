@@ -542,7 +542,13 @@ class EventFrontend(AbstractUserFrontend):
         return self.redirect(rs, "event/show_event")
 
     def _deletion_blocked_parts(self, rs: RequestState, event_id: int) -> Set[int]:
-        """All parts of a given event which must not be deleted."""
+        """Returns all part_ids from parts of a given event which must not be deleted.
+
+        Extracts all parts of the given event from the database and checks if there are
+        blockers preventing their deletion.
+
+        :returns: All part_ids whose deletion is blocked.
+        """
         blocked_parts: Set[int] = set()
         if len(rs.ambience['event']['parts']) == 1:
             blocked_parts.add(unwrap(rs.ambience['event']['parts'].keys()))
@@ -555,7 +561,13 @@ class EventFrontend(AbstractUserFrontend):
         return blocked_parts
 
     def _deletion_blocked_tracks(self, rs: RequestState, event_id: int) -> Set[int]:
-        """All tracks of a given event which must not be deleted."""
+        """Returns all track_ids from tracks of a given event which must not be deleted.
+
+        Extracts all tracks of the given event from the database and checks if there are
+        blockers preventing their deletion.
+
+        :returns: All track_ids whose deletion is blocked.
+        """
         blocked_tracks: Set[int] = set()
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
