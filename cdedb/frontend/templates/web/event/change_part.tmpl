@@ -64,8 +64,8 @@
         <h3 class="mosp heading-underline">{% trans %}Coursetracks{% endtrans %}</h3>
         {% set track_columns = [dict(name="title", label=gettext("Coursetrack"), func=util.input_text),
                                 dict(name="shortname", label=gettext("Shortname"), func=util.input_text),
-                                dict(name="num_choices", label=gettext("Course Choices"), func=util.input_text, func_additional_input = {'defaultvalue': DEFAULT_NUM_COURSE_CHOICES}),
-                                dict(name="min_choices", label=gettext("Req. Choices"), func=util.input_text, func_additional_input = {'defaultvalue': DEFAULT_NUM_COURSE_CHOICES}),
+                                dict(name="num_choices", label=gettext("Course Choices"), aclass='input-num-choices', func=util.input_text, func_additional_input = {'defaultvalue': DEFAULT_NUM_COURSE_CHOICES}),
+                                dict(name="min_choices", label=gettext("Req. Choices"), aclass='input-min-choices', func=util.input_text, func_additional_input = {'defaultvalue': DEFAULT_NUM_COURSE_CHOICES}),
                                 dict(name="sortkey", label=gettext("Sortkey"), func=util.input_text)] %}
         {% set tracks = ambience['event']['parts'][part_id]['tracks'] %}
         {{ util.dynamic_row_table("Coursetrack", track_columns, tracks, locked=referenced_tracks, modification_only=has_registrations, sortkey=EntitySorter.event_tracks, prefix="track") }}
