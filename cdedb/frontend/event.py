@@ -709,6 +709,9 @@ class EventFrontend(AbstractUserFrontend):
         data = check(rs, vtypes.EventPart, data)
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
 
+        #
+        # process the dynamic track input
+        #
         def track_constraint_maker(track_id: int, prefix: str) -> List[RequestConstraint]:
             min_choice = f"{prefix}min_choices_{track_id}"
             num_choice = f"{prefix}num_choices_{track_id}"
@@ -717,9 +720,6 @@ class EventFrontend(AbstractUserFrontend):
                 lambda d: d[min_choice] <= d[num_choice], (min_choice, ValueError(msg))
             )]
 
-        #
-        # process the dynamic track input
-        #
         track_existing = rs.ambience['event']['parts'][part_id]['tracks']
         track_spec = {
             'title': str,
@@ -741,6 +741,9 @@ class EventFrontend(AbstractUserFrontend):
         if new_tracks and has_registrations:
             raise ValueError(n_("Registrations exist, no track creation possible."))
 
+        #
+        # process the dynamic fee modifier input
+        #
         def fee_modifier_constraint_maker(
                 fee_modifier_id: int, prefix: str) -> List[RequestConstraint]:
             key = f"{prefix}field_id_{fee_modifier_id}"
@@ -753,9 +756,6 @@ class EventFrontend(AbstractUserFrontend):
                 (key, ValueError(msg))
             )]
 
-        #
-        # process the dynamic fee modifier input
-        #
         fee_modifier_existing = [
             mod['id'] for mod in rs.ambience['event']['fee_modifiers'].values()
             if mod['part_id'] == part_id
@@ -765,12 +765,14 @@ class EventFrontend(AbstractUserFrontend):
             'amount': decimal.Decimal,
             'field_id': vtypes.ID,
         }
+        fee_modifier_prefix = "fee_modifier_"
         # do not change fee modifiers once registrations exist
         if has_registrations:
             fee_modifier_data = dict()
         else:
             fee_modifier_data = process_dynamic_input(
-                rs, fee_modifier_existing, fee_modifier_spec, prefix="fee_modifier_",
+                rs, fee_modifier_existing, fee_modifier_spec,
+                prefix=fee_modifier_prefix,
                 additional={'part_id': part_id},
                 constraint_maker=fee_modifier_constraint_maker)
 
@@ -779,18 +781,18 @@ class EventFrontend(AbstractUserFrontend):
         used_names: Set[str] = set()
         field_msg = n_("Must not have multiple fee modifiers linked to the same"
                        " field in one event part.")
-        name_msg = n_("Must not have multiple fee modifiers with he same name "
+        name_msg = n_("Must not have multiple fee modifiers with the same name "
                       "in one event part.")
-        for modifier_id, modifier in fee_modifier_data.items():
+        for anid, modifier in fee_modifier_data.items():
             if modifier is None:
                 continue
             if modifier['field_id'] in used_fields:
                 rs.append_validation_error(
-                    (f"fee_modifier_field_id_{modifier_id}", ValueError(field_msg))
+                    (f"{fee_modifier_prefix}field_id_{anid}", ValueError(field_msg))
                 )
             if modifier['modifier_name'] in used_names:
                 rs.append_validation_error(
-                    (f"fee_modifier_modifier_name_{modifier_id}", ValueError(name_msg))
+                    (f"{fee_modifier_prefix}modifier_name_{anid}", ValueError(name_msg))
                 )
             used_fields.add(modifier['field_id'])
             used_names.add(modifier['modifier_name'])
