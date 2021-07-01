@@ -4617,6 +4617,9 @@ class EventFrontend(AbstractUserFrontend):
                     current = self.eventproxy.get_lodgement_group(rs, group_id)
                     # Do not update unchanged
                     if current != group:
+                        # TODO maybe we pass it in but simply ignore it?
+                        # do not pass the event_id in, since it must not change
+                        del group['event_id']
                         code *= self.eventproxy.set_lodgement_group(rs, group)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/lodgement_group_summary")
