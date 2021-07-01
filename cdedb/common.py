@@ -2166,10 +2166,10 @@ LASTSCHRIFT_TRANSACTION_FIELDS = (
 #: Datatype and Association of special purpose event fields
 EVENT_FIELD_SPEC: Dict[
     str, Tuple[Set[const.FieldDatatypes], Set[const.FieldAssociations]]] = {
-    'lodge': ({const.FieldDatatypes.str}, {const.FieldAssociations.registration}),
-    'camping_mat': (
+    'lodge_field': ({const.FieldDatatypes.str}, {const.FieldAssociations.registration}),
+    'camping_mat_field': (
         {const.FieldDatatypes.bool}, {const.FieldAssociations.registration}),
-    'course_room': ({const.FieldDatatypes.str}, {const.FieldAssociations.course}),
+    'course_room_field': ({const.FieldDatatypes.str}, {const.FieldAssociations.course}),
     'waitlist': ({const.FieldDatatypes.int}, {const.FieldAssociations.registration}),
     'fee_modifier': (
         {const.FieldDatatypes.bool}, {const.FieldAssociations.registration}),
