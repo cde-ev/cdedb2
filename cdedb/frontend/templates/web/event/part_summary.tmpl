@@ -35,7 +35,7 @@
     </p>
 
     {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
-        <div class="panel panel-info">
+        <div class="panel panel-info" id="part{{ part_id }}">
             <div class="panel-heading">
                 {{ part['title'] }}
                 <div class="pull-right">
@@ -67,10 +67,10 @@
                         <dd>{{ part['shortname'] }}</dd>
 
                         <dt>{% trans %}Begin{% endtrans %}</dt>
-                        <dd>{{ part['part_begin']|date(lang=lang) }}</dd>
+                        <dd id="part{{ part_id }}_begin">{{ part['part_begin']|date(lang=lang) }}</dd>
 
                         <dt>{% trans %}End{% endtrans %}</dt>
-                        <dd>{{ part['part_end']|date(lang=lang) }}</dd>
+                        <dd id="part{{ part_id }}_end">{{ part['part_end']|date(lang=lang) }}</dd>
                     </dl>
 
                     <dl class="dl-horizontal col-md-6">
@@ -123,7 +123,7 @@
                     </thead>
                     <tbody>
                         {% for track_id, track in part['tracks']|keydictsort(EntitySorter.course_track) %}
-                            <tr id="trackrow{{ part_id }}_{{ track }}">
+                            <tr id="trackrow{{ part_id }}_{{ track_id }}">
                                 <td>{{ track['title'] }}</td>
                                 <td>{{ track['shortname'] }}</td>
                                 <td>{{ track['num_choices'] }}</td>
