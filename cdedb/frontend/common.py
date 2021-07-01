@@ -2067,7 +2067,7 @@ def make_event_fee_reference(persona: CdEDBObject, event: CdEDBObject) -> str:
 def process_dynamic_input(
     rs: RequestState, existing: Collection[int], spec: validate.TypeMapping, *,
     additional: CdEDBObject = None, prefix: str = "",
-    constraint_maker: Callable[[int, str], Collection[RequestConstraint]] = None
+    constraint_maker: Callable[[int, str], List[RequestConstraint]] = None
 ) -> Dict[int, Optional[CdEDBObject]]:
     """Retrieve data from rs provided by 'dynamic_row_table' makro.
 
@@ -2133,7 +2133,7 @@ def process_dynamic_input(
             ret[anid] = None
         else:
             ret[anid]['id'] = anid  # type: ignore
-            ret[anid].update(additional)
+            ret[anid].update(additional)  # type: ignore
 
     # extract the new entries which shall be created
     marker = 1

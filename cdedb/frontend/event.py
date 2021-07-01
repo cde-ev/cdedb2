@@ -711,6 +711,7 @@ class EventFrontend(AbstractUserFrontend):
         # yield false validation errors
         del data['tracks']
         data = check(rs, vtypes.EventPart, data)
+        assert data is not None
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
 
         #

@@ -1577,7 +1577,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         def constraint_maker(candidate_id: int, prefix: str) -> List[RequestConstraint]:
             """Create constraints for each individual candidate"""
-            constraints = [
+            constraints: List[RequestConstraint] = [
                 (lambda c: c[f'shortname_{candidate_id}'] != ASSEMBLY_BAR_SHORTNAME,
                  (f'shortname_{candidate_id}',
                   ValueError(n_("Mustn’t be the bar shortname.")))),
