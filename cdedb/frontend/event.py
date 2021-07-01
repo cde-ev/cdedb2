@@ -55,7 +55,7 @@ from cdedb.query import (
 from cdedb.validation import (
     COURSE_COMMON_FIELDS, EVENT_EXPOSED_FIELDS, LODGEMENT_COMMON_FIELDS,
     PERSONA_FULL_EVENT_CREATION, TypeMapping, filter_none, validate_check,
-    EVENT_PART_COMMON_FIELDS, EVENT_PART_CREATION_FIELDS
+    EVENT_PART_COMMON_FIELDS, EVENT_PART_CREATION_MANDATORY_FIELDS
 )
 from cdedb.validationtypes import VALIDATOR_LOOKUP
 
@@ -641,7 +641,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @event_guard()
-    @REQUESTdatadict(*EVENT_PART_CREATION_FIELDS)
+    @REQUESTdatadict(*EVENT_PART_CREATION_MANDATORY_FIELDS)
     def add_part(self, rs: RequestState, event_id: int, data: CdEDBObject) -> Response:
         if self.eventproxy.has_registrations(rs, event_id):
             raise ValueError(n_("Registrations exist, no part creation possible."))

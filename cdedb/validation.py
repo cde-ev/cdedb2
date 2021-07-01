@@ -2207,7 +2207,7 @@ def _event(
     return Event(val)
 
 
-EVENT_PART_CREATION_FIELDS: TypeMapping = {
+EVENT_PART_CREATION_MANDATORY_FIELDS: TypeMapping = {
     'title': str,
     'shortname': str,
     'part_begin': datetime.date,
@@ -2216,9 +2216,13 @@ EVENT_PART_CREATION_FIELDS: TypeMapping = {
     'waitlist_field': Optional[ID],  # type: ignore
 }
 
+EVENT_PART_CREATION_OPTIONAL_FIELDS: TypeMapping = {
+    'tracks': Mapping
+}
+
 EVENT_PART_COMMON_FIELDS: TypeMapping = {
-    **EVENT_PART_CREATION_FIELDS,
-    'tracks': Mapping,
+    **EVENT_PART_CREATION_MANDATORY_FIELDS,
+    **EVENT_PART_CREATION_OPTIONAL_FIELDS
 }
 
 
@@ -2237,8 +2241,8 @@ def _event_part(
     optional_fields: TypeMapping
 
     if creation:
-        mandatory_fields = {**EVENT_PART_CREATION_FIELDS}
-        optional_fields = {}
+        mandatory_fields = {**EVENT_PART_CREATION_MANDATORY_FIELDS}
+        optional_fields = {**EVENT_PART_CREATION_OPTIONAL_FIELDS}
     else:
         mandatory_fields = {}
         optional_fields = {**EVENT_PART_COMMON_FIELDS}
