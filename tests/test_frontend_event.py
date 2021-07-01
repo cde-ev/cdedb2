@@ -1054,24 +1054,6 @@ etc;anything else""", f['entries_2'].value)
 
     @as_users("annika", "ferdinand")
     def test_create_event(self) -> None:
-        # Some helper to find dynamic ids
-        def find_event_id(url: str) -> int:
-            result = re.search(r'event/event/(\d+)', url)
-            assert result is not None
-            return int(result.group(1))
-
-        find_parts = lambda f: [int(m.group(1))
-                                for m in (re.match(r'delete_(\d+)', field)
-                                          for field in f.fields
-                                          if field is not None)
-                                if m]
-        find_tracks = lambda f: \
-            [int(m.group(1))
-             for m in (re.match(r'track_delete_\d+_(\d+)', field)
-                       for field in f.fields
-                       if field is not None)
-             if m]
-
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/list'},
                       {'href': '/event/event/create'})
@@ -1100,20 +1082,27 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Garcia")
 
         # Check creation of parts and no tracks
-        self.traverse({'href': '/event/event/{}/part/summary'
-                      .format(find_event_id(self.response.request.url))})
-        f = self.response.forms['partsummaryform']
-        parts = find_parts(f)
-        self.assertEqual(len(parts), 1)
-        self.assertEqual('2345-01-01', f["part_begin_{}".format(parts[0])].value)
-        self.assertEqual('2345-06-07', f["part_end_{}".format(parts[0])].value)
-        tracks = find_tracks(f)
-        self.assertEqual(len(tracks), 0)
+        self.traverse({'description': 'Veranstaltungsteile'})
+        self.assertPresence("Universale Akademie", div="part1001")
+        self.assertPresence('01.01.2345', div=f'part1001_begin', exact=True)
+        self.assertPresence('07.06.2345', div=f'part1001_end', exact=True)
+        self.assertNonPresence("", div="trackrow1001_1001", check_div=False)
+
+        # Check log
+        self.get('/event/event/log')
+        self.assertPresence("Veranstaltung erstellt",
+                            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
+        self.assertPresence("Orga hinzugefügt",
+                            div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
+        self.assertPresence("Orga hinzugefügt",
+                            div=str(self.EVENT_LOG_OFFSET + 3) + "-1003")
+        self.assertPresence("Veranstaltungsteil erstellt",
+                            div=str(self.EVENT_LOG_OFFSET + 4) + "-1004")
 
         # Create another event with course track and orga mailinglist
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/list'},
-                      {'href': '/event/event/create'})
+        self.traverse({'description': 'Veranstaltungen'},
+                      {'description': 'Alle Veranstaltungen'},
+                      {'description': 'Veranstaltung anlegen'})
         f = self.response.forms['createeventform']
         f['title'] = "Alternative Akademie"
         f['institution'] = 1
@@ -1137,11 +1126,60 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.assertTitle("Alternative Akademie")
         self.assertPresence("altaka@aka.cde-ev.de")
-        self.traverse({'href': '/event/event/{}/part/summary'
-                      .format(find_event_id(self.response.request.url))})
-        f = self.response.forms['partsummaryform']
-        tracks = find_tracks(f)
-        self.assertEqual(len(tracks), 1)
+
+        # Check creation of parts and no tracks
+        self.traverse({'description': 'Veranstaltungsteile'})
+        self.assertPresence("Alternative Akademie", div="part1002")
+        self.assertPresence("Alternative Akademie", div="trackrow1002_1001")
+        self.assertNonPresence("", div="trackrow1002_1002", check_div=False)
+
+        # Check event log
+        self.get('/event/event/log')
+        self.assertPresence("Veranstaltung erstellt",
+                            div=str(self.EVENT_LOG_OFFSET + 5) + "-1005")
+        self.assertPresence("Orga hinzugefügt",
+                            div=str(self.EVENT_LOG_OFFSET + 6) + "-1006")
+        self.assertPresence("Orga hinzugefügt",
+                            div=str(self.EVENT_LOG_OFFSET + 7) + "-1007")
+        self.assertPresence("Kursschiene hinzugefügt",
+                            div=str(self.EVENT_LOG_OFFSET + 8) + "-1008")
+        self.assertPresence("Veranstaltungsteil erstellt",
+                            div=str(self.EVENT_LOG_OFFSET + 9) + "-1009")
+
+        # Check mailinglist creation
+        # first the orga list
+        self.traverse({'description': 'Mailinglisten'},
+                      {'description': 'Alternative Akademie Orgateam'})
+        self.assertPresence("Anton", div="moderator-list")
+        self.assertPresence("Emilia", div="moderator-list")
+        self.traverse({'description': 'Konfiguration'})
+        f = self.response.forms['changelistform']
+        self.assertEqual('altaka', f['local_part'].value)
+        self.assertPresence("Orga (Opt-out)")
+        self.assertEqual('AltAka', f['subject_prefix'].value)
+
+        # then the participant list
+        self.traverse({'description': 'Mailinglisten'},
+                      {'description': 'Alternative Akademie Teilnehmer'})
+        self.assertPresence("Anton", div="moderator-list")
+        self.assertPresence("Emilia", div="moderator-list")
+        self.traverse({'description': 'Konfiguration'})
+        f = self.response.forms['changelistform']
+        self.assertEqual('altaka-all', f['local_part'].value)
+        self.assertPresence("Teilnehmer/Anmeldungen (Opt-out)")
+        # TODO check for correct registration part stati
+        self.assertEqual('AltAka', f['subject_prefix'].value)
+
+        # Check ml log
+        self.get('/ml/log')
+        self.assertPresence("Mailingliste erstellt", div="1-1001")
+        self.assertPresence("Alternative Akademie Orgateam", div="1-1001")
+        self.assertPresence("Moderator hinzugefügt", div="2-1002")
+        self.assertPresence("Moderator hinzugefügt", div="3-1003")
+        self.assertPresence("Mailingliste erstellt", div="4-1004")
+        self.assertPresence("Alternative Akademie Teilnehmer", div="4-1004")
+        self.assertPresence("Moderator hinzugefügt", div="5-1005")
+        self.assertPresence("Moderator hinzugefügt", div="6-1006")
 
     @as_users("annika", "garcia")
     def test_change_course(self) -> None:
@@ -3995,6 +4033,8 @@ etc;anything else""", f['entries_2'].value)
         self.logout()
         self.test_lodgements()
         self.logout()
+        # The log codes generated here are now checked inline. If this is true for all
+        # functions which are called here, this test should be zapped.
         self.test_create_event()
         self.logout()
         self.test_manage_attendees()
