@@ -705,9 +705,10 @@ class TestEventFrontend(FrontendTest):
         # Increase number of course choices of track 2 ("Kaffekränzchen")
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/part/summary'})
-        f = self.response.forms['partsummaryform']
-        f['track_num_choices_2_2'] = "2"
+                      {'href': '/event/event/1/part/summary'},
+                      {'href': '/event/event/1/part/2/change'})
+        f = self.response.forms['changepartform']
+        f['track_num_choices_2'] = "2"
         self.submit(f)
 
         # Change course choices as Orga
@@ -741,10 +742,11 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("Garcia")
 
         # Reduce number of course choices of track 1 ("Morgenkreis")
-        self.traverse({'href': '/event/event/1/part/summary'})
-        f = self.response.forms['partsummaryform']
-        f['track_num_choices_2_1'] = "3"
-        f['track_min_choices_2_1'] = "3"
+        self.traverse({'href': '/event/event/1/part/summary'},
+                      {'href': '/event/event/1/part/2/change'})
+        f = self.response.forms['changepartform']
+        f['track_num_choices_1'] = "3"
+        f['track_min_choices_1'] = "3"
         self.submit(f)
 
         # Check registration as Orga
