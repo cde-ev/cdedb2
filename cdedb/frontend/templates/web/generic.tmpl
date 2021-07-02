@@ -631,6 +631,7 @@
             <tbody>
             {% set primary_field = query.scope.get_primary_key() %}
             {% set QueryScope = enums['QueryScope'] %}
+            {% set ResultFormat = query_mod.QueryResultEntryFormat %}
             {% for row in result %}
                 {% set outerloopindex = loop.index0 %}
                 <tr class="ls-item" data-id="{{ row[primary_field] }}">
@@ -661,7 +662,7 @@
                                     {% set format_spec = query.get_field_format_spec(field) %}
                                     {% set text = choices.get(csvfield, {}).get(row.get(field),
                                                                                 row.get(field, "UNDEFINED")) %}
-                                    {% if format_spec == "persona" %}
+                                    {% if format_spec == ResultFormat.persona %}
                                         <span class="nowrap">
                                             {% if primary_field == "personas.id" %}
                                                 {{ row[field]|cdedbid }}
@@ -669,18 +670,18 @@
                                                 {{ util.href(show_user_link(user, row[field]), row[field]|cdedbid) }}
                                             {% endif %}
                                         </span>
-                                    {% elif format_spec == "username" %}
+                                    {% elif format_spec == ResultFormat.username %}
                                         {{ util.username_mailto(row) }}
-                                    {% elif format_spec == "date" %}
+                                    {% elif format_spec == ResultFormat.date %}
                                         {{ row.get(field, None)|date(lang=lang) }}
-                                    {% elif format_spec == "datetime" %}
+                                    {% elif format_spec == ResultFormat.datetime %}
                                         {{ row.get(field, None)|datetime(lang=lang) }}
-                                    {% elif format_spec == "bool" %}
+                                    {% elif format_spec == ResultFormat.bool %}
                                         {{ util.deko_checkbox(row.get(field, None), titles=(gettext('false'),
                                                                                             gettext('true'))) }}
-                                    {% elif format_spec == "course" and row[field] %}
+                                    {% elif format_spec == ResultFormat.event_course and row[field] %}
                                         {{ util.href(cdedblink("event/show_course", {'course_id': row[field]}), text) }}
-                                    {% elif format_spec == "lodgement" and row[field] %}
+                                    {% elif format_spec == ResultFormat.event_lodgement and row[field] %}
                                         {{ util.href(cdedblink("event/show_lodgement", {'lodgement_id': row[field]}), text) }}
                                     {% else %}
                                         {{ text }}

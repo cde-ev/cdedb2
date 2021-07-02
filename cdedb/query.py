@@ -498,6 +498,18 @@ _QUERY_SPECS[QueryScope.ml_user] = _QUERY_SPECS[QueryScope.persona]
 _QUERY_SPECS[QueryScope.assembly_user] = _QUERY_SPECS[QueryScope.persona]
 
 
+class QueryResultEntryFormat(enum.Enum):
+    """Simple enumeration to tell the template how to format a query result entry."""
+    other = -1
+    persona = 1
+    username = 2
+    event_course = 10
+    event_lodgement = 11
+    date = 20
+    datetime = 21
+    bool = 22
+
+
 class Query:
     """General purpose abstraction for an SQL query.
 
@@ -607,35 +619,37 @@ class Query:
         params['query_name'] = self.name
         return params
 
-    # TODO: Pre compile all patterns at top level.
-    # TODO: Use enum instead of strings?
-    def get_field_format_spec(self, field: str) -> str:
-        if self.spec[field] in {"date", "datetime", "bool"}:
-            return self.spec[field]
+    def get_field_format_spec(self, field: str) -> QueryResultEntryFormat:
+        if self.spec[field] == "date":
+            return QueryResultEntryFormat.date
+        if self.spec[field] == "datetime":
+            return QueryResultEntryFormat.datetime
+        if self.spec[field] == "bool":
+            return QueryResultEntryFormat.bool
         if self.scope == QueryScope.registration:
             if field == "persona.id":
-                return "persona"
+                return QueryResultEntryFormat.persona
             if field == "persona.username":
-                return "username"
+                return QueryResultEntryFormat.username
             if re.match(r"track\d+\.course_(id|instructor)", field):
-                return "course"
+                return QueryResultEntryFormat.event_course
             if re.match(r"course_choices\d+\.rank\d+", field):
-                return "course"
+                return QueryResultEntryFormat.event_course
             if re.match(r"part\d+\.lodgement_id", field):
-                return "lodgement"
+                return QueryResultEntryFormat.event_lodgement
         elif self.scope == QueryScope.event_course:
             if field == "course.course_id":
                 # TODO: This is already linked. Do we need this?
-                return "course"
+                return QueryResultEntryFormat.event_course
         elif self.scope == QueryScope.lodgement:
             if field == "lodgement.lodgement_id":
                 # TODO: This is already linked. Do we need this?
-                return "lodgement"
+                return QueryResultEntryFormat.event_lodgement
         elif field == "personas.id":
-            return "persona"
+            return QueryResultEntryFormat.persona
         elif field == "username":
-            return "username"
-        return ""
+            return QueryResultEntryFormat.username
+        return QueryResultEntryFormat.other
 
 
 def make_registration_query_spec(event: CdEDBObject) -> Dict[str, str]:
