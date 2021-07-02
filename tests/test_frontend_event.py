@@ -3724,28 +3724,46 @@ etc;anything else""", f['entries_2'].value)
 
     @as_users("ferdinand")
     def test_archive(self) -> None:
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'})
+        self.traverse("Veranstaltungen", "Große Testakademie 2222")
         self.assertTitle("Große Testakademie 2222")
+        #
         # prepare dates
-        self.traverse({'href': '/event/event/1/change'})
+        #
+        self.traverse("Konfiguration")
         f = self.response.forms["changeeventform"]
         f['registration_soft_limit'] = "2001-10-30 00:00:00+0000"
         f['registration_hard_limit'] = "2001-10-30 00:00:00+0000"
         self.submit(f)
         self.assertTitle("Große Testakademie 2222")
-        self.traverse({'href': '/event/event/1/part/summary'})
-        f = self.response.forms["partsummaryform"]
-        f['part_begin_1'] = "2003-02-02"
-        f['part_end_1'] = "2003-02-02"
-        f['part_begin_2'] = "2003-11-01"
-        f['part_end_2'] = "2003-11-11"
-        f['part_begin_3'] = "2003-11-11"
-        f['part_end_3'] = "2003-11-30"
+        self.traverse("Veranstaltungsteile")
+        self.assertTitle("Veranstaltungsteile konfigurieren (Große Testakademie 2222)")
+
+        # Warmup
+        self.traverse({"href": "/event/event/1/part/1/change"})
+        f = self.response.forms["changepartform"]
+        f['part_begin'] = "2003-02-02"
+        f['part_end'] = "2003-02-02"
         self.submit(f)
         self.assertTitle("Veranstaltungsteile konfigurieren (Große Testakademie 2222)")
+
+        # Erste Hälfte
+        self.traverse({"href": "/event/event/1/part/2/change"})
+        f = self.response.forms["changepartform"]
+        f['part_begin'] = "2003-11-01"
+        f['part_end'] = "2003-11-11"
+        self.submit(f)
+        self.assertTitle("Veranstaltungsteile konfigurieren (Große Testakademie 2222)")
+
+        # Zweite Hälfte
+        self.traverse({"href": "/event/event/1/part/3/change"})
+        f = self.response.forms["changepartform"]
+        f['part_begin'] = "2003-11-11"
+        f['part_end'] = "2003-11-30"
+        self.submit(f)
+        self.assertTitle("Veranstaltungsteile konfigurieren (Große Testakademie 2222)")
+
         # do it
-        self.traverse({'href': '/event/event/1/show'})
+        self.traverse("Übersicht")
         f = self.response.forms["archiveeventform"]
         f['ack_archive'].checked = True
         # checkbox to create a past event is checked by default
@@ -3754,9 +3772,13 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Diese Veranstaltung wurde archiviert.",
                             div="static-notifications")
         self.assertNotIn("archiveeventform", self.response.forms)
-        self.traverse({'href': '/cde/$'},
-                      {'href': '/cde/past/event/list'})
+        self.traverse("Mitglieder", "Verg. Veranstaltungen")
         self.assertPresence("Große Testakademie 2222 (Warmup)")
+
+        # check log
+        self.get("/event/event/1/log")
+        self.assertPresence("Veranstaltung archiviert")
+        # TODO check past event log
 
         # Check visibility but un-modifiability for participants
         self.logout()
@@ -3764,7 +3786,7 @@ etc;anything else""", f['entries_2'].value)
         self.get("/event/event/1/show")
         self.assertPresence("Diese Veranstaltung wurde archiviert.",
                             div="static-notifications")
-        self.traverse({'href': '/event/event/1/registration/status'})
+        self.traverse("Meine Anmeldung")
         self.assertNonPresence("Bearbeiten")
         self.get("/event/event/1/registration/amend")
         self.follow()
@@ -3773,25 +3795,26 @@ etc;anything else""", f['entries_2'].value)
 
     @as_users("anton")
     def test_archive_without_past_event(self) -> None:
-        self.traverse({'description': 'Veranstaltungen'},
-                      {'description': 'CdE-Party 2050'})
+        self.traverse("Veranstaltungen", "CdE-Party 2050")
         self.assertTitle("CdE-Party 2050")
 
         # prepare dates
-        self.traverse({'description': 'Konfiguration'})
+        self.traverse("Konfiguration")
         f = self.response.forms["changeeventform"]
         f['registration_start'] = "2000-10-30 00:00:00+0000"
         f['registration_soft_limit'] = "2001-10-30 00:00:00+0000"
         f['registration_hard_limit'] = "2001-10-30 00:00:00+0000"
         self.submit(f)
-        self.traverse({'description': 'Veranstaltungsteile'})
-        f = self.response.forms["partsummaryform"]
-        f['part_begin_4'] = "2003-02-02"
-        f['part_end_4'] = "2003-02-03"
+        self.traverse("Veranstaltungsteile")
+        # Party
+        self.traverse({"href": "/event/event/2/part/4/change"})
+        f = self.response.forms["changepartform"]
+        f['part_begin'] = "2003-02-02"
+        f['part_end'] = "2003-02-03"
         self.submit(f)
 
         # do it
-        self.traverse({'description': 'Übersicht'})
+        self.traverse(r"\sÜbersicht")
         f = self.response.forms["archiveeventform"]
         f['ack_archive'].checked = True
         f['create_past_event'].checked = False
@@ -3802,8 +3825,7 @@ etc;anything else""", f['entries_2'].value)
                             div="static-notifications")
 
         # check that there is no past event
-        self.traverse({'description': 'Mitglieder'},
-                      {'description': 'Verg.-Veranstaltungen'})
+        self.traverse("Mitglieder", "Verg.-Veranstaltungen")
         self.assertNonPresence("CdE-Party 2050")
 
     @as_users("anton")
@@ -3984,42 +4006,55 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
 
     @as_users("anton")
-    # @prepsql("UPDATE event.events SET registration_start = now() WHERE id = 2")
     def test_archived_participant(self) -> None:
-        self.get("/event/event/2/registration/add")
+        self.traverse("Veranstaltungen", "CdE-Party", "Anmeldungen",
+                      "Teilnehmer hinzufügen")
+        # add charly as participant with list consent
         f = self.response.forms["addregistrationform"]
         f["persona.persona_id"] = USER_DICT["charly"]["DB-ID"]
         f["part4.status"] = const.RegistrationPartStati.participant.value
         f["reg.list_consent"].checked = True
         self.submit(f)
-        self.traverse({"description": "Veranstaltungsteile"})
-        f = self.response.forms["partsummaryform"]
-        f["part_begin_4"] = now().date() - datetime.timedelta(days=1)
-        f["part_end_4"] = now().date() - datetime.timedelta(days=1)
+
+        # adjust dates
+        self.traverse("Veranstaltungsteile")
+        self.traverse({"href": "/event/event/2/part/4/change"})
+        f = self.response.forms["changepartform"]
+        f["part_begin"] = now().date() - datetime.timedelta(days=1)
+        f["part_end"] = now().date() - datetime.timedelta(days=1)
         self.submit(f)
-        self.traverse({"description": r"\sÜbersicht"})
+
+        # archive the event
+        self.traverse(r"\sÜbersicht")
         f = self.response.forms["archiveeventform"]
         f["ack_archive"].checked = True
-        self.submit(f, verbose=True)
+        self.submit(f)
         self.assertTitle("CdE-Party 2050")
         self.assertPresence("Charly")
+
         self.get("/event/event/2/registration/list")
         self.assertTitle("Teilnehmerliste CdE-Party 2050")
         self.assertPresence("Charly")
+
+        # archive charly
         self.admin_view_profile("charly")
         f = self.response.forms["archivepersonaform"]
         f["note"] = "For testing."
         f["ack_delete"].checked = True
         self.submit(f)
         self.assertPresence("CdE-Party 2050")
+
         self.get("/event/event/2/registration/list")
         self.assertTitle("Teilnehmerliste CdE-Party 2050")
         self.assertPresence("Charly")
+
+        # purge charly
         self.admin_view_profile("charly")
         f = self.response.forms["purgepersonaform"]
         f["ack_delete"].checked = True
         self.submit(f)
         self.assertNonPresence("CdE-Party 2050")
+
         self.get("/event/event/2/registration/list")
         self.assertTitle("Teilnehmerliste CdE-Party 2050")
         self.assertNonPresence("Charly")
