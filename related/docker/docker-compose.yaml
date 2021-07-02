@@ -18,7 +18,7 @@ services:
       dockerfile: ./related/docker/Dockerfile-cdedb
     volumes:
       - files:/var/lib/cdedb # attachments etc
-      - ../..:/cdedb2
+      - ../..:/cdedb2:z # the :z is for SELinux (see #2053)
     ports:
       - 5000:5000 # werkzeug server including interactive debugger
       - 8443:443 # apache
