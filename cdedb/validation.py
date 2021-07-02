@@ -234,6 +234,7 @@ def _examine_dictionary_fields(
     mandatory_fields: TypeMapping,
     optional_fields: TypeMapping = None,
     *,
+    argname: str = "",
     allow_superfluous: bool = False,
     **kwargs: Any,
 ) -> Dict[str, Any]:
@@ -251,6 +252,7 @@ def _examine_dictionary_fields(
     errs = ValidationSummary()
     retval: Dict[str, Any] = {}
     for key, value in adict.items():
+        error_name = argname + "." + key if argname else key
         if key in mandatory_fields:
             try:
                 v = _ALL_TYPED[mandatory_fields[key]](
@@ -266,12 +268,13 @@ def _examine_dictionary_fields(
             except ValidationSummary as e:
                 errs.extend(e)
         elif not allow_superfluous:
-            errs.append(KeyError(key, n_("Superfluous key found.")))
+            errs.append(KeyError(error_name, n_("Superfluous key found.")))
 
     missing_mandatory = set(mandatory_fields).difference(adict)
     if missing_mandatory:
         for key in missing_mandatory:
-            errs.append(KeyError(key, n_("Mandatory key missing.")))
+            error_name = argname + "." + key if argname else key
+            errs.append(KeyError(error_name, n_("Mandatory key missing.")))
 
     if errs:
         raise errs
@@ -2343,7 +2346,7 @@ def _event_field(
         optional_fields = _EVENT_FIELD_COMMON_FIELDS(extra_suffix)
 
     val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs)
+        val, mandatory_fields, optional_fields, argname=argname, **kwargs)
 
     entries_key = "entries{}".format(extra_suffix)
     kind_key = "kind{}".format(extra_suffix)
@@ -2813,6 +2816,83 @@ def _by_field_datatype(
     return ByFieldDatatype(val)
 
 
+def _questionnaire_row(
+    val: Any, field_definitions: CdEDBObjectMap, fee_modifier_fields: Set[int],
+    kind: const.QuestionnaireUsages, argname: str = "questionnaire_row", **kwargs: Any,
+) -> QuestionnaireRow:
+
+    argname_prefix = argname + "." if argname else ""
+    value = _mapping(val, argname, **kwargs)
+
+    mandatory_fields: TypeMapping = {
+        'title': Optional[str],  # type: ignore
+        'info': Optional[str],  # type: ignore
+        'input_size': Optional[int],  # type: ignore
+        'readonly': Optional[bool],  # type: ignore
+        'default_value': Optional[str],  # type: ignore
+    }
+    optional_fields = {
+        'field_id': Optional[ID],
+        'field_name': Optional[RestrictiveIdentifier],
+        'kind': const.QuestionnaireUsages,
+    }
+
+    value = _examine_dictionary_fields(
+        value, mandatory_fields, optional_fields, argname=argname, **kwargs)
+
+    errs = ValidationSummary()
+    if 'kind' in value:
+        if value['kind'] != kind:
+            msg = n_("Incorrect kind for this part of the questionnaire")
+            errs.append(ValueError(argname_prefix + 'kind', msg))
+    else:
+        value['kind'] = kind
+
+    fields_by_name = {f['field_name']: f for f in field_definitions.values()}
+    if value.get('field_name'):
+        if value.get('field_id') and value['field_id'] > 0:
+            msg = n_("Cannot specify both field id and field name.")
+            errs.append(ValueError(argname_prefix + 'field_id', msg))
+            errs.append(ValueError(argname_prefix + 'field_name', msg))
+        else:
+            if value['field_name'] not in fields_by_name:
+                errs.append(KeyError(
+                    argname_prefix + 'field_name',
+                    n_("No field with name '%(name)s' exists."),
+                    {"name": value['field_name']}))
+            else:
+                value['field_id'] = fields_by_name[value['field_name']]['id']
+    if 'field_name' in value:
+        del value['field_name']
+    if 'field_id' not in value:
+        value['field_id'] = None
+
+    if value['field_id'] and value['default_value']:
+        field = field_definitions.get(value['field_id'], None)
+        if not field:
+            raise ValidationSummary(
+                KeyError(argname_prefix + 'default_value',
+                         n_("Referenced field does not exist.")))
+
+        value['default_value'] = _by_field_datatype(
+            value['default_value'], "default_value",
+            kind=field.get('kind', FieldDatatypes.str), **kwargs)
+
+    field_id = value['field_id']
+    if field_id and field_id in fee_modifier_fields:
+        if not kind.allow_fee_modifier():
+            msg = n_("Inappropriate questionnaire usage for fee modifier field.")
+            errs.append(ValueError(argname_prefix + 'kind', msg))
+    if value['readonly'] and not k.allow_readonly():
+        msg = n_("Registration questionnaire rows may not be readonly.")
+        errs.append(ValueError(argname_prefix + 'readonly', msg))
+
+    if errs:
+        raise errs
+
+    return QuestionnaireRow(value)
+
+
 # TODO change parameter order to make more consistent?
 # TODO type fee_modifiers
 @_add_typed_validator
@@ -2827,7 +2907,8 @@ def _questionnaire(
     errs = ValidationSummary()
     ret: Dict[int, List[CdEDBObject]] = {}
     fee_modifier_fields = {e['field_id'] for e in fee_modifiers.values()}
-    for k, v in copy.deepcopy(val).items():
+    for i, (k, v) in enumerate(copy.deepcopy(val).items()):
+        row_argname = argname + f"[{k}][{i+1}]"
         try:
             k = _ALL_TYPED[const.QuestionnaireUsages](k, argname, **kwargs)
             v = _iterable(v, argname, **kwargs)
@@ -2835,68 +2916,20 @@ def _questionnaire(
             errs.extend(e)
         else:
             ret[k] = []
-            mandatory_fields: TypeMapping = {
-                'field_id': Optional[ID],  # type: ignore
-                'title': Optional[str],  # type: ignore
-                'info': Optional[str],  # type: ignore
-                'input_size': Optional[int],  # type: ignore
-                'readonly': Optional[bool],  # type: ignore
-                'default_value': Optional[str],  # type: ignore
-            }
-            optional_fields = {
-                'kind': const.QuestionnaireUsages,
-            }
             for value in v:
                 try:
-                    value = _mapping(value, argname, **kwargs)
+                    value = _questionnaire_row(
+                        value, field_definitions, fee_modifier_fields,
+                        kind=k, argname=row_argname, **kwargs)
                 except ValidationSummary as e:
                     errs.extend(e)
                     continue
-
-                try:
-                    value = _examine_dictionary_fields(
-                        value, mandatory_fields, optional_fields, **kwargs)
-                except ValidationSummary as e:
-                    errs.extend(e)
-                    continue
-
-                if 'kind' in value:
-                    if value['kind'] != k:
-                        msg = n_("Incorrect kind for this part of the questionnaire")
-                        errs.append(ValueError('kind', msg))
-                else:
-                    value['kind'] = k
-
-                if value['field_id'] and value['default_value']:
-                    field = field_definitions.get(value['field_id'], None)
-                    if not field:
-                        errs.append(KeyError('default_value', n_(
-                            "Referenced field does not exist.")))
-                        continue
-
-                    try:
-                        value['default_value'] = _by_field_datatype(
-                            value['default_value'], "default_value",
-                            kind=field.get('kind', FieldDatatypes.str), **kwargs)
-                    except ValidationSummary as e:
-                        errs.extend(e)
-
-                field_id = value['field_id']
-                if field_id and field_id in fee_modifier_fields:
-                    if not k.allow_fee_modifier():
-                        msg = n_("Inappropriate questionnaire usage for fee"
-                                 " modifier field.")
-                        errs.append(ValueError('kind', msg))
-                if value['readonly'] and not k.allow_readonly():
-                    msg = n_("Registration questionnaire rows may not be readonly.")
-                    errs.append(ValueError('readonly', msg))
                 ret[k].append(value)
 
     all_rows = itertools.chain.from_iterable(ret.values())
     for e1, e2 in itertools.combinations(all_rows, 2):
         if e1['field_id'] is not None and e1['field_id'] == e2['field_id']:
-            errs.append(ValueError('field_id', n_(
-                "Must not duplicate field.")))
+            errs.append(ValueError('field_id', n_("Must not duplicate field.")))
 
     if errs:
         raise errs
@@ -3427,6 +3460,74 @@ def _partial_registration_track(
         raise errs
 
     return PartialRegistrationTrack(val)
+
+
+@_add_typed_validator
+def _serialized_event_config_upload(
+    val: Any, field_definitions: CdEDBObjectMap, fee_modifiers: CdEDBObjectMap,
+    argname: str = "serialized_event_donfig_upload", **kwargs: Any,
+) -> SerializedEventConfigUpload:
+
+    val = _input_file(val, argname, **kwargs)
+    val = _json(val, argname, **kwargs)
+    return SerializedEventConfigUpload(_serialized_event_config(
+        val, field_definitions, fee_modifiers, argname, **kwargs))
+
+
+@_add_typed_validator
+def _serialized_event_config(
+    val: Any, field_definitions: CdEDBObjectMap, fee_modifiers: CdEDBObjectMap,
+    argname: str = "serialized_event_config", **kwargs: Any
+) -> SerializedEventConfig:
+
+    val = _mapping(val, argname, **kwargs)
+
+    optional_fields: TypeMapping = {
+        'fields': Mapping,
+        'questionnaire': Mapping,
+    }
+    val = _examine_dictionary_fields(val, {}, optional_fields, **kwargs)
+
+    errs = ValidationSummary()
+    field_definitions = copy.deepcopy(field_definitions)
+    fields_by_name = {f['field_name']: f for f in field_definitions.values()}
+    if 'fields' in val:
+        newfields = {}
+        for i, (field_name, field) in enumerate(val['fields'].items()):
+            field_argname = f"fields[{i+1}]"
+            try:
+                field = _mapping(field, field_argname, **kwargs)
+                field_name = _str(field_name, field_argname, **kwargs)
+            except ValidationSummary as e:
+                errs.extend(e)
+            else:
+                if field_name in fields_by_name:
+                    errs.append(KeyError(
+                        field_argname, n_("A field with this name already exists.")))
+                    continue
+                field = dict(field)
+                field['field_name'] = field_name
+                try:
+                    field = _ALL_TYPED[EventField](
+                        field, field_argname, creation=True, **kwargs)
+                except ValidationSummary as e:
+                    errs.extend(e)
+                else:
+                    newfields[-(i + 1)] = field
+        val['fields'] = newfields
+        field_definitions.update(newfields)
+
+    if 'questionnaire' in val:
+        try:
+            val['questionnaire'] = _questionnaire(
+                val['questionnaire'], field_definitions, fee_modifiers, **kwargs)
+        except ValidationSummary as e:
+            errs.extend(e)
+
+    if errs:
+        raise errs
+
+    return SerializedEventConfig(val)
 
 
 MAILINGLIST_COMMON_FIELDS: Mapping[str, Any] = {

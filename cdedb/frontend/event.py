@@ -2933,6 +2933,43 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard()
+    def config_import_form(self, rs: RequestState, event_id: int) -> Response:
+        return self.render(rs, "config_import")
+
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
+    @REQUESTfile("json_file")
+    @REQUESTdata("config_import_data", "token")
+    def config_import(self, rs: RequestState, event_id: int,
+                      json_file: Optional[werkzeug.datastructures.FileStorage],
+                      config_import_data: Optional[str], token: Optional[str],
+                      ) -> Response:
+        if config_import_data:
+            data = check(rs, vtypes.SerializedEventConfig,
+                         json.loads(config_import_data),
+                         field_definitions=rs.ambience['event']['fields'],
+                         fee_modifiers=rs.ambience['event']['fee_modifiers'])
+        else:
+            data = check(rs, vtypes.SerializedEventConfigUpload, json_file,
+                         field_definitions=rs.ambience['event']['fields'],
+                         fee_modifiers=rs.ambience['event']['fee_modifiers'])
+        if rs.has_validation_errors():
+            return self.config_import_form(rs, event_id)
+        assert data is not None
+
+        setter = {
+            'id': event_id,
+            'fields': data.get('fields', {}),
+        }
+        code = self.eventproxy.set_event(rs, setter)
+        code *= self.eventproxy.set_questionnaire(
+            rs, event_id, data.get('questionnaire', {}))
+
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "event/show_event")
+
+    @access("event")
+    @event_guard()
     def partial_import_form(self, rs: RequestState, event_id: int) -> Response:
         """First step of partial import process: Render form to upload file"""
         return self.render(rs, "partial_import")

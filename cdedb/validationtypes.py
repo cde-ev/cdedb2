@@ -89,13 +89,17 @@ RegistrationTrack = _NewType("RegistrationTrack", CdEDBObject)
 EventAssociatedFields = _NewType("EventAssociatedFields", CdEDBObject)
 LodgementGroup = _NewType("LodgementGroup", CdEDBObject)
 Lodgement = _NewType("Lodgement", CdEDBObject)
-Questionnaire = _NewType("Questionnaire", Dict[int, Any])  # TODO maybe cast keys to str
+QuestionnaireRow = _NewType("QuerstionnaireRow", CdEDBObject)
+Questionnaire = _NewType("Questionnaire", Dict[int, List[QuestionnaireRow]])  # TODO maybe cast keys to str
 
 SerializedEvent = _NewType("SerializedEvent", CdEDBObject)
 SerializedEventUpload = _NewType("SerializedEventUpload", SerializedEvent)
 SerializedPartialEvent = _NewType("SerializedPartialEvent", CdEDBObject)
 SerializedPartialEventUpload = _NewType(
     "SerializedPartialEventUpload", SerializedPartialEvent)
+SerializedEventConfig = _NewType("SerializedEventConfig", CdEDBObject)
+SerializedEventConfigUpload = _NewType(
+    "SerializedEventConfigUpload", SerializedEventConfig)
 
 PartialCourse = _NewType("PartialCourse", CdEDBObject)
 PartialLodgementGroup = _NewType("PartialLodgementGroup", CdEDBObject)
