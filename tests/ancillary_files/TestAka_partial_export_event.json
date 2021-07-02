@@ -6,7 +6,7 @@
     ],
     "kind": "partial",
     "id": 1,
-    "timestamp": "2020-07-22T20:05:26.150965+00:00",
+    "timestamp": "2021-07-02T01:22:41.390782+00:00",
     "courses": {
         "1": {
             "title": "Planetenretten f\u00fcr Anf\u00e4nger",
@@ -655,8 +655,15 @@
                 "part_begin": "2222-02-02",
                 "part_end": "2222-02-02",
                 "fee": "10.50",
+                "waitlist_field": null,
                 "tracks": {},
-                "waitlist_field": null
+                "fee_modifiers": {
+                    "1": {
+                        "modifier_name": "is_child",
+                        "amount": "-5.00",
+                        "field_id": 7
+                    }
+                }
             },
             "2": {
                 "title": "Erste H\u00e4lfte",
@@ -664,6 +671,7 @@
                 "part_begin": "2222-11-01",
                 "part_end": "2222-11-11",
                 "fee": "123.00",
+                "waitlist_field": null,
                 "tracks": {
                     "1": {
                         "title": "Morgenkreis (Erste H\u00e4lfte)",
@@ -680,7 +688,13 @@
                         "sortkey": 2
                     }
                 },
-                "waitlist_field": null
+                "fee_modifiers": {
+                    "2": {
+                        "modifier_name": "is_child",
+                        "amount": "-12.00",
+                        "field_id": 7
+                    }
+                }
             },
             "3": {
                 "title": "Zweite H\u00e4lfte",
@@ -688,6 +702,7 @@
                 "part_begin": "2222-11-11",
                 "part_end": "2222-11-30",
                 "fee": "450.99",
+                "waitlist_field": null,
                 "tracks": {
                     "3": {
                         "title": "Arbeitssitzung (Zweite H\u00e4lfte)",
@@ -697,24 +712,13 @@
                         "sortkey": 3
                     }
                 },
-                "waitlist_field": null
-            }
-        },
-        "fee_modifiers": {
-            "is_child1": {
-                "amount": "-5.00",
-                "part": "Wu",
-                "field": "is_child"
-            },
-            "is_child2": {
-                "amount": "-12.00",
-                "part": "1.H.",
-                "field": "is_child"
-            },
-            "is_child3": {
-                "amount": "-19.00",
-                "part": "2.H.",
-                "field": "is_child"
+                "fee_modifiers": {
+                    "3": {
+                        "modifier_name": "is_child",
+                        "amount": "-19.00",
+                        "field_id": 7
+                    }
+                }
             }
         },
         "fields": {
