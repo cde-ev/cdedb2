@@ -2324,7 +2324,7 @@ def _EVENT_FIELD_COMMON_FIELDS(extra_suffix: str) -> TypeMapping: return {
 
 @_add_typed_validator
 def _event_field(
-    val: Any, argname: str = "event_field", *,
+    val: Any, argname: str = "event_field", *, field_name: str = None,
     creation: bool = False, extra_suffix: str = "", **kwargs: Any
 ) -> EventField:
     """
@@ -2336,6 +2336,9 @@ def _event_field(
     val = _mapping(val, argname, **kwargs)
 
     field_name_key = "field_name{}".format(extra_suffix)
+    if field_name is not None:
+        val = dict(val)
+        val[field_name_key] = field_name
     if creation:
         spec = {**_EVENT_FIELD_COMMON_FIELDS(extra_suffix),
                 field_name_key: RestrictiveIdentifier}
@@ -3496,7 +3499,6 @@ def _serialized_event_config(
         for i, (field_name, field) in enumerate(val['fields'].items()):
             field_argname = f"fields[{i+1}]"
             try:
-                field = _mapping(field, field_argname, **kwargs)
                 field_name = _str(field_name, field_argname, **kwargs)
             except ValidationSummary as e:
                 errs.extend(e)
@@ -3505,11 +3507,10 @@ def _serialized_event_config(
                     errs.append(KeyError(
                         field_argname, n_("A field with this name already exists.")))
                     continue
-                field = dict(field)
-                field['field_name'] = field_name
                 try:
                     field = _ALL_TYPED[EventField](
-                        field, field_argname, creation=True, **kwargs)
+                        field, field_argname, creation=True, field_name=field_name,
+                        **kwargs)
                 except ValidationSummary as e:
                     errs.extend(e)
                 else:
