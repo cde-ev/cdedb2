@@ -3606,33 +3606,55 @@ etc;anything else""", f['entries_2'].value)
 
     @as_users("annika")
     def test_delete_event(self) -> None:
-        self.traverse({'href': '/event'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/part/summary'})
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Veranstaltungsteile")
         self.assertTitle("Veranstaltungsteile konfigurieren (Große Testakademie 2222)")
-        f = self.response.forms['partsummaryform']
-        past_past_date = now().date() - datetime.timedelta(days=2)
-        f['part_begin_1'] = past_past_date
-        f['part_begin_2'] = past_past_date
-        f['part_begin_3'] = past_past_date
         past_date = now().date() - datetime.timedelta(days=1)
-        f['part_end_1'] = past_date
-        f['part_end_2'] = past_date
-        f['part_end_3'] = past_date
+        past_past_date = now().date() - datetime.timedelta(days=2)
+
+        # Warmup
+        self.traverse({"href": "/event/event/1/part/1/change"})
+        f = self.response.forms['changepartform']
+        f['part_begin'] = past_past_date
+        f['part_end'] = past_date
         self.submit(f)
 
-        self.traverse({'href': '/event/event/1/show'})
+        # Erste Hälfte
+        self.traverse({"href": "/event/event/1/part/2/change"})
+        f = self.response.forms['changepartform']
+        f['part_begin'] = past_past_date
+        f['part_end'] = past_date
+        self.submit(f)
+
+        # Zweite Hälfte
+        self.traverse({"href": "/event/event/1/part/3/change"})
+        f = self.response.forms['changepartform']
+        f['part_begin'] = past_past_date
+        f['part_end'] = past_date
+        self.submit(f)
+
+        # Check that there are logs for this event
+        self.get("/event/event/log")
+        self.assertPresence("Veranstaltungsteil geändert",
+                            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
+        self.assertPresence("Große Testakademie 2222",
+                            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
+
+        # Delete the event
+        self.traverse("Veranstaltungen", "Große Testakademie 2222")
         f = self.response.forms['deleteeventform']
         f['ack_delete'].checked = True
         self.submit(f)
         self.assertTitle("Veranstaltungen")
         self.assertNonPresence("Testakademie")
-        self.logout()
+
+        # Check that all old logs are deleted and there is only a deletion log entry
+        self.get("/event/event/log")
+        self.assertPresence("Veranstaltung gelöscht", div="1-1007")
 
         # since annika is no member, she can not access the past events
+        self.logout()
         self.login(USER_DICT['berta'])
-        self.traverse({'href': '/cde'},
-                      {'href': '/cde/past/event/list'})
+        self.traverse("Mitglieder", "Verg. Veranstaltungen")
         self.assertTitle("Vergangene Veranstaltungen")
         self.assertNonPresence("Testakademie")
 
