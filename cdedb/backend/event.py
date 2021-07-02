@@ -970,6 +970,11 @@ class EventBackend(AbstractBackend):
                     if 'tracks' in ret[anid]['parts'][part_id]:
                         raise RuntimeError()
                     ret[anid]['parts'][part_id]['tracks'] = tracks
+                    fee_modifiers = {d['id']: d for d in fee_modifier_data
+                                     if d['part_id'] == part_id}
+                    if 'fee_modifiers' in ret[anid]['parts'][part_id]:
+                        raise RuntimeError()
+                    ret[anid]['parts'][part_id]['fee_modifiers'] = fee_modifiers
                 ret[anid]['tracks'] = {d['id']: d for d in track_data
                                        if d['part_id'] in ret[anid]['parts']}
                 ret[anid]['fee_modifiers'] = {
