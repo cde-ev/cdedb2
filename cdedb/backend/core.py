@@ -739,12 +739,14 @@ class CoreBackend(AbstractBackend):
                 and "purge" not in allow_specials):
             raise RuntimeError(n_("Editing archived member impossible."))
 
-        ret = self.changelog_submit_change(
-            rs, data, generation=generation,
-            may_wait=may_wait, change_note=change_note,
-            force_review=force_review)
-        if allow_specials and ret < 0:
-            raise RuntimeError(n_("Special change not committed."))
+        # This Atomizer is here to have a rollback in case of RuntimeError below.
+        with Atomizer(rs):
+            ret = self.changelog_submit_change(
+                rs, data, generation=generation,
+                may_wait=may_wait, change_note=change_note,
+                force_review=force_review)
+            if allow_specials and ret < 0:
+                raise RuntimeError(n_("Special change not committed."))
         return ret
 
     @access("persona")
@@ -2262,15 +2264,17 @@ class CoreBackend(AbstractBackend):
 
         The cookie depends on the inputs as well as a server side secret.
         """
-        if not self.is_admin(rs) and "meta_admin" not in rs.user.roles:
-            roles = self.get_roles_single(rs, persona_id)
-            if any("admin" in role for role in roles):
-                raise PrivilegeError(n_("Preventing reset of admin."))
         password_hash = unwrap(self.sql_select_one(
             rs, "core.personas", ("password_hash",), persona_id))
         if password_hash is None:
             # A personas password hash cannot be empty.
             raise ValueError(n_("Persona does not exist."))
+
+        if not self.is_admin(rs) and "meta_admin" not in rs.user.roles:
+            roles = self.get_roles_single(rs, persona_id)
+            if any("admin" in role for role in roles):
+                raise PrivilegeError(n_("Preventing reset of admin."))
+
         # This defines a specific account/password combination as purpose
         cookie = encode_parameter(
             salt, str(persona_id), password_hash,
