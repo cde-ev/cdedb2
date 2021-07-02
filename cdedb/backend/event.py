@@ -1608,7 +1608,8 @@ class EventBackend(AbstractBackend):
                 assert updated_field is not None
                 updated_field['id'] = x
                 updated_field['event_id'] = event_id
-                if any(updated_field[k] != current_field_data[x][k] for k in updated_field):
+                current = current_field_data[x]
+                if any(updated_field[k] != current[k] for k in updated_field):
                     if x in fee_modifier_fields:
                         raise ValueError(n_("Cannot change field that is "
                                             "associated with a fee modifier."))

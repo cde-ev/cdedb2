@@ -2356,8 +2356,8 @@ def _event_field(
         val[entries_key] = None
     if entries_key in val and val[entries_key] is not None:
         if isinstance(val[entries_key], str):
-            val[entries_key] = tuple(tuple(y.strip() for y in x.split(';', 1))
-                                     for x in val[entries_key].split('\n'))
+            val[entries_key] = list(list(y.strip() for y in x.split(';', 1))
+                                    for x in val[entries_key].split('\n'))
         try:
             oldentries = _iterable(val[entries_key], entries_key, **kwargs)
         except ValidationSummary as e:
@@ -2386,7 +2386,7 @@ def _event_field(
                             errs.append(ValueError(
                                 entries_key, n_("Duplicate value.")))
                         else:
-                            entries.append((value, description))
+                            entries.append([value, description])
                             seen_values.add(value)
             val[entries_key] = entries
 
