@@ -144,8 +144,8 @@ class CoreBackend(AbstractBackend):
             "title", "username", "display_name", "given_names",
             "family_name", "birth_name", "name_supplement", "birthday",
             "telephone", "mobile", "address_supplement", "address",
-            "postal_code", "location", "country", "address_supplement2",
-            "address2", "postal_code2", "location2", "country2", "weblink",
+            "postal_code", "location", "address_supplement2",
+            "address2", "postal_code2", "location2", "weblink",
             "specialisation", "affiliation", "timeline", "interests",
             "free_form")
         values = (str(persona[a]) for a in attributes if persona[a] is not None)

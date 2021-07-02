@@ -18,7 +18,7 @@ import string
 import tempfile
 import time
 from collections import OrderedDict, defaultdict
-from typing import Collection, Dict, List, Optional, Sequence, Set, Tuple, cast
+from typing import Any, Collection, Dict, List, Optional, Sequence, Set, Tuple, cast
 
 import dateutil.easter
 import psycopg2.extensions
@@ -336,13 +336,18 @@ class CdEFrontend(AbstractUserFrontend):
                     ) -> Response:
         """Perform search."""
         events = self.pasteventproxy.list_past_events(rs)
-        choices = {
+        courses = self.pasteventproxy.list_past_courses(rs)
+        choices: Dict[str, OrderedDict[Any, str]] = {
             'pevent_id': OrderedDict(
                 xsorted(events.items(), key=operator.itemgetter(1))),
+            'pcourse_id': OrderedDict(
+                xsorted(courses.items(), key=operator.itemgetter(1))),
             'gender': OrderedDict(
                 enum_entries_filter(
                     const.Genders,
-                    rs.gettext if download is None else rs.default_gettext))
+                    rs.gettext if download is None else rs.default_gettext)),
+            'country': OrderedDict(self.get_localized_country_codes(rs)),
+            'country2': OrderedDict(self.get_localized_country_codes(rs)),
         }
         return self.generic_user_search(
             rs, download, is_search, QueryScope.cde_user, QueryScope.cde_user,

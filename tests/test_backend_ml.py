@@ -637,6 +637,11 @@ class TestMlBackend(BackendTest):
                          state=SS.unsubscription_override, kind="info")
         self._change_sub(self.user['id'], mailinglist_id, SA.remove_subscriber,
                          state=SS.unsubscription_override, kind="info")
+        # transition between non-core states are forbidden
+        self._change_sub(self.user['id'], mailinglist_id, SA.add_subscription_override,
+                         state=SS.unsubscription_override, kind="error")
+        self._change_sub(self.user['id'], mailinglist_id, SA.remove_unsubscription_override,
+                         state=SS.unsubscribed)
         self._change_sub(self.user['id'], mailinglist_id, SA.add_subscription_override,
                          state=SS.subscription_override)
         self._change_sub(self.user['id'], mailinglist_id, SA.remove_subscriber,
@@ -1056,21 +1061,21 @@ class TestMlBackend(BackendTest):
         with self.assertRaises(SubscriptionError) as cm:
             self.ml.do_subscription_action(
                 self.key, SA.remove_subscriber, mailinglist_id=2, persona_id=6)
-        self.assertIn("User already unsubscribed.", cm.exception.args)
+        self.assertIn("subman_managing_is-unsubscribed", cm.exception.args)
         self._check_state(
             mailinglist_id=2, persona_id=6, expected_state=SS.unsubscribed)
 
         with self.assertRaises(SubscriptionError) as cm:
             self.ml.do_subscription_action(
                 self.key, SA.remove_subscriber, mailinglist_id=3, persona_id=2)
-        self.assertIn("User already unsubscribed.", cm.exception.args)
+        self.assertIn("subman_managing_is-unsubscribed", cm.exception.args)
         self._check_state(
             mailinglist_id=3, persona_id=2, expected_state=SS.unsubscribed)
 
         with self.assertRaises(SubscriptionError) as cm:
             self.ml.do_subscription_action(
                 self.key, SA.remove_subscriber, mailinglist_id=3, persona_id=3)
-        self.assertIn("User already unsubscribed.", cm.exception.args)
+        self.assertIn("subman_managing_is-unsubscribed", cm.exception.args)
         self._check_state(
             mailinglist_id=3, persona_id=3, expected_state=SS.none)
 

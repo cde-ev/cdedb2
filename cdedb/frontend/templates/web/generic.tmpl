@@ -78,12 +78,14 @@
     </script>
 {% endmacro %}
 
-{% macro user_search(realm, info="") %}
+{% macro user_search(realm, info="", archived=False) %}
     <div class="row">
         <div class="col-md-4">
             <div class="p button-par">
-                {{ util.href(cdedblink("{}/create_user_form".format(realm)), gettext("Create User"),
-                        icon="plus", aclass="btn btn-success btn-sm") }}
+                {% if not archived %}
+                    {{ util.href(cdedblink("{}/create_user_form".format(realm)), gettext("Create User"),
+                            icon="plus", aclass="btn btn-success btn-sm") }}
+                {% endif %}
                 {% if realm == 'cde' %}
                     {{ util.href(cdedblink('cde/batch_admission'), gettext("Batch Admission"), icon="file-import",
                              aclass="btn btn-default btn-sm") }}
@@ -94,31 +96,15 @@
             {% endif %}
         </div>
         <div class="col-md-8">
-            {{ place_default_queries("{}/user_search".format(realm), default_queries) }}
-        </div>
-    </div>
-
-    {{ user_search_mask(realm, archived=False, selection_blacklist=("pevent_id",)) }}
-
-    {% if values['is_search'] %}
-        <h3 id="query-results">{% trans %}Result{% endtrans %} [{{ result|length }}]</h3>
-        {{ user_search_result(result) }}
-    {% endif %}
-{% endmacro %}
-
-{% macro archived_user_search(realm, info="") %}
-    <div class="row">
-        <div class="col-md-4">
-            {% if info %}
-                <p class="text-muted">{{ util.make_icon('info-circle') }} {{ info }}</p>
+            {% if archived %}
+                {{ place_default_queries("{}/archived_user_search".format(realm), default_queries) }}
+            {% else %}
+                {{ place_default_queries("{}/user_search".format(realm), default_queries) }}
             {% endif %}
         </div>
-        <div class="col-md-8">
-            {{ place_default_queries("{}/archived_user_search".format(realm), default_queries) }}
-        </div>
     </div>
 
-    {{ user_search_mask(realm, archived=True, selection_blacklist=("pevent_id",)) }}
+    {{ user_search_mask(realm, archived=archived, selection_blacklist=("pevent_id",)) }}
 
     {% if values['is_search'] %}
         <h3 id="query-results">{% trans %}Result{% endtrans %} [{{ result|length }}]</h3>
@@ -188,10 +174,8 @@
 
             {% if archived %}
                 {% set target=cdedblink('{}/archived_user_search'.format(realm)) %}
-                {% set scope=enums['QueryScope'].archived_persona %}
             {% else %}
                 {% set target=cdedblink('{}/user_search'.format(realm)) %}
-                {% set scope=enums['QueryScope'].persona %}
             {% endif %}
             {{ format_query(scope, spec, TITLES, choices,
                             target + '#query-results', selection_blacklist=selection_blacklist,
@@ -439,15 +423,38 @@
                     </div>
                 </div>
 
-                <p class="pull-right nosp">
-                    {{ util.input_submit(label=gettext("Search"), icon="search") }}
-                    <span class="btn-group">
-                        {{ util.input_submit(label=gettext("CSV file"), value="csv", name="download", icon="download",
-                            aclass="btn btn-default") }}
-                        {{ util.input_submit(label=gettext("JSON file"), value="json", name="download", icon="download",
-                            aclass="btn btn-default") }}
-                    </span>
-                </p>
+                <div class="row">
+                    <div class="col-sm-6">
+                        <h4 class="filter-title">
+                            {{ util.make_icon('search') }} {% trans %}Search{% endtrans %}</h4>
+                        <div class="">
+                            {{ util.input_submit(label=gettext("Search"), icon="search") }}
+                            <div class="btn-group">
+                                {{ util.input_submit(label=gettext("CSV file"), value="csv", name="download", icon="download",
+                                    aclass="btn btn-default") }}
+                                {{ util.input_submit(label=gettext("JSON file"), value="json", name="download", icon="download",
+                                    aclass="btn btn-default") }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        {% if scope.supports_storing() %}
+                            <h4 class="filter-title">
+                                {{ util.make_icon('far fa-bookmark') }} {% trans %}Store query{% endtrans %}</h4>
+                            <div class="input-group">
+                                {{ util.input_text("query_name", placeholder=gettext("query name")) }}
+                                {{ util.input_hidden("query_scope", scope) }}
+                                <div class="input-group-btn">
+                                    {{ util.input_submit(gettext("Save"), name="store_query", formmethod="POST",
+                                        value=encode_anti_csrf("event/store_event_query", "store_query",
+                                                               persona_id=user.persona_id),
+                                        formaction=cdedblink("event/store_event_query"),
+                                        icon="far fa-bookmark", aclass="btn btn-primary") }}
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
                 {{ util.output_errors('query', wrapper=True) }}
                 <script nonce="{{ csp_nonce }}">
                     {
@@ -495,16 +502,26 @@
 
 {% macro place_default_queries(target, queries) %}
     {% if queries %}
-        {% call util.bootstrap_panel(title=gettext("Default Queries")) %}
+        {% call util.bootstrap_panel(title=gettext("Default Queries"), anid="default_queries_container") %}
             <div class="row">
                 {% for list in queries | sort | slice(2) %}
                 <div class="col-sm-6">
                     <ul>
                         {% for query_name in list %}
-                            {% with query = queries[query_name] %}<li>
-                                {{ util.href(cdedblink(target, query.serialize()) + '#query-results',
-                                        query.name if query.name else gettext(query_name), aclass="default-query") }}
-                            </li>{% endwith %}
+                            {% with query = queries[query_name] -%}
+                                <li>
+                                    {{ util.href(cdedblink(target, query.serialize()) + '#query-results',
+                                            query.name if query.name else gettext(query_name), aclass="default-query") }}
+                                    {% if query.query_id %}
+                                        <form action="{{ cdedblink('event/delete_event_query') }}" method="post" class="display-inline" id="deletequeryform{{ query.query_id }}">
+                                            {{ util.anti_csrf_token('event/delete_event_query') }}
+                                            {{ util.input_hidden("query_id", value=query.query_id) }}
+                                            {{ util.input_hidden("query_scope", value=query.scope) }}
+                                            {{ util.input_submit(label="", aclass='btn btn-xs btn-danger', icon="trash-alt", title=gettext('Delete query')) }}
+                                        </form>
+                                    {% endif %}
+                                </li>
+                            {%- endwith %}
                         {% endfor %}
                     </ul>
                 </div>
@@ -645,7 +662,7 @@
                                             or (query.scope == QueryScope.persona and field == "id") %}
                                         <span class="nowrap">{{ row[field]|cdedbid }}</span>
                                     {% elif field == "persona.username" %}
-                                        {{ util.username_mailto(row, "persona.") }}
+                                        {{ util.username_mailto(row, prefix="persona.") }}
                                     {% elif field == "username" %}
                                         {{ util.username_mailto(row) }}
                                     {% elif query.spec[csvfield] == "date" %}
@@ -654,7 +671,7 @@
                                         {{ row.get(field, None)|datetime(lang=lang) }}
                                     {% elif query.spec[csvfield] == "bool" %}
                                         {{ util.deko_checkbox(row.get(field, None), titles=(gettext('false'),
-                                                                                             gettext('true'))) }}
+                                                                                            gettext('true'))) }}
                                     {% else %}
                                         {{ choices.get(csvfield, {}).get(row.get(field),
                                                                          row.get(field, "UNDEFINED")) }}

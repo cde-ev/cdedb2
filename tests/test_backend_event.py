@@ -384,12 +384,31 @@ class TestEventBackend(BackendTest):
         new_reg_id = self.event.create_registration(self.key, new_reg)
         self.assertLess(0, new_reg_id)
 
+        scope = QueryScope.registration
+        query = Query(scope, scope.get_spec(event=data),
+                      ['reg.notes'], [('reg.notes', QueryOperators.nonempty, None)],
+                      [('reg.notes', True)], name="test_query")
+        self.assertTrue(self.event.store_event_query(self.key, new_id, query))
+        self.assertEqual(
+            self.event.get_event_queries(self.key, new_id)["test_query"].serialize(),
+            query.serialize())
+        self.assertEqual(
+            self.event.get_event_queries(
+                self.key, new_id, scopes={QueryScope.registration}
+            )["test_query"].serialize(),
+            query.serialize())
+        self.assertEqual(
+            self.event.get_event_queries(
+                self.key, new_id, scopes={QueryScope.persona}),
+            {}
+        )
+
         self.login(USER_DICT["annika"])
         self.assertLess(0, self.event.delete_event(
             self.key, new_id,
             ("event_parts", "course_tracks", "field_definitions", "courses",
-             "orgas", "lodgement_groups", "lodgements", "registrations",
-             "questionnaire", "log", "mailinglists", "fee_modifiers")))
+             "orgas", "lodgement_groups", "lodgements", "registrations", "log",
+             "questionnaire", "stored_queries", "mailinglists", "fee_modifiers")))
 
     @storage
     @as_users("annika", "garcia")
@@ -520,6 +539,7 @@ class TestEventBackend(BackendTest):
 
     @as_users("anton")
     def test_event_field_double_link(self) -> None:
+        event_id = 1
         questionnaire = {
             const.QuestionnaireUsages.additional:
                 [
@@ -542,13 +562,19 @@ class TestEventBackend(BackendTest):
                 ],
         }
         with self.assertRaises(ValueError) as cm:
-            self.event.set_questionnaire(self.key, 1, questionnaire)
+            self.event.set_questionnaire(self.key, event_id, questionnaire)
         self.assertIn("Must not duplicate field. (field_id)", cm.exception.args)
 
-        old_event = self.event.get_event(self.key, 1)
-        self.event.set_questionnaire(self.key, old_event['id'], None)
+        # Event mustn't have registrations to alter fee modifiers.
+        reg_ids = self.event.list_registrations(self.key, event_id)
+        for reg_id in reg_ids:
+            self.event.delete_registration(
+                self.key, reg_id,
+                cascade=self.event.delete_registration_blockers(self.key, reg_id))
+        old_event = self.event.get_event(self.key, event_id)
+        self.event.set_questionnaire(self.key, event_id, None)
         data = {
-            'id': old_event['id'],
+            'id': event_id,
             'fee_modifiers':
                 {
                     anid: None
@@ -558,7 +584,7 @@ class TestEventBackend(BackendTest):
         self.event.set_event(self.key, data)
 
         data = {
-            'id': old_event['id'],
+            'id': event_id,
             'fee_modifiers': {
                 -1: {
                     'field_id': 7,
@@ -1933,6 +1959,126 @@ class TestEventBackend(BackendTest):
         )
         self.assertEqual(expectation, result)
 
+    @as_users("garcia")
+    def test_store_event_query(self) -> None:
+        event_id = 1
+        event = self.event.get_event(self.key, event_id)
+        # Try storing valid queries.
+        expectation = {}
+        query = Query(
+            QueryScope.registration, QueryScope.registration.get_spec(event=event),
+            fields_of_interest=["persona.family_name", "reg.payment",
+                                "ctime.creation_time", "part1.status", "course2.title",
+                                "lodgement3.title", "reg_fields.xfield_brings_balls",
+                                ],
+            constraints=[],
+            order=[],
+            name="My registration query :)",
+        )
+        query.query_id = self.event.store_event_query(self.key, event_id, query)
+        expectation[query.name] = query
+        query = Query(
+            QueryScope.lodgement, QueryScope.lodgement.get_spec(event=event),
+            fields_of_interest=["lodgement.title", "lodgement_group.title",
+                                "part1.total_inhabitants",
+                                "lodgement_fields.xfield_contamination"],
+            constraints=[],
+            order=[],
+            name="Lodgement Query with funny symbol: 🏠",
+        )
+        query.query_id = self.event.store_event_query(self.key, event_id, query)
+        expectation[query.name] = query
+        query = Query(
+            QueryScope.event_course, QueryScope.event_course.get_spec(event=event),
+            fields_of_interest=["course.title", "track1.is_offered",
+                                "course_fields.xfield_room",
+                                ],
+            constraints=[],
+            order=[],
+            name="custom_course_query",
+        )
+        query.query_id = self.event.store_event_query(self.key, event_id, query)
+        expectation[query.name] = query
+
+        result = self.event.get_event_queries(self.key, event_id)
+        for name, query in result.items():
+            if name != "Test-Query":
+                self.assertIn(name, expectation)
+                q = expectation[name]
+                self.assertEqual(set(q.fields_of_interest), set(query.fields_of_interest))
+                self.assertEqual(set(q.constraints), set(query.constraints))
+                self.assertEqual(set(q.order), set(query.order))
+                self.assertEqual(q.query_id, query.query_id)
+            assert query.query_id is not None
+            self.assertTrue(self.event.delete_event_query(self.key, query.query_id))
+        self.assertEqual({}, self.event.get_event_queries(self.key, event_id))
+
+        # Now try some invalid things.
+        query = Query(
+            None, {},  # type: ignore[arg-type]
+            fields_of_interest=[],
+            constraints=[],
+            order=[],
+            name="",
+        )
+        with self.assertRaises(ValueError) as cm:
+            self.event.store_event_query(self.key, event_id, query)
+        self.assertIn("Invalid input for the enumeration %(enum)s (scope)",
+                      cm.exception.args)
+        query.scope = QueryScope.persona
+        with self.assertRaises(ValueError) as cm:
+            self.event.store_event_query(self.key, event_id, query)
+        self.assertIn("Must not be empty. (fields_of_interest)", cm.exception.args)
+        query.fields_of_interest = ["persona.id"]
+        with self.assertRaises(ValueError) as cm:
+            self.event.store_event_query(self.key, event_id, query)
+        self.assertIn("Cannot store this kind of query.", cm.exception.args)
+        query.scope = QueryScope.registration
+        self.assertFalse(self.event.store_event_query(self.key, event_id, query))
+        query.name = "test"
+        self.assertTrue(self.event.store_event_query(self.key, event_id, query))
+
+        # Store a query using a custom datafield using a datatype specific comparison.
+        field_data = {
+            "field_name": "foo",
+            "kind": const.FieldDatatypes.str,
+            "association": const.FieldAssociations.registration,
+            "entries": None,
+        }
+        event_data = {
+            "id": event_id,
+            "fields": {
+                -1: field_data,
+            },
+        }
+        self.event.set_event(self.key, event_data)
+        event = self.event.get_event(self.key, event_id)
+        query = Query(
+            QueryScope.registration, QueryScope.registration.get_spec(event=event),
+            ["reg_fields.xfield_foo"],
+            [("reg_fields.xfield_foo", QueryOperators.equal, "foo")],
+            [],
+            name="foo_string"
+        )
+        self.assertTrue(self.event.store_event_query(self.key, event_id, query))
+        self.assertIn(query.name, self.event.get_event_queries(self.key, event_id))
+
+        # Now change the datatype of that field.
+        field_data["kind"] = const.FieldDatatypes.date
+        del field_data["field_name"]
+        event_data["fields"] = {1001: field_data}
+        self.event.set_event(self.key, event_data)
+
+        # The query can no longer be retrieved.
+        self.assertNotIn(query.name, self.event.get_event_queries(self.key, event_id))
+
+        # Change the field back.
+        field_data["kind"] = const.FieldDatatypes.str
+        self.event.set_event(self.key, event_data)
+
+        # The query is valid again.
+        self.assertIn(query.name, self.event.get_event_queries(self.key, event_id))
+
     @as_users("annika", "garcia")
     def test_lock_event(self) -> None:
         self.assertTrue(self.event.lock_event(self.key, 1))
@@ -2895,9 +3041,10 @@ class TestEventBackend(BackendTest):
         self.assertEqual(reg['parts'][3]['status'],
                          const.RegistrationPartStati.rejected)
 
-    @as_users("garcia")
+    @as_users("berta")
     def test_uniqueness(self) -> None:
-        event_id = 1
+        event_id = 2
+        part_id = 4
         unique_name = 'unique_name'
         data = {
             'id': event_id,
@@ -2934,7 +3081,7 @@ class TestEventBackend(BackendTest):
                     'amount': decimal.Decimal("1.00"),
                     'field_id': 1001,
                     'modifier_name': unique_name,
-                    'part_id': 1,
+                    'part_id': part_id,
                 },
             },
         }
@@ -2946,7 +3093,7 @@ class TestEventBackend(BackendTest):
                     'amount': decimal.Decimal("1.00"),
                     'field_id': 1001,
                     'modifier_name': unique_name + "2",
-                    'part_id': 1,
+                    'part_id': part_id,
                 },
             },
         }
@@ -2960,7 +3107,7 @@ class TestEventBackend(BackendTest):
                     'amount': decimal.Decimal("1.00"),
                     'field_id': 1003,
                     'modifier_name': unique_name,
-                    'part_id': 1,
+                    'part_id': part_id,
                 },
             },
         }
@@ -2974,7 +3121,7 @@ class TestEventBackend(BackendTest):
                     'amount': decimal.Decimal("1.00"),
                     'field_id': 1003,
                     'modifier_name': unique_name + "2",
-                    'part_id': 1,
+                    'part_id': part_id,
                 },
             },
         }
@@ -2982,30 +3129,38 @@ class TestEventBackend(BackendTest):
 
     @as_users("annika")
     def test_fee_modifiers(self) -> None:
-        event_id = 1
-        field_name = 'is_child'
+        event_id = 2
         event = self.event.get_event(self.key, event_id)
-        self.assertEqual(event['fields'][7]['field_name'], field_name)
-        data = {
+        field_data = {
             'id': event_id,
             'fields': {
-                5: {
-                    'kind': const.FieldDatatypes.bool,
-                },
                 -1: {
                     'association': const.FieldAssociations.registration,
                     'field_name': 'solidarity',
                     'kind': const.FieldDatatypes.bool,
                     'entries': None,
-                }
+                },
+                -2: {
+                    'association': const.FieldAssociations.registration,
+                    'field_name': 'solidarity_int',
+                    'kind': const.FieldDatatypes.int,
+                    'entries': None,
+                },
+                -3: {
+                    'association': const.FieldAssociations.course,
+                    'field_name': 'solidarity_course',
+                    'kind': const.FieldDatatypes.bool,
+                    'entries': None,
+                },
             }
         }
-        self.event.set_event(self.key, data)
+        self.event.set_event(self.key, field_data)
         field_links = (
-            (2, ValueError, "Fee Modifier linked to non-bool field."),
-            (5, ValueError, "Fee Modifier linked to non-registration field."),
-            (7, psycopg2.IntegrityError, None),
-            (1001, None, None))
+            (1001, None, None),
+            (1001, psycopg2.IntegrityError, None),
+            (1002, ValueError, "Fee Modifier linked to non-bool field."),
+            (1003, ValueError, "Fee Modifier linked to non-registration field."),
+        )
         for field_id, error, error_msg in field_links:
             data = {
                 'id': event_id,
@@ -3014,7 +3169,7 @@ class TestEventBackend(BackendTest):
                         'modifier_name': 'solidarity',
                         'amount': decimal.Decimal("-12.50"),
                         'field_id': field_id,
-                        'part_id': 2,
+                        'part_id': list(event["parts"])[0],
                     }
                 }
             }
@@ -3025,18 +3180,33 @@ class TestEventBackend(BackendTest):
                     self.assertEqual(error_msg, cm.exception.args[0])
             else:
                 self.assertTrue(self.event.set_event(self.key, data))
-        reg_id = 2
+        reg_data = {
+            "persona_id": 1,
+            "event_id": event_id,
+            "parts": {
+                4: {
+                    "status": const.RegistrationPartStati.applied,
+                }
+            },
+            "tracks": {
+
+            },
+            "mixed_lodging": True,
+            "list_consent": True,
+            "notes": None,
+        }
+        reg_id = self.event.create_registration(self.key, reg_data)
         self.assertEqual(self.event.calculate_fee(self.key, reg_id),
-                         decimal.Decimal("589.49"))
+                         decimal.Decimal("15"))
         data = {
             'id': reg_id,
             'fields': {
-                field_name: True,
+                'solidarity': True,
             }
         }
         self.assertTrue(self.event.set_registration(self.key, data))
         self.assertEqual(self.event.calculate_fee(self.key, reg_id),
-                         decimal.Decimal("553.49"))
+                         decimal.Decimal("2.50"))
 
     @as_users("garcia")
     def test_waitlist(self) -> None:

@@ -56,7 +56,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertNonPresence("Search Mask")
         # Test changing locale to english
         f = self.response.forms['changelocaleform']
-        self.submit(f, 'locale', False)
+        self.submit(f, 'locale', check_notification=False)
         self.assertPresence("Search Mask", div='qf_title')
         self.assertNonPresence("Suchmaske")
         # Test storing of locale (via cookie)
@@ -66,7 +66,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertNonPresence("Suchmaske")
         # Test changing locale back to german
         f = self.response.forms['changelocaleform']
-        self.submit(f, 'locale', False)
+        self.submit(f, 'locale', check_notification=False)
         self.assertPresence("Suchmaske", div='qf_title')
         self.assertNonPresence("Search Mask")
 

@@ -278,7 +278,7 @@ class AssemblyBackend(AbstractBackend):
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
         """
         query = affirm(Query, query)
-        if query.scope in {QueryScope.persona, QueryScope.archived_persona}:
+        if query.scope in {QueryScope.assembly_user, QueryScope.archived_persona}:
             # Include only un-archived assembly-users
             query.constraints.append(("is_assembly_realm", QueryOperators.equal,
                                       True))

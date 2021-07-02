@@ -109,8 +109,8 @@
                                                 type='number') }}
                         {{ util.form_input_text(name="qval_location,location2", label=gettext("City"),
                                                 aclass="input-sm") }}
-                        {{ util.form_input_text(name="qval_country,country2", label=gettext("Country"),
-                                                aclass="input-sm") }}
+                        {{ util.form_input_select(name="qval_country,country2", label=gettext("Country"),
+                                                  entries=[("", nbsp)] + COUNTRY_CODES, defaultvalue=nbsp) }}
                     </div>
                 </div>
             {% if is_admin -%}
