@@ -15,7 +15,7 @@
         {% for persona_id, entry in cases.items() %} {# This is already sorted. #}
            <li>
                {{ util.href(cdedblink('core/show_privilege_change', {'privilege_change_id': entry["id"]}),
-                            "{} {}".format(personas[persona_id]['given_names'], personas[persona_id]['family_name'])) }}
+                            util.persona_name(personas[persona_id], display_and_given_names=True)) }}
            </li>
         {% endfor %}
    </ul>

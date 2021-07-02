@@ -4,13 +4,13 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans given_names=values['given_names'], family_name=values['family_name'] %}
-        Edit {{ given_names }} {{ family_name }}
+    {% trans name=util.persona_name(values) %}
+        Edit {{ names }}
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(show_user_link(user, values['id']), values['given_names'] + " " + values['family_name'],
+    {{ util.breadcrumb_link(show_user_link(user, values['id']), util.persona_name(values),
             icon="user") }}
     {{ util.breadcrumb_link(cdedblink("core/admin_change_user_form"), gettext("Edit Userdata"), active=True) }}
 {% endblock %}

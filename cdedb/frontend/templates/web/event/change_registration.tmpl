@@ -12,8 +12,7 @@
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
 {{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations")) }}
-{{ util.breadcrumb_link(cdedblink("event/show_registration"), "{} {}".
-        format(persona['given_names'], persona['family_name']), icon="user") }}
+{{ util.breadcrumb_link(cdedblink("event/show_registration"), util.persona_name(persona), icon="user") }}
 {{ util.breadcrumb_link(cdedblink("event/change_registration"), gettext("Edit"), active=True) }}
 {% endblock %}
 {% block heading %}

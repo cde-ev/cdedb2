@@ -12,8 +12,7 @@
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("core/genesis_list_cases"), gettext("Account Requests")) }}
 {{ util.breadcrumb_link(cdedblink("core/genesis_modify_form", {'case_id': values['case_id']}),
-                        gettext("Edit Account Request from %(given_names)s %(family_name)s")|format(
-                            given_names=values["given_names"], family_name=values["family_name"]),
+                        gettext("Edit Account Request from %(name)s")|format(name=util.persona_name(values)),
                         active="True", icon="user") }}
 {% endblock %}
 {% block content %}

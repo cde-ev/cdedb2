@@ -1,14 +1,14 @@
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans given_names=ambience['persona']['given_names'], family_name=ambience['persona']['family_name'] %}
-    	Change Privileges for {{ given_names }} {{ family_name }}
+    {% trans name=util.persona_name(ambience['persona']) %}
+        Change Privileges for {{ name }}
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']),
-            ambience['persona']['given_names'] + " " + ambience['persona']['family_name'], icon="user") }}
+            util.persona_name(ambience['persona']), icon="user") }}
     {{ util.breadcrumb_link(cdedblink("core/change_privileges_form"), gettext("Change Privileges"), active=True) }}
 {% endblock %}
 {% block content %}
@@ -18,6 +18,8 @@
     <form action="{{ cdedblink('core/change_privileges') }}" method="POST" id="privilegechangeform">
         {{ util.anti_csrf_token('core/change_privileges') }}
         <div class="row">
+            {{ util.form_input_static(label=gettext("User"),
+                                      value=util.persona_name(data, given_and_display_names=True)) }}
             {# see also change_privileges in cdedb.frontend.core and initialize_privilege_change in cdedb.backend.core #}
             {% if ambience['persona']['is_cde_realm'] %}
                 {{ util.form_input_checkbox(name="is_meta_admin", label=gettext("Meta-Admin"), small=True) }}

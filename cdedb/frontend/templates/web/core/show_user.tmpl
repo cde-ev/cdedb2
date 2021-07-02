@@ -5,14 +5,11 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% import "web/generic.tmpl" as generic with context %}
 {% block title %}
-    {% trans given_names=data['given_names'], family_name=data['family_name'] %}
-        {{ given_names }} {{ family_name }}
-    {% endtrans %}
+    {{ util.persona_name(data) }}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), "{} {}".format(ambience['persona']['given_names'],
-                                                                                  ambience['persona']['family_name']),
+{{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), util.persona_name(ambience['persona']),
         icon="user", active=True) }}
 {% endblock %}
 

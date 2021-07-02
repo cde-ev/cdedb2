@@ -4,15 +4,15 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans given_names=current['given_names'], family_name=current['family_name'] %}
-    	Inspect Changes for {{ given_names }} {{ family_name }}
+    {% trans names=util.persona_name(current) %}
+    	Inspect Changes for {{ name }}
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("core/list_pending_changes"), gettext("Inspect Changes")) }}
 {{ util.breadcrumb_link(cdedblink('core/inspect_change', {'persona_id': pending['id']}),
-        "{} {}".format(current['given_names'], current['family_name']), icon="user", active="True") }}
+        util.persona_name(current), icon="user", active="True") }}
 {% endblock %}
 
 {% macro show_diff(name, title, important=False) %}

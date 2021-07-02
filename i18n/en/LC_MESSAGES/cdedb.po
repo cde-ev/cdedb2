@@ -2367,28 +2367,28 @@ msgstr ""
 #: cdedb/frontend/event.py:2028 cdedb/frontend/event.py:2030
 #, python-format
 msgid ""
-"%(given_names)s %(family_name)s has no %(rank)i. choice in %(track_name)s."
+"%(name) has no %(rank)i. choice in %(track_name)s."
 msgstr ""
 
 #: cdedb/frontend/event.py:2031 cdedb/frontend/event.py:2033
 #, python-format
-msgid "%(given_names)s %(family_name)s has no %(rank)i. choice."
+msgid "%(name) has no %(rank)i. choice."
 msgstr ""
 
 #: cdedb/frontend/event.py:2064 cdedb/frontend/event.py:2066
 #, python-format
 msgid ""
-"No choice available for %(given_names)s %(family_name)s in %(track_name)s."
+"No choice available for %(name) in %(track_name)s."
 msgstr ""
 
 #: cdedb/frontend/event.py:2067 cdedb/frontend/event.py:2069
 #, python-format
-msgid "No choice available for %(given_names)s %(family_name)s."
+msgid "No choice available for %(name)."
 msgstr ""
 
 #: cdedb/frontend/event.py:2078 cdedb/frontend/event.py:2080
 #, python-format
-msgid "Error committing changes for %(given_names)s %(family_name)s."
+msgid "Error committing changes for %(name)."
 msgstr ""
 
 #: cdedb/frontend/event.py:2083 cdedb/frontend/event.py:2085
@@ -6233,7 +6233,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/money_transfers.tmpl:41
 #: cdedb/frontend/templates/web/event/batch_fees.tmpl:57
 #, python-format
-msgid "%(amount)s for %(given_names)s %(family_name)s"
+msgid "%(amount)s for %(name)"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/money_transfers.tmpl:92
@@ -6756,10 +6756,6 @@ msgid "Overall Balance"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:7
-#, python-format
-msgid "Edit %(given_names)s %(family_name)s"
-msgstr ""
-
 #: cdedb/frontend/templates/web/event/change_registration.tmpl:21
 #, python-format
 msgid "Edit %(name)s"
@@ -6903,7 +6899,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/admin_username_change.tmpl:4
 #, python-format
-msgid "Edit Email Address for %(given_names)s %(family_name)s"
+msgid "Edit Email Address for %(name)s"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/admin_username_change.tmpl:11
@@ -7018,7 +7014,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:4
 #, python-format
-msgid "Change Privileges for %(given_names)s %(family_name)s"
+msgid "Change Privileges for %(name)"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:12
@@ -7143,7 +7139,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/dearchive_user.tmpl:4
 #, python-format
-msgid "Dearchive %(given_names)s %(family_name)s"
+msgid "Dearchive %(name)"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/dearchive_user.tmpl:11
@@ -7245,7 +7241,7 @@ msgstr "Accountanfrage bearbeiten"
 
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:15
 #, python-format
-msgid "Edit Account Request from %(given_names)s %(family_name)s"
+msgid "Edit Account Request from %(name)"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:44
@@ -7323,12 +7319,12 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/genesis_show_case.tmpl:7
 #, python-format
-msgid "Account Request of %(given_names)s %(family_name)s"
+msgid "Account Request of %(name)"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/genesis_show_case.tmpl:15
 #, python-format
-msgid "Details of %(given_names)s %(family_name)s"
+msgid "Details of %(name)"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/genesis_show_case.tmpl:20
@@ -7552,7 +7548,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:7
 #, python-format
-msgid "Inspect Changes for %(given_names)s %(family_name)s"
+msgid "Inspect Changes for %(name)"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:13
@@ -7610,7 +7606,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/modify_balance.tmpl:4
 #, python-format
-msgid "Modify Balance for %(given_names)s %(family_name)s"
+msgid "Modify Balance for %(name)"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/modify_balance.tmpl:13
@@ -7634,7 +7630,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/modify_membership.tmpl:4
 #, python-format
-msgid "Modify Memberhip for %(given_names)s %(family_name)s"
+msgid "Modify Memberhip for %(name)"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/modify_membership.tmpl:13
@@ -7674,7 +7670,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:4
 #, python-format
-msgid "Change Realms for %(given_names)s %(family_name)s"
+msgid "Change Realms for %(name)"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:12
@@ -7736,7 +7732,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/set_foto.tmpl:7
 #, python-format
-msgid "Set Profile Picture for %(given_names)s %(family_name)s"
+msgid "Set Profile Picture for %(name)"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/set_foto.tmpl:16
@@ -7786,7 +7782,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/show_history.tmpl:7
 #, python-format
-msgid "Change History of %(given_names)s %(family_name)s"
+msgid "Change History of %(name)"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/show_history.tmpl:17
@@ -7891,7 +7887,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/show_privilege_change.tmpl:5
 #, python-format
-msgid "Privilege Change for %(given_names)s %(family_name)s"
+msgid "Privilege Change for %(name)"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/show_privilege_change.tmpl:17
@@ -7913,11 +7909,6 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/show_privilege_change.tmpl:61
 msgid "Reject Privilege Change"
-msgstr ""
-
-#: cdedb/frontend/templates/web/core/show_user.tmpl:8
-#, python-format
-msgid "%(given_names)s %(family_name)s"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/show_user.tmpl:30
