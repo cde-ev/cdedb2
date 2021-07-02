@@ -4113,160 +4113,163 @@ class EventBackend(AbstractBackend):
         def list_to_dict(alist: Collection[CdEDBObject]) -> CdEDBObjectMap:
             return {e['id']: e for e in alist}
 
+        # First gather all the data and give up the database lock afterwards.
         with Atomizer(rs):
             event = self.get_event(rs, event_id)
-            # basics
-            ret: CdEDBObject = {
-                'CDEDB_EXPORT_EVENT_VERSION': CDEDB_EXPORT_EVENT_VERSION,
-                'EVENT_SCHEMA_VERSION': EVENT_SCHEMA_VERSION,
-                'kind': "partial",  # could also be "full"
-                'id': event_id,
-                'timestamp': now(),
-            }
-            # courses
             courses = list_to_dict(self.sql_select(
                 rs, 'event.courses', COURSE_FIELDS, (event_id,),
                 entity_key='event_id'))
-            temp = self.sql_select(
+            course_segments = self.sql_select(
                 rs, 'event.course_segments',
                 ('course_id', 'track_id', 'is_active'), courses.keys(),
                 entity_key='course_id')
-            lookup: Dict[int, Dict[int, bool]] = collections.defaultdict(dict)
-            for e in temp:
-                lookup[e['course_id']][e['track_id']] = e['is_active']
-            for course_id, course in courses.items():
-                del course['id']
-                del course['event_id']
-                course['segments'] = lookup[course_id]
-                course['fields'] = cast_fields(
-                    course['fields'], event['fields'])
-            ret['courses'] = courses
-            # lodgement groups
             lodgement_groups = list_to_dict(self.sql_select(
                 rs, 'event.lodgement_groups', LODGEMENT_GROUP_FIELDS,
                 (event_id,), entity_key='event_id'))
-            for lodgement_group in lodgement_groups.values():
-                del lodgement_group['id']
-                del lodgement_group['event_id']
-            ret['lodgement_groups'] = lodgement_groups
-            # lodgements
             lodgements = list_to_dict(self.sql_select(
                 rs, 'event.lodgements', LODGEMENT_FIELDS, (event_id,),
                 entity_key='event_id'))
-            for lodgement in lodgements.values():
-                del lodgement['id']
-                del lodgement['event_id']
-                lodgement['fields'] = cast_fields(lodgement['fields'],
-                                                  event['fields'])
-            ret['lodgements'] = lodgements
-            # registrations
             registrations = list_to_dict(self.sql_select(
                 rs, 'event.registrations', REGISTRATION_FIELDS, (event_id,),
                 entity_key='event_id'))
-            backup_registrations = copy.deepcopy(registrations)
-            temp = self.sql_select(
+            registration_parts = self.sql_select(
                 rs, 'event.registration_parts',
                 REGISTRATION_PART_FIELDS, registrations.keys(),
                 entity_key='registration_id')
-            part_lookup: Dict[int, Dict[int, CdEDBObject]]
-            part_lookup = collections.defaultdict(dict)
-            for e in temp:
-                part_lookup[e['registration_id']][e['part_id']] = e
-            temp = self.sql_select(
+            registration_tracks = self.sql_select(
                 rs, 'event.registration_tracks',
                 REGISTRATION_TRACK_FIELDS, registrations.keys(),
                 entity_key='registration_id')
-            track_lookup: Dict[int, Dict[int, CdEDBObject]]
-            track_lookup = collections.defaultdict(dict)
-            for e in temp:
-                track_lookup[e['registration_id']][e['track_id']] = e
             choices = self.sql_select(
                 rs, "event.course_choices",
                 ("registration_id", "track_id", "course_id", "rank"),
                 registrations.keys(), entity_key="registration_id")
-            for registration_id, registration in registrations.items():
-                del registration['id']
-                del registration['event_id']
-                del registration['persona_id']
-                del registration['real_persona_id']
-                parts = part_lookup[registration_id]
-                for part in parts.values():
-                    del part['registration_id']
-                    del part['part_id']
-                registration['parts'] = parts
-                tracks = track_lookup[registration_id]
-                for track_id, track in tracks.items():
-                    tmp = {e['course_id']: e['rank'] for e in choices
-                           if (e['registration_id'] == track['registration_id']
-                               and e['track_id'] == track_id)}
-                    track['choices'] = xsorted(tmp.keys(), key=tmp.get)
-                    del track['registration_id']
-                    del track['track_id']
-                registration['tracks'] = tracks
-                registration['fields'] = cast_fields(registration['fields'],
-                                                     event['fields'])
-            ret['registrations'] = registrations
-            # now we add additional information that is only auxillary and
-            # does not correspond to changeable entries
-            #
-            # event
-            export_event = copy.deepcopy(event)
-            del export_event['id']
-            del export_event['begin']
-            del export_event['end']
-            del export_event['is_open']
-            del export_event['orgas']
-            del export_event['tracks']
-            for part in export_event['parts'].values():
-                del part['id']
-                del part['event_id']
-                for f in ('waitlist_field',):
-                    if part[f]:
-                        part[f] = event['fields'][part[f]]['field_name']
-                for track in part['tracks'].values():
-                    del track['id']
-                    del track['part_id']
-            for f in ('lodge_field', 'camping_mat_field', 'course_room_field'):
-                if export_event[f]:
-                    export_event[f] = event['fields'][event[f]]['field_name']
-            new_fields = {
-                field['field_name']: field
-                for field in export_event['fields'].values()
-            }
-            for field in new_fields.values():
-                del field['field_name']
-                del field['event_id']
-                del field['id']
-            export_event['fields'] = new_fields
-            new_fee_modifiers = {
-                mod['modifier_name'] + str(mod['part_id']): mod
-                for mod in export_event['fee_modifiers'].values()
-            }
-            for mod in new_fee_modifiers.values():
-                del mod['id']
-                del mod['modifier_name']
-                mod['part'] = event['parts'][mod['part_id']]['shortname']
-                del mod['part_id']
-                mod['field'] = event['fields'][mod['field_id']]['field_name']
-                del mod['field_id']
-            export_event['fee_modifiers'] = new_fee_modifiers
-            ret['event'] = export_event
-            # personas
             persona_ids = tuple(reg['persona_id']
-                                for reg in backup_registrations.values())
+                                for reg in registrations.values())
             personas = self.core.get_event_users(rs, persona_ids, event_id)
-            for reg_id, registration in ret['registrations'].items():
-                persona = personas[backup_registrations[reg_id]['persona_id']]
-                persona['is_orga'] = persona['id'] in event['orgas']
-                for attr in ('is_active', 'is_meta_admin', 'is_archived',
-                             'is_assembly_admin', 'is_assembly_realm',
-                             'is_cde_admin', 'is_finance_admin', 'is_cde_realm',
-                             'is_core_admin', 'is_event_admin',
-                             'is_event_realm', 'is_ml_admin', 'is_ml_realm',
-                             'is_searchable', 'is_cdelokal_admin', 'is_purged'):
-                    del persona[attr]
-                registration['persona'] = persona
-            return ret
+
+        # Now process all the data.
+        # basics
+        ret: CdEDBObject = {
+            'CDEDB_EXPORT_EVENT_VERSION': CDEDB_EXPORT_EVENT_VERSION,
+            'EVENT_SCHEMA_VERSION': EVENT_SCHEMA_VERSION,
+            'kind': "partial",  # could also be "full"
+            'id': event_id,
+            'timestamp': now(),
+        }
+        # courses
+        lookup: Dict[int, Dict[int, bool]] = collections.defaultdict(dict)
+        for e in course_segments:
+            lookup[e['course_id']][e['track_id']] = e['is_active']
+        for course_id, course in courses.items():
+            del course['id']
+            del course['event_id']
+            course['segments'] = lookup[course_id]
+            course['fields'] = cast_fields(
+                course['fields'], event['fields'])
+        ret['courses'] = courses
+        # lodgement groups
+        for lodgement_group in lodgement_groups.values():
+            del lodgement_group['id']
+            del lodgement_group['event_id']
+        ret['lodgement_groups'] = lodgement_groups
+        # lodgements
+        for lodgement in lodgements.values():
+            del lodgement['id']
+            del lodgement['event_id']
+            lodgement['fields'] = cast_fields(lodgement['fields'],
+                                              event['fields'])
+        ret['lodgements'] = lodgements
+        # registrations
+        backup_registrations = copy.deepcopy(registrations)
+        part_lookup: Dict[int, Dict[int, CdEDBObject]]
+        part_lookup = collections.defaultdict(dict)
+        for e in registration_parts:
+            part_lookup[e['registration_id']][e['part_id']] = e
+        track_lookup: Dict[int, Dict[int, CdEDBObject]]
+        track_lookup = collections.defaultdict(dict)
+        for e in registration_tracks:
+            track_lookup[e['registration_id']][e['track_id']] = e
+        for registration_id, registration in registrations.items():
+            del registration['id']
+            del registration['event_id']
+            del registration['persona_id']
+            del registration['real_persona_id']
+            parts = part_lookup[registration_id]
+            for part in parts.values():
+                del part['registration_id']
+                del part['part_id']
+            registration['parts'] = parts
+            tracks = track_lookup[registration_id]
+            for track_id, track in tracks.items():
+                tmp = {e['course_id']: e['rank'] for e in choices
+                       if (e['registration_id'] == track['registration_id']
+                           and e['track_id'] == track_id)}
+                track['choices'] = xsorted(tmp.keys(), key=tmp.get)
+                del track['registration_id']
+                del track['track_id']
+            registration['tracks'] = tracks
+            registration['fields'] = cast_fields(registration['fields'],
+                                                 event['fields'])
+        ret['registrations'] = registrations
+        # now we add additional information that is only auxillary and
+        # does not correspond to changeable entries
+        #
+        # event
+        export_event = copy.deepcopy(event)
+        del export_event['id']
+        del export_event['begin']
+        del export_event['end']
+        del export_event['is_open']
+        del export_event['orgas']
+        del export_event['tracks']
+        for part in export_event['parts'].values():
+            del part['id']
+            del part['event_id']
+            for f in ('waitlist_field',):
+                if part[f]:
+                    part[f] = event['fields'][part[f]]['field_name']
+            for track in part['tracks'].values():
+                del track['id']
+                del track['part_id']
+        for f in ('lodge_field', 'camping_mat_field', 'course_room_field'):
+            if export_event[f]:
+                export_event[f] = event['fields'][event[f]]['field_name']
+        new_fields = {
+            field['field_name']: field
+            for field in export_event['fields'].values()
+        }
+        for field in new_fields.values():
+            del field['field_name']
+            del field['event_id']
+            del field['id']
+        export_event['fields'] = new_fields
+        new_fee_modifiers = {
+            mod['modifier_name'] + str(mod['part_id']): mod
+            for mod in export_event['fee_modifiers'].values()
+        }
+        for mod in new_fee_modifiers.values():
+            del mod['id']
+            del mod['modifier_name']
+            mod['part'] = event['parts'][mod['part_id']]['shortname']
+            del mod['part_id']
+            mod['field'] = event['fields'][mod['field_id']]['field_name']
+            del mod['field_id']
+        export_event['fee_modifiers'] = new_fee_modifiers
+        ret['event'] = export_event
+        # personas
+        for reg_id, registration in ret['registrations'].items():
+            persona = personas[backup_registrations[reg_id]['persona_id']]
+            persona['is_orga'] = persona['id'] in event['orgas']
+            for attr in ('is_active', 'is_meta_admin', 'is_archived',
+                         'is_assembly_admin', 'is_assembly_realm',
+                         'is_cde_admin', 'is_finance_admin', 'is_cde_realm',
+                         'is_core_admin', 'is_event_admin',
+                         'is_event_realm', 'is_ml_admin', 'is_ml_realm',
+                         'is_searchable', 'is_cdelokal_admin', 'is_purged'):
+                del persona[attr]
+            registration['persona'] = persona
+        return ret
 
     @access("event")
     def partial_import_event(self, rs: RequestState, data: CdEDBObject,
