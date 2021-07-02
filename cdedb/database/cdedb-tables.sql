@@ -1272,6 +1272,18 @@ CREATE TABLE ldap_oc_mappings (
 );
 GRANT ALL ON ldap_oc_mappings TO cdb_admin;
 
+-- Helper table to make relations work
+
+DROP TABLE IF EXISTS ldap_organizations;
+CREATE TABLE ldap_organizations (
+	id serial PRIMARY KEY,
+	dn varchar NOT NULL,
+	oc_map_id integer NOT NULL REFERENCES ldap_oc_mappings(id),
+	-- ist das eine Referenz auf die ID des entsprechenden ldap_entries?
+	parent integer NOT NULL
+);
+GRANT ALL ON ldap_organizations TO cdb_admin;
+
 DROP TABLE IF EXISTS ldap_attr_mappings;
 CREATE TABLE ldap_attr_mappings (
 	id bigserial PRIMARY KEY,
@@ -1306,12 +1318,3 @@ CREATE TABLE ldap_entry_objclasses (
 	oc_name varchar(64)
 );
 GRANT ALL ON ldap_entry_objclasses TO cdb_admin;
-
--- Helper table to make relations work (this will probably be replaced)
-
-DROP TABLE IF EXISTS ldap_organizations;
-CREATE TABLE ldap_organizations (
-	id serial PRIMARY KEY,
-	moniker varchar NOT NULL
-);
-GRANT ALL ON ldap_organizations TO cdb_admin;
