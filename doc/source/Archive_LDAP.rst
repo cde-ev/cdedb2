@@ -100,6 +100,10 @@ additions to cdedb/database/cdedb-tables.sql::
     );
     GRANT ALL ON ldap_organizations TO cdb_admin;
 
+These can now be applied to the database by calling::
+
+    make sample-data
+
 We now configure the SQL-backend for LDAP via a corresponding LDIF file (as
 is necessary according to the cn=config mechanism). Current state of the
 content of our sql-ldap.ldif
