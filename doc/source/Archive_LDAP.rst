@@ -249,12 +249,12 @@ Troubleshooting
 To receive more information from LDAP in case anything goes wrong the log
 level can be increased with the following::
 
-ldapmodify -Y EXTERNAL -H ldapi:/// <<EOF
-dn: cn=config
-changetype: modify
-replace: olcLogLevel
-olcLogLevel: -1
-EOF
+    ldapmodify -Y EXTERNAL -H ldapi:/// <<EOF
+    dn: cn=config
+    changetype: modify
+    replace: olcLogLevel
+    olcLogLevel: -1
+    EOF
 
 To drop all LDAP SQL databases the following workaround seems necessary
 (using an LDIF file with a delete instruction errors with ``ldap_delete:
