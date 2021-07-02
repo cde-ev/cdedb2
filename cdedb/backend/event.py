@@ -1396,8 +1396,8 @@ class EventBackend(AbstractBackend):
 
         if updated_parts:
             # Retrieve current data, so we can check if anything actually changed.
-            current_part_data = self.sql_select(
-                rs, "event.event_parts", EVENT_PART_FIELDS, updated_parts)
+            current_part_data = {e['id']: e for e in self.sql_select(
+                rs, "event.event_parts", EVENT_PART_FIELDS, updated_parts)}
             for x in mixed_existence_sorter(updated_parts):
                 updated = copy.deepcopy(parts[x])
                 assert updated is not None
@@ -1583,7 +1583,7 @@ class EventBackend(AbstractBackend):
 
         existing_fields = {unwrap(e) for e in self.sql_select(
             rs, "event.field_definitions", ("id",), (event_id,), entity_key="event_id")}
-        new_fields = {x for x in fields if x > 0}
+        new_fields = {x for x in fields if x < 0}
         updated_fields = {x for x in fields if x > 0 and fields[x] is not None}
         deleted_fields = {x for x in fields if x > 0 and fields[x] is None}
         if not updated_fields | deleted_fields <= existing_fields:
@@ -1595,7 +1595,7 @@ class EventBackend(AbstractBackend):
             new_field['event_id'] = event_id
             ret *= self.sql_insert(rs, "event.field_definitions", new_field)
             self.event_log(rs, const.EventLogCodes.field_added, event_id,
-                           change_note=new_field['title'])
+                           change_note=new_field['field_name'])
 
         fee_modifier_fields = {unwrap(e) for e in self.sql_select(
             rs, "event.fee_modifiers", ("field_id",), updated_fields | deleted_fields,
@@ -1913,6 +1913,7 @@ class EventBackend(AbstractBackend):
             for x in mixed_existence_sorter(updated_modifiers):
                 updated_modifier = copy.deepcopy(modifiers[x])
                 assert updated_modifier is not None
+                updated_modifier['id'] = x
                 updated_modifier['part_id'] = part_id
                 current = current_modifier_data[x]
                 if any(updated_modifier[k] != current[k] for k in updated_modifier):
@@ -1947,7 +1948,7 @@ class EventBackend(AbstractBackend):
         if (field_data["event_id"] != event_id
                 or field_data["kind"] not in legal_field_kinds
                 or field_data["association"] not in legal_field_associations):
-            raise ValueError(n_("Unfit field for %(field)s"), {'field': field_name})
+            raise ValueError(n_("Unfit field for %(field)s."), {'field': field_name})
 
     @access("event")
     def set_event(self, rs: RequestState,
@@ -2018,7 +2019,7 @@ class EventBackend(AbstractBackend):
             if 'orgas' in data:
                 ret *= self.add_event_orgas(rs, data['id'], data['orgas'])
             if 'fields' in data:
-                ret *= self._set_event_fields(rs, data['id'], data['parts'])
+                ret *= self._set_event_fields(rs, data['id'], data['fields'])
 
             # This also includes taking care of course tracks and fee modifiers, since
             # they are each linked to a single event part.
@@ -4224,6 +4225,7 @@ class EventBackend(AbstractBackend):
             del export_event['is_open']
             del export_event['orgas']
             del export_event['tracks']
+            del export_event['fee_modifiers']
             for part in export_event['parts'].values():
                 del part['id']
                 del part['event_id']
@@ -4233,6 +4235,9 @@ class EventBackend(AbstractBackend):
                 for track in part['tracks'].values():
                     del track['id']
                     del track['part_id']
+                for fee_modifier in part['fee_modifiers'].values():
+                    del fee_modifier['id']
+                    del fee_modifier['part_id']
             for f in ('lodge_field', 'camping_mat_field', 'course_room_field'):
                 if export_event[f]:
                     export_event[f] = event['fields'][event[f]]['field_name']
@@ -4245,18 +4250,6 @@ class EventBackend(AbstractBackend):
                 del field['event_id']
                 del field['id']
             export_event['fields'] = new_fields
-            new_fee_modifiers = {
-                mod['modifier_name'] + str(mod['part_id']): mod
-                for mod in export_event['fee_modifiers'].values()
-            }
-            for mod in new_fee_modifiers.values():
-                del mod['id']
-                del mod['modifier_name']
-                mod['part'] = event['parts'][mod['part_id']]['shortname']
-                del mod['part_id']
-                mod['field'] = event['fields'][mod['field_id']]['field_name']
-                del mod['field_id']
-            export_event['fee_modifiers'] = new_fee_modifiers
             ret['event'] = export_event
             # personas
             persona_ids = tuple(reg['persona_id']
