@@ -939,19 +939,20 @@ class EventFrontend(AbstractUserFrontend):
         # Don't allow fee modifiers for newly created parts.
 
         # Handle deleted parts
-        ret = cast(Dict[int, Optional[CdEDBObject]], ret)
-        for part_id in deletes:
-            ret[part_id] = None
         for mod_id, mod in ret_fee_modifiers.items():
-            ret[mod['part_id']].setdefault('fee_modifiers', {})[mod_id] = mod
-            del mod['part_id']
-            if 'id' in mod:
-                del mod['id']
-        if not any(ret.values()):
+            if mod:
+                ret[mod['part_id']].setdefault('fee_modifiers', {})[mod_id] = mod
+                del mod['part_id']
+                if 'id' in mod:
+                    del mod['id']
+        ret_parts = cast(Dict[int, Optional[CdEDBObject]], ret)
+        for part_id in deletes:
+            ret_parts[part_id] = None
+        if not any(ret_parts.values()):
             rs.append_validation_error(
                 ("", ValueError(n_("At least one event part required."))))
             rs.notify("error", n_("At least one event part required."))
-        return ret
+        return ret_parts
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
