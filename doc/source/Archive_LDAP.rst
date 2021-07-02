@@ -238,23 +238,18 @@ repsesentation as Python dict as used in ``bin/create_sample_data_sql.py``)::
         ],
     }
 
-Now we should be able to retrieve the data from LDAP with the following command::
+Now we can retrieve the data from LDAP with the following command::
+
+    ldapsearch  -Y EXTERNAL -H ldapi:/// -b "dc=cde-ev,dc=de"
+
+which lists the contents of our LDAP-directory backed by the SQL-DB.
+
+An alternative to ``ldapsearch`` should be ``slapcat`` like the following::
 
     slapcat -n 2
 
 However this gives the barely helpful error ``slapcat: database doesn't
-support necessary operations.`` and the debugging invokation ``slapcat -n
-2 -d -1`` also does not reveal more (besides that most things seem to have
-worked).
-
-An alternative to ``slapcat`` should be ``ldapsearch`` like the following::
-
-    ldapsearch  -Y EXTERNAL -H ldapi:/// -b "dc=cde-ev,dc=de"
-
-this however does not return any results. To ensure that the above command
-is not faulty we run the following as sanity check (and see some results)::
-
-    ldapsearch  -Y EXTERNAL -H ldapi:/// -b "dc=cdedb,dc=virtual"
+support necessary operations.``.
 
 Troubleshooting
 ---------------
@@ -290,6 +285,11 @@ After reinstalling, a ldap admin passwort has to be specified.
 Bind to rootDN with ldapsearch::
 
     ldapsearch -H ldap:// -x -D "cn=admin,dc=cdedb,dc=virtual" -W
+
+Sanity test for ldapsearch (this should produce no errors and return some
+results)::
+
+    ldapsearch  -Y EXTERNAL -H ldapi:/// -b "dc=cdedb,dc=virtual"  
 
 
 References
