@@ -4144,6 +4144,7 @@ class EventBackend(AbstractBackend):
                 rs, "event.course_choices",
                 ("registration_id", "track_id", "course_id", "rank"),
                 registrations.keys(), entity_key="registration_id")
+            questionnaire = self.get_questionnaire(rs, event_id)
             persona_ids = tuple(reg['persona_id']
                                 for reg in registrations.values())
             personas = self.core.get_event_users(rs, persona_ids, event_id)
@@ -4256,6 +4257,20 @@ class EventBackend(AbstractBackend):
             mod['field'] = event['fields'][mod['field_id']]['field_name']
             del mod['field_id']
         export_event['fee_modifiers'] = new_fee_modifiers
+        new_questionnaire = {
+            str(usage): rows
+            for usage, rows in questionnaire.items()
+        }
+        for usage, rows in new_questionnaire.items():
+            for q in rows:
+                if q['field_id']:
+                    q['field_name'] = event['fields'][q['field_id']]['field_name']
+                else:
+                    q['field_name'] = None
+                del q['pos']
+                del q['kind']
+                del q['field_id']
+        export_event['questionnaire'] = new_questionnaire
         ret['event'] = export_event
         # personas
         for reg_id, registration in ret['registrations'].items():
