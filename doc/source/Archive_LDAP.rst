@@ -247,6 +247,15 @@ support necessary operations.`` and the debugging invokation ``slapcat -n
 2 -d -1`` also does not reveal more (besides that most things seem to have
 worked).
 
+An alternative to ``slapcat`` should be ``ldapsearch`` like the following::
+
+    ldapsearch  -Y EXTERNAL -H ldapi:/// -b "dc=cde-ev,dc=de"
+
+this however does not return any results. To ensure that the above command
+is not faulty we run the following as sanity check (and see some results)::
+
+    ldapsearch  -Y EXTERNAL -H ldapi:/// -b "dc=cdedb,dc=virtual"
+
 Troubleshooting
 ---------------
 
