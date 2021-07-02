@@ -51,7 +51,6 @@
                     {{ util.input_hidden("request_ids", all_request_ids) }}
                     {% for action, label, icon, coloring in (
                             ('accept', gettext('Accept All'), 'check', 'success'),
-                            ('reject', gettext('Reject All'), 'reply', 'warning'),
                             ('discard', gettext('Discard All'), 'trash-alt', 'danger')) %}
                         {{ util.input_submit(label=label, icon=icon, value=action, name="action",
                                              aclass="btn btn-xs btn-" + coloring) }}
