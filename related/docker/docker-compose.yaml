@@ -22,14 +22,14 @@ services:
       - files:/var/lib/cdedb # attachments etc
       - ../..:/cdedb2
     ports:
-      - 5000:5000 # werkzeug server including interactive debugger
-      - 8443:443 # apache
+      - 127.0.0.1:5000:5000 # werkzeug server including interactive debugger
+      - 127.0.0.1:8443:443 # apache
     depends_on:
       - cdb
   adminer:
     image: adminer
     ports:
-      - 8080:8080
+      - 127.0.0.1:8080:8080
 
 volumes:
   database:
