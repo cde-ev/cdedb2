@@ -177,12 +177,6 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
     # sql integration. This is just a static data set kind of independent
     # from the rest of the DB.
     LDAP_TABLES = {
-        'ldap_organizations': [
-            {
-                'id': 1,
-                'moniker': 'CdE',
-            },
-        ],
         'ldap_oc_mappings': [
             {
                 'id': 1,
@@ -201,6 +195,26 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
                 'create_proc': "SELECT 'TODO'",
                 'delete_proc': "SELECT 'TODO'",
                 'expect_return': 0,
+            },
+        ],
+        'ldap_organizations': [
+            {
+                'id': 1,
+                'dn': 'dc=cde-ev,dc=de',
+                'oc_map_id': 1,
+                'parent': 0
+            },
+            {
+                'id': 2,
+                'dn': 'ou=users,dc=cde-ev,dc=de',
+                'oc_map_id': 1,
+                'parent': 1
+            },
+            {
+                'id': 3,
+                'dn': 'ou=groups,dc=cde-ev,dc=de',
+                'oc_map_id': 1,
+                'parent': 1
             },
         ],
         'ldap_attr_mappings': [
