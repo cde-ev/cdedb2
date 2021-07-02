@@ -39,8 +39,25 @@
              notification message will be sent. The latter is preferred for spam messages. If you whitelist a message,
              it is not only accepted, but its author can write emails without moderation in the future.
          {% endtrans %}
-    </p>
+        </p>
         {% if held %}
+            {% set all_request_ids = [] %}
+            {% for email in held %}
+                {% do all_request_ids.append(email.request_id) %}
+            {% endfor %}
+            <p>
+                <form action="{{ cdedblink('ml/message_moderation_multi') }}" method="POST" id="moderateallform">
+                    {{ util.anti_csrf_token('ml/message_moderation_multi') }}
+                    {{ util.input_hidden("request_ids", all_request_ids) }}
+                    {% for action, label, icon, coloring in (
+                            ('accept', gettext('Accept All'), 'check', 'success'),
+                            ('reject', gettext('Reject All'), 'reply', 'warning'),
+                            ('discard', gettext('Discard All'), 'trash-alt', 'danger')) %}
+                        {{ util.input_submit(label=label, icon=icon, value=action, name="action",
+                                             aclass="btn btn-xs btn-" + coloring) }}
+                    {% endfor %}
+                </form>
+            </p>
             <ul>
                 {% for email in held %}
                     <li class="hide-hover-container clearfix-after">
