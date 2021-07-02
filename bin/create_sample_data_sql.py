@@ -180,8 +180,8 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
         'ldap_oc_mappings': [
             {
                 'id': 1,
-                'name': 'inetOrgPerson',
-                'keytbl': 'core.personas',
+                'name': 'organization',
+                'keytbl': 'ldap_organizations',
                 'keycol': 'id',
                 'create_proc': "SELECT 'TODO'",
                 'delete_proc': "SELECT 'TODO'",
@@ -189,8 +189,8 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
             },
             {
                 'id': 2,
-                'name': 'organization',
-                'keytbl': 'ldap_organizations',
+                'name': 'inetOrgPerson',
+                'keytbl': 'core.personas',
                 'keycol': 'id',
                 'create_proc': "SELECT 'TODO'",
                 'delete_proc': "SELECT 'TODO'",
@@ -220,7 +220,7 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
         'ldap_attr_mappings': [
             {
                 'id': 1,
-                'oc_map_id': 1,
+                'oc_map_id': 2,
                 'name': 'cn',
                 'sel_expr': 'personas.username',
                 'from_tbls': 'core.personas',
@@ -232,7 +232,7 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
             },
             {
                 'id': 2,
-                'oc_map_id': 1,
+                'oc_map_id': 2,
                 'name': 'givenName',
                 'sel_expr': 'personas.given_names',
                 'from_tbls': 'core.personas',
@@ -244,7 +244,7 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
             },
             {
                 'id': 3,
-                'oc_map_id': 1,
+                'oc_map_id': 2,
                 'name': 'sn',
                 'sel_expr': 'personas.family_name',
                 'from_tbls': 'core.personas',
@@ -256,7 +256,7 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
             },
             {
                 'id': 4,
-                'oc_map_id': 1,
+                'oc_map_id': 2,
                 'name': 'userPassword',
                 'sel_expr': 'personas.password_hash',
                 'from_tbls': 'core.personas',
@@ -277,22 +277,6 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
                 'delete_proc': "SELECT 'TODO'",
                 'param_order': 3,
                 'expect_return': 0,
-            },
-        ],
-        'ldap_entries': [
-            {
-                'id': 1,
-                'dn': 'dc=cde-ev,dc=de',
-                'oc_map_id': 2,
-                'parent': 0,
-                'keyval': 1,
-            },
-            {
-                'id': 2,
-                'dn': 'cn=anton@example.cde,dc=cde-ev,dc=de',
-                'oc_map_id': 1,
-                'parent': 1,
-                'keyval': 1,
             },
         ],
         'ldap_entry_objclasses': [

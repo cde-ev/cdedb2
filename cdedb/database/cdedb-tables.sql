@@ -1300,21 +1300,40 @@ CREATE TABLE ldap_attr_mappings (
 );
 GRANT ALL ON ldap_attr_mappings TO cdb_admin;
 
-DROP TABLE IF EXISTS ldap_entries;
-CREATE TABLE ldap_entries (
-	id bigserial PRIMARY KEY,
-	dn varchar(255) NOT NULL,
-	oc_map_id integer NOT NULL REFERENCES ldap_oc_mappings(id),
-	parent int NOT NULL,
-	keyval int NOT NULL
+CREATE VIEW ldap_entries (id, dn, oc_map_id, parent, keyval) AS
+    WITH const AS (
+        SELECT
+            2^32 AS id_offset,
+
+            2 AS persona_oc_id,
+            2 AS persona_parent
+    )
+    -- organizations
+    (
+        SELECT
+           id,
+           dn,
+           oc_map_id,
+           parent,
+           id AS keyval
+        FROM ldap_organizations
+    )
+    -- personas
+    UNION (
+        SELECT
+           id + const.id_offset,
+           -- the DB-ID is really static
+           'cn=' || id || ',ou=users,dc=cde-ev,dc=de' AS dn,
+           const.persona_oc_id AS oc_map_id,
+           const.persona_parent AS parent,
+           id as keyval
+        FROM core.personas, const
 );
-CREATE UNIQUE INDEX idx_ldap_entries_oc_map_id_keyval ON ldap_entries(oc_map_id, keyval);
-CREATE UNIQUE INDEX idx_ldap_entries_dn ON ldap_entries(dn);
 GRANT ALL ON ldap_entries TO cdb_admin;
 
 DROP TABLE IF EXISTS ldap_entry_objclasses;
 CREATE TABLE ldap_entry_objclasses (
-	entry_id integer NOT NULL REFERENCES ldap_entries(id),
+	entry_id integer NOT NULL,
 	oc_name varchar(64)
 );
 GRANT ALL ON ldap_entry_objclasses TO cdb_admin;
