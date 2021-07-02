@@ -68,7 +68,8 @@
             "ctime.creation_time": gettext("Registration Time"),
             "mtime.modification_time": gettext("Last Modification Time"),}) %}
 
-    {{ generic.format_query(spec, titles, choices, cdedblink('event/registration_query') + '#query-results',
+    {{ generic.format_query(enums['QueryScope'].registration, spec, titles, choices,
+                            cdedblink('event/registration_query') + '#query-results',
                             selection_default=('persona.username', 'persona.family_name', 'persona.given_names')) }}
 
     {% if values['is_search'] %}
@@ -79,17 +80,14 @@
             {% if "persona.username" in query.fields_of_interest %}
                     {% set usernames = [] %}
                 {% for entry in result if "persona.username" in entry and entry["persona.username"] %}
-                    {% do usernames.append("%s %s <%s>"|format(
-                            entry.get("persona.given_names", ""),
-                            entry.get("persona.family_name", ""),
-                            entry["persona.username"])) %}
+                    {% do usernames.append(entry["persona.username"]) %}
                 {% endfor %}
-                {{ util.href(util.mailto(bcc="; ".join(usernames)), gettext("bcc email to all"),
-                             icon="envelope", aclass="btn btn-sm btn-default",
+                {{ util.href(util.mailto(bcc=";".join(usernames)), gettext("bcc email to all"),
+                             icon="envelope", aclass="btn btn-default",
                              title=gettext("Send Mail to all registrations listed below as BCC.")) }}
             {% else %}
                 {{ util.href("#", gettext("bcc email to all"), readonly=True,
-                             icon="envelope", aclass="btn btn-sm btn-default",
+                             icon="envelope", aclass="btn btn-default",
                              title=gettext("Email button is only available, if the email field is shown.")) }}
             {% endif %}
         </div>

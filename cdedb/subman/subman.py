@@ -58,7 +58,7 @@ class SubscriptionManager:
         self.unwritten_states: StateSet = set(unwritten_states or ())
         if (self.unwritten_states &
                 {SubscriptionState.subscribed, SubscriptionState.unsubscribed}):
-            raise ValueError(_("Explicit core actions must be written."))
+            raise ValueError("Explicit core actions must be written.")
 
     @property
     def written_states(self) -> StateSet:
@@ -108,11 +108,11 @@ class SubscriptionManager:
         """
         if (action == SubscriptionAction.add_subscriber
                 and not policy.allows_subscription()):
-            raise SubscriptionError(_("User has no means to access this list."))
+            raise SubscriptionError(_("subman_managing_not-subscribable"))
         if action == SubscriptionAction.subscribe and not policy.may_subscribe():
-            raise SubscriptionError(_("Can not subscribe."))
+            raise SubscriptionError(_("subman_self_not-self-subscribable"))
         if action == SubscriptionAction.request_subscription and not policy.may_request():
-            raise SubscriptionError(_("Can not request subscription."))
+            raise SubscriptionError(_("subman_self_not-requestable"))
 
     def apply_action(self,
                      action: SubscriptionAction, *,
@@ -120,7 +120,7 @@ class SubscriptionManager:
                      old_state: SubscriptionState,
                      allow_unsub: bool = True,
                      is_privileged: bool = True,
-                     ) -> Optional[SubscriptionState]:
+                     ) -> SubscriptionState:
         """Apply a SubscriptionAction to a SubscriptionState according to a SubscriptionPolicy.
 
         This is the main interface for performing subscription actions. To decide if the
@@ -144,14 +144,14 @@ class SubscriptionManager:
         if not allow_unsub and old_state in {SubscriptionState.unsubscribed,
                                              SubscriptionState.unsubscription_override}:
             raise RuntimeError(
-                _("allow_unsub is incompatible with explicitly unsubscribed states."))
+                "allow_unsub is incompatible with explicitly unsubscribed states.")
 
         # 2: Check list-dependent requirements for transition.
         self._check_policy_requirements(action=action, policy=policy)
         if action.is_unsubscribing() and not allow_unsub:
-            raise SubscriptionError(_("Can not unsubscribe."))
+            raise SubscriptionError(_("subman_managing_no-unsubscribe-possible"))
         if action.is_managing() and not is_privileged:
-            raise SubscriptionError(_("Not privileged."))
+            raise SubscriptionError(_("subman_managing_not-privileged"))
 
         # 3: Check if current state allows transition.
         self._check_state_requirements(action, old_state)
@@ -182,7 +182,7 @@ class SubscriptionManager:
         """
         # pylint: disable=superfluous-parens
         if old_state in (self.unwritten_states | self.cleanup_protected_states):
-            raise SubscriptionError(_("No cleanup necessary."))
+            raise SubscriptionError(_("subman_managing_no-cleanup-necessary"))
 
         if old_state.is_subscribed() and policy.is_none():
             # If user is not allowed as subscriber, remove them.
@@ -193,7 +193,7 @@ class SubscriptionManager:
             # This conditional is only relevant if implicit subscribers are written.
             return SubscriptionState.none
         else:
-            raise SubscriptionError(_("No cleanup necessary."))
+            raise SubscriptionError(_("subman_managing_no-cleanup-necessary"))
 
     def is_obsolete(self,
                     policy: SubscriptionPolicy,

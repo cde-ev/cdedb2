@@ -74,7 +74,7 @@ DeletionBlockers = Dict[str, List[int]]
 
 # Pseudo error objects used to display errors in the frontend. First argument
 # is the field that contains the error, second argument is the error itself.
-Error = Tuple[str, Exception]
+Error = Tuple[Optional[str], Exception]
 
 # A notification to be displayed. First argument ist the notification type
 # (warning, info, error, success, question). Second argument is the message.
@@ -1086,6 +1086,7 @@ class LineResolutions(enum.IntEnum):
     renew_trial = 3  #: Renew the trial membership of an existing account.
     update = 4  #: Update an existing account with this data.
     renew_and_update = 5  #: A combination of renew_trial and update.
+    none = 10  #: No resolution was chosen.
 
     def do_trial(self) -> bool:
         """Whether to grant a trial membership."""
@@ -1555,7 +1556,7 @@ def extract_roles(session: CdEDBObject, introspection_only: bool = False
       level of the data set passed.
     """
     ret = {"anonymous"}
-    if session['is_active']:
+    if session['is_active'] or introspection_only:
         ret.add("persona")
     elif not introspection_only:
         return ret
@@ -1574,9 +1575,9 @@ def extract_roles(session: CdEDBObject, introspection_only: bool = False
             ret.add("member")
             if session.get("is_searchable"):
                 ret.add("searchable")
-        if "ml" in ret:
-            if session.get("is_cdelokal_admin"):
-                ret.add("cdelokal_admin")
+    if "ml" in ret:
+        if session.get("is_cdelokal_admin"):
+            ret.add("cdelokal_admin")
     if "cde_admin" in ret:
         if session.get("is_finance_admin"):
             ret.add("finance_admin")
@@ -2097,6 +2098,10 @@ LODGEMENT_FIELDS = ("id", "event_id", "title", "regular_capacity",
 # (This can be displayed in different places according to `kind`).
 QUESTIONNAIRE_ROW_FIELDS = ("field_id", "pos", "title", "info",
                             "input_size", "readonly", "default_value", "kind")
+
+#: Fields for a stored event query.
+STORED_EVENT_QUERY_FIELDS = (
+    "id", "event_id", "query_name", "scope", "serialized_query")
 
 #: Fields of a mailing list entry (that is one mailinglist)
 MAILINGLIST_FIELDS = (

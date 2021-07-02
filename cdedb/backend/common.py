@@ -33,7 +33,7 @@ from cdedb.common import (
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
 from cdedb.database.constants import FieldDatatypes
-from cdedb.query import QUERY_PRIMARIES, QUERY_VIEWS, Query, QueryOperators
+from cdedb.query import Query, QueryOperators
 from cdedb.validation import parse_date, parse_datetime
 
 F = TypeVar('F', bound=Callable[..., Any])
@@ -344,16 +344,20 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                     for x in cur.fetchall())
 
     def sql_insert(self, rs: RequestState, table: str, data: CdEDBObject,
-                   entity_key: str = "id") -> int:
+                   entity_key: str = "id", drop_on_conflict: bool = False) -> int:
         """Generic SQL insertion query.
 
         See :py:meth:`sql_select` for thoughts on this.
 
+        :param unique: Whether to do nothing if conflicting with a constraint
         :returns: id of inserted row
         """
         keys = tuple(key for key in data)
         query = (f"INSERT INTO {table} ({', '.join(keys)}) VALUES"
-                 f" ({', '.join(('%s',) * len(keys))}) RETURNING {entity_key}")
+                 f" ({', '.join(('%s',) * len(keys))})")
+        if drop_on_conflict:
+            query += " ON CONFLICT DO NOTHING"
+        query += f" RETURNING {entity_key}"
         params = tuple(data[key] for key in keys)
         return unwrap(self.query_one(rs, query, params)) or 0
 
@@ -494,8 +498,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                 else:
                     orders.append(entry.split(',')[0])
             select += ", " + ", ".join(orders)
-        select = glue(select, ',', QUERY_PRIMARIES[query.scope])
-        view = view or QUERY_VIEWS[query.scope]
+        select += ', ' + query.scope.get_primary_key()
+        view = view or query.scope.get_view()
         q = f"SELECT {'DISTINCT' if distinct else ''} {select} FROM {view}"
         params: List[DatabaseValue] = []
         constraints = []

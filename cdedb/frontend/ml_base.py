@@ -18,10 +18,11 @@ from cdedb.common import (
 )
 from cdedb.subman.exceptions import SubscriptionError
 from cdedb.subman.machine import SubscriptionAction
+from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access, calculate_db_logparams,
     calculate_loglinks, cdedbid_filter as cdedbid, check_validation as check,
-    csv_output, keydictsort_filter, mailinglist_guard, periodic,
+    csv_output, mailinglist_guard, periodic,
 )
 from cdedb.ml_type_aux import (
     ADDITIONAL_TYPE_FIELDS, TYPE_MAP, MailinglistGroup, get_type
@@ -29,6 +30,7 @@ from cdedb.ml_type_aux import (
 from cdedb.validation import (
     ALL_MAILINGLIST_FIELDS, PERSONA_FULL_ML_CREATION, filter_none
 )
+from cdedb.query import QueryScope
 
 
 class MlBaseFrontend(AbstractUserFrontend):
@@ -113,7 +115,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                     is_search: bool) -> Response:
         """Perform search."""
         return self.generic_user_search(
-            rs, download, is_search, 'qview_persona', 'qview_ml_user',
+            rs, download, is_search, QueryScope.ml_user, QueryScope.ml_user,
             self.mlproxy.submit_general_query)
 
     @access("core_admin", "ml_admin")
@@ -127,9 +129,8 @@ class MlBaseFrontend(AbstractUserFrontend):
         """
         return self.generic_user_search(
             rs, download, is_search,
-            'qview_archived_persona', 'qview_archived_persona',
-            self.mlproxy.submit_general_query,
-            endpoint="archived_user_search")
+            QueryScope.archived_persona, QueryScope.archived_persona,
+            self.mlproxy.submit_general_query, endpoint="archived_user_search")
 
     @access("ml")
     def list_mailinglists(self, rs: RequestState) -> Response:
@@ -511,8 +512,9 @@ class MlBaseFrontend(AbstractUserFrontend):
         ml = rs.ambience['mailinglist']
         data['id'] = mailinglist_id
         data['ml_type'] = ml_type
+        data['domain'] = ml['domain']
         new_type = get_type(data['ml_type'])
-        if ml['domain'] not in new_type.domains:
+        if data['domain'] not in new_type.domains:
             data['domain'] = new_type.domains[0]
         data = check(rs, vtypes.Mailinglist, data)
         if rs.has_validation_errors():
@@ -701,7 +703,6 @@ class MlBaseFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
 
-        moderators = set(moderators)
         if not self.coreproxy.verify_ids(rs, moderators, is_archived=False):
             rs.append_validation_error(
                 ("moderators", ValueError(n_(
@@ -713,9 +714,8 @@ class MlBaseFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
 
-        moderators |= set(rs.ambience['mailinglist']['moderators'])
-        code = self.mlproxy.set_moderators(rs, mailinglist_id, moderators)
-        self.notify_return_code(rs, code, info=n_("Action had no effect."))
+        code = self.mlproxy.add_moderators(rs, mailinglist_id, moderators)
+        self.notify_return_code(rs, code, error=n_("Action had no effect."))
         return self.redirect(rs, "ml/management")
 
     @access("ml", modi={"POST"})
@@ -725,7 +725,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                          moderator_id: vtypes.ID) -> Response:
         """Demote persona from moderator status."""
         moderators = set(rs.ambience['mailinglist']['moderators'])
-        if moderator_id is not None and moderator_id not in moderators:  # type: ignore
+        if moderator_id not in moderators:
             rs.append_validation_error(
                 ("moderator_id", ValueError(n_("User is no moderator."))))
         if rs.has_validation_errors():
@@ -736,11 +736,10 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs.notify("error", n_("Not allowed to remove yourself as moderator."))
             return self.management(rs, mailinglist_id)
 
-        moderators -= {moderator_id}
-        if not moderators:
+        if {moderator_id} == moderators:
             rs.notify("error", n_("Cannot remove last moderator."))
         else:
-            code = self.mlproxy.set_moderators(rs, mailinglist_id, moderators)
+            code = self.mlproxy.remove_moderator(rs, mailinglist_id, moderator_id)
             self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/management")
 
@@ -753,9 +752,8 @@ class MlBaseFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.advanced_management(rs, mailinglist_id)
 
-        whitelist = set(rs.ambience['mailinglist']['whitelist']) | {email}
-        code = self.mlproxy.set_whitelist(rs, mailinglist_id, whitelist)
-        self.notify_return_code(rs, code)
+        code = self.mlproxy.add_whitelist_entry(rs, mailinglist_id, email)
+        self.notify_return_code(rs, code, error=n_("Action had no effect."))
         return self.redirect(rs, "ml/advanced_management")
 
     @access("ml", modi={"POST"})
@@ -767,8 +765,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.advanced_management(rs, mailinglist_id)
 
-        whitelist = set(rs.ambience['mailinglist']['whitelist']) - {email}
-        code = self.mlproxy.set_whitelist(rs, mailinglist_id, whitelist)
+        code = self.mlproxy.remove_whitelist_entry(rs, mailinglist_id, email)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/advanced_management")
 

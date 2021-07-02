@@ -9,9 +9,9 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
     Accounts, CdEDBObject, CdEDBObjectMap, Error, TransactionType, diacritic_patterns,
-    n_, now,
+    n_, now, EntitySorter, xsorted,
 )
-from cdedb.frontend.common import cdedbid_filter
+from cdedb.filter import cdedbid_filter
 from cdedb.validation import validate_check
 
 # This is the specification of the order of the fields in the input.
@@ -499,6 +499,10 @@ class Transaction:
         confidence = ConfidenceLevel.Full
 
         # Try to find and match an event.
+        events = [
+            (e, get_event_name_pattern(e))
+            for e in xsorted(events.values(), key=EntitySorter.event, reverse=True)
+        ]
         self._match_event(events)
         # Try to find and match cdedbids.
         self._match_members(get_persona)
@@ -683,34 +687,34 @@ class Transaction:
                 self.persona_id = best_match.persona_id
                 self.persona_id_confidence = best_confidence
 
-    def _match_event(self, events: CdEDBObjectMap) -> None:
+    def _match_event(self, processed_events: List[Tuple[CdEDBObject, str]]) -> None:
         """
         Assign all matching Events to self.event_matches.
+
+        :param processed_events: This should be a sorted list of events, and
+            event name patterns derived from them.
 
         Assign the best match to self.best_event_match and
         the confidence of the best match to self.best_event_confidence.
         """
 
         confidence = ConfidenceLevel.Full
-        event_names = {
-            e["title"]: (get_event_name_pattern(e), e["shortname"], e["id"])
-            for e in events.values()
-            }
 
         Event = collections.namedtuple("Event", ("event_id", "confidence"))
 
         matched_events = []
-        for event_name, value in event_names.items():
-            pattern, _, event_id = value
+        for e, pattern in processed_events:
+            if e["is_archived"]:
+                confidence = confidence.decrease()
 
-            if re.search(re.escape(event_name), self.reference,
+            if re.search(re.escape(e["title"]), self.reference,
                          flags=re.IGNORECASE):
                 # Exact match to Event Name
-                matched_events.append(Event(event_id, confidence))
+                matched_events.append(Event(e["id"], confidence))
                 continue
             elif re.search(pattern, self.reference, flags=re.IGNORECASE):
                 # Similar to Event Name
-                matched_events.append(Event(event_id, confidence.decrease()))
+                matched_events.append(Event(e["id"], confidence.decrease()))
 
         if matched_events:
             best_match = None

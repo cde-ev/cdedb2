@@ -32,7 +32,7 @@
         <script nonce="{{ csp_nonce }}">
             $('#input-persona-persona_id').cdedbSearchPerson(
                 '{{ (cdedblink('core/select_persona')|e) + ('?kind=event_user&phrase=%s'|s) }}',
-                {{ registered_personas|list|json|s }}, false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
+                {{ registered_personas|list|tojson }}, false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
             );
         </script>
         {% if CDEDB_OFFLINE_DEPLOYMENT %}
@@ -60,7 +60,7 @@
                 {% set course_entries = courses|keydictsort(EntitySorter.course)
                                         |xdict_entries('{id}', '{nr}. {shortname}', include=course_choices[track_id]) %}
                 {{ util.form_input_select(name="track{}.course_id".format(track_id),
-                                          label=gettext("Course %s")|format(track['title'])
+                                          label=gettext("Course %s")|format(track['shortname'])
                                                 if ambience['event']['tracks']|length > 1  else gettext("Course"),
                                           entries=course_entries,
                                           nulloption=nbsp) }}
@@ -76,7 +76,7 @@
                 <h4>
                     {% trans %}Course Choices{% endtrans %}
                     {% if ambience['event']['tracks']|length > 1 %}
-                    {{ track['title'] }}
+                    {{ track['shortname'] }}
                     {% endif %}
                 </h4>
 

@@ -148,7 +148,7 @@
         {% endcall %}
 
         <div class="pull-right">
-            {{ util.href(cdedblink('event/registration_query', corresponding_query|querytoparams),
+            {{ util.href(cdedblink('event/registration_query', corresponding_query.serialize()),
                          gettext("View Registrations"), icon='list', aclass='btn btn-sm btn-default') }}
         </div>
         <div class="p softhide" id="js-button-group">
@@ -176,7 +176,7 @@
                         <th rowspan="2"></th>
                         <th rowspan="2">{% trans %}Full Name{% endtrans %}</th>
                         {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) %}
-                            <th colspan="{{ track['num_choices'] + 2 }}" class="b-left">{{ track['title'] }}</th>
+                            <th colspan="{{ track['num_choices'] + 2 }}" class="b-left">{{ track['shortname'] }}</th>
                         {% endfor %}
                     </tr>
                 {% endif %}

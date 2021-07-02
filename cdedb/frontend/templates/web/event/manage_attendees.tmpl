@@ -26,9 +26,14 @@
 {% block content %}
     <form action="{{ cdedblink('event/manage_attendees') }}" method="POST" id="manageattendeesform">
         {{ util.anti_csrf_token('event/manage_attendees') }}
-        <div class="row">
-            {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track)
-                    if track_id in ambience['course']['segments'] %}
+        {% set relevant_tracks = [] %}
+        {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track)
+                if track_id in ambience['course']['segments'] %}
+            {% do relevant_tracks.append((track_id, track)) %}
+        {% endfor %}
+        {% for batch in relevant_tracks|batch(3) %}
+            <div class="row">
+            {% for track_id, track in batch %}
                 <div class="col-md-6">
                     {% call util.bootstrap_panel(title=(track['title'] if ambience['event']['tracks']|length > 1
                                                                        else gettext("Assigned Attendees")),
@@ -65,14 +70,15 @@
                 </div>
             {% endfor %}
             <script nonce="{{ csp_nonce }}">
-                var course_names = {{ course_names|json|s }};
+                var course_names = {{ course_names|tojson }};
                 {% for track_id in ambience['event']['tracks'] %}
                     $('#input_new_{{ track_id }}').cdedbSearchParticipant(
-                        {{ selectize_data[track_id]|json|s }}, course_names, "{{ gettext("currently")|s }}: ");
+                        {{ selectize_data[track_id]|tojson }}, course_names, "{{ gettext("currently")|s }}: ");
                 {% endfor %}
                 $('.del-box').cdedbRemoveParticipantButton('{{ gettext("Remove Attendee") }}');
             </script>
-        </div>
+            </div>
+        {% endfor %}
         {{ util.input_submit(label=gettext("Save")) }}&emsp;
         {{ util.href(cdedblink('event/show_course'), gettext("Cancel"), icon='times-circle', aclass="btn btn-default") }}
     </form>

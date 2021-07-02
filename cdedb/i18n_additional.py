@@ -109,6 +109,8 @@ I18N_STRINGS = (
     n_("EventLogCodes.fee_modifier_deleted"),
     n_("EventLogCodes.minor_form_updated"),
     n_("EventLogCodes.minor_form_removed"),
+    n_("EventLogCodes.query_stored"),
+    n_("EventLogCodes.query_deleted"),
 
     n_("FinanceLogCodes.new_member"),
     n_("FinanceLogCodes.gain_membership"),
@@ -151,6 +153,7 @@ I18N_STRINGS = (
     n_("GenesisStati.successful"),
     n_("GenesisStati.rejected"),
 
+    n_("LineResolutions.none"),
     n_("LineResolutions.create"),
     n_("LineResolutions.skip"),
     n_("LineResolutions.renew_trial"),

@@ -2,6 +2,7 @@
 
 """Services for the cde realm."""
 
+import collections
 import copy
 import csv
 import datetime
@@ -17,7 +18,7 @@ import string
 import tempfile
 import time
 from collections import OrderedDict, defaultdict
-from typing import Collection, Dict, List, Optional, Sequence, Set, Tuple, cast
+from typing import Any, Collection, Dict, List, Optional, Sequence, Set, Tuple, cast
 
 import dateutil.easter
 import psycopg2.extensions
@@ -36,20 +37,22 @@ from cdedb.common import (
     lastschrift_reference, merge_dicts, n_, now, unwrap, xsorted,
 )
 from cdedb.database.connection import Atomizer
+from cdedb.filter import enum_entries_filter, money_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, CustomCSVDialect, REQUESTdata, REQUESTdatadict, REQUESTfile,
     Worker, access, calculate_db_logparams, calculate_loglinks, cdedbid_filter,
     check_validation as check, check_validation_optional as check_optional, csv_output,
-    enum_entries_filter, make_membership_fee_reference, make_postal_address,
-    money_filter, periodic, process_dynamic_input, request_extractor,
+    make_membership_fee_reference, make_postal_address, periodic,
+    process_dynamic_input, request_extractor,
 )
 from cdedb.query import (
-    QUERY_SPECS, Query, QueryConstraint, QueryOperators, mangle_query_input,
+    Query, QueryConstraint, QueryOperators, QueryScope,
 )
 from cdedb.validation import (
     LASTSCHRIFT_COMMON_FIELDS, PAST_EVENT_FIELDS, PAST_COURSE_COMMON_FIELDS,
     PERSONA_FULL_CDE_CREATION, TypeMapping, filter_none, validate_check,
-    validate_check_optional,
+    validate_check_optional, PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
+    is_optional
 )
 
 MEMBERSEARCH_DEFAULTS = {
@@ -200,8 +203,11 @@ class CdEFrontend(AbstractUserFrontend):
     @access("cde_admin", "member")
     def member_stats(self, rs: RequestState) -> Response:
         """Display stats about our members."""
-        stats = self.cdeproxy.get_member_stats(rs)
-        return self.render(rs, "member_stats", {'stats': stats})
+        simple_stats, other_stats, year_stats = self.cdeproxy.get_member_stats(rs)
+        all_years = list(collections.ChainMap(*year_stats.values()))
+        return self.render(rs, "member_stats", {
+            'simple_stats': simple_stats, 'other_stats': other_stats,
+            'year_stats': year_stats, 'all_years': all_years})
 
     @access("persona")
     @REQUESTdata("is_search")
@@ -226,9 +232,10 @@ class CdEFrontend(AbstractUserFrontend):
                 pu)
         else:
             defaults['qop_postal_code,postal_code2'] = QueryOperators.match
-        spec = copy.deepcopy(QUERY_SPECS['qview_cde_member'])
+        scope = QueryScope.cde_member
+        spec = scope.get_spec()
         query = check(rs, vtypes.QueryInput,
-                      mangle_query_input(rs, spec, defaults), "query", spec=spec,
+                      scope.mangle_query_input(rs, defaults), "query", spec=spec,
                       allow_empty=not is_search, separator=" ")
 
         events = self.pasteventproxy.list_past_events(rs)
@@ -266,7 +273,6 @@ class CdEFrontend(AbstractUserFrontend):
 
                 query.constraints = [restrict(constrain)
                                      for constrain in query.constraints]
-                query.scope = "qview_cde_member"
                 query.fields_of_interest.append('personas.id')
                 result = self.cdeproxy.submit_general_query(rs, query)
                 count = len(result)
@@ -286,9 +292,10 @@ class CdEFrontend(AbstractUserFrontend):
     def past_course_search(self, rs: RequestState, is_search: bool) -> Response:
         """Search for past courses."""
         defaults = copy.deepcopy(COURSESEARCH_DEFAULTS)
-        spec = copy.deepcopy(QUERY_SPECS['qview_pevent_course'])
+        scope = QueryScope.past_event_course
+        spec = scope.get_spec()
         query = check(rs, vtypes.QueryInput,
-                      mangle_query_input(rs, spec, defaults), "query", spec=spec,
+                      scope.mangle_query_input(rs, defaults), "query", spec=spec,
                       allow_empty=not is_search, separator=" ")
         result: Optional[Sequence[CdEDBObject]] = None
         count = 0
@@ -300,7 +307,6 @@ class CdEFrontend(AbstractUserFrontend):
             if is_search and not query.constraints:
                 rs.notify("error", n_("You have to specify some filters."))
             elif is_search:
-                query.scope = "qview_pevent_course"
                 query.fields_of_interest.append('courses.id')
                 result = self.pasteventproxy.submit_general_query(rs, query)
                 count = len(result)
@@ -320,7 +326,8 @@ class CdEFrontend(AbstractUserFrontend):
         field's name.
         """
         current = tuple(rs.retrieve_validation_errors())
-        rs.replace_validation_errors([('qval_' + k, v) for k, v in current])
+        rs.replace_validation_errors(
+            [('qval_' + k, v) for k, v in current])  # type: ignore[operator]
         rs.ignore_validation_errors()
 
     @access("core_admin", "cde_admin")
@@ -329,16 +336,21 @@ class CdEFrontend(AbstractUserFrontend):
                     ) -> Response:
         """Perform search."""
         events = self.pasteventproxy.list_past_events(rs)
-        choices = {
+        courses = self.pasteventproxy.list_past_courses(rs)
+        choices: Dict[str, OrderedDict[Any, str]] = {
             'pevent_id': OrderedDict(
                 xsorted(events.items(), key=operator.itemgetter(1))),
+            'pcourse_id': OrderedDict(
+                xsorted(courses.items(), key=operator.itemgetter(1))),
             'gender': OrderedDict(
                 enum_entries_filter(
                     const.Genders,
-                    rs.gettext if download is None else rs.default_gettext))
+                    rs.gettext if download is None else rs.default_gettext)),
+            'country': OrderedDict(self.get_localized_country_codes(rs)),
+            'country2': OrderedDict(self.get_localized_country_codes(rs)),
         }
         return self.generic_user_search(
-            rs, download, is_search, 'qview_cde_user', 'qview_cde_user',
+            rs, download, is_search, QueryScope.cde_user, QueryScope.cde_user,
             self.cdeproxy.submit_general_query, choices=choices)
 
     @access("core_admin", "cde_admin")
@@ -361,7 +373,7 @@ class CdEFrontend(AbstractUserFrontend):
         }
         return self.generic_user_search(
             rs, download, is_search,
-            'qview_archived_past_event_user', 'qview_archived_persona',
+            QueryScope.archived_past_event_user, QueryScope.archived_persona,
             self.cdeproxy.submit_general_query, choices=choices,
             endpoint="archived_user_search")
 
@@ -410,7 +422,7 @@ class CdEFrontend(AbstractUserFrontend):
         data = data or []
         csvfields = csvfields or tuple()
         pevents = self.pasteventproxy.list_past_events(rs)
-        pevent_ids = {d['pevent_id'] for d in data if d['pevent_id']}
+        pevent_ids = {d['pevent_id'] for d in data if d.get('pevent_id')}
         pcourses = {
             pevent_id: self.pasteventproxy.list_past_courses(rs, pevent_id)
             for pevent_id in pevent_ids}
@@ -432,12 +444,21 @@ class CdEFrontend(AbstractUserFrontend):
         """
         warnings: List[Error] = []
         problems: List[Error]
+
+        # short-circuit if additional fields like the resolution are error prone
+        problems = [
+            (field, error)
+            for error_field, error in rs.retrieve_validation_errors() for field in datum
+            if error_field == f"{field}{datum['lineno']}"]
+        if problems:
+            datum['problems'] = problems
+            return datum
+
         if datum['old_hash'] and datum['old_hash'] != datum['new_hash']:
-            # remove resolution in case of a change
-            datum['resolution'] = None
-            resolution_key = f"resolution{datum['lineno'] - 1}"
-            rs.values[resolution_key] = None
-            warnings.append((resolution_key, ValueError(n_("Entry changed."))))
+            # reset resolution in case of a change
+            datum['resolution'] = LineResolutions.none
+            rs.values[f"resolution{datum['lineno']}"] = LineResolutions.none
+            warnings.append((None, ValueError(n_("Entry changed."))))
         persona = copy.deepcopy(datum['raw'])
         # Adapt input of gender from old convention (this is the format
         # used by external processes, i.e. BuB)
@@ -475,8 +496,7 @@ class CdEFrontend(AbstractUserFrontend):
             problems.extend([('birthday', ValueError(
                 n_("Persona is younger than 10 years.")))])
 
-        pevent_id, w, p = self.pasteventproxy.find_past_event(
-            rs, datum['raw']['event'])
+        pevent_id, w, p = self.pasteventproxy.find_past_event(rs, datum['raw']['event'])
         warnings.extend(w)
         problems.extend(p)
         pcourse_id = None
@@ -487,30 +507,27 @@ class CdEFrontend(AbstractUserFrontend):
             problems.extend(p)
         else:
             warnings.append(("course", ValueError(n_("No course available."))))
+
         doppelgangers: CdEDBObjectMap = {}
         if persona:
             if (datum['resolution'] == LineResolutions.create
-                    and self.coreproxy.verify_existence(rs, persona['username'])):
-                warnings.append(
+                    and self.coreproxy.verify_existence(rs, persona['username'])
+                    and not bool(datum['doppelganger_id'])):
+                problems.append(
                     ("persona", ValueError(n_("Email address already taken."))))
             temp = copy.deepcopy(persona)
             temp['id'] = 1
             doppelgangers = self.coreproxy.find_doppelgangers(rs, temp)
         if doppelgangers:
-            warnings.append(("persona",
-                             ValueError(n_("Doppelgangers found."))))
-        if (datum['resolution'] is not None and
-                (bool(datum['doppelganger_id'])
-                 != datum['resolution'].is_modification())):
+            warnings.append(("persona", ValueError(n_("Doppelgangers found."))))
+        if bool(datum['doppelganger_id']) != datum['resolution'].is_modification():
             problems.append(
                 ("doppelganger",
-                 RuntimeError(
-                     n_("Doppelganger choice doesn’t fit resolution."))))
+                 RuntimeError(n_("Doppelganger choice doesn’t fit resolution."))))
         if datum['doppelganger_id']:
             if datum['doppelganger_id'] not in doppelgangers:
                 problems.append(
-                    ("doppelganger",
-                     KeyError(n_("Doppelganger unavailable."))))
+                    ("doppelganger", KeyError(n_("Doppelganger unavailable."))))
             else:
                 dg = doppelgangers[datum['doppelganger_id']]
                 if (
@@ -519,8 +536,7 @@ class CdEFrontend(AbstractUserFrontend):
                     and self.coreproxy.verify_existence(rs, persona['username'])
                 ):
                     warnings.append(
-                        ("doppelganger",
-                         ValueError(n_("Email address already taken."))))
+                        ("doppelganger", ValueError(n_("Email address already taken."))))
                 if not dg['is_cde_realm']:
                     warnings.append(
                         ("doppelganger",
@@ -533,15 +549,13 @@ class CdEFrontend(AbstractUserFrontend):
                         else:
                             problems.append(
                                 ("doppelganger",
-                                 ValueError(n_(
-                                     "Missing data for realm upgrade."))))
+                                 ValueError(n_("Missing data for realm upgrade."))))
         if datum['doppelganger_id'] and pevent_id:
-            existing = self.pasteventproxy.list_participants(
-                rs, pevent_id=pevent_id)
+            existing = self.pasteventproxy.list_participants(rs, pevent_id=pevent_id)
             if (datum['doppelganger_id'], pcourse_id) in existing:
                 problems.append(
-                    ("pevent_id",
-                     KeyError(n_("Participation already recorded."))))
+                    ("pevent_id", KeyError(n_("Participation already recorded."))))
+
         datum.update({
             'persona': persona,
             'pevent_id': pevent_id,
@@ -565,7 +579,6 @@ class CdEFrontend(AbstractUserFrontend):
             'birth_name', 'gender', 'address_supplement', 'address',
             'postal_code', 'location', 'country', 'telephone',
             'mobile', 'birthday')  # email omitted as it is handled separately
-        persona_id = None
         if datum['resolution'] == LineResolutions.skip:
             return ret
         elif datum['resolution'] == LineResolutions.create:
@@ -583,36 +596,49 @@ class CdEFrontend(AbstractUserFrontend):
             current = self.coreproxy.get_persona(rs, persona_id)
             if not current['is_cde_realm']:
                 # Promote to cde realm dependent on current realm
-                promotion: CdEDBObject = {
-                    'is_{}_realm'.format(realm): True
-                    for realm in ('cde', 'event', 'assembly', 'ml')}
-                promotion.update({
+                promotion: CdEDBObject = {field: None for field in CDE_TRANSITION_FIELDS}
+                # The ream independent upgrades of the persona. They are applied at last
+                # to prevent unintentional overrides
+                upgrades = {
+                    'is_cde_realm': True,
+                    'is_event_realm': True,
+                    'is_assembly_realm': True,
+                    'is_ml_realm': True,
                     'decided_search': False,
                     'trial_member': False,
                     'paper_expuls': True,
                     'bub_search': False,
                     'id': persona_id,
-                })
-                empty_fields = (
-                    'address_supplement2', 'address2', 'postal_code2',
-                    'location2', 'country2', 'weblink', 'specialisation',
-                    'affiliation', 'timeline', 'interests', 'free_form')
-                for field in empty_fields:
-                    promotion[field] = None
-                invariant_fields = {'family_name', 'given_names'}
+                }
+                # This applies a part of the newly imported data necessary for realm
+                # transition. The remaining data will be updated later.
+                mandatory_fields = {
+                    field for field, validator in CDE_TRANSITION_FIELDS.items()
+                    if field not in upgrades and not is_optional(validator)
+                }
+                assert mandatory_fields <= set(batch_fields)
+                # It is pure incident that only event users have additional (optional)
+                # data they share with cde users and which must be honoured during realm
+                # transition. This may be changed if a new user tier is introduced.
                 if not current['is_event_realm']:
                     if not datum['resolution'].do_update():
                         raise RuntimeError(n_("Need extra data."))
-                    # This applies a part of the newly imported data,
-                    # however email and name are not changed during a
-                    # realm transition and thus we update again later
-                    # on
-                    for field in set(batch_fields) - invariant_fields:
+                    for field in mandatory_fields:
                         promotion[field] = datum['persona'][field]
                 else:
-                    stored = self.coreproxy.get_event_user(rs, persona_id)
-                    for field in set(batch_fields) - invariant_fields:
-                        promotion[field] = stored.get(field)
+                    current = self.coreproxy.get_event_user(rs, persona_id)
+                    # take care that we do not override existent data
+                    current_fields = {
+                        field for field in CDE_TRANSITION_FIELDS
+                        if current.get(field) is not None
+                    }
+                    for field in current_fields:
+                        promotion[field] = current[field]
+                    for field in mandatory_fields:
+                        if promotion[field] is None:
+                            promotion[field] = datum['persona'][field]
+                # apply the actual changes
+                promotion.update(upgrades)
                 self.coreproxy.change_persona_realms(rs, promotion)
             if datum['resolution'].do_trial():
                 self.coreproxy.change_membership(
@@ -625,23 +651,20 @@ class CdEFrontend(AbstractUserFrontend):
                     rs, update, may_wait=False,
                     change_note="Probemitgliedschaft erneuert.")
             if datum['resolution'].do_update():
+                self.coreproxy.change_username(
+                    rs, persona_id, datum['persona']['username'], password=None)
                 update = {'id': datum['doppelganger_id']}
                 for field in batch_fields:
                     update[field] = datum['persona'][field]
-                self.coreproxy.change_username(
-                    rs, datum['doppelganger_id'],
-                    datum['persona']['username'], password=None)
-                # TODO the following should be must_wait=True
                 self.coreproxy.change_persona(
-                    rs, update, may_wait=False,
+                    rs, update, may_wait=True, force_review=True,
                     change_note="Import aktualisierter Daten.")
         else:
             raise RuntimeError(n_("Impossible."))
         if datum['pevent_id'] and persona_id:
-            # TODO preserve instructor/orga information
             self.pasteventproxy.add_participant(
-                rs, datum['pevent_id'], datum['pcourse_id'],
-                persona_id, is_instructor=False, is_orga=False)
+                rs, datum['pevent_id'], datum['pcourse_id'], persona_id,
+                is_instructor=datum['is_instructor'], is_orga=datum['is_orga'])
         return ret
 
     def perform_batch_admission(self, rs: RequestState, data: List[CdEDBObject],
@@ -658,7 +681,7 @@ class CdEFrontend(AbstractUserFrontend):
         try:
             with Atomizer(rs):
                 count = 0
-                for index, datum in enumerate(data):
+                for index, datum in enumerate(data, start=1):
                     count += self._perform_one_batch_admission(
                         rs, datum, trial_membership, consent)
         except psycopg2.extensions.TransactionRollbackError:
@@ -754,29 +777,44 @@ class CdEFrontend(AbstractUserFrontend):
         reader = csv.DictReader(
             accountlines, fieldnames=fields, dialect=CustomCSVDialect())
         data = []
-        lineno = 0
-        for raw_entry in reader:
+        total_account_number = 0
+        for lineno, raw_entry in enumerate(reader):
+            total_account_number += 1
             dataset: CdEDBObject = {'raw': raw_entry}
             params: TypeMapping = {
+                # as on the first submit no values for the resolution are transmitted,
+                # we have to cast None -> LineResolutions.none after extraction
                 f"resolution{lineno}": Optional[LineResolutions],  # type: ignore
                 f"doppelganger_id{lineno}": Optional[vtypes.ID],  # type: ignore
                 f"hash{lineno}": Optional[str],  # type: ignore
+                f"is_orga{lineno}": Optional[bool],  # type: ignore
+                f"is_instructor{lineno}": Optional[bool],  # type: ignore
             }
             tmp = request_extractor(rs, params)
-            dataset['resolution'] = tmp["resolution{}".format(lineno)]
-            dataset['doppelganger_id'] = tmp["doppelganger_id{}".format(lineno)]
-            dataset['old_hash'] = tmp["hash{}".format(lineno)]
+            if tmp[f"resolution{lineno}"] is None:
+                tmp[f"resolution{lineno}"] = LineResolutions.none
+
+            dataset['resolution'] = tmp[f"resolution{lineno}"]
+            dataset['doppelganger_id'] = tmp[f"doppelganger_id{lineno}"]
+            dataset['is_orga'] = tmp[f"is_orga{lineno}"]
+            dataset['is_instructor'] = tmp[f"is_instructor{lineno}"]
+            dataset['old_hash'] = tmp[f"hash{lineno}"]
             dataset['new_hash'] = get_hash(accountlines[lineno].encode())
-            rs.values["hash{}".format(lineno)] = dataset['new_hash']
-            lineno += 1
+            rs.values[f"hash{lineno}"] = dataset['new_hash']
             dataset['lineno'] = lineno
             data.append(self.examine_for_admission(rs, dataset))
+
+        if rs.has_validation_errors():
+            return self.batch_admission_form(rs, data=data, csvfields=fields)
+
         for ds1, ds2 in itertools.combinations(data, 2):
             similarity = self.similarity_score(ds1, ds2)
             if similarity == "high":
+                # note that we 0-indexed our lines internally but present them 1-indexed
+                # to the user. So, we need to increase the line number here manually.
                 problem = (None, ValueError(
                     n_("Lines %(first)s and %(second)s are the same."),
-                    {'first': ds1['lineno'], 'second': ds2['lineno']}))
+                    {'first': ds1['lineno']+1, 'second': ds2['lineno']+1}))
                 ds1['problems'].append(problem)
                 ds2['problems'].append(problem)
             elif similarity == "medium":
@@ -789,27 +827,29 @@ class CdEFrontend(AbstractUserFrontend):
                 pass
             else:
                 raise RuntimeError(n_("Impossible."))
+
         for dataset in data:
-            if (dataset['resolution'] is None
+            if (dataset['resolution'] == LineResolutions.none
                     and not dataset['doppelgangers']
                     and not dataset['problems']
                     and not dataset['old_hash']):
                 # automatically select resolution if this is an easy case
                 dataset['resolution'] = LineResolutions.create
-                rs.values['resolution{}'.format(dataset['lineno'] - 1)] = \
-                    LineResolutions.create.value
-        if lineno != len(accountlines):
+                rs.values[f"resolution{dataset['lineno']}"] = LineResolutions.create.value
+
+        if total_account_number != len(accountlines):
             rs.append_validation_error(
                 ("accounts", ValueError(n_("Lines didn’t match up."))))
         if not membership:
             rs.append_validation_error(
-                ("membership",
-                 ValueError(n_("Only member admission supported."))))
+                ("membership", ValueError(n_("Only member admission supported."))))
         open_issues = any(
-            e['resolution'] is None
+            e['resolution'] == LineResolutions.none
             or (e['problems'] and e['resolution'] != LineResolutions.skip)
             for e in data)
         if rs.has_validation_errors() or not data or open_issues:
+            # force a new validation round if some errors came up
+            rs.values['finalized'] = False
             return self.batch_admission_form(rs, data=data, csvfields=fields)
         if not finalized:
             rs.values['finalized'] = True
@@ -826,7 +866,7 @@ class CdEFrontend(AbstractUserFrontend):
                 rs.notify("warning", n_("DB serialization error."))
             else:
                 rs.notify("error", n_("Unexpected error on line %(num)s."),
-                          {'num': num + 1})
+                          {'num': num})
             return self.batch_admission_form(rs, data=data, csvfields=fields)
 
     @access("finance_admin")
@@ -2474,8 +2514,9 @@ class CdEFrontend(AbstractUserFrontend):
     def download_past_event_participantlist(self, rs: RequestState,
                                             pevent_id: int) -> Response:
         """Provide a download of a participant list for a past event."""
+        scope = QueryScope.past_event_user
         query = Query(
-            "qview_past_event_user", QUERY_SPECS['qview_past_event_user'],
+            scope, scope.get_spec(),
             ("personas.id", "given_names", "family_name", "address",
              "address_supplement", "postal_code", "location", "country"),
             [("pevent_id", QueryOperators.equal, pevent_id), ],

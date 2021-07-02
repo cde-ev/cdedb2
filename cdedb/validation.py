@@ -15,12 +15,10 @@ We offer three variants.
 * ``validate_check`` return a tuple ``(mangled_value, errors)``.
 * ``validate_affirm`` on success return the mangled value,
     but if there is an error raise an exception.
-* ``validate_is`` returns a :py:class:`boolean`,
-    but does no type conversion (hence things like dates mustn't be strings)
 
 The raw validator implementations are functions with signature
 ``(val, argname, **kwargs)`` of which many support the keyword arguments
-``_convert`` and ``_ignore_warnings``.
+``_ignore_warnings``.
 These functions are registered and than wrapped to generate the above variants.
 
 They return the the validated and optionally converted value
@@ -32,10 +30,7 @@ A ``ValueError`` may also store a third argument.
 This optional argument should be a ``Mapping[str, Any]``
 describing substitutions of the error string to be done by i18n.
 
-The parameter ``_convert`` is present in many validators
-and is usually passed along from the original caller to every validation inside
-as part of the keyword arguments.
-If ``True``, validators may try to convert the value into the appropriate type.
+Validators may try to convert the value into the appropriate type.
 For instance ``_int`` will try to convert the input into an int
 which would be useful for string inputs especially.
 
@@ -58,7 +53,7 @@ import string
 from enum import Enum
 from typing import (
     Callable, Iterable, Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar,
-    Union, cast, get_type_hints, overload,
+    Union, cast, get_type_hints, overload, Generic
 )
 
 import magic
@@ -82,7 +77,7 @@ from cdedb.database.constants import FieldAssociations, FieldDatatypes
 from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS
 from cdedb.query import (
     MULTI_VALUE_OPERATORS, NO_VALUE_OPERATORS, VALID_QUERY_OPERATORS, QueryOperators,
-    QueryOrder,
+    QueryOrder, QueryScope,
 )
 from cdedb.validationdata import (
     COUNTRY_CODES, FREQUENCY_LISTS, GERMAN_PHONE_CODES, GERMAN_POSTAL_CODES,
@@ -167,19 +162,6 @@ def validate_assert_optional(type_: Type[T], value: Any, **kwargs: Any) -> Optio
     return validate_assert(Optional[type_], value, **kwargs)  # type: ignore
 
 
-def validate_is(type_: Type[T], value: Any, **kwargs: Any) -> bool:
-    kwargs['_convert'] = False
-    try:
-        _ALL_TYPED[type_](value, **kwargs)
-        return True
-    except ValidationSummary:
-        return False
-
-
-def validate_is_optional(type_: Type[T], value: Any, **kwargs: Any) -> Optional[T]:
-    return validate_is(Optional[type_], value, **kwargs)  # type: ignore
-
-
 def validate_check(
     type_: Type[T], value: Any, **kwargs: Any
 ) -> Tuple[Optional[T], List[Error]]:
@@ -201,6 +183,15 @@ def validate_check_optional(
     return validate_check(Optional[type_], value, **kwargs)  # type: ignore
 
 
+# TODO replace with get_origin etc in Python 3.8 from typing
+get_args = lambda t: getattr(t, '__args__', ()) if t is not Generic else Generic
+get_origin = lambda t: getattr(t, '__origin__', None)
+
+
+def is_optional(type_: Type[T]) -> bool:
+    return get_origin(type_) is Union and NoneType in get_args(type_)
+
+
 def _allow_None(fun: Callable[..., T]) -> Callable[..., Optional[T]]:
     """Wrap a validator to allow ``None`` as valid input.
 
@@ -215,7 +206,7 @@ def _allow_None(fun: Callable[..., T]) -> Callable[..., Optional[T]]:
             try:
                 return fun(val, *args, **kwargs)
             except ValidationSummary:  # we need to catch everything
-                if kwargs.get('_convert', True) and not val:
+                if not val:
                     return None
                 else:
                     raise
@@ -382,15 +373,14 @@ def filter_none(data: Dict[str, Any]) -> Dict[str, Any]:
 
 @_add_typed_validator
 def _None(
-    val: Any, argname: str = None, *, _convert: bool = True, **kwargs: Any
+    val: Any, argname: str = None, **kwargs: Any
 ) -> None:
     """Force a None.
 
     This is mostly for ensuring proper population of dicts.
     """
-    if _convert:
-        if isinstance(val, str) and not val:
-            val = None
+    if isinstance(val, str) and not val:
+        val = None
     if val is not None:
         raise ValidationSummary(ValueError(argname, n_("Must be empty.")))
 
@@ -409,20 +399,19 @@ def _any(
 
 @_add_typed_validator
 def _int(
-    val: Any, argname: str = None, *, _convert: bool = True, **kwargs: Any
+    val: Any, argname: str = None, **kwargs: Any
 ) -> int:
-    if _convert:
-        if isinstance(val, (str, bool)):
-            try:
-                val = int(val)
-            except ValueError as e:
-                raise ValidationSummary(ValueError(argname, n_(
-                    "Invalid input for integer."))) from e
-        elif isinstance(val, float):
-            if not math.isclose(val, int(val), abs_tol=EPSILON):
-                raise ValidationSummary(ValueError(
-                    argname, n_("Precision loss.")))
+    if isinstance(val, (str, bool)):
+        try:
             val = int(val)
+        except ValueError as e:
+            raise ValidationSummary(ValueError(argname, n_(
+                "Invalid input for integer."))) from e
+    elif isinstance(val, float):
+        if not math.isclose(val, int(val), abs_tol=EPSILON):
+            raise ValidationSummary(ValueError(
+                argname, n_("Precision loss.")))
+        val = int(val)
     # disallow booleans as psycopg will try to send them as such and not ints
     if not isinstance(val, int) or isinstance(val, bool):
         raise ValidationSummary(TypeError(argname, n_("Must be an integer.")))
@@ -478,14 +467,13 @@ def _partial_import_id(
 
 @_add_typed_validator
 def _float(
-    val: Any, argname: str = None, *, _convert: bool = True, **kwargs: Any
+    val: Any, argname: str = None, **kwargs: Any
 ) -> float:
-    if _convert:
-        try:
-            val = float(val)
-        except (ValueError, TypeError) as e:
-            raise ValidationSummary(ValueError(
-                argname, n_("Invalid input for float."))) from e
+    try:
+        val = float(val)
+    except (ValueError, TypeError) as e:
+        raise ValidationSummary(ValueError(
+            argname, n_("Invalid input for float."))) from e
     if not isinstance(val, float):
         raise ValidationSummary(
             TypeError(argname, n_("Must be a floating point number.")))
@@ -500,9 +488,9 @@ def _float(
 @_add_typed_validator
 def _decimal(
     val: Any, argname: str = None, *,
-    large: bool = False, _convert: bool = True, **kwargs: Any
+    large: bool = False, **kwargs: Any
 ) -> decimal.Decimal:
-    if _convert and isinstance(val, str):
+    if isinstance(val, str):
         try:
             val = decimal.Decimal(val)
         except (ValueError, TypeError, decimal.InvalidOperation) as e:
@@ -557,13 +545,13 @@ def _positive_decimal(
 @_add_typed_validator
 def _str_type(
     val: Any, argname: str = None, *,
-    zap: str = '', sieve: str = '', _convert: bool = True, **kwargs: Any
+    zap: str = '', sieve: str = '', **kwargs: Any
 ) -> StringType:
     """
     :param zap: delete all characters in this from the result
     :param sieve: allow only the characters in this into the result
     """
-    if _convert and val is not None:
+    if val is not None:
         try:
             val = str(val)
         except (ValueError, TypeError) as e:
@@ -593,20 +581,19 @@ def _str(val: Any, argname: str = None, **kwargs: Any) -> str:
 @_add_typed_validator
 def _bytes(
     val: Any, argname: str = None, *,
-    _convert: bool = True, encoding: str = "utf-8", **kwargs: Any
+    encoding: str = "utf-8", **kwargs: Any
 ) -> bytes:
-    if _convert:
-        if isinstance(val, str):
-            if not encoding:
-                raise RuntimeError("Not encoding specified to convert str to bytes.")
-            val = val.encode(encoding=encoding)
-        else:
-            try:
-                val = bytes(val)
-            except ValueError as e:
-                raise ValidationSummary(
-                    ValueError(argname, n_("Cannot convert {val_type} to bytes."),
-                               {'val_type': str(type(val))})) from e
+    if isinstance(val, str):
+        if not encoding:
+            raise RuntimeError("Not encoding specified to convert str to bytes.")
+        val = val.encode(encoding=encoding)
+    else:
+        try:
+            val = bytes(val)
+        except ValueError as e:
+            raise ValidationSummary(
+                ValueError(argname, n_("Cannot convert {val_type} to bytes."),
+                           {'val_type': str(type(val))})) from e
     if not isinstance(val, bytes):
         raise ValidationSummary(
             TypeError(argname, n_("Must be a bytes object.")))
@@ -617,9 +604,6 @@ def _bytes(
 def _mapping(
     val: Any, argname: str = None, **kwargs: Any
 ) -> Mapping:  # type: ignore # type parameters would break this (for now)
-    """
-    :param _convert: is ignored since no useful default conversion is available
-    """
     if not isinstance(val, Mapping):
         raise ValidationSummary(TypeError(argname, n_("Must be a mapping.")))
     return val
@@ -629,9 +613,6 @@ def _mapping(
 def _iterable(
     val: Any, argname: str = None, **kwargs: Any
 ) -> Iterable:  # type: ignore # type parameters would break this (for now)
-    """
-    :param _convert: is ignored since no useful default conversion is available
-    """
     if not isinstance(val, Iterable):
         raise ValidationSummary(TypeError(argname, n_("Must be an iterable.")))
     return val
@@ -639,14 +620,13 @@ def _iterable(
 
 @_add_typed_validator
 def _sequence(
-    val: Any, argname: str = None, *, _convert: bool = True, **kwargs: Any
+    val: Any, argname: str = None, **kwargs: Any
 ) -> Sequence:  # type: ignore # type parameters would break this (for now)
-    if _convert:
-        try:
-            val = tuple(val)
-        except (ValueError, TypeError) as e:  # TODO what raises ValueError
-            raise ValidationSummary(ValueError(
-                argname, n_("Invalid input for sequence."))) from e
+    try:
+        val = tuple(val)
+    except (ValueError, TypeError) as e:  # TODO what raises ValueError
+        raise ValidationSummary(ValueError(
+            argname, n_("Invalid input for sequence."))) from e
     if not isinstance(val, Sequence):
         raise ValidationSummary(TypeError(argname, n_("Must be a sequence.")))
     return val
@@ -654,26 +634,26 @@ def _sequence(
 
 @_add_typed_validator
 def _bool(
-    val: Any, argname: str = None, *, _convert: bool = True, **kwargs: Any
+    val: Any, argname: str = None, **kwargs: Any
 ) -> bool:
-    if _convert and val is not None:
-        try:
-            return bool(distutils.util.strtobool(val))
-        except (AttributeError, ValueError):
-            try:
-                return bool(val)
-            except (ValueError, TypeError) as e:
-                raise ValidationSummary(ValueError(argname, n_(
-                    "Invalid input for boolean."))) from e
-    if not isinstance(val, bool):
+    if val is None:
         raise ValidationSummary(TypeError(argname, n_("Must be a boolean.")))
-    return val
+
+    try:
+        return bool(distutils.util.strtobool(val))
+    except (AttributeError, ValueError):
+        try:
+            return bool(val)
+        except (ValueError, TypeError) as e:
+            raise ValidationSummary(ValueError(argname, n_(
+                "Invalid input for boolean."))) from e
 
 
 @_add_typed_validator
 def _empty_dict(
     val: Any, argname: str = None, **kwargs: Any
 ) -> EmptyDict:
+    # TODO why do we not convert here but do so for _empty_list?
     if val != {}:
         raise ValidationSummary(
             ValueError(argname, n_("Must be an empty dict.")))
@@ -682,10 +662,9 @@ def _empty_dict(
 
 @_add_typed_validator
 def _empty_list(
-    val: Any, argname: str = None, *, _convert: bool = True, **kwargs: Any
+    val: Any, argname: str = None, **kwargs: Any
 ) -> EmptyList:
-    if _convert:  # TODO why do we convert here but not for _empty_dict?
-        val = list(_iterable(val, argname, _convert=_convert, **kwargs))
+    val = list(_iterable(val, argname, **kwargs))
     if val:
         raise ValidationSummary(ValueError(argname, n_("Must be an empty list.")))
     return EmptyList(val)
@@ -812,29 +791,26 @@ def _list_of(
     val: Any, atype: Type[T],
     argname: str = None,
     *,
-    _convert: bool = True,
     _parse_csv: bool = False,
     _allow_empty: bool = True,
     **kwargs: Any,
 ) -> List[T]:
-    """Apply another validator to all entries of of a list.
-
-    With `_convert` being True, the input may be a comma-separated string.
     """
-    if _convert:
-        if isinstance(val, str) and _parse_csv:
-            # TODO use default separator from config here?
-            # TODO use escaped_split?
-            # Skip emtpy entries which can be produced by JavaScript.
-            val = [v for v in val.split(",") if v]
-        val = _iterable(val, argname, _convert=_convert, **kwargs)
-    else:
-        val = _sequence(val, argname, _convert=_convert, **kwargs)
+    Apply another validator to all entries of of a list.
+
+    The input may be a comma-separated string.
+    """
+    if isinstance(val, str) and _parse_csv:
+        # TODO use default separator from config here?
+        # TODO use escaped_split?
+        # Skip emtpy entries which can be produced by JavaScript.
+        val = [v for v in val.split(",") if v]
+    val = _iterable(val, argname, **kwargs)
     vals: List[T] = []
     errs = ValidationSummary()
     for v in val:
         try:
-            vals.append(_ALL_TYPED[atype](v, argname, _convert=_convert, **kwargs))
+            vals.append(_ALL_TYPED[atype](v, argname, **kwargs))
         except ValidationSummary as e:
             errs.extend(e)
     if errs:
@@ -1072,6 +1048,7 @@ PERSONA_COMMON_FIELDS: Mapping[str, Any] = {
     'is_member': bool,
     'is_searchable': bool,
     'is_archived': bool,
+    'is_purged': bool,
     'is_active': bool,
     'display_name': str,
     'given_names': str,
@@ -1138,6 +1115,7 @@ def _persona(
         temp.update({
             'is_meta_admin': False,
             'is_archived': False,
+            'is_purged': False,
             'is_assembly_admin': False,
             'is_cde_admin': False,
             'is_finance_admin': False,
@@ -1213,9 +1191,9 @@ def parse_date(val: str) -> datetime.date:
 # TODO move this above _persona stuff?
 @_add_typed_validator
 def _date(
-    val: Any, argname: str = None, *, _convert: bool = True, **kwargs: Any
+    val: Any, argname: str = None, **kwargs: Any
 ) -> datetime.date:
-    if _convert and isinstance(val, str) and len(val.strip()) >= 6:
+    if isinstance(val, str) and len(val.strip()) >= 6:
         try:
             val = parse_date(val)
         except (ValueError, TypeError) as e:  # TODO TypeError should not occur
@@ -1233,6 +1211,8 @@ def _date(
 
 @_add_typed_validator
 def _birthday(val: Any, argname: str = None, **kwargs: Any) -> Birthday:
+    if not val:
+        val = datetime.date.min
     val = _date(val, argname=argname, **kwargs)
     if now().date() < val:
         raise ValidationSummary(ValueError(
@@ -1285,14 +1265,14 @@ def parse_datetime(
 @_add_typed_validator
 def _datetime(
     val: Any, argname: str = None, *,
-    _convert: bool = True, default_date: datetime.date = None, **kwargs: Any
+    default_date: datetime.date = None, **kwargs: Any
 ) -> datetime.datetime:
     """
     :param default_date: If the user-supplied value specifies only a time, this
       parameter allows to fill in the necessary date information to fill
       the gap.
     """
-    if _convert and isinstance(val, str) and len(val.strip()) >= 5:
+    if isinstance(val, str) and len(val.strip()) >= 5:
         try:
             val = parse_datetime(val, default_date)
         except (ValueError, TypeError) as e:  # TODO should never be TypeError?
@@ -1414,12 +1394,11 @@ def _german_postal_code(
 @_add_typed_validator
 def _country(
     val: Any, argname: str = None, *, _ignore_warnings: bool = False,
-    _convert: bool = True, **kwargs: Any
+    **kwargs: Any
 ) -> Country:
-    val = _ALL_TYPED[str](val, argname, _ignore_warnings=_ignore_warnings,
-                          _convert=_convert, **kwargs)
-    if _convert:
-        val = val.strip()
+    val = _ALL_TYPED[str](val, argname, _ignore_warnings=_ignore_warnings, **kwargs)
+    # TODO be more strict and do not strip
+    val = val.strip()
     if val not in COUNTRY_CODES:
         raise ValidationSummary(
             ValueError(argname, n_("Enter actual country name in English.")))
@@ -2373,7 +2352,7 @@ def _event_field(
     if not val.get(entries_key, True):
         val[entries_key] = None
     if entries_key in val and val[entries_key] is not None:
-        if isinstance(val[entries_key], str) and kwargs.get("_convert", True):
+        if isinstance(val[entries_key], str):
             val[entries_key] = tuple(tuple(y.strip() for y in x.split(';', 1))
                                      for x in val[entries_key].split('\n'))
         try:
@@ -2928,22 +2907,20 @@ def _questionnaire(
 # TODO move above
 @_add_typed_validator
 def _json(
-    val: Any, argname: str = "json", *, _convert: bool = True, **kwargs: Any
+    val: Any, argname: str = "json", **kwargs: Any
 ) -> JSON:
     """Deserialize a JSON payload.
 
     This is a bit different from many other validatiors in that it is not
     idempotent.
     """
-    if not _convert:
-        raise RuntimeError("This is a conversion by definition.")
     if isinstance(val, bytes):
         try:
             val = val.decode("utf-8")  # TODO remove encoding argument?
         except UnicodeDecodeError as e:
             raise ValidationSummary(ValueError(
                 argname, n_("Invalid UTF-8 sequence."))) from e
-    val = _str(val, argname, _convert=_convert, **kwargs)
+    val = _str(val, argname, **kwargs)
     try:
         data = json.loads(val)
     except json.decoder.JSONDecodeError as e:
@@ -3072,8 +3049,7 @@ def _serialized_event(
         for key, entry in val[table].items():
             try:
                 new_entry = validator(entry, table, **kwargs)
-                # _convert: bool = True to fix JSON key restriction
-                new_key = _int(key, table, **{**kwargs, '_convert': True})
+                new_key = _int(key, table, **kwargs)
             except ValidationSummary as e:
                 errs.extend(e)
             else:
@@ -3140,6 +3116,7 @@ def _serialized_partial_event(
         'lodgement_groups': Mapping,
         'lodgements': Mapping,
         'registrations': Mapping,
+        'summary': str,
     }
 
     val = _examine_dictionary_fields(
@@ -3165,7 +3142,7 @@ def _serialized_partial_event(
         for key, entry in val[domain].items():
             try:
                 # fix JSON key restriction
-                new_key = _int(key, domain, **{**kwargs, '_convert': True})
+                new_key = _int(key, domain, **kwargs)
             except ValidationSummary as e:
                 errs.extend(e)
                 continue
@@ -3230,7 +3207,7 @@ def _partial_course(
         new_dict = {}
         for key, entry in val['segments'].items():
             try:
-                new_key = _int(key, 'segments', **{**kwargs, '_convert': True})
+                new_key = _int(key, 'segments', **kwargs)
                 new_entry = _ALL_TYPED[Optional[bool]](  # type: ignore
                     entry, 'segments', **kwargs)
             except ValidationSummary as e:
@@ -3538,15 +3515,14 @@ def _mailinglist(
 
     errs = ValidationSummary()
 
-    if "domain" in val:
-        if "ml_type" not in val:
+    if "domain" not in val:
+        errs.append(ValueError("domain",
+            "Must specify domain for setting mailinglist."))
+    else:
+        atype = ml_type.get_type(val["ml_type"])
+        if val["domain"].value not in atype.domains:
             errs.append(ValueError("domain", n_(
-                "Must specify mailinglist type to change domain.")))
-        else:
-            atype = ml_type.get_type(val["ml_type"])
-            if val["domain"].value not in atype.domains:
-                errs.append(ValueError("domain", n_(
-                    "Invalid domain for this mailinglist type.")))
+                "Invalid domain for this mailinglist type.")))
 
     if errs:
         raise errs
@@ -3973,7 +3949,7 @@ def _query_input(
     separator: str = ',', escape: str = '\\',
     **kwargs: Any
 ) -> QueryInput:
-    """This is for the queries coming from the web.
+    """This is for the queries coming from the web and the database.
 
     It is not usable with decorators since the spec is often only known at
     runtime. To alleviate this circumstance there is the
@@ -3992,10 +3968,18 @@ def _query_input(
 
     val = _mapping(val, argname, **kwargs)
 
+    scope = _ALL_TYPED[QueryScope](val["scope"], "scope", **kwargs)
+    name = ""
+    if val.get("query_name"):
+        name = _ALL_TYPED[str](val["query_name"], "query_name", **kwargs)
+    query_id: Optional[ID] = None
+    if val.get("query_id"):
+        query_id = _ALL_TYPED[ID](val["query_id"], "query_id", **kwargs)
     fields_of_interest = []
     constraints = []
     order: List[QueryOrder] = []
     errs = ValidationSummary()
+
     for field, validator in spec.items():
         # First the selection of fields of interest
         try:
@@ -4137,8 +4121,8 @@ def _query_input(
     if errs:
         raise errs
 
-    return QueryInput(
-        Query(None, spec, fields_of_interest, constraints, order))  # type: ignore
+    return QueryInput(Query(
+        scope, dict(spec), fields_of_interest, constraints, order, name, query_id))
 
 
 # TODO ignore _ignore_warnings here too?
@@ -4158,31 +4142,27 @@ def _query(
 
     errs = ValidationSummary()
 
-    # scope
-    # TODO why no convert here?
-    _identifier(val.scope, "scope", **{**kwargs, '_convert': False})
-
-    if not val.scope.startswith("qview_"):
-        errs.append(ValueError("scope", n_("Must start with “qview_”.")))
+    # scope and name
+    _ALL_TYPED[QueryScope](val.scope, "scope", **kwargs)
+    _ALL_TYPED[Optional[str]](  # type: ignore
+        val.name, "name", **kwargs)
 
     # spec
     for field, validator in val.spec.items():
         try:
-            _csv_identifier(field, "spec", **{**kwargs, '_convert': False})
+            _csv_identifier(field, "spec", **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
 
         try:
-            _printable_ascii(validator, "spec", **
-                             {**kwargs, '_convert': False})
+            _printable_ascii(validator, "spec", **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
 
     # fields_of_interest
     for field in val.fields_of_interest:
         try:
-            _csv_identifier(field, "fields_of_interest", **
-                            {**kwargs, '_convert': False})
+            _csv_identifier(field, "fields_of_interest", **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
     if not val.fields_of_interest:
@@ -4198,8 +4178,7 @@ def _query(
             continue
 
         try:
-            field = _csv_identifier(
-                field, "constraints", **{**kwargs, '_convert': False})
+            field = _csv_identifier(field, "constraints", **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
 
@@ -4209,8 +4188,7 @@ def _query(
 
         try:
             operator = _ALL_TYPED[QueryOperators](
-                operator, "constraints/{}".format(field),
-                **{**kwargs, '_convert': False})
+                operator, "constraints/{}".format(field), **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
             continue
@@ -4228,8 +4206,7 @@ def _query(
                 Optional[VALIDATOR_LOOKUP[val.spec[field]]]]  # type: ignore
             for v in value:
                 try:
-                    validator(v, "constraints/{}".format(field),
-                              **{**kwargs, '_convert': False})
+                    validator(v, "constraints/{}".format(field), **kwargs)
                 except ValidationSummary as e:
                     errs.extend(e)
         else:
@@ -4239,7 +4216,7 @@ def _query(
                 ](
                     value,
                     "constraints/{}".format(field),
-                    **{**kwargs, '_convert': False}
+                    **kwargs
                 )
             except ValidationSummary as e:
                 errs.extend(e)
@@ -4249,7 +4226,7 @@ def _query(
         try:
             # TODO use generic tuple here once implemented
             entry = _ALL_TYPED[Iterable](  # type: ignore
-                entry, 'order', **{**kwargs, '_convert': False})
+                entry, 'order', **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
             continue
@@ -4261,8 +4238,8 @@ def _query(
             errs.append(ValueError("order", msg, {'index': idx}))
         else:
             try:
-                _csv_identifier(field, "order", **{**kwargs, '_convert': False})
-                _bool(ascending, "order", **{**kwargs, '_convert': False})
+                _csv_identifier(field, "order", **kwargs)
+                _bool(ascending, "order", **kwargs)
             except ValidationSummary as e:
                 errs.extend(e)
 
@@ -4290,40 +4267,28 @@ def _enum_validator_maker(
     error_msg = n_("Invalid input for the enumeration %(enum)s")
 
     def the_validator(
-        val: Any, argname: str = None, *,
-        _convert: bool = True, **kwargs: Any
+        val: Any, argname: str = None,
+        **kwargs: Any
     ) -> E:
         if isinstance(val, anenum):
             return val
 
-        if isinstance(val, int) and not _convert:
+        # first, try to convert if the enum member is given as "class.member"
+        if isinstance(val, str):
             try:
-                return anenum(val)
-            except ValueError as e:
-                raise ValidationSummary(ValueError(
-                    argname, error_msg, {'enum': anenum})) from e
+                enum_name, enum_val = val.split(".", 1)
+                if enum_name == anenum.__name__:
+                    return anenum[enum_val]
+            except (KeyError, ValueError):
+                pass
 
-        if _convert:
-            # first, try to convert if the enum member is given as "class.member"
-            if isinstance(val, str):
-                try:
-                    enum_name, enum_val = val.split(".", 1)
-                    if enum_name == anenum.__name__:
-                        return anenum[enum_val]
-                except (KeyError, ValueError):
-                    pass
-
-            # second, try to convert if the enum member is given as str(int)
-            try:
-                val = _int(val, argname=argname, _convert=_convert, **kwargs)
-                return anenum(val)
-            except (ValidationSummary, ValueError) as e:
-                raise ValidationSummary(ValueError(
-                    argname, error_msg, {'enum': anenum})) from e
-
-        else:
-            raise ValidationSummary(TypeError(
-                argname, n_("Must be a %(type)s."), {'type': anenum}))
+        # second, try to convert if the enum member is given as str(int)
+        try:
+            val = _int(val, argname=argname, **kwargs)
+            return anenum(val)
+        except (ValidationSummary, ValueError) as e:
+            raise ValidationSummary(ValueError(
+                argname, error_msg, {'enum': anenum})) from e
 
     the_validator.__name__ = name or f"_enum_{anenum.__name__.lower()}"
 
@@ -4345,7 +4310,7 @@ def _db_subscription_state(
     val = _ALL_TYPED[const.SubscriptionState](val, argname, **kwargs)
     if val == const.SubscriptionState.none:
         raise ValidationSummary(ValueError(argname,
-            n_("SubscriptionState.none is not written into the database.")))
+                                           n_("SubscriptionState.none is not written into the database.")))
     return DatabaseSubscriptionState(val)
 
 
@@ -4364,38 +4329,34 @@ def _infinite_enum_validator_maker(anenum: Type[E], name: str = None) -> None:
     error_msg = n_("Invalid input for the enumeration %(enum)s")
 
     def the_validator(
-        val: Any, argname: str = None, *,
-        _convert: bool = True, **kwargs: Any
+        val: Any, argname: str = None,
+        **kwargs: Any
     ) -> E:
         val_int: Optional[int]
 
         if isinstance(val, InfiniteEnum):
             val_enum = raw_validator(
-                val.enum, argname=argname, _convert=_convert, **kwargs)
+                val.enum, argname=argname, **kwargs)
 
             if val.enum.value == INFINITE_ENUM_MAGIC_NUMBER:
                 val_int = _non_negative_int(
-                    val.int, argname=argname, _convert=_convert, **kwargs)
+                    val.int, argname=argname, **kwargs)
             else:
                 val_int = None
 
         else:
-            if _convert:
-                val = _int(val, argname=argname, _convert=_convert, **kwargs)
+            val = _int(val, argname=argname, **kwargs)
 
-                val_int = None
-                if val < 0:
-                    try:
-                        val_enum = anenum(val)
-                    except ValueError as e:
-                        raise ValidationSummary(
-                            ValueError(argname, error_msg, {'enum': anenum})) from e
-                else:
-                    val_enum = anenum(INFINITE_ENUM_MAGIC_NUMBER)
-                    val_int = val
+            val_int = None
+            if val < 0:
+                try:
+                    val_enum = anenum(val)
+                except ValueError as e:
+                    raise ValidationSummary(
+                        ValueError(argname, error_msg, {'enum': anenum})) from e
             else:
-                raise ValidationSummary(TypeError(argname, n_(
-                    "Must be a %(type)s."), {'type': anenum}))
+                val_enum = anenum(INFINITE_ENUM_MAGIC_NUMBER)
+                val_int = val
 
         return InfiniteEnum[anenum](val_enum, val_int)  # type: ignore
 

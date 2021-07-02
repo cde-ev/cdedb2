@@ -15,7 +15,7 @@ from cdedb.database.constants import (
     MailinglistDomain, MailinglistTypes, RegistrationPartStati,
 )
 from cdedb.subman.machine import SubscriptionPolicy
-from cdedb.query import Query, QueryOperators
+from cdedb.query import Query, QueryOperators, QueryScope
 
 SubscriptionPolicyMap = Dict[int, SubscriptionPolicy]
 TypeMapping = Mapping[str, Type[Any]]
@@ -480,7 +480,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
             status_column: 'int',
         }
         query = Query(
-            scope="qview_registration",
+            scope=QueryScope.registration,
             spec=spec,
             fields_of_interest=("persona.id",),
             constraints=[

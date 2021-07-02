@@ -31,6 +31,7 @@ from cdedb.validation import (
     filter_none,
 )
 from cdedb.validationtypes import CdedbID, Email
+from cdedb.query import QueryScope
 
 #: Magic value to signal abstention during voting. Used during the emulation
 #: of classical voting. This can not occur as a shortname since it contains
@@ -97,7 +98,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                     is_search: bool) -> Response:
         """Perform search."""
         return self.generic_user_search(
-            rs, download, is_search, 'qview_persona', 'qview_assembly_user',
+            rs, download, is_search, QueryScope.assembly_user, QueryScope.assembly_user,
             self.assemblyproxy.submit_general_query)
 
     @access("core_admin", "assembly_admin")
@@ -111,7 +112,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         """
         return self.generic_user_search(
             rs, download, is_search,
-            'qview_archived_persona', 'qview_archived_persona',
+            QueryScope.archived_persona, QueryScope.archived_persona,
             self.assemblyproxy.submit_general_query,
             endpoint="archived_user_search")
 
@@ -259,10 +260,9 @@ class AssemblyFrontend(AbstractUserFrontend):
                 "Some of these users are not assembly users."))))
         if rs.has_validation_errors():
             return self.show_assembly(rs, assembly_id)
-        presider_ids = set(presider_ids) | rs.ambience['assembly']['presiders']
-        code = self.assemblyproxy.set_assembly_presiders(
+        code = self.assemblyproxy.add_assembly_presiders(
             rs, assembly_id, presider_ids)
-        self.notify_return_code(rs, code, info=n_("Action had no effect."))
+        self.notify_return_code(rs, code, error=n_("Action had no effect."))
         return self.redirect(rs, "assembly/show_assembly")
 
     @access("assembly_admin", modi={"POST"})
@@ -275,9 +275,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             rs.notify("info", n_(
                 "This user is not a presider for this assembly."))
             return self.redirect(rs, "assembly/show")
-        ids = rs.ambience['assembly']['presiders'] - {presider_id}
-        code = self.assemblyproxy.set_assembly_presiders(rs, assembly_id, ids)
-        self.notify_return_code(rs, code, info=n_("Action had no effect."))
+        code = self.assemblyproxy.remove_assembly_presider(rs, assembly_id, presider_id)
+        self.notify_return_code(rs, code, error=n_("Action had no effect."))
         return self.redirect(rs, "assembly/show_assembly")
 
     @access("assembly")

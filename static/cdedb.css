@@ -89,13 +89,16 @@ body{
 .input-slim {
     display: inline-block;
 }
+.table-stats>tbody>tr>td, .table-stats>tfoot>tr>td, .table-stats>thead>tr>td {
+    min-width: 4em;
+}
 .table-superdense>tbody>tr>td, .table-superdense>tbody>tr>th, .table-superdense>tfoot>tr>td,
 .table-superdense>tfoot>tr>th, .table-superdense>thead>tr>td, .table-superdense>thead>tr>th {
     padding: 3px;
 }
 .table>tbody>tr>td.indent, .table>tbody>tr>th.indent {
     border-top-style: none;
-    min-width: 20px;
+    width: 20px;
 }
 table>tbody>tr.no-upper-border>td {
     padding-top: 0 ;
@@ -184,7 +187,8 @@ h4.heading-underline, h5.heading-underline, h6.heading-underline {
     padding: 10px;
 }
 
-.checkbox input[type="checkbox"],.radio input[type="radio"] {
+.checkbox input[type="checkbox"], .checkbox, input[type="checkbox"],
+.radio input[type="radio"], .radio, input[type="radio"] {
     vertical-align: middle;
     position: relative;
     bottom: 3.5px;
@@ -508,7 +512,8 @@ a.headerlink {
 .btn-lang-change {
     border: none;
     background: none;
-    padding: 0 5px;
+    padding: 0;
+    margin: 0 2px;
 }
 
 .profilepic {
@@ -573,9 +578,14 @@ span.result-separator, code.result-separator {
     margin: -10px 0 10px 0;
 }
 
+table {
+    background: #fff;
+}
+
 /* Wide table container */
 .table-container {
     padding: 5px 10px 5px 0;
+    margin-right: -5px;
     background: #fff;
     display: inline-block;
     min-width: 100%;
@@ -713,8 +723,8 @@ tr.drow-delete>td, tr.drow-delete1>td {
 
 /* Batch import */
 .batch-line-body {
-    padding-left: 20px;
-    margin-bottom: 20px;
+    padding-left: 10px;
+    margin-bottom: 30px;
     border-left: solid 4px #ddd;
 }
 
@@ -1094,4 +1104,18 @@ ul.styleless {
 
 .button-group-below-text {
     margin-top: 5px
+}
+
+/*
+ * the following should be replaced with
+ * display: inline-flex; width: auto;
+ * in Bootstrap 5
+ */
+.input-group-inline {
+    display: inline-table !important;
+    vertical-align: middle !important;
+}
+
+.input-group-inline .form-control, .input-group-inline .input-group-btn {
+    width: auto !important;
 }

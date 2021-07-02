@@ -38,7 +38,7 @@
         </div>
     </div>
 
-    {{ generic.format_query(spec, titles, choices, cdedblink('event/course_query'),
+    {{ generic.format_query(enums['QueryScope'].event_course, spec, titles, choices, cdedblink('event/course_query'),
                             selection_default=selection_default) }}
 
     {% if values['is_search'] %}
