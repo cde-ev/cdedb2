@@ -9,6 +9,8 @@ services:
       dockerfile: ./related/docker/Dockerfile-postgres
     volumes:
       - database:/var/lib/postgresql/data # tables etc
+    ports:
+      - 127.0.0.1:5432:5432
     environment:
       POSTGRES_PASSWORD: passwd
   app:
