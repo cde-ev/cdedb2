@@ -5667,6 +5667,8 @@ class EventFrontend(AbstractUserFrontend):
         elif change_note:
             rs.append_validation_error(
                 (None, ValueError(n_("change_note only supported for registrations."))))
+        else:
+            change_note = ""
 
         data_params: TypeMapping = {
             f"input{anid}": Optional[  # type: ignore
@@ -5677,7 +5679,6 @@ class EventFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.field_set_form(  # type: ignore
                 rs, event_id, kind=kind, internal=True)
-        assert change_note is not None
 
         if kind == const.FieldAssociations.registration:
             entity_setter: EntitySetter = self.eventproxy.set_registration

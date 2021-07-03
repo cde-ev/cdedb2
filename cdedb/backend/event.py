@@ -3,12 +3,12 @@
 """The event backend provides means to organize events and provides a user
 variant for external participants.
 """
-import time
-
 import collections
 import copy
 import datetime
 import decimal
+import shutil
+import subprocess
 from pathlib import Path
 from typing import (
     Any, Callable, Collection, Dict, Iterable, List, Mapping, Optional, Sequence, Set,
@@ -49,8 +49,8 @@ class EventBackend(AbstractBackend):
 
     def __init__(self, configpath: PathLike = None):
         super().__init__(configpath)
-        self.minor_form_dir: Path
-        self.minor_form_dir = self.conf['STORAGE_DIR'] / 'minor_form'
+        self.minor_form_dir: Path = self.conf['STORAGE_DIR'] / 'minor_form'
+        self.event_keeper_dir: Path = self.conf['STORAGE_DIR'] / 'event_keeper'
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:
@@ -4659,19 +4659,37 @@ class EventBackend(AbstractBackend):
                     "Nach partiellem Import: " + data.get('summary', ""))
             return result, total_delta
 
+    @internal
+    def event_keeper_init(self, event_id: int) -> None:
+        event_keeper_directory = self.event_keeper_dir / str(event_id)
+
+        # TODO: remove the deletion and creation of parents.This is currently necessary
+        #  to make the tests work, without adding storage everywhere.
+        if event_keeper_directory.exists():
+            shutil.rmtree(event_keeper_directory)
+        event_keeper_directory.mkdir(parents=True)
+        subprocess.run(["git", "init"], cwd=event_keeper_directory)
+
     @access("event_admin")
     def event_keeper_create(self, rs: RequestState, event_id: int) -> CdEDBObject:
         """Create a new git repository for keeping track of event changes."""
         event_id = affirm(vtypes.ID, event_id)
-        # TODO
-        return self.event_keeper_commit(rs, event_id)
+        self.event_keeper_init(event_id)
+        return self.event_keeper_commit(rs, event_id, "Initialer Commit")
 
     @access("event")
     def event_keeper_commit(self, rs: RequestState, event_id: int,
-                            commit_msg: str = "") -> CdEDBObject:
+                            commit_msg: str) -> CdEDBObject:
         """Commit the current state of the event to it'S git repository."""
         event_id = affirm(vtypes.ID, event_id)
         commit_msg = affirm_optional(str, commit_msg) or ""
         export = self.partial_export_event(rs, event_id)
-        # TODO
+        event_keeper_directory = self.event_keeper_dir / str(event_id)
+        if not event_keeper_directory.exists():
+            self.event_keeper_init(event_id)
+        filename = f"{event_id}.json"
+        with open(event_keeper_directory / filename, "w") as f:
+            f.write(json_serialize(export))
+        subprocess.run(["git", "add", filename], cwd=event_keeper_directory)
+        subprocess.run(["git", "commit", "-m", commit_msg], cwd=event_keeper_directory)
         return export

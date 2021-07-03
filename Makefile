@@ -149,6 +149,7 @@ endif
 	sudo mkdir /var/lib/cdedb/assembly_attachment/
 	sudo mkdir /var/lib/cdedb/mailman_templates/
 	sudo mkdir /var/lib/cdedb/genesis_attachment/
+	sudo mkdir /var/lib/cdedb/event_keeper/
 	sudo cp tests/ancillary_files/$(TESTFOTONAME) /var/lib/cdedb/foto/
 	sudo cp tests/ancillary_files/rechen.pdf /var/lib/cdedb/assembly_attachment/1_v1
 	sudo cp tests/ancillary_files/kassen.pdf /var/lib/cdedb/assembly_attachment/2_v1
@@ -170,6 +171,7 @@ storage-test:
 	mkdir -p ${TESTSTORAGEPATH}/assembly_attachment/
 	mkdir -p ${TESTSTORAGEPATH}/genesis_attachment/
 	mkdir -p ${TESTSTORAGEPATH}/mailman_templates/
+	mkdir -p ${TESTSTORAGEPATH}/event_keeper/
 	mkdir -p ${TESTSTORAGEPATH}/testfiles/
 	cp tests/ancillary_files/$(TESTFOTONAME) ${TESTSTORAGEPATH}/foto/
 	cp tests/ancillary_files/rechen.pdf ${TESTSTORAGEPATH}/assembly_attachment/1_v1
