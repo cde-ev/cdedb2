@@ -9,7 +9,7 @@ import operator
 import pathlib
 import quopri
 import tempfile
-from typing import Any, Collection, Dict, Iterable, List, Optional, Set, Tuple
+from typing import Any, Collection, Dict, List, Optional, Set, Tuple
 
 import magic
 import qrcode

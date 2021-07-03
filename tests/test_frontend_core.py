@@ -151,7 +151,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence(self.user['given_names'], div='title')
 
     @as_users("annika", "paul", "quintus")
-    def test_showuser_events(self):
+    def test_showuser_events(self) -> None:
         # add second registration for garcia
         # TODO: include this in our sample-data
         user = self.user
