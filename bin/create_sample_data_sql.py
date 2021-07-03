@@ -319,10 +319,28 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
                 'expect_return': 0,
             },
             # Attributes of inetOrgPerson
+            # Naming was chosen accordingly to the following RFC:
+            # https://datatracker.ietf.org/doc/html/rfc2798 (defining inetOrgPerson)
+            # https://datatracker.ietf.org/doc/html/rfc4519 (defining attributes)
+            # mandatory
             {
                 'oc_map_id': LDAP_OC_MAPPINGS['inetOrgPerson'],
                 'name': 'cn',
-                'sel_expr': 'personas.username',
+                # should contain full name of the persona, aka
+                # title, given_names, family_name, name_supplement (if not empty)
+                'sel_expr': 'personas.given_names || \' \' || personas.family_name',
+                'from_tbls': 'core.personas',
+                'join_where': None,
+                'add_proc': "SELECT 'TODO'",
+                'delete_proc': "SELECT 'TODO'",
+                'param_order': 3,
+                'expect_return': 0,
+            },
+            # mandatory
+            {
+                'oc_map_id': LDAP_OC_MAPPINGS['inetOrgPerson'],
+                'name': 'sn',
+                'sel_expr': 'personas.family_name',
                 'from_tbls': 'core.personas',
                 'join_where': None,
                 'add_proc': "SELECT 'TODO'",
@@ -362,8 +380,20 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
             },
             {
                 'oc_map_id': LDAP_OC_MAPPINGS['inetOrgPerson'],
-                'name': 'sn',
-                'sel_expr': 'personas.family_name',
+                'name': 'mail',
+                'sel_expr': 'personas.username',
+                'from_tbls': 'core.personas',
+                'join_where': None,
+                'add_proc': "SELECT 'TODO'",
+                'delete_proc': "SELECT 'TODO'",
+                'param_order': 3,
+                'expect_return': 0,
+            },
+            # used as distinguish identifier
+            {
+                'oc_map_id': LDAP_OC_MAPPINGS['inetOrgPerson'],
+                'name': 'employeeNumber',
+                'sel_expr': 'personas.id',
                 'from_tbls': 'core.personas',
                 'join_where': None,
                 'add_proc': "SELECT 'TODO'",

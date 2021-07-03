@@ -1348,7 +1348,7 @@ CREATE VIEW ldap_entries (id, dn, oc_map_id, parent, keyval) AS
         SELECT
            id + 2*const.id_offset,
            -- the DB-ID is really static
-           'cn=' || id || ',ou=users,dc=cde-ev,dc=de' AS dn,
+           'employeeNumber=' || id || ',ou=users,dc=cde-ev,dc=de' AS dn,
            const.persona_oc_id AS oc_map_id,
            const.persona_parent AS parent,
            id as keyval
