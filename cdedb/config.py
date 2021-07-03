@@ -311,7 +311,9 @@ _DEFAULTS = {
     #: Default country code to be used
     "DEFAULT_COUNTRY": "DE",
     # Available languages
-    "I18N_LANGUAGES": ("de", "en"),
+    "I18N_LANGUAGES": ("de", "en", "la"),
+    # Advertised languages in the UI
+    "I18N_ADVERTISED_LANGUAGES": ("de", "en"),
 
     ###############
     # email stuff #
