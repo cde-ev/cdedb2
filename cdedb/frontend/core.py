@@ -661,7 +661,7 @@ class CoreFrontend(AbstractFrontend):
 
     @access("event")
     def show_user_events(self, rs: RequestState, persona_id: vtypes.ID) -> Response:
-        """Render overview which events a given user is registered for"""
+        """Render overview which events a given user is registered for."""
         if not (self.coreproxy.is_relative_admin(rs, persona_id)
                 or "event_admin" in rs.user.roles or rs.user.persona_id == persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))

@@ -25,16 +25,17 @@
 {% block content %}
     <p>
         {% trans %}
-            This lists all events which are not deleted yet and this user has a registration for.
+            This lists all events which have not been deleted yet and this user has a registration for.
         {% endtrans %}
     </p>
     <ul>
         {% for event_id, event in events|keydictsort(EntitySorter.event) %}
-            <li{% if event['is_archived'] %} class="text-muted"{% endif %}>
+            <li>
                 {{ util.href(cdedblink("event/show_registration",
                                        {'event_id': event_id, 'registration_id': registration_ids[event_id]}),
                              event['title']) }}
                 <br />
+                <small class="text-muted">
                 {% for part_id, status in registration_parts[event_id] %}
                     {% if registration_parts[event_id]|length != 1 %}
                         {{ event['parts'][part_id]['title'] }}:
@@ -42,6 +43,7 @@
                     {{ gettext(status|enum(enums['RegistrationPartStati'])) }}
                     {%- if not loop.last %}, {% endif -%}
                 {% endfor %}
+                </small>
             </li>
         {% else %}
             <p class="text-muted">{% trans %}This user has no registrations.{% endtrans %}</p>

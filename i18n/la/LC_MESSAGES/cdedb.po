@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2021-07-03 13:25+0000\n"
+"POT-Creation-Date: 2021-07-03 14:57+0000\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -8053,11 +8053,11 @@ msgstr "eventus"
 
 #: cdedb/frontend/templates/web/core/show_user_events.tmpl:27
 msgid ""
-"This lists all events which are not deleted yet and this user has a "
+"This lists all events which have not been deleted yet and this user has a "
 "registration for."
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/show_user_events.tmpl:47
+#: cdedb/frontend/templates/web/core/show_user_events.tmpl:49
 msgid "This user has no registrations."
 msgstr ""
 
