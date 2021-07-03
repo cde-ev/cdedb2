@@ -267,7 +267,8 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
         'ldap_agents': [
             {
                 'cn': 'test',
-                'password_hash': "$6$cde$F.RCGvViMHvJLnTfdnbg8in79Lf.pcLhVmYfPnk3uzPOgFucNEDylPeJctP9ctqtETA6blRqJPOpCUqx0kQxM0"
+                # password is 'secret' as usual
+                'password_hash': "$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1"
             }
         ],
         'ldap_attr_mappings': [
