@@ -30,12 +30,13 @@ import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    DEFAULT_NUM_COURSE_CHOICES, EVENT_FIELD_SPEC, LOG_FIELDS_COMMON, AgeClasses,
-    CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap, CourseChoiceToolActions,
-    CourseFilterPositions, DefaultReturnCode, EntitySorter, Error, InfiniteEnum,
-    KeyFunction, LodgementsSortkeys, PartialImportError, RequestState, Sortkey,
-    asciificator, deduct_years, determine_age_class, diacritic_patterns, get_hash, glue,
-    json_serialize, merge_dicts, mixed_existence_sorter, n_, now, unwrap, xsorted,
+    DEFAULT_NUM_COURSE_CHOICES, EVENT_FIELD_SPEC, EVENT_SCHEMA_VERSION,
+    LOG_FIELDS_COMMON, AgeClasses, CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap,
+    CourseChoiceToolActions, CourseFilterPositions, DefaultReturnCode, EntitySorter,
+    Error, InfiniteEnum, KeyFunction, LodgementsSortkeys, PartialImportError,
+    RequestState, Sortkey, asciificator, deduct_years, determine_age_class,
+    diacritic_patterns, get_hash, glue, json_serialize, merge_dicts,
+    mixed_existence_sorter, n_, now, unwrap, xsorted,
 )
 from cdedb.database.connection import Atomizer
 from cdedb.filter import (
@@ -1098,6 +1099,7 @@ class EventFrontend(AbstractUserFrontend):
             'id': event_id,
             'fields': fields
         }
+        self.eventproxy.event_keeper_commit(rs, event_id, "Vor Datenfeld-Änderungen.")
         code = self.eventproxy.set_event(rs, event)
         self.notify_return_code(rs, code)
         return self.redirect(
@@ -1396,6 +1398,8 @@ class EventFrontend(AbstractUserFrontend):
             rs.notify("error", n_("Course cannot be deleted, because it still "
                                   "has attendees."))
             return self.redirect(rs, "event/show_course")
+        self.eventproxy.event_keeper_commit(
+            rs, event_id, f"Vor Löschen von Kurs {rs.ambience['course']['shortname']}.")
         code = self.eventproxy.delete_course(
             rs, course_id, {"instructors", "course_choices", "course_segments"})
         self.notify_return_code(rs, code)
@@ -4269,6 +4273,9 @@ class EventFrontend(AbstractUserFrontend):
             return self.show_registration(rs, event_id, registration_id)
 
         # maybe exclude some blockers
+        db_id = cdedbid_filter(rs.ambience['registration']['persona_id'])
+        self.eventproxy.event_keeper_commit(
+            rs, event_id, f"Vor Löschen von Anmeldung {db_id}.")
         code = self.eventproxy.delete_registration(
             rs, registration_id, {"registration_parts", "registration_tracks",
                                   "course_choices"})
@@ -4389,9 +4396,11 @@ class EventFrontend(AbstractUserFrontend):
         else:
             change_note = "Multi-Edit"
 
+        self.eventproxy.event_keeper_commit(rs, event_id, "Vor " + change_note)
         for reg_id in reg_ids:
             registration['id'] = reg_id
             code *= self.eventproxy.set_registration(rs, registration, change_note)
+        self.eventproxy.event_keeper_commit(rs, event_id, "Nach " + change_note)
         self.notify_return_code(rs, code)
 
         # redirect to query filtered by reg_ids
@@ -4889,6 +4898,9 @@ class EventFrontend(AbstractUserFrontend):
                 ("ack_delete", ValueError(n_("Must be checked."))))
         if rs.has_validation_errors():
             return self.show_lodgement(rs, event_id, lodgement_id)
+        self.eventproxy.event_keeper_commit(
+            rs, event_id, f"Vor Löschen von Unterkunft"
+                          f" {rs.ambience['lodgement']['title']}.")
         code = self.eventproxy.delete_lodgement(
             rs, lodgement_id, cascade={"inhabitants"})
         self.notify_return_code(rs, code)
@@ -5665,6 +5677,7 @@ class EventFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.field_set_form(  # type: ignore
                 rs, event_id, kind=kind, internal=True)
+        assert change_note is not None
 
         if kind == const.FieldAssociations.registration:
             entity_setter: EntitySetter = self.eventproxy.set_registration
@@ -5677,6 +5690,8 @@ class EventFrontend(AbstractUserFrontend):
             raise NotImplementedError(f"Unknown kind {kind}.")
 
         code = 1
+        self.eventproxy.event_keeper_commit(
+            rs, event_id, "Vor Änderung: " + change_note)
         for anid, entity in entities.items():
             if data[f"input{anid}"] != entity['fields'].get(field['field_name']):
                 new = {
@@ -5687,6 +5702,8 @@ class EventFrontend(AbstractUserFrontend):
                     code *= entity_setter(rs, new, change_note)  # type: ignore
                 else:
                     code *= entity_setter(rs, new)
+        self.eventproxy.event_keeper_commit(
+            rs, event_id, "Nach Änderung: " + change_note)
         self.notify_return_code(rs, code)
 
         if kind == const.FieldAssociations.registration:
@@ -6106,3 +6123,33 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "view_event_log", {
             'log': log, 'total': total, 'length': _length, 'personas': personas,
             'registration_map': registration_map, 'loglinks': loglinks})
+
+    @periodic("event_keeper", 4)
+    def event_keeper(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject:
+        """Regularly backup any event that got changed."""
+        from pprint import pprint
+        if not state:
+            state = {
+                'EVENT_SCHEMA_VERSION': None,
+                'events': {}
+            }
+        event_ids = self.eventproxy.list_events(rs, archived=False)
+        if state.get("EVENT_SCHEMA_VERSION") != list(EVENT_SCHEMA_VERSION):
+            self.logger.info("Event schema version changed, creating new commit for"
+                             " every event.")
+            for event_id in event_ids:
+                self.eventproxy.event_keeper_commit(
+                    rs, event_id, "Schema-Version hat sich geändert.")
+            state['EVENT_SCHEMA_VERSION'] = EVENT_SCHEMA_VERSION
+
+        commit_msg = "Regelmäßiges Backup."
+        for event_id in event_ids:
+            if event_id not in state['events']:
+                state['events'][event_id] = 0
+            _, entries = self.eventproxy.retrieve_log(rs, event_id=event_id, length=1)
+            log_entry_id = unwrap(entries)['id']
+            if log_entry_id > state['events'][event_id]:
+                self.eventproxy.event_keeper_commit(rs, event_id, commit_msg)
+                state['events'][event_id] = log_entry_id
+
+        return state

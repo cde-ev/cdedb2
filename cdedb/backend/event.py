@@ -2039,6 +2039,7 @@ class EventBackend(AbstractBackend):
             if update_data:
                 update_data['id'] = new_id
                 self.set_event(rs, update_data)
+            self.event_keeper_create(rs, new_id)
         return new_id
 
     @access("event_admin")
@@ -3862,6 +3863,7 @@ class EventBackend(AbstractBackend):
             'offline_lock': not self.conf["CDEDB_OFFLINE_DEPLOYMENT"],
         }
         with Atomizer(rs):
+            self.event_keeper_commit(rs, event_id, "Vor Offline-Lock.")
             ret = self.sql_update(rs, "event.events", update)
             self.event_log(rs, const.EventLogCodes.event_locked, event_id)
         return ret
@@ -4092,6 +4094,7 @@ class EventBackend(AbstractBackend):
             }
             ret *= self.sql_update(rs, "event.events", update)
             self.event_log(rs, const.EventLogCodes.event_unlocked, data['id'])
+            self.event_keeper_commit(rs, data['id'], "Nach Entsperrung.")
             return ret
 
     @access("event", "droid_quick_partial_export")
@@ -4323,7 +4326,8 @@ class EventBackend(AbstractBackend):
 
         with Atomizer(rs):
             event = unwrap(self.get_events(rs, (data['id'],)))
-            all_current_data = self.partial_export_event(rs, data['id'])
+            all_current_data = self.event_keeper_commit(
+                rs, data['id'], "Vor partiellem Import.")
             oregistration_ids = self.list_registrations(rs, data['id'])
             old_registrations = self.get_registrations(rs, oregistration_ids)
 
@@ -4650,4 +4654,24 @@ class EventBackend(AbstractBackend):
             if not dryrun:
                 self.event_log(rs, const.EventLogCodes.event_partial_import,
                                data['id'], change_note=data.get('summary'))
+                self.event_keeper_commit(
+                    rs, data['id'],
+                    "Nach partiellem Import: " + data.get('summary', ""))
             return result, total_delta
+
+    @access("event_admin")
+    def event_keeper_create(self, rs: RequestState, event_id: int) -> CdEDBObject:
+        """Create a new git repository for keeping track of event changes."""
+        event_id = affirm(vtypes.ID, event_id)
+        # TODO
+        return self.event_keeper_commit(rs, event_id)
+
+    @access("event")
+    def event_keeper_commit(self, rs: RequestState, event_id: int,
+                            commit_msg: str = "") -> CdEDBObject:
+        """Commit the current state of the event to it'S git repository."""
+        event_id = affirm(vtypes.ID, event_id)
+        commit_msg = affirm_optional(str, commit_msg) or ""
+        export = self.partial_export_event(rs, event_id)
+        # TODO
+        return export
