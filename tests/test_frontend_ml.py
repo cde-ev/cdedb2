@@ -1380,6 +1380,76 @@ class TestMlFrontend(FrontendTest):
 
     @unittest.mock.patch("cdedb.frontend.common.CdEMailmanClient")
     @as_users("anton")
+    def test_mailman_moderation_multi_accept(self, client_class: unittest.mock.Mock
+                                             ) -> None:
+        #
+        # Prepare
+        #
+        messages, mmlist, client = self._prepare_moderation_mock(client_class)
+
+        #
+        # Run
+        #
+        self.traverse({'href': '/ml/$'},
+                      {'href': '/ml/mailinglist/99'},
+                      {'href': '/ml/mailinglist/99/moderate'})
+        self.assertTitle("Mailman-Migration – Nachrichtenmoderation")
+        self.assertPresence("Finanzbericht")
+        self.assertPresence("Verschwurbelung")
+        self.assertPresence("unerwartetes Erbe")
+        client.get_held_messages.return_value = []
+        f = self.response.forms['moderateallform']
+        self.submit(f, button='action', value='accept')
+        self.assertNonPresence("Finanzbericht")
+        self.assertNonPresence("Verschwurbelung")
+        self.assertNonPresence("unerwartetes Erbe")
+
+        #
+        # Check
+        #
+        umcall = unittest.mock.call
+        # Creation
+        self.assertEqual(
+            mmlist.moderate_message.call_args_list,
+            [umcall(1, 'accept'), umcall(2, 'accept'), umcall(3, 'accept')])
+
+    @unittest.mock.patch("cdedb.frontend.common.CdEMailmanClient")
+    @as_users("anton")
+    def test_mailman_moderation_multi_discard(self, client_class: unittest.mock.Mock
+                                              ) -> None:
+        #
+        # Prepare
+        #
+        messages, mmlist, client = self._prepare_moderation_mock(client_class)
+
+        #
+        # Run
+        #
+        self.traverse({'href': '/ml/$'},
+                      {'href': '/ml/mailinglist/99'},
+                      {'href': '/ml/mailinglist/99/moderate'})
+        self.assertTitle("Mailman-Migration – Nachrichtenmoderation")
+        self.assertPresence("Finanzbericht")
+        self.assertPresence("Verschwurbelung")
+        self.assertPresence("unerwartetes Erbe")
+        client.get_held_messages.return_value = []
+        f = self.response.forms['moderateallform']
+        self.submit(f, button='action', value='discard')
+        self.assertNonPresence("Finanzbericht")
+        self.assertNonPresence("Verschwurbelung")
+        self.assertNonPresence("unerwartetes Erbe")
+
+        #
+        # Check
+        #
+        umcall = unittest.mock.call
+        # Creation
+        self.assertEqual(
+            mmlist.moderate_message.call_args_list,
+            [umcall(1, 'discard'), umcall(2, 'discard'), umcall(3, 'discard')])
+
+    @unittest.mock.patch("cdedb.frontend.common.CdEMailmanClient")
+    @as_users("anton")
     def test_mailman_whitelist(self, client_class: unittest.mock.Mock) -> None:
         #
         # Prepare

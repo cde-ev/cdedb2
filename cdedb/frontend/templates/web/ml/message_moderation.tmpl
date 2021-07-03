@@ -41,14 +41,12 @@
          {% endtrans %}
         </p>
         {% if held %}
-            {% set all_request_ids = [] %}
-            {% for email in held %}
-                {% do all_request_ids.append(email.request_id) %}
-            {% endfor %}
             <p>
                 <form action="{{ cdedblink('ml/message_moderation_multi') }}" method="POST" id="moderateallform">
                     {{ util.anti_csrf_token('ml/message_moderation_multi') }}
-                    {{ util.input_hidden("request_ids", all_request_ids) }}
+                    {% for email in held %}
+                        {{ util.input_hidden("request_ids", email.request_id) }}
+                    {% endfor %}
                     {% for action, label, icon, coloring in (
                             ('accept', gettext('Accept All'), 'check', 'success'),
                             ('discard', gettext('Discard All'), 'trash-alt', 'danger')) %}
