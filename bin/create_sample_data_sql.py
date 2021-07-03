@@ -332,6 +332,25 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
             },
             {
                 'oc_map_id': LDAP_OC_MAPPINGS['inetOrgPerson'],
+                'name': 'displayName',
+                # This selects display_name if its a part of given_names, else given_names and concats this with family_name
+                'sel_expr': ' ('
+                            '   ('
+                            '   CASE WHEN ((personas.display_name <> \'\') AND personas.given_names LIKE \'%\' || personas.display_name || \'%\')'
+                            '   THEN personas.display_name'
+                            '   ELSE personas.given_names'
+                            '   END'
+                            '   ) || \' \' || personas.family_name'
+                            ' )',
+                'from_tbls': 'core.personas',
+                'join_where': None,
+                'add_proc': "SELECT 'TODO'",
+                'delete_proc': "SELECT 'TODO'",
+                'param_order': 3,
+                'expect_return': 0,
+            },
+            {
+                'oc_map_id': LDAP_OC_MAPPINGS['inetOrgPerson'],
                 'name': 'givenName',
                 'sel_expr': 'personas.given_names',
                 'from_tbls': 'core.personas',
