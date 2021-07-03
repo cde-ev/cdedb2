@@ -679,11 +679,10 @@ class CoreFrontend(AbstractFrontend):
 
         registrations = self.eventproxy.list_persona_registrations(rs, persona_id)
         registration_ids: Dict[int, int] = {}
-        registration_parts: Dict[
-            int, Iterable[Tuple[int, const.RegistrationPartStati]]] = {}
+        registration_parts: Dict[int, Dict[int, const.RegistrationPartStati]] = {}
         for event_id, reg in registrations.items():
             registration_ids[event_id] = unwrap(reg.keys())
-            registration_parts[event_id] = unwrap(reg.values()).items()
+            registration_parts[event_id] = unwrap(reg.values())
         events = self.eventproxy.get_events(rs, registrations.keys())
         return self.render(rs, "show_user_events",
                            {'events': events, 'registration_ids': registration_ids,

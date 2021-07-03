@@ -35,11 +35,11 @@
                              event['title']) }}
                 <br />
                 <small class="text-muted">
-                {% for part_id, status in registration_parts[event_id] %}
+                {% for part_id, part in event['parts']|keydictsort(EntitySorter.event_part) %}
                     {% if registration_parts[event_id]|length != 1 %}
                         {{ event['parts'][part_id]['title'] }}:
                     {% endif %}
-                    {{ gettext(status|enum(enums['RegistrationPartStati'])) }}
+                    {{ gettext(registration_parts[event_id][part_id]|enum(enums['RegistrationPartStati'])) }}
                     {%- if not loop.last %}, {% endif -%}
                 {% endfor %}
                 </small>
