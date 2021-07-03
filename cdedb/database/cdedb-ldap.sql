@@ -70,6 +70,10 @@ CREATE FUNCTION make_static_group_entity_id(static_group_id INT)
   RETURNS bigint LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
 $$ SELECT 3 * 2^32 + $1; $$ ;
 
+CREATE FUNCTION make_mailinglist_entity_id(mailinglist_id INT)
+  RETURNS bigint LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+$$ SELECT 4 * 2^32 + $1; $$ ;
+
 ---
 --- create dn
 --- Some dn's are used at multiple places. To ensure consistency, we define a
@@ -79,6 +83,10 @@ $$ SELECT 3 * 2^32 + $1; $$ ;
 CREATE FUNCTION make_persona_dn(persona_id INT)
   RETURNS varchar LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
 $$ SELECT 'uid=' || $1 || ',ou=users,dc=cde-ev,dc=de'; $$ ;
+
+CREATE FUNCTION make_mailinglist_cn(mailinglist_id INT)
+  RETURNS varchar LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+$$ SELECT 'mailinglist-' || $1 ; $$ ;
 
 ---
 --- ldap helper tables (in public schema)
@@ -139,6 +147,13 @@ CREATE VIEW ldap_groups (id, cn) AS
            cn
         FROM ldap_static_groups
     )
+    -- mailinglists
+    UNION (
+        SELECT
+           make_mailinglist_entity_id(id),
+           make_mailinglist_cn(id) AS cn
+        FROM ml.mailinglists
+    )
 ;
 GRANT ALL ON ldap_groups TO cdb_admin;
 
@@ -155,6 +170,17 @@ CREATE VIEW ldap_group_members (group_id, member_dn) AS
            FROM core.personas
            WHERE core.personas.is_active
         )
+    -- mailinglists
+    UNION (
+        SELECT
+           make_mailinglist_entity_id(mailinglist_id) AS group_id,
+           make_persona_dn(persona_id) AS member_dn
+        FROM ml.subscription_states
+        -- SubscriptionState.subscribed,
+        -- SubscriptionState.unsubscription_override
+        -- SubscriptionState.implicit
+        WHERE subscription_state = ANY(ARRAY[1, 10, 30])
+    )
 ;
 GRANT ALL ON ldap_group_members TO cdb_admin;
 
@@ -293,6 +319,16 @@ CREATE VIEW ldap_entries (id, dn, oc_map_id, parent, keyval) AS
                node_groups_id() AS parent,
                make_static_group_entity_id(id) as keyval
             FROM ldap_static_groups
+        )
+        -- mailinglists
+        UNION (
+            SELECT
+               make_mailinglist_entity_id(id),
+               'cn=' || make_mailinglist_cn(id) || ',ou=groups,dc=cde-ev,dc=de' AS dn,
+               oc_groupOfUniqueNames_id() AS oc_map_id,
+               node_groups_id() AS parent,
+               make_mailinglist_entity_id(id) as keyval
+            FROM ml.mailinglists
         )
 ;
 GRANT ALL ON ldap_entries TO cdb_admin;
