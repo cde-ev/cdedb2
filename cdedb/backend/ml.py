@@ -1019,7 +1019,8 @@ class MlBackend(AbstractBackend):
         states = states or set()
         # We are more restrictive here than in the signature
         states = affirm_set(vtypes.DatabaseSubscriptionState, states)
-        if not self.is_admin(rs) and rs.user.persona_id != persona_id:
+        if not (self.is_admin(rs) or self.core.is_relative_admin(rs, persona_id)
+                or rs.user.persona_id == persona_id):
             raise PrivilegeError(n_("Not privileged."))
 
         query = ("SELECT mailinglist_id, subscription_state "
@@ -1163,7 +1164,8 @@ class MlBackend(AbstractBackend):
         :returns: Returns dict mapping mailinglist_id with explicit addresses to the
             respective addresses
         """
-        if not self.is_admin(rs) and rs.user.persona_id != persona_id:
+        if not (self.is_admin(rs) or self.core.is_relative_admin(rs, persona_id)
+                or rs.user.persona_id == persona_id):
             raise PrivilegeError(n_("Not privileged."))
         persona_id = affirm(vtypes.ID, persona_id)
         query = ("SELECT mailinglist_id, address"
