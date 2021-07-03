@@ -218,31 +218,60 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
                 'delete_proc': "SELECT 'TODO'",
                 'expect_return': 0,
             },
+            {
+                'id': LDAP_OC_MAPPINGS['organizationalRole'],
+                'name': 'organizationalRole',
+                'keytbl': 'ldap_agents',
+                'keycol': 'id',
+                'create_proc': "SELECT 'TODO'",
+                'delete_proc': "SELECT 'TODO'",
+                'expect_return': 0,
+            },
         ],
         'ldap_organizations': [
+            # The overall organization
             {
                 'id': LDAP_ORGANIZATIONS['dc=cde-ev,dc=de'],
                 'dn': 'dc=cde-ev,dc=de',
                 'oc_map_id': LDAP_OC_MAPPINGS['organization'],
                 'parent': 0,
-                'display_name': 'CdE e.V.'
+                'display_name': 'CdE e.V.',
+                'additional_object_class': 'dcObject'
             },
+            # All organizational units
             {
                 'id': LDAP_ORGANIZATIONS['ou=users,dc=cde-ev,dc=de'],
                 'dn': 'ou=users,dc=cde-ev,dc=de',
                 'oc_map_id': LDAP_OC_MAPPINGS['organizationalUnit'],
                 'parent': LDAP_ORGANIZATIONS['dc=cde-ev,dc=de'],
-                'display_name': 'Users'
+                'display_name': 'Users',
+                'additional_object_class': None
             },
             {
                 'id': LDAP_ORGANIZATIONS['ou=groups,dc=cde-ev,dc=de'],
                 'dn': 'ou=groups,dc=cde-ev,dc=de',
                 'oc_map_id': LDAP_OC_MAPPINGS['organizationalUnit'],
                 'parent': LDAP_ORGANIZATIONS['dc=cde-ev,dc=de'],
-                'display_name': 'Groups'
+                'display_name': 'Groups',
+                'additional_object_class': None
+            },
+            {
+                'id': LDAP_ORGANIZATIONS['ou=dsa,dc=cde-ev,dc=de'],
+                'dn': 'ou=dsa,dc=cde-ev,dc=de',
+                'oc_map_id': LDAP_OC_MAPPINGS['organizationalUnit'],
+                'parent': LDAP_ORGANIZATIONS['dc=cde-ev,dc=de'],
+                'display_name': 'Directory System Agent',
+                'additional_object_class': None
             },
         ],
+        'ldap_agents': [
+            {
+                'cn': 'test',
+                'password_hash': "$6$cde$F.RCGvViMHvJLnTfdnbg8in79Lf.pcLhVmYfPnk3uzPOgFucNEDylPeJctP9ctqtETA6blRqJPOpCUqx0kQxM0"
+            }
+        ],
         'ldap_attr_mappings': [
+            # Attributes of organizations
             {
                 'oc_map_id': LDAP_OC_MAPPINGS['organization'],
                 'name': 'o',
@@ -254,6 +283,7 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
                 'param_order': 3,
                 'expect_return': 0,
             },
+            # Attributes of organizationalUnits
             {
                 'oc_map_id': LDAP_OC_MAPPINGS['organizationalUnit'],
                 'name': 'o',
@@ -265,6 +295,30 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
                 'param_order': 3,
                 'expect_return': 0,
             },
+            # Attributes of agents
+            {
+                'oc_map_id': LDAP_OC_MAPPINGS['organizationalRole'],
+                'name': 'cn',
+                'sel_expr': 'ldap_agents.cn',
+                'from_tbls': 'ldap_agents',
+                'join_where': None,
+                'add_proc': "SELECT 'TODO'",
+                'delete_proc': "SELECT 'TODO'",
+                'param_order': 3,
+                'expect_return': 0,
+            },
+            {
+                'oc_map_id': LDAP_OC_MAPPINGS['organizationalRole'],
+                'name': 'userPassword',
+                'sel_expr': 'ldap_agents.password_hash',
+                'from_tbls': 'ldap_agents',
+                'join_where': None,
+                'add_proc': "SELECT 'TODO'",
+                'delete_proc': "SELECT 'TODO'",
+                'param_order': 3,
+                'expect_return': 0,
+            },
+            # Attributes of inetOrgPerson
             {
                 'oc_map_id': LDAP_OC_MAPPINGS['inetOrgPerson'],
                 'name': 'cn',
