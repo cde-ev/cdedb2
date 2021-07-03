@@ -16,11 +16,12 @@ CREATE TABLE ldap_organizations (
 	parent integer NOT NULL,
 	-- maps ldap 'o' attribute
 	display_name varchar NOT NULL,
+	-- to be set in 'ldap_entry_objclasses'
 	additional_object_class varchar DEFAULT NULL
 );
 GRANT ALL ON ldap_organizations TO cdb_admin;
 
--- corresponds to Directory System Agents
+-- ldap Directory System Agents
 DROP TABLE IF EXISTS ldap_agents;
 CREATE TABLE ldap_agents (
 	id serial PRIMARY KEY,
@@ -36,6 +37,10 @@ GRANT ALL ON ldap_agents TO cdb_admin;
 --- in the openldap sources
 ---
 
+-- Maps ldap object classes to sql tables.
+-- Back-sql requires this to be a 1:1 relation. If we store the same ldap object
+-- in multiple sql tables (f.e. groupOfUniqueNames), we have to create a helper
+-- Query View to collect them all together.
 DROP TABLE IF EXISTS ldap_oc_mappings;
 CREATE TABLE ldap_oc_mappings (
 	id bigserial PRIMARY KEY,
@@ -51,6 +56,7 @@ CREATE TABLE ldap_oc_mappings (
 );
 GRANT ALL ON ldap_oc_mappings TO cdb_admin;
 
+-- Map ldap object class attributes to sql queries to extract them.
 DROP TABLE IF EXISTS ldap_attr_mappings;
 CREATE TABLE ldap_attr_mappings (
 	id bigserial PRIMARY KEY,
@@ -67,6 +73,10 @@ CREATE TABLE ldap_attr_mappings (
 );
 GRANT ALL ON ldap_attr_mappings TO cdb_admin;
 
+-- 'Stores' the real ldap entries.
+-- This is a SQL View collecting all entries which shall be inserted in ldap
+-- togehter. Keyval is the primary identifier specified in 'ldap_oc_mappings'
+-- for the given ldap object class
 CREATE VIEW ldap_entries (id, dn, oc_map_id, parent, keyval) AS
     WITH const AS (
         SELECT
@@ -112,6 +122,8 @@ CREATE VIEW ldap_entries (id, dn, oc_map_id, parent, keyval) AS
 ;
 GRANT ALL ON ldap_entries TO cdb_admin;
 
+-- Add additional ldap object classes to an entry with 'entry_id' in
+-- 'ldap_entries'.
 CREATE VIEW ldap_entry_objclasses (entry_id, oc_name) AS
     WITH const AS (
         SELECT
