@@ -310,7 +310,7 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
             {
                 'oc_map_id': LDAP_OC_MAPPINGS['organizationalRole'],
                 'name': 'userPassword',
-                'sel_expr': 'ldap_agents.password_hash',
+                'sel_expr': '\'{CRYPT}\' || ldap_agents.password_hash',
                 'from_tbls': 'ldap_agents',
                 'join_where': None,
                 'add_proc': "SELECT 'TODO'",
@@ -355,7 +355,7 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
             {
                 'oc_map_id': LDAP_OC_MAPPINGS['inetOrgPerson'],
                 'name': 'userPassword',
-                'sel_expr': 'personas.password_hash',
+                'sel_expr': '\'{CRYPT}\' || personas.password_hash',
                 'from_tbls': 'core.personas',
                 'join_where': None,
                 'add_proc': "SELECT 'TODO'",
