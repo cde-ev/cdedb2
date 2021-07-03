@@ -170,12 +170,19 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Kampfbrief-Kommentare (geblockt)")
         self.assertNonPresence("Witz des Tages")
 
-    @as_users("janis")
+    @as_users("emilia", "janis")
     def test_showuser_self(self) -> None:
+        name = f"{self.user['given_names']} {self.user['family_name']}"
+        self.get('/core/self/show')
+        self.assertTitle(name)
+        if not self.user_in("janis"): # Janis is no event user
+            self.get('/core/self/events')
+            self.assertTitle(f"{name} – Veranstaltungs-Daten")
         self.get('/core/self/mailinglists')
-        self.assertTitle("Janis Jalapeño – Mailinglisten-Daten")
-        # Check there is no link
+        self.assertTitle(f"{name} – Mailinglisten-Daten")
+        # Check there are no links
         self.traverse({'description': self.user['display_name']})
+        self.assertNonPresence("Veranstaltungs-Daten")
         self.assertNonPresence("Mailinglisten-Daten")
 
     @as_users("inga")
