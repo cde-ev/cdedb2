@@ -20,7 +20,7 @@
 {# This is a bit special, because also non-core roles determinate what a user can see or modify from another one #}
 {% block adminviews %}
     {% set views = [] %}
-    {% if "relative_admin" in access_mode %}
+    {% if "any_admin" in access_mode %}
         {{ views.append((gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"], None)) }}
     {% endif %}
     {{ views.append((gettext("Admin Administration"), ["meta_admin"], None)) }}
@@ -37,7 +37,7 @@
 {% endblock %}
 
 {% block static_notifications %}
-    {% if is_relative_admin %}
+    {% if is_relative_admin_view %}
         {% if ambience['persona']['is_purged'] %}
             {% call util.notification('info', id='purged') %}
                 {% trans %}This user has been purged.{% endtrans %}
@@ -55,45 +55,60 @@
 {% endblock %}
 
 {% block content %}
-    {% if quoteable %}
-        {{ util.href(show_user_link(user, ambience['persona']['id'], quote_me=True), gettext("Show complete Profile"),
-                     aclass="btn btn-info btn-sm", icon='eye-slash') }}
-    {% endif %}
-    {% if data['id'] == user.persona_id or is_relative_admin %}
-        <div class="p">
+    {# Actions #}
+    {% if data['id'] == user.persona_id or is_relative_admin_view %}
+        <div class="p button-par">
             {% if not ambience['persona']['is_archived'] %}
-                {% if is_relative_admin %}
+                {% if is_relative_admin_view %}
                     {% if data['id'] == user.persona_id %}
                         {{ util.href(cdedblink('core/change_user_form'), gettext("Edit (normal)"),
-                                aclass="btn btn-warning btn-sm mosp", icon="pen") }}
+                                aclass="btn btn-warning btn-sm", icon="pen") }}
                         {{ util.href(cdedblink('core/admin_change_user_form'), gettext("Edit (as Admin)"),
-                                aclass="btn btn-warning btn-sm mosp", icon="pen") }}
+                                aclass="btn btn-warning btn-sm", icon="pen") }}
                     {% else %}
                         {{ util.href(cdedblink('core/admin_change_user_form'), gettext("Edit"),
-                                aclass="btn btn-warning btn-sm mosp", icon="pen") }}
+                                aclass="btn btn-warning btn-sm", icon="pen") }}
                     {% endif %}
                 {% else %}
                     {{ util.href(cdedblink('core/change_user_form'), gettext("Edit"),
-                            aclass="btn btn-warning btn-sm mosp", icon="pen") }}
+                            aclass="btn btn-warning btn-sm", icon="pen") }}
                 {% endif %}
                 {% if data['id'] == user.persona_id %}
                     {{ util.href(cdedblink("core/change_password_form"), gettext("Change Password"),
-                            aclass="btn btn-warning btn-sm mosp", icon="edit") }}
+                            aclass="btn btn-warning btn-sm", icon="edit") }}
                     <form action="{{ cdedblink("core/logout_all") }}" method="POST" id="logoutallform"
                           class="display-inline">
                         {{ util.anti_csrf_token('core/logout_all') }}
                         {{ util.input_submit(label=gettext("Logout Everywhere"), title=gettext("Logout Everywhere"),
-                                             icon="power-off", aclass="btn btn-danger btn-sm mosp") }}
+                                             icon="power-off", aclass="btn btn-danger btn-sm") }}
                     </form>
-                    {{ util.href(docurl('Realm_Core_Privacy'), gettext("Who can see my data?"),aclass="btn btn-info btn-sm pull-right mosp", icon="question-circle") }}
-                {% endif %}
-                {% if is_relative_admin %}
-                    {{ util.href(cdedblink("core/show_history"), gettext("Change History"),
-                            aclass="btn btn-info btn-sm mosp", icon="clock") }}
+                    {{ util.href(docurl('Realm_Core_Privacy'), gettext("Who can see my data?"),aclass="btn btn-info btn-sm pull-right", icon="question-circle") }}
                 {% endif %}
             {% elif not ambience['persona']['is_purged'] %}
                 {{ util.href(cdedblink('core/dearchive_persona_form'), gettext("Restore Account"),
-                             aclass="btn btn-success btn-sm mosp", icon="file-medical-alt") }}
+                             aclass="btn btn-success btn-sm", icon="file-medical-alt") }}
+            {% endif %}
+        </div>
+    {% endif %}
+
+    {# Related pages #}
+    {% set show_admin_buttons = is_relative_admin_view or user.admin_views.intersection(["ml_user"]|set) %}
+    {% if quoteable or show_admin_buttons %}
+        <div class="p button-par">
+            {% if quoteable %}
+                {{ util.href(show_user_link(user, ambience['persona']['id'], quote_me=True),
+                             gettext("Show complete Profile"), aclass="btn btn-info btn-sm", icon='eye-slash') }}
+            {% endif %}
+            {% if is_relative_admin_view or show_admin_buttons %}
+                {% if is_relative_admin_view %}
+                    {{ util.href(cdedblink("core/show_history"), gettext("Change History"),
+                                 aclass="btn btn-info btn-sm", icon="clock") }}
+                {% endif %}
+                {% if is_relative_admin_view or "ml_user" in user.admin_views %}
+                    {{ util.href(cdedblink("core/show_user_mailinglists", {'persona_id': data['id']}),
+                                 gettext("Show Mailinglist Data"), aclass="btn btn-default btn-sm",
+                                 icon="envelope") }}
+                {% endif %}
             {% endif %}
         </div>
     {% endif %}
@@ -112,7 +127,7 @@
                         <img src="{{ staticurl("generic-avatar.png") }}" alt="{{ gettext("Default Profile Picture") }}"
                              class="profilepic img-thumbnail mosp">
                     {%- endif -%}
-                    {% if data['id'] == user.persona_id or is_relative_admin -%}
+                    {% if data['id'] == user.persona_id or is_relative_admin_view -%}
                         <br />
                         {{ util.href(cdedblink('core/set_foto_form'), gettext("Change Profile Picture"),
                                 aclass="btn btn-xs btn-warning mosp", icon="pen") }}
@@ -190,7 +205,7 @@
                                 {{ util.make_icon(icon, title=desc) }}
                             {% else %}
                                 {# Dirty hack to workaround Jinjas set drawbacks #}
-                                {% set tmp = vars.update({'any_realm_not': True}) %}
+                                {% do vars.update({'any_realm_not': True}) %}
                             {% endif %}
                         {% endfor %}
                         {% if 'core_user' in user.admin_views
@@ -247,7 +262,7 @@
                         {% if data['trial_member'] %}
                             {% trans %}(Trialmembership){% endtrans %}
                         {% endif %}
-                        {% if is_relative_admin %}
+                        {% if is_relative_admin_view %}
                             {{ util.href(cdedblink('core/modify_membership_form'), gettext("Change Status"), icon="pen",
                                          aclass="btn btn-xs btn-warning") }}
                         {% endif %}
@@ -328,7 +343,7 @@
                     {% if data['id'] == user.persona_id %}
                         {{ util.href(cdedblink('core/change_username_form'), gettext("Edit"),
                                      aclass="btn btn-xs btn-warning", icon="pen") }}
-                    {% elif is_relative_admin and not ambience['persona']['is_archived'] %}
+                    {% elif is_relative_admin_view and not ambience['persona']['is_archived'] %}
                         {{ util.href(cdedblink('core/admin_username_change_form'), gettext("Edit"),
                                      aclass="btn btn-xs btn-warning", icon="pen") }}
                     {% endif %}
@@ -444,7 +459,8 @@
             </table>
         {% endif %}
 
-        {% if is_relative_admin and data["is_cde_realm"] and not CDEDB_OFFLINE_DEPLOYMENT and not ambience['persona']['is_purged'] %}
+        {% if is_relative_admin_view and data["is_cde_realm"] and not CDEDB_OFFLINE_DEPLOYMENT
+                and not ambience['persona']['is_purged'] %}
             <h4 class="heading-underline">{% trans %}Copy-Paste Template{% endtrans %}</h4>
             <pre id="copy-paste-template">
 Kontoinhaber:       {{ meta_info['CdE_Konto_Inhaber'] }}
@@ -465,7 +481,7 @@ Mitglied.</pre>
         {% endif %}
     </div>
 
-    {% if data['id'] != user.persona_id and is_relative_admin and not ambience['persona']['is_purged'] %}
+    {% if data['id'] != user.persona_id and is_relative_admin_view and not ambience['persona']['is_purged'] %}
         {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
             {% if not ambience['persona']['is_archived'] %}
                     <div class="row">

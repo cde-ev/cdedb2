@@ -7976,6 +7976,11 @@
             "mailinglist_id": 4,
             "persona_id": 6,
             "address": "ferdinand-unterhaltung@example.cde"
+        },
+        {
+            "mailinglist_id": 52,
+            "persona_id": 9,
+            "address": "inga-papierkorb@example.cde"
         }
     ],
     "ml.whitelist": [

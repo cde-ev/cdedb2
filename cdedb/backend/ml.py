@@ -1018,7 +1018,8 @@ class MlBackend(AbstractBackend):
         states = states or set()
         # We are more restrictive here than in the signature
         states = affirm_set(vtypes.DatabaseSubscriptionState, states)
-        if not self.is_admin(rs) and rs.user.persona_id != persona_id:
+        if not (self.is_admin(rs) or self.core.is_relative_admin(rs, persona_id)
+                or rs.user.persona_id == persona_id):
             raise PrivilegeError(n_("Not privileged."))
 
         query = ("SELECT mailinglist_id, subscription_state "
@@ -1067,9 +1068,6 @@ class MlBackend(AbstractBackend):
         subscribers (or a subset given via `persona_ids`) to email addresses.
         If they have expicitly specified a subscription address that one is
         returned, otherwise the username is returned.
-        # TODO this must not happen
-        If a subscriber has neither a username nor a explicit subscription
-        address then for that subscriber None is returned.
 
         With `explicits_only = True` every subscriber is mapped to their
         explicit subscription address or None, if none is given.
@@ -1158,16 +1156,32 @@ class MlBackend(AbstractBackend):
                 explicits_only=explicits_only))
 
     @access("ml")
+    def get_user_subscription_addresses(self, rs: RequestState, persona_id: int
+                                        ) -> Dict[int, str]:
+        """Retrieve explicit email addresses of the given persona for all mailinglists.
+
+        :returns: Returns dict mapping mailinglist_id with explicit addresses to the
+            respective addresses
+        """
+        if not (self.is_admin(rs) or self.core.is_relative_admin(rs, persona_id)
+                or rs.user.persona_id == persona_id):
+            raise PrivilegeError(n_("Not privileged."))
+        persona_id = affirm(vtypes.ID, persona_id)
+        query = ("SELECT mailinglist_id, address"
+                 " FROM ml.subscription_addresses"
+                 " WHERE persona_id = %s")
+        data = self.query_all(rs, query, [persona_id])
+        return {e["mailinglist_id"]: e["address"] for e in data}
+
+    @access("ml")
     def get_persona_addresses(self, rs: RequestState) -> Set[str]:
         """Get all confirmed email addresses for a user.
 
         This includes all subscription addresses as well as the username.
         """
-        query = ("SELECT DISTINCT address FROM ml.subscription_addresses "
-                 "WHERE persona_id = %s")
-        params = (rs.user.persona_id,)
-        data = self.query_all(rs, query, params)
-        ret = {e["address"] for e in data}
+        assert rs.user.persona_id is not None
+        data = self.get_user_subscription_addresses(rs, rs.user.persona_id)
+        ret = set(data.values())
         ret.add(rs.user.username)
         return ret
 

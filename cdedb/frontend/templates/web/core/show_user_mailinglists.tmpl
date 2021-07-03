@@ -1,0 +1,88 @@
+{% extends "web/core/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% import "web/ml/generic.tmpl" as generic_ml with context %}
+{% block title %}
+    {% trans given_names=ambience['persona']['given_names'], family_name=ambience['persona']['family_name'] %}
+        {{ given_names }} {{ family_name }} – Mailinglist Data
+    {% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), "{} {}".format(
+        ambience['persona']['given_names'], ambience['persona']['family_name']), icon="user") }}
+    {{ util.breadcrumb_link(cdedblink("core/show_user_mailinglists"), gettext("Mailinglists"), active=True) }}
+{% endblock %}
+
+{% block heading %}
+    <h1 class="title">
+        {% trans %}
+            Mailinglist Data
+        {% endtrans %}
+        <small>
+            {{ util.make_icon('user', arialabel="User") }}
+            {{ ambience['persona']['given_names'] }} {{ ambience['persona']['family_name'] }}
+        </small>
+    </h1>
+{% endblock %}
+
+{% block content %}
+    <h4 class="heading-underline">{% trans %}Global information{% endtrans %}</h4>
+        <dl class="dl-horizontal">
+            <dt>{% trans %}Name{% endtrans %}</dt>
+            <dd>
+                {{ util.output_given_displayname(ambience['persona']['given_names'],
+                                                 ambience['persona']['display_name']) }}
+                {{ ambience['persona']['family_name'] }}
+            </dd>
+            <dt>{% trans %}CdEDB-ID{% endtrans %}</dt>
+            <dd id="cdedb-id">
+                {{ ambience['persona']['id']|cdedbid }}
+            </dd>
+            <dt>{% trans %}E-Mail{% endtrans %}</dt>
+            <dd id="contact-email">
+                {{ util.username_mailto(ambience['persona']) }}
+            </dd>
+        </dl>
+
+    <h4 class="heading-underline">{% trans %}Mailinglist information{% endtrans %}</h4>
+    {% trans %}
+        This lists all mailinglists this user is related to.
+        In particular, this includes lists they are or have recently been subscribed to,
+        as well as pending subscriptions and blocks.
+    {% endtrans %}
+    {% for group in groups %}
+        {% if mailinglists[group] %}
+            <h5 class="heading-underline">{{ gettext(group|string) }}</h5>
+            <div class="row">
+                {% for list in mailinglists[group]|keydictsort(EntitySorter.mailinglist)
+                        |slice(2 if mailinglists[group]|length > 5 else 1) %}
+                    <ul class="styleless col-md-6">
+                        {% for mailinglist_id, ml in list %}
+                            {% set state = subscriptions[mailinglist_id] %}
+                            {% if is_relevant_admin(mailinglist_id=mailinglist_id) or mailinglist_id in user.moderator %}
+                                {% set link = "ml/management" %}
+                            {% else %}
+                                {% set link = "ml/show_mailinglist" %}
+                            {% endif %}
+                            <li class="hide-hover-container clearfix-after">
+                                {{ util.state_checkbox(state) }}
+                                {{ util.href(cdedblink(link, {'mailinglist_id': mailinglist_id}), ml["title"]) }}
+                            {% if state == enums["SubscriptionState"].subscription_override %}
+                                {{ gettext("(override)") }}
+                            {% elif state == enums["SubscriptionState"].unsubscription_override %}
+                                {{ gettext("(blocked)") }}
+                            {% endif %}
+                            {% if ml["address"] %}
+                                <br />
+                                <span class="far fa-circle dummy"></span>
+                                {% trans %}E-Mail:{% endtrans %}
+                                {{ util.username_mailto(ambience['persona'], email=ml["address"]) }}
+                            {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endfor %}
+{% endblock %}

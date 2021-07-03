@@ -442,6 +442,13 @@ class TestMlFrontend(FrontendTest):
         self.assertNonPresence("Versammlungslisten")
         self.assertNonPresence("Andere Mailinglisten")
 
+    @as_users("quintus")
+    def test_mailinglist_cde_admin(self) -> None:
+        self.traverse({'href': '/ml/$'},
+                      {'href': '/ml/mailinglist/list'},
+                      {'href': '/ml/mailinglist/7/show'},
+                      {'href': '/ml/mailinglist/7/management'})
+
     @as_users("nina", "berta")
     def test_mailinglist_management(self) -> None:
         self.traverse({'href': '/ml/$'},
