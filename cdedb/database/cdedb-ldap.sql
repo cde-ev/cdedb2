@@ -12,8 +12,7 @@ CREATE TABLE ldap_organizations (
 	id serial PRIMARY KEY,
 	dn varchar NOT NULL,
 	oc_map_id integer NOT NULL,  -- REFERENCES ldap_oc_mappings(id)
-	-- ist das eine Referenz auf die ID des entsprechenden ldap_entries?
-	parent integer NOT NULL,
+	parent integer NOT NULL,  -- REFERENCES ldap_entries(id)
 	-- maps ldap 'o' attribute
 	display_name varchar NOT NULL,
 	-- to be set in 'ldap_entry_objclasses'
@@ -149,3 +148,4 @@ GRANT ALL ON ldap_entry_objclasses TO cdb_admin;
 
 -- create previously impossible references
 ALTER TABLE ldap_organizations ADD FOREIGN KEY (oc_map_id) REFERENCES ldap_oc_mappings(id);
+ALTER TABLE ldap_organizations ADD FOREIGN KEY (parent) REFERENCES ldap_entries(id);
