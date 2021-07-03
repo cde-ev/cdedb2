@@ -5,23 +5,23 @@
 
 CREATE FUNCTION oc_organization_id()
   RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
-'SELECT 1';
+$$ SELECT 1; $$;
 
 CREATE FUNCTION oc_organizationalUnit_id()
   RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
-'SELECT 2';
+$$ SELECT 2; $$;
 
 CREATE FUNCTION oc_organizationalRole_id()
   RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
-'SELECT 3';
+$$ SELECT 3; $$;
 
 CREATE FUNCTION oc_inetOrgPerson_id()
   RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
-'SELECT 10';
+$$ SELECT 10; $$;
 
 CREATE FUNCTION oc_groupOfUniqueNames_id()
   RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
-'SELECT 20';
+$$ SELECT 20; $$;
 
 ---
 --- ldap node helper functions
@@ -30,23 +30,23 @@ CREATE FUNCTION oc_groupOfUniqueNames_id()
 
 CREATE FUNCTION node_cde_id()
   RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
-'SELECT 1';
+$$ SELECT 1; $$;
 
 CREATE FUNCTION node_users_id()
   RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
-'SELECT 10';
+$$ SELECT 10; $$;
 
 CREATE FUNCTION node_groups_id()
   RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
-'SELECT 11';
+$$ SELECT 11; $$;
 
 CREATE FUNCTION node_dsa_id()
   RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
-'SELECT 12';
+$$ SELECT 12; $$;
 
 CREATE FUNCTION node_static_group_is_active_id()
   RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
-'SELECT 20';
+$$ SELECT 20; $$;
 
 ---
 --- serial id offset helper functions
