@@ -4692,8 +4692,8 @@ class EventBackend(AbstractBackend):
         filename = f"{event_id}.json"
 
         # Write to a file in a temporary directory, in order to be thread safe.
-        with tempfile.TemporaryDirectory() as td:
-            td = Path(td)
+        with tempfile.TemporaryDirectory() as t:
+            td = Path(t)
             with open(td / filename, "w") as f:
                 f.write(json_serialize(export))
             # Declare the temporary directory to be the working tree, and specify the
