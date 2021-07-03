@@ -1280,7 +1280,9 @@ CREATE TABLE ldap_organizations (
 	dn varchar NOT NULL,
 	oc_map_id integer NOT NULL REFERENCES ldap_oc_mappings(id),
 	-- ist das eine Referenz auf die ID des entsprechenden ldap_entries?
-	parent integer NOT NULL
+	parent integer NOT NULL,
+	-- maps ldap 'o' attribute
+	display_name varchar NOT NULL
 );
 GRANT ALL ON ldap_organizations TO cdb_admin;
 
