@@ -151,6 +151,33 @@ class TestCoreFrontend(FrontendTest):
                                         self.user['family_name']))
         self.assertPresence(self.user['given_names'], div='title')
 
+    @as_users("nina", "paul", "quintus")
+    def test_showuser_mailinglists(self) -> None:
+        if self.user_in("nina"):
+            # Mailinglist admins come from management
+            self.traverse("Mailinglisten", "Allumfassende Liste", "Verwaltung",
+                          "Inga Iota")
+        elif self.user_in("paul"):
+            self.admin_view_profile("inga")
+        elif self.user_in("quintus"):
+            # Relative admins may see this page
+            self.realm_admin_view_profile("inga", "cde")
+
+        self.traverse("Mailinglisten-Daten")
+        self.assertTitle("Inga Iota – Mailinglisten-Daten")
+        self.assertPresence("inga@example.cde", div='contact-email')
+        self.assertPresence("CdE-Info E-Mail: inga-papierkorb@example.cde")
+        self.assertPresence("Kampfbrief-Kommentare (geblockt)")
+        self.assertNonPresence("Witz des Tages")
+
+    @as_users("janis")
+    def test_showuser_self(self) -> None:
+        self.get('/core/self/mailinglists')
+        self.assertTitle("Janis Jalapeño – Mailinglisten-Daten")
+        # Check there is no link
+        self.traverse({'description': self.user['display_name']})
+        self.assertNonPresence("Mailinglisten-Daten")
+
     @as_users("inga")
     def test_vcard(self) -> None:
         # we test here only if the presented vcard is kind of correct. *When* a vcard

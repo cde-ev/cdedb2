@@ -482,7 +482,7 @@ class TestMlBackend(BackendTest):
         reality = self.ml.get_mailinglist(self.key, mailinglist_id)
         self.assertEqual(expectation, reality)
 
-    @as_users("nina", "berta")
+    @as_users("nina", "berta", "paul", "quintus")
     def test_subscriptions(self) -> None:
         # Which lists is Berta subscribed to.
         expectation = {
@@ -505,7 +505,7 @@ class TestMlBackend(BackendTest):
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=2))
 
-    @as_users("nina", "janis")
+    @as_users("nina", "janis", "paul")
     def test_subscriptions_two(self) -> None:
         # Which lists is Janis subscribed to.
         expectation = {
@@ -519,7 +519,7 @@ class TestMlBackend(BackendTest):
         self.assertEqual(expectation,
                          self.ml.get_user_subscriptions(self.key, persona_id=10))
 
-    @as_users("nina", "emilia")
+    @as_users("nina", "emilia", "annika")
     def test_subscriptions_three(self) -> None:
         expectation = {
             9: SS.unsubscribed,

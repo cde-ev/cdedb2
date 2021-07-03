@@ -126,6 +126,21 @@
     {% if title %}<span class="sr-only">{{ title }}</span>{% endif %}
 {%- endmacro %}
 
+{# Special tri-state macro to represent subscription states
+
+   In contrast to the deko_checkbox, this represents the pending state of someone who has requested subscription by
+   an empty circle. Otherwise, this macro is functionally equivalent.
+#}
+{% macro state_checkbox(state) %}
+    {% if state in enums["SubscriptionState"].subscribing_states() %}
+        <span class="fas fa-check-circle" title="{{ gettext("subscribed") }}" aria-hidden="true"></span>
+    {% elif state == enums["SubscriptionState"].pending %}
+        <span class="far fa-circle" title="{{ gettext("pending") }}" aria-hidden="true"></span>
+    {% else %}
+        <span class="far fa-times-circle" title="{{ gettext("not subscribed") }}" aria-hidden="true"></span>
+    {% endif %}
+{% endmacro %}
+
 {% macro persona_anchor(persona, verbose=False, quote_me=False, event_id=none, ml_id=none, aclass='', readonly=False) %}
     {%- if verbose -%}
         {{ href(show_user_link(user, persona['id'], quote_me, event_id=event_id, ml_id=ml_id), "{} {} {} {}".format(
@@ -937,16 +952,16 @@ mailto:
 {%- if kwargs %}?{{ kwargs|urlencode }}{% endif %}
 {%- endmacro %}
 
-{% macro username_mailto(persona) -%}
+{% macro username_mailto(persona, email=none) -%}
 {{ href(
     mailto(
-        address=persona.get("username", persona.get("persona.username", "")),
+        address=email or persona.get("username", persona.get("persona.username", "")),
         name="{} {}".format(
             persona.get("given_names", persona.get("persona.given_names", "")),
             persona.get("family_name", persona.get("persona.family_name", ""))
         )
     ),
-    persona.get("username", persona.get("persona.username", ""))
+    email or persona.get("username", persona.get("persona.username", ""))
 ) }}
 {%- endmacro %}
 
