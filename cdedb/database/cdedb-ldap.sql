@@ -55,24 +55,23 @@ $$ SELECT 20; $$;
 ---
 CREATE FUNCTION make_organization_entity_id(organization_id INT)
   RETURNS bigint LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
--- TODO this is not independent of the chosen offset
-$$ SELECT $1; $$ ;
+$$ SELECT 1 * 2^32 + $1; $$ ;
 
 CREATE FUNCTION make_dsa_entity_id(dsa_id INT)
   RETURNS bigint LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
-$$ SELECT 1 * 2^32 + $1; $$ ;
+$$ SELECT 2 * 2^32 + $1; $$ ;
 
 CREATE FUNCTION make_persona_entity_id(persona_id INT)
   RETURNS bigint LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
-$$ SELECT 2 * 2^32 + $1; $$ ;
+$$ SELECT 3 * 2^32 + $1; $$ ;
 
 CREATE FUNCTION make_static_group_entity_id(static_group_id INT)
   RETURNS bigint LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
-$$ SELECT 3 * 2^32 + $1; $$ ;
+$$ SELECT 4 * 2^32 + $1; $$ ;
 
 CREATE FUNCTION make_mailinglist_entity_id(mailinglist_id INT)
   RETURNS bigint LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
-$$ SELECT 4 * 2^32 + $1; $$ ;
+$$ SELECT 5 * 2^32 + $1; $$ ;
 
 ---
 --- create dn
@@ -102,7 +101,7 @@ CREATE TABLE ldap_organizations (
 	id serial PRIMARY KEY,
 	dn varchar NOT NULL,
 	oc_map_id integer NOT NULL,  -- REFERENCES ldap_oc_mappings(id)
-	parent integer NOT NULL,  -- REFERENCES ldap_entries(id)
+	parent bigint NOT NULL,  -- REFERENCES ldap_entries(id)
 	-- maps ldap 'o' attribute
 	display_name varchar NOT NULL,
 	-- to be set in 'ldap_entry_objclasses'
@@ -114,9 +113,9 @@ INSERT INTO ldap_organizations (id, dn, oc_map_id, parent, display_name, additio
     -- The overall organization
         (node_cde_id(), 'dc=cde-ev,dc=de', oc_organization_id(), 0, 'CdE e.V.', 'dcObject'),
     -- All organizational units
-        (node_users_id(), 'ou=users,dc=cde-ev,dc=de', oc_organizationalUnit_id(), node_cde_id(), 'Users', NULL),
-        (node_groups_id(), 'ou=groups,dc=cde-ev,dc=de', oc_organizationalUnit_id(), node_cde_id(), 'Groups', NULL),
-        (node_dsa_id(), 'ou=dsa,dc=cde-ev,dc=de', oc_organizationalUnit_id(), node_cde_id(), 'Directory System Agent', NULL);
+        (node_users_id(), 'ou=users,dc=cde-ev,dc=de', oc_organizationalUnit_id(), make_organization_entity_id(node_cde_id()), 'Users', NULL),
+        (node_groups_id(), 'ou=groups,dc=cde-ev,dc=de', oc_organizationalUnit_id(), make_organization_entity_id(node_cde_id()), 'Groups', NULL),
+        (node_dsa_id(), 'ou=dsa,dc=cde-ev,dc=de', oc_organizationalUnit_id(), make_organization_entity_id(node_cde_id()), 'Directory System Agent', NULL);
 
 -- ldap Directory System Agents
 DROP TABLE IF EXISTS ldap_agents;
@@ -294,7 +293,7 @@ CREATE VIEW ldap_entries (id, dn, oc_map_id, parent, keyval) AS
            make_dsa_entity_id(id),
            'cn=' || cn || ',ou=dsa,dc=cde-ev,dc=de' AS dn,
            oc_organizationalRole_id() AS oc_map_id,
-           node_dsa_id() AS parent,
+           make_organization_entity_id(node_dsa_id()) AS parent,
            id as keyval
         FROM ldap_agents
     )
@@ -305,7 +304,7 @@ CREATE VIEW ldap_entries (id, dn, oc_map_id, parent, keyval) AS
            -- the DB-ID is really static
            make_persona_dn(id) AS dn,
            oc_inetOrgPerson_id() AS oc_map_id,
-           node_users_id() AS parent,
+           make_organization_entity_id(node_users_id()) AS parent,
            id as keyval
         FROM core.personas
     )
@@ -316,7 +315,7 @@ CREATE VIEW ldap_entries (id, dn, oc_map_id, parent, keyval) AS
                make_static_group_entity_id(id),
                'cn=' || cn || ',ou=groups,dc=cde-ev,dc=de' AS dn,
                oc_groupOfUniqueNames_id() AS oc_map_id,
-               node_groups_id() AS parent,
+               make_organization_entity_id(node_groups_id()) AS parent,
                make_static_group_entity_id(id) as keyval
             FROM ldap_static_groups
         )
@@ -326,7 +325,7 @@ CREATE VIEW ldap_entries (id, dn, oc_map_id, parent, keyval) AS
                make_mailinglist_entity_id(id),
                'cn=' || make_mailinglist_cn(id) || ',ou=groups,dc=cde-ev,dc=de' AS dn,
                oc_groupOfUniqueNames_id() AS oc_map_id,
-               node_groups_id() AS parent,
+               make_organization_entity_id(node_groups_id()) AS parent,
                make_mailinglist_entity_id(id) as keyval
             FROM ml.mailinglists
         )
