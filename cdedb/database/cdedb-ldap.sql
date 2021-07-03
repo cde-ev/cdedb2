@@ -1,5 +1,36 @@
 ---
---- ldap stuff (in public schema)
+--- ldap helper tables (in public schema)
+--- this add some helper tables to satisfy the requirements of the ldap back-sql
+--- schema. Some of them add real new data which is required for middle-nodes in
+--- the ldap there, others are just query views on existent data which is
+--- scattered over multiple tables.
+---
+
+-- helper nodes to satisfy the ldap-tree conventions
+DROP TABLE IF EXISTS ldap_organizations;
+CREATE TABLE ldap_organizations (
+	id serial PRIMARY KEY,
+	dn varchar NOT NULL,
+	oc_map_id integer NOT NULL,  -- REFERENCES ldap_oc_mappings(id)
+	-- ist das eine Referenz auf die ID des entsprechenden ldap_entries?
+	parent integer NOT NULL,
+	-- maps ldap 'o' attribute
+	display_name varchar NOT NULL,
+	additional_object_class varchar DEFAULT NULL
+);
+GRANT ALL ON ldap_organizations TO cdb_admin;
+
+-- corresponds to Directory System Agents
+DROP TABLE IF EXISTS ldap_agents;
+CREATE TABLE ldap_agents (
+	id serial PRIMARY KEY,
+	cn varchar NOT NULL,
+    password_hash varchar NOT NULL
+);
+GRANT ALL ON ldap_agents TO cdb_admin;
+
+---
+--- ldap tables for back-sql (in public schema)
 --- this is taken with minimal modifications from
 --- servers/slapd/back-sql/rdbms_depend/pgsql/backsql_create.sql
 --- in the openldap sources
@@ -19,30 +50,6 @@ CREATE TABLE ldap_oc_mappings (
 	expect_return int NOT NULL
 );
 GRANT ALL ON ldap_oc_mappings TO cdb_admin;
-
--- Helper table to make relations work
-
-DROP TABLE IF EXISTS ldap_organizations;
-CREATE TABLE ldap_organizations (
-	id serial PRIMARY KEY,
-	dn varchar NOT NULL,
-	oc_map_id integer NOT NULL REFERENCES ldap_oc_mappings(id),
-	-- ist das eine Referenz auf die ID des entsprechenden ldap_entries?
-	parent integer NOT NULL,
-	-- maps ldap 'o' attribute
-	display_name varchar NOT NULL,
-	additional_object_class varchar DEFAULT NULL
-);
-GRANT ALL ON ldap_organizations TO cdb_admin;
-
--- corresponds to Directory System Agents
-DROP TABLE IF EXISTS ldap_agents;
-CREATE TABLE ldap_agents (
-	id serial PRIMARY KEY,
-	cn varchar NOT NULL,
-    password_hash varchar NOT NULL
-);
-GRANT ALL ON ldap_agents TO cdb_admin;
 
 DROP TABLE IF EXISTS ldap_attr_mappings;
 CREATE TABLE ldap_attr_mappings (
@@ -127,3 +134,6 @@ CREATE VIEW ldap_entry_objclasses (entry_id, oc_name) AS
     )
 ;
 GRANT ALL ON ldap_entry_objclasses TO cdb_admin;
+
+-- create previously impossible references
+ALTER TABLE ldap_organizations ADD FOREIGN KEY (oc_map_id) REFERENCES ldap_oc_mappings(id);
