@@ -104,6 +104,11 @@
                     {{ util.href(cdedblink("core/show_history"), gettext("Change History"),
                                  aclass="btn btn-info btn-sm", icon="clock") }}
                 {% endif %}
+                {% if is_relative_admin_view or "event_user" in user.admin_views %}
+                    {{ util.href(cdedblink("core/show_user_events", {'persona_id': data['id']}),
+                                 gettext("Show Event Data"), aclass="btn btn-default btn-sm",
+                                 icon="chalkboard-teacher") }}
+                {% endif %}
                 {% if is_relative_admin_view or "ml_user" in user.admin_views %}
                     {{ util.href(cdedblink("core/show_user_mailinglists", {'persona_id': data['id']}),
                                  gettext("Show Mailinglist Data"), aclass="btn btn-default btn-sm",
