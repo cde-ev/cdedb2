@@ -1282,7 +1282,8 @@ CREATE TABLE ldap_organizations (
 	-- ist das eine Referenz auf die ID des entsprechenden ldap_entries?
 	parent integer NOT NULL,
 	-- maps ldap 'o' attribute
-	display_name varchar NOT NULL
+	display_name varchar NOT NULL,
+	additional_object_class varchar DEFAULT NULL
 );
 GRANT ALL ON ldap_organizations TO cdb_admin;
 
@@ -1333,9 +1334,25 @@ CREATE VIEW ldap_entries (id, dn, oc_map_id, parent, keyval) AS
 );
 GRANT ALL ON ldap_entries TO cdb_admin;
 
-DROP TABLE IF EXISTS ldap_entry_objclasses;
-CREATE TABLE ldap_entry_objclasses (
-	entry_id integer NOT NULL,
-	oc_name varchar(64)
-);
+CREATE VIEW ldap_entry_objclasses (entry_id, oc_name) AS
+    WITH const AS (
+        SELECT
+            2^32 AS id_offset
+    )
+    -- organizations
+    (
+        SELECT
+           id AS entry_id,
+           additional_object_class AS oc_name
+        FROM ldap_organizations
+        WHERE additional_object_class IS NOT NULL
+    )
+    -- Directory System Agents
+    UNION (
+        SELECT
+           id + const.id_offset AS entry_id,
+           'simpleSecurityObject' AS oc_name
+        FROM ldap_agents, const
+    )
+;
 GRANT ALL ON ldap_entry_objclasses TO cdb_admin;

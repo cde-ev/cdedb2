@@ -309,13 +309,7 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
                 'param_order': 3,
                 'expect_return': 0,
             },
-        ],
-        'ldap_entry_objclasses': [
-            {
-                'entry_id': 1,
-                'oc_name': 'dcObject',
-            },
-        ],
+        ]
     }
 
     for table, table_data in LDAP_TABLES.items():
