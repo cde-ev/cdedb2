@@ -196,6 +196,15 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
                 'delete_proc': "SELECT 'TODO'",
                 'expect_return': 0,
             },
+            {
+                'id': 3,
+                'name': 'organizationalUnit',
+                'keytbl': 'ldap_organizations',
+                'keycol': 'id',
+                'create_proc': "SELECT 'TODO'",
+                'delete_proc': "SELECT 'TODO'",
+                'expect_return': 0,
+            },
         ],
         'ldap_organizations': [
             {
@@ -208,14 +217,14 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
             {
                 'id': 2,
                 'dn': 'ou=users,dc=cde-ev,dc=de',
-                'oc_map_id': 1,
+                'oc_map_id': 3,
                 'parent': 1,
                 'display_name': 'Users'
             },
             {
                 'id': 3,
                 'dn': 'ou=groups,dc=cde-ev,dc=de',
-                'oc_map_id': 1,
+                'oc_map_id': 3,
                 'parent': 1,
                 'display_name': 'Groups'
             },
@@ -224,6 +233,18 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
             {
                 'id': 1,
                 'oc_map_id': 1,
+                'name': 'o',
+                'sel_expr': 'ldap_organizations.display_name',
+                'from_tbls': 'ldap_organizations',
+                'join_where': None,
+                'add_proc': "SELECT 'TODO'",
+                'delete_proc': "SELECT 'TODO'",
+                'param_order': 3,
+                'expect_return': 0,
+            },
+            {
+                'id': 2,
+                'oc_map_id': 3,
                 'name': 'o',
                 'sel_expr': 'ldap_organizations.display_name',
                 'from_tbls': 'ldap_organizations',
