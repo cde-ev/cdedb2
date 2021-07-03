@@ -112,7 +112,8 @@ CREATE TABLE ldap_attr_mappings (
 	id bigserial PRIMARY KEY,
 	oc_map_id integer NOT NULL REFERENCES ldap_oc_mappings(id),
 	name varchar(255) NOT NULL,
-	sel_expr varchar(255) NOT NULL,
+	-- this should be a varchar(255). However, we have queries that are longer...
+	sel_expr varchar NOT NULL,
 	sel_expr_u varchar(255),
 	from_tbls varchar(255) NOT NULL,
 	join_where varchar(255),
