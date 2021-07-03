@@ -9,15 +9,15 @@ CREATE FUNCTION oc_organization_id()
 
 CREATE FUNCTION oc_organizationalUnit_id()
   RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
-'SELECT 3';
+'SELECT 2';
 
 CREATE FUNCTION oc_organizationalRole_id()
   RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
-'SELECT 4';
+'SELECT 3';
 
 CREATE FUNCTION oc_inetOrgPerson_id()
   RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
-'SELECT 2';
+'SELECT 10';
 
 ---
 --- ldap node helper functions
