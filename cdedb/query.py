@@ -131,12 +131,15 @@ class QueryScope(enum.IntEnum):
                         " ON personas.id = participants.persona_id")
         return _QUERY_VIEWS.get(self, default_view)  # type: ignore[return-value]
 
-    def get_primary_key(self) -> str:
+    def get_primary_key(self, short: bool = False) -> str:
         """Return the primary key of the view associated with the scope.
 
         This should always be selected, to avoid any pathologies.
         """
-        return PRIMARY_KEYS.get(self, "personas.id")
+        ret = PRIMARY_KEYS.get(self, "personas.id")
+        if short:
+            return ret.split(".", 1)[1]
+        return ret
 
     def get_spec(self, *, event: CdEDBObject = None) -> Dict[str, str]:
         """Return the query spec for this scope.
