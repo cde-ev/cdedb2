@@ -29,14 +29,19 @@ from ``kvm``)::
 
   kvm -m 1G -enable-kvm -device virtio-rng-pci -net nic,model=virtio -net user,hostfwd=tcp:127.0.0.1:20022-:22,hostfwd=tcp:127.0.0.1:20443-:443,hostfwd=tcp:127.0.0.1:5000-:5000 -drive file=cdedb.qcow2,if=virtio,cache=writethrough
 
+By default, the VM uses a single core only, which may limit performance
+especially in parallel to lint and integration tests. To mitigate these
+constraints, you may use ``-smp n`` as parameter to allow the VM to use ``n``
+cores of your system.
+
 If ``cdedb.vdi`` is the downloaded image, then the VM can be run with
 VirtualBox via the GUI. Thereby, choose the unpacked ``cdedb.vi`` image as hard
 disk. Furthermore, you would like to set some port forwarding (which is included
 in the kvm command).
 
 If you dont know how to do this, take a look at the first point in
-:ref:`accessing-vm-windows`. Note that there are two existing port forwarding, one
-for ``20022`` and one for ``20443``.
+:ref:`accessing-vm-windows`. Note that there are multiple port forwardings,
+for ``20022``, ``20443`` and ``5000``.
 
 Accessing -- Linux
 ------------------
