@@ -283,16 +283,17 @@ CREATE VIEW ldap_entries (id, dn, oc_map_id, parent, keyval) AS
            id as keyval
         FROM core.personas
     )
-    -- static groups
-    UNION (
-        SELECT
-           make_static_group_entity_id(id),
-           'cn=' || cn || ',ou=groups,dc=cde-ev,dc=de' AS dn,
-           oc_groupOfUniqueNames_id() AS oc_map_id,
-           node_groups_id() AS parent,
-           make_static_group_entity_id(id) as keyval
-        FROM ldap_static_groups
-    )
+    -- groups
+        -- static
+        UNION (
+            SELECT
+               make_static_group_entity_id(id),
+               'cn=' || cn || ',ou=groups,dc=cde-ev,dc=de' AS dn,
+               oc_groupOfUniqueNames_id() AS oc_map_id,
+               node_groups_id() AS parent,
+               make_static_group_entity_id(id) as keyval
+            FROM ldap_static_groups
+        )
 ;
 GRANT ALL ON ldap_entries TO cdb_admin;
 
