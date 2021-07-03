@@ -9,6 +9,7 @@ import datetime
 import decimal
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 from typing import (
     Any, Callable, Collection, Dict, Iterable, List, Mapping, Optional, Sequence, Set,
@@ -4684,12 +4685,25 @@ class EventBackend(AbstractBackend):
         event_id = affirm(vtypes.ID, event_id)
         commit_msg = affirm_optional(str, commit_msg) or ""
         export = self.partial_export_event(rs, event_id)
-        event_keeper_directory = self.event_keeper_dir / str(event_id)
-        if not event_keeper_directory.exists():
+        event_keeper_dir = self.event_keeper_dir / str(event_id)
+        # TODO: this should never happen in practice, but is a nice safeguard.
+        if not event_keeper_dir.exists():
             self.event_keeper_init(event_id)
         filename = f"{event_id}.json"
-        with open(event_keeper_directory / filename, "w") as f:
-            f.write(json_serialize(export))
-        subprocess.run(["git", "add", filename], cwd=event_keeper_directory)
-        subprocess.run(["git", "commit", "-m", commit_msg], cwd=event_keeper_directory)
+
+        # Write to a file in a temporary directory, in order to be thread safe.
+        with tempfile.TemporaryDirectory() as td:
+            td = Path(td)
+            with open(td / filename, "w") as f:
+                f.write(json_serialize(export))
+            # Declare the temporary directory to be the working tree, and specify the
+            # actual git directory.
+            subprocess.run(
+                [
+                    "git", f"--work-tree={td}", "add", td / filename,
+                ],
+                cwd=event_keeper_dir
+            )
+            # Then commit everything as if we were in the repository directory.
+            subprocess.run(["git", "-C", event_keeper_dir, "commit", "-m", commit_msg])
         return export
