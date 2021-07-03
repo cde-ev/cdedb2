@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2021-07-03 01:05+0200\n"
+"POT-Creation-Date: 2021-07-03 13:23+0000\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -5086,7 +5086,6 @@ msgstr ""
 #: cdedb/frontend/templates/web/generic.tmpl:32
 #: cdedb/frontend/templates/web/generic.tmpl:120
 #: cdedb/frontend/templates/web/generic.tmpl:192
-#: cdedb/frontend/templates/web/ml/show_ml_user.tmpl:42
 msgid "E-Mail"
 msgstr ""
 
@@ -5592,7 +5591,6 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/show_user.tmpl:143
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:186
 #: cdedb/frontend/templates/web/event/lodgement_group_summary.tmpl:26
-#: cdedb/frontend/templates/web/ml/show_ml_user.tmpl:32
 msgid "Name"
 msgstr ""
 
@@ -5650,7 +5648,6 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/change_registration.tmpl:43
 #: cdedb/frontend/templates/web/event/registration_query.tmpl:51
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:38
-#: cdedb/frontend/templates/web/ml/show_ml_user.tmpl:38
 msgid "CdEDB-ID"
 msgstr ""
 
@@ -7473,7 +7470,6 @@ msgid "Show all Fields"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:42
-#: cdedb/frontend/templates/web/ml/show_ml_user.tmpl:27
 msgid "Show Profile"
 msgstr ""
 
@@ -11998,40 +11994,6 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:203
 msgid "The mailinglist will be permanently deleted."
-msgstr ""
-
-#: cdedb/frontend/templates/web/ml/show_ml_user.tmpl:10
-#, fuzzy, python-format
-msgid "%(given_names)s %(family_name)s – Mailinglist Data"
-msgstr "%(given_names)s %(family_name)s tracta"
-
-#: cdedb/frontend/templates/web/ml/show_ml_user.tmpl:30
-#, fuzzy
-msgid "Global information"
-msgstr "notitiae rationis"
-
-#: cdedb/frontend/templates/web/ml/show_ml_user.tmpl:48
-#, fuzzy
-msgid "Mailinglist information"
-msgstr "administrator tabellarum epistularum electronicarum"
-
-#: cdedb/frontend/templates/web/ml/show_ml_user.tmpl:49
-msgid ""
-"This lists all mailinglists this user is related to. In particular, this "
-"includes lists they are or have recently been subscribed to, as well as "
-"pending subscriptions and blocks."
-msgstr ""
-
-#: cdedb/frontend/templates/web/ml/show_ml_user.tmpl:67
-msgid "(override)"
-msgstr ""
-
-#: cdedb/frontend/templates/web/ml/show_ml_user.tmpl:69
-msgid "(blocked)"
-msgstr ""
-
-#: cdedb/frontend/templates/web/ml/show_ml_user.tmpl:74
-msgid "E-Mail:"
 msgstr ""
 
 #: cdedb/frontend/templates/web/ml/user_search.tmpl:8

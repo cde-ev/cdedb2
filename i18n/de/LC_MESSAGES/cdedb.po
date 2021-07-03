@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2021-07-03 01:05+0200\n"
+"POT-Creation-Date: 2021-07-03 13:23+0000\n"
 "PO-Revision-Date: 2020-12-06 11:30+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -5313,7 +5313,6 @@ msgstr "Land"
 #: cdedb/frontend/templates/web/generic.tmpl:32
 #: cdedb/frontend/templates/web/generic.tmpl:120
 #: cdedb/frontend/templates/web/generic.tmpl:192
-#: cdedb/frontend/templates/web/ml/show_ml_user.tmpl:42
 msgid "E-Mail"
 msgstr "E-Mail"
 
@@ -5889,7 +5888,6 @@ msgstr "Organisationen der verg. Veranstaltungen verwalten"
 #: cdedb/frontend/templates/web/core/show_user.tmpl:143
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:186
 #: cdedb/frontend/templates/web/event/lodgement_group_summary.tmpl:26
-#: cdedb/frontend/templates/web/ml/show_ml_user.tmpl:32
 msgid "Name"
 msgstr "Name"
 
@@ -5947,7 +5945,6 @@ msgstr "Neue Einzugsermächtigung"
 #: cdedb/frontend/templates/web/event/change_registration.tmpl:43
 #: cdedb/frontend/templates/web/event/registration_query.tmpl:51
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:38
-#: cdedb/frontend/templates/web/ml/show_ml_user.tmpl:38
 msgid "CdEDB-ID"
 msgstr "CdEDB-ID"
 
@@ -7849,7 +7846,6 @@ msgid "Show all Fields"
 msgstr "Alle Felder anzeigen"
 
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:42
-#: cdedb/frontend/templates/web/ml/show_ml_user.tmpl:27
 msgid "Show Profile"
 msgstr "Profil anzeigen"
 
@@ -12700,42 +12696,6 @@ msgstr "Löscht die Mailingliste inklusive Beschreibung und allen Abonnements."
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:203
 msgid "The mailinglist will be permanently deleted."
 msgstr "Die Mailingliste wird irreversibel gelöscht."
-
-#: cdedb/frontend/templates/web/ml/show_ml_user.tmpl:10
-#, fuzzy, python-format
-msgid "%(given_names)s %(family_name)s – Mailinglist Data"
-msgstr "%(given_names)s %(family_name)s"
-
-#: cdedb/frontend/templates/web/ml/show_ml_user.tmpl:30
-#, fuzzy
-msgid "Global information"
-msgstr "Person"
-
-#: cdedb/frontend/templates/web/ml/show_ml_user.tmpl:48
-#, fuzzy
-msgid "Mailinglist information"
-msgstr "Mailinglisten-Administration"
-
-#: cdedb/frontend/templates/web/ml/show_ml_user.tmpl:49
-msgid ""
-"This lists all mailinglists this user is related to. In particular, this "
-"includes lists they are or have recently been subscribed to, as well as "
-"pending subscriptions and blocks."
-msgstr ""
-
-#: cdedb/frontend/templates/web/ml/show_ml_user.tmpl:67
-msgid "(override)"
-msgstr ""
-
-#: cdedb/frontend/templates/web/ml/show_ml_user.tmpl:69
-#, fuzzy
-msgid "(blocked)"
-msgstr "Veranstaltungssperre ist nicht aktiv."
-
-#: cdedb/frontend/templates/web/ml/show_ml_user.tmpl:74
-#, fuzzy
-msgid "E-Mail:"
-msgstr "E-Mail"
 
 #: cdedb/frontend/templates/web/ml/user_search.tmpl:8
 msgid "Mailinglist-User Management"
