@@ -19,6 +19,10 @@ CREATE FUNCTION oc_inetOrgPerson_id()
   RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
 'SELECT 10';
 
+CREATE FUNCTION oc_groupOfUniqueNames_id()
+  RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+'SELECT 20';
+
 ---
 --- ldap node helper functions
 --- ids of hardcoded ldap tree nodes
@@ -39,6 +43,10 @@ CREATE FUNCTION node_groups_id()
 CREATE FUNCTION node_dsa_id()
   RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
 'SELECT 12';
+
+CREATE FUNCTION node_static_group_is_active_id()
+  RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+'SELECT 20';
 
 ---
 --- serial id offset helper functions
@@ -111,6 +119,46 @@ CREATE TABLE ldap_agents (
 );
 GRANT ALL ON ldap_agents TO cdb_admin;
 
+-- static ldap groups operating only on core.personas
+DROP TABLE IF EXISTS ldap_static_groups;
+CREATE TABLE ldap_static_groups (
+	id serial PRIMARY KEY,
+	cn varchar NOT NULL
+);
+GRANT ALL ON ldap_static_groups TO cdb_admin;
+
+INSERT INTO ldap_static_groups (id, cn) VALUES
+    (node_static_group_is_active_id(), 'is_active');
+
+-- A view containing all ldap_groups and their unique attributes.
+CREATE VIEW ldap_groups (id, cn) AS
+    -- static groups
+    (
+        SELECT
+           make_static_group_entity_id(id),
+           cn
+        FROM ldap_static_groups
+    )
+;
+GRANT ALL ON ldap_groups TO cdb_admin;
+
+-- A view containing all members of all ldap_groups. Since each group can have
+-- mulitple members, we need an extra query view to track them.
+-- This is also honored in 'ldap_attr_mapping'.
+CREATE VIEW ldap_group_members (group_id, member_dn) AS
+    -- static groups
+        -- is_active
+        (
+           SELECT
+              make_static_group_entity_id(node_static_group_is_active_id()) AS group_id,
+              make_persona_dn(core.personas.id) AS member_dn
+           FROM core.personas
+           WHERE core.personas.is_active
+        )
+;
+GRANT ALL ON ldap_group_members TO cdb_admin;
+
+
 ---
 --- ldap tables for back-sql (in public schema)
 --- this is taken with minimal modifications from
@@ -141,7 +189,8 @@ INSERT INTO ldap_oc_mappings (id, name, keytbl, keycol, create_proc, delete_proc
     (oc_organization_id(), 'organization', 'ldap_organizations', 'id', 'SELECT ''TODO''', 'SELECT ''TODO''', 0),
     (oc_inetOrgPerson_id(), 'inetOrgPerson', 'core.personas', 'id', 'SELECT ''TODO''', 'SELECT ''TODO''', 0),
     (oc_organizationalUnit_id(), 'organizationalUnit', 'ldap_organizations', 'id', 'SELECT ''TODO''', 'SELECT ''TODO''', 0),
-    (oc_organizationalRole_id(), 'organizationalRole', 'ldap_agents', 'id', 'SELECT ''TODO''', 'SELECT ''TODO''', 0);
+    (oc_organizationalRole_id(), 'organizationalRole', 'ldap_agents', 'id', 'SELECT ''TODO''', 'SELECT ''TODO''', 0),
+    (oc_groupOfUniqueNames_id(), 'groupOfUniqueNames', 'ldap_groups', 'id', 'SELECT ''TODO''', 'SELECT ''TODO''', 0);
 
 
 -- Map ldap object class attributes to sql queries to extract them.
@@ -193,7 +242,10 @@ INSERT INTO ldap_attr_mappings (oc_map_id, name, sel_expr, from_tbls, join_where
     (oc_inetOrgPerson_id(), 'mail', 'personas.username', 'core.personas', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
     -- used as distinguish identifier
     (oc_inetOrgPerson_id(), 'uid', 'personas.id', 'core.personas', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
-    (oc_inetOrgPerson_id(), 'userPassword', '''{CRYPT}'' || personas.password_hash', 'core.personas', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0);
+    (oc_inetOrgPerson_id(), 'userPassword', '''{CRYPT}'' || personas.password_hash', 'core.personas', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
+    -- Attributes of groupOfUniqueNames
+    (oc_groupOfUniqueNames_id(), 'cn', 'ldap_groups.cn', 'ldap_groups', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
+    (oc_groupOfUniqueNames_id(), 'uniqueMember', 'ldap_group_members.member_dn', 'ldap_group_members, ldap_groups', 'ldap_groups.id = ldap_group_members.group_id', 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0);
 
 -- 'Stores' the real ldap entries.
 -- This is a SQL View collecting all entries which shall be inserted in ldap
@@ -230,6 +282,16 @@ CREATE VIEW ldap_entries (id, dn, oc_map_id, parent, keyval) AS
            node_users_id() AS parent,
            id as keyval
         FROM core.personas
+    )
+    -- static groups
+    UNION (
+        SELECT
+           make_static_group_entity_id(id),
+           'cn=' || cn || ',ou=groups,dc=cde-ev,dc=de' AS dn,
+           oc_groupOfUniqueNames_id() AS oc_map_id,
+           node_groups_id() AS parent,
+           make_static_group_entity_id(id) as keyval
+        FROM ldap_static_groups
     )
 ;
 GRANT ALL ON ldap_entries TO cdb_admin;
