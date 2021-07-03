@@ -372,6 +372,10 @@ class TestCron(CronTest):
         # We just want to test that no exception is raised.
         self.execute('validate_stored_event_queries')
 
+    def test_event_keeper(self) -> None:
+        # We just want to test that no exception is raised.
+        self.execute('event_keeper')
+
     @storage
     @unittest.mock.patch("cdedb.frontend.common.CdEMailmanClient")
     def test_mailman_sync(self, client_class: unittest.mock.Mock) -> None:
