@@ -531,8 +531,10 @@ class CoreFrontend(AbstractFrontend):
         if ("meta_admin" in rs.user.roles
                 and "meta_admin" in rs.user.admin_views):
             access_levels.add("meta")
-        # There are administraive buttons on this page (including the nav)
-        # for all of these admins.
+        # There are administraive buttons on this page for all of these admins.
+        # All of these admins should see the Account Requests in the nav
+        # event_admins and ml_admins additionally always get links to the respective
+        # realm data.
         if {"core_admin", "cde_admin", "event_admin", "ml_admin"} & rs.user.roles:
             access_mode.add("any_admin")
         # Other admins see their realm if they are relative admin

@@ -65,7 +65,7 @@
                                 {% set link = "ml/show_mailinglist" %}
                             {% endif %}
                             <li class="hide-hover-container clearfix-after">
-                                {{ generic_ml.state_checkbox(state) }}
+                                {{ util.state_checkbox(state) }}
                                 {{ util.href(cdedblink(link, {'mailinglist_id': mailinglist_id}), ml["title"]) }}
                             {% if state == enums["SubscriptionState"].subscription_override %}
                                 {{ gettext("(override)") }}

@@ -72,13 +72,3 @@
         </div>
     </div>
 {% endmacro %}
-
-{% macro state_checkbox(state) %}
-    {% if state in enums["SubscriptionState"].subscribing_states() %}
-        <span class="fas fa-check-circle" title="{{ gettext("subscribed") }}"></span>
-    {% elif state == enums["SubscriptionState"].pending %}
-        <span class="far fa-circle" title="{{ gettext("pending") }}"></span>
-    {% else %}
-        <span class="far fa-times-circle" title="{{ gettext("not subscribed") }}"></span>
-    {% endif %}
-{% endmacro %}
