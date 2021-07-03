@@ -63,6 +63,16 @@ CREATE FUNCTION make_static_group_entity_id(static_group_id INT)
 $$ SELECT CAST(3 AS BIGINT)<<32 + $1; $$ ;
 
 ---
+--- create dn
+--- Some dn's are used at multiple places. To ensure consistency, we define a
+--- function for them here. Other dn's are specified in 'ldap_entries'.
+---
+
+CREATE FUNCTION make_persona_dn(persona_id INT)
+  RETURNS varchar LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+$$ SELECT 'uid=' || $1 || ',ou=users,dc=cde-ev,dc=de'; $$ ;
+
+---
 --- ldap helper tables (in public schema)
 --- this add some helper tables to satisfy the requirements of the ldap back-sql
 --- schema. Some of them add real new data which is required for middle-nodes in
@@ -215,7 +225,7 @@ CREATE VIEW ldap_entries (id, dn, oc_map_id, parent, keyval) AS
         SELECT
            make_persona_entity_id(id),
            -- the DB-ID is really static
-           'uid=' || id || ',ou=users,dc=cde-ev,dc=de' AS dn,
+           make_persona_dn(id) AS dn,
            oc_inetOrgPerson_id() AS oc_map_id,
            node_users_id() AS parent,
            id as keyval
