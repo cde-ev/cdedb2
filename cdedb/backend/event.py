@@ -2715,7 +2715,7 @@ class EventBackend(AbstractBackend):
                 ret[part_id] = xsorted(
                     (reg['id'] for reg in data), key=lambda r_id:
                     (fields_by_id[r_id].get(field['field_name'], 0), r_id))  # pylint: disable=cell-var-from-loop; # noqa
-            return ret
+        return ret
 
     @access("event")
     def get_waitlist(self, rs: RequestState, event_id: int,
@@ -3174,12 +3174,12 @@ class EventBackend(AbstractBackend):
                 and not self.is_orga(rs, event_id=data['event_id'])
                 and not self.is_admin(rs)):
             raise PrivilegeError(n_("Not privileged."))
-        if not self.core.verify_id(rs, data['persona_id'], is_archived=False):
-            raise ValueError(n_("This user does not exist or is archived."))
-        if not self.core.verify_persona(rs, data['persona_id'], {"event"}):
-            raise ValueError(n_("This user is not an event user."))
-        self.assert_offline_lock(rs, event_id=data['event_id'])
         with Atomizer(rs):
+            if not self.core.verify_id(rs, data['persona_id'], is_archived=False):
+                raise ValueError(n_("This user does not exist or is archived."))
+            if not self.core.verify_persona(rs, data['persona_id'], {"event"}):
+                raise ValueError(n_("This user is not an event user."))
+            self.assert_offline_lock(rs, event_id=data['event_id'])
             data['fields'] = fdata
             data['amount_owed'] = self._calculate_single_fee(
                 rs, data, event=event)
@@ -3424,13 +3424,12 @@ class EventBackend(AbstractBackend):
         if self.is_admin(rs):
             # Admins are exempt
             return True
-        with Atomizer(rs):
-            query = ("SELECT COUNT(*) AS num FROM event.log"
-                     " WHERE event_id = %s AND code = %s "
-                     " AND submitted_by != persona_id "
-                     " AND ctime >= now() - interval '24 hours'")
-            params = (event_id, const.EventLogCodes.registration_created)
-            num = unwrap(self.query_one(rs, query, params))
+        query = ("SELECT COUNT(*) AS num FROM event.log"
+                 " WHERE event_id = %s AND code = %s "
+                 " AND submitted_by != persona_id "
+                 " AND ctime >= now() - interval '24 hours'")
+        params = (event_id, const.EventLogCodes.registration_created)
+        num = unwrap(self.query_one(rs, query, params))
         return num < self.conf["ORGA_ADD_LIMIT"]
 
     @access("event")
@@ -3669,7 +3668,7 @@ class EventBackend(AbstractBackend):
             self.event_log(
                 rs, const.EventLogCodes.lodgement_changed, event_id,
                 change_note=title)
-            return ret
+        return ret
 
     @access("event")
     def create_lodgement(self, rs: RequestState,
@@ -3945,7 +3944,7 @@ class EventBackend(AbstractBackend):
                         personas.add(e['submitted_by'])
             ret['core.personas'] = list_to_dict(self.sql_select(
                 rs, "core.personas", PERSONA_EVENT_FIELDS, personas))
-            return ret
+        return ret
 
     @classmethod
     def translate(cls, data: CdEDBObject,
@@ -4096,7 +4095,7 @@ class EventBackend(AbstractBackend):
             ret *= self.sql_update(rs, "event.events", update)
             self.event_log(rs, const.EventLogCodes.event_unlocked, data['id'])
             self.event_keeper_commit(rs, data['id'], "Nach Entsperrung.")
-            return ret
+        return ret
 
     @access("event", "droid_quick_partial_export")
     def partial_export_event(self, rs: RequestState,
@@ -4658,7 +4657,7 @@ class EventBackend(AbstractBackend):
                 self.event_keeper_commit(
                     rs, data['id'],
                     "Nach partiellem Import: " + data.get('summary', ""))
-            return result, total_delta
+        return result, total_delta
 
     @internal
     def event_keeper_init(self, event_id: int) -> None:

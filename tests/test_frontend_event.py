@@ -3337,6 +3337,13 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Garcia G.")
         self.assertNonPresence("Inga")
 
+        # check log
+        self.get('/event/event/1/log')
+        self.assertPresence("Kursteilnehmer von Heldentum geändert.",
+                            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
+        self.assertPresence("Kursteilnehmer von Heldentum geändert.",
+                            div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
+
     @as_users("garcia")
     def test_manage_inhabitants(self) -> None:
         self.traverse({'href': '/event/$'},
@@ -3363,12 +3370,20 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Emilia", div='inhabitants-3')
         self.assertPresence("Garcia", div='inhabitants-3')
         self.assertPresence("Inga", div='inhabitants-3')
+
         # check the status of the camping mat checkbox was not overridden
         self.traverse({'description': 'Bewohner verwalten'})
         self.assertTitle("\nBewohner der Unterkunft Kalte Kammer verwalten"
                          " (Große Testakademie 2222)\n")
         self.assertCheckbox(False, "is_camping_mat_3_3")
         self.assertCheckbox(True, "is_camping_mat_3_4")
+
+        # check log
+        self.get('/event/event/1/log')
+        self.assertPresence("Bewohner von Kalte Kammer geändert.",
+                            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
+        self.assertPresence("Bewohner von Kalte Kammer geändert.",
+                            div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
 
     @as_users("garcia")
     def test_lodgements_swap_inhabitants(self) -> None:
@@ -3437,6 +3452,18 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence('Garcia', div="inhabitants-1")
         self.assertNonPresence('Garcia', div="inhabitants-3")
         self.assertNonPresence('Inga', div="inhabitants-3")
+
+        # check log
+        self.get('/event/event/1/log')
+        change_note = "Bewohner von Kalte Kammer und Einzelzelle getauscht."
+        self.assertPresence(change_note,
+                            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
+        self.assertPresence(change_note,
+                            div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
+        self.assertPresence(change_note,
+                            div=str(self.EVENT_LOG_OFFSET + 3) + "-1003")
+        self.assertPresence(change_note,
+                            div=str(self.EVENT_LOG_OFFSET + 4) + "-1004")
 
     @as_users("annika", "garcia")
     def test_lock_event(self) -> None:
@@ -3993,11 +4020,9 @@ etc;anything else""", f['entries_2'].value)
         self.logout()
         self.test_create_delete_course()
         self.logout()
-        self.test_lodgements()
-        self.logout()
         self.test_create_event()
         self.logout()
-        self.test_manage_attendees()
+        self.test_lodgements()
         self.logout()
         self.test_add_empty_registration()
         self.logout()
@@ -4006,22 +4031,22 @@ etc;anything else""", f['entries_2'].value)
         self.login(USER_DICT['annika'])
         self.traverse({'href': '/event/$'},
                       {'href': '/event/log'})
-        self.assertTitle("Veranstaltungen-Log [1–16 von 16]")
+        self.assertTitle("Veranstaltungen-Log [1–17 von 17]")
         self.assertNonPresence("LogCodes")
         f = self.response.forms['logshowform']
         f['codes'] = [10, 27, 51]
         f['event_id'] = 1
         self.submit(f)
-        self.assertTitle("Veranstaltungen-Log [1–2 von 2]")
+        self.assertTitle("Veranstaltungen-Log [1–1 von 1]")
 
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/log'})
-        self.assertTitle("Große Testakademie 2222: Log [1–6 von 6]")
+        self.assertTitle("Große Testakademie 2222: Log [1–7 von 7]")
 
         self.traverse({'href': '/event/$'},
                       {'href': '/event/log'})
-        self.assertTitle("Veranstaltungen-Log [1–16 von 16]")
+        self.assertTitle("Veranstaltungen-Log [1–17 von 17]")
         f = self.response.forms['logshowform']
         f['persona_id'] = "DB-5-1"
         f['submitted_by'] = "DB-1-9"

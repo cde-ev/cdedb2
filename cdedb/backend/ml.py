@@ -332,7 +332,7 @@ class MlBackend(AbstractBackend):
             # Get additional information to find out if we can view these lists
             ml_ids = [e['id'] for e in data]
             mailinglists = self.get_mailinglists(rs, ml_ids)
-            ret = {e['id']: e['title'] for e in data}
+        ret = {e['id']: e['title'] for e in data}
 
         # Filter the  list returned depending on value of managed
         # Admins can administrate and view anything
@@ -391,16 +391,15 @@ class MlBackend(AbstractBackend):
             data = self.sql_select(
                 rs, "ml.whitelist", ("address", "mailinglist_id"), mailinglist_ids,
                 entity_key="mailinglist_id")
-            for anid in mailinglist_ids:
-                whitelist = {d['address'] for d in data if d['mailinglist_id'] == anid}
-                if 'whitelist' in ret[anid]:
-                    raise RuntimeError()
-                ret[anid]['whitelist'] = whitelist
-            for anid in mailinglist_ids:
-
-                ret[anid]['domain_str'] = str(const.MailinglistDomain(
-                    ret[anid]['domain']))
-                ret[anid]['ml_type_class'] = ml_type.TYPE_MAP[ret[anid]['ml_type']]
+        for anid in mailinglist_ids:
+            whitelist = {d['address'] for d in data if d['mailinglist_id'] == anid}
+            if 'whitelist' in ret[anid]:
+                raise RuntimeError()
+            ret[anid]['whitelist'] = whitelist
+        for anid in mailinglist_ids:
+            ret[anid]['domain_str'] = str(const.MailinglistDomain(
+                ret[anid]['domain']))
+            ret[anid]['ml_type_class'] = ml_type.TYPE_MAP[ret[anid]['ml_type']]
         return ret
 
     class _GetMailinglistProtocol(Protocol):
@@ -878,7 +877,7 @@ class MlBackend(AbstractBackend):
             if ret and code:
                 self.ml_log(rs, code, datum['mailinglist_id'], datum['persona_id'])
 
-            return ret
+        return ret
 
     @access("ml")
     def set_subscription_address(self, rs: RequestState, mailinglist_id: int,
