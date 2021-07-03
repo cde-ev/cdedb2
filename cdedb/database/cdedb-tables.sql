@@ -1264,6 +1264,9 @@ DROP TABLE IF EXISTS ldap_oc_mappings;
 CREATE TABLE ldap_oc_mappings (
 	id bigserial PRIMARY KEY,
 	name varchar(64) NOT NULL,
+	-- Table containing all sql entities of this ldap object class.
+	-- This is used as 'WHERE keytbl.keycol=ldap_entries.keyval' in queries by
+	-- the ldap backend.
 	keytbl varchar(64) NOT NULL,
 	keycol varchar(64) NOT NULL,
 	create_proc varchar(255),
