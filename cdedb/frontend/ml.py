@@ -50,7 +50,7 @@ class MlFrontend(MailmanMixin, MlBaseFrontend):
     @REQUESTdata("request_ids", "action")
     def message_moderation_multi(self, rs: RequestState, mailinglist_id: int,
                                  request_ids: Collection[int], action: str) -> Response:
-        if action not in self.moderate_action_logcodes or action in {"whitelist", "reject"}:
+        if action not in {"accept", "discard"}:
             rs.add_validation_error(
                 ("action", ValueError(n_("Invalid moderation action."))))
         if rs.has_validation_errors():
@@ -81,10 +81,10 @@ class MlFrontend(MailmanMixin, MlBaseFrontend):
                 rs.notify("success", n_("%(count)s messages moderated."),
                           {"count": success})
             if warning:
-                rs.notify("success", n_("%(count)s messages not moderated."),
+                rs.notify("warning", n_("%(count)s messages not moderated."),
                           {"count": warning})
             if error:
-                rs.notify("success", n_("%(count)s messages not moderated."),
+                rs.notify("error", n_("%(count)s messages not moderated."),
                           {"count": error})
 
         return self.redirect(rs, "ml/message_moderation")
