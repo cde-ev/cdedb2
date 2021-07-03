@@ -6128,7 +6128,6 @@ class EventFrontend(AbstractUserFrontend):
     @periodic("event_keeper", 4)
     def event_keeper(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject:
         """Regularly backup any event that got changed."""
-        from pprint import pprint
         if not state:
             state = {
                 'EVENT_SCHEMA_VERSION': None,
