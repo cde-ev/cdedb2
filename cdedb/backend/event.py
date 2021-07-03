@@ -3,6 +3,7 @@
 """The event backend provides means to organize events and provides a user
 variant for external participants.
 """
+import time
 
 import collections
 import copy
@@ -4181,7 +4182,6 @@ class EventBackend(AbstractBackend):
                                               event['fields'])
         ret['lodgements'] = lodgements
         # registrations
-        backup_registrations = copy.deepcopy(registrations)
         part_lookup: Dict[int, Dict[int, CdEDBObject]]
         part_lookup = collections.defaultdict(dict)
         for e in registration_parts:
@@ -4193,7 +4193,8 @@ class EventBackend(AbstractBackend):
         for registration_id, registration in registrations.items():
             del registration['id']
             del registration['event_id']
-            del registration['persona_id']
+            # Delete this later.
+            # del registration['persona_id']
             del registration['real_persona_id']
             parts = part_lookup[registration_id]
             for part in parts.values():
@@ -4216,14 +4217,14 @@ class EventBackend(AbstractBackend):
         # does not correspond to changeable entries
         #
         # event
-        export_event = copy.deepcopy(event)
-        del export_event['id']
-        del export_event['begin']
-        del export_event['end']
-        del export_event['is_open']
-        del export_event['orgas']
-        del export_event['tracks']
-        for part in export_event['parts'].values():
+        del event['id']
+        del event['begin']
+        del event['end']
+        del event['is_open']
+        # Delete this later.
+        # del export_event['orgas']
+        del event['tracks']
+        for part in event['parts'].values():
             del part['id']
             del part['event_id']
             for f in ('waitlist_field',):
@@ -4233,20 +4234,11 @@ class EventBackend(AbstractBackend):
                 del track['id']
                 del track['part_id']
         for f in ('lodge_field', 'camping_mat_field', 'course_room_field'):
-            if export_event[f]:
-                export_event[f] = event['fields'][event[f]]['field_name']
-        new_fields = {
-            field['field_name']: field
-            for field in export_event['fields'].values()
-        }
-        for field in new_fields.values():
-            del field['field_name']
-            del field['event_id']
-            del field['id']
-        export_event['fields'] = new_fields
+            if event[f]:
+                event[f] = event['fields'][event[f]]['field_name']
         new_fee_modifiers = {
             mod['modifier_name'] + str(mod['part_id']): mod
-            for mod in export_event['fee_modifiers'].values()
+            for mod in event['fee_modifiers'].values()
         }
         for mod in new_fee_modifiers.values():
             del mod['id']
@@ -4255,11 +4247,18 @@ class EventBackend(AbstractBackend):
             del mod['part_id']
             mod['field'] = event['fields'][mod['field_id']]['field_name']
             del mod['field_id']
-        export_event['fee_modifiers'] = new_fee_modifiers
-        ret['event'] = export_event
+        new_fields = {
+            field['field_name']: field
+            for field in event['fields'].values()
+        }
+        for field in new_fields.values():
+            del field['field_name']
+            del field['event_id']
+            del field['id']
         # personas
         for reg_id, registration in ret['registrations'].items():
-            persona = personas[backup_registrations[reg_id]['persona_id']]
+            persona = personas[registration['persona_id']]
+            del registration['persona_id']
             persona['is_orga'] = persona['id'] in event['orgas']
             for attr in ('is_active', 'is_meta_admin', 'is_archived',
                          'is_assembly_admin', 'is_assembly_realm',
@@ -4269,6 +4268,11 @@ class EventBackend(AbstractBackend):
                          'is_searchable', 'is_cdelokal_admin', 'is_purged'):
                 del persona[attr]
             registration['persona'] = persona
+        del event['orgas']
+        event['fields'] = new_fields
+        event['fee_modifiers'] = new_fee_modifiers
+        # event['questionnaire'] = new_questionnaire
+        ret['event'] = event
         return ret
 
     @access("event")
