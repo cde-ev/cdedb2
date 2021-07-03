@@ -92,7 +92,7 @@
     {% endif %}
 
     {# Related pages #}
-    {% set show_admin_buttons = is_relative_admin_view or user.admin_views.intersection(["ml_user"]|set) %}
+    {% set show_admin_buttons = is_relative_admin_view or user.admin_views.intersection(["event_user", "ml_user"]|set) %}
     {% if quoteable or show_admin_buttons %}
         <div class="p button-par">
             {% if quoteable %}
