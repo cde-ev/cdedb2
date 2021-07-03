@@ -1,11 +1,11 @@
 import argparse
 import json
 from itertools import chain
-from typing import Any, Callable, Dict, List, Set, Tuple, Type
+from typing import Any, Callable, Dict, List, Set, Sized, Tuple, Type
 
 from typing_extensions import TypedDict
 
-from cdedb.backend.common import PsycoJson
+from cdedb.backend.common import PsycoJson, DatabaseValue_s
 from cdedb.backend.core import CoreBackend
 from cdedb.common import RequestState, CdEDBObject
 from cdedb.script import setup
@@ -94,7 +94,8 @@ def prepare_aux(data: CdEDBObject) -> AuxData:
     )
 
 
-def format_inserts(table_name, table_data, keys, params, aux):
+def format_inserts(table_name: str, table_data: Sized, keys: Tuple[str, ...],
+                   params: List[DatabaseValue_s], aux: AuxData) -> List[str]:
     ret = []
     # Create len(data) many row placeholders for len(keys) many values.
     value_list = ",\n".join(("({})".format(", ".join(("%s",) * len(keys))),)
@@ -138,7 +139,7 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
         # Convert the keys to a tuple to ensure consistent ordering.
         keys = tuple(key_set)
         # FIXME more precise type
-        params: List[Any] = []
+        params_list: List[DatabaseValue_s] = []
         for entry in table_data:
             for k in keys:
                 if k not in entry:
@@ -151,9 +152,9 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
                         entry[k] = entry[k] + xss
             for k, f in aux["entry_replacements"].get(table, {}).items():
                 entry[k] = f(entry)
-            params.extend(entry[k] for k in keys)
+            params_list.extend(entry[k] for k in keys)
 
-        commands.extend(format_inserts(table, table_data, keys, params, aux))
+        commands.extend(format_inserts(table, table_data, keys, params_list, aux))
 
     # Now we update the tables to fix the cyclic references we skipped earlier.
     for table, refs in aux["cyclic_references"].items():
@@ -185,8 +186,8 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
 
     for table, table_data in LDAP_TABLES.items():
         keys = tuple(set(chain.from_iterable(e.keys() for e in table_data)))
-        params = [entry[key] for entry in table_data for key in keys]
-        commands.extend(format_inserts(table, table_data, keys, params, aux))
+        params_list = [entry[key] for entry in table_data for key in keys]
+        commands.extend(format_inserts(table, table_data, keys, params_list, aux))
 
     # Here we set all sequential ids to start with 1001, so that
     # ids are consistent when running the test suite.
