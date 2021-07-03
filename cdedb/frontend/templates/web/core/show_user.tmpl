@@ -99,7 +99,7 @@
                 {{ util.href(show_user_link(user, ambience['persona']['id'], quote_me=True),
                              gettext("Show complete Profile"), aclass="btn btn-info btn-sm", icon='eye-slash') }}
             {% endif %}
-            {% if is_relative_admin_view or show_admin_buttons%}
+            {% if is_relative_admin_view or show_admin_buttons %}
                 {% if is_relative_admin_view %}
                     {{ util.href(cdedblink("core/show_history"), gettext("Change History"),
                                  aclass="btn btn-info btn-sm", icon="clock") }}
