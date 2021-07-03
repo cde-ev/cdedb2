@@ -1,4 +1,55 @@
 ---
+--- ldap oc helper functions
+--- ids of all our ldap object classes
+---
+
+CREATE FUNCTION oc_organization_id()
+  RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+'SELECT 1';
+
+CREATE FUNCTION oc_organizationalUnit_id()
+  RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+'SELECT 3';
+
+CREATE FUNCTION oc_organizationalRole_id()
+  RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+'SELECT 4';
+
+CREATE FUNCTION oc_inetOrgPerson_id()
+  RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+'SELECT 2';
+
+---
+--- ldap node helper functions
+--- ids of hardcoded ldap tree nodes
+---
+
+CREATE FUNCTION node_cde_id()
+  RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+'SELECT 1';
+
+CREATE FUNCTION node_users_id()
+  RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+'SELECT 10';
+
+CREATE FUNCTION node_groups_id()
+  RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+'SELECT 11';
+
+CREATE FUNCTION node_dsa_id()
+  RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+'SELECT 12';
+
+---
+--- serial id offset helper functions
+--- To store multiple serial tables in a bigserial one, we simply shift the id
+--- of each serial table by this value (maximum store of serial)
+---
+CREATE FUNCTION id_offset()
+  RETURNS bigint LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+'SELECT 2^32';
+
+---
 --- ldap helper tables (in public schema)
 --- this add some helper tables to satisfy the requirements of the ldap back-sql
 --- schema. Some of them add real new data which is required for middle-nodes in
