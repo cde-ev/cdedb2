@@ -60,15 +60,15 @@ $$ SELECT $1; $$ ;
 
 CREATE FUNCTION make_dsa_entity_id(dsa_id INT)
   RETURNS bigint LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
-$$ SELECT CAST(1 AS BIGINT)<<32 + $1; $$ ;
+$$ SELECT 1 * 2^32 + $1; $$ ;
 
 CREATE FUNCTION make_persona_entity_id(persona_id INT)
   RETURNS bigint LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
-$$ SELECT CAST(2 AS BIGINT)<<32 + $1; $$ ;
+$$ SELECT 2 * 2^32 + $1; $$ ;
 
 CREATE FUNCTION make_static_group_entity_id(static_group_id INT)
   RETURNS bigint LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
-$$ SELECT CAST(3 AS BIGINT)<<32 + $1; $$ ;
+$$ SELECT 3 * 2^32 + $1; $$ ;
 
 ---
 --- create dn
