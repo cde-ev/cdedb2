@@ -202,8 +202,8 @@ class EventFrontend(AbstractUserFrontend):
     @access("anonymous")
     def list_events(self, rs: RequestState) -> Response:
         """List all events organized via DB."""
-        events = self.eventproxy.list_events(rs)
-        events = self.eventproxy.get_events(rs, events.keys())
+        event_ids = self.eventproxy.list_events(rs)
+        events = self.eventproxy.get_events(rs, event_ids.keys())
         if self.is_admin(rs):
             for event in events.values():
                 regs = self.eventproxy.list_registrations(rs, event['id'])

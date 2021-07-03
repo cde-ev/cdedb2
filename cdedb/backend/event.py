@@ -186,7 +186,7 @@ class EventBackend(AbstractBackend):
     @access("anonymous")
     def list_events(self, rs: RequestState, visible: bool = None,
                        current: bool = None,
-                       archived: bool = None) -> CdEDBObjectMap:
+                       archived: bool = None) -> Dict[int, str]:
         """List all events organized via DB.
 
         :returns: Mapping of event ids to titles.
