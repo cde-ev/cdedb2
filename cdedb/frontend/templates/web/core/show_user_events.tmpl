@@ -1,0 +1,50 @@
+{% set sidenav_active='ml_manage' %}
+{% extends "web/core/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block title %}
+    {% trans given_names=ambience['persona']['given_names'], family_name=ambience['persona']['family_name'] %}
+        {{ given_names }} {{ family_name }} – Event Data
+    {% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), "{} {}".format(
+        ambience['persona']['given_names'], ambience['persona']['family_name']), icon="user") }}
+    {{ util.breadcrumb_link(cdedblink("core/show_user_events"), gettext("Events"), active=True) }}
+{% endblock %}
+{% block heading %}
+    <h1 class="title">
+        {% trans %}Event Data{% endtrans %}
+        <small>
+            {{ util.make_icon('user', arialabel="User") }}
+            {{ ambience['persona']['given_names'] }} {{ ambience['persona']['family_name'] }}
+        </small>
+    </h1>
+{% endblock %}
+
+{% block content %}
+    <p>
+        {% trans %}
+            This lists all events which are not deleted yet and this user has a registration for.
+        {% endtrans %}
+    </p>
+    <ul>
+        {% for event_id, event in events|keydictsort(EntitySorter.event) %}
+            <li{% if event['is_archived'] %} class="text-muted"{% endif %}>
+                {{ util.href(cdedblink("event/show_registration",
+                                       {'event_id': event_id, 'registration_id': registration_ids[event_id]}),
+                             event['title']) }}
+                <br />
+                {% for part_id, status in registration_parts[event_id] %}
+                    {% if registration_parts[event_id]|length != 1 %}
+                        {{ event['parts'][part_id]['title'] }}:
+                    {% endif %}
+                    {{ gettext(status|enum(enums['RegistrationPartStati'])) }}
+                    {%- if not loop.last %}, {% endif -%}
+                {% endfor %}
+            </li>
+        {% else %}
+            <p class="text-muted">{% trans %}This user has no registrations.{% endtrans %}</p>
+        {% endfor %}
+    </ul>
+{% endblock %}
