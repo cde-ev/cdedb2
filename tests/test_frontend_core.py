@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import copy
 import re
 import urllib.parse
 from typing import Dict, Optional
@@ -150,6 +149,41 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("{} {}".format(self.user['given_names'],
                                         self.user['family_name']))
         self.assertPresence(self.user['given_names'], div='title')
+
+    @as_users("annika", "paul", "quintus")
+    def test_showuser_events(self):
+        # add second registration for garcia
+        # TODO: include this in our sample-data
+        user = self.user
+        self.logout()
+        self.login("anton")
+        self.traverse("Veranstaltungen",
+                      {'href': 'event/2/registration/query'},
+                      "Teilnehmer hinzufügen")
+        f = self.response.forms['addregistrationform']
+        f['persona.persona_id'] = USER_DICT["garcia"]["DB-ID"]
+        self.submit(f)
+        self.logout()
+        self.login(user)
+
+        if self.user_in("annika"):
+            # event admins navigate via event page
+            self.traverse("Veranstaltungen", "Große Testakademie",
+                          "Garcia G. Generalis")
+        elif self.user_in("paul"):
+            # core admin
+            self.admin_view_profile("garcia")
+        elif self.user_in("quintus"):
+            # cde admin
+            self.realm_admin_view_profile("garcia", "cde")
+
+        self.traverse("Veranstaltungs-Daten")
+        self.assertTitle("Garcia G. Generalis – Veranstaltungs-Daten")
+        self.assertPresence("CdE-Party 2050 Teilnehmer")
+        self.assertNonPresence("Party: Teilnehmer") # part names not shown for one-part events
+        self.assertPresence("Große Testakademie")
+        self.assertPresence("Warmup: Teilnehmer, Erste Hälfte: Teilnehmer,"
+                            " Zweite Hälfte: Teilnehmer")
 
     @as_users("nina", "paul", "quintus")
     def test_showuser_mailinglists(self) -> None:
