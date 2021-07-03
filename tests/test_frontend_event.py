@@ -2846,6 +2846,29 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.assertPresence("Emilia")
 
+        # Check log
+        self.traverse({'href': '/event/event/1/log'})
+        self.assertPresence("Kurs eingeteilt in Kursschiene Sitzung.",
+                            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
+        self.assertPresence("Kurs eingeteilt in Kursschiene Sitzung.",
+                            div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
+        self.assertPresence("Kurs eingeteilt in Kursschienen Kaffee, Sitzung.",
+                            div=str(self.EVENT_LOG_OFFSET + 3) + "-1003")
+
+        # Single-track event
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/3/show'},
+                      {'href': '/event/event/3/course/choices'}, )
+        self.assertTitle("Kurswahlen (CyberTestAkademie)")
+        f = self.response.forms['choiceactionform']
+        f['registration_ids'] = [7]
+        f['assign_action'] = -4
+        self.submit(f)
+
+        # Check log
+        self.traverse({'href': '/event/event/3/log'})
+        self.assertPresence("Kurs eingeteilt.", div="1-1004")
+
     @as_users("garcia")
     def test_automatic_assignment(self) -> None:
         self.traverse({'href': '/event/$'},
@@ -2857,6 +2880,14 @@ etc;anything else""", f['entries_2'].value)
         f['assign_track_ids'] = [1, 2, 3]
         f['assign_action'] = -5
         self.submit(f)
+        # Check log
+        self.traverse({'href': '/event/event/1/log'})
+        self.assertPresence(
+            "Kurs eingeteilt in Kursschienen Morgenkreis, Kaffee, Sitzung.",
+            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
+        self.assertPresence(
+            "Kurs eingeteilt in Kursschienen Morgenkreis, Kaffee, Sitzung.",
+            div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
 
     @as_users("garcia")
     def test_course_choices_filter_persistence(self) -> None:
@@ -2891,6 +2922,12 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Emilia")
         self.assertPresence("Garcia")
         self.assertNonPresence("Inga")
+
+        # Check log
+        self.traverse({'href': '/event/event/1/log'})
+        self.assertPresence(
+            "Kurs eingeteilt in Kursschiene Sitzung.",
+            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
 
     @as_users("garcia")
     def test_course_choices_problems(self) -> None:

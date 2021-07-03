@@ -2008,6 +2008,19 @@ class EventFrontend(AbstractUserFrontend):
             ids = cast(vtypes.IntCSVList, [])
 
         tracks = rs.ambience['event']['tracks']
+        # Orchestrate change_note
+        if len(tracks) == 1:
+            change_note = "Kurs eingeteilt."
+        elif len(assign_track_ids) == 1:
+            change_note = (
+                "Kurs eingeteilt in Kursschiene"
+                f" {tracks[unwrap(assign_track_ids)]['shortname']}.")
+        else:
+            change_note = (
+                "Kurs eingeteilt in Kursschienen " +
+                ", ".join(tracks[anid]['shortname'] for anid in assign_track_ids) +
+                ".")
+
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         personas = self.coreproxy.get_event_users(rs, tuple(
             reg['persona_id'] for reg in registrations.values()), event_id)
@@ -2078,7 +2091,7 @@ class EventFrontend(AbstractUserFrontend):
                                    'family_name': persona['family_name'],
                                    'track_name': tracks[atrack_id]['title']})
             if tmp['tracks']:
-                res = self.eventproxy.set_registration(rs, tmp)
+                res = self.eventproxy.set_registration(rs, tmp, change_note)
                 if res:
                     num_committed += 1
                 else:
