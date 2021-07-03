@@ -393,7 +393,7 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
             # used as distinguish identifier
             {
                 'oc_map_id': LDAP_OC_MAPPINGS['inetOrgPerson'],
-                'name': 'employeeNumber',
+                'name': 'uid',
                 'sel_expr': 'personas.id',
                 'from_tbls': 'core.personas',
                 'join_where': None,
