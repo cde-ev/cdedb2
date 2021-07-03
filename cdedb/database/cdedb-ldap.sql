@@ -104,11 +104,11 @@ GRANT ALL ON ldap_organizations TO cdb_admin;
 
 INSERT INTO ldap_organizations (id, dn, oc_map_id, parent, display_name, additional_object_class) VALUES
     -- The overall organization
-    (node_cde_id(), 'dc=cde-ev,dc=de', oc_organization_id(), 0, 'CdE e.V.', 'dcObject'),
+        (node_cde_id(), 'dc=cde-ev,dc=de', oc_organization_id(), 0, 'CdE e.V.', 'dcObject'),
     -- All organizational units
-    (node_users_id(), 'ou=users,dc=cde-ev,dc=de', oc_organizationalUnit_id(), node_cde_id(), 'Users', NULL),
-    (node_groups_id(), 'ou=groups,dc=cde-ev,dc=de', oc_organizationalUnit_id(), node_cde_id(), 'Groups', NULL),
-    (node_dsa_id(), 'ou=dsa,dc=cde-ev,dc=de', oc_organizationalUnit_id(), node_cde_id(), 'Directory System Agent', NULL);
+        (node_users_id(), 'ou=users,dc=cde-ev,dc=de', oc_organizationalUnit_id(), node_cde_id(), 'Users', NULL),
+        (node_groups_id(), 'ou=groups,dc=cde-ev,dc=de', oc_organizationalUnit_id(), node_cde_id(), 'Groups', NULL),
+        (node_dsa_id(), 'ou=dsa,dc=cde-ev,dc=de', oc_organizationalUnit_id(), node_cde_id(), 'Directory System Agent', NULL);
 
 -- ldap Directory System Agents
 DROP TABLE IF EXISTS ldap_agents;
@@ -213,39 +213,39 @@ GRANT ALL ON ldap_attr_mappings TO cdb_admin;
 
 INSERT INTO ldap_attr_mappings (oc_map_id, name, sel_expr, from_tbls, join_where, add_proc, delete_proc, param_order, expect_return) VALUES
     -- Attributes of organizations
-    (oc_organization_id(), 'o', 'ldap_organizations.display_name', 'ldap_organizations', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
+        (oc_organization_id(), 'o', 'ldap_organizations.display_name', 'ldap_organizations', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
     -- Attributes of organizationalUnits
-    (oc_organizationalUnit_id(), 'o', 'ldap_organizations.display_name', 'ldap_organizations', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
+        (oc_organizationalUnit_id(), 'o', 'ldap_organizations.display_name', 'ldap_organizations', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
     -- Attributes of agents
-    (oc_organizationalRole_id(), 'cn', 'ldap_agents.cn', 'ldap_agents', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
-    (oc_organizationalRole_id(), 'userPassword', '''{CRYPT}'' || ldap_agents.password_hash', 'ldap_agents', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
+        (oc_organizationalRole_id(), 'cn', 'ldap_agents.cn', 'ldap_agents', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
+        (oc_organizationalRole_id(), 'userPassword', '''{CRYPT}'' || ldap_agents.password_hash', 'ldap_agents', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
     -- Attributes of inetOrgPerson
     -- Naming was chosen accordingly to the following RFC:
     -- https://datatracker.ietf.org/doc/html/rfc2798 (defining inetOrgPerson)
     -- https://datatracker.ietf.org/doc/html/rfc4519 (defining attributes)
-    -- mandatory
-    (oc_inetOrgPerson_id(), 'cn', 'personas.given_names || '' '' || personas.family_name', 'core.personas', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
-    -- mandatory
-    (oc_inetOrgPerson_id(), 'sn', 'personas.family_name', 'ldap_organizations', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
-    (oc_inetOrgPerson_id(), 'displayName',
-        '(
-            (
-                CASE WHEN ((personas.display_name <> '''') AND personas.given_names LIKE ''%'' || personas.display_name || ''%'')
-                THEN personas.display_name
-                ELSE personas.given_names
-                END
-            )
-            || '' '' || personas.family_name
-        )',
-     'core.personas', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
-    (oc_inetOrgPerson_id(), 'givenName', 'personas.given_names', 'core.personas', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
-    (oc_inetOrgPerson_id(), 'mail', 'personas.username', 'core.personas', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
+        -- mandatory
+        (oc_inetOrgPerson_id(), 'cn', 'personas.given_names || '' '' || personas.family_name', 'core.personas', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
+        -- mandatory
+        (oc_inetOrgPerson_id(), 'sn', 'personas.family_name', 'ldap_organizations', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
+        (oc_inetOrgPerson_id(), 'displayName',
+            '(
+                (
+                    CASE WHEN ((personas.display_name <> '''') AND personas.given_names LIKE ''%'' || personas.display_name || ''%'')
+                    THEN personas.display_name
+                    ELSE personas.given_names
+                    END
+                )
+                || '' '' || personas.family_name
+            )',
+         'core.personas', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
+        (oc_inetOrgPerson_id(), 'givenName', 'personas.given_names', 'core.personas', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
+        (oc_inetOrgPerson_id(), 'mail', 'personas.username', 'core.personas', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
     -- used as distinguish identifier
-    (oc_inetOrgPerson_id(), 'uid', 'personas.id', 'core.personas', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
-    (oc_inetOrgPerson_id(), 'userPassword', '''{CRYPT}'' || personas.password_hash', 'core.personas', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
+        (oc_inetOrgPerson_id(), 'uid', 'personas.id', 'core.personas', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
+        (oc_inetOrgPerson_id(), 'userPassword', '''{CRYPT}'' || personas.password_hash', 'core.personas', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
     -- Attributes of groupOfUniqueNames
-    (oc_groupOfUniqueNames_id(), 'cn', 'ldap_groups.cn', 'ldap_groups', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
-    (oc_groupOfUniqueNames_id(), 'uniqueMember', 'ldap_group_members.member_dn', 'ldap_group_members, ldap_groups', 'ldap_groups.id = ldap_group_members.group_id', 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0);
+        (oc_groupOfUniqueNames_id(), 'cn', 'ldap_groups.cn', 'ldap_groups', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
+        (oc_groupOfUniqueNames_id(), 'uniqueMember', 'ldap_group_members.member_dn', 'ldap_group_members, ldap_groups', 'ldap_groups.id = ldap_group_members.group_id', 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0);
 
 -- 'Stores' the real ldap entries.
 -- This is a SQL View collecting all entries which shall be inserted in ldap
