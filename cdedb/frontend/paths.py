@@ -77,6 +77,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                      endpoint="change_password_form"),
                 rule("/password/change", methods=_POST,
                      endpoint="change_password"),
+                rule("/events", methods=_GET,
+                     endpoint="show_user_events_self"),
                 rule("/mailinglists", methods=_GET,
                      endpoint="show_user_mailinglists_self"),)),
             sub('/self/username', (
@@ -141,6 +143,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                      endpoint="resolve_change"),
                 rule("/show", methods=_GET,
                      endpoint="show_user"),
+                rule("/events", methods=_GET,
+                     endpoint="show_user_events"),
                 rule("/mailinglists", methods=_GET,
                      endpoint="show_user_mailinglists"),
                 rule("/vcard", methods=_GET,

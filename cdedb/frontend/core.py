@@ -666,6 +666,34 @@ class CoreFrontend(AbstractFrontend):
             'quoteable': quoteable, 'access_mode': access_mode,
         })
 
+    @access("event")
+    def show_user_events(self, rs: RequestState, persona_id: vtypes.ID) -> Response:
+        """Render overview which events a given user is registered for."""
+        if not (self.coreproxy.is_relative_admin(rs, persona_id)
+                or "event_admin" in rs.user.roles or rs.user.persona_id == persona_id):
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+        if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):
+            # reconnoitre_ambience leads to 404 if user does not exist at all.
+            rs.notify("error", n_("User is archived."))
+            return self.redirect_show_user(rs, persona_id)
+
+        registrations = self.eventproxy.list_persona_registrations(rs, persona_id)
+        registration_ids: Dict[int, int] = {}
+        registration_parts: Dict[int, Dict[int, const.RegistrationPartStati]] = {}
+        for event_id, reg in registrations.items():
+            registration_ids[event_id] = unwrap(reg.keys())
+            registration_parts[event_id] = unwrap(reg.values())
+        events = self.eventproxy.get_events(rs, registrations.keys())
+        return self.render(rs, "show_user_events",
+                           {'events': events, 'registration_ids': registration_ids,
+                            'registration_parts': registration_parts})
+
+    @access("event")
+    def show_user_events_self(self, rs: RequestState) -> Response:
+        """Shorthand to view event registrations for oneself."""
+        return self.redirect(rs, "core/show_user_events",
+                             {'persona_id': rs.user.persona_id})
+
     @access("ml")
     def show_user_mailinglists(self, rs: RequestState, persona_id: vtypes.ID
                                ) -> Response:

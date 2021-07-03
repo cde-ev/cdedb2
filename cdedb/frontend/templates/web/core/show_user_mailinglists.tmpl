@@ -1,6 +1,5 @@
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% import "web/ml/generic.tmpl" as generic_ml with context %}
 {% block title %}
     {% trans given_names=ambience['persona']['given_names'], family_name=ambience['persona']['family_name'] %}
         {{ given_names }} {{ family_name }} – Mailinglist Data

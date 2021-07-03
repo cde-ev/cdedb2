@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import copy
 import re
 import urllib.parse
 from typing import Dict, Optional
@@ -151,6 +150,41 @@ class TestCoreFrontend(FrontendTest):
                                         self.user['family_name']))
         self.assertPresence(self.user['given_names'], div='title')
 
+    @as_users("annika", "paul", "quintus")
+    def test_showuser_events(self) -> None:
+        # add second registration for garcia
+        # TODO: include this in our sample-data
+        user = self.user
+        self.logout()
+        self.login("anton")
+        self.traverse("Veranstaltungen",
+                      {'href': 'event/2/registration/query'},
+                      "Teilnehmer hinzufügen")
+        f = self.response.forms['addregistrationform']
+        f['persona.persona_id'] = USER_DICT["garcia"]["DB-ID"]
+        self.submit(f)
+        self.logout()
+        self.login(user)
+
+        if self.user_in("annika"):
+            # event admins navigate via event page
+            self.traverse("Veranstaltungen", "Große Testakademie",
+                          "Garcia G. Generalis")
+        elif self.user_in("paul"):
+            # core admin
+            self.admin_view_profile("garcia")
+        elif self.user_in("quintus"):
+            # cde admin
+            self.realm_admin_view_profile("garcia", "cde")
+
+        self.traverse("Veranstaltungs-Daten")
+        self.assertTitle("Garcia G. Generalis – Veranstaltungs-Daten")
+        self.assertPresence("CdE-Party 2050 Teilnehmer")
+        self.assertNonPresence("Party: Teilnehmer") # part names not shown for one-part events
+        self.assertPresence("Große Testakademie")
+        self.assertPresence("Warmup: Teilnehmer, Erste Hälfte: Teilnehmer,"
+                            " Zweite Hälfte: Teilnehmer")
+
     @as_users("nina", "paul", "quintus")
     def test_showuser_mailinglists(self) -> None:
         if self.user_in("nina"):
@@ -170,12 +204,19 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Kampfbrief-Kommentare (geblockt)")
         self.assertNonPresence("Witz des Tages")
 
-    @as_users("janis")
+    @as_users("emilia", "janis")
     def test_showuser_self(self) -> None:
+        name = f"{self.user['given_names']} {self.user['family_name']}"
+        self.get('/core/self/show')
+        self.assertTitle(name)
+        if not self.user_in("janis"): # Janis is no event user
+            self.get('/core/self/events')
+            self.assertTitle(f"{name} – Veranstaltungs-Daten")
         self.get('/core/self/mailinglists')
-        self.assertTitle("Janis Jalapeño – Mailinglisten-Daten")
-        # Check there is no link
+        self.assertTitle(f"{name} – Mailinglisten-Daten")
+        # Check there are no links
         self.traverse({'description': self.user['display_name']})
+        self.assertNonPresence("Veranstaltungs-Daten")
         self.assertNonPresence("Mailinglisten-Daten")
 
     @as_users("inga")

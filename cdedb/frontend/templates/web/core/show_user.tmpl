@@ -92,7 +92,7 @@
     {% endif %}
 
     {# Related pages #}
-    {% set show_admin_buttons = is_relative_admin_view or user.admin_views.intersection(["ml_user"]|set) %}
+    {% set show_admin_buttons = is_relative_admin_view or user.admin_views.intersection(["event_user", "ml_user"]|set) %}
     {% if quoteable or show_admin_buttons %}
         <div class="p button-par">
             {% if quoteable %}
@@ -103,6 +103,11 @@
                 {% if is_relative_admin_view %}
                     {{ util.href(cdedblink("core/show_history"), gettext("Change History"),
                                  aclass="btn btn-info btn-sm", icon="clock") }}
+                {% endif %}
+                {% if is_relative_admin_view or "event_user" in user.admin_views %}
+                    {{ util.href(cdedblink("core/show_user_events", {'persona_id': data['id']}),
+                                 gettext("Show Event Data"), aclass="btn btn-default btn-sm",
+                                 icon="chalkboard-teacher") }}
                 {% endif %}
                 {% if is_relative_admin_view or "ml_user" in user.admin_views %}
                     {{ util.href(cdedblink("core/show_user_mailinglists", {'persona_id': data['id']}),

@@ -2587,6 +2587,35 @@ class EventBackend(AbstractBackend):
                     {"type": "course", "block": blockers.keys()})
         return ret
 
+    @access("event")
+    def list_persona_registrations(
+        self, rs: RequestState, persona_id: int
+    ) -> Dict[int, Dict[int, Dict[int, const.RegistrationPartStati]]]:
+        """List all events a given user has a registration for.
+
+        :returns: Mapping of event ids to
+            (registration id to (part id to registration status))
+        """
+        if not (self.is_admin(rs) or self.core.is_relative_admin(rs, persona_id)
+                or rs.user.persona_id == persona_id):
+            raise PrivilegeError(n_("Not privileged."))
+        persona_id = affirm(vtypes.ID, persona_id)
+
+        query = ("SELECT event_id, registration_id, part_id, status"
+                 " FROM event.registrations"
+                 " LEFT JOIN event.registration_parts"
+                 " ON registrations.id = registration_parts.registration_id"
+                 " WHERE persona_id = %s")
+        data = self.query_all(rs, query, (persona_id,))
+        ret: Dict[int, Dict[int, Dict[int, const.RegistrationPartStati]]] = {}
+        for e in data:
+            ret.setdefault(
+                e['event_id'], {}
+            ).setdefault(
+                e['registration_id'], {}
+            )[e['part_id']] = const.RegistrationPartStati(e['status'])
+        return ret
+
     @access("event", "ml_admin")
     def list_registrations(self, rs: RequestState, event_id: int,
                            persona_id: int = None) -> Dict[int, int]:
