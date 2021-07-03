@@ -203,6 +203,7 @@ ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl start pgbouncer
 endif
 	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=cdb
+	$(PSQL) -f cdedb/database/cdedb-ldap.sql --dbname=cdb
 	$(PSQL) -f tests/ancillary_files/sample_data.sql --dbname=cdb
 
 sql-test:
@@ -214,6 +215,7 @@ ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl start pgbouncer
 endif
 	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=${TESTDATABASENAME}
+	$(PSQL) -f cdedb/database/cdedb-ldap.sql --dbname=${TESTDATABASENAME}
 	$(MAKE) sql-test-shallow
 
 sql-test-shallow: tests/ancillary_files/sample_data.sql
@@ -295,6 +297,7 @@ ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl start pgbouncer
 endif
 	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=${TESTDATABASENAME}
+	$(PSQL) -f cdedb/database/cdedb-ldap.sql --dbname=${TESTDATABASENAME}
 	$(PSQL) -f tests/ancillary_files/sample_data_xss.sql --dbname=${TESTDATABASENAME}
 
 xss-check:
@@ -338,7 +341,7 @@ coverage: .coverage
 	@echo "HTML reports for easier inspection are in ./htmlcov"
 
 tests/ancillary_files/sample_data.sql: tests/ancillary_files/sample_data.json \
-		$(SAMPLE_DATA_SQL) cdedb/database/cdedb-tables.sql
+		$(SAMPLE_DATA_SQL) cdedb/database/cdedb-tables.sql cdedb/database/cdedb-ldap.sql
 	SQLTEMPFILE=`sudo -u www-data mktemp` \
 		&& sudo -u www-data chmod +r "$${SQLTEMPFILE}" \
 		&& sudo rm -f /tmp/cdedb*log \
@@ -351,7 +354,7 @@ tests/ancillary_files/sample_data.sql: tests/ancillary_files/sample_data.json \
 		&& sudo -u www-data rm "$${SQLTEMPFILE}"
 
 tests/ancillary_files/sample_data_xss.sql: tests/ancillary_files/sample_data.json \
-		$(SAMPLE_DATA_SQL) cdedb/database/cdedb-tables.sql
+		$(SAMPLE_DATA_SQL) cdedb/database/cdedb-tables.sql cdedb/database/cdedb-ldap.sql
 	SQLTEMPFILE=`sudo -u www-data mktemp` \
 		&& sudo -u www-data chmod +r "$${SQLTEMPFILE}" \
 		&& sudo rm -f /tmp/cdedb*log \
