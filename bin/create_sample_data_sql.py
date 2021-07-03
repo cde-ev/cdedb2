@@ -176,10 +176,23 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
     # Currently this just provides a minimal viable example to test the ldap
     # sql integration. This is just a static data set kind of independent
     # from the rest of the DB.
+    LDAP_OC_MAPPINGS = {
+        'organization': 1,
+        'inetOrgPerson': 2,
+        'organizationalUnit': 3,
+        'organizationalRole': 4
+    }
+    LDAP_ORGANIZATIONS = {
+        'dc=cde-ev,dc=de': 1,
+        'ou=users,dc=cde-ev,dc=de': 10,
+        'ou=groups,dc=cde-ev,dc=de': 11,
+        'ou=dsa,dc=cde-ev,dc=de': 12
+    }
+
     LDAP_TABLES = {
         'ldap_oc_mappings': [
             {
-                'id': 1,
+                'id': LDAP_OC_MAPPINGS['organization'],
                 'name': 'organization',
                 'keytbl': 'ldap_organizations',
                 'keycol': 'id',
@@ -188,7 +201,7 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
                 'expect_return': 0,
             },
             {
-                'id': 2,
+                'id': LDAP_OC_MAPPINGS['inetOrgPerson'],
                 'name': 'inetOrgPerson',
                 'keytbl': 'core.personas',
                 'keycol': 'id',
@@ -197,7 +210,7 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
                 'expect_return': 0,
             },
             {
-                'id': 3,
+                'id': LDAP_OC_MAPPINGS['organizationalUnit'],
                 'name': 'organizationalUnit',
                 'keytbl': 'ldap_organizations',
                 'keycol': 'id',
@@ -208,31 +221,30 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
         ],
         'ldap_organizations': [
             {
-                'id': 1,
+                'id': LDAP_ORGANIZATIONS['dc=cde-ev,dc=de'],
                 'dn': 'dc=cde-ev,dc=de',
-                'oc_map_id': 1,
+                'oc_map_id': LDAP_OC_MAPPINGS['organization'],
                 'parent': 0,
                 'display_name': 'CdE e.V.'
             },
             {
-                'id': 2,
+                'id': LDAP_ORGANIZATIONS['ou=users,dc=cde-ev,dc=de'],
                 'dn': 'ou=users,dc=cde-ev,dc=de',
-                'oc_map_id': 3,
-                'parent': 1,
+                'oc_map_id': LDAP_OC_MAPPINGS['organizationalUnit'],
+                'parent': LDAP_ORGANIZATIONS['dc=cde-ev,dc=de'],
                 'display_name': 'Users'
             },
             {
-                'id': 3,
+                'id': LDAP_ORGANIZATIONS['ou=groups,dc=cde-ev,dc=de'],
                 'dn': 'ou=groups,dc=cde-ev,dc=de',
-                'oc_map_id': 3,
-                'parent': 1,
+                'oc_map_id': LDAP_OC_MAPPINGS['organizationalUnit'],
+                'parent': LDAP_ORGANIZATIONS['dc=cde-ev,dc=de'],
                 'display_name': 'Groups'
             },
         ],
         'ldap_attr_mappings': [
             {
-                'id': 1,
-                'oc_map_id': 1,
+                'oc_map_id': LDAP_OC_MAPPINGS['organization'],
                 'name': 'o',
                 'sel_expr': 'ldap_organizations.display_name',
                 'from_tbls': 'ldap_organizations',
@@ -243,8 +255,7 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
                 'expect_return': 0,
             },
             {
-                'id': 2,
-                'oc_map_id': 3,
+                'oc_map_id': LDAP_OC_MAPPINGS['organizationalUnit'],
                 'name': 'o',
                 'sel_expr': 'ldap_organizations.display_name',
                 'from_tbls': 'ldap_organizations',
@@ -255,8 +266,7 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
                 'expect_return': 0,
             },
             {
-                'id': 10,
-                'oc_map_id': 2,
+                'oc_map_id': LDAP_OC_MAPPINGS['inetOrgPerson'],
                 'name': 'cn',
                 'sel_expr': 'personas.username',
                 'from_tbls': 'core.personas',
@@ -267,8 +277,7 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
                 'expect_return': 0,
             },
             {
-                'id': 11,
-                'oc_map_id': 2,
+                'oc_map_id': LDAP_OC_MAPPINGS['inetOrgPerson'],
                 'name': 'givenName',
                 'sel_expr': 'personas.given_names',
                 'from_tbls': 'core.personas',
@@ -279,8 +288,7 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
                 'expect_return': 0,
             },
             {
-                'id': 12,
-                'oc_map_id': 2,
+                'oc_map_id': LDAP_OC_MAPPINGS['inetOrgPerson'],
                 'name': 'sn',
                 'sel_expr': 'personas.family_name',
                 'from_tbls': 'core.personas',
@@ -291,8 +299,7 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
                 'expect_return': 0,
             },
             {
-                'id': 13,
-                'oc_map_id': 2,
+                'oc_map_id': LDAP_OC_MAPPINGS['inetOrgPerson'],
                 'name': 'userPassword',
                 'sel_expr': 'personas.password_hash',
                 'from_tbls': 'core.personas',

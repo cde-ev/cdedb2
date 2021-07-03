@@ -1308,7 +1308,7 @@ CREATE VIEW ldap_entries (id, dn, oc_map_id, parent, keyval) AS
             2^32 AS id_offset,
 
             2 AS persona_oc_id,
-            2 AS persona_parent
+            10 AS persona_parent
     )
     -- organizations
     (
