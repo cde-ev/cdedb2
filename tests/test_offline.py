@@ -85,7 +85,6 @@ class TestOffline(FrontendTest):
                 headers={'X-CdEDB-API-token': 'y1f2i3d4x5b6'})
             self.assertEqual(self.response.json["message"], "success")
             expectation = {
-                'CDEDB_EXPORT_EVENT_VERSION',
                 'EVENT_SCHEMA_VERSION',
                 'kind',
                 'timestamp',

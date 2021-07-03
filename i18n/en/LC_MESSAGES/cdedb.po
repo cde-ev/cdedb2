@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2021-06-27 15:37+0200\n"
+"POT-Creation-Date: 2021-07-03 13:23+0000\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -35,7 +35,7 @@ msgid "Must have privileged access to view assembly log."
 msgstr ""
 
 #: cdedb/backend/assembly.py:295 cdedb/backend/cde.py:1069
-#: cdedb/backend/core.py:2883 cdedb/backend/event.py:924
+#: cdedb/backend/core.py:2886 cdedb/backend/event.py:924
 #: cdedb/backend/ml.py:304 cdedb/backend/past_event.py:794
 msgid "Bad scope."
 msgstr ""
@@ -67,9 +67,9 @@ msgstr ""
 #: cdedb/backend/assembly.py:1910 cdedb/backend/assembly.py:1936
 #: cdedb/backend/assembly.py:1996 cdedb/backend/cde.py:117
 #: cdedb/backend/cde.py:142 cdedb/backend/cde.py:293 cdedb/backend/core.py:519
-#: cdedb/backend/core.py:733 cdedb/backend/core.py:2674
-#: cdedb/backend/core.py:2677 cdedb/backend/core.py:2704
-#: cdedb/backend/core.py:2730 cdedb/backend/core.py:2734
+#: cdedb/backend/core.py:733 cdedb/backend/core.py:2677
+#: cdedb/backend/core.py:2680 cdedb/backend/core.py:2707
+#: cdedb/backend/core.py:2733 cdedb/backend/core.py:2737
 #: cdedb/backend/event.py:176 cdedb/backend/event.py:252
 #: cdedb/backend/event.py:480 cdedb/backend/event.py:504
 #: cdedb/backend/event.py:723 cdedb/backend/event.py:1765
@@ -80,18 +80,18 @@ msgstr ""
 #: cdedb/backend/event.py:2956 cdedb/backend/event.py:3060
 #: cdedb/backend/event.py:3173 cdedb/backend/event.py:3272
 #: cdedb/backend/event.py:3387 cdedb/backend/event.py:3420
-#: cdedb/backend/event.py:3442 cdedb/backend/event.py:3467
-#: cdedb/backend/event.py:3486 cdedb/backend/event.py:3505
-#: cdedb/backend/event.py:3594 cdedb/backend/event.py:3619
-#: cdedb/backend/event.py:3643 cdedb/backend/event.py:3685
-#: cdedb/backend/event.py:3731 cdedb/backend/event.py:3824
-#: cdedb/backend/event.py:3855 cdedb/backend/event.py:3879
-#: cdedb/backend/event.py:4028 cdedb/backend/event.py:4111
-#: cdedb/backend/event.py:4291 cdedb/backend/ml.py:165 cdedb/backend/ml.py:275
-#: cdedb/backend/ml.py:480 cdedb/backend/ml.py:502 cdedb/backend/ml.py:651
-#: cdedb/backend/ml.py:697 cdedb/backend/ml.py:851 cdedb/backend/ml.py:895
-#: cdedb/backend/ml.py:921 cdedb/backend/ml.py:954 cdedb/backend/ml.py:1023
-#: cdedb/backend/ml.py:1049 cdedb/backend/ml.py:1090
+#: cdedb/backend/event.py:3441 cdedb/backend/event.py:3466
+#: cdedb/backend/event.py:3485 cdedb/backend/event.py:3504
+#: cdedb/backend/event.py:3593 cdedb/backend/event.py:3618
+#: cdedb/backend/event.py:3642 cdedb/backend/event.py:3684
+#: cdedb/backend/event.py:3730 cdedb/backend/event.py:3823
+#: cdedb/backend/event.py:3854 cdedb/backend/event.py:3878
+#: cdedb/backend/event.py:4027 cdedb/backend/event.py:4110
+#: cdedb/backend/event.py:4293 cdedb/backend/ml.py:165 cdedb/backend/ml.py:275
+#: cdedb/backend/ml.py:479 cdedb/backend/ml.py:501 cdedb/backend/ml.py:650
+#: cdedb/backend/ml.py:696 cdedb/backend/ml.py:850 cdedb/backend/ml.py:894
+#: cdedb/backend/ml.py:920 cdedb/backend/ml.py:953 cdedb/backend/ml.py:1022
+#: cdedb/backend/ml.py:1048 cdedb/backend/ml.py:1089
 #: cdedb/frontend/assembly.py:195 cdedb/frontend/assembly.py:598
 #: cdedb/frontend/assembly.py:679 cdedb/frontend/assembly.py:736
 #: cdedb/frontend/assembly.py:756 cdedb/frontend/assembly.py:1085
@@ -125,7 +125,7 @@ msgstr ""
 msgid "Cannot alter assembly presiders after assembly has been concluded."
 msgstr ""
 
-#: cdedb/backend/assembly.py:543 cdedb/backend/ml.py:424
+#: cdedb/backend/assembly.py:543 cdedb/backend/ml.py:423
 #: cdedb/frontend/assembly.py:256 cdedb/frontend/assembly.py:425
 #: cdedb/frontend/event.py:1199 cdedb/frontend/ml_base.py:249
 #: cdedb/frontend/ml_base.py:708 cdedb/frontend/ml_base.py:796
@@ -145,16 +145,16 @@ msgstr ""
 #: cdedb/backend/assembly.py:690 cdedb/backend/assembly.py:739
 #: cdedb/backend/assembly.py:1006 cdedb/backend/assembly.py:1048
 #: cdedb/backend/assembly.py:1719 cdedb/backend/assembly.py:1750
-#: cdedb/backend/cde.py:245 cdedb/backend/cde.py:271 cdedb/backend/core.py:2585
-#: cdedb/backend/core.py:2608 cdedb/backend/event.py:1077
+#: cdedb/backend/cde.py:245 cdedb/backend/cde.py:271 cdedb/backend/core.py:2588
+#: cdedb/backend/core.py:2611 cdedb/backend/event.py:1077
 #: cdedb/backend/event.py:1113 cdedb/backend/event.py:1305
 #: cdedb/backend/event.py:1338 cdedb/backend/event.py:1425
 #: cdedb/backend/event.py:1483 cdedb/backend/event.py:2155
 #: cdedb/backend/event.py:2234 cdedb/backend/event.py:2493
 #: cdedb/backend/event.py:2576 cdedb/backend/event.py:3281
-#: cdedb/backend/event.py:3312 cdedb/backend/event.py:3553
-#: cdedb/backend/event.py:3582 cdedb/backend/event.py:3740
-#: cdedb/backend/event.py:3764 cdedb/backend/ml.py:704 cdedb/backend/ml.py:740
+#: cdedb/backend/event.py:3312 cdedb/backend/event.py:3552
+#: cdedb/backend/event.py:3581 cdedb/backend/event.py:3739
+#: cdedb/backend/event.py:3763 cdedb/backend/ml.py:703 cdedb/backend/ml.py:739
 #: cdedb/backend/past_event.py:340 cdedb/backend/past_event.py:371
 #: cdedb/backend/past_event.py:477
 #, python-format
@@ -163,7 +163,7 @@ msgstr ""
 
 #: cdedb/backend/assembly.py:701 cdedb/backend/assembly.py:1467
 #: cdedb/backend/assembly.py:1470 cdedb/backend/cde.py:251
-#: cdedb/backend/core.py:2596 cdedb/backend/core.py:2599
+#: cdedb/backend/core.py:2599 cdedb/backend/core.py:2602
 #, python-format
 msgid "Unable to cascade %(blocker)s."
 msgstr ""
@@ -266,11 +266,11 @@ msgstr ""
 msgid "Can only access attachments from exactly one assembly at a time."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1583
+#: cdedb/backend/assembly.py:1582
 msgid "Must have privileged access to add attachment."
 msgstr ""
 
-#: cdedb/backend/assembly.py:1585 cdedb/backend/assembly.py:1639
+#: cdedb/backend/assembly.py:1584 cdedb/backend/assembly.py:1639
 #: cdedb/backend/assembly.py:1797 cdedb/backend/assembly.py:1835
 #: cdedb/backend/assembly.py:1865
 msgid ""
@@ -464,7 +464,7 @@ msgstr "Members by First Event"
 msgid "unique_participants_per_year"
 msgstr "Unique Participants"
 
-#: cdedb/backend/cde.py:1038 cdedb/backend/core.py:1850
+#: cdedb/backend/cde.py:1038 cdedb/backend/core.py:1852
 msgid "Too many queries."
 msgstr ""
 
@@ -502,13 +502,13 @@ msgstr ""
 msgid "Modification failed."
 msgstr ""
 
-#: cdedb/backend/core.py:638 cdedb/backend/core.py:2475
-#: cdedb/backend/core.py:2498 cdedb/frontend/core.py:1727
+#: cdedb/backend/core.py:638 cdedb/backend/core.py:2478
+#: cdedb/backend/core.py:2501 cdedb/frontend/core.py:1727
 msgid "Nonexistent user."
 msgstr ""
 
-#: cdedb/backend/core.py:686 cdedb/backend/core.py:2273
-#: cdedb/backend/core.py:2302 cdedb/backend/core.py:2432
+#: cdedb/backend/core.py:686 cdedb/backend/core.py:2271
+#: cdedb/backend/core.py:2305 cdedb/backend/core.py:2435
 msgid "Persona does not exist."
 msgstr ""
 
@@ -556,211 +556,211 @@ msgstr ""
 msgid "Editing archived member impossible."
 msgstr ""
 
-#: cdedb/backend/core.py:748
+#: cdedb/backend/core.py:749
 msgid "Special change not committed."
 msgstr ""
 
-#: cdedb/backend/core.py:876 cdedb/backend/core.py:951
+#: cdedb/backend/core.py:876 cdedb/backend/core.py:953
 #: cdedb/frontend/core.py:1275 cdedb/frontend/core.py:1357
 msgid "Cannot modify own meta admin privileges."
 msgstr ""
 
-#: cdedb/backend/core.py:881
+#: cdedb/backend/core.py:883
 msgid "Pending privilege change."
 msgstr ""
 
-#: cdedb/backend/core.py:888
+#: cdedb/backend/core.py:890
 msgid "User does not fit the requirements for this admin privilege."
 msgstr ""
 
-#: cdedb/backend/core.py:945
+#: cdedb/backend/core.py:947
 #, python-format
 msgid "Invalid privilege change state: %(status)s."
 msgstr ""
 
-#: cdedb/backend/core.py:954 cdedb/frontend/core.py:1360
+#: cdedb/backend/core.py:956 cdedb/frontend/core.py:1360
 msgid ""
 "Only a different admin than the submitter may approve a privilege change."
 msgstr ""
 
-#: cdedb/backend/core.py:1000
+#: cdedb/backend/core.py:1002
 msgid "Invalid new privilege change status."
 msgstr ""
 
-#: cdedb/backend/core.py:1071
+#: cdedb/backend/core.py:1073
 msgid "No realm provided."
 msgstr ""
 
-#: cdedb/backend/core.py:1101
+#: cdedb/backend/core.py:1103
 msgid "Tried to credit balance to non-cde person."
 msgstr ""
 
-#: cdedb/backend/core.py:1132
+#: cdedb/backend/core.py:1134
 msgid "Not a CdE account."
 msgstr ""
 
-#: cdedb/backend/core.py:1352
+#: cdedb/backend/core.py:1354
 msgid "You are not allowed to archive this user."
 msgstr ""
 
-#: cdedb/backend/core.py:1360
+#: cdedb/backend/core.py:1362
 msgid "Cannot archive admins."
 msgstr ""
 
-#: cdedb/backend/core.py:1368
+#: cdedb/backend/core.py:1370
 msgid "Failed to revoke membership."
 msgstr ""
 
-#: cdedb/backend/core.py:1372
+#: cdedb/backend/core.py:1374
 msgid "Failed to remove foto."
 msgstr ""
 
-#: cdedb/backend/core.py:1457
+#: cdedb/backend/core.py:1459
 msgid "Active lastschrift exists."
 msgstr ""
 
-#: cdedb/backend/core.py:1477
+#: cdedb/backend/core.py:1479
 msgid "Involved in unfinished event."
 msgstr ""
 
-#: cdedb/backend/core.py:1506
+#: cdedb/backend/core.py:1508
 #, python-format
 msgid "Sole moderator of a mailinglist %(ml_ids)s."
 msgstr ""
 
-#: cdedb/backend/core.py:1532
+#: cdedb/backend/core.py:1534
 msgid "Cannot archive silently."
 msgstr ""
 
-#: cdedb/backend/core.py:1579
+#: cdedb/backend/core.py:1581
 msgid "Persona is not archived."
 msgstr ""
 
-#: cdedb/backend/core.py:1615
+#: cdedb/backend/core.py:1617
 msgid "Cannot purge silently."
 msgstr ""
 
-#: cdedb/backend/core.py:1641 cdedb/frontend/core.py:1876
+#: cdedb/backend/core.py:1643 cdedb/frontend/core.py:1876
 msgid "Name collision."
 msgstr ""
 
-#: cdedb/backend/core.py:1661 cdedb/frontend/core.py:2064
+#: cdedb/backend/core.py:1663 cdedb/frontend/core.py:2064
 #: cdedb/frontend/core.py:2302
 msgid "Failed."
 msgstr ""
 
-#: cdedb/backend/core.py:1742
+#: cdedb/backend/core.py:1744
 msgid "Access to persona data inhibited."
 msgstr ""
 
-#: cdedb/backend/core.py:1744
+#: cdedb/backend/core.py:1746
 msgid "Not an event user."
 msgstr ""
 
-#: cdedb/backend/core.py:1790
+#: cdedb/backend/core.py:1792
 msgid "May not provide more than one input."
 msgstr ""
 
-#: cdedb/backend/core.py:1853
+#: cdedb/backend/core.py:1855
 msgid "Not a CdE user."
 msgstr ""
 
-#: cdedb/backend/core.py:1859
+#: cdedb/backend/core.py:1861
 msgid "Improper access to member data."
 msgstr ""
 
-#: cdedb/backend/core.py:1871
+#: cdedb/backend/core.py:1874
 msgid "Not an ml user."
 msgstr ""
 
-#: cdedb/backend/core.py:1883
+#: cdedb/backend/core.py:1886
 msgid "Not an assembly user."
 msgstr ""
 
-#: cdedb/backend/core.py:1900
+#: cdedb/backend/core.py:1903
 msgid "Must be privileged."
 msgstr ""
 
-#: cdedb/backend/core.py:1937
+#: cdedb/backend/core.py:1940
 msgid "Unable to create this sort of persona."
 msgstr ""
 
-#: cdedb/backend/core.py:2025 cdedb/backend/core.py:2358
-#: cdedb/backend/core.py:2426
+#: cdedb/backend/core.py:2028 cdedb/backend/core.py:2361
+#: cdedb/backend/core.py:2429
 msgid "Atomized – impossible to escalate."
 msgstr ""
 
-#: cdedb/backend/core.py:2268
+#: cdedb/backend/core.py:2276
 msgid "Preventing reset of admin."
 msgstr ""
 
-#: cdedb/backend/core.py:2307 cdedb/frontend/common.py:1676
+#: cdedb/backend/core.py:2310 cdedb/frontend/common.py:1676
 msgid "Link expired."
 msgstr ""
 
-#: cdedb/backend/core.py:2309 cdedb/backend/core.py:2311
+#: cdedb/backend/core.py:2312 cdedb/backend/core.py:2314
 msgid "Link invalid or already used."
 msgstr ""
 
-#: cdedb/backend/core.py:2333
+#: cdedb/backend/core.py:2336
 msgid "Selecting persona allowed for reset only."
 msgstr ""
 
-#: cdedb/backend/core.py:2336
+#: cdedb/backend/core.py:2339
 msgid "Could not determine persona to reset."
 msgstr ""
 
-#: cdedb/backend/core.py:2338
+#: cdedb/backend/core.py:2341
 msgid "No authorization provided."
 msgstr ""
 
-#: cdedb/backend/core.py:2341
+#: cdedb/backend/core.py:2344
 msgid "Password verification failed."
 msgstr ""
 
-#: cdedb/backend/core.py:2348
+#: cdedb/backend/core.py:2351
 msgid "No new password provided."
 msgstr ""
 
-#: cdedb/backend/core.py:2351 cdedb/frontend/core.py:1683
+#: cdedb/backend/core.py:2354 cdedb/frontend/core.py:1683
 #: cdedb/frontend/core.py:1845 cdedb/validation.py:887
 msgid "Password too weak."
 msgstr ""
 
-#: cdedb/backend/core.py:2406 cdedb/frontend/cde.py:1298
+#: cdedb/backend/core.py:2409 cdedb/frontend/cde.py:1298
 #: cdedb/frontend/common.py:821 cdedb/frontend/event.py:2367
 msgid "No input provided."
 msgstr ""
 
-#: cdedb/backend/core.py:2408
+#: cdedb/backend/core.py:2411
 msgid "More than one input provided."
 msgstr ""
 
-#: cdedb/backend/core.py:2477
+#: cdedb/backend/core.py:2480
 msgid "Inactive user."
 msgstr ""
 
-#: cdedb/backend/core.py:2500
+#: cdedb/backend/core.py:2503
 msgid "Lockdown active."
 msgstr ""
 
-#: cdedb/backend/core.py:2576
+#: cdedb/backend/core.py:2579
 msgid "Unable to remove unconfirmed genesis case before confirmation timeout."
 msgstr ""
 
-#: cdedb/backend/core.py:2579
+#: cdedb/backend/core.py:2582
 msgid "Unable to remove genesis case with status {}."
 msgstr ""
 
-#: cdedb/backend/core.py:2727
+#: cdedb/backend/core.py:2730
 msgid "Genesis case does not exist."
 msgstr ""
 
-#: cdedb/backend/core.py:2767
+#: cdedb/backend/core.py:2770
 msgid "Invalid genesis state."
 msgstr ""
 
-#: cdedb/backend/core.py:2771
+#: cdedb/backend/core.py:2774
 msgid "Wrong target realm."
 msgstr ""
 
@@ -928,12 +928,12 @@ msgstr ""
 msgid "This is not useful."
 msgstr ""
 
-#: cdedb/backend/event.py:3175 cdedb/frontend/assembly.py:570
+#: cdedb/backend/event.py:3176 cdedb/frontend/assembly.py:570
 #: cdedb/frontend/event.py:492 cdedb/frontend/event.py:4228
 msgid "This user does not exist or is archived."
 msgstr ""
 
-#: cdedb/backend/event.py:3177 cdedb/frontend/event.py:495
+#: cdedb/backend/event.py:3178 cdedb/frontend/event.py:495
 #: cdedb/frontend/event.py:4232
 msgid "This user is not an event user."
 msgstr ""
@@ -946,31 +946,31 @@ msgstr ""
 msgid "Missing track dataset."
 msgstr ""
 
-#: cdedb/backend/event.py:3462
+#: cdedb/backend/event.py:3461
 msgid "Only lodgement groups from exactly one event allowed!"
 msgstr ""
 
-#: cdedb/backend/event.py:3614
+#: cdedb/backend/event.py:3613
 msgid "Only lodgements from exactly one event allowed!"
 msgstr ""
 
-#: cdedb/backend/event.py:3639
+#: cdedb/backend/event.py:3638
 msgid "Lodgement does not exist."
 msgstr ""
 
-#: cdedb/backend/event.py:4033
+#: cdedb/backend/event.py:4032
 msgid "Not locked."
 msgstr ""
 
-#: cdedb/backend/event.py:4035 cdedb/backend/event.py:4295
+#: cdedb/backend/event.py:4034 cdedb/backend/event.py:4297
 msgid "Version mismatch – aborting."
 msgstr ""
 
-#: cdedb/backend/event.py:4045
+#: cdedb/backend/event.py:4044
 msgid "Non-transferred persona found"
 msgstr ""
 
-#: cdedb/backend/event.py:4355
+#: cdedb/backend/event.py:4357
 msgid "Referential integrity of lodgement groups violated."
 msgstr ""
 
@@ -986,60 +986,60 @@ msgstr ""
 msgid "Different mailinglists specified."
 msgstr ""
 
-#: cdedb/backend/ml.py:427 cdedb/frontend/ml_base.py:253
+#: cdedb/backend/ml.py:426 cdedb/frontend/ml_base.py:253
 #: cdedb/frontend/ml_base.py:712
 msgid "Some of these users are not ml users."
 msgstr ""
 
-#: cdedb/backend/ml.py:464
+#: cdedb/backend/ml.py:463
 msgid "Cannot remove all moderators."
 msgstr ""
 
-#: cdedb/backend/ml.py:562
+#: cdedb/backend/ml.py:561
 msgid "Need to be moderator or admin to change mailinglist."
 msgstr ""
 
-#: cdedb/backend/ml.py:565
+#: cdedb/backend/ml.py:564
 msgid "Need to be admin to change this."
 msgstr ""
 
-#: cdedb/backend/ml.py:567
+#: cdedb/backend/ml.py:566
 msgid "Restricted moderators are not allowed to change this."
 msgstr ""
 
-#: cdedb/backend/ml.py:630
+#: cdedb/backend/ml.py:629
 msgid "Non-unique mailinglist name"
 msgstr ""
 
-#: cdedb/backend/ml.py:1208
+#: cdedb/backend/ml.py:1207
 msgid "Moderator access has been restricted."
 msgstr ""
 
-#: cdedb/backend/ml.py:1321
+#: cdedb/backend/ml.py:1320
 msgid "Source User is admin and can not be merged."
 msgstr ""
 
-#: cdedb/backend/ml.py:1323
+#: cdedb/backend/ml.py:1322
 msgid "Source persona must be a ml-only user."
 msgstr ""
 
-#: cdedb/backend/ml.py:1325
+#: cdedb/backend/ml.py:1324
 msgid "Source User is not accessible."
 msgstr ""
 
-#: cdedb/backend/ml.py:1330
+#: cdedb/backend/ml.py:1329
 msgid "Target User is no valid ml user."
 msgstr ""
 
-#: cdedb/backend/ml.py:1332
+#: cdedb/backend/ml.py:1331
 msgid "Target User is not accessible."
 msgstr ""
 
-#: cdedb/backend/ml.py:1334 cdedb/frontend/ml_base.py:308
+#: cdedb/backend/ml.py:1333 cdedb/frontend/ml_base.py:308
 msgid "Can not merge user into himself."
 msgstr ""
 
-#: cdedb/backend/ml.py:1349
+#: cdedb/backend/ml.py:1348
 #, python-format
 msgid "Both users are related to the same mailinglists: %(mls)s"
 msgstr ""
@@ -14638,16 +14638,16 @@ msgstr "Not a pending subscription request."
 msgid "subman_managing_is-subscribed"
 msgstr "User is currently subscribed."
 
-#: cdedb/subman/machine.py:236 cdedb/subman/machine.py:288
-#: cdedb/subman/machine.py:358
+#: cdedb/subman/machine.py:236 cdedb/subman/machine.py:263
+#: cdedb/subman/machine.py:290 cdedb/subman/machine.py:360
 msgid "subman_managing_is-unsubscription-overridden"
 msgstr ""
 "User is currently blocked. To change this, you may use the 'Advanced "
 "Management' page."
 
 #: cdedb/subman/machine.py:238 cdedb/subman/machine.py:252
-#: cdedb/subman/machine.py:264 cdedb/subman/machine.py:290
-#: cdedb/subman/machine.py:360
+#: cdedb/subman/machine.py:265 cdedb/subman/machine.py:292
+#: cdedb/subman/machine.py:362
 msgid "subman_managing_is-pending"
 msgstr "User has pending subscription request."
 
@@ -14657,46 +14657,46 @@ msgid "subman_managing_is-unsubscribed"
 msgstr "User is currently unsubscribed."
 
 #: cdedb/subman/machine.py:248 cdedb/subman/machine.py:261
-#: cdedb/subman/machine.py:356
+#: cdedb/subman/machine.py:288 cdedb/subman/machine.py:358
 msgid "subman_managing_is-subscription-overridden"
 msgstr ""
 "User is currently force-subscribed. To change this, you may use the "
 "'Advanced Management' page."
 
-#: cdedb/subman/machine.py:270 cdedb/subman/machine.py:272
-#: cdedb/subman/machine.py:275 cdedb/subman/machine.py:277
-#: cdedb/subman/machine.py:279 cdedb/subman/machine.py:281
+#: cdedb/subman/machine.py:271 cdedb/subman/machine.py:273
+#: cdedb/subman/machine.py:276 cdedb/subman/machine.py:278
+#: cdedb/subman/machine.py:280 cdedb/subman/machine.py:282
 msgid "subman_managing_not-subscription-overridden"
 msgstr "User is not force-subscribed."
 
-#: cdedb/subman/machine.py:296 cdedb/subman/machine.py:298
-#: cdedb/subman/machine.py:300 cdedb/subman/machine.py:303
-#: cdedb/subman/machine.py:305 cdedb/subman/machine.py:307
+#: cdedb/subman/machine.py:298 cdedb/subman/machine.py:300
+#: cdedb/subman/machine.py:302 cdedb/subman/machine.py:305
+#: cdedb/subman/machine.py:307 cdedb/subman/machine.py:309
 msgid "subman_managing_not-unsubscription-overridden"
 msgstr "User is not blocked."
 
-#: cdedb/subman/machine.py:311 cdedb/subman/machine.py:314
-#: cdedb/subman/machine.py:319 cdedb/subman/machine.py:324
-#: cdedb/subman/machine.py:327 cdedb/subman/machine.py:333
+#: cdedb/subman/machine.py:313 cdedb/subman/machine.py:316
+#: cdedb/subman/machine.py:321 cdedb/subman/machine.py:326
+#: cdedb/subman/machine.py:329 cdedb/subman/machine.py:335
 msgid "subman_self_is-subscribed"
 msgstr "You are currently subscribed."
 
-#: cdedb/subman/machine.py:316 cdedb/subman/machine.py:329
+#: cdedb/subman/machine.py:318 cdedb/subman/machine.py:331
 msgid "subman_self_is-unsubscription-overridden"
 msgstr "You are currently blocked."
 
-#: cdedb/subman/machine.py:331
+#: cdedb/subman/machine.py:333
 msgid "subman_self_is-pending"
 msgstr "You have currently a pending subscription request."
 
-#: cdedb/subman/machine.py:339 cdedb/subman/machine.py:345
-#: cdedb/subman/machine.py:347 cdedb/subman/machine.py:350
+#: cdedb/subman/machine.py:341 cdedb/subman/machine.py:347
+#: cdedb/subman/machine.py:349 cdedb/subman/machine.py:352
 msgid "subman_self_is-unsubscribed"
 msgstr "You are currently unsubscribed."
 
-#: cdedb/subman/machine.py:366 cdedb/subman/machine.py:368
-#: cdedb/subman/machine.py:370 cdedb/subman/machine.py:372
-#: cdedb/subman/machine.py:375 cdedb/subman/machine.py:377
+#: cdedb/subman/machine.py:368 cdedb/subman/machine.py:370
+#: cdedb/subman/machine.py:372 cdedb/subman/machine.py:374
+#: cdedb/subman/machine.py:377 cdedb/subman/machine.py:379
 msgid "subman_self_not-pending"
 msgstr "You have no pending subscription request."
 

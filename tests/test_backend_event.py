@@ -2130,7 +2130,6 @@ class TestEventBackend(BackendTest):
         self.assertTrue(self.event.lock_event(self.key, 1))
         data = self.event.export_event(self.key, 1)
         new_data = copy.deepcopy(data)
-        del new_data['CDEDB_EXPORT_EVENT_VERSION']
         stored_data = copy.deepcopy(data)
         # Apply some changes
 
