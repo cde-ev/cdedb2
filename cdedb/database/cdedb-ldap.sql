@@ -185,4 +185,5 @@ GRANT ALL ON ldap_entry_objclasses TO cdb_admin;
 
 -- create previously impossible references
 ALTER TABLE ldap_organizations ADD FOREIGN KEY (oc_map_id) REFERENCES ldap_oc_mappings(id);
-ALTER TABLE ldap_organizations ADD FOREIGN KEY (parent) REFERENCES ldap_entries(id);
+-- this SHOULD be a reference. However, one can not create foreign keys on query views...
+-- ALTER TABLE ldap_organizations ADD FOREIGN KEY (parent) REFERENCES ldap_entries(id);
