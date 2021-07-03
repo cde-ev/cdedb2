@@ -658,10 +658,9 @@
                 "waitlist_field": null,
                 "tracks": {},
                 "fee_modifiers": {
-                    "1": {
-                        "modifier_name": "is_child",
+                    "is_child": {
                         "amount": "-5.00",
-                        "field_id": 7
+                        "field_name": "is_child"
                     }
                 }
             },
@@ -689,10 +688,9 @@
                     }
                 },
                 "fee_modifiers": {
-                    "2": {
-                        "modifier_name": "is_child",
+                    "is_child": {
                         "amount": "-12.00",
-                        "field_id": 7
+                        "field_name": "is_child"
                     }
                 }
             },
@@ -713,10 +711,9 @@
                     }
                 },
                 "fee_modifiers": {
-                    "3": {
-                        "modifier_name": "is_child",
+                    "is_child": {
                         "amount": "-19.00",
-                        "field_id": 7
+                        "field_name": "is_child"
                     }
                 }
             }

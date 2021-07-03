@@ -4237,9 +4237,14 @@ class EventBackend(AbstractBackend):
                 for track in part['tracks'].values():
                     del track['id']
                     del track['part_id']
-                for fee_modifier in part['fee_modifiers'].values():
-                    del fee_modifier['id']
-                    del fee_modifier['part_id']
+                part['fee_modifiers'] = {fm['modifier_name']: fm
+                                         for fm in part['fee_modifiers'].values()}
+                for fm in part['fee_modifiers'].values():
+                    del fm['id']
+                    del fm['modifier_name']
+                    del fm['part_id']
+                    fm['field_name'] = event['fields'][fm['field_id']]['field_name']
+                    del fm['field_id']
             for f in ('lodge_field', 'camping_mat_field', 'course_room_field'):
                 if export_event[f]:
                     export_event[f] = event['fields'][event[f]]['field_name']
