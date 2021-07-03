@@ -1597,10 +1597,11 @@ class EventBackend(AbstractBackend):
             self.event_log(rs, const.EventLogCodes.field_added, event_id,
                            change_note=new_field['field_name'])
 
-        fee_modifier_fields = {unwrap(e) for e in self.sql_select(
-            rs, "event.fee_modifiers", ("field_id",), updated_fields | deleted_fields,
-            entity_key="field_id")}
         if updated_fields:
+            fee_modifier_fields = {unwrap(e) for e in self.sql_select(
+                rs, "event.fee_modifiers", ("field_id",),
+                updated_fields | deleted_fields,
+                entity_key="field_id")}
             current_field_data = {e['id']: e for e in self.sql_select(
                 rs, "event.field_definitions", FIELD_DEFINITION_FIELDS, updated_fields)}
             for x in mixed_existence_sorter(updated_fields):
@@ -1615,7 +1616,7 @@ class EventBackend(AbstractBackend):
                                             "associated with a fee modifier."))
                     kind = current_field_data[x]['kind']
                     if updated_field.get('kind', kind) != kind:
-                        self._cast_field_values(rs, current_field_data[x], updated_field['kind'])
+                        self._cast_field_values(rs, current, updated_field['kind'])
                     ret *= self.sql_update(rs, "event.field_definitions", updated_field)
                     self.event_log(rs, const.EventLogCodes.field_updated, event_id,
                                    change_note=current_field_data[x]['field_name'])
