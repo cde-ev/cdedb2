@@ -47,7 +47,7 @@ CREATE FUNCTION node_dsa_id()
 ---
 CREATE FUNCTION id_offset()
   RETURNS bigint LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
-'SELECT 2^32';
+'SELECT 1<<32';
 
 ---
 --- ldap helper tables (in public schema)
