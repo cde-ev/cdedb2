@@ -128,16 +128,6 @@ GRANT ALL ON ldap_attr_mappings TO cdb_admin;
 -- togehter. Keyval is the primary identifier specified in 'ldap_oc_mappings'
 -- for the given ldap object class
 CREATE VIEW ldap_entries (id, dn, oc_map_id, parent, keyval) AS
-    WITH const AS (
-        SELECT
-            2^32 AS id_offset,
-
-            2 AS persona_oc_id,
-            4 AS organizational_role_oc_id,
-
-            10 AS persona_parent,
-            12 AS organizational_role_parent
-    )
     -- organizations and organizationalUnits
     (
         SELECT
@@ -151,23 +141,23 @@ CREATE VIEW ldap_entries (id, dn, oc_map_id, parent, keyval) AS
     -- Directory System Agents
     UNION (
         SELECT
-           id + const.id_offset,
+           id + id_offset(),
            'cn=' || cn || ',ou=dsa,dc=cde-ev,dc=de' AS dn,
-           const.organizational_role_oc_id AS oc_map_id,
-           const.organizational_role_parent AS parent,
+           oc_organizationalRole_id() AS oc_map_id,
+           node_dsa_id() AS parent,
            id as keyval
-        FROM ldap_agents, const
+        FROM ldap_agents
     )
     -- personas
     UNION (
         SELECT
-           id + 2*const.id_offset,
+           id + 2*id_offset(),
            -- the DB-ID is really static
            'uid=' || id || ',ou=users,dc=cde-ev,dc=de' AS dn,
-           const.persona_oc_id AS oc_map_id,
-           const.persona_parent AS parent,
+           oc_inetOrgPerson_id() AS oc_map_id,
+           node_users_id() AS parent,
            id as keyval
-        FROM core.personas, const
+        FROM core.personas
     )
 ;
 GRANT ALL ON ldap_entries TO cdb_admin;
@@ -175,10 +165,6 @@ GRANT ALL ON ldap_entries TO cdb_admin;
 -- Add additional ldap object classes to an entry with 'entry_id' in
 -- 'ldap_entries'.
 CREATE VIEW ldap_entry_objclasses (entry_id, oc_name) AS
-    WITH const AS (
-        SELECT
-            2^32 AS id_offset
-    )
     -- organizations
     (
         SELECT
@@ -190,9 +176,9 @@ CREATE VIEW ldap_entry_objclasses (entry_id, oc_name) AS
     -- Directory System Agents
     UNION (
         SELECT
-           id + const.id_offset AS entry_id,
+           id + id_offset() AS entry_id,
            'simpleSecurityObject' AS oc_name
-        FROM ldap_agents, const
+        FROM ldap_agents
     )
 ;
 GRANT ALL ON ldap_entry_objclasses TO cdb_admin;
