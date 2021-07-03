@@ -45,9 +45,22 @@ CREATE FUNCTION node_dsa_id()
 --- To store multiple serial tables in a bigserial one, we simply shift the id
 --- of each serial table by this value (maximum store of serial)
 ---
-CREATE FUNCTION id_offset()
+CREATE FUNCTION make_organization_entity_id(organization_id INT)
   RETURNS bigint LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
-'SELECT CAST(1 AS BIGINT)<<32;';
+-- TODO this is not independent of the chosen offset
+$$ SELECT $1; $$ ;
+
+CREATE FUNCTION make_dsa_entity_id(dsa_id INT)
+  RETURNS bigint LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+$$ SELECT CAST(1 AS BIGINT)<<32 + $1; $$ ;
+
+CREATE FUNCTION make_persona_entity_id(persona_id INT)
+  RETURNS bigint LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+$$ SELECT CAST(2 AS BIGINT)<<32 + $1; $$ ;
+
+CREATE FUNCTION make_static_group_entity_id(static_group_id INT)
+  RETURNS bigint LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+$$ SELECT CAST(3 AS BIGINT)<<32 + $1; $$ ;
 
 ---
 --- ldap helper tables (in public schema)
@@ -180,7 +193,7 @@ CREATE VIEW ldap_entries (id, dn, oc_map_id, parent, keyval) AS
     -- organizations and organizationalUnits
     (
         SELECT
-           id,
+           make_organization_entity_id(id),
            dn,
            oc_map_id,
            parent,
@@ -190,7 +203,7 @@ CREATE VIEW ldap_entries (id, dn, oc_map_id, parent, keyval) AS
     -- Directory System Agents
     UNION (
         SELECT
-           id + id_offset(),
+           make_dsa_entity_id(id),
            'cn=' || cn || ',ou=dsa,dc=cde-ev,dc=de' AS dn,
            oc_organizationalRole_id() AS oc_map_id,
            node_dsa_id() AS parent,
@@ -200,7 +213,7 @@ CREATE VIEW ldap_entries (id, dn, oc_map_id, parent, keyval) AS
     -- personas
     UNION (
         SELECT
-           id + 2*id_offset(),
+           make_persona_entity_id(id),
            -- the DB-ID is really static
            'uid=' || id || ',ou=users,dc=cde-ev,dc=de' AS dn,
            oc_inetOrgPerson_id() AS oc_map_id,
@@ -225,7 +238,7 @@ CREATE VIEW ldap_entry_objclasses (entry_id, oc_name) AS
     -- Directory System Agents
     UNION (
         SELECT
-           id + id_offset() AS entry_id,
+           make_dsa_entity_id(id) AS entry_id,
            'simpleSecurityObject' AS oc_name
         FROM ldap_agents
     )
