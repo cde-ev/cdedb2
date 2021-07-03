@@ -952,16 +952,16 @@ mailto:
 {%- if kwargs %}?{{ kwargs|urlencode }}{% endif %}
 {%- endmacro %}
 
-{% macro username_mailto(persona, prefix="", email=none) -%}
+{% macro username_mailto(persona, email=none) -%}
 {{ href(
     mailto(
-        address=email or persona.get("{}username".format(prefix), ""),
+        address=email or persona.get("username", persona.get("persona.username", "")),
         name="{} {}".format(
-            persona.get("{}given_names".format(prefix), ""),
-            persona.get("{}family_name".format(prefix), "")
+            persona.get("given_names", persona.get("persona.given_names", "")),
+            persona.get("family_name", persona.get("persona.family_name", ""))
         )
     ),
-    email or persona.get("{}username".format(prefix), "")
+    email or persona.get("username", persona.get("persona.username", ""))
 ) }}
 {%- endmacro %}
 
