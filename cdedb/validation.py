@@ -2085,7 +2085,6 @@ EVENT_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'orgas': Iterable,
     'parts': Mapping,
     'fields': Mapping,
-    'fee_modifiers': Mapping,
 }
 
 
@@ -2172,35 +2171,6 @@ def _event(
                     newfields[anid] = field
         val['fields'] = newfields
 
-    if 'fee_modifiers' in val:
-        new_modifiers = {}
-        for anid, fee_modifier in val['fee_modifiers'].items():
-            try:
-                anid = _int(anid, 'fee_modifiers', **kwargs)
-            except ValidationSummary as e:
-                errs.extend(e)
-            else:
-                creation = (anid < 0)
-                try:
-                    fee_modifier = _ALL_TYPED[
-                        Optional[EventFeeModifier]  # type: ignore
-                    ](
-                        fee_modifier, 'fee_modifiers', creation=creation, **kwargs)
-                except ValidationSummary as e:
-                    errs.extend(e)
-                else:
-                    new_modifiers[anid] = fee_modifier
-
-        msg = n_("Must not have multiple fee modifiers linked to the same"
-                 " field in one event part.")
-
-        aniter: Iterable[Tuple[EventFeeModifier, EventFeeModifier]]
-        aniter = itertools.combinations(filter(None, val['fee_modifiers'].values()), 2)
-        for e1, e2 in aniter:
-            if e1['field_id'] is not None and e1['field_id'] == e2['field_id']:
-                if e1['part_id'] == e2['part_id']:
-                    errs.append(ValueError('fee_modifiers', msg))
-
     if errs:
         raise errs
 
@@ -2215,6 +2185,10 @@ EVENT_PART_COMMON_FIELDS: TypeMapping = {
     'fee': NonNegativeDecimal,
     'waitlist_field': Optional[ID],  # type: ignore
     'tracks': Mapping,
+}
+
+EVENT_PART_OPTIONAL_FIELDS: TypeMapping = {
+    'fee_modifiers': Mapping,
 }
 
 
@@ -2234,10 +2208,10 @@ def _event_part(
 
     if creation:
         mandatory_fields = {**EVENT_PART_COMMON_FIELDS}
-        optional_fields = {}
+        optional_fields = {**EVENT_PART_OPTIONAL_FIELDS}
     else:
         mandatory_fields = {}
-        optional_fields = {**EVENT_PART_COMMON_FIELDS}
+        optional_fields = {**EVENT_PART_COMMON_FIELDS, **EVENT_PART_OPTIONAL_FIELDS}
 
     val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
 
@@ -2267,6 +2241,35 @@ def _event_part(
                 else:
                     newtracks[anid] = track
         val['tracks'] = newtracks
+
+    if 'fee_modifiers' in val:
+        new_modifiers = {}
+        for anid, fee_modifier in val['fee_modifiers'].items():
+            try:
+                anid = _int(anid, 'fee_modifiers', **kwargs)
+            except ValidationSummary as e:
+                errs.extend(e)
+            else:
+                creation = (anid < 0)
+                try:
+                    fee_modifier = _ALL_TYPED[
+                        Optional[EventFeeModifier]  # type: ignore
+                    ](
+                        fee_modifier, 'fee_modifiers', creation=creation, **kwargs)
+                except ValidationSummary as e:
+                    errs.extend(e)
+                else:
+                    new_modifiers[anid] = fee_modifier
+
+        msg = n_("Must not have multiple fee modifiers linked to the same"
+                 " field in one event part.")
+
+        aniter: Iterable[Tuple[EventFeeModifier, EventFeeModifier]]
+        aniter = itertools.combinations(
+            [fm for fm in val['fee_modifiers'].values() if fm], 2)
+        for e1, e2 in aniter:
+            if e1['field_id'] is not None and e1['field_id'] == e2['field_id']:
+                errs.append(ValueError('fee_modifiers', msg))
 
     if errs:
         raise errs
@@ -2353,8 +2356,8 @@ def _event_field(
         val[entries_key] = None
     if entries_key in val and val[entries_key] is not None:
         if isinstance(val[entries_key], str):
-            val[entries_key] = tuple(tuple(y.strip() for y in x.split(';', 1))
-                                     for x in val[entries_key].split('\n'))
+            val[entries_key] = list(list(y.strip() for y in x.split(';', 1))
+                                    for x in val[entries_key].split('\n'))
         try:
             oldentries = _iterable(val[entries_key], entries_key, **kwargs)
         except ValidationSummary as e:
@@ -2383,7 +2386,7 @@ def _event_field(
                             errs.append(ValueError(
                                 entries_key, n_("Duplicate value.")))
                         else:
-                            entries.append((value, description))
+                            entries.append([value, description])
                             seen_values.add(value)
             val[entries_key] = entries
 
@@ -2396,7 +2399,6 @@ def _event_field(
 def _EVENT_FEE_MODIFIER_COMMON_FIELDS(extra_suffix: str) -> TypeMapping: return {
     "modifier_name{}".format(extra_suffix): RestrictiveIdentifier,
     "amount{}".format(extra_suffix): decimal.Decimal,
-    "part_id{}".format(extra_suffix): ID,
     "field_id{}".format(extra_suffix): ID,
 }
 
@@ -2413,7 +2415,7 @@ def _event_fee_modifier(
         mandatory_fields = _EVENT_FEE_MODIFIER_COMMON_FIELDS(extra_suffix)
         optional_fields: TypeMapping = {}
     else:
-        mandatory_fields = {'id': ID}
+        mandatory_fields = {}
         optional_fields = _EVENT_FEE_MODIFIER_COMMON_FIELDS(extra_suffix)
 
     val = _examine_dictionary_fields(
@@ -3040,7 +3042,8 @@ def _serialized_event(
                 'readonly': Optional[bool],  # type: ignore
                 'kind': const.QuestionnaireUsages,
             }),
-        'event.fee_modifiers': _event_fee_modifier,
+        'event.fee_modifiers': _augment_dict_validator(
+            _event_fee_modifier, {'id': ID, 'part_id': ID}),
     }
 
     errs = ValidationSummary()

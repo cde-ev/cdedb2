@@ -74,6 +74,8 @@ class TestEventBackend(BackendTest):
                              'min_choices': 3,
                              'sortkey': 1}
                     },
+                    'fee_modifiers': {
+                    },
                     'title': "First coming",
                     'shortname': "first",
                     'part_begin': datetime.date(2109, 8, 7),
@@ -88,6 +90,13 @@ class TestEventBackend(BackendTest):
                              'num_choices': 3,
                              'min_choices': 1,
                              'sortkey': 1}
+                    },
+                    'fee_modifiers': {
+                        -1: {
+                            'amount': decimal.Decimal("-7.00"),
+                            'field_id': 1003,  # TODO allow specifying a negative id here?
+                            'modifier_name': "is_child",
+                        }
                     },
                     'title': "Second coming",
                     'shortname': "second",
@@ -118,14 +127,6 @@ class TestEventBackend(BackendTest):
                     'entries': None,
                 }
             },
-            'fee_modifiers': {
-                -1: {
-                    'amount': decimal.Decimal("-7.00"),
-                    'field_id': 1003,  # TODO allow specifying a negative id here?
-                    'modifier_name': "is_child",
-                    'part_id': 1002,  # TODO allow specifying a negative id here?
-                }
-            }
         }
         new_id = self.event.create_event(self.key, data)
         # back to normal mode
@@ -151,6 +152,8 @@ class TestEventBackend(BackendTest):
         data['parts'][-2]['tracks'][-1].update({'id': 1002, 'part_id': 1002})
         data['tracks'] = {1001: data['parts'][-1]['tracks'][-1],
                           1002: data['parts'][-2]['tracks'][-1]}
+        data['parts'][-2]['fee_modifiers'][-1].update({'id': 1001, 'part_id': 1002})
+        data['fee_modifiers'] = {1001: data['parts'][-2]['fee_modifiers'][-1]}
         # correct part and field ids
         tmp = self.event.get_event(self.key, new_id)
         part_map = {}
@@ -165,6 +168,10 @@ class TestEventBackend(BackendTest):
                         set(x['title'] for x in data['parts'][part]['tracks'].values()),
                         set(x['title'] for x in tmp['parts'][part]['tracks'].values()))
                     data['parts'][part]['tracks'] = tmp['parts'][part]['tracks']
+                    self.assertEqual(
+                        set(x['modifier_name'] for x in data['parts'][part]['fee_modifiers'].values()),
+                        set(x['modifier_name'] for x in tmp['parts'][part]['fee_modifiers'].values()))
+                    data['parts'][part]['fee_modifiers'] = tmp['parts'][part]['fee_modifiers']
                     del data['parts'][oldpart]
                     break
         field_map = {}
@@ -177,16 +184,6 @@ class TestEventBackend(BackendTest):
                     data['fields'][field]['id'] = field
                     data['fields'][field]['event_id'] = new_id
                     del data['fields'][oldfield]
-                    break
-        fee_modifier_map = {}
-        for mod in tmp['fee_modifiers']:
-            for oldmod in data['fee_modifiers'].keys():
-                if (tmp['fee_modifiers'][mod]['modifier_name']
-                        == data['fee_modifiers'][oldmod]['modifier_name']):
-                    fee_modifier_map[tmp['fee_modifiers'][mod]['modifier_name']] = mod
-                    data['fee_modifiers'][mod] = data['fee_modifiers'][oldmod]
-                    data['fee_modifiers'][mod]['id'] = mod
-                    del data['fee_modifiers'][oldmod]
                     break
 
         self.assertEqual(data,
@@ -219,7 +216,15 @@ class TestEventBackend(BackendTest):
                        'num_choices': 5,
                        'min_choices': 4,
                        'sortkey': 3}
-            }}
+            },
+            'fee_modifiers': {
+                1001: {
+                    'modifier_name': "ist_kind",
+                    'amount': decimal.Decimal("3.33"),
+                    'field_id': 1003,
+                },
+            },
+        }
         newfield = {
             'association': 3,
             'field_name': "kuea",
@@ -261,11 +266,13 @@ class TestEventBackend(BackendTest):
                                  set(x['title']
                                      for x in tmp['parts'][part]['tracks'].values()))
                 data['parts'][part]['tracks'] = tmp['parts'][part]['tracks']
+                data['parts'][part]['fee_modifiers'] = tmp['parts'][part]['fee_modifiers']
         del data['parts'][part_map["First coming"]]
         changed_part['id'] = part_map["Second coming"]
         changed_part['event_id'] = new_id
         changed_part['shortname'] = "second"
         changed_part['tracks'][1002].update({'part_id': 1002, 'id': 1002})
+        changed_part['fee_modifiers'][1001].update({'part_id': 1002, 'id': 1001})
         data['parts'][part_map["Second coming"]] = changed_part
         for field in tmp['fields']:
             if tmp['fields'][field]['field_name'] == "kuea":
@@ -295,6 +302,7 @@ class TestEventBackend(BackendTest):
                                  'num_choices': 2,
                                  'min_choices': 2,
                                  'sortkey': 2}}
+        data['fee_modifiers'] = changed_part['fee_modifiers']
 
         self.assertEqual(data,
                          self.event.get_event(self.key, new_id))
@@ -575,28 +583,34 @@ class TestEventBackend(BackendTest):
         self.event.set_questionnaire(self.key, event_id, None)
         data = {
             'id': event_id,
-            'fee_modifiers':
-                {
-                    anid: None
-                    for anid in old_event['fee_modifiers']
+            'parts': {
+                part_id: {
+                    'fee_modifiers': {
+                        modifier_id: None
+                        for modifier_id in old_event['parts'][part_id]['fee_modifiers']
+                    }
                 }
+                for part_id in old_event['parts']
+            },
         }
         self.event.set_event(self.key, data)
 
         data = {
             'id': event_id,
-            'fee_modifiers': {
-                -1: {
-                    'field_id': 7,
-                    'modifier_name': "is_child",
-                    'amount': decimal.Decimal("-8.00"),
-                    'part_id': list(old_event['parts'])[0],
-                },
-                -2: {
-                    'field_id': 7,
-                    'modifier_name': "is_child2",
-                    'amount': decimal.Decimal("-7.00"),
-                    'part_id': list(old_event['parts'])[0],
+            'parts': {
+                list(old_event['parts'])[0]: {
+                    'fee_modifiers': {
+                        -1: {
+                            'field_id': 7,
+                            'modifier_name': "is_child",
+                            'amount': decimal.Decimal("-8.00"),
+                        },
+                        -2: {
+                            'field_id': 7,
+                            'modifier_name': "is_child2",
+                            'amount': decimal.Decimal("-7.00"),
+                        },
+                    },
                 },
             },
         }
@@ -2116,7 +2130,6 @@ class TestEventBackend(BackendTest):
         self.assertTrue(self.event.lock_event(self.key, 1))
         data = self.event.export_event(self.key, 1)
         new_data = copy.deepcopy(data)
-        del new_data['CDEDB_EXPORT_EVENT_VERSION']
         stored_data = copy.deepcopy(data)
         # Apply some changes
 
@@ -3076,24 +3089,30 @@ class TestEventBackend(BackendTest):
 
         data = {
             'id': event_id,
-            'fee_modifiers': {
-                -1: {
-                    'amount': decimal.Decimal("1.00"),
-                    'field_id': 1001,
-                    'modifier_name': unique_name,
-                    'part_id': part_id,
+            'parts': {
+                part_id: {
+                    'fee_modifiers': {
+                        -1: {
+                            'amount': decimal.Decimal("1.00"),
+                            'field_id': 1001,
+                            'modifier_name': unique_name,
+                        },
+                    },
                 },
             },
         }
         self.event.set_event(self.key, data)
         data = {
             'id': event_id,
-            'fee_modifiers': {
-                -1: {
-                    'amount': decimal.Decimal("1.00"),
-                    'field_id': 1001,
-                    'modifier_name': unique_name + "2",
-                    'part_id': part_id,
+            'parts': {
+                part_id: {
+                    'fee_modifiers': {
+                        -1: {
+                            'amount': decimal.Decimal("1.00"),
+                            'field_id': 1001,
+                            'modifier_name': unique_name + "2",
+                        },
+                    },
                 },
             },
         }
@@ -3102,12 +3121,15 @@ class TestEventBackend(BackendTest):
             self.event.set_event(self.key, data)
         data = {
             'id': event_id,
-            'fee_modifiers': {
-                -1: {
-                    'amount': decimal.Decimal("1.00"),
-                    'field_id': 1003,
-                    'modifier_name': unique_name,
-                    'part_id': part_id,
+            'parts': {
+                part_id: {
+                    'fee_modifiers': {
+                        -1: {
+                            'amount': decimal.Decimal("1.00"),
+                            'field_id': 1003,
+                            'modifier_name': unique_name,
+                        },
+                    },
                 },
             },
         }
@@ -3116,12 +3138,15 @@ class TestEventBackend(BackendTest):
             self.event.set_event(self.key, data)
         data = {
             'id': event_id,
-            'fee_modifiers': {
-                -1: {
-                    'amount': decimal.Decimal("1.00"),
-                    'field_id': 1003,
-                    'modifier_name': unique_name + "2",
-                    'part_id': part_id,
+            'parts': {
+                part_id: {
+                    'fee_modifiers': {
+                        -1: {
+                            'amount': decimal.Decimal("1.00"),
+                            'field_id': 1003,
+                            'modifier_name': unique_name + "2",
+                        },
+                    },
                 },
             },
         }
@@ -3158,26 +3183,29 @@ class TestEventBackend(BackendTest):
         field_links = (
             (1001, None, None),
             (1001, psycopg2.IntegrityError, None),
-            (1002, ValueError, "Fee Modifier linked to non-bool field."),
-            (1003, ValueError, "Fee Modifier linked to non-registration field."),
+            (1002, ValueError, "Unfit field for fee_modifier."),
+            (1003, ValueError, "Unfit field for fee_modifier."),
         )
         for field_id, error, error_msg in field_links:
             data = {
                 'id': event_id,
-                'fee_modifiers': {
-                    -1: {
-                        'modifier_name': 'solidarity',
-                        'amount': decimal.Decimal("-12.50"),
-                        'field_id': field_id,
-                        'part_id': list(event["parts"])[0],
-                    }
-                }
+                'parts': {
+                    list(event['parts'])[0]: {
+                        'fee_modifiers': {
+                            -1: {
+                                'modifier_name': 'solidarity',
+                                'amount': decimal.Decimal("-12.50"),
+                                'field_id': field_id,
+                            }
+                        },
+                    },
+                },
             }
             if error:
                 with self.assertRaises(error) as cm:
                     self.event.set_event(self.key, data)
                 if error_msg is not None:
-                    self.assertEqual(error_msg, cm.exception.args[0])
+                    self.assertEqual(error_msg, cm.exception.args[0] % cm.exception.args[1])
             else:
                 self.assertTrue(self.event.set_event(self.key, data))
         reg_data = {
@@ -3644,217 +3672,217 @@ class TestEventBackend(BackendTest):
         expectation = (35, (
             {'id': 1001,
              'change_note': None,
-             'code': 1,
+             'code': const.EventLogCodes.event_created,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
              'submitted_by': self.user['id']},
             {'id': 1002,
              'change_note': None,
-             'code': 10,
+             'code': const.EventLogCodes.orga_added,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': 2,
              'submitted_by': self.user['id']},
             {'id': 1003,
              'change_note': None,
-             'code': 10,
+             'code': const.EventLogCodes.orga_added,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': 7,
              'submitted_by': self.user['id']},
             {'id': 1004,
-             'change_note': 'First lecture',
-             'code': 35,
+             'change_note': 'instrument',
+             'code': const.EventLogCodes.field_added,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
              'submitted_by': self.user['id']},
             {'id': 1005,
-             'change_note': 'First coming',
-             'code': 15,
+             'change_note': 'preferred_excursion_date',
+             'code': const.EventLogCodes.field_added,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
              'submitted_by': self.user['id']},
             {'id': 1006,
-             'change_note': 'Second lecture',
-             'code': 35,
+             'change_note': 'First coming',
+             'code': const.EventLogCodes.part_created,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
              'submitted_by': self.user['id']},
             {'id': 1007,
-             'change_note': 'Second coming',
-             'code': 15,
+             'change_note': 'First lecture',
+             'code': const.EventLogCodes.track_added,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
              'submitted_by': self.user['id']},
             {'id': 1008,
-             'change_note': 'instrument',
-             'code': 20,
+             'change_note': 'Second coming',
+             'code': const.EventLogCodes.part_created,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
              'submitted_by': self.user['id']},
             {'id': 1009,
-             'change_note': 'preferred_excursion_date',
-             'code': 20,
+             'change_note': 'Second lecture',
+             'code': const.EventLogCodes.track_added,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
              'submitted_by': self.user['id']},
             {'id': 1010,
              'change_note': None,
-             'code': 10,
+             'code': const.EventLogCodes.orga_added,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': 1,
              'submitted_by': self.user['id']},
             {'id': 1011,
              'change_note': None,
-             'code': 11,
+             'code': const.EventLogCodes.orga_removed,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': 2,
              'submitted_by': self.user['id']},
             {'id': 1012,
              'change_note': None,
-             'code': 2,
+             'code': const.EventLogCodes.event_changed,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
              'submitted_by': self.user['id']},
             {'id': 1013,
-             'change_note': 'Third lecture',
-             'code': 35,
+             'change_note': 'kuea',
+             'code': const.EventLogCodes.field_added,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
              'submitted_by': self.user['id']},
             {'id': 1014,
-             'change_note': 'Third coming',
-             'code': 15,
+             'change_note': 'preferred_excursion_date',
+             'code': const.EventLogCodes.field_updated,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
              'submitted_by': self.user['id']},
             {'id': 1015,
-             'change_note': 'Second lecture v2',
-             'code': 36,
+             'change_note': 'instrument',
+             'code': const.EventLogCodes.field_removed,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
              'submitted_by': self.user['id']},
             {'id': 1016,
-             'change_note': 'Second coming',
-             'code': 16,
+             'change_note': 'Third coming',
+             'code': const.EventLogCodes.part_created,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
              'submitted_by': self.user['id']},
             {'id': 1017,
-             'change_note': 'First lecture',
-             'code': 37,
+             'change_note': 'Third lecture',
+             'code': const.EventLogCodes.track_added,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
              'submitted_by': self.user['id']},
             {'id': 1018,
-             'change_note': 'First coming',
-             'code': 17,
+             'change_note': 'Second coming',
+             'code': const.EventLogCodes.part_changed,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
              'submitted_by': self.user['id']},
             {'id': 1019,
-             'change_note': 'kuea',
-             'code': 20,
+             'change_note': 'Second lecture v2',
+             'code': const.EventLogCodes.track_updated,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
              'submitted_by': self.user['id']},
             {'id': 1020,
-             'change_note': 'preferred_excursion_date',
-             'code': 21,
+             'change_note': 'First lecture',
+             'code': const.EventLogCodes.track_removed,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
              'submitted_by': self.user['id']},
             {'id': 1021,
-             'change_note': 'instrument',
-             'code': 22,
+             'change_note': 'First coming',
+             'code': const.EventLogCodes.part_deleted,
              'ctime': nearly_now(),
              'event_id': 1001,
              'persona_id': None,
              'submitted_by': self.user['id']},
             {'id': 1022,
              'change_note': 'Topos theory for the kindergarden',
-             'code': 42,
+             'code': const.EventLogCodes.course_segments_changed,
              'ctime': nearly_now(),
              'event_id': 1,
              'persona_id': None,
              'submitted_by': self.user['id']},
             {'id': 1023,
              'change_note': 'Topos theory for the kindergarden',
-             'code': 40,
+             'code': const.EventLogCodes.course_created,
              'ctime': nearly_now(),
              'event_id': 1,
              'persona_id': None,
              'submitted_by': self.user['id']},
             {'id': 1024,
              'change_note': 'Topos theory for the kindergarden',
-             'code': 41,
+             'code': const.EventLogCodes.course_changed,
              'ctime': nearly_now(),
              'event_id': 1,
              'persona_id': None,
              'submitted_by': self.user['id']},
             {'id': 1025,
              'change_note': 'Topos theory for the kindergarden',
-             'code': 42,
+             'code': const.EventLogCodes.course_segments_changed,
              'ctime': nearly_now(),
              'event_id': 1,
              'persona_id': None,
              'submitted_by': self.user['id']},
             {'id': 1026,
              'change_note': None,
-             'code': 50,
+             'code': const.EventLogCodes.registration_created,
              'ctime': nearly_now(),
              'event_id': 1,
              'persona_id': 3,
              'submitted_by': self.user['id']},
             {'id': 1027,
              'change_note': "Boring change.",
-             'code': 51,
+             'code': const.EventLogCodes.registration_changed,
              'ctime': nearly_now(),
              'event_id': 1,
              'persona_id': 9,
              'submitted_by': self.user['id']},
             {'id': 1028,
              'change_note': 'HY',
-             'code': 26,
+             'code': const.EventLogCodes.lodgement_created,
              'ctime': nearly_now(),
              'event_id': 1,
              'persona_id': None,
              'submitted_by': self.user['id']},
             {'id': 1029,
              'change_note': 'HY',
-             'code': 25,
+             'code': const.EventLogCodes.lodgement_changed,
              'ctime': nearly_now(),
              'event_id': 1,
              'persona_id': None,
              'submitted_by': self.user['id']},
             {'id': 1030,
              'change_note': 'HY',
-             'code': 27,
+             'code': const.EventLogCodes.lodgement_deleted,
              'ctime': nearly_now(),
              'event_id': 1,
              'persona_id': None,
              'submitted_by': self.user['id']},
             {'id': 1031,
              'change_note': None,
-             'code': 30,
+             'code': const.EventLogCodes.questionnaire_changed,
              'ctime': nearly_now(),
              'event_id': 1,
              'persona_id': None,

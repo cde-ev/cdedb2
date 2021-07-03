@@ -558,9 +558,9 @@ class EventFrontend(AbstractUserFrontend):
                 for k in ('title', 'shortname', 'num_choices', 'min_choices',
                           'sortkey'):
                     current[f"track_{k}_{part_id}_{track_id}"] = track[k]
-        for m in rs.ambience['event']['fee_modifiers'].values():
-            for k in ('modifier_name', 'amount', 'field_id'):
-                current[f"fee_modifier_{k}_{m['part_id']}_{m['id']}"] = m[k]
+            for m_id, m in part['fee_modifiers'].items():
+                for k in ('modifier_name', 'amount', 'field_id'):
+                    current[f"fee_modifier_{k}_{part_id}_{m_id}"] = m[k]
         merge_dicts(rs.values, current)
         referenced_parts: Set[int] = set()
         referenced_tracks: Set[int] = set()
@@ -606,8 +606,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @staticmethod
     def process_part_input(rs: RequestState, has_registrations: bool
-                           ) -> Tuple[Dict[int, Optional[CdEDBObject]],
-                                      Dict[int, Optional[CdEDBObject]]]:
+                           ) -> Dict[int, Optional[CdEDBObject]]:
         """This handles input to configure the parts.
 
         Since this covers a variable number of rows, we cannot do this
@@ -940,21 +939,27 @@ class EventFrontend(AbstractUserFrontend):
         # Don't allow fee modifiers for newly created parts.
 
         # Handle deleted parts
+        for mod_id, mod in ret_fee_modifiers.items():
+            if mod:
+                ret[mod['part_id']].setdefault('fee_modifiers', {})[mod_id] = mod
+                del mod['part_id']
+                if 'id' in mod:
+                    del mod['id']
         ret_parts = cast(Dict[int, Optional[CdEDBObject]], ret)
         for part_id in deletes:
             ret_parts[part_id] = None
-        if not any(ret.values()):
+        if not any(ret_parts.values()):
             rs.append_validation_error(
                 ("", ValueError(n_("At least one event part required."))))
             rs.notify("error", n_("At least one event part required."))
-        return ret_parts, ret_fee_modifiers
+        return ret_parts
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
     def part_summary(self, rs: RequestState, event_id: int) -> Response:
         """Manipulate the parts of an event."""
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
-        parts, fee_modifiers = self.process_part_input(rs, has_registrations)
+        parts = self.process_part_input(rs, has_registrations)
         if rs.has_validation_errors():
             return self.part_summary_form(rs, event_id)
         for part_id, part in rs.ambience['event']['parts'].items():
@@ -964,7 +969,6 @@ class EventFrontend(AbstractUserFrontend):
         event = {
             'id': event_id,
             'parts': parts,
-            'fee_modifiers': fee_modifiers,
         }
         code = self.eventproxy.set_event(rs, event)
         self.notify_return_code(rs, code)

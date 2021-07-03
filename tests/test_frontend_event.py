@@ -3488,7 +3488,6 @@ etc;anything else""", f['entries_2'].value)
         data = saved.click(href='/event/event/1/export$').body
         data = data.replace(b"Gro\\u00dfe Testakademie 2222",
                             b"Mittelgro\\u00dfe Testakademie 2222")
-        data = data.replace(b'"CDEDB_EXPORT_EVENT_VERSION": 13,', b'')
         self.response = saved
         self.assertPresence(
             "Die Veranstaltung ist zur Offline-Nutzung gesperrt.")
@@ -3684,7 +3683,6 @@ etc;anything else""", f['entries_2'].value)
 
         upload = copy.deepcopy(first)
         del upload['event']
-        del upload['CDEDB_EXPORT_EVENT_VERSION']
         for reg in upload['registrations'].values():
             del reg['persona']
         self.get('/')
