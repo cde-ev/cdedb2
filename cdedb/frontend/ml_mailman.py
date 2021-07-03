@@ -9,7 +9,7 @@ from mailmanclient import Client, MailingList
 
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, RequestState
-from cdedb.frontend.common import cdedburl, periodic
+from cdedb.frontend.common import cdedburl, periodic, make_persona_name
 from cdedb.frontend.ml_base import MlBaseFrontend
 
 POLICY_MEMBER_CONVERT = {
@@ -185,8 +185,7 @@ The original message as received by Mailman is attached.
             rs, db_list['id'], persona_ids)
         personas = self.coreproxy.get_personas(rs, persona_ids)
         db_subscribers = {
-            address: "{} {}".format(personas[pid]['given_names'],
-                                    personas[pid]['family_name'])
+            address: make_persona_name(personas[pid])
             for pid, address in db_addresses.items() if address
         }
         mm_subscribers = {m.email: m for m in mm_list.members}
@@ -209,8 +208,7 @@ The original message as received by Mailman is attached.
         personas = self.coreproxy.get_personas(
             rs, db_list['moderators'])
         db_moderators = {
-            persona['username']: "{} {}".format(persona['given_names'],
-                                                persona['family_name'])
+            persona['username']: make_persona_name(persona)
             for persona in personas.values() if persona['username']
         }
         mm_moderators = {m.email: m for m in mm_list.moderators}

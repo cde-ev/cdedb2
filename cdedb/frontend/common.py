@@ -2062,6 +2062,38 @@ def make_event_fee_reference(persona: CdEDBObject, event: CdEDBObject) -> str:
     )
 
 
+def make_persona_name(persona: CdEDBObject, only_given_names=False,
+                      only_display_name=False, given_and_display_names=False,
+                      with_family_name=True, include_titles=False) -> str:
+    """Format the name of a given persona according to the display name specification
+
+    This is the Python pendant of the `util.persona_name()` macro.
+    """
+    display_name: str = persona.get('display_name', "")
+    given_names: str = persona['given_names']
+    ret = ""
+    if include_titles and persona.get('title'):
+        ret += " " + persona['title']
+    if only_given_names:
+        ret += given_names
+    elif only_display_name:
+        ret += display_name
+    elif given_and_display_names:
+        if not display_name or display_name == given_names:
+            ret += given_names
+        else:
+            ret += f"{given_names} ({display_name})"
+    elif display_name and display_name in given_names:
+        ret += display_name
+    else:
+        ret += given_names
+    if with_family_name:
+        ret += " " + persona['family_name']
+    if include_titles and persona.get('name_supplement'):
+        ret += persona['name_supplement']
+    return ret
+
+
 def process_dynamic_input(rs: RequestState, existing: Collection[int],
                           spec: validate.TypeMapping,
                           additional: CdEDBObject = None

@@ -46,7 +46,7 @@ from cdedb.frontend.common import (
     REQUESTdatadict, REQUESTfile, access, calculate_db_logparams, calculate_loglinks,
     cdedbid_filter, cdedburl, check_validation as check,
     check_validation_optional as check_optional, event_guard, make_event_fee_reference,
-    periodic, process_dynamic_input, request_extractor,
+    periodic, process_dynamic_input, request_extractor, make_persona_name
 )
 from cdedb.query import (
     Query, QueryConstraint, QueryOperators, QueryScope, make_registration_query_aux,
@@ -2029,13 +2029,11 @@ class EventFrontend(AbstractUserFrontend):
                 if assign_action.enum == CourseChoiceToolActions.specific_rank:
                     if assign_action.int >= len(reg_track['choices']):
                         rs.notify("warning",
-                                  (n_("%(given_names)s %(family_name)s has no "
+                                  (n_("%(name)s has no "
                                       "%(rank)i. choice in %(track_name)s.")
                                    if len(tracks) > 1
-                                   else n_("%(given_names)s %(family_name)s "
-                                           "has no %(rank)i. choice.")),
-                                  {'given_names': persona['given_names'],
-                                   'family_name': persona['family_name'],
+                                   else n_("%(name)s has no %(rank)i. choice.")),
+                                  {'name': make_persona_name(persona),
                                    'rank': assign_action.int + 1,
                                    'track_name': tracks[atrack_id]['title']})
                         continue
@@ -2065,13 +2063,12 @@ class EventFrontend(AbstractUserFrontend):
                             break
                     else:
                         rs.notify("warning",
-                                  (n_("No choice available for %(given_names)s "
-                                      "%(family_name)s in %(track_name)s.")
+                                  (n_("No choice available for %(name)s in "
+                                      "%(track_name)s.")
                                    if len(tracks) > 1
                                    else n_("No choice available for "
-                                           "%(given_names)s %(family_name)s.")),
-                                  {'given_names': persona['given_names'],
-                                   'family_name': persona['family_name'],
+                                           "%(name)s.")),
+                                  {'name': make_persona_name(persona),
                                    'track_name': tracks[atrack_id]['title']})
             if tmp['tracks']:
                 res = self.eventproxy.set_registration(rs, tmp)
@@ -2079,10 +2076,8 @@ class EventFrontend(AbstractUserFrontend):
                     num_committed += 1
                 else:
                     rs.notify("warning",
-                              n_("Error committing changes for %(given_names)s "
-                                 "%(family_name)s."),
-                              {'given_names': persona['given_names'],
-                               'family_name': persona['family_name']})
+                              n_("Error committing changes for %(name)s."),
+                              {'name': make_persona_name(persona)})
         rs.notify("success" if num_committed > 0 else "warning",
                   n_("Course assignment for %(num_committed)s of %(num_total)s "
                      "registrations committed."),
@@ -2577,9 +2572,7 @@ class EventFrontend(AbstractUserFrontend):
                                      for acheck in checks):
                         rwish.add(oid)
                 reverse_wish[reg_id] = ", ".join(
-                    "{} {}".format(
-                        personas[registrations[id]['persona_id']]['given_names'],
-                        personas[registrations[id]['persona_id']]['family_name'])
+                    make_persona_name(personas[registrations[id]['persona_id']])
                     for id in rwish)
 
         tex = self.fill_template(rs, "tex", "lodgement_puzzle", {
@@ -5124,10 +5117,7 @@ class EventFrontend(AbstractUserFrontend):
 
         selectize_data = {
             track_id: xsorted(
-                [{'name': (personas[registration['persona_id']]['given_names']
-                           + " " + personas[registration['persona_id']]
-                           ['family_name']),
-                  'current': registration['tracks'][track_id]['course_id'],
+                [{'name': make_persona_name(personas[registration['persona_id']]),
                   'id': registration_id}
                  for registration_id, registration in registrations.items()
                  if _check_not_this_course(registration_id, track_id)],
@@ -5527,8 +5517,7 @@ class EventFrontend(AbstractUserFrontend):
             personas = self.coreproxy.get_personas(
                 rs, tuple(e['persona_id'] for e in entities.values()))
             labels = {
-                reg_id: (f"{personas[entity['persona_id']]['given_names']}"
-                         f" {personas[entity['persona_id']]['family_name']}")
+                reg_id: make_persona_name(personas[entity['persona_id']]['given_names'])
                 for reg_id, entity in entities.items()}
             ordered_ids = xsorted(
                 entities.keys(), key=lambda anid: EntitySorter.persona(
