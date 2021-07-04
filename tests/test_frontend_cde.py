@@ -2559,7 +2559,7 @@ class TestCdEFrontend(FrontendTest):
 
     def test_finance_log(self) -> None:
         # First: generate data
-        pass
+        # nothing to do here - sample data suffices
 
         # Now check it
         self.login(USER_DICT['farin'])

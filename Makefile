@@ -236,7 +236,8 @@ pylint:
 	@echo "All of pylint"
 	@echo $(BANNERLINE)
 	@echo ""
-	$(PYLINT) cdedb --load-plugins=pylint.extensions.bad_builtin
+	# test_subman crashes pylint seemingly due to symlinking
+	$(PYLINT) cdedb tests --load-plugins=pylint.extensions.bad_builtin --ignore=test_subman.py
 
 template-line-length:
 	@echo $(BANNERLINE)

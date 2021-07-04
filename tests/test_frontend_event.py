@@ -346,7 +346,7 @@ class TestEventFrontend(FrontendTest):
         registered = {"Meine Anmeldung"}
         registered_or_orga = {"Teilnehmer-Infos"}
         orga = {
-            "Teilnehmerliste",  "Anmeldungen", "Statistik", "Kurse", "Kurseinteilung",
+            "Teilnehmerliste", "Anmeldungen", "Statistik", "Kurse", "Kurseinteilung",
             "Unterkünfte", "Downloads", "Partieller Import", "Überweisungen eintragen",
             "Konfiguration", "Veranstaltungsteile", "Datenfelder konfigurieren",
             "Anmeldung konfigurieren", "Fragebogen konfigurieren", "Log", "Checkin"}

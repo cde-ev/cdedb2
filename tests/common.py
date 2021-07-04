@@ -862,8 +862,8 @@ class FrontendTest(BackendTest):
             self.follow()
             self.basic_validate(verbose=verbose)
 
-    def login(self, user: UserIdentifier, *, ip: str = "", verbose: bool = False
-              ) -> Optional[str]:
+    def login(self, user: UserIdentifier, *,  # pylint: disable=arguments-differ
+              ip: str = "", verbose: bool = False) -> Optional[str]:
         """Log in as the given user.
 
         :param verbose: If True display additional debug information.
@@ -881,7 +881,7 @@ class FrontendTest(BackendTest):
             self.user = USER_DICT["anonymous"]
         return self.key  # type: ignore
 
-    def logout(self, verbose: bool = False) -> None:
+    def logout(self, verbose: bool = False) -> None:  # pylint: disable=arguments-differ
         """Log out. Raises a KeyError if not currently logged in.
 
         :param verbose: If True display additional debug information.
@@ -1017,7 +1017,7 @@ class FrontendTest(BackendTest):
             self.assertEqual(str(status), checkbox['data-checked'])
         elif "type" in checkbox.attrs:
             self.assertEqual("checkbox", checkbox['type'])
-            self.assertEqual(status, 'checked' == checkbox.get('checked'))
+            self.assertEqual(status, checkbox.get('checked') == 'checked')
         else:
             raise ValueError("Id doesnt belong to a checkbox", anid)
 
@@ -1096,7 +1096,7 @@ class FrontendTest(BackendTest):
         if index is None:
             if len(nodes) == 1:
                 node = nodes[0]
-            elif len(nodes) == 0:
+            elif not nodes:
                 raise AssertionError(f"No input with name {f!r} found.")
             else:
                 raise AssertionError(f"More than one input with name {f!r}"

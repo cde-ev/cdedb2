@@ -158,7 +158,7 @@ class TestEventBackend(BackendTest):
         tmp = self.event.get_event(self.key, new_id)
         part_map = {}
         for part in tmp['parts']:
-            for oldpart in data['parts'].keys():
+            for oldpart in data['parts']:
                 if tmp['parts'][part]['title'] == data['parts'][oldpart]['title']:
                     part_map[tmp['parts'][part]['title']] = part
                     data['parts'][part] = data['parts'][oldpart]
@@ -176,7 +176,7 @@ class TestEventBackend(BackendTest):
                     break
         field_map = {}
         for field in tmp['fields']:
-            for oldfield in data['fields'].keys():
+            for oldfield in data['fields']:
                 if (tmp['fields'][field]['field_name']
                         == data['fields'][oldfield]['field_name']):
                     field_map[tmp['fields'][field]['field_name']] = field
@@ -3439,7 +3439,7 @@ class TestEventBackend(BackendTest):
         tmp = self.event.get_event(self.key, new_id)
         part_map = {}
         for part in tmp['parts']:
-            for oldpart in data['parts'].keys():
+            for oldpart in data['parts']:
                 if tmp['parts'][part]['title'] == data['parts'][oldpart]['title']:
                     part_map[tmp['parts'][part]['title']] = part
                     data['parts'][part] = data['parts'][oldpart]
@@ -3449,7 +3449,7 @@ class TestEventBackend(BackendTest):
                     break
         field_map = {}
         for field in tmp['fields']:
-            for oldfield in data['fields'].keys():
+            for oldfield in data['fields']:
                 if (tmp['fields'][field]['field_name']
                         == data['fields'][oldfield]['field_name']):
                     field_map[tmp['fields'][field]['field_name']] = field

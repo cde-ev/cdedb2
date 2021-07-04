@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 
 import copy
+import decimal
 import unittest
-from typing import Iterable, Mapping, Tuple, Union
+from typing import Any, Iterable, Mapping, Type, Tuple, Union
 
 import pytz
 
 import cdedb.database.constants as const
 import cdedb.validation as validate
 from cdedb.common import ValidationWarning
-from cdedb.validationtypes import *  # noqa: F403
-
+#from cdedb.validationtypes import *  # noqa: F403
+from cdedb.validationtypes import
 
 class TestValidation(unittest.TestCase):
     def do_validator_test(
@@ -442,7 +443,7 @@ class TestValidation(unittest.TestCase):
             ("A>_bar_>B=C=D>E", None, ValueError),
             ("_bar_>A=B=C=D>E", None, ValueError),
             ("A>B=C=D=E>_bar_", None, ValueError),
-            ("E=C>A>_bar_=D=B",  None, ValueError),
+            ("E=C>A>_bar_=D=B", None, ValueError),
         ), extraparams={'ballot': classical_ballot})
 
     def test_iban(self) -> None:
