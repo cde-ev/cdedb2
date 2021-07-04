@@ -497,7 +497,7 @@ class CoreBackend(AbstractBackend):
                               ) -> CdEDBObjectMap:
         """Retrieve changes in the changelog."""
         stati = affirm_set(const.MemberChangeStati, stati)
-        query = glue("SELECT id, persona_id, given_names, family_name,",
+        query = glue("SELECT id, persona_id, given_names, display_name, family_name,",
                      "generation, ctime",
                      "FROM core.changelog WHERE code = ANY(%s)")
         data = self.query_all(rs, query, (stati,))
