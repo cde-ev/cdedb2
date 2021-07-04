@@ -2071,27 +2071,27 @@ def make_persona_name(persona: CdEDBObject, only_given_names=False,
     """
     display_name: str = persona.get('display_name', "")
     given_names: str = persona['given_names']
-    ret = ""
+    ret = []
     if include_titles and persona.get('title'):
-        ret += " " + persona['title']
+        ret.append(persona['title'])
     if only_given_names:
-        ret += given_names
+        ret.append(given_names)
     elif only_display_name:
-        ret += display_name
+        ret.append(display_name)
     elif given_and_display_names:
         if not display_name or display_name == given_names:
-            ret += given_names
+            ret.append(given_names)
         else:
-            ret += f"{given_names} ({display_name})"
+            ret.append(f"{given_names} ({display_name})")
     elif display_name and display_name in given_names:
-        ret += display_name
+        ret.append(display_name)
     else:
-        ret += given_names
+        ret.append(given_names)
     if with_family_name:
-        ret += " " + persona['family_name']
+        ret.append(persona['family_name'])
     if include_titles and persona.get('name_supplement'):
-        ret += persona['name_supplement']
-    return ret
+        ret.append(persona['name_supplement'])
+    return " ".join(ret)
 
 
 def process_dynamic_input(rs: RequestState, existing: Collection[int],
