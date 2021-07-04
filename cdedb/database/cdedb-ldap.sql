@@ -64,6 +64,34 @@ CREATE FUNCTION node_static_group_is_cde_realm_id()
   RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
 $$ SELECT 33; $$;
 
+CREATE FUNCTION node_static_group_is_ml_admin_id()
+  RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+$$ SELECT 40; $$;
+
+CREATE FUNCTION node_static_group_is_event_admin_id()
+  RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+$$ SELECT 41; $$;
+
+CREATE FUNCTION node_static_group_is_assembly_admin_id()
+  RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+$$ SELECT 42; $$;
+
+CREATE FUNCTION node_static_group_is_cde_admin_id()
+  RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+$$ SELECT 43; $$;
+
+CREATE FUNCTION node_static_group_is_core_admin_id()
+  RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+$$ SELECT 44; $$;
+
+CREATE FUNCTION node_static_group_is_finance_admin_id()
+  RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+$$ SELECT 45; $$;
+
+CREATE FUNCTION node_static_group_is_cdelokal_admin_id()
+  RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+$$ SELECT 46; $$;
+
 ---
 --- serial id offset helper functions
 --- To store multiple serial tables in a bigserial one, we simply shift the id
@@ -155,7 +183,14 @@ INSERT INTO ldap_static_groups (id, cn) VALUES
     (node_static_group_is_ml_realm_id(), 'is_ml_realm'),
     (node_static_group_is_event_realm_id(), 'is_event_realm'),
     (node_static_group_is_assembly_realm_id(), 'is_assembly_realm'),
-    (node_static_group_is_cde_realm_id(), 'is_cde_realm');
+    (node_static_group_is_cde_realm_id(), 'is_cde_realm'),
+    (node_static_group_is_ml_admin_id(), 'is_ml_admin'),
+    (node_static_group_is_event_admin_id(), 'is_event_admin'),
+    (node_static_group_is_assembly_admin_id(), 'is_assembly_admin'),
+    (node_static_group_is_cde_admin_id(), 'is_cde_admin'),
+    (node_static_group_is_core_admin_id(), 'is_core_admin'),
+    (node_static_group_is_finance_admin_id(), 'is_finance_admin'),
+    (node_static_group_is_cdelokal_admin_id(), 'is_cdelokal_admin');
 
 -- A view containing all ldap_groups and their unique attributes.
 CREATE VIEW ldap_groups (id, cn) AS
@@ -220,6 +255,62 @@ CREATE VIEW ldap_group_members (group_id, member_dn) AS
               make_persona_dn(core.personas.id) AS member_dn
            FROM core.personas
            WHERE core.personas.is_cde_realm
+        )
+        -- is_ml_admin
+        UNION (
+           SELECT
+              make_static_group_entity_id(node_static_group_is_ml_admin_id()) AS group_id,
+              make_persona_dn(core.personas.id) AS member_dn
+           FROM core.personas
+           WHERE core.personas.is_ml_admin
+        )
+        -- is_event_admin
+        UNION (
+           SELECT
+              make_static_group_entity_id(node_static_group_is_event_admin_id()) AS group_id,
+              make_persona_dn(core.personas.id) AS member_dn
+           FROM core.personas
+           WHERE core.personas.is_event_admin
+        )
+        -- is_assembly_admin
+        UNION (
+           SELECT
+              make_static_group_entity_id(node_static_group_is_assembly_admin_id()) AS group_id,
+              make_persona_dn(core.personas.id) AS member_dn
+           FROM core.personas
+           WHERE core.personas.is_assembly_admin
+        )
+        -- is_cde_admin
+        UNION (
+           SELECT
+              make_static_group_entity_id(node_static_group_is_cde_admin_id()) AS group_id,
+              make_persona_dn(core.personas.id) AS member_dn
+           FROM core.personas
+           WHERE core.personas.is_cde_admin
+        )
+        -- is_core_admin
+        UNION (
+           SELECT
+              make_static_group_entity_id(node_static_group_is_core_admin_id()) AS group_id,
+              make_persona_dn(core.personas.id) AS member_dn
+           FROM core.personas
+           WHERE core.personas.is_core_admin
+        )
+        -- is_finance_admin
+        UNION (
+           SELECT
+              make_static_group_entity_id(node_static_group_is_finance_admin_id()) AS group_id,
+              make_persona_dn(core.personas.id) AS member_dn
+           FROM core.personas
+           WHERE core.personas.is_finance_admin
+        )
+        -- is_cdelokal_admin
+        UNION (
+           SELECT
+              make_static_group_entity_id(node_static_group_is_cdelokal_admin_id()) AS group_id,
+              make_persona_dn(core.personas.id) AS member_dn
+           FROM core.personas
+           WHERE core.personas.is_cdelokal_admin
         )
     -- mailinglists
     UNION (
