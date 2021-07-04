@@ -2,7 +2,7 @@
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
     {% trans name=util.persona_name(data) %}
-        Dearchive {{ given_names }} {{ family_name }}
+        Dearchive {{ name }}
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}

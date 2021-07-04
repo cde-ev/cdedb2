@@ -9858,8 +9858,8 @@ msgstr "KL"
 
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:222
 #, python-format
-msgid "Select %s %s"
-msgstr "%s %s auswählen"
+msgid "Select %s"
+msgstr "%s auswählen"
 
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:283
 #: cdedb/frontend/templates/web/event/course_stats.tmpl:172

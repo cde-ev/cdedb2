@@ -9307,7 +9307,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:222
 #, python-format
-msgid "Select %s %s"
+msgid "Select %s"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/course_choices.tmpl:283
