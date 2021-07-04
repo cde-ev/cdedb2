@@ -107,7 +107,6 @@ def check_xss(payload: str, thread_id: int = 1, verbose: bool = False,
 
 def run_testsuite(testpatterns: List[str] = None, *, thread_id: int = 1,
                   manual_preparation: bool = False) -> int:
-    # TODO: implement/configure parallel testing
     if not manual_preparation:
         _prepare_check(thread_id=thread_id)
     check_test_setup()
@@ -135,13 +134,12 @@ if __name__ == '__main__':
     test_options = parser.add_argument_group("general options")
     test_options.add_argument('--manual-preparation', action='store_true',
                               help="don't do test preparation")
-    thread_options = test_options.add_mutually_exclusive_group()
-    thread_options.add_argument(
+    test_options.add_argument(
         '--thread-id', type=int, choices=(1, 2, 3, 4), metavar="INT",
         help="ID of thread to use for run (optional, if not given, choose free thread"
              " automatically)")
-    thread_options.add_argument('--threads', type=int, choices=(1, 2, 3), default=1,
-                                metavar="NUMBER", help="number of threads to use")
+
+    # TODO: implement --first --second --third parts
 
     xss_options = parser.add_argument_group("XSS Options")
     xss_options.add_argument('--xss-check', '--xss', action='store_true',

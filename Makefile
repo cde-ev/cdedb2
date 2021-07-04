@@ -33,8 +33,6 @@ help:
 	@echo "                  (TESTPATTERNS specifies globs to match against the testnames like"
 	@echo "                      '404 500' or tests.test_frontend_event.TestEventFrontend.test_show_event"
 	@echo "                      If TESTPATTERNS is empty, run full test suite)"
-	@echo "check-parallel -- run full test suite using multiple CPU cores/threads"
-	@echo "                  (beta, not stable yet!)"
 	@echo "xss-check      -- check for xss vulnerabilities"
 	@echo "dump-html      -- run frontend tests and store all encountered pages inside"
 	@echo "                  /tmp/cdedb-dump/"
@@ -259,21 +257,6 @@ ifneq ($(TESTPREPARATION), manual)
 else
 	@echo "Omitting test preparation."
 endif
-
-check-parallel:
-	# TODO: move this logic into bin/check.py
-	# TODO: using inverse regex arguments possible? Would be helpful for not overlooking some tests
-	# sleeping is necessary here that the i18n-refresh runs at the very beginning to not interfere
-	$(PYTHONBIN) -m bin.check \
-		test_backend test_common test_config test_database test_offline test_script test_session \
-		test_validation test_vote_verification & \
-	sleep 0.5; \
-	$(PYTHONBIN) -m bin.check \
-		frontend_event frontend_ml frontend_privacy frontend_parse & \
-	sleep 0.5; \
-	$(PYTHONBIN) -m bin.check \
-		frontend_application frontend_assembly frontend_common frontend_core frontend_cde \
-		frontend_cron
 
 check:
 	$(PYTHONBIN) -m bin.check $(or $(TESTPATTERNS), )
