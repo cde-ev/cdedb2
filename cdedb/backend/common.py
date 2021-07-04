@@ -565,7 +565,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                     phrase = "{0} = ANY(%s)".format(sql_param_str)
                 else:
                     phrase = "NOT({0} = ANY(%s))".format(sql_param_str)
-                params.extend((tuple(caser(x) for x in value),) * len(columns))  # type: ignore[arg-type] # noqa
+                params.extend((tuple(caser(x) for x in value),) * len(columns))  # type: ignore[arg-type]
             elif operator in (_ops.match, _ops.unmatch):
                 if operator == _ops.match:
                     phrase = "{} ~* %s"
