@@ -73,6 +73,16 @@ An alternative to ``ldapsearch`` should be ``slapcat`` like the following::
 However this gives the barely helpful error ``slapcat: database doesn't
 support necessary operations.``.
 
+Development
+-----------
+
+To access the ldap in a local vm, the respective port needs to be mapped to
+localhost. Add something similar to this to your vm setup::
+
+    hostfwd=tcp:127.0.0.1:20389-:389
+
+To view and query the ldap tree, ``Apache Directory Studio`` is a handsome tool.
+
 Troubleshooting
 ---------------
 
