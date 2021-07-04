@@ -1,14 +1,14 @@
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans given_names=ambience['persona']['given_names'], family_name=ambience['persona']['family_name'] %}
-        {{ given_names }} {{ family_name }} – Event Data
+    {% trans name=util.persona_name(ambience['persona']) %}
+        {{ name }} – Event Data
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), "{} {}".format(
-        ambience['persona']['given_names'], ambience['persona']['family_name']), icon="user") }}
+    {{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), util.persona_name(ambience['persona']),
+                            icon="user") }}
     {{ util.breadcrumb_link(cdedblink("core/show_user_events"), gettext("Events"), active=True) }}
 {% endblock %}
 {% block heading %}
@@ -16,7 +16,7 @@
         {% trans %}Event Data{% endtrans %}
         <small>
             {{ util.make_icon('user', arialabel="User") }}
-            {{ ambience['persona']['given_names'] }} {{ ambience['persona']['family_name'] }}
+            {{ util.persona_name(ambience['persona']) }}
         </small>
     </h1>
 {% endblock %}

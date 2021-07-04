@@ -9179,8 +9179,8 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/show_user_events.tmpl:4
 #, python-format
-msgid "%(given_names)s %(family_name)s – Event Data"
-msgstr "%(given_names)s %(family_name)s – Veranstaltungs-Daten"
+msgid "%(name)s – Event Data"
+msgstr "%(name)s – Veranstaltungs-Daten"
 
 #: cdedb/frontend/templates/web/core/show_user_events.tmpl:16
 msgid "Event Data"

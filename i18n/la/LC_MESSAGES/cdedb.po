@@ -8707,8 +8707,8 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/show_user_events.tmpl:4
 #, fuzzy, python-format
-msgid "%(given_names)s %(family_name)s – Event Data"
-msgstr "%(given_names)s %(family_name)s tracta"
+msgid "%(name)s – Event Data"
+msgstr "%(name)s tracta"
 
 #: cdedb/frontend/templates/web/core/show_user_events.tmpl:16
 #, fuzzy
