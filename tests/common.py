@@ -430,8 +430,8 @@ USER_DICT: Dict[str, UserObject] = {
         'password': "secret",
         'display_name': "Emilia",
         'given_names': "Emilia E.",
-        'family_name': "Eventis",
-        'default_name_format': "Emilia Eventis",
+        'family_name': "Emmy",
+        'default_name_format': "Emilia E. Eventis",
     },
     "ferdinand": {
         'id': 6,
