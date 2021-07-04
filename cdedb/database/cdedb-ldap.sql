@@ -48,6 +48,14 @@ CREATE FUNCTION node_static_group_is_active_id()
   RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
 $$ SELECT 20; $$;
 
+CREATE FUNCTION node_static_group_is_member_id()
+  RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+$$ SELECT 21; $$;
+
+CREATE FUNCTION node_static_group_is_searchable_id()
+  RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+$$ SELECT 22; $$;
+
 CREATE FUNCTION node_static_group_is_ml_realm_id()
   RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
 $$ SELECT 30; $$;
@@ -180,6 +188,8 @@ GRANT ALL ON ldap_static_groups TO cdb_admin;
 
 INSERT INTO ldap_static_groups (id, cn) VALUES
     (node_static_group_is_active_id(), 'is_active'),
+    (node_static_group_is_member_id(), 'is_member'),
+    (node_static_group_is_searchable_id(), 'is_searchable'),
     (node_static_group_is_ml_realm_id(), 'is_ml_realm'),
     (node_static_group_is_event_realm_id(), 'is_event_realm'),
     (node_static_group_is_assembly_realm_id(), 'is_assembly_realm'),
@@ -223,6 +233,22 @@ CREATE VIEW ldap_group_members (group_id, member_dn) AS
               make_persona_dn(core.personas.id) AS member_dn
            FROM core.personas
            WHERE core.personas.is_active
+        )
+        -- is_member
+        UNION (
+           SELECT
+              make_static_group_entity_id(node_static_group_is_member_id()) AS group_id,
+              make_persona_dn(core.personas.id) AS member_dn
+           FROM core.personas
+           WHERE core.personas.is_member
+        )
+        -- is_searchable AND is_member
+        UNION (
+           SELECT
+              make_static_group_entity_id(node_static_group_is_searchable_id()) AS group_id,
+              make_persona_dn(core.personas.id) AS member_dn
+           FROM core.personas
+           WHERE core.personas.is_member AND core.personas.is_searchable
         )
         -- is_ml_realm
         UNION (
