@@ -4706,14 +4706,17 @@ class EventBackend(AbstractBackend):
                 f.write(json_serialize(export))
             # Declare the temporary directory to be the working tree, and specify the
             # actual git directory.
-            subprocess.run(
-                [
-                    "git", f"--work-tree={td}", "add", td / filename,
-                ],
-                cwd=event_keeper_dir
-            )
+            subprocess.run(["git", f"--work-tree={td}", "add", td / filename],
+                           cwd=event_keeper_dir)
             # Then commit everything as if we were in the repository directory.
-            subprocess.run(["git", "-C", event_keeper_dir, "commit", "-m", commit_msg])
+            if rs.user.persona_id:
+                subprocess.run([
+                    "git", "-C", event_keeper_dir, "commit", "-m", commit_msg,
+                    "--author", f"{rs.user.given_names} {rs.user.family_name}"
+                                f"<{rs.user.username}>"])
+            else:
+                subprocess.run(["git", "-C", event_keeper_dir, "commit", "-m",
+                                commit_msg])
         return export
 
     @access("anonymous")
