@@ -74,7 +74,18 @@ steps:
   - sleep 5 # wait for db to come online
   - make i18n-compile # required for sample-data target
   - make sample-data # this creates the sql schema and copies the localconfig.py
-  - bin/check.py tests.test_f*
+  - bin/check.py tests.test_frontend_[!em]*
+- name: frontend event and ml tests
+  image: cdedb
+  pull: never # do not try to pull image from docker hub
+  depends_on:
+  - cdb # only needs db allowing mypy and lint to run parallel to this
+  volumes:
+  - name: tmp_dir
+    path: /tmp
+  commands:
+  - sleep 15 # wait for make sample-data to finish
+  - bin/check.py tests.test_frontend_[em]*
 - name: backend tests
   image: cdedb
   pull: never # do not try to pull image from docker hub
