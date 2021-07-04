@@ -129,7 +129,7 @@ if __name__ == '__main__':
     # TODO: some of the help texts can be improved
     parser = argparse.ArgumentParser(description="Entry point to CdEDB's"
                                                  " testing facilities.")
-    parser.add_argument('testpatterns', default="", nargs="*")
+    parser.add_argument('testpatterns', default=[], nargs="*")
 
     test_options = parser.add_argument_group("general options")
     test_options.add_argument('--manual-preparation', action='store_true',
@@ -139,13 +139,23 @@ if __name__ == '__main__':
         help="ID of thread to use for run (optional, if not given, choose free thread"
              " automatically)")
 
-    # TODO: implement --first --second --third parts
+    parallel_options = parser.add_argument_group(
+        "options for running suite in parallel (all together cover full suite)")
+    parallel_options.add_argument('--first', '-1', action='store_true',
+                                  help="run first half of the frontend tests"
+                                       " (everything before event tests)")
+    parallel_options.add_argument('--second', '-2', action='store_true',
+                                  help="run second half of the frontend tests (event"
+                                       " tests and following)")
+    parallel_options.add_argument('--third', '-3', action='store_true',
+                                  help="run third part of test suite (everything except"
+                                       " for the frontend tests)")
 
     xss_options = parser.add_argument_group("XSS Options")
     xss_options.add_argument('--xss-check', '--xss', action='store_true',
-                             help="check for xss vulnerabilities as implemented in "
-                                  "bin/escape_fuzzing.py (Note that this ignores some"
-                                  " other options, like --threads)")
+                             help="check for xss vulnerabilities as implemented in"
+                                  " bin/escape_fuzzing.py (Note that this ignores some"
+                                  " other options, like --first)")
     xss_options.add_argument('--payload', type=str, default='<script>abcdef</script>',
                              help="Payload string to use for xss vulnerability check")
 
@@ -153,6 +163,14 @@ if __name__ == '__main__':
                         help="more detailed output")
     # TODO: implement verbosity settings -v and -q (-v currently only used for xss)
     args = parser.parse_args()
+
+    # splitup in three parts with similar runtime
+    if args.first:
+        args.testpatterns.append('tests.test_frontend_[abcd]*')
+    if args.second:
+        args.testpatterns.append('tests.test_frontend_[!abcd]*')
+    if args.third:
+        args.testpatterns.append('tests.test_[!f]*')
 
     with CdEDBTestLock(args.thread_id) as Lock:
         assert Lock.thread_id is not None
