@@ -145,6 +145,23 @@ CREATE FUNCTION make_mailinglist_cn(mailinglist_address VARCHAR)
   RETURNS varchar LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
 $$ SELECT $1 ; $$ ;
 
+CREATE FUNCTION make_persona_display_name(display_name VARCHAR, given_names VARCHAR, family_name VARCHAR)
+  RETURNS varchar LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+$$
+    SELECT (
+        CASE WHEN
+            (
+                ( $1 <> '')
+                    AND $2 LIKE '%' || $1 || '%'
+            )
+        THEN $1
+        ELSE $2
+        END
+    )
+    || ' ' || $3
+    ;
+$$;
+
 ---
 --- ldap helper tables (in public schema)
 --- this add some helper tables to satisfy the requirements of the ldap back-sql
@@ -404,8 +421,7 @@ CREATE TABLE ldap_attr_mappings (
 	id bigserial PRIMARY KEY,
 	oc_map_id integer NOT NULL REFERENCES ldap_oc_mappings(id),
 	name varchar(255) NOT NULL,
-	-- this should be a varchar(255). However, we have queries that are longer...
-	sel_expr varchar NOT NULL,
+	sel_expr varchar(255) NOT NULL,
 	sel_expr_u varchar(255),
 	from_tbls varchar(255) NOT NULL,
 	join_where varchar(255),
@@ -432,17 +448,7 @@ INSERT INTO ldap_attr_mappings (oc_map_id, name, sel_expr, from_tbls, join_where
         (oc_inetOrgPerson_id(), 'cn', 'personas.given_names || '' '' || personas.family_name', 'core.personas', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
         -- mandatory
         (oc_inetOrgPerson_id(), 'sn', 'personas.family_name', 'ldap_organizations', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
-        (oc_inetOrgPerson_id(), 'displayName',
-            '(
-                (
-                    CASE WHEN ((personas.display_name <> '''') AND personas.given_names LIKE ''%'' || personas.display_name || ''%'')
-                    THEN personas.display_name
-                    ELSE personas.given_names
-                    END
-                )
-                || '' '' || personas.family_name
-            )',
-         'core.personas', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
+        (oc_inetOrgPerson_id(), 'displayName', 'make_persona_display_name(core.personas.display_name, core.personas.given_names, core.personas.family_name)', 'core.personas', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
         (oc_inetOrgPerson_id(), 'givenName', 'personas.given_names', 'core.personas', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
         (oc_inetOrgPerson_id(), 'mail', 'personas.username', 'core.personas', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
     -- used as distinguish identifier
