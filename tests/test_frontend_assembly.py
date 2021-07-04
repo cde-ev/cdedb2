@@ -939,7 +939,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         for use_bar in (False, True):
             with self.subTest(use_bar=use_bar):
                 # First, create a new ballot
-                wait_time = 3
+                wait_time = 5
                 future = now() + datetime.timedelta(seconds=wait_time)
                 farfuture = now() + datetime.timedelta(seconds=2 * wait_time)
                 bdata = {
