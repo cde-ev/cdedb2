@@ -4668,7 +4668,16 @@ class EventBackend(AbstractBackend):
         if event_keeper_directory.exists():
             shutil.rmtree(event_keeper_directory)
         event_keeper_directory.mkdir(parents=True)
+        # See https://git-scm.com/book/en/v2/Git-on-the-Server-The-Protocols
         subprocess.run(["git", "init"], cwd=event_keeper_directory)
+        shutil.move(event_keeper_directory / ".git/hooks/post-update.sample",
+                    event_keeper_directory / ".git/hooks/post-update")
+        # Additionally run post-commit since we commit on the repository itself
+        shutil.copy(event_keeper_directory / ".git/hooks/post-update",
+                    event_keeper_directory / ".git/hooks/post-commit")
+        subprocess.run(["chmod", "a+x", ".git/hooks/post-update",
+                        ".git/hooks/post-commit"],  cwd=event_keeper_directory)
+        subprocess.run(["git", "update-server-info"], cwd=event_keeper_directory)
 
     @access("event_admin")
     def event_keeper_create(self, rs: RequestState, event_id: int) -> CdEDBObject:
@@ -4706,3 +4715,17 @@ class EventBackend(AbstractBackend):
             # Then commit everything as if we were in the repository directory.
             subprocess.run(["git", "-C", event_keeper_dir, "commit", "-m", commit_msg])
         return export
+
+    @access("anonymous")
+    def get_event_keeper(self, rs: RequestState,
+                       event_id: int, subpath: str) -> Optional[bytes]:
+        """Retrieve the eventkeeper git form for an event."""
+        event_id = affirm(vtypes.ID, event_id)
+        #if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
+        #    raise PrivilegeError(n_("Not privileged."))
+        path = self.event_keeper_dir / str(event_id) / ".git" / subpath
+        ret = None
+        if path.exists() and path.is_file():
+            with open(path, "rb") as f:
+                ret = f.read()
+        return ret

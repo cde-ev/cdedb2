@@ -538,7 +538,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :param encoding: The character encoding to be uses, if `data` is given
           as str
         """
-        if not path and not afile and not data:
+        if not path and not afile and data is None:
             raise ValueError(n_("No input specified."))
         if (path and afile) or (path and data) or (afile and data):
             raise ValueError(n_("Ambiguous input."))

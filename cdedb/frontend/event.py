@@ -6150,9 +6150,23 @@ class EventFrontend(AbstractUserFrontend):
             if event_id not in state['events']:
                 state['events'][event_id] = 0
             _, entries = self.eventproxy.retrieve_log(rs, event_id=event_id, length=1)
-            log_entry_id = unwrap(entries)['id']
-            if log_entry_id > state['events'][event_id]:
+            if entries:
+                # this can only happen for missing logs (e.g. test data)
+                log_entry_id = unwrap(entries)['id']
+            else:
+                log_entry_id = 0
+            if not log_entry_id or log_entry_id > state['events'][event_id]:
                 self.eventproxy.event_keeper_commit(rs, event_id, commit_msg)
                 state['events'][event_id] = log_entry_id
 
         return state
+
+    @access("anonymous")
+    def get_event_keeper(self, rs: RequestState, event_id: int, shortname: str,
+                         subpath: Optional[str]) -> Response:
+        """Deliver event keeper git via clone.
+
+        TODO: Use HTTP basic auth and only allow orgas or use LDAP instead
+        """
+        file = self.eventproxy.get_event_keeper(rs, event_id, subpath) or bytes()
+        return self.send_file(rs, data=file, filename=subpath)
