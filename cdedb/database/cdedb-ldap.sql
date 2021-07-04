@@ -48,6 +48,22 @@ CREATE FUNCTION node_static_group_is_active_id()
   RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
 $$ SELECT 20; $$;
 
+CREATE FUNCTION node_static_group_is_ml_realm_id()
+  RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+$$ SELECT 30; $$;
+
+CREATE FUNCTION node_static_group_is_event_realm_id()
+  RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+$$ SELECT 31; $$;
+
+CREATE FUNCTION node_static_group_is_assembly_realm_id()
+  RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+$$ SELECT 32; $$;
+
+CREATE FUNCTION node_static_group_is_cde_realm_id()
+  RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+$$ SELECT 33; $$;
+
 ---
 --- serial id offset helper functions
 --- To store multiple serial tables in a bigserial one, we simply shift the id
@@ -135,7 +151,11 @@ CREATE TABLE ldap_static_groups (
 GRANT ALL ON ldap_static_groups TO cdb_admin;
 
 INSERT INTO ldap_static_groups (id, cn) VALUES
-    (node_static_group_is_active_id(), 'is_active');
+    (node_static_group_is_active_id(), 'is_active'),
+    (node_static_group_is_ml_realm_id(), 'is_ml_realm'),
+    (node_static_group_is_event_realm_id(), 'is_event_realm'),
+    (node_static_group_is_assembly_realm_id(), 'is_assembly_realm'),
+    (node_static_group_is_cde_realm_id(), 'is_cde_realm');
 
 -- A view containing all ldap_groups and their unique attributes.
 CREATE VIEW ldap_groups (id, cn) AS
@@ -168,6 +188,38 @@ CREATE VIEW ldap_group_members (group_id, member_dn) AS
               make_persona_dn(core.personas.id) AS member_dn
            FROM core.personas
            WHERE core.personas.is_active
+        )
+        -- is_ml_realm
+        UNION (
+           SELECT
+              make_static_group_entity_id(node_static_group_is_ml_realm_id()) AS group_id,
+              make_persona_dn(core.personas.id) AS member_dn
+           FROM core.personas
+           WHERE core.personas.is_ml_realm
+        )
+        -- is_event_realm
+        UNION (
+           SELECT
+              make_static_group_entity_id(node_static_group_is_event_realm_id()) AS group_id,
+              make_persona_dn(core.personas.id) AS member_dn
+           FROM core.personas
+           WHERE core.personas.is_event_realm
+        )
+        -- is_assembly_realm
+        UNION (
+           SELECT
+              make_static_group_entity_id(node_static_group_is_assembly_realm_id()) AS group_id,
+              make_persona_dn(core.personas.id) AS member_dn
+           FROM core.personas
+           WHERE core.personas.is_assembly_realm
+        )
+        -- is_cde_realm
+        UNION (
+           SELECT
+              make_static_group_entity_id(node_static_group_is_cde_realm_id()) AS group_id,
+              make_persona_dn(core.personas.id) AS member_dn
+           FROM core.personas
+           WHERE core.personas.is_cde_realm
         )
     -- mailinglists
     UNION (
