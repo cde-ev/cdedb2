@@ -2081,7 +2081,7 @@ class TestCdEFrontend(FrontendTest):
             # admin
             self.traverse({'description': 'Charly Clown'})
             _traverse_back()
-            self.traverse({'description': 'Emilia Eventis'})
+            self.traverse({'description': 'Emilia E. Eventis'})
             _traverse_back()
         else:
             # normal members
@@ -2120,7 +2120,7 @@ class TestCdEFrontend(FrontendTest):
             self.traverse({'description': 'Ferdinand'})
         else:
             self.assertPresence("Charly Clown", div="orgas")
-            self.assertPresence("Emilia Eventis", div="orgas")
+            self.assertPresence("Emilia E. Eventis", div="orgas")
             self.assertPresence("Ferdinand Findus", div="orgas")
             self.assertNonPresence("Garcia", div="orgas")
             self.assertNonPresence("weitere")
@@ -2142,7 +2142,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("PfingstAkademie 2014")
         self.assertPresence("Bertå Beispiel", div='list-participants')
         self.assertPresence("Charly Clown", div='list-participants')
-        self.assertPresence("Emilia Eventis", div='list-participants')
+        self.assertPresence("Emilia E. Eventis", div='list-participants')
         self.assertPresence("Ferdinand Findus", div='list-participants')
         self.assertPresence("Akira Abukara", div='list-participants')
 

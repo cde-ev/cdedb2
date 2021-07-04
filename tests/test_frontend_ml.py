@@ -512,7 +512,7 @@ class TestMlFrontend(FrontendTest):
         f['modunsubscriber_ids'] = "DB-5-1"
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch – Erweiterte Verwaltung")
-        self.assertPresence("Emilia Eventis", div="modunsubscriber-list")
+        self.assertPresence("Emilia E. Eventis", div="modunsubscriber-list")
 
         self.assertNonPresence("zelda@example.cde", div="whitelist")
         f = self.response.forms['addwhitelistform']
@@ -555,12 +555,12 @@ class TestMlFrontend(FrontendTest):
         # Inga is now in SubscriptionState 'subscribed'
         # self.assertPresence("Inga Iota", div="unsubscriber-list")
 
-        self.assertPresence("Emilia Eventis")
+        self.assertPresence("Emilia E. Eventis")
         f = self.response.forms['removemodunsubscriberform5']
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch – Erweiterte Verwaltung")
         self.assertNonPresence("Emilia", div="modunsubscriber-list")
-        self.assertPresence("Emilia Eventis", div="unsubscriber-list")
+        self.assertPresence("Emilia E. Eventis", div="unsubscriber-list")
 
         self.assertPresence("zelda@example.cde")
         f = self.response.forms['removewhitelistform1']

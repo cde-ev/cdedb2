@@ -2014,7 +2014,7 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/registration/query'},
                       {'description': 'Alle Anmeldungen'},
                       {'href': '/event/event/1/registration/2/show'})
-        self.assertTitle("Anmeldung von Emilia Eventis (Große Testakademie 2222)")
+        self.assertTitle("Anmeldung von Emilia E. Eventis (Große Testakademie 2222)")
         self.assertPresence("Bezahlt am 04.01.2018")
         self.assertPresence("Bereits Bezahlt 589,49 €")
         self.traverse({'href': '/event/event/1/show'},
@@ -2278,7 +2278,7 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'description': 'Alle Anmeldungen'},
                       {'href': '/event/event/1/registration/2/show'})
         self.assertTitle(
-            "\nAnmeldung von Emilia Eventis (Große Testakademie 2222)\n")
+            "\nAnmeldung von Emilia E. Eventis (Große Testakademie 2222)\n")
         self.assertPresence("56767 Wolkenkuckuksheim")
         self.assertPresence("Einzelzelle")
         self.assertPresence("α. Heldentum")
@@ -2315,7 +2315,7 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/registration/2/show'},
                       {'href': '/event/event/1/registration/2/change'})
         self.assertTitle(
-            "Anmeldung von Emilia Eventis bearbeiten (Große Testakademie 2222)")
+            "Anmeldung von Emilia E. Eventis bearbeiten (Große Testakademie 2222)")
         f = self.response.forms['changeregistrationform']
         self.assertEqual("Unbedingt in die Einzelzelle.", f['reg.orga_notes'].value)
         f['reg.orga_notes'] = "Wir wollen mal nicht so sein."
@@ -2334,7 +2334,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("", f['fields.lodge'].value)
         f['fields.lodge'] = "Om nom nom nom"
         self.submit(f)
-        self.assertTitle("Anmeldung von Emilia Eventis (Große Testakademie 2222)")
+        self.assertTitle("Anmeldung von Emilia E. Eventis (Große Testakademie 2222)")
         self.assertPresence("Om nom nom nom")
         self.traverse({'href': '/event/event/1/registration/2/change'})
         f = self.response.forms['changeregistrationform']
@@ -2351,13 +2351,13 @@ etc;anything else""", f['entries_2'].value)
     def test_change_registration_with_note(self) -> None:
         self.get('/event/event/1/registration/2/change')
         self.assertTitle(
-            "Anmeldung von Emilia Eventis bearbeiten (Große Testakademie 2222)")
+            "Anmeldung von Emilia E. Eventis bearbeiten (Große Testakademie 2222)")
         f = self.response.forms['changeregistrationform']
         self.assertEqual("Unbedingt in die Einzelzelle.", f['reg.orga_notes'].value)
         f['reg.orga_notes'] = "Wir wollen mal nicht so sein."
         f['change_note'] = "Orga-Notizen geändert."
         self.submit(f)
-        self.assertTitle("Anmeldung von Emilia Eventis (Große Testakademie 2222)")
+        self.assertTitle("Anmeldung von Emilia E. Eventis (Große Testakademie 2222)")
         self.assertNonPresence("Orga-Notizen geändert")
         # Check log
         self.traverse({'href': '/event/event/1/log'})
@@ -2444,7 +2444,7 @@ etc;anything else""", f['entries_2'].value)
         f['reg.parental_agreement'].checked = True
         f['part4.status'] = -1
         self.submit(f)
-        self.assertTitle("Anmeldung von Emilia Eventis (CdE-Party 2050)")
+        self.assertTitle("Anmeldung von Emilia E. Eventis (CdE-Party 2050)")
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['changeregistrationform']
         self.assertEqual(True, f['reg.parental_agreement'].checked)
@@ -2904,7 +2904,7 @@ etc;anything else""", f['entries_2'].value)
         f['assign_action'] = 2
         self.submit(f, check_notification=False)
         self.assertIn("alert alert-warning", self.response.text)
-        self.assertPresence("Emilia Eventis hat keine 3. Kurswahl",
+        self.assertPresence("Emilia E. Eventis hat keine 3. Kurswahl",
                             div="notifications")
         self.assertPresence("0 von 2 Anmeldungen gespeichert",
                             div="notifications")
@@ -3600,7 +3600,7 @@ etc;anything else""", f['entries_2'].value)
         self.get('/event/registration'
                  + '/select?kind=orga_registration&phrase=emil&aux=1')
         expectation = {
-            'registrations': [{'display_name': 'Emilia',
+            'registrations': [{'display_name': 'Emmy',
                                'email': 'emilia@example.cde',
                                'id': 2,
                                'name': 'Emilia E. Eventis'}]}
@@ -3616,7 +3616,7 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['quickregistrationform']
         f['phrase'] = "Emilia"
         self.submit(f)
-        self.assertTitle("Anmeldung von Emilia Eventis (Große Testakademie 2222)")
+        self.assertTitle("Anmeldung von Emilia E. Eventis (Große Testakademie 2222)")
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'})
         f = self.response.forms['quickregistrationform']
@@ -3629,7 +3629,7 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['quickregistrationform']
         f['phrase'] = "DB-5-1"
         self.submit(f)
-        self.assertTitle("Anmeldung von Emilia Eventis (Große Testakademie 2222)")
+        self.assertTitle("Anmeldung von Emilia E. Eventis (Große Testakademie 2222)")
 
     @storage
     @as_users("annika", "garcia")

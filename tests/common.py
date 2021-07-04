@@ -428,9 +428,9 @@ USER_DICT: Dict[str, UserObject] = {
         'DB-ID': "DB-5-1",
         'username': "emilia@example.cde",
         'password': "secret",
-        'display_name': "Emilia",
+        'display_name': "Emmy",
         'given_names': "Emilia E.",
-        'family_name': "Emmy",
+        'family_name': "Eventis",
         'default_name_format': "Emilia E. Eventis",
     },
     "ferdinand": {

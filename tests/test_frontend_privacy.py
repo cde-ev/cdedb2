@@ -635,7 +635,7 @@ class TestPrivacyFrontend(FrontendTest):
         akira = "Akira Abukara"
         berta = "Bertå Beispiel"
         charly = "Charly Clown"
-        emilia = "Emilia Eventis"
+        emilia = "Emilia E. Eventis"
         ferdinand = "Ferdinand Findus"
         # non-members should not have access if they are no cde admin
         if self.user_in('daniel'):
@@ -671,7 +671,7 @@ class TestPrivacyFrontend(FrontendTest):
     @as_users("charly", "daniel", "garcia", "inga")
     def test_show_past_course(self) -> None:
         akira = "Akira Abukara"
-        emilia = "Emilia Eventis"
+        emilia = "Emilia E. Eventis"
         ferdinand = "Ferdinand Findus"
         # non-members should not have access if they are no cde admin
         if self.user_in('daniel'):

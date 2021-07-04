@@ -1455,12 +1455,12 @@ class TestCoreFrontend(FrontendTest):
     def test_trivial_promotion(self) -> None:
         self.admin_view_profile('emilia')
         self.traverse({'description': 'Bereich hinzufügen'})
-        self.assertTitle("Bereichsänderung für Emilia Eventis")
+        self.assertTitle("Bereichsänderung für Emilia E. Eventis")
         f = self.response.forms['realmselectionform']
         self.assertNotIn("event", f['target_realm'].options)
         f['target_realm'] = "cde"
         self.submit(f)
-        self.assertTitle("Bereichsänderung für Emilia Eventis")
+        self.assertTitle("Bereichsänderung für Emilia E. Eventis")
         f = self.response.forms['promotionform']
         self.submit(f)
         self.assertTitle("Emilia E. Eventis")
