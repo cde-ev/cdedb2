@@ -154,7 +154,7 @@ class TestCoreFrontend(FrontendTest):
         if self.user_in("annika"):
             # event admins navigate via event page
             self.traverse("Veranstaltungen", "Große Testakademie",
-                          "Garcia G. Generalis")
+                          "Garcia Generalis")
         elif self.user_in("paul"):
             # core admin
             self.admin_view_profile("garcia")
@@ -163,7 +163,7 @@ class TestCoreFrontend(FrontendTest):
             self.realm_admin_view_profile("garcia", "cde")
 
         self.traverse("Veranstaltungs-Daten")
-        self.assertTitle("Garcia G. Generalis – Veranstaltungs-Daten")
+        self.assertTitle("Garcia Generalis – Veranstaltungs-Daten")
         self.assertPresence("CyberTestAkademie Teilnehmer")
         # part names not shown for one-part events
         self.assertNonPresence("CyberTestAkademie: Teilnehmer")

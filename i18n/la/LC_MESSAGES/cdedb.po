@@ -8727,8 +8727,8 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/show_user_mailinglists.tmpl:4
 #, fuzzy, python-format
-msgid "%(given_names)s %(family_name)s – Mailinglist Data"
-msgstr "%(given_names)s %(family_name)s tracta"
+msgid "%(name)s – Mailinglist Data"
+msgstr "%(name)s tracta"
 
 #: cdedb/frontend/templates/web/core/show_user_mailinglists.tmpl:17
 #, fuzzy

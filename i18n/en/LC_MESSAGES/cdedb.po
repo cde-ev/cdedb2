@@ -8755,7 +8755,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/show_user_mailinglists.tmpl:4
 #, python-format
-msgid "%(given_names)s %(family_name)s – Mailinglist Data"
+msgid "%(name)s – Mailinglist Data"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/show_user_mailinglists.tmpl:17

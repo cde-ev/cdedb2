@@ -9200,8 +9200,8 @@ msgstr "Dieser Nutzer hat keine Anmeldungen."
 
 #: cdedb/frontend/templates/web/core/show_user_mailinglists.tmpl:4
 #, python-format
-msgid "%(given_names)s %(family_name)s – Mailinglist Data"
-msgstr "%(given_names)s %(family_name)s – Mailinglisten-Daten"
+msgid "%(name)s – Mailinglist Data"
+msgstr "%(name)s – Mailinglisten-Daten"
 
 #: cdedb/frontend/templates/web/core/show_user_mailinglists.tmpl:17
 msgid "Mailinglist Data"
