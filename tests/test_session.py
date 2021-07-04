@@ -205,7 +205,7 @@ class TestMultiSessionFrontend(MultiAppFrontendTest):
             self.switch_app(i)
             with self.subTest(app_index=i):
                 self.get("/core/self/show")
-                self.assertTitle(f"{user['given_names']} {user['family_name']}")
+                self.assertTitle(user['default_name_format'])
                 self.assertNotIn('loginform', self.response.forms)
 
         # Now terminate all sessions and check that they are all inactive.

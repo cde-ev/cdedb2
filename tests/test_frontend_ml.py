@@ -449,7 +449,7 @@ class TestMlFrontend(FrontendTest):
                       {'href': '/ml/mailinglist/4/management'})
         self.assertTitle("Klatsch und Tratsch – Verwaltung")
         self.assertNonPresence("Inga Iota", div="moderator-list")
-        self.assertNonPresence("Anton Armin A. Administrator", div="moderator-list")
+        self.assertNonPresence("Anton Administrator", div="moderator-list")
         f = self.response.forms['addmoderatorform']
         # Check that you cannot add non-existing or archived moderators.
         errormsg = "Einige dieser Nutzer existieren nicht oder sind archiviert."
@@ -466,7 +466,7 @@ class TestMlFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch – Verwaltung")
         self.assertPresence("Inga Iota", div="moderator-list")
-        self.assertPresence("Anton Armin A. Administrator",
+        self.assertPresence("Anton Administrator",
                             div="moderator-list")
         f = self.response.forms['removemoderatorform9']
         self.submit(f)
@@ -512,7 +512,7 @@ class TestMlFrontend(FrontendTest):
         f['modunsubscriber_ids'] = "DB-5-1"
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch – Erweiterte Verwaltung")
-        self.assertPresence("Emilia E. Eventis", div="modunsubscriber-list")
+        self.assertPresence("Emilia Eventis", div="modunsubscriber-list")
 
         self.assertNonPresence("zelda@example.cde", div="whitelist")
         f = self.response.forms['addwhitelistform']
@@ -555,12 +555,12 @@ class TestMlFrontend(FrontendTest):
         # Inga is now in SubscriptionState 'subscribed'
         # self.assertPresence("Inga Iota", div="unsubscriber-list")
 
-        self.assertPresence("Emilia E. Eventis")
+        self.assertPresence("Emilia Eventis")
         f = self.response.forms['removemodunsubscriberform5']
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch – Erweiterte Verwaltung")
-        self.assertNonPresence("Emilia E. Eventis", div="modunsubscriber-list")
-        self.assertPresence("Emilia E. Eventis", div="unsubscriber-list")
+        self.assertNonPresence("Emilia", div="modunsubscriber-list")
+        self.assertPresence("Emilia Eventis", div="unsubscriber-list")
 
         self.assertPresence("zelda@example.cde")
         f = self.response.forms['removewhitelistform1']
@@ -761,7 +761,7 @@ class TestMlFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Munkelwand")
         self.assertPresence("Clown")
-        self.assertPresence("Garcia G. Generalis")
+        self.assertPresence("Garcia Generalis")
 
     @as_users("nina")
     def test_change_mailinglist(self) -> None:
@@ -963,7 +963,7 @@ class TestMlFrontend(FrontendTest):
         f = self.response.forms['addsubscriberform']
         f['subscriber_ids'] = "DB-1-9"
         self.submit(f)
-        self.assertPresence("Anton Armin A. Administrator")
+        self.assertPresence("Anton Administrator")
 
     def _create_mailinglist(self, mdata: CdEDBObject) -> None:
         self.traverse({'href': '/ml/'},
@@ -1002,7 +1002,7 @@ class TestMlFrontend(FrontendTest):
                     f = self.response.forms['addorgaform']
                     f['orga_id'] = user['DB-ID']
                     self.submit(f, check_notification=False)
-                    self.assertPresence(user['given_names'], div='manage-orgas')
+                    self.assertPresence(user['family_name'], div='manage-orgas')
                 self.logout()
                 self.login(user)
                 self.traverse({'href': '/'})
@@ -1212,7 +1212,7 @@ class TestMlFrontend(FrontendTest):
         f = self.response.forms['addmoderatorform']
         f['moderators'] = USER_DICT['berta']['DB-ID']
         self.submit(f)
-        self.assertPresence("Bertålotta", div='moderator-list')
+        self.assertPresence("Bertå", div='moderator-list')
         self.assertPresence("Garcia", div='moderator-list')
         f = self.response.forms['removemoderatorform7']
         self.submit(f)
@@ -1285,7 +1285,7 @@ class TestMlFrontend(FrontendTest):
         f['moderators'] = moderator["DB-ID"]
         self.submit(f)
         self.assertTitle("Little Whinging")
-        self.assertPresence(moderator['given_names'], div="moderator-list")
+        self.assertPresence(moderator['family_name'], div="moderator-list")
 
     @as_users("anton")
     def test_1342(self) -> None:

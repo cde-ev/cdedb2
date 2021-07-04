@@ -147,9 +147,8 @@ class TestCoreFrontend(FrontendTest):
               "vera", "werner", "annika", "farin", "akira")
     def test_showuser(self) -> None:
         self.traverse({'description': self.user['display_name']})
-        self.assertTitle("{} {}".format(self.user['given_names'],
-                                        self.user['family_name']))
-        self.assertPresence(self.user['given_names'], div='title')
+        self.assertTitle(self.user['default_name_format'])
+        self.assertPresence(self.user['family_name'], div='title')
 
     @as_users("inga")
     def test_vcard(self) -> None:
@@ -161,7 +160,7 @@ class TestCoreFrontend(FrontendTest):
         f['qval_given_names,display_name'] = "Berta"
         self.submit(f)
 
-        self.assertTitle("Bertålotta Beispiel")
+        self.assertTitle(USER_DICT['berta']['default_name_format'])
         self.traverse({'description': 'VCard'})
         vcard = ["BEGIN:VCARD",
                  "VERSION:3.0",
@@ -180,7 +179,6 @@ class TestCoreFrontend(FrontendTest):
     @as_users("vera")
     def test_vcard_cde_admin(self) -> None:
         self.admin_view_profile('charly')
-        self.assertTitle("Charly C. Clown")
         self.traverse({'description': 'VCard'})
 
     @as_users("vera")
@@ -240,7 +238,7 @@ class TestCoreFrontend(FrontendTest):
     @as_users("vera")
     def test_adminshowuser(self) -> None:
         self.admin_view_profile('berta')
-        self.assertTitle("Bertålotta Beispiel")
+        self.assertTitle("Bertå Beispiel")
         self.assertPresence("Bei Überweisungen aus dem Ausland achte bitte",
                             div='copy-paste-template')
 
@@ -438,17 +436,17 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("vera")
     def test_adminshowuser_advanced(self) -> None:
-        for phrase, title in (("DB-2-7", "Bertålotta Beispiel"),
-                              ("2", "Bertålotta Beispiel"),
-                              ("Bertålotta Beispiel", "Bertålotta Beispiel"),
-                              ("berta@example.cde", "Bertålotta Beispiel"),
-                              ("anton@example.cde", "Anton Armin A. Administrator"),
-                              ("Spielmanns", "Bertålotta Beispiel"),):
+        for phrase, user in (("DB-2-7", USER_DICT['berta']),
+                              ("2", USER_DICT['berta']),
+                              ("Bertålotta Beispiel", USER_DICT['berta']),
+                              ("berta@example.cde", USER_DICT['berta']),
+                              ("anton@example.cde", USER_DICT['anton']),
+                              ("Spielmanns", USER_DICT['berta']),):
             self.traverse({'href': '^/$'})
             f = self.response.forms['adminshowuserform']
             f['phrase'] = phrase
             self.submit(f)
-            self.assertTitle(title)
+            self.assertTitle(user['default_name_format'])
         self.traverse({'href': '^/$'})
         f = self.response.forms['adminshowuserform']
         f['phrase'] = "nonsense asorecuhasoecurhkgdgdckgdoao"
@@ -483,7 +481,7 @@ class TestCoreFrontend(FrontendTest):
     def test_adminchangedata_other(self) -> None:
         self.admin_view_profile('berta')
         self.traverse({'description': 'Bearbeiten'})
-        self.assertTitle("Bertålotta Beispiel bearbeiten")
+        self.assertTitle("Bertå Beispiel bearbeiten")
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
         f['birthday'] = "3.4.1933"
@@ -747,11 +745,11 @@ class TestCoreFrontend(FrontendTest):
     @as_users("vera", "ferdinand")
     def test_cde_admin_reset_password(self) -> None:
         self.realm_admin_view_profile('berta', 'cde')
-        self.assertTitle("Bertålotta Beispiel")
+        self.assertTitle("Bertå Beispiel")
         f = self.response.forms['sendpasswordresetform']
         self.submit(f)
         self.assertPresence("E-Mail abgeschickt.", div='notifications')
-        self.assertTitle("Bertålotta Beispiel")
+        self.assertTitle("Bertå Beispiel")
 
     @as_users("ferdinand", "nina")
     def test_ml_admin_reset_password(self) -> None:
@@ -878,8 +876,8 @@ class TestCoreFrontend(FrontendTest):
             new_privileges, old_privileges, new_password=new_password)
         # Check success.
         self.get('/core/persona/{}/privileges'.format(new_admin["id"]))
-        self.assertTitle("Privilegien ändern für {} {}".format(
-            new_admin["given_names"], new_admin["family_name"]))
+        self.assertTitle("Privilegien ändern für {}".format(
+            new_admin['default_name_format']))
         f = self.response.forms['privilegechangeform']
         old_privileges.update(new_privileges)
         for k, v in old_privileges.items():
@@ -897,8 +895,8 @@ class TestCoreFrontend(FrontendTest):
     def test_change_privileges_dependency_error(self) -> None:
         new_admin = USER_DICT["berta"]
         self.get('/core/persona/{}/privileges'.format(new_admin["id"]))
-        self.assertTitle("Privilegien ändern für {} {}".format(
-            new_admin["given_names"], new_admin["family_name"]))
+        self.assertTitle("Privilegien ändern für {}".format(
+            new_admin["default_name_format"]))
         f = self.response.forms['privilegechangeform']
         f['is_finance_admin'] = True
         f['notes'] = "Berta ist jetzt Praktikant der Finanz Vorstände."
@@ -930,8 +928,8 @@ class TestCoreFrontend(FrontendTest):
             new_privileges, old_privileges)
         # Check success.
         self.get('/core/persona/{}/privileges'.format(new_admin["id"]))
-        self.assertTitle("Privilegien ändern für {} {}".format(
-            new_admin["given_names"], new_admin["family_name"]))
+        self.assertTitle("Privilegien ändern für {}".format(
+            new_admin["default_name_format"]))
         f = self.response.forms['privilegechangeform']
         # Check that old privileges are still active.
         for k, v in old_privileges.items():
@@ -945,8 +943,8 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         self.traverse(
             {'href': '/core/persona/{}/privileges'.format(new_admin["id"])})
-        self.assertTitle("Privilegien ändern für {} {}".format(
-            new_admin["given_names"], new_admin["family_name"]))
+        self.assertTitle("Privilegien ändern für {}".format(
+            new_admin["default_name_format"]))
         f = self.response.forms['privilegechangeform']
         self.assertNotIn('is_meta_admin', f.fields)
         self.assertNotIn('is_core_admin', f.fields)
@@ -993,7 +991,7 @@ class TestCoreFrontend(FrontendTest):
         self._initialize_privilege_change(user, user, user, new_privileges)
         self.login(user)
         self.traverse({'description': "Admin-Änderungen"},
-                      {'description': user["given_names"]})
+                      {'description': "A. Administrator"})
         self.assertPresence(
             "Diese Änderung der Admin-Privilegien wurde von Dir angestoßen",
             div="notifications")
@@ -1023,8 +1021,8 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         self.traverse(
             {'href': '/core/persona/{}/privileges'.format(new_admin["id"])})
-        self.assertTitle("Privilegien ändern für {} {}".format(
-            new_admin["given_names"], new_admin["family_name"]))
+        self.assertTitle("Privilegien ändern für {}".format(
+            new_admin["default_name_format"]))
         f = self.response.forms['privilegechangeform']
         if old_privileges:
             for k, v in old_privileges.items():
@@ -1047,8 +1045,7 @@ class TestCoreFrontend(FrontendTest):
         # Confirm privilege change.
         self.login(admin2)
         self.traverse({'description': "Admin-Änderungen"},
-                      {'description': new_admin["given_names"] + " " +
-                                      new_admin["family_name"]})
+                      {'description': new_admin['family_name']})
         f = self.response.forms["ackprivilegechangeform"]
         self.submit(f)
         self.assertPresence("Änderung wurde übernommen.", div="notifications")
@@ -1075,8 +1072,7 @@ class TestCoreFrontend(FrontendTest):
         # Confirm privilege change.
         self.login(admin2)
         self.traverse({'description': "Admin-Änderungen"},
-                      {'description': new_admin["given_names"] + " " +
-                                      new_admin["family_name"]})
+                      {'description': new_admin['family_name']})
         f = self.response.forms["nackprivilegechangeform"]
         self.submit(f)
         self.assertPresence("Änderung abgelehnt.", div="notifications")
@@ -1239,7 +1235,7 @@ class TestCoreFrontend(FrontendTest):
             self.admin_view_profile('charly')
         else:
             self.realm_admin_view_profile('charly', realm='cde')
-        self.assertTitle("Charly C. Clown")
+        self.assertTitle("Charly Clown")
         self.assertNonPresence("Der Benutzer ist archiviert.")
         self.assertPresence("Zirkusstadt", div='address')
         f = self.response.forms['archivepersonaform']
@@ -1248,21 +1244,21 @@ class TestCoreFrontend(FrontendTest):
         self.assertValidationError(
             "note", "Darf nicht leer sein",
             notification="Archivierungsnotiz muss angegeben werden.")
-        self.assertTitle("Charly C. Clown")
+        self.assertTitle("Charly Clown")
         self.assertNonPresence("Der Benutzer ist archiviert.")
         self.assertPresence("Zirkusstadt", div='address')
         f = self.response.forms['archivepersonaform']
         f['ack_delete'].checked = True
         f['note'] = "Archived for testing."
         self.submit(f)
-        self.assertTitle("Charly C. Clown")
+        self.assertTitle("Charly Clown")
         self.assertPresence("Der Benutzer ist archiviert.", div='archived')
         self.assertNonPresence("Zirkusstadt")
         self.traverse({'description': "Account wiederherstellen"})
         f = self.response.forms['dearchivepersonaform']
         f['new_username'] = "charly@example.cde"
         self.submit(f)
-        self.assertTitle("Charly C. Clown")
+        self.assertTitle("Charly Clown")
         self.assertNonPresence("Der Benutzer ist archiviert.")
 
     @as_users("vera")
@@ -1360,11 +1356,11 @@ class TestCoreFrontend(FrontendTest):
         self.login(user)
         self.traverse({'description': 'Änderungen prüfen'})
         self.assertTitle("Zu prüfende Profiländerungen [1]")
-        self.traverse({'description': 'Bertålotta Ganondorf'},
+        self.traverse({'description': 'Ganondorf'},
                       {'description': 'Änderungen bearbeiten'})
-        self.assertTitle("Bertålotta Ganondorf bearbeiten")
+        self.assertTitle("Bertå Ganondorf bearbeiten")
         self.traverse({'description': 'Änderungen prüfen'},
-                      {'description': 'Bertålotta Ganondorf'})
+                      {'description': 'Ganondorf'})
         f = self.response.forms['ackchangeform']
         self.submit(f)
         self.assertTitle("Zu prüfende Profiländerungen [0]")
@@ -1373,7 +1369,7 @@ class TestCoreFrontend(FrontendTest):
         f['reviewed_by'] = 'DB-22-1'
         self.submit(f)
         self.assertTitle('Nutzerdaten-Log [1–1 von 1]')
-        self.assertPresence("Bertålotta Ganondorf")
+        self.assertPresence("Bertå Ganondorf")
         self.logout()
         user = USER_DICT["berta"]
         self.login(user)
@@ -1386,7 +1382,7 @@ class TestCoreFrontend(FrontendTest):
     def test_history(self) -> None:
         self.admin_view_profile('berta')
         self.traverse({'href': '/core/persona/2/adminchange'})
-        self.assertTitle("Bertålotta Beispiel bearbeiten")
+        self.assertTitle("Bertå Beispiel bearbeiten")
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
         f['birthday'] = "3.4.1933"
@@ -1461,15 +1457,15 @@ class TestCoreFrontend(FrontendTest):
     def test_trivial_promotion(self) -> None:
         self.admin_view_profile('emilia')
         self.traverse({'description': 'Bereich hinzufügen'})
-        self.assertTitle("Bereichsänderung für Emilia E. Eventis")
+        self.assertTitle("Bereichsänderung für Emilia Eventis")
         f = self.response.forms['realmselectionform']
         self.assertNotIn("event", f['target_realm'].options)
         f['target_realm'] = "cde"
         self.submit(f)
-        self.assertTitle("Bereichsänderung für Emilia E. Eventis")
+        self.assertTitle("Bereichsänderung für Emilia Eventis")
         f = self.response.forms['promotionform']
         self.submit(f)
-        self.assertTitle("Emilia E. Eventis")
+        self.assertTitle("Emilia Eventis")
         self.assertPresence("0,00 €", div='balance')
         self.assertCheckbox(True, "paper_expuls_checkbox")
         self.assertNonPresence("CdE-Mitglied", div="cde-membership")
@@ -1496,22 +1492,22 @@ class TestCoreFrontend(FrontendTest):
     def test_nontrivial_promotion(self) -> None:
         self.admin_view_profile('kalif')
         self.traverse({'description': 'Bereich hinzufügen'})
-        self.assertTitle("Bereichsänderung für Kalif ibn al-Ḥasan Karabatschi")
+        self.assertTitle("Bereichsänderung für Kalif Karabatschi")
         f = self.response.forms['realmselectionform']
         f['target_realm'] = "event"
         self.submit(f)
-        self.assertTitle("Bereichsänderung für Kalif ibn al-Ḥasan Karabatschi")
+        self.assertTitle("Bereichsänderung für Kalif Karabatschi")
         f = self.response.forms['promotionform']
         # First check error handling by entering an invalid birthday
         f['birthday'] = "foobar"
         self.submit(f, check_notification=False)
         self.assertValidationError("birthday", "Ungültige Eingabe für ein Datum")
-        self.assertTitle("Bereichsänderung für Kalif ibn al-Ḥasan Karabatschi")
+        self.assertTitle("Bereichsänderung für Kalif Karabatschi")
         # Now, do it right
         f['birthday'] = "21.6.1977"
         f['gender'] = 1
         self.submit(f)
-        self.assertTitle("Kalif ibn al-Ḥasan Karabatschi")
+        self.assertTitle("Kalif Karabatschi")
         self.assertPresence("21.06.1977", div='personal-information')
 
     @as_users("vera")
