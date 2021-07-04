@@ -84,7 +84,7 @@ apt-get install --yes --no-install-recommends                       \
 # some packages interpret "recommends" very narrowly, breaking if they are missing
 apt-get install --yes python3-coverage
 
-python3 -m pip install --no-cache-dir mypy==0.790 pylint
+python3 -m pip install --no-cache-dir mypy==0.790 pylint=2.7.2
 
 for file in /var/cache/apt/archives/*.deb
 do
