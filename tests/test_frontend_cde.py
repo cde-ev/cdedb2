@@ -2559,7 +2559,11 @@ class TestCdEFrontend(FrontendTest):
 
     def test_finance_log(self) -> None:
         # First: generate data
-        # nothing to do here - sample data suffices
+        # FIXME: the here generated data does absolutely not suffice ^^
+        #  however, this style of log test is deprecated anyway and should be integrated
+        #  into the actual test. Fot testing the finance log, the cde log test should
+        #  also produce a nice amount of data which could be tested. See
+        #  https://tracker.cde-ev.de/gitea/cdedb/cdedb2/pulls/2073#issuecomment-30727
 
         # Now check it
         self.login(USER_DICT['farin'])
