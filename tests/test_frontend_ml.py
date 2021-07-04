@@ -6,10 +6,10 @@ import unittest.mock
 from typing import Any, List, Tuple
 
 import cdedb.database.constants as const
-import cdedb.ml_type_aux as ml_type
 from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, CdEDBObject
 from cdedb.devsamples import MockHeldMessage, HELD_MESSAGE_SAMPLE
 from cdedb.frontend.common import CustomCSVDialect
+from cdedb.ml_type_aux import CdeLokalMailinglist
 from cdedb.query import QueryOperators
 from tests.common import USER_DICT, FrontendTest, as_users, prepsql
 
@@ -859,9 +859,9 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Mitgestaltungsforum – Typ ändern")
         f = self.response.forms['changemltypeform']
 
-        for list_type in const.MailinglistTypes:
-            with self.subTest(ml_type=list_type):
-                f['ml_type'] = list_type.value
+        for ml_type in const.MailinglistTypes:
+            with self.subTest(ml_type=ml_type):
+                f['ml_type'] = ml_type.value
                 f['event_id'] = event_id
                 f['registration_stati'] = [
                     const.RegistrationPartStati.participant.value,
@@ -870,26 +870,26 @@ class TestMlFrontend(FrontendTest):
                 f['assembly_id'] = assembly_id
                 # no ml type should allow event *and* assembly fields to be set
                 self.submit(f, check_notification=False)
-                if list_type not in event_types:
+                if ml_type not in event_types:
                     self.assertValidationError('event_id', "Muss leer sein.")
                     self.assertValidationError("registration_stati",
                                                "Muss eine leere Liste sein.",
                                                index=0)
-                elif list_type == const.MailinglistTypes.event_orga:
+                elif ml_type == const.MailinglistTypes.event_orga:
                     self.assertValidationError("registration_stati",
                                                "Muss eine leere Liste sein.",
                                                index=0)
                 else:
                     self.assertNonPresence("Muss eine leere Liste sein.")
-                if list_type not in assembly_types:
+                if ml_type not in assembly_types:
                     self.assertValidationError('assembly_id', "Muss leer sein.")
 
                 f['event_id'] = ''
                 f['registration_stati'] = []
                 f['assembly_id'] = ''
-                if list_type in general_types:
+                if ml_type in general_types:
                     self.submit(f)
-                elif list_type in event_types:
+                elif ml_type in event_types:
                     self.submit(f)  # only works if all event-associated ml
                     # types can also not be associated with an event, which may
                     # change in future
@@ -900,7 +900,7 @@ class TestMlFrontend(FrontendTest):
                     self.traverse({'description': r"\sÜbersicht"})
                     self.assertPresence(
                         f"Mailingliste zur Veranstaltung {event_title}")
-                elif list_type in assembly_types:
+                elif ml_type in assembly_types:
                     self.submit(f, check_notification=False)
                     self.assertValidationError(
                         'assembly_id', "Ungültige Eingabe für eine Ganzzahl.")
@@ -1291,7 +1291,7 @@ class TestMlFrontend(FrontendTest):
         f['local_part'] = "littlewhinging"
         f['domain'] = const.MailinglistDomain.cdelokal.value
         self.assertEqual(len(f['domain'].options),
-                         len(ml_type.CdeLokalMailinglist.domains))
+                         len(CdeLokalMailinglist.domains))
         moderator = USER_DICT["berta"]
         f['moderators'] = moderator["DB-ID"]
         self.submit(f)
