@@ -260,7 +260,8 @@ SUBSCRIPTION_ERROR_MATRIX: ActionStateErrorMatrix = {
         SubscriptionState.unsubscribed: None,
         SubscriptionState.subscription_override: SubscriptionInfo(_(
             "subman_managing_is-subscription-overridden")),
-        SubscriptionState.unsubscription_override: None,
+        SubscriptionState.unsubscription_override: SubscriptionError(_(
+            "subman_managing_is-unsubscription-overridden")),
         SubscriptionState.pending: SubscriptionError(_(
             "subman_managing_is-pending")),
         SubscriptionState.implicit: None,
@@ -284,7 +285,8 @@ SUBSCRIPTION_ERROR_MATRIX: ActionStateErrorMatrix = {
     SubscriptionAction.add_unsubscription_override: {
         SubscriptionState.subscribed: None,
         SubscriptionState.unsubscribed: None,
-        SubscriptionState.subscription_override: None,
+        SubscriptionState.subscription_override: SubscriptionError(_(
+            "subman_managing_is-subscription-overridden")),
         SubscriptionState.unsubscription_override: SubscriptionInfo(_(
             "subman_managing_is-unsubscription-overridden")),
         SubscriptionState.pending: SubscriptionError(_(

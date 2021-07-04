@@ -370,7 +370,7 @@ class CdEBackend(AbstractBackend):
                 rs, const.FinanceLogCodes.lastschrift_transaction_issue,
                 lastschrift['persona_id'], None, None,
                 change_note=data['amount'])
-            return ret
+        return ret
     issue_lastschrift_transaction_batch = batchify(
         issue_lastschrift_transaction)
 
@@ -451,7 +451,7 @@ class CdEBackend(AbstractBackend):
                 raise RuntimeError(n_("Impossible."))
             self.core.finance_log(rs, code, persona_id, delta, new_balance,
                                   change_note=str(update['tally']))
-            return ret
+        return ret
 
     @access("finance_admin")
     def rollback_lastschrift_transaction(
@@ -496,7 +496,7 @@ class CdEBackend(AbstractBackend):
                 'revoked_at': now(),
             }
             self.set_lastschrift(rs, lastschrift_update)
-            return ret
+        return ret
 
     def lastschrift_may_skip(self, rs: RequestState,
                              lastschrift: CdEDBObject) -> bool:
@@ -517,7 +517,7 @@ class CdEBackend(AbstractBackend):
                 rs, lastschrift_ids=(lastschrift['id'],),
                 stati=(const.LastschriftTransactionStati.success,),
                 periods=relevant_periods)
-            return bool(ids)
+        return bool(ids)
 
     @access("finance_admin")
     def lastschrift_skip(self, rs: RequestState,
@@ -554,7 +554,7 @@ class CdEBackend(AbstractBackend):
             self.core.finance_log(
                 rs, const.FinanceLogCodes.lastschrift_transaction_skip,
                 lastschrift['persona_id'], None, None)
-            return ret
+        return ret
 
     @access("finance_admin")
     def finance_statistics(self, rs: RequestState) -> CdEDBObject:
@@ -584,7 +584,7 @@ class CdEBackend(AbstractBackend):
                      " AND p.trial_member = False AND l.revoked_at IS NULL")
             ret['lastschrift_low_balance_members'] = unwrap(self.query_one(
                 rs, query, (self.conf["MEMBERSHIP_FEE"],)))
-            return ret
+        return ret
 
     @access("finance_admin")
     def get_period_history(self, rs: RequestState) -> CdEDBObjectMap:
@@ -633,10 +633,10 @@ class CdEBackend(AbstractBackend):
         with Atomizer(rs):
             period_id = self.current_period(rs)
             period = self.get_period(rs, period_id)
-            # Take special care about all previous steps.
-            return all(period[key] for key in
-                       ('billing_done', 'archival_notification_done', 'ejection_done',
-                        'archival_done', 'balance_done'))
+        # Take special care about all previous steps.
+        return all(period[key] for key in
+                   ('billing_done', 'archival_notification_done', 'ejection_done',
+                    'archival_done', 'balance_done'))
 
     @access("finance_admin")
     def advance_semester(self, rs: RequestState) -> DefaultReturnCode:
@@ -654,7 +654,7 @@ class CdEBackend(AbstractBackend):
             ret *= self.sql_insert(rs, "cde.org_period", new_period)
             self.cde_log(rs, const.CdeLogCodes.semester_advance,
                          persona_id=None, change_note=str(ret))
-            return ret
+        return ret
 
     @access("finance_admin")
     def may_start_semester_bill(self, rs: RequestState) -> bool:
@@ -668,8 +668,8 @@ class CdEBackend(AbstractBackend):
         with Atomizer(rs):
             period_id = self.current_period(rs)
             period = self.get_period(rs, period_id)
-            # Both parts of the previous step need to be finished.
-            return not (period['billing_done'] and period['archival_notification_done'])
+        # Both parts of the previous step need to be finished.
+        return not (period['billing_done'] and period['archival_notification_done'])
 
     @access("finance_admin")
     def finish_semester_bill(self, rs: RequestState,
@@ -696,7 +696,7 @@ class CdEBackend(AbstractBackend):
                 self.cde_log(
                     rs, const.CdeLogCodes.semester_bill,
                     persona_id=None, change_note=msg)
-            return ret
+        return ret
 
     @access("finance_admin")
     def finish_archival_notification(self, rs: RequestState) -> DefaultReturnCode:
@@ -716,7 +716,7 @@ class CdEBackend(AbstractBackend):
             self.cde_log(
                 rs, const.CdeLogCodes.automated_archival_notification_done,
                 persona_id=None, change_note=msg)
-            return ret
+        return ret
 
     @access("finance_admin")
     def may_start_semester_ejection(self, rs: RequestState) -> bool:
@@ -729,8 +729,8 @@ class CdEBackend(AbstractBackend):
         with Atomizer(rs):
             period_id = self.current_period(rs)
             period = self.get_period(rs, period_id)
-            return (period['billing_done'] and period['archival_notification_done']
-                    and not (period['ejection_done'] and period['archival_done']))
+        return (period['billing_done'] and period['archival_notification_done']
+                and not (period['ejection_done'] and period['archival_done']))
 
     @access("finance_admin")
     def finish_automated_archival(self, rs: RequestState) -> DefaultReturnCode:
@@ -752,7 +752,7 @@ class CdEBackend(AbstractBackend):
             self.cde_log(
                 rs, const.CdeLogCodes.automated_archival_done,
                 persona_id=None, change_note=msg)
-            return ret
+        return ret
 
     @access("finance_admin")
     def finish_semester_ejection(self, rs: RequestState) -> DefaultReturnCode:
@@ -775,7 +775,7 @@ class CdEBackend(AbstractBackend):
             self.cde_log(
                 rs, const.CdeLogCodes.semester_ejection, persona_id=None,
                 change_note=msg)
-            return ret
+        return ret
 
     @access("finance_admin")
     def may_start_semester_balance_update(self, rs: RequestState) -> bool:
@@ -786,8 +786,8 @@ class CdEBackend(AbstractBackend):
         with Atomizer(rs):
             period_id = self.current_period(rs)
             period = self.get_period(rs, period_id)
-            return (period['ejection_done'] and period['archival_done']
-                    and not period['balance_done'])
+        return (period['ejection_done'] and period['archival_done']
+                and not period['balance_done'])
 
     @access("finance_admin")
     def finish_semester_balance_update(self, rs: RequestState) -> DefaultReturnCode:
@@ -808,7 +808,7 @@ class CdEBackend(AbstractBackend):
                 rs, const.CdeLogCodes.semester_balance_update, persona_id=None,
                 change_note=msg.format(period['balance_trialmembers'],
                                            period['balance_total']))
-            return ret
+        return ret
 
     @access("finance_admin")
     def get_expuls_history(self, rs: RequestState) -> CdEDBObjectMap:
@@ -869,7 +869,7 @@ class CdEBackend(AbstractBackend):
             ret *= self.sql_insert(rs, "cde.expuls_period", new_expuls)
             self.cde_log(rs, const.CdeLogCodes.expuls_advance,
                          persona_id=None, change_note=str(ret))
-            return ret
+        return ret
 
     @access("finance_admin")
     def finish_expuls_addresscheck(self, rs: RequestState,
@@ -895,7 +895,7 @@ class CdEBackend(AbstractBackend):
             else:
                 self.cde_log(rs, const.CdeLogCodes.expuls_addresscheck,
                              persona_id=None, change_note=msg)
-            return ret
+        return ret
 
     @access("member", "cde_admin")
     def get_member_stats(self, rs: RequestState

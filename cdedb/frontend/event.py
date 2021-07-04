@@ -558,9 +558,9 @@ class EventFrontend(AbstractUserFrontend):
                 for k in ('title', 'shortname', 'num_choices', 'min_choices',
                           'sortkey'):
                     current[f"track_{k}_{part_id}_{track_id}"] = track[k]
-        for m in rs.ambience['event']['fee_modifiers'].values():
-            for k in ('modifier_name', 'amount', 'field_id'):
-                current[f"fee_modifier_{k}_{m['part_id']}_{m['id']}"] = m[k]
+            for m_id, m in part['fee_modifiers'].items():
+                for k in ('modifier_name', 'amount', 'field_id'):
+                    current[f"fee_modifier_{k}_{part_id}_{m_id}"] = m[k]
         merge_dicts(rs.values, current)
         referenced_parts: Set[int] = set()
         referenced_tracks: Set[int] = set()
@@ -606,8 +606,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @staticmethod
     def process_part_input(rs: RequestState, has_registrations: bool
-                           ) -> Tuple[Dict[int, Optional[CdEDBObject]],
-                                      Dict[int, Optional[CdEDBObject]]]:
+                           ) -> Dict[int, Optional[CdEDBObject]]:
         """This handles input to configure the parts.
 
         Since this covers a variable number of rows, we cannot do this
@@ -940,21 +939,27 @@ class EventFrontend(AbstractUserFrontend):
         # Don't allow fee modifiers for newly created parts.
 
         # Handle deleted parts
+        for mod_id, mod in ret_fee_modifiers.items():
+            if mod:
+                ret[mod['part_id']].setdefault('fee_modifiers', {})[mod_id] = mod
+                del mod['part_id']
+                if 'id' in mod:
+                    del mod['id']
         ret_parts = cast(Dict[int, Optional[CdEDBObject]], ret)
         for part_id in deletes:
             ret_parts[part_id] = None
-        if not any(ret.values()):
+        if not any(ret_parts.values()):
             rs.append_validation_error(
                 ("", ValueError(n_("At least one event part required."))))
             rs.notify("error", n_("At least one event part required."))
-        return ret_parts, ret_fee_modifiers
+        return ret_parts
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
     def part_summary(self, rs: RequestState, event_id: int) -> Response:
         """Manipulate the parts of an event."""
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
-        parts, fee_modifiers = self.process_part_input(rs, has_registrations)
+        parts = self.process_part_input(rs, has_registrations)
         if rs.has_validation_errors():
             return self.part_summary_form(rs, event_id)
         for part_id, part in rs.ambience['event']['parts'].items():
@@ -964,7 +969,6 @@ class EventFrontend(AbstractUserFrontend):
         event = {
             'id': event_id,
             'parts': parts,
-            'fee_modifiers': fee_modifiers,
         }
         code = self.eventproxy.set_event(rs, event)
         self.notify_return_code(rs, code)
@@ -2004,6 +2008,19 @@ class EventFrontend(AbstractUserFrontend):
             ids = cast(vtypes.IntCSVList, [])
 
         tracks = rs.ambience['event']['tracks']
+        # Orchestrate change_note
+        if len(tracks) == 1:
+            change_note = "Kurs eingeteilt."
+        elif len(assign_track_ids) == 1:
+            change_note = (
+                "Kurs eingeteilt in Kursschiene"
+                f" {tracks[unwrap(assign_track_ids)]['shortname']}.")
+        else:
+            change_note = (
+                "Kurs eingeteilt in Kursschienen " +
+                ", ".join(tracks[anid]['shortname'] for anid in assign_track_ids) +
+                ".")
+
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         personas = self.coreproxy.get_event_users(rs, tuple(
             reg['persona_id'] for reg in registrations.values()), event_id)
@@ -2071,7 +2088,7 @@ class EventFrontend(AbstractUserFrontend):
                                   {'name': make_persona_name(persona),
                                    'track_name': tracks[atrack_id]['title']})
             if tmp['tracks']:
-                res = self.eventproxy.set_registration(rs, tmp)
+                res = self.eventproxy.set_registration(rs, tmp, change_note)
                 if res:
                     num_committed += 1
                 else:
@@ -2297,10 +2314,10 @@ class EventFrontend(AbstractUserFrontend):
                         'amount_paid': all_regs[reg_id]['amount_paid']
                                        + datum['amount'],
                     }
-                    info = "{} am {} gezahlt.".format(
+                    change_note = "{} am {} gezahlt.".format(
                         money_filter(datum['amount']),
                         date_filter(datum['original_date'], lang="de"))
-                    count += self.eventproxy.set_registration(rs, update, info)
+                    count += self.eventproxy.set_registration(rs, update, change_note)
         except psycopg2.extensions.TransactionRollbackError:
             # We perform a rather big transaction, so serialization errors
             # could happen.
@@ -4907,8 +4924,7 @@ class EventFrontend(AbstractUserFrontend):
                 for registration_id in inhabitants[(lodgement_id, part_id)]
             })
 
-        def _check_without_lodgement(registration_id: int, part_id: int
-                                     ) -> bool:
+        def _check_without_lodgement(registration_id: int, part_id: int) -> bool:
             """Un-inlined check for registration without lodgement."""
             part = registrations[registration_id]['parts'][part_id]
             return (const.RegistrationPartStati(part['status']).is_present()
@@ -4927,8 +4943,7 @@ class EventFrontend(AbstractUserFrontend):
 
         # Generate data to be encoded to json and used by the
         # cdedbSearchParticipant() javascript function
-        def _check_not_this_lodgement(registration_id: int, part_id: int
-                                      ) -> bool:
+        def _check_not_this_lodgement(registration_id: int, part_id: int) -> bool:
             """Un-inlined check for registration with different lodgement."""
             part = registrations[registration_id]['parts'][part_id]
             return (const.RegistrationPartStati(part['status']).is_present()
@@ -4999,6 +5014,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.manage_inhabitants_form(rs, event_id, lodgement_id)
         # Iterate all registrations to find changed ones
         code = 1
+        change_note = f"Bewohner von {rs.ambience['lodgement']['title']} geändert."
         for reg_id, reg in registrations.items():
             new_reg: CdEDBObject = {
                 'id': reg_id,
@@ -5026,7 +5042,7 @@ class EventFrontend(AbstractUserFrontend):
                             False)
                     }
             if new_reg['parts']:
-                code *= self.eventproxy.set_registration(rs, new_reg)
+                code *= self.eventproxy.set_registration(rs, new_reg, change_note)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/show_lodgement")
 
@@ -5052,7 +5068,7 @@ class EventFrontend(AbstractUserFrontend):
         new_regs: CdEDBObjectMap = {}
         for part_id in rs.ambience['event']['parts']:
             if data[f"swap_with_{part_id}"]:
-                swap_lodgement_id = data[f"swap_with_{part_id}"]
+                swap_lodgement_id: int = data[f"swap_with_{part_id}"]
                 current_inhabitants = inhabitants[(lodgement_id, part_id)]
                 swap_inhabitants = inhabitants[(swap_lodgement_id, part_id)]
                 new_reg: CdEDBObject
@@ -5066,8 +5082,10 @@ class EventFrontend(AbstractUserFrontend):
                     new_regs[reg_id] = new_reg
 
         code = 1
+        change_note = (f"Bewohner von {lodgements[lodgement_id]} und"
+                       f" {lodgements[swap_lodgement_id]} getauscht.")
         for new_reg in new_regs.values():
-            code *= self.eventproxy.set_registration(rs, new_reg)
+            code *= self.eventproxy.set_registration(rs, new_reg, change_note)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/show_lodgement")
 
@@ -5174,6 +5192,8 @@ class EventFrontend(AbstractUserFrontend):
 
         # Iterate all registrations to find changed ones
         code = 1
+        change_note = ("Kursteilnehmer von"
+                       f" {rs.ambience['course']['shortname']} geändert.")
         for registration_id, registration in registrations.items():
             new_reg: CdEDBObject = {
                 'id': registration_id,
@@ -5191,7 +5211,7 @@ class EventFrontend(AbstractUserFrontend):
                         'course_id': (course_id if new_attendee else None)
                     }
             if new_reg['tracks']:
-                code *= self.eventproxy.set_registration(rs, new_reg)
+                code *= self.eventproxy.set_registration(rs, new_reg, change_note)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/show_course")
 

@@ -126,6 +126,21 @@
     {% if title %}<span class="sr-only">{{ title }}</span>{% endif %}
 {%- endmacro %}
 
+{# Special tri-state macro to represent subscription states
+
+   In contrast to the deko_checkbox, this represents the pending state of someone who has requested subscription by
+   an empty circle. Otherwise, this macro is functionally equivalent.
+#}
+{% macro state_checkbox(state) %}
+    {% if state in enums["SubscriptionState"].subscribing_states() %}
+        <span class="fas fa-check-circle" title="{{ gettext("subscribed") }}" aria-hidden="true"></span>
+    {% elif state == enums["SubscriptionState"].pending %}
+        <span class="far fa-circle" title="{{ gettext("pending") }}" aria-hidden="true"></span>
+    {% else %}
+        <span class="far fa-times-circle" title="{{ gettext("not subscribed") }}" aria-hidden="true"></span>
+    {% endif %}
+{% endmacro %}
+
 {# Create a link to a persona's profile page, labeled with some variant of their name
 
    persona:                 The persona data. Must be a dict containing (at least) the following keys:
@@ -201,9 +216,9 @@
 {% macro tel_link(phonenumber) %}
     {% set linknumber = phonenumber|replace(" ", "")|replace("(", "")|replace(")", "")|replace("/", "") %}
     {%- if linknumber.startswith("+") -%}
-        {{ util.href('tel:%s'|format(linknumber), phonenumber) }}
+        {{ href('tel:%s'|format(linknumber), phonenumber) }}
     {%- elif linknumber.startswith("0") -%}
-        {{ util.href('tel:%s'|format(linknumber|replace("0", "+49", 1)), phonenumber) }}
+        {{ href('tel:%s'|format(linknumber|replace("0", "+49", 1)), phonenumber) }}
     {%- endif -%}
 {% endmacro %}
 
@@ -470,7 +485,7 @@
     </label>
     {# checkboxes do not support the readonly attribute, so we emulate it with a disabled select and a hidden input. #}
     {% if actualreadonly %}
-        {{ util.input_hidden(name) }}
+        {{ input_hidden(name) }}
     {% endif %}
 {%- endmacro %}
 
@@ -491,7 +506,7 @@
             {%- if not inline %}</div>{% endif %}
             {# checkboxes do not support the readonly attribute, so we emulate it with a disabled select and a hidden input. #}
             {%- if actualreadonly -%}
-                {{ util.input_hidden(name) }}
+                {{ input_hidden(name) }}
             {%- endif -%}
         {%- endfor %}
     </div>
@@ -556,7 +571,7 @@
     </select>
     {# select tags do not support the readonly attribute, so we emulate it with a disabled select and a hidden input. #}
     {% if actualreadonly %}
-        {{ util.input_hidden(name) }}
+        {{ input_hidden(name) }}
     {% endif %}
 {%- endmacro %}
 
@@ -707,18 +722,18 @@
                         attributes=('data-basename="{}_"'.format(column['name'])|s if newrow else ''),
                         arialabel=gettext(column['label'])
                         ) }}
-                {{ util.output_errors(name) }}
+                {{ output_errors(name) }}
             </td>
         {% endfor %}
 
         <td>
             <span class="drow-buttonspace">
                 {% if newrow %}
-                    {{ util.input_checkbox("create_{}".format(id), label=gettext("Add"),
+                    {{ input_checkbox("create_{}".format(id), label=gettext("Add"),
                                            attributes='data-basename="create_"'|s,
                                            aclass='drow-indicator') }}
                 {% else %}
-                    {{ util.input_checkbox("delete_{}".format(id), label=gettext("Delete"),
+                    {{ input_checkbox("delete_{}".format(id), label=gettext("Delete"),
                                            readonly=not deletable, aclass='drow-indicator') }}
                 {% endif %}
             </span>
@@ -759,7 +774,7 @@
     </table>
     <p>
         <button type="button" class="btn btn-success softhide pull-right" id="drow-addbutton">
-            {{ util.make_icon('plus') }} {% trans %}Add {{ name }}{% endtrans %}
+            {{ make_icon('plus') }} {% trans %}Add {{ name }}{% endtrans %}
         </button>
     </p>
 {% endmacro %}
@@ -784,29 +799,29 @@
                 readonly = entry['readonly'] or is_locked or ambience['event']['is_archived'] %}
             <div id="questionnaire_field_entry_{{ FIELD['field_name'] }}">
             {% if FIELD['entries'] %}
-                {{ util.form_input_select(name=FIELD['field_name'], entries=FIELD['entries'],
+                {{ form_input_select(name=FIELD['field_name'], entries=FIELD['entries'],
                                           label=entry['title'], info=entry['info'],
                                           readonly=readonly,
                                           defaultvalue=entry['default_value'] if not readonly else "") }}
             {% else %}
                 {% set datatypes = enums['FieldDatatypes'] %}
                 {% if FIELD['kind'] == datatypes.bool %}
-                    {{ util.form_input_checkbox(
+                    {{ form_input_checkbox(
                         name=FIELD['field_name'], label=entry['title'], info=entry['info'],
                         readonly=readonly, defaultvalue=entry['default_value'] if not readonly else "") }}
                 {% elif FIELD['kind'] == datatypes.str  %}
                     {% if entry['input_size'] %}
-                        {{ util.form_input_textarea(
+                        {{ form_input_textarea(
                             name=FIELD['field_name'], label=entry['title'], info=entry['info'],
                             readonly=readonly, defaultvalue=entry['default_value'] if not readonly else "",
                             rows=(1+entry['input_size']*2)) }}
                     {% else %}
-                        {{ util.form_input_text(
+                        {{ form_input_text(
                             name=FIELD['field_name'], label=entry['title'], info=entry['info'],
                             readonly=readonly, defaultvalue=entry['default_value'] if not readonly else "") }}
                     {% endif %}
                 {% else %}
-                    {{ util.form_event_field_input(
+                    {{ form_event_field_input(
                         FIELD, name=FIELD['field_name'], label=entry['title'], info=entry['info'],
                         readonly=readonly, defaultvalue=entry['default_value'] if not readonly else "") }}
                 {% endif %}
@@ -870,52 +885,52 @@
         <div class="panel-body">
             <div class="row">
                 <div class="col-md-6">
-                    {{ util.form_input_text(name="title_{}".format(part_id), label=gettext("Title_[[name of an entity]]"),
+                    {{ form_input_text(name="title_{}".format(part_id), label=gettext("Title_[[name of an entity]]"),
                                             attributes=('data-basename="title_"'|s if newrow else ''),
                                             aclass='input-title drow-input', horizontal=false) }}
-                    {{ util.form_input_textarea(name="info_{}".format(part_id), label=gettext("Text"),
+                    {{ form_input_textarea(name="info_{}".format(part_id), label=gettext("Text"),
                                                 attributes=('data-basename="info_"'|s if newrow else ''),
                                                 aclass='input-info drow-input', horizontal=false,
                                                 info=gettext("Supports %(infolink)s for “Text-Only” fields.")|format(
-                                                    infolink=util.href(docurl("Handbuch_Markdown"),
+                                                    infolink=href(docurl("Handbuch_Markdown"),
                                                                        gettext("Markdown"),
                                                                        title=gettext("Short Markdown summary")))|s) }}
                 </div>
                 <div class="col-md-6">
-                    {{ util.form_input_select("field_id_{}".format(part_id), label=gettext("Query"),
+                    {{ form_input_select("field_id_{}".format(part_id), label=gettext("Query"),
                                               entries=registration_fields|keydictsort(EntitySorter.event_field)|dict_entries('id', 'field_name'),
                                               nulloption=gettext("— Only Text —"),
                                               attributes=('data-basename="field_id_"'|s if newrow else ''),
                                               aclass='input-field drow-input', horizontal=False) }}
-                    {{ util.form_input_select(
+                    {{ form_input_select(
                         "input_size_{}".format(part_id), label=gettext("Input Size"), entries=(
                             (0, gettext("singleline")), (1, gettext("multiline")),
                             (2, gettext("multiline") + "+"), (3, gettext("multiline") + "++")),
                         attributes=('data-basename="input_size_"'|s if newrow else ''),
                         aclass='input-inputsize drow-input', horizontal=False) }}
-                    {{ util.form_input_textarea(
+                    {{ form_input_textarea(
                         "default_value_{}".format(part_id), label=gettext("Default Value"), rows=2,
                         attributes=('data-basename="default_value_"'|s if newrow else ''),
                         aclass='input-defaultvalue drow-input', horizontal=False) }}
                     <div class="form-group row">
                         <div class="col-sm-8">
                             <div class="checkbox">
-                                {{ util.input_checkbox("readonly_{}".format(part_id), label=gettext("read-only"),
+                                {{ input_checkbox("readonly_{}".format(part_id), label=gettext("read-only"),
                                                        attributes=('data-basename="readonly_"'|s if newrow else ''),
                                                        aclass='input-readonly drow-input',
                                                        readonly=(not values["readonly_{}".format(part_id)]
                                                                  and (kind and not kind.allow_readonly()))) }}
-                                {{ util.output_errors("readonly_{}".format(part_id), wrapper=True) }}
+                                {{ output_errors("readonly_{}".format(part_id), wrapper=True) }}
                             </div>
                         </div>
                         <div class="col-sm-4 text-right">
                             <span class="drow-buttonspace">
                                 {% if newrow %}
-                                    {{ util.input_checkbox("create_{}".format(part_id), label=gettext("Add"),
+                                    {{ input_checkbox("create_{}".format(part_id), label=gettext("Add"),
                                                            attributes='data-basename="create_"'|s,
                                                            aclass='drow-indicator') }}
                                 {% else %}
-                                    {{ util.input_checkbox("delete_{}".format(part_id), label=gettext("Remove"),
+                                    {{ input_checkbox("delete_{}".format(part_id), label=gettext("Remove"),
                                                            aclass='drow-indicator') }}
                                 {% endif %}
                             </span>
@@ -986,25 +1001,25 @@ mailto:
 {%- if kwargs %}?{{ kwargs|urlencode }}{% endif %}
 {%- endmacro %}
 
-{% macro username_mailto(persona, prefix="") -%}
-    {% set given_names = persona.get("{}given_names".format(prefix), "") %}
-    {% set display_name = persona.get("{}display_name".format(prefix), "") %}
-    {% set forename = display_name if display_names and display_name in given_names else given_names %}
-{{ href(
-    mailto(
-        address=persona.get("{}username".format(prefix), ""),
-        name="{} {}".format(
-            forename,
-            persona.get("{}family_name".format(prefix), "")
-        )
-    ),
-    persona.get("{}username".format(prefix), "")
-) }}
+{% macro username_mailto(persona, email=none) -%}
+    {% set given_names = persona.get("given_names", persona.get("persona.given_names", "")) %}
+    {% set display_name = persona.get("display_name", persona.get("persona.display_name", "")) %}
+    {% set forename = display_name if display_name and display_name in given_names else given_names %}
+    {{ href(
+        mailto(
+            address=email or persona.get("username", persona.get("persona.username", "")),
+            name="{} {}".format(
+                forename,
+                persona.get("family_name", persona.get("persona.family_name", ""))
+            )
+        ),
+        email or persona.get("username", persona.get("persona.username", ""))
+    ) }}
 {%- endmacro %}
 
 {% macro meta_info_banner(fieldname) %}
     {% if meta_info.get(fieldname) %}
-        {% call util.bootstrap_panel() %}
+        {% call bootstrap_panel() %}
             {{ meta_info.get(fieldname)|md }}
         {% endcall %}
     {% endif %}
@@ -1026,7 +1041,7 @@ mailto:
             messagetypes = {"success": _("Success!"), "info": _("Info!"),
                             "warning": _("Warning!"), "error": _("Error!")} %}
         <div class="alert alert-{{ alerttypes[ntype] }}" role="alert" {% if id %}id="{{ id }}"{% endif %}>
-            {{ util.make_icon( icontypes[ntype] ) }}
+            {{ make_icon( icontypes[ntype] ) }}
             <strong>{{ messagetypes[ntype] }}</strong>
             <span class="notificationMessage">{{ caller() }}</span>
         </div>

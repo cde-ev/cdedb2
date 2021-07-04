@@ -1061,13 +1061,13 @@ span.color-legend {
 }
 .button-par {
     /* A div containing buttons, which may be wrapped with nice spacing in between */
-    margin-bottom: -8px;
+    margin-bottom: -5px;
 }
 .button-par.p {
-    margin-bottom: 2px;
+    margin-bottom: 5px;
 }
 .button-par .btn {
-    margin-bottom: 8px;
+    margin-bottom: 5px;
 }
 .clickable {
     cursor: pointer;

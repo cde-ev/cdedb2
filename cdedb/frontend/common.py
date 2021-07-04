@@ -287,6 +287,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'ANTI_CSRF_TOKEN_PAYLOAD': ANTI_CSRF_TOKEN_PAYLOAD,
             'GIT_COMMIT': self.conf["GIT_COMMIT"],
             'I18N_LANGUAGES': self.conf["I18N_LANGUAGES"],
+            'I18N_ADVERTISED_LANGUAGES': self.conf["I18N_ADVERTISED_LANGUAGES"],
             'DEFAULT_COUNTRY': self.conf["DEFAULT_COUNTRY"],
             'ALL_MOD_ADMIN_VIEWS': ALL_MOD_ADMIN_VIEWS,
             'ALL_MGMT_ADMIN_VIEWS': ALL_MGMT_ADMIN_VIEWS,

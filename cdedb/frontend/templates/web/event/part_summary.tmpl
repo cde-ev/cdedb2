@@ -34,7 +34,7 @@
                         name="fee_modifier_modifier_name_{}_{}".format(part_id, fee_modifier_id),
                         aclass='drow-input1 form-control', placeholder=gettext("Modifier Name"),
                         attributes=('data-basename="fee_modifier_modifier_name_" data-basename1="_"'|s if newrow else ''),
-                        arialabel=gettext("Name of Fee Modifier")) }}
+                        arialabel=gettext("Name of Fee Modifier"), actualreadonly=has_registrations) }}
             {% endcall %}
         </td>
         <td>
@@ -42,7 +42,8 @@
                 {{ util.input_text(
                         name="fee_modifier_amount_{}_{}".format(part_id, fee_modifier_id),
                         aclass='drow-input1 form-control', arialabel=gettext("Fee Modifier Amount"), type="number",
-                        attributes=('data-basename="fee_modifier_amount_" data-basename1="_"'|s if newrow else '')) }}
+                        attributes=('data-basename="fee_modifier_amount_" data-basename1="_"'|s if newrow else ''),
+                        actualreadonly=has_registrations) }}
             {% endcall %}
         </td>
         <td>
@@ -51,7 +52,7 @@
                         name="fee_modifier_field_id_{}_{}".format(part_id, fee_modifier_id), entries=fee_modifier_fields,
                         aclass='drow-input1 form-control', nulloption=nbsp,
                         attributes=('data-basename="fee_modifier_field_id_" data-basename1=" "'|s if newrow else ''),
-                        arialabel=gettext("Linked Field for Fee Modifier")) }}
+                        arialabel=gettext("Linked Field for Fee Modifier"), actualreadonly=has_registrations) }}
             {% endcall %}
         </td>
         <td>
@@ -59,11 +60,12 @@
                 {% if newrow %}
                     {{ util.input_checkbox(
                             name="fee_modifier_create_{}_{}".format(part_id, fee_modifier_id), label=gettext("Add"),
-                            attributes='data-basename="fee_modifier_create_"'|s, aclass='drow-indicator1') }}
+                            attributes='data-basename="fee_modifier_create_"'|s, aclass='drow-indicator1',
+                            actualreadonly=has_registrations) }}
                 {% else %}
                     {{ util.input_checkbox(
                             name="fee_modifier_delete_{}_{}".format(part_id, fee_modifier_id), label=gettext("Remove"),
-                            readonly=has_registrations, aclass='drow-indicator1') }}
+                            actualreadonly=has_registrations, aclass='drow-indicator1') }}
                 {% endif %}
             </div>
         </td>

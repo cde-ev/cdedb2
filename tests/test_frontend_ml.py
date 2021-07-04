@@ -442,6 +442,13 @@ class TestMlFrontend(FrontendTest):
         self.assertNonPresence("Versammlungslisten")
         self.assertNonPresence("Andere Mailinglisten")
 
+    @as_users("quintus")
+    def test_mailinglist_cde_admin(self) -> None:
+        self.traverse({'href': '/ml/$'},
+                      {'href': '/ml/mailinglist/list'},
+                      {'href': '/ml/mailinglist/7/show'},
+                      {'href': '/ml/mailinglist/7/management'})
+
     @as_users("nina", "berta")
     def test_mailinglist_management(self) -> None:
         self.traverse({'href': '/ml/$'},
@@ -713,6 +720,11 @@ class TestMlFrontend(FrontendTest):
             self.assertNonPresence("Der Nutzer hat keine Berechtigung auf "
                                    "dieser Liste zu stehen.",
                                     div='notifications')
+            # clean up
+            for anid in [1, 2, 5, 7, 9]:
+                self.assertTitle("Aktivenforum 2001 – Erweiterte Verwaltung")
+                f = self.response.forms[f'remove{state}form{anid}']
+                self.submit(f)
 
     @as_users("nina")
     def test_create_mailinglist(self) -> None:
