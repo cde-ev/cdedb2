@@ -152,20 +152,6 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("annika", "paul", "quintus")
     def test_showuser_events(self) -> None:
-        # add second registration for garcia
-        # TODO: include this in our sample-data
-        user = self.user
-        self.logout()
-        self.login("anton")
-        self.traverse("Veranstaltungen",
-                      {'href': 'event/2/registration/query'},
-                      "Teilnehmer hinzufügen")
-        f = self.response.forms['addregistrationform']
-        f['persona.persona_id'] = USER_DICT["garcia"]["DB-ID"]
-        self.submit(f)
-        self.logout()
-        self.login(user)
-
         if self.user_in("annika"):
             # event admins navigate via event page
             self.traverse("Veranstaltungen", "Große Testakademie",
@@ -179,8 +165,9 @@ class TestCoreFrontend(FrontendTest):
 
         self.traverse("Veranstaltungs-Daten")
         self.assertTitle("Garcia G. Generalis – Veranstaltungs-Daten")
-        self.assertPresence("CdE-Party 2050 Teilnehmer")
-        self.assertNonPresence("Party: Teilnehmer") # part names not shown for one-part events
+        self.assertPresence("CyberTestAkademie Teilnehmer")
+        # part names not shown for one-part events
+        self.assertNonPresence("CyberTestAkademie: Teilnehmer")
         self.assertPresence("Große Testakademie")
         self.assertPresence("Warmup: Teilnehmer, Erste Hälfte: Teilnehmer,"
                             " Zweite Hälfte: Teilnehmer")
