@@ -25,6 +25,8 @@ cp /media/cdrom0/server* /etc/ssl/apache2/
 chmod 600 /etc/ssl/apache2/server.key
 chmod 644 /etc/ssl/apache2/server.pem
 
+install --mode=640 --group=openldap /media/cdrom0/odbc.ini /etc/odbc.ini
+
 echo ""
 echo "Getting the system up to date..."
 echo "--------------------------------------------"
@@ -112,6 +114,9 @@ sudo -u cdedb touch /home/cdedb/.bash_profile
 echo "cd /cdedb2" >> /home/cdedb/.bash_profile
 echo "" >> /home/cdedb/.bash_profile
 echo "%cdedb ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+# apply our ldap schema
+ldapmodify -Y EXTERNAL -H ldapi:/// -f /cdedb2/sql-ldap.ldif
 
 cat > /etc/motd <<EOF
 
