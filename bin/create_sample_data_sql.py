@@ -174,8 +174,14 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
     # servers/slapd/back-sql/rdbms_depend/pgsql/testdb_metadata.sql
     # in the openldap sources.
 
+    # TODO outsource into sample_data.json
     LDAP_TABLES = {
         'ldap_agents': [
+            {
+                'cn': 'admin',
+                # password is 'secret' as usual
+                'password_hash': "$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1"
+            },
             {
                 'cn': 'test',
                 # password is 'secret' as usual

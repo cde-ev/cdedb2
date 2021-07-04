@@ -36,16 +36,17 @@ steps:
   # we do not tag a version as this would create many images
   # which would not be cleared from docker cache
   - docker build --file related/docker/Dockerfile-postgres --tag cdepostgres .
-  - docker build --file related/docker/Dockerfile-cdedb --tag cdedb .
+  - docker build --file related/docker/Dockerfile-cdedb --tag cdedb:20210705 .
+  - docker build --file related/docker/Dockerfile-ldap --tag ldap:20210705 .
 - name: mypy
-  image: cdedb
+  image: cdedb:20210705
   pull: never # do not try to pull image from docker hub
   depends_on:
   - build images
   commands:
   - make mypy
 - name: lint
-  image: cdedb
+  image: cdedb:20210705
   pull: never # do not try to pull image from docker hub
   depends_on:
   - build images
@@ -58,25 +59,38 @@ steps:
   environment:
     POSTGRES_PASSWORD: passwd
   volumes:
-  - name: database
+  - name: database # why is this necessary?
     path: /var/lib/postgresql/data
   depends_on:
   - build images
+- name: ldap # is used as the hostname for the container
+  image: ldap:20210705
+  pull: never # do not try to pull image from docker hub
+  detach: true # detach to keep running for the following steps
+  volumes:
+  - name: ldap # is this necessary?
+    path: /var/lib/ldap/data
+  depends_on:
+  - cdb
+  commands:
+    - sleep 5 # wait for db to come online
+    - slapd -d 0
 - name: testsuite
-  image: cdedb
+  image: cdedb:20210705
   pull: never # do not try to pull image from docker hub
   depends_on:
   - cdb # only needs db allowing mypy and lint to run parallel to this
+  - ldap
   volumes:
   - name: tmp_dir
     path: /tmp
   commands:
-  - sleep 5 # wait for db to come online
+  - sleep 10 # wait for db and ldap to come online
   - make i18n-compile # required for sample-data target
   - make sample-data # this creates the sql schema and copies the localconfig.py
   - make check
 - name: xss
-  image: cdedb
+  image: cdedb:20210705
   pull: never
   depends_on:
     - cdb

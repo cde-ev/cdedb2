@@ -24,6 +24,17 @@ services:
       - 8443:443 # apache
     depends_on:
       - cdb
+  ldap:
+    image: ldap
+    build:
+      context: ../..
+      dockerfile: ./related/docker/Dockerfile-ldap
+    volumes:
+      - ldap:/var/lib/slapd/data # ldap data and first run flag/file
+    ports:
+      - 8389:389
+    depends_on:
+      - cdb
   adminer:
     image: adminer
     ports:
@@ -32,3 +43,4 @@ services:
 volumes:
   database:
   files:
+  ldap:

@@ -9,11 +9,16 @@ RUN echo 'slapd slapd/password1 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a
     unixodbc \
     odbc-postgresql
 
-COPY ./related/auto-build/files/stage2/odbc.ini /etc/odbc.ini
-COPY ./sql-ldap.ldif /tmp/sql-ldap.ldif
+COPY ./related/docker/ldap-entrypoint.sh ./related/auto-build/files/stage2/odbc.ini ./sql-ldap.ldif /tmp/
 
-RUN sed -i "s/localhost/cdb/" /etc/odbc.ini \
-    && \
-    ldapmodify -Y EXTERNAL -H ldapi:/// -f /tmp/sql-ldap.ldif
+# Replace localhost with cdb as that is
+# the hostname where the db is accesible from docker.
+RUN mv /tmp/ldap-entrypoint.sh /ldap-entrypoint.sh \
+    && mv /tmp/odbc.ini /etc/odbc.ini \
+    && sed -i "s/localhost/cdb/" /etc/odbc.ini /tmp/sql-ldap.ldif
 
-CMD ["slapd"]
+# Set custom entrypoint to perform additional work on first run.
+ENTRYPOINT ["/ldap-entrypoint.sh"]
+
+# Start slapd in foreground/debug mode without debug messages (-d 0).
+CMD ["slapd", "-d", "0"]
