@@ -111,23 +111,23 @@ $$ SELECT 46; $$;
 ---
 CREATE FUNCTION make_organization_entity_id(organization_id INT)
   RETURNS bigint LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
-$$ SELECT 1 * 2^32 + $1; $$ ;
+$$ SELECT CAST (1 * 2^32 + $1 AS BIGINT); $$ ;
 
 CREATE FUNCTION make_dsa_entity_id(dsa_id INT)
   RETURNS bigint LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
-$$ SELECT 2 * 2^32 + $1; $$ ;
+$$ SELECT CAST (2 * 2^32 + $1 AS BIGINT); $$ ;
 
 CREATE FUNCTION make_persona_entity_id(persona_id INT)
   RETURNS bigint LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
-$$ SELECT 3 * 2^32 + $1; $$ ;
+$$ SELECT CAST (3 * 2^32 + $1 AS BIGINT); $$ ;
 
 CREATE FUNCTION make_static_group_entity_id(static_group_id INT)
   RETURNS bigint LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
-$$ SELECT 4 * 2^32 + $1; $$ ;
+$$ SELECT CAST (4 * 2^32 + $1 AS BIGINT); $$ ;
 
 CREATE FUNCTION make_mailinglist_entity_id(mailinglist_id INT)
   RETURNS bigint LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
-$$ SELECT 5 * 2^32 + $1; $$ ;
+$$ SELECT CAST (5 * 2^32 + $1 AS BIGINT); $$ ;
 
 ---
 --- create dn
