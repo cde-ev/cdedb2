@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
 
 import copy
-import datetime
-import decimal
 import unittest
-from typing import Any, Iterable, List, Mapping, Tuple, Type, Union
+from typing import Iterable, Mapping, Tuple, Union
 
 import pytz
 
 import cdedb.database.constants as const
 import cdedb.validation as validate
 from cdedb.common import ValidationWarning
-from cdedb.validationtypes import *
+from cdedb.validationtypes import *  # noqa: F403
 
 
 class TestValidation(unittest.TestCase):

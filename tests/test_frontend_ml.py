@@ -6,7 +6,6 @@ import unittest.mock
 from typing import Any, List, Tuple
 
 import cdedb.database.constants as const
-import cdedb.frontend.common
 import cdedb.ml_type_aux as ml_type
 from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, CdEDBObject
 from cdedb.devsamples import MockHeldMessage, HELD_MESSAGE_SAMPLE
@@ -860,9 +859,9 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Mitgestaltungsforum – Typ ändern")
         f = self.response.forms['changemltypeform']
 
-        for ml_type in const.MailinglistTypes:
-            with self.subTest(ml_type=ml_type):
-                f['ml_type'] = ml_type.value
+        for list_type in const.MailinglistTypes:
+            with self.subTest(ml_type=list_type):
+                f['ml_type'] = list_type.value
                 f['event_id'] = event_id
                 f['registration_stati'] = [
                     const.RegistrationPartStati.participant.value,
@@ -871,26 +870,26 @@ class TestMlFrontend(FrontendTest):
                 f['assembly_id'] = assembly_id
                 # no ml type should allow event *and* assembly fields to be set
                 self.submit(f, check_notification=False)
-                if ml_type not in event_types:
+                if list_type not in event_types:
                     self.assertValidationError('event_id', "Muss leer sein.")
                     self.assertValidationError("registration_stati",
                                                "Muss eine leere Liste sein.",
                                                index=0)
-                elif ml_type == const.MailinglistTypes.event_orga:
+                elif list_type == const.MailinglistTypes.event_orga:
                     self.assertValidationError("registration_stati",
                                                "Muss eine leere Liste sein.",
                                                index=0)
                 else:
                     self.assertNonPresence("Muss eine leere Liste sein.")
-                if ml_type not in assembly_types:
+                if list_type not in assembly_types:
                     self.assertValidationError('assembly_id', "Muss leer sein.")
 
                 f['event_id'] = ''
                 f['registration_stati'] = []
                 f['assembly_id'] = ''
-                if ml_type in general_types:
+                if list_type in general_types:
                     self.submit(f)
-                elif ml_type in event_types:
+                elif list_type in event_types:
                     self.submit(f)  # only works if all event-associated ml
                     # types can also not be associated with an event, which may
                     # change in future
@@ -901,7 +900,7 @@ class TestMlFrontend(FrontendTest):
                     self.traverse({'description': r"\sÜbersicht"})
                     self.assertPresence(
                         f"Mailingliste zur Veranstaltung {event_title}")
-                elif ml_type in assembly_types:
+                elif list_type in assembly_types:
                     self.submit(f, check_notification=False)
                     self.assertValidationError(
                         'assembly_id', "Ungültige Eingabe für eine Ganzzahl.")
@@ -1327,7 +1326,7 @@ class TestMlFrontend(FrontendTest):
         self.assertEqual({str(x) for x in stati} | {None}, tmp)
 
     def _prepare_moderation_mock(self, client_class: unittest.mock.Mock) -> Tuple[
-        List[MockHeldMessage], unittest.mock.MagicMock, Any]:
+            List[MockHeldMessage], unittest.mock.MagicMock, Any]:
         messages = HELD_MESSAGE_SAMPLE
         mmlist = unittest.mock.MagicMock()
         moderation_response = unittest.mock.MagicMock()

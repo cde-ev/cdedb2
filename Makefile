@@ -229,7 +229,7 @@ flake8:
 	@echo "All of flake8"
 	@echo $(BANNERLINE)
 	@echo ""
-	$(FLAKE8) cdedb
+	$(FLAKE8) cdedb tests
 
 pylint:
 	@echo $(BANNERLINE)

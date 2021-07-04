@@ -3301,7 +3301,7 @@ class TestEventBackend(BackendTest):
         self.assertEqual({1: 4, 2: 2, 3: 2},
                          self.event.get_waitlist_position(
                              self.key, event_id=1))
-        with self.assertRaises(PrivilegeError) as cm:
+        with self.assertRaises(PrivilegeError):
             self.event.get_waitlist_position(
                 self.key, event_id=1, persona_id=1)
 
