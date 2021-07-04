@@ -3,8 +3,8 @@
 import unittest
 from typing import Set
 
-import ldap3
-from ldap3.abstract.entry import Entry
+import ldap3   # type: ignore
+from ldap3.abstract.entry import Entry  # type: ignore
 
 
 class TestLDAP(unittest.TestCase):
@@ -50,7 +50,7 @@ class TestLDAP(unittest.TestCase):
 
     # TODO test encrypted connections (tls)
 
-    def test_organization_entity(self):
+    def test_organization_entity(self) -> None:
         """Check if all attributes of the organization are correctly present."""
         attributes = ["objectclass", "o"]
         expectation = {
@@ -68,7 +68,7 @@ class TestLDAP(unittest.TestCase):
             result = conn.entries[0].entry_attributes_as_dict
             self.assertEqual(result, expectation)
 
-    def test_organizational_unit_entity(self):
+    def test_organizational_unit_entity(self) -> None:
         """Check if all attributes of an organizational unit are correctly present."""
         organizational_unit_o = "Users"
         attributes = ["objectclass", "o"]
@@ -93,7 +93,7 @@ class TestLDAP(unittest.TestCase):
             result = conn.entries[0].entry_attributes_as_dict
             self.assertEqual(result, expectation)
 
-    def test_user_entity(self):
+    def test_user_entity(self) -> None:
         """Check if all attributes of an user are correctly present."""
         user_id = 1
         attributes = ["objectclass", "cn", "givenName", "displayName", "mail", "uid", "userPassword"]
@@ -121,7 +121,7 @@ class TestLDAP(unittest.TestCase):
             result = conn.entries[0].entry_attributes_as_dict
             self.assertEqual(result, expectation)
 
-    def test_group_entity(self):
+    def test_group_entity(self) -> None:
         """Check if all attributes of groups are correctly present."""
         group_cn = "is_cdelokal_admin"
         attributes = ["objectclass", "cn", "uniqueMember", "description"]
@@ -150,7 +150,7 @@ class TestLDAP(unittest.TestCase):
             result = conn.entries[0].entry_attributes_as_dict
             self.assertEqual(result, expectation)
 
-    def test_dsa_entity(self):
+    def test_dsa_entity(self) -> None:
         """Check if all attributes of dsas are correctly present."""
         dsa_cn = "test"
         attributes = ["objectclass", "cn", "userPassword"]
@@ -222,7 +222,7 @@ class TestLDAP(unittest.TestCase):
             result = conn.entries[0].entry_attributes_as_dict
             self.assertEqual(result, expectation)
 
-    def test_search_user_attributes(self):
+    def test_search_user_attributes(self) -> None:
         """Search a user by given attributes and return some of its attributes."""
         user_id = 9
         user_mail = "inga@example.cde"
