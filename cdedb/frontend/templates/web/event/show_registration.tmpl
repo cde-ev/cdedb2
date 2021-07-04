@@ -3,7 +3,7 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% block title %}
-    {% trans name=util.persona_name(persona['family_name']), title=ambience['event']['title'] -%}
+    {% trans name=util.persona_name(persona), title=ambience['event']['title'] -%}
     	Registration by {{ name }} ({{ title }})
     {% endtrans %}
 {% endblock %}

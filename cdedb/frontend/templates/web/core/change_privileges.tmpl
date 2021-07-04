@@ -19,7 +19,7 @@
         {{ util.anti_csrf_token('core/change_privileges') }}
         <div class="row">
             {{ util.form_input_static(label=gettext("User"),
-                                      value=util.persona_name(data, given_and_display_names=True)) }}
+                                      value=util.persona_name(ambience['persona'], given_and_display_names=True)) }}
             {# see also change_privileges in cdedb.frontend.core and initialize_privilege_change in cdedb.backend.core #}
             {% if ambience['persona']['is_cde_realm'] %}
                 {{ util.form_input_checkbox(name="is_meta_admin", label=gettext("Meta-Admin"), small=True) }}

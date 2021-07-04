@@ -8,7 +8,7 @@
         New Direct Debit Authorization
     {% endtrans %}
     {% if ambience['persona'] %}
-        {{ util.persona_name(ambience['persona'], only_given_names=True) }}
+        ({{ util.persona_name(ambience['persona'], only_given_names=True) }})
     {% endif %}
 {%- endblock %}
 {% block heading -%}

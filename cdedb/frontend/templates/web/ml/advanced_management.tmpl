@@ -226,7 +226,7 @@
                                         {{ util.input_hidden(name="unsubscription_id", value=unsubscription) }}
                                         {{ util.input_submit(label='', aclass="btn btn-xs btn-danger list-button-float", icon="trash-alt",
                                                 title=gettext("Reset %(name)s explicit unsubscription")|format(
-                                                    name=util.persona_name(persona))) }}
+                                                    name=util.persona_name(all_unsubscriptions[unsubscription]))) }}
                                     </form>
                                 {% else %}
                                     <form action="{{ cdedblink('ml/readd_subscriber') }}"
@@ -237,7 +237,7 @@
                                         {{ util.input_hidden(name="subscriber_id", value=unsubscription) }}
                                         {{ util.input_submit(label='', aclass="btn btn-xs btn-success list-button-float", icon="plus",
                                                 title=gettext("Subscribe %(name)s")|format(
-                                                    name=util.persona_name(persona))) }}
+                                                    name=util.persona_name(all_unsubscriptions[unsubscription]))) }}
                                     </form>
                                 {% endif %}
                             {% else %}

@@ -7,8 +7,8 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), util.persona_name(ambience['persona'])),
-        icon="user") }}
+{{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), util.persona_name(ambience['persona']),
+                        icon="user") }}
 {{ util.breadcrumb_link(cdedblink("core/modify_membership"), gettext("Modify Membership"), active="True") }}
 {% endblock %}
 {% block content %}

@@ -1,7 +1,7 @@
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans name=util.persona_name(ambience['persona']) %}
+    {% trans name=util.persona_name(ambience['persona'], only_given_names=True) %}
     	Modify Balance for {{ name }}
     {% endtrans %}
 {% endblock %}

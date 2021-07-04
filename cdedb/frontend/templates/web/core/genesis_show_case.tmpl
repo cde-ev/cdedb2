@@ -4,7 +4,7 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans name=util.persona_name(ambience['genesis_case']) %}
+    {% trans name="%s %s"|format(ambience['genesis_case']['given_names'], ambience['genesis_case']['family_name']) %}
         Account Request of {{ name }}
     {% endtrans %}
 {% endblock %}
@@ -12,7 +12,9 @@
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("core/genesis_list_cases"), gettext("Account Requests")) }}
 {{ util.breadcrumb_link(cdedblink("core/genesis_show_case"),
-                        gettext("Details of %(name)s")|format(name=util.name(ambience['genesis_case'])),
+                        gettext("Details of %(name)s")|format(
+                            name="%s %s"|format(ambience['genesis_case']['given_names'],
+                                                ambience['genesis_case']['family_name'])),
                         active="True", icon="user") }}
 {% endblock %}
 {% block content %}
@@ -55,7 +57,7 @@
     <dl class="dl-horizontal">
         <dt>{% trans %}Name{% endtrans %}</dt>
         <dd id="given-names">
-            {{ util.persona_name(ambience['genesis_case'], display_and_given_names=True, include_titles=True) }}
+            {{ ambience['genesis_case']['given_names'] }} {{ ambience['genesis_case']['family_name'] }}
         </dd>
         {% if ambience['genesis_case']['birth_name'] %}
             <dt>{% trans %}Birth Name{% endtrans %}</dt>

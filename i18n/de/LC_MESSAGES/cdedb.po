@@ -2433,22 +2433,22 @@ msgstr "automatisch"
 #: cdedb/frontend/event.py:2028 cdedb/frontend/event.py:2030
 #, python-format
 msgid ""
-"%(name) has no %(rank)i. choice in %(track_name)s."
+"%(name)s has no %(rank)i. choice in %(track_name)s."
 msgstr ""
-"%(name) hat keine %(rank)i. Kurswahl in "
+"%(name)s hat keine %(rank)i. Kurswahl in "
 "%(track_name)s."
 
 #: cdedb/frontend/event.py:2031 cdedb/frontend/event.py:2033
 #, python-format
-msgid "%(name) has no %(rank)i. choice."
-msgstr "%(name) hat keine %(rank)i. Kurswahl."
+msgid "%(name)s has no %(rank)i. choice."
+msgstr "%(name)s hat keine %(rank)i. Kurswahl."
 
 #: cdedb/frontend/event.py:2064 cdedb/frontend/event.py:2066
 #, python-format
 msgid ""
-"No choice available for %(name)s."
+"No choice available for %(name)s in %(track_name)s."
 msgstr ""
-"Keine Kurswahlen für %(name)s "
+"Keine Kurswahlen für %(name)s in %(track_name)s"
 "verfügbar."
 
 #: cdedb/frontend/event.py:2067 cdedb/frontend/event.py:2069
@@ -7530,8 +7530,8 @@ msgstr "Weiter"
 
 #: cdedb/frontend/templates/web/core/dearchive_user.tmpl:4
 #, python-format
-msgid "Dearchive %(name)"
-msgstr "%(name) wiederherstellen"
+msgid "Dearchive %(name)s"
+msgstr "%(name)s wiederherstellen"
 
 #: cdedb/frontend/templates/web/core/dearchive_user.tmpl:11
 msgid "Dearchive"
@@ -7640,8 +7640,8 @@ msgstr "Accountanfrage bearbeiten"
 
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:15
 #, python-format
-msgid "Edit Account Request from %(name)"
-msgstr "Accountanfrage von %(name) bearbeiten"
+msgid "Edit Account Request from %(name)s"
+msgstr "Accountanfrage von %(name)s bearbeiten"
 
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:44
 #: cdedb/frontend/templates/web/core/genesis_request.tmpl:50
@@ -7732,13 +7732,13 @@ msgstr "Anfrage abschicken"
 
 #: cdedb/frontend/templates/web/core/genesis_show_case.tmpl:7
 #, python-format
-msgid "Account Request of %(name)"
-msgstr "Accountanfrage von %(name)"
+msgid "Account Request of %(name)s"
+msgstr "Accountanfrage von %(name)s"
 
 #: cdedb/frontend/templates/web/core/genesis_show_case.tmpl:15
 #, python-format
-msgid "Details of %(name)"
-msgstr "Details von %(name)"
+msgid "Details of %(name)s"
+msgstr "Details von %(name)s"
 
 #: cdedb/frontend/templates/web/core/genesis_show_case.tmpl:20
 msgid "Case Meta-Information"

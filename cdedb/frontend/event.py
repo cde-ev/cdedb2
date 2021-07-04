@@ -5117,10 +5117,11 @@ class EventFrontend(AbstractUserFrontend):
 
         selectize_data = {
             track_id: xsorted(
-                [{'name': make_persona_name(personas[registration['persona_id']]),
+                ({'name': make_persona_name(personas[registration['persona_id']]),
+                  'current': registration['tracks'][track_id]['course_id'],
                   'id': registration_id}
                  for registration_id, registration in registrations.items()
-                 if _check_not_this_course(registration_id, track_id)],
+                 if _check_not_this_course(registration_id, track_id)),
                 key=lambda x: (
                     x['current'] is not None,
                     EntitySorter.persona(
@@ -5517,7 +5518,7 @@ class EventFrontend(AbstractUserFrontend):
             personas = self.coreproxy.get_personas(
                 rs, tuple(e['persona_id'] for e in entities.values()))
             labels = {
-                reg_id: make_persona_name(personas[entity['persona_id']]['given_names'])
+                reg_id: make_persona_name(personas[entity['persona_id']])
                 for reg_id, entity in entities.items()}
             ordered_ids = xsorted(
                 entities.keys(), key=lambda anid: EntitySorter.persona(

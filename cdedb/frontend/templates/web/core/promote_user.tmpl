@@ -39,7 +39,7 @@
             </p>
             <form action="{{ cdedblink('core/promote_user_form') }}" method="GET" id="realmselectionform"
                     class="form-horizontal">
-                {{ util.form_input_static(gettext("User"), value=util.persona_name(p, display_and_given_names=True),
+                {{ util.form_input_static(gettext("User"), value=util.persona_name(p, given_and_display_names=True),
                         small=True) }}
                 {{ util.form_input_checkboxes(name="target_realm", entries=myentries, label=gettext("Target Realm"),
                         radio=True, small=True) }}
@@ -51,7 +51,7 @@
             <form action="{{ cdedblink('core/promote_user') }}" method="POST" id="promotionform"
                     class="form-horizontal">
                 {{ util.anti_csrf_token('core/promote_user') }}
-                {{ util.form_input_static(gettext("User"), value=util.persona_name(p, display_and_given_names=True)) }}
+                {{ util.form_input_static(gettext("User"), value=util.persona_name(p, given_and_display_names=True)) }}
                 {{ util.form_input_static(gettext("New Realm"), value=realms[values['target_realm']]) }}
 
                 {% set implicit_realms = [] %}

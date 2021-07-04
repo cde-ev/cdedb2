@@ -34,29 +34,23 @@
                     <td>{{ gettext(enums['MemberChangeStati'](entry['code'])|string) }}</td>
                     <td>
                         {% if entry['submitted_by'] %}
-                            {{ util.href(show_user_link(user, entry['submitted_by']),
-                                         util.persona_name(personas[entry['submitted_by']]))
-                            }}
+                            {{ util.persona_anchor(personas[entry['submitted_by']]) }}
                         {% else %}
-                            -
+                            –
                         {% endif %}
                     </td>
                     <td>
                         {% if entry['reviewed_by'] %}
-                            {{ util.href(show_user_link(user, entry['reviewed_by']),
-                                         util.persona_name(personas[entry['submitted_by']]))
-                            }}
+                            {{ util.persona_anchor(personas[entry['reviewed_by']]) }}
                         {% else %}
-                            -
+                            –
                         {% endif %}
                     </td>
                     <td>
                         {% if entry['persona_id'] %}
-                            {{ util.href(show_user_link(user, entry['persona_id']),
-                                         util.persona_name(personas[entry['submitted_by']]))
-                            }}
+                            {{ util.persona_anchor(personas[entry['persona_id']]) }}
                         {% else %}
-                            -
+                            –
                         {% endif %}
                     </td>
                     <td>{{ entry['generation'] }}</td>
