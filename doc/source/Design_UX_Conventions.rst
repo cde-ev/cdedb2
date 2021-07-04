@@ -15,6 +15,7 @@ This may be the full given names, only a part of the given names or a completely
 
 Due to these possibilities, it is not trivial, where/when to use which of these two fields.
 The following shall give a guideline on this topic, based on our discussion on `Issue #2005 <https://tracker.cde-ev.de/gitea/cdedb/cdedb2/issues/2005#issuecomment-28855>`_.
+To apply this logic in the web template and frontend code, there is the :func:`cdedb.frontend.common.make_persona_name` helper function resp. the ``persona_name()`` macro in the ``util.tmpl`` template.
 
 * | *if* a person is addressed in a legal context (including postal addresses)
   | *then* use only the given names: "{given_names} {family_name}"

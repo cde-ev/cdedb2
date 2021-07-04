@@ -2068,6 +2068,8 @@ def make_persona_name(persona: CdEDBObject, only_given_names=False,
     """Format the name of a given persona according to the display name specification
 
     This is the Python pendant of the `util.persona_name()` macro.
+    For a full specification, which name variant should be used in which context, see
+    the documentation page about "User Experience Conventions".
     """
     display_name: str = persona.get('display_name', "")
     given_names: str = persona['given_names']

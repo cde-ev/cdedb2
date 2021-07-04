@@ -153,8 +153,11 @@
 
    Displaying names is rather complicated, esp. because of our distinction between given_names and display_name. Thus,
    this macro includes some logic to display a person's name correctly, depending on the context and the person's
-   display name. A full specification, which name variant should be used in which context, see the documentation page
-   about "User Experience Conventions".
+   display name. For a full specification, which name variant should be used in which context, see the documentation
+   page about "User Experience Conventions".
+
+   For usage in Python frontend code, the `cdedb.frontend.common.make_persona_name()` function implements the same
+   logic.
 
    persona:                 The persona data. Must be a dict containing (at least) the following keys:
                             'title', 'given_names', 'display_name', 'family_name', 'name_supplement'.
