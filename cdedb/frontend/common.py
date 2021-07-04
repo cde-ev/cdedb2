@@ -2062,9 +2062,12 @@ def make_event_fee_reference(persona: CdEDBObject, event: CdEDBObject) -> str:
     )
 
 
-def make_persona_name(persona: CdEDBObject, only_given_names=False,
-                      only_display_name=False, given_and_display_names=False,
-                      with_family_name=True, include_titles=False) -> str:
+def make_persona_name(persona: CdEDBObject,
+                      only_given_names: bool = False,
+                      only_display_name: bool = False,
+                      given_and_display_names: bool = False,
+                      with_family_name: bool = True,
+                      include_titles: bool = False) -> str:
     """Format the name of a given persona according to the display name specification
 
     This is the Python pendant of the `util.persona_name()` macro.
