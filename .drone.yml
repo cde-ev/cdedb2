@@ -62,7 +62,7 @@ steps:
     path: /var/lib/postgresql/data
   depends_on:
   - build images
-- name: frontend tests 1
+- name: frontend tests a-d
   image: cdedb
   pull: never # do not try to pull image from docker hub
   depends_on:
@@ -75,7 +75,7 @@ steps:
   - make i18n-compile # required for sample-data target
   - make sample-data # this creates the sql schema and copies the localconfig.py
   - bin/check.py tests.test_frontend_[abcd]* # everything before event
-- name: frontend tests 2
+- name: frontend tests e-z
   image: cdedb
   pull: never # do not try to pull image from docker hub
   depends_on:
@@ -112,8 +112,8 @@ steps:
   image: docker:20.10-git
   pull: never # do not try to pull image from docker hub
   depends_on:
-  - frontend tests 1
-  - frontend tests 2
+  - frontend tests a-d
+  - frontend tests e-z
   - backend tests
   - xss
   when:
