@@ -54,6 +54,8 @@
                 <span  class="row-key" data-row="{{ dataset['lineno'] }}">
                     {% trans lineno=dataset['lineno'] %}Line {{ lineno }}{% endtrans %}
                 </span>:
+                {# We don't use util.person_name() here, b/c dataset['raw'] is no full persona object, esp. it misses a
+                   'display_name' entry #}
                 {% trans amount=dataset['amount']|money(lang=lang), name=("%s %s"|format(
                         dataset['raw']['given_names'], dataset['raw']['family_name'])) -%}
                     {{ amount }} for {{ name }}
