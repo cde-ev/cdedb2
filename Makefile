@@ -229,14 +229,15 @@ flake8:
 	@echo "All of flake8"
 	@echo $(BANNERLINE)
 	@echo ""
-	$(FLAKE8) cdedb
+	$(FLAKE8) cdedb tests
 
 pylint:
 	@echo $(BANNERLINE)
 	@echo "All of pylint"
 	@echo $(BANNERLINE)
 	@echo ""
-	$(PYLINT) cdedb --load-plugins=pylint.extensions.bad_builtin
+	# test_subman crashes pylint seemingly due to symlinking
+	$(PYLINT) cdedb tests --load-plugins=pylint.extensions.bad_builtin --ignore=test_subman.py
 
 template-line-length:
 	@echo $(BANNERLINE)

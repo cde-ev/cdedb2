@@ -346,7 +346,7 @@ class TestEventFrontend(FrontendTest):
         registered = {"Meine Anmeldung"}
         registered_or_orga = {"Teilnehmer-Infos"}
         orga = {
-            "Teilnehmerliste",  "Anmeldungen", "Statistik", "Kurse", "Kurseinteilung",
+            "Teilnehmerliste", "Anmeldungen", "Statistik", "Kurse", "Kurseinteilung",
             "Unterkünfte", "Downloads", "Partieller Import", "Überweisungen eintragen",
             "Konfiguration", "Veranstaltungsteile", "Datenfelder konfigurieren",
             "Anmeldung konfigurieren", "Fragebogen konfigurieren", "Log", "Checkin"}
@@ -2034,7 +2034,6 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("451,00 € am 30.12.2019 gezahlt.",
                             div=str(self.EVENT_LOG_OFFSET + 3) + "-1003")
 
-
     @as_users("garcia")
     def test_batch_fee_regex(self) -> None:
         self.traverse({'href': '/event/$'},
@@ -2363,7 +2362,7 @@ etc;anything else""", f['entries_2'].value)
         # Check log
         self.traverse({'href': '/event/event/1/log'})
         self.assertPresence("Orga-Notizen geändert.",
-                            div=str(self.EVENT_LOG_OFFSET +1) + "-1001")
+                            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
 
     @as_users("garcia")
     def test_add_registration(self) -> None:

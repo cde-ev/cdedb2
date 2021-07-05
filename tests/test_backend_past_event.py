@@ -5,7 +5,7 @@ import datetime
 import pytz
 
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, xsorted, nearly_now
+from cdedb.common import xsorted, nearly_now
 from tests.common import BackendTest, as_users
 
 

@@ -1121,7 +1121,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         # Currently we don't distinguish between current and extended ballots
         current.update(extended)
         ballot_list: List[int] = sum((
-            xsorted(bdict, key=lambda key: bdict[key]["title"])  # pylint: disable=cell-var-from-loop; # noqa
+            xsorted(bdict, key=lambda key: bdict[key]["title"])  # pylint: disable=cell-var-from-loop;
             for bdict in (future, current, done)), [])
 
         i = ballot_list.index(ballot_id)

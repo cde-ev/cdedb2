@@ -21,7 +21,7 @@ class TestAssemblyBackend(BackendTest):
 
     @as_users("kalif")
     def test_basics(self) -> None:
-        data = self.core.get_assembly_user(self.key,self.user['id'])
+        data = self.core.get_assembly_user(self.key, self.user['id'])
         data['display_name'] = "Zelda"
         data['family_name'] = "Lord von und zu Hylia"
         setter = {k: v for k, v in data.items() if k in
