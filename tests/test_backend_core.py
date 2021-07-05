@@ -1296,7 +1296,7 @@ class TestCoreBackend(BackendTest):
     def test_log(self) -> None:
         # first generate some data
         data = copy.deepcopy(PERSONA_TEMPLATE)
-        self.core.create_persona(self.key, data)
+        new_persona_id = self.core.create_persona(self.key, data)
         data = {
             "family_name": "Zeruda-Hime",
             "given_names": "Zelda",
@@ -1320,7 +1320,7 @@ class TestCoreBackend(BackendTest):
              'change_note': None,
              'code': const.CoreLogCodes.persona_creation,
              'ctime': nearly_now(),
-             'persona_id': 1001,
+             'persona_id': new_persona_id,
              'submitted_by': self.user['id']},
             {'id': 1002,
              'change_note': 'zeldax@example.cde',
