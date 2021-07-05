@@ -74,7 +74,7 @@ steps:
   - sleep 5 # wait for db to come online
   - make i18n-compile # required for sample-data target
   - make sample-data # this creates the sql schema and copies the localconfig.py
-  - bin/check.py --first # everything before event
+  - bin/check.py --verbose --first # everything before event
 - name: frontend tests e-z
   image: cdedb
   pull: never # do not try to pull image from docker hub
@@ -85,7 +85,7 @@ steps:
     path: /tmp
   commands:
   - sleep 15 # wait for make sample-data to finish
-  - bin/check.py --second # event and following
+  - bin/check.py --verbose --second # event and following
 - name: backend tests
   image: cdedb
   pull: never # do not try to pull image from docker hub
@@ -96,7 +96,7 @@ steps:
     path: /tmp
   commands:
   - sleep 15 # wait for make sample-data to finish
-  - bin/check.py --third
+  - bin/check.py --verbose --third
 - name: xss
   image: cdedb
   pull: never

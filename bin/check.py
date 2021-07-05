@@ -106,7 +106,7 @@ def check_xss(payload: str, thread_id: int = 1, verbose: bool = False,
 
 
 def run_testsuite(testpatterns: List[str] = None, *, thread_id: int = 1,
-                  manual_preparation: bool = False) -> int:
+                  verbose: bool = False, manual_preparation: bool = False) -> int:
     if not manual_preparation:
         _prepare_check(thread_id=thread_id)
     check_test_setup()
@@ -118,17 +118,16 @@ def run_testsuite(testpatterns: List[str] = None, *, thread_id: int = 1,
     all_tests = unittest.defaultTestLoader.discover('tests', top_level_dir=str(root))
 
     unittest.installHandler()
-    test_runner = MyTextTestRunner(
-        verbosity=2, resultclass=MyTextTestResult, descriptions=False)
+    test_runner = MyTextTestRunner(verbosity=(2 if verbose else 1),
+                                   resultclass=MyTextTestResult, descriptions=False)
     ran_tests = test_runner.run(all_tests)
     return 0 if ran_tests.wasSuccessful() else 1
 
 
 if __name__ == '__main__':
     # parse arguments
-    # TODO: some of the help texts can be improved
-    parser = argparse.ArgumentParser(description="Entry point to CdEDB's"
-                                                 " testing facilities.")
+    parser = argparse.ArgumentParser(
+        description="Entry point to CdEDB's testing facilities.")
     parser.add_argument('testpatterns', default=[], nargs="*")
 
     test_options = parser.add_argument_group("general options")
@@ -161,7 +160,6 @@ if __name__ == '__main__':
 
     parser.add_argument('--verbose', '-v', action='store_true',
                         help="more detailed output")
-    # TODO: implement verbosity settings -v and -q (-v currently only used for xss)
     args = parser.parse_args()
 
     # splitup in three parts with similar runtime
@@ -176,11 +174,12 @@ if __name__ == '__main__':
         assert Lock.thread_id is not None
         print(f"Using thread {Lock.thread_id}", file=sys.stderr)
         if args.xss_check:
-            return_code = check_xss(args.payload, thread_id=Lock.thread_id,
-                                    verbose=args.verbose,
-                                    manual_preparation=args.manual_preparation)
+            return_code = check_xss(
+                args.payload, thread_id=Lock.thread_id, verbose=args.verbose,
+                manual_preparation=args.manual_preparation)
         else:
-            return_code = run_testsuite(args.testpatterns, thread_id=Lock.thread_id,
-                                        manual_preparation=args.manual_preparation)
+            return_code = run_testsuite(
+                args.testpatterns, thread_id=Lock.thread_id, verbose=args.verbose,
+                manual_preparation=args.manual_preparation)
 
     sys.exit(return_code)
