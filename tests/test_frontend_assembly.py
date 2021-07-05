@@ -538,7 +538,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f['signup_end'] = "2002-4-1 00:00:00"
         self.submit(f)
 
-        wait_time = 0.5
+        wait_time = 1
         future = now() + datetime.timedelta(seconds=wait_time)
         farfuture = now() + datetime.timedelta(seconds=2 * wait_time)
         bdata = {
@@ -938,7 +938,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         for use_bar in (False, True):
             with self.subTest(use_bar=use_bar):
                 # First, create a new ballot
-                wait_time = 3
+                wait_time = 5
                 future = now() + datetime.timedelta(seconds=wait_time)
                 farfuture = now() + datetime.timedelta(seconds=2 * wait_time)
                 bdata = {
@@ -1265,7 +1265,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         # werner is no member, so he must signup external
         secret = self._external_signup(user)
         # Create new ballot.
-        wait_time = 2
+        wait_time = 4
         future = now() + datetime.timedelta(seconds=wait_time)
         farfuture = now() + datetime.timedelta(seconds=2 * wait_time)
         bdata = {
