@@ -30,11 +30,6 @@ help:
 	@echo "mypy           -- let mypy run over our codebase (bin, cdedb, tests)"
 	@echo "lint           -- run linters (flake8 and pylint)"
 	@echo "check          -- run (parts of the) test suite"
-	@echo "                  (TESTPATTERNS specifies globs to match against the testnames like"
-	@echo "                      '404 500' or tests.test_frontend_event.TestEventFrontend.test_show_event"
-	@echo "                      If TESTPATTERNS is empty, run full test suite)"
-	@echo "check-parallel -- run full test suite using multiple CPU cores/threads"
-	@echo "                  (beta, not stable yet!)"
 	@echo "xss-check      -- check for xss vulnerabilities"
 	@echo "dump-html      -- run frontend tests and store all encountered pages inside"
 	@echo "                  /tmp/cdedb-dump/"
@@ -260,23 +255,8 @@ else
 	@echo "Omitting test preparation."
 endif
 
-check-parallel:
-	# TODO: move this logic into bin/check.py
-	# TODO: using inverse regex arguments possible? Would be helpful for not overlooking some tests
-	# sleeping is necessary here that the i18n-refresh runs at the very beginning to not interfere
-	$(PYTHONBIN) -m bin.check \
-		test_backend test_common test_config test_database test_offline test_script test_session \
-		test_validation test_vote_verification & \
-	sleep 0.5; \
-	$(PYTHONBIN) -m bin.check \
-		frontend_event frontend_ml frontend_privacy frontend_parse & \
-	sleep 0.5; \
-	$(PYTHONBIN) -m bin.check \
-		frontend_application frontend_assembly frontend_common frontend_core frontend_cde \
-		frontend_cron
-
 check:
-	$(PYTHONBIN) -m bin.check $(or $(TESTPATTERNS), )
+	$(PYTHONBIN) -m bin.check --verbose
 
 sql-xss: tests/ancillary_files/sample_data_xss.sql
 ifneq ($(wildcard /CONTAINER),/CONTAINER)
@@ -297,7 +277,7 @@ dump-html:
 
 /tmp/cdedb-dump/: export CDEDB_TEST_DUMP_DIR=/tmp/cdedb-dump/
 /tmp/cdedb-dump/:
-	$(PYTHONBIN) -m bin.check test_frontend
+	$(PYTHONBIN) -m bin.check --verbose tests.test_frontend*
 
 validate-html: /tmp/cdedb-dump/ /opt/validator/vnu-runtime-image/bin/vnu
 	/opt/validator/vnu-runtime-image/bin/vnu --no-langdetect --stdout \
