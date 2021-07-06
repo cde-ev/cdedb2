@@ -2364,7 +2364,10 @@ class CdEFrontend(AbstractUserFrontend):
         else:
             worker = Worker(self.conf, send_addresscheck, rs)
             worker.start()
-            time.sleep(1)
+            # Wait a bit to make the semester state update so that the user
+            # does not need to reload. However do not wait if there is
+            # nothing to wait for.
+            worker.join(.1)
             rs.notify("success", n_("Started sending mail."))
         return self.redirect(rs, "cde/show_semester")
 
