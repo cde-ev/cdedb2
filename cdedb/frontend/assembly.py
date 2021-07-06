@@ -1463,12 +1463,14 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         bdata = {
             "id": ballot_id,
-            "vote_begin": now() + datetime.timedelta(seconds=1),
+            # vote begin must be in the future
+            "vote_begin": now() + datetime.timedelta(milliseconds=100),
             "vote_end": now() + datetime.timedelta(minutes=1),
         }
 
         self.notify_return_code(rs, self.assemblyproxy.set_ballot(rs, bdata))
-        time.sleep(1)
+        # wait for ballot to be votable
+        time.sleep(.1)
         return self.redirect(rs, "assembly/show_ballot")
 
     @access("assembly", modi={"POST"})
