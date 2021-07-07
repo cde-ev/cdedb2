@@ -56,6 +56,10 @@ CREATE FUNCTION node_event_orgas_group_id()
   RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
 $$ SELECT 17; $$;
 
+CREATE FUNCTION node_assembly_presiders_group_id()
+  RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+$$ SELECT 18; $$;
+
 CREATE FUNCTION node_static_group_id()
   RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
 $$ SELECT 19; $$;
@@ -149,6 +153,10 @@ CREATE FUNCTION make_event_orgas_entity_id(event_id INT)
   RETURNS bigint LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
 $$ SELECT CAST (7 * 2^32 + $1 AS BIGINT); $$ ;
 
+CREATE FUNCTION make_assembly_presiders_entity_id(assembly_id INT)
+  RETURNS bigint LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+$$ SELECT CAST (8 * 2^32 + $1 AS BIGINT); $$ ;
+
 ---
 --- create dn
 --- Some dn's are used at multiple places. To ensure consistency, we define a
@@ -215,7 +223,8 @@ INSERT INTO ldap_organizations (id, dn, oc_map_id, parent, display_name, additio
         (node_static_group_id(), 'ou=status,ou=groups,dc=cde-ev,dc=de', oc_organizationalUnit_id(), make_organization_entity_id(node_groups_id()), 'Status', NULL),
         (node_ml_subscribers_group_id(), 'ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de', oc_organizationalUnit_id(), make_organization_entity_id(node_groups_id()), 'Mailinglists Subscribers', NULL),
         (node_ml_moderators_group_id(), 'ou=ml-moderators,ou=groups,dc=cde-ev,dc=de', oc_organizationalUnit_id(), make_organization_entity_id(node_groups_id()), 'Mailinglists Moderators', NULL),
-        (node_event_orgas_group_id(), 'ou=event-orgas,ou=groups,dc=cde-ev,dc=de', oc_organizationalUnit_id(), make_organization_entity_id(node_groups_id()), 'Event Orgas', NULL);
+        (node_event_orgas_group_id(), 'ou=event-orgas,ou=groups,dc=cde-ev,dc=de', oc_organizationalUnit_id(), make_organization_entity_id(node_groups_id()), 'Event Orgas', NULL),
+        (node_assembly_presiders_group_id(), 'ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de', oc_organizationalUnit_id(), make_organization_entity_id(node_groups_id()), 'Assembly Presiders', NULL);
 
 -- ldap Directory System Agents
 DROP TABLE IF EXISTS ldap_agents;
@@ -284,6 +293,14 @@ CREATE VIEW ldap_groups (id, cn, description) AS
            CAST (id as VARCHAR) AS cn,
            title || ' (' || shortname || ')' AS description
         FROM event.events
+    )
+    -- assembly presiders
+    UNION (
+        SELECT
+           make_assembly_presiders_entity_id(id),
+           CAST (id as VARCHAR) AS cn,
+           title || ' (' || shortname || ')' AS description
+        FROM assembly.assemblies
     )
 ;
 GRANT ALL ON ldap_groups TO cdb_admin;
@@ -429,6 +446,13 @@ CREATE VIEW ldap_group_members (group_id, member_dn) AS
            make_event_orgas_entity_id(event_id) AS group_id,
            make_persona_dn(persona_id) AS member_dn
         FROM event.orgas
+    )
+    -- assembly presiders
+    UNION (
+        SELECT
+           make_assembly_presiders_entity_id(assembly_id) AS group_id,
+           make_persona_dn(persona_id) AS member_dn
+        FROM assembly.presiders
     )
 ;
 GRANT ALL ON ldap_group_members TO cdb_admin;
@@ -588,6 +612,16 @@ CREATE VIEW ldap_entries (id, dn, oc_map_id, parent, keyval) AS
                make_organization_entity_id(node_event_orgas_group_id()) AS parent,
                make_event_orgas_entity_id(id) as keyval
             FROM event.events
+        )
+        -- assembly presiders
+        UNION (
+            SELECT
+               make_assembly_presiders_entity_id(id),
+               'cn=' || id || ',ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de' AS dn,
+               oc_groupOfUniqueNames_id() AS oc_map_id,
+               make_organization_entity_id(node_assembly_presiders_group_id()) AS parent,
+               make_assembly_presiders_entity_id(id) as keyval
+            FROM assembly.assemblies
         )
 ;
 GRANT ALL ON ldap_entries TO cdb_admin;
