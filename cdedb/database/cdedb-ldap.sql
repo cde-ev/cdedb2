@@ -48,6 +48,10 @@ CREATE FUNCTION node_mailinglist_group_id()
   RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
 $$ SELECT 15; $$;
 
+CREATE FUNCTION node_static_group_id()
+  RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+$$ SELECT 19; $$;
+
 CREATE FUNCTION node_static_group_is_active_id()
   RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
 $$ SELECT 20; $$;
@@ -192,6 +196,7 @@ INSERT INTO ldap_organizations (id, dn, oc_map_id, parent, display_name, additio
         (node_groups_id(), 'ou=groups,dc=cde-ev,dc=de', oc_organizationalUnit_id(), make_organization_entity_id(node_cde_id()), 'Groups', NULL),
         (node_dsa_id(), 'ou=dsa,dc=cde-ev,dc=de', oc_organizationalUnit_id(), make_organization_entity_id(node_cde_id()), 'Directory System Agent', NULL),
     -- Additional organizational units holding group of groups
+        (node_static_group_id(), 'ou=status,ou=groups,dc=cde-ev,dc=de', oc_organizationalUnit_id(), make_organization_entity_id(node_groups_id()), 'Status', NULL),
         (node_mailinglist_group_id(), 'ou=mailinglists,ou=groups,dc=cde-ev,dc=de', oc_organizationalUnit_id(), make_organization_entity_id(node_groups_id()), 'Mailinglists', NULL);
 
 -- ldap Directory System Agents
@@ -500,9 +505,9 @@ CREATE VIEW ldap_entries (id, dn, oc_map_id, parent, keyval) AS
         UNION (
             SELECT
                make_static_group_entity_id(id),
-               'cn=' || cn || ',ou=groups,dc=cde-ev,dc=de' AS dn,
+               'cn=' || cn || ',ou=status,ou=groups,dc=cde-ev,dc=de' AS dn,
                oc_groupOfUniqueNames_id() AS oc_map_id,
-               make_organization_entity_id(node_groups_id()) AS parent,
+               make_organization_entity_id(node_static_group_id()) AS parent,
                make_static_group_entity_id(id) as keyval
             FROM ldap_static_groups
         )

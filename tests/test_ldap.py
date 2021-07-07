@@ -158,8 +158,8 @@ class TestLDAP(BasicTest):
     def test_search_groups_of_user(self) -> None:
         user_id = 10
         expectation = {
-            'cn=is_active,ou=groups,dc=cde-ev,dc=de',
-            'cn=is_ml_realm,ou=groups,dc=cde-ev,dc=de',
+            'cn=is_active,ou=status,ou=groups,dc=cde-ev,dc=de',
+            'cn=is_ml_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
 
             'cn=42@lists.cde-ev.de,ou=mailinglists,ou=groups,dc=cde-ev,dc=de',
             'cn=everyone@lists.cde-ev.de,ou=mailinglists,ou=groups,dc=cde-ev,dc=de',
