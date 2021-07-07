@@ -265,6 +265,13 @@ _DEFAULTS = {
     # port on which the database listens, preferably a pooler like pgbouncer
     "DB_PORT": 6432,
 
+    # host name where the ldap server is running
+    "LDAP_HOST": "localhost",
+
+    # port on which the ldap server listens
+    # TODO switch to TLS port?
+    "LDAP_PORT": 389,
+
     # True for offline versions running on academies
     "CDEDB_OFFLINE_DEPLOYMENT": False,
 
