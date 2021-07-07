@@ -169,32 +169,6 @@ def build_commands(data: CdEDBObject, aux: AuxData, xss: str) -> List[str]:
                             commands.append(
                                 cur.mogrify(query, params).decode("utf8"))
 
-    # Insert the ldap infos
-    # This is adapted from
-    # servers/slapd/back-sql/rdbms_depend/pgsql/testdb_metadata.sql
-    # in the openldap sources.
-
-    # TODO outsource into sample_data.json
-    LDAP_TABLES = {
-        'ldap_agents': [
-            {
-                'cn': 'admin',
-                # password is 'secret' as usual
-                'password_hash': "$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1"
-            },
-            {
-                'cn': 'test',
-                # password is 'secret' as usual
-                'password_hash': "$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1"
-            }
-        ],
-    }
-
-    for table, table_data in LDAP_TABLES.items():
-        keys = tuple(set(chain.from_iterable(e.keys() for e in table_data)))
-        params_list = [entry[key] for entry in table_data for key in keys]
-        commands.extend(format_inserts(table, table_data, keys, params_list, aux))
-
     # Here we set all sequential ids to start with 1001, so that
     # ids are consistent when running the test suite.
     commands.extend("SELECT setval('{}_id_seq', 1000);".format(table)

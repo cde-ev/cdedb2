@@ -8214,5 +8214,15 @@
             "persona_id": 1
         }
     ],
-    "ml.log": []
+    "ml.log": [],
+    "ldap_agents": [
+            {
+                "cn": "admin",
+                "password_hash": "$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1"
+            },
+            {
+                "cn": "test",
+                "password_hash": "$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1"
+            }
+        ]
 }
