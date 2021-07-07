@@ -1,18 +1,24 @@
 #!/usr/bin/env python3
 
-import unittest
 from typing import Set
 
 import ldap3   # type: ignore
 from ldap3.abstract.entry import Entry  # type: ignore
 
+from tests.common import BasicTest
 
-class TestLDAP(unittest.TestCase):
-    server = ldap3.Server('127.0.0.1', port=389, get_info=ldap3.ALL)
+
+class TestLDAP(BasicTest):
 
     root_dn = f'dc=cde-ev,dc=de'
     test_dsa_dn = f'cn=test,ou=dsa,{root_dn}'
     test_dsa_pw = 'secret'
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        cls.server = ldap3.Server(
+            cls.conf['LDAP_HOST'], port=cls.conf['LDAP_PORT'], get_info=ldap3.ALL)
 
     def test_anonymous_bind(self) -> None:
         conn = ldap3.Connection(self.server)
