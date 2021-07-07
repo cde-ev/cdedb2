@@ -161,12 +161,12 @@ class TestLDAP(BasicTest):
             'cn=is_active,ou=status,ou=groups,dc=cde-ev,dc=de',
             'cn=is_ml_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
 
-            'cn=42@lists.cde-ev.de,ou=mailinglists,ou=groups,dc=cde-ev,dc=de',
-            'cn=everyone@lists.cde-ev.de,ou=mailinglists,ou=groups,dc=cde-ev,dc=de',
-            'cn=hogwarts@cdelokal.cde-ev.de,ou=mailinglists,ou=groups,dc=cde-ev,dc=de',
-            'cn=kanonisch@lists.cde-ev.de,ou=mailinglists,ou=groups,dc=cde-ev,dc=de',
-            'cn=moderatoren@lists.cde-ev.de,ou=mailinglists,ou=groups,dc=cde-ev,dc=de',
-            'cn=witz@lists.cde-ev.de,ou=mailinglists,ou=groups,dc=cde-ev,dc=de'
+            'cn=42@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+            'cn=everyone@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+            'cn=hogwarts@cdelokal.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+            'cn=kanonisch@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+            'cn=moderatoren@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+            'cn=witz@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
         }
         search_filter = (
             "(&"
