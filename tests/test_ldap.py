@@ -13,6 +13,7 @@ class TestLDAP(BasicTest):
     root_dn = f'dc=cde-ev,dc=de'
     test_dsa_dn = f'cn=test,ou=dsa,{root_dn}'
     test_dsa_pw = 'secret'
+    server: ldap3.Server
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -23,7 +24,7 @@ class TestLDAP(BasicTest):
     def single_result_search(self, search_filter: str, attributes: List[str],
                              expectation: Dict[str, List[str]], *,
                              user: str = test_dsa_dn, password: str = test_dsa_pw,
-                             search_base: str = root_dn):
+                             search_base: str = root_dn) -> None:
         with ldap3.Connection(self.server, user=user, password=password) as conn:
             conn.search(search_base=search_base, search_filter=search_filter,
                         attributes=attributes)
@@ -97,7 +98,7 @@ class TestLDAP(BasicTest):
         """Check if all attributes of an user are correctly present."""
         user_id = 1
         attributes = ["objectclass", "cn", "givenName", "displayName", "mail", "uid", "userPassword"]
-        expectation = {
+        expectation: Dict[str, List[str]] = {
             'uid': ['1'],
             'mail': ['anton@example.cde'],
 
@@ -105,7 +106,7 @@ class TestLDAP(BasicTest):
             'displayName': ['Anton Administrator'],
             'givenName': ['Anton Armin A.'],
 
-            'userPassword': [b'{CRYPT}$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/'],
+            'userPassword': [b'{CRYPT}$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/'],  # type: ignore
             'objectClass': ['inetOrgPerson'],
         }
         search_filter = (
@@ -235,10 +236,10 @@ class TestLDAP(BasicTest):
         """Check if all attributes of dsas are correctly present."""
         dsa_cn = "test"
         attributes = ["objectclass", "cn", "userPassword"]
-        expectation = {
+        expectation: Dict[str, List[str]] = {
             'cn': ['test'],
             'objectClass': ['organizationalRole', 'simpleSecurityObject'],
-            'userPassword': [b'{CRYPT}$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1'],
+            'userPassword': [b'{CRYPT}$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1'],  # type: ignore
         }
         search_filter = (
             "(&"
@@ -320,7 +321,7 @@ class TestLDAP(BasicTest):
         )
         with ldap3.Connection(self.server, user=self.test_dsa_dn, password=self.test_dsa_pw) as conn:
             conn.search(search_base=self.root_dn, search_filter=search_filter)
-            result_names: Set[str] = {entry.entry_dn for entry in conn.entries}
+            result_names = {entry.entry_dn for entry in conn.entries}
             self.assertEqual(result_names, expectation)
 
     def test_search_attributes_of_groups_of_user(self) -> None:
