@@ -82,8 +82,9 @@ ldap-reset-sql:
     && systemctl start slapd.service
 
 ldap-reset:
-	apt remove --purge -y slapd \
-    && apt install -y slapd
+	sudo apt remove --purge -y slapd \
+	&& sudo apt update \
+    && sudo apt install -y slapd
 
 reload:
 	$(MAKE) i18n-compile
