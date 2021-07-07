@@ -10,23 +10,9 @@ First we install odbc::
 
     sudo apt-get install unixodbc odbc-postgresql
 
-And configure it via /etc/odbc.ini::
+And configure it via /etc/odbc.ini
 
-    [cdb]
-    Description         = cdb connector for OpenLDAP's back-sql
-    Driver              = PostgreSQL Unicode
-    Trace               = No
-    Database            = cdb
-    Servername          = localhost
-    UserName            = cdb_admin
-    Password            = 9876543210abcdefghijklmnopqrst
-    Port                = 5432
-    ReadOnly            = No
-    RowVersioning       = No
-    ShowSystemTables    = No
-    ShowOidColumn       = No
-    FakeOidIndex        = No
-    ConnSettings        =
+.. literalinclude:: ../../related/auto-build/files/stage2/odbc.ini
 
 The ``Driver`` must be as specified in /etc/odbcinst.ini (which should be
 prefilled by the Debian package). To check odbc functionality we use the
