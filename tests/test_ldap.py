@@ -249,17 +249,68 @@ class TestLDAP(BasicTest):
         self.single_result_search(search_filter, attributes, expectation)
 
     def test_search_groups_of_user(self) -> None:
-        user_id = 10
+        # Garcia has status fields, is orga, subscriber and ml moderator
+        user_id = 7
         expectation = {
             'cn=is_active,ou=status,ou=groups,dc=cde-ev,dc=de',
+            'cn=is_assembly_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
+            'cn=is_cde_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
+            'cn=is_event_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
+            'cn=is_ml_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
+            'cn=is_member,ou=status,ou=groups,dc=cde-ev,dc=de',
+
+            'cn=aka@aka.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+            'cn=all@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+            'cn=announce@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+            'cn=everyone@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+            'cn=info@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+            'cn=kanonisch@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+            'cn=mitgestaltung@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+            'cn=moderatoren@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+            'cn=participants@aka.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+            'cn=werbung@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+
+            'cn=aka@aka.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
+            'cn=test-gast@aka.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
+            'cn=participants@aka.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
+            'cn=wait@aka.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
+
+            'cn=1,ou=event-orgas,ou=groups,dc=cde-ev,dc=de',
+            'cn=3,ou=event-orgas,ou=groups,dc=cde-ev,dc=de',
+        }
+        search_filter = (
+            "(&"
+                "(objectClass=groupOfUniqueNames)"
+                f"(uniqueMember=uid={user_id},ou=users,{self.root_dn})"
+            ")"
+        )
+        with ldap3.Connection(self.server, user=self.test_dsa_dn, password=self.test_dsa_pw) as conn:
+            conn.search(search_base=self.root_dn, search_filter=search_filter)
+            result_names: Set[str] = {entry.entry_dn for entry in conn.entries}
+            self.assertEqual(result_names, expectation)
+
+        # Kalif has status fields, is presider, subscriber and moderator
+        user_id = 23
+        expectation = {
+            'cn=everyone@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+            'cn=is_active,ou=status,ou=groups,dc=cde-ev,dc=de',
+            'cn=is_assembly_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
+            'cn=is_cde_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
+            'cn=is_event_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
             'cn=is_ml_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
 
-            'cn=42@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
-            'cn=everyone@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
-            'cn=hogwarts@cdelokal.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
-            'cn=kanonisch@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+            'cn=kongress@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+            'cn=kongress-leitung@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=moderatoren@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
-            'cn=witz@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+            'cn=opt@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+            'cn=wal@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+
+            'cn=kanonisch@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
+            'cn=kongress-leitung@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
+            'cn=kongress@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
+
+            'cn=1,ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de',
+            'cn=3,ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de',
         }
         search_filter = (
             "(&"
