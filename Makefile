@@ -76,11 +76,6 @@ doc:
 	bin/create_email_template_list.sh .
 	$(MAKE) -C doc html
 
-ldap-reset-sql:
-	systemctl stop slapd.service \
-    && rm /etc/ldap/slapd.d/cn\=config/*Database*sql* \
-    && systemctl start slapd.service
-
 ldap-reset:
 	sudo apt remove --purge -y slapd \
 	&& sudo apt update \
