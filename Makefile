@@ -195,7 +195,6 @@ ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
 	$(error Refusing to touch orga instance)
 endif
 ifneq ($(wildcard /CONTAINER),/CONTAINER)
-	sudo systemctl stop slapd.service
 	sudo systemctl stop pgbouncer
 endif
 	$(PSQL_ADMIN) -f cdedb/database/cdedb-users.sql
@@ -206,13 +205,9 @@ endif
 	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=cdb
 	$(PSQL) -f cdedb/database/cdedb-ldap.sql --dbname=cdb
 	$(PSQL) -f tests/ancillary_files/sample_data.sql --dbname=cdb
-ifneq ($(wildcard /CONTAINER),/CONTAINER)
-	sudo systemctl start slapd.service
-endif
 
 sql-test:
 ifneq ($(wildcard /CONTAINER),/CONTAINER)
-	sudo systemctl stop slapd.service
 	sudo systemctl stop pgbouncer
 endif
 	$(PSQL_ADMIN) -f cdedb/database/cdedb-db.sql -v cdb_database_name=${TESTDATABASENAME}
@@ -222,9 +217,6 @@ endif
 	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=${TESTDATABASENAME}
 	$(PSQL) -f cdedb/database/cdedb-ldap.sql --dbname=${TESTDATABASENAME}
 	$(MAKE) sql-test-shallow
-ifneq ($(wildcard /CONTAINER),/CONTAINER)
-	sudo systemctl start slapd.service
-endif
 
 sql-test-shallow: tests/ancillary_files/sample_data.sql
 	$(PSQL) -f tests/ancillary_files/clean_data.sql --dbname=${TESTDATABASENAME}
@@ -298,7 +290,6 @@ check:
 
 sql-xss: tests/ancillary_files/sample_data_xss.sql
 ifneq ($(wildcard /CONTAINER),/CONTAINER)
-	sudo systemctl stop slapd.service
 	sudo systemctl stop pgbouncer
 endif
 	$(PSQL_ADMIN) -f cdedb/database/cdedb-db.sql -v cdb_database_name=${TESTDATABASENAME}
@@ -308,9 +299,6 @@ endif
 	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=${TESTDATABASENAME}
 	$(PSQL) -f cdedb/database/cdedb-ldap.sql --dbname=${TESTDATABASENAME}
 	$(PSQL) -f tests/ancillary_files/sample_data_xss.sql --dbname=${TESTDATABASENAME}
-ifneq ($(wildcard /CONTAINER),/CONTAINER)
-	sudo systemctl start slapd.service
-endif
 
 xss-check:
 	$(PYTHONBIN) -m bin.check --xss-check --verbose
