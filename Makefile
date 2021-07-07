@@ -79,7 +79,8 @@ doc:
 ldap-reset:
 	sudo apt remove --purge -y slapd \
 	&& sudo apt update \
-    && sudo apt install -y slapd
+    && sudo apt install -y slapd \
+    && sudo ldapmodify -Y EXTERNAL -H ldapi:/// -f /cdedb2/sql-ldap.ldif
 
 reload:
 	$(MAKE) i18n-compile
