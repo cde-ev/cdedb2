@@ -116,8 +116,8 @@ class TestLDAP(BasicTest):
         )
         self.single_result_search(search_filter, attributes, expectation)
 
-    def test_group_entity(self) -> None:
-        """Check if all attributes of groups are correctly present."""
+    def test_static_group_entity(self) -> None:
+        """Check if all attributes of static groups are correctly present."""
         group_cn = "is_cdelokal_admin"
         attributes = ["objectclass", "cn", "uniqueMember", "description"]
         expectation = {
@@ -137,6 +137,99 @@ class TestLDAP(BasicTest):
             ")"
         )
         self.single_result_search(search_filter, attributes, expectation)
+
+    def test_ml_subscriber_group_entity(self) -> None:
+        """Check if all attributes of ml-subscriber groups are correctly present."""
+        group_cn = "gutscheine@lists.cde-ev.de"
+        search_base = "ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de"
+        attributes = ["objectclass", "cn", "uniqueMember", "description"]
+        expectation = {
+            'cn': ['gutscheine@lists.cde-ev.de'],
+            'description': ['Gutscheine <gutscheine@lists.cde-ev.de>'],
+            'uniqueMember': [
+                'uid=100,ou=users,dc=cde-ev,dc=de',
+                'uid=11,ou=users,dc=cde-ev,dc=de'
+            ],
+            'objectClass': ['groupOfUniqueNames'],
+        }
+
+        search_filter = (
+            "(&"
+            "(objectClass=groupOfUniqueNames)"
+            f"(cn={group_cn})"
+            ")"
+        )
+        self.single_result_search(search_filter, attributes, expectation,
+                                  search_base=search_base)
+
+    def test_ml_moderator_group_entity(self) -> None:
+        """Check if all attributes of ml-moderator groups are correctly present."""
+        group_cn = "gutscheine@lists.cde-ev.de"
+        search_base = "ou=ml-moderators,ou=groups,dc=cde-ev,dc=de"
+        attributes = ["objectclass", "cn", "uniqueMember", "description"]
+        expectation = {
+            'cn': ['gutscheine@lists.cde-ev.de'],
+            'description': ['Gutscheine <gutscheine@lists.cde-ev.de>'],
+            'uniqueMember': [
+                'uid=9,ou=users,dc=cde-ev,dc=de'
+            ],
+            'objectClass': ['groupOfUniqueNames'],
+        }
+
+        search_filter = (
+            "(&"
+            "(objectClass=groupOfUniqueNames)"
+            f"(cn={group_cn})"
+            ")"
+        )
+        self.single_result_search(search_filter, attributes, expectation,
+                                  search_base=search_base)
+
+    def test_event_orgas_group_entity(self) -> None:
+        """Check if all attributes of event-orga groups are correctly present."""
+        group_cn = "1"
+        search_base = "ou=event-orgas,ou=groups,dc=cde-ev,dc=de"
+        attributes = ["objectclass", "cn", "uniqueMember", "description"]
+        expectation = {
+            'cn': ['1'],
+            'description': ['Große Testakademie 2222 (TestAka)'],
+            'uniqueMember': [
+                'uid=7,ou=users,dc=cde-ev,dc=de'
+            ],
+            'objectClass': ['groupOfUniqueNames'],
+        }
+
+        search_filter = (
+            "(&"
+            "(objectClass=groupOfUniqueNames)"
+            f"(cn={group_cn})"
+            ")"
+        )
+        self.single_result_search(search_filter, attributes, expectation,
+                                  search_base=search_base)
+
+    def test_assembly_presiders_group_entity(self) -> None:
+        """Check if all attributes of assembly-presider groups are correctly present."""
+        group_cn = "1"
+        search_base = "ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de"
+        attributes = ["objectclass", "cn", "uniqueMember", "description"]
+        expectation = {
+            'cn': ['1'],
+            'description': ['Internationaler Kongress (kongress)'],
+            'uniqueMember': [
+                'uid=23,ou=users,dc=cde-ev,dc=de'
+            ],
+            'objectClass': ['groupOfUniqueNames'],
+        }
+
+        search_filter = (
+            "(&"
+            "(objectClass=groupOfUniqueNames)"
+            f"(cn={group_cn})"
+            ")"
+        )
+        self.single_result_search(search_filter, attributes, expectation,
+                                  search_base=search_base)
 
     def test_dsa_entity(self) -> None:
         """Check if all attributes of dsas are correctly present."""
