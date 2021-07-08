@@ -1,3 +1,9 @@
+# set log level to debug
+dn: cn=config
+changetype: modify
+replace: olcLogLevel
+olcLogLevel: -1
+
 # load sql-backend module
 dn: cn=module{0},cn=config
 changetype: modify
