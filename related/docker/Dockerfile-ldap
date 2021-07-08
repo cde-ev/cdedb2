@@ -9,13 +9,10 @@ RUN echo 'slapd slapd/password1 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a
     unixodbc \
     odbc-postgresql
 
-COPY ./related/docker/ldap-entrypoint.sh ./related/auto-build/files/stage2/odbc.ini ./sql-ldap.ldif /tmp/
+COPY ./related/docker/ldap-entrypoint.sh ./related/auto-build/files/stage2/odbc.ini ./sql-ldap.ldif /app/
 
-# Replace localhost with cdb as that is
-# the hostname where the db is accesible from docker.
-RUN mv /tmp/ldap-entrypoint.sh /ldap-entrypoint.sh \
-    && mv /tmp/odbc.ini /etc/odbc.ini \
-    && sed -i "s/localhost/cdb/" /etc/odbc.ini /tmp/sql-ldap.ldif
+RUN mv /app/ldap-entrypoint.sh /ldap-entrypoint.sh \
+    && mv /app/odbc.ini /etc/odbc.ini
 
 # Set custom entrypoint to perform additional work on first run.
 ENTRYPOINT ["/ldap-entrypoint.sh"]

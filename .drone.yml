@@ -72,6 +72,8 @@ steps:
     path: /var/lib/ldap/data
   depends_on:
   - cdb
+  environment:
+    DATABASE_NAME: cdb_test_0 # has to match the id where the ldap tests are running
   commands:
     - sleep 5 # wait for db to come online
     - slapd -d 0
