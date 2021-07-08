@@ -75,7 +75,7 @@ steps:
   environment:
     DATABASE_NAME: cdb_test_1 # has to match the id where the ldap tests are running
   commands:
-    - sleep 5 # wait for db to come online
+    - sleep 30 # wait for db to come online
     - slapd -d 0
 - name: testsuite
   image: cdedb:20210705
@@ -87,7 +87,7 @@ steps:
   - name: tmp_dir
     path: /tmp
   commands:
-  - sleep 10 # wait for db and ldap to come online
+  - sleep 5 # wait for db and ldap to come online
   - make i18n-compile # required for sample-data target
   - make sample-data # this creates the sql schema and copies the localconfig.py
   - make check
