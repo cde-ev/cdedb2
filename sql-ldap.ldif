@@ -48,7 +48,7 @@ olcSuffix: dc=cde-ev,dc=de
 olcAccess: {0}to * by * read
 # this user better exist or else there be dragons
 # it is created in create_sample_data_sql
-olcRootDN: cn=admin,ou=dsa,dc=cde-ev,dc=de
+olcRootDN: cn=admin,dc=cde-ev,dc=de
 olcRootPW: secret
 olcDatabase: sql
 olcDbHost: localhost
