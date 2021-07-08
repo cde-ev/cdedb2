@@ -10,14 +10,14 @@ if [ ! -e /var/lib/ldap/container_already_initalized ]; then
     sed -i "s/localhost/${DATABASE_HOST:-cdb}/" /etc/odbc.ini /app/sql-ldap.ldif
 
     # This is required for testing where the database name differs.
-    if [ -z "${DATABASE_NAME}" ]; then
-        sed -i "s/(Database\w*=\w*)cdb/\1${DATABASE_NAME}/" /etc/odbc.ini
-        sed -i "s/(olcDbName:\w*)cdb/\1${DATABASE_NAME}/" /app/sql-ldap.ldif
+    if [ ! -z "${DATABASE_NAME}" ]; then
+        sed -i -r "s/(Database\s*=\s*)cdb/\1${DATABASE_NAME}/" /etc/odbc.ini
+        sed -i -r "s/(olcDbName:\s*)cdb/\1${DATABASE_NAME}/" /app/sql-ldap.ldif
     fi
 
     # Start slapd in the background (in foreground mode with -d 0 to prevent forking)
     # with ldapi:// (unix socket) to allow for simple authentication with ldapmodify.
-    slapd -d -1 -h ldapi:// &
+    slapd -d -0 -h ldapi:// &
     # Wait for slapd to come up.
     sleep 5
     # Run ldapmodify to initialize the ldap-sql backend and config.
