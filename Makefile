@@ -209,8 +209,8 @@ ifeq ($(wildcard /OFFLINEVM),/OFFLINEVM)
 endif
 ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl stop pgbouncer
-endif
 	sudo systemctl stop slapd
+endif
 	$(PSQL_ADMIN) -f cdedb/database/cdedb-users.sql
 	$(PSQL_ADMIN) -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb
 ifneq ($(wildcard /CONTAINER),/CONTAINER)
@@ -219,7 +219,9 @@ endif
 	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=cdb
 	$(PSQL) -f cdedb/database/cdedb-ldap.sql --dbname=cdb
 	$(PSQL) -f tests/ancillary_files/sample_data.sql --dbname=cdb
+ifneq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo systemctl start slapd
+endif
 
 sql-test:
 ifneq ($(wildcard /CONTAINER),/CONTAINER)
