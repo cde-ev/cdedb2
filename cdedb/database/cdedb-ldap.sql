@@ -208,23 +208,24 @@ CREATE TABLE ldap_organizations (
 	-- maps ldap 'o' attribute
 	display_name varchar NOT NULL,
 	-- to be set in 'ldap_entry_objclasses'
-	additional_object_class varchar DEFAULT NULL
+	additional_object_class1 varchar DEFAULT NULL,
+	additional_object_class2 varchar DEFAULT NULL
 );
 GRANT ALL ON ldap_organizations TO cdb_admin;
 
-INSERT INTO ldap_organizations (id, dn, oc_map_id, parent, display_name, additional_object_class) VALUES
+INSERT INTO ldap_organizations (id, dn, oc_map_id, parent, display_name, additional_object_class1, additional_object_class2) VALUES
     -- The overall organization
-        (node_cde_id(), 'dc=cde-ev,dc=de', oc_organization_id(), 0, 'CdE e.V.', 'dcObject'),
+        (node_cde_id(), 'dc=cde-ev,dc=de', oc_organization_id(), 0, 'CdE e.V.', 'dcObject', 'top'),
     -- All organizational units
-        (node_users_id(), 'ou=users,dc=cde-ev,dc=de', oc_organizationalUnit_id(), make_organization_entity_id(node_cde_id()), 'Users', NULL),
-        (node_groups_id(), 'ou=groups,dc=cde-ev,dc=de', oc_organizationalUnit_id(), make_organization_entity_id(node_cde_id()), 'Groups', NULL),
-        (node_dsa_id(), 'ou=dsa,dc=cde-ev,dc=de', oc_organizationalUnit_id(), make_organization_entity_id(node_cde_id()), 'Directory System Agent', NULL),
+        (node_users_id(), 'ou=users,dc=cde-ev,dc=de', oc_organizationalUnit_id(), make_organization_entity_id(node_cde_id()), 'Users', NULL, NULL),
+        (node_groups_id(), 'ou=groups,dc=cde-ev,dc=de', oc_organizationalUnit_id(), make_organization_entity_id(node_cde_id()), 'Groups', NULL, NULL),
+        (node_dsa_id(), 'ou=dsa,dc=cde-ev,dc=de', oc_organizationalUnit_id(), make_organization_entity_id(node_cde_id()), 'Directory System Agent', NULL, NULL),
     -- Additional organizational units holding group of groups
-        (node_static_group_id(), 'ou=status,ou=groups,dc=cde-ev,dc=de', oc_organizationalUnit_id(), make_organization_entity_id(node_groups_id()), 'Status', NULL),
-        (node_ml_subscribers_group_id(), 'ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de', oc_organizationalUnit_id(), make_organization_entity_id(node_groups_id()), 'Mailinglists Subscribers', NULL),
-        (node_ml_moderators_group_id(), 'ou=ml-moderators,ou=groups,dc=cde-ev,dc=de', oc_organizationalUnit_id(), make_organization_entity_id(node_groups_id()), 'Mailinglists Moderators', NULL),
-        (node_event_orgas_group_id(), 'ou=event-orgas,ou=groups,dc=cde-ev,dc=de', oc_organizationalUnit_id(), make_organization_entity_id(node_groups_id()), 'Event Orgas', NULL),
-        (node_assembly_presiders_group_id(), 'ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de', oc_organizationalUnit_id(), make_organization_entity_id(node_groups_id()), 'Assembly Presiders', NULL);
+        (node_static_group_id(), 'ou=status,ou=groups,dc=cde-ev,dc=de', oc_organizationalUnit_id(), make_organization_entity_id(node_groups_id()), 'Status', NULL, NULL),
+        (node_ml_subscribers_group_id(), 'ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de', oc_organizationalUnit_id(), make_organization_entity_id(node_groups_id()), 'Mailinglists Subscribers', NULL, NULL),
+        (node_ml_moderators_group_id(), 'ou=ml-moderators,ou=groups,dc=cde-ev,dc=de', oc_organizationalUnit_id(), make_organization_entity_id(node_groups_id()), 'Mailinglists Moderators', NULL, NULL),
+        (node_event_orgas_group_id(), 'ou=event-orgas,ou=groups,dc=cde-ev,dc=de', oc_organizationalUnit_id(), make_organization_entity_id(node_groups_id()), 'Event Orgas', NULL, NULL),
+        (node_assembly_presiders_group_id(), 'ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de', oc_organizationalUnit_id(), make_organization_entity_id(node_groups_id()), 'Assembly Presiders', NULL, NULL);
 
 -- ldap Directory System Agents
 DROP TABLE IF EXISTS ldap_agents;
@@ -629,13 +630,21 @@ GRANT ALL ON ldap_entries TO cdb_admin;
 -- Add additional ldap object classes to an entry with 'entry_id' in
 -- 'ldap_entries'.
 CREATE VIEW ldap_entry_objclasses (entry_id, oc_name) AS
-    -- organizations
+    -- organizations part 1
     (
         SELECT
-           id AS entry_id,
-           additional_object_class AS oc_name
+           make_organization_entity_id(id) AS entry_id,
+           additional_object_class1 AS oc_name
         FROM ldap_organizations
-        WHERE additional_object_class IS NOT NULL
+        WHERE additional_object_class1 IS NOT NULL
+    )
+    -- organizations part 2
+    UNION (
+        SELECT
+           make_organization_entity_id(id) AS entry_id,
+           additional_object_class2 AS oc_name
+        FROM ldap_organizations
+        WHERE additional_object_class2 IS NOT NULL
     )
     -- Directory System Agents
     UNION (
