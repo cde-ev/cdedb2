@@ -130,3 +130,4 @@ References
 * http://www.zytrax.com/books/ldap/ch6/slapd-config.html
 * https://www.digitalocean.com/community/tutorials/how-to-configure-openldap-and-perform-administrative-ldap-tasks
 * https://stackoverflow.com/questions/30898397/creating-second-database-domain-in-openldap
+* ``man slapd-sql``
