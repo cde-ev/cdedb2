@@ -2714,6 +2714,17 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/stats'},)
         self.assertTitle("Statistik (Große Testakademie 2222)")
 
+        self.assertPresence("Teilnehmer-Statistik")
+        self.assertPresence("1.H.", div="participant-stats")
+        self.assertPresence("Noch nicht da")
+
+        self.assertPresence("Kursstatistik")
+        self.assertPresence("Morgenkreis", div="course-stats")
+        self.assertPresence("Kursleiter (theoretisch)", div="course-stats")
+
+        self.traverse({'href': '/event/event/1/registration/query', 'index': 2})
+        self.assertPresence("Ergebnis [1]")
+
     @as_users("garcia")
     def test_course_stats(self) -> None:
         self.traverse({'href': '/event/$'},
