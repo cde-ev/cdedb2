@@ -72,7 +72,11 @@ class TestLDAP(BasicTest):
         """Check if all attributes of the organization are correctly present."""
         attributes = ["objectclass", "o"]
         expectation = {
-            'objectClass': ['organization'],
+            'objectClass': [
+                'organization',
+                'dcObject',
+                'top'
+            ],
             'o': ['CdE e.V.']
         }
         search_filter = "(objectClass=organization)"
