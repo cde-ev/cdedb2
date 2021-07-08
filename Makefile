@@ -76,11 +76,27 @@ doc:
 	bin/create_email_template_list.sh .
 	$(MAKE) -C doc html
 
+.ONESHELL:
 ldap-reset:
-	sudo apt remove --purge -y slapd \
-	&& sudo apt update \
-    && sudo apt install -y slapd \
-    && sudo ldapmodify -Y EXTERNAL -H ldapi:/// -f /cdedb2/sql-ldap.ldif
+	sudo apt remove --purge -y slapd
+	sudo apt update
+	# pre-set slapd configurations
+	sudo debconf-set-selections <<EOF
+	slapd slapd/internal/adminpw password secret
+	slapd slapd/internal/generated_adminpw password secret
+	slapd slapd/password1 password secret
+	slapd slapd/password2 password secret
+	slapd slapd/domain string cde-ev.de
+	slapd shared/organization string CdEDB
+	EOF
+	sudo apt install -y slapd
+	# remove pre-installed mdb. This uses the same olcSuffix and blocks our sql database
+	sudo rm /etc/ldap/slapd.d/cn=config/olcDatabase={1}mdb.ldif
+	sudo rm /var/lib/ldap
+	# restart slapd to finish removal of mdb
+	sudo systemctl restart slapd
+	# apply our custom configurations
+	sudo ldapmodify -Y EXTERNAL -H ldapi:/// -f /cdedb2/sql-ldap.ldif
 
 reload:
 	$(MAKE) i18n-compile
