@@ -1630,6 +1630,7 @@ class EventFrontend(AbstractUserFrontend):
                 ('persona.id', QueryOperators.oneof,
                  rs.ambience['event']['orgas']),),
             'waitlist': lambda e, p, t: (
+                involved_filter(p),
                 ('part{}.status'.format(p['id']), QueryOperators.equal,
                  stati.waitlist.value),),
             'guest': lambda e, p, t: (
