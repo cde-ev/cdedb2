@@ -66,6 +66,14 @@ class TestLDAP(BasicTest):
         self.assertEqual('dn:' + 'uid=1,ou=users,dc=cde-ev,dc=de', conn.extend.standard.who_am_i())
         self.assertTrue(conn.unbind())
 
+    def test_anonymous_search(self) -> None:
+        """Anonymous clients are only allowed to bind."""
+        conn = ldap3.Connection(self.server)
+        conn.bind()
+        search_filter = "(objectClass=organization)"
+        conn.search(search_base=self.root_dn, search_filter=search_filter)
+        self.assertEqual('noSuchObject', conn.last_error)
+
     # TODO test encrypted connections (tls)
 
     def test_organization_entity(self) -> None:
@@ -110,7 +118,9 @@ class TestLDAP(BasicTest):
             'displayName': ['Anton Administrator'],
             'givenName': ['Anton Armin A.'],
 
-            'userPassword': [b'{CRYPT}$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/'],  # type: ignore
+            # this is empty, since dsas may not retrieve the password, but only
+            # authenticate against them
+            'userPassword': [],
             'objectClass': ['inetOrgPerson'],
         }
         search_filter = (
@@ -243,7 +253,9 @@ class TestLDAP(BasicTest):
         expectation: Dict[str, List[str]] = {
             'cn': ['test'],
             'objectClass': ['organizationalRole', 'simpleSecurityObject'],
-            'userPassword': [b'{CRYPT}$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1'],  # type: ignore
+            # this is empty, since dsas may not retrieve the password, but only
+            # authenticate against them
+            'userPassword': [],
         }
         search_filter = (
             "(&"

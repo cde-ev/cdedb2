@@ -45,7 +45,12 @@ changetype: add
 objectClass: olcDatabaseConfig
 objectClass: olcSqlConfig
 olcSuffix: dc=cde-ev,dc=de
-olcAccess: {0}to * by * read
+# protect passwords to be accessed only for authentication
+olcAccess: to attrs=userPassword by * auth
+# allow only authenticated users to read
+olcAccess: to * by users read
+# prevent all other requests
+olcAccess: to * by * none
 # this user better exist or else there be dragons
 # it is created in create_sample_data_sql
 olcRootDN: cn=admin,dc=cde-ev,dc=de
