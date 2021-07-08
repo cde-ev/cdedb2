@@ -11,10 +11,12 @@ add: olcModuleLoad
 olcModuleLoad: back_sql
 
 # backend definition
-dn: olcBackend=sql,cn=config
-changetype: add
-objectClass: olcBackendConfig
-olcBackend: sql
+# currently no options are implemented and therefore this shall not be used
+# https://manpages.debian.org/buster/slapd/slapd-config.5.en.html#GENERAL_BACKEND_OPTIONS
+#dn: olcBackend=sql,cn=config
+#changetype: add
+#objectClass: olcBackendConfig
+#olcBackend: sql
 
 # database definitions
 dn: olcDatabase=sql,cn=config
