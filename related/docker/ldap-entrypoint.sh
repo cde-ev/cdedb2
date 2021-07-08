@@ -2,6 +2,7 @@
 # We can only perform some initialization after the normal build process.
 # Those steps are exactly the ones which require connection to the sql db.
 # Furthermore we adjust some values in the config depending on environment variables.
+set -x
 
 if [ ! -e /var/lib/ldap/container_already_initalized ]; then
 
