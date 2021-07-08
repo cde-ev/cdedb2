@@ -1393,15 +1393,20 @@ class FrontendTest(BackendTest):
         return button
 
     def reload_and_check_form(self, form: webtest.Form, link: Union[CdEDBObject, str],
-                              max_tries: int = 42, waittime: float = 0.1,
+                              max_tries: int = 42, waittime: float = 0.01,
                               fail: bool = True) -> None:
         """Helper to repeatedly reload a page until a certain form is present.
 
-        This is mostly required for the "Semesterverwaltung".
+        This should be used sparingly as it does busy waiting andis mostly
+        required for the "Semesterverwaltung".
+
+        We do a quadratic backoff with waiting times increasing linearily to
+        simultaneously minimize the load of unsuccessful attempts and time
+        wasted while already being ready.
         """
         count = 0
         while count < max_tries:
-            time.sleep(waittime)
+            time.sleep(count*waittime)
             self.traverse(link)
             if form in self.response.forms:
                 break
