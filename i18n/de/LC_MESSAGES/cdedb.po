@@ -3183,25 +3183,25 @@ msgstr "Modalität"
 #, python-format
 msgid "Classical voting with %(votes)s vote and \"Against all\" option."
 msgstr ""
-"Klassiche Abstimmung mit %(votes)s Stimme und \"Gegen alle Kanididaten\"-"
+"Klassische Abstimmung mit %(votes)s Stimme und \"Gegen alle Kanididaten\"-"
 "Option."
 
 #: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:114
 #, python-format
 msgid "Classical voting with %(votes)s vote."
-msgstr "Klassiche Abstimmung mit %(votes)s Stimme."
+msgstr "Klassische Abstimmung mit %(votes)s Stimme."
 
 #: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:120
 #, python-format
 msgid "Classical voting with %(votes)s votes and \"Against all\" option."
 msgstr ""
-"Klassiche Abstimmung mit %(votes)s Stimmen und \"Gegen alle Kandidaten\"-"
+"Klassische Abstimmung mit %(votes)s Stimmen und \"Gegen alle Kandidaten\"-"
 "Option."
 
 #: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:124
 #, python-format
 msgid "Classical voting with %(votes)s votes."
-msgstr "Klassiche Abstimmung mit %(votes)s Stimmen."
+msgstr "Klassische Abstimmung mit %(votes)s Stimmen."
 
 #: cdedb/frontend/templates/web/assembly/_ballot_meta.tmpl:130
 msgid "Preferential voting with bar option."
@@ -3304,7 +3304,7 @@ msgstr "Hilfe zum Auszählen der Stimmen"
 
 #: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:181
 msgid "Classical vote"
-msgstr "Klassiche Wahl"
+msgstr "Klassische Wahl"
 
 #: cdedb/frontend/templates/web/assembly/_ballot_tallied.tmpl:186
 msgid ""
