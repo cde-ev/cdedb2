@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
-from typing import Dict, List, Set
+from typing import Dict, List, Set, Union
 
 import ldap3   # type: ignore
+from ldap3 import ALL_ATTRIBUTES
 from ldap3.abstract.entry import Entry  # type: ignore
 
 from tests.common import BasicTest
@@ -21,10 +22,10 @@ class TestLDAP(BasicTest):
         cls.server = ldap3.Server(
             cls.conf['LDAP_HOST'], port=cls.conf['LDAP_PORT'], get_info=ldap3.ALL)
 
-    def single_result_search(self, search_filter: str, attributes: List[str],
-                             expectation: Dict[str, List[str]], *,
-                             user: str = test_dsa_dn, password: str = test_dsa_pw,
-                             search_base: str = root_dn) -> None:
+    def single_result_search(
+        self, search_filter: str, expectation: Dict[str, List[str]], *,
+        user: str = test_dsa_dn, password: str = test_dsa_pw, search_base: str = root_dn,
+        attributes: Union[List[str], str] = ALL_ATTRIBUTES) -> None:
         with ldap3.Connection(self.server, user=user, password=password) as conn:
             conn.search(search_base=search_base, search_filter=search_filter,
                         attributes=attributes)
@@ -92,7 +93,7 @@ class TestLDAP(BasicTest):
                 f"(uid={user_id})"
             ")"
         )
-        self.single_result_search(search_filter, attributes, expectation,
+        self.single_result_search(search_filter, expectation, attributes=attributes,
                                   user=user, password=password)
 
         # users must not access other users data
@@ -109,7 +110,6 @@ class TestLDAP(BasicTest):
 
         # users may access any group and their members
         group_cn = 1
-        attributes = ["objectclass", "cn", "uniqueMember", "description"]
         search_base = "ou=event-orgas,ou=groups,dc=cde-ev,dc=de"
         expectation = {
             'cn': ['1'],
@@ -126,14 +126,12 @@ class TestLDAP(BasicTest):
             f"(cn={group_cn})"
             ")"
         )
-        self.single_result_search(search_filter, attributes, expectation,
-                                  search_base=search_base)
+        self.single_result_search(search_filter, expectation, search_base=search_base)
 
     # TODO test encrypted connections (tls)
 
     def test_organization_entity(self) -> None:
         """Check if all attributes of the organization are correctly present."""
-        attributes = ["objectclass", "o"]
         expectation = {
             'objectClass': [
                 'organization',
@@ -143,12 +141,11 @@ class TestLDAP(BasicTest):
             'o': ['CdE e.V.']
         }
         search_filter = "(objectClass=organization)"
-        self.single_result_search(search_filter, attributes, expectation)
+        self.single_result_search(search_filter, expectation)
 
     def test_organizational_unit_entity(self) -> None:
         """Check if all attributes of an organizational unit are correctly present."""
         organizational_unit_o = "Users"
-        attributes = ["objectclass", "o"]
         expectation = {
             'objectClass': ['organizationalUnit'],
             'o': ['Users']
@@ -159,12 +156,11 @@ class TestLDAP(BasicTest):
                 f"(o={organizational_unit_o})"
             ")"
         )
-        self.single_result_search(search_filter, attributes, expectation)
+        self.single_result_search(search_filter, expectation)
 
     def test_user_entity(self) -> None:
         """Check if all attributes of an user are correctly present."""
         user_id = 1
-        attributes = ["objectclass", "cn", "givenName", "displayName", "mail", "uid", "userPassword"]
         expectation: Dict[str, List[str]] = {
             'uid': ['1'],
             'mail': ['anton@example.cde'],
@@ -173,9 +169,8 @@ class TestLDAP(BasicTest):
             'displayName': ['Anton Administrator'],
             'givenName': ['Anton Armin A.'],
 
-            # this is empty, since dsas may not retrieve the password, but only
-            # authenticate against them
-            'userPassword': [],
+            # there is no password returned, since passwords may not be retrived but
+            # only used for binding
             'objectClass': ['inetOrgPerson'],
         }
         search_filter = (
@@ -184,12 +179,11 @@ class TestLDAP(BasicTest):
             f"(uid={user_id})"
             ")"
         )
-        self.single_result_search(search_filter, attributes, expectation)
+        self.single_result_search(search_filter, expectation)
 
     def test_static_group_entity(self) -> None:
         """Check if all attributes of static groups are correctly present."""
         group_cn = "is_cdelokal_admin"
-        attributes = ["objectclass", "cn", "uniqueMember", "description"]
         expectation = {
             'cn': ['is_cdelokal_admin'],
             'description': ['CdELokal-Administratoren'],
@@ -206,13 +200,12 @@ class TestLDAP(BasicTest):
             f"(cn={group_cn})"
             ")"
         )
-        self.single_result_search(search_filter, attributes, expectation)
+        self.single_result_search(search_filter, expectation)
 
     def test_ml_subscriber_group_entity(self) -> None:
         """Check if all attributes of ml-subscriber groups are correctly present."""
         group_cn = "gutscheine@lists.cde-ev.de"
         search_base = "ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de"
-        attributes = ["objectclass", "cn", "uniqueMember", "description"]
         expectation = {
             'cn': ['gutscheine@lists.cde-ev.de'],
             'description': ['Gutscheine <gutscheine@lists.cde-ev.de>'],
@@ -229,14 +222,12 @@ class TestLDAP(BasicTest):
             f"(cn={group_cn})"
             ")"
         )
-        self.single_result_search(search_filter, attributes, expectation,
-                                  search_base=search_base)
+        self.single_result_search(search_filter, expectation, search_base=search_base)
 
     def test_ml_moderator_group_entity(self) -> None:
         """Check if all attributes of ml-moderator groups are correctly present."""
         group_cn = "gutscheine@lists.cde-ev.de"
         search_base = "ou=ml-moderators,ou=groups,dc=cde-ev,dc=de"
-        attributes = ["objectclass", "cn", "uniqueMember", "description"]
         expectation = {
             'cn': ['gutscheine@lists.cde-ev.de'],
             'description': ['Gutscheine <gutscheine@lists.cde-ev.de>'],
@@ -252,14 +243,12 @@ class TestLDAP(BasicTest):
             f"(cn={group_cn})"
             ")"
         )
-        self.single_result_search(search_filter, attributes, expectation,
-                                  search_base=search_base)
+        self.single_result_search(search_filter, expectation, search_base=search_base)
 
     def test_event_orgas_group_entity(self) -> None:
         """Check if all attributes of event-orga groups are correctly present."""
         group_cn = "1"
         search_base = "ou=event-orgas,ou=groups,dc=cde-ev,dc=de"
-        attributes = ["objectclass", "cn", "uniqueMember", "description"]
         expectation = {
             'cn': ['1'],
             'description': ['Große Testakademie 2222 (TestAka)'],
@@ -275,14 +264,12 @@ class TestLDAP(BasicTest):
             f"(cn={group_cn})"
             ")"
         )
-        self.single_result_search(search_filter, attributes, expectation,
-                                  search_base=search_base)
+        self.single_result_search(search_filter, expectation, search_base=search_base)
 
     def test_assembly_presiders_group_entity(self) -> None:
         """Check if all attributes of assembly-presider groups are correctly present."""
         group_cn = "1"
         search_base = "ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de"
-        attributes = ["objectclass", "cn", "uniqueMember", "description"]
         expectation = {
             'cn': ['1'],
             'description': ['Internationaler Kongress (kongress)'],
@@ -298,19 +285,16 @@ class TestLDAP(BasicTest):
             f"(cn={group_cn})"
             ")"
         )
-        self.single_result_search(search_filter, attributes, expectation,
-                                  search_base=search_base)
+        self.single_result_search(search_filter, expectation, search_base=search_base)
 
     def test_dsa_entity(self) -> None:
         """Check if all attributes of dsas are correctly present."""
         dsa_cn = "test"
-        attributes = ["objectclass", "cn", "userPassword"]
         expectation: Dict[str, List[str]] = {
             'cn': ['test'],
             'objectClass': ['organizationalRole', 'simpleSecurityObject'],
-            # this is empty, since dsas may not retrieve the password, but only
-            # authenticate against them
-            'userPassword': [],
+            # there is no password returned, since passwords may not be retrived but
+            # only used for binding
         }
         search_filter = (
             "(&"
@@ -318,7 +302,7 @@ class TestLDAP(BasicTest):
             f"(cn={dsa_cn})"
             ")"
         )
-        self.single_result_search(search_filter, attributes, expectation)
+        self.single_result_search(search_filter, expectation)
 
     def test_search_groups_of_user(self) -> None:
         # Garcia has status fields, is orga, subscriber and ml moderator
@@ -410,7 +394,7 @@ class TestLDAP(BasicTest):
             'cn': ['42@lists.cde-ev.de'],
             'objectClass': ['groupOfUniqueNames']
         }
-        self.single_result_search(search_filter, attributes, expectation)
+        self.single_result_search(search_filter, expectation, attributes=attributes)
 
     def test_search_user_attributes(self) -> None:
         """Search a user by given attributes and return some of its attributes."""
@@ -432,7 +416,7 @@ class TestLDAP(BasicTest):
             f"(uid={user_id})"
             ")"
         )
-        self.single_result_search(search_filter, attributes, expectation)
+        self.single_result_search(search_filter, expectation, attributes=attributes)
 
         # Second, test search by email
         search_filter = (
@@ -441,4 +425,4 @@ class TestLDAP(BasicTest):
             f"(mail={user_mail})"
             ")"
         )
-        self.single_result_search(search_filter, attributes, expectation)
+        self.single_result_search(search_filter, expectation, attributes=attributes)
