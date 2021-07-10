@@ -45,14 +45,24 @@ changetype: add
 objectClass: olcDatabaseConfig
 objectClass: olcSqlConfig
 olcSuffix: dc=cde-ev,dc=de
+# for details see https://manpages.debian.org/buster/slapd/slapd.access.5.en.html
 # protect passwords to be accessed only for authentication
 olcAccess: to attrs=userPassword by * auth
-# allow only authenticated users to read
-olcAccess: to * by users read
+# grant every authenticated client access to the structural nodes (base node,
+# first sublevel of base) of the ldap tree
+olcAccess: to dn.base="dc=cde-ev,dc=de" by users read
+olcAccess: to dn.onelevel="dc=cde-ev,dc=de" by users read
+# grant all authenticated clients access to groups, since the only personal data
+# they contain is the user id
+olcAccess: to dn.subtree="ou=groups,dc=cde-ev,dc=de" by users read
+# grant users access to their own user data and dsas access to all user data
+olcAccess: to dn.subtree="ou=users,dc=cde-ev,dc=de" by self read by dn.subtree="ou=dsa,dc=cde-ev,dc=de" read
+# grant all dsas access to all dsas since why not
+olcAccess: to dn.subtree="ou=dsa,dc=cde-ev,dc=de" by dn.subtree="ou=dsa,dc=cde-ev,dc=de" read
 # prevent all other requests
 olcAccess: to * by * none
 # this user better exist or else there be dragons
-# it is created in create_sample_data_sql
+# this is the default user added by slapd
 olcRootDN: cn=admin,dc=cde-ev,dc=de
 olcRootPW: secret
 olcDatabase: sql

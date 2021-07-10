@@ -72,7 +72,62 @@ class TestLDAP(BasicTest):
         conn.bind()
         search_filter = "(objectClass=organization)"
         conn.search(search_base=self.root_dn, search_filter=search_filter)
-        self.assertEqual('noSuchObject', conn.last_error)
+        self.assertEqual(list(), conn.entries)
+
+    def test_user_access(self) -> None:
+        user_id = 1
+        other_user_id = 2
+        user = f"uid={user_id},ou=users,dc=cde-ev,dc=de"
+        password = "secret"
+
+        # users may access their own data
+        attributes = ["objectclass", "cn"]
+        expectation: Dict[str, List[str]] = {
+            'cn': ['Anton Armin A. Administrator'],
+            'objectClass': ['inetOrgPerson'],
+        }
+        search_filter = (
+            "(&"
+                "(objectClass=inetOrgPerson)"
+                f"(uid={user_id})"
+            ")"
+        )
+        self.single_result_search(search_filter, attributes, expectation,
+                                  user=user, password=password)
+
+        # users must not access other users data
+        conn = ldap3.Connection(self.server, user=user, password=password)
+        conn.bind()
+        search_filter = (
+            "(&"
+                "(objectClass=inetOrgPerson)"
+                f"(uid={other_user_id})"
+            ")"
+        )
+        conn.search(search_base=self.root_dn, search_filter=search_filter)
+        self.assertEqual(list(), conn.entries)
+
+        # users may access any group and their members
+        group_cn = 1
+        attributes = ["objectclass", "cn", "uniqueMember", "description"]
+        search_base = "ou=event-orgas,ou=groups,dc=cde-ev,dc=de"
+        expectation = {
+            'cn': ['1'],
+            'description': ['Große Testakademie 2222 (TestAka)'],
+            'uniqueMember': [
+                'uid=7,ou=users,dc=cde-ev,dc=de'
+            ],
+            'objectClass': ['groupOfUniqueNames'],
+        }
+
+        search_filter = (
+            "(&"
+            "(objectClass=groupOfUniqueNames)"
+            f"(cn={group_cn})"
+            ")"
+        )
+        self.single_result_search(search_filter, attributes, expectation,
+                                  search_base=search_base)
 
     # TODO test encrypted connections (tls)
 
