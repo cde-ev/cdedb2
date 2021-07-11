@@ -3515,7 +3515,7 @@
             "is_instructor": false,
             "is_orga": false
         },
-         {
+        {
             "persona_id": 4,
             "pevent_id": 1,
             "pcourse_id": 2,
@@ -4328,6 +4328,22 @@
             "checkin": null,
             "list_consent": false,
             "fields": {}
+        },
+        {
+            "id": 9,
+            "persona_id": 7,
+            "real_persona_id": null,
+            "event_id": 3,
+            "notes": null,
+            "orga_notes": null,
+            "payment": null,
+            "amount_paid": "0.00",
+            "amount_owed": "0.00",
+            "parental_agreement": false,
+            "mixed_lodging": false,
+            "checkin": null,
+            "list_consent": false,
+            "fields": {}
         }
     ],
     "event.registration_parts": [
@@ -4490,6 +4506,14 @@
             "status": 2,
             "lodgement_id": null,
             "is_camping_mat": false
+        },
+        {
+            "id": 21,
+            "registration_id": 9,
+            "part_id": 5,
+            "status": 2,
+            "lodgement_id": null,
+            "is_camping_mat": false
         }
     ],
     "event.registration_tracks": [
@@ -4629,6 +4653,13 @@
         {
             "id": 20,
             "registration_id": 8,
+            "track_id": 4,
+            "course_id": null,
+            "course_instructor": null
+        },
+        {
+            "id": 21,
+            "registration_id": 9,
             "track_id": 4,
             "course_id": null,
             "course_instructor": null
@@ -5008,15 +5039,15 @@
             "query_name": "Test-Query",
             "scope": 30,
             "serialized_query": {
+                "scope": 30,
                 "is_search": true,
                 "query_name": "Test-Query",
-                "scope": 30,
                 "qsel_reg.id": true,
-                "qsel_persona.id": true,
-                "qsel_persona.birthday": true,
-                "qop_persona.birthday": 20,
-                "qval_persona.birthday": "2000-01-01",
                 "qord_primary": "persona.birthday",
+                "qsel_persona.id": true,
+                "qop_persona.birthday": 20,
+                "qsel_persona.birthday": true,
+                "qval_persona.birthday": "2000-01-01",
                 "qord_primary_ascending": true
             }
         }
@@ -7976,6 +8007,11 @@
             "mailinglist_id": 4,
             "persona_id": 6,
             "address": "ferdinand-unterhaltung@example.cde"
+        },
+        {
+            "mailinglist_id": 52,
+            "persona_id": 9,
+            "address": "inga-papierkorb@example.cde"
         }
     ],
     "ml.whitelist": [

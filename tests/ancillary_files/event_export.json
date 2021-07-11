@@ -392,9 +392,8 @@
     },
     "EVENT_SCHEMA_VERSION": [
         15,
-        2
+        3
     ],
-    "CDEDB_EXPORT_EVENT_VERSION": 13,
     "event.registration_parts": {
         "2": {
             "is_camping_mat": false,

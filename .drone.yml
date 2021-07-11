@@ -73,7 +73,7 @@ steps:
   - pg_isready --host=cdb --timeout=10 # wait for database to come online
   - make i18n-compile # required for sample-data target
   - make sample-data # this creates the sql schema and copies the localconfig.py
-  - make TESTDATABASENAME=cdb_test_1 sql-test # create the test database
+  - make TESTDATABASENAME=cdb_test sql-test # create the test database for ldap
 - name: ldap # is used as the hostname for the container
   image: ldap:20210705
   pull: never # do not try to pull image from docker hub
@@ -81,7 +81,9 @@ steps:
   depends_on:
   - testsuite-setup
   environment:
-    DATABASE_NAME: cdb_test_1 # has to match the id where the ldap tests are running
+    # we use the database without a name as only readonly access is required
+    # and this will work regardless of the id the testing container gets
+    DATABASE_NAME: cdb_test
   commands:
     - cat /etc/odbc.ini
     - cat /app/sql-ldap.ldif
@@ -92,7 +94,7 @@ steps:
     - ldapwhoami -D cn=admin,ou=dsa,dc=cde-ev,dc=de -w secret
     - ldapwhoami -D cn=test,ou=dsa,dc=cde-ev,dc=de -w secret
     - fg
-- name: testsuite
+- name: frontend tests a-d
   image: cdedb:20210705
   pull: never # do not try to pull image from docker hub
   depends_on:
@@ -102,9 +104,29 @@ steps:
   - name: tmp_dir
     path: /tmp
   commands:
-  - make i18n-compile # required for sample-data target
-  - make sample-data # this creates the sql schema and copies the localconfig.py
-  - python3 bin/check.py --thread-id 1 # force thread 1 for ldap
+  - bin/check.py --verbose --first # everything before event
+- name: frontend tests e-z
+  image: cdedb
+  pull: never # do not try to pull image from docker hub
+  depends_on:
+  - testsuite-setup
+  - ldap
+  volumes:
+  - name: tmp_dir
+    path: /tmp
+  commands:
+  - bin/check.py --verbose --second # event and following
+- name: backend tests
+  image: cdedb
+  pull: never # do not try to pull image from docker hub
+  depends_on:
+  - testsuite-setup
+  - ldap
+  volumes:
+  - name: tmp_dir
+    path: /tmp
+  commands:
+  - bin/check.py --verbose --third
 - name: xss
   image: cdedb:20210705
   pull: never
@@ -114,12 +136,14 @@ steps:
   - name: tmp_dir
     path: /tmp
   commands:
-    - python3 bin/check.py --xss-check --verbose --thread-id 2
+    - python3 bin/check.py --xss-check --verbose
 - name: check for merge conflicts
   image: docker:20.10-git
   pull: never # do not try to pull image from docker hub
   depends_on:
-  - testsuite
+  - frontend tests a-d
+  - frontend tests e-z
+  - backend tests
   - xss
   when:
     status:
@@ -145,3 +169,4 @@ trigger:
   branch:
   - master
   - stable
+  - ci/*

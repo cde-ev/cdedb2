@@ -3,7 +3,6 @@
 import unittest.mock
 from typing import Any
 
-from cdedb.common import CdEDBObject
 from tests.common import FrontendTest, as_users
 
 

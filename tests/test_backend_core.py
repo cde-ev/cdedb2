@@ -1320,7 +1320,7 @@ class TestCoreBackend(BackendTest):
              'change_note': None,
              'code': const.CoreLogCodes.persona_creation,
              'ctime': nearly_now(),
-             'persona_id': 1001,
+             'persona_id': new_persona_id,
              'submitted_by': self.user['id']},
             {'id': 1002,
              'change_note': 'zeldax@example.cde',

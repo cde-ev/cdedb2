@@ -158,8 +158,6 @@ would break everything.
 You can explicitly specify a thread id by using the ``--thread-id`` flag of
 ``bin/check.py``.
 
-.. todo:: Implement parallel testing inside ``bin/check.py``.
-
 Every test ``Application`` stores log files and, if needed, some test files for up- and
 downloading (e.g. assembly attachments) in a temporary directory living inside ``/tmp``,
 whose structure is as follows::

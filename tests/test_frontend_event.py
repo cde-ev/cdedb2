@@ -346,7 +346,7 @@ class TestEventFrontend(FrontendTest):
         registered = {"Meine Anmeldung"}
         registered_or_orga = {"Teilnehmer-Infos"}
         orga = {
-            "Teilnehmerliste",  "Anmeldungen", "Statistik", "Kurse", "Kurseinteilung",
+            "Teilnehmerliste", "Anmeldungen", "Statistik", "Kurse", "Kurseinteilung",
             "Unterkünfte", "Downloads", "Partieller Import", "Überweisungen eintragen",
             "Konfiguration", "Veranstaltungsteile", "Datenfelder konfigurieren",
             "Anmeldung konfigurieren", "Fragebogen konfigurieren", "Log", "Checkin"}
@@ -2034,7 +2034,6 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("451,00 € am 30.12.2019 gezahlt.",
                             div=str(self.EVENT_LOG_OFFSET + 3) + "-1003")
 
-
     @as_users("garcia")
     def test_batch_fee_regex(self) -> None:
         self.traverse({'href': '/event/$'},
@@ -2363,7 +2362,7 @@ etc;anything else""", f['entries_2'].value)
         # Check log
         self.traverse({'href': '/event/event/1/log'})
         self.assertPresence("Orga-Notizen geändert.",
-                            div=str(self.EVENT_LOG_OFFSET +1) + "-1001")
+                            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
 
     @as_users("garcia")
     def test_add_registration(self) -> None:
@@ -2846,6 +2845,29 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.assertPresence("Emilia")
 
+        # Check log
+        self.traverse({'href': '/event/event/1/log'})
+        self.assertPresence("Kurs eingeteilt in Kursschiene Sitzung.",
+                            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
+        self.assertPresence("Kurs eingeteilt in Kursschiene Sitzung.",
+                            div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
+        self.assertPresence("Kurs eingeteilt in Kursschienen Kaffee, Sitzung.",
+                            div=str(self.EVENT_LOG_OFFSET + 3) + "-1003")
+
+        # Single-track event
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/3/show'},
+                      {'href': '/event/event/3/course/choices'}, )
+        self.assertTitle("Kurswahlen (CyberTestAkademie)")
+        f = self.response.forms['choiceactionform']
+        f['registration_ids'] = [7]
+        f['assign_action'] = -4
+        self.submit(f)
+
+        # Check log
+        self.traverse({'href': '/event/event/3/log'})
+        self.assertPresence("Kurs eingeteilt.", div="1-1004")
+
     @as_users("garcia")
     def test_automatic_assignment(self) -> None:
         self.traverse({'href': '/event/$'},
@@ -2857,6 +2879,14 @@ etc;anything else""", f['entries_2'].value)
         f['assign_track_ids'] = [1, 2, 3]
         f['assign_action'] = -5
         self.submit(f)
+        # Check log
+        self.traverse({'href': '/event/event/1/log'})
+        self.assertPresence(
+            "Kurs eingeteilt in Kursschienen Morgenkreis, Kaffee, Sitzung.",
+            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
+        self.assertPresence(
+            "Kurs eingeteilt in Kursschienen Morgenkreis, Kaffee, Sitzung.",
+            div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
 
     @as_users("garcia")
     def test_course_choices_filter_persistence(self) -> None:
@@ -2891,6 +2921,12 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Emilia")
         self.assertPresence("Garcia")
         self.assertNonPresence("Inga")
+
+        # Check log
+        self.traverse({'href': '/event/event/1/log'})
+        self.assertPresence(
+            "Kurs eingeteilt in Kursschiene Sitzung.",
+            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
 
     @as_users("garcia")
     def test_course_choices_problems(self) -> None:
@@ -3337,6 +3373,13 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Garcia G.")
         self.assertNonPresence("Inga")
 
+        # check log
+        self.get('/event/event/1/log')
+        self.assertPresence("Kursteilnehmer von Heldentum geändert.",
+                            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
+        self.assertPresence("Kursteilnehmer von Heldentum geändert.",
+                            div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
+
     @as_users("garcia")
     def test_manage_inhabitants(self) -> None:
         self.traverse({'href': '/event/$'},
@@ -3363,12 +3406,20 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Emilia", div='inhabitants-3')
         self.assertPresence("Garcia", div='inhabitants-3')
         self.assertPresence("Inga", div='inhabitants-3')
+
         # check the status of the camping mat checkbox was not overridden
         self.traverse({'description': 'Bewohner verwalten'})
         self.assertTitle("\nBewohner der Unterkunft Kalte Kammer verwalten"
                          " (Große Testakademie 2222)\n")
         self.assertCheckbox(False, "is_camping_mat_3_3")
         self.assertCheckbox(True, "is_camping_mat_3_4")
+
+        # check log
+        self.get('/event/event/1/log')
+        self.assertPresence("Bewohner von Kalte Kammer geändert.",
+                            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
+        self.assertPresence("Bewohner von Kalte Kammer geändert.",
+                            div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
 
     @as_users("garcia")
     def test_lodgements_swap_inhabitants(self) -> None:
@@ -3438,6 +3489,18 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence('Garcia', div="inhabitants-3")
         self.assertNonPresence('Inga', div="inhabitants-3")
 
+        # check log
+        self.get('/event/event/1/log')
+        change_note = "Bewohner von Kalte Kammer und Einzelzelle getauscht."
+        self.assertPresence(change_note,
+                            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
+        self.assertPresence(change_note,
+                            div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
+        self.assertPresence(change_note,
+                            div=str(self.EVENT_LOG_OFFSET + 3) + "-1003")
+        self.assertPresence(change_note,
+                            div=str(self.EVENT_LOG_OFFSET + 4) + "-1004")
+
     @as_users("annika", "garcia")
     def test_lock_event(self) -> None:
         self.traverse({'href': '/event/$'},
@@ -3461,7 +3524,6 @@ etc;anything else""", f['entries_2'].value)
         data = saved.click(href='/event/event/1/export$').body
         data = data.replace(b"Gro\\u00dfe Testakademie 2222",
                             b"Mittelgro\\u00dfe Testakademie 2222")
-        data = data.replace(b'"CDEDB_EXPORT_EVENT_VERSION": 13,', b'')
         self.response = saved
         self.assertPresence(
             "Die Veranstaltung ist zur Offline-Nutzung gesperrt.")
@@ -3657,7 +3719,6 @@ etc;anything else""", f['entries_2'].value)
 
         upload = copy.deepcopy(first)
         del upload['event']
-        del upload['CDEDB_EXPORT_EVENT_VERSION']
         for reg in upload['registrations'].values():
             del reg['persona']
         self.get('/')
@@ -3993,11 +4054,9 @@ etc;anything else""", f['entries_2'].value)
         self.logout()
         self.test_create_delete_course()
         self.logout()
-        self.test_lodgements()
-        self.logout()
         self.test_create_event()
         self.logout()
-        self.test_manage_attendees()
+        self.test_lodgements()
         self.logout()
         self.test_add_empty_registration()
         self.logout()
@@ -4006,22 +4065,22 @@ etc;anything else""", f['entries_2'].value)
         self.login(USER_DICT['annika'])
         self.traverse({'href': '/event/$'},
                       {'href': '/event/log'})
-        self.assertTitle("Veranstaltungen-Log [1–16 von 16]")
+        self.assertTitle("Veranstaltungen-Log [1–17 von 17]")
         self.assertNonPresence("LogCodes")
         f = self.response.forms['logshowform']
         f['codes'] = [10, 27, 51]
         f['event_id'] = 1
         self.submit(f)
-        self.assertTitle("Veranstaltungen-Log [1–2 von 2]")
+        self.assertTitle("Veranstaltungen-Log [1–1 von 1]")
 
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/log'})
-        self.assertTitle("Große Testakademie 2222: Log [1–6 von 6]")
+        self.assertTitle("Große Testakademie 2222: Log [1–7 von 7]")
 
         self.traverse({'href': '/event/$'},
                       {'href': '/event/log'})
-        self.assertTitle("Veranstaltungen-Log [1–16 von 16]")
+        self.assertTitle("Veranstaltungen-Log [1–17 von 17]")
         f = self.response.forms['logshowform']
         f['persona_id'] = "DB-5-1"
         f['submitted_by'] = "DB-1-9"
