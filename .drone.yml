@@ -91,9 +91,7 @@ steps:
     - echo "SELECT * FROM ldap_agents;" | isql cdb -b
     - slapd -d 0 &
     - sleep 5
-    - ldapwhoami -D cn=admin,dc=cde-ev,dc=de -w secret
-    - ldapwhoami -D cn=admin,ou=dsa,dc=cde-ev,dc=de -w secret
-    - ldapwhoami -D cn=test,ou=dsa,dc=cde-ev,dc=de -w secret
+    - ldapwhoami -D cn=admin,ou=dsa,dc=cde-ev,dc=de -w secret || ldapwhoami -D cn=admin,dc=cde-ev,dc=de -w secret || ldapwhoami -D cn=test,ou=dsa,dc=cde-ev,dc=de -w secret
     - fg
 - name: frontend tests a-d
   image: cdedb:20210705
