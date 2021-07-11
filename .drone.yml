@@ -135,7 +135,7 @@ steps:
   depends_on:
   - frontend tests a-d
   - frontend tests e-z
-  - backend tests
+  - non-frontend tests
   - xss
   when:
     status:
