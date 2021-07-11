@@ -26,9 +26,14 @@ class TestLDAP(BasicTest):
         user: str = test_dsa_dn, password: str = test_dsa_pw, search_base: str = root_dn,
         attributes: Union[List[str], str] = ALL_ATTRIBUTES
     ) -> None:
-        with ldap3.Connection(self.server, user=user, password=password) as conn:
-            conn.search(search_base=search_base, search_filter=search_filter,
-                        attributes=attributes)
+        with ldap3.Connection(
+            self.server, user=user, password=password, raise_exceptions=True
+        ) as conn:
+            conn.search(
+                search_base=search_base,
+                search_filter=search_filter,
+                attributes=attributes
+            )
             self.assertEqual(len(conn.entries), 1)
             result = conn.entries[0].entry_attributes_as_dict
             self.assertEqual(result, expectation)
