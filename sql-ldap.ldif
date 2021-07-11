@@ -63,7 +63,7 @@ olcAccess: to dn.subtree="ou=dsa,dc=cde-ev,dc=de" by dn.subtree="ou=dsa,dc=cde-e
 olcAccess: to * by * none
 # this user better exist or else there be dragons
 # this is the default user added by slapd
-olcRootDN: cn=admin,dc=cde-ev,dc=de
+olcRootDN: cn=admin,ou=dsa,dc=cde-ev,dc=de
 olcRootPW: secret
 olcDatabase: sql
 olcDbHost: localhost

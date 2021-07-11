@@ -59,49 +59,62 @@ steps:
   environment:
     POSTGRES_PASSWORD: passwd
   volumes:
-  - name: database # why is this necessary?
+  - name: database
     path: /var/lib/postgresql/data
   depends_on:
   - build images
+- name: testsuite-setup
+  image: cdedb:20210705
+  pull: never # do not try to pull image from docker hub
+  depends_on:
+  - cdb
+  commands:
+  - sleep 5
+  - pg_isready --host=cdb --timeout=10 # wait for database to come online
+  - make i18n-compile # required for sample-data target
+  - make sample-data # this creates the sql schema and copies the localconfig.py
+  - make TESTDATABASENAME=cdb_test_1 sql-test # create the test database
 - name: ldap # is used as the hostname for the container
   image: ldap:20210705
   pull: never # do not try to pull image from docker hub
   detach: true # detach to keep running for the following steps
-  volumes:
-  - name: ldap # is this necessary?
-    path: /var/lib/ldap/data
   depends_on:
-  - cdb
+  - testsuite-setup
   environment:
     DATABASE_NAME: cdb_test_1 # has to match the id where the ldap tests are running
   commands:
-    - sleep 30 # wait for db to come online
-    - slapd -d 0
+    - cat /etc/odbc.ini
+    - cat /app/sql-ldap.ldif
+    - echo "SELECT * FROM ldap_agents;" | isql cdb -b
+    - slapd -d 0 &
+    - sleep 5
+    - ldapwhoami -D cn=admin,dc=cde-ev,dc=de -w secret
+    - ldapwhoami -D cn=admin,ou=dsa,dc=cde-ev,dc=de -w secret
+    - ldapwhoami -D cn=test,ou=dsa,dc=cde-ev,dc=de -w secret
+    - fg
 - name: testsuite
   image: cdedb:20210705
   pull: never # do not try to pull image from docker hub
   depends_on:
-  - cdb # only needs db allowing mypy and lint to run parallel to this
+  - testsuite-setup
   - ldap
   volumes:
   - name: tmp_dir
     path: /tmp
   commands:
-  - sleep 5 # wait for db and ldap to come online
   - make i18n-compile # required for sample-data target
   - make sample-data # this creates the sql schema and copies the localconfig.py
-  - make check
+  - python3 bin/check.py --thread-id 1 # force thread 1 for ldap
 - name: xss
   image: cdedb:20210705
   pull: never
   depends_on:
-    - cdb
+    - testsuite-setup
   volumes:
   - name: tmp_dir
     path: /tmp
   commands:
-    - sleep 15 # wait for make sample-data in testsuite to finish
-    - make xss-check
+    - python3 bin/check.py --xss-check --verbose --thread-id 2
 - name: check for merge conflicts
   image: docker:20.10-git
   pull: never # do not try to pull image from docker hub

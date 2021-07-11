@@ -303,7 +303,7 @@ check-parallel:
 		frontend_cron
 
 check:
-	$(PYTHONBIN) -m bin.check $(or $(TESTPATTERNS), )
+	$(PYTHONBIN) bin/check.py $(or $(TESTPATTERNS), )
 
 sql-xss: tests/ancillary_files/sample_data_xss.sql
 ifneq ($(wildcard /CONTAINER),/CONTAINER)
@@ -318,7 +318,7 @@ endif
 	$(PSQL) -f tests/ancillary_files/sample_data_xss.sql --dbname=${TESTDATABASENAME}
 
 xss-check:
-	$(PYTHONBIN) -m bin.check --xss-check --verbose
+	$(PYTHONBIN) bin/check.py --xss-check --verbose
 
 dump-html:
 	$(MAKE) -B /tmp/cdedb-dump/
