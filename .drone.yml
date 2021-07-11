@@ -88,7 +88,7 @@ steps:
     - /ldap-entrypoint.sh
     - cat /etc/odbc.ini
     - cat /app/sql-ldap.ldif
-    - echo "SELECT * FROM ldap_agents;" | isql cdb -b
+    - echo "SELECT * FROM ldap_agents;" | isql cdb_test -b
     - slapd -d 0 &
     - sleep 5
     - ldapwhoami -D cn=admin,ou=dsa,dc=cde-ev,dc=de -w secret || ldapwhoami -D cn=admin,dc=cde-ev,dc=de -w secret || ldapwhoami -D cn=test,ou=dsa,dc=cde-ev,dc=de -w secret
