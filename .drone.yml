@@ -85,6 +85,7 @@ steps:
     # and this will work regardless of the id the testing container gets
     DATABASE_NAME: cdb_test
   commands:
+    - /ldap-entrypoint.sh
     - cat /etc/odbc.ini
     - cat /app/sql-ldap.ldif
     - echo "SELECT * FROM ldap_agents;" | isql cdb -b
