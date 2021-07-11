@@ -18,7 +18,7 @@ if [ ! -e /var/lib/ldap/container_already_initalized ]; then
 
     # Start slapd in the background (in foreground mode with -d 0 to prevent forking)
     # with ldapi:// (unix socket) to allow for simple authentication with ldapmodify.
-    slapd -d -0 -h ldapi:// &
+    slapd -d 0 -h ldapi:// &
     # Wait for slapd to come up.
     sleep 5
     # Run ldapmodify to initialize the ldap-sql backend and config.
