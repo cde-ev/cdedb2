@@ -117,8 +117,8 @@ steps:
     path: /tmp
   commands:
   - sleep 15
-  - ldapwhoami -H ldap://ldap -D cn=admin,ou=dsa,dc=cde-ev,dc=de -w secret
-  - ldapwhoami -H ldap://ldap -D cn=test,ou=dsa,dc=cde-ev,dc=de -w secret
+  - ldapwhoami -H ldap://ldap -D cn=admin,ou=dsa,dc=cde-ev,dc=de -w secret || true
+  - ldapwhoami -H ldap://ldap -D cn=test,ou=dsa,dc=cde-ev,dc=de -w secret || true
   - bin/check.py --verbose --third
 - name: xss
   image: cdedb:20210705
