@@ -2,9 +2,8 @@
 
 from typing import Dict, List, Set, Union
 
-import ldap3   # type: ignore
+import ldap3
 from ldap3 import ALL_ATTRIBUTES
-from ldap3.abstract.entry import Entry  # type: ignore
 
 from tests.common import BasicTest
 
@@ -25,7 +24,8 @@ class TestLDAP(BasicTest):
     def single_result_search(
         self, search_filter: str, expectation: Dict[str, List[str]], *,
         user: str = test_dsa_dn, password: str = test_dsa_pw, search_base: str = root_dn,
-        attributes: Union[List[str], str] = ALL_ATTRIBUTES) -> None:
+        attributes: Union[List[str], str] = ALL_ATTRIBUTES
+    ) -> None:
         with ldap3.Connection(self.server, user=user, password=password) as conn:
             conn.search(search_base=search_base, search_filter=search_filter,
                         attributes=attributes)
