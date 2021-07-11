@@ -11,6 +11,7 @@ if [ ! -e /var/lib/ldap/container_already_initalized ]; then
 
     # This is required for testing where the database name differs.
     if [ ! -z "${DATABASE_NAME}" ]; then
+        sed -i -r "s/\[cdb\]/[${DATABASE_NAME}]/" /etc/odbc.ini
         sed -i -r "s/(Database\s*=\s*)cdb/\1${DATABASE_NAME}/" /etc/odbc.ini
         sed -i -r "s/(olcDbName:\s*)cdb/\1${DATABASE_NAME}/" /app/sql-ldap.ldif
     fi
