@@ -2,7 +2,6 @@
 
 import datetime
 import json
-import time
 from typing import Collection, Optional, NamedTuple
 
 import freezegun
@@ -10,7 +9,7 @@ import pytz
 
 import cdedb.database.constants as const
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, FUTURE_TIMESTAMP, get_hash, now, nearly_now,
+    CdEDBObject, CdEDBObjectMap, get_hash, now, nearly_now,
 )
 from tests.common import (
     BackendTest, UserIdentifier, USER_DICT, as_users, prepsql, storage,
