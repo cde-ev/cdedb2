@@ -16,7 +16,6 @@ import re
 import shutil
 import string
 import tempfile
-import time
 from collections import OrderedDict, defaultdict
 from typing import Any, Collection, Dict, List, Optional, Sequence, Set, Tuple, cast
 
