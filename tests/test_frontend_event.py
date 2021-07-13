@@ -499,42 +499,44 @@ class TestEventFrontend(FrontendTest):
         self.assertNonPresence("Charly")
 
     def test_event_visibility(self) -> None:
-        # Add a course track, a course and move the registration start to one
-        # week in the future.
+        # add a course track
         self.login(USER_DICT['annika'])
-        self.traverse({'href': '/event/$'},
-                      {'description': 'Alle Veranstaltungen'},
-                      {'description': 'CdE-Party 2050'},
-                      {'description': 'Veranstaltungsteile'})
-        f = self.response.forms['partsummaryform']
-        f['track_title_4_-1'] = "Spätschicht"
-        f['track_shortname_4_-1'] = "Spät"
-        f['track_create_4_-1'].checked = True
+        self.traverse("Veranstaltungen", "Alle Veranstaltungen", "CdE-Party 2050",
+                      "Veranstaltungsteile")
+        self.traverse({"href": "/event/event/2/part/4/change"})
+        f = self.response.forms['changepartform']
+        f['track_title_-1'] = "Spätschicht"
+        f['track_shortname_-1'] = "Spät"
+        f['track_create_-1'].checked = True
+        f['track_sortkey_-1'] = "1"
         self.submit(f)
-        self.traverse({'href': '/event/event/2/course/stats'},
-                      {'href': '/event/event/2/course/create'})
+
+        # add a course
+        self.traverse("Kurse", "Kurs hinzufügen")
         f = self.response.forms['createcourseform']
         f['title'] = "Chillout mit Musik"
         f['nr'] = "1"
         f['shortname'] = "music"
         f['instructors'] = "Giorgio Moroder"
         self.submit(f)
-        self.traverse({'href': '/event/event/2/change'})
+
+        # move the registration start to one week in the future.
+        self.traverse("Konfiguration")
         f = self.response.forms['changeeventform']
-        f['registration_start'] =\
-            (now() + datetime.timedelta(days=7)).isoformat()
+        f['registration_start'] = (now() + datetime.timedelta(days=7)).isoformat()
         self.submit(f)
 
         # Check visibility for orga
-        self.traverse({'href': '/event/event/2/course/list'})
+        self.traverse("Kursliste")
         self.assertPresence("Chillout mit Musik")
+
         # Check for inexistence of links to event, invisible event page, but
         # visible course page
         self.logout()
         self.login(USER_DICT['emilia'])
-        self.assertNotIn('/event/event/2/show', self.response.text)
-        self.traverse({'href': '/event/$'})
-        self.assertNotIn('/event/event/2/show', self.response.text)
+        self.assertNonPresence("CdE Party")
+        self.traverse("Veranstaltungen")
+        self.assertNonPresence("CdE Party")
         self.get('/event/event/2/course/list')
         self.assertPresence("Chillout mit Musik")
         self.assertNotIn('/event/event/2/show', self.response.text)
@@ -544,26 +546,22 @@ class TestEventFrontend(FrontendTest):
         self.get('/')
         self.logout()
         self.login(USER_DICT['annika'])
-        self.traverse({'href': '/event/$'},
-                      {'description': 'Alle Veranstaltungen'},
-                      {'description': 'CdE-Party 2050'},
-                      {'description': 'Konfiguration'})
+        self.traverse("Veranstaltungen", "Alle Veranstaltungen", "CdE-Party 2050",
+                      "Konfiguration")
         f = self.response.forms['changeeventform']
         f['is_course_list_visible'] = False
         f['is_visible'] = True
         self.submit(f)
-        self.traverse({'href': '/event/event/2/course/list'})
+        self.traverse("Kursliste")
         self.assertPresence("Chillout mit Musik")
         self.logout()
 
         self.login(USER_DICT['emilia'])
-        self.traverse({'href': '/event/event/2/show'})
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/2/show'})
-        # Becuase of markdown smarty, the apostroph is replaced
+        self.traverse("CdE-Party 2050")
+        # Because of markdown smarty, the apostroph is replaced
         # with its typographically correct form here.
         self.assertPresence("Let‘s have a party!")
-        self.assertNotIn('/event/event/2/course/list', self.response.text)
+        self.assertNonPresence("Kursliste", div="sidebar")
         self.get('/event/event/2/course/list')
         self.follow()
         self.assertPresence("Die Kursliste ist noch nicht öffentlich",
@@ -613,92 +611,140 @@ class TestEventFrontend(FrontendTest):
     def test_part_summary_trivial(self) -> None:
         self.traverse("Veranstaltungen", "Große Testakademie 2222", "Log")
         self.assertTitle("Große Testakademie 2222: Log [1–4 von 4]")
+
+        # check there is no log generation if nothing changes
         self.traverse("Veranstaltungsteile")
         self.assertTitle("Veranstaltungsteile konfigurieren (Große Testakademie 2222)")
-        f = self.response.forms['partsummaryform']
-        self.assertEqual("Warmup", f['title_1'].value)
+        self.traverse({"href": "/event/event/1/part/1/change"})
+        f = self.response.forms['changepartform']
+        self.assertEqual("Warmup", f['title'].value)
         self.submit(f)
+
+        # check there is no log generation if nothing changes
         self.traverse("Datenfelder konfigurieren")
         f = self.response.forms['fieldsummaryform']
         self.submit(f)
+
+        # check the that no log entries were added
         self.traverse("Log")
         self.assertTitle("Große Testakademie 2222: Log [1–4 von 4]")
 
     @as_users("annika")
     def test_part_summary_complex(self) -> None:
-        self.traverse({'href': '/event/$'},
-                      {'description': 'Alle Veranstaltungen'},
-                      {'description': 'CdE-Party 2050'},
-                      {'description': 'Veranstaltungsteile'})
+        self.traverse("Veranstaltungen", 'Alle Veranstaltungen', 'CdE-Party 2050',
+                      'Veranstaltungsteile')
         self.assertTitle("Veranstaltungsteile konfigurieren (CdE-Party 2050)")
-        f = self.response.forms['partsummaryform']
-        self.assertNotIn('title_1001', f.fields)
-        f['create_-1'].checked = True
-        f['title_-1'] = "Cooldown"
-        f['shortname_-1'] = "cd"
-        f['part_begin_-1'] = "2244-4-5"
-        f['part_end_-1'] = "2233-6-7"
-        f['fee_-1'] = "23456.78"
-        f['track_create_-1_-1'].checked = True
-        f['track_title_-1_-1'] = "Chillout Training"
-        f['track_shortname_-1_-1'] = "Chillout"
-        f['track_num_choices_-1_-1'] = "1"
-        f['track_min_choices_-1_-1'] = "1"
-        f['track_sortkey_-1_-1'] = "1"
+        self.assertNonPresence("Cooldown")
+
+        # add new part
+        self.traverse("Teil hinzufügen")
+        f = self.response.forms['addpartform']
+        f['title'] = "Cooldown"
+        f['shortname'] = "cd"
+        f['part_begin'] = "2244-4-5"
+        f['part_end'] = "2233-6-7"
+        f['fee'] = "23456.78"
         self.submit(f, check_notification=False)
-        self.assertValidationError('part_end_-1', "Muss später als Beginn sein.")
-        f['part_begin_-1'] = "2233-4-5"
+        self.assertValidationError('part_end', "Muss später als Beginn sein.")
+        f['part_begin'] = "2233-4-5"
         self.submit(f)
-        self.assertTitle("Veranstaltungsteile konfigurieren (CdE-Party 2050)")
-        f = self.response.forms['partsummaryform']
-        self.assertEqual("Cooldown", f['title_1001'].value)
-        self.assertEqual("cd", f['shortname_1001'].value)
-        self.assertEqual("Chillout Training", f['track_title_1001_1001'].value)
-        f['title_1001'] = "Größere Hälfte"
-        f['fee_1001'] = "99.99"
-        f['part_end_1001'] = "2222-6-7"
+
+        # add track to new added part
+        self.traverse({"href": "/event/event/2/part/1001/change"})
+        f = self.response.forms['changepartform']
+        f['track_create_-1'].checked = True
+        f['track_title_-1'] = "Chillout Training"
+        f['track_shortname_-1'] = "Chillout"
+        f['track_num_choices_-1'] = "1"
+        f['track_min_choices_-1'] = "1"
+        f['track_sortkey_-1'] = "1"
+        self.submit(f)
+
+        # change the new added part
+        self.traverse({"href": "/event/event/2/part/1001/change"})
+        f = self.response.forms['changepartform']
+        self.assertEqual("Cooldown", f['title'].value)
+        self.assertEqual("cd", f['shortname'].value)
+        self.assertEqual("Chillout Training", f['track_title_1001'].value)
+        f['title'] = "Größere Hälfte"
+        f['fee'] = "99.99"
+        f['part_end'] = "2222-6-7"
         self.submit(f, check_notification=False)
-        self.assertValidationError('part_end_1001', "Muss später als Beginn sein")
-        f['part_end_1001'] = "2233-4-5"
+        self.assertValidationError('part_end', "Muss später als Beginn sein")
+        f['part_end'] = "2233-4-5"
         self.submit(f)
+
         # and now for tracks
         self.assertTitle("Veranstaltungsteile konfigurieren (CdE-Party 2050)")
-        f = self.response.forms['partsummaryform']
-        self.assertNotIn('track_1001_1002', f.fields)
-        f['track_title_1001_-1'] = "Spätschicht"
-        f['track_shortname_1001_-1'] = "Spät"
-        f['track_num_choices_1001_-1'] = "3"
-        f['track_min_choices_1001_-1'] = "4"
-        f['track_sortkey_1001_-1'] = "1"
-        f['track_create_1001_-1'].checked = True
+        self.traverse({"href": "/event/event/2/part/1001/change"})
+        f = self.response.forms['changepartform']
+        self.assertNotIn('track_1002', f.fields)
+        f['track_title_-1'] = "Spätschicht"
+        f['track_shortname_-1'] = "Spät"
+        f['track_num_choices_-1'] = "3"
+        f['track_min_choices_-1'] = "4"
+        f['track_sortkey_-1'] = "1"
+        f['track_create_-1'].checked = True
         self.submit(f, check_notification=False)
         self.assertValidationError(
-            'track_min_choices_1001_-1',
+            'track_min_choices_-1',
             "Muss kleiner oder gleich der Gesamtzahl von Kurswahlen sein.")
-        f['track_min_choices_1001_-1'] = "2"
+        f['track_min_choices_-1'] = "2"
         self.submit(f)
-        f = self.response.forms['partsummaryform']
-        self.assertEqual("Spätschicht", f['track_title_1001_1002'].value)
-        f['track_title_1001_1002'] = "Nachtschicht"
-        f['track_shortname_1001_1002'] = "Nacht"
+
+        # change the track
+        self.traverse({"href": "/event/event/2/part/1001/change"})
+        f = self.response.forms['changepartform']
+        self.assertEqual("Spätschicht", f['track_title_1002'].value)
+        f['track_title_1002'] = "Nachtschicht"
+        f['track_shortname_1002'] = "Nacht"
         self.submit(f)
-        f = self.response.forms['partsummaryform']
-        self.assertEqual("Nachtschicht", f['track_title_1001_1002'].value)
-        self.assertEqual("Nacht", f['track_shortname_1001_1002'].value)
-        f['track_delete_1001_1002'].checked = True
+
+        # delete the track
+        self.traverse({"href": "/event/event/2/part/1001/change"})
+        f = self.response.forms['changepartform']
+        self.assertEqual("Nachtschicht", f['track_title_1002'].value)
+        self.assertEqual("Nacht", f['track_shortname_1002'].value)
+        f['track_delete_1002'].checked = True
         self.submit(f)
+
+        # delete new part
         self.assertTitle("Veranstaltungsteile konfigurieren (CdE-Party 2050)")
-        f = self.response.forms['partsummaryform']
-        self.assertNotIn('track_title_1001_1002', f.fields)
-        # finally deletion
-        self.assertTitle("Veranstaltungsteile konfigurieren (CdE-Party 2050)")
-        f = self.response.forms['partsummaryform']
-        self.assertEqual("Größere Hälfte", f['title_1001'].value)
-        f['delete_1001'].checked = True
+        self.assertNonPresence("Nachtschicht", div="part1001")
+        f = self.response.forms['deletepartform1001']
+        f['ack_delete'].checked = True
         self.submit(f)
+
         self.assertTitle("Veranstaltungsteile konfigurieren (CdE-Party 2050)")
-        f = self.response.forms['partsummaryform']
-        self.assertNotIn('title_1001', f.fields)
+        self.assertNonPresence("Größere Hälfte")
+
+        # check log
+        self.get('/event/event/log')
+        self.assertPresence("Veranstaltungsteil erstellt",
+                            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
+        self.assertPresence("Kursschiene hinzugefügt",
+                            div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
+        self.assertPresence("Kursschiene geändert",
+                            div=str(self.EVENT_LOG_OFFSET + 3) + "-1003")
+        self.assertPresence("Veranstaltungsteil geändert",
+                            div=str(self.EVENT_LOG_OFFSET + 4) + "-1004")
+        self.assertPresence("Kursschiene hinzugefügt",
+                            div=str(self.EVENT_LOG_OFFSET + 5) + "-1005")
+        self.assertPresence("Kursschiene geändert",
+                            div=str(self.EVENT_LOG_OFFSET + 6) + "-1006")
+        self.assertPresence("Kursschiene geändert",
+                            div=str(self.EVENT_LOG_OFFSET + 7) + "-1007")
+        self.assertPresence("Kursschiene geändert",
+                            div=str(self.EVENT_LOG_OFFSET + 8) + "-1008")
+        self.assertPresence("Kursschiene geändert",
+                            div=str(self.EVENT_LOG_OFFSET + 9) + "-1009")
+        self.assertPresence("Kursschiene entfernt",
+                            div=str(self.EVENT_LOG_OFFSET + 10) + "-1010")
+        self.assertPresence("Kursschiene entfernt",
+                            div=str(self.EVENT_LOG_OFFSET + 11) + "-1011")
+        self.assertPresence("Veranstaltungsteil gelöscht",
+                            div=str(self.EVENT_LOG_OFFSET + 12) + "-1012")
+        #print(self.response.text)
 
     @as_users("garcia")
     def test_aposteriori_change_num_choices(self) -> None:
@@ -1474,19 +1520,9 @@ etc;anything else""", f['entries_2'].value)
 
     @as_users("annika")
     def test_registration_questionnaire(self) -> None:
-        self.traverse({'description': "Veranstaltungen"},
-                      {'description': "Große Testakademie 2222"},
-                      {'description': "Veranstaltungsteile"})
-        f = self.response.forms['partsummaryform']
-        for part_id in [1, 2, 3]:
-            field_name = f"fee_modifier_create_{part_id}_-1"
-            self.assertNotIn(field_name, f.fields)
-
-        self.traverse({'description': "Veranstaltungen"},
-                      {'description': "Alle Veranstaltungen"},
-                      {'description': "CdE-Party 2050"})
+        self.traverse("Veranstaltungen", "Alle Veranstaltungen", "CdE-Party 2050")
         # Create new boolean registration fields.
-        self.traverse({'description': "Datenfelder konfigurieren"})
+        self.traverse("Datenfelder konfigurieren")
         f = self.response.forms['fieldsummaryform']
         f['create_-1'].checked = True
         f['field_name_-1'] = "is_child"
@@ -1522,21 +1558,23 @@ etc;anything else""", f['entries_2'].value)
         f['association_-1'] = const.FieldAssociations.registration.value
         self.submit(f)
 
-        self.traverse({'description': "Veranstaltungsteile"})
-        f = self.response.forms['partsummaryform']
-        f['fee_modifier_create_4_-1'].checked = True
-        f['fee_modifier_modifier_name_4_-1'] = "is_child"
-        f['fee_modifier_amount_4_-1'] = "-10"
-        f['fee_modifier_field_id_4_-1'] = 1001
+        self.traverse("Veranstaltungsteile")
+        self.traverse({"href": "/event/event/2/part/4/change"})
+        f = self.response.forms['changepartform']
+        f['fee_modifier_create_-1'].checked = True
+        f['fee_modifier_modifier_name_-1'] = "is_child"
+        f['fee_modifier_amount_-1'] = "-10"
+        f['fee_modifier_field_id_-1'] = 1001
         self.submit(f)
-        f = self.response.forms['partsummaryform']
-        f['fee_modifier_create_4_-1'].checked = True
-        f['fee_modifier_modifier_name_4_-1'] = "plus_one"
-        f['fee_modifier_amount_4_-1'] = "+14.99"
-        f['fee_modifier_field_id_4_-1'] = 1002
+        self.traverse({"href": "/event/event/2/part/4/change"})
+        f = self.response.forms['changepartform']
+        f['fee_modifier_create_-1'].checked = True
+        f['fee_modifier_modifier_name_-1'] = "plus_one"
+        f['fee_modifier_amount_-1'] = "+14.99"
+        f['fee_modifier_field_id_-1'] = 1002
         self.submit(f)
 
-        self.traverse({'description': "Anmeldung konfigurieren"})
+        self.traverse("Anmeldung konfigurieren")
         f = self.response.forms['configureregistrationform']
         f['create_-1'].checked = True
         f['title_-1'] = "Ich bin unter 13 Jahre alt."
@@ -1563,14 +1601,14 @@ etc;anything else""", f['entries_2'].value)
         f['field_id_-1'] = 1005
         self.submit(f)
 
-        self.traverse({'description': "Konfiguration"})
+        self.traverse("Konfiguration")
         f = self.response.forms['changeeventform']
         f['registration_start'] = now().isoformat()
         f['registration_soft_limit'] = ""
         f['registration_hard_limit'] = ""
         self.submit(f)
 
-        self.traverse({'description': "Anmelden"})
+        self.traverse("Anmelden")
         self.assertTitle("Anmeldung für CdE-Party 2050")
         f = self.response.forms['registerform']
         self.assertPresence("Ich bin unter 13 Jahre alt.",
@@ -1635,9 +1673,7 @@ etc;anything else""", f['entries_2'].value)
 
     @as_users("annika")
     def test_fee_modifiers(self) -> None:
-        self.traverse({'description': "Veranstaltungen"},
-                      {'description': "Alle Veranstaltungen"},
-                      {'description': "CdE-Party 2050"})
+        self.traverse("Veranstaltungen", "Alle Veranstaltungen", "CdE-Party 2050")
         self._create_event_field({
             "field_name": "is_child",
             "kind": const.FieldDatatypes.bool.value,
@@ -1653,62 +1689,87 @@ etc;anything else""", f['entries_2'].value)
             "kind": const.FieldDatatypes.bool.value,
             "association": const.FieldAssociations.course.value,
         })  # id 1003
-        self.traverse({'description': "Veranstaltungsteile"})
-        f: webtest.Form = self.response.forms["partsummaryform"]
-        f['fee_modifier_create_4_-1'].checked = True
-        f['fee_modifier_modifier_name_4_-1'] = "Ich bin Unter 13 Jahre alt."
-        f['fee_modifier_amount_4_-1'] = "abc"
-        self.assertEqual(
-            ['', '1001'], [x[0] for x in f['fee_modifier_field_id_4_-1'].options])
-        f['fee_modifier_field_id_4_-1'].force_value(1002)
+
+        self.traverse("Veranstaltungsteile")
+        self.traverse({"href": "/event/event/2/part/4/change"})
+        f: webtest.Form = self.response.forms["changepartform"]
+        f['fee_modifier_create_-1'].checked = True
+        f['fee_modifier_modifier_name_-1'] = "Ich bin Unter 13 Jahre alt."
+        f['fee_modifier_amount_-1'] = "abc"
+        # check that only fitting fields are shown in the drop-down
+        self.assertEqual(['1001'], [x[0] for x in f['fee_modifier_field_id_-1'].options])
+        f['fee_modifier_field_id_-1'].force_value(1002)
         self.submit(f, check_notification=False)
-        self.assertValidationError('fee_modifier_amount_4_-1',
+        self.assertValidationError('fee_modifier_amount_-1',
                                    "Ungültige Eingabe für eine Dezimalzahl")
-        f['fee_modifier_modifier_name_4_-1'] = "is_child"
-        f['fee_modifier_amount_4_-1'] = "-5"
+
+        f['fee_modifier_modifier_name_-1'] = "is_child"
+        f['fee_modifier_amount_-1'] = "-5"
         self.submit(f, check_notification=False)
-        self.assertValidationError('fee_modifier_field_id_4_-1',
+        self.assertValidationError('fee_modifier_field_id_-1',
                                    "Unpassendes Datenfeld für Beitragsmodifikator.")
-        f['fee_modifier_field_id_4_-1'].force_value(1003)
+
+        f['fee_modifier_field_id_-1'].force_value(1003)
         self.submit(f, check_notification=False)
-        self.assertValidationError('fee_modifier_field_id_4_-1',
+        self.assertValidationError('fee_modifier_field_id_-1',
                                    "Unpassendes Datenfeld für Beitragsmodifikator.")
-        f['fee_modifier_field_id_4_-1'] = ''
+
+        f['fee_modifier_field_id_-1'].force_value('')
         self.submit(f, check_notification=False)
-        self.assertValidationError('fee_modifier_field_id_4_-1',
+        self.assertValidationError('fee_modifier_field_id_-1',
                                    "Ungültige Eingabe für eine Ganzzahl")
-        f['fee_modifier_field_id_4_-1'] = '1001'
+
+        f['fee_modifier_field_id_-1'] = '1001'
         self.submit(f)
 
-        self.traverse({'description': "Datenfelder konfigurieren"})
+        self.traverse("Datenfelder konfigurieren")
         f = self.response.forms['fieldsummaryform']
         f['kind_1002'] = const.FieldDatatypes.bool.value
         f['association_1003'] = const.FieldAssociations.registration.value
         self.submit(f)
-        self.traverse({'description': "Veranstaltungsteile"})
-        f = self.response.forms['partsummaryform']
-        f['fee_modifier_create_4_-1'].checked = True
-        f['fee_modifier_modifier_name_4_-1'] = "is_child"
-        f['fee_modifier_amount_4_-1'] = "-7"
-        f['fee_modifier_field_id_4_-1'] = 1001
+
+        self.traverse("Veranstaltungsteile")
+        self.traverse({"href": "/event/event/2/part/4/change"})
+        f = self.response.forms['changepartform']
+        f['fee_modifier_create_-1'].checked = True
+        f['fee_modifier_modifier_name_-1'] = "is_child"
+        f['fee_modifier_amount_-1'] = "-7"
+        f['fee_modifier_field_id_-1'] = 1001
         self.submit(f, check_notification=False)
-        self.assertValidationError('fee_modifier_field_id_4_-1',
+        self.assertValidationError('fee_modifier_field_id_-1',
                                    "Nicht mehr als ein Beitragsmodifikator pro"
                                    " Veranstaltungsteil darf mit dem gleichen Feld"
                                    " verbunden sein.")
         self.assertValidationError(
-            'fee_modifier_modifier_name_4_-1',
+            'fee_modifier_modifier_name_-1',
             "Nicht mehr als ein Beitragsmodifikator pro"
             " Veranstaltungsteil darf den selben Bezeichner haben.")
-        f['fee_modifier_modifier_name_4_-1'] = "is_child2"
-        f['fee_modifier_field_id_4_-1'] = 1002
+
+        f['fee_modifier_modifier_name_-1'] = "is_child2"
+        f['fee_modifier_field_id_-1'] = 1002
         self.submit(f)
+
+        # check log
+        self.get("/event/event/log")
+        self.assertPresence("Feld hinzugefügt",
+                            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
+        self.assertPresence("Feld hinzugefügt",
+                            div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
+        self.assertPresence("Feld hinzugefügt",
+                            div=str(self.EVENT_LOG_OFFSET + 3) + "-1003")
+        self.assertPresence("Beitragsmodifikator angelegt",
+                            div=str(self.EVENT_LOG_OFFSET + 4) + "-1004")
+        self.assertPresence("Feld geändert",
+                            div=str(self.EVENT_LOG_OFFSET + 5) + "-1005")
+        self.assertPresence("Feld geändert",
+                            div=str(self.EVENT_LOG_OFFSET + 6) + "-1006")
+        self.assertPresence("Beitragsmodifikator angelegt",
+                            div=str(self.EVENT_LOG_OFFSET + 7) + "-1007")
 
     @as_users("garcia")
     def test_waitlist(self) -> None:
-        # 1. Create some new fields.
-        self.traverse({'description': "Veranstaltungen"},
-                      {'description': "Große Testakademie 2222"})
+        # Create some new fields.
+        self.traverse("Veranstaltungen", "Große Testakademie 2222")
         self._create_event_field({
             "field_name": "waitlist_position",
             "kind": const.FieldDatatypes.int.value,
@@ -1724,25 +1785,38 @@ etc;anything else""", f['entries_2'].value)
             "kind": const.FieldDatatypes.int.value,
             "association": const.FieldAssociations.course.value,
         })  # id 1003
-        # 2. Check that the incorrect fields do not work as the waitlist field.
-        self.traverse({'description': "Veranstaltungsteile"})
-        f: webtest.Form = self.response.forms["partsummaryform"]
-        self.assertEqual(
-            [x[0] for x in f['waitlist_field_3'].options], ['', '8', '1001'])
-        f['waitlist_field_1'].force_value(1002)
+
+        # Check that the incorrect fields do not work as the waitlist field.
+        self.traverse("Veranstaltungsteile")
+        self.traverse({"href": "/event/event/1/part/1/change"})
+        f: webtest.Form = self.response.forms["changepartform"]
+        self.assertEqual([x[0] for x in f['waitlist_field'].options], ['', '8', '1001'])
+        f['waitlist_field'].force_value(1002)
         self.submit(f, check_notification=False)
-        self.assertValidationError('waitlist_field_1',
+        self.assertValidationError('waitlist_field',
                                    "Unpassendes Datenfeld für die Warteliste.")
-        f['waitlist_field_1'].force_value(1003)
+        f['waitlist_field'].force_value(1003)
         self.submit(f, check_notification=False)
-        self.assertValidationError('waitlist_field_1',
+        self.assertValidationError('waitlist_field',
                                    "Unpassendes Datenfeld für die Warteliste.")
-        # 3. Set the correct waitlist field.
-        f['waitlist_field_1'] = '1001'
+
+        # Set the correct waitlist field.
+        f['waitlist_field'] = '1001'
         self.submit(f)
-        # 4. Check that the default query applies the correct ordering.
-        self.traverse({'description': 'Anmeldungen'},
-                      {'description': 'Warteliste Wu'})
+
+        # Check log
+        self.traverse("Log")
+        self.assertPresence("Feld hinzugefügt",
+                            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
+        self.assertPresence("Feld hinzugefügt",
+                            div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
+        self.assertPresence("Feld hinzugefügt",
+                            div=str(self.EVENT_LOG_OFFSET + 3) + "-1003")
+        self.assertPresence("Veranstaltungsteil geändert",
+                            div=str(self.EVENT_LOG_OFFSET + 4) + "-1004")
+
+        # Check that the default query applies the correct ordering.
+        self.traverse('Anmeldungen', 'Warteliste Wu')
         f = self.response.forms['queryform']
         self.assertEqual(f['qord_primary'].value,
                          "reg_fields.xfield_waitlist_position")
@@ -1751,7 +1825,8 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual(f['qval_part1.status'].value,
                          str(const.RegistrationPartStati.waitlist.value))
         self.assertPresence("Emilia E.", div="result-container")
-        # 5. Check that participants can see their wailist position.
+
+        # Check that participants can see their waitlist position.
         self.logout()
         self.login(USER_DICT["emilia"])
         self.traverse({'href': "/event/event/1/registration/status"})
@@ -3895,28 +3970,26 @@ etc;anything else""", f['entries_2'].value)
 
     @as_users("annika")
     def test_one_track_no_courses(self) -> None:
-        self.traverse({'href': '/event/$'},
-                      {'description': 'Alle Veranstaltungen'},
-                      {'description': 'CdE-Party 2050'})
+        self.traverse("Veranstaltungen", "Alle Veranstaltungen", "CdE-Party 2050")
         # Check if course list is present (though we have no course track)
         self.assertNonPresence('/event/event/2/course/list', div="sidebar")
         self.assertNonPresence('/event/event/2/course/stats', div="sidebar")
         self.assertNonPresence('/event/event/2/course/choices', div="sidebar")
 
         # Add course track
-        self.traverse({'href': '/event/event/2/part/summary'})
-        f = self.response.forms['partsummaryform']
-        f['track_create_4_-1'].checked = True
-        f['track_title_4_-1'] = "Chillout Training"
-        f['track_shortname_4_-1'] = "Chill"
-        f['track_num_choices_4_-1'] = "1"
-        f['track_min_choices_4_-1'] = "1"
-        f['track_sortkey_4_-1'] = "1"
+        self.traverse("Veranstaltungsteile")
+        self.traverse({"href": "/event/event/2/part/4/change"})
+        f = self.response.forms['changepartform']
+        f['track_create_-1'].checked = True
+        f['track_title_-1'] = "Chillout Training"
+        f['track_shortname_-1'] = "Chill"
+        f['track_num_choices_-1'] = "1"
+        f['track_min_choices_-1'] = "1"
+        f['track_sortkey_-1'] = "1"
         self.submit(f)
 
         # Add registration
-        self.traverse({'href': '/event/event/2/registration/query'},
-                      {'href': '/event/event/2/registration/add'})
+        self.traverse("Anmeldungen", "Teilnehmer hinzufügen")
         # We have only one part, thus it should not be named
         self.assertNonPresence('Partywoche')
         # We have only one track, thus it should not be named
@@ -3927,7 +4000,7 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.assertNonPresence('Partywoche')
         self.assertNonPresence('Chillout')
-        self.traverse({'description': 'Bearbeiten'})
+        self.traverse('Bearbeiten')
         self.assertNonPresence('Partywoche')
         self.assertNonPresence('Chillout')
         self.get("/event/event/2/registration/multiedit?reg_ids=1001")
@@ -3948,14 +4021,13 @@ etc;anything else""", f['entries_2'].value)
     def test_free_event(self) -> None:
         # first, make Große Testakademie 2222 free
         self.login(USER_DICT['garcia'])
-        self.traverse({'description': "Veranstaltungen"},
-                      {'description': "Große Testakademie 2222"},
-                      {'description': "Veranstaltungsteile"})
-        f = self.response.forms['partsummaryform']
-        f['fee_1'] = 0
-        f['fee_2'] = 0
-        f['fee_3'] = 0
-        self.submit(f)
+        self.traverse("Veranstaltungen", "Große Testakademie 2222",
+                      "Veranstaltungsteile")
+        for part_id in [1, 2, 3]:
+            self.traverse({"href": f"/event/event/1/part/{part_id}/change"})
+            f = self.response.forms['changepartform']
+            f['fee'] = 0
+            self.submit(f)
 
         pay_request = "Anmeldung erst mit Überweisung des Teilnehmerbeitrags"
         iban = iban_filter(self.app.app.conf['EVENT_BANK_ACCOUNTS'][0][0])
@@ -4002,25 +4074,28 @@ etc;anything else""", f['entries_2'].value)
     @as_users("garcia")
     def test_no_choices(self) -> None:
         """This is a regression test for #1224, #1271 and #1395."""
-        self.traverse({"description": "Veranstaltungen"},
-                      {"description": "Große Testakademie 2222"},
-                      {"description": "Veranstaltungsteile"})
-        f = self.response.forms['partsummaryform']
-        f['track_num_choices_2_1'] = 0
-        f['track_min_choices_2_1'] = 0
-        f['track_num_choices_2_2'] = 0
-        f['track_min_choices_2_2'] = 0
-        f['track_num_choices_3_3'] = 0
-        f['track_min_choices_3_3'] = 0
+        # set all choices in all tracks to 0
+        self.traverse("Veranstaltungen", "Große Testakademie 2222",
+                      "Veranstaltungsteile")
+        self.traverse({"href": "/event/event/1/part/2/change"})
+        f = self.response.forms['changepartform']
+        f['track_num_choices_1'] = 0
+        f['track_min_choices_1'] = 0
+        f['track_num_choices_2'] = 0
+        f['track_min_choices_2'] = 0
         self.submit(f)
-        self.traverse({"description": "Anmeldungen"})
+        self.traverse({"href": "/event/event/1/part/3/change"})
+        f = self.response.forms['changepartform']
+        f['track_num_choices_3'] = 0
+        f['track_min_choices_3'] = 0
+
+        self.traverse("Anmeldungen")
         f = self.response.forms['queryform']
         for field in f.fields:
             if field and field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
-        self.traverse({'description': "Kurse"},
-                      {'description': "Kurssuche"})
+        self.traverse("Kurse", "Kurssuche")
         f = self.response.forms['queryform']
         for field in f.fields:
             if field and field.startswith('qsel_'):

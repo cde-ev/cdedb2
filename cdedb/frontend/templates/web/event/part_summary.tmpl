@@ -64,7 +64,7 @@
                 <div class="row">
                     <dl class="dl-horizontal col-md-6">
                         <dt>{% trans %}Shortname{% endtrans %}</dt>
-                        <dd>{{ part['shortname'] }}</dd>
+                        <dd id="part{{ part_id }}_shortname">{{ part['shortname'] }}</dd>
 
                         <dt>{% trans %}Begin{% endtrans %}</dt>
                         <dd id="part{{ part_id }}_begin">{{ part['part_begin']|date(lang=lang) }}</dd>
