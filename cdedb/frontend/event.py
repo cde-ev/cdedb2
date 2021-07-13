@@ -653,6 +653,17 @@ class EventFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.add_part_form(rs, event_id)
 
+        # check non-static dependencies
+        if data["waitlist_field"]:
+            waitlist_field = rs.ambience['event']['fields'][data["waitlist_field"]]
+            allowed_datatypes, allowed_associations = EVENT_FIELD_SPEC['waitlist']
+            if (waitlist_field['association'] not in allowed_associations
+                    or waitlist_field['kind'] not in allowed_datatypes):
+                rs.append_validation_error(("waitlist_field", ValueError(
+                    n_("Waitlist linked to non-fitting field."))))
+        if rs.has_validation_errors():
+            return self.add_part_form(rs, event_id)
+
         event = {'id': event_id, 'parts': {-1: data}}
         code = self.eventproxy.set_event(rs, event)
         self.notify_return_code(rs, code)
@@ -714,8 +725,21 @@ class EventFrontend(AbstractUserFrontend):
         # yield false validation errors
         del data['tracks']
         data = check(rs, vtypes.EventPart, data)
+        if rs.has_validation_errors():
+            return self.change_part_form(rs, event_id, part_id)
         assert data is not None
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
+
+        #
+        # Check part specific stuff which can not be checked statically
+        #
+        if data["waitlist_field"]:
+            waitlist_field = rs.ambience['event']['fields'][data["waitlist_field"]]
+            allowed_datatypes, allowed_associations = EVENT_FIELD_SPEC['waitlist']
+            if (waitlist_field['association'] not in allowed_associations
+                    or waitlist_field['kind'] not in allowed_datatypes):
+                rs.append_validation_error(("waitlist_field", ValueError(
+                    n_("Waitlist linked to non-fitting field."))))
 
         #
         # process the dynamic track input
