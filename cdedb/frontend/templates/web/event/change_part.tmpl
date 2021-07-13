@@ -9,14 +9,14 @@
 
 {% block title %}
     {% trans part_title=ambience['event']['parts'][part_id]['title'], event_title=ambience['event']['title'] %}
-    	Change {{ part_title }} ({{ event_title }})
+        Edit part {{ part_title }} ({{ event_title }})
     {% endtrans %}
 {% endblock %}
 
 {% block heading %}
     <h1 class="title">
         {% trans part_title=ambience['event']['parts'][part_id]['title'] %}
-            Change {{ part_title }}
+            Edit part {{ part_title }}
         {% endtrans %}
         <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
