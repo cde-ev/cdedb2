@@ -1,7 +1,7 @@
 {% set sidenav_active='event_checkin' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% import "web/event/generic.tmpl" as generic with context %}
+{% import "web/event/generic.tmpl" as generic_event with context %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
@@ -87,7 +87,7 @@
                                         {% set field_key = ambience['event']['fields'][field_id]['field_name'] %}
                                         <dt>{{ field['field_name'] }}</dt>
                                         <dd>
-                                            {{ generic.display_field(field, registration['fields'].get(field_key)) }}
+                                            {{ generic_event.display_field(field, registration['fields'].get(field_key)) }}
                                         </dd>
                                     {% endfor %}
                                 </dl>

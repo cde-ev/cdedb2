@@ -1,7 +1,7 @@
 {% extends "web/event/base.tmpl" %}
 {% set sidenav_active='event_registration' %}
 {% import "web/util.tmpl" as util with context %}
-{% import "web/event/generic.tmpl" as generic with context %}
+{% import "web/event/generic.tmpl" as generic_event with context %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% block title %}
     {% trans given_names=persona['given_names'], family_name=persona['family_name'],
@@ -248,7 +248,7 @@
                 {% if field['association'] == enums['FieldAssociations'].registration %}
                     <dt>{{ field['field_name'] }}</dt>
                     <dd>
-                        {{ generic.display_field(field, ambience['registration']['fields'].get(field['field_name'])) }}
+                        {{ generic_event.display_field(field, ambience['registration']['fields'].get(field['field_name'])) }}
                     </dd>
                 {% endif %}
             {% endfor %}
