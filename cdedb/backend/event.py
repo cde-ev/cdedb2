@@ -2015,7 +2015,7 @@ class EventBackend(AbstractBackend):
                         self._validate_special_event_field(
                             rs, data['id'], "course_room_field",
                             indirect_data[edata['course_room_field']])
-                    if edata.get('custom_checkin_fields'):
+                    if edata['custom_checkin_fields']:
                         legal_assoc = const.FieldAssociations.registration
                         checkin_fields = [x for x in indirect_data
                                           if x['id'] in edata['custom_checkin_fields']]
