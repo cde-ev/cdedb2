@@ -198,6 +198,7 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("quintus", "vera")
     def test_adminchangedata(self) -> None:
+        # Berta
         self.realm_admin_view_profile('berta', "cde")
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['changedataform']
@@ -209,6 +210,19 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Bertålotta Beispiel")
         self.assertPresence("03.04.1933", div='personal-information')
         self.assertPresence("Jabberwocky for the win.", div='additional')
+
+        # Olaf, disabled
+        self.realm_admin_view_profile('olaf', "cde")
+        self.traverse({'description': 'Bearbeiten'})
+        f = self.response.forms['changedataform']
+        f['display_name'] = "Link"
+        f['birthday'] = "21.11.1998"
+        f['free_form'] = "Spiele gerne Okarina."
+        self.submit(f)
+        self.assertPresence("Link", div='personal-information')
+        self.assertTitle("Olafson Olaf")
+        self.assertPresence("21.11.1998", div='personal-information')
+        self.assertPresence("Spiele gerne Okarina.", div='additional')
 
     @as_users("anton")
     def test_cde_admin_views(self) -> None:
@@ -472,6 +486,14 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Inga Iota")
         self.assertPresence("Ich war ein Jahr in Südafrika.", div='additional')
 
+        # by country
+        self.traverse({'description': 'Mitglieder'},
+                      {'description': 'CdE-Mitglied suchen'})
+        f = self.response.forms["membersearchform"]
+        f["qval_country,country2"] = "JP"
+        self.submit(f)
+        self.assertTitle("Akira Abukara")
+
         # by phone number
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'CdE-Mitglied suchen'})
@@ -492,7 +514,7 @@ class TestCdEFrontend(FrontendTest):
             "address,address_supplement,address2,address_supplement2",
             "location,location2", "country,country2"]
         for field in fields:
-            f['qval_' + field] = "[a]"
+            f['qval_' + field].force_value("[a]")
         self.submit(f, check_notification=False)
         for field in fields:
             self.assertValidationError("qval_" + field,
@@ -683,6 +705,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertEqual(
             "2",
             self.response.lxml.xpath("//*[@id='query-result']/tbody/tr[1]/@data-id")[0])
+        self.assertPresence("Vereinigtes Königreich")
 
     @as_users("vera")
     def test_user_search_csv(self) -> None:
@@ -864,10 +887,8 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Daten sind für andere Mitglieder sichtbar.",
                             div='searchability')
         self.assertCheckbox(True, "paper_expuls_checkbox")
-        mail = self.fetch_mail()[0]
+        link = self.fetch_link()
         self.logout()
-        link = self.fetch_link(mail)
-        assert link is not None
         self.get(link)
         self.assertTitle("Neues Passwort setzen")
         new_password = "krce63koLe#$e"
@@ -1953,16 +1974,16 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Vergangene Veranstaltungen")
 
         # Overview
-        self.assertPresence("PfingstAkademie 2014 [pa14] (CdE) 2 Kurse, 5 "
-                            "Teilnehmer", div='events-2014')
+        self.assertPresence("PfingstAkademie 2014 [pa14] (CdE) 2 Kurse, 6 Teilnehmer",
+                            div='events-2014')
         self.assertPresence(
             "Geburtstagsfete [gebi] (DdE) 0 Kurse, 0 Teilnehmer",
             div='events-2019')
 
         # Institution CdE
         self.traverse({'description': '^CdE$'})
-        self.assertPresence("PfingstAkademie 2014 [pa14] 2 Kurse, 5 "
-                            "Teilnehmer", div='events-2014')
+        self.assertPresence("PfingstAkademie 2014 [pa14] 2 Kurse, 6 Teilnehmer",
+                            div='events-2014')
         self.assertNonPresence("Geburtstagsfete")
 
         # Institution DdE
@@ -2026,11 +2047,11 @@ class TestCdEFrontend(FrontendTest):
         # Check list privacy
         # non-searchable non-participants can not see anything interesting
         if self.user_in("garcia"):
-            self.assertPresence("5 Teilnehmer", div='count-extra-participants')
-            self.assertNonPresence("Bertå")
+            self.assertPresence("6 Teilnehmer", div='count-extra-participants')
+            self.assertNonPresence("Bert")
             self.assertNonPresence("Ferdinand")
         else:
-            self.assertNonPresence("5 Teilnehmer")
+            self.assertNonPresence("6 Teilnehmer")
             self.assertPresence("Bertå", div='list-participants')
             self.assertPresence("Ferdinand", div='list-participants')
 
@@ -2053,7 +2074,7 @@ class TestCdEFrontend(FrontendTest):
             self.assertNonPresence("Charly")
             self.assertNonPresence("Emilia")
             if not self.user_in("garcia"):
-                self.assertPresence("2 weitere", div='count-extra-participants')
+                self.assertPresence("und 3 weitere", div='count-extra-participants')
 
         # links to non-searchable users are only displayed for admins
         if self.user_in("vera"):
@@ -2142,7 +2163,7 @@ class TestCdEFrontend(FrontendTest):
                                      dialect=dialect))
         given_names = {e["given_names"] for e in result}
         expectation = {
-            "Bertålotta", "Charly C.", "Emilia E.", "Ferdinand F.", "Akira"
+            "Bertålotta", "Charly C.", "Daniel D.", "Emilia E.", "Ferdinand F.", "Akira"
         }
         self.assertEqual(expectation, given_names)
 
@@ -2352,19 +2373,14 @@ class TestCdEFrontend(FrontendTest):
                             div="complex-stats-members_by_city")
         self.assertNonPresence("Burokratia")
         self.assertNonPresence("Liliput")
-        self.assertPresence("Mitglieder nach Geburtsjahr",
-                            div="complex-stats-members_by_birthday")
-        self.assertPresence("1991", div="complex-stats-members_by_birthday")
-        self.assertPresence("2222", div="complex-stats-members_by_birthday")
-        self.assertNonPresence("2014", div="complex-stats-members_by_birthday")
-        self.assertPresence("Mitglieder nach erster Akademieteilnahme",
-                            div="complex-stats-members_by_first_event")
-        self.assertPresence("2014", div="complex-stats-members_by_first_event")
-        self.assertNonPresence("2010", div="complex-stats-members_by_first_event")
-        self.assertPresence("Verschiedene Akademie-Teilnehmer nach Jahr",
-                            div="complex-stats-unique_participants_per_year")
-        self.assertPresence("2010", div="complex-stats-unique_participants_per_year")
-        self.assertPresence("2014", div="complex-stats-unique_participants_per_year")
+        self.assertDivNotExists(div="year-stats-members_by_birthday-1")
+        self.assertNonPresence("–", div="year-stats-members_by_birthday-1991")
+        self.assertNonPresence("–", div="year-stats-members_by_birthday-2222")
+        self.assertPresence("–", div="year-stats-members_by_birthday-2014")
+        self.assertNonPresence("–", div="year-stats-members_by_first_event-2014")
+        self.assertPresence("–", div="year-stats-members_by_first_event-2010")
+        self.assertNonPresence("–", div="year-stats-unique_participants_per_year-2010")
+        self.assertNonPresence("–", div="year-stats-unique_participants_per_year-2014")
 
     @as_users("vera")
     def test_past_log(self) -> None:
@@ -2543,7 +2559,11 @@ class TestCdEFrontend(FrontendTest):
 
     def test_finance_log(self) -> None:
         # First: generate data
-        pass
+        # FIXME: the here generated data does absolutely not suffice ^^
+        #  however, this style of log test is deprecated anyway and should be integrated
+        #  into the actual test. Fot testing the finance log, the cde log test should
+        #  also produce a nice amount of data which could be tested. See
+        #  https://tracker.cde-ev.de/gitea/cdedb/cdedb2/pulls/2073#issuecomment-30727
 
         # Now check it
         self.login(USER_DICT['farin'])

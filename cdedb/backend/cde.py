@@ -27,7 +27,7 @@ from cdedb.common import (
     merge_dicts, n_, now, unwrap,
 )
 from cdedb.database.connection import Atomizer
-from cdedb.query import Query, QueryOperators
+from cdedb.query import Query, QueryOperators, QueryScope
 
 
 class CdEBackend(AbstractBackend):
@@ -370,7 +370,7 @@ class CdEBackend(AbstractBackend):
                 rs, const.FinanceLogCodes.lastschrift_transaction_issue,
                 lastschrift['persona_id'], None, None,
                 change_note=data['amount'])
-            return ret
+        return ret
     issue_lastschrift_transaction_batch = batchify(
         issue_lastschrift_transaction)
 
@@ -451,7 +451,7 @@ class CdEBackend(AbstractBackend):
                 raise RuntimeError(n_("Impossible."))
             self.core.finance_log(rs, code, persona_id, delta, new_balance,
                                   change_note=str(update['tally']))
-            return ret
+        return ret
 
     @access("finance_admin")
     def rollback_lastschrift_transaction(
@@ -496,7 +496,7 @@ class CdEBackend(AbstractBackend):
                 'revoked_at': now(),
             }
             self.set_lastschrift(rs, lastschrift_update)
-            return ret
+        return ret
 
     def lastschrift_may_skip(self, rs: RequestState,
                              lastschrift: CdEDBObject) -> bool:
@@ -517,7 +517,7 @@ class CdEBackend(AbstractBackend):
                 rs, lastschrift_ids=(lastschrift['id'],),
                 stati=(const.LastschriftTransactionStati.success,),
                 periods=relevant_periods)
-            return bool(ids)
+        return bool(ids)
 
     @access("finance_admin")
     def lastschrift_skip(self, rs: RequestState,
@@ -554,7 +554,7 @@ class CdEBackend(AbstractBackend):
             self.core.finance_log(
                 rs, const.FinanceLogCodes.lastschrift_transaction_skip,
                 lastschrift['persona_id'], None, None)
-            return ret
+        return ret
 
     @access("finance_admin")
     def finance_statistics(self, rs: RequestState) -> CdEDBObject:
@@ -584,7 +584,7 @@ class CdEBackend(AbstractBackend):
                      " AND p.trial_member = False AND l.revoked_at IS NULL")
             ret['lastschrift_low_balance_members'] = unwrap(self.query_one(
                 rs, query, (self.conf["MEMBERSHIP_FEE"],)))
-            return ret
+        return ret
 
     @access("finance_admin")
     def get_period_history(self, rs: RequestState) -> CdEDBObjectMap:
@@ -633,10 +633,10 @@ class CdEBackend(AbstractBackend):
         with Atomizer(rs):
             period_id = self.current_period(rs)
             period = self.get_period(rs, period_id)
-            # Take special care about all previous steps.
-            return all(period[key] for key in
-                       ('billing_done', 'archival_notification_done', 'ejection_done',
-                        'archival_done', 'balance_done'))
+        # Take special care about all previous steps.
+        return all(period[key] for key in
+                   ('billing_done', 'archival_notification_done', 'ejection_done',
+                    'archival_done', 'balance_done'))
 
     @access("finance_admin")
     def advance_semester(self, rs: RequestState) -> DefaultReturnCode:
@@ -654,7 +654,7 @@ class CdEBackend(AbstractBackend):
             ret *= self.sql_insert(rs, "cde.org_period", new_period)
             self.cde_log(rs, const.CdeLogCodes.semester_advance,
                          persona_id=None, change_note=str(ret))
-            return ret
+        return ret
 
     @access("finance_admin")
     def may_start_semester_bill(self, rs: RequestState) -> bool:
@@ -668,8 +668,8 @@ class CdEBackend(AbstractBackend):
         with Atomizer(rs):
             period_id = self.current_period(rs)
             period = self.get_period(rs, period_id)
-            # Both parts of the previous step need to be finished.
-            return not (period['billing_done'] and period['archival_notification_done'])
+        # Both parts of the previous step need to be finished.
+        return not (period['billing_done'] and period['archival_notification_done'])
 
     @access("finance_admin")
     def finish_semester_bill(self, rs: RequestState,
@@ -696,7 +696,7 @@ class CdEBackend(AbstractBackend):
                 self.cde_log(
                     rs, const.CdeLogCodes.semester_bill,
                     persona_id=None, change_note=msg)
-            return ret
+        return ret
 
     @access("finance_admin")
     def finish_archival_notification(self, rs: RequestState) -> DefaultReturnCode:
@@ -716,7 +716,7 @@ class CdEBackend(AbstractBackend):
             self.cde_log(
                 rs, const.CdeLogCodes.automated_archival_notification_done,
                 persona_id=None, change_note=msg)
-            return ret
+        return ret
 
     @access("finance_admin")
     def may_start_semester_ejection(self, rs: RequestState) -> bool:
@@ -729,8 +729,8 @@ class CdEBackend(AbstractBackend):
         with Atomizer(rs):
             period_id = self.current_period(rs)
             period = self.get_period(rs, period_id)
-            return (period['billing_done'] and period['archival_notification_done']
-                    and not (period['ejection_done'] and period['archival_done']))
+        return (period['billing_done'] and period['archival_notification_done']
+                and not (period['ejection_done'] and period['archival_done']))
 
     @access("finance_admin")
     def finish_automated_archival(self, rs: RequestState) -> DefaultReturnCode:
@@ -752,7 +752,7 @@ class CdEBackend(AbstractBackend):
             self.cde_log(
                 rs, const.CdeLogCodes.automated_archival_done,
                 persona_id=None, change_note=msg)
-            return ret
+        return ret
 
     @access("finance_admin")
     def finish_semester_ejection(self, rs: RequestState) -> DefaultReturnCode:
@@ -775,7 +775,7 @@ class CdEBackend(AbstractBackend):
             self.cde_log(
                 rs, const.CdeLogCodes.semester_ejection, persona_id=None,
                 change_note=msg)
-            return ret
+        return ret
 
     @access("finance_admin")
     def may_start_semester_balance_update(self, rs: RequestState) -> bool:
@@ -786,8 +786,8 @@ class CdEBackend(AbstractBackend):
         with Atomizer(rs):
             period_id = self.current_period(rs)
             period = self.get_period(rs, period_id)
-            return (period['ejection_done'] and period['archival_done']
-                    and not period['balance_done'])
+        return (period['ejection_done'] and period['archival_done']
+                and not period['balance_done'])
 
     @access("finance_admin")
     def finish_semester_balance_update(self, rs: RequestState) -> DefaultReturnCode:
@@ -808,7 +808,7 @@ class CdEBackend(AbstractBackend):
                 rs, const.CdeLogCodes.semester_balance_update, persona_id=None,
                 change_note=msg.format(period['balance_trialmembers'],
                                            period['balance_total']))
-            return ret
+        return ret
 
     @access("finance_admin")
     def get_expuls_history(self, rs: RequestState) -> CdEDBObjectMap:
@@ -869,7 +869,7 @@ class CdEBackend(AbstractBackend):
             ret *= self.sql_insert(rs, "cde.expuls_period", new_expuls)
             self.cde_log(rs, const.CdeLogCodes.expuls_advance,
                          persona_id=None, change_note=str(ret))
-            return ret
+        return ret
 
     @access("finance_admin")
     def finish_expuls_addresscheck(self, rs: RequestState,
@@ -895,14 +895,15 @@ class CdEBackend(AbstractBackend):
             else:
                 self.cde_log(rs, const.CdeLogCodes.expuls_addresscheck,
                              persona_id=None, change_note=msg)
-            return ret
+        return ret
 
     @access("member", "cde_admin")
-    def get_member_stats(self, rs: RequestState) -> CdEDBObject:
+    def get_member_stats(self, rs: RequestState
+                         ) -> Tuple[CdEDBObject, CdEDBObject, CdEDBObject]:
         """Retrieve some generic statistics about members."""
         # Simple stats first.
         query = """SELECT
-            num_members, num_searchable, num_ex_members
+            num_members, num_of_searchable, num_of_trial, num_ex_members, num_all
         FROM
             (
                 SELECT COUNT(*) AS num_members
@@ -910,24 +911,31 @@ class CdEBackend(AbstractBackend):
                 WHERE is_member = True
             ) AS member_count,
             (
-                SELECT COUNT(*) AS num_searchable
+                SELECT COUNT(*) AS num_of_searchable
                 FROM core.personas
                 WHERE is_member = True AND is_searchable = True
             ) AS searchable_count,
             (
+                SELECT COUNT(*) AS num_of_trial
+                FROM core.personas
+                WHERE is_member = True AND trial_member = True
+            ) AS trial_count,
+            (
                 SELECT COUNT(*) AS num_ex_members
                 FROM core.personas
                 WHERE is_cde_realm = True AND is_member = False
-                    AND is_archived = False
-            ) AS ex_member_count
+            ) AS ex_member_count,
+            (
+                SELECT COUNT(*) AS num_all
+                FROM core.personas
+            ) AS all_count
         """
         data = self.query_one(rs, query, ())
         assert data is not None
 
-        ret: CdEDBObject = {
-            'simple_stats': OrderedDict((k, data[k]) for k in (
-                n_("num_members"), n_("num_searchable"), n_("num_ex_members")))
-        }
+        simple_stats = OrderedDict((k, data[k]) for k in (
+            n_("num_members"), n_("num_of_searchable"), n_("num_of_trial"),
+            n_("num_ex_members"), n_("num_all")))
 
         # TODO: improve this type annotation with a new mypy version.
         def query_stats(select: str, condition: str, order: str, limit: int = 0
@@ -939,33 +947,26 @@ class CdEBackend(AbstractBackend):
             data = self.query_all(rs, query, ())
             return OrderedDict((e['datum'], e['num']) for e in data)
 
-        # Members by country.
-        ret[n_("members_by_country")] = query_stats(
-            select="country",
-            condition="location",
-            order="num DESC, datum ASC")
+        # Members by locations.
+        other_stats: CdEDBObject = {
+            n_("members_by_country"): query_stats(
+                select="country",
+                condition="location",
+                order="num DESC, datum ASC"),
+            n_("members_by_city"): query_stats(
+                select="location",
+                condition="location",
+                order="num DESC, datum ASC",
+                limit=9),
+        }
 
-        # Members by PLZ.
-        # We don't want the PLZ stats for now. See #380.
-        # ret[n_("members_by_plz")] = query_stats(
-        #   select="postal_code",
-        #   condition="postal_code",
-        #   order="num DESC, datum ASC")
-
-        # Members by city.
-        # We want to cutoff the list due to privacy and readability concerns.
-        ret[n_("members_by_city")] = query_stats(
-            select="location",
-            condition="location",
-            order="num DESC, datum ASC",
-            limit=9)
-
-        # Members by birthday.
-        ret[n_("members_by_birthday")] = query_stats(
-            select="EXTRACT(year FROM birthday)::integer",
-            condition="birthday",
-            order="datum ASC"
-        )
+        # Members by date.
+        year_stats: CdEDBObject = {
+            n_("members_by_birthday"): query_stats(
+                select="EXTRACT(year FROM birthday)::integer",
+                condition="birthday",
+                order="datum ASC"),
+        }
 
         # Members by first event.
         query = """SELECT
@@ -997,7 +998,7 @@ class CdEBackend(AbstractBackend):
             -- num DESC,
             datum ASC
         """
-        ret[n_("members_by_first_event")] = OrderedDict(
+        year_stats[n_("members_by_first_event")] = OrderedDict(
             (e['datum'], e['num']) for e in self.query_all(rs, query, ()))
 
         # Unique event attendees per year:
@@ -1020,10 +1021,10 @@ class CdEBackend(AbstractBackend):
         ORDER BY
             datum ASC
         """
-        ret[n_("unique_participants_per_year")] = dict(
+        year_stats[n_("unique_participants_per_year")] = dict(
             (e['datum'], e['num']) for e in self.query_all(rs, query, ()))
 
-        return ret
+        return simple_stats, other_stats, year_stats
 
     @access("searchable", "core_admin", "cde_admin")
     def submit_general_query(self, rs: RequestState,
@@ -1032,7 +1033,7 @@ class CdEBackend(AbstractBackend):
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
         """
         query = affirm(Query, query)
-        if query.scope == "qview_cde_member":
+        if query.scope == QueryScope.cde_member:
             if self.core.check_quota(rs, num=1):
                 raise QuotaException(n_("Too many queries."))
             query.constraints.append(("is_cde_realm", QueryOperators.equal, True))
@@ -1043,12 +1044,13 @@ class CdEBackend(AbstractBackend):
             query.spec['is_member'] = "bool"
             query.spec['is_searchable'] = "bool"
             query.spec["is_archived"] = "bool"
-        elif query.scope in {"qview_cde_user", "qview_archived_past_event_user"}:
+        elif query.scope in {QueryScope.cde_user, QueryScope.archived_past_event_user}:
             if not {'core_admin', 'cde_admin'} & rs.user.roles:
                 raise PrivilegeError(n_("Admin only."))
             query.constraints.append(("is_cde_realm", QueryOperators.equal, True))
-            query.constraints.append(("is_archived", QueryOperators.equal,
-                                      query.scope == "qview_archived_past_event_user"))
+            query.constraints.append(
+                ("is_archived", QueryOperators.equal,
+                 query.scope == QueryScope.archived_past_event_user))
             query.spec['is_cde_realm'] = "bool"
             query.spec["is_archived"] = "bool"
             # Exclude users of any higher realm (implying event)
@@ -1056,7 +1058,7 @@ class CdEBackend(AbstractBackend):
                 query.constraints.append(
                     ("is_{}_realm".format(realm), QueryOperators.equal, False))
                 query.spec["is_{}_realm".format(realm)] = "bool"
-        elif query.scope == "qview_past_event_user":
+        elif query.scope == QueryScope.past_event_user:
             if not self.is_admin(rs):
                 raise PrivilegeError(n_("Admin only."))
             query.constraints.append(("is_event_realm", QueryOperators.equal, True))

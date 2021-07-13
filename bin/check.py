@@ -106,8 +106,7 @@ def check_xss(payload: str, thread_id: int = 1, verbose: bool = False,
 
 
 def run_testsuite(testpatterns: List[str] = None, *, thread_id: int = 1,
-                  manual_preparation: bool = False) -> int:
-    # TODO: implement/configure parallel testing
+                  verbose: bool = False, manual_preparation: bool = False) -> int:
     if not manual_preparation:
         _prepare_check(thread_id=thread_id)
     check_test_setup()
@@ -119,52 +118,68 @@ def run_testsuite(testpatterns: List[str] = None, *, thread_id: int = 1,
     all_tests = unittest.defaultTestLoader.discover('tests', top_level_dir=str(root))
 
     unittest.installHandler()
-    test_runner = MyTextTestRunner(
-        verbosity=2, resultclass=MyTextTestResult, descriptions=False)
+    test_runner = MyTextTestRunner(verbosity=(2 if verbose else 1),
+                                   resultclass=MyTextTestResult, descriptions=False)
     ran_tests = test_runner.run(all_tests)
     return 0 if ran_tests.wasSuccessful() else 1
 
 
 if __name__ == '__main__':
     # parse arguments
-    # TODO: some of the help texts can be improved
-    parser = argparse.ArgumentParser(description="Entry point to CdEDB's"
-                                                 " testing facilities.")
-    parser.add_argument('testpatterns', default="", nargs="*")
+    parser = argparse.ArgumentParser(
+        description="Entry point to CdEDB's testing facilities.")
+    parser.add_argument('testpatterns', default=[], nargs="*")
 
     test_options = parser.add_argument_group("general options")
     test_options.add_argument('--manual-preparation', action='store_true',
                               help="don't do test preparation")
-    thread_options = test_options.add_mutually_exclusive_group()
-    thread_options.add_argument(
+    test_options.add_argument(
         '--thread-id', type=int, choices=(1, 2, 3, 4), metavar="INT",
         help="ID of thread to use for run (optional, if not given, choose free thread"
              " automatically)")
-    thread_options.add_argument('--threads', type=int, choices=(1, 2, 3), default=1,
-                                metavar="NUMBER", help="number of threads to use")
+
+    parallel_options = parser.add_argument_group(
+        "options for running suite in parallel (all together cover full suite)")
+    parallel_options.add_argument('--first', '-1', action='store_true',
+                                  help="run first half of the frontend tests"
+                                       " (everything before event tests)")
+    parallel_options.add_argument('--second', '-2', action='store_true',
+                                  help="run second half of the frontend tests (event"
+                                       " tests and following)")
+    parallel_options.add_argument('--third', '-3', action='store_true',
+                                  help="run third part of test suite (everything except"
+                                       " for the frontend tests)")
 
     xss_options = parser.add_argument_group("XSS Options")
     xss_options.add_argument('--xss-check', '--xss', action='store_true',
-                             help="check for xss vulnerabilities as implemented in "
-                                  "bin/escape_fuzzing.py (Note that this ignores some"
-                                  " other options, like --threads)")
+                             help="check for xss vulnerabilities as implemented in"
+                                  " bin/escape_fuzzing.py (Note that this ignores some"
+                                  " other options, like --first)")
     xss_options.add_argument('--payload', type=str, default='<script>abcdef</script>',
                              help="Payload string to use for xss vulnerability check")
 
     parser.add_argument('--verbose', '-v', action='store_true',
                         help="more detailed output")
-    # TODO: implement verbosity settings -v and -q (-v currently only used for xss)
     args = parser.parse_args()
+
+    # splitup in three parts with similar runtime
+    if args.first:
+        args.testpatterns.append('tests.test_frontend_[abcd]*')
+    if args.second:
+        args.testpatterns.append('tests.test_frontend_[!abcd]*')
+    if args.third:
+        args.testpatterns.append('tests.test_[!f]*')
 
     with CdEDBTestLock(args.thread_id) as Lock:
         assert Lock.thread_id is not None
         print(f"Using thread {Lock.thread_id}", file=sys.stderr)
         if args.xss_check:
-            return_code = check_xss(args.payload, thread_id=Lock.thread_id,
-                                    verbose=args.verbose,
-                                    manual_preparation=args.manual_preparation)
+            return_code = check_xss(
+                args.payload, thread_id=Lock.thread_id, verbose=args.verbose,
+                manual_preparation=args.manual_preparation)
         else:
-            return_code = run_testsuite(args.testpatterns, thread_id=Lock.thread_id,
-                                        manual_preparation=args.manual_preparation)
+            return_code = run_testsuite(
+                args.testpatterns, thread_id=Lock.thread_id, verbose=args.verbose,
+                manual_preparation=args.manual_preparation)
 
     sys.exit(return_code)

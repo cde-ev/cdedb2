@@ -1,5 +1,6 @@
 {
 	"kind": "partial",
+	"summary": "Sehr wichtiger Import",
 	"courses": {
 		"1": {
 			"segments": {
@@ -254,6 +255,6 @@
 	},
         "EVENT_SCHEMA_VERSION": [
 			15,
-			2
+			3
 		]
 }

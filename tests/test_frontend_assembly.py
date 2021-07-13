@@ -532,14 +532,13 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
     @as_users("ferdinand")
     def test_conclude_assembly(self) -> None:
         self._create_assembly()
-        # werner is no member, so he must signup external
-        secret = self._signup()
+        self._signup()
         self.traverse({'description': 'Konfiguration'})
         f = self.response.forms['changeassemblyform']
         f['signup_end'] = "2002-4-1 00:00:00"
         self.submit(f)
 
-        wait_time = 0.5
+        wait_time = 1
         future = now() + datetime.timedelta(seconds=wait_time)
         farfuture = now() + datetime.timedelta(seconds=2 * wait_time)
         bdata = {
@@ -939,7 +938,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         for use_bar in (False, True):
             with self.subTest(use_bar=use_bar):
                 # First, create a new ballot
-                wait_time = 3
+                wait_time = 5
                 future = now() + datetime.timedelta(seconds=wait_time)
                 farfuture = now() + datetime.timedelta(seconds=2 * wait_time)
                 bdata = {
@@ -1108,12 +1107,12 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence("Rowena Ravenclaw", div='voters-list')
         self.assertNonPresence("Vera", div='voters-list')
 
-
         # classical vote without bar
         self.traverse({'description': 'Abstimmungen'},
                       {'description': 'Entlastung des Vorstands'},
                       {'description': 'Ergebnisdetails'})
-        self.assertTitle("Ergebnis (Kanonische Beispielversammlung/Entlastung des Vorstands)")
+        self.assertTitle("Ergebnis (Kanonische Beispielversammlung/Entlastung des"
+                         " Vorstands)")
 
         # test if the overall result is displayed correctly
         result = "Ja > Nein"
@@ -1122,21 +1121,22 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         # test if abstentions are rendered correctly
         self.assertPresence("Enthalten 1", div='vote-3', exact=True)
 
-
         # preferential vote without bar
         self.traverse({'description': 'Abstimmungen'},
                       {'description': 'Wie soll der CdE mit seinem Vermögen umgehen?'},
                       {'description': 'Ergebnisdetails'})
-        self.assertTitle("Ergebnis (Kanonische Beispielversammlung/Wie soll der CdE mit seinem Vermögen umgehen?)")
+        self.assertTitle("Ergebnis (Kanonische Beispielversammlung/Wie soll der CdE mit"
+                         " seinem Vermögen umgehen?)")
 
         # test if the overall result is displayed correctly
-        result = "Wir kaufen den Eisenberg! = Kostenlose Akademien für alle. > Investieren in Aktien und Fonds."
+        result = ("Wir kaufen den Eisenberg! = Kostenlose Akademien für alle."
+                  " > Investieren in Aktien und Fonds.")
         self.assertPresence(result, div='combined-preference', exact=True)
 
         # test a vote string
-        vote = "Kostenlose Akademien für alle. > Investieren in Aktien und Fonds. = Wir kaufen den Eisenberg! 3"
+        vote = ("Kostenlose Akademien für alle. > Investieren in Aktien und Fonds."
+                " = Wir kaufen den Eisenberg! 3")
         self.assertPresence(vote, div='vote-1', exact=True)
-
 
         # preferential vote with bar
         self.traverse({'description': 'Versammlung'},
@@ -1168,20 +1168,20 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         farfuture = now() + datetime.timedelta(seconds=1)
         f['vote_begin'] = future.isoformat()
         f['vote_end'] = farfuture.isoformat()
-        f['vote_extension_end'] = "2222-5-1 00:00:00"
+        f['vote_extension_end'] = "2037-5-1 00:00:00"
         f['abs_quorum'] = "0"
         f['rel_quorum'] = "100"
         f['votes'] = ""
         self.submit(f)
         self.assertTitle("Maximale Länge der Verfassung (Internationaler Kongress)")
         self.assertPresence(
-            "Verlängerung bis 01.05.2222, 00:00:00, falls 10 Stimmen nicht "
+            "Verlängerung bis 01.05.2037, 00:00:00, falls 10 Stimmen nicht "
             "erreicht werden.", div='voting-period')
         time.sleep(1)
         self.traverse({'href': '/assembly/1/ballot/list'},
                       {'description': 'Maximale Länge der Verfassung'},)
         self.assertTitle("Maximale Länge der Verfassung (Internationaler Kongress)")
-        s = ("Wurde bis 01.05.2222, 00:00:00 verlängert, da 10 Stimmen nicht "
+        s = ("Wurde bis 01.05.2037, 00:00:00 verlängert, da 10 Stimmen nicht "
              "erreicht wurden.")
         self.assertPresence(s, div='voting-period')
 
@@ -1247,7 +1247,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
 
         self.traverse({'description': 'Archiv-Sammlung'})
         # werner is no member, so he must signup external
-        secret = self._external_signup(self.user)
+        self._external_signup(self.user)
         self.traverse({'description': 'Abstimmungen'},
                       {'description': 'Test-Abstimmung – bitte ignorieren'},
                       {'description': 'Ergebnisdetails'})
@@ -1265,7 +1265,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         # werner is no member, so he must signup external
         secret = self._external_signup(user)
         # Create new ballot.
-        wait_time = 2
+        wait_time = 4
         future = now() + datetime.timedelta(seconds=wait_time)
         farfuture = now() + datetime.timedelta(seconds=2 * wait_time)
         bdata = {

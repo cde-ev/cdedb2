@@ -3,7 +3,6 @@
 """Services for the core realm."""
 
 import collections
-import copy
 import datetime
 import itertools
 import operator
@@ -24,20 +23,21 @@ import cdedb.validationtypes as vtypes
 from cdedb.common import (
     ADMIN_KEYS, ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, LOG_FIELDS_COMMON,
     REALM_ADMINS, REALM_INHERITANCE, REALM_SPECIFIC_GENESIS_FIELDS, ArchiveError,
-    CdEDBObject, DefaultReturnCode, EntitySorter, PrivilegeError, Realm,
+    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, EntitySorter, PrivilegeError, Realm,
     RequestState, extract_roles, get_persona_fields_by_realm, implied_realms,
     merge_dicts, n_, now, pairwise, unwrap, xsorted,
 )
 
 from cdedb.database.connection import Atomizer
+from cdedb.filter import date_filter, enum_entries_filter, markdown_parse_safe
 from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, access, basic_redirect,
     calculate_db_logparams, calculate_loglinks, check_validation as check,
-    check_validation_optional as check_optional, date_filter, enum_entries_filter,
-    make_membership_fee_reference, markdown_parse_safe, periodic, querytoparams_filter,
-    request_dict_extractor, request_extractor,
+    check_validation_optional as check_optional, make_membership_fee_reference,
+    periodic, request_dict_extractor, request_extractor,
 )
-from cdedb.query import QUERY_SPECS, Query, QueryOperators
+from cdedb.ml_type_aux import MailinglistGroup
+from cdedb.query import Query, QueryOperators, QueryScope
 from cdedb.subman.machine import SubscriptionPolicy
 from cdedb.validation import (
     TypeMapping, GENESIS_CASE_EXPOSED_FIELDS,
@@ -531,9 +531,15 @@ class CoreFrontend(AbstractFrontend):
         if ("meta_admin" in rs.user.roles
                 and "meta_admin" in rs.user.admin_views):
             access_levels.add("meta")
+        # There are administraive buttons on this page for all of these admins.
+        # All of these admins should see the Account Requests in the nav
+        # event_admins and ml_admins additionally always get links to the respective
+        # realm data.
+        if {"core_admin", "cde_admin", "event_admin", "ml_admin"} & rs.user.roles:
+            access_mode.add("any_admin")
         # Other admins see their realm if they are relative admin
         if is_relative_admin:
-            access_mode.add("relative_admin")
+            access_mode.add("any_admin")
             for realm in ("ml", "assembly", "event", "cde"):
                 if (f"{realm}_admin" in rs.user.roles
                         and f"{realm}_user" in rs.user.admin_views):
@@ -564,8 +570,8 @@ class CoreFrontend(AbstractFrontend):
                 if is_admin and not is_orga and is_participant:
                     access_mode.add("orga")
         # Mailinglist moderators see all users related to their mailinglist.
-        # This excludes users with relation "unsubscribed", because they are not
-        # directly shown on the management sites.
+        # This excludes users with relation "unsubscribed", since their email address
+        # is not relevant.
         if ml_id:
             # determinate if the user is relevant admin of this mailinglist
             ml_type = self.mlproxy.get_ml_type(rs, ml_id)
@@ -656,9 +662,74 @@ class CoreFrontend(AbstractFrontend):
 
         return self.render(rs, "show_user", {
             'data': data, 'past_events': past_events, 'meta_info': meta_info,
-            'is_relative_admin': is_relative_admin_view, 'reference': reference,
+            'is_relative_admin_view': is_relative_admin_view, 'reference': reference,
             'quoteable': quoteable, 'access_mode': access_mode,
         })
+
+    @access("event")
+    def show_user_events(self, rs: RequestState, persona_id: vtypes.ID) -> Response:
+        """Render overview which events a given user is registered for."""
+        if not (self.coreproxy.is_relative_admin(rs, persona_id)
+                or "event_admin" in rs.user.roles or rs.user.persona_id == persona_id):
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+        if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):
+            # reconnoitre_ambience leads to 404 if user does not exist at all.
+            rs.notify("error", n_("User is archived."))
+            return self.redirect_show_user(rs, persona_id)
+
+        registrations = self.eventproxy.list_persona_registrations(rs, persona_id)
+        registration_ids: Dict[int, int] = {}
+        registration_parts: Dict[int, Dict[int, const.RegistrationPartStati]] = {}
+        for event_id, reg in registrations.items():
+            registration_ids[event_id] = unwrap(reg.keys())
+            registration_parts[event_id] = unwrap(reg.values())
+        events = self.eventproxy.get_events(rs, registrations.keys())
+        return self.render(rs, "show_user_events",
+                           {'events': events, 'registration_ids': registration_ids,
+                            'registration_parts': registration_parts})
+
+    @access("event")
+    def show_user_events_self(self, rs: RequestState) -> Response:
+        """Shorthand to view event registrations for oneself."""
+        return self.redirect(rs, "core/show_user_events",
+                             {'persona_id': rs.user.persona_id})
+
+    @access("ml")
+    def show_user_mailinglists(self, rs: RequestState, persona_id: vtypes.ID
+                               ) -> Response:
+        """Render overview of mailinglist data of a certain user."""
+        if not (self.coreproxy.is_relative_admin(rs, persona_id)
+                or "ml_admin" in rs.user.roles or rs.user.persona_id == persona_id):
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+        if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):
+            # reconnoitre_ambience leads to 404 if user does not exist at all.
+            rs.notify("error", n_("User is archived."))
+            return self.redirect_show_user(rs, persona_id)
+
+        subscriptions = self.mlproxy.get_user_subscriptions(rs, persona_id)
+        mailinglists = self.mlproxy.get_mailinglists(rs, subscriptions.keys())
+        addresses = self.mlproxy.get_user_subscription_addresses(rs, persona_id)
+
+        grouped: Dict[MailinglistGroup, CdEDBObjectMap]
+        grouped = collections.defaultdict(dict)
+        for mailinglist_id, ml in mailinglists.items():
+            group_id = ml['ml_type_class'].sortkey
+            grouped[group_id][mailinglist_id] = {
+                'title': ml['title'],
+                'id': mailinglist_id,
+                'address': addresses.get(mailinglist_id)
+            }
+
+        return self.render(rs, "show_user_mailinglists", {
+            'groups': MailinglistGroup,
+            'mailinglists': grouped,
+            'subscriptions': subscriptions})
+
+    @access("ml")
+    def show_user_mailinglists_self(self, rs: RequestState) -> Response:
+        """Redirect to use `self` instead of persona_id to make ambience work."""
+        return self.redirect(rs, "core/show_user_mailinglists",
+                             {'persona_id': rs.user.persona_id})
 
     @access(*REALM_ADMINS)
     def show_history(self, rs: RequestState, persona_id: int) -> Response:
@@ -760,10 +831,10 @@ class CoreFrontend(AbstractFrontend):
         terms = tuple(t.strip() for t in phrase.split(' ') if t)
         search = [("username,family_name,given_names,display_name",
                    QueryOperators.match, t) for t in terms]
-        spec = copy.deepcopy(QUERY_SPECS["qview_core_user"])
+        spec = QueryScope.core_user.get_spec()
         spec["username,family_name,given_names,display_name"] = "str"
         query = Query(
-            "qview_core_user",
+            QueryScope.core_user,
             spec,
             ("personas.id",),
             search,
@@ -775,7 +846,7 @@ class CoreFrontend(AbstractFrontend):
             # TODO make this accessible
             pass
         query = Query(
-            "qview_core_user",
+            QueryScope.core_user,
             spec,
             ("personas.id", "username", "family_name", "given_names",
              "display_name"),
@@ -785,7 +856,7 @@ class CoreFrontend(AbstractFrontend):
         if len(result) == 1:
             return self.redirect_show_user(rs, result[0]["id"])
         elif result:
-            params = querytoparams_filter(query)
+            params = query.serialize()
             rs.values.update(params)
             return self.user_search(rs, is_search=True, download=None,
                                     query=query)
@@ -940,11 +1011,11 @@ class CoreFrontend(AbstractFrontend):
                 search = [("username,family_name,given_names,display_name",
                            QueryOperators.match, t) for t in terms]
                 search.extend(search_additions)
-                spec = copy.deepcopy(QUERY_SPECS["qview_core_user"])
+                spec = QueryScope.core_user.get_spec()
                 spec["username,family_name,given_names,display_name"] = "str"
                 spec.update(spec_additions)
                 query = Query(
-                    "qview_core_user", spec,
+                    QueryScope.core_user, spec,
                     ("personas.id", "username", "family_name", "given_names",
                      "display_name"), search, (("personas.id", True),))
                 data = self.coreproxy.submit_select_persona_query(rs, query)
@@ -1045,7 +1116,7 @@ class CoreFrontend(AbstractFrontend):
                     rs.gettext if download is None else rs.default_gettext))
         }
         return self.generic_user_search(
-            rs, download, is_search, 'qview_core_user', 'qview_core_user',
+            rs, download, is_search, QueryScope.core_user, QueryScope.core_user,
             self.coreproxy.submit_general_query, choices=choices, query=query)
 
     @access("core_admin")
@@ -1086,7 +1157,7 @@ class CoreFrontend(AbstractFrontend):
         }
         return self.generic_user_search(
             rs, download, is_search,
-            'qview_archived_core_user', 'qview_archived_persona',
+            QueryScope.archived_core_user, QueryScope.archived_persona,
             self.coreproxy.submit_general_query, choices=choices,
             endpoint="archived_user_search")
 
@@ -1105,8 +1176,7 @@ class CoreFrontend(AbstractFrontend):
         return ret
 
     @access(*REALM_ADMINS)
-    def admin_change_user_form(self, rs: RequestState, persona_id: int
-                               ) -> Response:
+    def admin_change_user_form(self, rs: RequestState, persona_id: int) -> Response:
         """Render form."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
@@ -1122,8 +1192,8 @@ class CoreFrontend(AbstractFrontend):
         merge_dicts(rs.values, data)
         if data['code'] == const.MemberChangeStati.pending:
             rs.notify("info", n_("Change pending."))
-        shown_fields = get_persona_fields_by_realm(
-            extract_roles(rs.ambience['persona']), restricted=False)
+        roles = extract_roles(rs.ambience['persona'], introspection_only=True)
+        shown_fields = get_persona_fields_by_realm(roles, restricted=False)
         return self.render(rs, "admin_change_user", {
             'admin_bits': self.admin_bits(rs),
             'shown_fields': shown_fields,
@@ -1138,7 +1208,7 @@ class CoreFrontend(AbstractFrontend):
         if not self.coreproxy.is_relative_admin(rs, persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
         # Assure we don't accidently change the original.
-        roles = extract_roles(rs.ambience['persona'])
+        roles = extract_roles(rs.ambience['persona'], introspection_only=True)
         attributes = get_persona_fields_by_realm(roles, restricted=False)
         data = request_dict_extractor(rs, attributes)
         data['id'] = persona_id
@@ -2575,7 +2645,7 @@ class CoreFrontend(AbstractFrontend):
             ('username', QueryOperators.equal, username),
             ('is_event_realm', QueryOperators.equal, True),
         )
-        query = Query("qview_persona", spec,
+        query = Query(QueryScope.persona, spec,
                       ("given_names", "family_name", "is_member", "username"),
                       constraints, (('id', True),))
         result = self.coreproxy.submit_resolve_api_query(rs, query)

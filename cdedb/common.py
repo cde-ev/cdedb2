@@ -1556,7 +1556,7 @@ def extract_roles(session: CdEDBObject, introspection_only: bool = False
       level of the data set passed.
     """
     ret = {"anonymous"}
-    if session['is_active']:
+    if session['is_active'] or introspection_only:
         ret.add("persona")
     elif not introspection_only:
         return ret
@@ -1575,9 +1575,9 @@ def extract_roles(session: CdEDBObject, introspection_only: bool = False
             ret.add("member")
             if session.get("is_searchable"):
                 ret.add("searchable")
-        if "ml" in ret:
-            if session.get("is_cdelokal_admin"):
-                ret.add("cdelokal_admin")
+    if "ml" in ret:
+        if session.get("is_cdelokal_admin"):
+            ret.add("cdelokal_admin")
     if "cde_admin" in ret:
         if session.get("is_finance_admin"):
             ret.add("finance_admin")
@@ -1865,17 +1865,12 @@ def roles_to_admin_views(roles: Set[Role]) -> Set[AdminView]:
     return result
 
 
-#: Deprecated, use EVENT_SCHEMA_VERSION instead. This should no longer be
-#: modified.
-#: TODO remove it
-CDEDB_EXPORT_EVENT_VERSION = 13
-
 #: Version tag, so we know that we don't run out of sync with exported event
 #: data. This has to be incremented whenever the event schema changes.
 #: If the partial export and import are unaffected the minor version may be
 #: incremented.
 #: If you increment this, it must be incremented in make_offline_vm.py as well.
-EVENT_SCHEMA_VERSION = (15, 2)
+EVENT_SCHEMA_VERSION = (15, 3)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3
@@ -2099,6 +2094,10 @@ LODGEMENT_FIELDS = ("id", "event_id", "title", "regular_capacity",
 QUESTIONNAIRE_ROW_FIELDS = ("field_id", "pos", "title", "info",
                             "input_size", "readonly", "default_value", "kind")
 
+#: Fields for a stored event query.
+STORED_EVENT_QUERY_FIELDS = (
+    "id", "event_id", "query_name", "scope", "serialized_query")
+
 #: Fields of a mailing list entry (that is one mailinglist)
 MAILINGLIST_FIELDS = (
     "id", "title", "address", "local_part", "domain", "description",
@@ -2162,10 +2161,10 @@ LASTSCHRIFT_TRANSACTION_FIELDS = (
 #: Datatype and Association of special purpose event fields
 EVENT_FIELD_SPEC: Dict[
     str, Tuple[Set[const.FieldDatatypes], Set[const.FieldAssociations]]] = {
-    'lodge': ({const.FieldDatatypes.str}, {const.FieldAssociations.registration}),
-    'camping_mat': (
+    'lodge_field': ({const.FieldDatatypes.str}, {const.FieldAssociations.registration}),
+    'camping_mat_field': (
         {const.FieldDatatypes.bool}, {const.FieldAssociations.registration}),
-    'course_room': ({const.FieldDatatypes.str}, {const.FieldAssociations.course}),
+    'course_room_field': ({const.FieldDatatypes.str}, {const.FieldAssociations.course}),
     'waitlist': ({const.FieldDatatypes.int}, {const.FieldAssociations.registration}),
     'fee_modifier': (
         {const.FieldDatatypes.bool}, {const.FieldAssociations.registration}),

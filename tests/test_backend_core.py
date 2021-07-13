@@ -3,19 +3,21 @@
 import copy
 import datetime
 import decimal
-from pathlib import Path
-from typing import cast
+from typing import cast, Optional
 
 import cdedb.database.constants as const
 from cdedb.common import (
     CdEDBObject, PERSONA_CDE_FIELDS, PERSONA_EVENT_FIELDS, PERSONA_ML_FIELDS,
     ArchiveError, PrivilegeError, RequestState, get_hash, merge_dicts, now, nearly_now
 )
+from cdedb.backend.common import affirm_validation_typed as affirm
 from cdedb.validation import PERSONA_CDE_CREATION
+import cdedb.validationtypes as vtypes
 from tests.common import (
     ANONYMOUS, BackendTest, USER_DICT, as_users, create_mock_image, execsql, prepsql,
     storage
 )
+
 
 PERSONA_TEMPLATE = {
     'username': "zelda@example.cde",
@@ -85,6 +87,46 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(1, self.core.logout(self.key))
         with self.assertRaises(RuntimeError):
             self.core.logout(self.key)
+
+    @as_users("anton")
+    def test_entity_persona(self) -> None:
+        persona_id: Optional[int] = -1
+        while True:
+            persona_id = self.core.next_persona(
+                self.key, persona_id=persona_id, is_member=None, is_archived=False)
+
+            if not persona_id:
+                break
+
+            # Validate ml data
+            persona = self.core.get_ml_user(self.key, persona_id)
+            affirm(vtypes.Persona, persona, _ignore_warnings=True)
+
+            # Validate event data if applicable
+            if not persona['is_event_realm']:
+                continue
+
+            persona = self.core.get_event_user(self.key, persona_id)
+            if persona_id != USER_DICT["inga"]["id"]:
+                affirm(vtypes.Persona, persona, _ignore_warnings=True)
+            else:
+                with self.assertRaises(ValueError) as cm:
+                    affirm(vtypes.Persona, persona, _ignore_warnings=True)
+                    self.assertIn("A birthday must be in the past. (birthday)",
+                                  cm.exception.args)
+
+            # Validate cde/total data if applicable
+            if not persona['is_cde_realm']:
+                continue
+
+            persona = self.core.get_total_persona(self.key, persona_id)
+            if persona_id != USER_DICT["inga"]["id"]:
+                affirm(vtypes.Persona, persona, _ignore_warnings=True)
+            else:
+                with self.assertRaises(ValueError) as cm:
+                    affirm(vtypes.Persona, persona, _ignore_warnings=True)
+                    self.assertIn("A birthday must be in the past. (birthday)",
+                                  cm.exception.args)
 
     @as_users("anton", "berta", "janis")
     def test_set_persona(self) -> None:
@@ -1009,7 +1051,8 @@ class TestCoreBackend(BackendTest):
                                     new_username="charly@example.cde")
 
         # Check that sole moderators cannot be archived.
-        self.ml.set_moderators(self.key, 2, {persona_id})
+        self.ml.add_moderators(self.key, 2, {persona_id})
+        self.ml.remove_moderator(self.key, 2, 10)
         with self.assertRaises(ArchiveError) as cm:
             self.core.archive_persona(self.key, persona_id, "Testing")
         self.assertIn("Sole moderator of a mailinglist", cm.exception.args[0])
@@ -1277,7 +1320,7 @@ class TestCoreBackend(BackendTest):
              'change_note': None,
              'code': const.CoreLogCodes.persona_creation,
              'ctime': nearly_now(),
-             'persona_id': 1001,
+             'persona_id': new_persona_id,
              'submitted_by': self.user['id']},
             {'id': 1002,
              'change_note': 'zeldax@example.cde',

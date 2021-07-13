@@ -1,7 +1,9 @@
 Test Suite
 ==========
 
-.. todo:: Explanation of our testing principles, sample data, special test functions etc
+This page describes the technical details reagrding the test suite.
+To get a high-level overview of our testing philosophy,
+take a look at :doc:`Design_Testing` instead.
 
 .. _sample-data:
 
@@ -99,10 +101,13 @@ Pattern matching is performed by unittest, which uses ``fnmatch.fnmatchcase``
 internally [#fnmatch]_.
 If a pattern without an asterisk is passed it will be wrapped with one on both ends.
 
+
+.. _coverage:
+
 Code coverage
 ^^^^^^^^^^^^^
 
-.. todo:: Implement coverage in ``bin/check.py`` script an document this here.
+.. todo:: Implement coverage in ``bin/check.py`` script and document this here.
 
 The coverage html reports for easier inspection are accessible on the local dev
 instance via Apache at `localhost:8443/coverage <https://localhost:8443/coverage>`_ for
@@ -135,8 +140,6 @@ This prevents multiple test runs from using the same database simultaneously, wh
 would break everything.
 You can explicitly specify a thread id by using the ``--thread-id`` flag of
 ``bin/check.py``.
-
-.. todo:: Implement parallel testing inside ``bin/check.py``.
 
 Every test ``Application`` stores log files and, if needed, some test files for up- and
 downloading (e.g. assembly attachments) in a temporary directory living inside ``/tmp``,

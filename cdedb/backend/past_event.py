@@ -23,7 +23,7 @@ from cdedb.common import (
     PrivilegeError, RequestState, glue, make_proxy, n_, now, unwrap, xsorted,
 )
 from cdedb.database.connection import Atomizer
-from cdedb.query import Query
+from cdedb.query import Query, QueryScope
 
 
 class PastEventBackend(AbstractBackend):
@@ -373,15 +373,22 @@ class PastEventBackend(AbstractBackend):
         return ret
 
     @access("persona")
-    def list_past_courses(self, rs: RequestState, pevent_id: int
+    def list_past_courses(self, rs: RequestState, pevent_id: Optional[int] = None
                           ) -> Dict[int, str]:
-        """List all courses of a concluded event.
+        """List all relevant past courses.
+
+        If a `pevent_id` is given, list only courses from a concluded event,
+        otherwise, return the full list.
 
         :returns: Mapping of course ids to titles.
         """
-        pevent_id = affirm(vtypes.ID, pevent_id)
-        data = self.sql_select(rs, "past_event.courses", ("id", "title"),
-                               (pevent_id,), entity_key="pevent_id")
+        pevent_id = affirm_optional(vtypes.ID, pevent_id)
+        if pevent_id:
+            data = self.sql_select(rs, "past_event.courses", ("id", "title"),
+                                   (pevent_id,), entity_key="pevent_id")
+        else:
+            query = "SELECT id, title FROM past_event.courses"
+            data = self.query_all(rs, query, tuple())
         return {e['id']: e['title'] for e in data}
 
     @access("cde", "event")
@@ -781,7 +788,7 @@ class PastEventBackend(AbstractBackend):
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
         """
         query = affirm(Query, query)
-        if query.scope == "qview_pevent_course":
+        if query.scope == QueryScope.past_event_course:
             pass
         else:
             raise RuntimeError(n_("Bad scope."))

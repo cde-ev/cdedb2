@@ -77,13 +77,13 @@ from cdedb.database.constants import FieldAssociations, FieldDatatypes
 from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS
 from cdedb.query import (
     MULTI_VALUE_OPERATORS, NO_VALUE_OPERATORS, VALID_QUERY_OPERATORS, QueryOperators,
-    QueryOrder,
+    QueryOrder, QueryScope,
 )
 from cdedb.validationdata import (
     COUNTRY_CODES, FREQUENCY_LISTS, GERMAN_PHONE_CODES, GERMAN_POSTAL_CODES,
     IBAN_LENGTHS, ITU_CODES,
 )
-from cdedb.validationtypes import *  # pylint: disable=wildcard-import,unused-wildcard-import; # noqa
+from cdedb.validationtypes import *  # pylint: disable=wildcard-import,unused-wildcard-import; # noqa: F403
 
 _BASICCONF = BasicConfig()
 NoneType = type(None)
@@ -1048,6 +1048,7 @@ PERSONA_COMMON_FIELDS: Mapping[str, Any] = {
     'is_member': bool,
     'is_searchable': bool,
     'is_archived': bool,
+    'is_purged': bool,
     'is_active': bool,
     'display_name': str,
     'given_names': str,
@@ -1114,6 +1115,7 @@ def _persona(
         temp.update({
             'is_meta_admin': False,
             'is_archived': False,
+            'is_purged': False,
             'is_assembly_admin': False,
             'is_cde_admin': False,
             'is_finance_admin': False,
@@ -1209,6 +1211,8 @@ def _date(
 
 @_add_typed_validator
 def _birthday(val: Any, argname: str = None, **kwargs: Any) -> Birthday:
+    if not val:
+        val = datetime.date.min
     val = _date(val, argname=argname, **kwargs)
     if now().date() < val:
         raise ValidationSummary(ValueError(
@@ -1298,7 +1302,7 @@ def _phone(
 ) -> Phone:
     val = _printable_ascii(val, argname, **kwargs)
     orig = val.strip()
-    val = ''.join(c for c in val if c in '+1234567890')  # pylint: disable=not-an-iterable; # noqa
+    val = ''.join(c for c in val if c in '+1234567890')  # pylint: disable=not-an-iterable;
 
     if len(val) < 7:
         raise ValidationSummary(ValueError(argname, n_("Too short.")))
@@ -2082,7 +2086,6 @@ EVENT_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'orgas': Iterable,
     'parts': Mapping,
     'fields': Mapping,
-    'fee_modifiers': Mapping,
 }
 
 
@@ -2169,35 +2172,6 @@ def _event(
                     newfields[anid] = field
         val['fields'] = newfields
 
-    if 'fee_modifiers' in val:
-        new_modifiers = {}
-        for anid, fee_modifier in val['fee_modifiers'].items():
-            try:
-                anid = _int(anid, 'fee_modifiers', **kwargs)
-            except ValidationSummary as e:
-                errs.extend(e)
-            else:
-                creation = (anid < 0)
-                try:
-                    fee_modifier = _ALL_TYPED[
-                        Optional[EventFeeModifier]  # type: ignore
-                    ](
-                        fee_modifier, 'fee_modifiers', creation=creation, **kwargs)
-                except ValidationSummary as e:
-                    errs.extend(e)
-                else:
-                    new_modifiers[anid] = fee_modifier
-
-        msg = n_("Must not have multiple fee modifiers linked to the same"
-                 " field in one event part.")
-
-        aniter: Iterable[Tuple[EventFeeModifier, EventFeeModifier]]
-        aniter = itertools.combinations(filter(None, val['fee_modifiers'].values()), 2)
-        for e1, e2 in aniter:
-            if e1['field_id'] is not None and e1['field_id'] == e2['field_id']:
-                if e1['part_id'] == e2['part_id']:
-                    errs.append(ValueError('fee_modifiers', msg))
-
     if errs:
         raise errs
 
@@ -2212,6 +2186,10 @@ EVENT_PART_COMMON_FIELDS: TypeMapping = {
     'fee': NonNegativeDecimal,
     'waitlist_field': Optional[ID],  # type: ignore
     'tracks': Mapping,
+}
+
+EVENT_PART_OPTIONAL_FIELDS: TypeMapping = {
+    'fee_modifiers': Mapping,
 }
 
 
@@ -2231,10 +2209,10 @@ def _event_part(
 
     if creation:
         mandatory_fields = {**EVENT_PART_COMMON_FIELDS}
-        optional_fields = {}
+        optional_fields = {**EVENT_PART_OPTIONAL_FIELDS}
     else:
         mandatory_fields = {}
-        optional_fields = {**EVENT_PART_COMMON_FIELDS}
+        optional_fields = {**EVENT_PART_COMMON_FIELDS, **EVENT_PART_OPTIONAL_FIELDS}
 
     val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
 
@@ -2264,6 +2242,35 @@ def _event_part(
                 else:
                     newtracks[anid] = track
         val['tracks'] = newtracks
+
+    if 'fee_modifiers' in val:
+        new_modifiers = {}
+        for anid, fee_modifier in val['fee_modifiers'].items():
+            try:
+                anid = _int(anid, 'fee_modifiers', **kwargs)
+            except ValidationSummary as e:
+                errs.extend(e)
+            else:
+                creation = (anid < 0)
+                try:
+                    fee_modifier = _ALL_TYPED[
+                        Optional[EventFeeModifier]  # type: ignore
+                    ](
+                        fee_modifier, 'fee_modifiers', creation=creation, **kwargs)
+                except ValidationSummary as e:
+                    errs.extend(e)
+                else:
+                    new_modifiers[anid] = fee_modifier
+
+        msg = n_("Must not have multiple fee modifiers linked to the same"
+                 " field in one event part.")
+
+        aniter: Iterable[Tuple[EventFeeModifier, EventFeeModifier]]
+        aniter = itertools.combinations(
+            [fm for fm in val['fee_modifiers'].values() if fm], 2)
+        for e1, e2 in aniter:
+            if e1['field_id'] is not None and e1['field_id'] == e2['field_id']:
+                errs.append(ValueError('fee_modifiers', msg))
 
     if errs:
         raise errs
@@ -2350,8 +2357,8 @@ def _event_field(
         val[entries_key] = None
     if entries_key in val and val[entries_key] is not None:
         if isinstance(val[entries_key], str):
-            val[entries_key] = tuple(tuple(y.strip() for y in x.split(';', 1))
-                                     for x in val[entries_key].split('\n'))
+            val[entries_key] = list(list(y.strip() for y in x.split(';', 1))
+                                    for x in val[entries_key].split('\n'))
         try:
             oldentries = _iterable(val[entries_key], entries_key, **kwargs)
         except ValidationSummary as e:
@@ -2380,7 +2387,7 @@ def _event_field(
                             errs.append(ValueError(
                                 entries_key, n_("Duplicate value.")))
                         else:
-                            entries.append((value, description))
+                            entries.append([value, description])
                             seen_values.add(value)
             val[entries_key] = entries
 
@@ -2393,7 +2400,6 @@ def _event_field(
 def _EVENT_FEE_MODIFIER_COMMON_FIELDS(extra_suffix: str) -> TypeMapping: return {
     "modifier_name{}".format(extra_suffix): RestrictiveIdentifier,
     "amount{}".format(extra_suffix): decimal.Decimal,
-    "part_id{}".format(extra_suffix): ID,
     "field_id{}".format(extra_suffix): ID,
 }
 
@@ -2410,7 +2416,7 @@ def _event_fee_modifier(
         mandatory_fields = _EVENT_FEE_MODIFIER_COMMON_FIELDS(extra_suffix)
         optional_fields: TypeMapping = {}
     else:
-        mandatory_fields = {'id': ID}
+        mandatory_fields = {}
         optional_fields = _EVENT_FEE_MODIFIER_COMMON_FIELDS(extra_suffix)
 
     val = _examine_dictionary_fields(
@@ -2693,7 +2699,7 @@ def _event_associated_fields(
         if field['association'] == association:
             dt = _ALL_TYPED[const.FieldDatatypes](
                 field['kind'], field['field_name'], **kwargs)
-            datatypes[field['field_name']] = cast(Type[Any], eval(  # pylint: disable=eval-used # noqa
+            datatypes[field['field_name']] = cast(Type[Any], eval(  # pylint: disable=eval-used
                 f"Optional[{dt.name}]",
                 {
                     'Optional': Optional,
@@ -3037,7 +3043,8 @@ def _serialized_event(
                 'readonly': Optional[bool],  # type: ignore
                 'kind': const.QuestionnaireUsages,
             }),
-        'event.fee_modifiers': _event_fee_modifier,
+        'event.fee_modifiers': _augment_dict_validator(
+            _event_fee_modifier, {'id': ID, 'part_id': ID}),
     }
 
     errs = ValidationSummary()
@@ -3113,6 +3120,7 @@ def _serialized_partial_event(
         'lodgement_groups': Mapping,
         'lodgements': Mapping,
         'registrations': Mapping,
+        'summary': str,
     }
 
     val = _examine_dictionary_fields(
@@ -3511,15 +3519,14 @@ def _mailinglist(
 
     errs = ValidationSummary()
 
-    if "domain" in val:
-        if "ml_type" not in val:
+    if "domain" not in val:
+        errs.append(ValueError("domain",
+            "Must specify domain for setting mailinglist."))
+    else:
+        atype = ml_type.get_type(val["ml_type"])
+        if val["domain"].value not in atype.domains:
             errs.append(ValueError("domain", n_(
-                "Must specify mailinglist type to change domain.")))
-        else:
-            atype = ml_type.get_type(val["ml_type"])
-            if val["domain"].value not in atype.domains:
-                errs.append(ValueError("domain", n_(
-                    "Invalid domain for this mailinglist type.")))
+                "Invalid domain for this mailinglist type.")))
 
     if errs:
         raise errs
@@ -3933,7 +3940,7 @@ def _non_regex(
     forbidden_chars = r'\*+?{}()[]|'
     msg = n_("Must not contain any forbidden characters"
              " (which are %(forbidden_chars)s while .^$ are allowed).")
-    if any(char in val for char in forbidden_chars):  # pylint: disable=unsupported-membership-test; # noqa
+    if any(char in val for char in forbidden_chars):  # pylint: disable=unsupported-membership-test;
         raise ValidationSummary(
             ValueError(argname, msg, {"forbidden_chars": forbidden_chars}))
     return NonRegex(val)
@@ -3946,7 +3953,7 @@ def _query_input(
     separator: str = ',', escape: str = '\\',
     **kwargs: Any
 ) -> QueryInput:
-    """This is for the queries coming from the web.
+    """This is for the queries coming from the web and the database.
 
     It is not usable with decorators since the spec is often only known at
     runtime. To alleviate this circumstance there is the
@@ -3965,10 +3972,18 @@ def _query_input(
 
     val = _mapping(val, argname, **kwargs)
 
+    scope = _ALL_TYPED[QueryScope](val["scope"], "scope", **kwargs)
+    name = ""
+    if val.get("query_name"):
+        name = _ALL_TYPED[str](val["query_name"], "query_name", **kwargs)
+    query_id: Optional[ID] = None
+    if val.get("query_id"):
+        query_id = _ALL_TYPED[ID](val["query_id"], "query_id", **kwargs)
     fields_of_interest = []
     constraints = []
     order: List[QueryOrder] = []
     errs = ValidationSummary()
+
     for field, validator in spec.items():
         # First the selection of fields of interest
         try:
@@ -4110,8 +4125,8 @@ def _query_input(
     if errs:
         raise errs
 
-    return QueryInput(
-        Query(None, spec, fields_of_interest, constraints, order))  # type: ignore
+    return QueryInput(Query(
+        scope, dict(spec), fields_of_interest, constraints, order, name, query_id))
 
 
 # TODO ignore _ignore_warnings here too?
@@ -4131,12 +4146,10 @@ def _query(
 
     errs = ValidationSummary()
 
-    # scope
-    # TODO why no convert here?
-    _identifier(val.scope, "scope", **kwargs)
-
-    if not val.scope.startswith("qview_"):
-        errs.append(ValueError("scope", n_("Must start with “qview_”.")))
+    # scope and name
+    _ALL_TYPED[QueryScope](val.scope, "scope", **kwargs)
+    _ALL_TYPED[Optional[str]](  # type: ignore
+        val.name, "name", **kwargs)
 
     # spec
     for field, validator in val.spec.items():

@@ -322,7 +322,7 @@
 
     <form action="{{ cdedblink('assembly/edit_candidates') }}" method="POST" id="candidatessummaryform">
         {{ util.anti_csrf_token('assembly/edit_candidates') }}
-        {{ util.dynamic_row_table(gettext("Candidates"), columns, ambience['ballot']['candidates'], sortkey=EntitySorter.candidate) }}
+        {{ util.dynamic_row_table(gettext("Candidates"), columns, ambience['ballot']['candidates'], sortkey=EntitySorter.candidates) }}
         {{ util.input_submit(label=gettext("Save")) }}
     </form>
 

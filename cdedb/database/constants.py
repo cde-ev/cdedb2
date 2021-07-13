@@ -10,7 +10,7 @@ their symbolic names provided by this module should be used.
 import enum
 from typing import Dict
 
-from cdedb.subman.machine import SubscriptionAction, SubscriptionState  # pylint: disable=unused-import # noqa
+from cdedb.subman.machine import SubscriptionAction, SubscriptionState  # pylint: disable=unused-import # noqa: F401
 
 
 def n_(x: str) -> str:
@@ -345,6 +345,8 @@ class EventLogCodes(enum.IntEnum):
     fee_modifier_deleted = 82  #:
     minor_form_updated = 85  #:
     minor_form_removed = 86  #:
+    query_stored = 90  #:
+    query_deleted = 91  #:
 
 
 @enum.unique

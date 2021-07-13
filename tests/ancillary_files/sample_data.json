@@ -644,7 +644,7 @@
             "title": null,
             "name_supplement": null,
             "gender": 1,
-            "birthday": null,
+            "birthday": "0001-01-01",
             "telephone": null,
             "mobile": null,
             "address_supplement": null,
@@ -812,7 +812,7 @@
             "title": "Prof.",
             "name_supplement": null,
             "gender": 2,
-            "birthday": "1979-07-06",
+            "birthday": "0001-01-01",
             "telephone": null,
             "mobile": null,
             "address_supplement": null,
@@ -987,7 +987,7 @@
             "address": "Glen House",
             "postal_code": "EH44 6PX",
             "location": "Innerleithen",
-            "country": "UK",
+            "country": "GB",
             "birth_name": null,
             "address_supplement2": null,
             "address2": null,
@@ -2262,7 +2262,7 @@
             "title": "Prof.",
             "name_supplement": null,
             "gender": 2,
-            "birthday": "1979-07-06",
+            "birthday": "0001-01-01",
             "telephone": null,
             "mobile": null,
             "address_supplement": null,
@@ -2879,7 +2879,7 @@
             "address": "Glen House",
             "postal_code": "EH44 6PX",
             "location": "Innerleithen",
-            "country": "UK",
+            "country": "GB",
             "birth_name": null,
             "address_supplement2": null,
             "address2": null,
@@ -3512,6 +3512,13 @@
             "persona_id": 3,
             "pevent_id": 1,
             "pcourse_id": null,
+            "is_instructor": false,
+            "is_orga": false
+        },
+        {
+            "persona_id": 4,
+            "pevent_id": 1,
+            "pcourse_id": 2,
             "is_instructor": false,
             "is_orga": false
         },
@@ -4321,6 +4328,22 @@
             "checkin": null,
             "list_consent": false,
             "fields": {}
+        },
+        {
+            "id": 9,
+            "persona_id": 7,
+            "real_persona_id": null,
+            "event_id": 3,
+            "notes": null,
+            "orga_notes": null,
+            "payment": null,
+            "amount_paid": "0.00",
+            "amount_owed": "0.00",
+            "parental_agreement": false,
+            "mixed_lodging": false,
+            "checkin": null,
+            "list_consent": false,
+            "fields": {}
         }
     ],
     "event.registration_parts": [
@@ -4483,6 +4506,14 @@
             "status": 2,
             "lodgement_id": null,
             "is_camping_mat": false
+        },
+        {
+            "id": 21,
+            "registration_id": 9,
+            "part_id": 5,
+            "status": 2,
+            "lodgement_id": null,
+            "is_camping_mat": false
         }
     ],
     "event.registration_tracks": [
@@ -4622,6 +4653,13 @@
         {
             "id": 20,
             "registration_id": 8,
+            "track_id": 4,
+            "course_id": null,
+            "course_instructor": null
+        },
+        {
+            "id": 21,
+            "registration_id": 9,
             "track_id": 4,
             "course_id": null,
             "course_instructor": null
@@ -4995,6 +5033,25 @@
             "kind": 2
         }
     ],
+    "event.stored_queries": [
+        {
+            "event_id": 1,
+            "query_name": "Test-Query",
+            "scope": 30,
+            "serialized_query": {
+                "scope": 30,
+                "is_search": true,
+                "query_name": "Test-Query",
+                "qsel_reg.id": true,
+                "qord_primary": "persona.birthday",
+                "qsel_persona.id": true,
+                "qop_persona.birthday": 20,
+                "qsel_persona.birthday": true,
+                "qval_persona.birthday": "2000-01-01",
+                "qord_primary_ascending": true
+            }
+        }
+    ],
     "event.log": [
         {
             "ctime": "2014-01-01T01:04:05+00:00",
@@ -5196,8 +5253,8 @@
             "assembly_id": 2,
             "title": "Eine damals wichtige Frage",
             "description": "Was für ein Logo soll der CdE bekommen?\n\n* CdE Wappen: Die vier Wappentiere, die den Schriftzug CdE umringen\n* CdE Glühbirne: Glühbirne mit dem Schriftzug CdE\n* Baum & Blätter: Ein Baum mit Blättern und Grün",
-            "vote_begin": "1000-09-29T22:00:00+00:00",
-            "vote_end": "1100-01-01T23:00:00+00:00",
+            "vote_begin": "1800-09-29T22:00:00+00:00",
+            "vote_end": "1900-01-01T23:00:00+00:00",
             "vote_extension_end": "1999-09-05T23:00:00+00:00",
             "extended": true,
             "use_bar": true,
@@ -7136,43 +7193,8 @@
         },
         {
             "mailinglist_id": 1,
-            "persona_id": 13,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 1,
             "persona_id": 15,
             "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 1,
-            "persona_id": 16,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 1,
-            "persona_id": 17,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 1,
-            "persona_id": 22,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 1,
-            "persona_id": 23,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 1,
-            "persona_id": 27,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 1,
-            "persona_id": 32,
-            "subscription_state": 2
         },
         {
             "mailinglist_id": 1,
@@ -7552,12 +7574,12 @@
         {
             "mailinglist_id": 13,
             "persona_id": 13,
-            "subscription_state": 2
+            "subscription_state": 1
         },
         {
             "mailinglist_id": 13,
             "persona_id": 14,
-            "subscription_state": 2
+            "subscription_state": 1
         },
         {
             "mailinglist_id": 13,
@@ -7567,42 +7589,42 @@
         {
             "mailinglist_id": 13,
             "persona_id": 16,
-            "subscription_state": 2
+            "subscription_state": 1
         },
         {
             "mailinglist_id": 13,
             "persona_id": 17,
-            "subscription_state": 2
+            "subscription_state": 1
         },
         {
             "mailinglist_id": 13,
             "persona_id": 18,
-            "subscription_state": 2
+            "subscription_state": 30
         },
         {
             "mailinglist_id": 13,
             "persona_id": 22,
-            "subscription_state": 2
+            "subscription_state": 1
         },
         {
             "mailinglist_id": 13,
             "persona_id": 23,
-            "subscription_state": 2
+            "subscription_state": 1
         },
         {
             "mailinglist_id": 13,
             "persona_id": 27,
-            "subscription_state": 2
+            "subscription_state": 1
         },
         {
             "mailinglist_id": 13,
             "persona_id": 32,
-            "subscription_state": 2
+            "subscription_state": 1
         },
         {
             "mailinglist_id": 13,
             "persona_id": 48,
-            "subscription_state": 2
+            "subscription_state": 1
         },
         {
             "mailinglist_id": 13,
@@ -7646,43 +7668,8 @@
         },
         {
             "mailinglist_id": 51,
-            "persona_id": 13,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 51,
             "persona_id": 15,
             "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 51,
-            "persona_id": 16,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 51,
-            "persona_id": 17,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 51,
-            "persona_id": 22,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 51,
-            "persona_id": 23,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 51,
-            "persona_id": 27,
-            "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 51,
-            "persona_id": 32,
-            "subscription_state": 2
         },
         {
             "mailinglist_id": 51,
@@ -8020,6 +8007,11 @@
             "mailinglist_id": 4,
             "persona_id": 6,
             "address": "ferdinand-unterhaltung@example.cde"
+        },
+        {
+            "mailinglist_id": 52,
+            "persona_id": 9,
+            "address": "inga-papierkorb@example.cde"
         }
     ],
     "ml.whitelist": [

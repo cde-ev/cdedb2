@@ -45,7 +45,7 @@
                             <span class="small text-muted">
                                 {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part)
                                    if enums['RegistrationPartStati'](registration['parts'][part_id]['status']).is_present() %}
-                                    {{ part['title'] }}
+                                    {{ part['shortname'] }}
                                     {% if registration['parts'][part_id]['status']
                                             == enums['RegistrationPartStati'].guest.value %}
                                         ({{ gettext(enums['RegistrationPartStati'].guest|string) }})

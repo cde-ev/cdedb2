@@ -15,7 +15,7 @@ from cdedb.database.constants import (
     MailinglistDomain, MailinglistTypes, RegistrationPartStati,
 )
 from cdedb.subman.machine import SubscriptionPolicy
-from cdedb.query import Query, QueryOperators
+from cdedb.query import Query, QueryOperators, QueryScope
 
 SubscriptionPolicyMap = Dict[int, SubscriptionPolicy]
 TypeMapping = Mapping[str, Type[Any]]
@@ -116,7 +116,8 @@ class GeneralMailinglist:
         - `viewer_roles`: A set of roles other than `ml_admin` which allows
           a user to view a mailinglist. The semantics are similar to `@access`.
         """
-        return bool((cls.viewer_roles | {"ml_admin"}) & rs.user.roles)
+        return (bool((cls.viewer_roles | {"ml_admin"}) & rs.user.roles)
+            or cls.is_relevant_admin(rs.user))
 
     @classmethod
     def is_restricted_moderator(cls, rs: RequestState, bc: BackendContainer,
@@ -480,7 +481,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
             status_column: 'int',
         }
         query = Query(
-            scope="qview_registration",
+            scope=QueryScope.registration,
             spec=spec,
             fields_of_interest=("persona.id",),
             constraints=[
