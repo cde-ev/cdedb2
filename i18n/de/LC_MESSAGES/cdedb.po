@@ -2321,7 +2321,7 @@ msgstr ""
 
 #: cdedb/frontend/event.py:877
 msgid ""
-"Must not have multiple fee modifiers witht he same name in one event part."
+"Must not have multiple fee modifiers with the same name in one event part."
 msgstr ""
 "Nicht mehr als ein Beitragsmodifikator pro Veranstaltungsteil darf den "
 "selben Bezeichner haben."

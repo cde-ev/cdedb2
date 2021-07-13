@@ -628,6 +628,9 @@ class EventFrontend(AbstractUserFrontend):
     @access("event")
     @event_guard()
     def add_part_form(self, rs: RequestState, event_id: int) -> Response:
+        if self.eventproxy.has_registrations(rs, event_id):
+            rs.notify("error", n_("Registrations exist, no part creation possible."))
+            return self.redirect(rs, "event/show_event")
         sorted_fields = xsorted(rs.ambience['event']['fields'].values(),
                                 key=EntitySorter.event_field)
         legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['waitlist']

@@ -2073,10 +2073,10 @@ def process_dynamic_input(
 
     This takes a 'spec' of field_names mapped to their validation. Each field_name is
     prepended with the 'prefix' and appended with the entity_id in the form of
-    "{prefix}{field_name}_{entity_id}" before extracted from the RequestState.
+    "{prefix}{field_name}_{entity_id}" before being extracted from the RequestState.
 
     During extraction with `request_extractor`, it is possible to pass some additional
-    constraints in. To dynamically create them for each not-deleted entry, a
+    constraints. To dynamically create them for each not-deleted entry, a
     'constraint_maker' function is needed. It might look like the following:
 
         def int_constraint_maker(field_id: int, prefix: str) -> List[RequestConstraint]:
@@ -2087,7 +2087,7 @@ def process_dynamic_input(
                 lambda d: d[rs_field_name] > 0, (rs_field_name, ValueError(msg))
             )]
 
-    This returns a data dict to update the database, which includes:
+    'process_dynamic_input' returns a data dict to update the database, which includes:
     - existing entries, mapped to their (validated) input fields (from spec)
     - existing entries, mapped to None (if they were marked to be deleted)
     - new entries, mapped to their (validated) input fields (from spec)
@@ -2103,30 +2103,31 @@ def process_dynamic_input(
         the string prefix and gives back all constraints for this entry, which are
         further passed to request_extractor
     :param additional: additional keys added to each output object
-    :param prefix: prefix in front of all concerned fields. Usable if more then one
-        dynamic input table is present on the same page
+    :param prefix: prefix in front of all concerned fields. Should be used when more
+        then one dynamic input table is present on the same page.
     """
     additional = additional or dict()
 
     delete_spec = {f"{prefix}delete_{anid}": bool for anid in existing}
     delete_flags = request_extractor(rs, delete_spec)
     deletes = {anid for anid in existing if delete_flags[f"{prefix}delete_{anid}"]}
+    non_deleted_existing = {anid for anid in existing if anid not in deletes}
 
     existing_data_spec: validate.TypeMapping = {
         f"{prefix}{key}_{anid}": value
-        for anid in existing if anid not in deletes
+        for anid in non_deleted_existing
         for key, value in spec.items()
     }
     # generate the constraints for each existing entry which will not be deleted
     constraints = list(itertools.chain.from_iterable(
-        constraint_maker(anid, prefix) for anid in existing if anid not in deletes)
+        constraint_maker(anid, prefix) for anid in non_deleted_existing)
     ) if constraint_maker else None
     data = request_extractor(rs, existing_data_spec, constraints)
 
     # build the return dict of all existing entries
     ret: Dict[int, Optional[CdEDBObject]] = {
         anid: {key: data[f"{prefix}{key}_{anid}"] for key in spec}
-        for anid in existing if anid not in deletes
+        for anid in non_deleted_existing
     }
     for anid in existing:
         if anid in deletes:
