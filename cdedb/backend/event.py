@@ -2017,7 +2017,7 @@ class EventBackend(AbstractBackend):
                             indirect_data[edata['course_room_field']])
                     if edata['custom_checkin_fields']:
                         legal_assoc = const.FieldAssociations.registration
-                        checkin_fields = [x for x in indirect_data
+                        checkin_fields = [x for x in indirect_data.values()
                                           if x['id'] in edata['custom_checkin_fields']]
                         if any(field['event_id'] != data['id']
                                or field['association'] != legal_assoc
