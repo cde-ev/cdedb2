@@ -1397,7 +1397,7 @@ class FrontendTest(BackendTest):
                               fail: bool = True) -> None:
         """Helper to repeatedly reload a page until a certain form is present.
 
-        This should be used sparingly as it does busy waiting andis mostly
+        This should be used sparingly as it does busy waiting and is mostly
         required for the "Semesterverwaltung".
 
         We do a quadratic backoff with waiting times increasing linearily to
