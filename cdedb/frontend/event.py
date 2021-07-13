@@ -652,6 +652,7 @@ class EventFrontend(AbstractUserFrontend):
         data = check(rs, vtypes.EventPart, data)
         if rs.has_validation_errors():
             return self.add_part_form(rs, event_id)
+        assert data is not None
 
         # check non-static dependencies
         if data["waitlist_field"]:
