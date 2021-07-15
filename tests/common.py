@@ -19,7 +19,6 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import time
 import unittest
 import urllib.parse
 from typing import (

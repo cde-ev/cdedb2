@@ -2361,7 +2361,7 @@ class CdEFrontend(AbstractUserFrontend):
             self.cdeproxy.finish_expuls_addresscheck(rs, skip=True)
             rs.notify("success", n_("Not sending mail."))
         else:
-            worker = self.create_worker(rs, "expuls_addresscheck", send_addresscheck)
+            self.create_worker(rs, "expuls_addresscheck", send_addresscheck)
             rs.notify("success", n_("Started sending mail."))
         return self.redirect(rs, "cde/show_semester")
 
