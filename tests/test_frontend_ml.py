@@ -6,11 +6,10 @@ import unittest.mock
 from typing import Any, List, Tuple
 
 import cdedb.database.constants as const
-import cdedb.frontend.common
-import cdedb.ml_type_aux as ml_type
 from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, CdEDBObject
 from cdedb.devsamples import MockHeldMessage, HELD_MESSAGE_SAMPLE
 from cdedb.frontend.common import CustomCSVDialect
+from cdedb.ml_type_aux import CdeLokalMailinglist
 from cdedb.query import QueryOperators
 from tests.common import USER_DICT, FrontendTest, as_users, prepsql
 
@@ -441,6 +440,13 @@ class TestMlFrontend(FrontendTest):
         self.assertNonPresence("Große Testakademie 2222")
         self.assertNonPresence("Versammlungslisten")
         self.assertNonPresence("Andere Mailinglisten")
+
+    @as_users("quintus")
+    def test_mailinglist_cde_admin(self) -> None:
+        self.traverse({'href': '/ml/$'},
+                      {'href': '/ml/mailinglist/list'},
+                      {'href': '/ml/mailinglist/7/show'},
+                      {'href': '/ml/mailinglist/7/management'})
 
     @as_users("nina", "berta")
     def test_mailinglist_management(self) -> None:
@@ -1285,7 +1291,7 @@ class TestMlFrontend(FrontendTest):
         f['local_part'] = "littlewhinging"
         f['domain'] = const.MailinglistDomain.cdelokal.value
         self.assertEqual(len(f['domain'].options),
-                         len(ml_type.CdeLokalMailinglist.domains))
+                         len(CdeLokalMailinglist.domains))
         moderator = USER_DICT["berta"]
         f['moderators'] = moderator["DB-ID"]
         self.submit(f)
@@ -1320,7 +1326,7 @@ class TestMlFrontend(FrontendTest):
         self.assertEqual({str(x) for x in stati} | {None}, tmp)
 
     def _prepare_moderation_mock(self, client_class: unittest.mock.Mock) -> Tuple[
-        List[MockHeldMessage], unittest.mock.MagicMock, Any]:
+            List[MockHeldMessage], unittest.mock.MagicMock, Any]:
         messages = HELD_MESSAGE_SAMPLE
         mmlist = unittest.mock.MagicMock()
         moderation_response = unittest.mock.MagicMock()

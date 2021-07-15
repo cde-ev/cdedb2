@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import copy
 import re
 import urllib.parse
 from typing import Dict, Optional
@@ -150,6 +149,62 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("{} {}".format(self.user['given_names'],
                                         self.user['family_name']))
         self.assertPresence(self.user['given_names'], div='title')
+
+    @as_users("annika", "paul", "quintus")
+    def test_showuser_events(self) -> None:
+        if self.user_in("annika"):
+            # event admins navigate via event page
+            self.traverse("Veranstaltungen", "Große Testakademie",
+                          "Garcia G. Generalis")
+        elif self.user_in("paul"):
+            # core admin
+            self.admin_view_profile("garcia")
+        elif self.user_in("quintus"):
+            # cde admin
+            self.realm_admin_view_profile("garcia", "cde")
+
+        self.traverse("Veranstaltungs-Daten")
+        self.assertTitle("Garcia G. Generalis – Veranstaltungs-Daten")
+        self.assertPresence("CyberTestAkademie Teilnehmer")
+        # part names not shown for one-part events
+        self.assertNonPresence("CyberTestAkademie: Teilnehmer")
+        self.assertPresence("Große Testakademie")
+        self.assertPresence("Warmup: Teilnehmer, Erste Hälfte: Teilnehmer,"
+                            " Zweite Hälfte: Teilnehmer")
+
+    @as_users("nina", "paul", "quintus")
+    def test_showuser_mailinglists(self) -> None:
+        if self.user_in("nina"):
+            # Mailinglist admins come from management
+            self.traverse("Mailinglisten", "Allumfassende Liste", "Verwaltung",
+                          "Inga Iota")
+        elif self.user_in("paul"):
+            self.admin_view_profile("inga")
+        elif self.user_in("quintus"):
+            # Relative admins may see this page
+            self.realm_admin_view_profile("inga", "cde")
+
+        self.traverse("Mailinglisten-Daten")
+        self.assertTitle("Inga Iota – Mailinglisten-Daten")
+        self.assertPresence("inga@example.cde", div='contact-email')
+        self.assertPresence("CdE-Info E-Mail: inga-papierkorb@example.cde")
+        self.assertPresence("Kampfbrief-Kommentare (geblockt)")
+        self.assertNonPresence("Witz des Tages")
+
+    @as_users("emilia", "janis")
+    def test_showuser_self(self) -> None:
+        name = f"{self.user['given_names']} {self.user['family_name']}"
+        self.get('/core/self/show')
+        self.assertTitle(name)
+        if not self.user_in("janis"):  # Janis is no event user
+            self.get('/core/self/events')
+            self.assertTitle(f"{name} – Veranstaltungs-Daten")
+        self.get('/core/self/mailinglists')
+        self.assertTitle(f"{name} – Mailinglisten-Daten")
+        # Check there are no links
+        self.traverse({'description': self.user['display_name']})
+        self.assertNonPresence("Veranstaltungs-Daten")
+        self.assertNonPresence("Mailinglisten-Daten")
 
     @as_users("inga")
     def test_vcard(self) -> None:
@@ -691,7 +746,6 @@ class TestCoreFrontend(FrontendTest):
 
     def test_repeated_password_reset(self) -> None:
         new_password = "krce63koLe#$e"
-        new_password2 = "krce63koLe#$e"
         user = USER_DICT["berta"]
         self.get('/')
         self.traverse({'description': 'Passwort zurücksetzen'})

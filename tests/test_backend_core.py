@@ -1065,11 +1065,8 @@ class TestCoreBackend(BackendTest):
         self.core.archive_persona(self.key, 4, "Archived for testing.")
         self.core.dearchive_persona(self.key, 4, new_username="daniel@example.cde")
         # The following call sometimes failed with the error "editing
-        # archived members impossbile". The solution may be to add some
-        # sleep to let the DB settle, but this seems kind of bogus.
-        #
-        # import time
-        # time.sleep(1)
+        # archived members impossbile". This could be pampered over with a
+        # sleep to let the DB settle, but this would only hide a real problem.
         data = {
             'id': 4,
             'is_active': True,
@@ -1320,7 +1317,7 @@ class TestCoreBackend(BackendTest):
              'change_note': None,
              'code': const.CoreLogCodes.persona_creation,
              'ctime': nearly_now(),
-             'persona_id': 1001,
+             'persona_id': new_persona_id,
              'submitted_by': self.user['id']},
             {'id': 1002,
              'change_note': 'zeldax@example.cde',
