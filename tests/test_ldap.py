@@ -173,6 +173,7 @@ class TestLDAP(BasicTest):
             'cn': ['Anton Armin A. Administrator'],
             'displayName': ['Anton Administrator'],
             'givenName': ['Anton Armin A.'],
+            'sn': ['Administrator'],
 
             # there is no password returned, since passwords may not be retrived but
             # only used for binding

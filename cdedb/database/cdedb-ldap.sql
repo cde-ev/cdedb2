@@ -533,7 +533,7 @@ INSERT INTO ldap_attr_mappings (oc_map_id, name, sel_expr, from_tbls, join_where
         -- mandatory
         (oc_inetOrgPerson_id(), 'cn', $$ personas.given_names || ' ' || personas.family_name $$, 'core.personas', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
         -- mandatory
-        (oc_inetOrgPerson_id(), 'sn', 'personas.family_name', 'ldap_organizations', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
+        (oc_inetOrgPerson_id(), 'sn', 'personas.family_name', 'core.personas', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
         (oc_inetOrgPerson_id(), 'displayName', 'make_persona_display_name(core.personas.display_name, core.personas.given_names, core.personas.family_name)', 'core.personas', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
         (oc_inetOrgPerson_id(), 'givenName', 'personas.given_names', 'core.personas', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
         (oc_inetOrgPerson_id(), 'mail', 'personas.username', 'core.personas', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
