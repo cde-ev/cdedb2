@@ -39,7 +39,7 @@ from cdedb.database.connection import Atomizer
 from cdedb.filter import enum_entries_filter, money_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, CustomCSVDialect, REQUESTdata, REQUESTdatadict, REQUESTfile,
-    Worker, access, calculate_db_logparams, calculate_loglinks, cdedbid_filter,
+    access, calculate_db_logparams, calculate_loglinks, cdedbid_filter,
     check_validation as check, check_validation_optional as check_optional, csv_output,
     make_membership_fee_reference, make_postal_address, periodic,
     process_dynamic_input, request_extractor,
@@ -2121,7 +2121,8 @@ class CdEFrontend(AbstractUserFrontend):
                      'meta_info': meta_info})
             return not testrun
 
-        Worker(self.conf, (send_billing_mail, send_archival_notification), rs).start()
+        self.create_worker(
+            rs, "semester_bill", (send_billing_mail, send_archival_notification))
         rs.notify("success", n_("Started sending billing mails."))
         rs.notify("success", n_("Started sending archival notifications."))
         return self.redirect(rs, "cde/show_semester")
@@ -2227,7 +2228,7 @@ class CdEFrontend(AbstractUserFrontend):
                 self._send_mail(mail)
             return True
 
-        Worker(self.conf, (eject_member, automated_archival), rs).start()
+        self.create_worker(rs, "semester_eject", (eject_member, automated_archival))
         rs.notify("success", n_("Started ejection."))
         rs.notify("success", n_("Started automated archival."))
         return self.redirect(rs, "cde/show_semester")
@@ -2289,8 +2290,7 @@ class CdEFrontend(AbstractUserFrontend):
                 self.cdeproxy.set_period(rrs, period_update)
                 return True
 
-        worker = Worker(self.conf, update_balance, rs)
-        worker.start()
+        self.create_worker(rs, "semester_balance_update", update_balance)
         rs.notify("success", n_("Started updating balance."))
         return self.redirect(rs, "cde/show_semester")
 
@@ -2361,12 +2361,7 @@ class CdEFrontend(AbstractUserFrontend):
             self.cdeproxy.finish_expuls_addresscheck(rs, skip=True)
             rs.notify("success", n_("Not sending mail."))
         else:
-            worker = Worker(self.conf, send_addresscheck, rs)
-            worker.start()
-            # Wait a bit to make the semester state update so that the user
-            # does not need to reload. However do not wait if there is
-            # nothing to wait for.
-            worker.join(.1)
+            worker = self.create_worker(rs, "expuls_addresscheck", send_addresscheck)
             rs.notify("success", n_("Started sending mail."))
         return self.redirect(rs, "cde/show_semester")
 

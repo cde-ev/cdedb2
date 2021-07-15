@@ -327,6 +327,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         mailman_basic_auth_password = secrets["MAILMAN_BASIC_AUTH_PASSWORD"]
         self.get_mailman = lambda: CdEMailmanClient(self.conf, mailman_password,
                                                     mailman_basic_auth_password)
+        # Keep track of Workers.
+        self.active_workers: Dict[str, Worker] = {}
 
     @classmethod
     @abc.abstractmethod
@@ -1063,6 +1065,24 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             else:
                 return None
 
+    def create_worker(self, rs: RequestState, name: str, tasks: "WorkerTasks",
+                      timeout: Optional[float] = 0.1) -> "Worker":
+        """Create a new Worker, remember and start it.
+
+        :param timeout: If this is not None, wait for the given number of seconds for
+            the worker thread to finish.
+        """
+        if name in self.active_workers:
+            self.active_workers[name].join(.1)
+            if self.active_workers[name].is_alive():
+                raise RuntimeError("Worker already active.")
+        worker = Worker(self.conf, tasks, rs)
+        self.active_workers[name] = worker
+        worker.start()
+        if timeout is not None:
+            worker.join(timeout)
+        return worker
+
 
 class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     """Base class for all frontends which have their own user realm.
@@ -1184,8 +1204,11 @@ class CdEMailmanClient(mailmanclient.Client):
             return mmlist.held if mmlist else None
 
 
+# Type Aliases for the Worker class.
 WorkerTarget = Callable[[RequestState], bool]
-TaskInfo = NamedTuple("TaskInfo", (("task", WorkerTarget), ("name", str), ("doc", str)))
+WorkerTasks = Union[WorkerTarget, Sequence[WorkerTarget]]
+WorkerTaskInfo = NamedTuple(
+    "WorkerTaskInfo", (("task", WorkerTarget), ("name", str), ("doc", str)))
 
 
 class Worker(threading.Thread):
@@ -1196,11 +1219,10 @@ class Worker(threading.Thread):
     concurrency is no concern.
     """
 
-    def __init__(self, conf: Config, tasks: Union[WorkerTarget, Sequence[WorkerTarget]],
-                 rs: RequestState) -> None:
+    def __init__(self, conf: Config, tasks: WorkerTasks, rs: RequestState) -> None:
         """
-        :param tasks: Every task will called with the cloned request state as a single
-            argument.
+        :param tasks: Every task will be called with the cloned request state as a
+            single argument.
         """
         # noinspection PyProtectedMember
         rrs = RequestState(
@@ -1220,9 +1242,9 @@ class Worker(threading.Thread):
             return task.__doc__.splitlines()[0] if task.__doc__ else ""
 
         if isinstance(tasks, Sequence):
-            task_infos = [TaskInfo(t, t.__name__, get_doc(t)) for t in tasks]
+            task_infos = [WorkerTaskInfo(t, t.__name__, get_doc(t)) for t in tasks]
         else:
-            task_infos = [TaskInfo(tasks, tasks.__name__, get_doc(tasks))]
+            task_infos = [WorkerTaskInfo(tasks, tasks.__name__, get_doc(tasks))]
 
         def runner() -> None:
             """Implement the actual loop running the task inside the Thread."""
