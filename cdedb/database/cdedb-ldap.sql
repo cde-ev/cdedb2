@@ -317,12 +317,14 @@ GRANT ALL ON ldap_groups TO cdb_admin;
 -- A view containing all members of all ldap_groups. Since each group can have
 -- mulitple members, we need an extra query view to track them.
 -- This is also honored in 'ldap_attr_mapping'.
-CREATE VIEW ldap_group_members (group_id, member_dn) AS
+CREATE VIEW ldap_group_members (group_id, group_dn, member_id, member_dn) AS
     -- static groups
         -- is_active
         (
            SELECT
               make_static_group_entity_id(node_static_group_is_active_id()) AS group_id,
+              'cn=is_active,ou=status,ou=groups,dc=cde-ev,dc=de' AS group_dn,
+              core.personas.id AS member_id,
               make_persona_dn(core.personas.id) AS member_dn
            FROM core.personas
            WHERE core.personas.is_active
@@ -331,6 +333,8 @@ CREATE VIEW ldap_group_members (group_id, member_dn) AS
         UNION (
            SELECT
               make_static_group_entity_id(node_static_group_is_member_id()) AS group_id,
+              'cn=is_member,ou=status,ou=groups,dc=cde-ev,dc=de' AS group_dn,
+              core.personas.id AS member_id,
               make_persona_dn(core.personas.id) AS member_dn
            FROM core.personas
            WHERE core.personas.is_member
@@ -339,6 +343,8 @@ CREATE VIEW ldap_group_members (group_id, member_dn) AS
         UNION (
            SELECT
               make_static_group_entity_id(node_static_group_is_searchable_id()) AS group_id,
+              'cn=is_searchable,ou=status,ou=groups,dc=cde-ev,dc=de' AS group_dn,
+              core.personas.id AS member_id,
               make_persona_dn(core.personas.id) AS member_dn
            FROM core.personas
            WHERE core.personas.is_member AND core.personas.is_searchable
@@ -347,6 +353,8 @@ CREATE VIEW ldap_group_members (group_id, member_dn) AS
         UNION (
            SELECT
               make_static_group_entity_id(node_static_group_is_ml_realm_id()) AS group_id,
+              'cn=is_ml_realm,ou=status,ou=groups,dc=cde-ev,dc=de' AS group_dn,
+              core.personas.id AS member_id,
               make_persona_dn(core.personas.id) AS member_dn
            FROM core.personas
            WHERE core.personas.is_ml_realm
@@ -355,6 +363,8 @@ CREATE VIEW ldap_group_members (group_id, member_dn) AS
         UNION (
            SELECT
               make_static_group_entity_id(node_static_group_is_event_realm_id()) AS group_id,
+              'cn=is_event_realm,ou=status,ou=groups,dc=cde-ev,dc=de' AS group_dn,
+              core.personas.id AS member_id,
               make_persona_dn(core.personas.id) AS member_dn
            FROM core.personas
            WHERE core.personas.is_event_realm
@@ -363,6 +373,8 @@ CREATE VIEW ldap_group_members (group_id, member_dn) AS
         UNION (
            SELECT
               make_static_group_entity_id(node_static_group_is_assembly_realm_id()) AS group_id,
+              'cn=is_assembly_realm,ou=status,ou=groups,dc=cde-ev,dc=de' AS group_dn,
+              core.personas.id AS member_id,
               make_persona_dn(core.personas.id) AS member_dn
            FROM core.personas
            WHERE core.personas.is_assembly_realm
@@ -371,6 +383,8 @@ CREATE VIEW ldap_group_members (group_id, member_dn) AS
         UNION (
            SELECT
               make_static_group_entity_id(node_static_group_is_cde_realm_id()) AS group_id,
+              'cn=is_cde_realm,ou=status,ou=groups,dc=cde-ev,dc=de' AS group_dn,
+              core.personas.id AS member_id,
               make_persona_dn(core.personas.id) AS member_dn
            FROM core.personas
            WHERE core.personas.is_cde_realm
@@ -379,6 +393,8 @@ CREATE VIEW ldap_group_members (group_id, member_dn) AS
         UNION (
            SELECT
               make_static_group_entity_id(node_static_group_is_ml_admin_id()) AS group_id,
+              'cn=is_ml_admin,ou=status,ou=groups,dc=cde-ev,dc=de' AS group_dn,
+              core.personas.id AS member_id,
               make_persona_dn(core.personas.id) AS member_dn
            FROM core.personas
            WHERE core.personas.is_ml_admin
@@ -387,6 +403,8 @@ CREATE VIEW ldap_group_members (group_id, member_dn) AS
         UNION (
            SELECT
               make_static_group_entity_id(node_static_group_is_event_admin_id()) AS group_id,
+              'cn=is_event_admin,ou=status,ou=groups,dc=cde-ev,dc=de' AS group_dn,
+              core.personas.id AS member_id,
               make_persona_dn(core.personas.id) AS member_dn
            FROM core.personas
            WHERE core.personas.is_event_admin
@@ -395,6 +413,8 @@ CREATE VIEW ldap_group_members (group_id, member_dn) AS
         UNION (
            SELECT
               make_static_group_entity_id(node_static_group_is_assembly_admin_id()) AS group_id,
+              'cn=is_assembly_admin,ou=status,ou=groups,dc=cde-ev,dc=de' AS group_dn,
+              core.personas.id AS member_id,
               make_persona_dn(core.personas.id) AS member_dn
            FROM core.personas
            WHERE core.personas.is_assembly_admin
@@ -403,6 +423,8 @@ CREATE VIEW ldap_group_members (group_id, member_dn) AS
         UNION (
            SELECT
               make_static_group_entity_id(node_static_group_is_cde_admin_id()) AS group_id,
+              'cn=is_cde_admin,ou=status,ou=groups,dc=cde-ev,dc=de' AS group_dn,
+              core.personas.id AS member_id,
               make_persona_dn(core.personas.id) AS member_dn
            FROM core.personas
            WHERE core.personas.is_cde_admin
@@ -411,6 +433,8 @@ CREATE VIEW ldap_group_members (group_id, member_dn) AS
         UNION (
            SELECT
               make_static_group_entity_id(node_static_group_is_core_admin_id()) AS group_id,
+              'cn=is_core_admin,ou=status,ou=groups,dc=cde-ev,dc=de' AS group_dn,
+              core.personas.id AS member_id,
               make_persona_dn(core.personas.id) AS member_dn
            FROM core.personas
            WHERE core.personas.is_core_admin
@@ -419,6 +443,8 @@ CREATE VIEW ldap_group_members (group_id, member_dn) AS
         UNION (
            SELECT
               make_static_group_entity_id(node_static_group_is_finance_admin_id()) AS group_id,
+              'cn=is_finance_admin,ou=status,ou=groups,dc=cde-ev,dc=de' AS group_dn,
+              core.personas.id AS member_id,
               make_persona_dn(core.personas.id) AS member_dn
            FROM core.personas
            WHERE core.personas.is_finance_admin
@@ -427,6 +453,8 @@ CREATE VIEW ldap_group_members (group_id, member_dn) AS
         UNION (
            SELECT
               make_static_group_entity_id(node_static_group_is_cdelokal_admin_id()) AS group_id,
+              'cn=is_cdelokal_admin,ou=status,ou=groups,dc=cde-ev,dc=de' AS group_dn,
+              core.personas.id AS member_id,
               make_persona_dn(core.personas.id) AS member_dn
            FROM core.personas
            WHERE core.personas.is_cdelokal_admin
@@ -435,24 +463,32 @@ CREATE VIEW ldap_group_members (group_id, member_dn) AS
     UNION (
         SELECT
            make_ml_subscribers_entity_id(mailinglist_id) AS group_id,
+           'cn=' || address || ',ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de' AS group_dn,
+           persona_id AS member_id,
            make_persona_dn(persona_id) AS member_dn
-        FROM ml.subscription_states
+        FROM ml.subscription_states, ml.mailinglists
+        WHERE ml.subscription_states.mailinglist_id = ml.mailinglists.id
         -- SubscriptionState.subscribed,
         -- SubscriptionState.unsubscription_override
         -- SubscriptionState.implicit
-        WHERE subscription_state = ANY(ARRAY[1, 10, 30])
+        AND subscription_state = ANY(ARRAY[1, 10, 30])
     )
     -- mailinglist moderators
     UNION (
         SELECT
            make_ml_moderators_entity_id(mailinglist_id) AS group_id,
+           'cn=' || address || ',ou=ml-moderators,ou=groups,dc=cde-ev,dc=de' AS group_dn,
+           persona_id AS member_id,
            make_persona_dn(persona_id) AS member_dn
-        FROM ml.moderators
+        FROM ml.moderators, ml.mailinglists
+        WHERE ml.moderators.mailinglist_id = ml.mailinglists.id
     )
     -- event orgas
     UNION (
         SELECT
            make_event_orgas_entity_id(event_id) AS group_id,
+           'cn=' || event_id || ',ou=event-orgas,ou=groups,dc=cde-ev,dc=de' AS group_dn,
+           persona_id AS member_id,
            make_persona_dn(persona_id) AS member_dn
         FROM event.orgas
     )
@@ -460,6 +496,8 @@ CREATE VIEW ldap_group_members (group_id, member_dn) AS
     UNION (
         SELECT
            make_assembly_presiders_entity_id(assembly_id) AS group_id,
+           'cn=' || assembly_id || ',ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de' AS group_dn,
+           persona_id AS member_id,
            make_persona_dn(persona_id) AS member_dn
         FROM assembly.presiders
     )
@@ -540,6 +578,7 @@ INSERT INTO ldap_attr_mappings (oc_map_id, name, sel_expr, from_tbls, join_where
         -- this seems to be interpreted as string and therefore needs to be casted to a VARCHAR
         (oc_inetOrgPerson_id(), 'uid', 'CAST (personas.id as VARCHAR)', 'core.personas', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
         (oc_inetOrgPerson_id(), 'userPassword', '''{CRYPT}'' || personas.password_hash', 'core.personas', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
+        (oc_inetOrgPerson_id(), 'memberOf', 'ldap_group_members.group_dn', 'ldap_group_members, core.personas', 'core.personas.id = ldap_group_members.member_id', 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
     -- Attributes of groupOfUniqueNames
         (oc_groupOfUniqueNames_id(), 'cn', 'ldap_groups.cn', 'ldap_groups', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
         (oc_groupOfUniqueNames_id(), 'description', 'ldap_groups.description', 'ldap_groups', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),

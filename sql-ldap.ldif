@@ -10,6 +10,12 @@ changetype: modify
 add: olcModuleLoad
 olcModuleLoad: back_sql
 
+# load memberof-module
+dn: cn=module{0},cn=config
+changetype: modify
+add: olcModuleLoad
+olcModuleLoad: memberof
+
 # backend definition
 # currently no options are implemented and therefore this shall not be used
 # https://manpages.debian.org/buster/slapd/slapd-config.5.en.html#GENERAL_BACKEND_OPTIONS
@@ -99,3 +105,23 @@ olcSqlHasLDAPinfoDnRu: FALSE
 # olcSqlAliasingQuote
 # olcSqlAutocommit
 # olcSqlIdQuery
+
+# add memberOf attribute
+# if we would work with a 'normal' ldap setup, we would like to construct those
+# attributes dynamically from the group membership of each users. However, this
+# would need writing access to the ldap database which we do not want to grant.
+# Since we fetch all our information from PostgreSQL, we can simply fetch this
+# reversed-group-membership from our database too, adding the values of this
+# attributes manually.
+#
+# for reference, this is how this may look if we would not use our current backend.
+# from https://tylersguides.com/guides/openldap-memberof-overlay/
+#
+# dn: olcOverlay=memberof,olcDatabase={1}sql,cn=config
+# changetype: add
+# objectClass: olcOverlayConfig
+# objectClass: olcMemberOf
+# olcOverlay: memberof
+# olcMemberOfRefint: TRUE
+# olcMemberOfGroupOC: groupOfNames
+# olcMemberOfMemberAD: uniqueMember
