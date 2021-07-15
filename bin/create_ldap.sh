@@ -10,7 +10,7 @@ fi
 
 
 echo "Install required packages"
-sudo apt-get install unixodbc odbc-postgresql
+sudo apt-get install -y unixodbc odbc-postgresql > /dev/null
 
 echo "Add odbc.ini file"
 sudo cp /cdedb2/related/auto-build/files/stage2/odbc.ini /etc/odbc.ini
@@ -26,14 +26,16 @@ slapd shared/organization string CdEDB
 EOF
 
 echo "Install slapd"
-sudo apt install -y slapd
+sudo apt install -y slapd > /dev/null
 
 # remove pre-installed mdb. This uses the same olcSuffix and blocks our sql database
+echo
 echo "Remove predefined mdb"
 sudo rm /etc/ldap/slapd.d/cn=config/olcDatabase=\{1\}mdb.ldif
-sudo rm /var/lib/ldap
+sudo rm -r /var/lib/ldap
 # restart slapd to finish removal of mdb
 sudo systemctl restart slapd
 
+echo
 echo "Apply our custom ldap configuration"
 sudo ldapmodify -Y EXTERNAL -H ldapi:/// -f /cdedb2/sql-ldap.ldif
