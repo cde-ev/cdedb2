@@ -1698,13 +1698,13 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['billform']
         f['testrun'].checked = True
         self.submit(f)
-        self.reload_and_check_form('billform', link)
+        self.join_worker_thread('semester_bill', link)
         self.assertTitle("Semesterverwaltung")
 
         f = self.response.forms['billform']
         f['addresscheck'].checked = True
         self.submit(f)
-        self.reload_and_check_form('ejectform', link)
+        self.join_worker_thread('semester_bill', link)
         self.assertTitle("Semesterverwaltung")
 
         # 1.2 Remove Inactive Members
@@ -1725,7 +1725,7 @@ class TestCdEFrontend(FrontendTest):
 
         f = self.response.forms['ejectform']
         self.submit(f)
-        self.reload_and_check_form('balanceform', link)
+        self.join_worker_thread('semester_eject', link)
         self.assertTitle("Semesterverwaltung")
 
         # 1.3 Update Balances
@@ -1743,7 +1743,7 @@ class TestCdEFrontend(FrontendTest):
 
         f = self.response.forms['balanceform']
         self.submit(f)
-        self.reload_and_check_form('proceedform', link)
+        self.join_worker_thread('semester_balance_update', link)
         self.assertTitle("Semesterverwaltung")
 
         # 1.4 Next Semester
@@ -1760,7 +1760,6 @@ class TestCdEFrontend(FrontendTest):
 
         f = self.response.forms['proceedform']
         self.submit(f)
-        self.reload_and_check_form('billform', link)
         self.assertTitle("Semesterverwaltung")
         self.assertPresence("Semester Nummer 44", div='current-semester')
 
@@ -1773,7 +1772,7 @@ class TestCdEFrontend(FrontendTest):
         # 2.1 Payment Request
         f = self.response.forms['billform']
         self.submit(f)
-        self.reload_and_check_form('ejectform', link)
+        self.join_worker_thread('semester_bill', link)
         self.assertTitle("Semesterverwaltung")
 
         # 2.2 Remove Inactive Members
@@ -1784,7 +1783,7 @@ class TestCdEFrontend(FrontendTest):
 
         f = self.response.forms['ejectform']
         self.submit(f)
-        self.reload_and_check_form('balanceform', link)
+        self.join_worker_thread('semester_eject', link)
         self.assertTitle("Semesterverwaltung")
 
         # 2.3 Update Balances
@@ -1793,7 +1792,7 @@ class TestCdEFrontend(FrontendTest):
 
         f = self.response.forms['balanceform']
         self.submit(f)
-        self.reload_and_check_form('proceedform', link)
+        self.join_worker_thread('semester_balance_update', link)
         self.assertTitle("Semesterverwaltung")
 
         # 2.4 Next Semester
@@ -1801,7 +1800,6 @@ class TestCdEFrontend(FrontendTest):
 
         f = self.response.forms['proceedform']
         self.submit(f)
-        self.reload_and_check_form('billform', link)
         self.assertTitle("Semesterverwaltung")
         self.assertPresence("Semester Nummer 45", div='current-semester')
         self.assertIn('billform', self.response.forms)
@@ -1830,13 +1828,13 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['addresscheckform']
         f['testrun'].checked = True
         self.submit(f)
-        self.reload_and_check_form('addresscheckform', link)
+        self.join_worker_thread('expuls_addresscheck', link)
         self.assertTitle("Semesterverwaltung")
 
         self.assertPresence("Später zu erledigen.", div='expuls-next')
         f = self.response.forms['addresscheckform']
         self.submit(f)
-        self.reload_and_check_form('proceedexpulsform', link)
+        self.join_worker_thread('expuls_addresscheck', link)
         self.assertTitle("Semesterverwaltung")
 
         # Next exPuls
@@ -1850,14 +1848,12 @@ class TestCdEFrontend(FrontendTest):
 
         f = self.response.forms['proceedexpulsform']
         self.submit(f)
-        self.reload_and_check_form('addresscheckform', link)
         self.assertTitle("Semesterverwaltung")
         self.assertPresence("exPuls trägt die Nummer 43", div='expuls-number')
 
         # No Address-Check
         f = self.response.forms['noaddresscheckform']
         self.submit(f)
-        self.reload_and_check_form('proceedexpulsform', link)
         self.assertTitle("Semesterverwaltung")
 
         # Next exPuls
@@ -1871,7 +1867,6 @@ class TestCdEFrontend(FrontendTest):
 
         f = self.response.forms['proceedexpulsform']
         self.submit(f)
-        self.reload_and_check_form('addresscheckform', link)
         self.assertTitle("Semesterverwaltung")
         self.assertPresence("exPuls trägt die Nummer 44", div='expuls-number')
         self.assertIn('addresscheckform', self.response.forms)
@@ -2499,56 +2494,53 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Mitglieder'}, link)
         f = self.response.forms['billform']
         self.submit(f)
+        self.join_worker_thread('semester_bill', link)
         logs.append((1001, const.CdeLogCodes.semester_bill))
         logs.append((1002, const.CdeLogCodes.automated_archival_notification_done))
 
         # Remove Inactive Members
-        self.reload_and_check_form('ejectform', link)
         f = self.response.forms['ejectform']
         self.submit(f)
+        self.join_worker_thread('semester_eject', link)
         logs.append((1003, const.CdeLogCodes.semester_ejection))
         logs.append((1004, const.CdeLogCodes.automated_archival_done))
 
         # Update Balances
-        self.reload_and_check_form('balanceform', link)
         f = self.response.forms['balanceform']
         self.submit(f)
+        self.join_worker_thread('semester_balance_update', link)
         logs.append((1005, const.CdeLogCodes.semester_balance_update))
 
         # Next Semester
-        self.reload_and_check_form('proceedform', link)
         f = self.response.forms['proceedform']
         self.submit(f)
         logs.append((1006, const.CdeLogCodes.semester_advance))
 
         # Payment Request with addresscheck
-        self.reload_and_check_form('billform', link)
         f = self.response.forms['billform']
         f['addresscheck'].checked = True
         self.submit(f)
+        self.join_worker_thread('semester_bill', link)
         logs.append((1007, const.CdeLogCodes.semester_bill_with_addresscheck))
         logs.append((1008, const.CdeLogCodes.automated_archival_notification_done))
 
         # exPuls with addresscheck
-        self.reload_and_check_form('addresscheckform', link)
         f = self.response.forms['addresscheckform']
         self.submit(f)
+        self.join_worker_thread('expuls_addresscheck', link)
         logs.append((1009, const.CdeLogCodes.expuls_addresscheck))
 
         # Next exPuls
-        self.reload_and_check_form('proceedexpulsform', link)
         f = self.response.forms['proceedexpulsform']
         self.submit(f)
         logs.append((1010, const.CdeLogCodes.expuls_advance))
 
         # exPuls without addresscheck
-        self.reload_and_check_form('noaddresscheckform', link)
         f = self.response.forms['noaddresscheckform']
         self.submit(f)
         logs.append((1011, const.CdeLogCodes.expuls_addresscheck_skipped))
 
         # Next exPuls
-        self.reload_and_check_form('proceedexpulsform', link)
         f = self.response.forms['proceedexpulsform']
         self.submit(f)
         logs.append((1012, const.CdeLogCodes.expuls_advance))
