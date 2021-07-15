@@ -50,7 +50,7 @@ Our LDAP Tree looks as follows::
     │       ├── cn=is_member
     │       ├── cn=is_ml_admin
     │       ├── cn=is_ml_realm
-    │       └── cn=is_ml_searchable
+    │       └── cn=is_searchable
     └── ou=users
         ├── uid=1
         └── ...

@@ -1,3 +1,6 @@
+-- This file specifies the ldap interfaces of the DB on database' side
+-- This needs cdedb-tables.sql as prerequisite.
+
 ---
 --- ldap oc helper functions
 --- ids of all our ldap object classes
