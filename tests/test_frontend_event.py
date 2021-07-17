@@ -1675,17 +1675,17 @@ etc;anything else""", f['entries_2'].value)
     def test_fee_modifiers(self) -> None:
         self.traverse("Veranstaltungen", "Alle Veranstaltungen", "CdE-Party 2050")
         self._create_event_field({
-            "field_name": "is_child",
+            "field_name": "field_is_child1",
             "kind": const.FieldDatatypes.bool.value,
             "association": const.FieldAssociations.registration.value,
         })  # id 1001
         self._create_event_field({
-            "field_name": "is_child2",
+            "field_name": "field_is_child2",
             "kind": const.FieldDatatypes.str.value,
             "association": const.FieldAssociations.registration.value,
         })  # id 1002
         self._create_event_field({
-            "field_name": "is_child3",
+            "field_name": "field_is_child3",
             "kind": const.FieldDatatypes.bool.value,
             "association": const.FieldAssociations.course.value,
         })  # id 1003
@@ -1703,7 +1703,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertValidationError('fee_modifier_amount_-1',
                                    "Ungültige Eingabe für eine Dezimalzahl")
 
-        f['fee_modifier_modifier_name_-1'] = "is_child"
+        f['fee_modifier_modifier_name_-1'] = "modifier_is_child1"
         f['fee_modifier_amount_-1'] = "-5"
         self.submit(f, check_notification=False)
         self.assertValidationError('fee_modifier_field_id_-1',
@@ -1732,7 +1732,7 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({"href": "/event/event/2/part/4/change"})
         f = self.response.forms['changepartform']
         f['fee_modifier_create_-1'].checked = True
-        f['fee_modifier_modifier_name_-1'] = "is_child"
+        f['fee_modifier_modifier_name_-1'] = "modifier_is_child1"
         f['fee_modifier_amount_-1'] = "-7"
         f['fee_modifier_field_id_-1'] = 1001
         self.submit(f, check_notification=False)
@@ -1745,9 +1745,28 @@ etc;anything else""", f['entries_2'].value)
             "Nicht mehr als ein Beitragsmodifikator pro"
             " Veranstaltungsteil darf den selben Bezeichner haben.")
 
-        f['fee_modifier_modifier_name_-1'] = "is_child2"
+        f['fee_modifier_modifier_name_-1'] = "modifier_is_child2"
         f['fee_modifier_field_id_-1'] = 1002
         self.submit(f)
+
+        # add, change and delete a fee-modifier simultaneously, involving the same field
+        # delete: is_child1 (id 1001): field 1001 -> None
+        # edit:   is_child2 (id 1002): field 1002 -> field 1001
+        # new:    is_child3 (id None): None       -> field 1002
+        self.traverse({"href": "/event/event/2/part/4/change"})
+        f = self.response.forms['changepartform']
+        f['fee_modifier_delete_1001'].checked = True
+        f['fee_modifier_field_id_1002'] = 1001
+        f['fee_modifier_create_-1'].checked = True
+        f['fee_modifier_modifier_name_-1'] = "modifier_is_child3"
+        f['fee_modifier_amount_-1'] = "0"
+        f['fee_modifier_field_id_-1'] = 1002
+        self.submit(f)
+        self.assertNonPresence("modifier_is_child1")
+        self.assertPresence("modifier_is_child2", div='feemodifierrow_4_1002')
+        self.assertPresence("field_is_child_1",   div='feemodifierrow_4_1002')
+        self.assertPresence("modifier_is_child3", div='feemodifierrow_4_1003')
+        self.assertPresence("field_is_child_2",   div='feemodifierrow_4_1002')
 
         # check log
         self.get("/event/event/log")
@@ -1765,6 +1784,12 @@ etc;anything else""", f['entries_2'].value)
                             div=str(self.EVENT_LOG_OFFSET + 6) + "-1006")
         self.assertPresence("Beitragsmodifikator angelegt",
                             div=str(self.EVENT_LOG_OFFSET + 7) + "-1007")
+        self.assertPresence("Beitragsmodifikator gelöscht",
+                            div=str(self.EVENT_LOG_OFFSET + 8) + "-1008")
+        self.assertPresence("Beitragsmodifikator geändert",
+                            div=str(self.EVENT_LOG_OFFSET + 9) + "-1009")
+        self.assertPresence("Beitragsmodifikator angelegt",
+                            div=str(self.EVENT_LOG_OFFSET + 10) + "-1010")
 
     @as_users("garcia")
     def test_waitlist(self) -> None:
