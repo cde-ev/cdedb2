@@ -281,7 +281,8 @@ The original message as received by Mailman is attached.
         mailman = self.get_mailman()
         # noinspection PyBroadException
         try:
-            _ = mailman.system  # cause the client to connect # noqa
+            # TODO: remove the noqa in newer flake8 version
+            _ = mailman.system  # cause the client to connect # noqa: F841
         except Exception:  # sadly this throws many different exceptions
             self.logger.exception("Mailman client connection failed!")
             return store

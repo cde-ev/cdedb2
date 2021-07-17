@@ -104,7 +104,7 @@ def json_keys_to_int(obj: T) -> T:
 
 def _read_sample_data(filename: PathLike = "/cdedb2/tests/ancillary_files/"
                                            "sample_data.json"
-                     ) -> Dict[str, CdEDBObjectMap]:
+                      ) -> Dict[str, CdEDBObjectMap]:
     """Helper to turn the sample data from the JSON file into usable format."""
     with open(filename, "r", encoding="utf8") as f:
         sample_data: Dict[str, List[CdEDBObject]] = json.load(f)
@@ -886,8 +886,8 @@ class FrontendTest(BackendTest):
             self.follow()
             self.basic_validate(verbose=verbose)
 
-    def login(self, user: UserIdentifier, *, ip: str = "", verbose: bool = False
-              ) -> Optional[str]:
+    def login(self, user: UserIdentifier, *,  # pylint: disable=arguments-differ
+              ip: str = "", verbose: bool = False) -> Optional[str]:
         """Log in as the given user.
 
         :param verbose: If True display additional debug information.
@@ -905,7 +905,7 @@ class FrontendTest(BackendTest):
             self.user = USER_DICT["anonymous"]
         return self.key  # type: ignore
 
-    def logout(self, verbose: bool = False) -> None:
+    def logout(self, verbose: bool = False) -> None:  # pylint: disable=arguments-differ
         """Log out. Raises a KeyError if not currently logged in.
 
         :param verbose: If True display additional debug information.
@@ -1039,7 +1039,7 @@ class FrontendTest(BackendTest):
             self.assertEqual(str(status), checkbox['data-checked'])
         elif "type" in checkbox.attrs:
             self.assertEqual("checkbox", checkbox['type'])
-            self.assertEqual(status, 'checked' == checkbox.get('checked'))
+            self.assertEqual(status, checkbox.get('checked') == 'checked')
         else:
             raise ValueError("Id doesnt belong to a checkbox", anid)
 
@@ -1075,7 +1075,7 @@ class FrontendTest(BackendTest):
         else:
             try:
                 content = self.response.lxml.xpath(f"//*[@id='{div}']")[0]
-            except IndexError as e:
+            except IndexError:
                 if check_div:
                     raise AssertionError(
                         f"Specified div {div!r} not found.") from None
@@ -1118,7 +1118,7 @@ class FrontendTest(BackendTest):
         if index is None:
             if len(nodes) == 1:
                 node = nodes[0]
-            elif len(nodes) == 0:
+            elif not nodes:
                 raise AssertionError(f"No input with name {f!r} found.")
             else:
                 raise AssertionError(f"More than one input with name {f!r}"
@@ -1415,15 +1415,20 @@ class FrontendTest(BackendTest):
         return button
 
     def reload_and_check_form(self, form: webtest.Form, link: Union[CdEDBObject, str],
-                              max_tries: int = 42, waittime: float = 0.1,
+                              max_tries: int = 42, waittime: float = 0.01,
                               fail: bool = True) -> None:
         """Helper to repeatedly reload a page until a certain form is present.
 
-        This is mostly required for the "Semesterverwaltung".
+        This should be used sparingly as it does busy waiting and is mostly
+        required for the "Semesterverwaltung".
+
+        We do a quadratic backoff with waiting times increasing linearily to
+        simultaneously minimize the load of unsuccessful attempts and time
+        wasted while already being ready.
         """
         count = 0
         while count < max_tries:
-            time.sleep(waittime)
+            time.sleep(count*waittime)
             self.traverse(link)
             if form in self.response.forms:
                 break

@@ -362,7 +362,7 @@ class TestPrivacyFrontend(FrontendTest):
         inspected = USER_DICT['martin']
         self.get(self.show_user_link(inspected['id']))
         # members got first an un-quoted view on a profile, showing the basics
-        found = self._profile_base_view(inspected)
+        self._profile_base_view(inspected)
         # The username must not be visible, although "Email" occurs as field
         self.assertNonPresence(inspected['username'])
         self.assertNonPresence("Gesamtes Profil anzeigen")

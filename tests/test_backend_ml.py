@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from typing import Collection, Set, Optional, cast
+from typing import Collection, Set, cast
 
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
@@ -270,7 +270,6 @@ class TestMlBackend(BackendTest):
         expectation['address'] = ml_type.get_full_address(expectation)
         self.assertLess(0, self.ml.set_mailinglist(self.key, setter))
         self.assertEqual(expectation, self.ml.get_mailinglist(self.key, 7))
-
 
     @as_users("janis")
     def test_list_mailinglists_semi_privileged(self) -> None:

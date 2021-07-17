@@ -3,9 +3,9 @@
 import datetime
 import json
 import re
-import time
 from typing import List
 
+import freezegun
 import webtest
 
 import cdedb.database.constants as const
@@ -530,42 +530,42 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
     @storage
     @as_users("ferdinand")
     def test_conclude_assembly(self) -> None:
-        self._create_assembly()
-        # werner is no member, so he must signup external
-        secret = self._signup()
-        self.traverse({'description': 'Konfiguration'})
-        f = self.response.forms['changeassemblyform']
-        f['signup_end'] = "2002-4-1 00:00:00"
-        self.submit(f)
+        base_time = now()
+        delta = datetime.timedelta(seconds=42)
+        with freezegun.freeze_time(base_time) as frozen_time:
+            self._create_assembly()
+            self._signup()
+            self.traverse({'description': 'Konfiguration'})
+            f = self.response.forms['changeassemblyform']
+            f['signup_end'] = "2002-4-1 00:00:00"
+            self.submit(f)
 
-        wait_time = 0.5
-        future = now() + datetime.timedelta(seconds=wait_time)
-        farfuture = now() + datetime.timedelta(seconds=2 * wait_time)
-        bdata = {
-            'title': 'Maximale Länge der Satzung',
-            'description': "Dann muss man halt eine alte Regel rauswerfen,"
-                           " wenn man eine neue will.",
-            'vote_begin': future.isoformat(),
-            'vote_end': farfuture.isoformat(),
-            'abs_quorum': "0",
-            'rel_quorum': "0",
-            'votes': "",
-            'notes': "Kein Aprilscherz!",
-        }
-        self._create_ballot(bdata, candidates=None)
-        self.assertTitle("Maximale Länge der Satzung (Drittes CdE-Konzil)")
-        time.sleep(2 * wait_time)
-        self.traverse({'description': 'Abstimmungen'},
-                      {'description': 'Maximale Länge der Satzung'},
-                      {'description': 'Drittes CdE-Konzil'},)
-        self.assertTitle("Drittes CdE-Konzil")
-        f = self.response.forms['concludeassemblyform']
-        f['ack_conclude'].checked = True
-        self.submit(f)
-        self.assertTitle("Drittes CdE-Konzil")
-        # Presiders can no longer be changed
-        self.assertNotIn("addpresidersform", self.response.forms)
-        self.assertNotIn("removepresiderform1", self.response.forms)
+            bdata = {
+                'title': 'Maximale Länge der Satzung',
+                'description': "Dann muss man halt eine alte Regel rauswerfen,"
+                               " wenn man eine neue will.",
+                'vote_begin': base_time + delta,
+                'vote_end': base_time + 3*delta,
+                'abs_quorum': "0",
+                'rel_quorum': "0",
+                'votes': "",
+                'notes': "Kein Aprilscherz!",
+            }
+            self._create_ballot(bdata, candidates=None)
+            self.assertTitle("Maximale Länge der Satzung (Drittes CdE-Konzil)")
+
+            frozen_time.tick(delta=4*delta)
+            self.traverse({'description': 'Abstimmungen'},
+                          {'description': 'Maximale Länge der Satzung'},
+                          {'description': 'Drittes CdE-Konzil'},)
+            self.assertTitle("Drittes CdE-Konzil")
+            f = self.response.forms['concludeassemblyform']
+            f['ack_conclude'].checked = True
+            self.submit(f)
+            self.assertTitle("Drittes CdE-Konzil")
+            # Presiders can no longer be changed
+            self.assertNotIn("addpresidersform", self.response.forms)
+            self.assertNotIn("removepresiderform1", self.response.forms)
 
     @storage
     @as_users("anton")
@@ -937,64 +937,64 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         # added implicitly)
         for use_bar in (False, True):
             with self.subTest(use_bar=use_bar):
-                # First, create a new ballot
-                wait_time = 3
-                future = now() + datetime.timedelta(seconds=wait_time)
-                farfuture = now() + datetime.timedelta(seconds=2 * wait_time)
-                bdata = {
-                    'title': 'Wahl zum Finanzvorstand -- {} bar'
-                             .format("w." if use_bar else "w/o"),
-                    'vote_begin': future.isoformat(),
-                    'vote_end': farfuture.isoformat(),
-                    'abs_quorum': "0",
-                    'rel_quorum': "0",
-                    'votes': "2",
-                    'use_bar': use_bar,
-                }
-                candidates = [
-                    {'shortname': 'arthur', 'title': 'Arthur Dent'},
-                    {'shortname': 'ford', 'title': 'Ford Prefect'},
-                ]
-                self._create_ballot(bdata, candidates)
+                base_time = now()
+                delta = datetime.timedelta(seconds=42)
+                with freezegun.freeze_time(base_time) as frozen_time:
+                    # First, create a new ballot
+                    bdata = {
+                        'title': 'Wahl zum Finanzvorstand -- {} bar'
+                                 .format("w." if use_bar else "w/o"),
+                        'vote_begin': base_time + delta,
+                        'vote_end': base_time + 3*delta,
+                        'abs_quorum': "0",
+                        'rel_quorum': "0",
+                        'votes': "2",
+                        'use_bar': use_bar,
+                    }
+                    candidates = [
+                        {'shortname': 'arthur', 'title': 'Arthur Dent'},
+                        {'shortname': 'ford', 'title': 'Ford Prefect'},
+                    ]
+                    self._create_ballot(bdata, candidates)
 
-                # Wait for voting to start then cast own vote.
-                time.sleep(wait_time)
-                self.traverse({'description': 'Abstimmungen'},
-                              {'description': bdata['title']})
+                    # Wait for voting to start then cast own vote.
+                    frozen_time.tick(delta=2*delta)
+                    self.traverse({'description': 'Abstimmungen'},
+                                  {'description': bdata['title']})
 
-                f = self.response.forms["voteform"]
-                f["vote"] = ["arthur"]
-                self.submit(f)
-                self.assertNonPresence("Du hast Dich enthalten.")
-
-                if use_bar:
                     f = self.response.forms["voteform"]
-                    f["vote"] = [ASSEMBLY_BAR_SHORTNAME]
+                    f["vote"] = ["arthur"]
                     self.submit(f)
                     self.assertNonPresence("Du hast Dich enthalten.")
 
-                f = self.response.forms["voteform"]
-                f["vote"] = []
-                self.submit(f)
-                self.assertPresence("Du hast Dich enthalten.", div='status')
+                    if use_bar:
+                        f = self.response.forms["voteform"]
+                        f["vote"] = [ASSEMBLY_BAR_SHORTNAME]
+                        self.submit(f)
+                        self.assertNonPresence("Du hast Dich enthalten.")
 
-                f = self.response.forms['abstentionform']
-                self.submit(f)
-                self.assertPresence("Du hast Dich enthalten.", div='status')
+                    f = self.response.forms["voteform"]
+                    f["vote"] = []
+                    self.submit(f)
+                    self.assertPresence("Du hast Dich enthalten.", div='status')
 
-                f = self.response.forms["voteform"]
-                f["vote"] = ["arthur", "ford"]
-                self.submit(f)
-                self.assertNonPresence("Du hast Dich enthalten.")
+                    f = self.response.forms['abstentionform']
+                    self.submit(f)
+                    self.assertPresence("Du hast Dich enthalten.", div='status')
 
-                # Check tally and own vote.
-                time.sleep(wait_time)
-                self.traverse({'description': 'Abstimmungen'},
-                              {'description': bdata['title']},
-                              {'description': 'Ergebnisdetails'})
-                self.assertPresence("Du hast für die folgenden Kandidaten "
-                                    "gestimmt: Arthur Dent = Ford Prefect",
-                                    div='own-vote', exact=True)
+                    f = self.response.forms["voteform"]
+                    f["vote"] = ["arthur", "ford"]
+                    self.submit(f)
+                    self.assertNonPresence("Du hast Dich enthalten.")
+
+                    # Check tally and own vote.
+                    frozen_time.tick(delta=2*delta)
+                    self.traverse({'description': 'Abstimmungen'},
+                                  {'description': bdata['title']},
+                                  {'description': 'Ergebnisdetails'})
+                    self.assertPresence("Du hast für die folgenden Kandidaten "
+                                        "gestimmt: Arthur Dent = Ford Prefect",
+                                        div='own-vote', exact=True)
 
     @storage
     @as_users("werner", "inga", "kalif")
@@ -1107,12 +1107,12 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence("Rowena Ravenclaw", div='voters-list')
         self.assertNonPresence("Vera", div='voters-list')
 
-
         # classical vote without bar
         self.traverse({'description': 'Abstimmungen'},
                       {'description': 'Entlastung des Vorstands'},
                       {'description': 'Ergebnisdetails'})
-        self.assertTitle("Ergebnis (Kanonische Beispielversammlung/Entlastung des Vorstands)")
+        self.assertTitle("Ergebnis (Kanonische Beispielversammlung/Entlastung des"
+                         " Vorstands)")
 
         # test if the overall result is displayed correctly
         result = "Ja > Nein"
@@ -1121,21 +1121,22 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         # test if abstentions are rendered correctly
         self.assertPresence("Enthalten 1", div='vote-3', exact=True)
 
-
         # preferential vote without bar
         self.traverse({'description': 'Abstimmungen'},
                       {'description': 'Wie soll der CdE mit seinem Vermögen umgehen?'},
                       {'description': 'Ergebnisdetails'})
-        self.assertTitle("Ergebnis (Kanonische Beispielversammlung/Wie soll der CdE mit seinem Vermögen umgehen?)")
+        self.assertTitle("Ergebnis (Kanonische Beispielversammlung/Wie soll der CdE mit"
+                         " seinem Vermögen umgehen?)")
 
         # test if the overall result is displayed correctly
-        result = "Wir kaufen den Eisenberg! = Kostenlose Akademien für alle. > Investieren in Aktien und Fonds."
+        result = ("Wir kaufen den Eisenberg! = Kostenlose Akademien für alle."
+                  " > Investieren in Aktien und Fonds.")
         self.assertPresence(result, div='combined-preference', exact=True)
 
         # test a vote string
-        vote = "Kostenlose Akademien für alle. > Investieren in Aktien und Fonds. = Wir kaufen den Eisenberg! 3"
+        vote = ("Kostenlose Akademien für alle. > Investieren in Aktien und Fonds."
+                " = Wir kaufen den Eisenberg! 3")
         self.assertPresence(vote, div='vote-1', exact=True)
-
 
         # preferential vote with bar
         self.traverse({'description': 'Versammlung'},
@@ -1157,32 +1158,34 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
     @storage
     @as_users("werner")
     def test_extend(self) -> None:
-        self.traverse({'description': 'Versammlungen'},
-                      {'description': 'Internationaler Kongress'},
-                      {'description': 'Abstimmungen'},
-                      {'description': 'Abstimmung anlegen'},)
-        f = self.response.forms['createballotform']
-        f['title'] = 'Maximale Länge der Verfassung'
-        future = now() + datetime.timedelta(seconds=.5)
-        farfuture = now() + datetime.timedelta(seconds=1)
-        f['vote_begin'] = future.isoformat()
-        f['vote_end'] = farfuture.isoformat()
-        f['vote_extension_end'] = "2037-5-1 00:00:00"
-        f['abs_quorum'] = "0"
-        f['rel_quorum'] = "100"
-        f['votes'] = ""
-        self.submit(f)
-        self.assertTitle("Maximale Länge der Verfassung (Internationaler Kongress)")
-        self.assertPresence(
-            "Verlängerung bis 01.05.2037, 00:00:00, falls 10 Stimmen nicht "
-            "erreicht werden.", div='voting-period')
-        time.sleep(1)
-        self.traverse({'href': '/assembly/1/ballot/list'},
-                      {'description': 'Maximale Länge der Verfassung'},)
-        self.assertTitle("Maximale Länge der Verfassung (Internationaler Kongress)")
-        s = ("Wurde bis 01.05.2037, 00:00:00 verlängert, da 10 Stimmen nicht "
-             "erreicht wurden.")
-        self.assertPresence(s, div='voting-period')
+        base_time = now()
+        delta = datetime.timedelta(seconds=42)
+        with freezegun.freeze_time(base_time) as frozen_time:
+            self.traverse({'description': 'Versammlungen'},
+                          {'description': 'Internationaler Kongress'},
+                          {'description': 'Abstimmungen'},
+                          {'description': 'Abstimmung anlegen'},)
+            f = self.response.forms['createballotform']
+            f['title'] = 'Maximale Länge der Verfassung'
+            f['vote_begin'] = base_time + delta
+            f['vote_end'] = base_time + 3*delta
+            f['vote_extension_end'] = "2037-5-1 00:00:00"
+            f['abs_quorum'] = "0"
+            f['rel_quorum'] = "100"
+            f['votes'] = ""
+            self.submit(f)
+            self.assertTitle("Maximale Länge der Verfassung (Internationaler Kongress)")
+            self.assertPresence(
+                "Verlängerung bis 01.05.2037, 00:00:00, falls 10 Stimmen nicht "
+                "erreicht werden.", div='voting-period')
+
+            frozen_time.tick(delta=4*delta)
+            self.traverse({'href': '/assembly/1/ballot/list'},
+                          {'description': 'Maximale Länge der Verfassung'},)
+            self.assertTitle("Maximale Länge der Verfassung (Internationaler Kongress)")
+            s = ("Wurde bis 01.05.2037, 00:00:00 verlängert, da 10 Stimmen nicht "
+                 "erreicht wurden.")
+            self.assertPresence(s, div='voting-period')
 
     @storage
     @as_users("werner")
@@ -1246,7 +1249,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
 
         self.traverse({'description': 'Archiv-Sammlung'})
         # werner is no member, so he must signup external
-        secret = self._external_signup(self.user)
+        self._external_signup(self.user)
         self.traverse({'description': 'Abstimmungen'},
                       {'description': 'Test-Abstimmung – bitte ignorieren'},
                       {'description': 'Ergebnisdetails'})
@@ -1257,89 +1260,91 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
 
     @storage
     def test_provide_secret(self) -> None:
-        user = USER_DICT["werner"]
-        self.login(user)
-        self.traverse({'description': 'Versammlungen'},
-                      {'description': 'Archiv-Sammlung'})
-        # werner is no member, so he must signup external
-        secret = self._external_signup(user)
-        # Create new ballot.
-        wait_time = 2
-        future = now() + datetime.timedelta(seconds=wait_time)
-        farfuture = now() + datetime.timedelta(seconds=2 * wait_time)
-        bdata = {
-            'title': 'Maximale Länge der Verfassung',
-            'vote_begin': future.isoformat(),
-            'vote_end': farfuture.isoformat(),
-            'abs_quorum': "0",
-            'rel_quorum': "0",
-            'votes': "1",
-        }
-        candidates = [
-            {'shortname': 'ja', 'title': 'Ja'},
-            {'shortname': 'nein', 'title': 'Nein'},
-        ]
-        self._create_ballot(bdata, candidates)
-
-        # Wait for voting to start then cast own vote.
-        time.sleep(wait_time)
-        self.traverse({'description': 'Abstimmungen'},
-                      {'description': bdata['title']})
-        f = self.response.forms["voteform"]
-        f["vote"] = "ja"
-        self.submit(f)
-
-        # Check tally and own vote.
-        time.sleep(wait_time)
-        self.traverse({'description': 'Abstimmungen'},
-                      {'description': bdata['title']},
-                      {'description': 'Ergebnisdetails'})
-        self.assertPresence("Du hast für die folgenden Kandidaten gestimmt: Ja",
-                            div='own-vote', exact=True)
-
-        self.traverse({'description': 'Abstimmungen'},
-                      {'description': 'Test-Abstimmung – bitte ignorieren'},
-                      {'description': 'Ergebnisdetails'})
-        self.assertPresence("Du hast nicht abgestimmt.", div='own-vote',
-                            exact=True)
-
-        self.traverse({'description': 'Abstimmungen'},
-                      {'description': 'Ganz wichtige Wahl'})
-        f = self.response.forms['deleteballotform']
-        f['ack_delete'].checked = True
-        self.submit(f)
-
-        self.logout()
         self.login("anton")
-        # Conclude assembly.
-        self.traverse({'description': "Versammlung"},
-                      {'description': "Archiv-Sammlung"})
-        self.assertTitle("Archiv-Sammlung")
-        f = self.response.forms['concludeassemblyform']
-        f['ack_conclude'].checked = True
-        self.submit(f)
-
         self.logout()
-        self.login(user)
-        # Own vote should be hidden now.
-        self.traverse({'description': "Versammlung"},
-                      {'description': 'Archiv-Sammlung'},
-                      {'description': 'Abstimmungen'},
-                      {'description': 'Maximale Länge der Verfassung'},
-                      {'description': 'Ergebnisdetails'})
-        s = ("Die Versammlung wurde beendet. Das Abstimmungsverhalten einzelner"
-             " Nutzer ist nicht mehr aus der Datenbank auslesbar.")
-        self.assertPresence(s)
-        self.assertNonPresence("Du hast für die folgenden Kandidaten gestimmt:")
+        base_time = now()
+        delta = datetime.timedelta(seconds=42)
+        with freezegun.freeze_time(base_time, ignore=['cdedb.filter', 'icu']) as frozen_time:
+            user = USER_DICT["werner"]
+            self.login(user)
+            self.traverse({'description': 'Versammlungen'},
+                          {'description': 'Archiv-Sammlung'})
+            # werner is no member, so he must signup external
+            secret = self._external_signup(user)
+            # Create new ballot.
+            bdata = {
+                'title': 'Maximale Länge der Verfassung',
+                'vote_begin': base_time + delta,
+                'vote_end': base_time + 3*delta,
+                'abs_quorum': "0",
+                'rel_quorum': "0",
+                'votes': "1",
+            }
+            candidates = [
+                {'shortname': 'ja', 'title': 'Ja'},
+                {'shortname': 'nein', 'title': 'Nein'},
+            ]
+            self._create_ballot(bdata, candidates)
 
-        # Provide the secret to retrieve the vote.
-        f = self.response.forms['showoldvoteform']
-        f['secret'] = secret
-        self.submit(f, check_notification=False)
-        self.assertNonPresence("Die Versammlung wurde beendet und die "
-                               "Stimmen sind nun verschlüsselt.")
-        self.assertPresence("Du hast für die folgenden Kandidaten gestimmt: Ja",
-                            div='own-vote', exact=True)
+            # Wait for voting to start then cast own vote.
+            frozen_time.tick(delta=2*delta)
+            self.traverse({'description': 'Abstimmungen'},
+                          {'description': bdata['title']})
+            f = self.response.forms["voteform"]
+            f["vote"] = "ja"
+            self.submit(f)
+
+            # Check tally and own vote.
+            frozen_time.tick(delta=2*delta)
+            self.traverse({'description': 'Abstimmungen'},
+                          {'description': bdata['title']},
+                          {'description': 'Ergebnisdetails'})
+            self.assertPresence("Du hast für die folgenden Kandidaten gestimmt: Ja",
+                                div='own-vote', exact=True)
+
+            self.traverse({'description': 'Abstimmungen'},
+                          {'description': 'Test-Abstimmung – bitte ignorieren'},
+                          {'description': 'Ergebnisdetails'})
+            self.assertPresence("Du hast nicht abgestimmt.", div='own-vote',
+                                exact=True)
+
+            self.traverse({'description': 'Abstimmungen'},
+                          {'description': 'Ganz wichtige Wahl'})
+            f = self.response.forms['deleteballotform']
+            f['ack_delete'].checked = True
+            self.submit(f)
+
+            self.logout()
+            self.login("anton")
+            # Conclude assembly.
+            self.traverse({'description': "Versammlung"},
+                          {'description': "Archiv-Sammlung"})
+            self.assertTitle("Archiv-Sammlung")
+            f = self.response.forms['concludeassemblyform']
+            f['ack_conclude'].checked = True
+            self.submit(f)
+
+            self.logout()
+            self.login(user)
+            # Own vote should be hidden now.
+            self.traverse({'description': "Versammlung"},
+                          {'description': 'Archiv-Sammlung'},
+                          {'description': 'Abstimmungen'},
+                          {'description': 'Maximale Länge der Verfassung'},
+                          {'description': 'Ergebnisdetails'})
+            s = ("Die Versammlung wurde beendet. Das Abstimmungsverhalten einzelner"
+                 " Nutzer ist nicht mehr aus der Datenbank auslesbar.")
+            self.assertPresence(s)
+            self.assertNonPresence("Du hast für die folgenden Kandidaten gestimmt:")
+
+            # Provide the secret to retrieve the vote.
+            f = self.response.forms['showoldvoteform']
+            f['secret'] = secret
+            self.submit(f, check_notification=False)
+            self.assertNonPresence("Die Versammlung wurde beendet und die "
+                                   "Stimmen sind nun verschlüsselt.")
+            self.assertPresence("Du hast für die folgenden Kandidaten gestimmt: Ja",
+                                div='own-vote', exact=True)
 
     @storage
     def test_log(self) -> None:

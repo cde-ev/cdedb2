@@ -4,14 +4,17 @@ import copy
 import datetime
 import decimal
 import unittest
-from typing import Any, Iterable, List, Mapping, Tuple, Type, Union
+from typing import Any, Dict, Iterable, List, Mapping, Tuple, Type, Union
 
 import pytz
 
 import cdedb.database.constants as const
 import cdedb.validation as validate
 from cdedb.common import ValidationWarning
-from cdedb.validationtypes import *
+from cdedb.validationtypes import (
+    IBAN, JSON, Email, GenesisCase, PasswordStrength, Persona, Phone, PrintableASCII,
+    PrintableASCIIType, SafeStr, StringType, Vote
+)
 
 
 class TestValidation(unittest.TestCase):
@@ -444,7 +447,7 @@ class TestValidation(unittest.TestCase):
             ("A>_bar_>B=C=D>E", None, ValueError),
             ("_bar_>A=B=C=D>E", None, ValueError),
             ("A>B=C=D=E>_bar_", None, ValueError),
-            ("E=C>A>_bar_=D=B",  None, ValueError),
+            ("E=C>A>_bar_=D=B", None, ValueError),
         ), extraparams={'ballot': classical_ballot})
 
     def test_iban(self) -> None:

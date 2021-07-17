@@ -195,7 +195,7 @@ class TestCoreFrontend(FrontendTest):
         name = f"{self.user['given_names']} {self.user['family_name']}"
         self.get('/core/self/show')
         self.assertTitle(name)
-        if not self.user_in("janis"): # Janis is no event user
+        if not self.user_in("janis"):  # Janis is no event user
             self.get('/core/self/events')
             self.assertTitle(f"{name} – Veranstaltungs-Daten")
         self.get('/core/self/mailinglists')
@@ -742,7 +742,6 @@ class TestCoreFrontend(FrontendTest):
 
     def test_repeated_password_reset(self) -> None:
         new_password = "krce63koLe#$e"
-        new_password2 = "krce63koLe#$e"
         user = USER_DICT["berta"]
         self.get('/')
         self.traverse({'description': 'Passwort zurücksetzen'})

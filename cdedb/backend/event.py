@@ -2750,7 +2750,7 @@ class EventBackend(AbstractBackend):
                 data = self.query_all(rs, query, (part_id, waitlist))
                 ret[part_id] = xsorted(
                     (reg['id'] for reg in data), key=lambda r_id:
-                    (fields_by_id[r_id].get(field['field_name'], 0), r_id))  # pylint: disable=cell-var-from-loop; # noqa
+                    (fields_by_id[r_id].get(field['field_name'], 0), r_id))  # pylint: disable=cell-var-from-loop
         return ret
 
     @access("event")
