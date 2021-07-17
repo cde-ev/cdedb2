@@ -159,7 +159,7 @@
         <dl class="dl-horizontal" id="personal-information">
             <dt>{% trans %}Name{% endtrans %}</dt>
             <dd>
-                {{ util.persona_name(data, given_and_display_names=True, include_titles=True) }}
+                {{ util.persona_name(data, given_and_display_names=True, with_titles=True) }}
             </dd>
             {% if data['birth_name'] %}
                 <dt>{% trans %}Birth Name{% endtrans %}</dt>

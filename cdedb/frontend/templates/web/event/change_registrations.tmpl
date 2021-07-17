@@ -79,7 +79,7 @@
         {% call util.form_input_general(label=gettext("Full Name"), displayerrors=False) %}
             {% for reg_id, reg in registrations.items() %}
                 {{ util.input_static(value=util.persona_name(
-                       personas[reg['persona_id']], given_and_display_names=True, include_titles=True)) }}
+                       personas[reg['persona_id']], given_and_display_names=True, with_titles=True)) }}
             {% endfor %}
         {% endcall %}
 

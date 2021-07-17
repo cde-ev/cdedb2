@@ -149,7 +149,7 @@
    only_display_name:       see 'persona_name' macro
    given_and_display_names: see 'persona_name' macro
    with_family_name:        see 'persona_name' macro
-   include_titles:          see 'persona_name' macro
+   with_titles:             see 'persona_name' macro
    quote_me:                see show_user_link()
    event_id:                see show_user_link()
    ml_id:                   see show_user_link()
@@ -157,7 +157,7 @@
    readonly:                see 'href' macro
 #}
 {% macro persona_anchor(persona, only_given_names=False, only_display_name=False, given_and_display_names=False,
-                        with_family_name=True, include_titles=False, quote_me=False, event_id=none, ml_id=none,
+                        with_family_name=True, with_titles=False, quote_me=False, event_id=none, ml_id=none,
                         aclass='', readonly=False) %}
     {{ href(show_user_link(user, persona['id'], quote_me, event_id=event_id, ml_id=ml_id),
             persona_name(persona, only_given_names, only_display_name, given_and_display_names, with_family_name),
@@ -181,13 +181,13 @@
    given_and_display_names: If True, the display of all given_names and the display name (if not equal) is enforced.
                             This is the "long" version of the name.
    with_family_name:        If True (default), the family name is included in the macro output
-   include_titles:          If True, the person's title(s) and name supplement are included in the macro output
+   with_titles:             If True, the person's title(s) and name supplement are included in the macro output
 #}
 {% macro persona_name(persona, only_given_names=False, only_display_name=False, given_and_display_names=False,
-                      with_family_name=True, include_titles=False) %}
+                      with_family_name=True, with_titles=False) %}
     {%- set display_name = persona['display_name'] %}
     {%- set given_names = persona['given_names'] %}
-    {%- if include_titles and persona['title'] %}{{ persona['title'] }}&nbsp;{% endif %}
+    {%- if with_titles and persona['title'] %}{{ persona['title'] }}&nbsp;{% endif %}
     {%- if only_given_names -%}
         {{ given_names }}
     {%- elif only_display_name -%}
@@ -210,7 +210,7 @@
         {%- endif -%}
     {% endif %}
     {%- if with_family_name %} {{ persona['family_name'] }}{% endif %}
-    {%- if include_titles and persona['name_supplement'] %}&nbsp;{{ persona['name_supplement'] }}{% endif -%}
+    {%- if with_titles and persona['name_supplement'] %}&nbsp;{{ persona['name_supplement'] }}{% endif -%}
 {% endmacro %}
 
 {% macro tel_link(phonenumber) %}

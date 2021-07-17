@@ -41,7 +41,7 @@
             <dt>{% trans %}Presiders{% endtrans %}</dt>
             <dd id="assembly-presiders">
                 {% for anid, entry in presiders|keydictsort(EntitySorter.persona) %}
-                    {{ util.persona_anchor(entry, only_given_names=True, include_titles=True) }}
+                    {{ util.persona_anchor(entry, only_given_names=True, with_titles=True) }}
                     {%- if not loop.last %},{% endif %}
                 {% endfor %}
             </dd>
@@ -55,7 +55,7 @@
             <ul>
                 {% for anid, entry in presiders|keydictsort(EntitySorter.persona) %}
                     <li class="hide-hover-container clearfix-after">
-                        {{ util.persona_anchor(entry, only_given_names=True, include_titles=True) }}
+                        {{ util.persona_anchor(entry, only_given_names=True, with_titles=True) }}
                         ({{ anid|cdedbid }})
                         <form action="{{ cdedblink('assembly/remove_presider') }}" method="POST"
                                 id="removepresiderform{{ anid }}" class="hide-hover display-inline">

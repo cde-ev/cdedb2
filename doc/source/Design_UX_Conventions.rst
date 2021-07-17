@@ -44,7 +44,7 @@ To apply this logic in the web template and frontend code, there is the :func:`c
   * | *else* show the given names and the display name in parentheses: "{given_names} ({display_name"}) {family_name}"
 
   | example: user profile page, orga realm (if not in lists)
-  | → ``util.persona_name(persona, given_and_display_names=True, include_titles=True)``
+  | → ``util.persona_name(persona, given_and_display_names=True, with_titles=True)``
 * | *else*
 
   * | *if* the display name is part of the given names (or equal)

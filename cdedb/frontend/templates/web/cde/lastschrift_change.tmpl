@@ -22,7 +22,7 @@
           class="form-horizontal">
         {{ util.anti_csrf_token('cde/lastschrift_change') }}
         {{ util.form_input_static(label=gettext("Member"),
-                                  value=util.persona_name(persona, only_given_names=True, include_titles=True)) }}
+                                  value=util.persona_name(persona, only_given_names=True, with_titles=True)) }}
         {{ util.form_input_text(name="amount", label=gettext("Amount"), type="number",
                                 attributes='min="0" step="0.01"'|s) }}
         {{ util.form_input_text(name="iban", label=gettext("IBAN"), type="iban") }}

@@ -2068,7 +2068,7 @@ def make_persona_name(persona: CdEDBObject,
                       only_display_name: bool = False,
                       given_and_display_names: bool = False,
                       with_family_name: bool = True,
-                      include_titles: bool = False) -> str:
+                      with_titles: bool = False) -> str:
     """Format the name of a given persona according to the display name specification
 
     This is the Python pendant of the `util.persona_name()` macro.
@@ -2078,7 +2078,7 @@ def make_persona_name(persona: CdEDBObject,
     display_name: str = persona.get('display_name', "")
     given_names: str = persona['given_names']
     ret = []
-    if include_titles and persona.get('title'):
+    if with_titles and persona.get('title'):
         ret.append(persona['title'])
     if only_given_names:
         ret.append(given_names)
@@ -2095,7 +2095,7 @@ def make_persona_name(persona: CdEDBObject,
         ret.append(given_names)
     if with_family_name:
         ret.append(persona['family_name'])
-    if include_titles and persona.get('name_supplement'):
+    if with_titles and persona.get('name_supplement'):
         ret.append(persona['name_supplement'])
     return " ".join(ret)
 
