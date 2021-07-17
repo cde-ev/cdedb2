@@ -3075,8 +3075,8 @@ etc;anything else""", f['entries_2'].value)
             href='/event/event/1/download/participantlist\\?runs=0', index=0)
         self.assertPresence('documentclass')
         self.assertPresence('Heldentum')
-        self.assertPresence('Emilia E.')
-        self.assertNonPresence('Garcia G.')
+        self.assertPresence('Emilia E.')  # we don't want nick names here
+        self.assertNonPresence('Garcia')
         self.response = save.click(
             href='/event/event/1/download/participantlist\\?runs=2', index=0)
         self.assertTrue(self.response.body.startswith(magic_bytes['pdf']))
@@ -3087,8 +3087,8 @@ etc;anything else""", f['entries_2'].value)
             index=0)
         self.assertPresence('documentclass')
         self.assertPresence('Heldentum')
-        self.assertPresence('Emilia E.')
-        self.assertPresence('Garcia G.')
+        self.assertPresence('Emilia E.')  # we don't want nick names here
+        self.assertPresence('Garcia')
 
         # export
         # partial event export
