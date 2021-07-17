@@ -24,6 +24,7 @@ import email.mime.text
 import email.utils
 import functools
 import io
+import itertools
 import json
 import logging
 import pathlib
@@ -2063,52 +2064,93 @@ def make_event_fee_reference(persona: CdEDBObject, event: CdEDBObject) -> str:
     )
 
 
-def process_dynamic_input(rs: RequestState, existing: Collection[int],
-                          spec: validate.TypeMapping,
-                          additional: CdEDBObject = None
-                          ) -> Dict[int, Optional[CdEDBObject]]:
-    """Retrieve information provided by flux tables.
+def process_dynamic_input(
+    rs: RequestState, existing: Collection[int], spec: validate.TypeMapping, *,
+    additional: CdEDBObject = None, prefix: str = "",
+    constraint_maker: Callable[[int, str], List[RequestConstraint]] = None
+) -> Dict[int, Optional[CdEDBObject]]:
+    """Retrieve data from rs provided by 'dynamic_row_table' makro.
 
-    This returns a data dict to update the database, which includes:
-    - existing, mapped to their (validated) input fields (from spec)
-    - existing, mapped to None (if they were marked to be deleted)
+    This takes a 'spec' of field_names mapped to their validation. Each field_name is
+    prepended with the 'prefix' and appended with the entity_id in the form of
+    "{prefix}{field_name}_{entity_id}" before being extracted from the RequestState.
+
+    During extraction with `request_extractor`, it is possible to pass some additional
+    constraints. To dynamically create them for each not-deleted entry, a
+    'constraint_maker' function is needed. It might look like the following:
+
+        def int_constraint_maker(field_id: int, prefix: str) -> List[RequestConstraint]:
+            # the field_name present in spec is assumed to be 'int' in this example
+            rs_field_name = f"{prefix}int_{field_id}"
+            msg = n_("Must be greater than zero.")
+            return [(
+                lambda d: d[rs_field_name] > 0, (rs_field_name, ValueError(msg))
+            )]
+
+    'process_dynamic_input' returns a data dict to update the database, which includes:
+    - existing entries, mapped to their (validated) input fields (from spec)
+    - existing entries, mapped to None (if they were marked to be deleted)
     - new entries, mapped to their (validated) input fields (from spec)
 
+    This adds some additional keys to some entities of the return dict:
+    - To each existing, not deleted entry: the 'id' of the entry.
+    - To each new and each existing, not deleted entry: all entries of 'additional'
+
     :param existing: ids of already existent objects
-    :param spec: name of input fields, mapped to their validation
+    :param spec: name of input fields, mapped to their validation. This uses the same
+        format as the `request_extractor`, but adds the 'prefix' to each key if present.
+    :param constraint_maker: a function accepting the id of a non-deleted entry and
+        the string prefix and gives back all constraints for this entry, which are
+        further passed to request_extractor
     :param additional: additional keys added to each output object
+    :param prefix: prefix in front of all concerned fields. Should be used when more
+        then one dynamic input table is present on the same page.
     """
-    delete_flags = request_extractor(rs, {f"delete_{anid}": bool for anid in existing})
-    deletes = {anid for anid in existing if delete_flags[f"delete_{anid}"]}
-    params: validate.TypeMapping = {
-        f"{key}_{anid}": value
-        for anid in existing if anid not in deletes
+    additional = additional or dict()
+
+    delete_spec = {f"{prefix}delete_{anid}": bool for anid in existing}
+    delete_flags = request_extractor(rs, delete_spec)
+    deletes = {anid for anid in existing if delete_flags[f"{prefix}delete_{anid}"]}
+    non_deleted_existing = {anid for anid in existing if anid not in deletes}
+
+    existing_data_spec: validate.TypeMapping = {
+        f"{prefix}{key}_{anid}": value
+        for anid in non_deleted_existing
         for key, value in spec.items()
     }
-    data = request_extractor(rs, params)
+    # generate the constraints for each existing entry which will not be deleted
+    constraints = list(itertools.chain.from_iterable(
+        constraint_maker(anid, prefix) for anid in non_deleted_existing)
+    ) if constraint_maker else None
+    data = request_extractor(rs, existing_data_spec, constraints)
+
+    # build the return dict of all existing entries
     ret: Dict[int, Optional[CdEDBObject]] = {
-        anid: {key: data[f"{key}_{anid}"] for key in spec}
-        for anid in existing if anid not in deletes
+        anid: {key: data[f"{prefix}{key}_{anid}"] for key in spec}
+        for anid in non_deleted_existing
     }
     for anid in existing:
         if anid in deletes:
             ret[anid] = None
         else:
             ret[anid]['id'] = anid  # type: ignore
+            ret[anid].update(additional)  # type: ignore
+
+    # extract the new entries which shall be created
     marker = 1
     while marker < 2 ** 10:
-        will_create = unwrap(
-            request_extractor(rs, {f"create_-{marker}": bool}))
+        will_create = unwrap(request_extractor(rs, {f"{prefix}create_-{marker}": bool}))
         if will_create:
-            params = {f"{key}_-{marker}": value for key, value in spec.items()}
-            data = request_extractor(rs, params)
-            ret[-marker] = {key: data[f"{key}_-{marker}"] for key in spec}
+            params = {f"{prefix}{key}_-{marker}": value for key, value in spec.items()}
+            constraints = constraint_maker(-marker, prefix) if constraint_maker else None
+            data = request_extractor(rs, params, constraints)
+            ret[-marker] = {key: data[f"{prefix}{key}_-{marker}"] for key in spec}
             if additional:
                 ret[-marker].update(additional)  # type: ignore
         else:
             break
         marker += 1
-    rs.values['create_last_index'] = marker - 1
+    rs.values[f'{prefix}create_last_index'] = marker - 1
     return ret
 
 

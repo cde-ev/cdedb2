@@ -52,7 +52,7 @@ import re
 import string
 from enum import Enum
 from typing import (
-    Callable, Iterable, Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar,
+    Callable, Iterable, Mapping, Optional, Sequence, Set, Tuple, TypeVar,
     Union, cast, get_type_hints, overload, Generic
 )
 
@@ -1302,7 +1302,7 @@ def _phone(
 ) -> Phone:
     val = _printable_ascii(val, argname, **kwargs)
     orig = val.strip()
-    val = ''.join(c for c in val if c in '+1234567890')  # pylint: disable=not-an-iterable;
+    val = ''.join(c for c in val if c in '+1234567890')  # pylint: disable=not-an-iterable; # noqa
 
     if len(val) < 7:
         raise ValidationSummary(ValueError(argname, n_("Too short.")))
@@ -2177,18 +2177,26 @@ def _event(
     return Event(val)
 
 
-EVENT_PART_COMMON_FIELDS: TypeMapping = {
+EVENT_PART_CREATION_MANDATORY_FIELDS: TypeMapping = {
     'title': str,
     'shortname': str,
     'part_begin': datetime.date,
     'part_end': datetime.date,
     'fee': NonNegativeDecimal,
     'waitlist_field': Optional[ID],  # type: ignore
+}
+
+EVENT_PART_CREATION_OPTIONAL_FIELDS: TypeMapping = {
     'tracks': Mapping,
+    'fee_modifiers': Mapping,
+}
+
+EVENT_PART_COMMON_FIELDS: TypeMapping = {
+    **EVENT_PART_CREATION_MANDATORY_FIELDS,
+    **EVENT_PART_CREATION_OPTIONAL_FIELDS
 }
 
 EVENT_PART_OPTIONAL_FIELDS: TypeMapping = {
-    'fee_modifiers': Mapping,
 }
 
 
@@ -2207,8 +2215,8 @@ def _event_part(
     optional_fields: TypeMapping
 
     if creation:
-        mandatory_fields = {**EVENT_PART_COMMON_FIELDS}
-        optional_fields = {**EVENT_PART_OPTIONAL_FIELDS}
+        mandatory_fields = {**EVENT_PART_CREATION_MANDATORY_FIELDS}
+        optional_fields = {**EVENT_PART_CREATION_OPTIONAL_FIELDS}
     else:
         mandatory_fields = {}
         optional_fields = {**EVENT_PART_COMMON_FIELDS, **EVENT_PART_OPTIONAL_FIELDS}
@@ -2301,7 +2309,7 @@ def _event_track(
         mandatory_fields = {**EVENT_TRACK_COMMON_FIELDS}
         optional_fields: TypeMapping = {}
     else:
-        mandatory_fields = {}
+        mandatory_fields = {'id': ID}
         optional_fields = {**EVENT_TRACK_COMMON_FIELDS}
 
     val = _examine_dictionary_fields(
@@ -2413,10 +2421,10 @@ def _event_fee_modifier(
 
     if creation:
         mandatory_fields = _EVENT_FEE_MODIFIER_COMMON_FIELDS(extra_suffix)
-        optional_fields: TypeMapping = {}
+        optional_fields: TypeMapping = {'id': ID}
     else:
         mandatory_fields = {}
-        optional_fields = _EVENT_FEE_MODIFIER_COMMON_FIELDS(extra_suffix)
+        optional_fields = dict(_EVENT_FEE_MODIFIER_COMMON_FIELDS(extra_suffix), id=ID)
 
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
@@ -2698,7 +2706,7 @@ def _event_associated_fields(
         if field['association'] == association:
             dt = _ALL_TYPED[const.FieldDatatypes](
                 field['kind'], field['field_name'], **kwargs)
-            datatypes[field['field_name']] = cast(Type[Any], eval(  # pylint: disable=eval-used
+            datatypes[field['field_name']] = cast(Type[Any], eval(  # pylint: disable=eval-used # noqa
                 f"Optional[{dt.name}]",
                 {
                     'Optional': Optional,
@@ -3002,7 +3010,7 @@ def _serialized_event(
         'event.event_parts': _augment_dict_validator(
             _event_part, {'id': ID, 'event_id': ID}),
         'event.course_tracks': _augment_dict_validator(
-            _event_track, {'id': ID, 'part_id': ID}),
+            _event_track, {'part_id': ID}),
         'event.courses': _augment_dict_validator(
             _course, {'event_id': ID}),
         'event.course_segments': _augment_dict_validator(
@@ -3519,8 +3527,8 @@ def _mailinglist(
     errs = ValidationSummary()
 
     if "domain" not in val:
-        errs.append(ValueError("domain",
-            "Must specify domain for setting mailinglist."))
+        errs.append(ValueError(
+            "domain", "Must specify domain for setting mailinglist."))
     else:
         atype = ml_type.get_type(val["ml_type"])
         if val["domain"].value not in atype.domains:
@@ -3939,7 +3947,7 @@ def _non_regex(
     forbidden_chars = r'\*+?{}()[]|'
     msg = n_("Must not contain any forbidden characters"
              " (which are %(forbidden_chars)s while .^$ are allowed).")
-    if any(char in val for char in forbidden_chars):  # pylint: disable=unsupported-membership-test;
+    if any(char in val for char in forbidden_chars):  # pylint: disable=unsupported-membership-test; # noqa
         raise ValidationSummary(
             ValueError(argname, msg, {"forbidden_chars": forbidden_chars}))
     return NonRegex(val)
@@ -4312,8 +4320,8 @@ def _db_subscription_state(
     """Validates whether a subscription state is written into the database."""
     val = _ALL_TYPED[const.SubscriptionState](val, argname, **kwargs)
     if val == const.SubscriptionState.none:
-        raise ValidationSummary(ValueError(argname,
-                                           n_("SubscriptionState.none is not written into the database.")))
+        raise ValidationSummary(ValueError(
+            argname, n_("SubscriptionState.none is not written into the database.")))
     return DatabaseSubscriptionState(val)
 
 

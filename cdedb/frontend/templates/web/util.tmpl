@@ -658,20 +658,24 @@
 {# Macro for a general row, used in a dynamic row table.
 
    non-deletable rows have a disabled 'delete'-checkbox,
+   readonly rows have all fields disabled
    aclass is used to pass classes to the row, such as drow-row, drow-prototype, drow-new
-   newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes #}
-{% macro dynamic_row(id, tablename, columns, deletable, aclass="", newrow=False) %}
+   newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes
+   prefix is used to specify a string inserting before every parameter name #}
+{% macro dynamic_row(id, tablename, columns, deletable=True, readonly=False, aclass="", newrow=False, prefix="") %}
     <tr class="{{ aclass }}" role="group" aria-label="{{ tablename }} {{ id }}">
         {% for column in columns %}
             {% set func = column['func'] %}
-            {% set name = '{}_{}'.format(column['name'], id) %}
+            {% set name = '{}{}_{}'.format(prefix, column['name'], id) %}
             <td {% if name in errors %}class="has-error"{% endif %}>
                 {# TODO set the remaining items of colum as attributes to func #}
                 {# this is a call for a generic util.input_* macro specified by the caller #}
                 {{ func(name=name,
-                        aclass='drow-input form-control',
-                        attributes=('data-basename="{}_"'.format(column['name'])|s if newrow else ''),
-                        arialabel=gettext(column['label'])
+                        aclass='drow-input form-control' + " " + column.get('aclass', ""),
+                        attributes=('data-basename="{}{}_"'.format(prefix, column['name'])|s if newrow else ''),
+                        arialabel=gettext(column['label']),
+                        readonly=readonly,
+                        **column.get('func_additional_input', {})
                         ) }}
                 {{ output_errors(name) }}
             </td>
@@ -680,12 +684,12 @@
         <td>
             <span class="drow-buttonspace">
                 {% if newrow %}
-                    {{ input_checkbox("create_{}".format(id), label=gettext("Add"),
-                                           attributes='data-basename="create_"'|s,
+                    {{ util.input_checkbox("{}create_{}".format(prefix, id), label=gettext("Add"),
+                                           attributes='data-basename="{}create_"'.format(prefix)|s, readonly=readonly,
                                            aclass='drow-indicator') }}
                 {% else %}
-                    {{ input_checkbox("delete_{}".format(id), label=gettext("Delete"),
-                                           readonly=not deletable, aclass='drow-indicator') }}
+                    {{ util.input_checkbox("{}delete_{}".format(prefix, id), label=gettext("Delete"),
+                                           readonly=not deletable or readonly, aclass='drow-indicator') }}
                 {% endif %}
             </span>
         </td>
@@ -699,9 +703,13 @@
              the 'name' (mapping the input to a db field) and a 'label'.
    existing: a dict of already existing entries.
    locked:   iterable which contains all id of existing entries which must not be modified or deleted by the user
-   sortkey:  to sort existing #}
-{% macro dynamic_row_table(name, columns, existing, locked=[], sortkey=none) %}
-    <table class="table table-condensed" id="drow-table">
+   readonly: if true, all input fields are disabled and no new row is shown
+   modification_only: if true, no rows can be added or deleted, but they may be modified
+   sortkey:  to sort existing
+   prefix is used to specify a string inserting before every parameter name #}
+{% macro dynamic_row_table(name, columns, existing, locked=[], readonly=False, modification_only=False, sortkey=none, prefix="") %}
+    {% set prefix = prefix + '_' if prefix else '' %}
+    <table class="table table-condensed" id="{{ prefix }}drow-table">
         <thead>
             <tr>
                 {% for column in columns %}
@@ -713,21 +721,27 @@
             {% set sorted_existing = existing|keydictsort(sortkey) if sortkey else existing|dictsort %}
             {# Old items, already stored in the database #}
             {% for id, entry in sorted_existing %}
-                {{ dynamic_row(id, name, columns, id not in locked, 'drow-row') }}
+                {{ dynamic_row(id, name, columns, deletable=id not in locked and not modification_only,
+                               readonly=readonly, aclass='drow-row', prefix=prefix) }}
             {% endfor %}
             {# Items that were added by the user but failed validation. They are still new and have no official id. #}
-            {% for i in range(1, values.get('create_last_index', 0) + 1) %}
-                {{ dynamic_row(-i, name, columns, False, 'drow-new', newrow=True) }}
+            {% set last_index_key = prefix+"create_last_index"  %}
+            {% for i in range(1, values.get(last_index_key, 0) + 1) %}
+                {{ dynamic_row(-i, name, columns, deletable=False, readonly=readonly, aclass='drow-new', newrow=True, prefix=prefix) }}
             {% endfor %}
             {# Prototype row. For non-JS users: an empty row with 'create'-checkbox, for JS: prototype for new rows. #}
-            {{ dynamic_row(-values.get('create_last_index', 0) - 1, name, columns, False, 'drow-prototype', newrow=True) }}
+            {% if not readonly and not modification_only %}
+                {{ dynamic_row(-values.get(last_index_key, 0) - 1, name, columns, deletable=False, aclass='drow-prototype', newrow=True, prefix=prefix) }}
+            {% endif %}
         </tbody>
     </table>
-    <p>
-        <button type="button" class="btn btn-success softhide pull-right" id="drow-addbutton">
-            {{ make_icon('plus') }} {% trans %}Add {{ name }}{% endtrans %}
-        </button>
-    </p>
+    {% if not (readonly or modification_only) %}
+        <p>
+            <button type="button" class="btn btn-success softhide pull-right" id="{{ prefix }}drow-addbutton">
+                {{ make_icon('plus') }} {% trans %}Add {{ name }}{% endtrans %}
+            </button>
+        </p>
+    {% endif %}
 {% endmacro %}
 
 {# Generate an anti CSRF (Cross-Site Request Forgery) token and add it as hidden input to an HTML form.

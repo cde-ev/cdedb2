@@ -148,6 +148,8 @@ class TestEventBackend(BackendTest):
         data['end'] = datetime.date(2110, 8, 20)
         data['is_open'] = True
         # TODO dynamically adapt ids from the database result
+        data['parts'][-1].update({'id': 1001})
+        data['parts'][-2].update({'id': 1002})
         data['parts'][-1]['tracks'][-1].update({'id': 1001, 'part_id': 1001})
         data['parts'][-2]['tracks'][-1].update({'id': 1002, 'part_id': 1002})
         data['tracks'] = {1001: data['parts'][-1]['tracks'][-1],
@@ -211,7 +213,8 @@ class TestEventBackend(BackendTest):
             'fee': decimal.Decimal("1.23"),
             'waitlist_field': None,
             'tracks': {
-                1002: {'title': "Second lecture v2",
+                1002: {'id': 1002,
+                       'title': "Second lecture v2",
                        'shortname': "Second v2",
                        'num_choices': 5,
                        'min_choices': 4,
@@ -3480,7 +3483,8 @@ class TestEventBackend(BackendTest):
             'part_end': datetime.date(2110, 9, 21),
             'fee': decimal.Decimal("1.23"),
             'tracks': {
-                1002: {'title': "Second lecture v2",  # hardcoded id 5
+                1002: {'id': 1002,
+                       'title': "Second lecture v2",  # hardcoded id 5
                        'shortname': "Second v2",
                        'num_choices': 5,
                        'min_choices': 4,
