@@ -35,12 +35,10 @@
                         \item
                             <<% if reg_id in instructors[(course_id, track_id)] %>>
                                 \emph{
-                                    <<<- personas[registrations[reg_id]['persona_id']]['given_names']|te >>>
-                                    <<< personas[registrations[reg_id]['persona_id']]['family_name']|te ->>>
+                                    <<<- personas[registrations[reg_id]['persona_id']]|persona_name|te ->>>
                                 }
                             <<% else %>>
-                                <<<- personas[registrations[reg_id]['persona_id']]['given_names']|te >>>
-                                <<< personas[registrations[reg_id]['persona_id']]['family_name']|te ->>>
+                                <<<- personas[registrations[reg_id]['persona_id']]|persona_name|te ->>>
                                 <<% if p['age'].is_minor() %>>
                                     \fbox{<<< p['age'].name|upper|te >>>}
                                 <<% endif %>>

@@ -79,8 +79,16 @@
                         if ambience['event']['tracks'][track_id]['part_id'] == part_id and track['course_id'] -%>>
                     <<% do mycourses.append((track_id, track['course_id']))|te -%>>
                 <<% endfor -%>>
-                \nametag{<<< personas[registration['persona_id']]['given_names']|te >>>}%
-                    {<<< personas[registration['persona_id']]['family_name']|te >>>}{
+                <<% set persona = personas[registration['persona_id']] -%>>
+                \nametag{<<< persona['display_name']|te ->>>
+                    }{
+                        <<#- prepend the legal given_names to the family name, in case display_name is not part of them -#>>
+                        <<% if persona['display_name'] in persona['given_names'] -%>>
+                           <<< persona['family_name']|te ->>>
+                        <<% else -%>>
+                           <<< persona|persona_name(only_given_names=True)|te ->>>
+                        <<% endif -%>>
+                    }{
                         <<%- if mycourses -%>>
                             <<%- for track_id, course_id in mycourses -%>>
                                 <<%- if (course_id == registration['tracks'][track_id]['course_instructor']) -%>>
