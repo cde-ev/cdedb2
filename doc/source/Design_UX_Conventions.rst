@@ -6,7 +6,7 @@ User Experience Conventions
 .. todo:: Add information on button color semantics
 
 
-Given Names and & Display Name
+Given Names & Display Name
 ------------------------------
 
 For each person, the CdEDB allows to store two different forename fields: ``given_names`` and ``display_name`` ("Known as", german: "Rufname").
