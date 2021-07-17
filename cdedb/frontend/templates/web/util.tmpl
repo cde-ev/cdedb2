@@ -735,11 +735,13 @@
             {% endif %}
         </tbody>
     </table>
-    <p>
-        <button type="button" class="btn btn-success softhide pull-right" id="{{ prefix }}drow-addbutton">
-            {{ make_icon('plus') }} {% trans %}Add {{ name }}{% endtrans %}
-        </button>
-    </p>
+    {% if not (readonly or modification_only) %}
+        <p>
+            <button type="button" class="btn btn-success softhide pull-right" id="{{ prefix }}drow-addbutton">
+                {{ make_icon('plus') }} {% trans %}Add {{ name }}{% endtrans %}
+            </button>
+        </p>
+    {% endif %}
 {% endmacro %}
 
 {# Generate an anti CSRF (Cross-Site Request Forgery) token and add it as hidden input to an HTML form.

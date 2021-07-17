@@ -104,7 +104,6 @@
 
         /**
          * Add a new row to formular based on the prototype row.
-         * TODO hide button if no drow-prototype row is available
          */
         this.addRow = function() {
             var $prototype = $element.find('.drow-prototype');
