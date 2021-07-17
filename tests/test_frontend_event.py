@@ -1764,9 +1764,9 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.assertNonPresence("modifier_is_child1")
         self.assertPresence("modifier_is_child2", div='feemodifierrow_4_1002')
-        self.assertPresence("field_is_child_1",   div='feemodifierrow_4_1002')
+        self.assertPresence("field_is_child1", div='feemodifierrow_4_1002')
         self.assertPresence("modifier_is_child3", div='feemodifierrow_4_1003')
-        self.assertPresence("field_is_child_2",   div='feemodifierrow_4_1002')
+        self.assertPresence("field_is_child2", div='feemodifierrow_4_1003')
 
         # check log
         self.get("/event/event/log")
@@ -1784,7 +1784,7 @@ etc;anything else""", f['entries_2'].value)
                             div=str(self.EVENT_LOG_OFFSET + 6) + "-1006")
         self.assertPresence("Beitragsmodifikator angelegt",
                             div=str(self.EVENT_LOG_OFFSET + 7) + "-1007")
-        self.assertPresence("Beitragsmodifikator gelöscht",
+        self.assertPresence("Beitragsmodifikator entfernt",
                             div=str(self.EVENT_LOG_OFFSET + 8) + "-1008")
         self.assertPresence("Beitragsmodifikator geändert",
                             div=str(self.EVENT_LOG_OFFSET + 9) + "-1009")
