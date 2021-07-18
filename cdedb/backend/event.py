@@ -1899,18 +1899,19 @@ class EventBackend(AbstractBackend):
         for field in field_data:
             self._validate_special_event_field(rs, event_id, "fee_modifier", field)
 
-        for x in mixed_existence_sorter(new_modifiers):
-            new_modifier = copy.deepcopy(modifiers[x])
-            assert new_modifier is not None
-            new_modifier['part_id'] = part_id
-            ret *= self.sql_insert(rs, "event.fee_modifiers", new_modifier)
-            self.event_log(rs, const.EventLogCodes.fee_modifier_created, event_id,
-                           change_note=new_modifier['modifier_name'])
-
+        # the order of deleting, updating and creating matters: The field of a deleted
+        # modifier may be used in another existing or new modifier at the same request.
         if updated_modifiers or deleted_modifiers:
             current_modifier_data = {e['id']: e for e in self.sql_select(
                 rs, "event.fee_modifiers", FEE_MODIFIER_FIELDS,
                 updated_modifiers | deleted_modifiers)}
+
+            if deleted_modifiers:
+                ret *= self.sql_delete(rs, "event.fee_modifiers", deleted_modifiers)
+                for x in mixed_existence_sorter(deleted_modifiers):
+                    current = current_modifier_data[x]
+                    self.event_log(rs, const.EventLogCodes.fee_modifier_deleted,
+                                   event_id, change_note=current['modifier_name'])
 
             for x in mixed_existence_sorter(updated_modifiers):
                 updated_modifier = copy.deepcopy(modifiers[x])
@@ -1926,12 +1927,13 @@ class EventBackend(AbstractBackend):
                     self.event_log(rs, const.EventLogCodes.fee_modifier_changed,
                                    event_id, change_note=current['modifier_name'])
 
-            if deleted_modifiers:
-                ret *= self.sql_delete(rs, "event.fee_modifiers", deleted_modifiers)
-                for x in mixed_existence_sorter(deleted_modifiers):
-                    current = current_modifier_data[x]
-                    self.event_log(rs, const.EventLogCodes.fee_modifier_deleted,
-                                   event_id, change_note=current['modifier_name'])
+        for x in mixed_existence_sorter(new_modifiers):
+            new_modifier = copy.deepcopy(modifiers[x])
+            assert new_modifier is not None
+            new_modifier['part_id'] = part_id
+            ret *= self.sql_insert(rs, "event.fee_modifiers", new_modifier)
+            self.event_log(rs, const.EventLogCodes.fee_modifier_created, event_id,
+                           change_note=new_modifier['modifier_name'])
 
         return ret
 
@@ -2022,7 +2024,6 @@ class EventBackend(AbstractBackend):
                 ret *= self.add_event_orgas(rs, data['id'], data['orgas'])
             if 'fields' in data:
                 ret *= self._set_event_fields(rs, data['id'], data['fields'])
-
             # This also includes taking care of course tracks and fee modifiers, since
             # they are each linked to a single event part.
             if 'parts' in data:
@@ -2750,7 +2751,7 @@ class EventBackend(AbstractBackend):
                 data = self.query_all(rs, query, (part_id, waitlist))
                 ret[part_id] = xsorted(
                     (reg['id'] for reg in data), key=lambda r_id:
-                    (fields_by_id[r_id].get(field['field_name'], 0), r_id))  # pylint: disable=cell-var-from-loop
+                    (fields_by_id[r_id].get(field['field_name'], 0), r_id))  # pylint: disable=cell-var-from-loop # noqa
         return ret
 
     @access("event")
