@@ -309,6 +309,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             comment_start_string="<<#",
             comment_end_string="#>>",
         )
+        self.jinja_env_tex.filters.update({'persona_name': make_persona_name})
         self.jinja_env_mail = self.jinja_env.overlay(
             autoescape=False,
             trim_blocks=True,
@@ -2062,6 +2063,43 @@ def make_event_fee_reference(persona: CdEDBObject, event: CdEDBObject) -> str:
         fn=asciificator(persona['family_name']),
         cdedbid=cdedbid_filter(persona['id'])
     )
+
+
+def make_persona_name(persona: CdEDBObject,
+                      only_given_names: bool = False,
+                      only_display_name: bool = False,
+                      given_and_display_names: bool = False,
+                      with_family_name: bool = True,
+                      with_titles: bool = False) -> str:
+    """Format the name of a given persona according to the display name specification
+
+    This is the Python pendant of the `util.persona_name()` macro.
+    For a full specification, which name variant should be used in which context, see
+    the documentation page about "User Experience Conventions".
+    """
+    display_name: str = persona.get('display_name', "")
+    given_names: str = persona['given_names']
+    ret = []
+    if with_titles and persona.get('title'):
+        ret.append(persona['title'])
+    if only_given_names:
+        ret.append(given_names)
+    elif only_display_name:
+        ret.append(display_name)
+    elif given_and_display_names:
+        if not display_name or display_name == given_names:
+            ret.append(given_names)
+        else:
+            ret.append(f"{given_names} ({display_name})")
+    elif display_name and display_name in given_names:
+        ret.append(display_name)
+    else:
+        ret.append(given_names)
+    if with_family_name:
+        ret.append(persona['family_name'])
+    if with_titles and persona.get('name_supplement'):
+        ret.append(persona['name_supplement'])
+    return " ".join(ret)
 
 
 def process_dynamic_input(

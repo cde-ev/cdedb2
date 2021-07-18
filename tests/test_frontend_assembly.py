@@ -188,8 +188,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
     def test_showuser(self) -> None:
         self.traverse({'description': self.user['display_name']})
         self.assertPresence("Versammlungen", div="has-realm")
-        self.assertTitle("{} {}".format(self.user['given_names'],
-                                        self.user['family_name']))
+        self.assertTitle(self.user['default_name_format'])
 
     @as_users("kalif")
     def test_changeuser(self) -> None:

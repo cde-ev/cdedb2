@@ -34,7 +34,7 @@ from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, access, basic_redirect,
     calculate_db_logparams, calculate_loglinks, check_validation as check,
     check_validation_optional as check_optional, make_membership_fee_reference,
-    periodic, request_dict_extractor, request_extractor,
+    periodic, request_dict_extractor, request_extractor, make_persona_name,
 )
 from cdedb.ml_type_aux import MailinglistGroup
 from cdedb.query import Query, QueryOperators, QueryScope
@@ -1031,21 +1031,18 @@ class CoreFrontend(AbstractFrontend):
             data = tuple(xsorted(
                 data, key=lambda e: e['id'])[:num_preview_personas])
 
-        def name(x: CdEDBObject) -> str:
-            return f"{x['given_names']} {x['family_name']}"
-
         # Check if name occurs multiple times to add email address in this case
         counter: Dict[str, int] = collections.defaultdict(lambda: 0)
         for entry in data:
-            counter[name(entry)] += 1
+            counter[make_persona_name(entry)] += 1
 
         # Generate return JSON list
         ret = []
         for entry in xsorted(data, key=EntitySorter.persona):
+            name = make_persona_name(entry)
             result = {
                 'id': entry['id'],
-                'name': name(entry),
-                'display_name': entry['display_name'],
+                'name': name,
             }
             # Email/username is only delivered if we have relative_admins
             # rights, a search term with an @ (and more) matches the mail
@@ -1055,7 +1052,7 @@ class CoreFrontend(AbstractFrontend):
                 '@' in t and len(t) > self.conf["NUM_PREVIEW_CHARS"]
                 and entry['username'] and t in entry['username']
                 for t in terms)
-            if counter[name(entry)] > 1 or searched_email or \
+            if counter[name] > 1 or searched_email or \
                     self.coreproxy.is_relative_admin(rs, entry['id']):
                 result['email'] = entry['username']
             ret.append(result)

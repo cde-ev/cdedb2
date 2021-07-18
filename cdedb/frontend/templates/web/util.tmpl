@@ -141,27 +141,76 @@
     {% endif %}
 {% endmacro %}
 
-{% macro persona_anchor(persona, verbose=False, quote_me=False, event_id=none, ml_id=none, aclass='', readonly=False) %}
-    {%- if verbose -%}
-        {{ href(show_user_link(user, persona['id'], quote_me, event_id=event_id, ml_id=ml_id), "{} {} {} {}".format(
-              persona['title'], persona['given_names'],
-              persona['family_name'], persona['name_supplement']), aclass=aclass, readonly=readonly) }}
-    {%- else -%}
-        {{ href(show_user_link(user, persona['id'], quote_me, event_id=event_id, ml_id=ml_id), "{} {}".format(
-              persona['given_names'], persona['family_name']), aclass=aclass, readonly=readonly) }}
-    {%- endif -%}
+{# Create a link to a persona's profile page, labeled with some variant of their name
+
+   persona:                 The persona data. Must be a dict containing (at least) the following keys:
+                            'id', 'title', 'given_names', 'display_name', 'family_name', 'name_supplement'.
+   only_given_names:        see 'persona_name' macro
+   only_display_name:       see 'persona_name' macro
+   given_and_display_names: see 'persona_name' macro
+   with_family_name:        see 'persona_name' macro
+   with_titles:             see 'persona_name' macro
+   quote_me:                see show_user_link()
+   event_id:                see show_user_link()
+   ml_id:                   see show_user_link()
+   aclass:                  see 'href' macro
+   readonly:                see 'href' macro
+#}
+{% macro persona_anchor(persona, only_given_names=False, only_display_name=False, given_and_display_names=False,
+                        with_family_name=True, with_titles=False, quote_me=False, event_id=none, ml_id=none,
+                        aclass='', readonly=False) %}
+    {{ href(show_user_link(user, persona['id'], quote_me, event_id=event_id, ml_id=ml_id),
+            persona_name(persona, only_given_names, only_display_name, given_and_display_names, with_family_name),
+            aclass=aclass, readonly=readonly) }}
 {% endmacro %}
 
-{% macro output_given_displayname(given_names, display_name) %}
-    {%- if display_name in given_names %}
-        {%- if not display_name or display_name == given_names -%}
-            {{ given_names }}
+{# Display the name of a given persona
+
+   Displaying names is rather complicated, esp. because of our distinction between given_names and display_name. Thus,
+   this macro includes some logic to display a person's name correctly, depending on the context and the person's
+   display name. For a full specification, which name variant should be used in which context, see the documentation
+   page about "User Experience Conventions".
+
+   For usage in Python frontend code, the `cdedb.frontend.common.make_persona_name()` function implements the same
+   logic.
+
+   persona:                 The persona data. Must be a dict containing (at least) the following keys:
+                            'title', 'given_names', 'display_name', 'family_name', 'name_supplement'.
+   only_given_names:        If True, the display_name is ignored. Should only be used in a legal/formal context.
+   only_display_name:       If True, the given_names are ignored. Should be used when the person is addressed directly.
+   given_and_display_names: If True, the display of all given_names and the display name (if not equal) is enforced.
+                            This is the "long" version of the name.
+   with_family_name:        If True (default), the family name is included in the macro output
+   with_titles:             If True, the person's title(s) and name supplement are included in the macro output
+#}
+{% macro persona_name(persona, only_given_names=False, only_display_name=False, given_and_display_names=False,
+                      with_family_name=True, with_titles=False) %}
+    {%- set display_name = persona['display_name'] %}
+    {%- set given_names = persona['given_names'] %}
+    {%- if with_titles and persona['title'] %}{{ persona['title'] }}&nbsp;{% endif %}
+    {%- if only_given_names -%}
+        {{ given_names }}
+    {%- elif only_display_name -%}
+        {{ display_name }}
+    {%- elif given_and_display_names %}
+        {%- if display_name in given_names %}
+            {%- if not display_name or display_name == given_names -%}
+                {{ given_names }}
+            {%- else -%}
+                {{ '<em>{}</em>'.format(display_name|e).join((given_names|e).split(display_name|e))|s }}
+            {%- endif %}
         {%- else -%}
-            {{ '<em>{}</em>'.format(display_name|e).join((given_names|e).split(display_name|e))|s }}
-        {%- endif %}
-    {%- else -%}
-        {{ given_names }} ({{ display_name }})
-    {%- endif -%}
+            {{ given_names }} ({{ display_name }})
+        {%- endif -%}
+    {% else %}
+        {%- if display_name in given_names -%}
+            {{ display_name }}
+        {%- else -%}
+            {{ given_names }}
+        {%- endif -%}
+    {% endif %}
+    {%- if with_family_name %} {{ persona['family_name'] }}{% endif %}
+    {%- if with_titles and persona['name_supplement'] %}&nbsp;{{ persona['name_supplement'] }}{% endif -%}
 {% endmacro %}
 
 {% macro tel_link(phonenumber) %}
@@ -967,16 +1016,19 @@ mailto:
 {%- endmacro %}
 
 {% macro username_mailto(persona, email=none) -%}
-{{ href(
-    mailto(
-        address=email or persona.get("username", persona.get("persona.username", "")),
-        name="{} {}".format(
-            persona.get("given_names", persona.get("persona.given_names", "")),
-            persona.get("family_name", persona.get("persona.family_name", ""))
-        )
-    ),
-    email or persona.get("username", persona.get("persona.username", ""))
-) }}
+    {% set given_names = persona.get("given_names", persona.get("persona.given_names", "")) %}
+    {% set display_name = persona.get("display_name", persona.get("persona.display_name", "")) %}
+    {% set forename = display_name if display_name and display_name in given_names else given_names %}
+    {{ href(
+        mailto(
+            address=email or persona.get("username", persona.get("persona.username", "")),
+            name="{} {}".format(
+                forename,
+                persona.get("family_name", persona.get("persona.family_name", ""))
+            )
+        ),
+        email or persona.get("username", persona.get("persona.username", ""))
+    ) }}
 {%- endmacro %}
 
 {% macro meta_info_banner(fieldname) %}

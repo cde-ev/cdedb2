@@ -84,8 +84,7 @@ class TestEventFrontend(FrontendTest):
     @as_users("emilia")
     def test_showuser(self) -> None:
         self.traverse({'description': self.user['display_name']})
-        self.assertTitle("{} {}".format(self.user['given_names'],
-                                        self.user['family_name']))
+        self.assertTitle(self.user['default_name_format'])
 
     @as_users("emilia")
     def test_changeuser(self) -> None:
@@ -260,7 +259,7 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("30.10.2000, 01:00:00 – 30.10.2200, 01:00:00 ",
                             div='timeframe-registration')
         self.assertPresence("aka@example.cde", div='orga-address')
-        self.assertPresence("Garcia G. Generalis", div='orgas', exact=True)
+        self.assertPresence("Garcia Generalis", div='orgas', exact=True)
 
     @as_users("berta", "charly")
     def test_show_event_noorga(self) -> None:
@@ -433,7 +432,7 @@ class TestEventFrontend(FrontendTest):
         self.assertNonPresence("30.10.2000")
         self.assertPresence("30.10.2001", div='timeframe-registration')
         # orgas
-        self.assertNonPresence("Bertålotta")
+        self.assertNonPresence("Beispiel")
         # check visibility and hint text on empty participant_info
         self.traverse("Teilnehmer-Infos")
         self.assertTitle("Universale Akademie – Teilnehmer-Infos")
@@ -468,11 +467,11 @@ class TestEventFrontend(FrontendTest):
             f['orga_id'] = USER_DICT['berta']['DB-ID']
             self.submit(f)
             self.assertTitle("Universale Akademie")
-            self.assertPresence("Bertålotta", div='manage-orgas')
+            self.assertPresence("Beispiel", div='manage-orgas')
             f = self.response.forms['removeorgaform2']
             self.submit(f)
             self.assertTitle("Universale Akademie")
-            self.assertNonPresence("Bertålotta")
+            self.assertNonPresence("Beispiel")
 
     @as_users("garcia")
     def test_orga_rate_limit(self) -> None:
@@ -1126,7 +1125,7 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.assertTitle("Universale Akademie")
         self.assertPresence("Mit Co und Coco.")
-        self.assertPresence("Bertålotta")
+        self.assertPresence("Beispiel")
         self.assertPresence("Garcia")
 
         # Check creation of parts and no tracks
@@ -1982,7 +1981,7 @@ etc;anything else""", f['entries_2'].value)
     def _sort_appearance(self, userlist: Sequence[UserObject]) -> None:
         row = 1
         for user in userlist:
-            self.assertPresence(user['given_names'], div="row-" + str(row))
+            self.assertPresence(user['family_name'], div="row-" + str(row))
             row += 1
 
     @as_users("garcia")
@@ -2147,7 +2146,7 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/registration/query'})
         self.traverse({'description': 'Alle Anmeldungen'},
                       {'href': '/event/event/1/registration/1/show'})
-        self.assertTitle("Anmeldung von Anton Armin A. Administrator"
+        self.assertTitle("Anmeldung von Anton Administrator"
                          " (Große Testakademie 2222)")
         self.assertPresence("Teilnehmerbeitrag ausstehend")
         self.assertPresence("Bereits Bezahlt 573,98 €")
@@ -2441,7 +2440,7 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/registration/3/show'},
                       {'href': '/event/event/1/registration/3/change'})
         self.assertTitle(
-            "Anmeldung von Garcia G. Generalis bearbeiten (Große Testakademie 2222)")
+            "Anmeldung von Garcia Generalis bearbeiten (Große Testakademie 2222)")
         f = self.response.forms['changeregistrationform']
         self.assertEqual("2", f['track2.course_id'].value)
 
@@ -2540,7 +2539,7 @@ etc;anything else""", f['entries_2'].value)
         f['track1.course_id'] = 5
         f['track1.course_choice_0'] = 5
         self.submit(f)
-        self.assertTitle("\nAnmeldung von Charly C. Clown (Große Testakademie 2222)\n")
+        self.assertTitle("\nAnmeldung von Charly Clown (Große Testakademie 2222)\n")
         self.assertPresence("Du entkommst uns nicht.")
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['changeregistrationform']
@@ -2569,7 +2568,7 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms["addregistrationform"]
         f["track1.course_choice_1"] = 4
         self.submit(f)
-        self.assertTitle("\nAnmeldung von Charly C. Clown (Große Testakademie 2222)\n")
+        self.assertTitle("\nAnmeldung von Charly Clown (Große Testakademie 2222)\n")
         self.assertEqual("5", f['track1.course_choice_0'].value)
         self.assertEqual("4", f['track1.course_choice_1'].value)
 
@@ -2598,13 +2597,13 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Anton Armin A.")
         self.traverse({'href': '/event/event/1/registration/1/show'})
         self.assertTitle(
-            "Anmeldung von Anton Armin A. Administrator (Große Testakademie 2222)")
+            "Anmeldung von Anton Administrator (Große Testakademie 2222)")
         f = self.response.forms['deleteregistrationform']
         f['ack_delete'].checked = True
         self.submit(f)
         self.traverse({'href': '/event/event/1/registration/query'},
                       {'description': 'Alle Anmeldungen'})
-        self.assertNonPresence("Anton Armin A.")
+        self.assertNonPresence("Anton")
 
     @as_users("garcia")
     def test_profile_link(self) -> None:
@@ -2884,21 +2883,21 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Morgenkreis", div="course_choice_table")
         self.assertPresence("Morgenkreis", div="assignment-options")
         self.assertPresence("Heldentum")
-        self.assertPresence("Anton Armin")
+        self.assertPresence("Anton")
         self.assertPresence("Emilia")
         self.assertPresence("Garcia")
         self.assertPresence("Inga")
         f = self.response.forms['choicefilterform']
         f['track_id'] = 3
         self.submit(f)
-        self.assertPresence("Anton Armin")
+        self.assertPresence("Anton")
         self.assertPresence("Emilia")
         self.assertPresence("Garcia")
         self.assertPresence("Inga")
         f = self.response.forms['choicefilterform']
         f['track_id'] = 1
         self.submit(f)
-        self.assertNonPresence("Anton Armin")
+        self.assertNonPresence("Anton")
         self.assertNonPresence("Emilia")
         self.assertPresence("Garcia")
         self.assertNonPresence("Inga")
@@ -2907,7 +2906,7 @@ etc;anything else""", f['entries_2'].value)
         f['course_id'] = 2
         f['position'] = -7
         self.submit(f)
-        self.assertNonPresence("Anton Armin")
+        self.assertNonPresence("Anton")
         self.assertPresence("Emilia")
         self.assertPresence("Garcia")
         self.assertPresence("Inga")
@@ -2916,7 +2915,7 @@ etc;anything else""", f['entries_2'].value)
         f['position'] = 0
         self.submit(f)
         self.assertNonPresence("Inga")
-        self.assertNonPresence("Anton Armin")
+        self.assertNonPresence("Anton")
         self.assertPresence("Garcia")
         self.assertPresence("Emilia")
         f = self.response.forms['choicefilterform']
@@ -2924,7 +2923,7 @@ etc;anything else""", f['entries_2'].value)
         f['position'] = 0
         f['track_id'] = 3
         self.submit(f)
-        self.assertNonPresence("Anton Armin")
+        self.assertNonPresence("Anton")
         self.assertNonPresence("Inga")
         self.assertNonPresence("Garcia")
         self.assertPresence("Emilia")
@@ -2943,7 +2942,7 @@ etc;anything else""", f['entries_2'].value)
         f['position'] = -6
         f['track_id'] = 3
         self.submit(f)
-        self.assertPresence("Anton Armin")
+        self.assertPresence("Anton")
         self.assertPresence("Inga")
         self.assertNonPresence("Garcia")
         self.assertNonPresence("Emilia")
@@ -2952,7 +2951,7 @@ etc;anything else""", f['entries_2'].value)
         f['position'] = -6
         f['track_id'] = 3
         self.submit(f)
-        self.assertNonPresence("Anton Armin")
+        self.assertNonPresence("Anton")
         self.assertPresence("Emilia")
         self.assertNonPresence("Garcia")
         self.assertNonPresence("Inga")
@@ -2971,7 +2970,7 @@ etc;anything else""", f['entries_2'].value)
         f['course_id'] = 5
         f['position'] = -6
         self.submit(f)
-        self.assertNonPresence("Anton Armin")
+        self.assertNonPresence("Anton")
         self.assertNonPresence("Emilia")
         self.assertPresence("Garcia")
         self.assertNonPresence("Inga")
@@ -3068,7 +3067,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual(f['track_id'].value, "3")
         self.assertEqual(f['position'].value, "-5")
         self.assertEqual(f['ids'].value, "2,3")
-        self.assertNonPresence("Anton Armin")
+        self.assertNonPresence("Anton")
         self.assertPresence("Emilia")
         self.assertPresence("Garcia")
         self.assertNonPresence("Inga")
@@ -3112,7 +3111,7 @@ etc;anything else""", f['entries_2'].value)
         f['assign_action'] = -5
         self.submit(f, check_notification=False)
         self.assertIn("alert alert-warning", self.response.text)
-        self.assertPresence("Keine Kurswahlen für Anton Armin A. Administrator",
+        self.assertPresence("Keine Kurswahlen für Anton Administrator",
                             div="notifications")
         self.assertPresence("1 von 2 Anmeldungen gespeichert",
                             div="notifications")
@@ -3216,8 +3215,8 @@ etc;anything else""", f['entries_2'].value)
             href='/event/event/1/download/participantlist\\?runs=0', index=0)
         self.assertPresence('documentclass')
         self.assertPresence('Heldentum')
-        self.assertPresence('Emilia E.')
-        self.assertNonPresence('Garcia G.')
+        self.assertPresence('Emilia E.')  # we don't want nick names here
+        self.assertNonPresence('Garcia')
         self.response = save.click(
             href='/event/event/1/download/participantlist\\?runs=2', index=0)
         self.assertTrue(self.response.body.startswith(magic_bytes['pdf']))
@@ -3228,8 +3227,8 @@ etc;anything else""", f['entries_2'].value)
             index=0)
         self.assertPresence('documentclass')
         self.assertPresence('Heldentum')
-        self.assertPresence('Emilia E.')
-        self.assertPresence('Garcia G.')
+        self.assertPresence('Emilia E.')  # we don't want nick names here
+        self.assertPresence('Garcia')
 
         # export
         # partial event export
@@ -3521,7 +3520,7 @@ etc;anything else""", f['entries_2'].value)
         f['delete_3_4'] = True
         self.submit(f)
         self.assertTitle("Kurs Heldentum (Große Testakademie 2222)")
-        self.assertPresence("Garcia G.")
+        self.assertPresence("Garcia")
         self.assertNonPresence("Inga")
 
         # check log
@@ -3836,7 +3835,7 @@ etc;anything else""", f['entries_2'].value)
         self.get('/event/registration'
                  + '/select?kind=orga_registration&phrase=emil&aux=1')
         expectation = {
-            'registrations': [{'display_name': 'Emilia',
+            'registrations': [{'display_name': 'Emmy',
                                'email': 'emilia@example.cde',
                                'id': 2,
                                'name': 'Emilia E. Eventis'}]}
@@ -4043,12 +4042,12 @@ etc;anything else""", f['entries_2'].value)
 
         # now, archive and purge a participant
         self.realm_admin_view_profile("daniel", "cde")
-        self.assertTitle("Daniel D. Dino")
+        self.assertTitle("Daniel Dino")
         f = self.response.forms['archivepersonaform']
         f['ack_delete'].checked = True
         f['note'] = "Archived for testing."
         self.submit(f)
-        self.assertTitle("Daniel D. Dino")
+        self.assertTitle("Daniel Dino")
         self.assertPresence("Der Benutzer ist archiviert.", div='archived')
         f = self.response.forms['purgepersonaform']
         f['ack_delete'].checked = True

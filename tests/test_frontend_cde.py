@@ -174,7 +174,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("vera", "berta")
     def test_showuser(self) -> None:
         self.traverse({'description': self.user['display_name']},)
-        self.assertTitle(f"{self.user['given_names']} {self.user['family_name']}")
+        self.assertTitle(self.user['default_name_format'])
         # TODO extend
         if self.user_in("berta"):
             self.assertPresence('PfingstAkademie')
@@ -375,7 +375,7 @@ class TestCdEFrontend(FrontendTest):
 
         count = self.conf["QUOTA_VIEWS_PER_DAY"] // 2
         for search, title in itertools.cycle((
-                ("Anton Armin", "Anton Armin A. Administrator"),
+                ("Anton Armin", "Anton Administrator"),
                 ("Inga Iota", "Inga Iota"))):
             count -= 1
             f['qval_fulltext'] = search
@@ -408,8 +408,8 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Account-Log [1–2 von 2]")
         self.assertPresence("Quota überschritten", div='1-1001')
         self.assertPresence("Quota überschritten", div='2-1002')
-        self.assertPresence("Bertålotta Beispiel", div='1-1001')
-        self.assertPresence("Bertålotta Beispiel", div='2-1002')
+        self.assertPresence("Bertå Beispiel", div='1-1001')
+        self.assertPresence("Bertå Beispiel", div='2-1002')
 
     @as_users("anton", "berta", "inga")
     def test_member_search(self) -> None:
@@ -420,7 +420,7 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['membersearchform']
         f['qval_family_name,birth_name'] = "Beispiel"
         self.submit(f)
-        self.assertTitle("Bertålotta Beispiel")
+        self.assertTitle(USER_DICT['berta']['default_name_format'])
         self.assertPresence("Im Garten 77", div='address')
 
         # by given_names and display_name
@@ -429,7 +429,7 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['membersearchform']
         f['qval_given_names,display_name'] = "Berta"
         self.submit(f)
-        self.assertTitle("Bertålotta Beispiel")
+        self.assertTitle(USER_DICT['berta']['default_name_format'])
         self.assertPresence("Im Garten 77", div='address')
 
         # by past event
@@ -439,7 +439,7 @@ class TestCdEFrontend(FrontendTest):
         f['qval_pevent_id'] = 1
         self.submit(f)
         self.traverse({'href': '/core/persona/2/show'})
-        self.assertTitle("Bertålotta Beispiel")
+        self.assertTitle(USER_DICT['berta']['default_name_format'])
         self.assertPresence("Im Garten 77", div='address')
 
         # by fulltext. This matchs only complete words, here on ...
@@ -543,7 +543,7 @@ class TestCdEFrontend(FrontendTest):
         # len(entry) > 3 performs a wildcard search
         f['qval_given_names,display_name'] = "Anton"
         self.submit(f)
-        self.assertTitle("Anton Armin A. Administrator")
+        self.assertTitle("Anton Administrator")
 
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'CdE-Mitglied suchen'})
@@ -607,7 +607,7 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['membersearchform']
         f['qval_family_name,birth_name'] = "Beispiel"
         self.submit(f)
-        self.assertTitle("Bertålotta Beispiel")
+        self.assertTitle("Bertå Beispiel")
         self.assertNonPresence("weiblich")
 
     @as_users("inga", "farin")
@@ -796,16 +796,16 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Daten sind für andere Mitglieder sichtbar.",
                             div='searchability')
         self.traverse({'description': 'Status ändern'})
-        self.assertTitle("Mitgliedsstatus von Bertålotta Beispiel bearbeiten")
+        self.assertTitle("Mitgliedsstatus von Bertå Beispiel bearbeiten")
         f = self.response.forms['modifymembershipform']
         self.submit(f)
-        self.assertTitle("Bertålotta Beispiel")
+        self.assertTitle("Bertå Beispiel")
         self.assertNonPresence("CdE-Mitglied", div='membership')
         self.assertNonPresence("Daten sind für andere Mitglieder sichtbar.")
         self.traverse({'description': 'Status ändern'})
         f = self.response.forms['modifymembershipform']
         self.submit(f)
-        self.assertTitle("Bertålotta Beispiel")
+        self.assertTitle("Bertå Beispiel")
         self.assertPresence("CdE-Mitglied", div='membership')
         self.assertPresence("Daten sind für andere Mitglieder sichtbar.",
                             div='searchability')
@@ -923,7 +923,7 @@ class TestCdEFrontend(FrontendTest):
             self.submit(f)
         else:
             self.realm_admin_view_profile('berta', "cde")
-        self.assertTitle("Bertålotta Beispiel")
+        self.assertTitle(USER_DICT['berta']['default_name_format'])
         self.traverse({'description': 'Einzugsermächtigung'})
         self.assertTitle("Einzugsermächtigung Bertålotta Beispiel")
         if self.user_in("farin"):
@@ -2064,7 +2064,7 @@ class TestCdEFrontend(FrontendTest):
             # no links are displayed to non-searchable users
             if not self.user_in("charly"):
                 # searchable member
-                self.traverse({'description': 'Ferdinand F. Findus'})
+                self.traverse({'description': 'Ferdinand Findus'})
                 _traverse_back()
             else:
                 self.assertNoLink('/core/persona/2/show')
@@ -2079,7 +2079,7 @@ class TestCdEFrontend(FrontendTest):
         # links to non-searchable users are only displayed for admins
         if self.user_in("vera"):
             # admin
-            self.traverse({'description': 'Charly C. Clown'})
+            self.traverse({'description': 'Charly Clown'})
             _traverse_back()
             self.traverse({'description': 'Emilia E. Eventis'})
             _traverse_back()
@@ -2102,8 +2102,7 @@ class TestCdEFrontend(FrontendTest):
                       {'description': 'Verg. Veranstaltungen'},
                       {'description': 'PfingstAkademie 2014'})
         self.assertTitle("PfingstAkademie 2014")
-        self.traverse({'description': '{} {}'.format(self.user['given_names'],
-                                                     self.user['family_name'])})
+        self.traverse({'description': self.user['default_name_format']})
 
     @as_users("anton", "charly", "garcia", "inga")
     def test_show_past_event_orgas(self) -> None:
@@ -2111,7 +2110,7 @@ class TestCdEFrontend(FrontendTest):
                       {'description': 'Verg. Veranstaltungen'},
                       {'description': 'FingerAkademie 2020'})
         self.assertTitle("FingerAkademie 2020")
-        self.assertPresence("Ferdinand F. Findus", div="orgas")
+        self.assertPresence("Ferdinand Findus", div="orgas")
         if self.user_in("inga"):
             # no patricipant, but searchable.
             self.assertPresence("und 2 weitere", div="orgas")
@@ -2120,9 +2119,9 @@ class TestCdEFrontend(FrontendTest):
             self.assertNonPresence("Garcia", div="orgas")
             self.traverse({'description': 'Ferdinand'})
         else:
-            self.assertPresence("Charly C. Clown", div="orgas")
+            self.assertPresence("Charly Clown", div="orgas")
             self.assertPresence("Emilia E. Eventis", div="orgas")
-            self.assertPresence("Ferdinand F. Findus", div="orgas")
+            self.assertPresence("Ferdinand Findus", div="orgas")
             self.assertNonPresence("Garcia", div="orgas")
             self.assertNonPresence("weitere")
             if self.user_in("anton"):
@@ -2141,10 +2140,10 @@ class TestCdEFrontend(FrontendTest):
                       {'description': 'Verg. Veranstaltungen'},
                       {'description': 'PfingstAkademie 2014'})
         self.assertTitle("PfingstAkademie 2014")
-        self.assertPresence("Bertålotta Beispiel", div='list-participants')
-        self.assertPresence("Charly C. Clown", div='list-participants')
+        self.assertPresence("Bertå Beispiel", div='list-participants')
+        self.assertPresence("Charly Clown", div='list-participants')
         self.assertPresence("Emilia E. Eventis", div='list-participants')
-        self.assertPresence("Ferdinand F. Findus", div='list-participants')
+        self.assertPresence("Ferdinand Findus", div='list-participants')
         self.assertPresence("Akira Abukara", div='list-participants')
 
         save = self.response
@@ -2254,7 +2253,7 @@ class TestCdEFrontend(FrontendTest):
                       {'description': 'Verg. Veranstaltungen'},
                       {'description': 'PfingstAkademie 2014'},
                       {'description': 'Swish -- und alles ist gut'})
-        self.assertPresence("Bertålotta Beispiel", div='list-participants')
+        self.assertPresence("Bertå Beispiel", div='list-participants')
         self.traverse({'description': 'Bearbeiten'})
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014) bearbeiten")
         f = self.response.forms['changecourseform']
@@ -2263,7 +2262,8 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Omph (PfingstAkademie 2014)")
         self.assertPresence("Loud and proud.", div='description', exact=True)
-        self.assertPresence("Bertålotta Beispiel", div='list-participants')
+        self.assertPresence(USER_DICT['berta']['default_name_format'],
+                            div='list-participants')
 
     @as_users("vera")
     def test_create_past_course(self) -> None:
@@ -2325,7 +2325,7 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
 
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
-        self.assertPresence("Garcia G. Generalis", div='list-participants')
+        self.assertPresence("Garcia Generalis", div='list-participants')
         self.assertPresence("Hades Hell", div='list-participants')
 
         f = self.response.forms['removeparticipantform7']
@@ -2349,7 +2349,7 @@ class TestCdEFrontend(FrontendTest):
         f['is_orga'].checked = True
         self.submit(f)
         self.assertTitle("PfingstAkademie 2014")
-        self.assertPresence("Garcia G. Generalis (Orga) ")
+        self.assertPresence("Garcia Generalis (Orga) ")
         f = self.response.forms['removeparticipantform7']
         self.submit(f)
         self.assertTitle("PfingstAkademie 2014")
@@ -2580,4 +2580,4 @@ class TestCdEFrontend(FrontendTest):
         f['persona_id'] = "DB-2-7"
         self.submit(f)
         self.assertTitle("Nutzerdaten-Log [1–1 von 1]")
-        self.assertPresence("Bertålotta Beispiel")
+        self.assertPresence("Bertå Beispiel")

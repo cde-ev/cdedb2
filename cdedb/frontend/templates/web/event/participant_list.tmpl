@@ -110,10 +110,10 @@
                     {% with persona = personas[registrations[registration_id]['persona_id']] %}
                     <tr id="row-{{ loop.index }}">
                         {% if persona['is_searchable'] and persona['is_member'] %}
-                            <td>{{ profile_link(persona, persona['given_names']) }}</td>
+                            <td>{{ profile_link(persona, util.persona_name(persona, with_family_name=False)) }}</td>
                             <td>{{ profile_link(persona, persona['family_name']) }}</td>
                         {% else %}
-                            <td>{{ persona['given_names'] }}</td>
+                            <td>{{ util.persona_name(persona, with_family_name=False) }}</td>
                             <td>{{ persona['family_name'] }}</td>
                         {% endif %}
                         <td>{{ util.username_mailto(persona) }}</td>
@@ -153,10 +153,10 @@
                     {% with persona = personas[registrations[registration_id]['persona_id']] %}
                     <tr id="row-{{ loop.index }}">
                         {% if persona['is_searchable'] and persona['is_member'] %}
-                            <td>{{ profile_link(persona, persona['given_names']) }}</td>
+                            <td>{{ profile_link(persona, util.persona_name(persona, with_family_name=False)) }}</td>
                             <td>{{ profile_link(persona, persona['family_name']) }}</td>
                         {% else %}
-                            <td>{{ persona['given_names'] }}</td>
+                            <td>{{ util.persona_name(persona, with_family_name=False) }}</td>
                             <td>{{ persona['family_name'] }}</td>
                         {% endif %}
                         <td>{{ util.username_mailto(persona) }}</td>

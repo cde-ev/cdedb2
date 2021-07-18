@@ -3,21 +3,19 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% block title %}
-    {% trans given_names=persona['given_names'], family_name=persona['family_name'],
-             title=ambience['event']['title'] -%}
-    	Registration by {{ given_names }} {{ family_name }} ({{ title }})
+    {% trans name=util.persona_name(persona), title=ambience['event']['title'] -%}
+    	Registration by {{ name }} ({{ title }})
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
 {{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations")) }}
-{{ util.breadcrumb_link(cdedblink("event/show_registration"),
-        "{} {}".format(persona['given_names'], persona['family_name']), active=True, icon="user") }}
+{{ util.breadcrumb_link(cdedblink("event/show_registration"), util.persona_name(persona), active=True, icon="user") }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {{ persona['given_names'] }} {{ persona['family_name'] }}
+        {{ util.persona_name(persona) }}
         <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
@@ -30,10 +28,7 @@
     <dl class="dl-horizontal">
         <dt>{% trans %}Full Name{% endtrans %}</dt>
         <dd>
-            {{ persona['title'] }}
-            {{ persona['given_names'] }}
-            {{ persona['family_name'] }}
-            {{ persona['name_supplement'] }}
+            {{ util.persona_name(persona, given_and_display_names=True, with_titles=True) }}
         </dd>
         <dt>{% trans %}CdEDB-ID{% endtrans %}</dt>
         <dd>{{ util.href(show_user_link(user, persona['id'], event_id=ambience['event']['id']), persona['id']|cdedbid) }}</dd>
@@ -70,7 +65,7 @@
     </dl>
     {% if persona['id'] in ambience['event']['orgas'] %}
     <p class="text-info">
-        {% trans given_names=persona['given_names'] %}
+        {% trans given_names=util.persona_name(persona, with_family_name=False) %}
         	{{ given_names }} is Orga of this event.
         {% endtrans %}
     </p>

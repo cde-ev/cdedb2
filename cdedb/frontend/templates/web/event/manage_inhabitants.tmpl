@@ -38,8 +38,7 @@
                             {% for registration_id in inhabitants[(ambience['lodgement']['id'], part_id)] %}
                                 <tr id="inhabitant-{{ part_id }}-{{ registration_id }}">
                                     <td>
-                                        {{ personas[registrations[registration_id]['persona_id']]['given_names'] }}
-                                        {{ personas[registrations[registration_id]['persona_id']]['family_name'] }}
+                                        {{ util.persona_name(personas[registrations[registration_id]['persona_id']]) }}
                                     </td>
                                     <td>
                                         &ensp;{{ util.input_checkbox('is_camping_mat_%s_%s'|format(part_id, registration_id), gettext("Camping Mat")) }}
@@ -63,8 +62,7 @@
                             <option value="">{% trans %}– none –{% endtrans %}</option>
                             {% for registration_id in without_lodgement[part_id] %}
                                 <option id="{{ registration_id }}_{{ part_id }}" value="{{ registration_id }}">
-                                    {{ personas[registrations[registration_id]['persona_id']]['given_names'] }}
-                                    {{ personas[registrations[registration_id]['persona_id']]['family_name'] }}
+                                    {{ util.persona_name(personas[registrations[registration_id]['persona_id']]) }}
                                 </option>
                             {% endfor %}
                         </select>

@@ -119,8 +119,7 @@
                                 <li>
                                     <details>
                                         <summary>
-                                            {{ personas[registrations[reg_id]['persona_id']]['given_names'] }}
-                                            {{ personas[registrations[reg_id]['persona_id']]['family_name'] }}
+                                            {{ util.persona_name(personas[registrations[reg_id]['persona_id']]) }}
                                         </summary>
                                         {{ diff_table(reg_diff, reg_titles, reg_choices) }}
                                     </details>
@@ -151,8 +150,7 @@
                         <ul class="slim">
                             {% for reg_id in summary['new_registration_ids'] %}
                                 <li>
-                                    {{ personas[delta['registrations'][reg_id]['persona_id']]['given_names'] }}
-                                    {{ personas[delta['registrations'][reg_id]['persona_id']]['family_name'] }}
+                                    {{ util.persona_name(personas[delta['registrations'][reg_id]['persona_id']]) }}
                                 </li>
                             {% endfor %}
                         </ul>
@@ -168,8 +166,7 @@
                         <ul class="slim">
                             {% for reg_id in summary['real_deleted_registration_ids'] %}
                                 <li>
-                                    {{ personas[registrations[reg_id]['persona_id']]['given_names'] }}
-                                    {{ personas[registrations[reg_id]['persona_id']]['family_name'] }}
+                                    {{ util.persona_name(personas[registrations[reg_id]['persona_id']]) }}
                                 </li>
                             {% endfor %}
                         </ul>

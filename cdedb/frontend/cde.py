@@ -2519,7 +2519,7 @@ class CdEFrontend(AbstractUserFrontend):
         scope = QueryScope.past_event_user
         query = Query(
             scope, scope.get_spec(),
-            ("personas.id", "given_names", "family_name", "address",
+            ("personas.id", "given_names", "display_name", "family_name", "address",
              "address_supplement", "postal_code", "location", "country"),
             [("pevent_id", QueryOperators.equal, pevent_id), ],
             (("family_name", True), ("given_names", True),
