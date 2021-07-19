@@ -2255,9 +2255,11 @@ class CoreFrontend(AbstractFrontend):
     def genesis_get_attachment(self, rs: RequestState, attachment_hash: str
                                ) -> Response:
         """Retrieve attachment for genesis case."""
-        path = self.conf["STORAGE_DIR"] / 'genesis_attachment' / attachment_hash
-        mimetype = magic.from_file(str(path), mime=True)
-        return self.send_file(rs, path=path, mimetype=mimetype)
+        data = self.coreproxy.genesis_get_attachment(rs, attachment_hash)
+        mimetype = None
+        if data:
+            mimetype = magic.from_buffer(data, mime=True)
+        return self.send_file(rs, data=data, mimetype=mimetype)
 
     @access("core_admin", *("{}_admin".format(realm)
                             for realm in REALM_SPECIFIC_GENESIS_FIELDS))
