@@ -1817,6 +1817,12 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("0 Probemitgliedschaften beendet", div="11-1011")
         self.assertPresence("12.50 € Guthaben abgebucht.", div="11-1011")
 
+        # This is a bit hacky, but we want to make sure the worker mechanism works.
+        frontend = self.app.app.cde
+        self.assertTrue(frontend.active_workers)
+        frontend.worker_cleanup(self.key, {})  # We don't actually need a real rs here.
+        self.assertFalse(frontend.active_workers)
+
     @as_users("farin")
     def test_expuls(self) -> None:
         link = {'description': 'Semesterverwaltung'}

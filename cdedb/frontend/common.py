@@ -251,6 +251,38 @@ def datetime_filter(val: Union[datetime.datetime, str, None],
         return val.strftime(formatstr)
 
 
+PeriodicMethod = Callable[[Any, RequestState, CdEDBObject], CdEDBObject]
+
+
+class PeriodicJob(Protocol):
+    cron: CdEDBObject
+
+    def __call__(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject:
+        ...
+
+
+def periodic(name: str, period: int = 1
+             ) -> Callable[[PeriodicMethod], PeriodicJob]:
+    """This decorator marks a function of a frontend for periodic execution.
+
+    This just adds a flag and all of the actual work is done by the
+    CronFrontend.
+
+    :param name: the name of this job
+    :param period: the interval in which to execute this job (e.g. period ==
+      2 means every second invocation of the CronFrontend)
+    """
+    def decorator(fun: PeriodicMethod) -> PeriodicJob:
+        fun = cast(PeriodicJob, fun)
+        fun.cron = {
+            'name': name,
+            'period': period,
+        }
+        return fun
+
+    return decorator
+
+
 class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     """Common base class for all frontends."""
     #: to be overridden by children
@@ -1083,6 +1115,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             worker.join(timeout)
         return worker
 
+    @periodic("worker_cleanup")
+    def worker_cleanup(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject:
+        for name, job in list(self.active_workers.items()):
+            if not job.is_alive():
+                del self.active_workers[name]
+        return state
+
 
 class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     """Base class for all frontends which have their own user realm.
@@ -1462,38 +1501,6 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
         )
 
         return cast(F, new_fun)
-
-    return decorator
-
-
-PeriodicMethod = Callable[[Any, RequestState, CdEDBObject], CdEDBObject]
-
-
-class PeriodicJob(Protocol):
-    cron: CdEDBObject
-
-    def __call__(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject:
-        ...
-
-
-def periodic(name: str, period: int = 1
-             ) -> Callable[[PeriodicMethod], PeriodicJob]:
-    """This decorator marks a function of a frontend for periodic execution.
-
-    This just adds a flag and all of the actual work is done by the
-    CronFrontend.
-
-    :param name: the name of this job
-    :param period: the interval in which to execute this job (e.g. period ==
-      2 means every second invocation of the CronFrontend)
-    """
-    def decorator(fun: PeriodicMethod) -> PeriodicJob:
-        fun = cast(PeriodicJob, fun)
-        fun.cron = {
-            'name': name,
-            'period': period,
-        }
-        return fun
 
     return decorator
 
