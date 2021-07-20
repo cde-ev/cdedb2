@@ -5,6 +5,9 @@
 set -x
 
 if [ ! -e /var/lib/ldap/container_already_initalized ]; then
+    # we assume this is the first start and therefore also the db is uninitialized
+    # consequently we give the app container time to create the sample-data
+    sleep 20
 
     # remove pre-installed mdb. This uses the same olcSuffix and blocks our sql database
     rm /etc/ldap/slapd.d/cn=config/olcDatabase=\{1\}mdb.ldif

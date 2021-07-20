@@ -37,6 +37,7 @@ services:
       - 127.0.0.1:8389:389
     depends_on:
       - cdb
+      - app # not really necessary but app creates the sample-data
   adminer:
     image: adminer
     ports:

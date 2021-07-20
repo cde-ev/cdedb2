@@ -55,6 +55,14 @@ or run ``docker-compose down`` otherwise.
 Initializing the containers
 ---------------------------
 
+.. note::
+
+    This is not required anymore if you preserve the original entrypoint.
+    If you however still want to create the sample-data manually etc.
+    you are free to use this section as a guide.
+    Note that all active sessions have to be stopped for the sample-data target to work.
+    In particular you have to stop the LDAP container.
+
 Before you start using the containers you have to initialize a few things.
 Most importantly this includes seeding the postgres database.
 However if you have not run the ``i18n-compile`` and ``doc`` make targets yet,
