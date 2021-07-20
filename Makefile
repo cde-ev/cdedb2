@@ -233,7 +233,7 @@ ifneq ($(wildcard /CONTAINER),/CONTAINER)
 endif
 	$(PSQL) -f cdedb/database/cdedb-tables.sql --dbname=${TESTDATABASENAME}
 	$(PSQL) -f cdedb/database/cdedb-ldap.sql --dbname=${TESTDATABASENAME}
-	$(MAKE) sql-test-shallow
+	$(PSQL) -f tests/ancillary_files/sample_data.sql --dbname=${TESTDATABASENAME}
 
 sql-test-shallow: tests/ancillary_files/sample_data.sql
 	$(PSQL) -f tests/ancillary_files/clean_data.sql --dbname=${TESTDATABASENAME}

@@ -11,7 +11,7 @@ from tests.common import BasicTest
 class TestLDAP(BasicTest):
 
     root_dn = f'dc=cde-ev,dc=de'
-    test_dsa_dn = f'cn=admin,ou=dsa,{root_dn}'  # FIXME why does test not work
+    test_dsa_dn = f'cn=test,ou=dsa,{root_dn}'
     test_dsa_pw = 'secret'
     server: ldap3.Server
 
