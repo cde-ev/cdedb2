@@ -1,25 +1,12 @@
 FROM debian:buster-20200607
 
-# TODO replace with mount from host, snakeoil or first-run script?
-RUN apt-get update && apt-get install --yes --no-install-recommends openssl \
-    && mkdir /etc/ssl/apache2 \
-    && openssl req \
-        -x509 \
-        -newkey rsa:4096 \
-        -out /etc/ssl/apache2/server.pem \
-        -keyout /etc/ssl/apache2/server.key \
-        -days 365 \
-        -nodes \
-        -subj "/C=DE/O=CdE e.V./CN=cdedb.local/emailAddress=cdedb@lists.cde-ev.de" \
-    && apt-get purge --yes --autoremove openssl \
-    && rm -rf /var/lib/apt/lists/*
-
 # texlive-plain-generic is needed for iftex - can be removed in next debian
 RUN apt-get update && apt-get install --yes --no-install-recommends \
     sudo \
     make \
     gettext \
     \
+    openssl \
     apache2 \
     python3 \
     libapache2-mod-wsgi-py3 \
@@ -94,11 +81,12 @@ RUN mkdir /var/lib/cdedb \
 # make storage persistent
 VOLUME /var/lib/cdedb
 
-COPY ./related/auto-build/files/stage3 /tmp/autobuild
+COPY ./related/docker/cdedb-entrypoint.sh ./related/auto-build/files/stage3 /tmp/autobuild/
 
 # put configuration files into correct positions
 # and add symlink to /cdedb2/cdedb directory so python can find it
-RUN a2enmod ssl wsgi headers \
+RUN cp /tmp/autobuild/cdedb-entrypoint.sh /cdedb-entrypoint.sh \
+    && a2enmod ssl wsgi headers \
     && a2dissite 000-default \
     && echo "" > /etc/apache2/ports.conf \
     && cp /tmp/autobuild/cdedb-site.conf /etc/apache2/sites-available \
@@ -119,4 +107,5 @@ EXPOSE 443
 WORKDIR /cdedb2
 
 STOPSIGNAL SIGWINCH
+ENTRYPOINT ["/cdedb-entrypoint.sh"]
 CMD ["sh", "-c", "APACHE_HTTPD='exec /usr/sbin/apache2' exec apachectl -DFOREGROUND"]
