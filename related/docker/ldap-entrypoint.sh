@@ -6,6 +6,9 @@ set -x
 
 if [ ! -e /var/lib/ldap/container_already_initalized ]; then
 
+    # remove pre-installed mdb. This uses the same olcSuffix and blocks our sql database
+    rm /etc/ldap/slapd.d/cn=config/olcDatabase=\{1\}mdb.ldif
+
     # Replace localhost with cdb as that is where the db is accesible by default.
     sed -i "s/localhost/${DATABASE_HOST:-cdb}/" /etc/odbc.ini /app/sql-ldap.ldif
 
