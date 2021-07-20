@@ -38,6 +38,11 @@ Starting the containers
 To start the containers you can simply run ``docker-copmpose up``.
 This will let the containers run in the foreground and block your terminal.
 If you wish to run the containers in a detached mode you can append a ``-d``.
+For the LDAP container to properly work you have to start it after seeding the database.
+To do so you may use ``docker-compose up app`` and performing the steps
+in the `Initializing the containers`_ section.
+Afterwards you may start all containers using ``docker-compose up`.
+Alternatively you can also comment out the LDAP container in the docker-compose file.
 
 Once the containers are running you can execute ``docker-compose ps``
 to check if everything went well and all containers are still alive.
