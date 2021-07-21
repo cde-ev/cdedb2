@@ -2742,7 +2742,7 @@ class EventBackend(AbstractBackend):
                 if not part['waitlist_field']:
                     ret[part_id] = None
                     continue
-                field = event['fields'][part['waitlist_field']]
+                field_name = event['fields'][part['waitlist_field']]['field_name']
                 query = ("SELECT reg.id, rparts.status"
                          " FROM event.registrations AS reg"
                          " LEFT OUTER JOIN event.registration_parts AS rparts"
@@ -2750,9 +2750,9 @@ class EventBackend(AbstractBackend):
                          " WHERE rparts.part_id = %s AND rparts.status = %s")
                 data = self.query_all(rs, query, (part_id, waitlist))
                 ret[part_id] = xsorted(
-                    (reg['id'] for reg in data), key=lambda r_id:
-                    (fields_by_id[r_id].get(field['field_name'], 0), r_id))  # pylint: disable=cell-var-from-loop # noqa
-        return ret
+                    (reg['id'] for reg in data),
+                    key=lambda r_id: (fields_by_id[r_id].get(field_name, 0) or 0, r_id))  # pylint: disable=cell-var-from-loop # noqa
+            return ret
 
     @access("event")
     def get_waitlist(self, rs: RequestState, event_id: int,
