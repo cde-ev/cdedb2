@@ -351,7 +351,7 @@ def get_bleach_cleaner() -> bleach.sanitizer.Cleaner:
         # customizations
         'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'colgroup', 'col', 'tr', 'th',
         'thead', 'table', 'tbody', 'td', 'hr', 'p', 'span', 'div', 'pre', 'tt',
-        'sup', 'sub', 'br', 'u', 'dl', 'dt', 'dd', 'details', 'summary']
+        'sup', 'sub', 'small', 'br', 'u', 'dl', 'dt', 'dd', 'details', 'summary']
     attributes = {
         'a': ['href', 'title'],
         'abbr': ['title'],
