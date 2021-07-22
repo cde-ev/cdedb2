@@ -76,6 +76,11 @@
                 {{ util.form_input_textarea(name="entries_{}".format(field_id), label=gettext("Options"),
                                             attributes=('data-basename="entries_"'|s if newrow else ('readonly' if not changeable else '')),
                                             aclass='drow-input') }}
+                {% if association == enums['FieldAssociations'].registration %}
+                    {{ util.form_input_checkbox(
+                            label=gettext("Display at Check-In"), name="checkin_{}".format(field_id),
+                            attributes=('data-basename="creation_"'|s if newrow else ('readonly' if not changeable else ''))) }}
+                {% endif %}
             </div>
         </div>
     </div>

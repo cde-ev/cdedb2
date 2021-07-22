@@ -1021,52 +1021,59 @@ class EventFrontend(AbstractUserFrontend):
                    if delete_flags['delete_{}'.format(field_id)]}
         ret: CdEDBOptionalMap = {}
 
-        def params_a(anid: int) -> TypeMapping:
+        def params_change(anid: int) -> TypeMapping:
+            """Return specification of parameters for changing an existing field."""
             return {
                 f"kind_{anid}": const.FieldDatatypes,
                 f"association_{anid}": const.FieldAssociations,
                 f"entries_{anid}": Optional[str],  # type: ignore
+                f"checkin_{anid}": bool,
             }
+        tmp: Optional[CdEDBObject]
         for field_id in fields:
             if field_id not in deletes:
-                tmp: Optional[CdEDBObject] = request_extractor(rs, params_a(field_id))
+                tmp = request_extractor(rs, params_change(field_id))
                 if rs.has_validation_errors():
                     break
-                tmp = check(rs, vtypes.EventField, tmp,
-                            extra_suffix="_{}".format(field_id))
+                tmp = check(rs, vtypes.EventField, tmp, extra_suffix=f"_{field_id}")
                 if tmp:
                     temp = {
-                        'kind': tmp["kind_{}".format(field_id)],
-                        'association': tmp["association_{}".format(field_id)],
-                        'entries': tmp["entries_{}".format(field_id)]}
+                        'kind': tmp[f"kind_{field_id}"],
+                        'association': tmp[f"association_{field_id}"],
+                        'entries': tmp[f"entries_{field_id}"],
+                        'checkin': tmp[f"checkin_{field_id}"],
+                    }
                     ret[field_id] = temp
         for field_id in deletes:
             ret[field_id] = None
         marker = 1
 
-        def params_b(anid: int) -> TypeMapping:
+        def params_creation(anid: int) -> TypeMapping:
+            """Return specification of parameters for creating a new field."""
             return {
                 f"field_name_-{anid}": str,
                 f"kind_-{anid}": const.FieldDatatypes,
                 f"association_-{anid}": const.FieldAssociations,
                 f"entries_-{anid}": Optional[str],  # type: ignore
+                f"checkin_-{anid}": bool,
             }
         while marker < 2 ** 10:
-            will_create = unwrap(request_extractor(
-                rs, {f"create_-{marker}": bool}))
+            will_create = unwrap(request_extractor(rs, {f"create_-{marker}": bool}))
             if will_create:
-                tmp = request_extractor(rs, params_b(marker))
+                tmp = request_extractor(rs, params_creation(marker))
                 if rs.has_validation_errors():
                     marker += 1
                     break
                 tmp = check(rs, vtypes.EventField, tmp, creation=True,
-                            extra_suffix="_-{}".format(marker))
+                            extra_suffix=f"_-{marker}")
                 if tmp:
                     temp = {
-                        'field_name': tmp["field_name_-{}".format(marker)],
-                        'kind': tmp["kind_-{}".format(marker)],
-                        'association': tmp["association_-{}".format(marker)],
-                        'entries': tmp["entries_-{}".format(marker)]}
+                        'field_name': tmp[f"field_name_-{marker}"],
+                        'kind': tmp[f"kind_-{marker}"],
+                        'association': tmp[f"association_-{marker}"],
+                        'entries': tmp[f"entries_-{marker}"],
+                        'checkin': tmp[f"checkin_-{marker}"],
+                    }
                     ret[-marker] = temp
             else:
                 break
@@ -5491,9 +5498,14 @@ class EventFrontend(AbstractUserFrontend):
                 personas[registrations[anid]['persona_id']]))
         registrations = OrderedDict(
             (reg_id, registrations[reg_id]) for reg_id in reg_order)
+        checkin_fields = {
+            field_id: f for field_id, f in rs.ambience['event']['fields'].items()
+            if f['checkin'] and f['association'] == const.FieldAssociations.registration
+        }
         return self.render(rs, "checkin", {
             'registrations': registrations, 'personas': personas,
-            'lodgements': lodgements})
+            'lodgements': lodgements, 'checkin_fields': checkin_fields,
+        })
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)

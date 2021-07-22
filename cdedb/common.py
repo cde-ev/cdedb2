@@ -2041,7 +2041,7 @@ EVENT_FIELDS = (
     "notes", "participant_info", "offline_lock", "is_visible",
     "is_course_list_visible", "is_course_state_visible", "is_participant_list_visible",
     "is_course_assignment_visible", "is_cancelled", "is_archived", "lodge_field",
-    "camping_mat_field", "course_room_field", "custom_checkin_fields")
+    "camping_mat_field", "course_room_field")
 
 #: Fields of an event part organized via CdEDB
 EVENT_PART_FIELDS = ("id", "event_id", "title", "shortname", "part_begin",
@@ -2052,8 +2052,9 @@ COURSE_TRACK_FIELDS = ("id", "part_id", "title", "shortname", "num_choices",
                        "min_choices", "sortkey")
 
 #: Fields of an extended attribute associated to an event entity
-FIELD_DEFINITION_FIELDS = ("id", "event_id", "field_name", "kind",
-                           "association", "entries")
+FIELD_DEFINITION_FIELDS = (
+    "id", "event_id", "field_name", "kind", "association", "entries", "checkin",
+)
 
 #: Fields of a modifier for an event_parts fee.
 FEE_MODIFIER_FIELDS = ("id", "part_id", "modifier_name", "amount", "field_id")

@@ -72,15 +72,10 @@
                         </small>
                     </div>
                 </div>
-                {% if ambience['event']['custom_checkin_fields'] %}
+                {% if checkin_fields %}
                     <hr class="nosp" />
-                    {% set relevant_fields = [] %}
-                    {% for field_id, field in ambience['event']['fields']|keydictsort(EntitySorter.event_field)
-                            if field['id'] in ambience['event']['custom_checkin_fields'] %}
-                        {% do relevant_fields.append((field_id, field)) %}
-                    {% endfor %}
                     <div class="row">
-                        {% for slice in relevant_fields|slice(2) %}
+                        {% for slice in checkin_fields|keydictsort(EntitySorter.event_field)|slice(2) %}
                             <div class="col-sm-6">
                                 <dl class="dl-horizontal small" style="margin-bottom: 5px">
                                     {% for field_id, field in slice %}

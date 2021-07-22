@@ -1998,7 +1998,6 @@ class EventBackend(AbstractBackend):
                 indirect_fields = set(
                     edata[f] for f in ("lodge_field", "camping_mat_field",
                                        "course_room_field") if f in edata)
-                indirect_fields |= set(edata.get("custom_checkin_fields", list()))
                 if indirect_fields:
                     indirect_data = {e['id']: e for e in self.sql_select(
                         rs, "event.field_definitions",
@@ -2015,15 +2014,6 @@ class EventBackend(AbstractBackend):
                         self._validate_special_event_field(
                             rs, data['id'], "course_room_field",
                             indirect_data[edata['course_room_field']])
-                    if edata['custom_checkin_fields']:
-                        legal_assoc = const.FieldAssociations.registration
-                        checkin_fields = [x for x in indirect_data.values()
-                                          if x['id'] in edata['custom_checkin_fields']]
-                        if any(field['event_id'] != data['id']
-                               or field['association'] != legal_assoc
-                               for field in checkin_fields):
-                            raise ValueError(n_("Unfit field for %(field)s"),
-                                             {'field': 'custom_checkin_fields'})
                 ret *= self.sql_update(rs, "event.events", edata)
                 self.event_log(rs, const.EventLogCodes.event_changed,
                                data['id'])

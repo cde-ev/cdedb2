@@ -671,10 +671,8 @@ CREATE TABLE event.events (
         -- reference to special purpose custom data fields
         lodge_field                  integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
         camping_mat_field            integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
-        course_room_field            integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
+        course_room_field            integer DEFAULT NULL  -- REFERENCES event.field_definitions(id)
         -- The references above are not yet possible, but will be added later on.
-        -- Additional custom fields which are displayed during checking.
-        custom_checkin_fields        integer[] NOT NULL DEFAULT array[]::integer[]
 );
 GRANT SELECT, UPDATE ON event.events TO cdb_persona;
 GRANT INSERT, DELETE ON event.events TO cdb_admin;
@@ -722,6 +720,8 @@ CREATE TABLE event.field_definitions (
         kind                    integer NOT NULL,
         -- see cdedb.database.constants.FieldAssociations
         association             integer NOT NULL,
+        -- whether or not to display this field during checking
+        checkin                 boolean NOT NULL DEFAULT FALSE,
         -- the following array describes the available selections
         -- first entry of each tuple is the value, second entry the description
         -- the whole thing may be NULL, if the field does not enforce a

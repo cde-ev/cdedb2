@@ -63,7 +63,6 @@ class TestEventBackend(BackendTest):
 
             academy! :)""",
             'use_additional_questionnaire': False,
-            'custom_checkin_fields': [],
             'notes': None,
             'orgas': {2, 7},
             'parts': {
