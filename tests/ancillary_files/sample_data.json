@@ -3759,7 +3759,8 @@
             "field_name": "brings_balls",
             "kind": 2,
             "association": 1,
-            "entries": null
+            "entries": null,
+            "checkin": true
         },
         {
             "id": 2,
@@ -3780,7 +3781,8 @@
                     "etc",
                     "anything else"
                 ]
-            ]
+            ],
+            "checkin": false
         },
         {
             "id": 3,
@@ -3788,7 +3790,8 @@
             "field_name": "lodge",
             "kind": 1,
             "association": 1,
-            "entries": null
+            "entries": null,
+            "checkin": false
         },
         {
             "id": 4,
@@ -3796,7 +3799,8 @@
             "field_name": "may_reserve",
             "kind": 2,
             "association": 1,
-            "entries": null
+            "entries": null,
+            "checkin": false
         },
         {
             "id": 5,
@@ -3804,7 +3808,8 @@
             "field_name": "room",
             "kind": 1,
             "association": 2,
-            "entries": null
+            "entries": null,
+            "checkin": false
         },
         {
             "id": 6,
@@ -3829,7 +3834,8 @@
                     "none",
                     "no radiation"
                 ]
-            ]
+            ],
+            "checkin": false
         },
         {
             "id": 7,
@@ -3837,7 +3843,8 @@
             "field_name": "is_child",
             "kind": 2,
             "association": 1,
-            "entries": null
+            "entries": null,
+            "checkin": false
         },
         {
             "id": 8,
@@ -3845,7 +3852,8 @@
             "field_name": "anzahl_GROSSBUCHSTABEN",
             "kind": 3,
             "association": 1,
-            "entries": null
+            "entries": null,
+            "checkin": true
         }
     ],
     "event.fee_modifiers": [
