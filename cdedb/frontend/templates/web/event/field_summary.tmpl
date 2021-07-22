@@ -78,7 +78,7 @@
                                             aclass='drow-input') }}
                 {% if association == enums['FieldAssociations'].registration %}
                     {{ util.form_input_checkbox(
-                            label=gettext("Display at Check-In"), name="checkin_{}".format(field_id),
+                            label=gettext("Display at Checkin"), name="checkin_{}".format(field_id),
                             attributes=('data-basename="creation_"'|s if newrow else ('readonly' if not changeable else ''))) }}
                 {% endif %}
             </div>

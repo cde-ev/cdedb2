@@ -10306,6 +10306,9 @@ msgstr "Beschreibungstext"
 msgid "Value"
 msgstr "Wert"
 
+msgid "Display at Checkin"
+msgstr "Beim Checkin anzeigen"
+
 #: cdedb/frontend/templates/web/event/generic.tmpl:14
 #, python-format
 msgid "for %(track)s"
