@@ -49,6 +49,21 @@ olcModuleLoad: memberof
 # olcDbIndex: member,memberUid eq
 # olcDbMaxSize: 1073741824
 
+# specify the password hash format
+# however, I am not sure if this works, it seems to be enough to prepend the
+# '{CRYPT}' string in front of the password hash in the database...
+dn: olcDatabase={-1}frontend,cn=config
+changetype: modify
+add: olcPasswordHash
+olcPasswordHash: {CRYPT}
+
+# specify the password hash format
+# use SHA512 like in the CdEDB
+dn: cn=config
+changetype: modify
+add: olcPasswordCryptSaltFormat
+olcPasswordCryptSaltFormat: $6$%.16s
+
 # database definitions
 # see https://manpages.debian.org/buster/slapd/slapd-config.5.en.html#GENERAL_DATABASE_OPTIONS
 dn: olcDatabase=sql,cn=config
