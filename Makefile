@@ -74,9 +74,9 @@ doc:
 .ONESHELL:
 ldap-reset:
 	@echo "Remove slapd ..."
-	sudo apt remove --purge -y slapd > /dev/null
+	sudo apt-get remove --purge -y slapd > /dev/null
 	echo "... apt update ..."
-	sudo apt update > /dev/null
+	sudo apt-get update > /dev/null
 	# pre-set slapd configurations
 	sudo debconf-set-selections <<EOF
 	slapd slapd/internal/adminpw password secret
@@ -87,7 +87,7 @@ ldap-reset:
 	slapd shared/organization string CdEDB
 	EOF
 	echo "... and reinstall slapd."
-	sudo apt install -y slapd > /dev/null
+	sudo apt-get install -y slapd > /dev/null
 	echo
 	echo "remove pre-installed mdb. This uses the same olcSuffix and blocks our sql database"
 	sudo rm /etc/ldap/slapd.d/cn=config/olcDatabase={1}mdb.ldif
