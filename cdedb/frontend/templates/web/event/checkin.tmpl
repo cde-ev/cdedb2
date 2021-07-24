@@ -26,7 +26,7 @@
         <input type="search" id="selector" class="form-control" aria-label="{% trans %}Name to Search{% endtrans %}" />
     {% endcall %}
 
-    <div class="list-group list-group-hover">
+    <div class="list-group list-group-hover" id="checkin-list">
         {% for registration_id, registration in registrations.items() %}
         <div class="selectee list-group-item">
             <div class="row">
@@ -74,7 +74,7 @@
                 </div>
                 {% if checkin_fields %}
                     <hr class="nosp" />
-                    <div class="row">
+                    <div class="row" id="checkin-fields-{{ registration_id }}">
                         {% for slice in checkin_fields|keydictsort(EntitySorter.event_field)|slice(2) %}
                             <div class="col-sm-6">
                                 <dl class="dl-horizontal small" style="margin-bottom: 5px">
