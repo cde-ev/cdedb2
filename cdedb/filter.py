@@ -428,7 +428,7 @@ def get_markdown_parser() -> markdown.Markdown:
             },
         }
         md = markdown.Markdown(extensions=["extra", "sane_lists", "smarty", "toc"],
-                               extension_configs=extension_configs)  # type: ignore
+                               extension_configs=extension_configs)
 
         MARKDOWN_PARSER.md = md
     else:
