@@ -3,9 +3,8 @@
 """Services for the ml realm."""
 
 import urllib.error
-from typing import Collection, Tuple
+from typing import Collection
 
-import mailmanclient
 from werkzeug import Response
 
 import cdedb.database.constants as const
@@ -31,32 +30,10 @@ class MlFrontend(MailmanMixin, MlBaseFrontend):
         "discard": const.MlLogCodes.moderate_discard,
     }
 
-    def moderate_single_message(
-        self, rs: RequestState, mmlist: mailmanclient.MailingList, request_id: int,
-        action: str
-    ) -> Tuple[int, str]:
-        try:
-            held = mmlist.get_held_message(request_id)
-            change_note = f'{held.sender} / {held.subject}'
-            response = mmlist.moderate_message(request_id, action)
-        except urllib.error.HTTPError:
-            rs.notify("error", n_("Message unavailable."))
-            return 0, ""
-        else:
-            return response.status, change_note
-
-    @access("ml", modi={"POST"})
-    @mailinglist_guard()
-    @REQUESTdata("request_ids", "action")
-    def message_moderation_multi(self, rs: RequestState, mailinglist_id: int,
-                                 request_ids: Collection[int], action: str) -> Response:
-        if action not in {"accept", "discard"}:
-            rs.add_validation_error(
-                ("action", ValueError(n_("Invalid moderation action."))))
-        if rs.has_validation_errors():
-            return self.message_moderation_form(rs, mailinglist_id)
+    def _moderate_messages(self, rs: RequestState, request_ids: Collection[int],
+                           action: str) -> Response:
+        """Helper to take care of the communication with mailman."""
         dblist = rs.ambience['mailinglist']
-
         if (self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or (
                 self.conf["CDEDB_DEV"] and not self.conf["CDEDB_TEST"])):
             self.logger.info("Skipping mailman request in dev/offline mode.")
@@ -64,19 +41,27 @@ class MlFrontend(MailmanMixin, MlBaseFrontend):
         else:
             mailman = self.get_mailman()
             mmlist = mailman.get_list_safe(dblist['address'])
+            if mmlist is None:
+                rs.notify("error", n_("List unavailable."))
+                return self.redirect(rs, "ml/message_moderation")
             success = warning = error = 0
             for request_id in request_ids:
-                status, change_note = self.moderate_single_message(
-                    rs, mmlist, request_id, action)
-                if status // 100 == 2:
-                    success += 1
-                    self.mlproxy.log_moderation(
-                        rs, self.moderate_action_logcodes[action],
-                        mailinglist_id, change_note=change_note)
-                elif status // 100 == 4:
-                    warning += 1
+                try:
+                    held = mmlist.get_held_message(request_id)
+                    change_note = f'{held.sender} / {held.subject}'
+                    response = mmlist.moderate_message(request_id, action)
+                except urllib.error.HTTPError:
+                    rs.notify("error", n_("Message unavailable."))
                 else:
-                    error += 1
+                    if response.status // 100 == 2:
+                        success += 1
+                        self.mlproxy.log_moderation(
+                            rs, self.moderate_action_logcodes[action],
+                            dblist['id'], change_note=change_note)
+                    elif response.status // 100 == 4:
+                        warning += 1
+                    else:
+                        error += 1
             if success:
                 rs.notify("success", n_("%(count)s messages moderated."),
                           {"count": success})
@@ -88,6 +73,18 @@ class MlFrontend(MailmanMixin, MlBaseFrontend):
                           {"count": error})
 
         return self.redirect(rs, "ml/message_moderation")
+
+    @access("ml", modi={"POST"})
+    @mailinglist_guard()
+    @REQUESTdata("request_ids", "action")
+    def message_moderation_multi(self, rs: RequestState, mailinglist_id: int,
+                                 request_ids: Collection[int], action: str) -> Response:
+        if action not in {"accept", "discard"}:
+            rs.add_validation_error(
+                ("action", ValueError(n_("Invalid moderation action."))))
+        if rs.has_validation_errors():
+            return self.message_moderation_form(rs, mailinglist_id)
+        return self._moderate_messages(rs, request_ids, action)
 
     @access("ml", modi={"POST"})
     @mailinglist_guard()
@@ -110,25 +107,4 @@ class MlFrontend(MailmanMixin, MlBaseFrontend):
             self.mlproxy.add_whitelist_entry(rs, dblist['id'], sender)
             action = "accept"
 
-        if (self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or (
-                self.conf["CDEDB_DEV"] and not self.conf["CDEDB_TEST"])):
-            self.logger.info("Skipping mailman request in dev/offline mode.")
-            rs.notify('info', n_("Skipping mailman request in dev/offline mode."))
-        else:
-            mailman = self.get_mailman()
-            mmlist = mailman.get_list_safe(dblist['address'])
-            if mmlist is None:
-                rs.notify("error", n_("List unavailable."))
-            else:
-                status, change_note = self.moderate_single_message(
-                    rs, mmlist, request_id, action)
-                if status // 100 == 2:
-                    rs.notify("success", n_("Message moderated."))
-                    self.mlproxy.log_moderation(
-                        rs, self.moderate_action_logcodes[action],
-                        mailinglist_id, change_note=change_note)
-                elif status // 100 == 4:
-                    rs.notify("warning", n_("Message not moderated."))
-                else:
-                    rs.notify("error", n_("Message not moderated."))
-        return self.redirect(rs, "ml/message_moderation")
+        return self._moderate_messages(rs, [request_id], action)
