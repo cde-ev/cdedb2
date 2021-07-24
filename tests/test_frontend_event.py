@@ -3462,6 +3462,33 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/checkin'})
+        # Check the filtering per event part.
+        # TODO place and check actual links.
+        self.assertPresence("Anton Armin", div="checkin-list")
+        self.assertPresence("Bertålotta Beispiel", div="checkin-list")
+        self.assertPresence("Emilia E.", div="checkin-list")
+        self.get("/event/event/1/checkin?part_ids=1")
+        self.assertNonPresence("Anton Armin", div="checkin-list")
+        self.assertPresence("Bertålotta Beispiel", div="checkin-list")
+        self.assertNonPresence("Emilia E.", div="checkin-list")
+        self.get("/event/event/1/checkin?part_ids=2")
+        self.assertNonPresence("Anton Armin", div="checkin-list")
+        self.assertNonPresence("Bertålotta Beispiel", div="checkin-list")
+        self.assertPresence("Emilia E.", div="checkin-list")
+        self.get("/event/event/1/checkin?part_ids=3")
+        self.assertPresence("Anton Armin", div="checkin-list")
+        self.assertNonPresence("Bertålotta Beispiel", div="checkin-list")
+        self.assertPresence("Emilia E.", div="checkin-list")
+        # TODO this check does not really make sense with the existing data.
+        self.get("/event/event/1/checkin?part_ids=2,3")
+        self.assertPresence("Anton Armin", div="checkin-list")
+        self.assertNonPresence("Bertålotta Beispiel", div="checkin-list")
+        self.assertPresence("Emilia E.", div="checkin-list")
+        self.get("/event/event/1/checkin?part_ids=1,2,3")
+        self.assertPresence("Anton Armin", div="checkin-list")
+        self.assertPresence("Bertålotta Beispiel", div="checkin-list")
+        self.assertPresence("Emilia E.", div="checkin-list")
+
         self.assertTitle("Checkin (Große Testakademie 2222)")
 
         self.assertPresence("anzahl_GROSSBUCHSTABEN 4", div="checkin-fields-1")

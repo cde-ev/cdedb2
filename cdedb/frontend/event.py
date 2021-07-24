@@ -5342,17 +5342,22 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard(check_offline=True)
-    def checkin_form(self, rs: RequestState, event_id: int) -> Response:
+    @REQUESTdata("part_ids")
+    def checkin_form(self, rs: RequestState, event_id: int,
+                     part_ids: Optional[vtypes.IntCSVList]) -> Response:
         """Render form."""
+        parts = rs.ambience['event']['parts']
+        if part_ids:
+            parts = {p_id: part for p_id, part in parts.items() if p_id in part_ids}
+        if rs.has_validation_errors() or not parts:
+            parts = rs.ambience['event']['parts']
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         there = lambda registration, part_id: const.RegistrationPartStati(
             registration['parts'][part_id]['status']).is_present()
         registrations = {
-            k: v
-            for k, v in registrations.items()
-            if (not v['checkin']
-                and any(there(v, id) for id in rs.ambience['event']['parts']))}
+            k: v for k, v in registrations.items()
+            if (not v['checkin'] and any(there(v, id) for id in parts))}
         personas = self.coreproxy.get_event_users(rs, tuple(
             reg['persona_id'] for reg in registrations.values()), event_id)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
