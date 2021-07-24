@@ -5344,7 +5344,7 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard(check_offline=True)
     @REQUESTdata("part_ids")
     def checkin_form(self, rs: RequestState, event_id: int,
-                     part_ids: Optional[vtypes.IntCSVList]) -> Response:
+                     part_ids: Optional[vtypes.IntCSVList] = None) -> Response:
         """Render form."""
         parts = rs.ambience['event']['parts']
         if part_ids:
