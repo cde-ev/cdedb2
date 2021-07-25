@@ -528,7 +528,7 @@ class TestCron(CronTest):
         self.assertEqual(
             mm_lists['witz'].subscribe.call_args_list,
             [umcall('new-anton@example.cde',
-                    display_name='Anton Armin A. Administrator',
+                    display_name='Anton Administrator',
                     pre_approved=True, pre_confirmed=True, pre_verified=True)])
         self.assertEqual(
             mm_lists['witz'].unsubscribe.call_args_list,

@@ -48,8 +48,7 @@
             <ul id="result">
                 {% for dataset in result %}
                     <li>
-                        {{ util.href(show_user_link(user, dataset['id'], quote_me=True),
-                                     "{} {}".format(dataset['given_names'], dataset['family_name'])) }}
+                        {{ util.persona_anchor(dataset, given_and_display_names=True, quote_me=True) }}
                     </li>
                 {% endfor %}
                 {% if count > cutoff %}

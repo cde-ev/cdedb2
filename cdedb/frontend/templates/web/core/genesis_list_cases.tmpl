@@ -27,7 +27,7 @@
                 <div class="row" id="request-{{ genesis_case_id }}">
                     <div class="col-sm-3">
                         <p>
-                            {{ entry['given_names'] }} {{ entry['family_name'] }}
+                            util.persona_name(entry, only_given_names=True)
                             &lt;{{ util.href(util.mailto(entry['username']), entry['username']) }}&gt;
                         </p>
                     </div>

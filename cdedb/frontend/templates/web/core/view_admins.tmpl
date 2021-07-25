@@ -132,7 +132,7 @@
         <div class="col-sm-{{ col_width }}">
             <ul class="nosp slim">
                 {% for admin in sublist %}
-                    <li>{{ util.persona_anchor(personas[admin]) }}</li>
+                    <li>{{ util.persona_anchor(personas[admin], given_and_display_names=True) }}</li>
                 {% endfor %}
             </ul>
         </div>

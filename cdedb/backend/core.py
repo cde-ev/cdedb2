@@ -497,7 +497,7 @@ class CoreBackend(AbstractBackend):
                               ) -> CdEDBObjectMap:
         """Retrieve changes in the changelog."""
         stati = affirm_set(const.MemberChangeStati, stati)
-        query = glue("SELECT id, persona_id, given_names, family_name,",
+        query = glue("SELECT id, persona_id, given_names, display_name, family_name,",
                      "generation, ctime",
                      "FROM core.changelog WHERE code = ANY(%s)")
         data = self.query_all(rs, query, (stati,))
@@ -2225,7 +2225,7 @@ class CoreBackend(AbstractBackend):
     def genesis_attachment_usage(self, rs: RequestState,
                                  attachment_hash: str) -> bool:
         """Check whether a genesis attachment is still referenced in a case."""
-        attachment_hash = affirm(str, attachment_hash)
+        attachment_hash = affirm(vtypes.RestrictiveIdentifier, attachment_hash)
         query = "SELECT COUNT(*) FROM core.genesis_cases WHERE attachment_hash = %s"
         return bool(unwrap(self.query_one(rs, query, (attachment_hash,))))
 
@@ -2234,7 +2234,7 @@ class CoreBackend(AbstractBackend):
         """Delete genesis attachments that are no longer in use."""
         ret = 0
         for f in self.genesis_attachment_dir.iterdir():
-            if f.is_file() and not self.genesis_attachment_usage(rs, str(f)):
+            if f.is_file() and not self.genesis_attachment_usage(rs, f.name):
                 f.unlink()
                 ret += 1
         return ret

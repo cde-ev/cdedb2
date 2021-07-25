@@ -391,6 +391,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Anton",
         'given_names': "Anton Armin A.",
         'family_name': "Administrator",
+        'default_name_format': "Anton Administrator",
     },
     "berta": {
         'id': 2,
@@ -400,6 +401,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Bertå",
         'given_names': "Bertålotta",
         'family_name': "Beispiel",
+        'default_name_format': "Bertå Beispiel",
     },
     "charly": {
         'id': 3,
@@ -409,6 +411,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Charly",
         'given_names': "Charly C.",
         'family_name': "Clown",
+        'default_name_format': "Charly Clown",
     },
     "daniel": {
         'id': 4,
@@ -418,15 +421,17 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Daniel",
         'given_names': "Daniel D.",
         'family_name': "Dino",
+        'default_name_format': "Daniel Dino",
     },
     "emilia": {
         'id': 5,
         'DB-ID': "DB-5-1",
         'username': "emilia@example.cde",
         'password': "secret",
-        'display_name': "Emilia",
+        'display_name': "Emmy",
         'given_names': "Emilia E.",
         'family_name': "Eventis",
+        'default_name_format': "Emilia E. Eventis",
     },
     "ferdinand": {
         'id': 6,
@@ -436,6 +441,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Ferdinand",
         'given_names': "Ferdinand F.",
         'family_name': "Findus",
+        'default_name_format': "Ferdinand Findus",
     },
     "garcia": {
         'id': 7,
@@ -445,6 +451,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Garcia",
         'given_names': "Garcia G.",
         'family_name': "Generalis",
+        'default_name_format': "Garcia Generalis",
     },
     "hades": {
         'id': 8,
@@ -454,6 +461,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': None,
         'given_names': "Hades",
         'family_name': "Hell",
+        'default_name_format': "Hades Hell",
     },
     "inga": {
         'id': 9,
@@ -463,6 +471,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Inga",
         'given_names': "Inga",
         'family_name': "Iota",
+        'default_name_format': "Inga Iota",
     },
     "janis": {
         'id': 10,
@@ -472,6 +481,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Janis",
         'given_names': "Janis",
         'family_name': "Jalapeño",
+        'default_name_format': "Janis Jalapeño",
     },
     "kalif": {
         'id': 11,
@@ -481,6 +491,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Kalif",
         'given_names': "Kalif ibn al-Ḥasan",
         'family_name': "Karabatschi",
+        'default_name_format': "Kalif Karabatschi",
     },
     "lisa": {
         'id': 12,
@@ -490,6 +501,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Lisa",
         'given_names': "Lisa",
         'family_name': "Lost",
+        'default_name_format': "Lisa Lost",
     },
     "martin": {
         'id': 13,
@@ -499,6 +511,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Martin",
         'given_names': "Martin",
         'family_name': "Meister",
+        'default_name_format': "Martin Meister",
     },
     "nina": {
         'id': 14,
@@ -508,6 +521,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Nina",
         'given_names': "Nina",
         'family_name': "Neubauer",
+        'default_name_format': "Nina Neubauer",
     },
     "olaf": {
         'id': 15,
@@ -517,6 +531,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Olaf",
         'given_names': "Olaf",
         'family_name': "Olafson",
+        'default_name_format': "Olaf Olafson",
     },
     "paul": {
         'id': 16,
@@ -526,6 +541,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Paul",
         'given_names': "Paulchen",
         'family_name': "Panther",
+        'default_name_format': "Paul Panther",
     },
     "quintus": {
         'id': 17,
@@ -535,6 +551,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Quintus",
         'given_names': "Quintus",
         'family_name': "da Quirm",
+        'default_name_format': "Quintus da Quirm",
     },
     "rowena": {
         'id': 18,
@@ -544,6 +561,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Rowena",
         'given_names': "Rowena",
         'family_name': "Ravenclaw",
+        'default_name_format': "Rowena Ravenclaw",
     },
     "vera": {
         'id': 22,
@@ -553,6 +571,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Vera",
         'given_names': "Vera",
         'family_name': "Verwaltung",
+        'default_name_format': "Vera Verwaltung",
     },
     "werner": {
         'id': 23,
@@ -562,6 +581,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Werner",
         'given_names': "Werner",
         'family_name': "Wahlleitung",
+        'default_name_format': "Werner Wahlleitung",
     },
     "annika": {
         'id': 27,
@@ -571,6 +591,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Annika",
         'given_names': "Annika",
         'family_name': "Akademieteam",
+        'default_name_format': "Annika Akademieteam",
     },
     "farin": {
         'id': 32,
@@ -580,6 +601,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Farin",
         'given_names': "Farin",
         'family_name': "Finanzvorstand",
+        'default_name_format': "Farin Finanzvorstand",
     },
     "viktor": {
         'id': 48,
@@ -589,6 +611,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Viktor",
         'given_names': "Viktor",
         'family_name': "Versammlungsadmin",
+        'default_name_format': "Viktor Versammlungsadmin",
     },
     "akira": {
         'id': 100,
@@ -598,6 +621,7 @@ USER_DICT: Dict[str, UserObject] = {
         'display_name': "Akira",
         'given_names': "Akira",
         'family_name': "Abukara",
+        'default_name_format': "Akira Abukara",
     },
     "anonymous": {
         'id': None,
@@ -907,8 +931,7 @@ class FrontendTest(BackendTest):
         f['phrase'] = u["DB-ID"]
         self.submit(f)
         if check:
-            self.assertTitle("{} {}".format(u['given_names'],
-                                            u['family_name']))
+            self.assertTitle(u['default_name_format'])
 
     def realm_admin_view_profile(self, user: str, realm: str,
                                  check: bool = True, verbose: bool = False
@@ -933,8 +956,7 @@ class FrontendTest(BackendTest):
         self.submit(f, verbose=verbose)
         self.traverse({'description': 'Profil'}, verbose=verbose)
         if check:
-            self.assertTitle("{} {}".format(u['given_names'],
-                                            u['family_name']))
+            self.assertTitle(u['default_name_format'])
 
     def _fetch_mail(self) -> List[email.message.EmailMessage]:
         """
@@ -1393,15 +1415,20 @@ class FrontendTest(BackendTest):
         return button
 
     def reload_and_check_form(self, form: webtest.Form, link: Union[CdEDBObject, str],
-                              max_tries: int = 42, waittime: float = 0.1,
+                              max_tries: int = 42, waittime: float = 0.01,
                               fail: bool = True) -> None:
         """Helper to repeatedly reload a page until a certain form is present.
 
-        This is mostly required for the "Semesterverwaltung".
+        This should be used sparingly as it does busy waiting and is mostly
+        required for the "Semesterverwaltung".
+
+        We do a quadratic backoff with waiting times increasing linearily to
+        simultaneously minimize the load of unsuccessful attempts and time
+        wasted while already being ready.
         """
         count = 0
         while count < max_tries:
-            time.sleep(waittime)
+            time.sleep(count*waittime)
             self.traverse(link)
             if form in self.response.forms:
                 break

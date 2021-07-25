@@ -69,7 +69,7 @@ class TestOffline(FrontendTest):
                           {'href': 'event/event/1/registration/1/show'},
                           {'href': 'core/persona/1/show'},
                           {'href': 'core/persona/1/adminchange'})
-            self.assertTitle('Anton Armin A. Administrator bearbeiten')
+            self.assertTitle('Anton Administrator bearbeiten')
             f = self.response.forms['changedataform']
             f['display_name'] = "Zelda"
             f['birthday'] = "3.4.1933"

@@ -79,7 +79,7 @@
                     {% if participant['viewable'] %}
                         {{ util.persona_anchor(personas[anid], quote_me=not is_admin) }}
                     {% else %}
-                        {{ personas[anid]['given_names'] }} {{ personas[anid]['family_name'] }}
+                        {{ util.persona_name(personas[anid]) }}
                     {% endif %}
                     {% if participant['is_instructor'] %}</strong>{% endif %}
                     {% if participant['is_instructor'] %}({% trans %}Course instructor{% endtrans %}){% endif %}

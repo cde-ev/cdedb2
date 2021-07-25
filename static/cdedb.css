@@ -1113,6 +1113,10 @@ ul.styleless {
     margin-top: 5px
 }
 
+.clear-both {
+    clear: both;
+}
+
 /*
  * the following should be replaced with
  * display: inline-flex; width: auto;

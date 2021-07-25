@@ -34,8 +34,7 @@
                 <div class="row">
                     <div class="col-sm-6">
                         <span class="searchname">
-                            {{ personas[registration['persona_id']]['given_names'] }}
-                            {{ personas[registration['persona_id']]['family_name'] }}
+                            {{ util.persona_name(personas[registration['persona_id']], given_and_display_names=True) }}
                         </span>
                         {% if registration['age'].is_minor() %}
                             {{ gettext(registration['age']|string) }}

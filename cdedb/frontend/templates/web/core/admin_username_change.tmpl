@@ -1,20 +1,20 @@
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans given_names=data['given_names'], family_name=data['family_name'] %}
-        Edit Email Address for {{ given_names }} {{ family_name }}
+    {% trans name=util.persona_name(data) %}
+        Edit Email Address for {{ name }}
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(show_user_link(user, data['id']), data['given_names'] + " " + data['family_name'], icon="user") }}
+    {{ util.breadcrumb_link(show_user_link(user, data['id']), util.persona_name(data), icon="user") }}
     {{ util.breadcrumb_link(cdedblink("core/admin_username_change_form"), gettext("Edit Email Address"), active=True) }}
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('core/admin_username_change') }}" method="POST" id="usernamechangeform"
             class="form-horizontal">
         {{ util.anti_csrf_token('core/admin_username_change') }}
-        {{ util.form_input_static(label=gettext("User"), value=(data['given_names'] +" "+ data['family_name'])) }}
+        {{ util.form_input_static(label=gettext("User"), value=util.persona_name(data, given_and_display_names=True)) }}
         {{ util.form_input_static(label=gettext("Old Email Address"), value=data['username']) }}
         {{ util.form_input_text(name="new_username", label=gettext("New Email Address"), type="email") }}
         {{ util.form_input_submit(label=gettext("Edit Email Address"), cancellink=show_user_link(user, values['persona_id'])) }}

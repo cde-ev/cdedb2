@@ -2,14 +2,14 @@
 
 import datetime
 import json
-import time
 from typing import Collection, Optional, NamedTuple
 
+import freezegun
 import pytz
 
 import cdedb.database.constants as const
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, FUTURE_TIMESTAMP, get_hash, now, nearly_now,
+    CdEDBObject, CdEDBObjectMap, get_hash, now, nearly_now,
 )
 from tests.common import (
     BackendTest, UserIdentifier, USER_DICT, as_users, prepsql, storage,
@@ -425,90 +425,90 @@ class TestAssemblyBackend(BackendTest):
 
     @as_users("viktor")
     def test_relative_quorum(self) -> None:
-        delta = 0.6
-        future = now() + datetime.timedelta(seconds=delta)
+        base_time = now()
+        delta = datetime.timedelta(seconds=42)
+        with freezegun.freeze_time(base_time) as frozen_time:
+            assembly_data = {
+                'description': None,
+                'notes': None,
+                'signup_end': datetime.datetime(2222, 2, 22),
+                'title': "MGV 2222",
+                'shortname': "mgv2222",
+            }
+            assembly_id = self.assembly.create_assembly(self.key, assembly_data)
+            ballot_data = {
+                'assembly_id': assembly_id,
+                'use_bar': False,
+                'candidates': {
+                    -1: {'title': 'Ja', 'shortname': 'j'},
+                    -2: {'title': 'Nein', 'shortname': 'n'},
+                },
+                'description': 'Sind sie sich sicher?',
+                'notes': None,
+                'rel_quorum': 100,
+                'title': 'Verstehen wir Spaß',
+                'vote_begin': base_time + delta,
+                'vote_end': base_time + 3*delta,
+                'vote_extension_end': base_time + 5*delta,
+            }
+            ballot_id = self.assembly.create_ballot(self.key, ballot_data)
 
-        assembly_data = {
-            'description': None,
-            'notes': None,
-            'signup_end': datetime.datetime(2222, 2, 22),
-            'title': "MGV 2222",
-            'shortname': "mgv2222",
-        }
-        assembly_id = self.assembly.create_assembly(self.key, assembly_data)
-        ballot_data = {
-            'assembly_id': assembly_id,
-            'use_bar': False,
-            'candidates': {
-                -1: {'title': 'Ja', 'shortname': 'j'},
-                -2: {'title': 'Nein', 'shortname': 'n'},
-            },
-            'description': 'Sind sie sich sicher?',
-            'notes': None,
-            'rel_quorum': 100,
-            'title': 'Verstehen wir Spaß',
-            'vote_begin': future,
-            'vote_end': future + datetime.timedelta(seconds=delta),
-            'vote_extension_end': future + 2 * datetime.timedelta(seconds=delta),
-        }
-        ballot_id = self.assembly.create_ballot(self.key, ballot_data)
+            ballot_data['rel_quorum'] = 3.141
+            with self.assertRaises(ValueError) as cm:
+                self.assembly.create_ballot(self.key, ballot_data)
+            self.assertIn("Precision loss.", cm.exception.args[0])
+            ballot_data['rel_quorum'] = -5
+            with self.assertRaises(ValueError) as cm:
+                self.assembly.create_ballot(self.key, ballot_data)
+            self.assertIn("Relative quorum must be between 0 and 100.",
+                          cm.exception.args[0])
+            ballot_data['rel_quorum'] = 168
+            with self.assertRaises(ValueError) as cm:
+                self.assembly.create_ballot(self.key, ballot_data)
+            self.assertIn("Relative quorum must be between 0 and 100.",
+                          cm.exception.args[0])
 
-        ballot_data['rel_quorum'] = 3.141
-        with self.assertRaises(ValueError) as cm:
-            self.assembly.create_ballot(self.key, ballot_data)
-        self.assertIn("Precision loss.", cm.exception.args[0])
-        ballot_data['rel_quorum'] = -5
-        with self.assertRaises(ValueError) as cm:
-            self.assembly.create_ballot(self.key, ballot_data)
-        self.assertIn("Relative quorum must be between 0 and 100.",
-                      cm.exception.args[0])
-        ballot_data['rel_quorum'] = 168
-        with self.assertRaises(ValueError) as cm:
-            self.assembly.create_ballot(self.key, ballot_data)
-        self.assertIn("Relative quorum must be between 0 and 100.",
-                      cm.exception.args[0])
+            # Initial quorum should be number of members.
+            self.assertEqual(8, self.assembly.get_ballot(self.key, ballot_id)["quorum"])
 
-        # Initial quorum should be number of members.
-        self.assertEqual(8, self.assembly.get_ballot(self.key, ballot_id)["quorum"])
+            # Adding a non-member attendee increases the quorum.
+            self.assembly.external_signup(self.key, assembly_id, 4)
+            self.assertEqual(9, self.assembly.get_ballot(self.key, ballot_id)["quorum"])
 
-        # Adding a non-member attendee increases the quorum.
-        self.assembly.external_signup(self.key, assembly_id, 4)
-        self.assertEqual(9, self.assembly.get_ballot(self.key, ballot_id)["quorum"])
-
-        # Conclude the ballot.
-        time.sleep(2 * delta)
-        self.assembly.check_voting_period_extension(self.key, ballot_id)
-        # Now adding an attendee does not change the quorum.
-        self.assembly.external_signup(self.key, assembly_id, 11)
-        self.assertEqual(9, self.assembly.get_ballot(self.key, ballot_id)["quorum"])
+            frozen_time.tick(delta=4*delta)
+            self.assembly.check_voting_period_extension(self.key, ballot_id)
+            # Now adding an attendee does not change the quorum.
+            self.assembly.external_signup(self.key, assembly_id, 11)
+            self.assertEqual(9, self.assembly.get_ballot(self.key, ballot_id)["quorum"])
 
     def test_extension(self) -> None:
-        self.login(USER_DICT['werner'])
-        future = now() + datetime.timedelta(seconds=.5)
-        farfuture = now() + datetime.timedelta(seconds=1)
-        data = {
-            'assembly_id': 1,
-            'use_bar': False,
-            'candidates': {
-                -1: {'title': 'Ja', 'shortname': 'j'},
-                -2: {'title': 'Nein', 'shortname': 'n'},
-            },
-            'description': 'Sind sie sich sicher?',
-            'notes': None,
-            'abs_quorum': 10,
-            'title': 'Verstehen wir Spaß',
-            'vote_begin': future,
-            'vote_end': farfuture,
-            'vote_extension_end': datetime.datetime(2222, 2, 6, 13, 22, 22, 222222,
-                                                    tzinfo=pytz.utc),
-            'votes': None,
-        }
-        new_id = self.assembly.create_ballot(self.key, data)
-        self.assertEqual(None, self.assembly.get_ballot(self.key, new_id)['extended'])
-        self.login(USER_DICT['kalif'])
-        time.sleep(1)
-        self.assertTrue(self.assembly.check_voting_period_extension(self.key, new_id))
-        self.assertEqual(True, self.assembly.get_ballot(self.key, new_id)['extended'])
+        base_time = now()
+        delta = datetime.timedelta(seconds=42)
+        with freezegun.freeze_time(base_time) as frozen_time:
+            self.login(USER_DICT['werner'])
+            data = {
+                'assembly_id': 1,
+                'use_bar': False,
+                'candidates': {
+                    -1: {'title': 'Ja', 'shortname': 'j'},
+                    -2: {'title': 'Nein', 'shortname': 'n'},
+                },
+                'description': 'Sind sie sich sicher?',
+                'notes': None,
+                'abs_quorum': 10,
+                'title': 'Verstehen wir Spaß',
+                'vote_begin': base_time + delta,
+                'vote_end': base_time + 3*delta,
+                'vote_extension_end': base_time + 5*delta,
+                'votes': None,
+            }
+            new_id = self.assembly.create_ballot(self.key, data)
+            self.assertEqual(None, self.assembly.get_ballot(self.key, new_id)['extended'])
+
+            frozen_time.tick(delta=4*delta)
+            self.login(USER_DICT['kalif'])
+            self.assertTrue(self.assembly.check_voting_period_extension(self.key, new_id))
+            self.assertEqual(True, self.assembly.get_ballot(self.key, new_id)['extended'])
 
     @as_users("charly")
     def test_signup(self) -> None:
@@ -571,54 +571,56 @@ class TestAssemblyBackend(BackendTest):
 
     @storage
     def test_conclusion(self) -> None:
-        self.login("viktor")
-        data = {
-            'description': 'Beschluss über die Anzahl anzuschaffender Schachsets',
-            'notes': None,
-            'signup_end': FUTURE_TIMESTAMP,
-            'title': 'Außerordentliche Mitgliederversammlung',
-            'shortname': 'amgv',
-        }
-        new_id = self.assembly.create_assembly(self.key, data)
-        non_member_id = USER_DICT["werner"]["id"]
-        assert isinstance(non_member_id, int)
-        self.assertTrue(self.assembly.add_assembly_presiders(
-            self.key, new_id, {non_member_id}))
-        self.login(non_member_id)
-        # werner is no member, so he must use the external signup function
-        self.assembly.external_signup(self.key, new_id, non_member_id)
-        future = now() + datetime.timedelta(seconds=.5)
-        farfuture = now() + datetime.timedelta(seconds=1)
-        data = {
-            'assembly_id': new_id,
-            'use_bar': False,
-            'candidates': {
-                -1: {'title': 'Ja', 'shortname': 'j'},
-                -2: {'title': 'Nein', 'shortname': 'n'},
-            },
-            'description': 'Sind sie sich sicher?',
-            'notes': None,
-            'abs_quorum': 0,
-            'title': 'Verstehen wir Spaß',
-            'vote_begin': future,
-            'vote_end': farfuture,
-            'vote_extension_end': None,
-            'votes': None,
-        }
-        ballot_id = self.assembly.create_ballot(self.key, data)
-        time.sleep(1)
-        self.assembly.check_voting_period_extension(self.key, ballot_id)
-        self.assertTrue(self.assembly.tally_ballot(self.key, ballot_id))
-        self.assembly.external_signup(self.key, new_id,
-                                      persona_id=USER_DICT['kalif']['id'])
-        update = {
-            'id': new_id,
-            'signup_end': now(),
-        }
-        self.assembly.set_assembly(self.key, update)
-        self.assertEqual({23, 11}, self.assembly.list_attendees(self.key, new_id))
-        self.login("anton")
-        self.assertLess(0, self.assembly.conclude_assembly(self.key, new_id))
+        base_time = now()
+        delta = datetime.timedelta(seconds=42)
+        with freezegun.freeze_time(base_time) as frozen_time:
+            self.login("viktor")
+            data = {
+                'description': 'Beschluss über die Anzahl anzuschaffender Schachsets',
+                'notes': None,
+                'signup_end': base_time + 10*delta,
+                'title': 'Außerordentliche Mitgliederversammlung',
+                'shortname': 'amgv',
+            }
+            new_id = self.assembly.create_assembly(self.key, data)
+            non_member_id = USER_DICT["werner"]["id"]
+            assert isinstance(non_member_id, int)
+            self.assertTrue(self.assembly.add_assembly_presiders(
+                self.key, new_id, {non_member_id}))
+            self.login(non_member_id)
+            # werner is no member, so he must use the external signup function
+            self.assembly.external_signup(self.key, new_id, non_member_id)
+            data = {
+                'assembly_id': new_id,
+                'use_bar': False,
+                'candidates': {
+                    -1: {'title': 'Ja', 'shortname': 'j'},
+                    -2: {'title': 'Nein', 'shortname': 'n'},
+                },
+                'description': 'Sind sie sich sicher?',
+                'notes': None,
+                'abs_quorum': 0,
+                'title': 'Verstehen wir Spaß',
+                'vote_begin': base_time + delta,
+                'vote_end': base_time + 3*delta,
+                'vote_extension_end': None,
+                'votes': None,
+            }
+            ballot_id = self.assembly.create_ballot(self.key, data)
+
+            frozen_time.tick(delta=4*delta)
+            self.assembly.check_voting_period_extension(self.key, ballot_id)
+            self.assertTrue(self.assembly.tally_ballot(self.key, ballot_id))
+            self.assembly.external_signup(self.key, new_id,
+                                          persona_id=USER_DICT['kalif']['id'])
+            update = {
+                'id': new_id,
+                'signup_end': now(),
+            }
+            self.assembly.set_assembly(self.key, update)
+            self.assertEqual({23, 11}, self.assembly.list_attendees(self.key, new_id))
+            self.login("anton")
+            self.assertLess(0, self.assembly.conclude_assembly(self.key, new_id))
 
     @storage
     @as_users("werner")

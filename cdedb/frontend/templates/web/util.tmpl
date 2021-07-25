@@ -141,27 +141,76 @@
     {% endif %}
 {% endmacro %}
 
-{% macro persona_anchor(persona, verbose=False, quote_me=False, event_id=none, ml_id=none, aclass='', readonly=False) %}
-    {%- if verbose -%}
-        {{ href(show_user_link(user, persona['id'], quote_me, event_id=event_id, ml_id=ml_id), "{} {} {} {}".format(
-              persona['title'], persona['given_names'],
-              persona['family_name'], persona['name_supplement']), aclass=aclass, readonly=readonly) }}
-    {%- else -%}
-        {{ href(show_user_link(user, persona['id'], quote_me, event_id=event_id, ml_id=ml_id), "{} {}".format(
-              persona['given_names'], persona['family_name']), aclass=aclass, readonly=readonly) }}
-    {%- endif -%}
+{# Create a link to a persona's profile page, labeled with some variant of their name
+
+   persona:                 The persona data. Must be a dict containing (at least) the following keys:
+                            'id', 'title', 'given_names', 'display_name', 'family_name', 'name_supplement'.
+   only_given_names:        see 'persona_name' macro
+   only_display_name:       see 'persona_name' macro
+   given_and_display_names: see 'persona_name' macro
+   with_family_name:        see 'persona_name' macro
+   with_titles:             see 'persona_name' macro
+   quote_me:                see show_user_link()
+   event_id:                see show_user_link()
+   ml_id:                   see show_user_link()
+   aclass:                  see 'href' macro
+   readonly:                see 'href' macro
+#}
+{% macro persona_anchor(persona, only_given_names=False, only_display_name=False, given_and_display_names=False,
+                        with_family_name=True, with_titles=False, quote_me=False, event_id=none, ml_id=none,
+                        aclass='', readonly=False) %}
+    {{ href(show_user_link(user, persona['id'], quote_me, event_id=event_id, ml_id=ml_id),
+            persona_name(persona, only_given_names, only_display_name, given_and_display_names, with_family_name),
+            aclass=aclass, readonly=readonly) }}
 {% endmacro %}
 
-{% macro output_given_displayname(given_names, display_name) %}
-    {%- if display_name in given_names %}
-        {%- if not display_name or display_name == given_names -%}
-            {{ given_names }}
+{# Display the name of a given persona
+
+   Displaying names is rather complicated, esp. because of our distinction between given_names and display_name. Thus,
+   this macro includes some logic to display a person's name correctly, depending on the context and the person's
+   display name. For a full specification, which name variant should be used in which context, see the documentation
+   page about "User Experience Conventions".
+
+   For usage in Python frontend code, the `cdedb.frontend.common.make_persona_name()` function implements the same
+   logic.
+
+   persona:                 The persona data. Must be a dict containing (at least) the following keys:
+                            'title', 'given_names', 'display_name', 'family_name', 'name_supplement'.
+   only_given_names:        If True, the display_name is ignored. Should only be used in a legal/formal context.
+   only_display_name:       If True, the given_names are ignored. Should be used when the person is addressed directly.
+   given_and_display_names: If True, the display of all given_names and the display name (if not equal) is enforced.
+                            This is the "long" version of the name.
+   with_family_name:        If True (default), the family name is included in the macro output
+   with_titles:             If True, the person's title(s) and name supplement are included in the macro output
+#}
+{% macro persona_name(persona, only_given_names=False, only_display_name=False, given_and_display_names=False,
+                      with_family_name=True, with_titles=False) %}
+    {%- set display_name = persona['display_name'] %}
+    {%- set given_names = persona['given_names'] %}
+    {%- if with_titles and persona['title'] %}{{ persona['title'] }}&nbsp;{% endif %}
+    {%- if only_given_names -%}
+        {{ given_names }}
+    {%- elif only_display_name -%}
+        {{ display_name }}
+    {%- elif given_and_display_names %}
+        {%- if display_name in given_names %}
+            {%- if not display_name or display_name == given_names -%}
+                {{ given_names }}
+            {%- else -%}
+                {{ '<em>{}</em>'.format(display_name|e).join((given_names|e).split(display_name|e))|s }}
+            {%- endif %}
         {%- else -%}
-            {{ '<em>{}</em>'.format(display_name|e).join((given_names|e).split(display_name|e))|s }}
-        {%- endif %}
-    {%- else -%}
-        {{ given_names }} ({{ display_name }})
-    {%- endif -%}
+            {{ given_names }} ({{ display_name }})
+        {%- endif -%}
+    {% else %}
+        {%- if display_name in given_names -%}
+            {{ display_name }}
+        {%- else -%}
+            {{ given_names }}
+        {%- endif -%}
+    {% endif %}
+    {%- if with_family_name %} {{ persona['family_name'] }}{% endif %}
+    {%- if with_titles and persona['name_supplement'] %}&nbsp;{{ persona['name_supplement'] }}{% endif -%}
 {% endmacro %}
 
 {% macro tel_link(phonenumber) %}
@@ -658,20 +707,24 @@
 {# Macro for a general row, used in a dynamic row table.
 
    non-deletable rows have a disabled 'delete'-checkbox,
+   readonly rows have all fields disabled
    aclass is used to pass classes to the row, such as drow-row, drow-prototype, drow-new
-   newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes #}
-{% macro dynamic_row(id, tablename, columns, deletable, aclass="", newrow=False) %}
+   newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes
+   prefix is used to specify a string inserting before every parameter name #}
+{% macro dynamic_row(id, tablename, columns, deletable=True, readonly=False, aclass="", newrow=False, prefix="") %}
     <tr class="{{ aclass }}" role="group" aria-label="{{ tablename }} {{ id }}">
         {% for column in columns %}
             {% set func = column['func'] %}
-            {% set name = '{}_{}'.format(column['name'], id) %}
+            {% set name = '{}{}_{}'.format(prefix, column['name'], id) %}
             <td {% if name in errors %}class="has-error"{% endif %}>
                 {# TODO set the remaining items of colum as attributes to func #}
                 {# this is a call for a generic util.input_* macro specified by the caller #}
                 {{ func(name=name,
-                        aclass='drow-input form-control',
-                        attributes=('data-basename="{}_"'.format(column['name'])|s if newrow else ''),
-                        arialabel=gettext(column['label'])
+                        aclass='drow-input form-control' + " " + column.get('aclass', ""),
+                        attributes=('data-basename="{}{}_"'.format(prefix, column['name'])|s if newrow else ''),
+                        arialabel=gettext(column['label']),
+                        readonly=readonly,
+                        **column.get('func_additional_input', {})
                         ) }}
                 {{ output_errors(name) }}
             </td>
@@ -680,12 +733,12 @@
         <td>
             <span class="drow-buttonspace">
                 {% if newrow %}
-                    {{ input_checkbox("create_{}".format(id), label=gettext("Add"),
-                                           attributes='data-basename="create_"'|s,
+                    {{ util.input_checkbox("{}create_{}".format(prefix, id), label=gettext("Add"),
+                                           attributes='data-basename="{}create_"'.format(prefix)|s, readonly=readonly,
                                            aclass='drow-indicator') }}
                 {% else %}
-                    {{ input_checkbox("delete_{}".format(id), label=gettext("Delete"),
-                                           readonly=not deletable, aclass='drow-indicator') }}
+                    {{ util.input_checkbox("{}delete_{}".format(prefix, id), label=gettext("Delete"),
+                                           readonly=not deletable or readonly, aclass='drow-indicator') }}
                 {% endif %}
             </span>
         </td>
@@ -699,9 +752,13 @@
              the 'name' (mapping the input to a db field) and a 'label'.
    existing: a dict of already existing entries.
    locked:   iterable which contains all id of existing entries which must not be modified or deleted by the user
-   sortkey:  to sort existing #}
-{% macro dynamic_row_table(name, columns, existing, locked=[], sortkey=none) %}
-    <table class="table table-condensed" id="drow-table">
+   readonly: if true, all input fields are disabled and no new row is shown
+   modification_only: if true, no rows can be added or deleted, but they may be modified
+   sortkey:  to sort existing
+   prefix is used to specify a string inserting before every parameter name #}
+{% macro dynamic_row_table(name, columns, existing, locked=[], readonly=False, modification_only=False, sortkey=none, prefix="") %}
+    {% set prefix = prefix + '_' if prefix else '' %}
+    <table class="table table-condensed" id="{{ prefix }}drow-table">
         <thead>
             <tr>
                 {% for column in columns %}
@@ -713,21 +770,27 @@
             {% set sorted_existing = existing|keydictsort(sortkey) if sortkey else existing|dictsort %}
             {# Old items, already stored in the database #}
             {% for id, entry in sorted_existing %}
-                {{ dynamic_row(id, name, columns, id not in locked, 'drow-row') }}
+                {{ dynamic_row(id, name, columns, deletable=id not in locked and not modification_only,
+                               readonly=readonly, aclass='drow-row', prefix=prefix) }}
             {% endfor %}
             {# Items that were added by the user but failed validation. They are still new and have no official id. #}
-            {% for i in range(1, values.get('create_last_index', 0) + 1) %}
-                {{ dynamic_row(-i, name, columns, False, 'drow-new', newrow=True) }}
+            {% set last_index_key = prefix+"create_last_index"  %}
+            {% for i in range(1, values.get(last_index_key, 0) + 1) %}
+                {{ dynamic_row(-i, name, columns, deletable=False, readonly=readonly, aclass='drow-new', newrow=True, prefix=prefix) }}
             {% endfor %}
             {# Prototype row. For non-JS users: an empty row with 'create'-checkbox, for JS: prototype for new rows. #}
-            {{ dynamic_row(-values.get('create_last_index', 0) - 1, name, columns, False, 'drow-prototype', newrow=True) }}
+            {% if not readonly and not modification_only %}
+                {{ dynamic_row(-values.get(last_index_key, 0) - 1, name, columns, deletable=False, aclass='drow-prototype', newrow=True, prefix=prefix) }}
+            {% endif %}
         </tbody>
     </table>
-    <p>
-        <button type="button" class="btn btn-success softhide pull-right" id="drow-addbutton">
-            {{ make_icon('plus') }} {% trans %}Add {{ name }}{% endtrans %}
-        </button>
-    </p>
+    {% if not (readonly or modification_only) %}
+        <p>
+            <button type="button" class="btn btn-success softhide pull-right" id="{{ prefix }}drow-addbutton">
+                {{ make_icon('plus') }} {% trans %}Add {{ name }}{% endtrans %}
+            </button>
+        </p>
+    {% endif %}
 {% endmacro %}
 
 {# Generate an anti CSRF (Cross-Site Request Forgery) token and add it as hidden input to an HTML form.
@@ -953,16 +1016,19 @@ mailto:
 {%- endmacro %}
 
 {% macro username_mailto(persona, email=none) -%}
-{{ href(
-    mailto(
-        address=email or persona.get("username", persona.get("persona.username", "")),
-        name="{} {}".format(
-            persona.get("given_names", persona.get("persona.given_names", "")),
-            persona.get("family_name", persona.get("persona.family_name", ""))
-        )
-    ),
-    email or persona.get("username", persona.get("persona.username", ""))
-) }}
+    {% set given_names = persona.get("given_names", persona.get("persona.given_names", "")) %}
+    {% set display_name = persona.get("display_name", persona.get("persona.display_name", "")) %}
+    {% set forename = display_name if display_name and display_name in given_names else given_names %}
+    {{ href(
+        mailto(
+            address=email or persona.get("username", persona.get("persona.username", "")),
+            name="{} {}".format(
+                forename,
+                persona.get("family_name", persona.get("persona.family_name", ""))
+            )
+        ),
+        email or persona.get("username", persona.get("persona.username", ""))
+    ) }}
 {%- endmacro %}
 
 {% macro meta_info_banner(fieldname) %}
