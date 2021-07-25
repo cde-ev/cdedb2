@@ -133,6 +133,9 @@ ul.slim {
     padding-left: 0;
     padding-right: 0;
 }
+.row dl {
+    margin-bottom: 0;
+}
 .list-group-hover .list-group-item:hover{
     background-color: #f5f5f5;
 }
