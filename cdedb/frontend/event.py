@@ -5379,13 +5379,14 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "checkin", {
             'registrations': registrations, 'personas': personas,
             'lodgements': lodgements, 'checkin_fields': checkin_fields,
+            'part_ids_param': ",".join(map(str, part_ids))
         })
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdata("registration_id")
-    def checkin(self, rs: RequestState, event_id: int, registration_id: vtypes.ID
-                ) -> Response:
+    @REQUESTdata("registration_id", "part_ids")
+    def checkin(self, rs: RequestState, event_id: int, registration_id: vtypes.ID,
+                part_ids: Optional[vtypes.IntCSVList] = None) -> Response:
         """Check a participant in."""
         if rs.has_validation_errors():
             return self.checkin_form(rs, event_id)
@@ -5402,7 +5403,8 @@ class EventFrontend(AbstractUserFrontend):
         }
         code = self.eventproxy.set_registration(rs, new_reg, "Eingecheckt.")
         self.notify_return_code(rs, code)
-        return self.redirect(rs, 'event/checkin')
+        params = {'part_ids': ",".join(map(str, part_ids))} if part_ids else None
+        return self.redirect(rs, 'event/checkin', params)
 
     FIELD_REDIRECT = {
         const.FieldAssociations.registration: "event/registration_query",
