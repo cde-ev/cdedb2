@@ -1,6 +1,7 @@
 {% extends "web/event/base.tmpl" %}
 {% set sidenav_active='event_lodgements' %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/event/generic.tmpl" as generic_event with context %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
@@ -49,26 +50,7 @@
                     {% if field['association'] == enums['FieldAssociations'].lodgement %}
                         <dt>{{ field['field_name'] }}</dt>
                         <dd>
-                            {% if field['entries'] %}
-                                {% for value, description in field['entries'] %}
-                                    {% if ambience['lodgement']['fields'].get(field['field_name']) == value %}
-                                        {{ description }}
-                                    {% endif %}
-                                {% endfor %}
-                            {% else %}
-                                {% if field['kind'] == enums['FieldDatatypes'].bool %}
-                                    {{ util.deko_checkbox(
-                                        checked=ambience['lodgement']['fields'].get(field['field_name'])) }}
-                                {% elif field['kind'] == enums['FieldDatatypes'].date %}
-                                    {{ ambience['lodgement']['fields'].get(field['field_name'])
-                                       |date(lang=lang, passthrough=True) }}
-                                {% elif field['kind'] == enums['FieldDatatypes'].datetime %}
-                                    {{ ambience['lodgement']['fields'].get(field['field_name'])
-                                       |datetime(lang=lang, passthrough=True) }}
-                                {% else %}
-                                    {{ ambience['lodgement']['fields'].get(field['field_name'])|linebreaks }}
-                                {% endif %}
-                            {% endif %}
+                            {{ generic_event.display_field(field, ambience['lodgement']['fields'].get(field['field_name'])) }}
                         </dd>
                     {% endif %}
                 {% endfor %}

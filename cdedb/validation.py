@@ -2330,6 +2330,11 @@ def _EVENT_FIELD_COMMON_FIELDS(extra_suffix: str) -> TypeMapping: return {
 }
 
 
+def _EVENT_FIELD_OPTIONAL_FIELDS(extra_suffix: str) -> TypeMapping: return {
+    f'checkin{extra_suffix}': bool,
+}
+
+
 @_add_typed_validator
 def _event_field(
     val: Any, argname: str = "event_field", *,
@@ -2348,10 +2353,11 @@ def _event_field(
         spec = {**_EVENT_FIELD_COMMON_FIELDS(extra_suffix),
                 field_name_key: RestrictiveIdentifier}
         mandatory_fields = spec
-        optional_fields: TypeMapping = {}
+        optional_fields: TypeMapping = _EVENT_FIELD_OPTIONAL_FIELDS(extra_suffix)
     else:
         mandatory_fields = {}
-        optional_fields = _EVENT_FIELD_COMMON_FIELDS(extra_suffix)
+        optional_fields = dict(_EVENT_FIELD_COMMON_FIELDS(extra_suffix),
+                               **_EVENT_FIELD_OPTIONAL_FIELDS(extra_suffix))
 
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)

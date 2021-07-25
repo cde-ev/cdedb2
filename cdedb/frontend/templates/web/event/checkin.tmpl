@@ -1,6 +1,7 @@
 {% set sidenav_active='event_checkin' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/event/generic.tmpl" as generic_event with context %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
@@ -25,10 +26,13 @@
         <input type="search" id="selector" class="form-control" aria-label="{% trans %}Name to Search{% endtrans %}" />
     {% endcall %}
 
-    <div class="list-group list-group-hover">
+    <div class="list-group list-group-hover" id="checkin-list">
         {% for registration_id, registration in registrations.items() %}
-                <div class="selectee list-group-item row">
-                    <div class="col-sm-4">
+        <div class="selectee list-group-item">
+            <div class="row">
+                <div class="col-sm-9">
+                <div class="row">
+                    <div class="col-sm-6">
                         <span class="searchname">
                             {{ util.persona_name(personas[registration['persona_id']], given_and_display_names=True) }}
                         </span>
@@ -52,7 +56,7 @@
                             ({{ gettext(enums['RegistrationPartStati'].guest|string) }})
                         {% endif %}
                     </div>
-                    <div class="col-sm-4 hide-xs">
+                    <div class="col-sm-6">
                         <small class="text-info">
                             {% trans %}Lodgement{% endtrans %}:
                             {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part)
@@ -66,7 +70,27 @@
                             {% endfor %}
                         </small>
                     </div>
-                    <div class="col-sm-2">
+                </div>
+                {% if checkin_fields %}
+                    <hr class="nosp" />
+                    <div class="row" id="checkin-fields-{{ registration_id }}">
+                        {% for slice in checkin_fields|keydictsort(EntitySorter.event_field)|slice(2) %}
+                            <div class="col-sm-6">
+                                <dl class="dl-horizontal small">
+                                    {% for field_id, field in slice %}
+                                        {% set field_key = ambience['event']['fields'][field_id]['field_name'] %}
+                                        <dt class="text-muted">{{ field['field_name'] }}</dt>
+                                        <dd class="text-muted">
+                                            {{ generic_event.display_field(field, registration['fields'].get(field_key)) }}
+                                        </dd>
+                                    {% endfor %}
+                                </dl>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                </div>
+                    <div class="col-sm-3 col-xs-12 button-par">
                         {{ util.href(cdedblink('event/change_registration',
                                                {'registration_id': registration_id, 'skip': 'reg.checkin'}),
                                      title=gettext("Edit"), icon='pen', aclass="btn btn-sm btn-warning") }}
@@ -74,8 +98,6 @@
                                                {'registration_id': registration_id}),
                                      title=gettext("Details"), icon='user', aclass="btn btn-sm btn-info") }}
 
-                    </div>
-                    <div class="col-sm-2">
                         <form action="{{ cdedblink('event/checkin') }}" method="POST" id="checkinform{{ registration_id }}"
                               style="display: inline;" class="checkinform">
                             {{ util.anti_csrf_token('event/checkin') }}
@@ -85,6 +107,7 @@
                         </form>
                     </div>
             </div>
+        </div>
         {% endfor %}
     </div>
     <script nonce="{{ csp_nonce }}">

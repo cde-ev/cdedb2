@@ -1,7 +1,7 @@
 {% set sidenav_active='event_configure_registration' if preview else 'event_register' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% import "web/event/generic.tmpl" as generic with context %}
+{% import "web/event/generic.tmpl" as generic_event with context %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% block title %}
     {% if preview %}
@@ -134,11 +134,11 @@
 
         <h3 class="sr-only">{% trans %}Course Choices{% endtrans %}</h3>
         {% for track_id, track in ambience['event']['tracks']|keydictsort(EntitySorter.course_track) if track['num_choices'] %}
-            {{ generic.select_course_choice(track, courses, course_choices) }}
+            {{ generic_event.select_course_choice(track, courses, course_choices) }}
         {% endfor %}
 
         <h3 class="heading-underline">{% trans %}Additional Information{% endtrans %}</h3>
-        {{ generic.additional_registration_choices(age, reg_questionnaire) }}
+        {{ generic_event.additional_registration_choices(age, reg_questionnaire) }}
 
         {% call util.form_input_general(displayerrors=False) %}
             {% if ambience['event']['use_additional_questionnaire'] %}

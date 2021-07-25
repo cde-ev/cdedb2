@@ -3463,6 +3463,17 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/checkin'})
         self.assertTitle("Checkin (Große Testakademie 2222)")
+
+        self.assertPresence("anzahl_GROSSBUCHSTABEN 4", div="checkin-fields-1")
+        self.assertPresence("anzahl_GROSSBUCHSTABEN 3", div="checkin-fields-2")
+        self.assertPresence("anzahl_GROSSBUCHSTABEN 2", div="checkin-fields-6")
+        self.traverse("Datenfelder konfigurieren")
+        f = self.response.forms['fieldsummaryform']
+        f['checkin_8'].checked = False
+        self.submit(f)
+        self.traverse("Checkin")
+        self.assertNonPresence("anzahl_GROSSBUCHSTABEN", div="checkin-list")
+
         f = self.response.forms['checkinform2']
         self.submit(f)
         self.assertTitle("Checkin (Große Testakademie 2222)")
@@ -3470,7 +3481,7 @@ etc;anything else""", f['entries_2'].value)
         # Check log
         self.traverse({'href': '/event/event/1/log'})
         self.assertPresence("Eingecheckt.",
-                            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
+                            div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
         # single-part
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/3/show'},
@@ -3484,7 +3495,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertNotIn('checkinform7', self.response.forms)
         # Check log
         self.traverse({'href': '/event/event/3/log'})
-        self.assertPresence("Eingecheckt.", div="1-1002")
+        self.assertPresence("Eingecheckt.", div="1-1003")
 
     @as_users("garcia")
     def test_checkin_concurrent_modification(self) -> None:

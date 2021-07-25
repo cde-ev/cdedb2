@@ -112,6 +112,7 @@ class TestEventBackend(BackendTest):
                     'field_name': "instrument",
                     'kind': 1,
                     'entries': None,
+                    'checkin': False,
                 },
                 -2: {
                     'association': 1,
@@ -119,12 +120,14 @@ class TestEventBackend(BackendTest):
                     'kind': 5,
                     'entries': [["2109-08-16", "In the first coming"],
                                 ["2110-08-16", "During the second coming"]],
+                    'checkin': True,
                 },
                 -3: {
                     'association': const.FieldAssociations.registration,
                     'field_name': "is_child",
                     'kind': const.FieldDatatypes.bool,
                     'entries': None,
+                    'checkin': False,
                 }
             },
         }
@@ -233,6 +236,7 @@ class TestEventBackend(BackendTest):
             'field_name': "kuea",
             'kind': 1,
             'entries': None,
+            'checkin': False,
         }
         changed_field = {
             'association': 2,
@@ -241,6 +245,7 @@ class TestEventBackend(BackendTest):
                 ["2110-08-15", "early second coming"],
                 ["2110-08-17", "late second coming"],
             ],
+            'checkin': True,
         }
         self.event.set_event(self.key, {
             'id': new_id,
@@ -2313,7 +2318,8 @@ class TestEventBackend(BackendTest):
                 'event_id': 1,
                 'field_name': 'behaviour',
                 'id': 11000,
-                'kind': 1,
+                'kind': const.FieldDatatypes.str,
+                'checkin': False,
             },
             11001: {
                 'association': const.FieldAssociations.registration,
@@ -2322,6 +2328,7 @@ class TestEventBackend(BackendTest):
                 'field_name': "solidarity",
                 'id': 11001,
                 'kind': const.FieldDatatypes.bool,
+                'checkin': False,
             }
         })
         # questionnaire rows
@@ -2523,6 +2530,7 @@ class TestEventBackend(BackendTest):
                 'field_name': 'behaviour',
                 'id': 1001,
                 'kind': const.FieldDatatypes.str,
+                'checkin': False,
             },
             1002: {
                 'association': const.FieldAssociations.registration,
@@ -2531,6 +2539,7 @@ class TestEventBackend(BackendTest):
                 'field_name': 'solidarity',
                 'id': 1002,
                 'kind': const.FieldDatatypes.bool,
+                'checkin': False,
             },
         })
         stored_data['event.fee_modifiers'][1001] = {
@@ -3427,6 +3436,7 @@ class TestEventBackend(BackendTest):
                     'field_name': "instrument",
                     'kind': 1,
                     'entries': None,
+                    'checkin': False,
                 },
                 -2: {
                     'association': 1,
@@ -3434,6 +3444,7 @@ class TestEventBackend(BackendTest):
                     'kind': 5,
                     'entries': [["2109-8-16", "In the first coming"],
                                 ["2110-8-16", "During the second coming"]],
+                    'checkin': True,
                 },
             },
         }
@@ -3495,6 +3506,7 @@ class TestEventBackend(BackendTest):
             'field_name': "kuea",
             'kind': 1,
             'entries': None,
+            'checkin': False,
         }
         changed_field = {
             'association': 1,
@@ -3503,6 +3515,7 @@ class TestEventBackend(BackendTest):
                 ["2110-8-15", "early second coming"],
                 ["2110-8-17", "late second coming"],
             ],
+            'checkin': True,
         }
         self.event.add_event_orgas(self.key, new_id, {2, 1})
         self.event.remove_event_orga(self.key, new_id, 2)

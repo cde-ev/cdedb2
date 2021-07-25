@@ -721,12 +721,14 @@
             "anzahl_GROSSBUCHSTABEN": {
                 "association": 1,
                 "entries": null,
-                "kind": 3
+                "kind": 3,
+                "checkin": true
             },
             "brings_balls": {
                 "kind": 2,
                 "association": 1,
-                "entries": null
+                "entries": null,
+                "checkin": true
             },
             "transportation": {
                 "kind": 1,
@@ -744,22 +746,26 @@
                         "etc",
                         "anything else"
                     ]
-                ]
+                ],
+                "checkin": false
             },
             "lodge": {
                 "kind": 1,
                 "association": 1,
-                "entries": null
+                "entries": null,
+                "checkin": false
             },
             "may_reserve": {
                 "kind": 2,
                 "association": 1,
-                "entries": null
+                "entries": null,
+                "checkin": false
             },
             "room": {
                 "kind": 1,
                 "association": 2,
-                "entries": null
+                "entries": null,
+                "checkin": false
             },
             "contamination": {
                 "kind": 1,
@@ -781,12 +787,14 @@
                         "none",
                         "no radiation"
                     ]
-                ]
+                ],
+                "checkin": false
             },
             "is_child": {
                 "kind": 2,
                 "association": 1,
-                "entries": null
+                "entries": null,
+                "checkin": false
             }
         }
     }
