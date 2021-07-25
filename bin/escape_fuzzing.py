@@ -24,6 +24,7 @@ import argparse
 import itertools
 import pathlib
 import queue
+import sys
 import tempfile
 import time
 from typing import Collection, List, NamedTuple, Optional, Set, TYPE_CHECKING
@@ -245,4 +246,5 @@ def check(response_data: ResponseData, *, payload: str,
 
 
 if __name__ == "__main__":
-    main()
+    ret = main()
+    sys.exit(ret)
