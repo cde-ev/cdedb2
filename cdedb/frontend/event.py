@@ -5346,11 +5346,10 @@ class EventFrontend(AbstractUserFrontend):
     def checkin_form(self, rs: RequestState, event_id: int,
                      part_ids: Optional[vtypes.IntCSVList] = None) -> Response:
         """Render form."""
-        parts = rs.ambience['event']['parts']
-        if part_ids:
-            parts = {p_id: part for p_id, part in parts.items() if p_id in part_ids}
-        if rs.has_validation_errors() or not parts:
+        if rs.has_validation_errors() or not part_ids:
             parts = rs.ambience['event']['parts']
+        else:
+            parts = {p_id: rs.ambience['event']['parts'][p_id] for p_id in part_ids}
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         there = lambda registration, part_id: const.RegistrationPartStati(
@@ -5379,7 +5378,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "checkin", {
             'registrations': registrations, 'personas': personas,
             'lodgements': lodgements, 'checkin_fields': checkin_fields,
-            'part_ids_param': ",".join(map(str, part_ids))
+            'part_ids_param': ",".join(map(str, parts))
         })
 
     @access("event", modi={"POST"})
