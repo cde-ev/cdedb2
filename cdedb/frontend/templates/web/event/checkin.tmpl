@@ -77,11 +77,11 @@
                     <div class="row" id="checkin-fields-{{ registration_id }}">
                         {% for slice in checkin_fields|keydictsort(EntitySorter.event_field)|slice(2) %}
                             <div class="col-sm-6">
-                                <dl class="dl-horizontal small" style="margin-bottom: 5px">
+                                <dl class="dl-horizontal small">
                                     {% for field_id, field in slice %}
                                         {% set field_key = ambience['event']['fields'][field_id]['field_name'] %}
-                                        <dt>{{ field['field_name'] }}</dt>
-                                        <dd>
+                                        <dt class="text-muted">{{ field['field_name'] }}</dt>
+                                        <dd class="text-muted">
                                             {{ generic_event.display_field(field, registration['fields'].get(field_key)) }}
                                         </dd>
                                     {% endfor %}
