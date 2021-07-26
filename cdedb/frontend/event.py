@@ -5342,17 +5342,21 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard(check_offline=True)
-    def checkin_form(self, rs: RequestState, event_id: int) -> Response:
+    @REQUESTdata("part_ids")
+    def checkin_form(self, rs: RequestState, event_id: int,
+                     part_ids: Optional[vtypes.IntCSVList] = None) -> Response:
         """Render form."""
+        if rs.has_validation_errors() or not part_ids:
+            parts = rs.ambience['event']['parts']
+        else:
+            parts = {p_id: rs.ambience['event']['parts'][p_id] for p_id in part_ids}
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         there = lambda registration, part_id: const.RegistrationPartStati(
             registration['parts'][part_id]['status']).is_present()
         registrations = {
-            k: v
-            for k, v in registrations.items()
-            if (not v['checkin']
-                and any(there(v, id) for id in rs.ambience['event']['parts']))}
+            k: v for k, v in registrations.items()
+            if (not v['checkin'] and any(there(v, id) for id in parts))}
         personas = self.coreproxy.get_event_users(rs, tuple(
             reg['persona_id'] for reg in registrations.values()), event_id)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
@@ -5374,13 +5378,14 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "checkin", {
             'registrations': registrations, 'personas': personas,
             'lodgements': lodgements, 'checkin_fields': checkin_fields,
+            'part_ids_param': ",".join(map(str, parts))
         })
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    @REQUESTdata("registration_id")
-    def checkin(self, rs: RequestState, event_id: int, registration_id: vtypes.ID
-                ) -> Response:
+    @REQUESTdata("registration_id", "part_ids")
+    def checkin(self, rs: RequestState, event_id: int, registration_id: vtypes.ID,
+                part_ids: Optional[vtypes.IntCSVList] = None) -> Response:
         """Check a participant in."""
         if rs.has_validation_errors():
             return self.checkin_form(rs, event_id)
@@ -5397,7 +5402,8 @@ class EventFrontend(AbstractUserFrontend):
         }
         code = self.eventproxy.set_registration(rs, new_reg, "Eingecheckt.")
         self.notify_return_code(rs, code)
-        return self.redirect(rs, 'event/checkin')
+        params = {'part_ids': ",".join(map(str, part_ids))} if part_ids else None
+        return self.redirect(rs, 'event/checkin', params)
 
     FIELD_REDIRECT = {
         const.FieldAssociations.registration: "event/registration_query",

@@ -3464,6 +3464,7 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/checkin'})
         self.assertTitle("Checkin (Große Testakademie 2222)")
 
+        # Check the display of custom datafields.
         self.assertPresence("anzahl_GROSSBUCHSTABEN 4", div="checkin-fields-1")
         self.assertPresence("anzahl_GROSSBUCHSTABEN 3", div="checkin-fields-2")
         self.assertPresence("anzahl_GROSSBUCHSTABEN 2", div="checkin-fields-6")
@@ -3474,9 +3475,41 @@ etc;anything else""", f['entries_2'].value)
         self.traverse("Checkin")
         self.assertNonPresence("anzahl_GROSSBUCHSTABEN", div="checkin-list")
 
+        # Check the filtering per event part.
+        # TODO place and check actual links.
+        self.assertPresence("Anton Armin", div="checkin-list")
+        self.assertPresence("Bertålotta Beispiel", div="checkin-list")
+        self.assertPresence("Emilia E.", div="checkin-list")
+        self.get("/event/event/1/checkin?part_ids=1,2,3")
+        self.assertPresence("Anton Armin", div="checkin-list")
+        self.assertPresence("Bertålotta Beispiel", div="checkin-list")
+        self.assertPresence("Emilia E.", div="checkin-list")
+        self.get("/event/event/1/checkin?part_ids=1")
+        self.assertNonPresence("Anton Armin", div="checkin-list")
+        self.assertPresence("Bertålotta Beispiel", div="checkin-list")
+        self.assertNonPresence("Emilia E.", div="checkin-list")
+        self.get("/event/event/1/checkin?part_ids=2")
+        self.assertNonPresence("Anton Armin", div="checkin-list")
+        self.assertNonPresence("Bertålotta Beispiel", div="checkin-list")
+        self.assertPresence("Emilia E.", div="checkin-list")
+        self.get("/event/event/1/checkin?part_ids=3")
+        self.assertPresence("Anton Armin", div="checkin-list")
+        self.assertNonPresence("Bertålotta Beispiel", div="checkin-list")
+        self.assertPresence("Emilia E.", div="checkin-list")
+        # TODO this check does not really make sense with the existing data.
+        self.get("/event/event/1/checkin?part_ids=2,3")
+        self.assertPresence("Anton Armin", div="checkin-list")
+        self.assertNonPresence("Bertålotta Beispiel", div="checkin-list")
+        self.assertPresence("Emilia E.", div="checkin-list")
+
         f = self.response.forms['checkinform2']
         self.submit(f)
         self.assertTitle("Checkin (Große Testakademie 2222)")
+        # Berta should still be hidden, because the `part_ids` parameter was preserved.
+        self.assertPresence("Anton Armin", div="checkin-list")
+        self.assertNonPresence("Bertålotta Beispiel", div="checkin-list")
+        # Emilia is now checked in and thus no longer appears.
+        self.assertNonPresence("Emilia E.", div="checkin-list")
         self.assertNotIn('checkinform2', self.response.forms)
         # Check log
         self.traverse({'href': '/event/event/1/log'})
