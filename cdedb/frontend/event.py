@@ -46,7 +46,7 @@ from cdedb.frontend.common import (
     REQUESTdatadict, REQUESTfile, access, calculate_db_logparams, calculate_loglinks,
     cdedbid_filter, cdedburl, check_validation as check,
     check_validation_optional as check_optional, event_guard, make_event_fee_reference,
-    periodic, process_dynamic_input, request_extractor,
+    periodic, process_dynamic_input, request_extractor, make_persona_name
 )
 from cdedb.query import (
     Query, QueryConstraint, QueryOperators, QueryScope, make_registration_query_aux,
@@ -55,6 +55,7 @@ from cdedb.query import (
 from cdedb.validation import (
     COURSE_COMMON_FIELDS, EVENT_EXPOSED_FIELDS, LODGEMENT_COMMON_FIELDS,
     PERSONA_FULL_EVENT_CREATION, TypeMapping, filter_none, validate_check,
+    EVENT_PART_COMMON_FIELDS, EVENT_PART_CREATION_MANDATORY_FIELDS
 )
 from cdedb.validationtypes import VALIDATOR_LOOKUP
 
@@ -544,43 +545,47 @@ class EventFrontend(AbstractUserFrontend):
                       {'address': ml_address})
         return self.redirect(rs, "event/show_event")
 
-    @access("event")
-    @event_guard()
-    def part_summary_form(self, rs: RequestState, event_id: int) -> Response:
-        """Render form."""
-        tracks = rs.ambience['event']['tracks']
-        current = {
-            f"{key}_{part_id}": value
-            for part_id, part in rs.ambience['event']['parts'].items()
-            for key, value in part.items() if key not in ('id', 'tracks')}
-        for part_id, part in rs.ambience['event']['parts'].items():
-            for track_id, track in part['tracks'].items():
-                for k in ('title', 'shortname', 'num_choices', 'min_choices',
-                          'sortkey'):
-                    current[f"track_{k}_{part_id}_{track_id}"] = track[k]
-        for m in rs.ambience['event']['fee_modifiers'].values():
-            for k in ('modifier_name', 'amount', 'field_id'):
-                current[f"fee_modifier_{k}_{m['part_id']}_{m['id']}"] = m[k]
-        merge_dicts(rs.values, current)
-        referenced_parts: Set[int] = set()
-        referenced_tracks: Set[int] = set()
-        has_registrations = self.eventproxy.has_registrations(rs, event_id)
+    def _deletion_blocked_parts(self, rs: RequestState, event_id: int) -> Set[int]:
+        """Returns all part_ids from parts of a given event which must not be deleted.
+
+        Extracts all parts of the given event from the database and checks if there are
+        blockers preventing their deletion.
+
+        :returns: All part_ids whose deletion is blocked.
+        """
+        blocked_parts: Set[int] = set()
+        if len(rs.ambience['event']['parts']) == 1:
+            blocked_parts.add(unwrap(rs.ambience['event']['parts'].keys()))
+        course_ids = self.eventproxy.list_courses(rs, event_id)
+        courses = self.eventproxy.get_courses(rs, course_ids.keys())
+        # referenced tracks block part deletion
+        for course in courses.values():
+            for track_id in course['segments']:
+                blocked_parts.add(rs.ambience['event']['tracks'][track_id]['part_id'])
+        return blocked_parts
+
+    def _deletion_blocked_tracks(self, rs: RequestState, event_id: int) -> Set[int]:
+        """Returns all track_ids from tracks of a given event which must not be deleted.
+
+        Extracts all tracks of the given event from the database and checks if there are
+        blockers preventing their deletion.
+
+        :returns: All track_ids whose deletion is blocked.
+        """
+        blocked_tracks: Set[int] = set()
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         for course in courses.values():
-            referenced_tracks.update(course['segments'])
-        # referenced tracks block part deletion
-        for track_id in referenced_tracks:
-            referenced_parts.add(tracks[track_id]['part_id'])
+            blocked_tracks.update(course['segments'])
+        return blocked_tracks
 
-        sorted_fields = xsorted(rs.ambience['event']['fields'].values(),
-                                key=EntitySorter.event_field)
-        legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['fee_modifier']
-        fee_modifier_fields = [
-            (field['id'], field['field_name']) for field in sorted_fields
-            if field['association'] in legal_assocs
-            and field['kind'] in legal_datatypes
-        ]
+    @access("event")
+    @event_guard()
+    def part_summary(self, rs: RequestState, event_id: int) -> Response:
+        """Display a comprehensive overview of all parts of a given event."""
+        has_registrations = self.eventproxy.has_registrations(rs, event_id)
+        referenced_parts = self._deletion_blocked_parts(rs, event_id)
+
         fee_modifiers_by_part = {
             part_id: {
                 e['id']: e
@@ -589,266 +594,193 @@ class EventFrontend(AbstractUserFrontend):
             }
             for part_id in rs.ambience['event']['parts']
         }
+
+        return self.render(rs, "part_summary", {
+            'fee_modifiers_by_part': fee_modifiers_by_part,
+            'referenced_parts': referenced_parts,
+            'has_registrations': has_registrations})
+
+    @access("event", modi={"POST"})
+    @event_guard()
+    @REQUESTdata("ack_delete")
+    def delete_part(self, rs: RequestState, event_id: int, part_id: int,
+                    ack_delete: bool) -> Response:
+        """Delete a given part."""
+        if not ack_delete:
+            rs.append_validation_error(
+                ("ack_delete", ValueError(n_("Must be checked."))))
+        if rs.has_validation_errors():
+            return self.part_summary(rs, event_id)
+        if self.eventproxy.has_registrations(rs, event_id):
+            raise ValueError(n_("Registrations exist, no deletion."))
+        if part_id in self._deletion_blocked_parts(rs, event_id):
+            raise ValueError(n_("This part can not be deleted."))
+
+        event = {
+            'id': event_id,
+            'parts': {part_id: None},
+        }
+        code = self.eventproxy.set_event(rs, event)
+        self.notify_return_code(rs, code)
+
+        return self.redirect(rs, "event/part_summary")
+
+    @access("event")
+    @event_guard()
+    def add_part_form(self, rs: RequestState, event_id: int) -> Response:
+        if self.eventproxy.has_registrations(rs, event_id):
+            rs.notify("error", n_("Registrations exist, no part creation possible."))
+            return self.redirect(rs, "event/show_event")
+        sorted_fields = xsorted(rs.ambience['event']['fields'].values(),
+                                key=EntitySorter.event_field)
         legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['waitlist']
         waitlist_fields = [
             (field['id'], field['field_name']) for field in sorted_fields
-            if field['association'] in legal_assocs
-            and field['kind'] in legal_datatypes
+            if field['association'] in legal_assocs and field['kind'] in legal_datatypes
         ]
-        return self.render(rs, "part_summary", {
-            'fee_modifier_fields': fee_modifier_fields,
-            'fee_modifiers_by_part': fee_modifiers_by_part,
+        return self.render(rs, "add_part", {
             'waitlist_fields': waitlist_fields,
-            'referenced_parts': referenced_parts,
+            'DEFAULT_NUM_COURSE_CHOICES': DEFAULT_NUM_COURSE_CHOICES})
+
+    @access("event", modi={"POST"})
+    @event_guard()
+    @REQUESTdatadict(*EVENT_PART_CREATION_MANDATORY_FIELDS)
+    def add_part(self, rs: RequestState, event_id: int, data: CdEDBObject) -> Response:
+        if self.eventproxy.has_registrations(rs, event_id):
+            raise ValueError(n_("Registrations exist, no part creation possible."))
+
+        data = check(rs, vtypes.EventPart, data)
+        if rs.has_validation_errors():
+            return self.add_part_form(rs, event_id)
+        assert data is not None
+
+        # check non-static dependencies
+        if data["waitlist_field"]:
+            waitlist_field = rs.ambience['event']['fields'][data["waitlist_field"]]
+            allowed_datatypes, allowed_associations = EVENT_FIELD_SPEC['waitlist']
+            if (waitlist_field['association'] not in allowed_associations
+                    or waitlist_field['kind'] not in allowed_datatypes):
+                rs.append_validation_error(("waitlist_field", ValueError(
+                    n_("Waitlist linked to non-fitting field."))))
+        if rs.has_validation_errors():
+            return self.add_part_form(rs, event_id)
+
+        event = {'id': event_id, 'parts': {-1: data}}
+        code = self.eventproxy.set_event(rs, event)
+        self.notify_return_code(rs, code)
+
+        return self.redirect(rs, "event/part_summary")
+
+    @access("event")
+    @event_guard()
+    def change_part_form(self, rs: RequestState, event_id: int, part_id: int) -> Response:
+        part = rs.ambience['event']['parts'][part_id]
+
+        current = copy.deepcopy(part)
+        del current['id']
+        del current['tracks']
+        for track_id, track in part['tracks'].items():
+            for k in ('title', 'shortname', 'num_choices', 'min_choices', 'sortkey'):
+                current[f"track_{k}_{track_id}"] = track[k]
+        for m in rs.ambience['event']['fee_modifiers'].values():
+            for k in ('modifier_name', 'amount', 'field_id'):
+                current[f"fee_modifier_{k}_{m['id']}"] = m[k]
+        merge_dicts(rs.values, current)
+
+        has_registrations = self.eventproxy.has_registrations(rs, event_id)
+        referenced_tracks = self._deletion_blocked_tracks(rs, event_id)
+
+        sorted_fields = xsorted(rs.ambience['event']['fields'].values(),
+                                key=EntitySorter.event_field)
+        legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['fee_modifier']
+        fee_modifier_fields = [
+            (field['id'], field['field_name']) for field in sorted_fields
+            if field['association'] in legal_assocs and field['kind'] in legal_datatypes
+        ]
+        fee_modifiers = {
+            e['id']: e
+            for e in rs.ambience['event']['fee_modifiers'].values()
+            if e['part_id'] == part_id
+        }
+        legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['waitlist']
+        waitlist_fields = [
+            (field['id'], field['field_name']) for field in sorted_fields
+            if field['association'] in legal_assocs and field['kind'] in legal_datatypes
+        ]
+        return self.render(rs, "change_part", {
+            'part_id': part_id,
+            'fee_modifier_fields': fee_modifier_fields,
+            'fee_modifiers': fee_modifiers,
+            'waitlist_fields': waitlist_fields,
             'referenced_tracks': referenced_tracks,
             'has_registrations': has_registrations,
             'DEFAULT_NUM_COURSE_CHOICES': DEFAULT_NUM_COURSE_CHOICES})
 
-    @staticmethod
-    def process_part_input(rs: RequestState, has_registrations: bool
-                           ) -> Tuple[Dict[int, Optional[CdEDBObject]],
-                                      Dict[int, Optional[CdEDBObject]]]:
-        """This handles input to configure the parts.
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
+    @REQUESTdatadict(*EVENT_PART_COMMON_FIELDS)
+    def change_part(self, rs: RequestState, event_id: int, part_id: int,
+                    data: CdEDBObject) -> Response:
+        """Change one part, including the associated tracks and fee modifiers."""
+        # this will be added at the end after processing the dynamic input and will only
+        # yield false validation errors
+        del data['tracks']
+        del data['fee_modifiers']
+        data = check(rs, vtypes.EventPart, data)
+        if rs.has_validation_errors():
+            return self.change_part_form(rs, event_id, part_id)
+        assert data is not None
+        has_registrations = self.eventproxy.has_registrations(rs, event_id)
 
-        Since this covers a variable number of rows, we cannot do this
-        statically. This takes care of validation too.
-        """
-        parts = rs.ambience['event']['parts']
-        fee_modifiers = rs.ambience['event']['fee_modifiers']
+        #
+        # Check part specific stuff which can not be checked statically
+        #
+        if data["waitlist_field"]:
+            waitlist_field = rs.ambience['event']['fields'][data["waitlist_field"]]
+            allowed_datatypes, allowed_associations = EVENT_FIELD_SPEC['waitlist']
+            if (waitlist_field['association'] not in allowed_associations
+                    or waitlist_field['kind'] not in allowed_datatypes):
+                rs.append_validation_error(("waitlist_field", ValueError(
+                    n_("Waitlist linked to non-fitting field."))))
 
-        # Handle basic part data
-        delete_flags = request_extractor(
-            rs, {f"delete_{part_id}": bool for part_id in parts})
-        deletes = {part_id for part_id in parts
-                   if delete_flags['delete_{}'.format(part_id)]}
-        if has_registrations and deletes:
-            raise ValueError(n_("Registrations exist, no deletion."))
-        spec: TypeMapping = {
+        #
+        # process the dynamic track input
+        #
+        def track_constraint_maker(track_id: int, prefix: str) -> List[RequestConstraint]:
+            min_choice = f"{prefix}min_choices_{track_id}"
+            num_choice = f"{prefix}num_choices_{track_id}"
+            msg = n_("Must be less or equal than total Course Choices.")
+            return [(
+                lambda d: d[min_choice] <= d[num_choice], (min_choice, ValueError(msg))
+            )]
+
+        track_existing = rs.ambience['event']['parts'][part_id]['tracks']
+        track_spec = {
             'title': str,
             'shortname': str,
-            'part_begin': datetime.date,
-            'part_end': datetime.date,
-            'fee': decimal.Decimal,
-            'waitlist_field': Optional[vtypes.ID],  # type: ignore
+            'num_choices': vtypes.NonNegativeInt,
+            'min_choices': vtypes.NonNegativeInt,
+            'sortkey': int
         }
-        params: TypeMapping = {
-            f"{key}_{part_id}": value
-            for part_id in parts if part_id not in deletes
-            for key, value in spec.items()
-        }
+        track_data = process_dynamic_input(
+            rs, track_existing, track_spec, prefix="track_",
+            constraint_maker=track_constraint_maker)
 
-        # noinspection PyRedundantParentheses
-        def part_constraint_maker(part_id: int) -> List[RequestConstraint]:
-            begin = f"part_begin_{part_id}"
-            end = f"part_end_{part_id}"
-            msg = n_("Must be later than begin.")
-            ret: List[RequestConstraint]
-            ret = [(lambda d: d[begin] <= d[end], (end, ValueError(msg)))]
+        deleted_tracks = {anid for anid in track_data if track_data[anid] is None}
+        new_tracks = {anid for anid in track_data if anid < 0}
+        if deleted_tracks and has_registrations:
+            raise ValueError(n_("Registrations exist, no track deletion possible."))
+        if deleted_tracks & self._deletion_blocked_tracks(rs, event_id):
+            raise ValueError(n_("Some tracks can not be deleted."))
+        if new_tracks and has_registrations:
+            raise ValueError(n_("Registrations exist, no track creation possible."))
 
-            key = f"waitlist_field_{part_id}"
-            fields = rs.ambience['event']['fields']
-            legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['waitlist']
-            ret.append((
-                lambda d: d[key] is None or
-                          fields[d[key]]['association'] in legal_assocs
-                          and fields[d[key]]['kind'] in legal_datatypes,
-                (key, ValueError(n_(
-                    "Waitlist linked to non-fitting field.")))))
-            return ret
-
-        constraints = list(itertools.chain.from_iterable(
-            part_constraint_maker(part_id)
-            for part_id in parts if part_id not in deletes))
-        data = request_extractor(rs, params, constraints)
-        ret: Dict[int, CdEDBObject] = {
-            part_id: {key: data["{}_{}".format(key, part_id)] for key in spec}
-            for part_id in parts if part_id not in deletes
-        }
-
-        def track_params(part_id: int, track_id: int) -> TypeMapping:
-            """
-            Helper function to create the parameter extraction configuration
-            for the data of a single track.
-            """
-            return {
-                f"track_{k}_{part_id}_{track_id}": t
-                for k, t in {
-                    'title': str,
-                    'shortname': str,
-                    'num_choices': vtypes.NonNegativeInt,
-                    'min_choices': vtypes.NonNegativeInt,
-                    'sortkey': int
-                }.items()
-            }
-
-        def track_excavator(req_data: CdEDBObject, part_id: int, track_id: int
-                            ) -> CdEDBObject:
-            """
-            Helper function to create a single track's data dict from the
-            extracted request data.
-            """
-            return {
-                k: req_data['track_{}_{}_{}'.format(k, part_id, track_id)]
-                for k in ('title', 'shortname', 'num_choices', 'min_choices',
-                          'sortkey')}
-
-        # Handle newly created parts
-        marker = 1
-        while marker < 2 ** 10:
-            will_create = unwrap(request_extractor(
-                rs, {f"create_-{marker}": bool}))
-            if will_create:
-                if has_registrations:
-                    raise ValueError(n_("Registrations exist, no creation."))
-                params = {f"{key}_-{marker}": value for key, value in spec.items()}
-                constraints = part_constraint_maker(-marker)
-                data = request_extractor(rs, params, constraints)
-                ret[-marker] = {key: data[f"{key}_-{marker}"] for key in spec}
-            else:
-                break
-            marker += 1
-        # Return index of last new row to template to generate all inputs
-        # previously added by JS
-        rs.values['create_last_index'] = marker - 1
-
-        # Handle track data
-        track_delete_flags = request_extractor(rs, {
-            f"track_delete_{part_id}_{track_id}": bool
-            for part_id, part in parts.items()
-            for track_id in part['tracks']
-        })
-        track_deletes = {
-            track_id
-            for part_id, part in parts.items() for track_id in part['tracks']
-            if track_delete_flags['track_delete_{}_{}'.format(part_id,
-                                                              track_id)]
-        }
-        if has_registrations and track_deletes:
-            raise ValueError(n_("Registrations exist, no deletion."))
-        params = dict(itertools.chain.from_iterable(map(lambda d: d.items(),
-            (
-                track_params(part_id, track_id)
-                for part_id, part in parts.items()
-                for track_id in part['tracks']
-                if track_id not in track_deletes
-            )
-        )))
-
-        # noinspection PyRedundantParentheses
-        def track_constraint_maker(part_id: int, track_id: int) -> RequestConstraint:
-            # pylint: disable=redefined-builtin
-            min = "track_min_choices_{}_{}".format(part_id, track_id)
-            num = "track_num_choices_{}_{}".format(part_id, track_id)
-            msg = n_("Must be less or equal than total Course Choices.")
-            return (lambda d: d[min] <= d[num], (min, ValueError(msg)))
-
-        constraints = list(
-            track_constraint_maker(part_id, track_id)
-            for part_id, part in parts.items()
-            for track_id in part['tracks']
-            if track_id not in track_deletes)
-        data = request_extractor(rs, params, constraints)
-        rs.values['track_create_last_index'] = {}
-        for part_id, part in parts.items():
-            if part_id in deletes:
-                continue
-            ret[part_id]['tracks'] = {
-                track_id: (track_excavator(data, part_id, track_id)
-                           if track_id not in track_deletes else None)
-                for track_id in part['tracks']}
-            marker = 1
-            while marker < 2 ** 5:
-                will_create = unwrap(request_extractor(
-                    rs,
-                    {f"track_create_{part_id}_-{marker}": bool}))
-                if will_create:
-                    if has_registrations:
-                        raise ValueError(
-                            n_("Registrations exist, no creation."))
-                    params = track_params(part_id, -marker)
-                    constraints = [track_constraint_maker(part_id, -marker)]
-                    newtrack = track_excavator(
-                        request_extractor(rs, params, constraints),
-                        part_id, -marker)
-                    ret[part_id]['tracks'][-marker] = newtrack
-                else:
-                    break
-                marker += 1
-            rs.values['track_create_last_index'][part_id] = marker - 1
-
-        # And now track data for newly created parts
-        for new_part_id in range(1, rs.values['create_last_index'] + 1):
-            ret[-new_part_id]['tracks'] = {}
-            marker = 1
-            while marker < 2 ** 5:
-                will_create = unwrap(request_extractor(
-                    rs,
-                    {f"track_create_-{new_part_id}_-{marker}": bool}))
-                if will_create:
-                    params = track_params(-new_part_id, -marker)
-                    constraints = [
-                        track_constraint_maker(-new_part_id, -marker)]
-                    newtrack = track_excavator(
-                        request_extractor(rs, params, constraints),
-                        -new_part_id, -marker)
-                    ret[-new_part_id]['tracks'][-marker] = newtrack
-                else:
-                    break
-                marker += 1
-            rs.values['track_create_last_index'][-new_part_id] = marker - 1
-
-        def fee_modifier_params(part_id: int, fee_modifier_id: int) -> TypeMapping:
-            """
-            Helper function to create the parameter extraction configuration
-            for the data of a single fee modifier.
-            """
-            return {
-                f"fee_modifier_{k}_{part_id}_{fee_modifier_id}": t
-                for k, t in {
-                    'modifier_name': vtypes.RestrictiveIdentifier,
-                    'amount': decimal.Decimal,
-                    'field_id': vtypes.ID,
-                }.items()
-            }
-
-        def fee_modifier_excavator(req_data: CdEDBObject, part_id: int,
-                                   fee_modifier_id: int) -> CdEDBObject:
-            """
-            Helper function to create a single fee modifier's data dict from the
-            extracted request data.
-            """
-            ret = {
-                k: req_data['fee_modifier_{}_{}_{}'.format(
-                    k, part_id, fee_modifier_id)]
-                for k in ('modifier_name', 'amount', 'field_id')}
-            ret['part_id'] = part_id
-            if fee_modifier_id > 0:
-                ret['id'] = fee_modifier_id
-            return ret
-
-        # Handle fee modifier data
-        fee_modifier_delete_flags = request_extractor(
-            rs, {f"fee_modifier_delete_{mod['part_id']}_{mod['id']}": bool
-                 for mod in fee_modifiers.values()})
-        fee_modifier_deletes = {
-            mod['id']
-            for mod in fee_modifiers.values()
-            if fee_modifier_delete_flags['fee_modifier_delete_{}_{}'.format(
-                mod['part_id'], mod['id'])]
-        }
-        if has_registrations and fee_modifier_deletes:
-            raise ValueError(n_("Registrations exist, no deletion."))
-        params = dict(itertools.chain.from_iterable(map(lambda d: d.items(),
-            (
-                fee_modifier_params(mod['part_id'], mod['id'])
-                for mod in fee_modifiers.values()
-                if mod['id'] not in fee_modifier_deletes)
-            )
-        ))
-
-        def constraint_maker(part_id: int, fee_modifier_id: int
-                             ) -> List[RequestConstraint]:
-            key = f"fee_modifier_field_id_{part_id}_{fee_modifier_id}"
+        #
+        # process the dynamic fee modifier input
+        #
+        def fee_modifier_constraint_maker(
+                fee_modifier_id: int, prefix: str) -> List[RequestConstraint]:
+            key = f"{prefix}field_id_{fee_modifier_id}"
             fields = rs.ambience['event']['fields']
             legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['fee_modifier']
             msg = n_("Fee Modifier linked to non-fitting field.")
@@ -858,117 +790,62 @@ class EventFrontend(AbstractUserFrontend):
                 (key, ValueError(msg))
             )]
 
-        constraints = list(itertools.chain.from_iterable(
-            constraint_maker(mod['part_id'], mod['id'])
-            for mod in fee_modifiers.values()
-            if mod['id'] not in fee_modifier_deletes))
+        fee_modifier_existing = [
+            mod['id'] for mod in rs.ambience['event']['fee_modifiers'].values()
+            if mod['part_id'] == part_id
+        ]
+        fee_modifier_spec = {
+            'modifier_name': vtypes.RestrictiveIdentifier,
+            'amount': decimal.Decimal,
+            'field_id': vtypes.ID,
+        }
+        fee_modifier_prefix = "fee_modifier_"
+        # do not change fee modifiers once registrations exist
+        if has_registrations:
+            fee_modifier_data = dict()
+        else:
+            fee_modifier_data = process_dynamic_input(
+                rs, fee_modifier_existing, fee_modifier_spec,
+                prefix=fee_modifier_prefix,
+                constraint_maker=fee_modifier_constraint_maker)
 
-        data = request_extractor(rs, params, constraints)
-        rs.values['fee_modifier_create_last_index'] = {}
-        ret_fee_modifiers: Dict[int, Optional[CdEDBObject]] = {
-            mod['id']: (fee_modifier_excavator(data, mod['part_id'], mod['id'])
-                        if mod['part_id'] not in deletes
-                        and mod['id'] not in fee_modifier_deletes else None)
-            for mod in fee_modifiers.values()}
-
-        # Check for duplicate fields in the same part.
+        # Check if each linked field and fee modifier name is unique.
+        used_fields: Set[int] = set()
+        used_names: Set[str] = set()
         field_msg = n_("Must not have multiple fee modifiers linked to the same"
                        " field in one event part.")
-        name_msg = n_("Must not have multiple fee modifiers witht he same name "
+        name_msg = n_("Must not have multiple fee modifiers with the same name "
                       "in one event part.")
-        used_fields = {}
-        used_names = {}
-        if len(ret_fee_modifiers) == 1:
-            f = unwrap(ret_fee_modifiers)
-            if f:
-                used_fields[f['part_id']] = {f['field_id']}
-                used_names[f['part_id']] = {f['modifier_name']}
-        for e1, e2 in itertools.combinations(
-                filter(None, ret_fee_modifiers.values()), 2):
-            used_fields.setdefault(e1['part_id'], set()).add(e1['field_id'])
-            used_fields.setdefault(e2['part_id'], set()).add(e2['field_id'])
-            used_names.setdefault(e1['part_id'], set()).add(e1['modifier_name'])
-            used_names.setdefault(e2['part_id'], set()).add(e2['modifier_name'])
-            if e1['part_id'] == e2['part_id']:
-                if e1['field_id'] == e2['field_id']:
-                    base_key = "fee_modifier_field_id_{}_{}"
-                    key1 = base_key.format(e1['part_id'], e1['id'])
-                    rs.add_validation_error((key1, ValueError(field_msg)))
-                    key2 = base_key.format(e2['part_id'], e2['id'])
-                    rs.add_validation_error((key2, ValueError(field_msg)))
-                if e1['modifier_name'] == e2['modifier_name']:
-                    base_key = "fee_modifier_modifier_name_{}_{}"
-                    key1 = base_key.format(e1['part_id'], e1['id'])
-                    rs.add_validation_error((key1, ValueError(name_msg)))
-                    key2 = base_key.format(e2['part_id'], e2['id'])
-                    rs.add_validation_error((key2, ValueError(name_msg)))
+        for anid, modifier in fee_modifier_data.items():
+            if modifier is None:
+                continue
+            if modifier['field_id'] in used_fields:
+                rs.append_validation_error(
+                    (f"{fee_modifier_prefix}field_id_{anid}", ValueError(field_msg))
+                )
+            if modifier['modifier_name'] in used_names:
+                rs.append_validation_error(
+                    (f"{fee_modifier_prefix}modifier_name_{anid}", ValueError(name_msg))
+                )
+            used_fields.add(modifier['field_id'])
+            used_names.add(modifier['modifier_name'])
 
-        for part_id in parts:
-            marker = 1
-            while marker < 2 ** 5:
-                will_create = unwrap(request_extractor(
-                    rs, {f"fee_modifier_create_{part_id}_-{marker}": bool}))
-                if will_create:
-                    if has_registrations:
-                        raise ValueError(n_(
-                            "Registrations exist, no creation."))
-                    params = fee_modifier_params(part_id, -marker)
-                    constraints = constraint_maker(part_id, -marker)
-                    new_fee_modifier = fee_modifier_excavator(
-                        request_extractor(rs, params, constraints),
-                        part_id, -marker)
-                    ret_fee_modifiers[-marker] = new_fee_modifier
-                    if new_fee_modifier['field_id'] in used_fields.get(
-                            part_id, set()):
-                        rs.add_validation_error(
-                            ("fee_modifier_field_id_{}_{}".format(
-                                part_id, -marker),
-                             ValueError(field_msg)))
-                    if new_fee_modifier['modifier_name'] in used_names.get(
-                            part_id, set()):
-                        rs.add_validation_error(
-                            ("fee_modifier_modifier_name_{}_{}".format(
-                                part_id, -marker),
-                             ValueError(name_msg)))
-                    used_fields.setdefault(part_id, set()).add(
-                        new_fee_modifier['field_id'])
-                else:
-                    break
-                marker += 1
-            rs.values['fee_modifier_create_last_index'][part_id] = marker - 1
-
-        # Don't allow fee modifiers for newly created parts.
-
-        # Handle deleted parts
-        ret_parts = cast(Dict[int, Optional[CdEDBObject]], ret)
-        for part_id in deletes:
-            ret_parts[part_id] = None
-        if not any(ret.values()):
-            rs.append_validation_error(
-                ("", ValueError(n_("At least one event part required."))))
-            rs.notify("error", n_("At least one event part required."))
-        return ret_parts, ret_fee_modifiers
-
-    @access("event", modi={"POST"})
-    @event_guard(check_offline=True)
-    def part_summary(self, rs: RequestState, event_id: int) -> Response:
-        """Manipulate the parts of an event."""
-        has_registrations = self.eventproxy.has_registrations(rs, event_id)
-        parts, fee_modifiers = self.process_part_input(rs, has_registrations)
         if rs.has_validation_errors():
-            return self.part_summary_form(rs, event_id)
-        for part_id, part in rs.ambience['event']['parts'].items():
-            if parts.get(part_id) == part:
-                # remove unchanged
-                del parts[part_id]
+            return self.change_part_form(rs, event_id, part_id)
+
+        #
+        # put it all together
+        #
+        data['tracks'] = track_data
+        data['fee_modifiers'] = fee_modifier_data
         event = {
             'id': event_id,
-            'parts': parts,
-            'fee_modifiers': fee_modifiers,
+            'parts': {part_id: data},
         }
         code = self.eventproxy.set_event(rs, event)
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/part_summary_form")
+
+        return self.redirect(rs, "event/part_summary")
 
     @access("event")
     @event_guard()
@@ -1017,52 +894,59 @@ class EventFrontend(AbstractUserFrontend):
                    if delete_flags['delete_{}'.format(field_id)]}
         ret: CdEDBOptionalMap = {}
 
-        def params_a(anid: int) -> TypeMapping:
+        def params_change(anid: int) -> TypeMapping:
+            """Return specification of parameters for changing an existing field."""
             return {
                 f"kind_{anid}": const.FieldDatatypes,
                 f"association_{anid}": const.FieldAssociations,
                 f"entries_{anid}": Optional[str],  # type: ignore
+                f"checkin_{anid}": bool,
             }
+        tmp: Optional[CdEDBObject]
         for field_id in fields:
             if field_id not in deletes:
-                tmp: Optional[CdEDBObject] = request_extractor(rs, params_a(field_id))
+                tmp = request_extractor(rs, params_change(field_id))
                 if rs.has_validation_errors():
                     break
-                tmp = check(rs, vtypes.EventField, tmp,
-                            extra_suffix="_{}".format(field_id))
+                tmp = check(rs, vtypes.EventField, tmp, extra_suffix=f"_{field_id}")
                 if tmp:
                     temp = {
-                        'kind': tmp["kind_{}".format(field_id)],
-                        'association': tmp["association_{}".format(field_id)],
-                        'entries': tmp["entries_{}".format(field_id)]}
+                        'kind': tmp[f"kind_{field_id}"],
+                        'association': tmp[f"association_{field_id}"],
+                        'entries': tmp[f"entries_{field_id}"],
+                        'checkin': tmp[f"checkin_{field_id}"],
+                    }
                     ret[field_id] = temp
         for field_id in deletes:
             ret[field_id] = None
         marker = 1
 
-        def params_b(anid: int) -> TypeMapping:
+        def params_creation(anid: int) -> TypeMapping:
+            """Return specification of parameters for creating a new field."""
             return {
                 f"field_name_-{anid}": str,
                 f"kind_-{anid}": const.FieldDatatypes,
                 f"association_-{anid}": const.FieldAssociations,
                 f"entries_-{anid}": Optional[str],  # type: ignore
+                f"checkin_-{anid}": bool,
             }
         while marker < 2 ** 10:
-            will_create = unwrap(request_extractor(
-                rs, {f"create_-{marker}": bool}))
+            will_create = unwrap(request_extractor(rs, {f"create_-{marker}": bool}))
             if will_create:
-                tmp = request_extractor(rs, params_b(marker))
+                tmp = request_extractor(rs, params_creation(marker))
                 if rs.has_validation_errors():
                     marker += 1
                     break
                 tmp = check(rs, vtypes.EventField, tmp, creation=True,
-                            extra_suffix="_-{}".format(marker))
+                            extra_suffix=f"_-{marker}")
                 if tmp:
                     temp = {
-                        'field_name': tmp["field_name_-{}".format(marker)],
-                        'kind': tmp["kind_-{}".format(marker)],
-                        'association': tmp["association_-{}".format(marker)],
-                        'entries': tmp["entries_-{}".format(marker)]}
+                        'field_name': tmp[f"field_name_-{marker}"],
+                        'kind': tmp[f"kind_-{marker}"],
+                        'association': tmp[f"association_-{marker}"],
+                        'entries': tmp[f"entries_-{marker}"],
+                        'checkin': tmp[f"checkin_-{marker}"],
+                    }
                     ret[-marker] = temp
             else:
                 break
@@ -1626,6 +1510,7 @@ class EventFrontend(AbstractUserFrontend):
                 ('persona.id', QueryOperators.oneof,
                  rs.ambience['event']['orgas']),),
             'waitlist': lambda e, p, t: (
+                involved_filter(p),
                 ('part{}.status'.format(p['id']), QueryOperators.equal,
                  stati.waitlist.value),),
             'guest': lambda e, p, t: (
@@ -2004,6 +1889,19 @@ class EventFrontend(AbstractUserFrontend):
             ids = cast(vtypes.IntCSVList, [])
 
         tracks = rs.ambience['event']['tracks']
+        # Orchestrate change_note
+        if len(tracks) == 1:
+            change_note = "Kurs eingeteilt."
+        elif len(assign_track_ids) == 1:
+            change_note = (
+                "Kurs eingeteilt in Kursschiene"
+                f" {tracks[unwrap(assign_track_ids)]['shortname']}.")
+        else:
+            change_note = (
+                "Kurs eingeteilt in Kursschienen " +
+                ", ".join(tracks[anid]['shortname'] for anid in assign_track_ids) +
+                ".")
+
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         personas = self.coreproxy.get_event_users(rs, tuple(
             reg['persona_id'] for reg in registrations.values()), event_id)
@@ -2029,13 +1927,11 @@ class EventFrontend(AbstractUserFrontend):
                 if assign_action.enum == CourseChoiceToolActions.specific_rank:
                     if assign_action.int >= len(reg_track['choices']):
                         rs.notify("warning",
-                                  (n_("%(given_names)s %(family_name)s has no "
+                                  (n_("%(name)s has no "
                                       "%(rank)i. choice in %(track_name)s.")
                                    if len(tracks) > 1
-                                   else n_("%(given_names)s %(family_name)s "
-                                           "has no %(rank)i. choice.")),
-                                  {'given_names': persona['given_names'],
-                                   'family_name': persona['family_name'],
+                                   else n_("%(name)s has no %(rank)i. choice.")),
+                                  {'name': make_persona_name(persona),
                                    'rank': assign_action.int + 1,
                                    'track_name': tracks[atrack_id]['title']})
                         continue
@@ -2065,24 +1961,21 @@ class EventFrontend(AbstractUserFrontend):
                             break
                     else:
                         rs.notify("warning",
-                                  (n_("No choice available for %(given_names)s "
-                                      "%(family_name)s in %(track_name)s.")
+                                  (n_("No choice available for %(name)s in "
+                                      "%(track_name)s.")
                                    if len(tracks) > 1
                                    else n_("No choice available for "
-                                           "%(given_names)s %(family_name)s.")),
-                                  {'given_names': persona['given_names'],
-                                   'family_name': persona['family_name'],
+                                           "%(name)s.")),
+                                  {'name': make_persona_name(persona),
                                    'track_name': tracks[atrack_id]['title']})
             if tmp['tracks']:
-                res = self.eventproxy.set_registration(rs, tmp)
+                res = self.eventproxy.set_registration(rs, tmp, change_note)
                 if res:
                     num_committed += 1
                 else:
                     rs.notify("warning",
-                              n_("Error committing changes for %(given_names)s "
-                                 "%(family_name)s."),
-                              {'given_names': persona['given_names'],
-                               'family_name': persona['family_name']})
+                              n_("Error committing changes for %(name)s."),
+                              {'name': make_persona_name(persona)})
         rs.notify("success" if num_committed > 0 else "warning",
                   n_("Course assignment for %(num_committed)s of %(num_total)s "
                      "registrations committed."),
@@ -2302,10 +2195,10 @@ class EventFrontend(AbstractUserFrontend):
                         'amount_paid': all_regs[reg_id]['amount_paid']
                                        + datum['amount'],
                     }
-                    info = "{} am {} gezahlt.".format(
+                    change_note = "{} am {} gezahlt.".format(
                         money_filter(datum['amount']),
                         date_filter(datum['original_date'], lang="de"))
-                    count += self.eventproxy.set_registration(rs, update, info)
+                    count += self.eventproxy.set_registration(rs, update, change_note)
         except psycopg2.extensions.TransactionRollbackError:
             # We perform a rather big transaction, so serialization errors
             # could happen.
@@ -2577,9 +2470,7 @@ class EventFrontend(AbstractUserFrontend):
                                      for acheck in checks):
                         rwish.add(oid)
                 reverse_wish[reg_id] = ", ".join(
-                    "{} {}".format(
-                        personas[registrations[id]['persona_id']]['given_names'],
-                        personas[registrations[id]['persona_id']]['family_name'])
+                    make_persona_name(personas[registrations[id]['persona_id']])
                     for id in rwish)
 
         tex = self.fill_template(rs, "tex", "lodgement_puzzle", {
@@ -4749,8 +4640,9 @@ class EventFrontend(AbstractUserFrontend):
                                 ) -> Response:
         """Manipulate groups of lodgements."""
         group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
-        groups = process_dynamic_input(rs, group_ids.keys(), {'title': str},
-                                       {'event_id': event_id})
+        spec = {'title': str}
+        groups = process_dynamic_input(
+            rs, group_ids.keys(), spec, additional={'event_id': event_id})
         if rs.has_validation_errors():
             return self.lodgement_group_summary_form(rs, event_id)
         code = 1
@@ -4765,6 +4657,9 @@ class EventFrontend(AbstractUserFrontend):
                     current = self.eventproxy.get_lodgement_group(rs, group_id)
                     # Do not update unchanged
                     if current != group:
+                        # TODO maybe we pass it in but simply ignore it?
+                        # do not pass the event_id in, since it must not change
+                        del group['event_id']
                         code *= self.eventproxy.set_lodgement_group(rs, group)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/lodgement_group_summary")
@@ -4914,8 +4809,7 @@ class EventFrontend(AbstractUserFrontend):
                 for registration_id in inhabitants[(lodgement_id, part_id)]
             })
 
-        def _check_without_lodgement(registration_id: int, part_id: int
-                                     ) -> bool:
+        def _check_without_lodgement(registration_id: int, part_id: int) -> bool:
             """Un-inlined check for registration without lodgement."""
             part = registrations[registration_id]['parts'][part_id]
             return (const.RegistrationPartStati(part['status']).is_present()
@@ -4934,8 +4828,7 @@ class EventFrontend(AbstractUserFrontend):
 
         # Generate data to be encoded to json and used by the
         # cdedbSearchParticipant() javascript function
-        def _check_not_this_lodgement(registration_id: int, part_id: int
-                                      ) -> bool:
+        def _check_not_this_lodgement(registration_id: int, part_id: int) -> bool:
             """Un-inlined check for registration with different lodgement."""
             part = registrations[registration_id]['parts'][part_id]
             return (const.RegistrationPartStati(part['status']).is_present()
@@ -5006,6 +4899,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.manage_inhabitants_form(rs, event_id, lodgement_id)
         # Iterate all registrations to find changed ones
         code = 1
+        change_note = f"Bewohner von {rs.ambience['lodgement']['title']} geändert."
         for reg_id, reg in registrations.items():
             new_reg: CdEDBObject = {
                 'id': reg_id,
@@ -5033,7 +4927,7 @@ class EventFrontend(AbstractUserFrontend):
                             False)
                     }
             if new_reg['parts']:
-                code *= self.eventproxy.set_registration(rs, new_reg)
+                code *= self.eventproxy.set_registration(rs, new_reg, change_note)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/show_lodgement")
 
@@ -5059,7 +4953,7 @@ class EventFrontend(AbstractUserFrontend):
         new_regs: CdEDBObjectMap = {}
         for part_id in rs.ambience['event']['parts']:
             if data[f"swap_with_{part_id}"]:
-                swap_lodgement_id = data[f"swap_with_{part_id}"]
+                swap_lodgement_id: int = data[f"swap_with_{part_id}"]
                 current_inhabitants = inhabitants[(lodgement_id, part_id)]
                 swap_inhabitants = inhabitants[(swap_lodgement_id, part_id)]
                 new_reg: CdEDBObject
@@ -5073,8 +4967,11 @@ class EventFrontend(AbstractUserFrontend):
                     new_regs[reg_id] = new_reg
 
         code = 1
+        # noinspection PyUnboundLocalVariable
+        change_note = (f"Bewohner von {lodgements[lodgement_id]} und"
+                       f" {lodgements[swap_lodgement_id]} getauscht.")
         for new_reg in new_regs.values():
-            code *= self.eventproxy.set_registration(rs, new_reg)
+            code *= self.eventproxy.set_registration(rs, new_reg, change_note)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/show_lodgement")
 
@@ -5124,13 +5021,11 @@ class EventFrontend(AbstractUserFrontend):
 
         selectize_data = {
             track_id: xsorted(
-                [{'name': (personas[registration['persona_id']]['given_names']
-                           + " " + personas[registration['persona_id']]
-                           ['family_name']),
+                ({'name': make_persona_name(personas[registration['persona_id']]),
                   'current': registration['tracks'][track_id]['course_id'],
                   'id': registration_id}
                  for registration_id, registration in registrations.items()
-                 if _check_not_this_course(registration_id, track_id)],
+                 if _check_not_this_course(registration_id, track_id)),
                 key=lambda x: (
                     x['current'] is not None,
                     EntitySorter.persona(
@@ -5183,6 +5078,8 @@ class EventFrontend(AbstractUserFrontend):
 
         # Iterate all registrations to find changed ones
         code = 1
+        change_note = ("Kursteilnehmer von"
+                       f" {rs.ambience['course']['shortname']} geändert.")
         for registration_id, registration in registrations.items():
             new_reg: CdEDBObject = {
                 'id': registration_id,
@@ -5200,7 +5097,7 @@ class EventFrontend(AbstractUserFrontend):
                         'course_id': (course_id if new_attendee else None)
                     }
             if new_reg['tracks']:
-                code *= self.eventproxy.set_registration(rs, new_reg)
+                code *= self.eventproxy.set_registration(rs, new_reg, change_note)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/show_course")
 
@@ -5470,9 +5367,14 @@ class EventFrontend(AbstractUserFrontend):
                 personas[registrations[anid]['persona_id']]))
         registrations = OrderedDict(
             (reg_id, registrations[reg_id]) for reg_id in reg_order)
+        checkin_fields = {
+            field_id: f for field_id, f in rs.ambience['event']['fields'].items()
+            if f['checkin'] and f['association'] == const.FieldAssociations.registration
+        }
         return self.render(rs, "checkin", {
             'registrations': registrations, 'personas': personas,
-            'lodgements': lodgements})
+            'lodgements': lodgements, 'checkin_fields': checkin_fields,
+        })
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
@@ -5527,8 +5429,7 @@ class EventFrontend(AbstractUserFrontend):
             personas = self.coreproxy.get_personas(
                 rs, tuple(e['persona_id'] for e in entities.values()))
             labels = {
-                reg_id: (f"{personas[entity['persona_id']]['given_names']}"
-                         f" {personas[entity['persona_id']]['family_name']}")
+                reg_id: make_persona_name(personas[entity['persona_id']])
                 for reg_id, entity in entities.items()}
             ordered_ids = xsorted(
                 entities.keys(), key=lambda anid: EntitySorter.persona(

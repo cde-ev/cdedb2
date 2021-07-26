@@ -11,9 +11,11 @@
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("core/genesis_list_cases"), gettext("Account Requests")) }}
+{# Since the dataset is no full persona (esp. it does not contain a display_name entry), we can not use the
+   util.persona_name makro here. #}
 {{ util.breadcrumb_link(cdedblink("core/genesis_modify_form", {'case_id': values['case_id']}),
-                        gettext("Edit Account Request from %(given_names)s %(family_name)s")|format(
-                            given_names=values["given_names"], family_name=values["family_name"]),
+                        gettext("Edit Account Request from %(name)s")|format(
+                            name=values['given_names']+" "+values['family_name']),
                         active="True", icon="user") }}
 {% endblock %}
 {% block content %}

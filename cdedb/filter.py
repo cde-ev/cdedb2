@@ -92,9 +92,19 @@ def date_filter(val: Union[datetime.date, str, None],
         date_formatter = icu.DateFormat.createDateInstance(
             verbosity_mapping[verbosity], locale
         )
-        return date_formatter.format(datetime.datetime.combine(val, datetime.time()))
-    else:
-        return val.strftime(formatstr)
+        effective = datetime.datetime.combine(val, datetime.time())
+        if not hasattr(effective, '_date_to_freeze'):
+            # This branch is only avoided if freezegun is in effect
+            # (hence only under test).
+            #
+            # Sadly pyICU is incompatible with freezegun (see for example
+            # https://github.com/spulec/freezegun/issues/207). Thus we have
+            # to forfeit nicely formatted dates in this scenario.
+            #
+            # The attribute check is a bit fragile, but no better way to
+            # detect freezegun was available.
+            return date_formatter.format(effective)
+    return val.strftime(formatstr)
 
 
 @overload
@@ -341,7 +351,7 @@ def get_bleach_cleaner() -> bleach.sanitizer.Cleaner:
         # customizations
         'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'colgroup', 'col', 'tr', 'th',
         'thead', 'table', 'tbody', 'td', 'hr', 'p', 'span', 'div', 'pre', 'tt',
-        'sup', 'sub', 'br', 'u', 'dl', 'dt', 'dd', 'details', 'summary']
+        'sup', 'sub', 'small', 'br', 'u', 'dl', 'dt', 'dd', 'details', 'summary']
     attributes = {
         'a': ['href', 'title'],
         'abbr': ['title'],
@@ -418,7 +428,7 @@ def get_markdown_parser() -> markdown.Markdown:
             },
         }
         md = markdown.Markdown(extensions=["extra", "sane_lists", "smarty", "toc"],
-                               extension_configs=extension_configs)  # type: ignore
+                               extension_configs=extension_configs)
 
         MARKDOWN_PARSER.md = md
     else:

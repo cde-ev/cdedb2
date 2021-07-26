@@ -16,7 +16,6 @@ import re
 import shutil
 import string
 import tempfile
-import time
 from collections import OrderedDict, defaultdict
 from typing import Any, Collection, Dict, List, Optional, Sequence, Set, Tuple, cast
 
@@ -2364,7 +2363,10 @@ class CdEFrontend(AbstractUserFrontend):
         else:
             worker = Worker(self.conf, send_addresscheck, rs)
             worker.start()
-            time.sleep(1)
+            # Wait a bit to make the semester state update so that the user
+            # does not need to reload. However do not wait if there is
+            # nothing to wait for.
+            worker.join(.1)
             rs.notify("success", n_("Started sending mail."))
         return self.redirect(rs, "cde/show_semester")
 
@@ -2517,7 +2519,7 @@ class CdEFrontend(AbstractUserFrontend):
         scope = QueryScope.past_event_user
         query = Query(
             scope, scope.get_spec(),
-            ("personas.id", "given_names", "family_name", "address",
+            ("personas.id", "given_names", "display_name", "family_name", "address",
              "address_supplement", "postal_code", "location", "country"),
             [("pevent_id", QueryOperators.equal, pevent_id), ],
             (("family_name", True), ("given_names", True),

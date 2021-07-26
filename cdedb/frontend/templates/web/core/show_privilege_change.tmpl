@@ -2,15 +2,15 @@
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans given_names=persona['given_names'], family_name=persona['family_name'] %}
-    	Privilege Change for {{ given_names }} {{ family_name }}
+    {% trans name=util.persona_name(persona) %}
+    	Privilege Change for {{ name }}
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("core/list_privilege_changes"), gettext("Privilege Changes")) }}
 {{ util.breadcrumb_link(cdedblink('core/show_privilege_change', {'case_id': ambience['privilege_change']['id']}),
-        "{} {}".format(persona['given_names'], persona['family_name']), icon="user", active="True") }}
+        util.persona_name(persona), icon="user", active="True") }}
 {% endblock %}
 
 {% block content %}

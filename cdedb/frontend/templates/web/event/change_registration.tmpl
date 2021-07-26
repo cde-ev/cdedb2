@@ -4,33 +4,25 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans given_names=persona['given_names'], family_name=persona['family_name'], title=ambience['event']['title'] %}
-        Edit Registration by {{ given_names }} {{ family_name }} ({{ title }})
+    {% trans name=util.persona_name(persona), title=ambience['event']['title'] %}
+        Edit Registration by {{ name }} ({{ title }})
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
 {{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations")) }}
-{{ util.breadcrumb_link(cdedblink("event/show_registration"), "{} {}".
-        format(persona['given_names'], persona['family_name']), icon="user") }}
+{{ util.breadcrumb_link(cdedblink("event/show_registration"), util.persona_name(persona), icon="user") }}
 {{ util.breadcrumb_link(cdedblink("event/change_registration"), gettext("Edit"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans given_names=persona['given_names'], family_name=persona['family_name'] %}
-            Edit {{ given_names }} {{ family_name }}
+        {% trans name=util.persona_name(persona) %}
+            Edit {{ name }}
         {% endtrans %}
         <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
-
-{% macro output_name(persona) %}
-    {{ persona['title'] }}
-    {{ persona['given_names'] }}
-    {{ persona['family_name'] }}
-    {{ persona['name_supplement'] }}
-{% endmacro %}
 
 {% block content %}
     <form action="{{ cdedblink('event/change_registration') }}" method="POST" id="changeregistrationform"
@@ -39,7 +31,9 @@
         {% for val in skip %}{{ util.input_hidden('skip', val) }}{% endfor %}
 
         <h3 class="heading-underline">{% trans %}Personal Information{% endtrans %}</h3>
-        {{ util.form_input_static(label=gettext("Full Name"), value=output_name(persona)) }}
+        {{ util.form_input_static(label=gettext("Full Name"),
+                                  value=util.persona_name(persona, given_and_display_names=True, with_titles=True))
+                }}
         {{ util.form_input_static(label=gettext("CdEDB-ID"), value=persona['id']|cdedbid) }}
         {% if CDEDB_OFFLINE_DEPLOYMENT %}
             {{ util.form_input_text(name="reg.real_persona_id", label=gettext("Online CdEDB-ID")) }}

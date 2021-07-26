@@ -14,7 +14,7 @@
             {{ util.form_input_text(name="birth_name", label=gettext("Birth Name")) }}
         {% endif %}
         {{ util.form_input_text(name="name_supplement", label=gettext("Name Affix")) }}
-        {{ util.form_input_text(name="display_name", label=gettext("First Given Name")) }}
+        {{ util.form_input_text(name="display_name", label=gettext("Known as (Forename)")) }}
         {% if realm == "cde" %}
             {{ util.form_input_textarea(name="specialisation", label=gettext("Specialisation")) }}
             {{ util.form_input_textarea(name="affiliation", label=gettext("School, University, …")) }}
@@ -122,7 +122,7 @@
         "family_name": gettext("Family Name"),
         "birth_name": gettext("Birth Name"),
         "given_names": gettext("Given Names"),
-        "display_name": gettext("First Given Name"),
+        "display_name": gettext("Known as (Forename)"),
         "title": gettext("Title_[[of a persona]]"),
         "name_supplement": gettext("Name Affix"),
         "gender": gettext("Gender"),
@@ -194,7 +194,7 @@
         "family_name": gettext("Family Name"),
         "birth_name": gettext("Birth Name"),
         "given_names": gettext("Given Names"),
-        "display_name": gettext("First Given Name"),
+        "display_name": gettext("Known as (Forename)"),
         "title": gettext("Title_[[of a persona]]"),
         "name_supplement": gettext("Name Affix"),
         "gender": gettext("Gender"),
@@ -629,8 +629,9 @@
                 </tr>
             </thead>
             <tbody>
-            {% set primary_field = query.scope.get_primary_key().split('.')[-1] %}
+            {% set primary_field = query.scope.get_primary_key(short=True) %}
             {% set QueryScope = enums['QueryScope'] %}
+            {% set ResultFormat = query_mod.QueryResultEntryFormat %}
             {% for row in result %}
                 {% set outerloopindex = loop.index0 %}
                 <tr class="ls-item" data-id="{{ row[primary_field] }}">
@@ -658,23 +659,32 @@
                             {# NOTE that we split off any possible schema specification since they're not preserved
                                     by the query #}
                                 <td data-col="{{ field }}">  {# The data-col attribute is mainly used for testing #}
-                                    {% if field in ("personas.id", "persona.id")
-                                            or (query.scope == QueryScope.persona and field == "id") %}
-                                        <span class="nowrap">{{ row[field]|cdedbid }}</span>
-                                    {% elif field == "persona.username" %}
-                                        {{ util.username_mailto(row, prefix="persona.") }}
-                                    {% elif field == "username" %}
+                                    {% set format_spec = query.get_field_format_spec(field) %}
+                                    {% set text = choices.get(csvfield, {}).get(row.get(field),
+                                                                                row.get(field, "UNDEFINED")) %}
+                                    {% if format_spec == ResultFormat.persona %}
+                                        <span class="nowrap">
+                                            {% if primary_field == "personas.id" %}
+                                                {{ row[field]|cdedbid }}
+                                            {% else %}
+                                                {{ util.href(show_user_link(user, row[field]), row[field]|cdedbid) }}
+                                            {% endif %}
+                                        </span>
+                                    {% elif format_spec == ResultFormat.username %}
                                         {{ util.username_mailto(row) }}
-                                    {% elif query.spec[csvfield] == "date" %}
+                                    {% elif format_spec == ResultFormat.date %}
                                         {{ row.get(field, None)|date(lang=lang) }}
-                                    {% elif query.spec[csvfield] == "datetime" %}
+                                    {% elif format_spec == ResultFormat.datetime %}
                                         {{ row.get(field, None)|datetime(lang=lang) }}
-                                    {% elif query.spec[csvfield] == "bool" %}
+                                    {% elif format_spec == ResultFormat.bool %}
                                         {{ util.deko_checkbox(row.get(field, None), titles=(gettext('false'),
                                                                                             gettext('true'))) }}
+                                    {% elif format_spec == ResultFormat.event_course and row[field] %}
+                                        {{ util.href(cdedblink("event/show_course", {'course_id': row[field]}), text) }}
+                                    {% elif format_spec == ResultFormat.event_lodgement and row[field] %}
+                                        {{ util.href(cdedblink("event/show_lodgement", {'lodgement_id': row[field]}), text) }}
                                     {% else %}
-                                        {{ choices.get(csvfield, {}).get(row.get(field),
-                                                                         row.get(field, "UNDEFINED")) }}
+                                        {{ text }}
                                     {% endif %}
                                 </td>
                         {% endfor %}

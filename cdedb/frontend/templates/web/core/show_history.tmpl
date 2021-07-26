@@ -4,14 +4,13 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_historycollapse.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans given_names=current['given_names'], family_name=current['family_name'] %}
-    	Change History of {{ given_names }} {{ family_name }}
+    {% trans name=util.persona_name(current) %}
+        Change History of {{ name }}
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(show_user_link(user, current['id']), current['given_names'] + " " + current['family_name'],
-            icon="user") }}
+    {{ util.breadcrumb_link(show_user_link(user, current['id']), util.persona_name(current), icon="user") }}
     {{ util.breadcrumb_link(cdedblink("core/show_history"), gettext("Change History"), active=True) }}
 {% endblock %}
 {% set STATUS={enums["MemberChangeStati"].pending: ('pending','check',gettext("pending")),
@@ -105,9 +104,7 @@
         {% call history_field(gettext("Name")) %}
             {% call(c) print_multifield_history(
                     ['title','given_names', 'display_name', 'family_name', 'name_supplement']) %}
-                {{ entries[c]['title'] }}
-                {{ util.output_given_displayname(entries[c]['given_names'], entries[c]['display_name']) }}
-                {{ entries[c]['family_name'] }} {{ entries[c]['name_supplement'] }}
+                {{ util.persona_name(entries[c], given_and_display_names=True, with_titles=True) }}
             {% endcall %}
         {% endcall %}
 

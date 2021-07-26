@@ -133,6 +133,9 @@ ul.slim {
     padding-left: 0;
     padding-right: 0;
 }
+.row dl {
+    margin-bottom: 0;
+}
 .list-group-hover .list-group-item:hover{
     background-color: #f5f5f5;
 }
@@ -248,6 +251,10 @@ h2.mosp {
 }
 h3.mosp {
     margin-top: 24px;
+}
+hr.nosp {
+    margin-top: 5px;
+    margin-bottom: 5px;
 }
 label.nosp {
     margin-bottom: 0;
@@ -1061,13 +1068,13 @@ span.color-legend {
 }
 .button-par {
     /* A div containing buttons, which may be wrapped with nice spacing in between */
-    margin-bottom: -8px;
+    margin-bottom: -5px;
 }
 .button-par.p {
-    margin-bottom: 2px;
+    margin-bottom: 5px;
 }
 .button-par .btn {
-    margin-bottom: 8px;
+    margin-bottom: 5px;
 }
 .clickable {
     cursor: pointer;
@@ -1104,6 +1111,10 @@ ul.styleless {
 
 .button-group-below-text {
     margin-top: 5px
+}
+
+.clear-both {
+    clear: both;
 }
 
 /*

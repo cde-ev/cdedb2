@@ -14,6 +14,7 @@ import os
 import pathlib
 import subprocess
 import sys
+from typing import Collection
 
 from psycopg2.extras import Json, DictCursor
 
@@ -104,6 +105,12 @@ def update_event(cur: DictCursor, event: CdEDBObject) -> None:
     cur.execute(query, params)
 
 
+def update_parts(cur: DictCursor, parts: Collection[CdEDBObject]) -> None:
+    query = "UPDATE event.event_parts SET waitlist_field = %s WHERE id = %s"
+    for part in parts:
+        cur.execute(query, (part['waitlist_field'], part['id']))
+
+
 def work(args: argparse.Namespace) -> None:
     db_name = os.environ['CDEDB_TEST_DATABASE'] if args.test else 'cdb'
 
@@ -111,7 +118,7 @@ def work(args: argparse.Namespace) -> None:
     with open(args.data_path, encoding='UTF-8') as infile:
         data = json.load(infile)
 
-    if data.get("EVENT_SCHEMA_VERSION") != [15, 2]:
+    if data.get("EVENT_SCHEMA_VERSION") != [15, 3]:
         raise RuntimeError("Version mismatch -- aborting.")
     if data["kind"] != "full":
         raise RuntimeError("Not a full export -- aborting.")
@@ -198,9 +205,14 @@ def work(args: argparse.Namespace) -> None:
                     for key in ('lodge_field', 'camping_mat_field',
                                 'course_room_field'):
                         values[str(data['id'])][key] = None
+                if table == 'event.event_parts':
+                    for part_id in data[table]:
+                        for key in ('waitlist_field',):
+                            values[part_id][key] = None
                 populate_table(cur, table, values, repopath=args.repopath)
             # Fix forward references
             update_event(cur, data['event.events'][str(data['id'])])
+            update_parts(cur, data['event.event_parts'].values())
 
             # Create a surrogate changelog that can be used for the
             # duration of the offline deployment

@@ -25,7 +25,7 @@ class TestCommon(BasicTest):
         unsorted = [3, 8, -3, 5, 0, -4]
         self.assertEqual(list(mixed_existence_sorter(unsorted)),
                          [0, 3, 5, 8, -3, -4])
-        self.assertEqual(sorted([-3, -4]), xsorted([-3, -4]))
+        self.assertEqual(sorted([-3, -4]), xsorted([-3, -4]))  # pylint: disable=bad-builtin
 
     def test_extract_roles(self) -> None:
         self.assertEqual({
@@ -42,7 +42,7 @@ class TestCommon(BasicTest):
                 }))
 
     def test_schulze_ordinary(self) -> None:
-        bar = '0'
+        bar = '0'  # pylint: disable=blacklisted-name
 
         def _ordinary_votes(spec: Dict[Optional[Tuple[str, ...]], int],
                             candidates: Tuple[str, ...]) -> List[str]:
@@ -251,7 +251,7 @@ class TestCommon(BasicTest):
             ("Corona", 2020),
         ]
         self.assertEqual(list(reversed(tuples)), xsorted(tuples))
-        self.assertEqual(tuples, xsorted(tuples, key=lambda x: str(x)))
+        self.assertEqual(tuples, xsorted(tuples, key=str))
 
     def test_unwrap(self) -> None:
         self.assertIsInstance(unwrap([1]), int)
@@ -353,4 +353,4 @@ class TestCommon(BasicTest):
                          datetime.datetime.fromisoformat("2012-12-21T12:40:00"))
 
     def test_datetime_min(self) -> None:
-        self.assertEquals(datetime.date.min, datetime.date(1, 1, 1))
+        self.assertEqual(datetime.date.min, datetime.date(1, 1, 1))

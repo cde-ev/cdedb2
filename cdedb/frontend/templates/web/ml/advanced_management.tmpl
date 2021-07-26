@@ -82,9 +82,8 @@
                                 {{ util.anti_csrf_token('ml/remove_subscription_override') }}
                                 {{ util.input_hidden(name="modsubscriber_id", value=subscription_override) }}
                                 {{ util.input_submit(label='', aclass="btn btn-xs btn-danger list-button-float", icon="minus",
-                                        title=gettext("Remove %(given_names)s %(family_name)s as forced subscriber")|format(
-                                            given_names=persona['given_names'],
-                                            family_name=persona['family_name'])) }}
+                                        title=gettext("Remove %(name)s as forced subscriber")|format(
+                                            name=util.persona_name(persona))|s) }}
                             </form>
                         {% endif %}
                     </li>
@@ -134,9 +133,8 @@
                                 {{ util.anti_csrf_token('ml/remove_unsubscription_override') }}
                                 {{ util.input_hidden(name="modunsubscriber_id", value=unsubscription_override) }}
                                 {{ util.input_submit(label='', aclass="btn btn-xs btn-danger list-button-float", icon="minus",
-                                        title=gettext("Remove %(given_names)s %(family_name)s as blocked subscriber")|format(
-                                            given_names=persona['given_names'],
-                                            family_name=persona['family_name'])) }}
+                                        title=gettext("Remove %(name)s as blocked subscriber")|format(
+                                            name=util.persona_name(persona))|s) }}
                             </form>
                         {% endif %}
                     </li>
@@ -227,9 +225,8 @@
                                         {{ util.anti_csrf_token('ml/reset_unsubscription') }}
                                         {{ util.input_hidden(name="unsubscription_id", value=unsubscription) }}
                                         {{ util.input_submit(label='', aclass="btn btn-xs btn-danger list-button-float", icon="trash-alt",
-                                                title=gettext("Reset %(given_names)s %(family_name)s explicit unsubscription")|format(
-                                                    given_names=all_unsubscriptions[unsubscription]['given_names'],
-                                                    family_name=all_unsubscriptions[unsubscription]['family_name'])) }}
+                                                title=gettext("Reset %(name)s explicit unsubscription")|format(
+                                                    name=util.persona_name(all_unsubscriptions[unsubscription]))|s) }}
                                     </form>
                                 {% else %}
                                     <form action="{{ cdedblink('ml/readd_subscriber') }}"
@@ -239,9 +236,8 @@
                                         {{ util.anti_csrf_token('ml/readd_subscriber') }}
                                         {{ util.input_hidden(name="subscriber_id", value=unsubscription) }}
                                         {{ util.input_submit(label='', aclass="btn btn-xs btn-success list-button-float", icon="plus",
-                                                title=gettext("Subscribe %(given_names)s %(family_name)s")|format(
-                                                    given_names=all_unsubscriptions[unsubscription]['given_names'],
-                                                    family_name=all_unsubscriptions[unsubscription]['family_name'])) }}
+                                                title=gettext("Subscribe %(name)s")|format(
+                                                    name=util.persona_name(all_unsubscriptions[unsubscription]))|s) }}
                                     </form>
                                 {% endif %}
                             {% else %}

@@ -25,6 +25,7 @@ from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, AbstractUserFrontend, access,
     assembly_guard, calculate_db_logparams, calculate_loglinks, cdedburl,
     check_validation as check, periodic, process_dynamic_input, request_extractor,
+    RequestConstraint
 )
 from cdedb.validation import (
     ASSEMBLY_COMMON_FIELDS, BALLOT_EXPOSED_FIELDS, PERSONA_FULL_ASSEMBLY_CREATION,
@@ -1121,7 +1122,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         # Currently we don't distinguish between current and extended ballots
         current.update(extended)
         ballot_list: List[int] = sum((
-            xsorted(bdict, key=lambda key: bdict[key]["title"])  # pylint: disable=cell-var-from-loop; # noqa
+            xsorted(bdict, key=lambda key: bdict[key]["title"])  # pylint: disable=cell-var-from-loop;
             for bdict in (future, current, done)), [])
 
         i = ballot_list.index(ballot_id)
@@ -1463,12 +1464,14 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         bdata = {
             "id": ballot_id,
-            "vote_begin": now() + datetime.timedelta(seconds=1),
+            # vote begin must be in the future
+            "vote_begin": now() + datetime.timedelta(milliseconds=100),
             "vote_end": now() + datetime.timedelta(minutes=1),
         }
 
         self.notify_return_code(rs, self.assemblyproxy.set_ballot(rs, bdata))
-        time.sleep(1)
+        # wait for ballot to be votable
+        time.sleep(.1)
         return self.redirect(rs, "assembly/show_ballot")
 
     @access("assembly", modi={"POST"})
@@ -1573,17 +1576,23 @@ class AssemblyFrontend(AbstractUserFrontend):
     def edit_candidates(self, rs: RequestState, assembly_id: int,
                         ballot_id: int) -> Response:
         """Create, edit and delete candidates of a ballot."""
+
+        def constraint_maker(candidate_id: int, prefix: str) -> List[RequestConstraint]:
+            """Create constraints for each individual candidate"""
+            constraints: List[RequestConstraint] = [
+                (lambda c: c[f'shortname_{candidate_id}'] != ASSEMBLY_BAR_SHORTNAME,
+                 (f'shortname_{candidate_id}',
+                  ValueError(n_("Mustn’t be the bar shortname.")))),
+            ]
+            return constraints
+
+        spec = {'shortname': vtypes.RestrictiveIdentifier, 'title': str}
         candidates = process_dynamic_input(
-            rs, rs.ambience['ballot']['candidates'].keys(),
-            {'shortname': vtypes.RestrictiveIdentifier, 'title': str})
+            rs, rs.ambience['ballot']['candidates'].keys(), spec,
+            constraint_maker=constraint_maker)
 
         shortnames: Set[str] = set()
         for candidate_id, candidate in candidates.items():
-            if candidate and candidate['shortname'] == ASSEMBLY_BAR_SHORTNAME:
-                rs.append_validation_error(
-                    (f"shortname_{candidate_id}",
-                     ValueError(n_("Mustn’t be the bar shortname.")))
-                )
             if candidate and candidate['shortname'] in shortnames:
                 rs.append_validation_error(
                     (f"shortname_{candidate_id}",

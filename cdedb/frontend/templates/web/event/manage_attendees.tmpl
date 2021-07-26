@@ -41,8 +41,7 @@
                         <ul class="slim">
                             {% for registration_id in attendees[(ambience['course']['id'], track_id)] %}
                                 <li>
-                                    {{ personas[registrations[registration_id]['persona_id']]['given_names'] }}
-                                    {{ personas[registrations[registration_id]['persona_id']]['family_name'] }}
+                                    {{ util.persona_name(personas[registrations[registration_id]['persona_id']]) }}
                                     &ensp;{{ util.input_checkbox('delete_%s_%s'|format(track_id, registration_id),
                                             gettext("Remove"), aclass="del-box") }}
                                 </li>
@@ -61,8 +60,7 @@
                             <option value="">{% trans %}– none –{% endtrans %}</option>
                             {% for registration_id in without_course[track_id] %}
                                 <option id="{{ registration_id }}_{{ track_id }}" value="{{ registration_id }}">
-                                    {{ personas[registrations[registration_id]['persona_id']]['given_names'] }}
-                                    {{ personas[registrations[registration_id]['persona_id']]['family_name'] }}
+                                    {{ util.persona_name(personas[registrations[registration_id]['persona_id']]) }}
                                 </option>
                             {% endfor %}
                         </select>

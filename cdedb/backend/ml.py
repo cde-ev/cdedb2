@@ -332,7 +332,7 @@ class MlBackend(AbstractBackend):
             # Get additional information to find out if we can view these lists
             ml_ids = [e['id'] for e in data]
             mailinglists = self.get_mailinglists(rs, ml_ids)
-            ret = {e['id']: e['title'] for e in data}
+        ret = {e['id']: e['title'] for e in data}
 
         # Filter the  list returned depending on value of managed
         # Admins can administrate and view anything
@@ -391,16 +391,15 @@ class MlBackend(AbstractBackend):
             data = self.sql_select(
                 rs, "ml.whitelist", ("address", "mailinglist_id"), mailinglist_ids,
                 entity_key="mailinglist_id")
-            for anid in mailinglist_ids:
-                whitelist = {d['address'] for d in data if d['mailinglist_id'] == anid}
-                if 'whitelist' in ret[anid]:
-                    raise RuntimeError()
-                ret[anid]['whitelist'] = whitelist
-            for anid in mailinglist_ids:
-
-                ret[anid]['domain_str'] = str(const.MailinglistDomain(
-                    ret[anid]['domain']))
-                ret[anid]['ml_type_class'] = ml_type.TYPE_MAP[ret[anid]['ml_type']]
+        for anid in mailinglist_ids:
+            whitelist = {d['address'] for d in data if d['mailinglist_id'] == anid}
+            if 'whitelist' in ret[anid]:
+                raise RuntimeError()
+            ret[anid]['whitelist'] = whitelist
+        for anid in mailinglist_ids:
+            ret[anid]['domain_str'] = str(const.MailinglistDomain(
+                ret[anid]['domain']))
+            ret[anid]['ml_type_class'] = ml_type.TYPE_MAP[ret[anid]['ml_type']]
         return ret
 
     class _GetMailinglistProtocol(Protocol):
@@ -878,7 +877,7 @@ class MlBackend(AbstractBackend):
             if ret and code:
                 self.ml_log(rs, code, datum['mailinglist_id'], datum['persona_id'])
 
-            return ret
+        return ret
 
     @access("ml")
     def set_subscription_address(self, rs: RequestState, mailinglist_id: int,
@@ -1019,7 +1018,8 @@ class MlBackend(AbstractBackend):
         states = states or set()
         # We are more restrictive here than in the signature
         states = affirm_set(vtypes.DatabaseSubscriptionState, states)
-        if not self.is_admin(rs) and rs.user.persona_id != persona_id:
+        if not (self.is_admin(rs) or self.core.is_relative_admin(rs, persona_id)
+                or rs.user.persona_id == persona_id):
             raise PrivilegeError(n_("Not privileged."))
 
         query = ("SELECT mailinglist_id, subscription_state "
@@ -1068,9 +1068,6 @@ class MlBackend(AbstractBackend):
         subscribers (or a subset given via `persona_ids`) to email addresses.
         If they have expicitly specified a subscription address that one is
         returned, otherwise the username is returned.
-        # TODO this must not happen
-        If a subscriber has neither a username nor a explicit subscription
-        address then for that subscriber None is returned.
 
         With `explicits_only = True` every subscriber is mapped to their
         explicit subscription address or None, if none is given.
@@ -1159,16 +1156,32 @@ class MlBackend(AbstractBackend):
                 explicits_only=explicits_only))
 
     @access("ml")
+    def get_user_subscription_addresses(self, rs: RequestState, persona_id: int
+                                        ) -> Dict[int, str]:
+        """Retrieve explicit email addresses of the given persona for all mailinglists.
+
+        :returns: Returns dict mapping mailinglist_id with explicit addresses to the
+            respective addresses
+        """
+        if not (self.is_admin(rs) or self.core.is_relative_admin(rs, persona_id)
+                or rs.user.persona_id == persona_id):
+            raise PrivilegeError(n_("Not privileged."))
+        persona_id = affirm(vtypes.ID, persona_id)
+        query = ("SELECT mailinglist_id, address"
+                 " FROM ml.subscription_addresses"
+                 " WHERE persona_id = %s")
+        data = self.query_all(rs, query, [persona_id])
+        return {e["mailinglist_id"]: e["address"] for e in data}
+
+    @access("ml")
     def get_persona_addresses(self, rs: RequestState) -> Set[str]:
         """Get all confirmed email addresses for a user.
 
         This includes all subscription addresses as well as the username.
         """
-        query = ("SELECT DISTINCT address FROM ml.subscription_addresses "
-                 "WHERE persona_id = %s")
-        params = (rs.user.persona_id,)
-        data = self.query_all(rs, query, params)
-        ret = {e["address"] for e in data}
+        assert rs.user.persona_id is not None
+        data = self.get_user_subscription_addresses(rs, rs.user.persona_id)
+        ret = set(data.values())
         ret.add(rs.user.username)
         return ret
 

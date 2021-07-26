@@ -1865,17 +1865,12 @@ def roles_to_admin_views(roles: Set[Role]) -> Set[AdminView]:
     return result
 
 
-#: Deprecated, use EVENT_SCHEMA_VERSION instead. This should no longer be
-#: modified.
-#: TODO remove it
-CDEDB_EXPORT_EVENT_VERSION = 13
-
 #: Version tag, so we know that we don't run out of sync with exported event
 #: data. This has to be incremented whenever the event schema changes.
 #: If the partial export and import are unaffected the minor version may be
 #: incremented.
 #: If you increment this, it must be incremented in make_offline_vm.py as well.
-EVENT_SCHEMA_VERSION = (15, 2)
+EVENT_SCHEMA_VERSION = (15, 3)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3
@@ -2057,8 +2052,9 @@ COURSE_TRACK_FIELDS = ("id", "part_id", "title", "shortname", "num_choices",
                        "min_choices", "sortkey")
 
 #: Fields of an extended attribute associated to an event entity
-FIELD_DEFINITION_FIELDS = ("id", "event_id", "field_name", "kind",
-                           "association", "entries")
+FIELD_DEFINITION_FIELDS = (
+    "id", "event_id", "field_name", "kind", "association", "entries", "checkin",
+)
 
 #: Fields of a modifier for an event_parts fee.
 FEE_MODIFIER_FIELDS = ("id", "part_id", "modifier_name", "amount", "field_id")
@@ -2166,10 +2162,10 @@ LASTSCHRIFT_TRANSACTION_FIELDS = (
 #: Datatype and Association of special purpose event fields
 EVENT_FIELD_SPEC: Dict[
     str, Tuple[Set[const.FieldDatatypes], Set[const.FieldAssociations]]] = {
-    'lodge': ({const.FieldDatatypes.str}, {const.FieldAssociations.registration}),
-    'camping_mat': (
+    'lodge_field': ({const.FieldDatatypes.str}, {const.FieldAssociations.registration}),
+    'camping_mat_field': (
         {const.FieldDatatypes.bool}, {const.FieldAssociations.registration}),
-    'course_room': ({const.FieldDatatypes.str}, {const.FieldAssociations.course}),
+    'course_room_field': ({const.FieldDatatypes.str}, {const.FieldAssociations.course}),
     'waitlist': ({const.FieldDatatypes.int}, {const.FieldAssociations.registration}),
     'fee_modifier': (
         {const.FieldDatatypes.bool}, {const.FieldAssociations.registration}),

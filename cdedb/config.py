@@ -680,8 +680,9 @@ class Config(BasicConfig):
             spec = importlib.util.spec_from_file_location(
                 "primaryconf", str(configpath)
             )
+            if not spec:
+                raise ImportError
             primaryconf = importlib.util.module_from_spec(spec)
-            # noinspection PyUnresolvedReferences
             spec.loader.exec_module(primaryconf)  # type: ignore
             primaryconf = {
                 key: getattr(primaryconf, key)
@@ -722,8 +723,9 @@ class SecretsConfig(Mapping[str, Any]):
             spec = importlib.util.spec_from_file_location(
                 "primaryconf", str(configpath)
             )
+            if not spec:
+                raise ImportError
             primaryconf = importlib.util.module_from_spec(spec)
-            # noinspection PyUnresolvedReferences
             spec.loader.exec_module(primaryconf)  # type: ignore
             primaryconf = {
                 key: getattr(primaryconf, key)

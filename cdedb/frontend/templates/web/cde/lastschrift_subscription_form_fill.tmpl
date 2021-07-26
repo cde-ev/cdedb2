@@ -21,7 +21,7 @@
         <h4 class="heading-underline">{% trans %}Personal Information{% endtrans %}</h4>
         {% if persona %}
             {{ util.form_input_text(name="full_name", label=gettext("Member"),
-                                    defaultvalue="{} {}".format(persona['given_names'], persona['family_name'])) }}
+                                    defaultvalue=util.persona_name(persona, only_given_names=True, with_titles=True)) }}
             {{ util.form_input_text(name="db_id", label=gettext("CdEDB-ID"), defaultvalue=persona["id"]|cdedbid) }}
             {{ util.form_input_text(name="username", label=gettext("E-Mail"), defaultvalue=persona['username']) }}
             {{ util.input_hidden("not_minor", value=not_minor) }}

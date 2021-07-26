@@ -52,7 +52,7 @@ import re
 import string
 from enum import Enum
 from typing import (
-    Callable, Iterable, Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar,
+    Callable, Iterable, Mapping, Optional, Sequence, Set, Tuple, TypeVar,
     Union, cast, get_type_hints, overload, Generic
 )
 
@@ -83,7 +83,7 @@ from cdedb.validationdata import (
     COUNTRY_CODES, FREQUENCY_LISTS, GERMAN_PHONE_CODES, GERMAN_POSTAL_CODES,
     IBAN_LENGTHS, ITU_CODES,
 )
-from cdedb.validationtypes import *  # pylint: disable=wildcard-import,unused-wildcard-import; # noqa
+from cdedb.validationtypes import *  # pylint: disable=wildcard-import,unused-wildcard-import; # noqa: F403
 
 _BASICCONF = BasicConfig()
 NoneType = type(None)
@@ -2085,7 +2085,6 @@ EVENT_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'orgas': Iterable,
     'parts': Mapping,
     'fields': Mapping,
-    'fee_modifiers': Mapping,
 }
 
 
@@ -2172,49 +2171,32 @@ def _event(
                     newfields[anid] = field
         val['fields'] = newfields
 
-    if 'fee_modifiers' in val:
-        new_modifiers = {}
-        for anid, fee_modifier in val['fee_modifiers'].items():
-            try:
-                anid = _int(anid, 'fee_modifiers', **kwargs)
-            except ValidationSummary as e:
-                errs.extend(e)
-            else:
-                creation = (anid < 0)
-                try:
-                    fee_modifier = _ALL_TYPED[
-                        Optional[EventFeeModifier]  # type: ignore
-                    ](
-                        fee_modifier, 'fee_modifiers', creation=creation, **kwargs)
-                except ValidationSummary as e:
-                    errs.extend(e)
-                else:
-                    new_modifiers[anid] = fee_modifier
-
-        msg = n_("Must not have multiple fee modifiers linked to the same"
-                 " field in one event part.")
-
-        aniter: Iterable[Tuple[EventFeeModifier, EventFeeModifier]]
-        aniter = itertools.combinations(filter(None, val['fee_modifiers'].values()), 2)
-        for e1, e2 in aniter:
-            if e1['field_id'] is not None and e1['field_id'] == e2['field_id']:
-                if e1['part_id'] == e2['part_id']:
-                    errs.append(ValueError('fee_modifiers', msg))
-
     if errs:
         raise errs
 
     return Event(val)
 
 
-EVENT_PART_COMMON_FIELDS: TypeMapping = {
+EVENT_PART_CREATION_MANDATORY_FIELDS: TypeMapping = {
     'title': str,
     'shortname': str,
     'part_begin': datetime.date,
     'part_end': datetime.date,
     'fee': NonNegativeDecimal,
     'waitlist_field': Optional[ID],  # type: ignore
+}
+
+EVENT_PART_CREATION_OPTIONAL_FIELDS: TypeMapping = {
     'tracks': Mapping,
+    'fee_modifiers': Mapping,
+}
+
+EVENT_PART_COMMON_FIELDS: TypeMapping = {
+    **EVENT_PART_CREATION_MANDATORY_FIELDS,
+    **EVENT_PART_CREATION_OPTIONAL_FIELDS
+}
+
+EVENT_PART_OPTIONAL_FIELDS: TypeMapping = {
 }
 
 
@@ -2233,11 +2215,11 @@ def _event_part(
     optional_fields: TypeMapping
 
     if creation:
-        mandatory_fields = {**EVENT_PART_COMMON_FIELDS}
-        optional_fields = {}
+        mandatory_fields = {**EVENT_PART_CREATION_MANDATORY_FIELDS}
+        optional_fields = {**EVENT_PART_CREATION_OPTIONAL_FIELDS}
     else:
         mandatory_fields = {}
-        optional_fields = {**EVENT_PART_COMMON_FIELDS}
+        optional_fields = {**EVENT_PART_COMMON_FIELDS, **EVENT_PART_OPTIONAL_FIELDS}
 
     val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
 
@@ -2267,6 +2249,35 @@ def _event_part(
                 else:
                     newtracks[anid] = track
         val['tracks'] = newtracks
+
+    if 'fee_modifiers' in val:
+        new_modifiers = {}
+        for anid, fee_modifier in val['fee_modifiers'].items():
+            try:
+                anid = _int(anid, 'fee_modifiers', **kwargs)
+            except ValidationSummary as e:
+                errs.extend(e)
+            else:
+                creation = (anid < 0)
+                try:
+                    fee_modifier = _ALL_TYPED[
+                        Optional[EventFeeModifier]  # type: ignore
+                    ](
+                        fee_modifier, 'fee_modifiers', creation=creation, **kwargs)
+                except ValidationSummary as e:
+                    errs.extend(e)
+                else:
+                    new_modifiers[anid] = fee_modifier
+
+        msg = n_("Must not have multiple fee modifiers linked to the same"
+                 " field in one event part.")
+
+        aniter: Iterable[Tuple[EventFeeModifier, EventFeeModifier]]
+        aniter = itertools.combinations(
+            [fm for fm in val['fee_modifiers'].values() if fm], 2)
+        for e1, e2 in aniter:
+            if e1['field_id'] is not None and e1['field_id'] == e2['field_id']:
+                errs.append(ValueError('fee_modifiers', msg))
 
     if errs:
         raise errs
@@ -2298,7 +2309,7 @@ def _event_track(
         mandatory_fields = {**EVENT_TRACK_COMMON_FIELDS}
         optional_fields: TypeMapping = {}
     else:
-        mandatory_fields = {}
+        mandatory_fields = {'id': ID}
         optional_fields = {**EVENT_TRACK_COMMON_FIELDS}
 
     val = _examine_dictionary_fields(
@@ -2316,6 +2327,11 @@ def _EVENT_FIELD_COMMON_FIELDS(extra_suffix: str) -> TypeMapping: return {
     'kind{}'.format(extra_suffix): const.FieldDatatypes,
     'association{}'.format(extra_suffix): const.FieldAssociations,
     'entries{}'.format(extra_suffix): Any,  # type: ignore
+}
+
+
+def _EVENT_FIELD_OPTIONAL_FIELDS(extra_suffix: str) -> TypeMapping: return {
+    f'checkin{extra_suffix}': bool,
 }
 
 
@@ -2337,10 +2353,11 @@ def _event_field(
         spec = {**_EVENT_FIELD_COMMON_FIELDS(extra_suffix),
                 field_name_key: RestrictiveIdentifier}
         mandatory_fields = spec
-        optional_fields: TypeMapping = {}
+        optional_fields: TypeMapping = _EVENT_FIELD_OPTIONAL_FIELDS(extra_suffix)
     else:
         mandatory_fields = {}
-        optional_fields = _EVENT_FIELD_COMMON_FIELDS(extra_suffix)
+        optional_fields = dict(_EVENT_FIELD_COMMON_FIELDS(extra_suffix),
+                               **_EVENT_FIELD_OPTIONAL_FIELDS(extra_suffix))
 
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
@@ -2353,8 +2370,8 @@ def _event_field(
         val[entries_key] = None
     if entries_key in val and val[entries_key] is not None:
         if isinstance(val[entries_key], str):
-            val[entries_key] = tuple(tuple(y.strip() for y in x.split(';', 1))
-                                     for x in val[entries_key].split('\n'))
+            val[entries_key] = list(list(y.strip() for y in x.split(';', 1))
+                                    for x in val[entries_key].split('\n'))
         try:
             oldentries = _iterable(val[entries_key], entries_key, **kwargs)
         except ValidationSummary as e:
@@ -2383,7 +2400,7 @@ def _event_field(
                             errs.append(ValueError(
                                 entries_key, n_("Duplicate value.")))
                         else:
-                            entries.append((value, description))
+                            entries.append([value, description])
                             seen_values.add(value)
             val[entries_key] = entries
 
@@ -2396,7 +2413,6 @@ def _event_field(
 def _EVENT_FEE_MODIFIER_COMMON_FIELDS(extra_suffix: str) -> TypeMapping: return {
     "modifier_name{}".format(extra_suffix): RestrictiveIdentifier,
     "amount{}".format(extra_suffix): decimal.Decimal,
-    "part_id{}".format(extra_suffix): ID,
     "field_id{}".format(extra_suffix): ID,
 }
 
@@ -2411,10 +2427,10 @@ def _event_fee_modifier(
 
     if creation:
         mandatory_fields = _EVENT_FEE_MODIFIER_COMMON_FIELDS(extra_suffix)
-        optional_fields: TypeMapping = {}
+        optional_fields: TypeMapping = {'id': ID}
     else:
-        mandatory_fields = {'id': ID}
-        optional_fields = _EVENT_FEE_MODIFIER_COMMON_FIELDS(extra_suffix)
+        mandatory_fields = {}
+        optional_fields = dict(_EVENT_FEE_MODIFIER_COMMON_FIELDS(extra_suffix), id=ID)
 
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
@@ -3000,7 +3016,7 @@ def _serialized_event(
         'event.event_parts': _augment_dict_validator(
             _event_part, {'id': ID, 'event_id': ID}),
         'event.course_tracks': _augment_dict_validator(
-            _event_track, {'id': ID, 'part_id': ID}),
+            _event_track, {'part_id': ID}),
         'event.courses': _augment_dict_validator(
             _course, {'event_id': ID}),
         'event.course_segments': _augment_dict_validator(
@@ -3040,7 +3056,8 @@ def _serialized_event(
                 'readonly': Optional[bool],  # type: ignore
                 'kind': const.QuestionnaireUsages,
             }),
-        'event.fee_modifiers': _event_fee_modifier,
+        'event.fee_modifiers': _augment_dict_validator(
+            _event_fee_modifier, {'id': ID, 'part_id': ID}),
     }
 
     errs = ValidationSummary()
@@ -3516,8 +3533,8 @@ def _mailinglist(
     errs = ValidationSummary()
 
     if "domain" not in val:
-        errs.append(ValueError("domain",
-            "Must specify domain for setting mailinglist."))
+        errs.append(ValueError(
+            "domain", "Must specify domain for setting mailinglist."))
     else:
         atype = ml_type.get_type(val["ml_type"])
         if val["domain"].value not in atype.domains:
@@ -4309,8 +4326,8 @@ def _db_subscription_state(
     """Validates whether a subscription state is written into the database."""
     val = _ALL_TYPED[const.SubscriptionState](val, argname, **kwargs)
     if val == const.SubscriptionState.none:
-        raise ValidationSummary(ValueError(argname,
-                                           n_("SubscriptionState.none is not written into the database.")))
+        raise ValidationSummary(ValueError(
+            argname, n_("SubscriptionState.none is not written into the database.")))
     return DatabaseSubscriptionState(val)
 
 
