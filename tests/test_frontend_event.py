@@ -3462,6 +3462,19 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/checkin'})
+        self.assertTitle("Checkin (Große Testakademie 2222)")
+
+        # Check the display of custom datafields.
+        self.assertPresence("anzahl_GROSSBUCHSTABEN 4", div="checkin-fields-1")
+        self.assertPresence("anzahl_GROSSBUCHSTABEN 3", div="checkin-fields-2")
+        self.assertPresence("anzahl_GROSSBUCHSTABEN 2", div="checkin-fields-6")
+        self.traverse("Datenfelder konfigurieren")
+        f = self.response.forms['fieldsummaryform']
+        f['checkin_8'].checked = False
+        self.submit(f)
+        self.traverse("Checkin")
+        self.assertNonPresence("anzahl_GROSSBUCHSTABEN", div="checkin-list")
+
         # Check the filtering per event part.
         # TODO place and check actual links.
         self.assertPresence("Anton Armin", div="checkin-list")
@@ -3488,18 +3501,6 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Anton Armin", div="checkin-list")
         self.assertNonPresence("Bertålotta Beispiel", div="checkin-list")
         self.assertPresence("Emilia E.", div="checkin-list")
-
-        self.assertTitle("Checkin (Große Testakademie 2222)")
-
-        self.assertPresence("anzahl_GROSSBUCHSTABEN 4", div="checkin-fields-1")
-        self.assertPresence("anzahl_GROSSBUCHSTABEN 3", div="checkin-fields-2")
-        self.assertPresence("anzahl_GROSSBUCHSTABEN 2", div="checkin-fields-6")
-        self.traverse("Datenfelder konfigurieren")
-        f = self.response.forms['fieldsummaryform']
-        f['checkin_8'].checked = False
-        self.submit(f)
-        self.traverse("Checkin")
-        self.assertNonPresence("anzahl_GROSSBUCHSTABEN", div="checkin-list")
 
         f = self.response.forms['checkinform2']
         self.submit(f)
