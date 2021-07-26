@@ -3,7 +3,7 @@
 """Services for the ml realm."""
 
 import urllib.error
-from typing import Collection
+from typing import Collection, Mapping
 
 from werkzeug import Response
 
@@ -23,7 +23,7 @@ class MlFrontend(MailmanMixin, MlBaseFrontend):
         held = self.get_mailman().get_held_messages(rs.ambience['mailinglist'])
         return self.render(rs, "message_moderation", {'held': held})
 
-    moderate_action_logcodes = {
+    _moderate_action_logcodes: Mapping[str, const.MlLogCodes] = {
         "whitelist": const.MlLogCodes.moderate_accept,
         "accept": const.MlLogCodes.moderate_accept,
         "reject": const.MlLogCodes.moderate_reject,
@@ -56,7 +56,7 @@ class MlFrontend(MailmanMixin, MlBaseFrontend):
                     if response.status // 100 == 2:
                         success += 1
                         self.mlproxy.log_moderation(
-                            rs, self.moderate_action_logcodes[action],
+                            rs, self._moderate_action_logcodes[action],
                             dblist['id'], change_note=change_note)
                     elif response.status // 100 == 4:
                         warning += 1
@@ -79,8 +79,12 @@ class MlFrontend(MailmanMixin, MlBaseFrontend):
     @REQUESTdata("request_ids", "action")
     def message_moderation_multi(self, rs: RequestState, mailinglist_id: int,
                                  request_ids: Collection[int], action: str) -> Response:
+        """Moderate multiple held messages at once.
+
+        Valid actions are: accept and discard.
+        """
         if action not in {"accept", "discard"}:
-            rs.add_validation_error(
+            rs.append_validation_error(
                 ("action", ValueError(n_("Invalid moderation action."))))
         if rs.has_validation_errors():
             return self.message_moderation_form(rs, mailinglist_id)
@@ -95,8 +99,8 @@ class MlFrontend(MailmanMixin, MlBaseFrontend):
 
         Valid actions are: whitelist, accept, reject, discard
         """
-        if action not in self.moderate_action_logcodes:
-            rs.add_validation_error(
+        if action not in self._moderate_action_logcodes:
+            rs.append_validation_error(
                 ("action", ValueError(n_("Invalid moderation action."))))
         if rs.has_validation_errors():
             return self.message_moderation_form(rs, mailinglist_id)
