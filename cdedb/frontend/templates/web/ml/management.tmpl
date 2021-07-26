@@ -85,7 +85,7 @@
                                 {{ util.input_hidden(name="moderator_id", value=moderator) }}
                                 {{ util.input_submit(label='', aclass="btn btn-xs btn-danger list-button-float", icon="minus",
                                         title=gettext("Remove %(name)s as moderator")|format(
-                                            name=util.persona_name(persona))) }}
+                                            name=util.persona_name(persona))|s) }}
                             </form>
                         {% else %}
                             {{ util.input_submit(label="", aclass="btn btn-xs btn-danger list-button-float dummy", icon="minus", ariahidden=True) }}
@@ -187,7 +187,7 @@
                                     {{ util.input_hidden(name="subscriber_id", value=subscriber) }}
                                     {{ util.input_submit(label="", icon="minus", aclass="btn btn-xs btn-danger list-button-float",
                                             title=gettext("Remove %(name)s as subscriber")|format(
-                                                name=util.persona_name(subscribers[subscriber]))) }}
+                                                name=util.persona_name(subscribers[subscriber]))|s) }}
                                 </form>
                             {% endif %}
                         </li>

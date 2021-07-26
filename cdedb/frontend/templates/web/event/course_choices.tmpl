@@ -219,7 +219,7 @@
                     <tr class="ls-item">
                         <td>
                             {{ util.input_checkbox("registration_ids", value=reg_id, aclass="rowSelector",
-                                    arialabel=gettext("Select %s")|format(util.persona_name(persona)))
+                                    arialabel=gettext("Select %s")|format(util.persona_name(persona))|s)
                                     }}
                         </td>
                         <td>
