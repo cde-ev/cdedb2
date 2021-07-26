@@ -14,6 +14,7 @@ import cdedb.database.constants as const
 from cdedb.common import (
     CdEDBObject, ADMIN_VIEWS_COOKIE_NAME, Role, extract_roles, now, LineResolutions
 )
+from cdedb.frontend.common import Worker
 from cdedb.query import QueryOperators
 from tests.common import (
     FrontendTest, UserIdentifier, USER_DICT, as_users, get_user, prepsql, storage,
@@ -1818,10 +1819,10 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("12.50 € Guthaben abgebucht.", div="11-1011")
 
         # This is a bit hacky, but we want to make sure the worker mechanism works.
+        self.assertTrue(Worker.active_workers)
         frontend = self.app.app.cde
-        self.assertTrue(frontend.active_workers)
         frontend.worker_cleanup(self.key, {})  # We don't actually need a real rs here.
-        self.assertFalse(frontend.active_workers)
+        self.assertFalse(Worker.active_workers)
 
     @as_users("farin")
     def test_expuls(self) -> None:

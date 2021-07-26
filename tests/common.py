@@ -46,7 +46,7 @@ from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.application import Application
-from cdedb.frontend.common import AbstractFrontend
+from cdedb.frontend.common import AbstractFrontend, Worker
 from cdedb.frontend.cron import CronFrontend
 from cdedb.query import QueryOperators
 from cdedb.script import setup
@@ -1401,7 +1401,7 @@ class FrontendTest(BackendTest):
             testing environment Worker threads should not take longer than a couple
             seconds.
         """
-        worker = getattr(self.app.app, realm).active_workers[worker_name]
+        worker = Worker.active_workers[worker_name]
         worker.join(timeout)
         if worker.is_alive():
             self.fail(f"Worker {realm}/{worker_name} still active after {timeout}"

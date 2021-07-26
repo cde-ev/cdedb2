@@ -359,8 +359,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         mailman_basic_auth_password = secrets["MAILMAN_BASIC_AUTH_PASSWORD"]
         self.get_mailman = lambda: CdEMailmanClient(self.conf, mailman_password,
                                                     mailman_basic_auth_password)
-        # Keep track of Workers.
-        self.active_workers: Dict[str, Worker] = {}
 
     @classmethod
     @abc.abstractmethod
@@ -1104,12 +1102,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :param timeout: If this is not None, wait for the given number of seconds for
             the worker thread to finish.
         """
-        if name in self.active_workers:
-            self.active_workers[name].join(.1)
-            if self.active_workers[name].is_alive():
+        if name in Worker.active_workers:
+            Worker.active_workers[name].join(.1)
+            if Worker.active_workers[name].is_alive():
                 raise RuntimeError("Worker already active.")
         worker = Worker(self.conf, tasks, rs)
-        self.active_workers[name] = worker
+        Worker.active_workers[name] = worker
         worker.start()
         if timeout is not None:
             worker.join(timeout)
@@ -1117,9 +1115,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
     @periodic("worker_cleanup")
     def worker_cleanup(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject:
-        for name, job in list(self.active_workers.items()):
+        for name, job in list(Worker.active_workers.items()):
             if not job.is_alive():
-                del self.active_workers[name]
+                del Worker.active_workers[name]
         return state
 
 
@@ -1257,6 +1255,7 @@ class Worker(threading.Thread):
     state object, containing a separate database connection, so that
     concurrency is no concern.
     """
+    active_workers: ClassVar[Dict[str, "Worker"]] = {}
 
     def __init__(self, conf: Config, tasks: WorkerTasks, rs: RequestState) -> None:
         """
