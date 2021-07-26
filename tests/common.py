@@ -1401,11 +1401,13 @@ class FrontendTest(BackendTest):
             testing environment Worker threads should not take longer than a couple
             seconds.
         """
-        worker = Worker.active_workers[worker_name]
-        worker.join(timeout)
-        if worker.is_alive():
-            self.fail(f"Worker {realm}/{worker_name} still active after {timeout}"
-                      f" seconds.")
+        ref = Worker.active_workers[worker_name]
+        worker = ref()
+        if worker:
+            worker.join(timeout)
+            if worker.is_alive():
+                self.fail(f"Worker {realm}/{worker_name} still active after {timeout}"
+                          f" seconds.")
         self.traverse(link)
 
 

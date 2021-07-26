@@ -37,6 +37,7 @@ import threading
 import typing
 import urllib.error
 import urllib.parse
+import weakref
 from email.mime.nonmultipart import MIMENonMultipart
 from secrets import token_hex
 from typing import (
@@ -1103,22 +1104,16 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             the worker thread to finish.
         """
         if name in Worker.active_workers:
-            Worker.active_workers[name].join(.1)
-            if Worker.active_workers[name].is_alive():
+            # Dereference the weakref.
+            old_worker = Worker.active_workers[name]()
+            if old_worker and old_worker.is_alive():
                 raise RuntimeError("Worker already active.")
         worker = Worker(self.conf, tasks, rs)
-        Worker.active_workers[name] = worker
+        Worker.active_workers[name] = weakref.ref(worker)
         worker.start()
         if timeout is not None:
             worker.join(timeout)
         return worker
-
-    @periodic("worker_cleanup")
-    def worker_cleanup(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject:
-        for name, job in list(Worker.active_workers.items()):
-            if not job.is_alive():
-                del Worker.active_workers[name]
-        return state
 
 
 class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
@@ -1255,7 +1250,7 @@ class Worker(threading.Thread):
     state object, containing a separate database connection, so that
     concurrency is no concern.
     """
-    active_workers: ClassVar[Dict[str, "Worker"]] = {}
+    active_workers: ClassVar[Dict[str, "weakref.ReferenceType[Worker]"]] = {}
 
     def __init__(self, conf: Config, tasks: WorkerTasks, rs: RequestState) -> None:
         """

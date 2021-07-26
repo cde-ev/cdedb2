@@ -1818,11 +1818,9 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("0 Probemitgliedschaften beendet", div="11-1011")
         self.assertPresence("12.50 € Guthaben abgebucht.", div="11-1011")
 
-        # This is a bit hacky, but we want to make sure the worker mechanism works.
-        self.assertTrue(Worker.active_workers)
-        frontend = self.app.app.cde
-        frontend.worker_cleanup(self.key, {})  # We don't actually need a real rs here.
-        self.assertFalse(Worker.active_workers)
+        # Check that the weak references to all workers are dead.
+        for name, ref in Worker.active_workers.items():
+            self.assertIsNone(ref(), f"Worker {name!r} is still alive.")
 
     @as_users("farin")
     def test_expuls(self) -> None:
