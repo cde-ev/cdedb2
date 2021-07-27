@@ -38,6 +38,7 @@ import threading
 import typing
 import urllib.error
 import urllib.parse
+import weakref
 from email.mime.nonmultipart import MIMENonMultipart
 from secrets import token_hex
 from typing import (
@@ -250,6 +251,38 @@ def datetime_filter(val: Union[datetime.datetime, str, None],
         return datetime_formatter.format(val)
     else:
         return val.strftime(formatstr)
+
+
+PeriodicMethod = Callable[[Any, RequestState, CdEDBObject], CdEDBObject]
+
+
+class PeriodicJob(Protocol):
+    cron: CdEDBObject
+
+    def __call__(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject:
+        ...
+
+
+def periodic(name: str, period: int = 1
+             ) -> Callable[[PeriodicMethod], PeriodicJob]:
+    """This decorator marks a function of a frontend for periodic execution.
+
+    This just adds a flag and all of the actual work is done by the
+    CronFrontend.
+
+    :param name: the name of this job
+    :param period: the interval in which to execute this job (e.g. period ==
+      2 means every second invocation of the CronFrontend)
+    """
+    def decorator(fun: PeriodicMethod) -> PeriodicJob:
+        fun = cast(PeriodicJob, fun)
+        fun.cron = {
+            'name': name,
+            'period': period,
+        }
+        return fun
+
+    return decorator
 
 
 class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
@@ -1186,8 +1219,15 @@ class CdEMailmanClient(mailmanclient.Client):
             return mmlist.held if mmlist else None
 
 
+# Type Aliases for the Worker class.
 WorkerTarget = Callable[[RequestState], bool]
-TaskInfo = NamedTuple("TaskInfo", (("task", WorkerTarget), ("name", str), ("doc", str)))
+WorkerTasks = Union[WorkerTarget, Sequence[WorkerTarget]]
+
+
+class WorkerTaskInfo(NamedTuple):
+    task: WorkerTarget
+    name: str
+    doc: str
 
 
 class Worker(threading.Thread):
@@ -1197,12 +1237,12 @@ class Worker(threading.Thread):
     state object, containing a separate database connection, so that
     concurrency is no concern.
     """
+    active_workers: ClassVar[Dict[str, "weakref.ReferenceType[Worker]"]] = {}
 
-    def __init__(self, conf: Config, tasks: Union[WorkerTarget, Sequence[WorkerTarget]],
-                 rs: RequestState) -> None:
+    def __init__(self, conf: Config, tasks: WorkerTasks, rs: RequestState) -> None:
         """
-        :param tasks: Every task will called with the cloned request state as a single
-            argument.
+        :param tasks: Every task will be called with the cloned request state as a
+            single argument.
         """
         # noinspection PyProtectedMember
         rrs = RequestState(
@@ -1222,9 +1262,9 @@ class Worker(threading.Thread):
             return task.__doc__.splitlines()[0] if task.__doc__ else ""
 
         if isinstance(tasks, Sequence):
-            task_infos = [TaskInfo(t, t.__name__, get_doc(t)) for t in tasks]
+            task_infos = [WorkerTaskInfo(t, t.__name__, get_doc(t)) for t in tasks]
         else:
-            task_infos = [TaskInfo(tasks, tasks.__name__, get_doc(tasks))]
+            task_infos = [WorkerTaskInfo(tasks, tasks.__name__, get_doc(tasks))]
 
         def runner() -> None:
             """Implement the actual loop running the task inside the Thread."""
@@ -1261,6 +1301,37 @@ class Worker(threading.Thread):
                 logger.debug(f"{len(task_infos)} tasks completed successfully.")
 
         super().__init__(target=runner, daemon=False)
+
+    @classmethod
+    def create(cls, rs: RequestState, name: str, tasks: "WorkerTasks",
+               conf: Config, timeout: Optional[float] = 0.1) -> "Worker":
+        """Create a new Worker, remember and start it.
+
+        In order to not mess with garbage collection of finished workers, we only keep
+        a weak reference to the instance. This means that the weakref object needs to
+        be called. If it returns `None`, the referenced object has already been garbage
+        collected. Otherwise it will return the `Worker` instance which can then be
+        joined. Workers will automatically be garbaage collected once they finish
+        execution unless a reference is specifically kept somewhere.
+
+        Note the pattern of assigning the result of this call first, because otherwise
+        there is a race condition between checking for truthyness and calling the
+        `is_alive` method where the Worker could finish in the meantime.
+
+        :param timeout: If this is not None, wait for the given number of seconds for
+            the worker thread to finish.
+        """
+        if name in cls.active_workers:
+            # Dereference the weakref.
+            old_worker = cls.active_workers[name]()
+            if old_worker and old_worker.is_alive():
+                raise RuntimeError("Worker already active.")
+        worker = cls(conf, tasks, rs)
+        cls.active_workers[name] = weakref.ref(worker)
+        worker.start()
+        if timeout is not None:
+            worker.join(timeout)
+        return worker
 
 
 def reconnoitre_ambience(obj: AbstractFrontend,
@@ -1442,38 +1513,6 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
         )
 
         return cast(F, new_fun)
-
-    return decorator
-
-
-PeriodicMethod = Callable[[Any, RequestState, CdEDBObject], CdEDBObject]
-
-
-class PeriodicJob(Protocol):
-    cron: CdEDBObject
-
-    def __call__(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject:
-        ...
-
-
-def periodic(name: str, period: int = 1
-             ) -> Callable[[PeriodicMethod], PeriodicJob]:
-    """This decorator marks a function of a frontend for periodic execution.
-
-    This just adds a flag and all of the actual work is done by the
-    CronFrontend.
-
-    :param name: the name of this job
-    :param period: the interval in which to execute this job (e.g. period ==
-      2 means every second invocation of the CronFrontend)
-    """
-    def decorator(fun: PeriodicMethod) -> PeriodicJob:
-        fun = cast(PeriodicJob, fun)
-        fun.cron = {
-            'name': name,
-            'period': period,
-        }
-        return fun
 
     return decorator
 

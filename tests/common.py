@@ -19,7 +19,6 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import time
 import unittest
 import urllib.parse
 from typing import (
@@ -47,7 +46,7 @@ from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.application import Application
-from cdedb.frontend.common import AbstractFrontend
+from cdedb.frontend.common import AbstractFrontend, Worker
 from cdedb.frontend.cron import CronFrontend
 from cdedb.query import QueryOperators
 from cdedb.script import setup
@@ -58,6 +57,7 @@ _SECRETSCONF = SecretsConfig()
 # TODO: use TypedDict to specify UserObject.
 UserObject = Mapping[str, Any]
 UserIdentifier = Union[UserObject, str, int]
+LinkIdentifier = Union[MutableMapping[str, Any], str]
 
 # This is to be used in place of `self.key` for anonymous requests. It makes mypy happy.
 ANONYMOUS = cast(RequestState, None)
@@ -852,8 +852,7 @@ class FrontendTest(BackendTest):
                 raise AssertionError(
                     "Post request did not produce success notification.")
 
-    def traverse(self, *links: Union[MutableMapping[str, Any], str],
-                 verbose: bool = False) -> None:
+    def traverse(self, *links: LinkIdentifier, verbose: bool = False) -> None:
         """Follow a sequence of links, described by their kwargs.
 
         A link can also be just a string, in which case that string is assumed
@@ -1413,28 +1412,24 @@ class FrontendTest(BackendTest):
                     value=button['value'])
         return button
 
-    def reload_and_check_form(self, form: webtest.Form, link: Union[CdEDBObject, str],
-                              max_tries: int = 42, waittime: float = 0.01,
-                              fail: bool = True) -> None:
-        """Helper to repeatedly reload a page until a certain form is present.
+    def join_worker_thread(self, worker_name: str, link: LinkIdentifier, *,
+                           realm: str = "cde", timeout: float = 2) -> None:
+        """Wait for the specified Worker thread to finish.
 
-        This should be used sparingly as it does busy waiting and is mostly
-        required for the "Semesterverwaltung".
-
-        We do a quadratic backoff with waiting times increasing linearily to
-        simultaneously minimize the load of unsuccessful attempts and time
-        wasted while already being ready.
+        :param realm: specify to which realm the Worker belongs. Currently only the
+            CdEFrontend uses Workers.
+        :param timeout: pecificy a maximum wait time for the thread to end. In our
+            testing environment Worker threads should not take longer than a couple
+            seconds.
         """
-        count = 0
-        while count < max_tries:
-            time.sleep(count*waittime)
-            self.traverse(link)
-            if form in self.response.forms:
-                break
-            count += 1
-        else:
-            if fail:
-                self.fail(f"Form {form} not found after {count} reloads.")
+        ref = Worker.active_workers[worker_name]
+        worker = ref()
+        if worker:
+            worker.join(timeout)
+            if worker.is_alive():
+                self.fail(f"Worker {realm}/{worker_name} still active after {timeout}"
+                          f" seconds.")
+        self.traverse(link)
 
 
 class MultiAppFrontendTest(FrontendTest):
