@@ -15117,7 +15117,7 @@ msgstr "Mitglieder (Moderiertes Opt-in)"
 
 #: cdedb/i18n_additional.py:266
 msgid "MailinglistTypes.member_invitation_only"
-msgstr "Mitglieder (Nur durch Modeatoren)"
+msgstr "Mitglieder (Nur durch Moderatoren)"
 
 #: cdedb/i18n_additional.py:267
 msgid "MailinglistTypes.team"
