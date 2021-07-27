@@ -1096,25 +1096,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             else:
                 return None
 
-    def create_worker(self, rs: RequestState, name: str, tasks: "WorkerTasks",
-                      timeout: Optional[float] = 0.1) -> "Worker":
-        """Create a new Worker, remember and start it.
-
-        :param timeout: If this is not None, wait for the given number of seconds for
-            the worker thread to finish.
-        """
-        if name in Worker.active_workers:
-            # Dereference the weakref.
-            old_worker = Worker.active_workers[name]()
-            if old_worker and old_worker.is_alive():
-                raise RuntimeError("Worker already active.")
-        worker = Worker(self.conf, tasks, rs)
-        Worker.active_workers[name] = weakref.ref(worker)
-        worker.start()
-        if timeout is not None:
-            worker.join(timeout)
-        return worker
-
 
 class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     """Base class for all frontends which have their own user realm.
@@ -1239,8 +1220,12 @@ class CdEMailmanClient(mailmanclient.Client):
 # Type Aliases for the Worker class.
 WorkerTarget = Callable[[RequestState], bool]
 WorkerTasks = Union[WorkerTarget, Sequence[WorkerTarget]]
-WorkerTaskInfo = NamedTuple(
-    "WorkerTaskInfo", (("task", WorkerTarget), ("name", str), ("doc", str)))
+
+
+class WorkerTaskInfo(NamedTuple):
+    task: WorkerTarget
+    name: str
+    doc: str
 
 
 class Worker(threading.Thread):
@@ -1314,6 +1299,37 @@ class Worker(threading.Thread):
                 logger.debug(f"{len(task_infos)} tasks completed successfully.")
 
         super().__init__(target=runner, daemon=False)
+
+    @classmethod
+    def create(cls, rs: RequestState, name: str, tasks: "WorkerTasks",
+               conf: Config, timeout: Optional[float] = 0.1) -> "Worker":
+        """Create a new Worker, remember and start it.
+
+        In order to not mess with garbage collection of finished workers, we only keep
+        a weak reference to the instance. This means that the weakref object needs to
+        be called. If it returns `None`, the referenced object has already been garbage
+        collected. Otherwise it will return the `Worker` instance which can then be
+        joined. Workers will automatically be garbaage collected once they finish
+        execution unless a reference is specifically kept somewhere.
+
+        Note the pattern of assigning the result of this call first, because otherwise
+        there is a race condition between checking for truthyness and calling the
+        `is_alive` method where the Worker could finish in the meantime.
+
+        :param timeout: If this is not None, wait for the given number of seconds for
+            the worker thread to finish.
+        """
+        if name in cls.active_workers:
+            # Dereference the weakref.
+            old_worker = cls.active_workers[name]()
+            if old_worker and old_worker.is_alive():
+                raise RuntimeError("Worker already active.")
+        worker = cls(conf, tasks, rs)
+        cls.active_workers[name] = weakref.ref(worker)
+        worker.start()
+        if timeout is not None:
+            worker.join(timeout)
+        return worker
 
 
 def reconnoitre_ambience(obj: AbstractFrontend,
