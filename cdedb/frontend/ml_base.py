@@ -55,7 +55,8 @@ class MlBaseFrontend(AbstractUserFrontend):
         mailinglist_infos = self.mlproxy.get_mailinglists(rs, mailinglists)
         sub_states = const.SubscriptionState.subscribing_states()
         subscriptions = self.mlproxy.get_user_subscriptions(
-            rs, rs.user.persona_id, states=sub_states)
+            rs, rs.user.persona_id,
+            states=sub_states | {const.SubscriptionState.pending})
         grouped: Dict[MailinglistGroup, CdEDBObjectMap]
         grouped = collections.defaultdict(dict)
         for mailinglist_id, title in mailinglists.items():

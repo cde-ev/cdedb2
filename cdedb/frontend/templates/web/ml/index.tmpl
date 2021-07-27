@@ -11,7 +11,7 @@
 
 {% macro format_entry(mailinglist_id, title) %}
     <li class="hide-hover-container clearfix-after">
-        {{ util.state_checkbox(state) }}
+        {{ util.state_checkbox(subscriptions[mailinglist_id]) }}
         {{ util.href(cdedblink("ml/show_mailinglist", {'mailinglist_id': mailinglist_id}), title) }}
         {% if user.persona_id in mailinglist_infos[mailinglist_id]['moderators'] %}
             {{ util.href(cdedblink('ml/management',{'mailinglist_id' : mailinglist_id}), gettext("Manage"), icon='list',
