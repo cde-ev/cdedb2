@@ -722,6 +722,7 @@ class FrontendTest(BackendTest):
     response: webtest.TestResponse
     app_extra_environ = {
         'REMOTE_ADDR': "127.0.0.0",
+        'HTTP_HOST': "localhost",
         'SERVER_PROTOCOL': "HTTP/1.1",
         'wsgi.url_scheme': 'https'}
 
