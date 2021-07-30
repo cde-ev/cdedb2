@@ -609,10 +609,11 @@ class MlBaseFrontend(AbstractUserFrontend):
             requests, key=lambda anid: EntitySorter.persona(personas[anid])))
         restricted = not self.mlproxy.may_manage(rs, mailinglist_id,
                                                  allow_restricted=False)
+        allow_unsub = self.mlproxy.get_ml_type(rs, mailinglist_id).allow_unsub
         return self.render(rs, "management", {
             'subscribers': subscribers, 'requests': requests,
             'moderators': moderators, 'explicits': explicits,
-            'restricted': restricted})
+            'restricted': restricted, 'allow_unsub': allow_unsub})
 
     @access("ml")
     @mailinglist_guard()

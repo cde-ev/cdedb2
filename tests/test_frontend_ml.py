@@ -498,6 +498,31 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Klatsch und Tratsch – Erweiterte Verwaltung")
         self.assertNonPresence("zelda@example.cde")
 
+    @as_users("nina")
+    def test_mandatory_mailinglist(self) -> None:
+        self.traverse({'href': '/ml/$'},
+                      {'href': '/ml/mailinglist/1/'},
+                      {'href': '/ml/mailinglist/1/management'})
+        self.assertDivNotExists('removesubscriberform100')
+        self.traverse("Erweiterte Verwaltung")
+        self.assertTitle("Verkündungen – Erweiterte Verwaltung")
+        f = self.response.forms['addmodsubscriberform']
+        f['modsubscriber_ids'] = "DB-4-3"
+        self.submit(f)
+        self.assertTitle("Verkündungen – Erweiterte Verwaltung")
+        self.assertPresence("Daniel Dino")
+        f = self.response.forms['removemodsubscriberform4']
+        self.submit(f)
+        self.assertTitle("Verkündungen – Erweiterte Verwaltung")
+        self.assertNonPresence("Daniel Dino", div="modsubscriber-list")
+        self.traverse("Verwaltung")
+        self.assertPresence("Daniel Dino")
+        # Reload server- and client-side
+        self.ml.write_subscription_states(self.key, 1)
+        self.traverse({'href': '/ml/mailinglist/1'},
+                      {'href': '/ml/mailinglist/1/management'})
+        self.assertNonPresence("Daniel")
+
     @as_users("nina", "berta")
     def test_advanced_management(self) -> None:
         self.traverse({'href': '/ml/$'},
