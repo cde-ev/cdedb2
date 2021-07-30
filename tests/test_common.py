@@ -312,18 +312,18 @@ class TestCommon(BasicTest):
         with self.subTest("untranslated"):
             assert matches_de is not None
             self.assertIsNone(matches_de["untranslated"],
-                              f"There are untranslated strings (de)."
-                              f" Make sure all strings are translated to German.")
+                              "There are untranslated strings (de)."
+                              " Make sure all strings are translated to German.")
         with self.subTest("fuzzy-de"):
             assert matches_de is not None
             self.assertIsNone(matches_de["fuzzy"],
-                              f"There are fuzzy translations (de). Double check these"
-                              f" and remove the '#, fuzzy' marker afterwards.")
+                              "There are fuzzy translations (de). Double check these"
+                              " and remove the '#, fuzzy' marker afterwards.")
         with self.subTest("fuzzy-en"):
             assert matches_en is not None
             self.assertIsNone(matches_en["fuzzy"],
-                              f"There are fuzzy translations (en). Double check these"
-                              f" and remove the '#, fuzzy' marker afterwards.")
+                              "There are fuzzy translations (en). Double check these"
+                              " and remove the '#, fuzzy' marker afterwards.")
 
     def test_ml_type_mismatch(self) -> None:
         pseudo_mailinglist = {"ml_type": const.MailinglistTypes.event_associated}

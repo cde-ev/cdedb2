@@ -3061,8 +3061,7 @@ class EventFrontend(AbstractUserFrontend):
         course_entries = {
             c["id"]: "{}. {}".format(c["nr"], c["shortname"])
             for c in courses.values()}
-        lodgement_entries = {l["id"]: l["title"]
-                             for l in lodgements.values()}
+        lodgement_entries = {lgd["id"]: lgd["title"] for lgd in lodgements.values()}
         reg_part_stati_entries =\
             dict(enum_entries_filter(const.RegistrationPartStati, rs.gettext))
         segment_stati_entries = {
