@@ -33,6 +33,7 @@ import werkzeug.routing
 
 import cdedb.database.constants as const
 from cdedb.database.connection import IrradiatedConnection
+from cdedb.validationdata import COUNTRY_CODES
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -541,6 +542,18 @@ def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,
 
     return sorted(iterable, key=lambda x: collate(key(x)),  # pylint: disable=bad-builtin
                   reverse=reverse)
+
+
+def get_localized_country_codes(rs: RequestState) -> List[Tuple[str, str]]:
+    """Generate a list of country code - name tupes in current language."""
+
+    def _format_country_code(code: str) -> str:
+        """Helper to make string hidden to pybabel."""
+        return f'CountryCodes.{code}'
+
+    return xsorted(
+        [(v, rs.gettext(_format_country_code(v))) for v in COUNTRY_CODES],
+        key=lambda x: x[1])
 
 
 Sortkey = Tuple[Union[str, int, datetime.datetime], ...]

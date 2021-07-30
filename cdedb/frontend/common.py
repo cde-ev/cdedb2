@@ -74,8 +74,8 @@ from cdedb.common import (
     CdEDBMultiDict, CdEDBObject, CustomJSONEncoder, EntitySorter, Error, Notification,
     NotificationType, PathLike, PrivilegeError, RequestState, Role, User,
     ValidationWarning, _tdelta, asciificator, decode_parameter, encode_parameter,
-    glue, json_serialize, make_proxy, make_root_logger, merge_dicts, n_, now,
-    roles_to_db_role, unwrap, xsorted,
+    get_localized_country_codes, glue, json_serialize, make_proxy, make_root_logger,
+    merge_dicts, n_, now, roles_to_db_role, unwrap,
 )
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -84,7 +84,6 @@ from cdedb.devsamples import HELD_MESSAGE_SAMPLE
 from cdedb.enums import ENUMS_DICT
 from cdedb.filter import JINJA_FILTERS, cdedbid_filter, safe_filter, sanitize_None
 from cdedb.query import Query
-from cdedb.validationdata import COUNTRY_CODES
 
 _LOGGER = logging.getLogger(__name__)
 _BASICCONF = BasicConfig()
@@ -371,18 +370,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         """
         return "{}_admin".format(cls.realm) in rs.user.roles
 
-    @staticmethod
-    def get_localized_country_codes(rs: RequestState) -> List[Tuple[str, str]]:
-        """Generate a list of country code - name tupes in current language."""
-
-        def _format_country_code(code: str) -> str:
-            """Helper to make string hidden to pybabel."""
-            return f'CountryCodes.{code}'
-
-        return xsorted(
-            [(v, rs.gettext(_format_country_code(v))) for v in COUNTRY_CODES],
-            key=lambda x: x[1])
-
     def fill_template(self, rs: RequestState, modus: str, templatename: str,
                       params: CdEDBObject) -> str:
         """Central function for generating output from a template. This
@@ -489,7 +476,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         # here come the always accessible things promised above
         data = {
-            'COUNTRY_CODES': self.get_localized_country_codes(rs),
+            'COUNTRY_CODES': get_localized_country_codes(rs),
             'ambience': rs.ambience,
             'cdedblink': _cdedblink,
             'doclink': _doclink,
