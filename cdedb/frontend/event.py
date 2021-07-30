@@ -1207,7 +1207,7 @@ class EventFrontend(AbstractUserFrontend):
         data['active_segments'] = active_segments
         field_params: TypeMapping = {
             f"fields.{field['field_name']}": Optional[  # type: ignore
-                VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]
+                VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]  # noqa: F821
             for field in rs.ambience['event']['fields'].values()
             if field['association'] == const.FieldAssociations.course
         }
@@ -1246,7 +1246,7 @@ class EventFrontend(AbstractUserFrontend):
         data['segments'] = segments
         field_params: TypeMapping = {
             f"fields.{field['field_name']}": Optional[  # type: ignore
-                VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]
+                VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]  # noqa: F821
             for field in rs.ambience['event']['fields'].values()
             if field['association'] == const.FieldAssociations.course
         }
@@ -3646,7 +3646,7 @@ class EventFrontend(AbstractUserFrontend):
         f = lambda entry: rs.ambience['event']['fields'][entry['field_id']]
         params: TypeMapping = {
             f(entry)['field_name']: Optional[  # type: ignore
-                VALIDATOR_LOOKUP[const.FieldDatatypes(f(entry)['kind']).name]]
+                VALIDATOR_LOOKUP[const.FieldDatatypes(f(entry)['kind']).name]]  # noqa: F821
             for entry in add_questionnaire
             if entry['field_id'] and not entry['readonly']
         }
@@ -3988,7 +3988,7 @@ class EventFrontend(AbstractUserFrontend):
             })
         field_params: TypeMapping = {
             f"fields.{field['field_name']}": Optional[  # type: ignore
-                VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]
+                VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]  # noqa: F821
             for field in event['fields'].values()
             if field['association'] == const.FieldAssociations.registration
         }
@@ -4714,7 +4714,7 @@ class EventFrontend(AbstractUserFrontend):
         data['event_id'] = event_id
         field_params: TypeMapping = {
             f"fields.{field['field_name']}": Optional[  # type: ignore
-                VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]
+                VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]  # noqa: F821
             for field in rs.ambience['event']['fields'].values()
             if field['association'] == const.FieldAssociations.lodgement
         }
@@ -4740,7 +4740,7 @@ class EventFrontend(AbstractUserFrontend):
         groups = self.eventproxy.list_lodgement_groups(rs, event_id)
         field_values = {
             "fields.{}".format(key): value
-            for key, value in rs.ambience['lodgement']['fields'].items()}
+            for key, value in rs.ambience['lodgement']['fields'].items()}  # noqa: F821
         merge_dicts(rs.values, rs.ambience['lodgement'], field_values)
         return self.render(rs, "change_lodgement", {'groups': groups})
 
@@ -4756,7 +4756,7 @@ class EventFrontend(AbstractUserFrontend):
         data['id'] = lodgement_id
         field_params: TypeMapping = {
             f"fields.{field['field_name']}": Optional[  # type: ignore
-                VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]
+                VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]  # noqa: F821
             for field in rs.ambience['event']['fields'].values()
             if field['association'] == const.FieldAssociations.lodgement
         }
