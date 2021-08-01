@@ -1131,8 +1131,8 @@ etc;anything else""", f['entries_2'].value)
         # Check creation of parts and no tracks
         self.traverse({'description': 'Veranstaltungsteile'})
         self.assertPresence("Universale Akademie", div="part1001")
-        self.assertPresence('01.01.2345', div=f'part1001_begin', exact=True)
-        self.assertPresence('07.06.2345', div=f'part1001_end', exact=True)
+        self.assertPresence('01.01.2345', div='part1001_begin', exact=True)
+        self.assertPresence('07.06.2345', div='part1001_end', exact=True)
         self.assertNonPresence("", div="trackrow1001_1001", check_div=False)
 
         # Check log
