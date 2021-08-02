@@ -2423,13 +2423,7 @@ class CdEFrontend(AbstractUserFrontend):
             elif institution_id < 0:
                 code *= self.pasteventproxy.create_institution(rs, institution)
             else:
-                with Atomizer(rs):
-                    current = self.pasteventproxy.get_institution(
-                        rs, institution_id)
-                    # Do not update unchanged
-                    if current != institution:
-                        code *= self.pasteventproxy.set_institution(
-                            rs, institution)
+                code *= self.pasteventproxy.rcw_institution(rs, institution)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "cde/institution_summary_form")
 
