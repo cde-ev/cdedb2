@@ -42,7 +42,7 @@ from cdedb.frontend.common import (
     access, calculate_db_logparams, calculate_loglinks, cdedbid_filter,
     check_validation as check, check_validation_optional as check_optional, csv_output,
     make_membership_fee_reference, make_postal_address, periodic, process_dynamic_input,
-    request_extractor, Worker,
+    request_extractor, Worker, TransactionObserver,
 )
 from cdedb.query import (
     Query, QueryConstraint, QueryOperators, QueryScope,
@@ -2677,7 +2677,7 @@ class CdEFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.create_past_event_form(rs)
         assert data is not None
-        with Atomizer(rs):
+        with TransactionObserver(rs, self, "create_past_event"):
             new_id = self.pasteventproxy.create_past_event(rs, data)
             for course in thecourses:
                 course['pevent_id'] = new_id
