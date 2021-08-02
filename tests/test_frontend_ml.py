@@ -936,8 +936,8 @@ class TestMlFrontend(FrontendTest):
         self.login(USER_DICT['inga'])
         self.traverse("Mailinglisten")
         # check icon
-        self.assertNotEqual(self.response.lxml.get_element_by_id('mailinglist4')
-                            .find_class('fa-times-circle'), [])
+        self.assertEqual(len(self.response.lxml.get_element_by_id('mailinglist4')
+                             .find_class('fa-times-circle')), 1)
         self.traverse("Klatsch und Tratsch")
         self.assertTitle("Klatsch und Tratsch")
         f = self.response.forms['subscribe-mod-form']
@@ -945,8 +945,8 @@ class TestMlFrontend(FrontendTest):
         self.assertIn('cancel-request-form', self.response.forms)
         self.traverse("Mailinglisten-Übersicht")
         # check icon
-        self.assertNotEqual(self.response.lxml.get_element_by_id('mailinglist4')
-                            .find_class('fa-circle'), [])
+        self.assertEqual(len(self.response.lxml.get_element_by_id('mailinglist4')
+                             .find_class('fa-circle')), 1)
         self.logout()
         self.login(USER_DICT['berta'])
         self.traverse({'href': '/ml/$'},
@@ -961,8 +961,8 @@ class TestMlFrontend(FrontendTest):
         self.login(USER_DICT['inga'])
         self.traverse("Mailinglisten")
         # check icon
-        self.assertNotEqual(self.response.lxml.get_element_by_id('mailinglist4')
-                            .find_class('fa-check-circle'), [])
+        self.assertEqual(len(self.response.lxml.get_element_by_id('mailinglist4')
+                             .find_class('fa-check-circle')), 1)
         self.traverse("Klatsch und Tratsch")
         self.assertIn('unsubscribeform', self.response.forms)
 
