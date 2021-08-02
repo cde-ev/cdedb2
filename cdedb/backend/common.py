@@ -28,7 +28,7 @@ import cdedb.validationtypes as vtypes
 from cdedb.common import (
     LOCALE, CdEDBLog, CdEDBObject, CdEDBObjectMap, PathLike, PrivilegeError, PsycoJson,
     Realm, RequestState, Role, diacritic_patterns, glue, make_proxy, make_root_logger,
-    n_, unwrap,
+    n_, unwrap, DefaultReturnCode,
 )
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
@@ -141,6 +141,45 @@ def batchify(function: Callable[..., T],
         return ret
 
     return batchified
+
+
+def read_conditional_write_composer(
+        reader: Callable[..., int], writer: Callable[..., T],
+        id_param_name: str = "anid", datum_param_name: str = "data",
+        id_key_name: str = "id",) -> Callable[..., T]:
+    """This takes two functions and returns a combined version.
+
+    The overall semantics are similar to the writer. However the write is
+    elided if the reader returns a value equal to the object to be written
+    (i.e. there is no change).
+
+    :param id_param_name: Name of the reader argument specifying the object
+        id.
+    :param datum_param_name: Name of the writer argument specifying the
+        object value.
+    :param id_key_name: Key associated to the id in the object value
+        dictionary.
+    """
+
+    @functools.wraps(writer)
+    def composed(self: AbstractBackend, rs: RequestState, *args: Any,
+                 **kwargs: Any) -> DefaultReturnCode:
+        ret = 1
+        reader_kwargs = kwargs.copy()
+        reader_args = args[:]
+        if datum_param_name in reader_kwargs:
+            data = reader_kwargs.pop(datum_param_name)
+            reader_kwargs[id_param_name] = data[id_key_name]
+        else:
+            data = reader_args[0]
+            reader_args = (data[id_key_name],) + reader_args[1:]
+        with Atomizer(rs):
+            current = reader(self, rs, *reader_args, **reader_kwargs)
+            if {k: v for k, v in current.items() if k in data} != data:
+                ret = writer(self, rs, *args, **kwargs)
+        return ret
+
+    return composed
 
 
 def access(*roles: Role) -> Callable[[F], F]:
