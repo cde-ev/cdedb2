@@ -89,6 +89,7 @@ Registration = _NewType("Registration", CdEDBObject)
 RegistrationPart = _NewType("RegistrationPart", CdEDBObject)
 RegistrationTrack = _NewType("RegistrationTrack", CdEDBObject)
 EventAssociatedFields = _NewType("EventAssociatedFields", CdEDBObject)
+FeeBookingEntry = _NewType("FeeBookingEntry", CdEDBObject)
 LodgementGroup = _NewType("LodgementGroup", CdEDBObject)
 Lodgement = _NewType("Lodgement", CdEDBObject)
 Questionnaire = _NewType("Questionnaire", Dict[int, Any])  # TODO maybe cast keys to str

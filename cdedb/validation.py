@@ -2745,6 +2745,21 @@ def _event_associated_fields(
     return EventAssociatedFields(val)
 
 
+@_add_typed_validator
+def _fee_booking_entry(val: Any, argname: str = "fee_booking_entry",
+                       **kwargs: Any) -> FeeBookingEntry:
+    val = _mapping(val, argname, **kwargs)
+    mandatory_fields = {
+        'registration_id': int,
+        'date': Optional[datetime.date],
+        'original_date': datetime.date,
+        'amount': decimal.Decimal,
+    }
+    optional_fields: TypeMapping = {}
+    return FeeBookingEntry(_examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, **kwargs))
+
+
 LODGEMENT_GROUP_FIELDS: TypeMapping = {
     'title': str,
 }

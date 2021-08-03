@@ -7,12 +7,14 @@ template for all services.
 """
 
 import abc
+import cgitb
 import collections.abc
 import copy
 import datetime
 import enum
 import functools
 import logging
+import sys
 from types import TracebackType
 from typing import (
     Any, Callable, ClassVar, Collection, Dict, Iterable, List, Mapping,
@@ -511,6 +513,21 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         """
         query = f"DELETE FROM {table} WHERE {entity_key} = %s"
         return self.query_exec(rs, query, (entity,))
+
+    def cgitb_log(self) -> None:
+        """Log the current exception.
+
+        This uses the standard logger and formats the exception with cgitb.
+        We take special care to contain any exceptions as cgitb is prone to
+        produce them with its prying fingers.
+        """
+        # noinspection PyBroadException
+        try:
+            self.logger.error(cgitb.text(sys.exc_info(), context=7))
+        except Exception:
+            # cgitb is very invasive when generating the stack trace, which might go
+            # wrong.
+            pass
 
     def general_query(self, rs: RequestState, query: Query,
                       distinct: bool = True, view: str = None
