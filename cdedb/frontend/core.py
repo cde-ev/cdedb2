@@ -35,6 +35,7 @@ from cdedb.frontend.common import (
     calculate_db_logparams, calculate_loglinks, check_validation as check,
     check_validation_optional as check_optional, make_membership_fee_reference,
     periodic, request_dict_extractor, request_extractor, make_persona_name,
+    TransactionObserver,
 )
 from cdedb.ml_type_aux import MailinglistGroup
 from cdedb.query import Query, QueryOperators, QueryScope
@@ -2366,7 +2367,7 @@ class CoreFrontend(AbstractFrontend):
             'reviewer': rs.user.persona_id,
             'realm': case['realm'],
         }
-        with Atomizer(rs):
+        with TransactionObserver(rs, self, "genesis_decide"):
             code = self.coreproxy.genesis_modify_case(rs, data)
             success = bool(code)
             new_id = None
