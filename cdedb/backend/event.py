@@ -22,7 +22,7 @@ from cdedb.backend.common import (
     PYTHON_TO_SQL_MAP, AbstractBackend, Silencer, DatabaseValue_s, access,
     affirm_set_validation as affirm_set, affirm_validation_typed as affirm,
     affirm_validation_typed_optional as affirm_optional, cast_fields, internal,
-    singularize,
+    singularize, read_conditional_write_composer,
 )
 from cdedb.common import (
     COURSE_FIELDS, COURSE_SEGMENT_FIELDS,
@@ -3578,6 +3578,12 @@ class EventBackend(AbstractBackend):
                 change_note=title)
 
         return ret
+
+    class _RCWLodgementGroupProtocol(Protocol):
+        def __call__(self, rs: RequestState, data: CdEDBObject
+                     ) -> DefaultReturnCode: ...
+    rcw_lodgement_group: _RCWLodgementGroupProtocol = read_conditional_write_composer(
+        get_lodgement_group, set_lodgement_group, id_param_name='group_id')
 
     @access("event")
     def create_lodgement_group(self, rs: RequestState,
