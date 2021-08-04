@@ -71,6 +71,11 @@ changetype: add
 objectClass: olcDatabaseConfig
 objectClass: olcSqlConfig
 olcSuffix: dc=cde-ev,dc=de
+# idea:
+# grant all users access to their own data
+# grant users no access to groups (they can see their own group membership over their memberOf attributes)
+# grant all dsas access to user mail, uid, names (but not to memberOf)
+# grant some dsas dedicated access to some groups
 #
 # for details see https://manpages.debian.org/buster/slapd/slapd.access.5.en.html
 # protect passwords to be accessed only for authentication
@@ -85,16 +90,20 @@ olcAccess:
 olcAccess:
   to dn.onelevel="dc=cde-ev,dc=de"
   by users read
-# grant all authenticated clients access to groups, since the only personal data
-# they contain is the user id
+# grant group access to some dsas, only if they need them
 olcAccess:
   to dn.subtree="ou=groups,dc=cde-ev,dc=de"
-  by users read
-# grant users access to their own user data and dsas access to all user data
+  by dn.base="cn=cloud,ou=dsa,dc=cde-ev,dc=de" read
+# grant users and all dsas access to some user attributes
+# access to objectClass and entry (the entry itself) are mandatory to access an user
+olcAccess:
+  to dn.subtree="ou=users,dc=cde-ev,dc=de" attrs=objectClass,entry,uid,mail,cn,sn,displayName,givenName
+  by self read break
+  by dn.subtree="ou=dsa,dc=cde-ev,dc=de" read
+# grant users full access to their own data
 olcAccess:
   to dn.subtree="ou=users,dc=cde-ev,dc=de"
   by self read
-  by dn.subtree="ou=dsa,dc=cde-ev,dc=de" read
 #
 # In theory, it should be possible to give more fine granular access to dsas.
 # This would allow specific dsas access to only users which are members of
@@ -107,10 +116,10 @@ olcAccess:
 #  to filter=(memberOf=cn=is_active,ou=status,ou=groups,dc=cde-ev,dc=de)
 #  by dn.subtree="ou=dsa,dc=cde-ev,dc=de" read
 #
-# grant all dsas access to all dsas since why not
+# grant dsas access to their own data
 olcAccess:
   to dn.subtree="ou=dsa,dc=cde-ev,dc=de"
-  by dn.subtree="ou=dsa,dc=cde-ev,dc=de" read
+  by self read
 # prevent all other requests
 olcAccess:
   to *
