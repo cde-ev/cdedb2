@@ -5,7 +5,7 @@ from typing import Dict, List, Set, Union
 import ldap3
 from ldap3 import ALL_ATTRIBUTES
 
-from tests.common import BasicTest
+from tests.common import BasicTest, USER_DICT
 
 
 class TestLDAP(BasicTest):
@@ -13,7 +13,23 @@ class TestLDAP(BasicTest):
     root_dn = f'dc=cde-ev,dc=de'
     test_dsa_dn = f'cn=test,ou=dsa,{root_dn}'
     test_dsa_pw = 'secret'
+    admin_dsa_dn = f'cn=admin,ou=dsa,{root_dn}'
+    admin_dsa_pw = 'secret'
     server: ldap3.Server
+
+    # all dsas except the admin dsa
+    DSAs = {
+        f'cn=apache,ou=dsa,{root_dn}': 'secret',
+        f'cn=cloud,ou=dsa,{root_dn}': 'secret',
+        f'cn=cyberaka,ou=dsa,{root_dn}': 'secret',
+        f'cn=dokuwiki,ou=dsa,{root_dn}': 'secret',
+        f'cn=test,ou=dsa,{root_dn}': 'secret',
+    }
+
+    # all users which have a password
+    USERS = {
+        f'uid={user["id"]},ou=users,dc=cde-ev,dc=de': user['password'] for user in USER_DICT.values() if user['password']
+    }
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -37,6 +53,38 @@ class TestLDAP(BasicTest):
             self.assertEqual(len(conn.entries), 1)
             result = conn.entries[0].entry_attributes_as_dict
             self.assertEqual(result, expectation)
+
+    def no_result_search(
+        self,
+        search_filter: str, *,
+        except_users: Set[str] = None,
+        search_base: str = root_dn,
+        attributes: Union[List[str], str] = ALL_ATTRIBUTES
+    ) -> None:
+        """Test that this search yields no results for all DSAs and all users.
+
+        The 'except_users' argument may be used to exclude some users from this check.
+        """
+        users: Dict[str, str] = {**self.DSAs, **self.USERS}
+        except_users = except_users or set()
+        for user, password in users.items():
+            identifier = user.split(sep=",", maxsplit=1)[0]
+            with ldap3.Connection(
+                self.server, user=user, password=password, raise_exceptions=True
+            ) as conn:
+                conn.search(
+                    search_base=search_base,
+                    search_filter=search_filter,
+                    attributes=attributes
+                )
+                try:
+                    # if the current user should access the entries, we check if he does
+                    if identifier in except_users:
+                        self.assertNotEqual(len(conn.entries), 0)
+                    else:
+                        self.assertEqual(len(conn.entries), 0)
+                except AssertionError as e:
+                    raise RuntimeError(f"The above error occured with user '{user}'")
 
     def test_anonymous_bind(self) -> None:
         conn = ldap3.Connection(self.server)
