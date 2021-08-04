@@ -58,6 +58,8 @@ An alternative to ``ldapsearch`` should be ``slapcat`` like the following::
 
 However this gives the barely helpful error ``slapcat: database doesn't
 support necessary operations.``.
+This [StackOverflow Comment[(https://serverfault.com/a/584609) suggest that
+``slapcat`` is not compatible with the ``sql-backend``.
 
 Development
 -----------
