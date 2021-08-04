@@ -149,6 +149,56 @@ class TestLDAP(BasicTest):
         self.single_result_search(search_filter, expectation, attributes=attributes,
                                   user=user, password=password)
 
+        # users may not access any group and their members
+        # However, they are able to access their own group membership by the 'memberOf'
+        # attribute
+        attributes = ["memberOf"]
+        expectation = {
+            'memberOf': [
+                'cn=2,ou=event-orgas,ou=groups,dc=cde-ev,dc=de',
+                'cn=3,ou=event-orgas,ou=groups,dc=cde-ev,dc=de',
+                'cn=42@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
+                'cn=aktivenforum2000@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+                'cn=all@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+                'cn=announce@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+                'cn=everyone@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
+                'cn=everyone@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+                'cn=info@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+                'cn=is_active,ou=status,ou=groups,dc=cde-ev,dc=de',
+                'cn=is_assembly_admin,ou=status,ou=groups,dc=cde-ev,dc=de',
+                'cn=is_assembly_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
+                'cn=is_cde_admin,ou=status,ou=groups,dc=cde-ev,dc=de',
+                'cn=is_cdelokal_admin,ou=status,ou=groups,dc=cde-ev,dc=de',
+                'cn=is_cde_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
+                'cn=is_core_admin,ou=status,ou=groups,dc=cde-ev,dc=de',
+                'cn=is_event_admin,ou=status,ou=groups,dc=cde-ev,dc=de',
+                'cn=is_event_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
+                'cn=is_finance_admin,ou=status,ou=groups,dc=cde-ev,dc=de',
+                'cn=is_member,ou=status,ou=groups,dc=cde-ev,dc=de',
+                'cn=is_ml_admin,ou=status,ou=groups,dc=cde-ev,dc=de',
+                'cn=is_ml_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
+                'cn=is_searchable,ou=status,ou=groups,dc=cde-ev,dc=de',
+                'cn=kanonisch@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+                'cn=klatsch@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+                'cn=kongress@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+                'cn=lokalgruppen@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
+                'cn=migration@testmail.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
+                'cn=mitgestaltung@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+                'cn=moderatoren@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
+                'cn=moderatoren@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+                'cn=participants@aka.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+                'cn=party50@aka.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
+                'cn=party50@aka.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+                'cn=party50-all@aka.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
+                'cn=platin@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
+                'cn=platin@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+                'cn=werbung@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
+                'cn=witz@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de'
+            ]
+        }
+        self.single_result_search(search_filter, expectation, attributes=attributes,
+                                  user=user, password=password)
+
         # users must not access other users data
         conn = ldap3.Connection(self.server, user=user, password=password)
         conn.bind()
@@ -160,26 +210,6 @@ class TestLDAP(BasicTest):
         )
         conn.search(search_base=self.root_dn, search_filter=search_filter)
         self.assertEqual(list(), conn.entries)
-
-        # users may access any group and their members
-        group_cn = 1
-        search_base = "ou=event-orgas,ou=groups,dc=cde-ev,dc=de"
-        expectation = {
-            'cn': ['1'],
-            'description': ['Große Testakademie 2222 (TestAka)'],
-            'uniqueMember': [
-                'uid=7,ou=users,dc=cde-ev,dc=de'
-            ],
-            'objectClass': ['groupOfUniqueNames'],
-        }
-
-        search_filter = (
-            "(&"
-            "(objectClass=groupOfUniqueNames)"
-            f"(cn={group_cn})"
-            ")"
-        )
-        self.single_result_search(search_filter, expectation, search_base=search_base)
 
     # TODO test encrypted connections (tls)
 
@@ -254,7 +284,9 @@ class TestLDAP(BasicTest):
             f"(cn={group_cn})"
             ")"
         )
-        self.single_result_search(search_filter, expectation)
+        self.no_result_search(search_filter, except_users={"cn=cloud"})
+        self.single_result_search(search_filter, expectation, user=self.admin_dsa_dn,
+                                  password=self.admin_dsa_pw)
 
     def test_ml_subscriber_group_entity(self) -> None:
         """Check if all attributes of ml-subscriber groups are correctly present."""
@@ -276,7 +308,9 @@ class TestLDAP(BasicTest):
             f"(cn={group_cn})"
             ")"
         )
-        self.single_result_search(search_filter, expectation, search_base=search_base)
+        self.no_result_search(search_filter, except_users={"cn=cloud"})
+        self.single_result_search(search_filter, expectation, search_base=search_base,
+                                  user=self.admin_dsa_dn, password=self.admin_dsa_pw)
 
     def test_ml_moderator_group_entity(self) -> None:
         """Check if all attributes of ml-moderator groups are correctly present."""
@@ -297,7 +331,9 @@ class TestLDAP(BasicTest):
             f"(cn={group_cn})"
             ")"
         )
-        self.single_result_search(search_filter, expectation, search_base=search_base)
+        self.no_result_search(search_filter, except_users={"cn=cloud"})
+        self.single_result_search(search_filter, expectation, search_base=search_base,
+                                  user=self.admin_dsa_dn, password=self.admin_dsa_pw)
 
     def test_event_orgas_group_entity(self) -> None:
         """Check if all attributes of event-orga groups are correctly present."""
@@ -318,7 +354,9 @@ class TestLDAP(BasicTest):
             f"(cn={group_cn})"
             ")"
         )
-        self.single_result_search(search_filter, expectation, search_base=search_base)
+        self.no_result_search(search_filter, except_users={"cn=cloud"})
+        self.single_result_search(search_filter, expectation, search_base=search_base,
+                                  user=self.admin_dsa_dn, password=self.admin_dsa_pw)
 
     def test_assembly_presiders_group_entity(self) -> None:
         """Check if all attributes of assembly-presider groups are correctly present."""
@@ -339,7 +377,9 @@ class TestLDAP(BasicTest):
             f"(cn={group_cn})"
             ")"
         )
-        self.single_result_search(search_filter, expectation, search_base=search_base)
+        self.no_result_search(search_filter, except_users={"cn=cloud"})
+        self.single_result_search(search_filter, expectation, search_base=search_base,
+                                  user=self.admin_dsa_dn, password=self.admin_dsa_pw)
 
     def test_dsa_entity(self) -> None:
         """Check if all attributes of dsas are correctly present."""
@@ -356,6 +396,7 @@ class TestLDAP(BasicTest):
             f"(cn={dsa_cn})"
             ")"
         )
+        self.no_result_search(search_filter, except_users={"cn=test"})
         self.single_result_search(search_filter, expectation)
 
     def test_search_groups_of_user(self) -> None:
@@ -394,7 +435,8 @@ class TestLDAP(BasicTest):
                 f"(uniqueMember=uid={user_id},ou=users,{self.root_dn})"
             ")"
         )
-        with ldap3.Connection(self.server, user=self.test_dsa_dn, password=self.test_dsa_pw) as conn:
+        self.no_result_search(search_filter, except_users={"cn=cloud"})
+        with ldap3.Connection(self.server, user=self.admin_dsa_dn, password=self.admin_dsa_pw) as conn:
             conn.search(search_base=self.root_dn, search_filter=search_filter)
             result_names: Set[str] = {entry.entry_dn for entry in conn.entries}
             self.assertEqual(result_names, expectation)
@@ -428,7 +470,8 @@ class TestLDAP(BasicTest):
                 f"(uniqueMember=uid={user_id},ou=users,{self.root_dn})"
             ")"
         )
-        with ldap3.Connection(self.server, user=self.test_dsa_dn, password=self.test_dsa_pw) as conn:
+        self.no_result_search(search_filter, except_users={"cn=cloud"})
+        with ldap3.Connection(self.server, user=self.admin_dsa_dn, password=self.admin_dsa_pw) as conn:
             conn.search(search_base=self.root_dn, search_filter=search_filter)
             result_names = {entry.entry_dn for entry in conn.entries}
             self.assertEqual(result_names, expectation)
@@ -448,7 +491,10 @@ class TestLDAP(BasicTest):
             'cn': ['42@lists.cde-ev.de'],
             'objectClass': ['groupOfUniqueNames']
         }
-        self.single_result_search(search_filter, expectation, attributes=attributes)
+        self.no_result_search(search_filter, except_users={"cn=cloud"})
+        # TODO use appropiate non-admin-dsa here
+        self.single_result_search(search_filter, expectation, attributes=attributes,
+                                  user=self.admin_dsa_dn, password=self.admin_dsa_pw)
 
     def test_search_user_attributes(self) -> None:
         """Search a user by given attributes and return some of its attributes."""
