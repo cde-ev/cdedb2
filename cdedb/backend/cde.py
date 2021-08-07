@@ -102,6 +102,56 @@ class CdEBackend(AbstractBackend):
             change_note=change_note, time_start=time_start,
             time_stop=time_stop)
 
+    @access("core_admin", "cde_admin")
+    def change_membership(
+            self, rs: RequestState, persona_id: int, is_member: bool
+    ) -> Tuple[DefaultReturnCode, List[int], bool]:
+        """Special modification function for membership.
+
+        This is similar to the version from the core backend, but can
+        additionally handle lastschrift permits.
+
+        In the general situation this variant should be used.
+
+        :param is_member: Desired target state of membership.
+        :returns: A tuple containing the return code, a list of ids of
+            revoked lastschrift permits and whether any in-flight
+            transactions are affected.
+        """
+        persona_id = affirm(vtypes.ID, persona_id)
+        is_member = affirm(bool, is_member)
+        code = 1
+        revoked_permits = []
+        collateral_transactions = False
+        with Atomizer(rs):
+            if not is_member:
+                lastschrift_ids = self.list_lastschrift(
+                    rs, persona_ids=(persona_id,), active=None)
+                lastschrifts = self.get_lastschrifts(
+                    rs, lastschrift_ids.keys())
+                active_permits = []
+                for lastschrift in lastschrifts.values():
+                    if not lastschrift['revoked_at']:
+                        active_permits.append(lastschrift['id'])
+                if active_permits:
+                    if self.list_lastschrift_transactions(
+                            rs, lastschrift_ids=active_permits,
+                            stati=(const.LastschriftTransactionStati.issued,)):
+                        collateral_transactions = True
+                    for active_permit in active_permits:
+                        data = {
+                            'id': active_permit,
+                            'revoked_at': now(),
+                        }
+                        lastschrift_code = self.set_lastschrift(rs, data)
+                        if lastschrift_code <= 0:
+                            raise ValueError(n_(
+                                "Failed to revoke active lastschrift permit"))
+                        revoked_permits.append(active_permit)
+            code = self.core.change_membership_easy_mode(
+                rs, persona_id, is_member)
+        return code, revoked_permits, collateral_transactions
+
     @access("member", "core_admin", "cde_admin")
     def list_lastschrift(self, rs: RequestState,
                          persona_ids: Collection[int] = None,
@@ -435,7 +485,7 @@ class CdEBackend(AbstractBackend):
                     const.FinanceLogCodes.lastschrift_transaction_success,
                     change_note="Erfolgreicher Lastschrifteinzug.")
                 if new_balance >= self.conf["MEMBERSHIP_FEE"]:
-                    self.core.change_membership(rs, persona_id, is_member=True)
+                    self.change_membership(rs, persona_id, is_member=True)
                 # Return early since change_persona_balance does the logging
                 return ret
             elif status == const.LastschriftTransactionStati.failure:

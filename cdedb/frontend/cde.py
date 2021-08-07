@@ -642,7 +642,7 @@ class CdEFrontend(AbstractUserFrontend):
                 promotion.update(upgrades)
                 self.coreproxy.change_persona_realms(rs, promotion)
             if datum['resolution'].do_trial():
-                self.coreproxy.change_membership(
+                self.cdeproxy.change_membership(
                     rs, datum['doppelganger_id'], is_member=True)
                 update = {
                     'id': datum['doppelganger_id'],
@@ -1234,8 +1234,9 @@ class CdEFrontend(AbstractUserFrontend):
                         const.FinanceLogCodes.increase_balance,
                         change_note=note)
                     if new_balance >= self.conf["MEMBERSHIP_FEE"]:
-                        memberships_gained += self.coreproxy.change_membership(
+                        code, _, _ = self.cdeproxy.change_membership(
                             rs, datum['persona_id'], is_member=True)
+                        memberships_gained += bool(code)
                     # Remember the changed balance in case of multiple transfers.
                     personas[datum['persona_id']]['balance'] = new_balance
         except psycopg2.extensions.TransactionRollbackError:
@@ -2160,7 +2161,7 @@ class CdEFrontend(AbstractUserFrontend):
                 do_eject = (persona['balance'] < self.conf["MEMBERSHIP_FEE"]
                             and not persona['trial_member'])
                 if do_eject:
-                    self.coreproxy.change_membership(rrs, persona_id,
+                    self.cdeproxy.change_membership(rrs, persona_id,
                                                      is_member=False)
                     period_update['ejection_count'] = \
                         period['ejection_count'] + 1
