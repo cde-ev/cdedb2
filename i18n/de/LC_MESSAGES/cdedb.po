@@ -9261,7 +9261,7 @@ msgstr "Sichtbarkeit und Anmeldungs-Daten"
 
 #: cdedb/frontend/templates/web/event/change_event.tmpl:41
 msgid "Visibility of the Event"
-msgstr "Sichbarkeit der Veranstaltung"
+msgstr "Sichtbarkeit der Veranstaltung"
 
 #: cdedb/frontend/templates/web/event/change_event.tmpl:42
 msgid ""
