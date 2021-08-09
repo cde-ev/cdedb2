@@ -73,9 +73,9 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     \
     && apt-get install --yes python3-coverage \
     \
-    && rm -rf /var/lib/apt/lists/* \
-    \
-    && python3 -m pip --no-cache-dir install \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN python3 -m pip --no-cache-dir install \
     mypy==0.910 \
     flake8==3.8.4 \
     setuptools \
