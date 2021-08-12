@@ -566,108 +566,6 @@ class CdEFrontend(AbstractUserFrontend):
         })
         return datum
 
-    def _perform_one_batch_admission(self, rs: RequestState, datum: CdEDBObject,
-                                     trial_membership: bool, consent: bool
-                                     ) -> int:
-        """Uninlined code from perform_batch_admission().
-
-        :returns: number of created accounts (0 or 1)
-        """
-        ret = 0
-        batch_fields = (
-            'family_name', 'given_names', 'title', 'name_supplement',
-            'birth_name', 'gender', 'address_supplement', 'address',
-            'postal_code', 'location', 'country', 'telephone',
-            'mobile', 'birthday')  # email omitted as it is handled separately
-        if datum['resolution'] == LineResolutions.skip:
-            return ret
-        elif datum['resolution'] == LineResolutions.create:
-            new_persona = copy.deepcopy(datum['persona'])
-            new_persona.update({
-                'is_member': True,
-                'trial_member': trial_membership,
-                'paper_expuls': True,
-                'is_searchable': consent,
-            })
-            persona_id = self.coreproxy.create_persona(rs, new_persona)
-            ret = 1
-        elif datum['resolution'].is_modification():
-            persona_id = datum['doppelganger_id']
-            current = self.coreproxy.get_persona(rs, persona_id)
-            if not current['is_cde_realm']:
-                # Promote to cde realm dependent on current realm
-                promotion: CdEDBObject = {
-                    field: None for field in CDE_TRANSITION_FIELDS}
-                # The ream independent upgrades of the persona. They are applied at last
-                # to prevent unintentional overrides
-                upgrades = {
-                    'is_cde_realm': True,
-                    'is_event_realm': True,
-                    'is_assembly_realm': True,
-                    'is_ml_realm': True,
-                    'decided_search': False,
-                    'trial_member': False,
-                    'paper_expuls': True,
-                    'bub_search': False,
-                    'id': persona_id,
-                }
-                # This applies a part of the newly imported data necessary for realm
-                # transition. The remaining data will be updated later.
-                mandatory_fields = {
-                    field for field, validator in CDE_TRANSITION_FIELDS.items()
-                    if field not in upgrades and not is_optional(validator)
-                }
-                assert mandatory_fields <= set(batch_fields)
-                # It is pure incident that only event users have additional (optional)
-                # data they share with cde users and which must be honoured during realm
-                # transition. This may be changed if a new user tier is introduced.
-                if not current['is_event_realm']:
-                    if not datum['resolution'].do_update():
-                        raise RuntimeError(n_("Need extra data."))
-                    for field in mandatory_fields:
-                        promotion[field] = datum['persona'][field]
-                else:
-                    current = self.coreproxy.get_event_user(rs, persona_id)
-                    # take care that we do not override existent data
-                    current_fields = {
-                        field for field in CDE_TRANSITION_FIELDS
-                        if current.get(field) is not None
-                    }
-                    for field in current_fields:
-                        promotion[field] = current[field]
-                    for field in mandatory_fields:
-                        if promotion[field] is None:
-                            promotion[field] = datum['persona'][field]
-                # apply the actual changes
-                promotion.update(upgrades)
-                self.coreproxy.change_persona_realms(rs, promotion)
-            if datum['resolution'].do_trial():
-                self.cdeproxy.change_membership(
-                    rs, datum['doppelganger_id'], is_member=True)
-                update = {
-                    'id': datum['doppelganger_id'],
-                    'trial_member': True,
-                }
-                self.coreproxy.change_persona(
-                    rs, update, may_wait=False,
-                    change_note="Probemitgliedschaft erneuert.")
-            if datum['resolution'].do_update():
-                self.coreproxy.change_username(
-                    rs, persona_id, datum['persona']['username'], password=None)
-                update = {'id': datum['doppelganger_id']}
-                for field in batch_fields:
-                    update[field] = datum['persona'][field]
-                self.coreproxy.change_persona(
-                    rs, update, may_wait=True, force_review=True,
-                    change_note="Import aktualisierter Daten.")
-        else:
-            raise RuntimeError(n_("Impossible."))
-        if datum['pevent_id'] and persona_id:
-            self.pasteventproxy.add_participant(
-                rs, datum['pevent_id'], datum['pcourse_id'], persona_id,
-                is_instructor=datum['is_instructor'], is_orga=datum['is_orga'])
-        return ret
-
     def perform_batch_admission(self, rs: RequestState, data: List[CdEDBObject],
                                 trial_membership: bool, consent: bool,
                                 sendmail: bool) -> Tuple[bool, Optional[int]]:
@@ -678,54 +576,41 @@ class CdEFrontend(AbstractUserFrontend):
           where an exception was triggered or None if it was a DB
           serialization error.
         """
-        # noinspection PyBroadException
-        try:
-            with Atomizer(rs):
-                count = 0
-                for index, datum in enumerate(data, start=1):
-                    count += self._perform_one_batch_admission(
-                        rs, datum, trial_membership, consent)
-        except psycopg2.extensions.TransactionRollbackError:
-            # We perform a rather big transaction, so serialization errors
-            # could happen.
-            return False, None
-        except Exception:
-            # This blanket catching of all exceptions is a last resort. We try
-            # to do enough validation, so that this should never happen, but
-            # an opaque error (as would happen without this) would be rather
-            # frustrating for the users -- hence some extra error handling
-            # here.
-            self.logger.error(glue(
-                ">>>\n>>>\n>>>\n>>> Exception during batch creation",
-                "<<<\n<<<\n<<<\n<<<"))
-            self.logger.exception("FIRST AS SIMPLE TRACEBACK")
-            self.logger.error("SECOND TRY CGITB")
-            self.cgitb_log()
-            return False, index
-        # Send mail after the transaction succeeded
-        if sendmail:
-            for datum in data:
-                if datum['resolution'] == LineResolutions.create:
-                    success, message = self.coreproxy.make_reset_cookie(
-                        rs, datum['raw']['username'],
-                        timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
-                    email = self.encode_parameter(
-                        "core/do_password_reset_form", "email",
-                        datum['raw']['username'],
-                        persona_id=None,
-                        timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
-                    meta_info = self.coreproxy.get_meta_info(rs)
-                    self.do_mail(rs, "welcome",
-                                 {'To': (datum['raw']['username'],),
-                                  'Subject': "Aufnahme in den CdE",
-                                  },
-                                 {'data': datum['persona'],
-                                  'fee': self.conf["MEMBERSHIP_FEE"],
-                                  'email': email if success else "",
-                                  'cookie': message if success else "",
-                                  'meta_info': meta_info,
-                                  })
-        return True, count
+        relevant_keys = {
+            'resolution', 'doppelganger_id', 'pevent_id', 'pcourse_id',
+            'is_instructor', 'is_orga', 'persona',
+        }
+        relevant_data = [{k: v for k, v in item.items() if k in relevant_keys}
+                         for item in data]
+        with TransactionObserver(rs, self, "perform_batch_admission"):
+            success, count = self.cdeproxy.perform_batch_admission(
+                rs, relevant_data, trial_membership, consent)
+            if not success:
+                return success, count
+            # Send mail after the transaction succeeded
+            if sendmail:
+                for datum in data:
+                    if datum['resolution'] == LineResolutions.create:
+                        success, message = self.coreproxy.make_reset_cookie(
+                            rs, datum['raw']['username'],
+                            timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
+                        email = self.encode_parameter(
+                            "core/do_password_reset_form", "email",
+                            datum['raw']['username'],
+                            persona_id=None,
+                            timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
+                        meta_info = self.coreproxy.get_meta_info(rs)
+                        self.do_mail(rs, "welcome",
+                                     {'To': (datum['raw']['username'],),
+                                      'Subject': "Aufnahme in den CdE",
+                                      },
+                                     {'data': datum['persona'],
+                                      'fee': self.conf["MEMBERSHIP_FEE"],
+                                      'email': email if success else "",
+                                      'cookie': message if success else "",
+                                      'meta_info': meta_info,
+                                      })
+            return True, count
 
     @staticmethod
     def similarity_score(ds1: CdEDBObject, ds2: CdEDBObject) -> str:

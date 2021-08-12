@@ -68,6 +68,7 @@ ByFieldDatatype = _NewType("ByFieldDatatype", str)
 
 Persona = _NewType("Persona", CdEDBObject)
 GenesisCase = _NewType("GenesisCase", CdEDBObject)
+BatchAdmissionEntry = _NewType("BatchAdmissionEntry", CdEDBObject)
 PrivilegeChange = _NewType("PrivilegeChange", CdEDBObject)
 Period = _NewType("Period", CdEDBObject)
 ExPuls = _NewType("ExPuls", CdEDBObject)

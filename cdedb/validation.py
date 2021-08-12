@@ -70,7 +70,7 @@ from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, EPSILON, EVENT_SCHEMA_VERSION, INFINITE_ENUM_MAGIC_NUMBER,
     REALM_SPECIFIC_GENESIS_FIELDS, CdEDBObjectMap, Error, InfiniteEnum,
     ValidationWarning, asciificator, compute_checkdigit, extract_roles, n_, now,
-    xsorted,
+    xsorted, LineResolutions,
 )
 from cdedb.config import BasicConfig
 from cdedb.database.constants import FieldAssociations, FieldDatatypes
@@ -1165,6 +1165,25 @@ def _persona(
         raise errs
 
     return Persona(val)
+
+
+@_add_typed_validator
+def _batch_admission_entry(
+    val: Any, argname: str = None, **kwargs: Any
+) -> BatchAdmissionEntry:
+    val = _mapping(val, argname, **kwargs)
+    mandatory_fields = {
+        'resolution': LineResolutions,
+        'doppelganger_id': Optional[int],
+        'pevent_id': Optional[int],
+        'pcourse_id': Optional[int],
+        'is_instructor': bool,
+        'is_orga': bool,
+        'persona': Any,  # TODO This should be more strict
+    }
+    optional_fields: TypeMapping = {}
+    return BatchAdmissionEntry(_examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, **kwargs))
 
 
 def parse_date(val: str) -> datetime.date:
