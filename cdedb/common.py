@@ -545,7 +545,7 @@ def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,
 
 
 def get_localized_country_codes(rs: RequestState) -> List[Tuple[str, str]]:
-    """Generate a list of country code - name tupes in current language."""
+    """Generate a list of country code - name tuples in current language."""
 
     def _format_country_code(code: str) -> str:
         """Helper to make string hidden to pybabel."""

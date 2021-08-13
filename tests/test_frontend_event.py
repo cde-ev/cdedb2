@@ -2203,6 +2203,8 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Beispiel")
         self.assertPresence("Emilia")
         self.assertPresence("Garcia")
+        self.assertPresence("Deutschland", div="query-result")
+        self.assertNonPresence("DE", div="query-result")
         self.assertEqual(
             "Einzelzelle",
             self.response.lxml.xpath('//*[@id="query-result"]//tr[1]/td[@data-col='
