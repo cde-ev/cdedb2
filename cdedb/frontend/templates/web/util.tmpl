@@ -564,7 +564,10 @@
         {% set entries = entries|sort(attribute=1) if sort else entries %}
         {%- for value, label in entries %}
             <option value="{{ value }}"
-                    {%- if values.get(name, defaultvalue)|string == value|string %} selected="selected"{% endif %}>
+                {# User default value if key is unset or falsey #}
+                {%- if (values.get(name, defaultvalue) or defaultvalue)|string == value|string %}
+                    selected="selected"
+                {% endif %}>
                 {{- label -}}
             </option>
         {%- endfor %}
