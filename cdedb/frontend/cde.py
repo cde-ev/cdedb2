@@ -32,8 +32,8 @@ from cdedb.common import (
     Accounts, ArchiveError, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
     EntitySorter, Error, LineResolutions, LOG_FIELDS_COMMON, PERSONA_DEFAULTS,
     RequestState, SemesterSteps, TransactionType, asciificator, deduct_years,
-    determine_age_class, diacritic_patterns, get_hash, glue, int_to_words,
-    lastschrift_reference, merge_dicts, n_, now, unwrap, xsorted,
+    determine_age_class, diacritic_patterns, get_hash, get_localized_country_codes,
+    glue, int_to_words, lastschrift_reference, merge_dicts, n_, now, unwrap, xsorted,
 )
 from cdedb.database.connection import Atomizer
 from cdedb.filter import enum_entries_filter, money_filter
@@ -41,8 +41,8 @@ from cdedb.frontend.common import (
     AbstractUserFrontend, CustomCSVDialect, REQUESTdata, REQUESTdatadict, REQUESTfile,
     access, calculate_db_logparams, calculate_loglinks, cdedbid_filter,
     check_validation as check, check_validation_optional as check_optional, csv_output,
-    make_membership_fee_reference, make_postal_address, periodic,
-    process_dynamic_input, request_extractor, Worker,
+    make_membership_fee_reference, make_postal_address, periodic, process_dynamic_input,
+    request_extractor, Worker,
 )
 from cdedb.query import (
     Query, QueryConstraint, QueryOperators, QueryScope,
@@ -345,8 +345,8 @@ class CdEFrontend(AbstractUserFrontend):
                 enum_entries_filter(
                     const.Genders,
                     rs.gettext if download is None else rs.default_gettext)),
-            'country': OrderedDict(self.get_localized_country_codes(rs)),
-            'country2': OrderedDict(self.get_localized_country_codes(rs)),
+            'country': OrderedDict(get_localized_country_codes(rs)),
+            'country2': OrderedDict(get_localized_country_codes(rs)),
         }
         return self.generic_user_search(
             rs, download, is_search, QueryScope.cde_user, QueryScope.cde_user,
