@@ -1224,6 +1224,8 @@ class Worker(threading.Thread):
     state object, containing a separate database connection, so that
     concurrency is no concern.
     """
+
+    # For details about this class variable dict see `Worker.create()`.
     active_workers: ClassVar[Dict[str, "weakref.ReferenceType[Worker]"]] = {}
 
     def __init__(self, conf: Config, tasks: WorkerTasks, rs: RequestState) -> None:
@@ -1293,6 +1295,10 @@ class Worker(threading.Thread):
     def create(cls, rs: RequestState, name: str, tasks: "WorkerTasks",
                conf: Config, timeout: Optional[float] = 0.1) -> "Worker":
         """Create a new Worker, remember and start it.
+
+        The state of the `cls.active_workers` dict is not shared between the threads of
+        a multithreaded instance of the application. Thus it should not be relied upon
+        for anything other than testing purposes.
 
         In order to not mess with garbage collection of finished workers, we only keep
         a weak reference to the instance. This means that the weakref object needs to
