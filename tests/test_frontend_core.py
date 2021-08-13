@@ -532,7 +532,7 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("vera")
     def test_automatic_country(self) -> None:
-        self.admin_view_profile('annika', 'cde')
+        self.admin_view_profile('annika')
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['changedataform']
         f['location2'] = "Kabul"
