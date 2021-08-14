@@ -567,7 +567,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         payload: Union[Iterable[bytes], bytes]
         if path:
-            f = path.open("rb")
+            f = pathlib.Path(path).open("rb")
             payload = werkzeug.wsgi.wrap_file(rs.request.environ, f)
         elif afile:
             payload = werkzeug.wsgi.wrap_file(rs.request.environ, afile)
