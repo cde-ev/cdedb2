@@ -518,7 +518,7 @@ class TestMlFrontend(FrontendTest):
         self.traverse("Verwaltung")
         self.assertPresence("Daniel Dino")
         # Reload server- and client-side
-        self.ml.write_subscription_states(self.key, 1)
+        self.ml.write_subscription_states(self.key, (1,))
         self.traverse({'href': '/ml/mailinglist/1'},
                       {'href': '/ml/mailinglist/1/management'})
         self.assertNonPresence("Daniel")
