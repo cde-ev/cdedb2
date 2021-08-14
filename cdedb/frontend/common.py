@@ -567,8 +567,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         payload: Union[Iterable[bytes], bytes]
         if path:
-            with open(path, "rb") as f:
-                payload = werkzeug.wsgi.wrap_file(rs.request.environ, f)
+            f = path.open("rb")
+            payload = werkzeug.wsgi.wrap_file(rs.request.environ, f)
         elif afile:
             payload = werkzeug.wsgi.wrap_file(rs.request.environ, afile)
         elif data:
@@ -590,8 +590,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             disposition += '; filename="{}"'.format(filename)
         headers.append(('Content-Disposition', disposition))
         headers.append(('X-Generation-Time', str(now() - rs.begin)))
-        return Response(payload, direct_passthrough=True, headers=headers,
-                        **extra_args)
+        return Response(payload, direct_passthrough=True, headers=headers, **extra_args)
 
     @staticmethod
     def send_json(rs: RequestState, data: Any) -> Response:
