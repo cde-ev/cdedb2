@@ -1199,7 +1199,7 @@ class MlBackend(AbstractBackend):
 
     @access("ml")
     def write_subscription_states(self, rs: RequestState,
-                                  mailinglist_ids: Collection = None,
+                                  mailinglist_ids: Collection[int] = None,
                                   ) -> DefaultReturnCode:
         """This takes care of writing implicit subscriptions to the db.
 
