@@ -565,17 +565,17 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if (path and afile) or (path and data) or (afile and data):
             raise ValueError(n_("Ambiguous input."))
 
-        wrapped_file: Union[Iterable[bytes], bytes]
+        payload: Union[Iterable[bytes], bytes]
         if path:
             with open(path, "rb") as f:
-                wrapped_file = werkzeug.wsgi.wrap_file(rs.request.environ, f)
+                payload = werkzeug.wsgi.wrap_file(rs.request.environ, f)
         elif afile:
-            wrapped_file = werkzeug.wsgi.wrap_file(rs.request.environ, afile)
+            payload = werkzeug.wsgi.wrap_file(rs.request.environ, afile)
         elif data:
             if isinstance(data, str):
-                wrapped_file = data.encode(encoding)
+                payload = data.encode(encoding)
             elif isinstance(data, bytes):
-                wrapped_file = data
+                payload = data
             else:
                 raise ValueError(n_("Invalid input type."))
         else:
@@ -590,7 +590,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             disposition += '; filename="{}"'.format(filename)
         headers.append(('Content-Disposition', disposition))
         headers.append(('X-Generation-Time', str(now() - rs.begin)))
-        return Response(wrapped_file, direct_passthrough=True, headers=headers,
+        return Response(payload, direct_passthrough=True, headers=headers,
                         **extra_args)
 
     @staticmethod
