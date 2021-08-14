@@ -527,7 +527,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     def send_csv_file(rs: RequestState, mimetype: str = 'text/csv',
                       filename: str = None, inline: bool = True, *,
                       path: Union[str, pathlib.Path] = None,
-                      afile: IO[AnyStr] = None,
+                      afile: IO[bytes] = None,
                       data: AnyStr = None) -> Response:
         """Wrapper around :py:meth:`send_file` for CSV files.
 
@@ -544,7 +544,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     @staticmethod
     def send_file(rs: RequestState, mimetype: str = None, filename: str = None,
                   inline: bool = True, *, path: PathLike = None,
-                  afile: IO[AnyStr] = None, data: AnyStr = None,
+                  afile: IO[bytes] = None, data: AnyStr = None,
                   encoding: str = 'utf-8') -> Response:
         """Wrapper around :py:meth:`werkzeug.wsgi.wrap_file` to offer a file for
         download.
@@ -565,31 +565,22 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if (path and afile) or (path and data) or (afile and data):
             raise ValueError(n_("Ambiguous input."))
 
-        data_buffer = io.BytesIO()
+        wrapped_file: Union[Iterable[bytes], bytes]
         if path:
-            path = pathlib.Path(path)
-            if not path.is_file():
-                raise werkzeug.exceptions.NotFound()
-            with open(path, 'rb') as f:
-                data_buffer.write(f.read())
+            with open(path, "rb") as f:
+                wrapped_file = werkzeug.wsgi.wrap_file(rs.request.environ, f)
         elif afile:
-            content = afile.read()
-            if isinstance(content, str):
-                data_buffer.write(content.encode(encoding))
-            elif isinstance(content, bytes):
-                data_buffer.write(content)
-            else:
-                raise ValueError(n_("Invalid datatype read from file."))
+            wrapped_file = werkzeug.wsgi.wrap_file(rs.request.environ, afile)
         elif data:
             if isinstance(data, str):
-                data_buffer.write(data.encode(encoding))
+                wrapped_file = data.encode(encoding)
             elif isinstance(data, bytes):
-                data_buffer.write(data)
+                wrapped_file = data
             else:
                 raise ValueError(n_("Invalid input type."))
-        data_buffer.seek(0)
+        else:
+            raise RuntimeError(n_("Impossible."))
 
-        wrapped_file = werkzeug.wsgi.wrap_file(rs.request.environ, data_buffer)
         extra_args = {}
         if mimetype is not None:
             extra_args['mimetype'] = mimetype
