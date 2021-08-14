@@ -85,7 +85,8 @@ class MlBaseFrontend(AbstractUserFrontend):
             for ml_id in mailinglist_ids:
                 self.mlproxy.write_subscription_states(rs, ml_id)
 
-        cProfile.run("foo(rs)", "/cdedb2/write_subscription_states.prof")
+        cProfile.runctx("foo(rs)", {}, locals(),
+                        "/cdedb2/write_subscription_states.prof")
 
         self.notify_return_code(rs, 1)
 
