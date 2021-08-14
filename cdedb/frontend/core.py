@@ -127,8 +127,7 @@ class CoreFrontend(AbstractFrontend):
                     begin = event['begin']
                     if (not begin or begin >= present.date()
                             or abs(begin.year - present.year) < 2):
-                        regs = self.eventproxy.list_registrations(rs,
-                                                                  event['id'])
+                        regs = self.eventproxy.list_registrations(rs, event['id'])
                         event['registrations'] = len(regs)
                         orga[event_id] = event
                 dashboard['orga'] = orga

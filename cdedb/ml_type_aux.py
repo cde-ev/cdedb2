@@ -447,14 +447,11 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
         if mailinglist["event_id"] is None:
             return {anid: SubscriptionPolicy.invitation_only for anid in persona_ids}
 
-        ret = {}
-        for persona_id in persona_ids:
-            if bc.event.check_registration_status(
-                    rs, persona_id, mailinglist['event_id'],
-                    mailinglist['registration_stati']):
-                ret[persona_id] = SubscriptionPolicy.subscribable
-            else:
-                ret[persona_id] = SubscriptionPolicy.none
+        ret = bc.event.check_registrations_status(
+            rs, persona_ids, mailinglist['event_id'],
+            mailinglist['registration_stati'])
+        for k, v in ret.items():
+            ret[k] = SubscriptionPolicy.subscribable if v else SubscriptionPolicy.none
 
         return ret
 

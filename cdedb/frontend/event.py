@@ -311,7 +311,7 @@ class EventFrontend(AbstractUserFrontend):
         as well."""
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
-        registration_ids = self.eventproxy.list_registrations(rs, event_id)
+        registration_ids = self.eventproxy.list_participants(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
 
         if not part_ids:
