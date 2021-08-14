@@ -3,6 +3,7 @@
 """Base class providing fundamental ml services."""
 
 import collections
+import cProfile
 from datetime import datetime
 from typing import Any, Collection, Dict, Optional, Set
 
@@ -78,12 +79,15 @@ class MlBaseFrontend(AbstractUserFrontend):
         This will usually be done by a cron job, but sometimes it can be nice to trigger
         this immediately.
         """
-        mailinglist_ids = self.mlproxy.list_mailinglists(rs)
 
-        code = 1
-        for ml_id in mailinglist_ids:
-            code *= self.mlproxy.write_subscription_states(rs, ml_id)
-        self.notify_return_code(rs, code)
+        def foo(rs: RequestState) -> None:
+            mailinglist_ids = self.mlproxy.list_mailinglists(rs)
+            for ml_id in mailinglist_ids:
+                self.mlproxy.write_subscription_states(rs, ml_id)
+
+        cProfile.run("foo(rs)", "write_subscription_states.prof")
+
+        self.notify_return_code(rs, 1)
 
         return self.redirect(rs, "ml/index")
 
