@@ -20,7 +20,7 @@ QEMUOPTIONS ?= -m 1G -enable-kvm -net nic,model=virtio -net user,hostfwd=tcp:127
 
 QEMUCACHING ?= writethrough
 
-DEBVERSION = bullseye-DI-rc1
+DEBVERSION = 11.0.0
 NETINSTISO = debian-${DEBVERSION}-amd64-netinst.iso
 
 DISTINFO_DATA?= ${AWK} -v alg=$$algo -v file=$${file} \
@@ -51,20 +51,18 @@ showconf:
 	@echo "admin:    |  fullimage vdiimage clean mrproper"
 
 
-# TODO Use normal path again once bullseye is released:
-# https://cdimage.debian.org/cdimage/release/${DEBVERSION}/amd64/iso-cd/${NETINSTISO}
 fetch: ${WORKDIR}/.done_fetch
 ${WORKDIR}/.done_fetch:
 	[ -d ${WORKDIR} ] || (mkdir -p ${WORKDIR} && chmod 755 ${WORKDIR})
 	[ -d ${DISTDIR} ] || (mkdir -p ${DISTDIR} && chmod 755 ${DISTDIR})
-	[ -f ${DISTDIR}/${NETINSTISO} ] || (cd ${DISTDIR} && ${FETCH} https://cdimage.debian.org/cdimage/bullseye_di_rci/amd64/iso-cd/${NETINSTISO})
+	[ -f ${DISTDIR}/${NETINSTISO} ] || (cd ${DISTDIR} && ${FETCH} https://cdimage.debian.org/cdimage/release/${DEBVERSION}/amd64/iso-cd/${NETINSTISO})
 	touch $@
 
 checksum:${WORKDIR}/.done_checksum
 ${WORKDIR}/.done_checksum: ${WORKDIR}/.done_fetch
 	chmod u+x bin/*/*
 	PATH=$$PATH:./bin/`uname`; \
-	for algo in md5 sha256; \
+	for algo in sha256 sha512; \
 		do MKSUM=`$$algo < ${DISTDIR}/${NETINSTISO}`; \
 		CKSUM=`file=${NETINSTISO}; ${DISTINFO_DATA}`; \
 		echo ${NETINSTISO} "has real  " $$algo "sum" $$MKSUM; \
@@ -226,7 +224,7 @@ run: ${WORKDIR}/.done_install-stage3
 makesum: ${WORKDIR}/.done_fetch
 	rm -f distinfo && touch distinfo;
 	PATH=$$PATH:./bin/`uname`; \
-	for algo in md5 sha256; \
+	for algo in sha256 sha512; \
 		do MKSUM=`$$algo < ${DISTDIR}/${NETINSTISO}`; \
 		echo "$$algo (${NETINSTISO}) = $$MKSUM" >> distinfo; \
 	done
