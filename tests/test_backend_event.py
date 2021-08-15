@@ -655,7 +655,8 @@ class TestEventBackend(BackendTest):
         expectation = {
             'anzahl_GROSSBUCHSTABEN': 4,
             'arrival': datetime.datetime(2222, 11, 9, 8, 55, 44, tzinfo=pytz.utc),
-            'lodge': 'Die üblichen Verdächtigen :)',
+            'lodge': 'Die üblichen Verdächtigen, insb. Berta Beispiel und '
+                     'garcia@example.cde :)',
             'is_child': False,
         }
         self.assertEqual(expectation, data['fields'])
@@ -1012,7 +1013,8 @@ class TestEventBackend(BackendTest):
                 'event_id': 1,
                 'fields': {
                     'anzahl_GROSSBUCHSTABEN': 4,
-                    'lodge': 'Die üblichen Verdächtigen :)',
+                    'lodge': 'Die üblichen Verdächtigen, insb. Berta Beispiel '
+                             'und garcia@example.cde :)',
                     'is_child': False,
                 },
                 'list_consent': True,
