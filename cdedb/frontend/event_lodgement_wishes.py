@@ -408,6 +408,8 @@ def make_edge_tooltip(edge: LodgementWish, registrations: CdEDBObjectMap,
 
 def make_node_color(registration: CdEDBObject, personas: CdEDBObjectMap,
                     event: CdEDBObject) -> str:
+    # This color code is documented for the user in the
+    # `web/event/ldogement_wishes_graph_form.tmpl` template.
     age = get_age(personas[registration['persona_id']], event)
     if age <= 14.0:
         return "#ff87a0"
