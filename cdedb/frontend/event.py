@@ -4726,8 +4726,8 @@ class EventFrontend(AbstractUserFrontend):
         event = rs.ambience['event']
 
         if not event['lodge_field']:
-            rs.notify('error', n_("Lodgement wishes graph is only available if"
-                                  "the  Field for Rooming Preferences is set in "
+            rs.notify('error', n_("Lodgement wishes graph is only available if "
+                                  "the Field for Rooming Preferences is set in "
                                   "event configuration."))
             return self.redirect(rs, 'event/lodgement_wishes_graph_form')
         if show_lodgements and not part_id:

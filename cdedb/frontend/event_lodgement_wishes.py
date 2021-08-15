@@ -143,7 +143,7 @@ def detect_lodgement_wishes(registrations: CdEDBObjectMap,
                                                personas):
                         problems.append((
                             'info',
-                            n_("Supressing unpermitted wish edge from "
+                            n_("Suppressing unpermitted wish edge from "
                                "%(from_name)s to %(to_name)s."),
                             {'from_name': make_persona_name(
                                 personas[registration['persona_id']]),
@@ -161,7 +161,7 @@ def detect_lodgement_wishes(registrations: CdEDBObjectMap,
                             and restrict_part_id not in common_active_parts):
                         problems.append((
                             'info',
-                            n_("Supressing wish edge from %(from_name)s to "
+                            n_("Suppressing wish edge from %(from_name)s to "
                                "%(to_name)s since they will not be present "
                                "together (even when considering the "
                                "waitlist)."),
