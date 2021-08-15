@@ -2465,9 +2465,10 @@ class EventFrontend(AbstractUserFrontend):
         else:
             problems = []
         reverse_wish = {
-            reg_id: ", ".join(make_persona_name(
-                                  personas[registrations[id]['persona_id']])
-                              for id in rwish[reg_id])
+            reg_id: ", ".join(
+                make_persona_name(
+                    personas[registrations[wishing_id]['persona_id']])
+                for wishing_id in rwish[reg_id])
             for reg_id in registrations
         }
 
@@ -4708,7 +4709,7 @@ class EventFrontend(AbstractUserFrontend):
             personas = self.coreproxy.get_event_users(rs, tuple(
                 reg['persona_id'] for reg in registrations.values()), event_id)
 
-            wishes_, problems = detect_lodgement_wishes(
+            _wishes, problems = detect_lodgement_wishes(
                 registrations, personas, event, None)
         else:
             problems = []
@@ -4743,7 +4744,7 @@ class EventFrontend(AbstractUserFrontend):
         personas = self.coreproxy.get_event_users(rs, tuple(
             reg['persona_id'] for reg in registrations.values()), event_id)
 
-        wishes, problems_ = detect_lodgement_wishes(
+        wishes, _problems = detect_lodgement_wishes(
             registrations, personas, event, part_id)
         graph = create_lodgement_wishes_graph(
             rs, registrations, wishes, lodgements, event, personas, part_id,

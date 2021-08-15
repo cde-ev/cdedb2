@@ -10,7 +10,7 @@ import re
 from dataclasses import dataclass
 from typing import List, Set, Dict, Optional, Tuple, Pattern
 
-import graphviz  # type: ignore
+import graphviz
 
 from cdedb.common import CdEDBObject, RequestState, CdEDBObjectMap, Notification, \
     inverse_diacritic_patterns, n_
@@ -209,13 +209,13 @@ ACTIVE_STATI = PRESENT_STATI | {RegistrationPartStati.waitlist}
 
 
 def parts_with_status(registration: CdEDBObject,
-                      status: Set[RegistrationPartStati]) -> Set[int]:
+                      stati: Set[RegistrationPartStati]) -> Set[int]:
     """ Return a set of event part ids in which the given registration/
     participant has one of the given stati"""
     return {
         part_id
         for part_id, part in registration['parts'].items()
-        if part['status'] in status
+        if part['status'] in stati
     }
 
 
