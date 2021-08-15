@@ -1,0 +1,114 @@
+{% set sidenav_active='event_lodgements' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+
+{% block title %}
+    {% trans event_title=ambience['event']['title'] %}
+        Lodgement Wishes Graph ({{ event_title }})
+    {% endtrans %}
+{% endblock %}
+
+{% block heading %}
+    <h1 class="title">
+        {% trans event_title=ambience['event']['title'] %}
+            Lodgement Wishes Graph
+        {% endtrans %}
+        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
+    </h1>
+{% endblock %}
+
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+    {{ util.breadcrumb_link(cdedblink("event/lodgements"), gettext("Lodgements")) }}
+    {{ util.breadcrumb_link(cdedblink("event/lodgement_wishes_graph_form"), gettext("Lodgement Wishes Graph"),
+                            active=True) }}
+{% endblock %}
+
+{% block content %}
+    {% set has_lodge_field = ambience['event'].get('lodge_field') is not none %}
+    <p>
+        {% trans %}
+            The Lodgement Wishes Graph provides a visual representation of the roommate wishes entered by the
+            participants. It detects wished participants in the entered text by full name (any given name plus family
+            name), forename/display name plus family name, email address or CdEDB id ("DB-0000").
+        {% endtrans %}
+    </p>
+    {% if not has_lodge_field %}
+        <p class="text-warning">
+            {% trans link_custom_fields=util.href(cdedblink('event/field_summary'), gettext("Custom Field")),
+                     link_config=util.href(cdedblink('event/change_event'), gettext("Event Configuration")) %}
+                The Lodgement Wishes Graph is only available if a <i>Field for Rooming Preferences</i> is configured in
+                the event configuration. Please create a {{ link_custom_fields }} (associated to registrations) for the
+                lodgement wishes, if not present yet, and go to {{ link_config }} to select it as the field for Rooming
+                Preferences.
+            {% endtrans %}
+        </p>
+    {% endif %}
+    <p>
+        {% trans %}
+            Each node represents one participant. Participants on the waitlist are included in the graph but displayed
+            with a dashed outline. The background color of the nodes corresponds roughly to the participant's age.
+            Further information about a participant (esp. their wishes as submitted) is shown in the mouse-over tooltip
+            of the nodes. The nodes are hyperlinked to the details page of the participant.
+        {% endtrans %}
+    </p>
+    <p>
+        <span class="color-legend" style="background-color: #ff87a0;"></span>&nbsp;≤14.0&emsp;
+        <span class="color-legend" style="background-color: #ff9a87;"></span>&nbsp;≤16.0&emsp;
+        <span class="color-legend" style="background-color: #ffca87;"></span>&nbsp;≤17.97&emsp;
+        <span class="color-legend" style="background-color: #fdf36d;"></span>&nbsp;≤18&emsp;
+        <span class="color-legend" style="background-color: #bbf78c;"></span>&nbsp;≤20&emsp;
+        <span class="color-legend" style="background-color: #87ff8c;"></span>&nbsp;≤22&emsp;
+        <span class="color-legend" style="background-color: #87ffcf;"></span>&nbsp;≤24&emsp;
+        <span class="color-legend" style="background-color: #87f6ff;"></span>&nbsp;≤28&emsp;
+        <span class="color-legend" style="background-color: #87d0ff;"></span>&nbsp;>28
+    </p>
+    <p>
+        {% trans %}
+            Each edge represents a detected wish. Bidirectional wishes are drawn as a stronger line (and have greater
+            impact on the graph layout). Wishes that are only applicable when considering the waitlist are shown as a
+            dashed, greyish line.
+        {% endtrans %}
+    </p>
+    <p>
+        {% trans %}
+            The displayed participants can be filtered by event part. The nodes can optionally be clustered by the
+            already assigned lodgements. For multi-part events that requires the part to be filtered. The subgraphs'
+            labels are hyperlinked to the respective lodgement management page.
+        {% endtrans %}
+    </p>
+
+    <form action="{{ cdedblink('event/lodgement_wishes_graph') }}" method="GET" id="settingsform" class="form-horizontal">
+        {% if ambience['event']['parts']|length > 1 %}
+            {{ util.form_input_select('part_id', ambience['event']['parts'].items()|dict_entries('id', 'title'),
+                                      gettext("Event Parts"), nulloption=gettext("— All Parts —"))}}
+        {% else %}
+            {{ util.input_hidden('part_id', (ambience['event']['parts']|list)[0]) }}
+        {% endif %}
+        {{ util.form_input_checkbox('all_participants', "All Participants",
+                                    info=gettext("Include participants without wishes and not being wished")) }}
+        {{ util.form_input_checkbox('show_lodgements', "Show Lodgements",
+                                    info=gettext("Display assigned lodgements as subgraphs (reduces graph layout "
+                                                 "quality)")) }}
+        {{ util.form_input_submit(label=gettext("Go!"), readonly=not has_lodge_field) }}
+    </form>
+
+    {% if has_lodge_field %}
+        <hr />
+        <h2>{% trans %}Lodgement Wish Problems{% endtrans %}</h2>
+        {% if problems %}
+            <ul>
+                {% with texttypes = {"success": "success", "info": "info", "warning": "warning", "error": "danger"} %}
+                    {% for ntype, message, params in problems %}
+                        <li class="text-{{ texttypes[ntype] }}">{{ gettext(message)|e|format(**params) }}</li>
+                    {% endfor %}
+                {% endwith %}
+            </ul>
+        {% else %}
+            <p>
+                {% trans %}No wish issues detected.{% endtrans %}
+            </p>
+        {% endif %}
+    {% endif %}
+{% endblock %}

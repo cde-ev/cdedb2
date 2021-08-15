@@ -48,6 +48,8 @@ from cdedb.frontend.common import (
     check_validation_optional as check_optional, event_guard, make_event_fee_reference,
     periodic, process_dynamic_input, request_extractor, make_persona_name
 )
+from cdedb.frontend.event_lodgement_wishes import detect_lodgement_wishes, \
+    create_lodgement_wishes_graph
 from cdedb.query import (
     Query, QueryConstraint, QueryOperators, QueryScope, make_registration_query_aux,
     make_lodgement_query_aux, make_course_query_aux,
@@ -4697,6 +4699,60 @@ class EventFrontend(AbstractUserFrontend):
             'inhabitants': inhabitants, 'problems': problems,
             'groups': groups,
         })
+
+    @access("event")
+    @event_guard()
+    def lodgement_wishes_graph_form(self, rs: RequestState, event_id: int
+                                    ) -> Response:
+        event = rs.ambience['event']
+        if event['lodge_field']:
+            registration_ids = self.eventproxy.list_registrations(rs, event_id)
+            registrations = self.eventproxy.get_registrations(rs, registration_ids)
+            personas = self.coreproxy.get_event_users(rs, tuple(
+                reg['persona_id'] for reg in registrations.values()), event_id)
+
+            wishes_, problems = detect_lodgement_wishes(
+                registrations, personas, event, None)
+        else:
+            problems = []
+        return self.render(rs, "lodgement_wishes_graph_form",
+                           {'problems': problems})
+
+    @access("event")
+    @event_guard()
+    @REQUESTdata('all_participants', 'part_id', 'show_lodgements')
+    def lodgement_wishes_graph(self, rs: RequestState, event_id: int,
+                               all_participants: bool, part_id: Optional[int],
+                               show_lodgements: bool) -> Response:
+        if rs.has_validation_errors():
+            return self.redirect(rs, 'event/lodgement_wishes_graph_form')
+        event = rs.ambience['event']
+
+        if not event['lodge_field']:
+            rs.notify('error', n_("Lodgement wishes graph is only available if"
+                                  "the  Field for Rooming Preferences is set in "
+                                  "event configuration."))
+            return self.redirect(rs, 'event/lodgement_wishes_graph_form')
+        if show_lodgements and not part_id:
+            rs.notify('error', n_("Lodgement clusters can only be displayed if "
+                                  "the graph is restricted to a specific "
+                                  "part."))
+            return self.redirect(rs, 'event/lodgement_wishes_graph_form')
+
+        registration_ids = self.eventproxy.list_registrations(rs, event_id)
+        registrations = self.eventproxy.get_registrations(rs, registration_ids)
+        lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
+        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        personas = self.coreproxy.get_event_users(rs, tuple(
+            reg['persona_id'] for reg in registrations.values()), event_id)
+
+        wishes, problems_ = detect_lodgement_wishes(
+            registrations, personas, event, part_id)
+        graph = create_lodgement_wishes_graph(
+            rs, registrations, wishes, lodgements, event, personas, part_id,
+            all_participants, part_id if show_lodgements else None)
+        data: bytes = graph.pipe('svg')
+        return self.send_file(rs, "image/svg+xml", data=data)
 
     @access("event")
     @event_guard(check_offline=True)
