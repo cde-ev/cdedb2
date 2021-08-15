@@ -139,8 +139,8 @@ def detect_lodgement_wishes(registrations: CdEDBObjectMap,
                     # if not, create the new wish object
                     # but first check, if the wish is allowed (considering
                     # genders) and
-                    if not combination_allowed(registration, other_registration,
-                                               personas):
+                    if not _combination_allowed(registration, other_registration,
+                                                personas):
                         problems.append((
                             'info',
                             n_("Suppressing unpermitted wish edge from "
@@ -154,8 +154,8 @@ def detect_lodgement_wishes(registrations: CdEDBObjectMap,
                     # Skip whishes of people that don't (potentially) meet at
                     # the event
                     common_active_parts = (
-                        parts_with_status(registration, ACTIVE_STATI)
-                        & parts_with_status(other_registration, ACTIVE_STATI))
+                        _parts_with_status(registration, ACTIVE_STATI)
+                        & _parts_with_status(other_registration, ACTIVE_STATI))
                     if not common_active_parts or (
                             restrict_part_id
                             and restrict_part_id not in common_active_parts):
@@ -172,8 +172,8 @@ def detect_lodgement_wishes(registrations: CdEDBObjectMap,
                         continue
 
                     common_presence_parts = (
-                        parts_with_status(registration, PRESENT_STATI)
-                        & parts_with_status(other_registration, PRESENT_STATI))
+                        _parts_with_status(registration, PRESENT_STATI)
+                        & _parts_with_status(other_registration, PRESENT_STATI))
                     wishes[(registration_id, other_registration_id)] = \
                         LodgementWish(
                             registration_id,
@@ -207,8 +207,8 @@ PRESENT_STATI = {status for status in RegistrationPartStati
 ACTIVE_STATI = PRESENT_STATI | {RegistrationPartStati.waitlist}
 
 
-def parts_with_status(registration: CdEDBObject,
-                      stati: Set[RegistrationPartStati]) -> Set[int]:
+def _parts_with_status(registration: CdEDBObject,
+                       stati: Set[RegistrationPartStati]) -> Set[int]:
     """ Return a set of event part ids in which the given registration/
     participant has one of the given stati"""
     return {
@@ -218,18 +218,18 @@ def parts_with_status(registration: CdEDBObject,
     }
 
 
-def combination_allowed(registration1: CdEDBObject, registration2: CdEDBObject,
-                        personas: CdEDBObjectMap) -> bool:
+def _combination_allowed(registration1: CdEDBObject, registration2: CdEDBObject,
+                         personas: CdEDBObjectMap) -> bool:
     """ Check if two participants are allowed to be assigned to the same
     lodgement based on their gender and gender preferences."""
     # TODO special rules for children <= 12 years
-    return (gender_equality(personas[registration1['persona_id']]['gender'],
-                            personas[registration2['persona_id']]['gender'])
+    return (_gender_equality(personas[registration1['persona_id']]['gender'],
+                             personas[registration2['persona_id']]['gender'])
             or (registration1['mixed_lodging']
                 and registration2['mixed_lodging']))
 
 
-def gender_equality(first: Genders, second: Genders) -> bool:
+def _gender_equality(first: Genders, second: Genders) -> bool:
     """
     Partial equality relation for Genders: For simplicity, we consider
     `not_specified` and `other` to be equivalent to any Gender.
@@ -306,8 +306,8 @@ def create_lodgement_wishes_graph(
         # Only consider wishing or wished participants (unless show_all==True)
         if registration_id not in referenced_registraion_ids and not show_all:
             continue
-        all_active_parts = parts_with_status(registration, ACTIVE_STATI)
-        present_parts = parts_with_status(registration, PRESENT_STATI)
+        all_active_parts = _parts_with_status(registration, ACTIVE_STATI)
+        present_parts = _parts_with_status(registration, PRESENT_STATI)
         # Only consider (potential) participants of selected part
         if (not all_active_parts
                 or filter_part_id and filter_part_id not in all_active_parts):
@@ -330,11 +330,11 @@ def create_lodgement_wishes_graph(
         wish_field_name = event['fields'][event['lodge_field']]['field_name']
         subgraph.node(
             str(registration['id']),
-            make_node_label(registration, personas, event),
-            tooltip=make_node_tooltip(rs, registration, personas, event),
-            fillcolor=make_node_color(registration, personas, event),
+            _make_node_label(registration, personas, event),
+            tooltip=_make_node_tooltip(rs, registration, personas, event),
+            fillcolor=_make_node_color(registration, personas, event),
             color=("black" if registration['fields'].get(wish_field_name)
-                   else make_node_color(registration, personas, event)),
+                   else _make_node_color(registration, personas, event)),
             style='filled' if is_present else 'dashed',
             penwidth="1" if is_present else "4",
             URL=cdedburl(rs, 'event/show_registration',
@@ -352,15 +352,15 @@ def create_lodgement_wishes_graph(
                    weight=("1" if not wish.present_together or wish.negated
                            else ("9" if wish.bidirectional else "3")),
                    penwidth="1.5" if wish.bidirectional else "0.5",
-                   tooltip=make_edge_tooltip(wish, registrations, personas),
+                   tooltip=_make_edge_tooltip(wish, registrations, personas),
                    color="black" if wish.present_together else "grey")
 
     return graph
 
 
-def make_node_label(registration: CdEDBObject, personas: CdEDBObjectMap,
-                    event: CdEDBObject) -> str:
-    presence_parts = parts_with_status(registration, PRESENT_STATI)
+def _make_node_label(registration: CdEDBObject, personas: CdEDBObjectMap,
+                     event: CdEDBObject) -> str:
+    presence_parts = _parts_with_status(registration, PRESENT_STATI)
     parts = ("\n({})".format(
                  ', '.join(event['parts'][p]['shortname']
                            for p in presence_parts))
@@ -369,16 +369,16 @@ def make_node_label(registration: CdEDBObject, personas: CdEDBObjectMap,
     return make_persona_name(personas[registration['persona_id']]) + parts
 
 
-def make_node_tooltip(rs: RequestState, registration: CdEDBObject,
-                      personas: CdEDBObjectMap, event: CdEDBObject) -> str:
+def _make_node_tooltip(rs: RequestState, registration: CdEDBObject,
+                       personas: CdEDBObjectMap, event: CdEDBObject) -> str:
     parts = ""
     if len(event['parts']) > 1:
         parts = "\n"
-        present_parts = parts_with_status(registration, PRESENT_STATI)
+        present_parts = _parts_with_status(registration, PRESENT_STATI)
         parts += ', '.join(event['parts'][p]['title']
                            for p in present_parts)
-        waitlist_parts = parts_with_status(registration,
-                                           {RegistrationPartStati.waitlist})
+        waitlist_parts = _parts_with_status(registration,
+                                            {RegistrationPartStati.waitlist})
         if waitlist_parts:
             if present_parts:
                 parts += "  |  "
@@ -395,8 +395,8 @@ def make_node_tooltip(rs: RequestState, registration: CdEDBObject,
     )
 
 
-def make_edge_tooltip(edge: LodgementWish, registrations: CdEDBObjectMap,
-                    personas: CdEDBObjectMap) -> str:
+def _make_edge_tooltip(edge: LodgementWish, registrations: CdEDBObjectMap,
+                       personas: CdEDBObjectMap) -> str:
     return "{name1} {sign} {name2}".format(
         name1=make_persona_name(
             personas[registrations[edge.wishing]['persona_id']]),
@@ -406,11 +406,11 @@ def make_edge_tooltip(edge: LodgementWish, registrations: CdEDBObjectMap,
     )
 
 
-def make_node_color(registration: CdEDBObject, personas: CdEDBObjectMap,
-                    event: CdEDBObject) -> str:
+def _make_node_color(registration: CdEDBObject, personas: CdEDBObjectMap,
+                     event: CdEDBObject) -> str:
     # This color code is documented for the user in the
     # `web/event/ldogement_wishes_graph_form.tmpl` template.
-    age = get_age(personas[registration['persona_id']], event)
+    age = _get_age(personas[registration['persona_id']], event)
     if age <= 14.0:
         return "#ff87a0"
     elif age <= 16.0:
@@ -431,12 +431,12 @@ def make_node_color(registration: CdEDBObject, personas: CdEDBObjectMap,
         return "#87d0ff"
 
 
-def get_age(persona: CdEDBObject, event: CdEDBObject) -> float:
+def _get_age(persona: CdEDBObject, event: CdEDBObject) -> float:
     """
     Roughly calculate the age of a persona at the begin of a given event in
     years as a fractional number.
 
-    This is meant to be used in combination with :func:`make_node_color`. It
+    This is meant to be used in combination with :func:`_make_node_color`. It
     does not consider leapyaers correctly. For other purposes, consider using
     :func:`cdedb.common.deduct_years` instead.
     """
