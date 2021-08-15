@@ -80,9 +80,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         """
         mailinglist_ids = self.mlproxy.list_mailinglists(rs)
 
-        code = 1
-        for ml_id in mailinglist_ids:
-            code *= self.mlproxy.write_subscription_states(rs, ml_id)
+        code = self.mlproxy.write_subscription_states(rs, mailinglist_ids)
         self.notify_return_code(rs, code)
 
         return self.redirect(rs, "ml/index")
@@ -1153,7 +1151,6 @@ class MlBaseFrontend(AbstractUserFrontend):
         """Write the current state of implicit subscribers to the database."""
         mailinglist_ids = self.mlproxy.list_mailinglists(rs)
 
-        for ml_id in mailinglist_ids:
-            self.mlproxy.write_subscription_states(rs, ml_id)
+        self.mlproxy.write_subscription_states(rs, mailinglist_ids)
 
         return store
