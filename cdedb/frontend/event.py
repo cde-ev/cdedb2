@@ -2452,32 +2452,29 @@ class EventFrontend(AbstractUserFrontend):
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
 
-        reverse_wish = {}
+        rwish = collections.defaultdict(list)
         if event['lodge_field']:
-            for reg_id, reg in registrations.items():
-                rwish = set()
-                persona = personas[reg['persona_id']]
-                checks = {
-                    diacritic_patterns("{} {}".format(
-                        given_name, persona['family_name']))
-                    for given_name in persona['given_names'].split()}
-                checks.add(diacritic_patterns("{} {}".format(
-                    persona['display_name'], persona['family_name'])))
-                for oid, other in registrations.items():
-                    owish = other['fields'].get(
-                        event['fields'][event['lodge_field']]['field_name'])
-                    if not owish:
-                        continue
-                    if any(re.search(acheck, owish, flags=re.IGNORECASE)
-                                     for acheck in checks):
-                        rwish.add(oid)
-                reverse_wish[reg_id] = ", ".join(
-                    make_persona_name(personas[registrations[id]['persona_id']])
-                    for id in rwish)
+            wishes, problems = detect_lodgement_wishes(registrations, personas,
+                                                       event, None)
+            for wish in wishes:
+                if wish.negated:
+                    continue
+                rwish[wish.wished].append(wish.wishing)
+                if wish.bidirectional:
+                    rwish[wish.wishing].append(wish.wished)
+        else:
+            problems = []
+        reverse_wish = {
+            reg_id: ", ".join(make_persona_name(
+                                  personas[registrations[id]['persona_id']])
+                              for id in rwish[reg_id])
+            for reg_id in registrations
+        }
 
         tex = self.fill_template(rs, "tex", "lodgement_puzzle", {
             'lodgements': lodgements, 'registrations': registrations,
-            'personas': personas, 'reverse_wish': reverse_wish})
+            'personas': personas, 'reverse_wish': reverse_wish,
+            'wish_problems': problems})
         file = self.serve_latex_document(rs, tex, "{}_lodgement_puzzle".format(
             rs.ambience['event']['shortname']), runs)
         if file:
