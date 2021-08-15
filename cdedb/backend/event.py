@@ -2630,22 +2630,22 @@ class EventBackend(AbstractBackend):
             persona_ids = set()
         event_id = affirm(vtypes.ID, event_id)
         persona_ids = affirm_set(vtypes.ID, persona_ids)
+
+        # ml_admins are allowed to do this to be able to manage
+        # subscribers of event mailinglists.
+        if (persona_ids != {rs.user.persona_id}
+                and not self.is_orga(rs, event_id=event_id)
+                and not self.is_admin(rs)
+                and "ml_admin" not in rs.user.roles):
+            raise PrivilegeError(n_("Not privileged."))
+
         query = "SELECT id, persona_id FROM event.registrations"
         conditions = ["event_id = %s"]
         params: List[Any] = [event_id]
-        # condition for limited access, f. e. for the online participant list.
-        # ml_admins are allowed to do this to be able to manage
-        # subscribers of event mailinglists.
-        if not (persona_ids != {rs.user.persona_id}
-                or self.is_orga(rs, event_id=event_id)
-                or self.is_admin(rs)
-                or "ml_admin" not in rs.user.roles):
-            raise PrivilegeError(n_("Not privileged."))
         if persona_ids:
             conditions.append("persona_id = ANY(%s)")
             params.append(persona_ids)
-        if conditions:
-            query += " WHERE " + " AND ".join(conditions)
+        query += " WHERE " + " AND ".join(conditions)
         data = self.query_all(rs, query, params)
         return {e['id']: e['persona_id'] for e in data}
 
@@ -2671,6 +2671,9 @@ class EventBackend(AbstractBackend):
         :returns: Mapping of registration ids to persona_ids.
         """
         event_id = affirm(vtypes.ID, event_id)
+
+        # In this case, privilege check is performed afterwards since it depends on
+        # the result of the query.
         query = """SELECT DISTINCT
             regs.id, regs.persona_id
         FROM
@@ -2683,6 +2686,7 @@ class EventBackend(AbstractBackend):
         query += " WHERE " + " AND ".join(conditions)
         data = self.query_all(rs, query, params)
         ret = {e['id']: e['persona_id'] for e in data}
+
         if not (rs.user.persona_id in ret.values()
                 or self.is_orga(rs, event_id=event_id)
                 or self.is_admin(rs)):
