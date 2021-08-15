@@ -197,7 +197,7 @@ def make_identifying_regex(persona: CdEDBObject) -> Pattern[str]:
     ]
     patterns.append(inverse_diacritic_patterns(re.escape(
         f"{persona['display_name']} {persona['family_name']}")))
-    patterns.append(re.escape(f"DB-{persona['id']}"))
+    patterns.append(re.escape(f"DB-{persona['id']}\\b"))
     patterns.append(re.escape(persona['username']))
     return re.compile('|'.join(patterns))
 
