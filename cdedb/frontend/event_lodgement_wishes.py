@@ -8,7 +8,7 @@ wishes heuristics.
 import logging
 import re
 from dataclasses import dataclass
-from typing import List, Set, Dict, Optional, Tuple
+from typing import List, Set, Dict, Optional, Tuple, Pattern
 
 import graphviz  # type: ignore
 
@@ -79,7 +79,7 @@ def detect_lodgement_wishes(registrations: CdEDBObjectMap,
         a list of localizable problem notification messages.
     """
     # Create a list of regex patterns, referencing the other personas, to search
-    lookup_map: List[Tuple[re.Pattern[str], int]] = [
+    lookup_map: List[Tuple[Pattern[str], int]] = [
         (make_identifying_regex(personas[registration['persona_id']]),
          registration_id)
         for registration_id, registration in registrations.items()
@@ -186,7 +186,7 @@ def detect_lodgement_wishes(registrations: CdEDBObjectMap,
     return list(wishes.values()), problems
 
 
-def make_identifying_regex(persona: CdEDBObject) -> re.Pattern[str]:
+def make_identifying_regex(persona: CdEDBObject) -> Pattern[str]:
     """
     Create a Regex for finding different references to the given persona in
     other participant's rooming preferences text.
