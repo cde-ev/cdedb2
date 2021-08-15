@@ -1460,7 +1460,7 @@ def inverse_diacritic_patterns(s: str) -> str:
     for char in s:
         if char in UMLAUT_MAP:
             repl = UMLAUT_MAP[char]
-            ret += f"({char}|{repl})" if len(char) > 1 else f"[{char}{repl}]"
+            ret += f"({char}|{repl})" if len(repl) > 1 else f"[{char}{repl}]"
         else:
             ret += char
     return ret
