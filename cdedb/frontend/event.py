@@ -4710,7 +4710,7 @@ class EventFrontend(AbstractUserFrontend):
                 reg['persona_id'] for reg in registrations.values()), event_id)
 
             _wishes, problems = detect_lodgement_wishes(
-                registrations, personas, event, None)
+                registrations, personas, event, restrict_part_id=None)
         else:
             problems = []
         return self.render(rs, "lodgement_wishes_graph_form",

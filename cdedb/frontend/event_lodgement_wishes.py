@@ -5,7 +5,6 @@ It is also used by event/download_lodgement_puzzle for creating the reverse
 wishes heuristics.
 """
 
-import logging
 import re
 from dataclasses import dataclass
 from typing import List, Set, Dict, Optional, Tuple, Pattern
