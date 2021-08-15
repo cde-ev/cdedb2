@@ -79,7 +79,7 @@ def detect_lodgement_wishes(registrations: CdEDBObjectMap,
         a list of localizable problem notification messages.
     """
     # Create a list of regex patterns, referencing the other personas, to search
-    lookup_map: List[Tuple[re.Pattern, int]] = [
+    lookup_map: List[Tuple[re.Pattern[str], int]] = [
         (make_identifying_regex(personas[registration['persona_id']]),
          registration_id)
         for registration_id, registration in registrations.items()
@@ -186,7 +186,7 @@ def detect_lodgement_wishes(registrations: CdEDBObjectMap,
     return list(wishes.values()), problems
 
 
-def make_identifying_regex(persona: CdEDBObject) -> re.Pattern:
+def make_identifying_regex(persona: CdEDBObject) -> re.Pattern[str]:
     """
     Create a Regex for finding different references to the given persona in
     other participant's rooming preferences text.
@@ -230,7 +230,7 @@ def combination_allowed(registration1: CdEDBObject, registration2: CdEDBObject,
                 and registration2['mixed_lodging']))
 
 
-def gender_equality(first: Genders, second: Genders):
+def gender_equality(first: Genders, second: Genders) -> bool:
     """
     Partial equality relation for Genders: For simplicity, we consider
     `not_specified` and `other` to be equivalent to any Gender.
@@ -311,7 +311,7 @@ def create_lodgement_wishes_graph(
         present_parts = parts_with_status(registration, PRESENT_STATI)
         # Only consider (potential) participants of selected part
         if (not all_active_parts
-            or filter_part_id and filter_part_id not in all_active_parts):
+                or filter_part_id and filter_part_id not in all_active_parts):
             # This check is actually redundant as long as show_all==False,
             # since analyze_wishes() also considers the
             # part_id in edge.waitlist_together.
@@ -432,4 +432,3 @@ def make_node_color(registration: CdEDBObject, personas: CdEDBObjectMap,
 
 def get_age(persona: CdEDBObject, event: CdEDBObject) -> float:
     return float((event['begin'] - persona['birthday']).days) / 365
-
