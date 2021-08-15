@@ -199,7 +199,6 @@ def make_identifying_regex(persona: CdEDBObject) -> Pattern[str]:
         f"{persona['display_name']} {persona['family_name']}")))
     patterns.append(re.escape(f"DB-{persona['id']}"))
     patterns.append(re.escape(persona['username']))
-    logging.getLogger("cdedb.frontend.event").warning("%s", patterns)
     return re.compile('|'.join(patterns))
 
 
