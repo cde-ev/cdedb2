@@ -432,4 +432,12 @@ def make_node_color(registration: CdEDBObject, personas: CdEDBObjectMap,
 
 
 def get_age(persona: CdEDBObject, event: CdEDBObject) -> float:
+    """
+    Roughly calculate the age of a persona at the begin of a given event in
+    years as a fractional number.
+
+    This is meant to be used in combination with :func:`make_node_color`. It
+    does not consider leapyaers correctly. For other purposes, consider using
+    :func:`cdedb.common.deduct_years` instead.
+    """
     return float((event['begin'] - persona['birthday']).days) / 365
