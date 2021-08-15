@@ -98,7 +98,7 @@
         <hr />
         <h2>{% trans %}Lodgement Wish Problems{% endtrans %}</h2>
         {% if problems %}
-            <ul>
+            <ul id="wish-problems">
                 {% with texttypes = {"success": "success", "info": "info", "warning": "warning", "error": "danger"} %}
                     {% for ntype, message, params in problems %}
                         <li class="text-{{ texttypes[ntype] }}">{{ gettext(message)|e|format(**params) }}</li>

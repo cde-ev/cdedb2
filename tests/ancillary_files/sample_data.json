@@ -4197,7 +4197,7 @@
             "checkin": null,
             "list_consent": true,
             "fields": {
-                "lodge": "Die üblichen Verdächtigen :)",
+                "lodge": "Die üblichen Verdächtigen, insb. Berta Beispiel und garcia@example.cde :)",
                 "is_child": false,
                 "anzahl_GROSSBUCHSTABEN": 4
             }
