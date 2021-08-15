@@ -2716,12 +2716,16 @@ msgid ""
 "Lodgement wishes graph is only available if the Field for Rooming "
 "Preferences is set in event configuration."
 msgstr ""
+"Der Hauswünsche-Graph ist nur verfügbar, wenn in der "
+"Veranstaltungs-Konfiguration ein Feld für Hauswünsche festgelegt wurde."
 
 #: cdedb/frontend/event.py:4734
 msgid ""
 "Lodgement clusters can only be displayed if the graph is restricted to a "
 "specific part."
 msgstr ""
+"Unterkunft-Cluster können nur angezeigt werden, wenn der Graph auf einen "
+"einzelnen Veranstaltungsteil eingeschränkt wird."
 
 #: cdedb/frontend/event.py:5222
 msgid "Invalid query name."
@@ -2783,23 +2787,26 @@ msgid ""
 "Wish \"%(wish_text)s\" of %(from_name)s is ambiguous: It may refer to "
 "%(other_name)s as well as %(more_names)s."
 msgstr ""
+"Der Wunsch \"%(wish_text)s\" von %(from_name)s ist nicht eindeutig: Er könnte"
+" sich auf %(other_name)s beziehen, oder auf %(more_names)s."
 
 #: cdedb/frontend/event_lodgement_wishes.py:146
 #, python-format
 msgid "Suppressing unpermitted wish edge from %(from_name)s to %(to_name)s."
-msgstr ""
+msgstr "Unterdrücke unerlaubte Wunsch-Kante von %(from_name)s nach %(to_name)s."
 
 #: cdedb/frontend/event_lodgement_wishes.py:164
 #, python-format
 msgid ""
 "Suppressing wish edge from %(from_name)s to %(to_name)s since they will not "
 "be present together (even when considering the waitlist)."
-msgstr ""
+msgstr "Unterdrücke Wunsche-Kante von %(from_name)s zu %(to_name)s da sie "
+"nicht gemeinsam anwesend sein werden (selbst, wenn man die Warteliste "
+"brücksichtigt)."
 
 #: cdedb/frontend/event_lodgement_wishes.py:386
-#, fuzzy
 msgid "Waitlist: "
-msgstr "Warteliste"
+msgstr "Warteliste: "
 
 #: cdedb/frontend/ml.py:40
 msgid "Skipping mailman request in dev/offline mode."
@@ -3004,9 +3011,8 @@ msgstr "Reserve"
 
 #: cdedb/frontend/templates/tex/event/lodgement_puzzle.tmpl:30
 #: cdedb/frontend/templates/web/event/lodgement_wishes_graph_form.tmpl:99
-#, fuzzy
 msgid "Lodgement Wish Problems"
-msgstr "Unterkunftsnotizen"
+msgstr "Hauswunsch-Probleme"
 
 #: cdedb/frontend/templates/tex/event/lodgement_puzzle.tmpl:53
 msgid "guest"
@@ -10681,16 +10687,14 @@ msgid "Lodgement Query (%(title)s)"
 msgstr "Unterkunftssuche (%(title)s)"
 
 #: cdedb/frontend/templates/web/event/lodgement_wishes_graph_form.tmpl:6
-#, fuzzy, python-format
 msgid "Lodgement Wishes Graph (%(event_title)s)"
-msgstr "Unterkunftgruppen (%(title)s)"
+msgstr "Hauswünsche-Graph (%(event_title)s)"
 
 #: cdedb/frontend/templates/web/event/lodgement_wishes_graph_form.tmpl:13
 #: cdedb/frontend/templates/web/event/lodgement_wishes_graph_form.tmpl:24
 #: cdedb/frontend/templates/web/event/lodgements.tmpl:47
-#, fuzzy
 msgid "Lodgement Wishes Graph"
-msgstr "Unterkunftgruppe"
+msgstr "Hauswünsche-Graph"
 
 #: cdedb/frontend/templates/web/event/lodgement_wishes_graph_form.tmpl:31
 msgid ""
@@ -10699,11 +10703,15 @@ msgid ""
 "entered text by full name (any given name plus family name), forename/"
 "display name plus family name, email address or CdEDB id (\"DB-0000\")."
 msgstr ""
+"Der Hauswünsche-Graph zeigt eine graphische Darstellung der Hauswünsche, die "
+"von den Teilnehmern eingegeben wurden. Er erkennt die gewünschten Teilnehmer "
+"im eingegebenen Text anhand ihrer vollständigen Namen (irgendein Vorname "
+"plus Nachname), Rufnamen plus Nachnamen, E-Mail-Adressen oder CdEDB-ID "
+"(\"DB-0000\")."
 
 #: cdedb/frontend/templates/web/event/lodgement_wishes_graph_form.tmpl:39
-#, fuzzy
 msgid "Custom Field"
-msgstr "Datenfelder"
+msgstr "Datenfeld"
 
 #: cdedb/frontend/templates/web/event/lodgement_wishes_graph_form.tmpl:39
 #, python-format
@@ -10714,11 +10722,15 @@ msgid ""
 "wishes, if not present yet, and go to %(link_config)s to select it as the "
 "field for Rooming Preferences."
 msgstr ""
+"Der Hauswünsche-Graph ist nur verfügbar, wenn ein <i>Feld für Hauswünsche</i>"
+"in der Verantsaltungs-Konfiguration eingestellt wurde. Bitte erstelle ein "
+"%(link_custom_fields)s (für Anmeldungen) für die Hauswünsche, falls noch "
+"nicht geschehen und nutze die %(link_config)s, um es als Feld für Hauswünsche"
+" auszuwählen."
 
 #: cdedb/frontend/templates/web/event/lodgement_wishes_graph_form.tmpl:40
-#, fuzzy
 msgid "Event Configuration"
-msgstr "Konfiguration"
+msgstr "Veranstaltungs-Konfiguration"
 
 #: cdedb/frontend/templates/web/event/lodgement_wishes_graph_form.tmpl:49
 msgid ""
@@ -10729,6 +10741,12 @@ msgid ""
 "the mouse-over tooltip of the nodes. The nodes are hyperlinked to the "
 "details page of the participant."
 msgstr ""
+"Jeder Knoten repräsentiert einem Teilnehmer. Teilnehmer auf der Warteliste "
+"sind ebenfalls im Graph enthalten, werden jedoch mit einer gestrichelten "
+"Umrandung dargestellt. Die Hintergrundfarbe der Knoten entspricht grob dem "
+"Alter der Teilnehmer. Weitere Informationen über einen Teilnehmer werden im "
+"Mouse-over Tooltip der Knoten angezeigt (insb. ihre eingetragenen Wünsche). "
+"Die Knoten sind Hyperlinks auf die Detail-Ansichts-Seite der Teilnehmer."
 
 #: cdedb/frontend/templates/web/event/lodgement_wishes_graph_form.tmpl:68
 msgid ""
@@ -10737,14 +10755,23 @@ msgid ""
 "only applicable when considering the waitlist are shown as a dashed, greyish "
 "line."
 msgstr ""
+"Jede Kante repräsentiert einen erkannten Hauswunsch. Gegenseitige Wünsche "
+"werden als stärkere Linie dargestellt (und haben größeren Einfluss auf das "
+"Graph-Layout). Wünsche, die nur unter Berücksichtigung der Warteliste "
+"anwendbar sind, werden gestrichelt und ausgegraut dargestellt."
 
 #: cdedb/frontend/templates/web/event/lodgement_wishes_graph_form.tmpl:75
 msgid ""
 "The displayed participants can be filtered by event part. The nodes can "
 "optionally be clustered by the already assigned lodgements. For multi-part "
-"events that requires the part to be filtered. The subgraphs' labels are "
+"events that requires the part to be filtered. The clusters' labels are "
 "hyperlinked to the respective lodgement management page."
 msgstr ""
+"Die angezeigten Teilnehmer können nach Veranstaltungsteil gefiltert werden. "
+"Optional können die Knoten auch nach den bereits zugewiesenen Unterkünften "
+"geclustert werden. Bei mehrteiligen Veranstaltungen muss dazu nach einem "
+"Veranstaltungsteil gefiltert werden. Die Label der Cluster sind Hyperlinks "
+"auf die jeweilige Unterkunfts-Seite."
 
 #: cdedb/frontend/templates/web/event/lodgement_wishes_graph_form.tmpl:85
 #: cdedb/frontend/templates/web/event/participant_list.tmpl:148
@@ -10753,19 +10780,21 @@ msgstr "Veranstaltungsteile"
 
 #: cdedb/frontend/templates/web/event/lodgement_wishes_graph_form.tmpl:85
 msgid "— All Parts —"
-msgstr ""
+msgstr "— Alle Teile —"
 
 #: cdedb/frontend/templates/web/event/lodgement_wishes_graph_form.tmpl:90
 msgid "Include participants without wishes and not being wished"
-msgstr ""
+msgstr "Schließe Teilnehmer ein, die nicht wünschen oder gewünscht wurden"
 
 #: cdedb/frontend/templates/web/event/lodgement_wishes_graph_form.tmpl:92
-msgid "Display assigned lodgements as subgraphs (reduces graph layout quality)"
+msgid "Display assigned lodgements as clusters (reduces graph layout quality)"
 msgstr ""
+"Zeige die zugewiesenen Unterkünfte als Cluster and (verschlechtert die "
+"Qualität des Graph-Layouts)"
 
 #: cdedb/frontend/templates/web/event/lodgement_wishes_graph_form.tmpl:110
 msgid "No wish issues detected."
-msgstr ""
+msgstr "Keine Probleme mit den Wünschen erkannt."
 
 #: cdedb/frontend/templates/web/event/lodgements.tmpl:5
 #, python-format

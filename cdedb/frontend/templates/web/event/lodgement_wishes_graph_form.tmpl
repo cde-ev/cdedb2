@@ -74,7 +74,7 @@
     <p>
         {% trans %}
             The displayed participants can be filtered by event part. The nodes can optionally be clustered by the
-            already assigned lodgements. For multi-part events that requires the part to be filtered. The subgraphs'
+            already assigned lodgements. For multi-part events that requires the part to be filtered. The clusters'
             labels are hyperlinked to the respective lodgement management page.
         {% endtrans %}
     </p>
@@ -89,7 +89,7 @@
         {{ util.form_input_checkbox('all_participants', "All Participants",
                                     info=gettext("Include participants without wishes and not being wished")) }}
         {{ util.form_input_checkbox('show_lodgements', "Show Lodgements",
-                                    info=gettext("Display assigned lodgements as subgraphs (reduces graph layout "
+                                    info=gettext("Display assigned lodgements as clusters (reduces graph layout "
                                                  "quality)")) }}
         {{ util.form_input_submit(label=gettext("Go!"), readonly=not has_lodge_field) }}
     </form>
