@@ -1445,6 +1445,11 @@ def diacritic_patterns(s: str, two_way_replace: bool = False) -> str:
     return s
 
 
+UMLAUT_TRANSLATE_TABLE = str.maketrans({
+    char: f"({char}|{repl})" if len(repl) > 1 else f"[{char}{repl}]"
+    for char, repl in UMLAUT_MAP.items()})
+
+
 def inverse_diacritic_patterns(s: str) -> str:
     """
     Replace diacritic letters in a search pattern with a regex that
@@ -1456,14 +1461,7 @@ def inverse_diacritic_patterns(s: str) -> str:
     diacritic characters and enhances it to a search expression that will find
     the word even when written without the diacritics.
     """
-    ret = ""
-    for char in s:
-        if char in UMLAUT_MAP:
-            repl = UMLAUT_MAP[char]
-            ret += f"({char}|{repl})" if len(repl) > 1 else f"[{char}{repl}]"
-        else:
-            ret += char
-    return ret
+    return s.translate(UMLAUT_TRANSLATE_TABLE)
 
 
 _tdelta = datetime.timedelta
