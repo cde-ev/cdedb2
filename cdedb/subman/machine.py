@@ -22,7 +22,6 @@ for them.
 """
 
 import enum
-from gettext import gettext as _
 from typing import Mapping, Optional, Set
 
 from .exceptions import SubscriptionError, SubscriptionInfo
@@ -221,18 +220,18 @@ _ACTION_TARGET_STATE_MAP: Mapping[SubscriptionAction, SubscriptionState] = {
 
 # Errors are identical for all managing actions handling a subscription request.
 _SUBSCRIPTION_REQUEST_ERROR_MAPPING: _StateErrorMapping = {
-    SubscriptionState.subscribed: SubscriptionError(_(
+    SubscriptionState.subscribed: SubscriptionError(n_(
         "subman_managing_not-pending")),
-    SubscriptionState.unsubscribed: SubscriptionError(_(
+    SubscriptionState.unsubscribed: SubscriptionError(n_(
         "subman_managing_not-pending")),
-    SubscriptionState.subscription_override: SubscriptionError(_(
+    SubscriptionState.subscription_override: SubscriptionError(n_(
         "subman_managing_not-pending")),
-    SubscriptionState.unsubscription_override: SubscriptionError(_(
+    SubscriptionState.unsubscription_override: SubscriptionError(n_(
         "subman_managing_not-pending")),
     SubscriptionState.pending: None,
-    SubscriptionState.implicit: SubscriptionError(_(
+    SubscriptionState.implicit: SubscriptionError(n_(
         "subman_managing_not-pending")),
-    SubscriptionState.none: SubscriptionError(_(
+    SubscriptionState.none: SubscriptionError(n_(
         "subman_managing_not-pending")),
 }
 SUBSCRIPTION_ERROR_MATRIX: ActionStateErrorMatrix = {
