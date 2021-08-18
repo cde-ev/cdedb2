@@ -4951,6 +4951,7 @@ class EventFrontend(AbstractUserFrontend):
             lodgements.keys(), rs.ambience['event'], registrations, key="lodgement_id")
 
         new_regs: CdEDBObjectMap = {}
+        change_notes = []
         for part_id in rs.ambience['event']['parts']:
             if data[f"swap_with_{part_id}"]:
                 swap_lodgement_id: int = data[f"swap_with_{part_id}"]
@@ -4965,11 +4966,13 @@ class EventFrontend(AbstractUserFrontend):
                     new_reg = new_regs.get(reg_id, {'id': reg_id, 'parts': dict()})
                     new_reg['parts'][part_id] = {'lodgement_id': lodgement_id}
                     new_regs[reg_id] = new_reg
+                change_notes.append(
+                    f"Bewohner von {lodgements[lodgement_id]} und"
+                    f" {lodgements[swap_lodgement_id]} für"
+                    f" {rs.ambience['event']['parts'][part_id]['title']} getauscht")
 
         code = 1
-        # noinspection PyUnboundLocalVariable
-        change_note = (f"Bewohner von {lodgements[lodgement_id]} und"
-                       f" {lodgements[swap_lodgement_id]} getauscht.")
+        change_note = ", ".join(change_notes) + "."
         for new_reg in new_regs.values():
             code *= self.eventproxy.set_registration(rs, new_reg, change_note)
         self.notify_return_code(rs, code)

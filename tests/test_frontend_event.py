@@ -3687,7 +3687,9 @@ etc;anything else""", f['entries_2'].value)
 
         # check log
         self.get('/event/event/1/log')
-        change_note = "Bewohner von Kalte Kammer und Einzelzelle getauscht."
+        change_note = (
+            "Bewohner von Kalte Kammer und Einzelzelle für Warmup getauscht, "
+            "Bewohner von Kalte Kammer und Einzelzelle für Zweite Hälfte getauscht.")
         self.assertPresence(change_note,
                             div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
         self.assertPresence(change_note,
