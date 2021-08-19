@@ -73,11 +73,10 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     \
     && apt-get install --yes python3-coverage \
     \
-    && rm -rf /var/lib/apt/lists/*
-# setuptools is needed for the next pip installs (specifically pylint),
-# but installing it at the same time does not work.
-RUN python3 -m pip --no-cache-dir install setuptools
-RUN python3 -m pip --no-cache-dir install \
+    && rm -rf /var/lib/apt/lists/* \
+    \
+    && python3 -m pip --no-cache-dir install setuptools \
+    && python3 -m pip --no-cache-dir install \
     mypy==0.910 \
     flake8==3.8.4 \
     pylint==2.7.2 \
@@ -86,6 +85,9 @@ RUN python3 -m pip --no-cache-dir install \
     types-jinja2 \
     types-python-dateutil \
     types-freezegun
+# comment regarding the pip section above:
+# setuptools is needed for the next step of pip installs (specifically pylint),
+# but installing it at the same time does not work.
 
 # TODO check wether it is sensible to lower privileges to cdedb user
 # create and configure directories for the apache user
