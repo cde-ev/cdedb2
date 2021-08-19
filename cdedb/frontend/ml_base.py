@@ -80,9 +80,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         """
         mailinglist_ids = self.mlproxy.list_mailinglists(rs)
 
-        code = 1
-        for ml_id in mailinglist_ids:
-            code *= self.mlproxy.write_subscription_states(rs, ml_id)
+        code = self.mlproxy.write_subscription_states(rs, mailinglist_ids)
         self.notify_return_code(rs, code)
 
         return self.redirect(rs, "ml/index")
@@ -160,7 +158,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         mailinglist_infos = self.mlproxy.get_mailinglists(rs, mailinglists)
         sub_states = const.SubscriptionState.subscribing_states()
         subscriptions = self.mlproxy.get_user_subscriptions(
-            rs, rs.user.persona_id, states=sub_states)
+            rs, rs.user.persona_id, states=sub_states | {const.SubscriptionState.pending})
         grouped: Dict[MailinglistGroup, CdEDBObjectMap]
         grouped = collections.defaultdict(dict)
         for ml_id in mailinglists:
@@ -609,10 +607,11 @@ class MlBaseFrontend(AbstractUserFrontend):
             requests, key=lambda anid: EntitySorter.persona(personas[anid])))
         restricted = not self.mlproxy.may_manage(rs, mailinglist_id,
                                                  allow_restricted=False)
+        allow_unsub = self.mlproxy.get_ml_type(rs, mailinglist_id).allow_unsub
         return self.render(rs, "management", {
             'subscribers': subscribers, 'requests': requests,
             'moderators': moderators, 'explicits': explicits,
-            'restricted': restricted})
+            'restricted': restricted, 'allow_unsub': allow_unsub})
 
     @access("ml")
     @mailinglist_guard()
@@ -1152,7 +1151,6 @@ class MlBaseFrontend(AbstractUserFrontend):
         """Write the current state of implicit subscribers to the database."""
         mailinglist_ids = self.mlproxy.list_mailinglists(rs)
 
-        for ml_id in mailinglist_ids:
-            self.mlproxy.write_subscription_states(rs, ml_id)
+        self.mlproxy.write_subscription_states(rs, mailinglist_ids)
 
         return store

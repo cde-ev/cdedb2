@@ -766,6 +766,8 @@ class Silencer:
         self.rs = rs
 
     def __enter__(self) -> None:
+        if self.rs.is_quiet:
+            raise RuntimeError("Already silenced. Reentrant use is unsupported.")
         self.rs.is_quiet = True
         _affirm_atomized_context(self.rs)
 

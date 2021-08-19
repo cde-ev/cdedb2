@@ -16,7 +16,8 @@ import re
 from typing import Any, Collection, Dict, Tuple
 
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, RequestState, EntitySorter, n_, xsorted,
+    CdEDBObject, CdEDBObjectMap, RequestState, EntitySorter, n_,
+    get_localized_country_codes, xsorted,
 )
 import cdedb.database.constants as const
 from cdedb.filter import enum_entries_filter, keydictsort_filter
@@ -838,11 +839,12 @@ def make_registration_query_aux(
         for g_id, g in keydictsort_filter(lodgement_groups,
                                           EntitySorter.lodgement_group))
     # First we construct the choices
-    choices: Dict[str, Dict[int, str]] = {
+    choices: Dict[str, Dict[Any, str]] = {
         # Genders enum
         'persona.gender': collections.OrderedDict(
             enum_entries_filter(
                 const.Genders, enum_gettext, raw=fixed_gettext)),
+        'persona.country': collections.OrderedDict(get_localized_country_codes(rs)),
     }
 
     # Precompute some choices

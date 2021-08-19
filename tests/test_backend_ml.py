@@ -387,7 +387,7 @@ class TestMlBackend(BackendTest):
         for ml_id in ml_ids:
             with self.subTest(ml_id=ml_id):
                 expectation = self.ml.get_subscription_states(self.key, ml_id)
-                self.ml.write_subscription_states(self.key, ml_id)
+                self.ml.write_subscription_states(self.key, (ml_id,))
                 result = self.ml.get_subscription_states(self.key, ml_id)
 
                 self.assertEqual(expectation, result)
@@ -841,7 +841,7 @@ class TestMlBackend(BackendTest):
 
         for persona_id in {17, 27, 32}:
             self._change_sub(persona_id, mailinglist_id, SA.reset, state=SS.none)
-        self.ml.write_subscription_states(self.key, mailinglist_id)
+        self.ml.write_subscription_states(self.key, (mailinglist_id,))
         for persona_id in {17, 27, 32}:
             new_state = self.ml.get_subscription(self.key, persona_id=persona_id,
                                                  mailinglist_id=mailinglist_id)
@@ -852,7 +852,7 @@ class TestMlBackend(BackendTest):
                              state=SS.subscription_override)
             self._change_sub(persona_id, mailinglist_id,
                              SA.remove_subscription_override, state=SS.subscribed)
-        self.ml.write_subscription_states(self.key, mailinglist_id)
+        self.ml.write_subscription_states(self.key, (mailinglist_id,))
         for persona_id in {17, 27, 32}:
             new_state = self.ml.get_subscription(self.key, persona_id=persona_id,
                                                  mailinglist_id=mailinglist_id)
@@ -894,7 +894,7 @@ class TestMlBackend(BackendTest):
 
         # For admins, some shallow cron testing
         if not self.user_in(2):
-            self.ml.write_subscription_states(self.key, mailinglist_id)
+            self.ml.write_subscription_states(self.key, (mailinglist_id,))
             self._check_state(self.user['id'], mailinglist_id, SS.subscribed)
 
     @as_users('nina')
@@ -915,7 +915,7 @@ class TestMlBackend(BackendTest):
                          state=SS.subscription_override)
 
         # Cron testing
-        self.ml.write_subscription_states(self.key, mailinglist_id)
+        self.ml.write_subscription_states(self.key, (mailinglist_id,))
         self._check_state(self.user['id'], mailinglist_id, SS.subscription_override)
 
         # It is impossible to unsubscribe normally
@@ -929,7 +929,7 @@ class TestMlBackend(BackendTest):
                          state=SS.subscribed)
 
         # Cron testing
-        self.ml.write_subscription_states(self.key, mailinglist_id)
+        self.ml.write_subscription_states(self.key, (mailinglist_id,))
         self._check_state(self.user['id'], mailinglist_id, SS.none)
 
     @as_users("anton")
@@ -960,7 +960,7 @@ class TestMlBackend(BackendTest):
         self._change_sub(self.user['id'], ml_id, SA.subscribe,
                          state=SS.subscribed, kind="info")
 
-        self.ml.write_subscription_states(self.key, ml_id)
+        self.ml.write_subscription_states(self.key, (ml_id,))
 
         expectation = {
             1: SS.subscribed,
@@ -1043,10 +1043,10 @@ class TestMlBackend(BackendTest):
         admin_key = cast(RequestState, self.login("viktor"))
         # Remove all assembly presiders
         self.assembly.remove_assembly_presider(admin_key, assembly_id, 23)
-        self.ml.write_subscription_states(self.key, ml_id)
+        self.ml.write_subscription_states(self.key, (ml_id,))
         self.assertEqual({}, self.ml.get_subscription_states(self.key, ml_id))
         self.assembly.add_assembly_presiders(admin_key, assembly_id, {1})
-        self.ml.write_subscription_states(self.key, ml_id)
+        self.ml.write_subscription_states(self.key, (ml_id,))
 
         expectation = {
             1: SS.implicit,
@@ -1183,7 +1183,7 @@ class TestMlBackend(BackendTest):
         self.assertEqual(result, expectation)
 
         self.assertLess(
-            0, self.ml.write_subscription_states(self.key, mailinglist_id))
+            0, self.ml.write_subscription_states(self.key, (mailinglist_id,)))
 
         expectation = {
             1: SS.subscribed,
@@ -1226,7 +1226,7 @@ class TestMlBackend(BackendTest):
         self.assertEqual(result, expectation)
 
         self.assertLess(
-            0, self.ml.write_subscription_states(self.key, mailinglist_id))
+            0, self.ml.write_subscription_states(self.key, (mailinglist_id,)))
 
         expectation = {
             1: SS.implicit,
@@ -1256,7 +1256,7 @@ class TestMlBackend(BackendTest):
         self.assertEqual(result, expectation)
 
         self.assertLess(
-            0, self.ml.write_subscription_states(self.key, mailinglist_id))
+            0, self.ml.write_subscription_states(self.key, (mailinglist_id,)))
 
         expectation = {
             1: SS.implicit,
@@ -1281,7 +1281,7 @@ class TestMlBackend(BackendTest):
             for persona_id in removes
         ]
         self.ml._set_subscriptions(self.key, data)
-        self.ml.write_subscription_states(self.key, mailinglist_id)
+        self.ml.write_subscription_states(self.key, (mailinglist_id,))
 
         expectation = {
             1: SS.implicit,

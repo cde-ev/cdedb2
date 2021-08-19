@@ -178,7 +178,7 @@
                         <li class="hide-hover-container clearfix-after">
                             {{ util.persona_anchor(subscribers[subscriber], ml_id=ambience['mailinglist']['id']) }}
                             {% if subscriber in explicits %}({{ explicits[subscriber] }}){% endif %}
-                            {% if not restricted %}
+                            {% if not restricted and allow_unsub %}
                                 <form action="{{ cdedblink('ml/remove_subscriber') }}"
                                       method="POST"
                                       id="removesubscriberform{{ subscriber }}"

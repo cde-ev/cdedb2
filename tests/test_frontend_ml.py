@@ -498,6 +498,31 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Klatsch und Tratsch – Erweiterte Verwaltung")
         self.assertNonPresence("zelda@example.cde")
 
+    @as_users("nina")
+    def test_mandatory_mailinglist(self) -> None:
+        self.traverse({'href': '/ml/$'},
+                      {'href': '/ml/mailinglist/1/'},
+                      {'href': '/ml/mailinglist/1/management'})
+        self.assertDivNotExists('removesubscriberform100')
+        self.traverse("Erweiterte Verwaltung")
+        self.assertTitle("Verkündungen – Erweiterte Verwaltung")
+        f = self.response.forms['addmodsubscriberform']
+        f['modsubscriber_ids'] = "DB-4-3"
+        self.submit(f)
+        self.assertTitle("Verkündungen – Erweiterte Verwaltung")
+        self.assertPresence("Daniel Dino")
+        f = self.response.forms['removemodsubscriberform4']
+        self.submit(f)
+        self.assertTitle("Verkündungen – Erweiterte Verwaltung")
+        self.assertNonPresence("Daniel Dino", div="modsubscriber-list")
+        self.traverse("Verwaltung")
+        self.assertPresence("Daniel Dino")
+        # Reload server- and client-side
+        self.ml.write_subscription_states(self.key, (1,))
+        self.traverse({'href': '/ml/mailinglist/1'},
+                      {'href': '/ml/mailinglist/1/management'})
+        self.assertNonPresence("Daniel")
+
     @as_users("nina", "berta")
     def test_advanced_management(self) -> None:
         self.traverse({'href': '/ml/$'},
@@ -934,11 +959,19 @@ class TestMlFrontend(FrontendTest):
 
     def test_subscription_request(self) -> None:
         self.login(USER_DICT['inga'])
-        self.traverse({'href': '/ml/$'},
-                      {'href': '/ml/mailinglist/4'},)
+        self.traverse("Mailinglisten")
+        # check icon
+        self.assertEqual(len(self.response.lxml.get_element_by_id('mailinglist4')
+                             .find_class('fa-times-circle')), 1)
+        self.traverse("Klatsch und Tratsch")
         self.assertTitle("Klatsch und Tratsch")
         f = self.response.forms['subscribe-mod-form']
         self.submit(f)
+        self.assertIn('cancel-request-form', self.response.forms)
+        self.traverse("Mailinglisten-Übersicht")
+        # check icon
+        self.assertEqual(len(self.response.lxml.get_element_by_id('mailinglist4')
+                             .find_class('fa-circle')), 1)
         self.logout()
         self.login(USER_DICT['berta'])
         self.traverse({'href': '/ml/$'},
@@ -951,8 +984,11 @@ class TestMlFrontend(FrontendTest):
         self.assertNotIn('handlerequestform9', self.response.forms)
         self.logout()
         self.login(USER_DICT['inga'])
-        self.traverse({'href': '/ml/$'},
-                      {'href': '/ml/mailinglist/4'},)
+        self.traverse("Mailinglisten")
+        # check icon
+        self.assertEqual(len(self.response.lxml.get_element_by_id('mailinglist4')
+                             .find_class('fa-check-circle')), 1)
+        self.traverse("Klatsch und Tratsch")
         self.assertIn('unsubscribeform', self.response.forms)
 
     @as_users("charly", "inga")

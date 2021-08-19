@@ -74,8 +74,8 @@ from cdedb.common import (
     CdEDBMultiDict, CdEDBObject, CustomJSONEncoder, EntitySorter, Error, Notification,
     NotificationType, PathLike, PrivilegeError, RequestState, Role, User,
     ValidationWarning, _tdelta, asciificator, decode_parameter, encode_parameter,
-    glue, json_serialize, make_proxy, make_root_logger, merge_dicts, n_, now,
-    roles_to_db_role, unwrap, xsorted,
+    get_localized_country_codes, glue, json_serialize, make_proxy, make_root_logger,
+    merge_dicts, n_, now, roles_to_db_role, unwrap,
 )
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -84,7 +84,6 @@ from cdedb.devsamples import HELD_MESSAGE_SAMPLE
 from cdedb.enums import ENUMS_DICT
 from cdedb.filter import JINJA_FILTERS, cdedbid_filter, safe_filter, sanitize_None
 from cdedb.query import Query
-from cdedb.validationdata import COUNTRY_CODES
 
 _LOGGER = logging.getLogger(__name__)
 _BASICCONF = BasicConfig()
@@ -371,18 +370,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         """
         return "{}_admin".format(cls.realm) in rs.user.roles
 
-    @staticmethod
-    def get_localized_country_codes(rs: RequestState) -> List[Tuple[str, str]]:
-        """Generate a list of country code - name tupes in current language."""
-
-        def _format_country_code(code: str) -> str:
-            """Helper to make string hidden to pybabel."""
-            return f'CountryCodes.{code}'
-
-        return xsorted(
-            [(v, rs.gettext(_format_country_code(v))) for v in COUNTRY_CODES],
-            key=lambda x: x[1])
-
     def fill_template(self, rs: RequestState, modus: str, templatename: str,
                       params: CdEDBObject) -> str:
         """Central function for generating output from a template. This
@@ -489,7 +476,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         # here come the always accessible things promised above
         data = {
-            'COUNTRY_CODES': self.get_localized_country_codes(rs),
+            'COUNTRY_CODES': get_localized_country_codes(rs),
             'ambience': rs.ambience,
             'cdedblink': _cdedblink,
             'doclink': _doclink,
@@ -540,7 +527,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     def send_csv_file(rs: RequestState, mimetype: str = 'text/csv',
                       filename: str = None, inline: bool = True, *,
                       path: Union[str, pathlib.Path] = None,
-                      afile: IO[AnyStr] = None,
+                      afile: IO[bytes] = None,
                       data: AnyStr = None) -> Response:
         """Wrapper around :py:meth:`send_file` for CSV files.
 
@@ -557,7 +544,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     @staticmethod
     def send_file(rs: RequestState, mimetype: str = None, filename: str = None,
                   inline: bool = True, *, path: PathLike = None,
-                  afile: IO[AnyStr] = None, data: AnyStr = None,
+                  afile: IO[bytes] = None, data: AnyStr = None,
                   encoding: str = 'utf-8') -> Response:
         """Wrapper around :py:meth:`werkzeug.wsgi.wrap_file` to offer a file for
         download.
@@ -578,31 +565,22 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if (path and afile) or (path and data) or (afile and data):
             raise ValueError(n_("Ambiguous input."))
 
-        data_buffer = io.BytesIO()
+        payload: Union[Iterable[bytes], bytes]
         if path:
-            path = pathlib.Path(path)
-            if not path.is_file():
-                raise werkzeug.exceptions.NotFound()
-            with open(path, 'rb') as f:
-                data_buffer.write(f.read())
+            f = pathlib.Path(path).open("rb")
+            payload = werkzeug.wsgi.wrap_file(rs.request.environ, f)
         elif afile:
-            content = afile.read()
-            if isinstance(content, str):
-                data_buffer.write(content.encode(encoding))
-            elif isinstance(content, bytes):
-                data_buffer.write(content)
-            else:
-                raise ValueError(n_("Invalid datatype read from file."))
+            payload = werkzeug.wsgi.wrap_file(rs.request.environ, afile)
         elif data:
             if isinstance(data, str):
-                data_buffer.write(data.encode(encoding))
+                payload = data.encode(encoding)
             elif isinstance(data, bytes):
-                data_buffer.write(data)
+                payload = data
             else:
                 raise ValueError(n_("Invalid input type."))
-        data_buffer.seek(0)
+        else:
+            raise RuntimeError(n_("Impossible."))
 
-        wrapped_file = werkzeug.wsgi.wrap_file(rs.request.environ, data_buffer)
         extra_args = {}
         if mimetype is not None:
             extra_args['mimetype'] = mimetype
@@ -612,8 +590,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             disposition += '; filename="{}"'.format(filename)
         headers.append(('Content-Disposition', disposition))
         headers.append(('X-Generation-Time', str(now() - rs.begin)))
-        return Response(wrapped_file, direct_passthrough=True, headers=headers,
-                        **extra_args)
+        return Response(payload, direct_passthrough=True, headers=headers, **extra_args)
 
     @staticmethod
     def send_json(rs: RequestState, data: Any) -> Response:
@@ -1237,6 +1214,8 @@ class Worker(threading.Thread):
     state object, containing a separate database connection, so that
     concurrency is no concern.
     """
+
+    # For details about this class variable dict see `Worker.create()`.
     active_workers: ClassVar[Dict[str, "weakref.ReferenceType[Worker]"]] = {}
 
     def __init__(self, conf: Config, tasks: WorkerTasks, rs: RequestState) -> None:
@@ -1306,6 +1285,10 @@ class Worker(threading.Thread):
     def create(cls, rs: RequestState, name: str, tasks: "WorkerTasks",
                conf: Config, timeout: Optional[float] = 0.1) -> "Worker":
         """Create a new Worker, remember and start it.
+
+        The state of the `cls.active_workers` dict is not shared between the threads of
+        a multithreaded instance of the application. Thus it should not be relied upon
+        for anything other than testing purposes.
 
         In order to not mess with garbage collection of finished workers, we only keep
         a weak reference to the instance. This means that the weakref object needs to

@@ -18,12 +18,11 @@ functions:
   object without issue.
 """
 
-from gettext import gettext as _
 from typing import AbstractSet, Collection, Optional
 
 from .exceptions import SubscriptionError
 from .machine import (
-    SubscriptionAction, SubscriptionPolicy, SubscriptionState,
+    n_, SubscriptionAction, SubscriptionPolicy, SubscriptionState,
     ActionStateErrorMatrix, SUBSCRIPTION_ERROR_MATRIX,
 )
 
@@ -108,11 +107,11 @@ class SubscriptionManager:
         """
         if (action == SubscriptionAction.add_subscriber
                 and not policy.allows_subscription()):
-            raise SubscriptionError(_("subman_managing_not-subscribable"))
+            raise SubscriptionError(n_("subman_managing_not-subscribable"))
         if action == SubscriptionAction.subscribe and not policy.may_subscribe():
-            raise SubscriptionError(_("subman_self_not-self-subscribable"))
+            raise SubscriptionError(n_("subman_self_not-self-subscribable"))
         if action == SubscriptionAction.request_subscription and not policy.may_request():
-            raise SubscriptionError(_("subman_self_not-requestable"))
+            raise SubscriptionError(n_("subman_self_not-requestable"))
 
     def apply_action(self,
                      action: SubscriptionAction, *,
@@ -149,9 +148,9 @@ class SubscriptionManager:
         # 2: Check list-dependent requirements for transition.
         self._check_policy_requirements(action=action, policy=policy)
         if action.is_unsubscribing() and not allow_unsub:
-            raise SubscriptionError(_("subman_managing_no-unsubscribe-possible"))
+            raise SubscriptionError(n_("subman_managing_no-unsubscribe-possible"))
         if action.is_managing() and not is_privileged:
-            raise SubscriptionError(_("subman_managing_not-privileged"))
+            raise SubscriptionError(n_("subman_managing_not-privileged"))
 
         # 3: Check if current state allows transition.
         self._check_state_requirements(action, old_state)
@@ -182,7 +181,7 @@ class SubscriptionManager:
         """
         # pylint: disable=superfluous-parens
         if old_state in (self.unwritten_states | self.cleanup_protected_states):
-            raise SubscriptionError(_("subman_managing_no-cleanup-necessary"))
+            raise SubscriptionError(n_("subman_managing_no-cleanup-necessary"))
 
         if old_state.is_subscribed() and policy.is_none():
             # If user is not allowed as subscriber, remove them.
@@ -193,7 +192,7 @@ class SubscriptionManager:
             # This conditional is only relevant if implicit subscribers are written.
             return SubscriptionState.none
         else:
-            raise SubscriptionError(_("subman_managing_no-cleanup-necessary"))
+            raise SubscriptionError(n_("subman_managing_no-cleanup-necessary"))
 
     def is_obsolete(self,
                     policy: SubscriptionPolicy,

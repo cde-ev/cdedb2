@@ -34,8 +34,9 @@ from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap, CourseChoiceToolActions,
     CourseFilterPositions, DefaultReturnCode, EntitySorter, Error, InfiniteEnum,
     KeyFunction, LodgementsSortkeys, PartialImportError, RequestState, Sortkey,
-    asciificator, deduct_years, determine_age_class, diacritic_patterns, get_hash, glue,
-    json_serialize, merge_dicts, mixed_existence_sorter, n_, now, unwrap, xsorted,
+    asciificator, deduct_years, determine_age_class, diacritic_patterns, get_hash,
+    get_localized_country_codes, glue, json_serialize, merge_dicts,
+    mixed_existence_sorter, n_, now, unwrap, xsorted,
 )
 from cdedb.database.connection import Atomizer
 from cdedb.filter import (
@@ -170,7 +171,7 @@ class EventFrontend(AbstractUserFrontend):
                 enum_entries_filter(
                     const.Genders,
                     rs.gettext if download is None else rs.default_gettext)),
-            'country': OrderedDict(self.get_localized_country_codes(rs)),
+            'country': OrderedDict(get_localized_country_codes(rs)),
         }
         return self.generic_user_search(
             rs, download, is_search, QueryScope.event_user, QueryScope.event_user,
@@ -310,7 +311,7 @@ class EventFrontend(AbstractUserFrontend):
         as well."""
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
-        registration_ids = self.eventproxy.list_registrations(rs, event_id)
+        registration_ids = self.eventproxy.list_participants(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
 
         if not part_ids:
