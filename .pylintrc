@@ -16,7 +16,7 @@ persistent=yes
 
 # List of plugins (as comma separated values of python modules names) to load,
 # usually to register additional checkers.
-load-plugins=
+load-plugins=pylint.extensions.bad_builtin
 
 # Use multiple processes to speed up Pylint.
 jobs=4
@@ -59,37 +59,25 @@ confidence=
 # --enable=similarities". If you want to run only the classes checker, but have
 # no Warning level messages displayed, use"--disable=all --enable=classes
 # --disable=W"
-disable=standarderror-builtin,delslice-method,old-ne-operator,basestring-builtin,oct-method,long-builtin,range-builtin-not-iterating,dict-iter-method,unpacking-in-except,hex-method,unicode-builtin,next-method-called,zip-builtin-not-iterating,reload-builtin,unichr-builtin,reduce-builtin,dict-view-method,nonzero-method,long-suffix,print-statement,getslice-method,setslice-method,intern-builtin,buffer-builtin,cmp-method,input-builtin,execfile-builtin,metaclass-assignment,old-octal-literal,apply-builtin,old-division,raw_input-builtin,raising-string,map-builtin-not-iterating,coerce-method,indexing-exception,backtick,parameter-unpacking,round-builtin,file-builtin,no-absolute-import,filter-builtin-not-iterating,useless-suppression,old-raise-syntax,cmp-builtin,using-cmp-argument,xrange-builtin,import-star-module-level,coerce-builtin,suppressed-message,logging-format-interpolation,invalid-name,
-        C0111, C0103, C0301, C0302, C0321, C0330,
-        W0212, W0511, W0613,
-        R1705,
-        logging-fstring-interpolation,
-        redefined-outer-name,
-        unsubscriptable-object,
-        function-redefined,
-        pointless-statement,
-        unexpected-keyword-arg,
-        missing-kwoa,
-        no-self-use,
-        ungrouped-imports,
-        no-member,
-        too-many-ancestors,
-        too-many-instance-attributes,
-        too-few-public-methods,
-        too-many-public-methods,
-        too-many-branches,
-        too-many-arguments,
-        too-many-locals,
-        too-many-statements,
-        too-many-boolean-expressions,
-        too-many-nested-blocks,
-        too-many-return-statements,
-        unused-variable,
-        no-value-for-parameter,
-        broad-except,
-        no-name-in-module,
-        cell-var-in-loop,
-        useless-super-delegation,
+disable=
+    no-member,no-name-in-module,  # our test classes and some modules (mainly icu) cause errors here
+    unsubscriptable-object,  # some mypy annotations are seemingly not recognized as such
+    no-value-for-parameter, # REQUESTdatadict blurs function args
+    no-else-return,no-else-raise,no-else-break,no-else-continue,  # better readability
+    unused-argument,unused-variable,
+    import-outside-toplevel,  # this has reasons if we do it
+    broad-except,  # all our broad excepts have a reason (e.g. safety fallback)
+    multiple-statements,
+    protected-access,
+    redefined-outer-name,
+    useless-super-delegation,  # we sometimes do this to have type annotations
+    too-many-public-methods,too-many-instance-attributes,too-few-public-methods,
+    too-many-lines,  # enable again after fixing #80
+    logging-format-interpolation,logging-fstring-interpolation,  # should we actually fix these?
+    missing-module-docstring,missing-class-docstring,missing-function-docstring,
+    invalid-name,
+    fixme,
+
 
 [REPORTS]
 
@@ -309,7 +297,7 @@ docstring-min-length=-1
 [ELIF]
 
 # Maximum number of nested blocks for function / method body
-max-nested-blocks=5
+max-nested-blocks=7
 
 
 [IMPORTS]
@@ -333,26 +321,26 @@ int-import-graph=
 [DESIGN]
 
 # Maximum number of arguments for function / method
-max-args=5
+max-args=20
 
 # Argument names that match this expression will be ignored. Default to name
 # with leading underscore
 ignored-argument-names=_.*
 
 # Maximum number of locals for function / method body
-max-locals=15
+max-locals=50
 
 # Maximum number of return / yield for function / method body
-max-returns=6
+max-returns=10
 
 # Maximum number of branch for function / method body
-max-branches=12
+max-branches=25
 
 # Maximum number of statements in function / method body
-max-statements=50
+max-statements=125
 
 # Maximum number of parents for a class (see R0901).
-max-parents=7
+max-parents=8
 
 # Maximum number of attributes for a class (see R0902).
 max-attributes=7
@@ -364,7 +352,7 @@ min-public-methods=2
 max-public-methods=20
 
 # Maximum number of boolean expressions in a if statement
-max-bool-expr=5
+max-bool-expr=6
 
 
 [CLASSES]
