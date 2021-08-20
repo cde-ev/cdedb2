@@ -76,6 +76,7 @@ disable=
     logging-format-interpolation,logging-fstring-interpolation,  # should we actually fix these?
     missing-module-docstring,missing-class-docstring,missing-function-docstring,
     invalid-name,
+    similarities,
     fixme,
 
 
