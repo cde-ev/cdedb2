@@ -674,7 +674,8 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard()
-    def change_part_form(self, rs: RequestState, event_id: int, part_id: int) -> Response:
+    def change_part_form(self, rs: RequestState, event_id: int, part_id: int
+                         ) -> Response:
         part = rs.ambience['event']['parts'][part_id]
 
         current = copy.deepcopy(part)
@@ -747,7 +748,8 @@ class EventFrontend(AbstractUserFrontend):
         #
         # process the dynamic track input
         #
-        def track_constraint_maker(track_id: int, prefix: str) -> List[RequestConstraint]:
+        def track_constraint_maker(track_id: int, prefix: str
+                                   ) -> List[RequestConstraint]:
             min_choice = f"{prefix}min_choices_{track_id}"
             num_choice = f"{prefix}num_choices_{track_id}"
             msg = n_("Must be less or equal than total Course Choices.")
@@ -1469,7 +1471,7 @@ class EventFrontend(AbstractUserFrontend):
         )
         QueryFilterGetter = Callable[
             [CdEDBObject, CdEDBObject, CdEDBObject], Collection[QueryConstraint]]
-        # Query filters for all the registration statistics defined and calculated above.
+        # Query filters for all the registration statistics defined and calculated above
         # They are customized and inserted into the query on the fly by get_query().
         # `e` is the event, `p` is the event_part, `t` is the track.
         registration_query_filters: Dict[str, QueryFilterGetter] = {
@@ -2664,7 +2666,8 @@ class EventFrontend(AbstractUserFrontend):
                     order = [("persona.given_names", True)]
                     query = Query(QueryScope.registration, spec, fields_of_interest,
                                   constrains, order)
-                    query_res = self.eventproxy.submit_general_query(rs, query, event_id)
+                    query_res = self.eventproxy.submit_general_query(rs, query,
+                                                                     event_id)
                     course_key = f"track{track_id}.course_id"
                     # we have to replace the course id with the course number
                     result = tuple(
@@ -3833,7 +3836,8 @@ class EventFrontend(AbstractUserFrontend):
 
         new_questionnaire = [self._sanitize_questionnaire_row(questionnaire[i])
                              for i in order]
-        code = self.eventproxy.set_questionnaire(rs, event_id, {kind: new_questionnaire})
+        code = self.eventproxy.set_questionnaire(rs, event_id,
+                                                 {kind: new_questionnaire})
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/reorder_questionnaire_form", {'kind': kind})
 
@@ -4845,7 +4849,8 @@ class EventFrontend(AbstractUserFrontend):
                  if _check_not_this_lodgement(registration_id, part_id)],
                 key=lambda x: (
                     x['current'] is not None,
-                    EntitySorter.persona(personas[registrations[x['id']]['persona_id']]))
+                    EntitySorter.persona(
+                        personas[registrations[x['id']]['persona_id']]))
             )
             for part_id in rs.ambience['event']['parts']
         }
@@ -5423,10 +5428,12 @@ class EventFrontend(AbstractUserFrontend):
         :param kind: specifies the entity: registration, course or lodgement
 
         :returns: A tuple of values, containing
-            * entities: corresponding to the given ids (registrations, courses, lodgements)
+            * entities: corresponding to the given ids (registrations, courses,
+                lodgements)
             * ordered_ids: given ids, sorted by the corresponding EntitySorter
             * labels: name of the entities which will be displayed in the template
-            * field: the event field which will be changed, None if no field_id was given
+            * field: the event field which will be changed, None if no field_id was
+                given
         """
         if kind == const.FieldAssociations.registration:
             if not ids:
@@ -5457,11 +5464,12 @@ class EventFrontend(AbstractUserFrontend):
             groups = self.eventproxy.get_lodgement_groups(rs, group_ids)
             labels = {
                 lodg_id: f"{lodg['title']}" if lodg['group_id'] is None
-                         else safe_filter(f"{lodg['title']}, "
-                                          f"<em>{groups[lodg['group_id']]['title']}</em>")
+                         else safe_filter(f"{lodg['title']}, <em>"
+                                          f"{groups[lodg['group_id']]['title']}</em>")
                 for lodg_id, lodg in entities.items()}
             ordered_ids = xsorted(
-                entities.keys(), key=lambda anid: EntitySorter.lodgement(entities[anid]))
+                entities.keys(),
+                key=lambda anid: EntitySorter.lodgement(entities[anid]))
         else:
             # this should not happen, since we check before for validation errors
             raise NotImplementedError(f"Unknown kind {kind}")
@@ -5495,7 +5503,8 @@ class EventFrontend(AbstractUserFrontend):
                 rs, "event/field_set_form", {
                     'ids': (','.join(str(i) for i in ids) if ids else None),
                     'field_id': field_id, 'kind': kind.value})
-        _, ordered_ids, labels, _ = self.field_set_aux(rs, event_id, field_id, ids, kind)
+        _, ordered_ids, labels, _ = self.field_set_aux(rs, event_id, field_id, ids,
+                                                       kind)
         fields = [(field['id'], field['field_name'])
                   for field in xsorted(rs.ambience['event']['fields'].values(),
                                        key=EntitySorter.event_field)

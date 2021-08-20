@@ -2202,7 +2202,8 @@ def process_dynamic_input(
         will_create = unwrap(request_extractor(rs, {f"{prefix}create_-{marker}": bool}))
         if will_create:
             params = {f"{prefix}{key}_-{marker}": value for key, value in spec.items()}
-            constraints = constraint_maker(-marker, prefix) if constraint_maker else None
+            constraints = (constraint_maker(-marker, prefix)
+                           if constraint_maker else None)
             data = request_extractor(rs, params, constraints)
             ret[-marker] = {key: data[f"{prefix}{key}_-{marker}"] for key in spec}
             if additional:

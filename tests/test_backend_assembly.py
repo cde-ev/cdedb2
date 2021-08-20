@@ -108,7 +108,8 @@ class TestAssemblyBackend(BackendTest):
         self.assertLess(0, self.assembly.remove_assembly_presider(self.key, new_id, 23))
         self.assertTrue(self.assembly.add_assembly_presiders(self.key, new_id, {23}))
         # Check return of setting presiders to the same thing.
-        self.assertEqual(0, self.assembly.add_assembly_presiders(self.key, new_id, {23}))
+        self.assertEqual(0, self.assembly.add_assembly_presiders(self.key,
+                                                                 new_id, {23}))
         expectation['presiders'] = {1, 23}
         self.assertEqual(expectation, self.assembly.get_assembly(self.key, new_id))
         self.assertLess(0, self.assembly.delete_assembly(
@@ -503,12 +504,15 @@ class TestAssemblyBackend(BackendTest):
                 'votes': None,
             }
             new_id = self.assembly.create_ballot(self.key, data)
-            self.assertEqual(None, self.assembly.get_ballot(self.key, new_id)['extended'])
+            self.assertEqual(None,
+                             self.assembly.get_ballot(self.key, new_id)['extended'])
 
             frozen_time.tick(delta=4*delta)
             self.login(USER_DICT['kalif'])
-            self.assertTrue(self.assembly.check_voting_period_extension(self.key, new_id))
-            self.assertEqual(True, self.assembly.get_ballot(self.key, new_id)['extended'])
+            self.assertTrue(
+                self.assembly.check_voting_period_extension(self.key, new_id))
+            self.assertEqual(True,
+                             self.assembly.get_ballot(self.key, new_id)['extended'])
 
     @as_users("charly")
     def test_signup(self) -> None:

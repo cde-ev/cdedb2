@@ -158,7 +158,8 @@ class MlBaseFrontend(AbstractUserFrontend):
         mailinglist_infos = self.mlproxy.get_mailinglists(rs, mailinglists)
         sub_states = const.SubscriptionState.subscribing_states()
         subscriptions = self.mlproxy.get_user_subscriptions(
-            rs, rs.user.persona_id, states=sub_states | {const.SubscriptionState.pending})
+            rs, rs.user.persona_id,
+            states=sub_states | {const.SubscriptionState.pending})
         grouped: Dict[MailinglistGroup, CdEDBObjectMap]
         grouped = collections.defaultdict(dict)
         for ml_id in mailinglists:
@@ -298,7 +299,8 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs.append_validation_error(
                 ("target_persona_id", ValueError(n_(
                     "User does not exist or is archived."))))
-        if not self.coreproxy.verify_persona(rs, source_persona_id, allowed_roles={"ml"}):
+        if not self.coreproxy.verify_persona(rs, source_persona_id,
+                                             allowed_roles={"ml"}):
             rs.append_validation_error(
                 ("source_persona_id", ValueError(n_(
                     "Source persona must be a ml-only user and no admin."))))

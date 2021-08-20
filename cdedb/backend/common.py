@@ -402,7 +402,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         return self.query_all(rs, query, (entities,))
 
     def sql_select_one(self, rs: RequestState, table: str, columns: Sequence[str],
-                       entity: EntityKey, entity_key: str = "id") -> Optional[CdEDBObject]:
+                       entity: EntityKey, entity_key: str = "id"
+                       ) -> Optional[CdEDBObject]:
         """Generic SQL select query for one row.
 
         See :py:meth:`sql_select` for thoughts on this.

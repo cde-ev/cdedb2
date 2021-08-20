@@ -81,14 +81,15 @@ class SubscriptionManager:
     def _check_state_requirements(self,
                                   action: SubscriptionAction,
                                   old_state: SubscriptionState) -> None:
-        """This checks if the given action is allowed to be performed from the given state.
+        """This checks if the given action is allowed to be performed from the given
+         state.
 
-        This check is the heart of the subscription state machine, since it considers the
-        actual state transition. If the given state does not allow the transition via the
-        given action, a SubscriptionError is raised.
+        This check is the heart of the subscription state machine, since it considers
+        the actual state transition. If the given state does not allow the transition
+        via the given action, a SubscriptionError is raised.
 
-        Keep in mind that different actions may lead to the same target state, but only one
-        of them may be appropriate to use from the current state.
+        Keep in mind that different actions may lead to the same target state, but only
+        one of them may be appropriate to use from the current state.
         """
 
         # TODO: `if exception := self.get_error(action, old_state)`.
@@ -110,7 +111,8 @@ class SubscriptionManager:
             raise SubscriptionError(n_("subman_managing_not-subscribable"))
         if action == SubscriptionAction.subscribe and not policy.may_subscribe():
             raise SubscriptionError(n_("subman_self_not-self-subscribable"))
-        if action == SubscriptionAction.request_subscription and not policy.may_request():
+        if (action == SubscriptionAction.request_subscription
+                and not policy.may_request()):
             raise SubscriptionError(n_("subman_self_not-requestable"))
 
     def apply_action(self,
@@ -120,20 +122,21 @@ class SubscriptionManager:
                      allow_unsub: bool = True,
                      is_privileged: bool = True,
                      ) -> SubscriptionState:
-        """Apply a SubscriptionAction to a SubscriptionState according to a SubscriptionPolicy.
+        """Apply a SubscriptionAction to a SubscriptionState according to a
+        SubscriptionPolicy.
 
         This is the main interface for performing subscription actions. To decide if the
         action is allowed to be performed, a series of checks are performed.
 
-        :param action: The SubscriptionAction to be performed in the end if all goes well.
-            Determines the target state of the transition.
-        :param policy: The SubscriptionPolicy describing the allowed interactions between
-            the affected user and the affected subscription object.
-        :param old_state: The current state of the relation between the affected user and
-            the affected subscription object.
-        :param allow_unsub: If this is not True, prevent the user from becoming unsubscribed.
-            We recommend only using the policies SubscriptionPolicy.implicits_only and
-            None for objects using this feature.
+        :param action: The SubscriptionAction to be performed in the end if all goes
+            well. Determines the target state of the transition.
+        :param policy: The SubscriptionPolicy describing the allowed interactions
+            between the affected user and the affected subscription object.
+        :param old_state: The current state of the relation between the affected user
+            and the affected subscription object.
+        :param allow_unsub: If this is not True, prevent the user from becoming
+            unsubscribed. We recommend only using the policies
+            SubscriptionPolicy.implicits_only and None for objects using this feature.
             Warning: This feature is not compatible with users with old_state in
             {SubscriptionState.unsubscribed, SubscriptionState.unsubscription_override}
             regarding the respective object.
@@ -170,9 +173,9 @@ class SubscriptionManager:
         written to the database, independent of being explicit or implicit.
 
         This interface is exposed mainly to make the transition understandable by
-        analogy to apply_action. Since this is dependant on the fact whether a subscriber
-        would be implied as a subscriber of the respective object, it can not be done
-        with the exact same formalism as apply_action.
+        analogy to apply_action. Since this is dependant on the fact whether a
+        subscriber would be implied as a subscriber of the respective object, it can not
+        be done with the exact same formalism as apply_action.
 
         This is guaranteed to only touch states not in
         SubscriptionManager.cleanup_protected_states().
@@ -204,13 +207,13 @@ class SubscriptionManager:
         This can be called as part of an automatic cleanup procedure to check if a
         subscriber should be removed from a subscription object.
 
-        :param policy: The SubscriptionPolicy describing the allowed interactions between
-            the affected user and the affected subscription object.
-        :param old_state: The current state of the relation between the affected user and
-            the affected subscription object.
+        :param policy: The SubscriptionPolicy describing the allowed interactions
+            between the affected user and the affected subscription object.
+        :param old_state: The current state of the relation between the affected user
+            and the affected subscription object.
         :param is_implied: Whether the user is currently implied as a subscriber of the
-            respective object. Note that the user may still have a current state other than
-            implicit, even if they are implied, for example if they opted out of an
+            respective object. Note that the user may still have a current state other
+            than implicit, even if they are implied, for example if they opted out of an
             automatic subscription.
         """
         try:

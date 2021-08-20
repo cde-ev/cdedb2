@@ -181,7 +181,9 @@ logging-modules=logging
 max-line-length=88
 
 # Regexp for a line that is allowed to be longer than the limit.
-ignore-long-lines=^\s*(# )?<?https?://\S+>?$
+# default: ^\s*(# )?<?https?://\S+>?$
+# adjusted to cover mypy and flake8 ignore flags
+ignore-long-lines=# (type: ignore|noqa(: )?)\S*$
 
 # Allow the body of an if to be on the same line as the test if there is no
 # else.

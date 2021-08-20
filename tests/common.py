@@ -774,7 +774,8 @@ class FrontendTest(BackendTest):
             # path without host but with query string - capped at 64 chars
             # To enhance readability, we mark most chars as safe. All special chars are
             # allowed in linux file paths, but sadly windows is more restrictive...
-            url = urllib.parse.quote(self.response.request.path_qs, safe='/;@&=+$,~')[:64]
+            url = urllib.parse.quote(
+                self.response.request.path_qs, safe='/;@&=+$,~')[:64]
             # since / chars are forbidden in file paths, we replace them by _
             url = url.replace('/', '_')
             # create a temporary file in scrap_path with url as a prefix

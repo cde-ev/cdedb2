@@ -146,14 +146,16 @@ class TestMlFrontend(FrontendTest):
         f['source_persona_id'] = USER_DICT['rowena']['DB-ID']
         f['target_persona_id'] = berta_id
         self.submit(f, check_notification=False)
-        msg = "Der Quellnutzer muss ein reiner Mailinglistennutzer und darf kein Admin sein."
+        msg = ("Der Quellnutzer muss ein reiner Mailinglistennutzer und darf kein Admin"
+               " sein.")
         self.assertValidationError('source_persona_id', msg)
 
         f = self.response.forms['merge-accounts']
         f['source_persona_id'] = USER_DICT['nina']['DB-ID']
         f['target_persona_id'] = berta_id
         self.submit(f, check_notification=False)
-        msg = "Der Quellnutzer muss ein reiner Mailinglistennutzer und darf kein Admin sein."
+        msg = ("Der Quellnutzer muss ein reiner Mailinglistennutzer und darf kein Admin"
+               " sein.")
         self.assertValidationError('source_persona_id', msg)
 
         f = self.response.forms['merge-accounts']
@@ -175,7 +177,8 @@ class TestMlFrontend(FrontendTest):
         f['source_persona_id'] = janis_id
         f['target_persona_id'] = berta_id
         self.submit(f, check_notification=False)
-        msg = "Beide Benutzer haben einen Bezug zu gleichen Mailinglisten: Witz des Tages"
+        msg = ("Beide Benutzer haben einen Bezug zu gleichen Mailinglisten: Witz des"
+               " Tages")
         self.assertPresence(msg, div='notifications')
 
         # ... so we resolve the blocking ...

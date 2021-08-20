@@ -1348,14 +1348,16 @@ class MlBackend(AbstractBackend):
             source = self.core.get_ml_user(rs, source_persona_id)
             if any(source[admin_bit] for admin_bit in ADMIN_KEYS):
                 raise ValueError(n_("Source User is admin and can not be merged."))
-            if not self.core.verify_persona(rs, source_persona_id, allowed_roles={'ml'}):
+            if not self.core.verify_persona(rs, source_persona_id,
+                                            allowed_roles={'ml'}):
                 raise ValueError(n_("Source persona must be a ml-only user."))
             if source['is_archived']:
                 raise ValueError(n_("Source User is not accessible."))
 
             # check the target user is a valid persona and not archived
             target = self.core.get_ml_user(rs, target_persona_id)
-            if not self.core.verify_persona(rs, target_persona_id, required_roles={'ml'}):
+            if not self.core.verify_persona(rs, target_persona_id,
+                                            required_roles={'ml'}):
                 raise ValueError(n_("Target User is no valid ml user."))
             if target['is_archived']:
                 raise ValueError(n_("Target User is not accessible."))
@@ -1417,7 +1419,8 @@ class MlBackend(AbstractBackend):
             # at last, archive the source user
             # this will delete all subscriptions and remove all moderator rights
             msg = f"Dieser Account ist in Nutzer {target_persona_id} aufgegangen."
-            code *= self.core.archive_persona(rs, persona_id=source_persona_id, note=msg)
+            code *= self.core.archive_persona(rs, persona_id=source_persona_id,
+                                              note=msg)
 
         return code
 

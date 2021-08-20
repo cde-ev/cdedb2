@@ -210,8 +210,10 @@ _ACTION_TARGET_STATE_MAP: Mapping[SubscriptionAction, SubscriptionState] = {
     SubscriptionAction.deny_request: SubscriptionState.none,
     SubscriptionAction.block_request: SubscriptionState.unsubscription_override,
     SubscriptionAction.add_subscriber: SubscriptionState.subscribed,
-    SubscriptionAction.add_subscription_override: SubscriptionState.subscription_override,
-    SubscriptionAction.add_unsubscription_override: SubscriptionState.unsubscription_override,
+    SubscriptionAction.add_subscription_override:
+        SubscriptionState.subscription_override,
+    SubscriptionAction.add_unsubscription_override:
+        SubscriptionState.unsubscription_override,
     SubscriptionAction.remove_subscriber: SubscriptionState.unsubscribed,
     SubscriptionAction.remove_subscription_override: SubscriptionState.subscribed,
     SubscriptionAction.remove_unsubscription_override: SubscriptionState.unsubscribed,

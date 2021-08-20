@@ -80,6 +80,7 @@ class MailmanMixin(MlBaseFrontend):
             # 'pass_types': ['multipart', 'text/plain', 'application/pdf'],
         }
         desired_templates = {
+            # pylint: disable=line-too-long
             # Funny split to protect trailing whitespace
             'list:member:regular:footer': '-- ' + f"""
 Dies ist eine Mailingliste des CdE e.V.
