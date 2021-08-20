@@ -965,12 +965,12 @@ class AssemblyBackend(AbstractBackend):
             blockers["vote_begin"] = [ballot_id]
         if ballot['candidates']:
             # Ballot still has candidates
-            blockers["candidates"] = [anid for anid in ballot["candidates"]]
+            blockers["candidates"] = ballot["candidates"].keys()
 
         attachments = self.list_attachments(rs, ballot_id=ballot_id)
         if attachments:
             # Ballot still has attachments
-            blockers["attachments"] = [anid for anid in attachments]
+            blockers["attachments"] = list(attachments)
 
         # Voters are people who _may_ vote in this ballot.
         voters = self.sql_select(rs, "assembly.voter_register", ("id", ),
@@ -1689,7 +1689,7 @@ class AssemblyBackend(AbstractBackend):
 
         versions = self.get_attachment_history(rs, attachment_id)
         if versions:
-            blockers["versions"] = [v for v in versions]
+            blockers["versions"] = list(versions.keys())
 
         attachment = self.get_attachment(rs, attachment_id)
         if attachment['ballot_id']:

@@ -1409,7 +1409,7 @@ def reconnoitre_ambience(obj: AbstractFrontend,
             try:
                 ambience[s.object_name] = s.getter(value)
             except KeyError:
-                raise werkzeug.exceptions.NotFound(
+                raise werkzeug.exceptions.NotFound(  # pylint: disable=raise-missing-from
                     rs.gettext("Object {param}={value} not found").format(
                         param=param, value=value))
             except PrivilegeError as e:

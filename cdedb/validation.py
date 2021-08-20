@@ -98,6 +98,7 @@ TypeMapping = Mapping[str, Type[Any]]
 
 
 class ValidationSummary(ValueError, Sequence[Exception]):
+    # pylint: disable=too-many-ancestors
     args: Tuple[Exception, ...]
 
     def __len__(self) -> int:
@@ -155,7 +156,7 @@ def validate_assert(type_: Type[T], value: Any, **kwargs: Any) -> T:
         )
         e = errs[0]
         e.args = ("{} ({})".format(e.args[1], e.args[0]),) + e.args[2:]
-        raise e from errs
+        raise e from errs  # pylint: disable=raising-bad-type
 
 
 def validate_assert_optional(type_: Type[T], value: Any, **kwargs: Any) -> Optional[T]:
@@ -3937,7 +3938,7 @@ def _regex(
         re.compile(val)
     except re.error as e:
         # TODO maybe provide more precise feedback?
-        raise ValidationSummary(
+        raise ValidationSummary(  # pylint: disable=raise-missing-from
             ValueError(argname,
                        n_("Invalid  regular expression (position %(pos)s)."),
                        {'pos': e.pos}))
@@ -3960,7 +3961,7 @@ def _non_regex(
 
 
 @_add_typed_validator
-def _query_input(
+def _query_input(  # pylint: disable=too-many-branches
     val: Any, argname: str = None, *,
     spec: Mapping[str, str], allow_empty: bool = False,
     separator: str = ',', escape: str = '\\',

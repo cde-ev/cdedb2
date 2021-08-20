@@ -624,6 +624,7 @@ class Query:
         return params
 
     def get_field_format_spec(self, field: str) -> QueryResultEntryFormat:
+        # pylint: disable=too-many-return-statements
         if self.spec[field] == "date":
             return QueryResultEntryFormat.date
         if self.spec[field] == "datetime":

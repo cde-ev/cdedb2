@@ -1361,7 +1361,8 @@ class TestMlFrontend(FrontendTest):
         tmp = {f.get("registration_stati", index=i).value for i in range(7)}
         self.assertEqual({str(x) for x in stati} | {None}, tmp)
 
-    def _prepare_moderation_mock(self, client_class: unittest.mock.Mock) -> Tuple[
+    @staticmethod
+    def _prepare_moderation_mock(client_class: unittest.mock.Mock) -> Tuple[
             List[MockHeldMessage], unittest.mock.MagicMock, Any]:
         messages = HELD_MESSAGE_SAMPLE
         mmlist = unittest.mock.MagicMock()

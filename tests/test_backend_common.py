@@ -17,4 +17,5 @@ class TestBackendCommon(unittest.TestCase):
         self.assertTrue(callable(proxy.login))
         self.assertTrue(callable(proxy.get_realms_multi))
         with self.assertRaises(PrivilegeError):
+            # pylint: disable=pointless-statement
             proxy.verify_password  # exception in __getitem__

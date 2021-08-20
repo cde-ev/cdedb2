@@ -40,7 +40,7 @@ class SubscriptionManager:
         SubscriptionState.pending
     }
 
-    def __init__(
+    def __init__(  # pylint: disable=dangerous-default-value
         self, *,
         error_matrix: ActionStateErrorMatrix = SUBSCRIPTION_ERROR_MATRIX,
         unwritten_states: Optional[StateColl] = None,

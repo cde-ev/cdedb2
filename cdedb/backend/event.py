@@ -3168,7 +3168,7 @@ class EventBackend(AbstractBackend):
                                                     fupdate)
             if 'parts' in data:
                 parts = data['parts']
-                if not (set(event['parts'].keys()) >= {x for x in parts}):
+                if not set(event['parts'].keys()) >= parts.keys():
                     raise ValueError(n_("Non-existing parts specified."))
                 existing = {e['part_id']: e['id'] for e in self.sql_select(
                     rs, "event.registration_parts", ("id", "part_id"),
@@ -4366,6 +4366,8 @@ class EventBackend(AbstractBackend):
           transaction token describes the change and can be submitted to
           guarantee a certain effect.
         """
+        # this function is huge, disable complexity checkers
+        # pylint: disable=design,too-many-nested-blocks
         data = affirm(vtypes.SerializedPartialEvent, data)
         dryrun = affirm(bool, dryrun)
         if not self.is_orga(rs, event_id=data['id']) and not self.is_admin(rs):

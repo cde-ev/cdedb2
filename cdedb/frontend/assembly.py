@@ -683,8 +683,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
 
         # Check for extensions before grouping ballots.
-        if any([self._update_ballot_state(rs, ballot)
-                for anid, ballot in ballots.items()]):
+        if any(self._update_ballot_state(rs, ballot)
+               for anid, ballot in ballots.items()):
             return self.redirect(rs, "assembly/list_ballots")
 
         done, extended, current, future = self.group_ballots(ballots)
@@ -1414,8 +1414,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
 
         # Check for extensions before grouping ballots.
-        if any([self._update_ballot_state(rs, ballot)
-                for anid, ballot in ballots.items()]):
+        if any(self._update_ballot_state(rs, ballot)
+               for anid, ballot in ballots.items()):
             return self.redirect(rs, "assembly/summary_ballots")
 
         done, extended, current, future = self.group_ballots(ballots)

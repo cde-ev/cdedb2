@@ -484,6 +484,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
           clause. This is necessary for event stuff and should be used seldom.
         :returns: all results of the query
         """
+        # pylint: disable=too-many-branches
         query.fix_custom_columns()
         self.logger.debug("Performing general query {}.".format(query))
         select = ", ".join('{} AS "{}"'.format(column, column.replace('"', ''))
