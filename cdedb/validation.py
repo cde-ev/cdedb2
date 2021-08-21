@@ -2324,16 +2324,18 @@ def _event_track(
     return EventTrack(val)
 
 
-def _EVENT_FIELD_COMMON_FIELDS(extra_suffix: str) -> TypeMapping: return {
-    'kind{}'.format(extra_suffix): const.FieldDatatypes,
-    'association{}'.format(extra_suffix): const.FieldAssociations,
-    'entries{}'.format(extra_suffix): Any,  # type: ignore
-}
+def _EVENT_FIELD_COMMON_FIELDS(extra_suffix: str) -> TypeMapping:
+    return {
+        'kind{}'.format(extra_suffix): const.FieldDatatypes,
+        'association{}'.format(extra_suffix): const.FieldAssociations,
+        'entries{}'.format(extra_suffix): Any,  # type: ignore
+    }
 
 
-def _EVENT_FIELD_OPTIONAL_FIELDS(extra_suffix: str) -> TypeMapping: return {
-    f'checkin{extra_suffix}': bool,
-}
+def _EVENT_FIELD_OPTIONAL_FIELDS(extra_suffix: str) -> TypeMapping:
+    return {
+        f'checkin{extra_suffix}': bool,
+    }
 
 
 @_add_typed_validator
@@ -2411,11 +2413,12 @@ def _event_field(
     return EventField(val)
 
 
-def _EVENT_FEE_MODIFIER_COMMON_FIELDS(extra_suffix: str) -> TypeMapping: return {
-    "modifier_name{}".format(extra_suffix): RestrictiveIdentifier,
-    "amount{}".format(extra_suffix): decimal.Decimal,
-    "field_id{}".format(extra_suffix): ID,
-}
+def _EVENT_FEE_MODIFIER_COMMON_FIELDS(extra_suffix: str) -> TypeMapping:
+    return {
+        "modifier_name{}".format(extra_suffix): RestrictiveIdentifier,
+        "amount{}".format(extra_suffix): decimal.Decimal,
+        "field_id{}".format(extra_suffix): ID,
+    }
 
 
 @_add_typed_validator

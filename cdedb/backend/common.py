@@ -513,11 +513,13 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                 # for str as well as for other types
                 sql_param_str = "lower({0})"
 
-                def caser(x: T) -> T: return x.lower()  # type: ignore[attr-defined]
+                def caser(x: T) -> T:
+                    return x.lower()  # type: ignore[attr-defined]
             else:
                 sql_param_str = "{0}"
 
-                def caser(x: T) -> T: return x
+                def caser(x: T) -> T:
+                    return x
             columns = field.split(',')
             # Treat containsall and friends special since they want to find
             # each value in any column, without caring that the columns are
