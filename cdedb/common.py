@@ -136,16 +136,14 @@ class RequestState:
     enough to not be non-nice).
     """
 
-    def __init__(self, sessionkey: Optional[str], apitoken: Optional[str],
-                 user: User, request: werkzeug.Request,
-                 notifications: Collection[Notification],
+    def __init__(self, sessionkey: Optional[str], apitoken: Optional[str], user: User,
+                 request: werkzeug.Request, notifications: Collection[Notification],
                  mapadapter: werkzeug.routing.MapAdapter,
                  requestargs: Optional[Dict[str, int]],
                  errors: Collection[Error],
                  values: Optional[CdEDBMultiDict], lang: str,
                  gettext: Callable[[str], str],
                  ngettext: Callable[[str, str, int], str],
-                 coders: Optional[Mapping[str, Callable]],  # type: ignore
                  begin: Optional[datetime.datetime],
                  default_gettext: Callable[[str], str] = None,
                  default_ngettext: Callable[[str, str, int], str] = None):
@@ -157,8 +155,6 @@ class RequestState:
           filling forms in.
         :param lang: language code for i18n, currently only 'de' and 'en' are
             valid.
-        :param coders: Functions for encoding and decoding parameters primed
-          with secrets. This is hacky, but sadly necessary.
         :param begin: time where we started to process the request
         :param default_gettext: default translation function used to ensure
             stability across different locales
@@ -182,7 +178,6 @@ class RequestState:
         self.ngettext = ngettext
         self.default_gettext = default_gettext or gettext
         self.default_ngettext = default_ngettext or ngettext
-        self._coders = coders or {}
         self.begin = begin or now()
         # Visible version of the database connection
         # noinspection PyTypeChecker

@@ -175,8 +175,7 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
             sessionkey=sessionkey, apitoken=apitoken, user=user,
             request=None, notifications=[], mapadapter=None,  # type: ignore
             requestargs=None, errors=[], values=None, lang="de",
-            gettext=translator.gettext, ngettext=translator.ngettext,
-            coders=None, begin=now())
+            gettext=translator.gettext, ngettext=translator.ngettext, begin=now())
         rs._conn = connpool[roles_to_db_role(rs.user.roles)]
         rs.conn = rs._conn
         if "event" in rs.user.roles and hasattr(backend, "orga_info"):

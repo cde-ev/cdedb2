@@ -56,19 +56,13 @@ class CronFrontend(BaseApp):
         roles = ALL_ROLES
         user = User(roles=roles, persona_id=None)
         lang = "en"
-        coders: Dict[str, Callable[..., Any]] = {
-            "encode_parameter": self.encode_parameter,
-            "decode_parameter": self.decode_parameter,
-            "encode_notification": self.encode_notification,
-            "decode_notification": self.decode_notification,
-        }
         urls = self.urlmap.bind("db.cde-ev.de", script_name="/db/",
                                 url_scheme="https")
         # This is not a real request, so we can go without some of these.
         rs = RequestState(
             sessionkey=None, apitoken=None, user=user, request=None,  # type: ignore
             notifications=[], mapadapter=urls, requestargs={}, errors=[],
-            values=None, lang=lang, coders=coders, begin=None,
+            values=None, lang=lang, begin=None,
             gettext=self.translations[lang].gettext,
             ngettext=self.translations[lang].ngettext)
         rs._conn = self.connpool['cdb_admin']  # pylint: disable=protected-access

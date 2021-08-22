@@ -197,20 +197,13 @@ class Application(BaseApp):
 
             endpoint, args = urls.match()
 
-            coders: Dict[str, Callable[..., Any]] = {
-                "encode_parameter": self.encode_parameter,
-                "decode_parameter": self.decode_parameter,
-                "encode_notification": self.encode_notification,
-                "decode_notification": self.decode_notification,
-            }
             lang = self.get_locale(request)
             rs = RequestState(
                 sessionkey=sessionkey, apitoken=apitoken, user=user,
                 request=request, notifications=[], mapadapter=urls,
                 requestargs=args, errors=[], values=None, lang=lang,
                 gettext=self.translations[lang].gettext,
-                ngettext=self.translations[lang].ngettext,
-                coders=coders, begin=begin,
+                ngettext=self.translations[lang].ngettext, begin=begin,
                 default_gettext=self.translations["en"].gettext,
                 default_ngettext=self.translations["en"].ngettext
             )

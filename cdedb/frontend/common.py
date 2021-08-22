@@ -1263,7 +1263,7 @@ class Worker(threading.Thread):
             request=rs.request, notifications=[], mapadapter=rs.urls,
             requestargs=rs.requestargs, errors=[],
             values=copy.deepcopy(rs.values), lang=rs.lang, gettext=rs.gettext,
-            ngettext=rs.ngettext, coders=rs._coders, begin=rs.begin)
+            ngettext=rs.ngettext, begin=rs.begin)
         # noinspection PyProtectedMember
         secrets = SecretsConfig(conf._configpath)
         connpool = connection_pool_factory(
