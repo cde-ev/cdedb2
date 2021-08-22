@@ -8,7 +8,7 @@ This expects a period of 15 minutes.
 import gettext
 import inspect
 import pathlib
-from typing import Any, Callable, Collection, Dict, Iterator
+from typing import Collection, Iterator
 
 from cdedb.common import ALL_ROLES, PathLike, RequestState, User, glue, n_, now
 from cdedb.config import SecretsConfig

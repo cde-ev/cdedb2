@@ -7,7 +7,7 @@ import json
 import os
 import pathlib
 import types
-from typing import Any, Callable, Dict, Set
+from typing import Set
 
 import jinja2
 import psycopg2.extensions
