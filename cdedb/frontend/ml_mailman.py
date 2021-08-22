@@ -231,7 +231,8 @@ The original message as received by Mailman is attached.
         for address in delete_owners:
             mm_list.remove_owner(address)
 
-    def mailman_sync_list_whites(self, rs: RequestState, mailman: Client,  # pylint: disable=no-self-use
+    @staticmethod
+    def mailman_sync_list_whites(rs: RequestState, mailman: Client,
                                  db_list: CdEDBObject,
                                  mm_list: MailingList) -> None:
         db_whitelist = db_list['whitelist']
