@@ -2036,7 +2036,7 @@ class CoreBackend(AbstractBackend):
             rs.conn = self.connpool['cdb_member']
         else:
             rs.conn = self.connpool['cdb_persona']
-        rs._conn = rs.conn  # Necessary to keep the mechanics happy
+        rs._conn = rs.conn  # Necessary to keep the mechanics happy. pylint: disable=protected-access
 
         # Get more information about user (for immediate use in frontend)
         data = self.sql_select_one(rs, "core.personas",

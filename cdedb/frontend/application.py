@@ -7,7 +7,7 @@ import json
 import os
 import pathlib
 import types
-from typing import Any, Callable, Dict, Optional, Set
+from typing import Any, Callable, Dict, Set
 
 import jinja2
 import psycopg2.extensions
@@ -32,7 +32,7 @@ from cdedb.frontend.assembly import AssemblyFrontend
 from cdedb.frontend.cde import CdEFrontend
 from cdedb.frontend.common import (
     JINJA_FILTERS, BaseApp, FrontendEndpoint, Response, construct_redirect, docurl,
-    sanitize_None, staticurl, datetime_filter,
+    sanitize_None, staticurl, datetime_filter, AbstractFrontend,
 )
 from cdedb.frontend.core import CoreFrontend
 from cdedb.frontend.event import EventFrontend
@@ -236,7 +236,8 @@ class Application(BaseApp):
                     # they can be manipulated by the client side, so
                     # we can not assume anything.
                     self.logger.debug(f"Invalid raw notification '{raw_notifications}'")
-            handler: FrontendEndpoint = getattr(getattr(self, component), action)
+            frontend: AbstractFrontend = getattr(self, component)
+            handler: FrontendEndpoint = getattr(frontend, action)
             if request.method not in handler.modi:
                 raise werkzeug.exceptions.MethodNotAllowed(
                     handler.modi,
@@ -245,8 +246,8 @@ class Application(BaseApp):
 
             # Check anti CSRF token (if required by the endpoint)
             if handler.anti_csrf.check and 'droid' not in user.roles:
-                error = check_anti_csrf(rs, component, action, handler.anti_csrf.name,
-                                        handler.anti_csrf.payload)
+                error = frontend.check_anti_csrf(rs, action, handler.anti_csrf.name,
+                                                 handler.anti_csrf.payload)
                 if error is not None:
                     rs.csrf_alert = True
                     rs.extend_validation_errors(
@@ -350,39 +351,3 @@ class Application(BaseApp):
 
         return request.accept_languages.best_match(
             self.conf["I18N_LANGUAGES"], default="de")
-
-
-def check_anti_csrf(rs: RequestState, component: str, action: str,
-                    token_name: str, token_payload: str) -> Optional[str]:
-    """
-    A helper function to check the anti CSRF token
-
-    The anti CSRF token is a signed userid, added as hidden input to most
-    forms, used to mitigate Cross Site Request Forgery (CSRF) attacks. It is
-    checked before calling the handler function, if the handler function is
-    marked to be protected against CSRF attacks, which is the default for
-    all POST endpoints.
-
-    The anti CSRF token should be created using the util.anti_csrf_token
-    template macro.
-
-    :param action: The name of the endpoint, checked by 'decode_parameter'
-    :param component: The name of the realm, checked by 'decode_parameter'
-    :param token_name: The name of the anti CSRF token.
-    :param token_payload: The expected payload of the anti CSRF token.
-    :return: None if everything is ok, or an error message otherwise.
-    """
-    val = rs.request.values.get(token_name, "").strip()
-    if not val:
-        return n_("Anti CSRF token is required for this form.")
-    # noinspection PyProtectedMember
-    timeout, val = rs._coders['decode_parameter'](
-        "{}/{}".format(component, action), token_name, val, rs.user.persona_id)
-    if not val:
-        if timeout:
-            return n_("Anti CSRF token expired. Please try again.")
-        else:
-            return n_("Anti CSRF token is forged.")
-    if val != token_payload:
-        return n_("Anti CSRF token is invalid.")
-    return None

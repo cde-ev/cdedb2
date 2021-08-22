@@ -67,7 +67,7 @@ disable=
     unused-argument,unused-variable,
     import-outside-toplevel,  # this has reasons if we do it
     broad-except,  # all our broad excepts have a reason (e.g. safety fallback)
-    protected-access,
+    # protected-access,
     redefined-outer-name,
     useless-super-delegation,  # we sometimes do this to have type annotations
     too-many-public-methods,too-many-instance-attributes,too-few-public-methods,

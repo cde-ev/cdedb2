@@ -305,7 +305,7 @@ def make_proxy(backend: B, internal: bool = False) -> B:
                 if not internal:
                     # Expose database connection for the backends
                     # noinspection PyProtectedMember
-                    rs.conn = rs._conn
+                    rs.conn = rs._conn  # pylint: disable=protected-access
                 return fun(rs, *args, **kwargs)
             finally:
                 if not internal:
@@ -326,7 +326,7 @@ def make_proxy(backend: B, internal: bool = False) -> B:
             return wrapit(attr)
 
         @staticmethod
-        def _get_backend_class() -> Type[B]:
+        def get_backend_class() -> Type[B]:
             return backend.__class__
 
     return cast(B, Proxy())

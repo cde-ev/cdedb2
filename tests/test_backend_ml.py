@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# pylint: disable=protected-access
 
 from typing import Collection, Set, cast
 

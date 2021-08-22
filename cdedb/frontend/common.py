@@ -1075,6 +1075,40 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             else:
                 return None
 
+    def check_anti_csrf(self, rs: RequestState, action: str,
+                        token_name: str, token_payload: str) -> Optional[str]:
+        """
+        A helper function to check the anti CSRF token
+
+        The anti CSRF token is a signed userid, added as hidden input to most
+        forms, used to mitigate Cross Site Request Forgery (CSRF) attacks. It is
+        checked before calling the handler function, if the handler function is
+        marked to be protected against CSRF attacks, which is the default for
+        all POST endpoints.
+
+        The anti CSRF token should be created using the util.anti_csrf_token
+        template macro.
+
+        :param action: The name of the endpoint, checked by 'decode_parameter'
+        :param token_name: The name of the anti CSRF token.
+        :param token_payload: The expected payload of the anti CSRF token.
+        :return: None if everything is ok, or an error message otherwise.
+        """
+        val = rs.request.values.get(token_name, "").strip()
+        if not val:
+            return n_("Anti CSRF token is required for this form.")
+        # noinspection PyProtectedMember
+        timeout, val = self.decode_parameter(
+            f"{self.realm}/{action}", token_name, val, rs.user.persona_id)
+        if not val:
+            if timeout:
+                return n_("Anti CSRF token expired. Please try again.")
+            else:
+                return n_("Anti CSRF token is forged.")
+        if val != token_payload:
+            return n_("Anti CSRF token is invalid.")
+        return None
+
 
 class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     """Base class for all frontends which have their own user realm.
@@ -1470,7 +1504,7 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
                                       for role in access_list)
                 if rs.user.roles == {"anonymous"} and expects_persona:
                     params = {
-                        'wants': rs._coders['encode_parameter'](
+                        'wants': obj.encode_parameter(
                             "core/index", "wants", rs.request.url,
                             persona_id=rs.user.persona_id,
                             timeout=obj.conf["UNCRITICAL_PARAMETER_TIMEOUT"])
@@ -1478,7 +1512,7 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
                     ret = basic_redirect(rs, cdedburl(rs, "core/index", params))
                     # noinspection PyProtectedMember
                     notifications = json_serialize([
-                        rs._coders['encode_notification'](
+                        obj.encode_notification(
                             rs, "error", n_("You must login."))])
                     ret.set_cookie("displaynote", notifications)
                     return ret
@@ -1693,8 +1727,8 @@ def REQUESTdata(
                     if encoded and val:
                         # only decode if exists
                         # noinspection PyProtectedMember
-                        timeout, val = rs._coders['decode_parameter'](
-                            "{}/{}".format(obj.realm, fun.__name__),
+                        timeout, val = obj.decode_parameter(
+                            f"{obj.realm}/{fun.__name__}",
                             name, val, persona_id=rs.user.persona_id)
                         if timeout is True:
                             rs.notify("warning", n_("Link expired."))

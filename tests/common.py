@@ -139,6 +139,7 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
     This is similar to the normal make_proxy but encorporates a different
     wrapper.
     """
+    # pylint: disable=protected-access
 
     sessionproxy = SessionBackend(backend.conf._configpath)
     secrets = SecretsConfig(backend.conf._configpath)
@@ -1263,7 +1264,7 @@ class FrontendTest(BackendTest):
         f = self.response.forms['logshowform']
         # use internal value property as I don't see a way to get the
         # checkbox value otherwise
-        codes = [field._value for field in f.fields['codes']]
+        codes = [field._value for field in f.fields['codes']]  # pylint: disable=protected-access
         f['codes'] = codes
         self.assertGreater(len(codes), 1)
         self.submit(f)

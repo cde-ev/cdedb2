@@ -71,7 +71,7 @@ class CronFrontend(BaseApp):
             values=None, lang=lang, coders=coders, begin=None,
             gettext=self.translations[lang].gettext,
             ngettext=self.translations[lang].ngettext)
-        rs._conn = self.connpool['cdb_admin']
+        rs._conn = self.connpool['cdb_admin']  # pylint: disable=protected-access
         return rs
 
     def execute(self, jobs: Collection[str] = None) -> bool:

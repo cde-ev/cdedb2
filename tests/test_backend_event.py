@@ -3316,7 +3316,7 @@ class TestEventBackend(BackendTest):
                          self.event.get_waitlist_position(
                              self.key, event_id=1, persona_id=5))
         self.login(USER_DICT["emilia"])
-        self.event._get_waitlist(self.key, event_id=1)
+        self.event._get_waitlist(self.key, event_id=1)  # pylint: disable=protected-access
         self.assertEqual({1: 4, 2: 2, 3: 2},
                          self.event.get_waitlist_position(
                              self.key, event_id=1))
