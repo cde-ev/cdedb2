@@ -1,4 +1,6 @@
 """This contains the exceptions used for control flow at subscription management."""
+# We allow 120 line length here.
+# pylint: disable=line-too-long
 
 from typing import Any
 
