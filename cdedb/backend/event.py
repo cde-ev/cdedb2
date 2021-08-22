@@ -3170,7 +3170,7 @@ class EventBackend(AbstractBackend):
                                                     fupdate)
             if 'parts' in data:
                 parts = data['parts']
-                if not set(event['parts'].keys()) >= parts.keys():
+                if not event['parts'].keys() >= parts.keys():
                     raise ValueError(n_("Non-existing parts specified."))
                 existing = {e['part_id']: e['id'] for e in self.sql_select(
                     rs, "event.registration_parts", ("id", "part_id"),
