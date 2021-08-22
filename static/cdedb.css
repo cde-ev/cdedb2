@@ -151,7 +151,7 @@ ul.slim {
 hr.strong {
     border-top: 1px solid #ddd;
 }
-hr.primary {
+hr.info {
     border-top: 2px solid #d9edf7;
 }
 h4, .h4, h5, .h5, h6, .h6 {
