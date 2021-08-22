@@ -965,7 +965,7 @@ class AssemblyBackend(AbstractBackend):
             blockers["vote_begin"] = [ballot_id]
         if ballot['candidates']:
             # Ballot still has candidates
-            blockers["candidates"] = ballot["candidates"].keys()
+            blockers["candidates"] = list(ballot["candidates"])
 
         attachments = self.list_attachments(rs, ballot_id=ballot_id)
         if attachments:
@@ -1689,7 +1689,7 @@ class AssemblyBackend(AbstractBackend):
 
         versions = self.get_attachment_history(rs, attachment_id)
         if versions:
-            blockers["versions"] = list(versions.keys())
+            blockers["versions"] = list(versions)
 
         attachment = self.get_attachment(rs, attachment_id)
         if attachment['ballot_id']:
