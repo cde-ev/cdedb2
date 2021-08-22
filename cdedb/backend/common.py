@@ -220,7 +220,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         # Everybody needs access to the core backend
         # Import here since we otherwise have a cyclic import.
         # I don't see how we can get out of this ...
-        from cdedb.backend.core import CoreBackend
+        from cdedb.backend.core import CoreBackend  # pylint: disable=import-outside-toplevel
         self.core: CoreBackend
         if isinstance(self, CoreBackend):
             # self.core = cast('CoreBackend', self)
