@@ -1405,6 +1405,18 @@ def asciificator(s: str) -> str:
     return ret
 
 
+# According to https://en.wikipedia.org/wiki/Filename#Reserved_characters_and_words
+FILENAME_SANITIZE_MAP = str.maketrans({
+    x: '_'
+    for x in "/\\?%*:|\"<> ."
+})
+
+
+def sanitize_filename(name: str) -> str:
+    """Sanitize filenames by replacing forbidden and problematic characters with '_'."""
+    return name.translate(FILENAME_SANITIZE_MAP)
+
+
 MaybeStr = TypeVar("MaybeStr", str, Type[None])
 
 
