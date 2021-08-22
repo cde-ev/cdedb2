@@ -42,20 +42,24 @@ class SubscriptionManager:
         SubscriptionState.pending
     }
 
-    def __init__(  # pylint: disable=dangerous-default-value
+    def __init__(
         self, *,
-        error_matrix: ActionStateErrorMatrix = SUBSCRIPTION_ERROR_MATRIX,
+        error_matrix: ActionStateErrorMatrix = None,
         unwritten_states: Optional[StateColl] = None,
     ) -> None:
         """
         Create an instance of a `SubscriptionManager`.
 
-        :param error_matrix: You may provide an alternative matrix defining the
+        :param error_matrix: Defaults to `subman.machine.SUBSCRIPTION_ERROR_MATRIX`.
+            You may provide an alternative matrix defining the
             relations between actions and states.
         :param unwritten_states: Provide this if you want to keep track of a subset of
             all `SubscriptionState`s, that should not be written to your database.
         """
-        self.error_matrix = error_matrix
+        if error_matrix is None:
+            self.error_matrix = SUBSCRIPTION_ERROR_MATRIX
+        else:
+            self.error_matrix = error_matrix
         self.unwritten_states: StateSet = set(unwritten_states or ())
         if (self.unwritten_states &
                 {SubscriptionState.subscribed, SubscriptionState.unsubscribed}):
