@@ -1443,9 +1443,9 @@ def reconnoitre_ambience(obj: AbstractFrontend,
             try:
                 ambience[s.object_name] = s.getter(value)
             except KeyError:
-                raise werkzeug.exceptions.NotFound(  # pylint: disable=raise-missing-from
+                raise werkzeug.exceptions.NotFound(
                     rs.gettext("Object {param}={value} not found").format(
-                        param=param, value=value))
+                        param=param, value=value)) from None
             except PrivilegeError as e:
                 if not obj.conf['CDEDB_DEV']:
                     msg = "Not privileged to view object {param}={value}: {exc}"
