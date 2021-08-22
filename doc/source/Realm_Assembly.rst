@@ -5,6 +5,7 @@ Assembly Realm
    :maxdepth: 1
    :hidden:
 
+   Realm_Assembly_Attachments
    Realm_Assembly_Voting-Procedere
    Realm_Assembly_Voting-Details
 
