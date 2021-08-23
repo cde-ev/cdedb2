@@ -69,6 +69,16 @@ class AssemblyBackend(AbstractBackend):
     def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
 
+    @access("assembly")
+    def is_assembly_locked(self, rs: RequestState, assembly_id: int) -> bool:
+        """Helper to check, whether an assembly may be modified.
+
+        :returns: True if the assembly may not be edited, False otherwise.
+        """
+        assembly_id = affirm(vtypes.ID, assembly_id)
+        assembly = self.get_assembly(rs, assembly_id)
+        return not assembly["is_active"]
+
     @access("persona")
     def presider_infos(self, rs: RequestState, persona_ids: Collection[int]
                        ) -> Dict[int, Set[int]]:
@@ -754,6 +764,30 @@ class AssemblyBackend(AbstractBackend):
         data = self.sql_select(rs, "assembly.ballots", ("id", "title"),
                                (assembly_id,), entity_key="assembly_id")
         return {e['id']: e['title'] for e in data}
+
+    @access("assembly")
+    def is_ballot_locked(self, rs: RequestState, ballot_id: int) -> bool:
+        """Helper to check, whether a ballot may be modified.
+
+        :returns: True if the ballot may not be edited, False otherwise.
+        """
+        ballot_id = affirm(vtypes.ID, ballot_id)
+        ballot = self.get_ballot(rs, ballot_id)
+        return ballot["vote_begin"] < now()
+
+    @access("assembly")
+    def are_ballots_locked(self, rs: RequestState, ballot_ids: Collection[int]
+                           ) -> bool:
+        """Helper to check whether the given ballots may all be modified.
+
+        :returns: True if any of the ballots may not be edited.
+        """
+        ballot_ids = affirm_set(vtypes.ID, ballot_ids)
+        reference_time = now()
+        # Don't refer to `is_ballot_locked' to avoid needing an Atomizer and
+        # a lot of subqueries.
+        return any(b["vote_begin"] < reference_time for b in
+                   self.get_ballots(rs, ballot_ids).values())
 
     @access("assembly")
     def get_ballots(self, rs: RequestState, ballot_ids: Collection[int]
@@ -1516,16 +1550,6 @@ class AssemblyBackend(AbstractBackend):
             return self.may_access(rs, assembly_id=unwrap(assembly_ids))
 
     @access("assembly")
-    def check_ballot_locked(self, rs: RequestState, ballot_id: int) -> bool:
-        """Helper to check, whether a ballot may be modified.
-
-        :returns: True if the ballot may not be edited, False otherwise.
-        """
-        ballot_id = affirm(vtypes.ID, ballot_id)
-        ballot = self.get_ballot(rs, ballot_id)
-        return ballot['vote_begin'] < now()
-
-    @access("assembly")
     def check_attachment_locked(self, rs: RequestState,
                                 attachment_id: int) -> bool:
         """Helper to check, whether a attachment may be modified.
@@ -1536,7 +1560,7 @@ class AssemblyBackend(AbstractBackend):
         with Atomizer(rs):
             attachment = self.get_attachment(rs, attachment_id)
             if attachment['ballot_id']:
-                if self.check_ballot_locked(rs, attachment['ballot_id']):
+                if self.is_ballot_locked(rs, attachment['ballot_id']):
                     return True
             assembly_id = self.get_assembly_id(rs, attachment_id=attachment_id)
             assembly = self.get_assembly(rs, assembly_id)
