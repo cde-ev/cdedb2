@@ -1535,15 +1535,14 @@ class AssemblyBackend(AbstractBackend):
 
     @internal
     @access("assembly")
-    def check_attachment_access(self, rs: RequestState,
-                                attachment_ids: Collection[int]) -> bool:
+    def may_access_attachments(self, rs: RequestState,
+                               attachment_ids: Collection[int]) -> bool:
         """Helper to check whether the user may access the given attachments."""
         attachment_ids = affirm_set(vtypes.ID, attachment_ids)
         with Atomizer(rs):
             if not attachment_ids:
                 return True
-            assembly_ids = self.get_assembly_ids(
-                rs, attachment_ids=attachment_ids)
+            assembly_ids = self.get_assembly_ids(rs, attachment_ids=attachment_ids)
             if len(assembly_ids) != 1:
                 raise ValueError(n_("Can only access attachments from exactly "
                                     "one assembly at a time."))
@@ -1574,7 +1573,7 @@ class AssemblyBackend(AbstractBackend):
         attachment_ids = affirm_set(vtypes.ID, attachment_ids)
         ret: Dict[int, CdEDBObjectMap] = {anid: {} for anid in attachment_ids}
         with Atomizer(rs):
-            if not self.check_attachment_access(rs, attachment_ids):
+            if not self.may_access_attachments(rs, attachment_ids):
                 raise PrivilegeError(n_("Not privileged."))
             data = self.sql_select(
                 rs, "assembly.attachment_versions",
@@ -1832,7 +1831,7 @@ class AssemblyBackend(AbstractBackend):
         """Get the most recent version numbers for the given attachments."""
         attachment_ids = affirm_set(vtypes.ID, attachment_ids)
         with Atomizer(rs):
-            if not self.check_attachment_access(rs, attachment_ids):
+            if not self.may_access_attachments(rs, attachment_ids):
                 raise PrivilegeError(n_("Not privileged."))
             query = ("SELECT attachment_id, MAX(version) as version"
                      " FROM assembly.attachment_versions"
@@ -1980,7 +1979,7 @@ class AssemblyBackend(AbstractBackend):
                                version: int = None) -> Union[bytes, None]:
         """Get the content of an attachment. Defaults to most recent version."""
         attachment_id = affirm(vtypes.ID, attachment_id)
-        if not self.check_attachment_access(rs, (attachment_id,)):
+        if not self.may_access_attachments(rs, (attachment_id,)):
             raise PrivilegeError(n_("Not privileged."))
         version = affirm_optional(vtypes.ID, version) or self.get_current_version(
             rs, attachment_id, include_deleted=False)
@@ -2066,7 +2065,7 @@ class AssemblyBackend(AbstractBackend):
         """Retrieve data on attachments"""
         attachment_ids = affirm_set(vtypes.ID, attachment_ids)
         with Atomizer(rs):
-            if not self.check_attachment_access(rs, attachment_ids):
+            if not self.may_access_attachments(rs, attachment_ids):
                 raise PrivilegeError(n_("Not privileged."))
             return self._get_attachment_infos(rs, attachment_ids)
 
