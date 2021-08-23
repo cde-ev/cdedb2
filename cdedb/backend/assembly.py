@@ -1566,7 +1566,7 @@ class AssemblyBackend(AbstractBackend):
         return not assembly['is_active']
 
     @access("assembly")
-    def get_attachment_histories(self, rs: RequestState,
+    def get_attachments_versions(self, rs: RequestState,
                                  attachment_ids: Collection[int]
                                  ) -> Dict[int, CdEDBObjectMap]:
         """Retrieve all version information for given attachments."""
@@ -1584,10 +1584,10 @@ class AssemblyBackend(AbstractBackend):
 
         return ret
 
-    class _GetAttachmentHistoryProtocol(Protocol):
+    class _GetAttachmentVersionsProtocol(Protocol):
         def __call__(self, rs: RequestState, attachment_id: int) -> CdEDBObjectMap: ...
-    get_attachment_history: _GetAttachmentHistoryProtocol = singularize(
-        get_attachment_histories, "attachment_ids", "attachment_id")
+    get_attachment_versions: _GetAttachmentVersionsProtocol = singularize(
+        get_attachments_versions, "attachment_ids", "attachment_id")
 
     @access("assembly")
     def add_attachment(self, rs: RequestState, data: CdEDBObject,
@@ -1710,7 +1710,7 @@ class AssemblyBackend(AbstractBackend):
             raise PrivilegeError(n_(
                 "Must have privileged access to delete attachment."))
 
-        versions = self.get_attachment_history(rs, attachment_id)
+        versions = self.get_attachment_versions(rs, attachment_id)
         if versions:
             blockers["versions"] = [v for v in versions]
 
@@ -1938,7 +1938,7 @@ class AssemblyBackend(AbstractBackend):
                 raise ValueError(n_(
                     "Unable to change attachment once voting has begun or the "
                     "assembly has been concluded."))
-            history = self.get_attachment_history(rs, attachment_id)
+            history = self.get_attachment_versions(rs, attachment_id)
             if version not in history:
                 raise ValueError(n_("This version does not exist."))
             if history[version]['dtime']:

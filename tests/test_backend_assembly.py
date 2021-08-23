@@ -706,7 +706,7 @@ class TestAssemblyBackend(BackendTest):
             },
         }
         self.assertEqual(
-            expectation, self.assembly.get_attachment_history(self.key, new_id))
+            expectation, self.assembly.get_attachment_versions(self.key, new_id))
         with self.assertRaises(ValueError):
             self.assembly.remove_attachment_version(self.key, new_id, 1)
         data = {
@@ -757,7 +757,7 @@ class TestAssemblyBackend(BackendTest):
             2: data,
         }
         self.assertEqual(
-            history_expectation, self.assembly.get_attachment_history(self.key, new_id))
+            history_expectation, self.assembly.get_attachment_versions(self.key, new_id))
         with self.assertRaises(ValueError):
             self.assembly.delete_attachment(self.key, new_id)
 
@@ -832,7 +832,7 @@ class TestAssemblyBackend(BackendTest):
             expectation, self.assembly.get_attachments(self.key, (1001, 1002, 1003)))
         self.assertEqual(
             history_expectation,
-            self.assembly.get_attachment_histories(self.key, (1001, 1002, 1003)))
+            self.assembly.get_attachments_versions(self.key, (1001, 1002, 1003)))
         self.assertTrue(self.assembly.delete_attachment(self.key, 1001, {"versions"}))
         del expectation[1001]
         self.assertEqual(

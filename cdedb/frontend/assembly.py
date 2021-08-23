@@ -198,7 +198,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         attachment_ids = self.assemblyproxy.list_attachments(
             rs, assembly_id=assembly_id)
         attachments = self.assemblyproxy.get_attachments(rs, attachment_ids)
-        attachment_histories = self.assemblyproxy.get_attachment_histories(
+        attachment_histories = self.assemblyproxy.get_attachments_versions(
             rs, attachment_ids)
         attends = self.assemblyproxy.does_attend(rs, assembly_id=assembly_id)
         ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
@@ -215,7 +215,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 self.assemblyproxy.get_attachments(
                     rs, ballot_attachment_ids)
             attachment_histories.update(
-                self.assemblyproxy.get_attachment_histories(
+                self.assemblyproxy.get_attachments_versions(
                     rs, ballot_attachment_ids))
             has_ballot_attachments = has_ballot_attachments or bool(
                 ballot_attachment_ids)
@@ -498,7 +498,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 rs, assembly_attachments)
         }
         attachment_histories: Dict[Optional[int], Dict[int, CdEDBObjectMap]] = {
-            None: self.assemblyproxy.get_attachment_histories(
+            None: self.assemblyproxy.get_attachments_versions(
                 rs, assembly_attachments)
         }
         ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
@@ -510,7 +510,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             all_attachments[ballot_id] = self.assemblyproxy.get_attachments(
                 rs, attachment_ids)
             attachment_histories[ballot_id] = (
-                self.assemblyproxy.get_attachment_histories(rs, attachment_ids))
+                self.assemblyproxy.get_attachments_versions(rs, attachment_ids))
         return self.render(rs, "list_attachments", {
             "all_attachments": all_attachments,
             "attachment_histories": attachment_histories,
@@ -735,7 +735,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         """Retrieve an attachment. Default to most recent version."""
         if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        history = self.assemblyproxy.get_attachment_history(
+        history = self.assemblyproxy.get_attachment_versions(
             rs, attachment_id)
         version = version or self.assemblyproxy.get_current_version(
             rs, attachment_id, include_deleted=False)
@@ -755,7 +755,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                         attachment_id: int, ballot_id: int = None) -> Response:
         if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        history = self.assemblyproxy.get_attachment_history(
+        history = self.assemblyproxy.get_attachment_versions(
             rs, attachment_id)
         edit = not self.assemblyproxy.check_attachment_locked(rs, attachment_id)
         return self.render(rs, "show_attachment", {
@@ -784,7 +784,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                     return self.redirect(rs, "assembly/show_ballot")
                 else:
                     return self.redirect(rs, "assembly/show_assembly")
-            history = self.assemblyproxy.get_attachment_history(
+            history = self.assemblyproxy.get_attachment_versions(
                 rs, attachment_id)
         return self.render(
             rs, "add_attachment", {
@@ -822,7 +822,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             'authors': authors,
         }
         if attachment_id:
-            history = self.assemblyproxy.get_attachment_history(
+            history = self.assemblyproxy.get_attachment_versions(
                 rs, attachment_id)
             file_hash = get_hash(attachment)
             if any(v["file_hash"] == file_hash for v in history.values()):
@@ -866,7 +866,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 rs.notify("warning", n_("Voting has already begun."))
                 return self.redirect(rs, "assembly/show_ballot")
 
-        history = self.assemblyproxy.get_attachment_history(rs, attachment_id)
+        history = self.assemblyproxy.get_attachment_versions(rs, attachment_id)
         ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
         ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
         timestamp = now()
@@ -951,7 +951,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             if now() > ballot['vote_begin']:
                 rs.notify("warning", n_("Voting has already begun."))
                 return self.redirect(rs, "assembly/show_ballot")
-        history = self.assemblyproxy.get_attachment_history(
+        history = self.assemblyproxy.get_attachment_versions(
             rs, attachment_id)
         if version not in history or history[version]['dtime']:
             rs.notify("error", "Invalid version specified.")
@@ -993,7 +993,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                                      {'ballot_id': attachment['ballot_id']})
             else:
                 return self.redirect(rs, "assembly/show_assembly")
-        history = self.assemblyproxy.get_attachment_history(
+        history = self.assemblyproxy.get_attachment_versions(
             rs, attachment_id)
         if version not in history or history[version]['dtime']:
             rs.notify("error", "Invalid version specified.")
@@ -1038,7 +1038,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             else:
                 return self.redirect(rs, "assembly/show_assembly")
         else:
-            history = self.assemblyproxy.get_attachment_history(
+            history = self.assemblyproxy.get_attachment_versions(
                 rs, attachment_id)
             if version not in history:
                 rs.notify("error", n_("This version does not exist."))
@@ -1088,7 +1088,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         attachment_ids = self.assemblyproxy.list_attachments(
             rs, ballot_id=ballot_id)
         attachments = self.assemblyproxy.get_attachments(rs, attachment_ids)
-        attachment_histories = self.assemblyproxy.get_attachment_histories(
+        attachment_histories = self.assemblyproxy.get_attachments_versions(
             rs, attachment_ids)
         if self._update_ballot_state(rs, ballot):
             return self.redirect(rs, "assembly/show_ballot")
