@@ -1549,23 +1549,6 @@ class AssemblyBackend(AbstractBackend):
             return self.may_access(rs, assembly_id=unwrap(assembly_ids))
 
     @access("assembly")
-    def check_attachment_locked(self, rs: RequestState,
-                                attachment_id: int) -> bool:
-        """Helper to check, whether a attachment may be modified.
-
-        :returns: True if the attachment may not be edited, False otherwise.
-        """
-        attachment_id = affirm(vtypes.ID, attachment_id)
-        with Atomizer(rs):
-            attachment = self.get_attachment(rs, attachment_id)
-            if attachment['ballot_id']:
-                if self.is_ballot_locked(rs, attachment['ballot_id']):
-                    return True
-            assembly_id = self.get_assembly_id(rs, attachment_id=attachment_id)
-            assembly = self.get_assembly(rs, assembly_id)
-        return not assembly['is_active']
-
-    @access("assembly")
     def get_attachments_versions(self, rs: RequestState,
                                  attachment_ids: Collection[int]
                                  ) -> Dict[int, CdEDBObjectMap]:
@@ -1866,7 +1849,7 @@ class AssemblyBackend(AbstractBackend):
         content = affirm(bytes, content)
         attachment_id = data['attachment_id']
         with Atomizer(rs):
-            if self.check_attachment_locked(rs, attachment_id):
+            if not self.is_attachment_version_creatable(rs, attachment_id):
                 raise ValueError(n_(
                     "Unable to change attachment once voting has begun or the "
                     "assembly has been concluded."))
@@ -1904,7 +1887,7 @@ class AssemblyBackend(AbstractBackend):
             if not self.is_presider(rs, attachment_id=attachment_id):
                 raise PrivilegeError(n_("Must have privileged access to change"
                                         " attachment version."))
-            if self.check_attachment_locked(rs, attachment_id):
+            if not self.is_attachment_version_changeable(rs, attachment_id):
                 raise ValueError(n_(
                     "Unable to change attachment once voting has begun or the "
                     "assembly has been concluded."))
@@ -1934,7 +1917,7 @@ class AssemblyBackend(AbstractBackend):
             if not self.is_presider(rs, attachment_id=attachment_id):
                 raise PrivilegeError(n_("Must have privileged access to remove"
                                         " attachment version."))
-            if self.check_attachment_locked(rs, attachment_id):
+            if not self.is_attachment_version_deletable(rs, attachment_id):
                 raise ValueError(n_(
                     "Unable to change attachment once voting has begun or the "
                     "assembly has been concluded."))
