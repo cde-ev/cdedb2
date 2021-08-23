@@ -1626,52 +1626,6 @@ class AssemblyBackend(AbstractBackend):
         return new_id
 
     @access("assembly")
-    def change_attachment_link(self, rs: RequestState,
-                               data: CdEDBObject) -> DefaultReturnCode:
-        """Change the association of an attachment.
-
-        It is not allowed to modify an attachment of a ballot that
-        has started voting or of an assembly that has been concluded.
-
-        It is not allowed to change the associated ballot to a ballot that has
-        started voting.
-
-        It is not allowed to change the (indirectly) associated assembly of
-        an attachment.
-        """
-        data = affirm(vtypes.AssemblyAttachment, data)
-        with Atomizer(rs):
-            # Do some checks to make sure we are not illegaly modifying ballots.
-            locked_msg = n_("Unable to change attachment once voting has begun"
-                            " or the assembly has been concluded.")
-            attachment = self.get_attachment(rs, data['id'])
-            old_assembly_id = self.get_assembly_id(rs, attachment_id=data['id'])
-            new_assembly_id = data.get('assembly_id') or self.get_assembly_id(
-                rs, ballot_id=data['ballot_id'])
-            if old_assembly_id != new_assembly_id:
-                raise ValueError(n_("Cannot change to a different assembly."))
-            assembly = self.get_assembly(rs, old_assembly_id)
-            if not self.is_presider(rs, assembly_id=assembly['id']):
-                raise PrivilegeError(n_("Must have privileged access to change"
-                                        " attachment link."))
-            if not assembly['is_active']:
-                raise ValueError(locked_msg)
-            old_ballot_id = attachment['ballot_id']
-            new_ballot_id = data['ballot_id']
-            ballot_ids = set(x for x in (old_ballot_id, new_ballot_id) if x)
-            ballots = self.get_ballots(rs, ballot_ids).values()
-            for ballot in ballots:
-                if ballot['vote_begin'] < now():
-                    raise ValueError(locked_msg)
-
-            # Actually perform the change.
-            ret = self.sql_update(rs, "assembly.attachments", data)
-            self.assembly_log(rs, const.AssemblyLogCodes.attachment_changed,
-                              assembly_id=old_assembly_id,
-                              change_note=data['id'])
-            return ret
-
-    @access("assembly")
     def delete_attachment_blockers(self, rs: RequestState,
                                    attachment_id: int) -> DeletionBlockers:
         """Determine what keeps an attachment from being deleted.
@@ -1775,6 +1729,71 @@ class AssemblyBackend(AbstractBackend):
         ballot_id = affirm(vtypes.ID, ballot_id)
         return not self.is_ballot_locked(rs, ballot_id)
 
+    @access("assembly")
+    def get_attachment_ballots(self, rs: RequestState, attachment_id: vtypes.ID) -> Set[vtypes.ID]:
+        """Return all ballot_ids linked to an attachment."""
+        ret = self.sql_select(
+            rs, "assembly.attachment_ballot_links", ("id", "ballot_id"),
+            (attachment_id,), entity_key="attachment_id")
+        return {data["ballot_id"] for data in ret}
+
+    @access("assembly")
+    def add_attachment_ballot_link(self, rs: RequestState, attachment_id: int,
+                                   ballot_id: int) -> DefaultReturnCode:
+        """Create a new association attachment -> ballot."""
+        attachment_id = affirm(vtypes.ID, attachment_id)
+        ballot_id = affirm(vtypes.ID, ballot_id)
+        with Atomizer(rs):
+            # This checks that attachment and ballot belong to the same assembly.
+            assembly_id = self.get_assembly_id(
+                rs, attachment_id=attachment_id, ballot_id=ballot_id)
+            if not self.is_attachment_ballot_link_creatable(rs, attachment_id, ballot_id):
+                raise ValueError(n_("Cannot link attachment to ballot that has already"
+                                    " begun voting."))
+            ret = self.sql_insert(
+                rs, "assembly.attachment_ballot_links",
+                {'attachment_id': attachment_id, 'ballot_id': ballot_id},
+                drop_on_conflict=True)
+            if ret:
+                attachment_versions = self.get_attachment_versions(rs, attachment_id)
+                current_version = self.get_current_version(rs, attachment_id)
+                version_data = attachment_versions[current_version]
+                # TODO: be more specific with log code.
+                # TODO: Mention ballot title in change note.
+                self.assembly_log(
+                    rs, const.AssemblyLogCodes.attachment_changed, assembly_id,
+                    persona_id=None, change_note=version_data["title"])
+            # TODO return -1 instead of 0 if link already exists?
+            return ret
+
+    @access("assembly")
+    def remove_attachment_ballot_link(self, rs: RequestState, attachment_id: int,
+                                      ballot_id: int) -> DefaultReturnCode:
+        """Remove an association between an attachment and a ballot."""
+        attachment_id = affirm(vtypes.ID, attachment_id)
+        ballot_id = affirm(vtypes.ID, ballot_id)
+        with Atomizer(rs):
+            # This checks that attachment and ballot belong to the same assembly.
+            assembly_id = self.get_assembly_id(
+                rs, attachment_id=attachment_id, ballot_id=ballot_id)
+            if not self.is_attachment_ballot_link_deletable(rs, attachment_id, ballot_id):
+                raise ValueError(n_("Cannot unlink attachment from ballot that has"
+                                    " already begun voting."))
+            query = ("DELETE FROM assembly.attachment_ballot_links"
+                     " WHERE attachment_id = %s AND ballot_id = %s")
+            ret = self.query_exec(rs, query, (attachment_id, ballot_id))
+            if ret:
+                attachment_versions = self.get_attachment_versions(rs, attachment_id)
+                current_version = self.get_current_version(rs, attachment_id)
+                version_data = attachment_versions[current_version]
+                # TODO: be more specific with log code.
+                # TODO: Mention ballot title in change note.
+                self.assembly_log(
+                    rs, const.AssemblyLogCodes.attachment_changed, assembly_id,
+                    persona_id=None, change_note=version_data["title"])
+            # TODO: return -1 instead of 0 if link doesn't exist?
+            return ret
+
     @internal
     @access("assembly")
     def is_attachment_version_creatable(self, rs: RequestState, attachment_id: vtypes.ID) -> bool:
@@ -1783,10 +1802,6 @@ class AssemblyBackend(AbstractBackend):
         with Atomizer(rs):
             assembly_id = self.get_assembly_id(rs, attachment_id=attachment_id)
             return not self.is_assembly_locked(rs, assembly_id)
-
-    @access("assembly")
-    def get_attachment_ballots(self, rs: RequestState, attachment_id: vtypes.ID) -> Set[vtypes.ID]:
-        pass
 
     @internal
     @access("assembly")
