@@ -1775,6 +1775,56 @@ class AssemblyBackend(AbstractBackend):
                     {"type": "assembly", "block": blockers.keys()})
         return ret
 
+    @internal
+    @access("assembly")
+    def is_attachment_ballot_link_creatable(self, rs: RequestState, attachment_id: vtypes.ID, ballot_id: vtypes.ID) -> bool:
+        """An attachment_ballot_link may be created if the ballot it links to is before
+        its voting phase."""
+        attachment_id = affirm(vtypes.ID, attachment_id)
+        ballot_id = affirm(vtypes.ID, ballot_id)
+        return not self.is_ballot_locked(rs, ballot_id)
+
+    @internal
+    @access("assembly")
+    def is_attachment_ballot_link_deletable(self, rs: RequestState, attachment_id: vtypes.ID, ballot_id: vtypes.ID) -> bool:
+        """An attachment_ballot_link can only be deleted if the ballot it links to is
+        before its voting phase."""
+        attachment_id = affirm(vtypes.ID, attachment_id)
+        ballot_id = affirm(vtypes.ID, ballot_id)
+        return not self.is_ballot_locked(rs, ballot_id)
+
+    @internal
+    @access("assembly")
+    def is_attachment_version_creatable(self, rs: RequestState, attachment_id: vtypes.ID) -> bool:
+        """An attachment_version may be created at any time during an assembly."""
+        attachment_id = affirm(vtypes.ID, attachment_id)
+        with Atomizer(rs):
+            assembly_id = self.get_assembly_id(rs, attachment_id=attachment_id)
+            return not self.is_assembly_locked(rs, assembly_id)
+
+    @access("assembly")
+    def get_attachment_ballots(self, rs: RequestState, attachment_id: vtypes.ID) -> Set[vtypes.ID]:
+        pass
+
+    @internal
+    @access("assembly")
+    def is_attachment_version_deletable(self, rs: RequestState, attachment_id: vtypes.ID) -> bool:
+        """An attachment_version must not be deleted if its attachment has at least one
+        attachment_ballot_link which voting phase had started."""
+        attachment_id = affirm(vtypes.ID, attachment_id)
+        with Atomizer(rs):
+            assembly_id = self.get_assembly_id(rs, attachment_id=attachment_id)
+            if self.is_assembly_locked(rs, assembly_id):
+                return False
+            linked_ballots = self.get_attachment_ballots(rs, attachment_id)
+            return not self.are_ballots_locked(rs, linked_ballots)
+
+    @internal
+    @access("assembly")
+    def is_attachment_version_changeable(self, rs: RequestState, attachment_id: vtypes.ID) -> bool:
+        """An attachment_version can be changed if and only if it may also be deleted."""
+        return self.is_attachment_version_deletable(rs, attachment_id)
+
     @access("assembly")
     def get_current_versions(self, rs: RequestState,
                              attachment_ids: Collection[int],
