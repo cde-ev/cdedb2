@@ -314,19 +314,15 @@ class AssemblyBackend(AbstractBackend):
         """Helper to retrieve a corresponding assembly id."""
         ballot_ids = affirm_set(vtypes.ID, ballot_ids or set())
         attachment_ids = affirm_set(vtypes.ID, attachment_ids or set())
-        ret = set()
+        ret: Set[int] = set()
         if attachment_ids:
-            attachment_data = self._get_attachment_infos(rs, attachment_ids)
-            for e in attachment_data.values():
-                if e["assembly_id"]:
-                    ret.add(e["assembly_id"])
-                if e["ballot_id"]:
-                    ballot_ids.add(e["ballot_id"])
+            attachment_data = self.sql_select(
+                rs, "assembly.attachments", ("assembly_id",), attachment_ids)
+            ret.update(e["assembly_id"] for e in attachment_data)
         if ballot_ids:
             ballot_data = self.sql_select(
                 rs, "assembly.ballots", ("assembly_id",), ballot_ids)
-            for e in ballot_data:
-                ret.add(e["assembly_id"])
+            ret.update(e["assembly_id"] for e in ballot_data)
         return ret
 
     @internal
@@ -976,7 +972,7 @@ class AssemblyBackend(AbstractBackend):
         * vote_begin: Whether voting on the ballot has begun.
                       Prevents deletion.
         * candidates: Rows in the assembly.candidates table.
-        * attachments: All attachments associated with this ballot.
+        * attachment_ballot_links: All attachment links associated with this ballot.
         * votes: Votes that have been cast in this ballot. Prevents deletion.
         * voters: Rows in the assembly.voters table. These do not actually
                   mean that anyone has voted for that ballot, as they are
@@ -1001,10 +997,12 @@ class AssemblyBackend(AbstractBackend):
             # Ballot still has candidates
             blockers["candidates"] = [anid for anid in ballot["candidates"]]
 
-        attachments = self.list_attachments(rs, ballot_id=ballot_id)
-        if attachments:
+        attachment_ballot_links = self.sql_select(
+            rs, "assembly.attachment_ballot_links", ("id",), (ballot_id,),
+            entity_key="ballot_id")
+        if attachment_ballot_links:
             # Ballot still has attachments
-            blockers["attachments"] = [anid for anid in attachments]
+            blockers["attachment_link"] = [anid for anid in attachment_ballot_links]
 
         # Voters are people who _may_ vote in this ballot.
         voters = self.sql_select(rs, "assembly.voter_register", ("id", ),
@@ -1059,7 +1057,7 @@ class AssemblyBackend(AbstractBackend):
                 if "candidates" in cascade:
                     ret *= self.sql_delete(
                         rs, "assembly.candidates", blockers["candidates"])
-                if "attachments" in cascade:
+                if "attachment_ballot_links" in cascade:
                     with Silencer(rs):
                         attachment_cascade = {"versions"}
                         for attachment_id in blockers["attachments"]:
@@ -1577,8 +1575,8 @@ class AssemblyBackend(AbstractBackend):
                        content: bytes) -> DefaultReturnCode:
         """Add a new attachment.
 
-        Note that it is not allowed to add an attachment to a ballot that
-        has started voting or to an assembly that has been concluded.
+        Note that it is not allowed to add an attachment to an assembly that has been
+        concluded.
 
         :returns: The id of the new attachment.
         """
@@ -1591,25 +1589,16 @@ class AssemblyBackend(AbstractBackend):
                         " or the assembly has been concluded.")
         attachment = {k: v for k, v in data.items()
                       if k in ASSEMBLY_ATTACHMENT_FIELDS}
+        assembly_id = attachment['assembly_id']
+        version = {k: v for k, v in data.items()
+                   if k in ASSEMBLY_ATTACHMENT_VERSION_FIELDS}
+        version['version'] = 1
+        version['file_hash'] = get_hash(content)
         with Atomizer(rs):
-            if attachment.get('ballot_id'):
-                ballot = self.get_ballot(rs, attachment['ballot_id'])
-                if ballot['vote_begin'] < now():
-                    raise ValueError(locked_msg)
-                assembly_id = ballot['assembly_id']
-            else:
-                assembly_id = attachment['assembly_id']
-            assembly = self.get_assembly(rs, assembly_id)
-            if not assembly['is_active']:
+            if self.is_assembly_locked(rs, assembly_id):
                 raise ValueError(locked_msg)
             new_id = self.sql_insert(rs, "assembly.attachments", attachment)
-            version = {
-                k: v for k, v in data.items()
-                if k in ASSEMBLY_ATTACHMENT_VERSION_FIELDS
-            }
-            version['version'] = 1
             version['attachment_id'] = new_id
-            version['file_hash'] = get_hash(content)
             code = self.sql_insert(rs, "assembly.attachment_versions", version)
             if not code:
                 raise RuntimeError(n_("Something went wrong."))
@@ -1618,11 +1607,8 @@ class AssemblyBackend(AbstractBackend):
                 raise RuntimeError(n_("File already exists."))
             with open(path, "wb") as f:
                 f.write(content)
-            assembly_id = data.get('assembly_id') or self.get_assembly_id(
-                rs, ballot_id=data['ballot_id'])
             self.assembly_log(rs, const.AssemblyLogCodes.attachment_added,
-                              assembly_id=assembly_id,
-                              change_note=version['title'])
+                              assembly_id=assembly_id, change_note=version['title'])
         return new_id
 
     @access("assembly")
@@ -1634,7 +1620,7 @@ class AssemblyBackend(AbstractBackend):
 
         * versions: All version entries for the attachment including versions,
             that were deleted.
-        * vote_begin: The associated ballot has begun voting. Prevents deletion.
+        * attachment_ballot_link: All links to ballots. Prevents deletion.
         * is_active: The associated assembly has concluded. Prevents deletion.
 
         :return: List of blockers, separated by type. The values of the dict
@@ -1651,16 +1637,15 @@ class AssemblyBackend(AbstractBackend):
         if versions:
             blockers["versions"] = [v for v in versions]
 
-        attachment = self.get_attachment(rs, attachment_id)
-        if attachment['ballot_id']:
-            ballot = self.get_ballot(rs, attachment['ballot_id'])
-            if ballot['vote_begin'] < now():
-                blockers["vote_begin"] = ballot["vote_begin"]
-            assembly = self.get_assembly(rs, ballot["assembly_id"])
-        else:
-            assembly = self.get_assembly(rs, attachment["assembly_id"])
-        if not assembly["is_active"]:
-            blockers["is_active"] = assembly["id"]
+        attachment_ballot_links = self.sql_select(
+            rs, "assembly.attachment_ballot_links", ("id",),
+            (attachment_id,), entity_key="attachment_id")
+        if attachment_ballot_links:
+            blockers["attachment_ballot_links"] = [e["id"] for e in attachment_ballot_links]
+
+        assembly_id = self.get_assembly_id(rs, attachment_id=attachment_id)
+        if self.is_assembly_locked(rs, assembly_id):
+            blockers["is_active"] = assembly_id
 
         return blockers
 
@@ -1697,6 +1682,9 @@ class AssemblyBackend(AbstractBackend):
                         path = self.attachment_base_path / filename
                         if path.exists():
                             path.unlink()
+                if "attachment_ballot_links" in cascade:
+                    ret *= self.sql_delete(rs, "assembly.attachment_ballot_links",
+                                           (attachment_id,), entity_key="attachment_id")
                 blockers = self.delete_attachment_blockers(rs, attachment_id)
 
             if not blockers:
@@ -1855,11 +1843,7 @@ class AssemblyBackend(AbstractBackend):
     @access("assembly")
     def add_attachment_version(self, rs: RequestState, data: CdEDBObject,
                                content: bytes) -> DefaultReturnCode:
-        """Add a new version of an attachment.
-
-        This is not allowed if the associated ballot has begun voting or if
-        the (indirectly) associated assembly has concluded.
-        """
+        """Add a new version of an attachment."""
         data = affirm(vtypes.AssemblyAttachmentVersion, data, creation=True)
         content = affirm(bytes, content)
         attachment_id = data['attachment_id']
@@ -1890,11 +1874,7 @@ class AssemblyBackend(AbstractBackend):
     @access("assembly")
     def change_attachment_version(self, rs: RequestState,
                                   data: CdEDBObject) -> DefaultReturnCode:
-        """Alter a version of an attachment.
-
-        This is not allowed if the associated ballot has begun voting or if
-        the (indirectly) associated assembly has concluded.
-        """
+        """Alter a version of an attachment."""
         data = affirm(vtypes.AssemblyAttachmentVersion, data)
         attachment_id = data.pop('attachment_id')
         version = data.pop('version')
@@ -1921,11 +1901,7 @@ class AssemblyBackend(AbstractBackend):
     @access("assembly")
     def remove_attachment_version(self, rs: RequestState, attachment_id: int,
                                   version: int) -> DefaultReturnCode:
-        """Remove a version of an attachment. Leaves other versions intact.
-
-        This is not allowed if the associated ballot has begun voting or if
-        the (indirectly) associated assembly has concluded.
-        """
+        """Remove a version of an attachment. Leaves other versions intact."""
         attachment_id = affirm(vtypes.ID, attachment_id)
         version = affirm(vtypes.ID, version)
         with Atomizer(rs):
@@ -1992,9 +1968,6 @@ class AssemblyBackend(AbstractBackend):
                          ballot_id: int = None) -> Set[int]:
         """List all files attached to an assembly/ballot.
 
-        Files can either be attached to an assembly or ballot, but not
-        to both at the same time.
-
         Exactly one of the inputs has to be provided.
         """
         if assembly_id is None and ballot_id is None:
@@ -2007,16 +1980,13 @@ class AssemblyBackend(AbstractBackend):
             raise PrivilegeError(n_("Not privileged."))
 
         if assembly_id is not None:
-            column = "assembly_id"
-            key = assembly_id
+            data = self.sql_select(rs, "assembly.attachments", ("id",),
+                                   (assembly_id,), entity_key="assembly_id")
         else:
-            assert ballot_id is not None
-            column = "ballot_id"
-            key = ballot_id
+            data = self.sql_select(rs, "assembly.attachment_ballot_links",
+                                   ("attachment_id",), (ballot_id,), "ballot_id")
 
-        data = self.sql_select(rs, "assembly.attachments", ("id",),
-                               (key,), entity_key=column)
-        return {e['id'] for e in data}
+        return {unwrap(e) for e in data}
 
     def _get_attachment_infos(self, rs: RequestState,
                               attachment_ids: Collection[int]
@@ -2025,37 +1995,33 @@ class AssemblyBackend(AbstractBackend):
         attachment_ids = affirm_set(vtypes.ID, attachment_ids)
         query = f"""SELECT
                 {', '.join(ASSEMBLY_ATTACHMENT_FIELDS +
-                           ('num_versions', 'current_version'))}
+                           ('num_versions', 'current_version', 'ballot_ids'))}
             FROM (
                 (
-                    SELECT
-                        {', '.join(ASSEMBLY_ATTACHMENT_FIELDS)}
-                    FROM
-                        assembly.attachments
-                    WHERE
-                        id = ANY(%s)
+                    SELECT {', '.join(ASSEMBLY_ATTACHMENT_FIELDS)}
+                    FROM assembly.attachments
+                    WHERE id = ANY(%s)
                 ) AS attachments
                 LEFT OUTER JOIN (
                     SELECT
                         attachment_id, COUNT(version) as num_versions,
                         MAX(version) as current_version
-                    FROM
-                        assembly.attachment_versions
-                    WHERE
-                        dtime IS NULL
-                    GROUP BY
-                        attachment_id
+                    FROM assembly.attachment_versions
+                    WHERE dtime IS NULL
+                    GROUP BY attachment_id
                 ) AS count ON attachments.id = count.attachment_id
+                LEFT OUTER JOIN (
+                    SELECT
+                        attachment_id,
+                        array_agg(ballot_id ORDER BY ballot_id) AS ballot_ids
+                    FROM assembly.attachment_ballot_links
+                    GROUP BY attachment_id
+                ) AS ballot_links ON attachments.id = ballot_links.attachment_id
             )"""
         params = (attachment_ids,)
         data = self.query_all(rs, query, params)
         ret = {e['id']: e for e in data}
         return ret
-
-    class _GetAttachmentInfoProtocol(Protocol):
-        def __call__(self, rs: RequestState, attachement_id: int) -> CdEDBObject: ...
-    _get_attachment_info: _GetAttachmentInfoProtocol = singularize(
-        _get_attachment_infos, "attachment_ids", "attachment_id")
 
     @access("assembly")
     def get_attachments(self, rs: RequestState,
