@@ -4368,8 +4368,6 @@ class EventBackend(AbstractBackend):
           transaction token describes the change and can be submitted to
           guarantee a certain effect.
         """
-        # this function is huge, disable complexity checkers
-        # pylint: disable=design,too-many-nested-blocks
         data = affirm(vtypes.SerializedPartialEvent, data)
         dryrun = affirm(bool, dryrun)
         if not self.is_orga(rs, event_id=data['id']) and not self.is_admin(rs):

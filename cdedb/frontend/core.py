@@ -492,7 +492,6 @@ class CoreFrontend(AbstractFrontend):
         frontend function and not an incoming request. This allows to access
         this endpoint without a redirect to preserve validation results.
         """
-        # pylint: disable=too-many-branches
         assert rs.user.persona_id is not None
         if (persona_id != confirm_id or rs.has_validation_errors()) and not internal:
             return self.index(rs)
@@ -901,7 +900,6 @@ class CoreFrontend(AbstractFrontend):
 
         * ``ml_subscriber``: Id of the mailinglist for context
         """
-        # pylint: disable=too-many-branches
         if rs.has_validation_errors():
             return self.send_json(rs, {})
 

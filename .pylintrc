@@ -68,7 +68,7 @@ disable=
     broad-except,  # all our broad excepts have a reason (e.g. safety fallback)
     redefined-outer-name,
     useless-super-delegation,  # we sometimes do this to have type annotations
-    too-many-public-methods,too-many-instance-attributes,too-few-public-methods,
+    design, too-many-nested-blocks,  # lots of our methods are sadly huge, so these are not helpful
     too-many-lines,  # enable again after fixing #80
     logging-format-interpolation,logging-fstring-interpolation,  # should we actually fix these?
     missing-module-docstring,missing-class-docstring,missing-function-docstring,
@@ -297,7 +297,7 @@ docstring-min-length=-1
 [ELIF]
 
 # Maximum number of nested blocks for function / method body
-max-nested-blocks=7
+max-nested-blocks=5
 
 
 [IMPORTS]
@@ -321,26 +321,26 @@ int-import-graph=
 [DESIGN]
 
 # Maximum number of arguments for function / method
-max-args=20
+max-args=5
 
 # Argument names that match this expression will be ignored. Default to name
 # with leading underscore
 ignored-argument-names=_.*
 
 # Maximum number of locals for function / method body
-max-locals=50
+max-locals=15
 
 # Maximum number of return / yield for function / method body
-max-returns=10
+max-returns=6
 
 # Maximum number of branch for function / method body
-max-branches=25
+max-branches=12
 
 # Maximum number of statements in function / method body
-max-statements=125
+max-statements=50
 
 # Maximum number of parents for a class (see R0901).
-max-parents=8
+max-parents=7
 
 # Maximum number of attributes for a class (see R0902).
 max-attributes=7
@@ -352,7 +352,7 @@ min-public-methods=2
 max-public-methods=20
 
 # Maximum number of boolean expressions in a if statement
-max-bool-expr=6
+max-bool-expr=5
 
 
 [CLASSES]

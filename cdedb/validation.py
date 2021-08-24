@@ -98,7 +98,6 @@ TypeMapping = Mapping[str, Type[Any]]
 
 
 class ValidationSummary(ValueError, Sequence[Exception]):
-    # pylint: disable=too-many-ancestors
     args: Tuple[Exception, ...]
 
     def __len__(self) -> int:
@@ -3964,7 +3963,7 @@ def _non_regex(
 
 
 @_add_typed_validator
-def _query_input(  # pylint: disable=too-many-branches
+def _query_input(
     val: Any, argname: str = None, *,
     spec: Mapping[str, str], allow_empty: bool = False,
     separator: str = ',', escape: str = '\\',
