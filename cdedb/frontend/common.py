@@ -222,7 +222,7 @@ class BaseApp(metaclass=abc.ABCMeta):
         return self.encode_parameter(target, token_name, token_payload, persona_id)
 
 
-def raise_jinja(val: str):
+def raise_jinja(val: str) -> None:
     """Helper to point out programming errors in jinja.
 
     May not be used for handling of user input, user-errors or control flow.
