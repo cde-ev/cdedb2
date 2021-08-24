@@ -562,10 +562,15 @@
             </option>
         {%- endif %}
         {% set entries = entries|sort(attribute=1) if sort else entries %}
+        {# Relevant for default: Use default value if key is unset or empty string or none #}
+        {% set former_value = values.get(name, "")|string if values.get(name, "") is not none else "" %}
         {%- for value, label in entries %}
+            {% if value in ("", none) and defaultvalue %}
+                {# This leads to problems regarding defaultvalues. #}
+                {{ raise("Empty string values with defaultvalue not supported. default: " + defaultvalue|string + " value: " + value|string) }}
+            {% endif %}
             <option value="{{ value }}"
-                {# User default value if key is unset or falsey #}
-                {%- if (values.get(name, defaultvalue) or defaultvalue)|string == value|string %}
+                {%- if former_value == value|string or (former_value == "" and defaultvalue|string == value|string) %}
                     selected="selected"
                 {% endif %}>
                 {{- label -}}
