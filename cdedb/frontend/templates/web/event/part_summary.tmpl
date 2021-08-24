@@ -41,6 +41,25 @@
             </div>
 
             <div class="panel-body">
+                <div class="p button-par">
+                    {% if not has_registrations and part_id not in referenced_parts %}
+                        <form action="{{ cdedblink('event/delete_part', {'part_id' : part_id}) }}"
+                              method="POST"
+                              id="deletepartform{{ part_id }}"
+                              class="display-inline">
+                            {{ util.anti_csrf_token('event/delete_part') }}
+                            {{ util.output_errors("ack_delete", wrapper=True) }}
+                            {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
+                            {{ util.input_submit(label=gettext("Delete Part"), aclass="btn btn-sm btn-danger", icon="trash") }}
+                        </form>
+                        <script nonce="{{ csp_nonce }}">
+                            $('#deletepartform{{ part_id }}').cdedbProtectAction("{{ gettext("The event part will be permanently deleted.") }}");
+                            $('#deletepartform{{ part_id }}').find('[name="ack_delete"]').prop('checked', true).parent().hide();
+                        </script>
+                    {% endif %}
+                    {{ util.href(cdedblink('event/change_part_form', {'part_id' : part_id}), gettext("Change Part"),
+                                           icon='pen', aclass='btn btn-sm btn-warning') }}
+                </div>
                 <div class="row">
                     <dl class="dl-horizontal col-md-6">
                         <dt>{% trans %}Shortname{% endtrans %}</dt>
@@ -113,27 +132,6 @@
                         {% endfor %}
                     </tbody>
                 </table>
-
-                <div class="row col-md-12">
-                    {% if not has_registrations and part_id not in referenced_parts %}
-                        <form action="{{ cdedblink('event/delete_part', {'part_id' : part_id}) }}"
-                              method="POST"
-                              id="deletepartform{{ part_id }}"
-                              class="display-inline">
-                            {{ util.anti_csrf_token('event/delete_part') }}
-                            {{ util.output_errors("ack_delete", wrapper=True) }}
-                            {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
-                            {{ util.input_submit(label=gettext("Delete Part"), aclass="btn btn-xs btn-danger", icon="trash") }}
-                        </form>
-                        <script nonce="{{ csp_nonce }}">
-                            $('#deletepartform{{ part_id }}').cdedbProtectAction("{{ gettext("The event part will be permanently deleted.") }}");
-                            $('#deletepartform{{ part_id }}').find('[name="ack_delete"]').prop('checked', true).parent().hide();
-                        </script>
-                    {% endif %}
-                    {{ util.href(cdedblink('event/change_part_form', {'part_id' : part_id}), gettext("Change Part"),
-                                           icon='pen', aclass='btn btn-xs btn-warning') }}
-                </div>
-
             </div>
         </div>
     {% endfor %}
