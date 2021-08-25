@@ -1743,14 +1743,12 @@ class AssemblyBackend(AbstractBackend):
                 {'attachment_id': attachment_id, 'ballot_id': ballot_id},
                 drop_on_conflict=True)
             if ret:
-                attachment_versions = self.get_attachment_versions(rs, attachment_id)
-                current_version = self.get_current_version(rs, attachment_id)
-                version_data = attachment_versions[current_version]
+                current_version = self.get_current_attachment_version(rs, attachment_id)
                 # TODO: be more specific with log code.
                 # TODO: Mention ballot title in change note.
                 self.assembly_log(
                     rs, const.AssemblyLogCodes.attachment_changed, assembly_id,
-                    persona_id=None, change_note=version_data["title"])
+                    persona_id=None, change_note=current_version["title"])
             # TODO return -1 instead of 0 if link already exists?
             return ret
 
@@ -1771,14 +1769,12 @@ class AssemblyBackend(AbstractBackend):
                      " WHERE attachment_id = %s AND ballot_id = %s")
             ret = self.query_exec(rs, query, (attachment_id, ballot_id))
             if ret:
-                attachment_versions = self.get_attachment_versions(rs, attachment_id)
-                current_version = self.get_current_version(rs, attachment_id)
-                version_data = attachment_versions[current_version]
+                current_version = self.get_current_attachment_version(rs, attachment_id)
                 # TODO: be more specific with log code.
                 # TODO: Mention ballot title in change note.
                 self.assembly_log(
                     rs, const.AssemblyLogCodes.attachment_changed, assembly_id,
-                    persona_id=None, change_note=version_data["title"])
+                    persona_id=None, change_note=current_version["title"])
             # TODO: return -1 instead of 0 if link doesn't exist?
             return ret
 
@@ -1811,34 +1807,40 @@ class AssemblyBackend(AbstractBackend):
         return self.is_attachment_version_deletable(rs, attachment_id)
 
     @access("assembly")
-    def get_current_versions(self, rs: RequestState,
-                             attachment_ids: Collection[int],
-                             include_deleted: bool = False) -> Dict[int, int]:
-        """Get the most recent version numbers for the given attachments."""
+    def get_current_attachments_version(
+            self, rs: RequestState,
+            attachment_ids: Collection[int],
+            include_deleted: bool = False) -> CdEDBObjectMap:
+        """Get the most recent version for the given attachments.
+
+        This is independent from the context in which the attachment is viewed, in
+        contrast to 'get_attachments_versions_of_interest'.
+        """
         attachment_ids = affirm_set(vtypes.ID, attachment_ids)
         with Atomizer(rs):
             if not self.may_access_attachments(rs, attachment_ids):
                 raise PrivilegeError(n_("Not privileged."))
-            query = ("SELECT attachment_id, MAX(version) as version"
+            query = ("SELECT id, attachment_id, MAX(version) as version"
                      " FROM assembly.attachment_versions"
                      " WHERE {} GROUP BY attachment_id")
             constraints = ["attachment_id = ANY(%s)"]
+            if not include_deleted:
+                constraints.append("dtime IS NULL")
             params = [attachment_ids]
             data = self.query_all(
                 rs, query.format(" AND ".join(constraints)), params)
-            ret = {e["attachment_id"]: e["version"] for e in data}
-            if not include_deleted:
-                constraints.append("dtime IS NULL")
-                data = self.query_all(
-                    rs, query.format(" AND ".join(constraints)), params)
-                ret.update({e["attachment_id"]: e["version"] for e in data})
+            attachments_version_ids = {e["id"] for e in data}
+            data = self.sql_select(
+                rs, "assembly.attachment_versions",
+                ASSEMBLY_ATTACHMENT_VERSION_FIELDS, attachments_version_ids)
+            ret = {e["attachment_id"]: e for e in data}
         return ret
 
     class _GetCurrentVersionProtocol(Protocol):
         def __call__(self, rs: RequestState, attachment_id: int,
-                     include_deleted: bool = False) -> int: ...
-    get_current_version: _GetCurrentVersionProtocol = singularize(
-        get_current_versions, "attachment_ids", "attachment_id")
+                     include_deleted: bool = False) -> CdEDBObject: ...
+    get_current_attachment_version: _GetCurrentVersionProtocol = singularize(
+        get_current_attachments_version, "attachment_ids", "attachment_id")
 
     @access("assembly")
     def add_attachment_version(self, rs: RequestState, data: CdEDBObject,
@@ -1852,8 +1854,9 @@ class AssemblyBackend(AbstractBackend):
                 raise ValueError(n_(
                     "Unable to change attachment once voting has begun or the "
                     "assembly has been concluded."))
-            version = self.get_current_version(
-                rs, attachment_id, include_deleted=True) + 1
+            current_version = self.get_current_attachment_version(
+                rs, attachment_id, include_deleted=True)
+            version = current_version["version"] + 1
             data['version'] = version
             data['file_hash'] = get_hash(content)
             ret = self.sql_insert(rs, "assembly.attachment_versions", data)
@@ -1912,10 +1915,10 @@ class AssemblyBackend(AbstractBackend):
                 raise ValueError(n_(
                     "Unable to change attachment once voting has begun or the "
                     "assembly has been concluded."))
-            history = self.get_attachment_versions(rs, attachment_id)
-            if version not in history:
+            versions = self.get_attachment_versions(rs, attachment_id)
+            if version not in versions:
                 raise ValueError(n_("This version does not exist."))
-            if history[version]['dtime']:
+            if versions[version]['dtime']:
                 raise ValueError(n_("This version has already been deleted."))
             attachment = self.get_attachment(rs, attachment_id)
             if attachment['num_versions'] <= 1:
@@ -1955,8 +1958,10 @@ class AssemblyBackend(AbstractBackend):
         attachment_id = affirm(vtypes.ID, attachment_id)
         if not self.may_access_attachments(rs, (attachment_id,)):
             raise PrivilegeError(n_("Not privileged."))
-        version = affirm_optional(vtypes.ID, version) or self.get_current_version(
-            rs, attachment_id, include_deleted=False)
+        version = affirm_optional(vtypes.ID, version)
+        if version is None:
+            current_version = self.get_current_attachment_version(rs, attachment_id)
+            version = current_version["version"]
         path = self.attachment_base_path / f"{attachment_id}_v{version}"
         if path.exists():
             with open(path, "rb") as f:
