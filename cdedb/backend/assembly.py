@@ -1695,19 +1695,13 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def get_attachment_ballots(self, rs: RequestState, attachment_id: vtypes.ID) -> Set[vtypes.ID]:
-        """Return all ballot_ids linked to an attachment."""
+        """Return all ballot_ids linked to an attachment.
+
+        For the other way round, use 'list_attachments'."""
         ret = self.sql_select(
             rs, "assembly.attachment_ballot_links", ("id", "ballot_id"),
             (attachment_id,), entity_key="attachment_id")
         return {data["ballot_id"] for data in ret}
-
-    @access("assembly")
-    def get_ballot_attachments(self, rs: RequestState, ballot_id: vtypes.ID) -> Set[vtypes.ID]:
-        """Return all attachment_ids linked to an ballot."""
-        ret = self.sql_select(
-            rs, "assembly.attachment_ballot_links", ("id", "attachment_id"),
-            (ballot_id,), entity_key="ballot_id")
-        return {data["attachment_id"] for data in ret}
 
     @access("assembly")
     def add_attachment_ballot_link(self, rs: RequestState, attachment_id: int,
@@ -1872,7 +1866,7 @@ class AssemblyBackend(AbstractBackend):
         :returns: Dict[attachment_id: Dict[version_nr: version]]
         """
         ballot_id = affirm(vtypes.ID, ballot_id)
-        attachment_ids = self.get_ballot_attachments(rs, ballot_id)
+        attachment_ids = self.list_attachments(rs, ballot_id=ballot_id)
         if self.is_ballot_locked(rs, ballot_id):
             # TODO this is more complex
             pass
