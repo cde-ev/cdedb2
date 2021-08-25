@@ -1702,6 +1702,14 @@ class AssemblyBackend(AbstractBackend):
         return {data["ballot_id"] for data in ret}
 
     @access("assembly")
+    def get_ballot_attachments(self, rs: RequestState, ballot_id: vtypes.ID) -> Set[vtypes.ID]:
+        """Return all attachment_ids linked to an ballot."""
+        ret = self.sql_select(
+            rs, "assembly.attachment_ballot_links", ("id", "attachment_id"),
+            (ballot_id,), entity_key="ballot_id")
+        return {data["attachment_id"] for data in ret}
+
+    @access("assembly")
     def add_attachment_ballot_link(self, rs: RequestState, attachment_id: int,
                                    ballot_id: int) -> DefaultReturnCode:
         """Create a new association attachment -> ballot."""
@@ -1841,6 +1849,37 @@ class AssemblyBackend(AbstractBackend):
                      include_deleted: bool = False) -> CdEDBObject: ...
     get_current_attachment_version: _GetCurrentVersionProtocol = singularize(
         get_current_attachments_version, "attachment_ids", "attachment_id")
+
+    @access("assembly")
+    def get_attachments_versions_of_interest(
+            self, rs: RequestState, ballot_id: int) -> Dict[int, CdEDBObjectMap]:
+        """Get all versions of interest of all attachments for a given ballot.
+
+        The versions of interests of an attachment are dependend of the context,
+        specifically the ballot. This contrasts to the current attachment version, which
+        is independent of context.
+
+        Before the voting phase of the ballot has started, the current attachment
+        version is the only version of interest of this attachment for this ballot.
+
+        After the voting phase had started,
+         * the last attachment version which was uploaded before the voting phase
+           started and
+         * each attachment version which was uploaded after the voting phase started and
+           before it ended
+        are versions of interest of this attachment for this ballot.
+
+        :returns: Dict[attachment_id: Dict[version_nr: version]]
+        """
+        ballot_id = affirm(vtypes.ID, ballot_id)
+        attachment_ids = self.get_ballot_attachments(rs, ballot_id)
+        if self.is_ballot_locked(rs, ballot_id):
+            # TODO this is more complex
+            pass
+        else:
+            current_versions = self.get_current_attachments_version(rs, attachment_ids)
+            return {attachment_id: {version['version']: version}
+                    for attachment_id, version in current_versions.items()}
 
     @access("assembly")
     def add_attachment_version(self, rs: RequestState, data: CdEDBObject,
