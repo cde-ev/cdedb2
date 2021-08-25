@@ -2145,7 +2145,7 @@ BALLOT_FIELDS = (
 #: assembly or a ballot)
 ASSEMBLY_ATTACHMENT_FIELDS = ("id", "assembly_id")
 
-ASSEMBLY_ATTACHMENT_VERSION_FIELDS = ("attachment_id", "version", "title",
+ASSEMBLY_ATTACHMENT_VERSION_FIELDS = ("attachment_id", "version_nr", "title",
                                       "authors", "filename", "ctime", "dtime",
                                       "file_hash")
 

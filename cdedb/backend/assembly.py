@@ -1568,7 +1568,7 @@ class AssemblyBackend(AbstractBackend):
         assembly_id = attachment['assembly_id']
         version = {k: v for k, v in data.items()
                    if k in ASSEMBLY_ATTACHMENT_VERSION_FIELDS}
-        version['version'] = 1
+        version["version_nr"] = 1
         version['file_hash'] = get_hash(content)
         with Atomizer(rs):
             if self.is_assembly_locked(rs, assembly_id):
@@ -1727,12 +1727,12 @@ class AssemblyBackend(AbstractBackend):
                 {'attachment_id': attachment_id, 'ballot_id': ballot_id},
                 drop_on_conflict=True)
             if ret:
-                current_version = self.get_current_attachment_version(rs, attachment_id)
+                version = self.get_current_attachment_version(rs, attachment_id)
                 # TODO: be more specific with log code.
                 # TODO: Mention ballot title in change note.
                 self.assembly_log(
                     rs, const.AssemblyLogCodes.attachment_changed, assembly_id,
-                    persona_id=None, change_note=current_version["title"])
+                    persona_id=None, change_note=version["title"])
             # TODO return -1 instead of 0 if link already exists?
             return ret
 
@@ -1753,12 +1753,12 @@ class AssemblyBackend(AbstractBackend):
                      " WHERE attachment_id = %s AND ballot_id = %s")
             ret = self.query_exec(rs, query, (attachment_id, ballot_id))
             if ret:
-                current_version = self.get_current_attachment_version(rs, attachment_id)
+                version = self.get_current_attachment_version(rs, attachment_id)
                 # TODO: be more specific with log code.
                 # TODO: Mention ballot title in change note.
                 self.assembly_log(
                     rs, const.AssemblyLogCodes.attachment_changed, assembly_id,
-                    persona_id=None, change_note=current_version["title"])
+                    persona_id=None, change_note=version["title"])
             # TODO: return -1 instead of 0 if link doesn't exist?
             return ret
 
@@ -1805,7 +1805,7 @@ class AssemblyBackend(AbstractBackend):
                 ASSEMBLY_ATTACHMENT_VERSION_FIELDS, attachment_ids,
                 entity_key="attachment_id")
         for entry in data:
-            ret[entry["attachment_id"]][entry["version"]] = entry
+            ret[entry["attachment_id"]][entry["version_nr"]] = entry
 
         return ret
 
@@ -1828,7 +1828,7 @@ class AssemblyBackend(AbstractBackend):
         with Atomizer(rs):
             if not self.may_access_attachments(rs, attachment_ids):
                 raise PrivilegeError(n_("Not privileged."))
-            query = ("SELECT id, attachment_id, MAX(version) as version"
+            query = ("SELECT id, attachment_id, MAX(version_nr) as version_nr"
                      " FROM assembly.attachment_versions"
                      " WHERE {} GROUP BY attachment_id")
             constraints = ["attachment_id = ANY(%s)"]
@@ -1878,7 +1878,7 @@ class AssemblyBackend(AbstractBackend):
             pass
         else:
             current_versions = self.get_current_attachments_version(rs, attachment_ids)
-            return {attachment_id: {version['version']: version}
+            return {attachment_id: {version['version_nr']: version}
                     for attachment_id, version in current_versions.items()}
 
     @access("assembly")
@@ -1895,11 +1895,11 @@ class AssemblyBackend(AbstractBackend):
                     "assembly has been concluded."))
             current_version = self.get_current_attachment_version(
                 rs, attachment_id, include_deleted=True)
-            version = current_version["version"] + 1
-            data['version'] = version
+            version_nr = current_version["version_nr"] + 1
+            data['version_nr'] = version_nr
             data['file_hash'] = get_hash(content)
             ret = self.sql_insert(rs, "assembly.attachment_versions", data)
-            path = self.attachment_base_path / f"{attachment_id}_v{version}"
+            path = self.attachment_base_path / f"{attachment_id}_v{version_nr}"
             if path.exists():
                 raise ValueError(n_("File already exists."))
             with open(path, "wb") as f:
@@ -1910,7 +1910,7 @@ class AssemblyBackend(AbstractBackend):
                                         " attachment version."))
             self.assembly_log(
                 rs, const.AssemblyLogCodes.attachment_version_added,
-                assembly_id, change_note=f"{data['title']}: Version {version}")
+                assembly_id, change_note=f"{data['title']}: Version {version_nr}")
         return ret
 
     @access("assembly")
@@ -1919,7 +1919,7 @@ class AssemblyBackend(AbstractBackend):
         """Alter a version of an attachment."""
         data = affirm(vtypes.AssemblyAttachmentVersion, data)
         attachment_id = data.pop('attachment_id')
-        version = data.pop('version')
+        version_nr = data.pop('version_nr')
         with Atomizer(rs):
             if not self.is_presider(rs, attachment_id=attachment_id):
                 raise PrivilegeError(n_("Must have privileged access to change"
@@ -1931,21 +1931,21 @@ class AssemblyBackend(AbstractBackend):
             keys = tuple(data.keys())
             setters = ", ".join(f"{k} = %s" for k in keys)
             query = (f"UPDATE assembly.attachment_versions SET {setters}"
-                     f" WHERE attachment_id = %s AND version = %s")
-            params = tuple(data[k] for k in keys) + (attachment_id, version)
+                     f" WHERE attachment_id = %s AND version_nr = %s")
+            params = tuple(data[k] for k in keys) + (attachment_id, version_nr)
             ret = self.query_exec(rs, query, params)
             assembly_id = self.get_assembly_id(rs, attachment_id=attachment_id)
             self.assembly_log(
                 rs, const.AssemblyLogCodes.attachment_version_changed,
-                assembly_id, change_note=f"{data['title']}: Version {version}")
+                assembly_id, change_note=f"{data['title']}: Version {version_nr}")
         return ret
 
     @access("assembly")
     def remove_attachment_version(self, rs: RequestState, attachment_id: int,
-                                  version: int) -> DefaultReturnCode:
+                                  version_nr: int) -> DefaultReturnCode:
         """Remove a version of an attachment. Leaves other versions intact."""
         attachment_id = affirm(vtypes.ID, attachment_id)
-        version = affirm(vtypes.ID, version)
+        version_nr = affirm(vtypes.ID, version_nr)
         with Atomizer(rs):
             if not self.is_presider(rs, attachment_id=attachment_id):
                 raise PrivilegeError(n_("Must have privileged access to remove"
@@ -1955,9 +1955,9 @@ class AssemblyBackend(AbstractBackend):
                     "Unable to change attachment once voting has begun or the "
                     "assembly has been concluded."))
             versions = self.get_attachment_versions(rs, attachment_id)
-            if version not in versions:
+            if version_nr not in versions:
                 raise ValueError(n_("This version does not exist."))
-            if versions[version]['dtime']:
+            if versions[version_nr]['dtime']:
                 raise ValueError(n_("This version has already been deleted."))
             attachment = self.get_attachment(rs, attachment_id)
             if attachment['num_versions'] <= 1:
@@ -1965,7 +1965,7 @@ class AssemblyBackend(AbstractBackend):
                                     "of an attachment."))
             deletor: Dict[str, Union[int, datetime.datetime, None]] = {
                 'attachment_id': attachment_id,
-                'version': version,
+                'version_nr': version_nr,
                 'dtime': now(),
                 'title': None,
                 'authors': None,
@@ -1975,16 +1975,16 @@ class AssemblyBackend(AbstractBackend):
             keys = tuple(deletor.keys())
             setters = ", ".join(f"{k} = %s" for k in keys)
             query = (f"UPDATE assembly.attachment_versions SET {setters}"
-                     f" WHERE attachment_id = %s AND version = %s")
-            params = tuple(deletor[k] for k in keys) + (attachment_id, version)
+                     f" WHERE attachment_id = %s AND version_nr = %s")
+            params = tuple(deletor[k] for k in keys) + (attachment_id, version_nr)
             ret = self.query_exec(rs, query, params)
 
             if ret:
-                path = self.attachment_base_path / f"{attachment_id}_v{version}"
+                path = self.attachment_base_path / f"{attachment_id}_v{version_nr}"
                 if path.exists():
                     path.unlink()
                 assembly_id = self.get_assembly_id(rs, attachment_id=attachment_id)
-                change_note = f"{history[version]['title']}: Version {version}"
+                change_note = f"{versions[version_nr]['title']}: Version {version_nr}"
                 self.assembly_log(
                     rs, const.AssemblyLogCodes.attachment_version_removed,
                     assembly_id, change_note=change_note)
@@ -1992,16 +1992,16 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def get_attachment_content(self, rs: RequestState, attachment_id: int,
-                               version: int = None) -> Union[bytes, None]:
+                               version_nr: int = None) -> Union[bytes, None]:
         """Get the content of an attachment. Defaults to most recent version."""
         attachment_id = affirm(vtypes.ID, attachment_id)
         if not self.may_access_attachments(rs, (attachment_id,)):
             raise PrivilegeError(n_("Not privileged."))
-        version = affirm_optional(vtypes.ID, version)
-        if version is None:
+        version_nr = affirm_optional(vtypes.ID, version_nr)
+        if version_nr is None:
             current_version = self.get_current_attachment_version(rs, attachment_id)
-            version = current_version["version"]
-        path = self.attachment_base_path / f"{attachment_id}_v{version}"
+            version_nr = current_version["version_nr"]
+        path = self.attachment_base_path / f"{attachment_id}_v{version_nr}"
         if path.exists():
             with open(path, "rb") as f:
                 return f.read()
@@ -2039,7 +2039,7 @@ class AssemblyBackend(AbstractBackend):
         attachment_ids = affirm_set(vtypes.ID, attachment_ids)
         query = f"""SELECT
                 {', '.join(ASSEMBLY_ATTACHMENT_FIELDS +
-                           ('num_versions', 'current_version', 'ballot_ids'))}
+                           ('num_versions', 'current_version_nr', 'ballot_ids'))}
             FROM (
                 (
                     SELECT {', '.join(ASSEMBLY_ATTACHMENT_FIELDS)}
@@ -2048,8 +2048,8 @@ class AssemblyBackend(AbstractBackend):
                 ) AS attachments
                 LEFT OUTER JOIN (
                     SELECT
-                        attachment_id, COUNT(version) as num_versions,
-                        MAX(version) as current_version
+                        attachment_id, COUNT(version_nr) as num_versions,
+                        MAX(version_nr) as current_version_nr
                     FROM assembly.attachment_versions
                     WHERE dtime IS NULL
                     GROUP BY attachment_id

@@ -1103,7 +1103,7 @@ GRANT SELECT, UPDATE ON assembly.attachments_id_seq TO cdb_member;
 CREATE TABLE assembly.attachment_versions (
         id                      bigserial PRIMARY KEY,
         attachment_id           integer NOT NULL REFERENCES assembly.attachments(id),
-        version                 integer NOT NULL DEFAULT 1,
+        version_nr              integer NOT NULL DEFAULT 1,
         title                   varchar,
         authors                 varchar,
         filename                varchar,
@@ -1113,7 +1113,7 @@ CREATE TABLE assembly.attachment_versions (
         file_hash               varchar NOT NULL
 );
 CREATE INDEX idx_attachment_versions_attachment_id ON assembly.attachment_versions(attachment_id);
-CREATE UNIQUE INDEX idx_attachment_version_constraint ON assembly.attachment_versions(attachment_id, version);
+CREATE UNIQUE INDEX idx_attachment_version_constraint ON assembly.attachment_versions(attachment_id, version_nr);
 GRANT SELECT, INSERT, DELETE, UPDATE on assembly.attachment_versions TO cdb_member;
 GRANT SELECT, UPDATE on assembly.attachment_versions_id_seq TO cdb_member;
 
