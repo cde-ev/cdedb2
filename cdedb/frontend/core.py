@@ -25,7 +25,7 @@ from cdedb.common import (
     REALM_ADMINS, REALM_INHERITANCE, REALM_SPECIFIC_GENESIS_FIELDS, ArchiveError,
     CdEDBObject, CdEDBObjectMap, DefaultReturnCode, EntitySorter, PrivilegeError, Realm,
     RequestState, extract_roles, get_persona_fields_by_realm, implied_realms,
-    merge_dicts, n_, now, pairwise, unwrap, xsorted,
+    merge_dicts, n_, now, pairwise, unwrap, xsorted, sanitize_filename
 )
 
 from cdedb.database.connection import Atomizer
@@ -367,8 +367,11 @@ class CoreFrontend(AbstractFrontend):
             return self.index(rs)
 
         vcard = self._create_vcard(rs, persona_id)
+        persona = self.coreproxy.get_persona(rs, persona_id)
+        filename = sanitize_filename(make_persona_name(persona))
+
         return self.send_file(rs, data=vcard, mimetype='text/vcard',
-                              filename='vcard.vcf')
+                              filename=f'{filename}.vcf')
 
     @access("searchable", "cde_admin")
     @REQUESTdata("#confirm_id")
