@@ -1547,30 +1547,6 @@ class AssemblyBackend(AbstractBackend):
             return self.may_access(rs, assembly_id=unwrap(assembly_ids))
 
     @access("assembly")
-    def get_attachments_versions(self, rs: RequestState,
-                                 attachment_ids: Collection[int]
-                                 ) -> Dict[int, CdEDBObjectMap]:
-        """Retrieve all version information for given attachments."""
-        attachment_ids = affirm_set(vtypes.ID, attachment_ids)
-        ret: Dict[int, CdEDBObjectMap] = {anid: {} for anid in attachment_ids}
-        with Atomizer(rs):
-            if not self.may_access_attachments(rs, attachment_ids):
-                raise PrivilegeError(n_("Not privileged."))
-            data = self.sql_select(
-                rs, "assembly.attachment_versions",
-                ASSEMBLY_ATTACHMENT_VERSION_FIELDS, attachment_ids,
-                entity_key="attachment_id")
-        for entry in data:
-            ret[entry["attachment_id"]][entry["version"]] = entry
-
-        return ret
-
-    class _GetAttachmentVersionsProtocol(Protocol):
-        def __call__(self, rs: RequestState, attachment_id: int) -> CdEDBObjectMap: ...
-    get_attachment_versions: _GetAttachmentVersionsProtocol = singularize(
-        get_attachments_versions, "attachment_ids", "attachment_id")
-
-    @access("assembly")
     def add_attachment(self, rs: RequestState, data: CdEDBObject,
                        content: bytes) -> DefaultReturnCode:
         """Add a new attachment.
@@ -1805,6 +1781,30 @@ class AssemblyBackend(AbstractBackend):
     def is_attachment_version_changeable(self, rs: RequestState, attachment_id: vtypes.ID) -> bool:
         """An attachment_version can be changed if and only if it may also be deleted."""
         return self.is_attachment_version_deletable(rs, attachment_id)
+
+    @access("assembly")
+    def get_attachments_versions(self, rs: RequestState,
+                                 attachment_ids: Collection[int]
+                                 ) -> Dict[int, CdEDBObjectMap]:
+        """Retrieve all version information for given attachments."""
+        attachment_ids = affirm_set(vtypes.ID, attachment_ids)
+        ret: Dict[int, CdEDBObjectMap] = {anid: {} for anid in attachment_ids}
+        with Atomizer(rs):
+            if not self.may_access_attachments(rs, attachment_ids):
+                raise PrivilegeError(n_("Not privileged."))
+            data = self.sql_select(
+                rs, "assembly.attachment_versions",
+                ASSEMBLY_ATTACHMENT_VERSION_FIELDS, attachment_ids,
+                entity_key="attachment_id")
+        for entry in data:
+            ret[entry["attachment_id"]][entry["version"]] = entry
+
+        return ret
+
+    class _GetAttachmentVersionsProtocol(Protocol):
+        def __call__(self, rs: RequestState, attachment_id: int) -> CdEDBObjectMap: ...
+    get_attachment_versions: _GetAttachmentVersionsProtocol = singularize(
+        get_attachments_versions, "attachment_ids", "attachment_id")
 
     @access("assembly")
     def get_current_attachments_version(
