@@ -37,7 +37,7 @@
 
 {% macro link_attachment_version(version) %}
     {{ util.href(cdedblink("assembly/get_attachment",
-                           {'attachment_id': version["attachment_id"], 'version': version["version_nr"]}),
+                           {'attachment_id': version["attachment_id"], 'version_nr': version["version_nr"]}),
                  version["title"]|string + " " + gettext("(Version %(version)s)")|format(version=version["version_nr"]),
                  icon="file") }}
 {% endmacro %}

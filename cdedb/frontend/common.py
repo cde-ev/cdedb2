@@ -1335,12 +1335,7 @@ def reconnoitre_ambience(obj: AbstractFrontend,
                 rs.gettext("Inconsistent request."))
 
     def attachment_check(a: CdEDBObject) -> None:
-        if a['attachment']['ballot_id']:
-            do_assert(a['attachment']['ballot_id']
-                      == rs.requestargs.get('ballot_id'))
-        else:
-            do_assert(a['attachment']['assembly_id']
-                      == rs.requestargs['assembly_id'])
+        do_assert(a['attachment']['assembly_id'] == rs.requestargs['assembly_id'])
 
     scouts = (
         Scout(lambda anid: obj.coreproxy.get_persona(rs, anid), 'persona_id',
