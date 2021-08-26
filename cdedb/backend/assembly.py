@@ -1822,20 +1822,11 @@ class AssemblyBackend(AbstractBackend):
         with Atomizer(rs):
             if not self.may_access_attachments(rs, attachment_ids):
                 raise PrivilegeError(n_("Not privileged."))
-            query = ("SELECT id, attachment_id, MAX(version_nr) as version_nr"
-                     " FROM assembly.attachment_versions"
-                     " WHERE {} GROUP BY attachment_id")
-            constraints = ["attachment_id = ANY(%s)"]
-            if not include_deleted:
-                constraints.append("dtime IS NULL")
-            params = [attachment_ids]
-            data = self.query_all(
-                rs, query.format(" AND ".join(constraints)), params)
-            attachments_version_ids = {e["id"] for e in data}
-            data = self.sql_select(
-                rs, "assembly.attachment_versions",
-                ASSEMBLY_ATTACHMENT_VERSION_FIELDS, attachments_version_ids)
-            ret = {e["attachment_id"]: e for e in data}
+            # TODO do this efficiently in SQL
+            attachments_versions = self.get_attachments_versions(rs, attachment_ids)
+            attachments = self.get_attachments(rs, attachment_ids)
+            ret = {attachment_id: attachments_versions[attachment_id][attachment['current_version_nr']]
+                   for attachment_id, attachment in attachments.items()}
         return ret
 
     class _GetCurrentVersionProtocol(Protocol):
