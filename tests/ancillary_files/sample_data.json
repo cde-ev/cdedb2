@@ -6473,7 +6473,7 @@
         {
             "id": 1,
             "attachment_id": 1,
-            "version": 1,
+            "version_nr": 1,
             "title": "Rechenschaftsbericht",
             "authors": "Farin",
             "filename": "rechen.pdf",
@@ -6484,7 +6484,7 @@
         {
             "id": 2,
             "attachment_id": 2,
-            "version": 1,
+            "version_nr": 1,
             "title": "Kassenprüferbericht",
             "authors": "Berta",
             "filename": "kasse.pdf",
@@ -6495,7 +6495,7 @@
         {
             "id": 3,
             "attachment_id": 2,
-            "version": 2,
+            "version_nr": 2,
             "title": null,
             "authors": null,
             "filename": null,
@@ -6506,7 +6506,7 @@
         {
             "id": 4,
             "attachment_id": 2,
-            "version": 3,
+            "version_nr": 3,
             "title": "Kassenprüferbericht 2",
             "authors": "Garcia",
             "filename": "kasse.pdf",
@@ -6517,7 +6517,7 @@
         {
             "id": 5,
             "attachment_id": 3,
-            "version": 1,
+            "version_nr": 1,
             "title": "Liste der Kanditaten",
             "authors": "Wahlleitung",
             "filename": "kandidaten.pdf",

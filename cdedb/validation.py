@@ -3856,7 +3856,7 @@ def _assembly_attachment_version(
                                 attachment_id=ID)
         optional_fields: TypeMapping = {}
     else:
-        mandatory_fields = {'attachment_id': ID, 'version': ID}
+        mandatory_fields = {'attachment_id': ID, 'version_nr': ID}
         optional_fields = {**ASSEMBLY_ATTACHMENT_VERSION_FIELDS}
 
     val = _examine_dictionary_fields(

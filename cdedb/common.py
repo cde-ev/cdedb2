@@ -655,7 +655,7 @@ class EntitySorter:
 
     @staticmethod
     def attachment_version(version: CdEDBObject) -> Sortkey:
-        return (version['attachment_id'], version['version'])
+        return (version['attachment_id'], version['version_nr'])
 
     @staticmethod
     def past_event(past_event: CdEDBObject) -> Sortkey:
