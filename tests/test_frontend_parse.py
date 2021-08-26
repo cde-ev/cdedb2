@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# pylint: disable=missing-module-docstring
+
 import csv
 import re
 from datetime import datetime

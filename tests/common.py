@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""General testing utilities for CdEDB2 testsuite"""
 
 import collections.abc
 import copy

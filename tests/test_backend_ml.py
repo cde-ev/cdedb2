@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# pylint: disable=protected-access
+# pylint: disable=protected-access,missing-module-docstring
 
 from typing import Collection, Set, cast
 

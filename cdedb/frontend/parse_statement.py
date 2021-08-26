@@ -1,3 +1,5 @@
+"""Helpers for parsing bank statements"""
+
 import collections
 import datetime
 import decimal
