@@ -1064,13 +1064,12 @@ class AssemblyFrontend(AbstractUserFrontend):
         if not self.assemblyproxy.may_assemble(rs, ballot_id=ballot_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         ballot = rs.ambience['ballot']
-        attachment_ids = self.assemblyproxy.list_attachments(
-            rs, ballot_id=ballot_id)
-        attachments = self.assemblyproxy.get_attachments(rs, attachment_ids)
-        attachment_histories = self.assemblyproxy.get_attachments_versions(
-            rs, attachment_ids)
         if self._update_ballot_state(rs, ballot):
             return self.redirect(rs, "assembly/show_ballot")
+
+        # get associated attachments
+        attachments_versions = self.assemblyproxy.get_attachments_versions_of_interest(
+            rs, ballot_id)
 
         # initial checks done, present the ballot
         ballot['is_voting'] = self.is_ballot_voting(ballot)
@@ -1110,10 +1109,14 @@ class AssemblyFrontend(AbstractUserFrontend):
         next_ballot = ballots[ballot_list[i+1]] if i + 1 < length else None
 
         return self.render(rs, "show_ballot", {
-            'attachments': attachments, 'MAGIC_ABSTAIN': MAGIC_ABSTAIN,
-            'attachment_histories': attachment_histories, 'result': result,
-            'attends': attends, 'ASSEMBLY_BAR_SHORTNAME': ASSEMBLY_BAR_SHORTNAME,
-            'prev_ballot': prev_ballot, 'next_ballot': next_ballot, **vote_dict
+            'attachments_versions': attachments_versions,
+            'MAGIC_ABSTAIN': MAGIC_ABSTAIN,
+            'ASSEMBLY_BAR_SHORTNAME': ASSEMBLY_BAR_SHORTNAME,
+            'attends': attends,
+            'result': result,
+            'prev_ballot': prev_ballot,
+            'next_ballot': next_ballot,
+            **vote_dict
         })
 
     @access("assembly")
