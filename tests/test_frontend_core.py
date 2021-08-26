@@ -1540,6 +1540,11 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("CdE-Mitglied", div="cde-membership")
         self.assertPresence("Probemitgliedschaft", div="cde-membership")
 
+        # check for correct welcome mail
+        mail = self.fetch_mail_content()
+        self.assertIn("Ein herzliches Willkommen", mail)
+        self.assertIn("zum ersten Mal in unserer Datenbank anmeldest", mail)
+
     @as_users("vera")
     def test_nontrivial_promotion(self) -> None:
         self.admin_view_profile('kalif')
