@@ -215,8 +215,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         # logger are thread-safe!
         self.logger = logging.getLogger("cdedb.backend.{}".format(self.realm))
-        self.logger.debug("Instantiated {} with configpath {}.".format(
-            self, configpath))
+        self.logger.debug(f"Instantiated {self} with configpath {configpath}.")
         # Everybody needs access to the core backend
         # Import here since we otherwise have a cyclic import.
         # I don't see how we can get out of this ...
@@ -307,8 +306,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         """
         sanitized_params = tuple(
             self._sanitize_db_input(p) for p in params)
-        self.logger.debug("Execute PostgreSQL query {}.".format(cur.mogrify(
-            query, sanitized_params)))
+        self.logger.debug(f"Execute PostgreSQL query"
+                          f" {cur.mogrify(query, sanitized_params)}.")
         cur.execute(query, sanitized_params)
 
     def query_exec(self, rs: RequestState, query: str,
@@ -486,7 +485,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         :returns: all results of the query
         """
         query.fix_custom_columns()
-        self.logger.debug("Performing general query {}.".format(query))
+        self.logger.debug(f"Performing general query {query}.")
         select = ", ".join('{} AS "{}"'.format(column, column.replace('"', ''))
                            for field in query.fields_of_interest
                            for column in field.split(','))

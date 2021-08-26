@@ -672,7 +672,7 @@ class Config(BasicConfig):
         :param configpath: path to file with overrides
         """
         super().__init__()
-        _LOGGER.debug("Initialising Config with path {}".format(configpath))
+        _LOGGER.debug(f"Initialising Config with path {configpath}")
         self._configpath = configpath
         config_keys = _DEFAULTS.keys() | _BASIC_DEFAULTS.keys()
 

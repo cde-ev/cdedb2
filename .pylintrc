@@ -70,7 +70,7 @@ disable=
     useless-super-delegation,  # we sometimes do this to have type annotations
     design, too-many-nested-blocks,  # lots of our methods are sadly huge, so these are not helpful
     too-many-lines,  # enable again after fixing #80
-    logging-format-interpolation,logging-fstring-interpolation,  # should we actually fix these?
+    logging-fstring-interpolation,  # we do not perform very extensive logging, so this is irrelevant
     missing-class-docstring,missing-function-docstring,  # not applicable for our application structure
     invalid-name,
     similarities,

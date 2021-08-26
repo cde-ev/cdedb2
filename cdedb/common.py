@@ -337,7 +337,7 @@ def make_root_logger(name: str, logfile_path: PathLike,
     """
     logger = logging.getLogger(name)
     if logger.handlers:
-        logger.debug("Logger {} already initialized.".format(name))
+        logger.debug(f"Logger {name} already initialized.")
         return logger
     logger.propagate = False
     logger.setLevel(log_level)
@@ -357,7 +357,7 @@ def make_root_logger(name: str, logfile_path: PathLike,
         console_handler.setLevel(console_log_level)
         console_handler.setFormatter(formatter)
         logger.addHandler(console_handler)
-    logger.debug("Configured logger {}.".format(name))
+    logger.debug(f"Configured logger {name}.")
     return logger
 
 
@@ -1534,8 +1534,7 @@ def decode_parameter(salt: str, target: str, name: str, param: str,
         if persona_id:
             # Allow non-anonymous requests for parameters with anonymous access
             return decode_parameter(salt, target, name, param, persona_id=None)
-        _LOGGER.debug("Hash mismatch ({} != {}) for {}".format(
-            h.hexdigest(), mac, tohash))
+        _LOGGER.debug(f"Hash mismatch ({h.hexdigest()} != {mac}) for {tohash}")
         return False, None
     timestamp = message[:24]
     if timestamp == 24 * '.':
@@ -1543,7 +1542,7 @@ def decode_parameter(salt: str, target: str, name: str, param: str,
     else:
         ttl = datetime.datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S%z")
         if ttl <= now():
-            _LOGGER.debug("Expired protected parameter {}".format(tohash))
+            _LOGGER.debug(f"Expired protected parameter {tohash}")
             return True, None
     return None, message[26:]
 

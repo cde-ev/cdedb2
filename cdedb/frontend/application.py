@@ -222,8 +222,7 @@ class Application(BaseApp):
                             assert nparams is not None
                             rs.notify(ntype, nmessage, nparams)
                         else:
-                            self.logger.info(
-                                "Invalid notification '{}'".format(note))
+                            self.logger.info(f"Invalid notification '{note}'")
                 except Exception:
                     # Do nothing if we fail to handle a notification,
                     # they can be manipulated by the client side, so
@@ -307,9 +306,8 @@ class Application(BaseApp):
                    "to simultaneous access. Please reload the page to try "
                    "again."))
         except Exception as e:
-            self.logger.error(glue(
-                ">>>\n>>>\n>>>\n>>> Exception while serving {}",
-                "<<<\n<<<\n<<<\n<<<").format(request.url))
+            self.logger.error(f">>>\n>>>\n>>>\n>>> Exception while serving"
+                              f" {request.url} <<<\n<<<\n<<<\n<<<")
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
 

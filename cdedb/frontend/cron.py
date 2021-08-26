@@ -10,7 +10,7 @@ import inspect
 import pathlib
 from typing import Collection, Iterator
 
-from cdedb.common import ALL_ROLES, PathLike, RequestState, User, glue, n_, now
+from cdedb.common import ALL_ROLES, PathLike, RequestState, User, n_, now
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -87,8 +87,6 @@ class CronFrontend(BaseApp):
         base_state['tstamp'] = now().timestamp()
         base_state['period'] += 1
 
-        banner = glue(">>>\n>>>\n>>>\n>>> Exception while executing {}",
-                      "<<<\n<<<\n<<<\n<<<")
         try:
             for frontend in (self.core, self.cde, self.event, self.assembly,
                              self.ml):
@@ -104,7 +102,9 @@ class CronFrontend(BaseApp):
                         try:
                             tmp = hook(rs, state)
                         except Exception:
-                            self.logger.error(banner.format(hook.cron['name']))
+                            self.logger.error(
+                                f">>>\n>>>\n>>>\n>>> Exception while executing"
+                                f" {hook.cron['name']} <<<\n<<<\n<<<\n<<<")
                             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
                             self.logger.error("SECOND TRY CGITB")
                             self.cgitb_log()

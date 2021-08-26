@@ -127,8 +127,7 @@ class BaseApp(metaclass=abc.ABCMeta):
             syslog_level=self.conf["SYSLOG_LEVEL"],
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         self.logger = logging.getLogger(logger_name)  # logger are thread-safe!
-        self.logger.debug("Instantiated {} with configpath {}.".format(
-            self, configpath))
+        self.logger.debug(f"Instantiated {self} with configpath {configpath}.")
         # local variable to prevent closure over secrets
         url_parameter_salt = secrets["URL_PARAMETER_SALT"]
         self.decode_parameter = (
@@ -239,7 +238,7 @@ def datetime_filter(val: Union[datetime.datetime, str, None],
     if val.tzinfo is not None:
         val = val.astimezone(_BASICCONF["DEFAULT_TIMEZONE"])
     else:
-        _LOGGER.warning("Found naive datetime object {}.".format(val))
+        _LOGGER.warning(f"Found naive datetime object {val}.")
 
     if lang:
         locale = icu.Locale(lang)
@@ -873,10 +872,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             with tempfile.NamedTemporaryFile(mode='w', prefix="cdedb-mail-",
                                              suffix=".txt", delete=False) as f:
                 f.write(str(msg))
-                self.logger.debug("Stored mail to {}.".format(f.name))
+                self.logger.debug(f"Stored mail to {f.name}.")
                 ret = f.name
-        self.logger.info("Sent email with subject '{}' to '{}'".format(
-            msg['Subject'], msg['To']))
+        self.logger.info(f"Sent email with subject '{msg['Subject']}' to '{msg['To']}'")
         return ret
 
     def redirect_show_user(self, rs: RequestState, persona_id: int,
@@ -940,22 +938,20 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         pdf_path = pathlib.Path(cwd, pdf_file)
 
         args = ("lualatex", "-interaction", "batchmode", target_file)
-        self.logger.info("Invoking {}".format(args))
+        self.logger.info(f"Invoking {args}")
         try:
             for _ in range(runs):
                 subprocess.run(args, cwd=cwd, check=True,
                                stdout=subprocess.DEVNULL)
         except subprocess.CalledProcessError as e:
             if pdf_path.exists():
-                self.logger.debug(
-                    "Deleting corrupted file {}".format(pdf_path))
+                self.logger.debug(f"Deleting corrupted file {pdf_path}")
                 pdf_path.unlink()
-            self.logger.debug("Exception \"{}\" caught and handled.".format(e))
+            self.logger.debug(f"Exception \"{e}\" caught and handled.")
             if self.conf["CDEDB_DEV"]:
                 tstamp = round(now().timestamp())
                 backup_path = "/tmp/cdedb-latex-error-{}.tex".format(tstamp)
-                self.logger.info("Copying source file to {}".format(
-                    backup_path))
+                self.logger.info(f"Copying source file to {backup_path}")
                 shutil.copy2(target_file, backup_path)
             errormsg = errormsg or n_(
                 "LaTeX compilation failed. Try downloading the "
@@ -1196,8 +1192,7 @@ class CdEMailmanClient(mailmanclient.Client):
             syslog_level=self.conf["SYSLOG_LEVEL"],
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         self.logger = logging.getLogger(logger_name)
-        self.logger.debug("Instantiated {} with configpath {}.".format(
-            self, conf._configpath))
+        self.logger.debug(f"Instantiated {self} with configpath {conf._configpath}.")
 
     def get_list_safe(self, address: str) -> Optional[
             mailmanclient.restobjects.mailinglist.MailingList]:

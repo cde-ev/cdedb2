@@ -1270,8 +1270,8 @@ class MlBackend(AbstractBackend):
                 if delete:
                     num = self._remove_subscriptions(rs, delete)
                     ret *= num
-                    msg = "Removed {} subscribers from mailinglist {}."
-                    self.logger.info(msg.format(num, mailinglist_id))
+                    self.logger.info(f"Removed {num} subscribers from mailinglist"
+                                     f" {mailinglist_id}.")
 
                 # Check whether any implicit subscribers need to be written.
                 # This is the case if they are not already old subscribers and
@@ -1291,8 +1291,8 @@ class MlBackend(AbstractBackend):
                 if data:
                     self._set_subscriptions(rs, data)
                     ret *= len(data)
-                    msg = "Added {} subscribers to mailinglist {}."
-                    self.logger.info(msg.format(len(write), mailinglist_id))
+                    self.logger.info(f"Added {len(write)} subscribers to mailinglist"
+                                     f" {mailinglist_id}.")
 
         return ret
 

@@ -69,7 +69,7 @@ def _create_connection(dbname: str, dbuser: str, password: str, port: int,
         conn = psycopg2.connect(**connection_parameters, host="cdb", port=5432)
     conn.set_client_encoding("UTF8")
     conn.set_session(isolation_level)
-    _LOGGER.debug("Created connection to {} as {}".format(dbname, dbuser))
+    _LOGGER.debug(f"Created connection to {dbname} as {dbuser}")
     return conn
 
 
