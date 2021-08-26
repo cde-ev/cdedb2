@@ -34,6 +34,15 @@
     {% endwith %}
 {% endmacro %}
 
+
+{% macro link_attachment_version(version) %}
+    {{ util.href(cdedblink("assembly/get_attachment",
+                           {'attachment_id': version["attachment_id"], 'version': version["version_nr"]}),
+                 version["title"]|string + " " + gettext("(Version %(version)s)")|format(version=version["version_nr"]),
+                 icon="file") }}
+{% endmacro %}
+
+
 {% macro add_attachment_version_button(attachment_id, ballot=None, xs=False) %}
     {% if xs %}
         {% set aclass = "btn btn-success btn-xs hide-hover" %}

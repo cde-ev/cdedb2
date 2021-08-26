@@ -197,28 +197,10 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         attachment_ids = self.assemblyproxy.list_attachments(
             rs, assembly_id=assembly_id)
-        attachments = self.assemblyproxy.get_attachments(rs, attachment_ids)
-        attachment_histories = self.assemblyproxy.get_attachments_versions(
-            rs, attachment_ids)
+        attachments_version = self.assemblyproxy.get_current_attachments_version(rs, attachment_ids)
         attends = self.assemblyproxy.does_attend(rs, assembly_id=assembly_id)
-        ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
-        ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
         presiders = self.coreproxy.get_personas(
             rs, rs.ambience['assembly']['presiders'])
-
-        has_ballot_attachments = False
-        ballot_attachments = {}
-        for ballot_id in ballot_ids:
-            ballot_attachment_ids = self.assemblyproxy.list_attachments(
-                rs, ballot_id=ballot_id)
-            ballot_attachments[ballot_id] = \
-                self.assemblyproxy.get_attachments(
-                    rs, ballot_attachment_ids)
-            attachment_histories.update(
-                self.assemblyproxy.get_attachments_versions(
-                    rs, ballot_attachment_ids))
-            has_ballot_attachments = has_ballot_attachments or bool(
-                ballot_attachment_ids)
 
         if self.is_admin(rs):
             conclude_blockers = self.assemblyproxy.conclude_assembly_blockers(
@@ -230,13 +212,10 @@ class AssemblyFrontend(AbstractUserFrontend):
             delete_blockers = {"is_admin": [False]}
 
         params = {
-            "attachments": attachments,
-            "attachment_histories": attachment_histories,
-            "attends": attends, "ballots": ballots,
-            "ballot_attachments": ballot_attachments,
+            "attachments_version": attachments_version,
+            "attends": attends,
             "conclude_blockers": conclude_blockers,
             "delete_blockers": delete_blockers,
-            "has_ballot_attachments": has_ballot_attachments,
             "presiders": presiders,
         }
 
