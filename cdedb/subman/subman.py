@@ -56,10 +56,7 @@ class SubscriptionManager:
         :param unwritten_states: Provide this if you want to keep track of a subset of
             all `SubscriptionState`s, that should not be written to your database.
         """
-        if error_matrix is None:
-            self.error_matrix = SUBSCRIPTION_ERROR_MATRIX
-        else:
-            self.error_matrix = error_matrix
+        self.error_matrix = error_matrix or SUBSCRIPTION_ERROR_MATRIX
         self.unwritten_states: StateSet = set(unwritten_states or ())
         if (self.unwritten_states &
                 {SubscriptionState.subscribed, SubscriptionState.unsubscribed}):
