@@ -896,8 +896,59 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     @access("assembly")
     @assembly_guard
-    # ballot_id comes semantically after assembly_id, but is optional,
-    # so needs to be at the end.
+    def add_attachment_version_form(self, rs: RequestState, assembly_id: int,
+                                    attachment_id: int) -> Response:
+        """Render form."""
+        attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
+        if attachment['assembly_id'] != assembly_id:
+            rs.notify("error", n_("Invalid attachment specified."))
+            return self.redirect(rs, "assembly/list_attachments")
+        current_version = self.assemblyproxy.get_current_attachment_version(
+            rs, attachment_id)
+        return self.render(
+            rs, "add_attachment_version", {'current_version': current_version})
+
+    @access("assembly", modi={"POST"})
+    @assembly_guard
+    @REQUESTdata("title", "authors", "filename")
+    @REQUESTfile("attachment")
+    def add_attachment_version(self, rs: RequestState, assembly_id: int,
+                               attachment_id: int,
+                               attachment: werkzeug.datastructures.FileStorage,
+                               title: str, filename: Optional[vtypes.Identifier],
+                               authors: Optional[str]) -> Response:
+        """Create a new attachment.
+
+        It can either be associated to an assembly or a ballot.
+        """
+        if attachment and not filename:
+            assert attachment.filename is not None
+            tmp = pathlib.Path(attachment.filename).parts[-1]
+            filename = check(rs, vtypes.Identifier, tmp, 'filename')
+        attachment = check(rs, vtypes.PDFFile, attachment, 'attachment')
+        if rs.has_validation_errors():
+            return self.add_attachment_version_form(
+                rs, assembly_id=assembly_id, attachment_id=attachment_id)
+        assert attachment is not None
+        data: CdEDBObject = {
+            'title': title,
+            'filename': filename,
+            'authors': authors,
+        }
+        versions = self.assemblyproxy.get_attachment_versions(rs, attachment_id)
+        file_hash = get_hash(attachment)
+        if any(v["file_hash"] == file_hash for v in versions.values()):
+            # TODO maybe display some kind of warning here?
+            # Currently this would mean that you need to reupload the file.
+            pass
+
+        data['attachment_id'] = attachment_id
+        code = self.assemblyproxy.add_attachment_version(rs, data, attachment)
+        self.notify_return_code(rs, code, success=n_("Attachment added."))
+        return self.redirect(rs, "assembly/list_attachments")
+
+    @access("assembly")
+    @assembly_guard
     def edit_attachment_version_form(
             self, rs: RequestState, assembly_id: int, attachment_id: int,
             version: int, ballot_id: int = None) -> Response:

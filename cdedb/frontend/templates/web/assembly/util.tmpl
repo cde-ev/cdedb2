@@ -145,9 +145,13 @@
     </div>
 {% endmacro %}
 
-{% macro small_attachment_title(attachment, history, version=None, icon=True, version_info=False) %}
-    {% if version is none %}
-        {% set version = attachment['current_version'] %}
+{% macro small_attachment_title(version, icon=True, version_info=False) %}
+    {% if icon %}
+        {{- util.make_icon('file', arialabel=gettext('Attachment')) }}
+    {% endif %}
+    {{ version['title'] -}}
+    {% if version_info %}
+        {% trans version_nr=version['version_nr'] %}(Version {{ version_nr }}){% endtrans %}
     {% endif %}
     {% with current = history[version] %}
         {% if icon %}
