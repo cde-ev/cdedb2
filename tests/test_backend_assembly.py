@@ -625,14 +625,20 @@ class TestAssemblyBackend(BackendTest):
     @storage
     @as_users("werner")
     def test_entity_attachments(self) -> None:
+        assembly_id = 1
+        ballot_id = 2
+        attachment_id = 1
         with open("/cdedb2/tests/ancillary_files/rechen.pdf", "rb") as f:
             self.assertEqual(
                 f.read(),
-                self.assembly.get_attachment_content(self.key, attachment_id=1))
-        self.assertEqual(set(), self.assembly.list_attachments(self.key, assembly_id=1))
-        self.assertEqual(set(), self.assembly.list_attachments(self.key, ballot_id=2))
+                self.assembly.get_attachment_content(
+                    self.key, attachment_id=attachment_id))
+        self.assertEqual(
+            set(), self.assembly.list_attachments(self.key, assembly_id=assembly_id))
+        self.assertEqual(
+            set(), self.assembly.list_attachments(self.key, ballot_id=ballot_id))
         data = {
-            "ballot_id": 2,
+            "assembly_id": assembly_id,
             "title": "Rechenschaftsbericht",
             "authors": "Farin",
             "filename": "rechen.pdf",
@@ -643,60 +649,29 @@ class TestAssemblyBackend(BackendTest):
             b'123', self.assembly.get_attachment_content(self.key, new_id, 1))
         expectation = {
             "id": new_id,
-            "assembly_id": None,
-            "ballot_id": 2,
+            "assembly_id": assembly_id,
+            "ballot_ids": None,
             "num_versions": 1,
-            "current_version": 1,
+            "current_version_nr": 1,
         }
         self.assertEqual(
             expectation, self.assembly.get_attachment(self.key, attachment_id=new_id))
-        data = {
+        self.assertTrue(self.assembly.add_attachment_ballot_link(self.key, new_id, ballot_id))
+        expectation = {
             "id": new_id,
-            "ballot_id": None,
-            "assembly_id": 1,
+            "assembly_id": assembly_id,
+            "ballot_ids": [ballot_id],
+            'num_versions': 1,
+            'current_version_nr': 1,
         }
-        self.assertTrue(self.assembly.change_attachment_link(self.key, data))
-        data.update({'num_versions': 1, 'current_version': 1})
-        self.assertEqual(data, self.assembly.get_attachment(self.key, new_id))
+        self.assertEqual(expectation, self.assembly.get_attachment(self.key, new_id))
         with self.assertRaises(ValueError):
-            data = {
-                "id": new_id,
-                "ballot_id": 1,
-                "assembly_id": None,
-            }
-            self.assembly.change_attachment_link(self.key, data)
-        with self.assertRaises(ValueError):
-            data = {
-                "id": new_id,
-                "ballot_id": 1,
-                "assembly_id": 1,
-            }
-            self.assembly.change_attachment_link(self.key, data)
-        with self.assertRaises(ValueError):
-            data = {
-                "id": new_id,
-                "ballot_id": None,
-                "assembly_id": None,
-            }
-            self.assembly.change_attachment_link(self.key, data)
-        with self.assertRaises(ValueError):
-            data = {
-                "id": new_id,
-                "ballot_id": None,
-                "assembly_id": 2,
-            }
-            self.assembly.change_attachment_link(self.key, data)
-        with self.assertRaises(ValueError):
-            data = {
-                "id": new_id,
-                "ballot_id": 6,
-                "assembly_id": None,
-            }
-            self.assembly.change_attachment_link(self.key, data)
+            self.assembly.add_attachment_ballot_link(self.key, new_id, ballot_id=6)
         expectation = {
             1: {
                 "attachment_id": new_id,
-                "version": 1,
+                "id": 1001,
+                "version_nr": 1,
                 "title": "Rechenschaftsbericht",
                 "authors": "Farin",
                 "filename": "rechen.pdf",
@@ -719,58 +694,79 @@ class TestAssemblyBackend(BackendTest):
             b'123', self.assembly.get_attachment_content(self.key, new_id))
         self.assertLess(
             0, self.assembly.add_attachment_version(self.key, data, b'1234'))
+        self.assertLess(
+            0, self.assembly.add_attachment_version(self.key, data, b'12345'))
         self.assertEqual(
-            b'123', self.assembly.get_attachment_content(self.key, new_id, 1))
+            b'123', self.assembly.get_attachment_content(
+                self.key, attachment_id=new_id, version_nr=1))
         self.assertEqual(
-            b'1234', self.assembly.get_attachment_content(self.key, new_id))
+            b'1234', self.assembly.get_attachment_content(
+                self.key, attachment_id=new_id, version_nr=2))
         self.assertEqual(
-            b'1234', self.assembly.get_attachment_content(self.key, new_id, 2))
+            b'12345', self.assembly.get_attachment_content(
+                self.key, attachment_id=new_id, version_nr=3))
+        self.assertEqual(
+            b'12345', self.assembly.get_attachment_content(
+                self.key, attachment_id=new_id))
+        self.assertLess(
+            0, self.assembly.remove_attachment_version(
+                self.key, attachment_id=new_id, version_nr=3))
         expectation = {
             "id": new_id,
-            "assembly_id": 1,
-            "ballot_id": None,
+            "assembly_id": assembly_id,
+            "ballot_ids": [ballot_id],
             "num_versions": 2,
-            "current_version": 2,
+            "current_version_nr": 2,
         }
-        self.assertEqual(expectation, self.assembly.get_attachment(self.key, new_id))
-        self.assertLess(0, self.assembly.remove_attachment_version(self.key, new_id, 1))
+        self.assertEqual(
+            expectation, self.assembly.get_attachment(self.key, attachment_id=new_id))
+        self.assertLess(
+            0, self.assembly.remove_attachment_version(
+                self.key, attachment_id=new_id, version_nr=1))
         expectation.update({"num_versions": 1})
-        self.assertEqual(expectation, self.assembly.get_attachment(self.key, new_id))
-        self.assertIsNone(self.assembly.get_attachment_content(self.key, new_id, 1))
+        self.assertEqual(
+            expectation, self.assembly.get_attachment(self.key, attachment_id=new_id))
+        self.assertIsNone(self.assembly.get_attachment_content(
+            self.key, attachment_id=new_id, version_nr=1))
         data.update({
-            "version": 2,
+            "version_nr": 2,
             "ctime": nearly_now(),
             "dtime": None,
             "file_hash": get_hash(b'1234'),
         })
-        history_expectation: CdEDBObjectMap = {
-            1: {
-                "attachment_id": new_id,
-                "version": 1,
-                "title": None,
-                "authors": None,
-                "filename": None,
-                "ctime": nearly_now(),
-                "dtime": nearly_now(),
-                "file_hash": get_hash(b'123'),
-            },
-            2: data,
+        deleted_version = {
+            "attachment_id": new_id,
+            "version_nr": 1,
+            "title": None,
+            "authors": None,
+            "filename": None,
+            "ctime": nearly_now(),
+            "dtime": nearly_now(),
+            "file_hash": get_hash(b'123'),
         }
+        history_expectation: CdEDBObjectMap = {
+            1: deleted_version,
+            2: data,
+            3: deleted_version.copy(),
+        }
+        history_expectation[3]['version_nr'] = 3
+        history_expectation[3]['file_hash'] = get_hash(b'12345')
         self.assertEqual(
-            history_expectation, self.assembly.get_attachment_versions(self.key, new_id))
+            history_expectation, self.assembly.get_attachment_versions(
+                self.key, new_id, current_version_only=False))
         with self.assertRaises(ValueError):
             self.assembly.delete_attachment(self.key, new_id)
 
         data = {
             "attachment_id": new_id,
-            "version": 2,
+            "version_nr": 2,
             "title": "Rechenschaftsbericht",
         }
         self.assertTrue(self.assembly.change_attachment_version(self.key, data))
         history_expectation[2].update(data)
 
         data = {
-            "assembly_id": 1,
+            "assembly_id": assembly_id,
             "title": "Verfassung des Staates der CdEler",
             "authors": "Anton",
             "filename": "verf.pdf",
@@ -780,61 +776,108 @@ class TestAssemblyBackend(BackendTest):
         history_expectation = {1001: history_expectation, 1002: {1: data}}
         history_expectation[1002][1].update({
             "attachment_id": 1002,
-            "version": 1,
+            "version_nr": 1,
             "ctime": nearly_now(),
             "dtime": None,
             "file_hash": get_hash(b'abc'),
         })
         data = {
-            "ballot_id": 2,
+            "assembly_id": assembly_id,
             "title": "Beschlussvorlage",
             "authors": "Berta",
             "filename": "beschluss.pdf",
         }
         self.assertLess(
             0, self.assembly.add_attachment(self.key, data, b'super secret'))
-        del data["ballot_id"]
+        del data['assembly_id']
         history_expectation[1003] = {1: data}
         history_expectation[1003][1].update({
             "attachment_id": 1003,
-            "version": 1,
+            "version_nr": 1,
             "ctime": nearly_now(),
             "dtime": None,
             "file_hash": get_hash(b'super secret'),
         })
         self.assertEqual(
-            {1001, 1002}, self.assembly.list_attachments(self.key, assembly_id=1))
-        self.assertEqual({1003}, self.assembly.list_attachments(self.key, ballot_id=2))
+            {1001, 1002, 1003},
+            self.assembly.list_attachments(self.key, assembly_id=assembly_id))
+        self.assertEqual(
+            {1001}, self.assembly.list_attachments(self.key, ballot_id=ballot_id))
         expectation = {
             1001: {
-                'assembly_id': 1,
-                'ballot_id': None,
+                'assembly_id': assembly_id,
+                'ballot_ids': [ballot_id],
                 'id': 1001,
                 'num_versions': 1,
-                'current_version': 2,
+                'current_version_nr': 2,
             },
             1002: {
-                'assembly_id': 1,
-                'ballot_id': None,
+                'assembly_id': assembly_id,
+                'ballot_ids': None,
                 'id': 1002,
                 'num_versions': 1,
-                'current_version': 1,
+                'current_version_nr': 1,
            },
             1003: {
-                'assembly_id': None,
-                'ballot_id': 2,
+                'assembly_id': assembly_id,
+                'ballot_ids': None,
                 'id': 1003,
                 'num_versions': 1,
-                'current_version': 1,
+                'current_version_nr': 1,
             },
         }
         self.assertEqual(
             expectation, self.assembly.get_attachments(self.key, (1001, 1002, 1003)))
         self.assertEqual(
             history_expectation,
-            self.assembly.get_attachments_versions(self.key, (1001, 1002, 1003)))
-        self.assertTrue(self.assembly.delete_attachment(self.key, 1001, {"versions"}))
-        del expectation[1001]
+            self.assembly.get_attachments_versions(
+                self.key, (1001, 1002, 1003), current_version_only=False))
+        history_expectation = {
+            1001: {
+                2: {
+                    'attachment_id': 1001,
+                    'authors': 'Farin',
+                    'ctime': nearly_now(),
+                    'dtime': None,
+                    'file_hash': get_hash(b'1234'),
+                    'filename': 'rechen_v2.pdf',
+                    'id': 1002,
+                    'title': 'Rechenschaftsbericht',
+                    'version_nr': 2,
+                }
+            },
+            1002: {
+                1: {
+                    'attachment_id': 1002,
+                    'authors': 'Anton',
+                    'ctime': nearly_now(),
+                    'dtime': None,
+                    'file_hash': get_hash(b'abc'),
+                    'filename': 'verf.pdf',
+                    'id': 1004,
+                    'title': 'Verfassung des Staates der CdEler',
+                    'version_nr': 1,
+                }
+            },
+            1003: {
+                1: {
+                    'attachment_id': 1003,
+                    'authors': 'Berta',
+                    'ctime': nearly_now(),
+                    'dtime': None,
+                    'file_hash': get_hash(b'super secret'),
+                    'filename': 'beschluss.pdf',
+                    'id': 1005,
+                    'title': 'Beschlussvorlage',
+                    'version_nr': 1,
+                },
+            },
+        }
+        self.assertEqual(
+            history_expectation, self.assembly.get_attachments_versions(
+                self.key, (1001, 1002, 1003), current_version_only=True))
+        self.assertTrue(self.assembly.delete_attachment(self.key, 1003, {"versions"}))
+        del expectation[1003]
         self.assertEqual(
             expectation, self.assembly.get_attachments(self.key, (1001, 1002, 1003)))
 

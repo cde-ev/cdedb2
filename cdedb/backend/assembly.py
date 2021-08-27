@@ -1603,7 +1603,8 @@ class AssemblyBackend(AbstractBackend):
             raise PrivilegeError(n_(
                 "Must have privileged access to delete attachment."))
 
-        versions = self.get_attachment_versions(rs, attachment_id)
+        versions = self.get_attachment_versions(
+            rs, attachment_id, current_version_only=False)
         if versions:
             blockers["versions"] = [v for v in versions]
 
@@ -1788,12 +1789,15 @@ class AssemblyBackend(AbstractBackend):
     @internal
     @access("assembly")
     def is_attachment_version_changeable(self, rs: RequestState, attachment_id: vtypes.ID) -> bool:
-        """An attachment_version can be changed if and only if it may also be deleted."""
+        """An attachment_version can be changed if and only if it may also be deleted.
+        """
         return self.is_attachment_version_deletable(rs, attachment_id)
 
     @access("assembly")
     def get_attachments_versions(self, rs: RequestState,
-                                 attachment_ids: Collection[int]
+                                 attachment_ids: Collection[int],
+                                 *, current_version_only: bool = True,
+                                 include_deleted: bool = False,
                                  ) -> Dict[int, CdEDBObjectMap]:
         """Retrieve all version information for given attachments."""
         attachment_ids = affirm_set(vtypes.ID, attachment_ids)
@@ -1801,12 +1805,27 @@ class AssemblyBackend(AbstractBackend):
         with Atomizer(rs):
             if not self.may_access_attachments(rs, attachment_ids):
                 raise PrivilegeError(n_("Not privileged."))
-            data = self.sql_select(
-                rs, "assembly.attachment_versions",
-                ASSEMBLY_ATTACHMENT_VERSION_FIELDS, attachment_ids,
-                entity_key="attachment_id")
-        for entry in data:
-            ret[entry["attachment_id"]][entry["version_nr"]] = entry
+            if current_version_only:
+                q = f"""SELECT *
+                    FROM (
+                        SELECT attachment_id, MAX(version_nr) AS version_nr
+                        FROM assembly.attachment_versions
+                        {'WHERE dtime IS NULL' if not include_deleted else ''}
+                        GROUP BY attachment_id
+                    ) AS max_version
+                    LEFT OUTER JOIN assembly.attachment_versions AS version_data
+                    ON max_version.attachment_id = version_data.attachment_id
+                        AND max_version.version_nr = version_data.version_nr
+                    WHERE max_version.attachment_id = ANY(%s)"""
+                data = self.query_all(rs, q, (attachment_ids,))
+                ret = {e['attachment_id']: {e['version_nr']: e} for e in data}
+            else:
+                data = self.sql_select(
+                    rs, "assembly.attachment_versions",
+                    ASSEMBLY_ATTACHMENT_VERSION_FIELDS, attachment_ids,
+                    entity_key="attachment_id")
+                for entry in data:
+                    ret[entry["attachment_id"]][entry["version_nr"]] = entry
 
         return ret
 
@@ -1815,32 +1834,11 @@ class AssemblyBackend(AbstractBackend):
     get_attachment_versions: _GetAttachmentVersionsProtocol = singularize(
         get_attachments_versions, "attachment_ids", "attachment_id")
 
-    @access("assembly")
-    def get_current_attachments_version(
-            self, rs: RequestState,
-            attachment_ids: Collection[int],
-            include_deleted: bool = False) -> CdEDBObjectMap:
-        """Get the most recent version for the given attachments.
-
-        This is independent from the context in which the attachment is viewed, in
-        contrast to 'get_attachments_versions_of_interest'.
-        """
-        attachment_ids = affirm_set(vtypes.ID, attachment_ids)
-        with Atomizer(rs):
-            if not self.may_access_attachments(rs, attachment_ids):
-                raise PrivilegeError(n_("Not privileged."))
-            # TODO do this efficiently in SQL
-            attachments_versions = self.get_attachments_versions(rs, attachment_ids)
-            attachments = self.get_attachments(rs, attachment_ids)
-            ret = {attachment_id: attachments_versions[attachment_id][attachment['current_version_nr']]
-                   for attachment_id, attachment in attachments.items()}
-        return ret
-
-    class _GetCurrentVersionProtocol(Protocol):
-        def __call__(self, rs: RequestState, attachment_id: int,
-                     include_deleted: bool = False) -> CdEDBObject: ...
-    get_current_attachment_version: _GetCurrentVersionProtocol = singularize(
-        get_current_attachments_version, "attachment_ids", "attachment_id")
+    def get_current_attachment_version(self, rs: RequestState, ballot_id: int,
+                                       *, include_deleted: bool = False,
+                                       ) -> CdEDBObject:
+        return unwrap(self.get_attachment_versions(
+            rs, ballot_id, current_version_only=True, include_deleted=include_deleted))
 
     @access("assembly")
     def get_attachments_versions_of_interest(
@@ -1869,9 +1867,8 @@ class AssemblyBackend(AbstractBackend):
             # TODO this is more complex
             pass
         else:
-            current_versions = self.get_current_attachments_version(rs, attachment_ids)
-            return {attachment_id: {version['version_nr']: version}
-                    for attachment_id, version in current_versions.items()}
+            return self.get_attachments_versions(
+                rs, attachment_ids, current_version_only=True)
 
     @access("assembly")
     def add_attachment_version(self, rs: RequestState, data: CdEDBObject,
@@ -1946,7 +1943,8 @@ class AssemblyBackend(AbstractBackend):
                 raise ValueError(n_(
                     "Unable to change attachment once voting has begun or the "
                     "assembly has been concluded."))
-            versions = self.get_attachment_versions(rs, attachment_id)
+            versions = self.get_attachment_versions(
+                rs, attachment_id, current_version_only=False)
             if version_nr not in versions:
                 raise ValueError(n_("This version does not exist."))
             if versions[version_nr]['dtime']:
