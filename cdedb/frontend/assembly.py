@@ -953,46 +953,37 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly", modi={"POST"})
     @assembly_guard
     @REQUESTdata("attachment_ack_delete")
-    # ballot_id is optional, but comes semantically before attachment_id
-    def delete_attachment(self, rs: RequestState, assembly_id: int,
-                          attachment_id: int, attachment_ack_delete: bool,
-                          version: int = None,
-                          ballot_id: int = None) -> Response:
-        """Delete an attachment."""
+    def delete_attachment_version(self, rs: RequestState, assembly_id: int,
+                                  attachment_id: int, version_nr: int,
+                                  attachment_ack_delete: bool) -> Response:
+        """Delete a version of an attachment."""
         if not attachment_ack_delete:
             rs.append_validation_error(
                 ("attachment_ack_delete", ValueError(n_("Must be checked."))))
         if rs.has_validation_errors():
-            return self.redirect(rs, "assembly/show_attachment")
-        if version is None:
-            cascade = {"versions"}
-            code = self.assemblyproxy.delete_attachment(
-                rs, attachment_id, cascade)
-            self.notify_return_code(rs, code)
-            if ballot_id:
-                return self.redirect(rs, "assembly/show_ballot")
-            else:
-                return self.redirect(rs, "assembly/show_assembly")
-        else:
-            history = self.assemblyproxy.get_attachment_versions(
-                rs, attachment_id)
-            if version not in history:
-                rs.notify("error", n_("This version does not exist."))
-                return self.redirect(rs, "assembly/show_attachment")
-            if history[version]['dtime']:
-                rs.notify("error", n_("This version has already been deleted."))
-                return self.redirect(rs, "assembly/show_attachment")
-            attachment = rs.ambience['attachment']
-            if attachment['num_versions'] <= 1:
-                rs.notify("error", n_("Cannot remove the last remaining "
-                                      "version of an attachment."))
-                return self.redirect(rs, "assembly/show_attachment")
+            return self.redirect(rs, "assembly/list_attachments")
 
-            code = self.assemblyproxy.remove_attachment_version(
-                rs, attachment_id, version)
-            self.notify_return_code(
-                rs, code, error=n_("Unknown version."))
-            return self.redirect(rs, "assembly/show_attachment")
+        attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
+        if attachment['assembly_id'] != assembly_id:
+            rs.notify("error", n_("Invalid attachment specified."))
+            return self.redirect(rs, "assembly/list_attachments")
+        if attachment['num_versions'] <= 1:
+            rs.notify("error", n_("Cannot remove the last remaining "
+                                  "version of an attachment."))
+            return self.redirect(rs, "assembly/list_attachments")
+
+        versions = self.assemblyproxy.get_attachment_versions(rs, attachment_id)
+        if version_nr not in versions:
+            rs.notify("error", n_("This version does not exist."))
+            return self.redirect(rs, "assembly/list_attachments")
+        if versions[version_nr]['dtime']:
+            rs.notify("error", n_("This version has already been deleted."))
+            return self.redirect(rs, "assembly/list_attachments")
+
+        code = self.assemblyproxy.remove_attachment_version(
+            rs, attachment_id, version_nr)
+        self.notify_return_code(rs, code, error=n_("Unknown version."))
+        return self.redirect(rs, "assembly/list_attachments")
 
     @access("assembly", modi={"POST"})
     @REQUESTdata("secret")
