@@ -1054,12 +1054,9 @@ class AssemblyBackend(AbstractBackend):
                 if "candidates" in cascade:
                     ret *= self.sql_delete(
                         rs, "assembly.candidates", blockers["candidates"])
-                if "attachment_ballot_links" in cascade:
-                    with Silencer(rs):
-                        attachment_cascade = {"versions"}
-                        for attachment_id in blockers["attachments"]:
-                            ret *= self.delete_attachment(
-                                rs, attachment_id, attachment_cascade)
+                if "attachment_link" in cascade:
+                    ret *= self.sql_delete(rs, "assembly.attachment_ballot_links",
+                                           blockers["attachment_link"])
                 if "voters" in cascade:
                     ret *= self.sql_delete(
                         rs, "assembly.voter_register", blockers["voters"])
