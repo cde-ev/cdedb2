@@ -24,25 +24,33 @@
 
 {% endblock %}
 {% block content %}
+    {# This is more complicated now... #}
     {% set edit = ambience['assembly']['is_active'] and ("assembly_presider" in user.admin_views
                                                          or ambience['assembly']['id'] in user.presider) %}
-    {% set timestamp = now() %}
-    {% for ballot_id, ballot in [(None, None)] + ballots|keydictsort(EntitySorter.ballot) %}
-        {% set attachments = all_attachments[ballot_id] %}
-        {% set ballot_edit = edit and ((timestamp < ballot['vote_begin']) if ballot else True) %}
-        {% set title = gettext("General Files") %}
-        {% set icon = 'file' %}
-        {% if ballot %}
-            {% set title = gettext("Files for %(link)s")|format(
-                    link=util.href(cdedblink("assembly/show_ballot", {'ballot_id': ballot['id']}), ballot['title'],
-                                   icon="thumbs-up"))|s %}
-            {% set icon = None %}
-        {% endif %}
-        {% if attachments or ballot_edit %}
-            {{ assembly_util.attachment_box(attachments, attachment_histories[ballot_id], title=title,
-                                            ballot=ballot, new_attachment_button=edit, icon=icon, edit=ballot_edit) }}
-        {% endif %}
-    {% endfor %}
+    {% if attachments %}
+        <ul class="slim" id="attachments">
+            {% for attachment_id, attachment in attachments.items() %}
+                {% set attachment_versions = attachments_versions[attachment_id] %}
+                {% set current_version = attachment_versions[attachment["current_version_nr"]] %}
+                <li>
+                    <div class="p" id="attachment_container_{{ attachment_id }}">
+                        {{ assembly_util.print_attachment_version(current_version, edit, add=True, delete=attachment_versions|length>1) }}
+                        {% if attachment_versions|length > 1 %}
+                            <ul>
+                                {% for version_nr, version in attachment_versions|keydictsort(EntitySorter.attachment_version)|reverse %}
+                                    {% if version_nr != current_version['version_nr'] %}
+                                        <li>
+                                            {{ assembly_util.print_attachment_version(version, edit, add=False, delete=True) }}
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
     {% if not count and not edit %}
         <p class="text-muted">
             {% trans %}No attachments have been uploaded yet.{% endtrans %}

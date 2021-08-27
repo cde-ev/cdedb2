@@ -470,30 +470,17 @@ class AssemblyFrontend(AbstractUserFrontend):
             rs.notify(
                 "error", n_("May not access attachments for this assembly."))
             return self.redirect(rs, "assembly/index")
-        assembly_attachments = self.assemblyproxy.list_attachments(
-                rs, assembly_id=assembly_id)
-        count = len(assembly_attachments)
-        all_attachments: Dict[Optional[int], CdEDBObjectMap] = {
-            None: self.assemblyproxy.get_attachments(
-                rs, assembly_attachments)
-        }
-        attachment_histories: Dict[Optional[int], Dict[int, CdEDBObjectMap]] = {
-            None: self.assemblyproxy.get_attachments_versions(
-                rs, assembly_attachments)
-        }
+        attachment_ids = self.assemblyproxy.list_attachments(
+            rs, assembly_id=assembly_id)
+        count = len(attachment_ids)
+        attachments = self.assemblyproxy.get_attachments(rs, attachment_ids)
+        attachments_versions = self.assemblyproxy.get_attachments_versions(
+            rs, attachment_ids)
         ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
         ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
-        for ballot_id in ballot_ids:
-            attachment_ids = self.assemblyproxy.list_attachments(
-                rs, ballot_id=ballot_id)
-            count += len(attachment_ids)
-            all_attachments[ballot_id] = self.assemblyproxy.get_attachments(
-                rs, attachment_ids)
-            attachment_histories[ballot_id] = (
-                self.assemblyproxy.get_attachments_versions(rs, attachment_ids))
         return self.render(rs, "list_attachments", {
-            "all_attachments": all_attachments,
-            "attachment_histories": attachment_histories,
+            "attachments": attachments,
+            "attachments_versions": attachments_versions,
             "ballots": ballots,
             "count": count,
         })

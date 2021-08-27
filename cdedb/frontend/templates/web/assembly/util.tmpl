@@ -84,56 +84,55 @@
     </script>
 {% endmacro %}
 
-{% macro print_attachment_link(attachment, version, edit, ballot, add=False, delete=False) %}
+
+{% macro print_attachment_version(version, edit, add=False, delete=False) %}
     {% if not version["dtime"] %}
         {{ util.href(cdedblink("assembly/get_attachment",
-                               {'attachment_id': version["attachment_id"],
-                                'version': version["version"], 'ballot_id': ballot['id'] if ballot else None}),
-                     version["title"]|string + " " + gettext("(Version %(version)s)")|format(version=version["version"]),
+                               {'attachment_id': version["attachment_id"], 'version': version["version_nr"]}),
+                     version["title"]|string + " " + gettext("(Version %(version)s)")|format(version=version["version_nr"]),
                      icon="file") }}
         {% if edit %}
             <div class="list-button-float" id="versionmanagement">
                 {% if add %}
-                    {{ add_attachment_version_button(version["attachment_id"], ballot=ballot, xs=True) }}
+                    {{ util.href(cdedblink("assembly/add_attachment_version_form", {'attachment_id': version['attachment_id']}),
+                                label=util.make_icon("plus"), aclass="btn btn-success btn-xs hide-hover",
+                                title=gettext("Add Version")) }}
                 {% endif %}
-                {{ util.href(cdedblink('assembly/edit_attachment_version',
-                             {'attachment_id': version["attachment_id"],
-                              'version': version["version"],
-                              'ballot_id': ballot['id'] if ballot else None}),
-                             title=gettext("Edit Version %(version)s")|format(version=version['version']),
-                             label=util.make_icon("pen"), aclass="btn btn-xs btn-warning hide-hover") }}
                 {% if delete %}
                     <form action="{{ cdedblink('assembly/delete_attachment',
                                                {'attachment_id': version["attachment_id"],
-                                                'ballot_id': ballot['id'] if ballot else None,
-                                                'version': version['version']}) }}"
+                                                'version': version['version_nr']}) }}"
                             method="POST"
-                            id="removeattachmentversionform{{ version["attachment_id"] }}_{{ version["version"] }}"
+                            id="removeattachmentversionform{{ version["attachment_id"] }}_{{ version["version_nr"] }}"
                             class="hide-hover display-inline">
                         {{ util.anti_csrf_token('assembly/delete_attachment') }}
                         {{ util.input_checkbox("attachment_ack_delete", gettext("Are you sure?")) }}
+                        {# TODO make this nicer
                         {% set deletable = (attachment['num_versions'] > 1) %}
+                        #}
+                        {% set deletable = False %}
                         {{ util.input_submit(label="", aclass="btn btn-xs btn-danger", icon="trash-alt",
-                                title=(gettext("Delete Version %(version)s")|format(version=version['version']) if deletable
+                                title=(gettext("Delete Version %(version)s")|format(version=version['version_nr']) if deletable
                                        else gettext("Cannot remove the last remaining version of an attachment.")),
                                 readonly=not deletable) }}
                     </form>
                     <script nonce="{{ csp_nonce }}">
-                        $('#removeattachmentversionform{{ version['attachment_id'] }}_{{ version["version"] }}').cdedbProtectAction(
+                        $('#removeattachmentversionform{{ version['attachment_id'] }}_{{ version["version_nr"] }}').cdedbProtectAction(
                             "{{ gettext("The version of the attachment will be permanently deleted.") }}");
-                        $('#removeattachmentversionform{{ version['attachment_id'] }}_{{ version["version"] }}').find(
+                        $('#removeattachmentversionform{{ version['attachment_id'] }}_{{ version["version_nr"] }}').find(
                             '[name="attachment_ack_delete"]').prop('checked', true).parent().hide();
                     </script>
                 {% endif %}
+                {# Change version #}
+                {{ util.href(cdedblink('assembly/edit_attachment_version',
+                             {'attachment_id': version["attachment_id"],
+                              'version_nr': version["version_nr"]}),
+                             title=gettext("Edit Version %(version)s")|format(version=version['version_nr']),
+                             label=util.make_icon("pen"), aclass="btn btn-xs btn-warning hide-hover") }}
             </div>
         {% endif %}
-        {% if ballot and 'ballot' not in ambience %}
-            <div class="small">
-                ({{ util.href(cdedblink('assembly/show_ballot', {'ballot_id': ballot['id']}), ballot['title'], icon='thumbs-up') }})
-             </div>
-        {% endif %}
     {% else %}
-        <div>{% trans version=version["version"] %}Version {{ version }} was deleted.{% endtrans %}</div>
+        <div>{% trans version_nr=version["version_nr"] %}Version {{ version_nr }} was deleted.{% endtrans %}</div>
     {% endif %}
     <div class="text-muted small">
         {% if version["authors"] %}
