@@ -6,37 +6,35 @@
 {% endmacro %}
 
 
-{% macro delete_attachment_button(attachment_id) %}
-    <form action="{{ cdedblink("assembly/delete_attachment", {'attachment_id': attachment_id}) }}"
-          method="POST" id="deleteattachmentform{{ attachment_id }}" style="display: inline;">
-        {{ util.anti_csrf_token("assembly/delete_attachment") }}
-        {{ util.input_checkbox("attachment_ack_delete", gettext("Are you sure?")) }}
-        {{ util.input_submit(label=gettext("Delete Attachment"), aclass="btn btn-sm btn-danger", icon="trash-alt",
-                title=gettext("Delete Attachment")) }}
-    </form>
-    <script nonce="{{ csp_nonce }}">
-        $('#deleteattachmentform{{ attachment_id }}').cdedbProtectAction(
-            "{{ gettext("The attachment will be permanently deleted.") }}");
-        $('#deleteattachmentform{{ attachment_id }}').find(
-            '[name="attachment_ack_delete"]').prop('checked', true).parent().hide();
-    </script>
-{% endmacro %}
-
-
-{% macro print_attachment_version(version, edit, add=False, delete=False) %}
+{% macro print_attachment_version(version, add=False, change=False, delete=False, delete_attachment=False) %}
     {% if not version["dtime"] %}
         {{ util.href(cdedblink("assembly/get_attachment",
                                {'attachment_id': version["attachment_id"], 'version': version["version_nr"]}),
                      version["title"]|string + " " + gettext("(Version %(version)s)")|format(version=version["version_nr"]),
                      icon="file") }}
-        {% if edit %}
+        {% if add or change or delete %}
             <div class="list-button-float" id="versionmanagement">
                 {% if add %}
                     {{ util.href(cdedblink("assembly/add_attachment_version_form", {'attachment_id': version['attachment_id']}),
                                 label=util.make_icon("plus"), aclass="btn btn-success btn-xs hide-hover",
                                 title=gettext("Add Version")) }}
                 {% endif %}
-                {% if delete %}
+                {% if delete_attachment %}
+                    <form action="{{ cdedblink("assembly/delete_attachment", {'attachment_id': version["attachment_id"]}) }}"
+                          method="POST" id="deleteattachmentform{{ version["attachment_id"] }}"
+                          class="hide-hover display-inline">
+                        {{ util.anti_csrf_token("assembly/delete_attachment") }}
+                        {{ util.input_checkbox("attachment_ack_delete", gettext("Are you sure?")) }}
+                        {{ util.input_submit(label="", aclass="btn btn-xs btn-danger hide-hover", icon="trash-alt",
+                                title=gettext("Delete Attachment")) }}
+                    </form>
+                    <script nonce="{{ csp_nonce }}">
+                        $('#deleteattachmentform{{ version["attachment_id"] }}').cdedbProtectAction(
+                            "{{ gettext("The attachment will be permanently deleted.") }}");
+                        $('#deleteattachmentform{{ version["attachment_id"] }}').find(
+                            '[name="attachment_ack_delete"]').prop('checked', true).parent().hide();
+                    </script>
+                {% elif delete %}
                     <form action="{{ cdedblink('assembly/delete_attachment_version',
                                                {'attachment_id': version["attachment_id"],
                                                 'version_nr': version['version_nr']}) }}"
@@ -45,14 +43,8 @@
                             class="hide-hover display-inline">
                         {{ util.anti_csrf_token('assembly/delete_attachment_version') }}
                         {{ util.input_checkbox("attachment_ack_delete", gettext("Are you sure?")) }}
-                        {# TODO make this nicer
-                        {% set deletable = (attachment['num_versions'] > 1) %}
-                        #}
-                        {% set deletable = False %}
-                        {{ util.input_submit(label="", aclass="btn btn-xs btn-danger", icon="trash-alt",
-                                title=(gettext("Delete Version %(version)s")|format(version=version['version_nr']) if deletable
-                                       else gettext("Cannot remove the last remaining version of an attachment.")),
-                                readonly=not deletable) }}
+                        {{ util.input_submit(label="", aclass="btn btn-xs btn-danger hide-hover", icon="trash-alt",
+                                title=(gettext("Delete Version %(version)s")|format(version=version['version_nr']))) }}
                     </form>
                     <script nonce="{{ csp_nonce }}">
                         $('#removeattachmentversionform{{ version['attachment_id'] }}_{{ version["version_nr"] }}').cdedbProtectAction(
@@ -61,12 +53,13 @@
                             '[name="attachment_ack_delete"]').prop('checked', true).parent().hide();
                     </script>
                 {% endif %}
-                {# Change version #}
-                {{ util.href(cdedblink('assembly/edit_attachment_version',
-                             {'attachment_id': version["attachment_id"],
-                              'version_nr': version["version_nr"]}),
-                             title=gettext("Edit Version %(version)s")|format(version=version['version_nr']),
-                             label=util.make_icon("pen"), aclass="btn btn-xs btn-warning hide-hover") }}
+                {% if change %}
+                    {{ util.href(cdedblink('assembly/edit_attachment_version',
+                                 {'attachment_id': version["attachment_id"],
+                                  'version_nr': version["version_nr"]}),
+                                 title=gettext("Edit Version %(version)s")|format(version=version['version_nr']),
+                                 label=util.make_icon("pen"), aclass="btn btn-xs btn-warning hide-hover") }}
+                {% endif %}
             </div>
         {% endif %}
     {% else %}

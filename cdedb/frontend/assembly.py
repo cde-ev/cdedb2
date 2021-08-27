@@ -467,11 +467,28 @@ class AssemblyFrontend(AbstractUserFrontend):
         attachments = self.assemblyproxy.get_attachments(rs, attachment_ids)
         attachments_versions = self.assemblyproxy.get_attachments_versions(
             rs, attachment_ids)
+        # TODO make more efficient
+        are_attachment_versions_creatable = {
+            attachment_id: self.assemblyproxy.is_attachment_version_creatable(rs, attachment_id)
+            for attachment_id in attachment_ids}
+        are_attachment_versions_changeable = {
+            attachment_id: self.assemblyproxy.is_attachment_version_changeable(rs, attachment_id)
+            for attachment_id in attachment_ids}
+        are_attachment_versions_deletable = {
+            attachment_id: self.assemblyproxy.is_attachment_version_deletable(rs, attachment_id)
+            for attachment_id in attachment_ids}
+        are_attachments_deletable = {
+            attachment_id: attachment["num_versions"] <= 1 and are_attachment_versions_deletable[attachment_id]
+            for attachment_id, attachment in attachments.items()}
         ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
         ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
         return self.render(rs, "list_attachments", {
             "attachments": attachments,
             "attachments_versions": attachments_versions,
+            "are_attachment_versions_creatable": are_attachment_versions_creatable,
+            "are_attachment_versions_changeable": are_attachment_versions_changeable,
+            "are_attachment_versions_deletable": are_attachment_versions_deletable,
+            "are_attachments_deletable": are_attachments_deletable,
             "ballots": ballots,
             "count": count,
         })
@@ -741,6 +758,34 @@ class AssemblyFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code, success=n_("Attachment added."))
         return self.redirect(rs, "assembly/list_attachments")
 
+    @access("assembly", modi={"POST"})
+    @assembly_guard
+    @REQUESTdata("attachment_ack_delete")
+    def delete_attachment(self, rs: RequestState, assembly_id: int,
+                          attachment_id: int, attachment_ack_delete: bool) -> Response:
+        """Delete an attachment."""
+        if not attachment_ack_delete:
+            rs.append_validation_error(
+                ("attachment_ack_delete", ValueError(n_("Must be checked."))))
+        if rs.has_validation_errors():
+            return self.redirect(rs, "assembly/list_attachments")
+
+        if not self.assemblyproxy.is_attachment_version_deletable(rs, attachment_id):
+            rs.notify("error", n_("Attachment can not be deleted."))
+            return self.redirect(rs, "assembly/list_attachments")
+
+        attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
+        # This is possible in theory but should not be done to avoid user errors
+        if attachment['num_versions'] > 1:
+            rs.notify("error", n_("Remove all but the last version before delete the"
+                                  " attachment."))
+            return self.redirect(rs, "assembly/list_attachments")
+
+        cascade = {"versions"}
+        code = self.assemblyproxy.delete_attachment(rs, attachment_id, cascade)
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "assembly/list_attachments")
+
     @access("assembly")
     @assembly_guard
     def change_attachment_link_form(self, rs: RequestState,
@@ -889,6 +934,9 @@ class AssemblyFrontend(AbstractUserFrontend):
         if attachment['assembly_id'] != assembly_id:
             rs.notify("error", n_("Invalid attachment specified."))
             return self.redirect(rs, "assembly/list_attachments")
+        if not self.assemblyproxy.is_attachment_version_changeable(rs, attachment_id):
+            rs.notify("error", n_("Attachment version can not be modified."))
+            return self.redirect(rs, "assembly/list_attachments")
         versions = self.assemblyproxy.get_attachment_versions(
             rs, attachment_id)
         if version_nr not in versions or versions[version_nr]['dtime']:
@@ -910,6 +958,10 @@ class AssemblyFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.change_attachment_link_form(
                 rs, assembly_id, attachment_id, version_nr)
+        if not self.assemblyproxy.is_attachment_version_changeable(rs, attachment_id):
+            rs.notify("error", n_("Attachment version can not be modified."))
+            return self.redirect(rs, "assembly/list_attachments")
+
         attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
         if attachment['assembly_id'] != assembly_id:
             rs.notify("error", n_("Invalid attachment specified."))
@@ -943,10 +995,16 @@ class AssemblyFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.redirect(rs, "assembly/list_attachments")
 
+        if not self.assemblyproxy.is_attachment_version_deletable(rs, attachment_id):
+            rs.notify("error", n_("Attachment version can not be deleted."))
+            return self.redirect(rs, "assembly/list_attachments")
+
         attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
         if attachment['assembly_id'] != assembly_id:
             rs.notify("error", n_("Invalid attachment specified."))
             return self.redirect(rs, "assembly/list_attachments")
+        # This should not happen. Instead, the last attachment_version_delete button
+        # should link directly to delete_attachment
         if attachment['num_versions'] <= 1:
             rs.notify("error", n_("Cannot remove the last remaining "
                                   "version of an attachment."))

@@ -1695,7 +1695,6 @@ class AssemblyBackend(AbstractBackend):
                     {"type": "assembly", "block": blockers.keys()})
         return ret
 
-    @internal
     @access("assembly")
     def is_attachment_ballot_link_creatable(self, rs: RequestState,
                                             attachment_id: vtypes.ID,
@@ -1706,7 +1705,6 @@ class AssemblyBackend(AbstractBackend):
         ballot_id = affirm(vtypes.ID, ballot_id)
         return not self.is_ballot_locked(rs, ballot_id)
 
-    @internal
     @access("assembly")
     def is_attachment_ballot_link_deletable(self, rs: RequestState,
                                             attachment_id: vtypes.ID,
@@ -1788,7 +1786,6 @@ class AssemblyBackend(AbstractBackend):
                     change_note=f"{version['title']} ({ballot['title']})")
             return ret
 
-    @internal
     @access("assembly")
     def is_attachment_version_creatable(self, rs: RequestState, attachment_id: vtypes.ID) -> bool:
         """An attachment_version may be created at any time during an assembly."""
@@ -1797,7 +1794,6 @@ class AssemblyBackend(AbstractBackend):
             assembly_id = self.get_assembly_id(rs, attachment_id=attachment_id)
             return not self.is_assembly_locked(rs, assembly_id)
 
-    @internal
     @access("assembly")
     def is_attachment_version_deletable(self, rs: RequestState, attachment_id: vtypes.ID) -> bool:
         """An attachment_version must not be deleted if its attachment has at least one
@@ -1810,7 +1806,6 @@ class AssemblyBackend(AbstractBackend):
             linked_ballots = self.get_attachment_ballots(rs, attachment_id)
             return not self.are_ballots_locked(rs, linked_ballots)
 
-    @internal
     @access("assembly")
     def is_attachment_version_changeable(self, rs: RequestState, attachment_id: vtypes.ID) -> bool:
         """An attachment_version can be changed if and only if it may also be deleted.
@@ -1990,10 +1985,6 @@ class AssemblyBackend(AbstractBackend):
                 raise ValueError(n_("This version does not exist."))
             if versions[version_nr]['dtime']:
                 raise ValueError(n_("This version has already been deleted."))
-            attachment = self.get_attachment(rs, attachment_id)
-            if attachment['num_versions'] <= 1:
-                raise ValueError(n_("Cannot remove the last remaining version "
-                                    "of an attachment."))
             deletor: Dict[str, Union[int, datetime.datetime, None]] = {
                 'attachment_id': attachment_id,
                 'version_nr': version_nr,
