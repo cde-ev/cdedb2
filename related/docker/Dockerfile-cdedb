@@ -1,4 +1,4 @@
-FROM debian:buster-20200607
+FROM debian:bullseye-20210816
 
 # TODO replace with mount from host, snakeoil or first-run script?
 RUN apt-get update && apt-get install --yes --no-install-recommends openssl \
@@ -33,7 +33,6 @@ RUN echo 'slapd slapd/password1 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a
     ldap-utils \
     \
     texlive \
-    texlive-plain-generic \
     texlive-latex-extra \
     texlive-lang-german \
     texlive-luatex \
@@ -66,6 +65,7 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     \
     python3-pip \
     \
+    flake8 \
     isort \
     pylint3 \
     python3-freezegun \
@@ -78,7 +78,6 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     \
     && python3 -m pip --no-cache-dir install \
     mypy==0.910 \
-    flake8==3.8.4 \
     types-werkzeug \
     types-pytz \
     types-jinja2 \
