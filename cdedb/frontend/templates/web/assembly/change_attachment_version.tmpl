@@ -27,13 +27,13 @@
     {{ util.breadcrumb_link(cdedblink("assembly/list_attachments"), gettext("Attachment Overview"), icon="file") }}
     {{ util.breadcrumb_link(cdedblink("assembly/show_attachment"),
                             assembly_util.small_attachment_title(current_version, icon=False), icon='file', active=True) }}
-    {{ util.breadcrumb_link(cdedblink("assembly/edit_attachment_version"), gettext("Edit Version"), active=True) }}
+    {{ util.breadcrumb_link(cdedblink("assembly/change_attachment_version"), gettext("Change Version"), active=True) }}
 {% endblock %}
 
 {% block content %}
-    <form action="{{ cdedblink('assembly/edit_attachment_version') }}" method="POST" enctype="multipart/form-data"
+    <form action="{{ cdedblink('assembly/change_attachment_version') }}" method="POST" enctype="multipart/form-data"
             id="editattachmentversionform" class="form-horizontal">
-        {{ util.anti_csrf_token('assembly/edit_attachment_version') }}
+        {{ util.anti_csrf_token('assembly/change_attachment_version') }}
         {{ util.form_input_text(name="title", label=gettext("Label")) }}
         {{ util.form_input_text(name="authors", label=gettext("Authors")) }}
         {{ util.form_input_text(name="filename", label=gettext("Filename")) }}

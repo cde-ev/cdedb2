@@ -54,10 +54,10 @@
                     </script>
                 {% endif %}
                 {% if change %}
-                    {{ util.href(cdedblink('assembly/edit_attachment_version',
+                    {{ util.href(cdedblink('assembly/change_attachment_version',
                                  {'attachment_id': version["attachment_id"],
                                   'version_nr': version["version_nr"]}),
-                                 title=gettext("Edit Version %(version)s")|format(version=version['version_nr']),
+                                 title=gettext("Change Version %(version)s")|format(version=version['version_nr']),
                                  label=util.make_icon("pen"), aclass="btn btn-xs btn-warning hide-hover") }}
                 {% endif %}
             </div>

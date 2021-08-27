@@ -919,7 +919,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     @access("assembly")
     @assembly_guard
-    def edit_attachment_version_form(
+    def change_attachment_version_form(
             self, rs: RequestState, assembly_id: int, attachment_id: int,
             version_nr: int) -> Response:
         """Render form."""
@@ -937,16 +937,16 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.redirect(rs, "assembly/list_attachments")
         current_version = versions[version_nr]
         merge_dicts(rs.values, current_version)
-        return self.render(rs, "edit_attachment_version", {
+        return self.render(rs, "change_attachment_version", {
             "current_version": current_version
         })
 
     @access("assembly", modi={"POST"})
     @assembly_guard
     @REQUESTdata("version_nr", "title", "authors", "filename")
-    def edit_attachment_version(self, rs: RequestState, assembly_id: int,
-                                attachment_id: int, version_nr: int, title: str,
-                                authors: Optional[str], filename: str) -> Response:
+    def change_attachment_version(self, rs: RequestState, assembly_id: int,
+                                  attachment_id: int, version_nr: int, title: str,
+                                  authors: Optional[str], filename: str) -> Response:
         """Change an existing version of an attachment."""
         if rs.has_validation_errors():
             return self.change_attachment_link_form(
