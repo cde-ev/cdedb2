@@ -903,84 +903,52 @@ class AssemblyFrontend(AbstractUserFrontend):
     @assembly_guard
     def edit_attachment_version_form(
             self, rs: RequestState, assembly_id: int, attachment_id: int,
-            version: int, ballot_id: int = None) -> Response:
+            version_nr: int) -> Response:
         """Change an existing version of an attachment."""
-        attachment = rs.ambience['attachment']
-        if (attachment['assembly_id']
-                and attachment['assembly_id'] != assembly_id):
+        attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
+        if attachment['assembly_id'] != assembly_id:
             rs.notify("error", n_("Invalid attachment specified."))
-            if attachment['ballot_id']:
-                return self.redirect(rs, "assembly/show_ballot",
-                                     {'ballot_id': attachment['ballot_id']})
-            else:
-                return self.redirect(rs, "assembly/show_assembly")
-        if attachment['ballot_id']:
-            ballot = self.assemblyproxy.get_ballot(rs, attachment['ballot_id'])
-            if now() > ballot['vote_begin']:
-                rs.notify("warning", n_("Voting has already begun."))
-                return self.redirect(rs, "assembly/show_ballot")
-        history = self.assemblyproxy.get_attachment_versions(
+            return self.redirect(rs, "assembly/list_attachments")
+        versions = self.assemblyproxy.get_attachment_versions(
             rs, attachment_id)
-        if version not in history or history[version]['dtime']:
+        if version_nr not in versions or versions[version_nr]['dtime']:
             rs.notify("error", "Invalid version specified.")
-            if attachment['ballot_id']:
-                return self.redirect(rs, "assembly/show_ballot",
-                                     {'ballot_id': attachment['ballot_id']})
-            else:
-                return self.redirect(rs, "assembly/show_assembly")
-        merge_dicts(rs.values, history[version])
+            return self.redirect(rs, "assembly/list_attachments")
+        current_version = versions[version_nr]
+        merge_dicts(rs.values, current_version)
         return self.render(rs, "edit_attachment_version", {
-            'attachment': attachment,
-            'history': history,
-            'version': version,
+            "current_version": current_version
         })
 
     @access("assembly", modi={"POST"})
     @assembly_guard
-    @REQUESTdata("title", "authors", "filename")
+    @REQUESTdata("version_nr", "title", "authors", "filename")
     def edit_attachment_version(self, rs: RequestState, assembly_id: int,
-                                attachment_id: int, version: int, title: str,
-                                authors: Optional[str], filename: str,
-                                ballot_id: int = None) -> Response:
+                                attachment_id: int, version_nr: int, title: str,
+                                authors: Optional[str], filename: str) -> Response:
         """Change an existing version of an attachment."""
         if rs.has_validation_errors():
             return self.change_attachment_link_form(
-                rs, assembly_id, attachment_id, version)
-        attachment = rs.ambience['attachment']
-        if attachment['ballot_id']:
-            ballot = self.assemblyproxy.get_ballot(rs, attachment['ballot_id'])
-            if now() > ballot['vote_begin']:
-                rs.notify("warning", n_("Voting has already begun."))
-                return self.redirect(rs, "assembly/show_ballot")
-        if (ballot_id != attachment['ballot_id'] or
-                (attachment['assembly_id']
-                 and attachment['assembly_id'] != assembly_id)):
+                rs, assembly_id, attachment_id, version_nr)
+        attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
+        if attachment['assembly_id'] != assembly_id:
             rs.notify("error", n_("Invalid attachment specified."))
-            if attachment['ballot_id']:
-                return self.redirect(rs, "assembly/show_ballot",
-                                     {'ballot_id': attachment['ballot_id']})
-            else:
-                return self.redirect(rs, "assembly/show_assembly")
-        history = self.assemblyproxy.get_attachment_versions(
-            rs, attachment_id)
-        if version not in history or history[version]['dtime']:
+            return self.redirect(rs, "assembly/list_attachments")
+        versions = self.assemblyproxy.get_attachment_versions(rs, attachment_id)
+        if version_nr not in versions or versions[version_nr]['dtime']:
             rs.notify("error", "Invalid version specified.")
-            if attachment['ballot_id']:
-                return self.redirect(rs, "assembly/show_ballot",
-                                     {'ballot_id': attachment['ballot_id']})
-            else:
-                return self.redirect(rs, "assembly/show_assembly")
+            return self.redirect(rs, "assembly/list_attachments")
 
         data = {
             'attachment_id': attachment_id,
-            'version': version,
+            'version_nr': version_nr,
             'title': title,
             'authors': authors,
             'filename': filename,
         }
         code = self.assemblyproxy.change_attachment_version(rs, data)
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "assembly/show_attachment")
+        return self.redirect(rs, "assembly/list_attachments")
 
     @access("assembly", modi={"POST"})
     @assembly_guard

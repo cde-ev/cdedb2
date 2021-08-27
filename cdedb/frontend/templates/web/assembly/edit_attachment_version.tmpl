@@ -1,51 +1,35 @@
-{% set sidenav_active='assembly_ballots' if ambience['ballot'] else 'assembly_show' %}
+{% set sidenav_active='list_attachments' %}
 {% extends "web/assembly/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/assembly/util.tmpl" as assembly_util with context %}
+
 {% block title %}
-    {% if ambience['ballot'] %}
-        {% trans title=ambience['assembly']['title'] + "/" + ambience['ballot']['title'] %}
-            Edit Version ({{ title }})
-        {% endtrans %}
-    {% else %}
-        {% trans title=ambience['assembly']['title'] %}
-            Edit Version ({{ title }})
-        {% endtrans %}
-    {% endif %}
-    – {{ assembly_util.small_attachment_title(attachment, history, icon=False, version_info=True) }}
+    {% trans title=ambience['assembly']['title'] %}
+        Edit Version ({{ title }})
+    {% endtrans %}
+    – {{ assembly_util.small_attachment_title(current_version, icon=False, version_info=True) }}
 {% endblock %}
+
 {% block heading %}
     <h1 class="title">
         {% trans %}
             Edit Version
         {% endtrans %}
-        {% if ambience['ballot'] %}
-            <small>
-                {{- util.make_icon('thumbs-up', arialabel=gettext("Ballot")) }} {{ ambience['ballot']['title'] -}}
-            </small>
-        {% else %}
-            <small>
-                {{- util.make_icon('bullhorn', arialabel=gettext("Assembly")) }} {{ ambience['assembly']['title'] -}}
-            </small>
-        {% endif %}
         <small>
-            {{ assembly_util.small_attachment_title(attachment, history, version, version_info=True) }}
+            {{ assembly_util.small_attachment_title(current_version, version_info=True) }}
         </small>
     </h1>
 {% endblock %}
+
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
-    {% if ambience['ballot'] %}
-        {{ util.breadcrumb_link(cdedblink("assembly/list_ballots"), gettext("Ballots")) }}
-        {{ util.breadcrumb_link(cdedblink("assembly/show_ballot"), ambience['ballot']['title'], icon="thumbs-up") }}
-    {% endif %}
+    {{ util.breadcrumb_link(cdedblink("assembly/list_attachments"), gettext("Attachment Overview"), icon="file") }}
     {{ util.breadcrumb_link(cdedblink("assembly/show_attachment"),
-                            assembly_util.small_attachment_title(attachment, history, version, icon=False,
-                                                                 version_info=True),
-                            icon="file") }}
+                            assembly_util.small_attachment_title(current_version, icon=False), icon='file', active=True) }}
     {{ util.breadcrumb_link(cdedblink("assembly/edit_attachment_version"), gettext("Edit Version"), active=True) }}
 {% endblock %}
+
 {% block content %}
     <form action="{{ cdedblink('assembly/edit_attachment_version') }}" method="POST" enctype="multipart/form-data"
             id="editattachmentversionform" class="form-horizontal">
@@ -53,9 +37,6 @@
         {{ util.form_input_text(name="title", label=gettext("Label")) }}
         {{ util.form_input_text(name="authors", label=gettext("Authors")) }}
         {{ util.form_input_text(name="filename", label=gettext("Filename")) }}
-        {{ util.form_input_submit(cancellink=(
-            cdedblink('assembly/show_attachment') if attachment else (
-                cdedblink('assembly/show_ballot') if ambience['ballot']
-                    else cdedblink('assembly/show_assembly')))) }}
+        {{ util.form_input_submit(cancellink=cdedblink('assembly/list_attachments')) }}
     </form>
 {% endblock %}

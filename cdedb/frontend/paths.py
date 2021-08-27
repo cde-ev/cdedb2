@@ -642,7 +642,7 @@ CDEDB_PATHS = werkzeug.routing.Map((
                              endpoint="add_attachment_version_form"),
                         rule("/add", methods=_POST,
                              endpoint="add_attachment_version"),
-                        sub("/version/<int:version>", (
+                        sub("/version/<int:version_nr>", (
                             rule("/get", methods=_GET,
                                  endpoint="get_attachment"),
                             rule("/delete", methods=_POST,
