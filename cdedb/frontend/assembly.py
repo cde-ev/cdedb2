@@ -697,16 +697,18 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly")
     @REQUESTdata("version_nr")
     def get_attachment(self, rs: RequestState, assembly_id: int, attachment_id: int,
-                       version_nr: int = None, ballot_id: int = None) -> Response:
+                       version_nr: int = None) -> Response:
         """Retrieve an attachment. Default to most recent version."""
         if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+        attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
+        if attachment['assembly_id'] != assembly_id:
+            rs.notify("error", n_("Invalid attachment specified."))
+            return self.redirect(rs, "assembly/list_attachments")
         if rs.has_validation_errors():
             return self.redirect(rs, "assembly/list_attachments")
-        versions = self.assemblyproxy.get_attachment_versions(
-            rs, attachment_id)
-        version_nr = version_nr or self.assemblyproxy.get_attachment(
-            rs, attachment_id)["current_version_nr"]
+        versions = self.assemblyproxy.get_attachment_versions(rs, attachment_id)
+        version_nr = version_nr or attachment["current_version_nr"]
         content = self.assemblyproxy.get_attachment_content(
             rs, attachment_id, version_nr)
         if not content:
