@@ -1566,6 +1566,9 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Kalif Karabatschi")
         self.assertPresence("21.06.1977", div='personal-information')
+        # check that no welcome mail is sent - this is for cde promotion only
+        with self.assertRaises(IndexError):
+            self.fetch_mail_content()
 
     @as_users("vera")
     def test_ignore_warnings_postal_code(self) -> None:
