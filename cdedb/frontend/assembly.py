@@ -458,12 +458,10 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly")
     def list_attachments(self, rs: RequestState, assembly_id: int) -> Response:
         if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):
-            rs.notify(
-                "error", n_("May not access attachments for this assembly."))
+            rs.notify("error", n_("May not access attachments for this assembly."))
             return self.redirect(rs, "assembly/index")
         attachment_ids = self.assemblyproxy.list_attachments(
             rs, assembly_id=assembly_id)
-        count = len(attachment_ids)
         attachments = self.assemblyproxy.get_attachments(rs, attachment_ids)
         attachments_versions = self.assemblyproxy.get_attachments_versions(
             rs, attachment_ids)
@@ -489,8 +487,6 @@ class AssemblyFrontend(AbstractUserFrontend):
             "are_attachment_versions_changeable": are_attachment_versions_changeable,
             "are_attachment_versions_deletable": are_attachment_versions_deletable,
             "are_attachments_deletable": are_attachments_deletable,
-            "ballots": ballots,
-            "count": count,
         })
 
     def process_signup(self, rs: RequestState, assembly_id: int,
@@ -894,10 +890,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                                attachment: werkzeug.datastructures.FileStorage,
                                title: str, filename: Optional[vtypes.Identifier],
                                authors: Optional[str]) -> Response:
-        """Create a new attachment.
-
-        It can either be associated to an assembly or a ballot.
-        """
+        """Create a new version of an existing attachment."""
         if attachment and not filename:
             assert attachment.filename is not None
             tmp = pathlib.Path(attachment.filename).parts[-1]
@@ -929,7 +922,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     def edit_attachment_version_form(
             self, rs: RequestState, assembly_id: int, attachment_id: int,
             version_nr: int) -> Response:
-        """Change an existing version of an attachment."""
+        """Render form."""
         attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
         if attachment['assembly_id'] != assembly_id:
             rs.notify("error", n_("Invalid attachment specified."))
