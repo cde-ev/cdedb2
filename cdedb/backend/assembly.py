@@ -982,7 +982,7 @@ class AssemblyBackend(AbstractBackend):
         blockers: CdEDBObject = {}
 
         if not self.is_presider(rs, ballot_id=ballot_id):
-            raise RuntimeError(n_(
+            raise PrivilegeError(n_(
                 "Must have privileged access to delete ballot."))
 
         # TODO use an Atomizer here?
