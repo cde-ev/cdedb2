@@ -2369,27 +2369,27 @@ class CoreFrontend(AbstractFrontend):
         with Atomizer(rs):
             code = self.coreproxy.genesis_modify_case(rs, data)
             success = bool(code)
+            new_id = None
             if success and data['case_status'] == const.GenesisStati.approved:
-                success = bool(self.coreproxy.genesis(rs, genesis_case_id))
+                new_id = self.coreproxy.genesis(rs, genesis_case_id)
+                success = bool(new_id)
         if not success:
             rs.notify("error", n_("Failed."))
             return self.genesis_list_cases(rs)
-        if case_status == const.GenesisStati.approved:
+        if case_status == const.GenesisStati.approved and new_id:
+            persona = self.coreproxy.get_persona(rs, new_id)
+            meta_info = self.coreproxy.get_meta_info(rs)
             success, cookie = self.coreproxy.make_reset_cookie(
-                rs, case['username'],
+                rs, persona['username'],
                 timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
+            email = self.encode_parameter("core/do_password_reset_form", "email",
+                                          persona['username'], persona_id=None,
+                                          timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
             self.do_mail(
-                rs, "genesis_approved",
-                {'To': (case['username'],),
-                 'Subject': "CdEDB-Account erstellt",
-                 },
-                {
-                    'email': self.encode_parameter(
-                        "core/do_password_reset_form", "email",
-                        case['username'], persona_id=None,
-                        timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"]),
-                    'cookie': cookie,
-                 })
+                rs, "welcome",
+                {'To': (persona['username'],), 'Subject': "Aufnahme in den CdE"},
+                {'data': persona, 'email': email,
+                 'cookie': cookie, 'meta_info': meta_info})
             rs.notify("success", n_("Case approved."))
         else:
             self.do_mail(
