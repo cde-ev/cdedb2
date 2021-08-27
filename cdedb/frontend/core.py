@@ -2388,8 +2388,8 @@ class CoreFrontend(AbstractFrontend):
             self.do_mail(
                 rs, "welcome",
                 {'To': (persona['username'],), 'Subject': "Aufnahme in den CdE"},
-                {'data': persona, 'email': email,
-                 'cookie': cookie, 'meta_info': meta_info})
+                {'data': persona, 'email': email, 'cookie': cookie,
+                 'fee': self.conf['MEMBERSHIP_FEE'], 'meta_info': meta_info})
             rs.notify("success", n_("Case approved."))
         else:
             self.do_mail(
