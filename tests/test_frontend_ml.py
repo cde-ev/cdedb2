@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# pylint: disable=missing-module-docstring
 
 import csv
 import re
@@ -146,14 +147,16 @@ class TestMlFrontend(FrontendTest):
         f['source_persona_id'] = USER_DICT['rowena']['DB-ID']
         f['target_persona_id'] = berta_id
         self.submit(f, check_notification=False)
-        msg = "Der Quellnutzer muss ein reiner Mailinglistennutzer und darf kein Admin sein."
+        msg = ("Der Quellnutzer muss ein reiner Mailinglistennutzer und darf kein Admin"
+               " sein.")
         self.assertValidationError('source_persona_id', msg)
 
         f = self.response.forms['merge-accounts']
         f['source_persona_id'] = USER_DICT['nina']['DB-ID']
         f['target_persona_id'] = berta_id
         self.submit(f, check_notification=False)
-        msg = "Der Quellnutzer muss ein reiner Mailinglistennutzer und darf kein Admin sein."
+        msg = ("Der Quellnutzer muss ein reiner Mailinglistennutzer und darf kein Admin"
+               " sein.")
         self.assertValidationError('source_persona_id', msg)
 
         f = self.response.forms['merge-accounts']
@@ -175,7 +178,8 @@ class TestMlFrontend(FrontendTest):
         f['source_persona_id'] = janis_id
         f['target_persona_id'] = berta_id
         self.submit(f, check_notification=False)
-        msg = "Beide Benutzer haben einen Bezug zu gleichen Mailinglisten: Witz des Tages"
+        msg = ("Beide Benutzer haben einen Bezug zu gleichen Mailinglisten: Witz des"
+               " Tages")
         self.assertPresence(msg, div='notifications')
 
         # ... so we resolve the blocking ...
@@ -1361,7 +1365,8 @@ class TestMlFrontend(FrontendTest):
         tmp = {f.get("registration_stati", index=i).value for i in range(7)}
         self.assertEqual({str(x) for x in stati} | {None}, tmp)
 
-    def _prepare_moderation_mock(self, client_class: unittest.mock.Mock) -> Tuple[
+    @staticmethod
+    def _prepare_moderation_mock(client_class: unittest.mock.Mock) -> Tuple[
             List[MockHeldMessage], unittest.mock.MagicMock, Any]:
         messages = HELD_MESSAGE_SAMPLE
         mmlist = unittest.mock.MagicMock()

@@ -67,7 +67,7 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     \
     flake8 \
     isort \
-    pylint3 \
+    pylint \
     python3-freezegun \
     wget \
     unzip \

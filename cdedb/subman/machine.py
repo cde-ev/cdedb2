@@ -20,6 +20,8 @@ particular object they could possibly be subscribed to. This determines what act
 they can perform themselves, but also what administrative actions others may perform
 for them.
 """
+# We allow 120 line length here.
+# pylint: disable=line-too-long
 
 import enum
 from typing import Mapping, Optional, Set

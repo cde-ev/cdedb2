@@ -121,7 +121,7 @@ class MlBackend(AbstractBackend):
                 or self.is_relevant_admin(rs, mailinglist_id=mailinglist_id))
 
     @access("ml")
-    def get_available_types(self, rs: RequestState) -> Set[const.MailinglistTypes]:
+    def get_available_types(self, rs: RequestState) -> Set[const.MailinglistTypes]:  # pylint: disable=no-self-use
         """Get a list of MailinglistTypes the user is allowed to manage."""
         ret = {enum_member for enum_member, atype in ml_type.TYPE_MAP.items()
                if atype.is_relevant_admin(rs.user)}
@@ -1270,8 +1270,8 @@ class MlBackend(AbstractBackend):
                 if delete:
                     num = self._remove_subscriptions(rs, delete)
                     ret *= num
-                    msg = "Removed {} subscribers from mailinglist {}."
-                    self.logger.info(msg.format(num, mailinglist_id))
+                    self.logger.info(f"Removed {num} subscribers from mailinglist"
+                                     f" {mailinglist_id}.")
 
                 # Check whether any implicit subscribers need to be written.
                 # This is the case if they are not already old subscribers and
@@ -1291,8 +1291,8 @@ class MlBackend(AbstractBackend):
                 if data:
                     self._set_subscriptions(rs, data)
                     ret *= len(data)
-                    msg = "Added {} subscribers to mailinglist {}."
-                    self.logger.info(msg.format(len(write), mailinglist_id))
+                    self.logger.info(f"Added {len(write)} subscribers to mailinglist"
+                                     f" {mailinglist_id}.")
 
         return ret
 
@@ -1348,14 +1348,16 @@ class MlBackend(AbstractBackend):
             source = self.core.get_ml_user(rs, source_persona_id)
             if any(source[admin_bit] for admin_bit in ADMIN_KEYS):
                 raise ValueError(n_("Source User is admin and can not be merged."))
-            if not self.core.verify_persona(rs, source_persona_id, allowed_roles={'ml'}):
+            if not self.core.verify_persona(rs, source_persona_id,
+                                            allowed_roles={'ml'}):
                 raise ValueError(n_("Source persona must be a ml-only user."))
             if source['is_archived']:
                 raise ValueError(n_("Source User is not accessible."))
 
             # check the target user is a valid persona and not archived
             target = self.core.get_ml_user(rs, target_persona_id)
-            if not self.core.verify_persona(rs, target_persona_id, required_roles={'ml'}):
+            if not self.core.verify_persona(rs, target_persona_id,
+                                            required_roles={'ml'}):
                 raise ValueError(n_("Target User is no valid ml user."))
             if target['is_archived']:
                 raise ValueError(n_("Target User is not accessible."))
@@ -1417,7 +1419,8 @@ class MlBackend(AbstractBackend):
             # at last, archive the source user
             # this will delete all subscriptions and remove all moderator rights
             msg = f"Dieser Account ist in Nutzer {target_persona_id} aufgegangen."
-            code *= self.core.archive_persona(rs, persona_id=source_persona_id, note=msg)
+            code *= self.core.archive_persona(rs, persona_id=source_persona_id,
+                                              note=msg)
 
         return code
 
