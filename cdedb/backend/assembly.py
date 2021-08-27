@@ -1714,6 +1714,9 @@ class AssemblyBackend(AbstractBackend):
             # This checks that attachment and ballot belong to the same assembly.
             assembly_id = self.get_assembly_id(
                 rs, attachment_id=attachment_id, ballot_id=ballot_id)
+            if not self.is_presider(rs, assembly_id=assembly_id):
+                raise PrivilegeError(n_("Must have privileged access to add"
+                                        " attachment link."))
             if not self.is_attachment_ballot_link_creatable(rs, attachment_id, ballot_id):
                 raise ValueError(n_("Cannot link attachment to ballot that has already"
                                     " begun voting."))
@@ -1723,13 +1726,14 @@ class AssemblyBackend(AbstractBackend):
                 drop_on_conflict=True)
             if ret:
                 version = self.get_current_attachment_version(rs, attachment_id)
-                # TODO: be more specific with log code.
-                # TODO: Mention ballot title in change note.
+                ballot = self.get_ballot(rs, ballot_id)
                 self.assembly_log(
-                    rs, const.AssemblyLogCodes.attachment_changed, assembly_id,
-                    persona_id=None, change_note=version["title"])
-            # TODO return -1 instead of 0 if link already exists?
-            return ret
+                    rs, const.AssemblyLogCodes.attachment_ballot_link_created,
+                    assembly_id, persona_id=None,
+                    change_note=f"{version['title']} ({ballot['title']})")
+                return ret
+            else:
+                return -1
 
     @access("assembly")
     def remove_attachment_ballot_link(self, rs: RequestState, attachment_id: int,
@@ -1741,6 +1745,9 @@ class AssemblyBackend(AbstractBackend):
             # This checks that attachment and ballot belong to the same assembly.
             assembly_id = self.get_assembly_id(
                 rs, attachment_id=attachment_id, ballot_id=ballot_id)
+            if not self.is_presider(rs, assembly_id=assembly_id):
+                raise PrivilegeError(n_("Must have privileged access to delete"
+                                        " attachment link."))
             if not self.is_attachment_ballot_link_deletable(rs, attachment_id, ballot_id):
                 raise ValueError(n_("Cannot unlink attachment from ballot that has"
                                     " already begun voting."))
@@ -1749,12 +1756,11 @@ class AssemblyBackend(AbstractBackend):
             ret = self.query_exec(rs, query, (attachment_id, ballot_id))
             if ret:
                 version = self.get_current_attachment_version(rs, attachment_id)
-                # TODO: be more specific with log code.
-                # TODO: Mention ballot title in change note.
+                ballot = self.get_ballot(rs, ballot_id)
                 self.assembly_log(
-                    rs, const.AssemblyLogCodes.attachment_changed, assembly_id,
-                    persona_id=None, change_note=version["title"])
-            # TODO: return -1 instead of 0 if link doesn't exist?
+                    rs, const.AssemblyLogCodes.attachment_ballot_link_deleted,
+                    assembly_id, persona_id=None,
+                    change_note=f"{version['title']} ({ballot['title']})")
             return ret
 
     @internal

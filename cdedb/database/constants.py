@@ -385,10 +385,12 @@ class AssemblyLogCodes(enum.IntEnum):
     assembly_presider_removed = 36  #:
     attachment_added = 40  #:
     attachment_removed = 41  #:
-    attachment_changed = 42
-    attachment_version_added = 50
-    attachment_version_removed = 51
-    attachment_version_changed = 52
+    attachment_changed = 42  #:
+    attachment_ballot_link_created = 43  #:
+    attachment_ballot_link_deleted = 44  #:
+    attachment_version_added = 50  #:
+    attachment_version_removed = 51  #:
+    attachment_version_changed = 52  #:
 
 
 @enum.unique
