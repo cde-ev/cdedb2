@@ -56,4 +56,9 @@
             {% trans %}No attachments have been uploaded yet.{% endtrans %}
         </p>
     {% endif %}
+
+    {% if "assembly_presider" in user.admin_views or ambience['assembly']['id'] in user.presider %}
+        {{ util.href(cdedblink("assembly/add_attachment_form"),
+                    label=gettext("Add Attachment"), aclass="btn btn-success", icon=util.make_icon("plus")) }}
+    {% endif %}
 {% endblock %}

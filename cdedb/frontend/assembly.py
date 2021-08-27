@@ -730,84 +730,36 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     @access("assembly")
     @assembly_guard
-    def add_attachment_form(self, rs: RequestState, assembly_id: int,
-                            ballot_id: int = None,
-                            attachment_id: int = None) -> Response:
+    def add_attachment_form(self, rs: RequestState, assembly_id: int) -> Response:
         """Render form."""
-        if ballot_id and now() > rs.ambience['ballot']['vote_begin']:
-            rs.notify("warning", n_("Voting has already begun."))
-            return self.redirect(rs, "assembly/show_ballot")
-        attachment = None
-        history = None
-        if attachment_id:
-            attachment = rs.ambience['attachment']
-            if (attachment['ballot_id'] != ballot_id or
-                    (attachment['assembly_id']
-                     and attachment['assembly_id'] != assembly_id)):
-                rs.notify("error", n_("Invalid attachment specified."))
-                if ballot_id:
-                    return self.redirect(rs, "assembly/show_ballot")
-                else:
-                    return self.redirect(rs, "assembly/show_assembly")
-            history = self.assemblyproxy.get_attachment_versions(
-                rs, attachment_id)
-        return self.render(
-            rs, "add_attachment", {
-                'attachment': attachment, 'history': history,
-            })
+        return self.render(rs, "add_attachment")
 
     @access("assembly", modi={"POST"})
     @assembly_guard
     @REQUESTdata("title", "authors", "filename")
     @REQUESTfile("attachment")
-    # ballot_id and attachment_id come semantically after asssembly_id,
-    # but are optional, so need to be at the end.
     def add_attachment(self, rs: RequestState, assembly_id: int,
                        attachment: werkzeug.datastructures.FileStorage,
                        title: str, filename: Optional[vtypes.Identifier],
-                       authors: Optional[str], ballot_id: int = None,
-                       attachment_id: int = None) -> Response:
-        """Create a new attachment.
-
-        It can either be associated to an assembly or a ballot.
-        """
+                       authors: Optional[str]) -> Response:
+        """Create a new attachment."""
         if attachment and not filename:
             assert attachment.filename is not None
             tmp = pathlib.Path(attachment.filename).parts[-1]
             filename = check(rs, vtypes.Identifier, tmp, 'filename')
         attachment = check(rs, vtypes.PDFFile, attachment, 'attachment')
         if rs.has_validation_errors():
-            return self.add_attachment_form(
-                rs, assembly_id=assembly_id, ballot_id=ballot_id,
-                attachment_id=attachment_id)
+            return self.add_attachment_form(rs, assembly_id=assembly_id)
         assert attachment is not None
         data: CdEDBObject = {
             'title': title,
             'filename': filename,
             'authors': authors,
         }
-        if attachment_id:
-            history = self.assemblyproxy.get_attachment_versions(
-                rs, attachment_id)
-            file_hash = get_hash(attachment)
-            if any(v["file_hash"] == file_hash for v in history.values()):
-                # TODO maybe display some kind of warning here?
-                # Currently this would mean that you need to reupload the file.
-                pass
-
-            data['attachment_id'] = attachment_id
-            code = self.assemblyproxy.add_attachment_version(
-                rs, data, attachment)
-        else:
-            if ballot_id:
-                data['ballot_id'] = ballot_id
-            else:
-                data['assembly_id'] = assembly_id
-            code = self.assemblyproxy.add_attachment(rs, data, attachment)
+        data['assembly_id'] = assembly_id
+        code = self.assemblyproxy.add_attachment(rs, data, attachment)
         self.notify_return_code(rs, code, success=n_("Attachment added."))
-        return self.redirect(rs, "assembly/show_attachment", {
-            'attachment_id': attachment_id if attachment_id else code,
-        })
+        return self.redirect(rs, "assembly/list_attachments")
 
     @access("assembly")
     @assembly_guard
