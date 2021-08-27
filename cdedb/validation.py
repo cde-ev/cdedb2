@@ -155,7 +155,7 @@ def validate_assert(type_: Type[T], value: Any, **kwargs: Any) -> T:
         )
         e = errs[0]
         e.args = ("{} ({})".format(e.args[1], e.args[0]),) + e.args[2:]
-        raise e from errs
+        raise e from errs  # pylint: disable=raising-bad-type
 
 
 def validate_assert_optional(type_: Type[T], value: Any, **kwargs: Any) -> Optional[T]:
@@ -2323,16 +2323,18 @@ def _event_track(
     return EventTrack(val)
 
 
-def _EVENT_FIELD_COMMON_FIELDS(extra_suffix: str) -> TypeMapping: return {
-    'kind{}'.format(extra_suffix): const.FieldDatatypes,
-    'association{}'.format(extra_suffix): const.FieldAssociations,
-    'entries{}'.format(extra_suffix): Any,  # type: ignore
-}
+def _EVENT_FIELD_COMMON_FIELDS(extra_suffix: str) -> TypeMapping:
+    return {
+        'kind{}'.format(extra_suffix): const.FieldDatatypes,
+        'association{}'.format(extra_suffix): const.FieldAssociations,
+        'entries{}'.format(extra_suffix): Any,  # type: ignore
+    }
 
 
-def _EVENT_FIELD_OPTIONAL_FIELDS(extra_suffix: str) -> TypeMapping: return {
-    f'checkin{extra_suffix}': bool,
-}
+def _EVENT_FIELD_OPTIONAL_FIELDS(extra_suffix: str) -> TypeMapping:
+    return {
+        f'checkin{extra_suffix}': bool,
+    }
 
 
 @_add_typed_validator
@@ -2410,11 +2412,12 @@ def _event_field(
     return EventField(val)
 
 
-def _EVENT_FEE_MODIFIER_COMMON_FIELDS(extra_suffix: str) -> TypeMapping: return {
-    "modifier_name{}".format(extra_suffix): RestrictiveIdentifier,
-    "amount{}".format(extra_suffix): decimal.Decimal,
-    "field_id{}".format(extra_suffix): ID,
-}
+def _EVENT_FEE_MODIFIER_COMMON_FIELDS(extra_suffix: str) -> TypeMapping:
+    return {
+        "modifier_name{}".format(extra_suffix): RestrictiveIdentifier,
+        "amount{}".format(extra_suffix): decimal.Decimal,
+        "field_id{}".format(extra_suffix): ID,
+    }
 
 
 @_add_typed_validator
@@ -3937,7 +3940,7 @@ def _regex(
         re.compile(val)
     except re.error as e:
         # TODO maybe provide more precise feedback?
-        raise ValidationSummary(
+        raise ValidationSummary(  # pylint: disable=raise-missing-from
             ValueError(argname,
                        n_("Invalid  regular expression (position %(pos)s)."),
                        {'pos': e.pos}))

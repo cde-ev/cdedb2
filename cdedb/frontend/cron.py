@@ -8,9 +8,9 @@ This expects a period of 15 minutes.
 import gettext
 import inspect
 import pathlib
-from typing import Any, Callable, Collection, Dict, Iterator
+from typing import Collection, Iterator
 
-from cdedb.common import ALL_ROLES, PathLike, RequestState, User, glue, n_, now
+from cdedb.common import ALL_ROLES, PathLike, RequestState, User, n_, now
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -56,22 +56,16 @@ class CronFrontend(BaseApp):
         roles = ALL_ROLES
         user = User(roles=roles, persona_id=None)
         lang = "en"
-        coders: Dict[str, Callable[..., Any]] = {
-            "encode_parameter": self.encode_parameter,
-            "decode_parameter": self.decode_parameter,
-            "encode_notification": self.encode_notification,
-            "decode_notification": self.decode_notification,
-        }
         urls = self.urlmap.bind("db.cde-ev.de", script_name="/db/",
                                 url_scheme="https")
         # This is not a real request, so we can go without some of these.
         rs = RequestState(
             sessionkey=None, apitoken=None, user=user, request=None,  # type: ignore
             notifications=[], mapadapter=urls, requestargs={}, errors=[],
-            values=None, lang=lang, coders=coders, begin=None,
+            values=None, lang=lang, begin=None,
             gettext=self.translations[lang].gettext,
             ngettext=self.translations[lang].ngettext)
-        rs._conn = self.connpool['cdb_admin']
+        rs._conn = self.connpool['cdb_admin']  # pylint: disable=protected-access
         return rs
 
     def execute(self, jobs: Collection[str] = None) -> bool:
@@ -93,8 +87,6 @@ class CronFrontend(BaseApp):
         base_state['tstamp'] = now().timestamp()
         base_state['period'] += 1
 
-        banner = glue(">>>\n>>>\n>>>\n>>> Exception while executing {}",
-                      "<<<\n<<<\n<<<\n<<<")
         try:
             for frontend in (self.core, self.cde, self.event, self.assembly,
                              self.ml):
@@ -110,7 +102,9 @@ class CronFrontend(BaseApp):
                         try:
                             tmp = hook(rs, state)
                         except Exception:
-                            self.logger.error(banner.format(hook.cron['name']))
+                            self.logger.error(
+                                f">>>\n>>>\n>>>\n>>> Exception while executing"
+                                f" {hook.cron['name']} <<<\n<<<\n<<<\n<<<")
                             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
                             self.logger.error("SECOND TRY CGITB")
                             self.cgitb_log()

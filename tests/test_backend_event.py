@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# pylint: disable=missing-module-docstring
 
 import collections.abc
 import copy
@@ -94,7 +95,8 @@ class TestEventBackend(BackendTest):
                     'fee_modifiers': {
                         -1: {
                             'amount': decimal.Decimal("-7.00"),
-                            'field_id': 1003,  # TODO allow specifying a negative id here?
+                            # TODO allow specifying a negative id here?
+                            'field_id': 1003,
                             'modifier_name': "is_child",
                         }
                     },
@@ -174,9 +176,12 @@ class TestEventBackend(BackendTest):
                         set(x['title'] for x in tmp['parts'][part]['tracks'].values()))
                     data['parts'][part]['tracks'] = tmp['parts'][part]['tracks']
                     self.assertEqual(
-                        set(x['modifier_name'] for x in data['parts'][part]['fee_modifiers'].values()),
-                        set(x['modifier_name'] for x in tmp['parts'][part]['fee_modifiers'].values()))
-                    data['parts'][part]['fee_modifiers'] = tmp['parts'][part]['fee_modifiers']
+                        set(x['modifier_name']
+                            for x in data['parts'][part]['fee_modifiers'].values()),
+                        set(x['modifier_name']
+                            for x in tmp['parts'][part]['fee_modifiers'].values()))
+                    data['parts'][part]['fee_modifiers'] = (
+                        tmp['parts'][part]['fee_modifiers'])
                     del data['parts'][oldpart]
                     break
         field_map = {}
@@ -274,7 +279,8 @@ class TestEventBackend(BackendTest):
                                  set(x['title']
                                      for x in tmp['parts'][part]['tracks'].values()))
                 data['parts'][part]['tracks'] = tmp['parts'][part]['tracks']
-                data['parts'][part]['fee_modifiers'] = tmp['parts'][part]['fee_modifiers']
+                data['parts'][part]['fee_modifiers'] = (
+                    tmp['parts'][part]['fee_modifiers'])
         del data['parts'][part_map["First coming"]]
         changed_part['id'] = part_map["Second coming"]
         changed_part['event_id'] = new_id
@@ -2027,7 +2033,8 @@ class TestEventBackend(BackendTest):
             if name != "Test-Query":
                 self.assertIn(name, expectation)
                 q = expectation[name]
-                self.assertEqual(set(q.fields_of_interest), set(query.fields_of_interest))
+                self.assertEqual(set(q.fields_of_interest),
+                                 set(query.fields_of_interest))
                 self.assertEqual(set(q.constraints), set(query.constraints))
                 self.assertEqual(set(q.order), set(query.order))
                 self.assertEqual(q.query_id, query.query_id)
@@ -3217,7 +3224,8 @@ class TestEventBackend(BackendTest):
                 with self.assertRaises(error) as cm:
                     self.event.set_event(self.key, data)
                 if error_msg is not None:
-                    self.assertEqual(error_msg, cm.exception.args[0] % cm.exception.args[1])
+                    self.assertEqual(error_msg,
+                                     cm.exception.args[0] % cm.exception.args[1])
             else:
                 self.assertTrue(self.event.set_event(self.key, data))
         reg_data = {
@@ -3309,7 +3317,7 @@ class TestEventBackend(BackendTest):
                          self.event.get_waitlist_position(
                              self.key, event_id=1, persona_id=5))
         self.login(USER_DICT["emilia"])
-        self.event._get_waitlist(self.key, event_id=1)
+        self.event._get_waitlist(self.key, event_id=1)  # pylint: disable=protected-access
         self.assertEqual({1: 4, 2: 2, 3: 2},
                          self.event.get_waitlist_position(
                              self.key, event_id=1))

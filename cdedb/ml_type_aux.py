@@ -1,3 +1,5 @@
+"""Classes for different types of mailinglists"""
+
 import enum
 import itertools
 from collections import OrderedDict
