@@ -48,8 +48,9 @@ from cdedb.frontend.common import (
     check_validation_optional as check_optional, event_guard, make_event_fee_reference,
     periodic, process_dynamic_input, request_extractor, make_persona_name
 )
-from cdedb.frontend.event_lodgement_wishes import detect_lodgement_wishes, \
-    create_lodgement_wishes_graph
+from cdedb.frontend.event_lodgement_wishes import (
+    create_lodgement_wishes_graph, detect_lodgement_wishes,
+)
 from cdedb.query import (
     Query, QueryConstraint, QueryOperators, QueryScope, make_registration_query_aux,
     make_lodgement_query_aux, make_course_query_aux,
