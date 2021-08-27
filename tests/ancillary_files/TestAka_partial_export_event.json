@@ -156,7 +156,7 @@
             "list_consent": true,
             "fields": {
                 "anzahl_GROSSBUCHSTABEN": 4,
-                "lodge": "Die \u00fcblichen Verd\u00e4chtigen :)",
+                "lodge": "Die \u00fcblichen Verd\u00e4chtigen, insb. Berta Beispiel und garcia@example.cde :)",
                 "is_child": false
             },
             "amount_paid": "0.00",
