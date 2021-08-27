@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""General testing utilities for CdEDB2 testsuite"""
 
 import collections.abc
 import copy
@@ -139,6 +140,7 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
     This is similar to the normal make_proxy but encorporates a different
     wrapper.
     """
+    # pylint: disable=protected-access
 
     sessionproxy = SessionBackend(backend.conf._configpath)
     secrets = SecretsConfig(backend.conf._configpath)
@@ -174,8 +176,7 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
             sessionkey=sessionkey, apitoken=apitoken, user=user,
             request=None, notifications=[], mapadapter=None,  # type: ignore
             requestargs=None, errors=[], values=None, lang="de",
-            gettext=translator.gettext, ngettext=translator.ngettext,
-            coders=None, begin=now())
+            gettext=translator.gettext, ngettext=translator.ngettext, begin=now())
         rs._conn = connpool[roles_to_db_role(rs.user.roles)]
         rs.conn = rs._conn
         if "event" in rs.user.roles and hasattr(backend, "orga_info"):
@@ -722,6 +723,7 @@ class FrontendTest(BackendTest):
     response: webtest.TestResponse
     app_extra_environ = {
         'REMOTE_ADDR': "127.0.0.0",
+        'HTTP_HOST': "localhost",
         'SERVER_PROTOCOL': "HTTP/1.1",
         'wsgi.url_scheme': 'https'}
 
@@ -773,7 +775,8 @@ class FrontendTest(BackendTest):
             # path without host but with query string - capped at 64 chars
             # To enhance readability, we mark most chars as safe. All special chars are
             # allowed in linux file paths, but sadly windows is more restrictive...
-            url = urllib.parse.quote(self.response.request.path_qs, safe='/;@&=+$,~')[:64]
+            url = urllib.parse.quote(
+                self.response.request.path_qs, safe='/;@&=+$,~')[:64]
             # since / chars are forbidden in file paths, we replace them by _
             url = url.replace('/', '_')
             # create a temporary file in scrap_path with url as a prefix
@@ -1261,7 +1264,7 @@ class FrontendTest(BackendTest):
         f = self.response.forms['logshowform']
         # use internal value property as I don't see a way to get the
         # checkbox value otherwise
-        codes = [field._value for field in f.fields['codes']]
+        codes = [field._value for field in f.fields['codes']]  # pylint: disable=protected-access
         f['codes'] = codes
         self.assertGreater(len(codes), 1)
         self.submit(f)

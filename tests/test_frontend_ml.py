@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# pylint: disable=missing-module-docstring
 
 import csv
 import re
@@ -146,14 +147,16 @@ class TestMlFrontend(FrontendTest):
         f['source_persona_id'] = USER_DICT['rowena']['DB-ID']
         f['target_persona_id'] = berta_id
         self.submit(f, check_notification=False)
-        msg = "Der Quellnutzer muss ein reiner Mailinglistennutzer und darf kein Admin sein."
+        msg = ("Der Quellnutzer muss ein reiner Mailinglistennutzer und darf kein Admin"
+               " sein.")
         self.assertValidationError('source_persona_id', msg)
 
         f = self.response.forms['merge-accounts']
         f['source_persona_id'] = USER_DICT['nina']['DB-ID']
         f['target_persona_id'] = berta_id
         self.submit(f, check_notification=False)
-        msg = "Der Quellnutzer muss ein reiner Mailinglistennutzer und darf kein Admin sein."
+        msg = ("Der Quellnutzer muss ein reiner Mailinglistennutzer und darf kein Admin"
+               " sein.")
         self.assertValidationError('source_persona_id', msg)
 
         f = self.response.forms['merge-accounts']
@@ -175,7 +178,8 @@ class TestMlFrontend(FrontendTest):
         f['source_persona_id'] = janis_id
         f['target_persona_id'] = berta_id
         self.submit(f, check_notification=False)
-        msg = "Beide Benutzer haben einen Bezug zu gleichen Mailinglisten: Witz des Tages"
+        msg = ("Beide Benutzer haben einen Bezug zu gleichen Mailinglisten: Witz des"
+               " Tages")
         self.assertPresence(msg, div='notifications')
 
         # ... so we resolve the blocking ...
@@ -518,7 +522,7 @@ class TestMlFrontend(FrontendTest):
         self.traverse("Verwaltung")
         self.assertPresence("Daniel Dino")
         # Reload server- and client-side
-        self.ml.write_subscription_states(self.key, 1)
+        self.ml.write_subscription_states(self.key, (1,))
         self.traverse({'href': '/ml/mailinglist/1'},
                       {'href': '/ml/mailinglist/1/management'})
         self.assertNonPresence("Daniel")
@@ -959,11 +963,19 @@ class TestMlFrontend(FrontendTest):
 
     def test_subscription_request(self) -> None:
         self.login(USER_DICT['inga'])
-        self.traverse({'href': '/ml/$'},
-                      {'href': '/ml/mailinglist/4'},)
+        self.traverse("Mailinglisten")
+        # check icon
+        self.assertEqual(len(self.response.lxml.get_element_by_id('mailinglist4')
+                             .find_class('fa-times-circle')), 1)
+        self.traverse("Klatsch und Tratsch")
         self.assertTitle("Klatsch und Tratsch")
         f = self.response.forms['subscribe-mod-form']
         self.submit(f)
+        self.assertIn('cancel-request-form', self.response.forms)
+        self.traverse("Mailinglisten-Übersicht")
+        # check icon
+        self.assertEqual(len(self.response.lxml.get_element_by_id('mailinglist4')
+                             .find_class('fa-circle')), 1)
         self.logout()
         self.login(USER_DICT['berta'])
         self.traverse({'href': '/ml/$'},
@@ -976,8 +988,11 @@ class TestMlFrontend(FrontendTest):
         self.assertNotIn('handlerequestform9', self.response.forms)
         self.logout()
         self.login(USER_DICT['inga'])
-        self.traverse({'href': '/ml/$'},
-                      {'href': '/ml/mailinglist/4'},)
+        self.traverse("Mailinglisten")
+        # check icon
+        self.assertEqual(len(self.response.lxml.get_element_by_id('mailinglist4')
+                             .find_class('fa-check-circle')), 1)
+        self.traverse("Klatsch und Tratsch")
         self.assertIn('unsubscribeform', self.response.forms)
 
     @as_users("charly", "inga")
@@ -1350,7 +1365,8 @@ class TestMlFrontend(FrontendTest):
         tmp = {f.get("registration_stati", index=i).value for i in range(7)}
         self.assertEqual({str(x) for x in stati} | {None}, tmp)
 
-    def _prepare_moderation_mock(self, client_class: unittest.mock.Mock) -> Tuple[
+    @staticmethod
+    def _prepare_moderation_mock(client_class: unittest.mock.Mock) -> Tuple[
             List[MockHeldMessage], unittest.mock.MagicMock, Any]:
         messages = HELD_MESSAGE_SAMPLE
         mmlist = unittest.mock.MagicMock()

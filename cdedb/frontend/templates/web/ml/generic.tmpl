@@ -17,7 +17,7 @@
                 {{ util.href(cdedblink("ml/show_mailinglist", {'mailinglist_id': ml['id']}), ml['title']) }}
             {% endif %}
             {% if ml['id'] in subscriptions %}
-                {{ util.make_icon('check-circle', title=gettext("subscribed")) }}
+                {{ util.state_checkbox(subscriptions[ml['id']]) }}
             {% endif %}<br />
             {% if not ml['is_active'] %}
                 <span class="small">{% trans %}inactive{% endtrans %}</span>

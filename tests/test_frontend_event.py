@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# pylint: disable=missing-module-docstring
 
 import copy
 import csv
@@ -1132,8 +1133,8 @@ etc;anything else""", f['entries_2'].value)
         # Check creation of parts and no tracks
         self.traverse({'description': 'Veranstaltungsteile'})
         self.assertPresence("Universale Akademie", div="part1001")
-        self.assertPresence('01.01.2345', div=f'part1001_begin', exact=True)
-        self.assertPresence('07.06.2345', div=f'part1001_end', exact=True)
+        self.assertPresence('01.01.2345', div='part1001_begin', exact=True)
+        self.assertPresence('07.06.2345', div='part1001_end', exact=True)
         self.assertNonPresence("", div="trackrow1001_1001", check_div=False)
 
         # Check log
@@ -1697,7 +1698,8 @@ etc;anything else""", f['entries_2'].value)
         f['fee_modifier_modifier_name_-1'] = "Ich bin Unter 13 Jahre alt."
         f['fee_modifier_amount_-1'] = "abc"
         # check that only fitting fields are shown in the drop-down
-        self.assertEqual(['1001'], [x[0] for x in f['fee_modifier_field_id_-1'].options])
+        self.assertEqual(['1001'],
+                         [x[0] for x in f['fee_modifier_field_id_-1'].options])
         f['fee_modifier_field_id_-1'].force_value(1002)
         self.submit(f, check_notification=False)
         self.assertValidationError('fee_modifier_amount_-1',
@@ -2204,6 +2206,8 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Beispiel")
         self.assertPresence("Emilia")
         self.assertPresence("Garcia")
+        self.assertPresence("Deutschland", div="query-result")
+        self.assertNonPresence("DE", div="query-result")
         self.assertEqual(
             "Einzelzelle",
             self.response.lxml.xpath('//*[@id="query-result"]//tr[1]/td[@data-col='
@@ -3741,7 +3745,9 @@ etc;anything else""", f['entries_2'].value)
 
         # check log
         self.get('/event/event/1/log')
-        change_note = "Bewohner von Kalte Kammer und Einzelzelle getauscht."
+        change_note = (
+            "Bewohner von Kalte Kammer und Einzelzelle für Warmup getauscht, "
+            "Bewohner von Kalte Kammer und Einzelzelle für Zweite Hälfte getauscht.")
         self.assertPresence(change_note,
                             div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
         self.assertPresence(change_note,
@@ -3878,7 +3884,8 @@ etc;anything else""", f['entries_2'].value)
 
     @as_users("annika")
     def test_delete_event(self) -> None:
-        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Veranstaltungsteile")
+        self.traverse("Veranstaltungen", "Große Testakademie 2222",
+                      "Veranstaltungsteile")
         self.assertTitle("Veranstaltungsteile konfigurieren (Große Testakademie 2222)")
         past_date = now().date() - datetime.timedelta(days=1)
         past_past_date = now().date() - datetime.timedelta(days=2)

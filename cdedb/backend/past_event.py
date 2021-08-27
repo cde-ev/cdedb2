@@ -734,9 +734,7 @@ class PastEventBackend(AbstractBackend):
             if course_id not in courses_seen:
                 self.delete_past_course(rs, course_map[course_id])
             elif not courses[course_id]['active_segments']:
-                self.logger.warning(
-                    "Course {} remains without active parts.".format(
-                        course_id))
+                self.logger.warning(f"Course {course_id} remains without active parts.")
         return new_id
 
     @access("cde_admin", "event_admin")

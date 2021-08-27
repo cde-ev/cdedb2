@@ -25,7 +25,7 @@ from cdedb.common import (
     REALM_ADMINS, REALM_INHERITANCE, REALM_SPECIFIC_GENESIS_FIELDS, ArchiveError,
     CdEDBObject, CdEDBObjectMap, DefaultReturnCode, EntitySorter, PrivilegeError, Realm,
     RequestState, extract_roles, get_persona_fields_by_realm, implied_realms,
-    merge_dicts, n_, now, pairwise, unwrap, xsorted,
+    merge_dicts, n_, now, pairwise, unwrap, xsorted, sanitize_filename
 )
 
 from cdedb.database.connection import Atomizer
@@ -127,8 +127,7 @@ class CoreFrontend(AbstractFrontend):
                     begin = event['begin']
                     if (not begin or begin >= present.date()
                             or abs(begin.year - present.year) < 2):
-                        regs = self.eventproxy.list_registrations(rs,
-                                                                  event['id'])
+                        regs = self.eventproxy.list_registrations(rs, event['id'])
                         event['registrations'] = len(regs)
                         orga[event_id] = event
                 dashboard['orga'] = orga
@@ -354,7 +353,7 @@ class CoreFrontend(AbstractFrontend):
 
     @access("ml", modi={"POST"}, check_anti_csrf=False)
     @REQUESTdata("md_str")
-    def markdown_parse(self, rs: RequestState, md_str: str) -> Response:
+    def markdown_parse(self, rs: RequestState, md_str: str) -> Response:  # pylint: disable=no-self-use
         if rs.has_validation_errors():
             return Response("", mimetype='text/plain')
         html_str = markdown_parse_safe(md_str)
@@ -368,8 +367,11 @@ class CoreFrontend(AbstractFrontend):
             return self.index(rs)
 
         vcard = self._create_vcard(rs, persona_id)
+        persona = self.coreproxy.get_persona(rs, persona_id)
+        filename = sanitize_filename(make_persona_name(persona))
+
         return self.send_file(rs, data=vcard, mimetype='text/vcard',
-                              filename='vcard.vcf')
+                              filename=f'{filename}.vcf')
 
     @access("searchable", "cde_admin")
     @REQUESTdata("#confirm_id")
@@ -1555,7 +1557,8 @@ class CoreFrontend(AbstractFrontend):
                          {'To': (persona['username'],),
                           'Subject': "Aufnahme in den CdE",
                           },
-                         {'data': persona,
+                         {'data': data,
+                          'fee': self.conf['MEMBERSHIP_FEE'],
                           'email': "",
                           'cookie': "",
                           'meta_info': meta_info,
@@ -1763,8 +1766,7 @@ class CoreFrontend(AbstractFrontend):
                 ("old_password", ValueError(n_("Wrong password."))))
             rs.ignore_validation_errors()
             self.logger.info(
-                "Unsuccessful password change for persona {}.".format(
-                    rs.user.persona_id))
+                f"Unsuccessful password change for persona {rs.user.persona_id}.")
             return self.change_password_form(rs)
         else:
             count = self.coreproxy.logout(rs, other_sessions=True, this_session=False)
@@ -1814,16 +1816,16 @@ class CoreFrontend(AbstractFrontend):
                         persona_id=None,
                         timeout=self.conf["PARAMETER_TIMEOUT"]),
                         'cookie': message})
-                msg = "Sent password reset mail to {} for IP {}."
-                self.logger.info(msg.format(email, rs.request.remote_addr))
+                self.logger.info(f"Sent password reset mail to {email}"
+                                 f" for IP {rs.request.remote_addr}.")
                 rs.notify("success", n_("Email sent."))
         if admin_exception:
             self.do_mail(
                 rs, "admin_no_reset_password",
                 {'To': (email,), 'Subject': "Passwort zurücksetzen"},
             )
-            msg = "Sent password reset denial mail to admin {} for IP {}."
-            self.logger.info(msg.format(email, rs.request.remote_addr))
+            self.logger.info(f"Sent password reset denial mail to admin {email}"
+                             f" for IP {rs.request.remote_addr}.")
             rs.notify("success", n_("Email sent."))
         return self.redirect(rs, "core/index")
 
@@ -1862,8 +1864,8 @@ class CoreFrontend(AbstractFrontend):
                     persona_id=None,
                     timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"]),
                     'cookie': message})
-            msg = "Sent password reset mail to {} for admin {}."
-            self.logger.info(msg.format(email, rs.user.persona_id))
+            self.logger.info(f"Sent password reset mail to {email}"
+                             f" for admin {rs.user.persona_id}.")
             rs.notify("success", n_("Email sent."))
         return self.redirect_show_user(rs, persona_id)
 
@@ -1951,8 +1953,8 @@ class CoreFrontend(AbstractFrontend):
                      {'new_username': self.encode_parameter(
                          "core/do_username_change_form", "new_username",
                          new_username, rs.user.persona_id)})
-        self.logger.info("Sent username change mail to {} for {}.".format(
-            new_username, rs.user.username))
+        self.logger.info(f"Sent username change mail to {new_username}"
+                         f" for {rs.user.username}.")
         rs.notify("success", "Email sent.")
         return self.redirect(rs, "core/index")
 
@@ -2243,8 +2245,8 @@ class CoreFrontend(AbstractFrontend):
         attachment_count = self.coreproxy.genesis_forget_attachments(rs)
 
         if count or attachment_count:
-            msg = "genesis_forget: Deleted {} genesis cases and {} attachments"
-            self.logger.info(msg.format(count, attachment_count))
+            self.logger.info(f"genesis_forget: Deleted {count} genesis cases and"
+                             f" {attachment_count} attachments")
 
         return store
 

@@ -298,8 +298,8 @@ class CoreBackend(AbstractBackend):
             current_generation = unwrap(self.changelog_get_generations(
                 rs, (data['id'],)))
             if generation is not None and current_generation != generation:
-                self.logger.info("Generation mismatch {} != {} for {}".format(
-                    current_generation, generation, data['id']))
+                self.logger.info(f"Generation mismatch ({current_generation} !="
+                                 f" {generation}) for {data['id']}")
                 return 0
 
             # get current state
@@ -676,8 +676,7 @@ class CoreBackend(AbstractBackend):
           without.
         """
         if not change_note:
-            self.logger.info(
-                "No change note specified (persona_id={}).".format(data['id']))
+            self.logger.info(f"No change note specified (persona_id={data['id']}).")
             change_note = "Allgemeine Änderung"
 
         current = self.sql_select_one(
@@ -1989,8 +1988,7 @@ class CoreBackend(AbstractBackend):
                 not self.conf["CDEDB_OFFLINE_DEPLOYMENT"]
                 and not self.verify_persona_password(rs, password, data["id"])):
             # log message to be picked up by fail2ban
-            self.logger.warning("CdEDB login failure from {} for {}".format(
-                ip, username))
+            self.logger.warning(f"CdEDB login failure from {ip} for {username}")
             return None
         if self.conf["LOCKDOWN"] and not (data['is_meta_admin']
                                           or data['is_core_admin']):
@@ -2036,7 +2034,7 @@ class CoreBackend(AbstractBackend):
             rs.conn = self.connpool['cdb_member']
         else:
             rs.conn = self.connpool['cdb_persona']
-        rs._conn = rs.conn  # Necessary to keep the mechanics happy
+        rs._conn = rs.conn  # Necessary to keep the mechanics happy. pylint: disable=protected-access
 
         # Get more information about user (for immediate use in frontend)
         data = self.sql_select_one(rs, "core.personas",

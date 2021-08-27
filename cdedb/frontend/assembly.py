@@ -683,7 +683,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
 
         # Check for extensions before grouping ballots.
-        if any([self._update_ballot_state(rs, ballot)
+        # Converting to list is needed to ensure updating all ballots.
+        if any([self._update_ballot_state(rs, ballot)  # pylint: disable=use-a-generator
                 for anid, ballot in ballots.items()]):
             return self.redirect(rs, "assembly/list_ballots")
 
@@ -1414,7 +1415,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
 
         # Check for extensions before grouping ballots.
-        if any([self._update_ballot_state(rs, ballot)
+        # Converting to list is needed to ensure updating all ballots.
+        if any([self._update_ballot_state(rs, ballot)  # pylint: disable=use-a-generator
                 for anid, ballot in ballots.items()]):
             return self.redirect(rs, "assembly/summary_ballots")
 
