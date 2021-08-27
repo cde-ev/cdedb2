@@ -1796,7 +1796,7 @@ class AssemblyBackend(AbstractBackend):
     @access("assembly")
     def get_attachments_versions(self, rs: RequestState,
                                  attachment_ids: Collection[int],
-                                 *, current_version_only: bool = True,
+                                 *, current_version_only: bool = False,
                                  include_deleted: bool = False,
                                  ) -> Dict[int, CdEDBObjectMap]:
         """Retrieve all version information for given attachments."""
@@ -1834,11 +1834,28 @@ class AssemblyBackend(AbstractBackend):
     get_attachment_versions: _GetAttachmentVersionsProtocol = singularize(
         get_attachments_versions, "attachment_ids", "attachment_id")
 
-    def get_current_attachment_version(self, rs: RequestState, ballot_id: int,
-                                       *, include_deleted: bool = False,
-                                       ) -> CdEDBObject:
-        return unwrap(self.get_attachment_versions(
-            rs, ballot_id, current_version_only=True, include_deleted=include_deleted))
+    @access("assembly")
+    def get_current_attachments_version(
+            self, rs: RequestState,
+            attachment_ids: Collection[int],
+            include_deleted: bool = False) -> CdEDBObjectMap:
+        """Get the most recent version for the given attachments.
+
+        This is independent from the context in which the attachment is viewed, in
+        contrast to 'get_attachments_versions_of_interest'.
+        """
+        attachment_ids = affirm_set(vtypes.ID, attachment_ids)
+        attachments_versions = self.get_attachments_versions(
+            rs, attachment_ids, current_version_only=True,
+            include_deleted=include_deleted)
+        return {attachment_id: unwrap(version)
+                for attachment_id, version in attachments_versions.items()}
+
+    class _GetCurrentVersionProtocol(Protocol):
+        def __call__(self, rs: RequestState, attachment_id: int,
+                     include_deleted: bool = False) -> CdEDBObject: ...
+    get_current_attachment_version: _GetCurrentVersionProtocol = singularize(
+        get_current_attachments_version, "attachment_ids", "attachment_id")
 
     @access("assembly")
     def get_attachments_versions_of_interest(

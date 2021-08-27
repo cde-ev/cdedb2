@@ -197,7 +197,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         attachment_ids = self.assemblyproxy.list_attachments(
             rs, assembly_id=assembly_id)
-        attachments_version = self.assemblyproxy.get_current_attachment_version(
+        attachments_version = self.assemblyproxy.get_current_attachments_version(
             rs, attachment_ids)
         attends = self.assemblyproxy.does_attend(rs, assembly_id=assembly_id)
         presiders = self.coreproxy.get_personas(
