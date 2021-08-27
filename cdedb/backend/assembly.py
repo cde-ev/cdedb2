@@ -1611,7 +1611,8 @@ class AssemblyBackend(AbstractBackend):
             rs, "assembly.attachment_ballot_links", ("id",),
             (attachment_id,), entity_key="attachment_id")
         if attachment_ballot_links:
-            blockers["attachment_ballot_links"] = [e["id"] for e in attachment_ballot_links]
+            blockers["attachment_ballot_links"] = [
+                e["id"] for e in attachment_ballot_links]
 
         assembly_id = self.get_assembly_id(rs, attachment_id=attachment_id)
         if self.is_assembly_locked(rs, assembly_id):
@@ -1625,7 +1626,7 @@ class AssemblyBackend(AbstractBackend):
         """Remove an attachment."""
         attachment_id = affirm(vtypes.ID, attachment_id)
         blockers = self.delete_attachment_blockers(rs, attachment_id)
-        if blockers.keys() & {"vote_begin", "is_active"}:
+        if blockers.keys() & {"is_active"}:
             raise ValueError(n_("Unable to delete attachment once voting has "
                                 "begun or the assembly has been concluded."))
         cascade = affirm_set(str, cascade or set()) & blockers.keys()
@@ -1671,7 +1672,9 @@ class AssemblyBackend(AbstractBackend):
 
     @internal
     @access("assembly")
-    def is_attachment_ballot_link_creatable(self, rs: RequestState, attachment_id: vtypes.ID, ballot_id: vtypes.ID) -> bool:
+    def is_attachment_ballot_link_creatable(self, rs: RequestState,
+                                            attachment_id: vtypes.ID,
+                                            ballot_id: vtypes.ID) -> bool:
         """An attachment_ballot_link may be created if the ballot it links to is before
         its voting phase."""
         attachment_id = affirm(vtypes.ID, attachment_id)
@@ -1680,7 +1683,9 @@ class AssemblyBackend(AbstractBackend):
 
     @internal
     @access("assembly")
-    def is_attachment_ballot_link_deletable(self, rs: RequestState, attachment_id: vtypes.ID, ballot_id: vtypes.ID) -> bool:
+    def is_attachment_ballot_link_deletable(self, rs: RequestState,
+                                            attachment_id: vtypes.ID,
+                                            ballot_id: vtypes.ID) -> bool:
         """An attachment_ballot_link can only be deleted if the ballot it links to is
         before its voting phase."""
         attachment_id = affirm(vtypes.ID, attachment_id)
@@ -1688,10 +1693,12 @@ class AssemblyBackend(AbstractBackend):
         return not self.is_ballot_locked(rs, ballot_id)
 
     @access("assembly")
-    def get_attachment_ballots(self, rs: RequestState, attachment_id: vtypes.ID) -> Set[vtypes.ID]:
+    def get_attachment_ballots(self, rs: RequestState, attachment_id: vtypes.ID
+                               ) -> Set[vtypes.ID]:
         """Return all ballot_ids linked to an attachment.
 
-        For the other way round, use 'list_attachments'."""
+        For the other way round, use 'list_attachments'.
+        """
         ret = self.sql_select(
             rs, "assembly.attachment_ballot_links", ("id", "ballot_id"),
             (attachment_id,), entity_key="attachment_id")
