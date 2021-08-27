@@ -1,40 +1,3 @@
-{% macro print_attachment(attachment, history, full_history=False, edit=False, ballot=None, edit_buttons_below=True) %}
-    {% with current_version = history[attachment['current_version']] %}
-        <div class="p" id="attachment_container_{{ current_version["attachment_id"] }}">
-            {{ print_attachment_link(attachment, current_version, edit, ballot,
-                                     add=not full_history, delete=full_history) }}
-            {% if full_history %}
-                {% if history|length > 1 %}
-                    <ul>
-                        {% for i, version in history|keydictsort(EntitySorter.attachment_version)|reverse %}
-                            {% if i != current_version['version'] %}
-                                <li>
-                                    {{ print_attachment_link(attachment, version, edit, ballot, delete=True) }}
-                                </li>
-                            {% endif %}
-                        {% endfor %}
-                    </ul>
-                {% endif %}
-                {% if edit and edit_buttons_below %}
-                    <div class="p button-group-below-text"
-                         id="attachment_management_{{ current_version["attachment_id"] }}">
-                        {{ add_attachment_version_button(current_version["attachment_id"], ballot=ballot, xs=False) }}
-                        {{ change_attachment_link_button(current_version["attachment_id"], ballot=ballot) }}
-                        {{ delete_attachment_button(current_version["attachment_id"], ballot=ballot) }}
-                    </div>
-                {% endif %}
-            {% else %}
-                <div class="small">
-                    {{ util.href(cdedblink("assembly/show_attachment", {'attachment_id': current_version['attachment_id'],
-                                                                        'ballot_id': attachment['ballot_id']}),
-                                 gettext("Attachment Details")) }}
-                </div>
-            {% endif %}
-        </div>
-    {% endwith %}
-{% endmacro %}
-
-
 {% macro link_attachment_version(version) %}
     {{ util.href(cdedblink("assembly/get_attachment",
                            {'attachment_id': version["attachment_id"], 'version_nr': version["version_nr"]}),
@@ -43,33 +6,8 @@
 {% endmacro %}
 
 
-{% macro add_attachment_version_button(attachment_id, ballot=None, xs=False) %}
-    {% if xs %}
-        {% set aclass = "btn btn-success btn-xs hide-hover" %}
-        {% set label = util.make_icon("plus") %}
-        {% set icon = None %}
-        {% set title = gettext("Add Version") %}
-    {% else %}
-        {% set aclass = "btn btn-success btn-sm" %}
-        {% set label = gettext("Add Version") %}
-        {% set icon = "plus" %}
-        {% set title = None %}
-    {% endif %}
-    {{ util.href(cdedblink("assembly/add_attachment_form", {'attachment_id': attachment_id,
-                                                            'ballot_id': ballot['id'] if ballot else None}),
-                 label=label, aclass=aclass, icon=icon, title=title) }}
-{% endmacro %}
-
-{% macro change_attachment_link_button(attachment_id, ballot=None) %}
-    {{ util.href(cdedblink("assembly/change_attachment_link_form", {'attachment_id': attachment_id,
-                                                                    'ballot_id': ballot['id'] if ballot else None}),
-                 gettext("Change Attachment Link"), aclass="btn btn-warning btn-sm", icon="pen") }}
-{% endmacro %}
-
-{% macro delete_attachment_button(attachment_id, ballot=None) %}
-    <form action="{{ cdedblink("assembly/delete_attachment",
-                               {'attachment_id': attachment_id,
-                                'ballot_id': ballot['id'] if ballot else None}) }}"
+{% macro delete_attachment_button(attachment_id) %}
+    <form action="{{ cdedblink("assembly/delete_attachment", {'attachment_id': attachment_id}) }}"
           method="POST" id="deleteattachmentform{{ attachment_id }}" style="display: inline;">
         {{ util.anti_csrf_token("assembly/delete_attachment") }}
         {{ util.input_checkbox("attachment_ack_delete", gettext("Are you sure?")) }}
@@ -153,83 +91,4 @@
     {% if version_info %}
         {% trans version_nr=version['version_nr'] %}(Version {{ version_nr }}){% endtrans %}
     {% endif %}
-    {% with current = history[version] %}
-        {% if icon %}
-            {{- util.make_icon('file', arialabel=gettext('Attachment')) }}
-        {% endif %}
-        {{ current['title'] -}}
-        {% if version_info %}
-            {% trans version=current['version'] %}(Version {{ version }}){% endtrans %}
-        {% endif %}
-    {% endwith %}
-{% endmacro %}
-
-{% macro attachment_box(attachments, histories, title=gettext("General Files"), ballot=None, edit=False,
-                        new_attachment_button=False, full_history=True, icon='file', edit_buttons_below=True) %}
-    {% call util.bootstrap_panel(title=title, icon=icon, aclass="panel-default panel-condensed mosp") %}
-        {{ attachment_list(attachments=attachments, histories=histories, ballot=ballot, edit=edit,
-                           new_attachment_button=new_attachment_button, full_history=full_history,
-                           edit_buttons_below=edit_buttons_below) }}
-    {% endcall %}
-{% endmacro %}
-
-{% macro attachment_list(attachments, histories, ballot=None, edit=False, new_attachment_button=False,
-                         full_history=True, edit_buttons_below=True) %}
-    <div class="row">
-        <div class="col-sm-12">
-        {% if not attachments %}
-            <div class="p text-muted">
-                {% if ballot %}
-                    {% if ballot['vote_begin'] < now() %}
-                        {% trans %}
-                            This ballot does not have any attachments.
-                        {% endtrans %}
-                    {% else %}
-                        {% trans %}
-                            This ballot does not yet have any attachments.
-                        {% endtrans %}
-                    {% endif %}
-                {% else %}
-                    {% if ambience['assembly']['is_active'] %}
-                        {% trans %}
-                            This assembly does not yet have any general files.
-                        {% endtrans %}
-                    {% else %}
-                        {% trans %}
-                            This assembly does not have any general files.
-                        {% endtrans %}
-                    {% endif %}
-                {% endif %}
-            </div>
-        {% endif %}
-            {% if attachments|length > 1 %}
-                <ul class="slim" id="attachments-{{ "ballot-{}".format(ballot['id']) if ballot else "general"}}">
-                    {% for attachment_id, attachment in attachments|keydictsort(EntitySorter.get_attachment_sorter(histories)) %}
-                        <li class="hide-hover-container clearfix-after" id="attachment{{ attachment_id }}">
-                            {{ print_attachment(attachment, histories[attachment_id], edit=edit,
-                                                full_history=full_history, ballot=ballot,
-                                                edit_buttons_below=edit_buttons_below) }}
-                        </li>
-                    {% endfor %}
-                </ul>
-            {% else %}
-                {# There is only one attachment, but we have to get it out of the dict somehow. #}
-                {% for attachment_id, attachment in attachments.items() %}
-                    <div id="attachments-{{ "ballot-{}".format(ballot['id']) if ballot else "general"}}">
-                        <div class="hide-hover-container clearfix-after" id="attachment{{ attachment_id }}">
-                            {{ print_attachment(attachment, histories[attachment_id], edit=edit,
-                                                full_history=full_history, ballot=ballot,
-                                                edit_buttons_below=edit_buttons_below) }}
-                        </div>
-                    </div>
-                {% endfor %}
-            {% endif %}
-            {% if new_attachment_button and edit %}
-                <div class="p">
-                    {{ util.href(cdedblink("assembly/add_attachment_form"),
-                                 gettext("Add File"), aclass="btn btn-success btn-sm", icon="plus") }}
-                </div>
-            {% endif %}
-        </div>
-    </div>
 {% endmacro %}

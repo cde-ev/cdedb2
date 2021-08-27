@@ -718,19 +718,6 @@ class AssemblyFrontend(AbstractUserFrontend):
                               filename=versions[version_nr]['filename'])
 
     @access("assembly")
-    def show_attachment(self, rs: RequestState, assembly_id: int,
-                        attachment_id: int, ballot_id: int = None) -> Response:
-        if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):
-            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        history = self.assemblyproxy.get_attachment_versions(
-            rs, attachment_id)
-        edit = not self.assemblyproxy.check_attachment_locked(rs, attachment_id)
-        return self.render(rs, "show_attachment", {
-            'attachment': rs.ambience['attachment'], 'history': history,
-            'edit': edit,
-        })
-
-    @access("assembly")
     @assembly_guard
     def add_attachment_form(self, rs: RequestState, assembly_id: int) -> Response:
         """Render form."""
