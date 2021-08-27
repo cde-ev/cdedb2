@@ -768,8 +768,7 @@ class AssemblyBackend(AbstractBackend):
         :returns: True if the ballot may not be edited, False otherwise.
         """
         ballot_id = affirm(vtypes.ID, ballot_id)
-        ballot = self.get_ballot(rs, ballot_id)
-        return ballot["vote_begin"] < now()
+        return self.are_ballots_locked(rs, (ballot_id,))
 
     @access("assembly")
     def are_ballots_locked(self, rs: RequestState, ballot_ids: Collection[int]
@@ -779,11 +778,9 @@ class AssemblyBackend(AbstractBackend):
         :returns: True if any of the ballots may not be edited.
         """
         ballot_ids = affirm_set(vtypes.ID, ballot_ids)
-        reference_time = now()
-        # Don't refer to `is_ballot_locked' to avoid needing an Atomizer and
-        # a lot of subqueries.
-        return any(b["vote_begin"] < reference_time for b in
-                   self.get_ballots(rs, ballot_ids).values())
+        q = "SELECT id FROM assembly.ballots WHERE id = ANY(%s) AND vote_begin < %s"
+        params = (ballot_ids, now())
+        return bool(self.query_all(rs, q, params))
 
     @access("assembly")
     def get_ballots(self, rs: RequestState, ballot_ids: Collection[int]
