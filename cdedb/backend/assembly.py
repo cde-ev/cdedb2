@@ -783,6 +783,30 @@ class AssemblyBackend(AbstractBackend):
         return bool(self.query_all(rs, q, params))
 
     @access("assembly")
+    def is_ballot_voting(self, rs: RequestState, ballot_id: int) -> bool:
+        """Helper to check, whether a ballot is open for voting.
+
+        :returns: True if the ballot is open for voting, False otherwise.
+        """
+        ballot_id = affirm(vtypes.ID, ballot_id)
+        return self.are_ballots_voting(rs, (ballot_id,))
+
+    @access("assembly")
+    def are_ballots_voting(self, rs: RequestState, ballot_ids: Collection[int]) -> bool:
+        """Helper to check whether the given ballots are (partially) open for voting.
+
+        :returns: True if any of the given ballots is open for voting.
+        """
+        ballot_ids = affirm_set(vtypes.ID, ballot_ids)
+        q = ("SELECT id FROM assembly.ballots WHERE id = ANY(%s)"
+             " AND vote_begin > %s"
+             " AND (vote_end < %s"
+                   " OR (extended = TRUE AND vote_extension_end < %s))")
+        reference_time = now()
+        params = (ballot_ids, reference_time, reference_time, reference_time)
+        return bool(self.query_all(rs, q, params))
+
+    @access("assembly")
     def get_ballots(self, rs: RequestState, ballot_ids: Collection[int]
                     ) -> CdEDBObjectMap:
         """Retrieve data for some ballots,

@@ -48,15 +48,6 @@ class AssemblyFrontend(AbstractUserFrontend):
     def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
 
-    @staticmethod
-    def is_ballot_voting(ballot: Dict[str, Any]) -> bool:
-        """Determine whether a ballot is open for voting."""
-        timestamp = now()
-        return (timestamp > ballot['vote_begin']
-                and (timestamp < ballot['vote_end']
-                     or (ballot['extended']
-                         and timestamp < ballot['vote_extension_end'])))
-
     @access("assembly")
     def index(self, rs: RequestState) -> Response:
         """Render start page."""
@@ -1009,7 +1000,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             rs, ballot_id)
 
         # initial checks done, present the ballot
-        ballot['is_voting'] = self.is_ballot_voting(ballot)
+        ballot['is_voting'] = self.assemblyproxy.is_ballot_voting(rs, ballot_id)
         ballot['vote_count'] = self.assemblyproxy.count_votes(rs, ballot_id)
         result = self.get_online_result(rs, ballot)
         attends = self.assemblyproxy.does_attend(rs, ballot_id=ballot_id)
