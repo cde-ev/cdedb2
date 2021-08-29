@@ -699,10 +699,19 @@ class AssemblyFrontend(AbstractUserFrontend):
             'ballot_id': new_id})
 
     @access("assembly")
+    def get_attachment(self, rs: RequestState, assembly_id: int, attachment_id: int) -> Response:
+        """A wrapper around get_attachment_version to retrive the current version."""
+        attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
+        # Access checking is done inside get_attachment_version
+        return self.get_attachment_version(
+            rs, assembly_id=assembly_id, attachment_id=attachment_id,
+            version_nr=attachment["current_version_nr"])
+
+    @access("assembly")
     @REQUESTdata("version_nr")
-    def get_attachment(self, rs: RequestState, assembly_id: int, attachment_id: int,
-                       version_nr: int = None) -> Response:
-        """Retrieve an attachment. Default to most recent version."""
+    def get_attachment_version(self, rs: RequestState, assembly_id: int,
+                               attachment_id: int, version_nr: int) -> Response:
+        """Retrieve the content of a given attachment version."""
         if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
@@ -712,7 +721,6 @@ class AssemblyFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.redirect(rs, "assembly/list_attachments")
         versions = self.assemblyproxy.get_attachment_versions(rs, attachment_id)
-        version_nr = version_nr or attachment["current_version_nr"]
         content = self.assemblyproxy.get_attachment_content(
             rs, attachment_id, version_nr)
         if not content:

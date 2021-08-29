@@ -176,7 +176,11 @@
                         {% for attachment_id, attachment_versions in slice %}
                             {% for version_nr, version in attachment_versions.items() %}
                                 <li class="hide-hover-container clearfix-after" id="attachment{{ attachment_id }}">
-                                    {{ assembly_util.link_attachment_version(version) }}
+                                    {{ util.href(
+                                        cdedblink("assembly/get_attachment_version",
+                                                  {'attachment_id': attachment_id, 'version_nr': version_nr}),
+                                        version["title"]|string + " " + gettext("(Version %(version)s)")|format(version=version_nr),
+                                        icon="file") }}
                                 </li>
                             {% endfor %}
                         {% endfor %}
