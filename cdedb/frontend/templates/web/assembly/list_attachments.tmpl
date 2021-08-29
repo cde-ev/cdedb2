@@ -20,7 +20,7 @@
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
-    {{ util.breadcrumb_link(cdedblink("assembly/list_attachments"), gettext("Attachment Overview"), icon="file", active=True) }}
+    {{ util.breadcrumb_link(cdedblink("assembly/list_attachments"), gettext("Attachment Overview"), active=True) }}
 
 {% endblock %}
 {% block content %}

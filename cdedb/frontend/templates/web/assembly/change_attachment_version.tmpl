@@ -24,7 +24,7 @@
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
-    {{ util.breadcrumb_link(cdedblink("assembly/list_attachments"), gettext("Attachment Overview"), icon="file") }}
+    {{ util.breadcrumb_link(cdedblink("assembly/list_attachments"), gettext("Attachment Overview")) }}
     {{ util.breadcrumb_link("", assembly_util.small_attachment_title(current_version, icon=False), icon='file', active=True) }}
     {{ util.breadcrumb_link(cdedblink("assembly/change_attachment_version"), gettext("Change Version"), active=True) }}
 {% endblock %}
