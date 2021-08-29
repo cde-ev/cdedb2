@@ -18,7 +18,7 @@ An attachment_version has the following attributes:
 
 - an **id** (id)
 - the **attachment id** of its attachment
-- a **version number** (integer) starting at 1
+- a **version number** (integer) starting at 1, incremented by one for each new attachment_version of an attachment
 - a **file_hash** of the real file containing the current stand of the attachment idea (file)
 - a **filename** (varchar)
 - a **title** (varchar)
