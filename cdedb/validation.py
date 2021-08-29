@@ -3678,7 +3678,8 @@ BALLOT_OPTIONAL_FIELDS: Mapping[str, Any] = {
     **BALLOT_EXPOSED_OPTIONAL_FIELDS,
     'extended': Optional[bool],
     'is_tallied': bool,
-    'candidates': Mapping
+    'candidates': Mapping,
+    'linked_attachments': Optional[List[Optional[ID]]]
 }
 
 
