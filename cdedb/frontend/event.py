@@ -4800,7 +4800,7 @@ class EventFrontend(AbstractUserFrontend):
         groups = self.eventproxy.list_lodgement_groups(rs, event_id)
         field_values = {
             "fields.{}".format(key): value
-            for key, value in rs.ambience['lodgement']['fields'].items()}  # noqa: F821
+            for key, value in rs.ambience['lodgement']['fields'].items()}
         merge_dicts(rs.values, rs.ambience['lodgement'], field_values)
         return self.render(rs, "change_lodgement", {'groups': groups})
 
