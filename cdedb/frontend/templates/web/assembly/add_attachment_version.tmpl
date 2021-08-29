@@ -3,6 +3,11 @@
 {% import "web/util.tmpl" as util with context %}
 {% import "web/assembly/util.tmpl" as assembly_util with context %}
 
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+{% endblock %}
+{% set jshint = 'weak' %}
+
 {% block title %}
     {% trans title=ambience['assembly']['title'] %}Add Version ({{ title }}){% endtrans %}
         – {{ assembly_util.small_attachment_title(current_version, icon=False) }}
@@ -21,19 +26,38 @@
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
-    {{ util.breadcrumb_link(cdedblink("assembly/list_attachments"), gettext("Attachment Overview"), icon="file") }}
+    {{ util.breadcrumb_link(cdedblink("assembly/list_attachments"), gettext("Attachment Overview")) }}
     {{ util.breadcrumb_link("", assembly_util.small_attachment_title(current_version, icon=False), icon='file', active=True) }}
     {{ util.breadcrumb_link(cdedblink("assembly/add_attachment"), gettext("Add Version"), active=True) }}
 {% endblock %}
 
+{% block static_notifications %}
+    {{ super() }}
+    {% if not (is_changeable or is_deletable) %}
+        {% call util.notification('warning') %}
+            {% trans %}This attachment version can not be modified or deleted after it was created.{% endtrans %}
+        {% endcall %}
+    {% endif %}
+{% endblock %}
+
 {% block content %}
     <form action="{{ cdedblink('assembly/add_attachment_version') }}" method="POST" enctype="multipart/form-data"
-            id="addattachmentform" class="form-horizontal">
+            id="addattachmentversionform" class="form-horizontal">
         {{ util.anti_csrf_token('assembly/add_attachment_version') }}
         {{ util.form_input_text(name="title", label=gettext("Label")) }}
         {{ util.form_input_text(name="authors", label=gettext("Authors")) }}
         {{ util.form_input_text(name="filename", label=gettext("Filename"), info=gettext("Leave empty for current filename.")) }}
         {{ util.form_input_file(name="attachment", accept="application/pdf", info=gettext("Only PDFs allowed.")) }}
+        {% if not (is_changeable or is_deletable) %}
+            {{ util.form_input_checkbox("ack_creation", gettext("Are you sure?")) }}
+        {% endif %}
         {{ util.form_input_submit(label=gettext("Upload"), cancellink=cdedblink('assembly/list_attachments')) }}
     </form>
+    {% if not (is_changeable or is_deletable) %}
+        <script nonce="{{ csp_nonce }}">
+            $('#addattachmentversionform').cdedbProtectAction(
+                "{{ gettext("This attachment version can not be modified or deleted after it was created.") }}");
+            $('#addattachmentversionform').find('[name="ack_creation"]').prop('checked', true).parent().hide();
+        </script>
+    {% endif %}
 {% endblock %}
