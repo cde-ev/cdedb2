@@ -312,6 +312,14 @@
     {%- endif %}
 {%- endmacro %}
 
+{% macro markdown_preview(anid) %}
+    <p class="help-block no-color">
+        {{ make_icon('fab fa-markdown') }} {% trans %}Supports Markdown.{% endtrans %}
+        <span class="mdjs" style="display: none;"><a id="{{ anid }}-mdpreview">{{ gettext("Preview") }}</a> |</span>
+        {{ href(docurl("Handbuch_Markdown"), gettext("Tutorial"), title=gettext("Short Markdown summary")) }}
+    </p>
+    <div id="{{ anid }}-mdpreview-html"></div> {# temporary until we have a working modal solution #}
+{%- endmacro %}
 
 {# ################### #
  # (Form) input macros #
@@ -364,37 +372,27 @@
                 {{ ("col-sm-offset-2" if small else "col-sm-offset-4") if not label }}
             ">
         {%- endif %}
-        {% if markdownhint in info %}
-            <p class="mdjs" style="display: none;">
-                <a id="{{ anid }}-mdpreview-off">Edit</a>
-                |
-                <a id="{{ anid }}-mdpreview-on">Preview</a>
-            </p>
-            <div id="{{ anid }}-mdpreview" class="mdjs" style="display: none;"></div>
-            <div id="{{ anid }}-mdedit">
-        {% endif %}
         {% if addon %}<div class="input-group">{% endif %}
             {{- caller() }}
         {% if addon %}<span class="input-group-addon">{{ addon }}</span></div>{% endif %}
-        {% if markdownhint in info %}</div>{% endif %}
             {{- output_errors(name, displayerrors, differentiate_warnings=differentiate_warnings) }}
             {{- output_info(info) }}
+        {%- if markdownhint in info %}{{ markdown_preview(anid) }}{% endif %}
         {%- if horizontal %}</div>{% endif %}
     </div>
     {% if markdownhint in info %}
         <script nonce="{{ csp_nonce }}">
             $(".mdjs").show();
-            $("#{{ anid }}-mdpreview-off").click(function() {
-                $("#{{ anid }}-mdpreview").hide();
-                $("#{{ anid }}-mdedit").show();
-            });
-            $("#{{ anid }}-mdpreview-on").click(function() {
+            $("#{{ anid }}-mdpreview").click(function() {
+                if ($("#{{ anid }}-mdpreview-html").html()) { {# workaround until we got modal working #}
+                    $("#{{ anid }}-mdpreview-html").html("");
+                    return
+                }
                 var input = $("#{{ anid }}").val();
-                $.post("/db/core/markdown/parse",
+                $.post("{{ cdedblink("core/markdown_parse")|e }}",
                     { md_str: input },
                     function(result) {
-                        $("#{{ anid }}-mdedit").hide();
-                        $("#{{ anid }}-mdpreview").html(result).show();
+                        $("#{{ anid }}-mdpreview-html").html(result).show();
                     }
                 );
             });
