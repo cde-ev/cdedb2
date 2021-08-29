@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2021-08-29 18:44+0200\n"
+"POT-Creation-Date: 2021-08-29 18:50+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -3011,7 +3011,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/show_lodgement.tmpl:126
 #: cdedb/frontend/templates/web/event/show_registration.tmpl:274
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:189
-#: cdedb/frontend/templates/web/util.tmpl:748
+#: cdedb/frontend/templates/web/util.tmpl:749
 msgid "Delete"
 msgstr ""
 
@@ -3534,7 +3534,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/partial_import_check.tmpl:82
 #: cdedb/frontend/templates/web/ml/change_mailinglist.tmpl:60
 #: cdedb/frontend/templates/web/ml/create_mailinglist.tmpl:34
-#: cdedb/frontend/templates/web/util.tmpl:910 cdedb/query.py:1321
+#: cdedb/frontend/templates/web/util.tmpl:911 cdedb/query.py:1321
 msgid "Title_[[name of an entity]]"
 msgstr "Title"
 
@@ -4127,8 +4127,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:161
 #: cdedb/frontend/templates/web/ml/management.tmpl:69
 #: cdedb/frontend/templates/web/ml/management.tmpl:165
-#: cdedb/frontend/templates/web/util.tmpl:744
-#: cdedb/frontend/templates/web/util.tmpl:951
+#: cdedb/frontend/templates/web/util.tmpl:745
+#: cdedb/frontend/templates/web/util.tmpl:952
 msgid "Add"
 msgstr ""
 
@@ -6241,7 +6241,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/cde/parse_statement.tmpl:178
 #: cdedb/frontend/templates/web/event/batch_fees.tmpl:25
-#: cdedb/frontend/templates/web/util.tmpl:641
+#: cdedb/frontend/templates/web/util.tmpl:642
 msgid "Ignore Warnings"
 msgstr ""
 
@@ -6310,7 +6310,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/field_summary.tmpl:57
 #: cdedb/frontend/templates/web/event/manage_attendees.tmpl:46
 #: cdedb/frontend/templates/web/event/manage_inhabitants.tmpl:47
-#: cdedb/frontend/templates/web/util.tmpl:955
+#: cdedb/frontend/templates/web/util.tmpl:956
 msgid "Remove"
 msgstr ""
 
@@ -12210,114 +12210,119 @@ msgstr ""
 msgid "IBAN in the usual format, spaces are allowed"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:663
-msgid "from"
+#: cdedb/frontend/templates/web/util.tmpl:570
+msgid ""
+"Empty string values with defaultvalue not supported. default: {} value: {}"
 msgstr ""
 
 #: cdedb/frontend/templates/web/util.tmpl:664
+msgid "from"
+msgstr ""
+
+#: cdedb/frontend/templates/web/util.tmpl:665
 #, python-format
 msgid "%s from"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:665
+#: cdedb/frontend/templates/web/util.tmpl:666
 msgid "to"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:666
+#: cdedb/frontend/templates/web/util.tmpl:667
 #, python-format
 msgid "%s to"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:773
+#: cdedb/frontend/templates/web/util.tmpl:774
 #, python-format
 msgid "%(title)s"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:798
+#: cdedb/frontend/templates/web/util.tmpl:799
 #, python-format
 msgid "Add %(name)s"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:913
+#: cdedb/frontend/templates/web/util.tmpl:914
 msgid "Text"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:916
+#: cdedb/frontend/templates/web/util.tmpl:917
 #, python-format
 msgid "Supports %(infolink)s for “Text-Only” fields."
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:918
-#: cdedb/frontend/templates/web/util.tmpl:1054
+#: cdedb/frontend/templates/web/util.tmpl:919
+#: cdedb/frontend/templates/web/util.tmpl:1055
 msgid "Markdown"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:919
-#: cdedb/frontend/templates/web/util.tmpl:1055
+#: cdedb/frontend/templates/web/util.tmpl:920
+#: cdedb/frontend/templates/web/util.tmpl:1056
 msgid "Short Markdown summary"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:922
+#: cdedb/frontend/templates/web/util.tmpl:923
 msgid "Query"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:924
+#: cdedb/frontend/templates/web/util.tmpl:925
 msgid "— Only Text —"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:928
+#: cdedb/frontend/templates/web/util.tmpl:929
 msgid "Input Size"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:929
 #: cdedb/frontend/templates/web/util.tmpl:930
+#: cdedb/frontend/templates/web/util.tmpl:931
 msgid "multiline"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:929
+#: cdedb/frontend/templates/web/util.tmpl:930
 msgid "singleline"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:934
+#: cdedb/frontend/templates/web/util.tmpl:935
 msgid "Default Value"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:940
+#: cdedb/frontend/templates/web/util.tmpl:941
 msgid "read-only"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:1007
+#: cdedb/frontend/templates/web/util.tmpl:1008
 #, python-format
 msgid "Hide %(label)s"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:1007
+#: cdedb/frontend/templates/web/util.tmpl:1008
 #, python-format
 msgid "Show %(label)s"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:1010
+#: cdedb/frontend/templates/web/util.tmpl:1011
 msgid "(enabled)"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:1051
+#: cdedb/frontend/templates/web/util.tmpl:1052
 #, python-format
 msgid "Supports %(infolink)s."
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:1063
+#: cdedb/frontend/templates/web/util.tmpl:1064
 msgid "Info!"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:1063
+#: cdedb/frontend/templates/web/util.tmpl:1064
 msgid "Success!"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:1064
+#: cdedb/frontend/templates/web/util.tmpl:1065
 msgid "Error!"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:1064
+#: cdedb/frontend/templates/web/util.tmpl:1065
 msgid "Warning!"
 msgstr ""
 

@@ -567,7 +567,8 @@
         {%- for value, label in entries %}
             {% if value in ("", none) and defaultvalue %}
                 {# This leads to problems regarding defaultvalues. #}
-                {{ raise("Empty string values with defaultvalue not supported. default: " + defaultvalue|string + " value: " + value|string) }}
+                {{ raise(gettext("Empty string values with defaultvalue not supported. default: {} value: {}")
+                    |format(defaultvalue|string, value|string)) }}
             {% endif %}
             <option value="{{ value }}"
                 {%- if former_value == value|string or (former_value == "" and defaultvalue|string == value|string) %}
