@@ -1,3 +1,5 @@
+"""Helpers for parsing bank statements"""
+
 import collections
 import datetime
 import decimal
@@ -223,8 +225,8 @@ def parse_amount(amount: str) -> decimal.Decimal:
         amount = number_from_german(amount)
         try:
             ret = decimal.Decimal(amount)
-        except decimal.InvalidOperation:
-            raise ValueError("Could not parse.")
+        except decimal.InvalidOperation as e:
+            raise ValueError("Could not parse.") from e
     return ret
 
 

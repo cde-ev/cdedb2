@@ -79,8 +79,8 @@ with Atomizer(rs()):
     from pprint import pprint
 
     ml_ids = ml.list_mailinglists(rs(), active_only=False)
+    ml.write_subscription_states(rs(), ml_ids)
     for ml_id in ml_ids:
-        ml.write_subscription_states(rs(), ml_id)
 
         # Some debug output.
         pprint(ml_id)

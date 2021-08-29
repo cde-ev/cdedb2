@@ -1,3 +1,5 @@
+"""interactive werkzeug debugger for the CdEDB2 application"""
+
 import os
 from pathlib import Path
 

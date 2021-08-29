@@ -159,9 +159,9 @@
 {% macro persona_anchor(persona, only_given_names=False, only_display_name=False, given_and_display_names=False,
                         with_family_name=True, with_titles=False, quote_me=False, event_id=none, ml_id=none,
                         aclass='', readonly=False) %}
-    {{ href(show_user_link(user, persona['id'], quote_me, event_id=event_id, ml_id=ml_id),
+    {{- href(show_user_link(user, persona['id'], quote_me, event_id=event_id, ml_id=ml_id),
             persona_name(persona, only_given_names, only_display_name, given_and_display_names, with_family_name),
-            aclass=aclass, readonly=readonly) }}
+            aclass=aclass, readonly=readonly) -}}
 {% endmacro %}
 
 {# Display the name of a given persona

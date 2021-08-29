@@ -80,6 +80,7 @@ class MailmanMixin(MlBaseFrontend):
             # 'pass_types': ['multipart', 'text/plain', 'application/pdf'],
         }
         desired_templates = {
+            # pylint: disable=line-too-long
             # Funny split to protect trailing whitespace
             'list:member:regular:footer': '-- ' + f"""
 Dies ist eine Mailingliste des CdE e.V.
@@ -230,7 +231,8 @@ The original message as received by Mailman is attached.
         for address in delete_owners:
             mm_list.remove_owner(address)
 
-    def mailman_sync_list_whites(self, rs: RequestState, mailman: Client,
+    @staticmethod
+    def mailman_sync_list_whites(rs: RequestState, mailman: Client,
                                  db_list: CdEDBObject,
                                  mm_list: MailingList) -> None:
         db_whitelist = db_list['whitelist']

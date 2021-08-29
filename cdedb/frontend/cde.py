@@ -32,8 +32,8 @@ from cdedb.common import (
     Accounts, ArchiveError, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
     EntitySorter, Error, LineResolutions, LOG_FIELDS_COMMON, PERSONA_DEFAULTS,
     RequestState, SemesterSteps, TransactionType, asciificator, deduct_years,
-    determine_age_class, diacritic_patterns, get_hash, glue, int_to_words,
-    lastschrift_reference, merge_dicts, n_, now, unwrap, xsorted,
+    determine_age_class, diacritic_patterns, get_hash, get_localized_country_codes,
+    glue, int_to_words, lastschrift_reference, merge_dicts, n_, now, unwrap, xsorted,
 )
 from cdedb.database.connection import Atomizer
 from cdedb.filter import enum_entries_filter, money_filter
@@ -41,8 +41,8 @@ from cdedb.frontend.common import (
     AbstractUserFrontend, CustomCSVDialect, REQUESTdata, REQUESTdatadict, REQUESTfile,
     access, calculate_db_logparams, calculate_loglinks, cdedbid_filter,
     check_validation as check, check_validation_optional as check_optional, csv_output,
-    make_membership_fee_reference, make_postal_address, periodic,
-    process_dynamic_input, request_extractor, Worker,
+    make_membership_fee_reference, make_postal_address, periodic, process_dynamic_input,
+    request_extractor, Worker,
 )
 from cdedb.query import (
     Query, QueryConstraint, QueryOperators, QueryScope,
@@ -345,8 +345,8 @@ class CdEFrontend(AbstractUserFrontend):
                 enum_entries_filter(
                     const.Genders,
                     rs.gettext if download is None else rs.default_gettext)),
-            'country': OrderedDict(self.get_localized_country_codes(rs)),
-            'country2': OrderedDict(self.get_localized_country_codes(rs)),
+            'country': OrderedDict(get_localized_country_codes(rs)),
+            'country2': OrderedDict(get_localized_country_codes(rs)),
         }
         return self.generic_user_search(
             rs, download, is_search, QueryScope.cde_user, QueryScope.cde_user,
@@ -535,7 +535,8 @@ class CdEFrontend(AbstractUserFrontend):
                     and self.coreproxy.verify_existence(rs, persona['username'])
                 ):
                     warnings.append(
-                        ("doppelganger", ValueError(n_("Email address already taken."))))
+                        ("doppelganger",
+                         ValueError(n_("Email address already taken."))))
                 if not dg['is_cde_realm']:
                     warnings.append(
                         ("doppelganger",
@@ -595,7 +596,8 @@ class CdEFrontend(AbstractUserFrontend):
             current = self.coreproxy.get_persona(rs, persona_id)
             if not current['is_cde_realm']:
                 # Promote to cde realm dependent on current realm
-                promotion: CdEDBObject = {field: None for field in CDE_TRANSITION_FIELDS}
+                promotion: CdEDBObject = {
+                    field: None for field in CDE_TRANSITION_FIELDS}
                 # The ream independent upgrades of the persona. They are applied at last
                 # to prevent unintentional overrides
                 upgrades = {
@@ -834,7 +836,8 @@ class CdEFrontend(AbstractUserFrontend):
                     and not dataset['old_hash']):
                 # automatically select resolution if this is an easy case
                 dataset['resolution'] = LineResolutions.create
-                rs.values[f"resolution{dataset['lineno']}"] = LineResolutions.create.value
+                rs.values[
+                    f"resolution{dataset['lineno']}"] = LineResolutions.create.value
 
         if total_account_number != len(accountlines):
             rs.append_validation_error(
@@ -932,7 +935,7 @@ class CdEFrontend(AbstractUserFrontend):
             else:
                 params["has_none"].append(t.t_id)
             params["accounts"][str(t.account)] += 1
-            if t.event_id:
+            if t.event_id and t.type == TransactionType.EventFee:
                 params["events"][t.event_id] += 1
             if t.type == TransactionType.MembershipFee:
                 params["memberships"] += 1

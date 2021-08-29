@@ -481,14 +481,16 @@ class EventBackend(AbstractBackend):
             query.constraints.append(("event_id", QueryOperators.equal,
                                       event_id))
             query.spec['event_id'] = "id"
-        elif query.scope in {QueryScope.event_user, QueryScope.archived_past_event_user}:
+        elif query.scope in {QueryScope.event_user,
+                             QueryScope.archived_past_event_user}:
             if not self.is_admin(rs) and "core_admin" not in rs.user.roles:
                 raise PrivilegeError(n_("Admin only."))
             # Include only un-archived event-users
             query.constraints.append(("is_event_realm", QueryOperators.equal,
                                       True))
-            query.constraints.append(("is_archived", QueryOperators.equal,
-                                      query.scope == QueryScope.archived_past_event_user))
+            query.constraints.append(
+                ("is_archived", QueryOperators.equal,
+                 query.scope == QueryScope.archived_past_event_user))
             query.spec["is_event_realm"] = "bool"
             query.spec["is_archived"] = "bool"
             # Exclude users of any higher realm (implying event)
@@ -2618,53 +2620,85 @@ class EventBackend(AbstractBackend):
         return ret
 
     @access("event", "ml_admin")
-    def list_registrations(self, rs: RequestState, event_id: int,
-                           persona_id: int = None) -> Dict[int, int]:
+    def list_registrations_personas(self, rs: RequestState, event_id: int,
+                                    persona_ids: Collection[int] = None
+                                    ) -> Dict[int, int]:
         """List all registrations of an event.
 
-        If an ordinary event_user is requesting this, just participants of this
-        event are returned and he himself must have the status 'participant'.
-
-        :param persona_id: If passed restrict to registrations by this persona.
+        :param persona_ids: If passed restrict to registrations by these personas.
         :returns: Mapping of registration ids to persona_ids.
         """
+        if not persona_ids:
+            persona_ids = set()
         event_id = affirm(vtypes.ID, event_id)
-        persona_id = affirm_optional(vtypes.ID, persona_id)
+        persona_ids = affirm_set(vtypes.ID, persona_ids)
+
+        # ml_admins are allowed to do this to be able to manage
+        # subscribers of event mailinglists.
+        if (persona_ids != {rs.user.persona_id}
+                and not self.is_orga(rs, event_id=event_id)
+                and not self.is_admin(rs)
+                and "ml_admin" not in rs.user.roles):
+            raise PrivilegeError(n_("Not privileged."))
+
         query = "SELECT id, persona_id FROM event.registrations"
         conditions = ["event_id = %s"]
         params: List[Any] = [event_id]
-        # condition for limited access, f. e. for the online participant list.
-        # ml_admins are allowed to do this to be able to manage
-        # subscribers of event mailinglists.
-        is_limited = (persona_id != rs.user.persona_id
-                      and not self.is_orga(rs, event_id=event_id)
-                      and not self.is_admin(rs)
-                      and "ml_admin" not in rs.user.roles)
-        if is_limited:
-            query = """SELECT DISTINCT
-                regs.id, regs.persona_id
-            FROM
-                event.registrations AS regs
-                LEFT OUTER JOIN
-                    event.registration_parts AS rparts
-                ON rparts.registration_id = regs.id"""
-            conditions = ["regs.event_id = %s", "rparts.status = %s"]
-            params.append(const.RegistrationPartStati.participant)
-        elif persona_id:
-            conditions.append("persona_id = %s")
-            params.append(persona_id)
-        if conditions:
-            query += " WHERE " + " AND ".join(conditions)
+        if persona_ids:
+            conditions.append("persona_id = ANY(%s)")
+            params.append(persona_ids)
+        query += " WHERE " + " AND ".join(conditions)
+        data = self.query_all(rs, query, params)
+        return {e['id']: e['persona_id'] for e in data}
+
+    @access("event", "ml_admin")
+    def list_registrations(self, rs: RequestState, event_id: int, persona_id: int = None
+                           ) -> Dict[int, int]:
+        """Manual singularization of list_registrations_personas
+
+        Handles default values properly.
+        """
+        if persona_id:
+            return self.list_registrations_personas(rs, event_id, {persona_id})
+        else:
+            return self.list_registrations_personas(rs, event_id)
+
+    @access("event")
+    def list_participants(self, rs: RequestState, event_id: int) -> Dict[int, int]:
+        """List all participants of an event.
+
+        Just participants of this event are returned and the requester himself must
+        have the status 'participant'.
+
+        :returns: Mapping of registration ids to persona_ids.
+        """
+        event_id = affirm(vtypes.ID, event_id)
+
+        # In this case, privilege check is performed afterwards since it depends on
+        # the result of the query.
+        query = """SELECT DISTINCT
+            regs.id, regs.persona_id
+        FROM
+            event.registrations AS regs
+            LEFT OUTER JOIN
+                event.registration_parts AS rparts
+            ON rparts.registration_id = regs.id"""
+        conditions = ["regs.event_id = %s", "rparts.status = %s"]
+        params = [event_id, const.RegistrationPartStati.participant]
+        query += " WHERE " + " AND ".join(conditions)
         data = self.query_all(rs, query, params)
         ret = {e['id']: e['persona_id'] for e in data}
-        if is_limited and rs.user.persona_id not in ret.values():
+
+        if not (rs.user.persona_id in ret.values()
+                or self.is_orga(rs, event_id=event_id)
+                or self.is_admin(rs)):
             raise PrivilegeError(n_("Not privileged."))
         return ret
 
     @access("persona")
-    def check_registration_status(
-            self, rs: RequestState, persona_id: int, event_id: int,
-            stati: Collection[const.RegistrationPartStati]) -> bool:
+    def check_registrations_status(
+            self, rs: RequestState, persona_ids: Collection[int], event_id: int,
+            stati: Collection[const.RegistrationPartStati]) -> Dict[int, bool]:
         """Check if any status for a given event matches one of the given stati.
 
         This is mostly used to determine mailinglist eligibility. Thus,
@@ -2673,28 +2707,40 @@ class EventBackend(AbstractBackend):
         A user may do this for themselves, an orga for their event and an
         event or ml admin for every user.
         """
+        persona_ids = affirm_set(vtypes.ID, persona_ids)
         event_id = affirm(vtypes.ID, event_id)
         stati = affirm_set(const.RegistrationPartStati, stati)
 
+        # By default, assume no participation.
+        ret = {anid: False for anid in persona_ids}
+
         # First, rule out people who can not participate at any event.
-        if (persona_id == rs.user.persona_id and
+        if (persona_ids == {rs.user.persona_id} and
                 "event" not in rs.user.roles):
-            return False
+            return ret
 
         # Check if eligible to check registration status for other users.
-        if not (persona_id == rs.user.persona_id
+        if not (persona_ids == {rs.user.persona_id}
                 or self.is_orga(rs, event_id=event_id)
                 or self.is_admin(rs)
                 or "ml_admin" in rs.user.roles):
             raise PrivilegeError(n_("Not privileged."))
 
-        registration_ids = self.list_registrations(
-            rs, event_id, persona_id)
+        registration_ids = self.list_registrations_personas(rs, event_id, persona_ids)
         if not registration_ids:
-            return False
-        reg_id = unwrap(registration_ids.keys())
-        reg = self.get_registration(rs, reg_id)
-        return any(part['status'] in stati for part in reg['parts'].values())
+            return {anid: False for anid in persona_ids}
+
+        registrations = self.get_registrations(rs, registration_ids)
+        ret.update({reg['persona_id']:
+                        any(part['status'] in stati for part in reg['parts'].values())
+                    for reg in registrations.values()})
+        return ret
+
+    class _GetRegistrationStatusProtocol(Protocol):
+        def __call__(self, rs: RequestState, persona_id: int, event_id: int,
+                     stati: Collection[const.RegistrationPartStati]) -> bool: ...
+    check_registration_status: _GetRegistrationStatusProtocol = singularize(
+        check_registrations_status, "persona_ids", "persona_id")
 
     @access("event")
     def get_registration_map(self, rs: RequestState, event_ids: Collection[int]
@@ -3124,7 +3170,7 @@ class EventBackend(AbstractBackend):
                                                     fupdate)
             if 'parts' in data:
                 parts = data['parts']
-                if not (set(event['parts'].keys()) >= {x for x in parts}):
+                if not event['parts'].keys() >= parts.keys():
                     raise ValueError(n_("Non-existing parts specified."))
                 existing = {e['part_id']: e['id'] for e in self.sql_select(
                     rs, "event.registration_parts", ("id", "part_id"),

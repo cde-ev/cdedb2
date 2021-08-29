@@ -26,6 +26,16 @@
     \usepackage[top=.5cm,bottom=.5cm, left=.5cm, right=.5cm]{geometry}
 <<% endblock %>>
 <<% block content %>>
+    <<% if wish_problems %>>
+        \section*{<<% trans %>>Lodgement Wish Problems<<% endtrans %>>}
+        \begin{itemize}
+            <<% for ntype, message, params in wish_problems %>>
+                \item <<< gettext(message)|format(**params)|te >>>
+            <<% endfor %>>
+        \end{itemize}
+        \clearpage
+    <<% endif %>>
+
     <<% for lodgement_id, lodgement in lodgements|keydictsort(EntitySorter.lodgement) %>>
         <<% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %>>
             \lodgement{<<< lodgement['title']|te >>>}{<<< part['title']|te >>>}{<<< lodgement['regular_capacity']|te >>>}%

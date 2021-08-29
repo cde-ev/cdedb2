@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# pylint: disable=missing-module-docstring
 
 import copy
 import csv
@@ -9,6 +10,7 @@ import tempfile
 import unittest
 from typing import Sequence
 
+import lxml.etree
 import webtest
 
 import cdedb.database.constants as const
@@ -1696,7 +1698,8 @@ etc;anything else""", f['entries_2'].value)
         f['fee_modifier_modifier_name_-1'] = "Ich bin Unter 13 Jahre alt."
         f['fee_modifier_amount_-1'] = "abc"
         # check that only fitting fields are shown in the drop-down
-        self.assertEqual(['1001'], [x[0] for x in f['fee_modifier_field_id_-1'].options])
+        self.assertEqual(['1001'],
+                         [x[0] for x in f['fee_modifier_field_id_-1'].options])
         f['fee_modifier_field_id_-1'].force_value(1002)
         self.submit(f, check_notification=False)
         self.assertValidationError('fee_modifier_amount_-1',
@@ -2203,6 +2206,8 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Beispiel")
         self.assertPresence("Emilia")
         self.assertPresence("Garcia")
+        self.assertPresence("Deutschland", div="query-result")
+        self.assertNonPresence("DE", div="query-result")
         self.assertEqual(
             "Einzelzelle",
             self.response.lxml.xpath('//*[@id="query-result"]//tr[1]/td[@data-col='
@@ -3151,6 +3156,61 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("α", div='problem_instructor_wrong_course')
         self.assertPresence("δ", div='problem_instructor_wrong_course')
 
+    @as_users("garcia")
+    def test_lodgement_wishes_graph(self) -> None:
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/lodgement/'},
+                      {'href': '/event/event/1/lodgement/graph/form'})
+        self.assertPresence("Unterdrücke Wunsche-Kante von Anton Administrator "
+                            "zu Bertå Beispiel", div='wish-problems')
+        f = self.response.forms['settingsform']
+        self.submit(f, check_notification=False)
+        # unfortunately Webtest's response.lxml property has a bug, as it tries
+        # to construct the lxml ElementTree from unicode, which is not supported
+        # by lxml (see https://github.com/Pylons/webtest/issues/236). So, let's
+        # do it manually.
+        xml = lxml.etree.XML(self.response.body)
+        xml_namespaces = {'svg': "http://www.w3.org/2000/svg",
+                          'xlink': "http://www.w3.org/1999/xlink"}
+
+        node_link = xml.xpath('//svg:a[.//svg:text[contains(text(),"Garcia")]]',
+                              namespaces=xml_namespaces)[0]
+        self.assertEqual("/event/event/1/registration/3/show",
+                         node_link.attrib['{http://www.w3.org/1999/xlink}href'])
+        parts_text_text = node_link.xpath('./svg:text/text()',
+                                          namespaces=xml_namespaces)
+        self.assertIn("Wu, 1.H., 2.H.", parts_text_text[1])
+        edge_group = xml.xpath(
+            '//svg:g[@class="edge"]',
+            namespaces=xml_namespaces)
+        self.assertEqual(1, len(edge_group))
+        edge_link_title = edge_group[0].xpath(
+            './/svg:a/@xlink:title',
+            namespaces=xml_namespaces)
+        self.assertEqual("Anton Administrator → Garcia Generalis",
+                         edge_link_title[0])
+        # Emilia has no wishes and has not been wished
+        self.assertNotIn("Emilia", self.response.text)
+        # We don't display lodgement clusters this time
+        self.assertNotIn("Einzelzelle", self.response.text)
+
+        # Second time
+        self.get('/event/event/1/lodgement/graph/form')
+        f = self.response.forms['settingsform']
+        f['all_participants'] = True
+        f['show_lodgements'] = True
+        f['part_id'] = 2
+        self.submit(f, check_notification=False)
+        xml = lxml.etree.XML(self.response.body)
+
+        self.assertIn("Emilia", self.response.text)
+        self.assertIn("Einzelzelle", self.response.text)
+        # Anton is not present in 1. Hälfte
+        self.assertNotIn("Anton", self.response.text)
+        edge_group = xml.xpath('//svg:g[@class="edge"]', namespaces=xml_namespaces)
+        self.assertEqual(0, len(edge_group))
+
     @storage
     @as_users("garcia")
     def test_downloads(self) -> None:
@@ -3685,7 +3745,9 @@ etc;anything else""", f['entries_2'].value)
 
         # check log
         self.get('/event/event/1/log')
-        change_note = "Bewohner von Kalte Kammer und Einzelzelle getauscht."
+        change_note = (
+            "Bewohner von Kalte Kammer und Einzelzelle für Warmup getauscht, "
+            "Bewohner von Kalte Kammer und Einzelzelle für Zweite Hälfte getauscht.")
         self.assertPresence(change_note,
                             div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
         self.assertPresence(change_note,
@@ -3822,7 +3884,8 @@ etc;anything else""", f['entries_2'].value)
 
     @as_users("annika")
     def test_delete_event(self) -> None:
-        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Veranstaltungsteile")
+        self.traverse("Veranstaltungen", "Große Testakademie 2222",
+                      "Veranstaltungsteile")
         self.assertTitle("Veranstaltungsteile konfigurieren (Große Testakademie 2222)")
         past_date = now().date() - datetime.timedelta(days=1)
         past_past_date = now().date() - datetime.timedelta(days=2)

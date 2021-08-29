@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# pylint: disable=missing-module-docstring
+
 import datetime
 import secrets
 from typing import List, NamedTuple, Sequence, Optional, cast

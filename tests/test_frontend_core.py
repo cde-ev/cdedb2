@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# pylint: disable=missing-module-docstring
 
 import re
 import urllib.parse
@@ -1551,6 +1552,11 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("CdE-Mitglied", div="cde-membership")
         self.assertPresence("Probemitgliedschaft", div="cde-membership")
 
+        # check for correct welcome mail
+        mail = self.fetch_mail_content()
+        self.assertIn("Ein herzliches Willkommen", mail)
+        self.assertIn("zum ersten Mal in unserer Datenbank anmeldest", mail)
+
     @as_users("vera")
     def test_nontrivial_promotion(self) -> None:
         self.admin_view_profile('kalif')
@@ -1572,6 +1578,9 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Kalif Karabatschi")
         self.assertPresence("21.06.1977", div='personal-information')
+        # check that no welcome mail is sent - this is for cde promotion only
+        with self.assertRaises(IndexError):
+            self.fetch_mail_content()
 
     @as_users("vera")
     def test_ignore_warnings_postal_code(self) -> None:

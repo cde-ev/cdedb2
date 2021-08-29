@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# pylint: disable=missing-module-docstring
 
 import datetime
 import json
@@ -1089,7 +1090,8 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                       {'description': 'Zusammenfassung'},
                       {'description': 'Eine damals wichtige Frage'},
                       {'description': 'Ergebnisdetails'})
-        self.assertTitle("Ergebnis (Kanonische Beispielversammlung/Eine damals wichtige Frage)")
+        self.assertTitle("Ergebnis (Kanonische Beispielversammlung/"
+                         "Eine damals wichtige Frage)")
 
         # test if the overall result is displayed correctly
         result = "CdE Wappen > CdE Glühbirne = Baum & Blätter = Gegen alle Kandidaten"
@@ -1264,7 +1266,8 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.logout()
         base_time = now()
         delta = datetime.timedelta(seconds=42)
-        with freezegun.freeze_time(base_time, ignore=['cdedb.filter', 'icu']) as frozen_time:
+        with freezegun.freeze_time(base_time,
+                                   ignore=['cdedb.filter', 'icu']) as frozen_time:
             user = USER_DICT["werner"]
             self.login(user)
             self.traverse({'description': 'Versammlungen'},

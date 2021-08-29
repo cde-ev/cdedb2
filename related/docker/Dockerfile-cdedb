@@ -63,11 +63,11 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3-typing-extensions \
     python3-qrcode \
     python3-vobject \
+    python3-graphviz \
     \
     python3-pip \
     \
     isort \
-    pylint3 \
     python3-freezegun \
     wget \
     unzip \
@@ -76,14 +76,19 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     \
     && rm -rf /var/lib/apt/lists/* \
     \
+    && python3 -m pip --no-cache-dir install setuptools \
     && python3 -m pip --no-cache-dir install \
     mypy==0.910 \
     flake8==3.8.4 \
+    pylint==2.7.2 \
     types-werkzeug \
     types-pytz \
     types-jinja2 \
     types-python-dateutil \
     types-freezegun
+# comment regarding the pip section above:
+# setuptools is needed for the next step of pip installs (specifically pylint),
+# but installing it at the same time does not work.
 
 # TODO check wether it is sensible to lower privileges to cdedb user
 # create and configure directories for the apache user

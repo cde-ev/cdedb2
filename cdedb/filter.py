@@ -1,3 +1,5 @@
+"""Filter definitions for jinja templates"""
+
 import datetime
 import decimal
 import enum
