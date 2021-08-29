@@ -1901,7 +1901,7 @@ class AssemblyBackend(AbstractBackend):
         attachment_ids = self.list_attachments(rs, ballot_id=ballot_id)
         if self.is_ballot_locked(rs, ballot_id):
             # TODO this is more complex
-            pass
+            return {}
         else:
             return self.get_attachments_versions(
                 rs, attachment_ids, current_version_only=True)
