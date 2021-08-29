@@ -685,8 +685,9 @@ CDEDB_PATHS = werkzeug.routing.Map((
                         rule("/add", methods=_POST,
                              endpoint="add_attachment"),
                         sub("/<int:attachment_id>", (
-                            rule("/get", methods=_GET,
-                                 endpoint="get_attachment"),
+                            # this is kept as legacy support
+                            rule("/get", endpoint="",
+                                 redirect_to='assembly/assembly/<assembly_id>/attachment/<attachment_id>/get'),
                             rule("/show", methods=_GET,
                                  endpoint="show_attachment"),
                             rule("/change", methods=_GET,
@@ -700,8 +701,9 @@ CDEDB_PATHS = werkzeug.routing.Map((
                             rule("/add", methods=_POST,
                                  endpoint="add_attachment"),
                             sub("/version/<int:version>", (
-                                rule("/get", methods=_GET,
-                                     endpoint="get_attachment"),
+                                # this is kept as legacy support
+                                rule("/get", endpoint="",
+                                     redirect_to="assembly/assembly/<assembly_id>/attachment/<attachment_id>/version/<version>/get"),
                                 rule("/delete", methods=_POST,
                                      endpoint="delete_attachment"),
                                 rule("/edit", methods=_GET,
