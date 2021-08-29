@@ -364,13 +364,42 @@
                 {{ ("col-sm-offset-2" if small else "col-sm-offset-4") if not label }}
             ">
         {%- endif %}
+        {% if markdownhint in info %}
+            <p class="mdjs" style="display: none;">
+                <a id="{{ anid }}-mdpreview-off">Edit</a>
+                |
+                <a id="{{ anid }}-mdpreview-on">Preview</a>
+            </p>
+            <div id="{{ anid }}-mdpreview" class="mdjs" style="display: none;"></div>
+            <div id="{{ anid }}-mdedit">
+        {% endif %}
         {% if addon %}<div class="input-group">{% endif %}
             {{- caller() }}
         {% if addon %}<span class="input-group-addon">{{ addon }}</span></div>{% endif %}
+        {% if markdownhint in info %}</div>{% endif %}
             {{- output_errors(name, displayerrors, differentiate_warnings=differentiate_warnings) }}
             {{- output_info(info) }}
         {%- if horizontal %}</div>{% endif %}
     </div>
+    {% if markdownhint in info %}
+        <script nonce="{{ csp_nonce }}">
+            $(".mdjs").show();
+            $("#{{ anid }}-mdpreview-off").click(function() {
+                $("#{{ anid }}-mdpreview").hide();
+                $("#{{ anid }}-mdedit").show();
+            });
+            $("#{{ anid }}-mdpreview-on").click(function() {
+                var input = $("#{{ anid }}").val();
+                $.post("/db/core/markdown/parse",
+                    { md_str: input },
+                    function(result) {
+                        $("#{{ anid }}-mdedit").hide();
+                        $("#{{ anid }}-mdpreview").html(result).show();
+                    }
+                );
+            });
+        </script>
+    {% endif %}
 {%- endmacro %}
 
 {% macro input_text(name, readonly=False, actualreadonly=False, defaultvalue='', anid=none, aclass='form-control',
