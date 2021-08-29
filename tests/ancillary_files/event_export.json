@@ -157,7 +157,7 @@
             "persona_id": 1,
             "list_consent": true,
             "fields": {
-                "lodge": "Die \u00fcblichen Verd\u00e4chtigen :)",
+                "lodge": "Die \u00fcblichen Verd\u00e4chtigen, insb. Berta Beispiel und garcia@example.cde :)",
                 "is_child": false,
                 "anzahl_GROSSBUCHSTABEN": 4
             },

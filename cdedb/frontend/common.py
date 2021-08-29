@@ -127,8 +127,7 @@ class BaseApp(metaclass=abc.ABCMeta):
             syslog_level=self.conf["SYSLOG_LEVEL"],
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         self.logger = logging.getLogger(logger_name)  # logger are thread-safe!
-        self.logger.debug("Instantiated {} with configpath {}.".format(
-            self, configpath))
+        self.logger.debug(f"Instantiated {self} with configpath {configpath}.")
         # local variable to prevent closure over secrets
         url_parameter_salt = secrets["URL_PARAMETER_SALT"]
         self.decode_parameter = (
@@ -221,6 +220,14 @@ class BaseApp(metaclass=abc.ABCMeta):
         return self.encode_parameter(target, token_name, token_payload, persona_id)
 
 
+def raise_jinja(val: str) -> None:
+    """Helper to point out programming errors in jinja.
+
+    May not be used for handling of user input, user-errors or control flow.
+    """
+    raise RuntimeError(val)
+
+
 # This needs acces to config, and cannot be moved to filter.py
 def datetime_filter(val: Union[datetime.datetime, str, None],
                     formatstr: str = "%Y-%m-%d %H:%M (%Z)", lang: str = None,
@@ -239,7 +246,7 @@ def datetime_filter(val: Union[datetime.datetime, str, None],
     if val.tzinfo is not None:
         val = val.astimezone(_BASICCONF["DEFAULT_TIMEZONE"])
     else:
-        _LOGGER.warning("Found naive datetime object {}.".format(val))
+        _LOGGER.warning(f"Found naive datetime object {val}.")
 
     if lang:
         locale = icu.Locale(lang)
@@ -307,6 +314,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'query_mod': query_mod,
             'glue': glue,
             'enums': ENUMS_DICT,
+            'raise': raise_jinja,
             'encode_parameter': self.encode_parameter,
             'encode_anti_csrf': self.encode_anti_csrf_token,
             'staticurl': functools.partial(staticurl,
@@ -873,10 +881,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             with tempfile.NamedTemporaryFile(mode='w', prefix="cdedb-mail-",
                                              suffix=".txt", delete=False) as f:
                 f.write(str(msg))
-                self.logger.debug("Stored mail to {}.".format(f.name))
+                self.logger.debug(f"Stored mail to {f.name}.")
                 ret = f.name
-        self.logger.info("Sent email with subject '{}' to '{}'".format(
-            msg['Subject'], msg['To']))
+        self.logger.info(f"Sent email with subject '{msg['Subject']}' to '{msg['To']}'")
         return ret
 
     def redirect_show_user(self, rs: RequestState, persona_id: int,
@@ -940,22 +947,20 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         pdf_path = pathlib.Path(cwd, pdf_file)
 
         args = ("lualatex", "-interaction", "batchmode", target_file)
-        self.logger.info("Invoking {}".format(args))
+        self.logger.info(f"Invoking {args}")
         try:
             for _ in range(runs):
                 subprocess.run(args, cwd=cwd, check=True,
                                stdout=subprocess.DEVNULL)
         except subprocess.CalledProcessError as e:
             if pdf_path.exists():
-                self.logger.debug(
-                    "Deleting corrupted file {}".format(pdf_path))
+                self.logger.debug(f"Deleting corrupted file {pdf_path}")
                 pdf_path.unlink()
-            self.logger.debug("Exception \"{}\" caught and handled.".format(e))
+            self.logger.debug(f"Exception \"{e}\" caught and handled.")
             if self.conf["CDEDB_DEV"]:
                 tstamp = round(now().timestamp())
                 backup_path = "/tmp/cdedb-latex-error-{}.tex".format(tstamp)
-                self.logger.info("Copying source file to {}".format(
-                    backup_path))
+                self.logger.info(f"Copying source file to {backup_path}")
                 shutil.copy2(target_file, backup_path)
             errormsg = errormsg or n_(
                 "LaTeX compilation failed. Try downloading the "
@@ -1075,6 +1080,40 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             else:
                 return None
 
+    def check_anti_csrf(self, rs: RequestState, action: str,
+                        token_name: str, token_payload: str) -> Optional[str]:
+        """
+        A helper function to check the anti CSRF token
+
+        The anti CSRF token is a signed userid, added as hidden input to most
+        forms, used to mitigate Cross Site Request Forgery (CSRF) attacks. It is
+        checked before calling the handler function, if the handler function is
+        marked to be protected against CSRF attacks, which is the default for
+        all POST endpoints.
+
+        The anti CSRF token should be created using the util.anti_csrf_token
+        template macro.
+
+        :param action: The name of the endpoint, checked by 'decode_parameter'
+        :param token_name: The name of the anti CSRF token.
+        :param token_payload: The expected payload of the anti CSRF token.
+        :return: None if everything is ok, or an error message otherwise.
+        """
+        val = rs.request.values.get(token_name, "").strip()
+        if not val:
+            return n_("Anti CSRF token is required for this form.")
+        # noinspection PyProtectedMember
+        timeout, val = self.decode_parameter(
+            f"{self.realm}/{action}", token_name, val, rs.user.persona_id)
+        if not val:
+            if timeout:
+                return n_("Anti CSRF token expired. Please try again.")
+            else:
+                return n_("Anti CSRF token is forged.")
+        if val != token_payload:
+            return n_("Anti CSRF token is invalid.")
+        return None
+
 
 class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     """Base class for all frontends which have their own user realm.
@@ -1162,8 +1201,7 @@ class CdEMailmanClient(mailmanclient.Client):
             syslog_level=self.conf["SYSLOG_LEVEL"],
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         self.logger = logging.getLogger(logger_name)
-        self.logger.debug("Instantiated {} with configpath {}.".format(
-            self, conf._configpath))
+        self.logger.debug(f"Instantiated {self} with configpath {conf._configpath}.")
 
     def get_list_safe(self, address: str) -> Optional[
             mailmanclient.restobjects.mailinglist.MailingList]:
@@ -1229,7 +1267,7 @@ class Worker(threading.Thread):
             request=rs.request, notifications=[], mapadapter=rs.urls,
             requestargs=rs.requestargs, errors=[],
             values=copy.deepcopy(rs.values), lang=rs.lang, gettext=rs.gettext,
-            ngettext=rs.ngettext, coders=rs._coders, begin=rs.begin)
+            ngettext=rs.ngettext, begin=rs.begin)
         # noinspection PyProtectedMember
         secrets = SecretsConfig(conf._configpath)
         connpool = connection_pool_factory(
@@ -1406,7 +1444,7 @@ def reconnoitre_ambience(obj: AbstractFrontend,
             except KeyError:
                 raise werkzeug.exceptions.NotFound(
                     rs.gettext("Object {param}={value} not found").format(
-                        param=param, value=value))
+                        param=param, value=value)) from None
             except PrivilegeError as e:
                 if not obj.conf['CDEDB_DEV']:
                     msg = "Not privileged to view object {param}={value}: {exc}"
@@ -1465,7 +1503,7 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
                                       for role in access_list)
                 if rs.user.roles == {"anonymous"} and expects_persona:
                     params = {
-                        'wants': rs._coders['encode_parameter'](
+                        'wants': obj.encode_parameter(
                             "core/index", "wants", rs.request.url,
                             persona_id=rs.user.persona_id,
                             timeout=obj.conf["UNCRITICAL_PARAMETER_TIMEOUT"])
@@ -1473,7 +1511,7 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
                     ret = basic_redirect(rs, cdedburl(rs, "core/index", params))
                     # noinspection PyProtectedMember
                     notifications = json_serialize([
-                        rs._coders['encode_notification'](
+                        obj.encode_notification(
                             rs, "error", n_("You must login."))])
                     ret.set_cookie("displaynote", notifications)
                     return ret
@@ -1688,8 +1726,8 @@ def REQUESTdata(
                     if encoded and val:
                         # only decode if exists
                         # noinspection PyProtectedMember
-                        timeout, val = rs._coders['decode_parameter'](
-                            "{}/{}".format(obj.realm, fun.__name__),
+                        timeout, val = obj.decode_parameter(
+                            f"{obj.realm}/{fun.__name__}",
                             name, val, persona_id=rs.user.persona_id)
                         if timeout is True:
                             rs.notify("warning", n_("Link expired."))
@@ -2197,7 +2235,8 @@ def process_dynamic_input(
         will_create = unwrap(request_extractor(rs, {f"{prefix}create_-{marker}": bool}))
         if will_create:
             params = {f"{prefix}{key}_-{marker}": value for key, value in spec.items()}
-            constraints = constraint_maker(-marker, prefix) if constraint_maker else None
+            constraints = (constraint_maker(-marker, prefix)
+                           if constraint_maker else None)
             data = request_extractor(rs, params, constraints)
             ret[-marker] = {key: data[f"{prefix}{key}_-{marker}"] for key in spec}
             if additional:

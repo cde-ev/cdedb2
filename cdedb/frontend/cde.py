@@ -535,7 +535,8 @@ class CdEFrontend(AbstractUserFrontend):
                     and self.coreproxy.verify_existence(rs, persona['username'])
                 ):
                     warnings.append(
-                        ("doppelganger", ValueError(n_("Email address already taken."))))
+                        ("doppelganger",
+                         ValueError(n_("Email address already taken."))))
                 if not dg['is_cde_realm']:
                     warnings.append(
                         ("doppelganger",
@@ -595,7 +596,8 @@ class CdEFrontend(AbstractUserFrontend):
             current = self.coreproxy.get_persona(rs, persona_id)
             if not current['is_cde_realm']:
                 # Promote to cde realm dependent on current realm
-                promotion: CdEDBObject = {field: None for field in CDE_TRANSITION_FIELDS}
+                promotion: CdEDBObject = {
+                    field: None for field in CDE_TRANSITION_FIELDS}
                 # The ream independent upgrades of the persona. They are applied at last
                 # to prevent unintentional overrides
                 upgrades = {
@@ -834,7 +836,8 @@ class CdEFrontend(AbstractUserFrontend):
                     and not dataset['old_hash']):
                 # automatically select resolution if this is an easy case
                 dataset['resolution'] = LineResolutions.create
-                rs.values[f"resolution{dataset['lineno']}"] = LineResolutions.create.value
+                rs.values[
+                    f"resolution{dataset['lineno']}"] = LineResolutions.create.value
 
         if total_account_number != len(accountlines):
             rs.append_validation_error(
@@ -932,7 +935,7 @@ class CdEFrontend(AbstractUserFrontend):
             else:
                 params["has_none"].append(t.t_id)
             params["accounts"][str(t.account)] += 1
-            if t.event_id:
+            if t.event_id and t.type == TransactionType.EventFee:
                 params["events"][t.event_id] += 1
             if t.type == TransactionType.MembershipFee:
                 params["memberships"] += 1

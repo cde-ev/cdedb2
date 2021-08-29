@@ -1016,7 +1016,7 @@ class AssemblyBackend(AbstractBackend):
             blockers["vote_begin"] = [ballot_id]
         if ballot['candidates']:
             # Ballot still has candidates
-            blockers["candidates"] = [anid for anid in ballot["candidates"]]
+            blockers["candidates"] = list(ballot["candidates"])
 
         attachment_ballot_links = self.sql_select(
             rs, "assembly.attachment_ballot_links", ("id",), (ballot_id,),
@@ -1630,7 +1630,7 @@ class AssemblyBackend(AbstractBackend):
         versions = self.get_attachment_versions(
             rs, attachment_id, current_version_only=False)
         if versions:
-            blockers["versions"] = [v for v in versions]
+            blockers["versions"] = list(versions)
 
         attachment_ballot_links = self.sql_select(
             rs, "assembly.attachment_ballot_links", ("id",),

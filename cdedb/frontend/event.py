@@ -49,6 +49,9 @@ from cdedb.frontend.common import (
     check_validation_optional as check_optional, event_guard, make_event_fee_reference,
     periodic, process_dynamic_input, request_extractor, make_persona_name
 )
+from cdedb.frontend.event_lodgement_wishes import (
+    create_lodgement_wishes_graph, detect_lodgement_wishes,
+)
 from cdedb.query import (
     Query, QueryConstraint, QueryOperators, QueryScope, make_registration_query_aux,
     make_lodgement_query_aux, make_course_query_aux,
@@ -674,7 +677,8 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard()
-    def change_part_form(self, rs: RequestState, event_id: int, part_id: int) -> Response:
+    def change_part_form(self, rs: RequestState, event_id: int, part_id: int
+                         ) -> Response:
         part = rs.ambience['event']['parts'][part_id]
 
         current = copy.deepcopy(part)
@@ -747,7 +751,8 @@ class EventFrontend(AbstractUserFrontend):
         #
         # process the dynamic track input
         #
-        def track_constraint_maker(track_id: int, prefix: str) -> List[RequestConstraint]:
+        def track_constraint_maker(track_id: int, prefix: str
+                                   ) -> List[RequestConstraint]:
             min_choice = f"{prefix}min_choices_{track_id}"
             num_choice = f"{prefix}num_choices_{track_id}"
             msg = n_("Must be less or equal than total Course Choices.")
@@ -1469,7 +1474,7 @@ class EventFrontend(AbstractUserFrontend):
         )
         QueryFilterGetter = Callable[
             [CdEDBObject, CdEDBObject, CdEDBObject], Collection[QueryConstraint]]
-        # Query filters for all the registration statistics defined and calculated above.
+        # Query filters for all the registration statistics defined and calculated above
         # They are customized and inserted into the query on the fly by get_query().
         # `e` is the event, `p` is the event_part, `t` is the track.
         registration_query_filters: Dict[str, QueryFilterGetter] = {
@@ -2451,32 +2456,30 @@ class EventFrontend(AbstractUserFrontend):
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
 
-        reverse_wish = {}
+        rwish = collections.defaultdict(list)
         if event['lodge_field']:
-            for reg_id, reg in registrations.items():
-                rwish = set()
-                persona = personas[reg['persona_id']]
-                checks = {
-                    diacritic_patterns("{} {}".format(
-                        given_name, persona['family_name']))
-                    for given_name in persona['given_names'].split()}
-                checks.add(diacritic_patterns("{} {}".format(
-                    persona['display_name'], persona['family_name'])))
-                for oid, other in registrations.items():
-                    owish = other['fields'].get(
-                        event['fields'][event['lodge_field']]['field_name'])
-                    if not owish:
-                        continue
-                    if any(re.search(acheck, owish, flags=re.IGNORECASE)
-                                     for acheck in checks):
-                        rwish.add(oid)
-                reverse_wish[reg_id] = ", ".join(
-                    make_persona_name(personas[registrations[id]['persona_id']])
-                    for id in rwish)
+            wishes, problems = detect_lodgement_wishes(registrations, personas,
+                                                       event, None)
+            for wish in wishes:
+                if wish.negated:
+                    continue
+                rwish[wish.wished].append(wish.wishing)
+                if wish.bidirectional:
+                    rwish[wish.wishing].append(wish.wished)
+        else:
+            problems = []
+        reverse_wish = {
+            reg_id: ", ".join(
+                make_persona_name(
+                    personas[registrations[wishing_id]['persona_id']])
+                for wishing_id in rwish[reg_id])
+            for reg_id in registrations
+        }
 
         tex = self.fill_template(rs, "tex", "lodgement_puzzle", {
             'lodgements': lodgements, 'registrations': registrations,
-            'personas': personas, 'reverse_wish': reverse_wish})
+            'personas': personas, 'reverse_wish': reverse_wish,
+            'wish_problems': problems})
         file = self.serve_latex_document(rs, tex, "{}_lodgement_puzzle".format(
             rs.ambience['event']['shortname']), runs)
         if file:
@@ -2664,7 +2667,8 @@ class EventFrontend(AbstractUserFrontend):
                     order = [("persona.given_names", True)]
                     query = Query(QueryScope.registration, spec, fields_of_interest,
                                   constrains, order)
-                    query_res = self.eventproxy.submit_general_query(rs, query, event_id)
+                    query_res = self.eventproxy.submit_general_query(rs, query,
+                                                                     event_id)
                     course_key = f"track{track_id}.course_id"
                     # we have to replace the course id with the course number
                     result = tuple(
@@ -3833,7 +3837,8 @@ class EventFrontend(AbstractUserFrontend):
 
         new_questionnaire = [self._sanitize_questionnaire_row(questionnaire[i])
                              for i in order]
-        code = self.eventproxy.set_questionnaire(rs, event_id, {kind: new_questionnaire})
+        code = self.eventproxy.set_questionnaire(rs, event_id,
+                                                 {kind: new_questionnaire})
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/reorder_questionnaire_form", {'kind': kind})
 
@@ -4699,6 +4704,60 @@ class EventFrontend(AbstractUserFrontend):
         })
 
     @access("event")
+    @event_guard()
+    def lodgement_wishes_graph_form(self, rs: RequestState, event_id: int
+                                    ) -> Response:
+        event = rs.ambience['event']
+        if event['lodge_field']:
+            registration_ids = self.eventproxy.list_registrations(rs, event_id)
+            registrations = self.eventproxy.get_registrations(rs, registration_ids)
+            personas = self.coreproxy.get_event_users(rs, tuple(
+                reg['persona_id'] for reg in registrations.values()), event_id)
+
+            _wishes, problems = detect_lodgement_wishes(
+                registrations, personas, event, restrict_part_id=None)
+        else:
+            problems = []
+        return self.render(rs, "lodgement_wishes_graph_form",
+                           {'problems': problems})
+
+    @access("event")
+    @event_guard()
+    @REQUESTdata('all_participants', 'part_id', 'show_lodgements')
+    def lodgement_wishes_graph(self, rs: RequestState, event_id: int,
+                               all_participants: bool, part_id: Optional[int],
+                               show_lodgements: bool) -> Response:
+        if rs.has_validation_errors():
+            return self.redirect(rs, 'event/lodgement_wishes_graph_form')
+        event = rs.ambience['event']
+
+        if not event['lodge_field']:
+            rs.notify('error', n_("Lodgement wishes graph is only available if "
+                                  "the Field for Rooming Preferences is set in "
+                                  "event configuration."))
+            return self.redirect(rs, 'event/lodgement_wishes_graph_form')
+        if show_lodgements and not part_id:
+            rs.notify('error', n_("Lodgement clusters can only be displayed if "
+                                  "the graph is restricted to a specific "
+                                  "part."))
+            return self.redirect(rs, 'event/lodgement_wishes_graph_form')
+
+        registration_ids = self.eventproxy.list_registrations(rs, event_id)
+        registrations = self.eventproxy.get_registrations(rs, registration_ids)
+        lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
+        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        personas = self.coreproxy.get_event_users(rs, tuple(
+            reg['persona_id'] for reg in registrations.values()), event_id)
+
+        wishes, _problems = detect_lodgement_wishes(
+            registrations, personas, event, part_id)
+        graph = create_lodgement_wishes_graph(
+            rs, registrations, wishes, lodgements, event, personas, part_id,
+            all_participants, part_id if show_lodgements else None)
+        data: bytes = graph.pipe('svg')
+        return self.send_file(rs, "image/svg+xml", data=data)
+
+    @access("event")
     @event_guard(check_offline=True)
     def create_lodgement_form(self, rs: RequestState, event_id: int
                               ) -> Response:
@@ -4845,7 +4904,8 @@ class EventFrontend(AbstractUserFrontend):
                  if _check_not_this_lodgement(registration_id, part_id)],
                 key=lambda x: (
                     x['current'] is not None,
-                    EntitySorter.persona(personas[registrations[x['id']]['persona_id']]))
+                    EntitySorter.persona(
+                        personas[registrations[x['id']]['persona_id']]))
             )
             for part_id in rs.ambience['event']['parts']
         }
@@ -5426,10 +5486,12 @@ class EventFrontend(AbstractUserFrontend):
         :param kind: specifies the entity: registration, course or lodgement
 
         :returns: A tuple of values, containing
-            * entities: corresponding to the given ids (registrations, courses, lodgements)
+            * entities: corresponding to the given ids (registrations, courses,
+                lodgements)
             * ordered_ids: given ids, sorted by the corresponding EntitySorter
             * labels: name of the entities which will be displayed in the template
-            * field: the event field which will be changed, None if no field_id was given
+            * field: the event field which will be changed, None if no field_id was
+                given
         """
         if kind == const.FieldAssociations.registration:
             if not ids:
@@ -5460,11 +5522,12 @@ class EventFrontend(AbstractUserFrontend):
             groups = self.eventproxy.get_lodgement_groups(rs, group_ids)
             labels = {
                 lodg_id: f"{lodg['title']}" if lodg['group_id'] is None
-                         else safe_filter(f"{lodg['title']}, "
-                                          f"<em>{groups[lodg['group_id']]['title']}</em>")
+                         else safe_filter(f"{lodg['title']}, <em>"
+                                          f"{groups[lodg['group_id']]['title']}</em>")
                 for lodg_id, lodg in entities.items()}
             ordered_ids = xsorted(
-                entities.keys(), key=lambda anid: EntitySorter.lodgement(entities[anid]))
+                entities.keys(),
+                key=lambda anid: EntitySorter.lodgement(entities[anid]))
         else:
             # this should not happen, since we check before for validation errors
             raise NotImplementedError(f"Unknown kind {kind}")
@@ -5498,7 +5561,8 @@ class EventFrontend(AbstractUserFrontend):
                 rs, "event/field_set_form", {
                     'ids': (','.join(str(i) for i in ids) if ids else None),
                     'field_id': field_id, 'kind': kind.value})
-        _, ordered_ids, labels, _ = self.field_set_aux(rs, event_id, field_id, ids, kind)
+        _, ordered_ids, labels, _ = self.field_set_aux(rs, event_id, field_id, ids,
+                                                       kind)
         fields = [(field['id'], field['field_name'])
                   for field in xsorted(rs.ambience['event']['fields'].values(),
                                        key=EntitySorter.event_field)

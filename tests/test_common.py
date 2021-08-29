@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# pylint: disable=missing-module-docstring
 
 import datetime
 import pathlib
@@ -15,7 +16,7 @@ import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
 from cdedb.common import (
     NearlyNow, extract_roles, int_to_words, mixed_existence_sorter, nearly_now, now,
-    schulze_evaluate, unwrap, xsorted,
+    schulze_evaluate, unwrap, xsorted, inverse_diacritic_patterns,
 )
 from tests.common import ANONYMOUS, BasicTest
 
@@ -354,3 +355,9 @@ class TestCommon(BasicTest):
 
     def test_datetime_min(self) -> None:
         self.assertEqual(datetime.date.min, datetime.date(1, 1, 1))
+
+    def test_inverse_diacritic_patterns(self) -> None:
+        pattern = re.compile(inverse_diacritic_patterns("Bertå Böhm"))
+        self.assertTrue(pattern.match("Berta Böhm"))
+        self.assertTrue(pattern.match("Bertå Boehm"))
+        self.assertFalse(pattern.match("Bertä Böhm"))

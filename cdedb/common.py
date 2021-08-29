@@ -136,16 +136,14 @@ class RequestState:
     enough to not be non-nice).
     """
 
-    def __init__(self, sessionkey: Optional[str], apitoken: Optional[str],
-                 user: User, request: werkzeug.Request,
-                 notifications: Collection[Notification],
+    def __init__(self, sessionkey: Optional[str], apitoken: Optional[str], user: User,
+                 request: werkzeug.Request, notifications: Collection[Notification],
                  mapadapter: werkzeug.routing.MapAdapter,
                  requestargs: Optional[Dict[str, int]],
                  errors: Collection[Error],
                  values: Optional[CdEDBMultiDict], lang: str,
                  gettext: Callable[[str], str],
                  ngettext: Callable[[str, str, int], str],
-                 coders: Optional[Mapping[str, Callable]],  # type: ignore
                  begin: Optional[datetime.datetime],
                  default_gettext: Callable[[str], str] = None,
                  default_ngettext: Callable[[str, str, int], str] = None):
@@ -157,8 +155,6 @@ class RequestState:
           filling forms in.
         :param lang: language code for i18n, currently only 'de' and 'en' are
             valid.
-        :param coders: Functions for encoding and decoding parameters primed
-          with secrets. This is hacky, but sadly necessary.
         :param begin: time where we started to process the request
         :param default_gettext: default translation function used to ensure
             stability across different locales
@@ -182,7 +178,6 @@ class RequestState:
         self.ngettext = ngettext
         self.default_gettext = default_gettext or gettext
         self.default_ngettext = default_ngettext or ngettext
-        self._coders = coders or {}
         self.begin = begin or now()
         # Visible version of the database connection
         # noinspection PyTypeChecker
@@ -305,7 +300,7 @@ def make_proxy(backend: B, internal: bool = False) -> B:
                 if not internal:
                     # Expose database connection for the backends
                     # noinspection PyProtectedMember
-                    rs.conn = rs._conn
+                    rs.conn = rs._conn  # pylint: disable=protected-access
                 return fun(rs, *args, **kwargs)
             finally:
                 if not internal:
@@ -326,7 +321,7 @@ def make_proxy(backend: B, internal: bool = False) -> B:
             return wrapit(attr)
 
         @staticmethod
-        def _get_backend_class() -> Type[B]:
+        def get_backend_class() -> Type[B]:
             return backend.__class__
 
     return cast(B, Proxy())
@@ -342,7 +337,7 @@ def make_root_logger(name: str, logfile_path: PathLike,
     """
     logger = logging.getLogger(name)
     if logger.handlers:
-        logger.debug("Logger {} already initialized.".format(name))
+        logger.debug(f"Logger {name} already initialized.")
         return logger
     logger.propagate = False
     logger.setLevel(log_level)
@@ -362,7 +357,7 @@ def make_root_logger(name: str, logfile_path: PathLike,
         console_handler.setLevel(console_log_level)
         console_handler.setFormatter(formatter)
         logger.addHandler(console_handler)
-    logger.debug("Configured logger {}.".format(name))
+    logger.debug(f"Configured logger {name}.")
     return logger
 
 
@@ -1356,6 +1351,37 @@ def n_(x: str) -> str:
     return x
 
 
+UMLAUT_MAP = {
+    "ä": "ae", "æ": "ae",
+    "Ä": "AE", "Æ": "AE",
+    "ö": "oe", "ø": "oe", "œ": "oe",
+    "Ö": "Oe", "Ø": "Oe", "Œ": "Oe",
+    "ü": "ue",
+    "Ü": "Ue",
+    "ß": "ss",
+    "à": "a", "á": "a", "â": "a", "ã": "a", "å": "a", "ą": "a",
+    "À": "A", "Á": "A", "Â": "A", "Ã": "A", "Å": "A", "Ą": "A",
+    "ç": "c", "č": "c", "ć": "c",
+    "Ç": "C", "Č": "C", "Ć": "C",
+    "è": "e", "é": "e", "ê": "e", "ë": "e", "ę": "e",
+    "È": "E", "É": "E", "Ê": "E", "Ë": "E", "Ę": "E",
+    "ì": "i", "í": "i", "î": "i", "ï": "i",
+    "Ì": "I", "Í": "I", "Î": "I", "Ï": "I",
+    "ł": "l",
+    "Ł": "L",
+    "ñ": "n", "ń": "n",
+    "Ñ": "N", "Ń": "N",
+    "ò": "o", "ó": "o", "ô": "o", "õ": "o", "ő": "o",
+    "Ò": "O", "Ó": "O", "Ô": "O", "Õ": "O", "Ő": "O",
+    "ù": "u", "ú": "u", "û": "u", "ű": "u",
+    "Ù": "U", "Ú": "U", "Û": "U", "Ű": "U",
+    "ý": "y", "ÿ": "y",
+    "Ý": "Y", "Ÿ": "Y",
+    "ź": "z",
+    "Ź": "Z",
+}
+
+
 def asciificator(s: str) -> str:
     """Pacify a string.
 
@@ -1363,39 +1389,10 @@ def asciificator(s: str) -> str:
     be used if your use case does not tolerate any fancy characters
     (like SEPA files).
     """
-    umlaut_map = {
-        "ä": "ae", "æ": "ae",
-        "Ä": "AE", "Æ": "AE",
-        "ö": "oe", "ø": "oe", "œ": "oe",
-        "Ö": "Oe", "Ø": "Oe", "Œ": "Oe",
-        "ü": "ue",
-        "Ü": "Ue",
-        "ß": "ss",
-        "à": "a", "á": "a", "â": "a", "ã": "a", "å": "a", "ą": "a",
-        "À": "A", "Á": "A", "Â": "A", "Ã": "A", "Å": "A", "Ą": "A",
-        "ç": "c", "č": "c", "ć": "c",
-        "Ç": "C", "Č": "C", "Ć": "C",
-        "è": "e", "é": "e", "ê": "e", "ë": "e", "ę": "e",
-        "È": "E", "É": "E", "Ê": "E", "Ë": "E", "Ę": "E",
-        "ì": "i", "í": "i", "î": "i", "ï": "i",
-        "Ì": "I", "Í": "I", "Î": "I", "Ï": "I",
-        "ł": "l",
-        "Ł": "L",
-        "ñ": "n", "ń": "n",
-        "Ñ": "N", "Ń": "N",
-        "ò": "o", "ó": "o", "ô": "o", "õ": "o", "ő": "o",
-        "Ò": "O", "Ó": "O", "Ô": "O", "Õ": "O", "Ő": "O",
-        "ù": "u", "ú": "u", "û": "u", "ű": "u",
-        "Ù": "U", "Ú": "U", "Û": "U", "Ű": "U",
-        "ý": "y", "ÿ": "y",
-        "Ý": "Y", "Ÿ": "Y",
-        "ź": "z",
-        "Ź": "Z",
-    }
     ret = ""
     for char in s:
-        if char in umlaut_map:
-            ret += umlaut_map[char]
+        if char in UMLAUT_MAP:
+            ret += UMLAUT_MAP[char]
         elif char in (  # pylint: disable=superfluous-parens
             string.ascii_letters + string.digits + " /-?:().,+"
         ):
@@ -1403,6 +1400,18 @@ def asciificator(s: str) -> str:
         else:
             ret += ' '
     return ret
+
+
+# According to https://en.wikipedia.org/wiki/Filename#Reserved_characters_and_words
+FILENAME_SANITIZE_MAP = str.maketrans({
+    x: '_'
+    for x in "/\\?%*:|\"<> ."
+})
+
+
+def sanitize_filename(name: str) -> str:
+    """Sanitize filenames by replacing forbidden and problematic characters with '_'."""
+    return name.translate(FILENAME_SANITIZE_MAP)
 
 
 MaybeStr = TypeVar("MaybeStr", str, Type[None])
@@ -1454,6 +1463,25 @@ def diacritic_patterns(s: str, two_way_replace: bool = False) -> str:
         for _, regex in umlaut_map:
             s = re.sub(regex, regex, s, flags=re.IGNORECASE)
     return s
+
+
+UMLAUT_TRANSLATE_TABLE = str.maketrans({
+    char: f"({char}|{repl})" if len(repl) > 1 else f"[{char}{repl}]"
+    for char, repl in UMLAUT_MAP.items()})
+
+
+def inverse_diacritic_patterns(s: str) -> str:
+    """
+    Replace diacritic letters in a search pattern with a regex that
+    matches either the diacritic letter or its ASCII representation.
+
+    This function does kind of the opposite thing than
+    :func:`diacritic_patterns`: Instead of enhancing a search expression such
+    that also searches for similiar words with diacritics, it takes a word with
+    diacritic characters and enhances it to a search expression that will find
+    the word even when written without the diacritics.
+    """
+    return s.translate(UMLAUT_TRANSLATE_TABLE)
 
 
 _tdelta = datetime.timedelta
@@ -1539,8 +1567,7 @@ def decode_parameter(salt: str, target: str, name: str, param: str,
         if persona_id:
             # Allow non-anonymous requests for parameters with anonymous access
             return decode_parameter(salt, target, name, param, persona_id=None)
-        _LOGGER.debug("Hash mismatch ({} != {}) for {}".format(
-            h.hexdigest(), mac, tohash))
+        _LOGGER.debug(f"Hash mismatch ({h.hexdigest()} != {mac}) for {tohash}")
         return False, None
     timestamp = message[:24]
     if timestamp == 24 * '.':
@@ -1548,7 +1575,7 @@ def decode_parameter(salt: str, target: str, name: str, param: str,
     else:
         ttl = datetime.datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S%z")
         if ttl <= now():
-            _LOGGER.debug("Expired protected parameter {}".format(tohash))
+            _LOGGER.debug(f"Expired protected parameter {tohash}")
             return True, None
     return None, message[26:]
 

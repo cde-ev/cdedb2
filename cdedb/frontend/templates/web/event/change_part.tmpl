@@ -59,7 +59,7 @@
                               dict(name="amount", label=gettext("Amount"), func=util.input_text),
                               dict(name="field_id", label=gettext("Linked Field"), func=util.input_select, func_additional_input = {'entries': fee_modifier_fields})] %}
         {% set locked_fee_modifiers = fee_modifiers.values() if has_registrations else [] %}
-        {{ util.dynamic_row_table("Fee Modifier", fee_columns, fee_modifiers, locked=locked_fee_modifiers, readonly=has_registrations, sortkey=EntitySorter.fee_modifiers, prefix="fee_modifier") }}
+        {{ util.dynamic_row_table(gettext("Fee Modifier"), fee_columns, fee_modifiers, locked=locked_fee_modifiers, readonly=has_registrations, sortkey=EntitySorter.fee_modifiers, prefix="fee_modifier") }}
 
         <h3 class="mosp heading-underline clear-both">{% trans %}Coursetracks{% endtrans %}</h3>
         {% set track_columns = [dict(name="title", label=gettext("Coursetrack"), func=util.input_text),
@@ -68,7 +68,7 @@
                                 dict(name="min_choices", label=gettext("Req. Choices"), aclass='input-min-choices', func=util.input_text, func_additional_input = {'defaultvalue': DEFAULT_NUM_COURSE_CHOICES}),
                                 dict(name="sortkey", label=gettext("Sortkey"), func=util.input_text)] %}
         {% set tracks = ambience['event']['parts'][part_id]['tracks'] %}
-        {{ util.dynamic_row_table("Coursetrack", track_columns, tracks, locked=referenced_tracks, modification_only=has_registrations, sortkey=EntitySorter.event_tracks, prefix="track") }}
+        {{ util.dynamic_row_table(gettext("Coursetrack"), track_columns, tracks, locked=referenced_tracks, modification_only=has_registrations, sortkey=EntitySorter.event_tracks, prefix="track") }}
 
         {{ util.input_submit(label=gettext("Save")) }}
     </form>

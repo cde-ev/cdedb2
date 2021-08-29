@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# pylint: disable=missing-module-docstring
+
 import csv
 import re
 from datetime import datetime
@@ -41,7 +44,7 @@ class TestParseFrontend(FrontendTest):
             3: parse.ConfidenceLevel.Low,
             4: parse.ConfidenceLevel.Null,
         }
-        self.assertEqual(expectation, t._find_cdedbids(parse.ConfidenceLevel.Full))
+        self.assertEqual(expectation, t._find_cdedbids(parse.ConfidenceLevel.Full))  # pylint: disable=protected-access
 
     def test_parse_statement_additional(self) -> None:
         pseudo_winter = {"title": "CdE Pseudo-WinterAkademie",
