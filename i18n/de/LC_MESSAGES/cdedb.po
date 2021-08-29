@@ -10,7 +10,7 @@ msgstr ""
 "POT-Creation-Date: 2021-08-29 18:50+0200\n"
 "PO-Revision-Date: 2020-12-06 11:30+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
-"Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
+"Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -10790,7 +10790,7 @@ msgstr "Schließe Teilnehmer ein, die nicht wünschen oder gewünscht wurden"
 #: cdedb/frontend/templates/web/event/lodgement_wishes_graph_form.tmpl:93
 msgid "Display assigned lodgements as clusters (reduces graph layout quality)"
 msgstr ""
-"Zeige die zugewiesenen Unterkünfte als Cluster and (verschlechtert die "
+"Zeige die zugewiesenen Unterkünfte als Cluster an (verschlechtert die "
 "Qualität des Graph-Layouts)"
 
 #: cdedb/frontend/templates/web/event/lodgement_wishes_graph_form.tmpl:111
