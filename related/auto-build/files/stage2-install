@@ -78,7 +78,7 @@ apt-get install --yes --no-install-recommends                       \
     python3-ldap3 python3-passlib python3-bleach python3-magic      \
     python3-sphinx-rtd-theme python3-zxcvbn python3-markdown        \
     python3-mailmanclient python3-requests python3-qrcode           \
-    python3-vobject python3-typing-extensions                       \
+    python3-vobject python3-typing-extensions python3-graphviz      \
     \
     python3-pip isort python3-freezegun
 # some packages interpret "recommends" very narrowly, breaking if they are missing

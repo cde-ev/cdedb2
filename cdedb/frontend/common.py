@@ -220,6 +220,14 @@ class BaseApp(metaclass=abc.ABCMeta):
         return self.encode_parameter(target, token_name, token_payload, persona_id)
 
 
+def raise_jinja(val: str) -> None:
+    """Helper to point out programming errors in jinja.
+
+    May not be used for handling of user input, user-errors or control flow.
+    """
+    raise RuntimeError(val)
+
+
 # This needs acces to config, and cannot be moved to filter.py
 def datetime_filter(val: Union[datetime.datetime, str, None],
                     formatstr: str = "%Y-%m-%d %H:%M (%Z)", lang: str = None,
@@ -306,6 +314,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'query_mod': query_mod,
             'glue': glue,
             'enums': ENUMS_DICT,
+            'raise': raise_jinja,
             'encode_parameter': self.encode_parameter,
             'encode_anti_csrf': self.encode_anti_csrf_token,
             'staticurl': functools.partial(staticurl,
