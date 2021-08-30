@@ -53,12 +53,12 @@ class MlFrontend(MailmanMixin, MlBaseFrontend):
                 except urllib.error.HTTPError:
                     rs.notify("error", n_("Message unavailable."))
                 else:
-                    if response.status // 100 == 2:
+                    if response.status_code // 100 == 2:
                         success += 1
                         self.mlproxy.log_moderation(
                             rs, self._moderate_action_logcodes[action],
                             dblist['id'], change_note=change_note)
-                    elif response.status // 100 == 4:
+                    elif response.status_code // 100 == 4:
                         warning += 1
                     else:
                         error += 1
