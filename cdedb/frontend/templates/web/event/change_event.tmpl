@@ -23,14 +23,13 @@
 {% block content %}
     <form action="{{ cdedblink('event/change_event') }}" method="POST" id="changeeventform" class="form-horizontal">
         {{ util.anti_csrf_token('event/change_event') }}
-        {{ util.form_input_textarea(name="notes", label=gettext("Orga-Notes"), rows="5", info=util.markdownhint) }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Orga-Notes"), rows="5", markdown=True) }}
 
         <h4 class="heading-underline">{% trans %}Event Meta Data{% endtrans %}</h4>
         {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]")) }}
-        {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
-                                    info=(util.markdownhint + " " +
-                                          gettext("This description is visible to all event users, if “Visibility "
-                                                  "of the Event” is set."))) }}
+        {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5", markdown=True,
+                                    info=gettext("This description is visible to all event users, if “Visibility "
+                                                  "of the Event” is set.")) }}
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
         {{ util.form_input_text(name="orga_address", label=gettext("Orga Address"),
                                 info=gettext("This address is visible publicly (without login), if “Visibility of the "
@@ -85,7 +84,7 @@
         {{ util.form_input_text(name="nonmember_surcharge", label=gettext("Additional Fee for External Participants."), addon='€',
                                 info=gettext("Participants who are not currently members will have to pay this additional fee.")) }}
         {{ util.form_input_textarea(name="registration_text", label=gettext("Registration page free text"), rows="5",
-                                    info=util.markdownhint) }}
+                                    markdown=True) }}
         {{ util.form_input_textarea(name="mail_text", label=gettext("Registration mail free text"), rows="5") }}
 
         <h4 class="heading-underline">{% trans %}Special Purpose Custom Fields{% endtrans %}</h4>
@@ -104,9 +103,9 @@
 
         <h4 class="heading-underline">{% trans %}Additional information for participants{% endtrans %}</h4>
         {{ util.form_input_textarea(
-                name="participant_info", label=gettext("Participant info"), rows="8",
-                info=(util.markdownhint + " " + gettext("This is only for event-internal information. Any public"
-                                                        " information should be placed on the website."))) }}
+                name="participant_info", label=gettext("Participant info"), rows="8", markdown=True,
+                info=gettext("This is only for event-internal information. Any public information should be placed on"
+                             " the website.")) }}
 
         {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink('event/show_event'), readonly=is_locked) }}
     </form>

@@ -52,8 +52,8 @@
                 {{ util.form_input_checkbox(name="paper_expuls", label=gettext("Printed exPuls")) }}
             {% endif %}
         {% endif %}
-        {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="7",
-                                    info=util.markdownhint + " " + gettext("Visible to all Admins.")) }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="7", markdown=True,
+                                    info=gettext("Visible to all Admins.")) }}
 
         <h4 class="heading-underline">{% trans %}Contact Information{% endtrans %}</h4>
         {{ util.form_input_static(label=gettext("E-Mail"), value=values['username']) }}
@@ -62,7 +62,7 @@
             {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone"), type="tel") }}
         {% endif %}
         {% if "weblink" in shown_fields and 'cde' in admin_bits %}
-            {{ util.form_input_text(name="weblink", label=gettext("WWW"), info=util.markdownhint) }}
+            {{ util.form_input_text(name="weblink", label=gettext("WWW"), markdown=True) }}
         {% endif %}
 
         {% if "address" in shown_fields and 'event' in admin_bits %}
@@ -99,15 +99,11 @@
 
         {% if "specialisation" in shown_fields and 'cde' in admin_bits %}
             <h4 class="heading-underline">{% trans %}Miscellaneous{% endtrans %}</h4>
-            {{ util.form_input_textarea(name="specialisation", label=gettext("Specialisation"),
-                                        info=util.markdownhint) }}
-            {{ util.form_input_textarea(name="affiliation", label=gettext("School, University, …"),
-                                        info=util.markdownhint) }}
-            {{ util.form_input_textarea(name="timeline", label=gettext("Year(s) of Graduation"),
-                                        info=util.markdownhint) }}
-            {{ util.form_input_textarea(name="interests", label=gettext("Interests"), info=util.markdownhint) }}
-            {{ util.form_input_textarea(name="free_form", label=gettext("Miscellaneous"), rows="5",
-                                        info=util.markdownhint) }}
+            {{ util.form_input_textarea(name="specialisation", label=gettext("Specialisation"), markdown=True) }}
+            {{ util.form_input_textarea(name="affiliation", label=gettext("School, University, …"), markdown=True) }}
+            {{ util.form_input_textarea(name="timeline", label=gettext("Year(s) of Graduation"), markdown=True) }}
+            {{ util.form_input_textarea(name="interests", label=gettext("Interests"), markdown=True) }}
+            {{ util.form_input_textarea(name="free_form", label=gettext("Miscellaneous"), rows="5", markdown=True) }}
         {% endif %}
 
         <div class="panel panel-primary">

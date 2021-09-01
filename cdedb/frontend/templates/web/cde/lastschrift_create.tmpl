@@ -55,7 +55,7 @@
         {{ util.form_input_text(name="iban", label=gettext("IBAN"), type="iban") }}
         {{ util.form_input_text(name="account_owner", label=gettext("Account holder (if different)")) }}
         {{ util.form_input_textarea(name="account_address", label=gettext("Account holder’s address (if different)")) }}
-        {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="5", info=util.markdownhint) }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="5", markdown=True) }}
         {% if ambience['persona'] %}
             {{ util.form_input_submit(label=gettext("Create"), cancellink=cdedblink('cde/lastschrift_show')) }}
         {% else %}

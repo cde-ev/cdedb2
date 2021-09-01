@@ -19,8 +19,7 @@
 
         <h4 class="heading-underline">{% trans %}Event Meta Data{% endtrans %}</h4>
         {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]")) }}
-        {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
-                                    info=util.markdownhint) }}
+        {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5", markdown=True) }}
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
         {{ util.form_input_select(name="institution", label=gettext("Institution"),
                                   entries=institutions|keydictsort(EntitySorter.institution)|dict_entries('id', 'title'),
@@ -45,7 +44,7 @@
         <h4 class="heading-underline">{% trans %}Orgas{% endtrans %}</h4>
         {{ util.form_input_text(name="orga_ids", label=gettext("Orgas"), placeholder="DB-XXXX-X,DB-XXXX-X,…",
             anid="input-orgas") }}
-        {{ util.form_input_textarea(name="notes", label=gettext("Orga-Notes"), rows="5", info=util.markdownhint) }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Orga-Notes"), rows="5", markdown=True) }}
         <script nonce="{{ csp_nonce }}">
             $('#input-orgas').cdedbSearchPerson(
                 '{{ (cdedblink('core/select_persona')|e) + ('?kind=event_user&phrase=%s'|s) }}',

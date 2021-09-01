@@ -15,8 +15,7 @@
     <form action="{{ cdedblink('assembly/create_ballot') }}" method="POST" id="createballotform" class="form-horizontal">
         {{ util.anti_csrf_token('assembly/create_ballot') }}
         {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]")) }}
-        {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
-                                    info=util.markdownhint) }}
+        {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5", markdown=True) }}
         {{ util.form_input_text(name="vote_begin", label=gettext("Start of voting period"), type="datetime-local") }}
         {{ util.form_input_text(name="vote_end", label=gettext("End of voting period"), type="datetime-local") }}
         {{ util.form_input_text(name="abs_quorum", label=gettext("Absolute Quorum"), type="number", defaultvalue="0") }}
@@ -25,7 +24,7 @@
         {{ util.form_input_text(name="votes", label=gettext("Number of votes"), type="number",
                                info=gettext("Leave empty for Preferential Vote.")) }}
         {{ util.form_input_checkbox(name="use_bar", label=gettext("Allow rejection")) }}
-        {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="5", info=util.markdownhint) }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="5", markdown=True) }}
         {{ util.form_input_static(aclass='text-info', icon='info-circle',
                                   value=gettext("Warning: The new Ballot will be immediately "
                                                 "visible to all CdE-Members and Assembly-Participants.")) }}
