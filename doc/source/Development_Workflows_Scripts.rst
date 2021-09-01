@@ -15,14 +15,7 @@ Setting up a script
 .. note:: The following code snippets are basic examples, in an actual script
           you might need completely different imports or even none at all.
 
-
-The first thing that should be done when setting up a script is ensuring that
-the `cdedb` modules are accessible: ::
-
-    import sys
-    sys.path.insert(0, "/cdedb2")
-
-After that should come the rest of the required imports and other
+The first thing that should be done are all the required imports and other
 prerequisites like setting up backends using ``make_backend``. ::
 
     from pprint import pprint

@@ -80,7 +80,7 @@
 
 {% macro gettext_country(country) -%}
     {%- if country %}
-        {{ gettext("CountryCodes." + country) }}
+        {{- gettext("CountryCodes." + country) -}}
     {% endif %}
 {%- endmacro %}
 
@@ -589,9 +589,18 @@
             </option>
         {%- endif %}
         {% set entries = entries|sort(attribute=1) if sort else entries %}
+        {# Relevant for default: Use default value if key is unset or empty string or none #}
+        {% set former_value = values.get(name, "")|string if values.get(name, "") is not none else "" %}
         {%- for value, label in entries %}
+            {% if value in ("", none) and defaultvalue %}
+                {# This leads to problems regarding defaultvalues. #}
+                {{ raise(gettext("Empty string values with defaultvalue not supported. default: {} value: {}")
+                    |format(defaultvalue|string, value|string)) }}
+            {% endif %}
             <option value="{{ value }}"
-                    {%- if values.get(name, defaultvalue)|string == value|string %} selected="selected"{% endif %}>
+                {%- if former_value == value|string or (former_value == "" and defaultvalue|string == value|string) %}
+                    selected="selected"
+                {% endif %}>
                 {{- label -}}
             </option>
         {%- endfor %}

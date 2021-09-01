@@ -36,7 +36,7 @@
             {{ util.form_input_text(name="location", label=gettext("City"),
                                     defaultvalue=persona["location"]) }}
             {{ util.form_input_text(name="country", label=gettext("Country (if other than Germany)"),
-                                    defaultvalue=persona["country"]) }}
+                                    defaultvalue=util.gettext_country(persona["country"])) }}
         {% else %}
             {{ util.form_input_text(name="full_name", label=gettext("Member")) }}
             {{ util.form_input_text(name="id", label=gettext("CdEDB-ID")) }}

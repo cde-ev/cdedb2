@@ -532,6 +532,17 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("(Zelda)", div='personal-information')
 
     @as_users("vera")
+    def test_automatic_country(self) -> None:
+        self.admin_view_profile('annika')
+        self.traverse({'description': 'Bearbeiten'})
+        f = self.response.forms['changedataform']
+        f['location2'] = "Kabul"
+        self.submit(f)
+        self.assertTitle("Annika Akademieteam")
+        self.assertNonPresence("Afghanistan")
+        self.assertPresence("Deutschland", div='address2')
+
+    @as_users("vera")
     def test_adminchangedata_other(self) -> None:
         self.admin_view_profile('berta')
         self.traverse({'description': 'Bearbeiten'})

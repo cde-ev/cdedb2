@@ -2355,7 +2355,7 @@ class EventFrontend(AbstractUserFrontend):
             work_dir.mkdir()
             filename = "{}_nametags.tex".format(
                 rs.ambience['event']['shortname'])
-            with open(work_dir / filename, 'w') as f:
+            with open(work_dir / filename, 'w', encoding='utf-8') as f:
                 f.write(tex)
             src = self.conf["REPOSITORY_PATH"] / "misc/blank.png"
             shutil.copy(src, work_dir / "aka-logo.png")
@@ -2540,7 +2540,7 @@ class EventFrontend(AbstractUserFrontend):
             work_dir.mkdir()
             filename = "{}_course_lists.tex".format(
                 rs.ambience['event']['shortname'])
-            with open(work_dir / filename, 'w') as f:
+            with open(work_dir / filename, 'w', encoding='utf-8') as f:
                 f.write(tex)
             src = self.conf["REPOSITORY_PATH"] / "misc/blank.png"
             shutil.copy(src, work_dir / "event-logo.png")
@@ -2586,7 +2586,7 @@ class EventFrontend(AbstractUserFrontend):
             work_dir.mkdir()
             filename = "{}_lodgement_lists.tex".format(
                 rs.ambience['event']['shortname'])
-            with open(work_dir / filename, 'w') as f:
+            with open(work_dir / filename, 'w', encoding='utf-8') as f:
                 f.write(tex)
             src = self.conf["REPOSITORY_PATH"] / "misc/blank.png"
             shutil.copy(src, work_dir / "aka-logo.png")
@@ -2685,7 +2685,7 @@ class EventFrontend(AbstractUserFrontend):
                     # save the result in one file per track
                     filename = f"{asciificator(track['shortname'])}.csv"
                     file = pathlib.Path(work_dir, filename)
-                    file.write_text(data)
+                    file.write_text(data, encoding='utf-8')
 
             # create a zip archive of all lists
             zipname = f"{rs.ambience['event']['shortname']}_dokuteam_participant_list"
@@ -4800,7 +4800,7 @@ class EventFrontend(AbstractUserFrontend):
         groups = self.eventproxy.list_lodgement_groups(rs, event_id)
         field_values = {
             "fields.{}".format(key): value
-            for key, value in rs.ambience['lodgement']['fields'].items()}  # noqa: F821
+            for key, value in rs.ambience['lodgement']['fields'].items()}
         merge_dicts(rs.values, rs.ambience['lodgement'], field_values)
         return self.render(rs, "change_lodgement", {'groups': groups})
 
