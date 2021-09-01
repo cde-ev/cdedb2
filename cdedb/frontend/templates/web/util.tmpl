@@ -315,10 +315,47 @@
 {% macro markdown_preview(anid) %}
     <p class="help-block no-color">
         {{ make_icon('fab fa-markdown') }} {% trans %}Supports Markdown.{% endtrans %}
-        <span class="mdjs" style="display: none;"><a id="{{ anid }}-mdpreview">{{ gettext("Preview") }}</a> |</span>
+        <span class="mdjs" style="display: none;">
+            <a id="{{ anid }}-mdpreview" title="{% trans %}Open Markdown Preview{% endtrans %}">
+                {{ gettext("Preview") }}
+            </a> |
+        </span>
         {{ href(docurl("Handbuch_Markdown"), gettext("Tutorial"), title=gettext("Short Markdown summary")) }}
     </p>
-    <div id="{{ anid }}-mdpreview-html"></div> {# temporary until we have a working modal solution #}
+    <div class="modal fade" id="{{ anid }}-mdpreview-modal" tabindex="-1" role="dialog"
+         aria-labelledby="{{ anid }}-mdpreview-modal-label">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="{{ anid }}-mdpreview-modal-label">
+                        {% trans %}Markdown Preview{% endtrans %}
+                    </h4>
+                </div>
+                <div class="modal-body" id="{{ anid }}-mdpreview-html">
+                    {% trans %}Loading...{% endtrans %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">
+                        {% trans %}Close{% endtrans %}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script nonce="{{ csp_nonce }}">
+        $(".mdjs").show();
+        $("#{{ anid }}-mdpreview").click(function() {
+            var input = $("#{{ anid }}").val();
+            $("#{{ anid }}-mdpreview-modal").modal("show")
+            $.post("{{ cdedblink("core/markdown_parse")|e }}",
+                { md_str: input },
+                function(result) {
+                    $("#{{ anid }}-mdpreview-html").html(result);
+                }
+            );
+        });
+    </script>
 {%- endmacro %}
 
 {# ################### #
@@ -380,24 +417,6 @@
         {%- if markdownhint in info %}{{ markdown_preview(anid) }}{% endif %}
         {%- if horizontal %}</div>{% endif %}
     </div>
-    {% if markdownhint in info %}
-        <script nonce="{{ csp_nonce }}">
-            $(".mdjs").show();
-            $("#{{ anid }}-mdpreview").click(function() {
-                if ($("#{{ anid }}-mdpreview-html").html()) { {# workaround until we got modal working #}
-                    $("#{{ anid }}-mdpreview-html").html("");
-                    return
-                }
-                var input = $("#{{ anid }}").val();
-                $.post("{{ cdedblink("core/markdown_parse")|e }}",
-                    { md_str: input },
-                    function(result) {
-                        $("#{{ anid }}-mdpreview-html").html(result).show();
-                    }
-                );
-            });
-        </script>
-    {% endif %}
 {%- endmacro %}
 
 {% macro input_text(name, readonly=False, actualreadonly=False, defaultvalue='', anid=none, aclass='form-control',
