@@ -322,36 +322,15 @@
         </span>
         {{ href(docurl("Handbuch_Markdown"), gettext("Tutorial"), title=gettext("Short Markdown summary")) }}
     </p>
-    <div class="modal fade" id="{{ anid }}-mdpreview-modal" tabindex="-1" role="dialog"
-         aria-labelledby="{{ anid }}-mdpreview-modal-label">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title" id="{{ anid }}-mdpreview-modal-label">
-                        {% trans %}Markdown Preview{% endtrans %}
-                    </h4>
-                </div>
-                <div class="modal-body" id="{{ anid }}-mdpreview-html">
-                    {% trans %}Loading...{% endtrans %}
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">
-                        {% trans %}Close{% endtrans %}
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
     <script nonce="{{ csp_nonce }}">
         $(".mdjs").show();
         $("#{{ anid }}-mdpreview").click(function() {
             var input = $("#{{ anid }}").val();
-            $("#{{ anid }}-mdpreview-modal").modal("show")
+            $("#mdpreview-modal").modal("show")
             $.post("{{ cdedblink("core/markdown_parse")|e }}",
                 { md_str: input },
                 function(result) {
-                    $("#{{ anid }}-mdpreview-html").html(result);
+                    $("#mdpreview-html").html(result);
                 }
             );
         });
