@@ -6,14 +6,14 @@
     {{ util.cdedb_script('cdedb_searchpersona.js') }}
 {% endblock %}
 {% block title %}
-    {% trans title=ambience['event']['title'] -%}{{ title }} Log{% endtrans %}
+    {% trans title=ambience['event']['title'] -%}{{ title }}: Log{% endtrans %}
     {{ logging.counter(total, values['offset'] or '', length) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
         {% trans %}Log{% endtrans %}
-        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
         {{ logging.counter(total, values['offset'] or '', length) }}
+        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block breadcrumb %}

@@ -14,6 +14,15 @@
     {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
     {{ util.breadcrumb_link(cdedblink("assembly/view_assembly_log"), gettext("Log"), active=True) }}
 {% endblock %}
+
+{% block heading %}
+    <h1 class="title">
+        {% trans %}Log{% endtrans %}
+        {{ logging.counter(total, values['offset'] or '', length) }}
+        <small>{{ util.make_icon('bullhorn') }} {{ ambience['assembly']['title'] }}</small>
+    </h1>
+{% endblock %}
+
 {% block content %}
     {% call logging.table(log) %}
         {% for entry in log %}

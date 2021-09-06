@@ -6,7 +6,7 @@
     {{ util.cdedb_script('cdedb_searchpersona.js') }}
 {% endblock %}
 {% block title %}
-    {% trans title=ambience['mailinglist']['title'] -%}{{ title }} Log{% endtrans %}
+    {% trans title=ambience['mailinglist']['title'] -%}{{ title }}: Log{% endtrans %}
     {{ logging.counter(total, values['offset'] or '', length) }}
 {% endblock %}
 {% block breadcrumb %}
@@ -17,6 +17,17 @@
     {{ util.breadcrumb_link(cdedblink("ml/show_mailinglist"), ambience['mailinglist']['title'], icon="envelope") }}
     {{ util.breadcrumb_link(cdedblink("ml/view_ml_log"), gettext("Log"), active=True) }}
 {% endblock %}
+
+{% block heading %}
+    <h1 class="title">
+        {% trans %}Log{% endtrans %}
+        {{ logging.counter(total, values['offset'] or '', length) }}
+        <small>
+            {{ util.make_icon('envelope', arialabel=gettext("Mailinglist")) }} {{ ambience['mailinglist']['title'] }}
+        </small>
+    </h1>
+{% endblock %}
+
 {% block content %}
     {% call logging.table(log) %}
         {% for entry in log %}
