@@ -79,7 +79,7 @@ Spezifikation
 Dieser Abschnitt enthält Informationen zu den technischen Details der Syntax, die für das Schreiben einfacher
 Markdown-Texte nicht benötigt werden.
 
-Die CdE-Datenbank verwendet das ``python3-markdown``-Modul in Version 3.0.1, um Markdown zu HTML zu parsen. Das so
+Die CdE-Datenbank verwendet das ``python3-markdown``-Modul in Version 3.3.4, um Markdown zu HTML zu parsen. Das so
 entstandene HTML wird anschließend bis auf eine Liste erlaubter Tags und Attribute escapet. Es ist also auch möglich,
 direkt HTML zu verwenden. Folgende `Extensions <https://www.markdownguide.org/basic-syntax/>`_ werden verwendet:
 
