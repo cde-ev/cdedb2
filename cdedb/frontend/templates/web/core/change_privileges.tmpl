@@ -11,6 +11,17 @@
             util.persona_name(ambience['persona']), icon="user") }}
     {{ util.breadcrumb_link(cdedblink("core/change_privileges_form"), gettext("Change Privileges"), active=True) }}
 {% endblock %}
+
+{% block heading %}
+    <h1 class="title">
+        {% trans %}Change Privileges{% endtrans %}
+        <small>
+            {{ util.make_icon('user', arialabel="User") }}
+            {{ util.persona_name(ambience['persona']) }}
+        </small>
+    </h1>
+{% endblock %}
+
 {% block content %}
     {% trans %}
         Privilege changes will have to be approved by another Meta-Admin.

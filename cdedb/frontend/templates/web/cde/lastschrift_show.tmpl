@@ -25,6 +25,16 @@
                             icon="euro-sign") }}
 {% endblock %}
 
+{% block heading %}
+    <h1 class="title">
+        {% trans %}Direct Debit Authorization{% endtrans %}
+        <small>
+            {{ util.make_icon('user', arialabel="User") }}
+            {{ util.persona_name(ambience['persona'], only_given_names=True) }}
+        </small>
+    </h1>
+{% endblock %}
+
 {% block content %}
     <div id="active-permit">
     {% if active_permit %}

@@ -12,6 +12,17 @@
 {{ util.breadcrumb_link(cdedblink("cde/lastschrift_change_form", {'persona_id': values['persona_id']}), gettext("Edit"),
 	active=True) }}
 {% endblock %}
+
+{% block heading %}
+    <h1 class="title">
+        {% trans %}Edit Direct Debit Authorization{% endtrans %}
+        <small>
+            {{ util.make_icon('user', arialabel="User") }}
+            {{ util.persona_name(persona, only_given_names=True) }}
+        </small>
+    </h1>
+{% endblock %}
+
 {% block content %}
     <script nonce="{{ csp_nonce }}">
         $(function() {

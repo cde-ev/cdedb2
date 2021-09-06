@@ -12,11 +12,12 @@
     {% endif %}
 {%- endblock %}
 {% block heading -%}
-    <h1>
+    <h1 class="title">
         {% trans %}New Direct Debit Authorization{% endtrans %}
         {% if ambience['persona'] %}
             <small>
-                {{ util.make_icon('user') }} {{ util.persona_name(ambience['persona'], only_given_names=True) }}
+                {{ util.make_icon('user', arialabel="User") }}
+                {{ util.persona_name(ambience['persona'], only_given_names=True) }}
             </small>
         {% endif %}
     </h1>

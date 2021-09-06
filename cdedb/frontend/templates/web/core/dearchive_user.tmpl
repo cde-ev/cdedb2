@@ -10,6 +10,17 @@
     {{ util.breadcrumb_link(show_user_link(user, data['id']), util.persona_name(data), icon="user") }}
     {{ util.breadcrumb_link(cdedblink("core/dearchive_persona_form"), gettext("Dearchive"), active=True) }}
 {% endblock %}
+
+{% block heading %}
+    <h1 class="title">
+        {% trans %}Dearchive Account{% endtrans %}
+        <small>
+            {{ util.make_icon('user', arialabel="User") }}
+            {{ util.persona_name(data) }}
+        </small>
+    </h1>
+{% endblock %}
+
 {% block content %}
     {% trans %}
         This restores the archived Account. It will be usable again.

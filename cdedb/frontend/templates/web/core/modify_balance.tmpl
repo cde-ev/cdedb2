@@ -11,6 +11,17 @@
         icon="user") }}
 {{ util.breadcrumb_link(cdedblink("core/modify_balance_form"), gettext("Modify Balance"), active="True") }}
 {% endblock %}
+
+{% block heading %}
+    <h1 class="title">
+        {% trans %}Modify Balance{% endtrans %}
+        <small>
+            {{ util.make_icon('user', arialabel="User") }}
+            {{ util.persona_name(ambience['persona'], only_given_names=True) }}
+        </small>
+    </h1>
+{% endblock %}
+
 {% block content %}
     <p>
         {{ util.make_icon('info-circle') }}

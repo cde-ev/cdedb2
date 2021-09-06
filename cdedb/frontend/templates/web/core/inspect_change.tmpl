@@ -15,6 +15,16 @@
         util.persona_name(current), icon="user", active="True") }}
 {% endblock %}
 
+{% block heading %}
+    <h1 class="title">
+        {% trans %}Inspect Changes{% endtrans %}
+        <small>
+            {{ util.make_icon('user', arialabel="User") }}
+            {{ util.persona_name(current) }}
+        </small>
+    </h1>
+{% endblock %}
+
 {% macro show_diff(name, title, important=False) %}
     <div class="row {% if name not in diff and not important %}unimportant{% endif %}">
         <label class="col-sm-3">

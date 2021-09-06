@@ -15,6 +15,17 @@
         {{ util.breadcrumb_link(cdedblink("core/promote_user_form"), gettext("Confirm"), active=True) }}
     {% endif %}
 {% endblock %}
+
+{% block heading %}
+    <h1 class="title">
+        {% trans %}Add Realm{% endtrans %}
+        <small>
+            {{ util.make_icon('user', arialabel="User") }}
+            {{ util.persona_name(ambience['persona']) }}
+        </small>
+    </h1>
+{% endblock %}
+
 {% block content %}
    {% with p = ambience['persona'],
            realms = {'cde': gettext("cde_realm"),

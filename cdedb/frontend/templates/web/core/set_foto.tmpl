@@ -14,6 +14,17 @@
         icon="user") }}
 {{ util.breadcrumb_link(cdedblink('core/set_foto_form'), gettext("Set Profile Picture"), active="True") }}
 {% endblock %}
+
+{% block heading %}
+    <h1 class="title">
+        {% trans %}Set Profile Picture{% endtrans %}
+        <small>
+            {{ util.make_icon('user', arialabel="User") }}
+            {{ util.persona_name(ambience['persona']) }}
+        </small>
+    </h1>
+{% endblock %}
+
 {% block content %}
 
     <div class="row">

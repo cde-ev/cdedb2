@@ -11,6 +11,17 @@
                         icon="user") }}
 {{ util.breadcrumb_link(cdedblink("core/modify_membership"), gettext("Modify Membership"), active="True") }}
 {% endblock %}
+
+{% block heading %}
+    <h1 class="title">
+        {% trans %}Modify Membership{% endtrans %}
+        <small>
+            {{ util.make_icon('user', arialabel="User") }}
+            {{ util.persona_name(ambience['persona']) }}
+        </small>
+    </h1>
+{% endblock %}
+
 {% block content %}
    {% if ambience['persona']['is_member'] %}
         <p>
