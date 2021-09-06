@@ -2219,3 +2219,7 @@ EPSILON = 10 ** (-6)  #:
 #: Timestamp which lies in the future. Make a constant so we do not have to
 #: hardcode the value otherwere
 FUTURE_TIMESTAMP = datetime.datetime(9996, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
+
+#: Specification for the output date format of money transfers.
+#: Note how this differs from the input in that we use 4 digit years.
+PARSE_OUTPUT_DATEFORMAT = "%d.%m.%Y"
