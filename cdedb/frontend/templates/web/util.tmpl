@@ -323,17 +323,7 @@
         {{ href(docurl("Handbuch_Markdown"), gettext("Tutorial"), title=gettext("Short Markdown summary")) }}
     </p>
     <script nonce="{{ csp_nonce }}">
-        $(".mdjs").show();
-        $("#{{ anid }}-mdpreview").click(function() {
-            var input = $("#{{ anid }}").val();
-            $("#mdpreview-modal").modal("show")
-            $.post("{{ cdedblink("core/markdown_parse")|e }}",
-                { md_str: input },
-                function(result) {
-                    $("#mdpreview-html").html(result);
-                }
-            );
-        });
+        $("#{{ anid }}").cdedbMarkdownPreview("{{ cdedblink("core/markdown_parse")|e }}")
     </script>
 {%- endmacro %}
 

@@ -280,6 +280,27 @@
         });
         return this;
     };
+
+    /**
+     * Preview rendered HTML from Markdown plaintext
+     *
+     * The link to the markdown parsing frontend endpoint is passed as argument
+     * so we can make use of the link building helper in jinja
+     */
+    $.fn.cdedbMarkdownPreview = function (link) {
+        $(".mdjs").show();
+        let input = this;  // we need it inside the onclick-function
+        $(`#${ input.attr("id") }-mdpreview`).click(function() {
+            $.post(link,
+                { md_str: input.val() },
+                function(result) {
+                    $("#mdpreview-html").html(result);
+                }
+            );
+            $("#mdpreview-modal").modal("show");
+        });
+        return this;
+    };
 })(jQuery);
 
 
