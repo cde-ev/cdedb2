@@ -29,8 +29,10 @@ from cdedb.common import (
     ORG_PERIOD_FIELDS, CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
     DeletionBlockers, PrivilegeError, QuotaException, RequestState, implying_realms,
     merge_dicts, n_, now, unwrap, glue, LineResolutions, PathLike, make_proxy,
+    PARSE_OUTPUT_DATEFORMAT,
 )
 from cdedb.database.connection import Atomizer
+from cdedb.filter import money_filter
 from cdedb.query import Query, QueryOperators, QueryScope
 from cdedb.validation import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS, is_optional,
@@ -616,6 +618,77 @@ class CdEBackend(AbstractBackend):
                 rs, const.FinanceLogCodes.lastschrift_transaction_skip,
                 lastschrift['persona_id'], None, None)
         return ret
+
+    @access("finance_admin")
+    def perform_money_transfers(self, rs: RequestState, data: List[CdEDBObject]
+                                ) -> Tuple[bool, Optional[int], Optional[int]]:
+        """Resolve all money transfer entries.
+
+        :returns: A bool indicating success and:
+            * In case of success:
+                * The number of recorded transactions
+                * The number of new members.
+            * In case of error:
+                * The index of the erronous line or None
+                    if a DB-serialization error occurred.
+                * None
+        """
+        data = affirm_array(vtypes.MoneyTransferEntry, data)
+        index = 0
+        note_template = ("Guthabenänderung um {amount} auf {new_balance} "
+                         "(Überwiesen am {date})")
+        # noinspection PyBroadException
+        try:
+            with Atomizer(rs):
+                count = 0
+                memberships_gained = 0
+                persona_ids = tuple(e['persona_id'] for e in data)
+                personas = self.core.get_total_personas(rs, persona_ids)
+                for index, datum in enumerate(data):
+                    assert isinstance(datum['amount'], decimal.Decimal)
+                    new_balance = (personas[datum['persona_id']]['balance']
+                                   + datum['amount'])
+                    note = datum['note']
+                    if note:
+                        try:
+                            date = datetime.datetime.strptime(
+                                note, PARSE_OUTPUT_DATEFORMAT)
+                        except ValueError:
+                            pass
+                        else:
+                            # This is the default case and makes it pretty
+                            note = note_template.format(
+                                amount=money_filter(datum['amount']),
+                                new_balance=money_filter(new_balance),
+                                date=date.strftime(PARSE_OUTPUT_DATEFORMAT))
+                    count += self.core.change_persona_balance(
+                        rs, datum['persona_id'], new_balance,
+                        const.FinanceLogCodes.increase_balance,
+                        change_note=note)
+                    if new_balance >= self.conf["MEMBERSHIP_FEE"]:
+                        code, _, _ = self.change_membership(
+                            rs, datum['persona_id'], is_member=True)
+                        memberships_gained += bool(code)
+                    # Remember the changed balance in case of multiple transfers.
+                    personas[datum['persona_id']]['balance'] = new_balance
+        except psycopg2.extensions.TransactionRollbackError:
+            # We perform a rather big transaction, so serialization errors
+            # could happen.
+            return False, None, None
+        except Exception:
+            # This blanket catching of all exceptions is a last resort. We try
+            # to do enough validation, so that this should never happen, but
+            # an opaque error (as would happen without this) would be rather
+            # frustrating for the users -- hence some extra error handling
+            # here.
+            self.logger.error(glue(
+                ">>>\n>>>\n>>>\n>>> Exception during transfer processing",
+                "<<<\n<<<\n<<<\n<<<"))
+            self.logger.exception("FIRST AS SIMPLE TRACEBACK")
+            self.logger.error("SECOND TRY CGITB")
+            self.cgitb_log()
+            return False, index, None
+        return True, count, memberships_gained
 
     @access("finance_admin")
     def finance_statistics(self, rs: RequestState) -> CdEDBObject:

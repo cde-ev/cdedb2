@@ -1744,6 +1744,20 @@ def _lastschrift(
     return Lastschrift(val)
 
 
+@_add_typed_validator
+def _money_transfer_entry(val: Any, argname: str = "money_transfer_entry",
+                       **kwargs: Any) -> MoneyTransferEntry:
+    val = _mapping(val, argname, **kwargs)
+    mandatory_fields = {
+        'persona_id': int,
+        'amount': decimal.Decimal,
+        'note': Optional[str],
+    }
+    optional_fields: TypeMapping = {}
+    return MoneyTransferEntry(_examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, **kwargs))
+
+
 # TODO move above
 @_add_typed_validator
 def _iban(
