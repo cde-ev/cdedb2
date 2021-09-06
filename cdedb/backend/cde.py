@@ -517,6 +517,20 @@ class CdEBackend(AbstractBackend):
         return ret
 
     @access("finance_admin")
+    def finalize_lastschrift_transactions(
+            self, rs: RequestState, transactions: List[CdEDBObject]
+    ) -> DefaultReturnCode:
+        """Atomized multiplex variant of finalize_lastschrift_transaction."""
+        transactions = affirm_array(vtypes.LastschriftTransactionEntry, transactions)
+        code = 1
+        with Atomizer(rs):
+            for transaction in transactions:
+                code *= self.finalize_lastschrift_transaction(
+                    rs, transaction['transaction_id'], transaction['status'],
+                    tally=transaction['tally'])
+        return code
+
+    @access("finance_admin")
     def rollback_lastschrift_transaction(
             self, rs: RequestState, transaction_id: int,
             tally: decimal.Decimal) -> DefaultReturnCode:

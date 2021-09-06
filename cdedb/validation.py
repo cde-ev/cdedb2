@@ -1839,6 +1839,21 @@ def _lastschrift_transaction(
         val, mandatory_fields, optional_fields, **kwargs))
 
 
+@_add_typed_validator
+def _lastschrift_transaction_entry(
+        val: Any, argname: str = "lastschrift_transaction_entry",
+        **kwargs: Any) -> LastschriftTransactionEntry:
+    val = _mapping(val, argname, **kwargs)
+    mandatory_fields = {
+        'transaction_id': int,
+        'tally': Optional[decimal.Decimal],
+        'status': const.LastschriftTransactionStati,
+    }
+    optional_fields: TypeMapping = {}
+    return MoneyTransferEntry(_examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, **kwargs))
+
+
 SEPA_TRANSACTIONS_FIELDS: TypeMapping = {
     'issued_at': datetime.datetime,
     'lastschrift_id': ID,

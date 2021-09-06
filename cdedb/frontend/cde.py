@@ -1575,15 +1575,12 @@ class CdEFrontend(AbstractUserFrontend):
         else:
             return self.redirect(rs, "cde/lastschrift_index")
 
-    def lastschrift_process_transaction(
-            self, rs: RequestState, transaction_id: int,
-            status: const.LastschriftTransactionStati) -> DefaultReturnCode:
-        """Process one transaction and store the outcome."""
-        tally = None
-        if status == const.LastschriftTransactionStati.failure:
-            tally = -self.conf["SEPA_ROLLBACK_FEE"]
-        return self.cdeproxy.finalize_lastschrift_transaction(
-            rs, transaction_id, status, tally=tally)
+    def tally_for_lastschrift_status(self, status: const.LastschriftTransactionStati
+                                     ) -> Optional[decimal.Decimal]:
+        """Retrieve preset tally associated with each status."""
+        return (-self.conf["SEPA_ROLLBACK_FEE"]
+                if status == const.LastschriftTransactionStati.failure else
+                None)
 
     @access("finance_admin", modi={"POST"})
     @REQUESTdata("status", "persona_id")
@@ -1599,7 +1596,9 @@ class CdEFrontend(AbstractUserFrontend):
         """
         if rs.has_validation_errors():
             return self.lastschrift_index(rs)
-        code = self.lastschrift_process_transaction(rs, transaction_id, status)
+        code = self.cdeproxy.finalize_lastschrift_transaction(
+            rs, transaction_id, status,
+            tally=self.tally_for_lastschrift_status(status))
         self.notify_return_code(rs, code)
         if persona_id:
             return self.redirect(rs, "cde/lastschrift_show",
@@ -1632,10 +1631,14 @@ class CdEFrontend(AbstractUserFrontend):
         else:
             raise RuntimeError("Impossible.")
         code = 1
-        with Atomizer(rs):
-            for transaction_id in transaction_ids:
-                code *= self.lastschrift_process_transaction(
-                    rs, transaction_id, status)
+        transactions = [
+            {
+                'transaction_id': transaction_id,
+                'status': status,
+                'tally': self.tally_for_lastschrift_status(status),
+            }
+            for transaction_id in transaction_ids]
+        code = self.cdeproxy.finalize_lastschrift_transactions(rs, transactions)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "cde/lastschrift_index")
 
