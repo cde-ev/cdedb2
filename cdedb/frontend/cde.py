@@ -1859,95 +1859,61 @@ class CdEFrontend(AbstractUserFrontend):
         # it doesn't leak
         def send_billing_mail(rrs: RequestState, rs: None = None) -> bool:
             """Send one billing mail and advance semester state."""
-            with Atomizer(rrs):
-                period = self.cdeproxy.get_period(rrs, period_id)
-                persona_id = self.coreproxy.next_persona(
-                    rrs, period['billing_state'], is_member=True, is_archived=False)
-                if testrun:
-                    persona_id = rrs.user.persona_id
-                # We are finished if we reached the end or if this was previously done.
-                if not persona_id or period['billing_done']:
-                    if not period['billing_done']:
-                        self.cdeproxy.finish_semester_bill(rrs, addresscheck)
-                    return False
-                period_update = {
-                    'id': period_id,
-                    'billing_state': persona_id,
-                }
-                persona = self.coreproxy.get_cde_user(rrs, persona_id)
-                lastschrift_list = self.cdeproxy.list_lastschrift(
-                    rrs, persona_ids=(persona_id,))
-                lastschrift = None
-                if lastschrift_list:
-                    lastschrift = self.cdeproxy.get_lastschrift(
-                        rrs, unwrap(lastschrift_list.keys()))
-                    lastschrift['reference'] = lastschrift_reference(
-                        persona['id'], lastschrift['id'])
-                address = make_postal_address(persona)
-                transaction_subject = make_membership_fee_reference(persona)
-                endangered = (persona['balance'] < self.conf["MEMBERSHIP_FEE"]
-                              and not persona['trial_member']
-                              and not lastschrift)
-                if endangered:
-                    subject = "Mitgliedschaft verlängern"
-                else:
-                    subject = "Mitgliedschaft verlängert"
-                period_update['billing_count'] = period['billing_count'] + 1
-                if not testrun:
-                    self.cdeproxy.set_period(rrs, period_update)
+            with TransactionObserver(rrs, self, "send_billing_mail"):
+                proceed, persona = self.cdeproxy.process_for_semester_bill(
+                    rrs, period_id, addresscheck, testrun)
 
-            # Send mail only if transaction completed successfully.
-            self.do_mail(
-                rrs, "billing",
-                {'To': (persona['username'],),
-                 'Subject': subject},
-                {'persona': persona,
-                 'fee': self.conf["MEMBERSHIP_FEE"],
-                 'lastschrift': lastschrift,
-                 'open_lastschrift': open_lastschrift,
-                 'address': address,
-                 'transaction_subject': transaction_subject,
-                 'addresscheck': addresscheck,
-                 'meta_info': meta_info})
-            return not testrun
+                # Send mail only if transaction completed successfully.
+                if persona:
+                    lastschrift_list = self.cdeproxy.list_lastschrift(
+                        rrs, persona_ids=(persona['id'],))
+                    lastschrift = None
+                    if lastschrift_list:
+                        lastschrift = self.cdeproxy.get_lastschrift(
+                            rrs, unwrap(lastschrift_list.keys()))
+                        lastschrift['reference'] = lastschrift_reference(
+                            persona['id'], lastschrift['id'])
+
+                    address = make_postal_address(persona)
+                    transaction_subject = make_membership_fee_reference(persona)
+                    endangered = (persona['balance'] < self.conf["MEMBERSHIP_FEE"]
+                                  and not persona['trial_member']
+                                  and not lastschrift)
+                    if endangered:
+                        subject = "Mitgliedschaft verlängern"
+                    else:
+                        subject = "Mitgliedschaft verlängert"
+
+                    self.do_mail(
+                        rrs, "billing",
+                        {'To': (persona['username'],),
+                         'Subject': subject},
+                        {'persona': persona,
+                         'fee': self.conf["MEMBERSHIP_FEE"],
+                         'lastschrift': lastschrift,
+                         'open_lastschrift': open_lastschrift,
+                         'address': address,
+                         'transaction_subject': transaction_subject,
+                         'addresscheck': addresscheck,
+                         'meta_info': meta_info})
+            return proceed and not testrun
 
         def send_archival_notification(rrs: RequestState, rs: None = None) -> bool:
             """Send archival notifications to inactive accounts."""
-            with Atomizer(rrs):
-                period = self.cdeproxy.get_period(rrs, period_id)
-                persona_id = self.coreproxy.next_persona(
-                    rrs, period['archival_notification_state'], is_member=None,
-                    is_archived=False)
-                if testrun:
-                    persona_id = rrs.user.persona_id
-                # We are finished if we reached the end or if this was previously done.
-                if not persona_id or period['archival_notification_done']:
-                    if not period['archival_notification_done']:
-                        self.cdeproxy.finish_archival_notification(rrs)
-                    return False
-                period_update = {
-                    'id': period_id,
-                    'archival_notification_state': persona_id,
-                }
-                is_archivable = self.coreproxy.is_persona_automatically_archivable(
-                    rrs, persona_id)
-                if is_archivable or testrun:
-                    persona = self.coreproxy.get_persona(rrs, persona_id)
-                    period_update['archival_notification_count'] = \
-                        period['archival_notification_count'] + 1
-                if not testrun:
-                    self.cdeproxy.set_period(rrs, period_update)
+            with TransactionObserver(rrs, self, "send_archival_notification"):
+                proceed, persona = self.cdeproxy.process_for_semester_prearchival(
+                    rrs, period_id, testrun)
 
-            if is_archivable or testrun:
-                self.do_mail(
-                    rrs, "imminent_archival",
-                    {'To': (persona['username'],),
-                     'Subject': "Bevorstehende Löschung Deines"
-                                " CdE-Datenbank-Accounts"},
-                    {'persona': persona,
-                     'fee': self.conf["MEMBERSHIP_FEE"],
-                     'meta_info': meta_info})
-            return not testrun
+                if persona:
+                    self.do_mail(
+                        rrs, "imminent_archival",
+                        {'To': (persona['username'],),
+                         'Subject': "Bevorstehende Löschung Deines"
+                                    " CdE-Datenbank-Accounts"},
+                        {'persona': persona,
+                         'fee': self.conf["MEMBERSHIP_FEE"],
+                         'meta_info': meta_info})
+            return proceed and not testrun
 
         Worker.create(
             rs, "semester_bill",
@@ -1968,94 +1934,39 @@ class CdEFrontend(AbstractUserFrontend):
         # it doesn't leak
         def eject_member(rrs: RequestState, rs: None = None) -> bool:
             """Check one member for ejection and advance semester state."""
-            with Atomizer(rrs):
-                period = self.cdeproxy.get_period(rrs, period_id)
-                persona_id = self.coreproxy.next_persona(
-                    rrs, period['ejection_state'], is_member=True, is_archived=False)
-                # We are finished if we reached the end or if this was previously done.
-                if not persona_id or period['ejection_done']:
-                    if not period['ejection_done']:
-                        self.cdeproxy.finish_semester_ejection(rrs)
-                    return False
-                period_update = {
-                    'id': period_id,
-                    'ejection_state': persona_id,
-                }
-                persona = self.coreproxy.get_cde_user(rrs, persona_id)
-                do_eject = (persona['balance'] < self.conf["MEMBERSHIP_FEE"]
-                            and not persona['trial_member'])
-                if do_eject:
-                    self.cdeproxy.change_membership(rrs, persona_id,
-                                                     is_member=False)
-                    period_update['ejection_count'] = \
-                        period['ejection_count'] + 1
-                    period_update['ejection_balance'] = \
-                        period['ejection_balance'] + persona['balance']
+            with TransactionObserver(rrs, self, "eject_member"):
+                proceed, persona = self.cdeproxy.process_for_semester_eject(
+                    rrs, period_id)
+
+                if persona:
                     transaction_subject = make_membership_fee_reference(persona)
                     meta_info = self.coreproxy.get_meta_info(rrs)
-                self.cdeproxy.set_period(rrs, period_update)
-            if do_eject:
-                self.do_mail(
-                    rrs, "ejection",
-                    {'To': (persona['username'],),
-                     'Subject': "Austritt aus dem CdE e.V."},
-                    {'persona': persona,
-                     'fee': self.conf["MEMBERSHIP_FEE"],
-                     'transaction_subject': transaction_subject,
-                     'meta_info': meta_info})
-            return True
+                    self.do_mail(
+                        rrs, "ejection",
+                        {'To': (persona['username'],),
+                         'Subject': "Austritt aus dem CdE e.V."},
+                        {'persona': persona,
+                         'fee': self.conf["MEMBERSHIP_FEE"],
+                         'transaction_subject': transaction_subject,
+                         'meta_info': meta_info})
+            return proceed
 
         def automated_archival(rrs: RequestState, rs: None = None) -> bool:
             """Archive one inactive user if they are eligible."""
-            with Atomizer(rrs):
-                period = self.cdeproxy.get_period(rrs, period_id)
-                persona_id = self.coreproxy.next_persona(
-                    rrs, period['archival_state'], is_member=False, is_archived=False)
-                # We are finished if we reached the end or if this was previously done.
-                if not persona_id or period['archival_done']:
-                    if not period['archival_done']:
-                        self.cdeproxy.finish_automated_archival(rrs)
-                    return False
-                period_update = {
-                    'id': period_id,
-                    'archival_state': persona_id,
-                }
-                mail = None
-                if self.coreproxy.is_persona_automatically_archivable(
-                        rrs, persona_id, reference_date=period['billing_done']):
-                    note = "Autmoatisch archiviert wegen Inaktivität."
-                    try:
-                        code = self.coreproxy.archive_persona(rrs, persona_id, note)
-                    except ArchiveError as e:
-                        self.logger.exception(f"Unexpected error during archival of"
-                                              f" persona {persona_id}.")
-                        # TODO: somehow combine all failures into a single mail.
-                        #  This requires storing the ids somehow.
-                        mail = self._create_mail(
-                            text=f"Automated archival of persona {persona_id} failed"
-                                 f" with ArchivalError:\n{e}",
-                            headers={'Subject': "Automated Archival failure",
-                                     'To': (rrs.user.username,)},
-                            attachments=None)
-                    else:
-                        if code:
-                            period_update['archival_count'] = \
-                                period['archival_count'] + 1
-                        else:
-                            self.logger.error(
-                                f"Automated archival of persona {persona_id} failed"
-                                f" for unknown reasons.")
-                            # TODO: combine all failures into a single mail. See above.
-                            mail = self._create_mail(
-                                text=f"Automated archival of persona {persona_id}"
-                                     f" failed with unknown error.",
-                                headers={'Subject': "Automated Archival failure",
-                                         'To': (rrs.user.username,)},
-                                attachments=None)
-                self.cdeproxy.set_period(rrs, period_update)
-            if mail is not None:
-                self._send_mail(mail)
-            return True
+            with TransactionObserver(rrs, self, "automated_archival"):
+                proceed, persona = self.cdeproxy.process_for_semester_archival(
+                    rrs, period_id)
+
+                if persona:
+                    # TODO: somehow combine all failures into a single mail.
+                    # This requires storing the ids somehow.
+                    mail = self._create_mail(
+                        text=f"Automated archival of persona {persona['id']} failed",
+                        headers={'Subject': "Automated Archival failure",
+                                 'To': (rs.user.username,)},
+                        attachments=None)
+                    self._send_mail(mail)
+            return proceed
 
         Worker.create(
             rs, "semester_eject", (eject_member, automated_archival), self.conf)
@@ -2075,50 +1986,9 @@ class CdEFrontend(AbstractUserFrontend):
         # it doesn't leak
         def update_balance(rrs: RequestState, rs: None = None) -> bool:
             """Update one members balance and advance state."""
-            with Atomizer(rrs):
-                period = self.cdeproxy.get_period(rrs, period_id)
-                persona_id = self.coreproxy.next_persona(
-                    rrs, period['balance_state'], is_member=True, is_archived=False)
-                # We are finished if we reached the end or if this was previously done.
-                if not persona_id or period['balance_done']:
-                    if not period['balance_done']:
-                        self.cdeproxy.finish_semester_balance_update(rrs)
-                    return False
-                persona = self.coreproxy.get_cde_user(rrs, persona_id)
-                period_update = {
-                    'id': period_id,
-                    'balance_state': persona_id,
-                }
-                if (persona['balance'] < self.conf["MEMBERSHIP_FEE"]
-                        and not persona['trial_member']):
-                    # TODO maybe fail more gracefully here?
-                    # Maybe set balance to 0 and send a mail or something.
-                    raise ValueError(n_("Balance too low."))
-                else:
-                    if persona['trial_member']:
-                        update = {
-                            'id': persona_id,
-                            'trial_member': False,
-                        }
-                        self.coreproxy.change_persona(
-                            rrs, update,
-                            change_note="Probemitgliedschaft beendet."
-                        )
-                        period_update['balance_trialmembers'] = \
-                            period['balance_trialmembers'] + 1
-                    else:
-                        new_b = persona['balance'] - self.conf["MEMBERSHIP_FEE"]
-                        note = "Mitgliedsbeitrag abgebucht ({}).".format(
-                            money_filter(self.conf["MEMBERSHIP_FEE"]))
-                        self.coreproxy.change_persona_balance(
-                            rrs, persona_id, new_b,
-                            const.FinanceLogCodes.deduct_membership_fee,
-                            change_note=note)
-                        new_total = (period['balance_total']
-                                     + self.conf["MEMBERSHIP_FEE"])
-                        period_update['balance_total'] = new_total
-                self.cdeproxy.set_period(rrs, period_update)
-                return True
+            proceed, persona = self.cdeproxy.process_for_semester_balance(
+                rrs, period_id)
+            return proceed
 
         Worker.create(rs, "semester_balance_update", update_balance, self.conf)
         rs.notify("success", n_("Started updating balance."))
@@ -2158,34 +2028,17 @@ class CdEFrontend(AbstractUserFrontend):
         # it doesn't leak
         def send_addresscheck(rrs: RequestState, rs: None = None) -> bool:
             """Send one address check mail and advance state."""
-            with Atomizer(rrs):
-                expuls = self.cdeproxy.get_expuls(rrs, expuls_id)
-                persona_id = self.coreproxy.next_persona(
-                    rrs, expuls['addresscheck_state'],
-                    is_member=True, is_archived=False)
-                if testrun:
-                    persona_id = rrs.user.persona_id
-                # We are finished if we reached the end or if this was previously done.
-                if not persona_id or expuls['addresscheck_done']:
-                    if not expuls['addresscheck_done']:
-                        self.cdeproxy.finish_expuls_addresscheck(
-                            rrs, skip=False)
-                    return False
-                persona = self.coreproxy.get_cde_user(rrs, persona_id)
-                address = make_postal_address(persona)
-                if not testrun:
-                    expuls_update = {
-                        'id': expuls_id,
-                        'addresscheck_state': persona_id,
-                        'addresscheck_count': expuls['addresscheck_count'] + 1,
-                    }
-                    self.cdeproxy.set_expuls(rrs, expuls_update)
-            self.do_mail(
-                rrs, "addresscheck",
-                {'To': (persona['username'],),
-                 'Subject': "Adressabfrage für den exPuls"},
-                {'persona': persona, 'address': address})
-            return not testrun
+            with TransactionObserver(rrs, self, "send_addresscheck"):
+                proceed, persona = self.cdeproxy.process_for_expuls_check(
+                    rrs, expuls_id, testrun)
+                if persona:
+                    address = make_postal_address(persona)
+                    self.do_mail(
+                        rrs, "addresscheck",
+                        {'To': (persona['username'],),
+                         'Subject': "Adressabfrage für den exPuls"},
+                        {'persona': persona, 'address': address})
+            return proceed and not testrun
 
         if skip:
             self.cdeproxy.finish_expuls_addresscheck(rs, skip=True)
