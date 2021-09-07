@@ -640,7 +640,8 @@ class CdEFrontend(AbstractUserFrontend):
                             promotion[field] = datum['persona'][field]
                 # apply the actual changes
                 promotion.update(upgrades)
-                self.coreproxy.change_persona_realms(rs, promotion)
+                self.coreproxy.change_persona_realms(
+                    rs, promotion, change_note="Datenübernahme nach Massenaufnahme")
             if datum['resolution'].do_trial():
                 self.coreproxy.change_membership(
                     rs, datum['doppelganger_id'], is_member=True)

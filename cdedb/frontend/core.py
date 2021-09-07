@@ -1508,16 +1508,15 @@ class CoreFrontend(AbstractFrontend):
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
         merge_dicts(rs.values, rs.ambience['persona'])
-        if (target_realm
-                and rs.ambience['persona']['is_{}_realm'.format(target_realm)]):
+        if target_realm and rs.ambience['persona']['is_{}_realm'.format(target_realm)]:
             rs.notify("warning", n_("No promotion necessary."))
             return self.redirect_show_user(rs, persona_id)
         return self.render(rs, "promote_user")
 
     @access("core_admin", modi={"POST"})
     @REQUESTdatadict(*CDE_TRANSITION_FIELDS)
-    @REQUESTdata("target_realm")
-    def promote_user(self, rs: RequestState, persona_id: int,
+    @REQUESTdata("target_realm", "change_note")
+    def promote_user(self, rs: RequestState, persona_id: int, change_note: str,
                      target_realm: vtypes.Realm, data: CdEDBObject) -> Response:
         """Add a new realm to the users ."""
         for key in tuple(k for k in data.keys() if not data[k]):
@@ -1549,7 +1548,7 @@ class CoreFrontend(AbstractFrontend):
             return self.promote_user_form(  # type: ignore
                 rs, persona_id, internal=True)
         assert data is not None
-        code = self.coreproxy.change_persona_realms(rs, data)
+        code = self.coreproxy.change_persona_realms(rs, data, change_note)
         self.notify_return_code(rs, code)
         if code > 0 and target_realm == "cde":
             meta_info = self.coreproxy.get_meta_info(rs)
