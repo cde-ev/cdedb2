@@ -1560,8 +1560,10 @@ class TestCoreFrontend(FrontendTest):
 
         # check for correct welcome mail
         mail = self.fetch_mail_content()
+        self.assertIn(USER_DICT['nina']['display_name'], mail)
         self.assertIn("Ein herzliches Willkommen", mail)
         self.assertIn("zum ersten Mal in unserer Datenbank anmeldest", mail)
+        self.assertIn("kostenlos", mail)  # check trial membership
 
     @as_users("vera")
     def test_nontrivial_promotion(self) -> None:
