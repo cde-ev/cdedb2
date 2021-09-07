@@ -3535,7 +3535,7 @@ class EventBackend(AbstractBackend):
             # We perform a rather big transaction, so serialization errors
             # could happen.
             return False, None
-        except Exception as e:
+        except Exception:
             breakpoint()
             # This blanket catching of all exceptions is a last resort. We try
             # to do enough validation, so that this should never happen, but

@@ -20,7 +20,6 @@ from collections import OrderedDict, defaultdict
 from typing import Any, Collection, Dict, List, Optional, Sequence, Set, Tuple, cast
 
 import dateutil.easter
-import psycopg2.extensions
 import werkzeug.exceptions
 from werkzeug import Response
 from werkzeug.datastructures import FileStorage
@@ -29,14 +28,13 @@ import cdedb.database.constants as const
 import cdedb.frontend.parse_statement as parse
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    Accounts, ArchiveError, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
+    Accounts, CdEDBObject, CdEDBObjectMap,
     EntitySorter, Error, LineResolutions, LOG_FIELDS_COMMON, PERSONA_DEFAULTS,
     RequestState, SemesterSteps, TransactionType, asciificator, deduct_years,
     determine_age_class, diacritic_patterns, get_hash, get_localized_country_codes,
     glue, int_to_words, lastschrift_reference, merge_dicts, n_, now, unwrap, xsorted,
 )
-from cdedb.database.connection import Atomizer
-from cdedb.filter import enum_entries_filter, money_filter
+from cdedb.filter import enum_entries_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, CustomCSVDialect, REQUESTdata, REQUESTdatadict, REQUESTfile,
     access, calculate_db_logparams, calculate_loglinks, cdedbid_filter,
@@ -50,8 +48,7 @@ from cdedb.query import (
 from cdedb.validation import (
     LASTSCHRIFT_COMMON_FIELDS, PAST_EVENT_FIELDS, PAST_COURSE_COMMON_FIELDS,
     PERSONA_FULL_CDE_CREATION, TypeMapping, filter_none, validate_check,
-    validate_check_optional, PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
-    is_optional
+    validate_check_optional
 )
 
 MEMBERSEARCH_DEFAULTS = {

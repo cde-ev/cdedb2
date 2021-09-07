@@ -34,7 +34,7 @@ from cdedb.common import (
     CourseFilterPositions, DefaultReturnCode, EntitySorter, Error, InfiniteEnum,
     KeyFunction, LodgementsSortkeys, PartialImportError, RequestState, Sortkey,
     asciificator, deduct_years, determine_age_class, diacritic_patterns, get_hash,
-    get_localized_country_codes, glue, json_serialize, merge_dicts,
+    get_localized_country_codes, json_serialize, merge_dicts,
     mixed_existence_sorter, n_, now, unwrap, xsorted,
 )
 from cdedb.filter import (
