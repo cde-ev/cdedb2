@@ -1142,7 +1142,7 @@ class CdEBackend(AbstractBackend):
                 'id': period_id,
                 'ejection_state': persona_id,
             }
-            persona: Optional[CdEDBObject] = self.core.get_cde_user(rs, persona_id)
+            persona = self.core.get_cde_user(rs, persona_id)
             do_eject = (persona['balance'] < self.conf["MEMBERSHIP_FEE"]
                         and not persona['trial_member'])
             if do_eject:
@@ -1152,7 +1152,7 @@ class CdEBackend(AbstractBackend):
                 period_update['ejection_balance'] = \
                     period['ejection_balance'] + persona['balance']
             else:
-                persona = None
+                persona = None  # type: ignore[assignment]
             self.set_period(rs, period_update)
             return True, persona
 

@@ -1960,7 +1960,7 @@ class CdEFrontend(AbstractUserFrontend):
                     mail = self._create_mail(
                         text=f"Automated archival of persona {persona['id']} failed",
                         headers={'Subject': "Automated Archival failure",
-                                 'To': (rs.user.username,)},
+                                 'To': (rrs.user.username,)},
                         attachments=None)
                     self._send_mail(mail)
             return proceed
