@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2021-08-29 18:50+0200\n"
+"POT-Creation-Date: 2021-09-04 15:18+0000\n"
 "PO-Revision-Date: 2020-12-06 11:30+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -2802,7 +2802,7 @@ msgstr ""
 "gemeinsam anwesend sein werden (selbst, wenn man die Warteliste "
 "brücksichtigt)."
 
-#: cdedb/frontend/event_lodgement_wishes.py:384
+#: cdedb/frontend/event_lodgement_wishes.py:390
 msgid "Waitlist: "
 msgstr "Warteliste: "
 
@@ -6727,7 +6727,7 @@ msgstr ""
 "Löscht die Veranstaltung inklusive Beschreibung, Kursen und Teilnehmern."
 
 #: cdedb/frontend/templates/web/cde/show_past_event.tmpl:216
-#: cdedb/frontend/templates/web/event/show_event.tmpl:443
+#: cdedb/frontend/templates/web/event/show_event.tmpl:432
 msgid "The event will be permanently deleted."
 msgstr "Die Veranstaltung wird irreversibel gelöscht."
 
@@ -10783,9 +10783,17 @@ msgstr "Veranstaltungsteile"
 msgid "— All Parts —"
 msgstr "— Alle Teile —"
 
+#: cdedb/frontend/templates/web/event/lodgement_wishes_graph_form.tmpl:90
+msgid "All Participants"
+msgstr "Alle Teilnehmer"
+
 #: cdedb/frontend/templates/web/event/lodgement_wishes_graph_form.tmpl:91
 msgid "Include participants without wishes and not being wished"
 msgstr "Schließe Teilnehmer ein, die nicht wünschen oder gewünscht wurden"
+
+#: cdedb/frontend/templates/web/event/lodgement_wishes_graph_form.tmpl:92
+msgid "Show Lodgements"
+msgstr "Zeige Unterkünfte"
 
 #: cdedb/frontend/templates/web/event/lodgement_wishes_graph_form.tmpl:93
 msgid "Display assigned lodgements as clusters (reduces graph layout quality)"
@@ -11586,7 +11594,6 @@ msgstr "zur Initialisierung der Offline-VM"
 
 #: cdedb/frontend/templates/web/event/show_event.tmpl:264
 #: cdedb/frontend/templates/web/event/show_event.tmpl:267
-#: cdedb/frontend/templates/web/event/show_event.tmpl:447
 msgid "Are you sure to download a full export before locking?"
 msgstr ""
 "Bist du sicher, das du nicht zuerst die Veranstaltung sperren möchtest?"
@@ -11692,7 +11699,7 @@ msgstr ""
 msgid "The event will be permanently archived."
 msgstr "Die Veranstaltung wird irreversibel archiviert."
 
-#: cdedb/frontend/templates/web/event/show_event.tmpl:435
+#: cdedb/frontend/templates/web/event/show_event.tmpl:439
 msgid ""
 "Deletes the event, including all course and participant information. This "
 "should usually not be done before the event has been archived and fully "

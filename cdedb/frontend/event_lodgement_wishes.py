@@ -279,8 +279,13 @@ def create_lodgement_wishes_graph(
     graph = graphviz.Digraph(
         engine=('fdp' if cluster_by_lodgement_in_part else 'neato'),
         graph_attr={'overlap': "false", 'splines': 'line', 'maxiter': "8000",
-                    'sep': "+8", 'tooltip': " "},
-        node_attr={'fontname': "sans-serif", 'style': "filled"})
+                    'sep': "+6", 'tooltip': " ", 'scale': "5",
+                    'fontsize': "10pt",
+                    'fontname': 'Helvetica Neue,Helvetica,Arial,sans-serif'},
+        edge_attr={'arrowsize': "0.6"},
+        node_attr={'style': "filled", 'fontsize': "7pt",
+                   'fontname': 'Helvetica Neue,Helvetica,Arial,sans-serif',
+                   'margin': "0.02,0.02", 'height': "0.25"})
     # Only the 'fdp' layout algorithm supports subgraphs, but 'neato' gives
     # slightly better layout results. Thus, we select the layout algorithm
     # dynamically based on the `cluster_by_lodgement_in_part` parameter.
