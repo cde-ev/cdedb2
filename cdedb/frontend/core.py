@@ -1551,12 +1551,13 @@ class CoreFrontend(AbstractFrontend):
         code = self.coreproxy.change_persona_realms(rs, data, change_note)
         self.notify_return_code(rs, code)
         if code > 0 and target_realm == "cde":
+            persona = self.coreproxy.get_persona(rs, persona_id)
             meta_info = self.coreproxy.get_meta_info(rs)
             self.do_mail(rs, "welcome",
                          {'To': (persona['username'],),
                           'Subject': "Aufnahme in den CdE",
                           },
-                         {'data': data,
+                         {'data': persona,
                           'fee': self.conf['MEMBERSHIP_FEE'],
                           'email': "",
                           'cookie': "",
