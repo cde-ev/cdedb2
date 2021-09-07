@@ -1172,7 +1172,7 @@ def _batch_admission_entry(
     val: Any, argname: str = None, **kwargs: Any
 ) -> BatchAdmissionEntry:
     val = _mapping(val, argname, **kwargs)
-    mandatory_fields = {
+    mandatory_fields: Dict[str, Any] = {
         'resolution': LineResolutions,
         'doppelganger_id': Optional[int],
         'pevent_id': Optional[int],
@@ -1748,7 +1748,7 @@ def _lastschrift(
 def _money_transfer_entry(val: Any, argname: str = "money_transfer_entry",
                        **kwargs: Any) -> MoneyTransferEntry:
     val = _mapping(val, argname, **kwargs)
-    mandatory_fields = {
+    mandatory_fields: Dict[str, Any] = {
         'persona_id': int,
         'amount': decimal.Decimal,
         'note': Optional[str],
@@ -1844,13 +1844,13 @@ def _lastschrift_transaction_entry(
         val: Any, argname: str = "lastschrift_transaction_entry",
         **kwargs: Any) -> LastschriftTransactionEntry:
     val = _mapping(val, argname, **kwargs)
-    mandatory_fields = {
+    mandatory_fields: Dict[str, Any] = {
         'transaction_id': int,
         'tally': Optional[decimal.Decimal],
         'status': const.LastschriftTransactionStati,
     }
     optional_fields: TypeMapping = {}
-    return MoneyTransferEntry(_examine_dictionary_fields(
+    return LastschriftTransactionEntry(_examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs))
 
 
@@ -2797,7 +2797,7 @@ def _event_associated_fields(
 def _fee_booking_entry(val: Any, argname: str = "fee_booking_entry",
                        **kwargs: Any) -> FeeBookingEntry:
     val = _mapping(val, argname, **kwargs)
-    mandatory_fields = {
+    mandatory_fields: Dict[str, Any] = {
         'registration_id': int,
         'date': Optional[datetime.date],
         'original_date': datetime.date,

@@ -146,9 +146,9 @@ def batchify(function: Callable[..., T],
 
 
 def read_conditional_write_composer(
-        reader: Callable[..., int], writer: Callable[..., T],
+        reader: Callable[..., Any], writer: Callable[..., int],
         id_param_name: str = "anid", datum_param_name: str = "data",
-        id_key_name: str = "id",) -> Callable[..., T]:
+        id_key_name: str = "id",) -> Callable[..., int]:
     """This takes two functions and returns a combined version.
 
     The overall semantics are similar to the writer. However the write is
