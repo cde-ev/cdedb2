@@ -2086,6 +2086,7 @@ class TestCoreFrontend(FrontendTest):
         f['target_realm'] = "assembly"
         self.submit(f)
         f = self.response.forms['promotionform']
+        f['change_note'] = promotion_change_note = "trivial promotion"
         self.submit(f)
         logs.append((1011, const.CoreLogCodes.realm_change))
 
@@ -2106,6 +2107,6 @@ class TestCoreFrontend(FrontendTest):
                       const.CoreLogCodes.realm_change.value,
                       const.CoreLogCodes.username_change.value]
         self.submit(f)
-        self.assertPresence("Bereiche geändert.")
+        self.assertPresence(promotion_change_note)
         self.assertPresence("zelda@example.cde")
         self.assertPresence("bertalotta@example.cde")
