@@ -2585,13 +2585,15 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("vera")
     def test_postal_address(self) -> None:
-        fake_rs = types.SimpleNamespace()
-        fake_rs.default_gettext = self.gettext
+        frs = types.SimpleNamespace()
+        frs.default_gettext = self.translator.gettext
         persona_id = None
         while persona_id := self.core.next_persona(self.key, persona_id,
                                                    is_member=None, is_archived=False):
             persona = self.core.get_total_persona(self.key, persona_id)
             if persona['country']:
-                a = make_postal_address(fake_rs, persona)
-                self.assertNotIn(persona['country'], a)
-                self.assertIn(self.gettext(f"CountryCodes.{persona['country']}"), a)
+                address = make_postal_address(frs, persona)  # type: ignore[arg-type]
+                self.assertNotIn(persona['country'], address)
+                self.assertIn(
+                    self.translator.gettext(f"CountryCodes.{persona['country']}"),
+                    address)
