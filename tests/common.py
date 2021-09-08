@@ -324,6 +324,7 @@ class BackendTest(CdEDBTest):
     pastevent: ClassVar[PastEventBackend]
     ml: ClassVar[MlBackend]
     assembly: ClassVar[AssemblyBackend]
+    gettext: Callable[[str], str]
     user: UserObject
     key: RequestState
 
@@ -340,6 +341,10 @@ class BackendTest(CdEDBTest):
         # Workaround to make orga info available for calls into the MLBackend.
         cls.ml.orga_info = lambda rs, persona_id: cls.event.orga_info(  # type: ignore
             rs.sessionkey, persona_id)
+        translator = gettext.translation(
+            'cdedb', languages=['de'],
+            localedir=str(cls.conf["REPOSITORY_PATH"] / 'i18n'))
+        cls.gettext = translator.gettext
 
     def setUp(self) -> None:
         """Reset login state."""
