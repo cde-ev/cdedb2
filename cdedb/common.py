@@ -643,7 +643,7 @@ class EntitySorter:
     @staticmethod
     def get_attachment_sorter(histories: CdEDBObject) -> KeyFunction:
         def attachment(attachment: CdEDBObject) -> Sortkey:
-            attachment = histories[attachment['id']][attachment['current_version']]
+            attachment = histories[attachment['id']][attachment['latest_version']]
             return (attachment['title'], attachment['attachment_id'])
 
         return attachment

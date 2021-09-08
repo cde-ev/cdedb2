@@ -657,7 +657,7 @@ class TestAssemblyBackend(BackendTest):
             "assembly_id": assembly_id,
             "ballot_ids": None,
             "num_versions": 1,
-            "current_version_nr": 1,
+            "latest_version_nr": 1,
         }
         self.assertEqual(
             expectation, self.assembly.get_attachment(self.key, attachment_id=new_id))
@@ -667,7 +667,7 @@ class TestAssemblyBackend(BackendTest):
             "assembly_id": assembly_id,
             "ballot_ids": [ballot_id],
             'num_versions': 1,
-            'current_version_nr': 1,
+            'latest_version_nr': 1,
         }
         self.assertEqual(expectation, self.assembly.get_attachment(self.key, new_id))
         with self.assertRaises(ValueError):
@@ -721,7 +721,7 @@ class TestAssemblyBackend(BackendTest):
             "assembly_id": assembly_id,
             "ballot_ids": [ballot_id],
             "num_versions": 2,
-            "current_version_nr": 2,
+            "latest_version_nr": 2,
         }
         self.assertEqual(
             expectation, self.assembly.get_attachment(self.key, attachment_id=new_id))
@@ -758,7 +758,7 @@ class TestAssemblyBackend(BackendTest):
         history_expectation[3]['file_hash'] = get_hash(b'12345')
         self.assertEqual(
             history_expectation, self.assembly.get_attachment_versions(
-                self.key, new_id, current_version_only=False))
+                self.key, new_id, latest_version_only=False))
         with self.assertRaises(ValueError):
             self.assembly.delete_attachment(self.key, new_id)
 
@@ -814,21 +814,21 @@ class TestAssemblyBackend(BackendTest):
                 'ballot_ids': [ballot_id],
                 'id': 1001,
                 'num_versions': 1,
-                'current_version_nr': 2,
+                'latest_version_nr': 2,
             },
             1002: {
                 'assembly_id': assembly_id,
                 'ballot_ids': None,
                 'id': 1002,
                 'num_versions': 1,
-                'current_version_nr': 1,
+                'latest_version_nr': 1,
            },
             1003: {
                 'assembly_id': assembly_id,
                 'ballot_ids': None,
                 'id': 1003,
                 'num_versions': 1,
-                'current_version_nr': 1,
+                'latest_version_nr': 1,
             },
         }
         self.assertEqual(
@@ -836,7 +836,7 @@ class TestAssemblyBackend(BackendTest):
         self.assertEqual(
             history_expectation,
             self.assembly.get_attachments_versions(
-                self.key, (1001, 1002, 1003), current_version_only=False))
+                self.key, (1001, 1002, 1003), latest_version_only=False))
         history_expectation = {
             1001: {
                 2: {
@@ -880,7 +880,7 @@ class TestAssemblyBackend(BackendTest):
         }
         self.assertEqual(
             history_expectation, self.assembly.get_attachments_versions(
-                self.key, (1001, 1002, 1003), current_version_only=True))
+                self.key, (1001, 1002, 1003), latest_version_only=True))
         self.assertTrue(self.assembly.delete_attachment(self.key, 1003, {"versions"}))
         del expectation[1003]
         self.assertEqual(

@@ -1628,7 +1628,7 @@ class AssemblyBackend(AbstractBackend):
                 "Must have privileged access to delete attachment."))
 
         versions = self.get_attachment_versions(
-            rs, attachment_id, current_version_only=False)
+            rs, attachment_id, latest_version_only=False)
         if versions:
             blockers["versions"] = list(versions)
 
@@ -1760,7 +1760,7 @@ class AssemblyBackend(AbstractBackend):
                 {'attachment_id': attachment_id, 'ballot_id': ballot_id},
                 drop_on_conflict=True)
             if ret:
-                version = self.get_current_attachment_version(rs, attachment_id)
+                version = self.get_latest_attachment_version(rs, attachment_id)
                 ballot = self.get_ballot(rs, ballot_id)
                 self.assembly_log(
                     rs, const.AssemblyLogCodes.attachment_ballot_link_created,
@@ -1790,7 +1790,7 @@ class AssemblyBackend(AbstractBackend):
                      " WHERE attachment_id = %s AND ballot_id = %s")
             ret = self.query_exec(rs, query, (attachment_id, ballot_id))
             if ret:
-                version = self.get_current_attachment_version(rs, attachment_id)
+                version = self.get_latest_attachment_version(rs, attachment_id)
                 ballot = self.get_ballot(rs, ballot_id)
                 self.assembly_log(
                     rs, const.AssemblyLogCodes.attachment_ballot_link_deleted,
@@ -1837,7 +1837,7 @@ class AssemblyBackend(AbstractBackend):
     @access("assembly")
     def get_attachments_versions(self, rs: RequestState,
                                  attachment_ids: Collection[int],
-                                 *, current_version_only: bool = False,
+                                 *, latest_version_only: bool = False,
                                  include_deleted: bool = False,
                                  ) -> Dict[int, CdEDBObjectMap]:
         """Retrieve all version information for given attachments."""
@@ -1846,7 +1846,7 @@ class AssemblyBackend(AbstractBackend):
         with Atomizer(rs):
             if not self.may_access_attachments(rs, attachment_ids):
                 raise PrivilegeError(n_("Not privileged."))
-            if current_version_only:
+            if latest_version_only:
                 q = f"""SELECT *
                     FROM (
                         SELECT attachment_id, MAX(version_nr) AS version_nr
@@ -1876,7 +1876,7 @@ class AssemblyBackend(AbstractBackend):
         get_attachments_versions, "attachment_ids", "attachment_id")
 
     @access("assembly")
-    def get_current_attachments_version(
+    def get_latest_attachments_version(
             self, rs: RequestState,
             attachment_ids: Collection[int],
             include_deleted: bool = False) -> CdEDBObjectMap:
@@ -1887,16 +1887,16 @@ class AssemblyBackend(AbstractBackend):
         """
         attachment_ids = affirm_set(vtypes.ID, attachment_ids)
         attachments_versions = self.get_attachments_versions(
-            rs, attachment_ids, current_version_only=True,
+            rs, attachment_ids, latest_version_only=True,
             include_deleted=include_deleted)
         return {attachment_id: unwrap(version)
                 for attachment_id, version in attachments_versions.items()}
 
-    class _GetCurrentVersionProtocol(Protocol):
+    class _GetLatestVersionProtocol(Protocol):
         def __call__(self, rs: RequestState, attachment_id: int,
                      include_deleted: bool = False) -> CdEDBObject: ...
-    get_current_attachment_version: _GetCurrentVersionProtocol = singularize(
-        get_current_attachments_version, "attachment_ids", "attachment_id")
+    get_latest_attachment_version: _GetLatestVersionProtocol = singularize(
+        get_latest_attachments_version, "attachment_ids", "attachment_id")
 
     @access("assembly")
     def get_definitive_attachments_version(
@@ -1904,10 +1904,10 @@ class AssemblyBackend(AbstractBackend):
         """Get the definitive version of all attachments for a given ballot.
 
         The definitive version of an attachment depends on the context in which the
-        attachment is viewed – specifically the ballot. This contrasts to the current
+        attachment is viewed – specifically the ballot. This contrasts to the latest
         attachment version, which is independent of context.
 
-        Before the voting phase of the ballot has started, the current attachment
+        Before the voting phase of the ballot has started, the latest attachment
         version is the definitive version of this attachment for this ballot.
 
         After the voting phase had started, the last attachment version which was
@@ -1922,7 +1922,7 @@ class AssemblyBackend(AbstractBackend):
             # TODO this is more complex
             return {}
         else:
-            return self.get_current_attachments_version(rs, attachment_ids)
+            return self.get_latest_attachments_version(rs, attachment_ids)
 
     @access("assembly")
     def add_attachment_version(self, rs: RequestState, data: CdEDBObject,
@@ -1936,9 +1936,9 @@ class AssemblyBackend(AbstractBackend):
                 raise ValueError(n_(
                     "Unable to change attachment once voting has begun or the "
                     "assembly has been concluded."))
-            current_version = self.get_current_attachment_version(
+            latest_version = self.get_latest_attachment_version(
                 rs, attachment_id, include_deleted=True)
-            version_nr = current_version["version_nr"] + 1
+            version_nr = latest_version["version_nr"] + 1
             data['version_nr'] = version_nr
             data['file_hash'] = get_hash(content)
             ret = self.sql_insert(rs, "assembly.attachment_versions", data)
@@ -1971,7 +1971,7 @@ class AssemblyBackend(AbstractBackend):
                     "Unable to change attachment once voting has begun or the "
                     "assembly has been concluded."))
             versions = self.get_attachment_versions(
-                rs, attachment_id, current_version_only=False)
+                rs, attachment_id, latest_version_only=False)
             if version_nr not in versions:
                 raise ValueError(n_("This version does not exist."))
             if versions[version_nr]['dtime']:
@@ -2012,8 +2012,8 @@ class AssemblyBackend(AbstractBackend):
             raise PrivilegeError(n_("Not privileged."))
         version_nr = affirm_optional(vtypes.ID, version_nr)
         if version_nr is None:
-            current_version = self.get_current_attachment_version(rs, attachment_id)
-            version_nr = current_version["version_nr"]
+            latest_version = self.get_latest_attachment_version(rs, attachment_id)
+            version_nr = latest_version["version_nr"]
         path = self.attachment_base_path / f"{attachment_id}_v{version_nr}"
         if path.exists():
             with open(path, "rb") as f:
@@ -2052,7 +2052,7 @@ class AssemblyBackend(AbstractBackend):
         attachment_ids = affirm_set(vtypes.ID, attachment_ids)
         query = f"""SELECT
                 {', '.join(ASSEMBLY_ATTACHMENT_FIELDS +
-                           ('num_versions', 'current_version_nr', 'ballot_ids'))}
+                           ('num_versions', 'latest_version_nr', 'ballot_ids'))}
             FROM (
                 (
                     SELECT {', '.join(ASSEMBLY_ATTACHMENT_FIELDS)}
@@ -2062,7 +2062,7 @@ class AssemblyBackend(AbstractBackend):
                 LEFT OUTER JOIN (
                     SELECT
                         attachment_id, COUNT(version_nr) as num_versions,
-                        MAX(version_nr) as current_version_nr
+                        MAX(version_nr) as latest_version_nr
                     FROM assembly.attachment_versions
                     WHERE dtime IS NULL
                     GROUP BY attachment_id

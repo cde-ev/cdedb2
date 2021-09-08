@@ -10,7 +10,7 @@
 
 {% block title %}
     {% trans title=ambience['assembly']['title'] %}Add Version ({{ title }}){% endtrans %}
-        – {{ assembly_util.small_attachment_title(current_version, icon=False) }}
+        – {{ assembly_util.small_attachment_title(latest_version, icon=False) }}
 {% endblock %}
 
 {% block heading %}
@@ -18,7 +18,7 @@
         {% trans %}Add Version{% endtrans %}
         <small>
             {{- util.make_icon('bullhorn', arialabel=gettext("Assembly")) }} {{ ambience['assembly']['title'] -}}
-            {{ assembly_util.small_attachment_title(current_version) }}
+            {{ assembly_util.small_attachment_title(latest_version) }}
         </small>
     </h1>
 {% endblock %}
@@ -27,7 +27,7 @@
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
     {{ util.breadcrumb_link(cdedblink("assembly/list_attachments"), gettext("Attachment Overview")) }}
-    {{ util.breadcrumb_link("", assembly_util.small_attachment_title(current_version, icon=False), icon='file', active=True) }}
+    {{ util.breadcrumb_link("", assembly_util.small_attachment_title(latest_version, icon=False), icon='file', active=True) }}
     {{ util.breadcrumb_link(cdedblink("assembly/add_attachment"), gettext("Add Version"), active=True) }}
 {% endblock %}
 

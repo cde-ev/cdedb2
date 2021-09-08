@@ -183,15 +183,15 @@
                                                    'version_nr': definitive_version["version_nr"]}),
                                         definitive_version["title"]|string + " " + gettext("(Version %(version)s)")|format(version=definitive_version["version_nr"]),
                                         icon="file") }}
-                                    {% if current_versions[attachment_id] != definitive_version %}
-                                        {% set current_version = current_versions[attachment_id] %}
+                                    {% if latest_versions[attachment_id] != definitive_version %}
+                                        {% set latest_version = latest_versions[attachment_id] %}
                                         <ul>
                                             <li>
                                                 {{ util.href(
                                                     cdedblink("assembly/get_attachment_version",
                                                               {'attachment_id': attachment_id,
-                                                               'version_nr': current_version["version_nr"]}),
-                                                    current_version["title"]|string + " " + gettext("(Version %(version)s)")|format(version=current_version["version_nr"]),
+                                                               'version_nr': latest_version["version_nr"]}),
+                                                    latest_version["title"]|string + " " + gettext("(Version %(version)s)")|format(version=latest_version["version_nr"]),
                                                     icon="file") }}
                                             </li>
                                         </ul>

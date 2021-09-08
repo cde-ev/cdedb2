@@ -30,18 +30,18 @@
         <ul class="slim" id="attachments">
             {% for attachment_id, attachment in attachments.items() %}
                 {% set attachment_versions = attachments_versions[attachment_id] %}
-                {% set current_version = attachment_versions[attachment["current_version_nr"]] %}
+                {% set latest_version = attachment_versions[attachment["latest_version_nr"]] %}
                 <li>
                     <div class="p" id="attachment_container_{{ attachment_id }}">
                         {{ assembly_util.print_attachment_version(
-                                current_version,
+                                latest_version,
                                 add=are_attachment_versions_creatable[attachment_id],
                                 delete=are_attachment_versions_deletable[attachment_id],
                                 delete_attachment=are_attachments_deletable[attachment_id]) }}
                         {% if attachment_versions|length > 1 %}
                             <ul>
                                 {% for version_nr, version in attachment_versions|keydictsort(EntitySorter.attachment_version)|reverse %}
-                                    {% if version_nr != current_version['version_nr'] %}
+                                    {% if version_nr != latest_version['version_nr'] %}
                                         <li>
                                             {{ assembly_util.print_attachment_version(
                                                     version,

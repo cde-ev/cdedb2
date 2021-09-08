@@ -188,7 +188,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         attachment_ids = self.assemblyproxy.list_attachments(
             rs, assembly_id=assembly_id)
-        attachments_version = self.assemblyproxy.get_current_attachments_version(
+        attachments_version = self.assemblyproxy.get_latest_attachments_version(
             rs, attachment_ids)
         attends = self.assemblyproxy.does_attend(rs, assembly_id=assembly_id)
         presiders = self.coreproxy.get_personas(
@@ -702,7 +702,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         # Access checking is done inside get_attachment_version
         return self.get_attachment_version(
             rs, assembly_id=assembly_id, attachment_id=attachment_id,
-            version_nr=attachment["current_version_nr"])
+            version_nr=attachment["latest_version_nr"])
 
     @access("assembly")
     @REQUESTdata("version_nr")
@@ -796,12 +796,12 @@ class AssemblyFrontend(AbstractUserFrontend):
         if attachment['assembly_id'] != assembly_id:
             rs.notify("error", n_("Invalid attachment specified."))
             return self.redirect(rs, "assembly/list_attachments")
-        current_version = self.assemblyproxy.get_current_attachment_version(
+        latest_version = self.assemblyproxy.get_latest_attachment_version(
             rs, attachment_id)
         is_deletable = self.assemblyproxy.is_attachment_version_deletable(rs, attachment_id)
         return self.render(
             rs, "add_attachment_version", {
-                'current_version': current_version,
+                'latest_version': latest_version,
                 'is_deletable': is_deletable
             })
 
@@ -923,7 +923,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         # get associated attachments
         definitive_versions = self.assemblyproxy.get_definitive_attachments_version(
             rs, ballot_id)
-        current_versions = self.assemblyproxy.get_current_attachments_version(
+        latest_versions = self.assemblyproxy.get_latest_attachments_version(
             rs, definitive_versions.keys())
 
         # initial checks done, present the ballot
@@ -964,7 +964,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         next_ballot = ballots[ballot_list[i+1]] if i + 1 < length else None
 
         return self.render(rs, "show_ballot", {
-            'current_versions': current_versions,
+            'latest_versions': latest_versions,
             'definitive_versions': definitive_versions,
             'MAGIC_ABSTAIN': MAGIC_ABSTAIN,
             'ASSEMBLY_BAR_SHORTNAME': ASSEMBLY_BAR_SHORTNAME,
@@ -1275,15 +1275,15 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.redirect(rs, "assembly/show_ballot")
         attachment_ids = self.assemblyproxy.list_attachments(
             rs, assembly_id=assembly_id)
-        attachment_versions = self.assemblyproxy.get_current_attachments_version(
+        attachment_versions = self.assemblyproxy.get_latest_attachments_version(
             rs, attachment_ids)
         attachment_entries = [(attachment_id, version["title"]) for attachment_id, version in attachment_versions.items()]
 
         # add the current attachment to the values dict, since they are no part of them
         # by default
-        current_attachments = self.assemblyproxy.list_attachments(
+        latest_attachments = self.assemblyproxy.list_attachments(
             rs, ballot_id=ballot_id)
-        rs.values["linked_attachments"] = list(current_attachments)
+        rs.values["linked_attachments"] = list(latest_attachments)
         merge_dicts(rs.values, rs.ambience['ballot'])
 
         return self.render(rs, "change_ballot", {
