@@ -921,8 +921,10 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.redirect(rs, "assembly/show_ballot")
 
         # get associated attachments
-        attachments_versions = self.assemblyproxy.get_attachments_versions_of_interest(
+        definitive_versions = self.assemblyproxy.get_definitive_attachments_version(
             rs, ballot_id)
+        current_versions = self.assemblyproxy.get_current_attachments_version(
+            rs, definitive_versions.keys())
 
         # initial checks done, present the ballot
         ballot['is_voting'] = self.assemblyproxy.is_ballot_voting(rs, ballot_id)
@@ -962,7 +964,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         next_ballot = ballots[ballot_list[i+1]] if i + 1 < length else None
 
         return self.render(rs, "show_ballot", {
-            'attachments_versions': attachments_versions,
+            'current_versions': current_versions,
+            'definitive_versions': definitive_versions,
             'MAGIC_ABSTAIN': MAGIC_ABSTAIN,
             'ASSEMBLY_BAR_SHORTNAME': ASSEMBLY_BAR_SHORTNAME,
             'attends': attends,

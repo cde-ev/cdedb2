@@ -1883,7 +1883,7 @@ class AssemblyBackend(AbstractBackend):
         """Get the most recent version for the given attachments.
 
         This is independent from the context in which the attachment is viewed, in
-        contrast to 'get_attachments_versions_of_interest'.
+        contrast to 'get_definitive_attachments_version'.
         """
         attachment_ids = affirm_set(vtypes.ID, attachment_ids)
         attachments_versions = self.get_attachments_versions(
@@ -1899,25 +1899,22 @@ class AssemblyBackend(AbstractBackend):
         get_current_attachments_version, "attachment_ids", "attachment_id")
 
     @access("assembly")
-    def get_attachments_versions_of_interest(
-            self, rs: RequestState, ballot_id: int) -> Dict[int, CdEDBObjectMap]:
-        """Get all versions of interest of all attachments for a given ballot.
+    def get_definitive_attachments_version(
+            self, rs: RequestState, ballot_id: int) -> CdEDBObjectMap:
+        """Get the definitive version of all attachments for a given ballot.
 
-        The versions of interests of an attachment are dependend of the context,
-        specifically the ballot. This contrasts to the current attachment version, which
-        is independent of context.
+        The definitive version of an attachment depends on the context in which the
+        attachment is viewed – specifically the ballot. This contrasts to the current
+        attachment version, which is independent of context.
 
         Before the voting phase of the ballot has started, the current attachment
-        version is the only version of interest of this attachment for this ballot.
+        version is the definitive version of this attachment for this ballot.
 
-        After the voting phase had started,
-         * the last attachment version which was uploaded before the voting phase
-           started and
-         * each attachment version which was uploaded after the voting phase started and
-           before it ended
-        are versions of interest of this attachment for this ballot.
+        After the voting phase had started, the last attachment version which was
+        uploaded before the voting phase started is the definitve version of this
+        attachment for this ballot.
 
-        :returns: Dict[attachment_id: Dict[version_nr: version]]
+        :returns: Dict[attachment_id: version]
         """
         ballot_id = affirm(vtypes.ID, ballot_id)
         attachment_ids = self.list_attachments(rs, ballot_id=ballot_id)
@@ -1925,8 +1922,7 @@ class AssemblyBackend(AbstractBackend):
             # TODO this is more complex
             return {}
         else:
-            return self.get_attachments_versions(
-                rs, attachment_ids, current_version_only=True)
+            return self.get_current_attachments_version(rs, attachment_ids)
 
     @access("assembly")
     def add_attachment_version(self, rs: RequestState, data: CdEDBObject,

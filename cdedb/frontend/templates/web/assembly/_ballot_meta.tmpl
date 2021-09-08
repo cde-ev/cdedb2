@@ -169,20 +169,35 @@
     {% call util.bootstrap_panel(title=gettext("Files"), icon='file', aclass="panel-default panel-condensed mosp") %}
         <div class="row">
             {# TODO sorting #}
-            {% for slice in attachments_versions.items()|slice(2) if attachments_versions %}
+            {% for slice in definitive_versions.items()|slice(2) if definitive_versions %}
                 <div class="col-sm-6">
                     <ul class="slim" id="attachments-{{ "ballot-{}".format(ambience['ballot']['id'])}}">
                         {# TODO sorting #}
-                        {% for attachment_id, attachment_versions in slice %}
-                            {% for version_nr, version in attachment_versions.items() %}
-                                <li class="hide-hover-container clearfix-after" id="attachment{{ attachment_id }}">
+                        {% for attachment_id, definitive_version in slice %}
+                            <li class="hide-hover-container clearfix-after" id="attachment{{ attachment_id }}">
+                                <div class="p">
+                                    {# TODO move in helper makro #}
                                     {{ util.href(
                                         cdedblink("assembly/get_attachment_version",
-                                                  {'attachment_id': attachment_id, 'version_nr': version_nr}),
-                                        version["title"]|string + " " + gettext("(Version %(version)s)")|format(version=version_nr),
+                                                  {'attachment_id': attachment_id,
+                                                   'version_nr': definitive_version["version_nr"]}),
+                                        definitive_version["title"]|string + " " + gettext("(Version %(version)s)")|format(version=definitive_version["version_nr"]),
                                         icon="file") }}
-                                </li>
-                            {% endfor %}
+                                    {% if current_versions[attachment_id] != definitive_version %}
+                                        {% set current_version = current_versions[attachment_id] %}
+                                        <ul>
+                                            <li>
+                                                {{ util.href(
+                                                    cdedblink("assembly/get_attachment_version",
+                                                              {'attachment_id': attachment_id,
+                                                               'version_nr': current_version["version_nr"]}),
+                                                    current_version["title"]|string + " " + gettext("(Version %(version)s)")|format(version=current_version["version_nr"]),
+                                                    icon="file") }}
+                                            </li>
+                                        </ul>
+                                    {% endif %}
+                                </div>
+                            </li>
                         {% endfor %}
                     </ul>
                 </div>
