@@ -70,14 +70,22 @@ class AssemblyBackend(AbstractBackend):
         return super().is_admin(rs)
 
     @access("assembly")
-    def is_assembly_locked(self, rs: RequestState, assembly_id: int) -> bool:
-        """Helper to check, whether an assembly may be modified.
+    def are_assemblies_locked(self, rs: RequestState,
+                              assembly_ids: Collection[vtypes.ID]) -> bool:
+        """Helper to check, whether all assemblies may be modified.
 
-        :returns: True if the assembly may not be edited, False otherwise.
+        :returns: True if any assembly may not be modified, False otherwise.
         """
-        assembly_id = affirm(vtypes.ID, assembly_id)
-        assembly = self.get_assembly(rs, assembly_id)
-        return not assembly["is_active"]
+        assembly_ids = affirm_set(vtypes.ID, assembly_ids)
+        q = "SELECT id FROM assembly.assemblies WHERE id = ANY(%s) AND is_active IS FALSE"
+        params = (assembly_ids, )
+        return bool(self.query_all(rs, q, params))
+
+    class _IsAssemblyLockedProtokol(Protocol):
+        def __call__(self, rs: RequestState, anid: int) -> CdEDBObject: ...
+
+    is_assembly_locked: _IsAssemblyLockedProtokol = singularize(
+        are_assemblies_locked, "assembly_ids", "assembly_id", passthrough=True)
 
     @access("persona")
     def presider_infos(self, rs: RequestState, persona_ids: Collection[int]
@@ -762,15 +770,6 @@ class AssemblyBackend(AbstractBackend):
         return {e['id']: e['title'] for e in data}
 
     @access("assembly")
-    def is_ballot_locked(self, rs: RequestState, ballot_id: int) -> bool:
-        """Helper to check, whether a ballot may be modified.
-
-        :returns: True if the ballot may not be edited, False otherwise.
-        """
-        ballot_id = affirm(vtypes.ID, ballot_id)
-        return self.are_ballots_locked(rs, (ballot_id,))
-
-    @access("assembly")
     def are_ballots_locked(self, rs: RequestState, ballot_ids: Collection[int]
                            ) -> bool:
         """Helper to check whether the given ballots may all be modified.
@@ -782,14 +781,10 @@ class AssemblyBackend(AbstractBackend):
         params = (ballot_ids, now())
         return bool(self.query_all(rs, q, params))
 
-    @access("assembly")
-    def is_ballot_voting(self, rs: RequestState, ballot_id: int) -> bool:
-        """Helper to check, whether a ballot is open for voting.
-
-        :returns: True if the ballot is open for voting, False otherwise.
-        """
-        ballot_id = affirm(vtypes.ID, ballot_id)
-        return self.are_ballots_voting(rs, (ballot_id,))
+    class _IsBallotLockedProtokol(Protocol):
+        def __call__(self, rs: RequestState, anid: int) -> CdEDBObject: ...
+    is_ballot_locked: _IsBallotLockedProtokol = singularize(
+        are_ballots_locked, "ballot_ids", "ballot_id", passthrough=True)
 
     @access("assembly")
     def are_ballots_voting(self, rs: RequestState, ballot_ids: Collection[int]) -> bool:
@@ -805,6 +800,11 @@ class AssemblyBackend(AbstractBackend):
         reference_time = now()
         params = (ballot_ids, reference_time, reference_time, reference_time)
         return bool(self.query_all(rs, q, params))
+
+    class _IsBallotVotingProtokol(Protocol):
+        def __call__(self, rs: RequestState, anid: int) -> CdEDBObject: ...
+    is_ballot_voting: _IsBallotVotingProtokol = singularize(
+        are_ballots_voting, "ballot_ids", "ballot_id", passthrough=True)
 
     @access("assembly")
     def get_ballots(self, rs: RequestState, ballot_ids: Collection[int]
@@ -1696,24 +1696,36 @@ class AssemblyBackend(AbstractBackend):
         return ret
 
     @access("assembly")
-    def is_attachment_ballot_link_creatable(self, rs: RequestState,
-                                            attachment_id: vtypes.ID,
-                                            ballot_id: vtypes.ID) -> bool:
+    def are_attachment_ballot_links_creatable(self, rs: RequestState,
+                                              attachment_id: vtypes.ID,
+                                              ballot_ids: Collection[vtypes.ID]) -> bool:
         """An attachment_ballot_link may be created if the ballot it links to is before
         its voting phase."""
         attachment_id = affirm(vtypes.ID, attachment_id)
-        ballot_id = affirm(vtypes.ID, ballot_id)
-        return not self.is_ballot_locked(rs, ballot_id)
+        ballot_ids = affirm_set(vtypes.ID, ballot_ids)
+        return not self.are_ballots_locked(rs, ballot_ids)
+
+    class _IsAttachmentBallotLinkCreatableProtocol(Protocol):
+        def __call__(self, rs: RequestState, anid: int) -> CdEDBObject: ...
+
+    is_attachment_ballot_link_creatable: _IsAttachmentBallotLinkCreatableProtocol = singularize(
+        are_attachment_ballot_links_creatable, "ballot_ids", "ballot_id", passthrough=True)
 
     @access("assembly")
-    def is_attachment_ballot_link_deletable(self, rs: RequestState,
-                                            attachment_id: vtypes.ID,
-                                            ballot_id: vtypes.ID) -> bool:
+    def are_attachment_ballot_links_deletable(self, rs: RequestState,
+                                              attachment_id: vtypes.ID,
+                                              ballot_ids: Collection[vtypes.ID]) -> bool:
         """An attachment_ballot_link can only be deleted if the ballot it links to is
         before its voting phase."""
         attachment_id = affirm(vtypes.ID, attachment_id)
-        ballot_id = affirm(vtypes.ID, ballot_id)
-        return not self.is_ballot_locked(rs, ballot_id)
+        ballot_ids = affirm_set(vtypes.ID, ballot_ids)
+        return not self.are_ballots_locked(rs, ballot_ids)
+
+    class _IsAttachmentBallotLinkDeletableProtocol(Protocol):
+        def __call__(self, rs: RequestState, anid: int) -> CdEDBObject: ...
+
+    is_attachment_ballot_link_deletable: _IsAttachmentBallotLinkDeletableProtocol = singularize(
+        are_attachment_ballot_links_deletable, "ballot_ids", "ballot_id", passthrough=True)
 
     @access("assembly")
     def get_attachment_ballots(self, rs: RequestState, attachment_id: vtypes.ID
@@ -1787,24 +1799,40 @@ class AssemblyBackend(AbstractBackend):
             return ret
 
     @access("assembly")
-    def is_attachment_version_creatable(self, rs: RequestState, attachment_id: vtypes.ID) -> bool:
+    def are_attachment_versions_creatable(self, rs: RequestState,
+                                          attachment_ids: Collection[vtypes.ID]) -> bool:
         """An attachment_version may be created at any time during an assembly."""
-        attachment_id = affirm(vtypes.ID, attachment_id)
+        attachment_ids = affirm_set(vtypes.ID, attachment_ids)
         with Atomizer(rs):
-            assembly_id = self.get_assembly_id(rs, attachment_id=attachment_id)
-            return not self.is_assembly_locked(rs, assembly_id)
+            assembly_ids = self.get_assembly_ids(rs, attachment_ids=attachment_ids)
+            return not self.are_assemblies_locked(rs, assembly_ids)
+
+    class _IsAttachmentVersionCreatableProtocol(Protocol):
+        def __call__(self, rs: RequestState, anid: int) -> CdEDBObject: ...
+
+    is_attachment_version_creatable: _IsAttachmentVersionCreatableProtocol = singularize(
+        are_attachment_versions_creatable, "attachment_ids", "attachment_id", passthrough=True)
 
     @access("assembly")
-    def is_attachment_version_deletable(self, rs: RequestState, attachment_id: vtypes.ID) -> bool:
+    def are_attachment_versions_deletable(self, rs: RequestState,
+                                          attachment_ids: Collection[vtypes.ID]) -> bool:
         """An attachment_version must not be deleted if its attachment has at least one
         attachment_ballot_link which voting phase had started."""
-        attachment_id = affirm(vtypes.ID, attachment_id)
+        attachment_ids = affirm_set(vtypes.ID, attachment_ids)
         with Atomizer(rs):
-            assembly_id = self.get_assembly_id(rs, attachment_id=attachment_id)
-            if self.is_assembly_locked(rs, assembly_id):
+            assembly_ids = self.get_assembly_ids(rs, attachment_ids=attachment_ids)
+            if self.are_assemblies_locked(rs, assembly_ids):
                 return False
-            linked_ballots = self.get_attachment_ballots(rs, attachment_id)
+            linked_ballots: Set[vtypes.ID] = set()
+            for attachment_id in attachment_ids:
+                linked_ballots |= self.get_attachment_ballots(rs, attachment_id)
             return not self.are_ballots_locked(rs, linked_ballots)
+
+    class _IsAttachmentVersionDeletableProtocol(Protocol):
+        def __call__(self, rs: RequestState, anid: int) -> CdEDBObject: ...
+
+    is_attachment_version_deletable: _IsAttachmentVersionDeletableProtocol = singularize(
+        are_attachment_versions_deletable, "attachment_ids", "attachment_id", passthrough=True)
 
     @access("assembly")
     def is_attachment_version_changeable(self, rs: RequestState, attachment_id: vtypes.ID) -> bool:
