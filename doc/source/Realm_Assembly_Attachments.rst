@@ -36,7 +36,10 @@ An attachment_version may be created at any time during an assembly (independent
 
 Deletion
 --------
-An attachment can only be deleted if it has no attachment_ballot_link and no attachment_version.
+An attachment can only be deleted if it has:
+
+- no attachment_ballot_links or only attachment_ballot_links which may be deleted.
+- no attachment_versions.
 
 An attachment_ballot_link can only be deleted if the ballot it links to is before its voting phase.
 
@@ -44,24 +47,20 @@ An attachment_version must not be deleted if its attachment has at least one att
 
 Changing
 --------
-An attachment can not be changed.
+Attachments, attachment_ballot_links and attachment_versions can not be changed.
 
-An attachment_ballot_link can not be changed.
+Definitive Version
+------------------
 
-An attachment_version can be changed if and only if it may also be deleted.
-Only the filename, authors and title attributes of an attachment_version can be changed.
-
-Versions of interest
---------------------
-
-Each attachment_ballot_link of an attachment has 1:n versions_of_interest (voi) of this attachment (which may differ between different ballots):
+Each ballot with an existing attachment_ballot_link has exactly one definitive version of the linked attachment.
+This version may may differ between different ballots and may change during the lifetime of an ballot:
 
 Before voting phase started
-    The latest attachment_version is the only voi of the ballot.
+    The latest attachment_version is the definitive version of the ballot.
 
 After voting phase started
-    The last attachment_version which was uploaded before the voting phase started is a voi of the ballot.
-    Each attachment_version which was uploaded after the voting phase started and before it ended is a voi of the ballot.
+    The last attachment_version which was uploaded before the voting phase started is a the definitive version of the ballot.
 
-In a legal context we consider the voi with the highest version number as relevant.
+The definitive version of an attachment is the relevant one in a legal context for the given ballot.
+An attachment may get new versions after any linked ballots had started its voting phase, but they should be rare and contain only formal changes.
 It is up to the presiders of an assembly to restrict uploads and corrections of attachment_versions once a ballot started voting.
