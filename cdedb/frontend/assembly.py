@@ -469,9 +469,6 @@ class AssemblyFrontend(AbstractUserFrontend):
         are_attachment_versions_creatable = {
             attachment_id: self.assemblyproxy.is_attachment_version_creatable(rs, attachment_id)
             for attachment_id in attachment_ids}
-        are_attachment_versions_changeable = {
-            attachment_id: self.assemblyproxy.is_attachment_version_changeable(rs, attachment_id)
-            for attachment_id in attachment_ids}
         are_attachment_versions_deletable = {
             attachment_id: self.assemblyproxy.is_attachment_version_deletable(rs, attachment_id)
             for attachment_id in attachment_ids}
@@ -484,7 +481,6 @@ class AssemblyFrontend(AbstractUserFrontend):
             "attachments": attachments,
             "attachments_versions": attachments_versions,
             "are_attachment_versions_creatable": are_attachment_versions_creatable,
-            "are_attachment_versions_changeable": are_attachment_versions_changeable,
             "are_attachment_versions_deletable": are_attachment_versions_deletable,
             "are_attachments_deletable": are_attachments_deletable,
         })
@@ -802,12 +798,10 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.redirect(rs, "assembly/list_attachments")
         current_version = self.assemblyproxy.get_current_attachment_version(
             rs, attachment_id)
-        is_changeable = self.assemblyproxy.is_attachment_version_changeable(rs, attachment_id)
         is_deletable = self.assemblyproxy.is_attachment_version_deletable(rs, attachment_id)
         return self.render(
             rs, "add_attachment_version", {
                 'current_version': current_version,
-                'is_changeable': is_changeable,
                 'is_deletable': is_deletable
             })
 
@@ -830,9 +824,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             tmp = pathlib.Path(attachment.filename).parts[-1]
             filename = check(rs, vtypes.Identifier, tmp, 'filename')
         attachment = check(rs, vtypes.PDFFile, attachment, 'attachment')
-        is_changeable = self.assemblyproxy.is_attachment_version_changeable(rs, attachment_id)
         is_deletable = self.assemblyproxy.is_attachment_version_deletable(rs, attachment_id)
-        if not (is_changeable or is_deletable) and not ack_creation:
+        if not is_deletable and not ack_creation:
             rs.append_validation_error(
                 ("ack_creation", ValueError(n_("Must be checked."))))
         if rs.has_validation_errors():
@@ -854,64 +847,6 @@ class AssemblyFrontend(AbstractUserFrontend):
         data['attachment_id'] = attachment_id
         code = self.assemblyproxy.add_attachment_version(rs, data, attachment)
         self.notify_return_code(rs, code, success=n_("Attachment added."))
-        return self.redirect(rs, "assembly/list_attachments")
-
-    @access("assembly")
-    @assembly_guard
-    def change_attachment_version_form(
-            self, rs: RequestState, assembly_id: int, attachment_id: int,
-            version_nr: int) -> Response:
-        """Render form."""
-        attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
-        if attachment['assembly_id'] != assembly_id:
-            rs.notify("error", n_("Invalid attachment specified."))
-            return self.redirect(rs, "assembly/list_attachments")
-        if not self.assemblyproxy.is_attachment_version_changeable(rs, attachment_id):
-            rs.notify("error", n_("Attachment version can not be modified."))
-            return self.redirect(rs, "assembly/list_attachments")
-        versions = self.assemblyproxy.get_attachment_versions(
-            rs, attachment_id)
-        if version_nr not in versions or versions[version_nr]['dtime']:
-            rs.notify("error", "Invalid version specified.")
-            return self.redirect(rs, "assembly/list_attachments")
-        current_version = versions[version_nr]
-        merge_dicts(rs.values, current_version)
-        return self.render(rs, "change_attachment_version", {
-            "current_version": current_version
-        })
-
-    @access("assembly", modi={"POST"})
-    @assembly_guard
-    @REQUESTdata("version_nr", "title", "authors", "filename")
-    def change_attachment_version(self, rs: RequestState, assembly_id: int,
-                                  attachment_id: int, version_nr: int, title: str,
-                                  authors: Optional[str], filename: str) -> Response:
-        """Change an existing version of an attachment."""
-        if rs.has_validation_errors():
-            return self.change_attachment_link_form(
-                rs, assembly_id, attachment_id, version_nr)
-        if not self.assemblyproxy.is_attachment_version_changeable(rs, attachment_id):
-            rs.notify("error", n_("Attachment version can not be modified."))
-            return self.redirect(rs, "assembly/list_attachments")
-
-        attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
-        if attachment['assembly_id'] != assembly_id:
-            rs.notify("error", n_("Invalid attachment specified."))
-            return self.redirect(rs, "assembly/list_attachments")
-        versions = self.assemblyproxy.get_attachment_versions(rs, attachment_id)
-        if version_nr not in versions or versions[version_nr]['dtime']:
-            rs.notify("error", "Invalid version specified.")
-            return self.redirect(rs, "assembly/list_attachments")
-
-        data = {
-            'attachment_id': attachment_id,
-            'version_nr': version_nr,
-            'title': title,
-            'authors': authors,
-            'filename': filename,
-        }
-        code = self.assemblyproxy.change_attachment_version(rs, data)
-        self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/list_attachments")
 
     @access("assembly", modi={"POST"})

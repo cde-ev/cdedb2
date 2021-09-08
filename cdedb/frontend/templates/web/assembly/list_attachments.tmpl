@@ -36,7 +36,6 @@
                         {{ assembly_util.print_attachment_version(
                                 current_version,
                                 add=are_attachment_versions_creatable[attachment_id],
-                                change=are_attachment_versions_changeable[attachment_id],
                                 delete=are_attachment_versions_deletable[attachment_id],
                                 delete_attachment=are_attachments_deletable[attachment_id]) }}
                         {% if attachment_versions|length > 1 %}
@@ -47,7 +46,6 @@
                                             {{ assembly_util.print_attachment_version(
                                                     version,
                                                     add=False,
-                                                    change=are_attachment_versions_changeable[attachment_id],
                                                     delete=are_attachment_versions_deletable[attachment_id],
                                                     delete_attachment=False) }}
                                         </li>

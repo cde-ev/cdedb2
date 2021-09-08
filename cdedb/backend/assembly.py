@@ -1835,12 +1835,6 @@ class AssemblyBackend(AbstractBackend):
         are_attachment_versions_deletable, "attachment_ids", "attachment_id", passthrough=True)
 
     @access("assembly")
-    def is_attachment_version_changeable(self, rs: RequestState, attachment_id: vtypes.ID) -> bool:
-        """An attachment_version can be changed if and only if it may also be deleted.
-        """
-        return self.is_attachment_version_deletable(rs, attachment_id)
-
-    @access("assembly")
     def get_attachments_versions(self, rs: RequestState,
                                  attachment_ids: Collection[int],
                                  *, current_version_only: bool = False,
@@ -1963,33 +1957,6 @@ class AssemblyBackend(AbstractBackend):
                                         " attachment version."))
             self.assembly_log(
                 rs, const.AssemblyLogCodes.attachment_version_added,
-                assembly_id, change_note=f"{data['title']}: Version {version_nr}")
-        return ret
-
-    @access("assembly")
-    def change_attachment_version(self, rs: RequestState,
-                                  data: CdEDBObject) -> DefaultReturnCode:
-        """Alter a version of an attachment."""
-        data = affirm(vtypes.AssemblyAttachmentVersion, data)
-        attachment_id = data.pop('attachment_id')
-        version_nr = data.pop('version_nr')
-        with Atomizer(rs):
-            if not self.is_presider(rs, attachment_id=attachment_id):
-                raise PrivilegeError(n_("Must have privileged access to change"
-                                        " attachment version."))
-            if not self.is_attachment_version_changeable(rs, attachment_id):
-                raise ValueError(n_(
-                    "Unable to change attachment once voting has begun or the "
-                    "assembly has been concluded."))
-            keys = tuple(data.keys())
-            setters = ", ".join(f"{k} = %s" for k in keys)
-            query = (f"UPDATE assembly.attachment_versions SET {setters}"
-                     f" WHERE attachment_id = %s AND version_nr = %s")
-            params = tuple(data[k] for k in keys) + (attachment_id, version_nr)
-            ret = self.query_exec(rs, query, params)
-            assembly_id = self.get_assembly_id(rs, attachment_id=attachment_id)
-            self.assembly_log(
-                rs, const.AssemblyLogCodes.attachment_version_changed,
                 assembly_id, change_note=f"{data['title']}: Version {version_nr}")
         return ret
 

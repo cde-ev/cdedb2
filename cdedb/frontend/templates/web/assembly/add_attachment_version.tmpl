@@ -33,9 +33,9 @@
 
 {% block static_notifications %}
     {{ super() }}
-    {% if not (is_changeable or is_deletable) %}
+    {% if not is_deletable %}
         {% call util.notification('warning') %}
-            {% trans %}This attachment version can not be modified or deleted after it was created.{% endtrans %}
+            {% trans %}This attachment version can not be deleted after it was created.{% endtrans %}
         {% endcall %}
     {% endif %}
 {% endblock %}
@@ -48,15 +48,15 @@
         {{ util.form_input_text(name="authors", label=gettext("Authors")) }}
         {{ util.form_input_text(name="filename", label=gettext("Filename"), info=gettext("Leave empty for current filename.")) }}
         {{ util.form_input_file(name="attachment", accept="application/pdf", info=gettext("Only PDFs allowed.")) }}
-        {% if not (is_changeable or is_deletable) %}
+        {% if not is_deletable %}
             {{ util.form_input_checkbox("ack_creation", gettext("Are you sure?")) }}
         {% endif %}
         {{ util.form_input_submit(label=gettext("Upload"), cancellink=cdedblink('assembly/list_attachments')) }}
     </form>
-    {% if not (is_changeable or is_deletable) %}
+    {% if not is_deletable %}
         <script nonce="{{ csp_nonce }}">
             $('#addattachmentversionform').cdedbProtectAction(
-                "{{ gettext("This attachment version can not be modified or deleted after it was created.") }}");
+                "{{ gettext("This attachment version can not be deleted after it was created.") }}");
             $('#addattachmentversionform').find('[name="ack_creation"]').prop('checked', true).parent().hide();
         </script>
     {% endif %}
