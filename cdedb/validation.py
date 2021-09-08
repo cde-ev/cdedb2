@@ -1542,7 +1542,7 @@ def _csvfile(
     """
     val = _input_file(val, argname, **kwargs)
     mime = magic.from_buffer(val, mime=True)
-    if mime not in ("text/csv", "text/plain"):
+    if mime not in ("text/csv", "text/plain", "application/csv"):
         raise ValidationSummary(ValueError(
             argname, n_("Only text/csv allowed.")))
     val = _str(val.decode(encoding).strip(), argname, **kwargs)
