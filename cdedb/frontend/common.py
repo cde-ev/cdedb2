@@ -2073,7 +2073,7 @@ def construct_redirect(request: werkzeug.Request,
         return ret
 
 
-def make_postal_address(persona: CdEDBObject) -> List[str]:
+def make_postal_address(rs: RequestState, persona: CdEDBObject) -> List[str]:
     """Prepare address info for formatting.
 
     Addresses have some specific formatting wishes, so we are flexible
@@ -2096,7 +2096,7 @@ def make_postal_address(persona: CdEDBObject) -> List[str]:
         ret.append("{} {}".format(p['postal_code'] or '',
                                   p['location'] or ''))
     if p['country']:
-        ret.append(p['country'])
+        ret.append(rs.default_gettext(f"CountryCodes.{p['country']}"))
     return ret
 
 
