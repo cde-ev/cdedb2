@@ -24,8 +24,8 @@
 
 {% endblock %}
 {% block content %}
-    {% set edit = ambience['assembly']['is_active'] and ("assembly_presider" in user.admin_views
-                                                         or ambience['assembly']['id'] in user.presider) %}
+    {% set edit_right = ambience['assembly']['is_active'] and ("assembly_presider" in user.admin_views
+                                                               or ambience['assembly']['id'] in user.presider) %}
     {% if attachments %}
         <ul class="slim" id="attachments">
             {% for attachment_id, attachment in attachments.items() %}
@@ -60,13 +60,13 @@
             {% endfor %}
         </ul>
     {% endif %}
-    {% if not attachments and not edit %}
+    {% if not attachments and not edit_right %}
         <p class="text-muted">
             {% trans %}No attachments have been uploaded yet.{% endtrans %}
         </p>
     {% endif %}
 
-    {% if edit %}
+    {% if edit_right %}
         {{ util.href(cdedblink("assembly/add_attachment_form"),
                     label=gettext("Add Attachment"), aclass="btn btn-success", icon=util.make_icon("plus")) }}
     {% endif %}

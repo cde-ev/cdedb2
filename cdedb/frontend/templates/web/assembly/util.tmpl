@@ -1,10 +1,12 @@
 {% macro print_attachment_version(version, add=False, change=False, delete=False, delete_attachment=False) %}
+    {% set edit_right = ambience['assembly']['is_active'] and ("assembly_presider" in user.admin_views
+                                                           or ambience['assembly']['id'] in user.presider) %}
     {% if not version["dtime"] %}
         {{ util.href(cdedblink("assembly/get_attachment_version",
                                {'attachment_id': version["attachment_id"], 'version_nr': version["version_nr"]}),
                      version["title"]|string + " " + gettext("(Version %(version)s)")|format(version=version["version_nr"]),
                      icon="file") }}
-        {% if add or change or delete %}
+        {% if edit_right and (add or change or delete) %}
             <div class="list-button-float" id="versionmanagement">
                 {% if add %}
                     {{ util.href(cdedblink("assembly/add_attachment_version_form", {'attachment_id': version['attachment_id']}),
