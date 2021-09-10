@@ -57,7 +57,7 @@
         <script nonce="{{ csp_nonce }}">
             $('#addattachmentversionform').cdedbProtectAction(
                 "{{ gettext("This attachment version can not be deleted after it was created.") }}");
-            $('#addattachmentversionform').find('[name="ack_creation"]').prop('checked', true).parent().hide();
+            $('#addattachmentversionform').find('[name="ack_creation"]').prop('checked', true).closest('div.form-group').hide();
         </script>
     {% endif %}
 {% endblock %}
