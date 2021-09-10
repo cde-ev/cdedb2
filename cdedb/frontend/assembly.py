@@ -188,6 +188,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
         attachment_ids = self.assemblyproxy.list_attachments(
             rs, assembly_id=assembly_id)
+        attachments = self.assemblyproxy.get_attachments(rs, attachment_ids)
         attachments_version = self.assemblyproxy.get_latest_attachments_version(
             rs, attachment_ids)
         attends = self.assemblyproxy.does_attend(rs, assembly_id=assembly_id)
@@ -204,6 +205,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             delete_blockers = {"is_admin": [False]}
 
         params = {
+            "attachments": attachments,
             "attachments_version": attachments_version,
             "attends": attends,
             "conclude_blockers": conclude_blockers,

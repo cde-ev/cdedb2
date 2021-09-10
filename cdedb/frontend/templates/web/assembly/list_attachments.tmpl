@@ -4,11 +4,13 @@
 {% import "web/assembly/util.tmpl" as assembly_util with context %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint = 'weak' %}
+
 {% block title %}
     {% trans title=ambience['assembly']['title'] %}
         Attachment Overview ({{ title }})
     {% endtrans %}
 {% endblock %}
+
 {% block heading %}
     <h1 class="title">
         {% trans %}
@@ -17,11 +19,11 @@
         <small>{{ util.make_icon('bullhorn') }} {{ ambience['assembly']['title'] }}</small>
     </h1>
 {% endblock %}
+
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
     {{ util.breadcrumb_link(cdedblink("assembly/list_attachments"), gettext("Attachment Overview"), active=True) }}
-
 {% endblock %}
 
 {% macro print_attachment_version(version, add=False, delete=False, delete_attachment=False) %}

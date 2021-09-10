@@ -2,17 +2,40 @@
 {% extends "web/assembly/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/assembly/util.tmpl" as assembly_util with context %}
+
 {% block scripts %}
     {{ util.cdedb_script('cdedb_helper.js') }}
     {{ util.cdedb_script('cdedb_searchpersona.js') }}
 {% endblock %}
+
 {% set jshint = 'weak' %}
+
 {% block title %}{{ ambience['assembly']['title'] }}{% endblock %}
+
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn",
             active=True) }}
 {% endblock %}
+
+{% macro print_attachment_version(version, is_only_version=False) %}
+    {% set link_title = version["title"]|string %}
+    {% if not is_only_version %}
+        {% set link_title = link_title + " " + gettext("(Version %(version)s)")|format(version=version["version_nr"]) %}
+    {% endif %}
+    {# Here, the endpoint "get_attachment" is used to get the current version by default #}
+    {{ util.href(cdedblink("assembly/get_attachment", {'attachment_id': version["attachment_id"]}),
+                 link_title, icon="file") }}
+    <div class="text-muted small">
+        {% if version["authors"] %}
+            {% trans %}by{% endtrans %} {{ version["authors"] }} <br />
+        {% endif %}
+        {% trans ctime=version["ctime"]|datetime(lang=lang) %}uploaded {{ ctime }}{% endtrans %},
+        {# TODO add anchor #}
+        {{ util.href(cdedblink("assembly/list_attachments"), gettext("Details")) }}
+    </div>
+{% endmacro %}
+
 {% block content %}
     <div id="description">
         {{ ambience['assembly']['description']|md }}
@@ -110,10 +133,7 @@
                     <ul class="slim" id="attachments">
                         {% for attachment_id, version in slice %}
                             <li class="hide-hover-container clearfix-after">
-                                {# Here, the endpoint "get_attachment" is used to get the current version by default #}
-                                {{ util.href(cdedblink("assembly/get_attachment", {'attachment_id': attachment_id}),
-                                    version["title"]|string + " " + gettext("(Version %(version)s)")|format(version=version["version_nr"]),
-                                    icon="file") }}
+                                {{ print_attachment_version(version, is_only_version=attachments[attachment_id]["num_versions"] == 1) }}
                             </li>
                         {% endfor %}
                     </ul>
