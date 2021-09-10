@@ -465,18 +465,11 @@ class AssemblyFrontend(AbstractUserFrontend):
         attachments = self.assemblyproxy.get_attachments(rs, attachment_ids)
         attachments_versions = self.assemblyproxy.get_attachments_versions(
             rs, attachment_ids)
-        # TODO make more efficient
-        are_attachment_versions_creatable = {
-            attachment_id: self.assemblyproxy.is_attachment_version_creatable(rs, attachment_id)
-            for attachment_id in attachment_ids}
-        are_attachment_versions_deletable = {
-            attachment_id: self.assemblyproxy.is_attachment_version_deletable(rs, attachment_id)
-            for attachment_id in attachment_ids}
+        are_attachment_versions_creatable = self.assemblyproxy.are_attachment_versions_creatable(rs, attachment_ids)
+        are_attachment_versions_deletable = self.assemblyproxy.are_attachment_versions_deletable(rs, attachment_ids)
         are_attachments_deletable = {
             attachment_id: attachment["num_versions"] <= 1 and are_attachment_versions_deletable[attachment_id]
             for attachment_id, attachment in attachments.items()}
-        ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
-        ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
         return self.render(rs, "list_attachments", {
             "attachments": attachments,
             "attachments_versions": attachments_versions,
