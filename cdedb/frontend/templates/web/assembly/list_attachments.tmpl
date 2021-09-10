@@ -7,14 +7,14 @@
 
 {% block title %}
     {% trans title=ambience['assembly']['title'] %}
-        Attachment Overview ({{ title }})
+        Attachments ({{ title }})
     {% endtrans %}
 {% endblock %}
 
 {% block heading %}
     <h1 class="title">
         {% trans %}
-            Attachment Overview
+            Attachments
         {% endtrans %}
         <small>{{ util.make_icon('bullhorn') }} {{ ambience['assembly']['title'] }}</small>
     </h1>
@@ -23,7 +23,7 @@
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
-    {{ util.breadcrumb_link(cdedblink("assembly/list_attachments"), gettext("Attachment Overview"), active=True) }}
+    {{ util.breadcrumb_link(cdedblink("assembly/list_attachments"), gettext("Attachments"), active=True) }}
 {% endblock %}
 
 {% macro print_attachment_version(version, add=False, delete=False, delete_attachment=False) %}
