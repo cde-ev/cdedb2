@@ -1199,7 +1199,7 @@ class CdEBackend(AbstractBackend):
                         self.logger.error(
                             f"Automated archival of persona {persona_id} failed"
                             f" for unknown reasons.")
-                        persona = {'persona_id': persona_id}
+                        persona = {'id': persona_id}
             self.set_period(rs, period_update)
             return True, persona
 
