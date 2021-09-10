@@ -38,7 +38,7 @@
             <div class="list-button-float" id="versionmanagement">
                 {% if add %}
                     {{ util.href(cdedblink("assembly/add_attachment_version_form", {'attachment_id': version['attachment_id']}),
-                                label=util.make_icon("plus"), aclass="btn btn-success btn-xs hide-hover",
+                                label=util.make_icon("file-medical"), aclass="btn btn-success btn-xs hide-hover",
                                 title=gettext("Add Version")) }}
                 {% endif %}
                 {% if delete_attachment %}
@@ -47,7 +47,7 @@
                           class="hide-hover display-inline">
                         {{ util.anti_csrf_token("assembly/delete_attachment") }}
                         {{ util.input_checkbox("attachment_ack_delete", gettext("Are you sure?")) }}
-                        {{ util.input_submit(label="", aclass="btn btn-xs btn-danger hide-hover", icon="trash-alt",
+                        {{ util.input_submit(label="", aclass="btn btn-xs btn-danger hide-hover", icon="fire",
                                 title=gettext("Delete Attachment")) }}
                     </form>
                     <script nonce="{{ csp_nonce }}">
@@ -82,7 +82,7 @@
     {% endif %}
     <div class="text-muted small">
         {% if version["authors"] %}
-            {% trans %}by{% endtrans %} {{ version["authors"] }},
+            {% trans %}by{% endtrans %} {{ version["authors"] }} <br />
         {% endif %}
         {% trans ctime=version["ctime"]|datetime(lang=lang) %}uploaded {{ ctime }}{% endtrans %}
         {%- if version["dtime"] -%}
@@ -101,7 +101,7 @@
                 {% set latest_version = attachment_versions[attachment["latest_version_nr"]] %}
                 <li>
                     <div class="p" id="attachment_container_{{ attachment_id }}">
-                        {{ assembly_util.print_attachment_version(
+                        {{ print_attachment_version(
                                 latest_version,
                                 add=are_attachment_versions_creatable[attachment_id],
                                 delete=are_attachment_versions_deletable[attachment_id],
@@ -111,7 +111,7 @@
                                 {% for version_nr, version in attachment_versions|keydictsort(EntitySorter.attachment_version)|reverse %}
                                     {% if version_nr != latest_version['version_nr'] %}
                                         <li>
-                                            {{ assembly_util.print_attachment_version(
+                                            {{ print_attachment_version(
                                                     version,
                                                     add=False,
                                                     delete=are_attachment_versions_deletable[attachment_id],
