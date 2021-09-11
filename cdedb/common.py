@@ -156,6 +156,8 @@ class RequestState:
           filling forms in.
         :param lang: language code for i18n, currently only 'de' and 'en' are
             valid.
+        :param translations: A mapping of language (like the `lang` parameter) to
+            gettext translation object.
         :param begin: time where we started to process the request
         """
         self.ambience: Dict[str, CdEDBObject] = {}
