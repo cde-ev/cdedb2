@@ -2097,7 +2097,9 @@ def make_postal_address(rs: RequestState, persona: CdEDBObject) -> List[str]:
         ret.append("{} {}".format(p['postal_code'] or '',
                                   p['location'] or ''))
     if p['country']:
-        ret.append(rs.translations["de"].gettext(f"CountryCodes.{p['country']}"))
+        # Mask the `gettext` name, so that pybabel does not try to extract this string.
+        g = rs.translations["de"].gettext
+        ret.append(g(f"CountryCodes.{p['country']}"))
     return ret
 
 
