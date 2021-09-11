@@ -147,9 +147,7 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
     connpool = connection_pool_factory(
         backend.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
         secrets, backend.conf["DB_PORT"])
-    translator = gettext.translation(
-        'cdedb', languages=['de'],
-        localedir=str(backend.conf["REPOSITORY_PATH"] / 'i18n'))
+    translations = setup_translations(backend.conf)
 
     def setup_requeststate(key: Optional[str], ip: str = "127.0.0.0"
                            ) -> RequestState:
@@ -175,8 +173,8 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
         rs = RequestState(
             sessionkey=sessionkey, apitoken=apitoken, user=user,
             request=None, notifications=[], mapadapter=None,  # type: ignore
-            requestargs=None, errors=[], values=None, lang="de",
-            gettext=translator.gettext, ngettext=translator.ngettext, begin=now())
+            requestargs=None, errors=[], values=None, begin=now(),
+            lang="de", tranlations=translations)
         rs._conn = connpool[roles_to_db_role(rs.user.roles)]
         rs.conn = rs._conn
         if "event" in rs.user.roles and hasattr(backend, "orga_info"):
