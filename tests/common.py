@@ -47,7 +47,7 @@ from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.application import Application
-from cdedb.frontend.common import AbstractFrontend, Worker
+from cdedb.frontend.common import AbstractFrontend, Worker, setup_translations
 from cdedb.frontend.cron import CronFrontend
 from cdedb.query import QueryOperators
 from cdedb.script import setup
@@ -324,7 +324,7 @@ class BackendTest(CdEDBTest):
     pastevent: ClassVar[PastEventBackend]
     ml: ClassVar[MlBackend]
     assembly: ClassVar[AssemblyBackend]
-    translator: ClassVar[gettext.NullTranslations]
+    translations: ClassVar[Mapping[str, gettext.NullTranslations]]
     user: UserObject
     key: RequestState
 
@@ -341,9 +341,7 @@ class BackendTest(CdEDBTest):
         # Workaround to make orga info available for calls into the MLBackend.
         cls.ml.orga_info = lambda rs, persona_id: cls.event.orga_info(  # type: ignore
             rs.sessionkey, persona_id)
-        cls.translator = gettext.translation(
-            'cdedb', languages=['de'],
-            localedir=str(cls.conf["REPOSITORY_PATH"] / 'i18n'))
+        cls.translations = setup_translations(cls.conf)
 
     def setUp(self) -> None:
         """Reset login state."""

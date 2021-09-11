@@ -23,6 +23,7 @@ import email.mime.multipart
 import email.mime.text
 import email.utils
 import functools
+import gettext
 import io
 import itertools
 import json
@@ -56,6 +57,7 @@ import werkzeug.datastructures
 import werkzeug.exceptions
 import werkzeug.utils
 import werkzeug.wrappers
+import werkzeug.wsgi
 from typing_extensions import Literal, Protocol
 
 import cdedb.query as query_mod
@@ -1265,9 +1267,8 @@ class Worker(threading.Thread):
         rrs = RequestState(
             sessionkey=rs.sessionkey, apitoken=rs.apitoken, user=rs.user,
             request=rs.request, notifications=[], mapadapter=rs.urls,
-            requestargs=rs.requestargs, errors=[],
-            values=copy.deepcopy(rs.values), lang=rs.lang, gettext=rs.gettext,
-            ngettext=rs.ngettext, begin=rs.begin)
+            requestargs=rs.requestargs, errors=[], values=copy.deepcopy(rs.values),
+            begin=rs.begin, lang=rs.lang, tranlations=rs.translations)
         # noinspection PyProtectedMember
         secrets = SecretsConfig(conf._configpath)
         connpool = connection_pool_factory(
@@ -2096,7 +2097,7 @@ def make_postal_address(rs: RequestState, persona: CdEDBObject) -> List[str]:
         ret.append("{} {}".format(p['postal_code'] or '',
                                   p['location'] or ''))
     if p['country']:
-        ret.append(rs.default_gettext(f"CountryCodes.{p['country']}"))
+        ret.append(rs.translations["de"].gettext(f"CountryCodes.{p['country']}"))
     return ret
 
 
@@ -2376,3 +2377,12 @@ def calculate_loglinks(rs: RequestState, total: int,
     ret: Dict[str, Union[CdEDBMultiDict, List[CdEDBMultiDict]]]
     ret = dict(**loglinks, **{"pre-current": pre, "post-current": post})
     return ret
+
+
+def setup_translations(conf: Config) -> Mapping[str, gettext.NullTranslations]:
+    """Helper to setup a mapping of languages to gettext translation objects."""
+    return {
+        lang: gettext.translation('cdedb', languages=[lang],
+                                  localedir=conf["REPOSITORY_PATH"] / 'i18n')
+        for lang in conf["I18N_LANGUAGES"]
+    }

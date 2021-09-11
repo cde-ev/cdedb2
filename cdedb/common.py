@@ -8,6 +8,7 @@ import datetime
 import decimal
 import enum
 import functools
+import gettext
 import hashlib
 import hmac
 import itertools
@@ -28,6 +29,7 @@ import icu
 import psycopg2.extras
 import pytz
 import werkzeug
+import werkzeug.datastructures
 import werkzeug.exceptions
 import werkzeug.routing
 
@@ -141,12 +143,11 @@ class RequestState:
                  mapadapter: werkzeug.routing.MapAdapter,
                  requestargs: Optional[Dict[str, int]],
                  errors: Collection[Error],
-                 values: Optional[CdEDBMultiDict], lang: str,
-                 gettext: Callable[[str], str],
-                 ngettext: Callable[[str, str, int], str],
+                 values: Optional[CdEDBMultiDict],
                  begin: Optional[datetime.datetime],
-                 default_gettext: Callable[[str], str] = None,
-                 default_ngettext: Callable[[str, str, int], str] = None):
+                 lang: str,
+                 tranlations: Mapping[str, gettext.NullTranslations],
+                 ) -> None:
         """
         :param mapadapter: URL generator (specific for this request)
         :param requestargs: verbatim copy of the arguments contained in the URL
@@ -156,10 +157,6 @@ class RequestState:
         :param lang: language code for i18n, currently only 'de' and 'en' are
             valid.
         :param begin: time where we started to process the request
-        :param default_gettext: default translation function used to ensure
-            stability across different locales
-        :param default_ngettext: default translation function used to ensure
-            stability across different locales
         """
         self.ambience: Dict[str, CdEDBObject] = {}
         self.sessionkey = sessionkey
@@ -174,10 +171,7 @@ class RequestState:
             values = werkzeug.datastructures.MultiDict(values)
         self.values = values or werkzeug.datastructures.MultiDict()
         self.lang = lang
-        self.gettext = gettext
-        self.ngettext = ngettext
-        self.default_gettext = default_gettext or gettext
-        self.default_ngettext = default_ngettext or ngettext
+        self.translations = tranlations
         self.begin = begin or now()
         # Visible version of the database connection
         # noinspection PyTypeChecker
@@ -194,6 +188,22 @@ class RequestState:
         # is executed and then to True with the corresponding methods
         # of this class
         self.validation_appraised: Optional[bool] = None
+
+    @property
+    def gettext(self) -> Callable[[str], str]:
+        return self.translations[self.lang].gettext
+
+    @property
+    def ngettext(self) -> Callable[[str, str, int], str]:
+        return self.translations[self.lang].ngettext
+
+    @property
+    def default_gettext(self) -> Callable[[str], str]:
+        return self.translations["en"].gettext
+
+    @property
+    def default_ngettext(self) -> Callable[[str, str, int], str]:
+        return self.translations["en"].ngettext
 
     def notify(self, ntype: NotificationType, message: str,
                params: CdEDBObject = None) -> None:
