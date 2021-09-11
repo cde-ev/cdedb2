@@ -171,10 +171,19 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
             apitoken = key
 
         rs = RequestState(
-            sessionkey=sessionkey, apitoken=apitoken, user=user,
-            request=None, notifications=[], mapadapter=None,  # type: ignore
-            requestargs=None, errors=[], values=None, begin=now(),
-            lang="de", translations=translations)
+            sessionkey=sessionkey,
+            apitoken=apitoken,
+            user=user,
+            request=None,  # type: ignore[arg-type]
+            notifications=[],
+            mapadapter=None,  # type: ignore[arg-type]
+            requestargs=None,
+            errors=[],
+            values=None,
+            begin=now(),
+            lang="de",
+            translations=translations,
+        )
         rs._conn = connpool[roles_to_db_role(rs.user.roles)]
         rs.conn = rs._conn
         if "event" in rs.user.roles and hasattr(backend, "orga_info"):
