@@ -2587,7 +2587,6 @@ class TestCdEFrontend(FrontendTest):
     def test_postal_address(self) -> None:
         frs = types.SimpleNamespace()
         frs.translations = self.translations
-        de_gettext = self.translations["de"].gettext
         persona_id = None
         t = lambda g, p: g(f"CountryCodes.{p['country']}")
         while persona_id := self.core.next_persona(self.key, persona_id,
@@ -2596,6 +2595,4 @@ class TestCdEFrontend(FrontendTest):
             if p['country']:
                 address = make_postal_address(frs, p)  # type: ignore[arg-type]
                 self.assertNotIn(p['country'], address)
-                self.assertIn(t(de_gettext, p), address)
-                for lang in self.conf["I18N_LANGUAGES"]:
-                    self.assertNotIn(t(self.translations[lang].gettext, p), address)
+                self.assertIn(t(self.translations["de"].gettext, p), address)
