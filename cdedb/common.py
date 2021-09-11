@@ -8,7 +8,7 @@ import datetime
 import decimal
 import enum
 import functools
-import gettext
+import gettext  # pylint: disable=unused-import
 import hashlib
 import hmac
 import itertools
@@ -545,7 +545,7 @@ def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,
             return tuple(map(collate, sortkey))
         return sortkey
 
-    return sorted(iterable, key=lambda x: collate(key(x)),  # pylint: disable=bad-builtin
+    return sorted(iterable, key=lambda x: collate(key(x)),  # pylint: disable=bad-builtin # noqa
                   reverse=reverse)
 
 
