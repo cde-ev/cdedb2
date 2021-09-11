@@ -197,7 +197,7 @@ class Application(BaseApp):
                 sessionkey=sessionkey, apitoken=apitoken, user=user,
                 request=request, notifications=[], mapadapter=urls,
                 requestargs=args, errors=[], values=None, begin=begin,
-                lang=lang, tranlations=self.translations,
+                lang=lang, translations=self.translations,
             )
             rs.values.update(args)
             component, action = endpoint.split('/')

@@ -1268,7 +1268,7 @@ class Worker(threading.Thread):
             sessionkey=rs.sessionkey, apitoken=rs.apitoken, user=rs.user,
             request=rs.request, notifications=[], mapadapter=rs.urls,
             requestargs=rs.requestargs, errors=[], values=copy.deepcopy(rs.values),
-            begin=rs.begin, lang=rs.lang, tranlations=rs.translations)
+            begin=rs.begin, lang=rs.lang, translations=rs.translations)
         # noinspection PyProtectedMember
         secrets = SecretsConfig(conf._configpath)
         connpool = connection_pool_factory(

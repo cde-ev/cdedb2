@@ -146,7 +146,7 @@ class RequestState:
                  values: Optional[CdEDBMultiDict],
                  begin: Optional[datetime.datetime],
                  lang: str,
-                 tranlations: Mapping[str, gettext.NullTranslations],
+                 translations: Mapping[str, gettext.NullTranslations],
                  ) -> None:
         """
         :param mapadapter: URL generator (specific for this request)
@@ -171,7 +171,7 @@ class RequestState:
             values = werkzeug.datastructures.MultiDict(values)
         self.values = values or werkzeug.datastructures.MultiDict()
         self.lang = lang
-        self.translations = tranlations
+        self.translations = translations
         self.begin = begin or now()
         # Visible version of the database connection
         # noinspection PyTypeChecker
