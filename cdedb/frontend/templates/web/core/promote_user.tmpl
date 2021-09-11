@@ -92,9 +92,13 @@
                 {% endif %}
                 {% if not p['is_cde_realm'] and values['target_realm'] == 'cde'  %}
                     {{ util.form_input_checkbox(name="trial_member", label=gettext("Grant Trialmembership")) }}
-                    {{ util.form_input_textarea(name="free_form", label=gettext("Miscellaneous"), rows="5",
-                                                info=util.markdownhint) }}
                 {% endif %}
+
+                <div class="panel panel-primary">
+                    <div class="panel-body">
+                        {{ util.form_input_textarea(name="change_note", label=gettext("Changenotes")) }}
+                    </div>
+                </div>
                 {{ util.form_input_submit(label=gettext("Add Realm"),
                         cancellink=show_user_link(user, ambience['persona']['id'])) }}
             </form>

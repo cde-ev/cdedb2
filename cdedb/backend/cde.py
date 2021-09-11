@@ -1495,7 +1495,8 @@ class CdEBackend(AbstractBackend):
                             promotion[field] = datum['persona'][field]
                 # apply the actual changes
                 promotion.update(upgrades)
-                self.core.change_persona_realms(rs, promotion)
+                self.core.change_persona_realms(
+                    rs, promotion, change_note="Datenübernahme nach Massenaufnahme")
             if datum['resolution'].do_trial():
                 self.change_membership(
                     rs, datum['doppelganger_id'], is_member=True)

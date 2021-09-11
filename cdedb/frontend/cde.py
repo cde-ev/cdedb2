@@ -1150,7 +1150,7 @@ class CdEFrontend(AbstractUserFrontend):
                                   'Subject': "Überweisung eingegangen",
                                   },
                                  {'persona': persona,
-                                  'address': make_postal_address(persona),
+                                  'address': make_postal_address(rs, persona),
                                   'new_balance': persona['balance']})
         if success:
             rs.notify("success", n_("Committed %(num)s transfers. "
@@ -1681,7 +1681,7 @@ class CdEFrontend(AbstractUserFrontend):
         transaction = rs.ambience['transaction']
         persona = self.coreproxy.get_cde_user(
             rs, rs.ambience['lastschrift']['persona_id'])
-        addressee = make_postal_address(persona)
+        addressee = make_postal_address(rs, persona)
         if rs.ambience['lastschrift']['account_owner']:
             addressee[0] = rs.ambience['lastschrift']['account_owner']
         if rs.ambience['lastschrift']['account_address']:
@@ -1871,7 +1871,7 @@ class CdEFrontend(AbstractUserFrontend):
                         lastschrift['reference'] = lastschrift_reference(
                             persona['id'], lastschrift['id'])
 
-                    address = make_postal_address(persona)
+                    address = make_postal_address(rrs, persona)
                     transaction_subject = make_membership_fee_reference(persona)
                     endangered = (persona['balance'] < self.conf["MEMBERSHIP_FEE"]
                                   and not persona['trial_member']
@@ -2029,7 +2029,7 @@ class CdEFrontend(AbstractUserFrontend):
                 proceed, persona = self.cdeproxy.process_for_expuls_check(
                     rrs, expuls_id, testrun)
                 if persona:
-                    address = make_postal_address(persona)
+                    address = make_postal_address(rrs, persona)
                     self.do_mail(
                         rrs, "addresscheck",
                         {'To': (persona['username'],),

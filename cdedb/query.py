@@ -238,7 +238,7 @@ _QUERY_VIEWS = {
         LEFT OUTER JOIN (
             SELECT
                 id, granted_at, revoked_at,
-                revoked_at IS NOT NULL AS active_lastschrift,
+                revoked_at IS NULL AS active_lastschrift,
                 amount, persona_id
             FROM cde.lastschrift
             WHERE (granted_at, persona_id) IN (

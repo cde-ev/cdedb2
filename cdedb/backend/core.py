@@ -775,27 +775,27 @@ class CoreBackend(AbstractBackend):
                                 force_review=force_review)
 
     @access("core_admin")
-    def change_persona_realms(self, rs: RequestState,
-                              data: CdEDBObject) -> DefaultReturnCode:
+    def change_persona_realms(self, rs: RequestState, data: CdEDBObject,
+                              change_note: str) -> DefaultReturnCode:
         """Special modification function for realm transitions."""
         data = affirm(vtypes.Persona, data, transition=True)
+        change_note = affirm(str, change_note)
         with Atomizer(rs):
             if data.get('is_cde_realm'):
                 # Fix balance
-                tmp = unwrap(self.get_total_personas(rs, (data['id'],)))
+                tmp = self.get_total_persona(rs, data['id'])
                 if tmp['balance'] is None:
                     data['balance'] = decimal.Decimal('0.0')
                 else:
                     data['balance'] = tmp['balance']
             ret = self.set_persona(
-                rs, data, may_wait=False,
-                change_note="Bereiche geändert.",
+                rs, data, may_wait=False, change_note=change_note,
                 allow_specials=("realms", "finance", "membership"))
             if data.get('trial_member'):
                 ret *= self.change_membership_easy_mode(rs, data['id'], is_member=True)
             self.core_log(
                 rs, const.CoreLogCodes.realm_change, data['id'],
-                change_note="Bereiche geändert.")
+                change_note=change_note)
         return ret
 
     @access("persona")
