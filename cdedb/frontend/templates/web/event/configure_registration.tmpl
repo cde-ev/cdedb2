@@ -25,7 +25,7 @@
 {% endblock %}
 
 {% block content %}
-    <div class="p">
+    <div class="p button-par">
         {{ util.href(cdedblink('event/register', {"preview": True}), gettext("Registration Preview"),
                      aclass="btn btn-info btn-sm", icon='edit') }}
         {{ util.href(cdedblink('event/reorder_questionnaire_form', {'kind': enums['QuestionnaireUsages'].registration.value}),
