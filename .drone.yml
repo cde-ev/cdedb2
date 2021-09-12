@@ -72,10 +72,10 @@ steps:
       path: /tmp
   commands:
     - sleep 5
-    - make sample-data
-    - make sql-test
-    - echo $DRONE_COMMIT_BEFORE
-    - bin/docker-evolution-trial.sh $DRONE_TARGET_BRANCH $DRONE_COMMIT
+    - make i18n-compile # needed for sample-data step.
+    - make sample-data # perform basic setup.
+    - make sql-test # create the necessary test database.
+    - bin/docker-evolution-trial.sh origin/$DRONE_TARGET_BRANCH $DRONE_COMMIT
 - name: frontend tests a-d
   image: cdedb
   pull: never # do not try to pull image from docker hub
