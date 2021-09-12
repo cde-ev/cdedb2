@@ -14,13 +14,8 @@
 {% endblock %}
 
 {% block heading %}
-    <h1 class="title">
-        {% trans %}Edit Direct Debit Authorization{% endtrans %}
-        <small>
-            {{ util.make_icon('user', arialabel="User") }}
-            {{ util.persona_name(persona, only_given_names=True) }}
-        </small>
-    </h1>
+    {{ util.context_heading(gettext("Edit Direct Debit Authorization"),
+                            util.persona_name(persona, only_given_names=True), 'user', gettext("User")) }}
 {% endblock %}
 
 {% block content %}

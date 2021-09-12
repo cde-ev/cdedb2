@@ -18,11 +18,10 @@
 {% endblock %}
 
 {% block heading %}
-    <h1 class="title">
-        {% trans %}Add Course{% endtrans %}
-        <small>{{ util.make_icon('calendar-alt') }} {{ ambience['pevent']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Add Course"), ambience['pevent']['title'],
+                            'calendar-alt', gettext("Past Event")) }}
 {% endblock %}
+
 {% block content %}
     <script nonce="{{ csp_nonce }}">
         $(function() {

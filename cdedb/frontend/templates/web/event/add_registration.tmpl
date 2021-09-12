@@ -15,12 +15,8 @@
     {{ util.breadcrumb_link(cdedblink("event/add_registration"), gettext("Add Participant"), active=True) }}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {% trans %}
-            New Registration
-        {% endtrans %}
-        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("New Registration"), ambience['event']['title'],
+                            'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('event/add_registration') }}" method="POST" id="addregistrationform"

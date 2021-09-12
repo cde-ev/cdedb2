@@ -10,11 +10,8 @@
     {{ logging.counter(total, values['offset'] or '', length) }}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {% trans %}Log{% endtrans %}
-        {{ logging.counter(total, values['offset'] or '', length) }}
-        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Log") + logging.counter(total, values['offset'] or '', length),
+                            ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}

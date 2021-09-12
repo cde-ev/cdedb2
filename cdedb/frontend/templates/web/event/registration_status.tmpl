@@ -12,10 +12,8 @@
     {{ util.breadcrumb_link(cdedblink("event/registration_status"), gettext("My Registration"), active=True) }}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {% trans %}Your Registration{% endtrans %}
-        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Your Registration"), ambience['event']['title'],
+                            'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block static_notifications %}
     {{ super() }}

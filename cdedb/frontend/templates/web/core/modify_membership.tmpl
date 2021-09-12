@@ -13,13 +13,8 @@
 {% endblock %}
 
 {% block heading %}
-    <h1 class="title">
-        {% trans %}Modify Membership{% endtrans %}
-        <small>
-            {{ util.make_icon('user', arialabel="User") }}
-            {{ util.persona_name(ambience['persona']) }}
-        </small>
-    </h1>
+    {{ util.context_heading(gettext("Modify Membership"), util.persona_name(ambience['persona']),
+                            'user', gettext("User")) }}
 {% endblock %}
 
 {% block content %}

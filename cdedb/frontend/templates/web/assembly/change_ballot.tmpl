@@ -14,10 +14,7 @@
     {{ util.breadcrumb_link(cdedblink("assembly/change_ballot"), gettext("Edit"), active=True) }}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {{ gettext("Edit Ballot") }}
-        <small>{{ util.make_icon('thumbs-up') }} {{ ambience['ballot']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Edit Ballot"), ambience['ballot']['title'], 'thumbs-up', gettext("Ballot")) }}
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('assembly/change_ballot') }}" method="POST" id="changeballotform"

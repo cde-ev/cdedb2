@@ -15,10 +15,8 @@
 {{ util.breadcrumb_link(cdedblink("event/lodgement_group_summary"), gettext("Manage Lodgement Groups"), active=True) }}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {% trans %}Lodgement Groups{% endtrans %}
-        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Lodgement Groups"), ambience['event']['title'],
+                            'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 
 

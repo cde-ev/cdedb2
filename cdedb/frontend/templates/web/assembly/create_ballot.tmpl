@@ -13,10 +13,7 @@
 {% endblock %}
 
 {% block heading %}
-    <h1 class="title">
-        {% trans %}Create Ballot{% endtrans %}
-        <small>{{ util.make_icon('bullhorn') }} {{ ambience['assembly']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Create Ballot"), ambience['assembly']['title'], 'bullhorn', gettext("Assembly")) }}
 {% endblock %}
 
 {% block content %}

@@ -19,10 +19,8 @@
     {{ util.breadcrumb_link(cdedblink("ml/management"), gettext("Management"), active=True) }}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {% trans %}Manage Mailinglist{% endtrans %}
-        <small>{{ util.make_icon('envelope') }} {{ ambience['mailinglist']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Manage Mailinglist"), ambience['mailinglist']['title'],
+                            'envelope', gettext("Mailinglist")) }}
 {% endblock %}
 {% block static_notifications %}
     {% if restricted %}

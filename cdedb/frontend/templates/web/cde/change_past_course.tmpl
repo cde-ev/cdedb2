@@ -20,12 +20,8 @@
 {% endblock %}
 
 {% block heading %}
-    <h1 class="title">
-        {% trans course=ambience['pcourse']['title'] %}
-            Edit course {{ course }}
-        {% endtrans %}
-        <small>{{ util.make_icon('calendar-alt') }} {{ ambience['pevent']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Edit course %(course)s")|format(course=ambience['pcourse']['title']),
+                            ambience['pevent']['title'], 'calendar-alt', gettext("Past Event")) }}
 {% endblock %}
 
 {% block content %}

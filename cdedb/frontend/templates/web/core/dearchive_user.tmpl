@@ -12,13 +12,7 @@
 {% endblock %}
 
 {% block heading %}
-    <h1 class="title">
-        {% trans %}Dearchive Account{% endtrans %}
-        <small>
-            {{ util.make_icon('user', arialabel="User") }}
-            {{ util.persona_name(data) }}
-        </small>
-    </h1>
+    {{ util.context_heading(gettext("Dearchive Account"), util.persona_name(data), 'user', gettext("User")) }}
 {% endblock %}
 
 {% block content %}

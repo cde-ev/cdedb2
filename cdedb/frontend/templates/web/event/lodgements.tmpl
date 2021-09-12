@@ -12,10 +12,7 @@
 {{ util.breadcrumb_link(cdedblink("event/lodgements"), gettext("Lodgements"), active=True) }}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {% trans %}Lodgements{% endtrans %}
-        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Lodgements"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 
 {% macro display_sorting_header(part_id, sortkey, label) %}

@@ -15,13 +15,7 @@
 {% endblock %}
 
 {% block heading %}
-    <h1 class="title">
-        {% trans %}Change History{% endtrans %}
-        <small>
-            {{ util.make_icon('user', arialabel="User") }}
-            {{ util.persona_name(current) }}
-        </small>
-    </h1>
+    {{ util.context_heading(gettext("Change History"), util.persona_name(current), 'user', gettext("User")) }}
 {% endblock %}
 
 {% set STATUS={enums["MemberChangeStati"].pending: ('pending','check',gettext("pending")),

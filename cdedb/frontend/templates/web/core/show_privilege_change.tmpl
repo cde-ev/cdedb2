@@ -14,13 +14,7 @@
 {% endblock %}
 
 {% block heading %}
-    <h1 class="title">
-        {% trans %}Privilege Change{% endtrans %}
-        <small>
-            {{ util.make_icon('user', arialabel="User") }}
-            {{ util.persona_name(persona) }}
-        </small>
-    </h1>
+    {{ util.context_heading(gettext("Privilege Change"), util.persona_name(persona), 'user', gettext("User")) }}
 {% endblock %}
 
 {% block content %}

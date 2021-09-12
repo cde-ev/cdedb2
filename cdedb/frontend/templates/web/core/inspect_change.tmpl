@@ -16,13 +16,7 @@
 {% endblock %}
 
 {% block heading %}
-    <h1 class="title">
-        {% trans %}Inspect Changes{% endtrans %}
-        <small>
-            {{ util.make_icon('user', arialabel="User") }}
-            {{ util.persona_name(current) }}
-        </small>
-    </h1>
+    {{ util.context_heading(gettext("Inspect Changes"), util.persona_name(current), 'user', gettext("User")) }}
 {% endblock %}
 
 {% macro show_diff(name, title, important=False) %}

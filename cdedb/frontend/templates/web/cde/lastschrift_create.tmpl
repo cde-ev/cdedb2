@@ -12,15 +12,13 @@
     {% endif %}
 {%- endblock %}
 {% block heading -%}
-    <h1 class="title">
-        {% trans %}New Direct Debit Authorization{% endtrans %}
-        {% if ambience['persona'] %}
-            <small>
-                {{ util.make_icon('user', arialabel="User") }}
-                {{ util.persona_name(ambience['persona'], only_given_names=True) }}
-            </small>
-        {% endif %}
-    </h1>
+    {% if ambience['persona'] %}
+        {{ util.context_heading(gettext("New Direct Debit Authorization"),
+                                util.persona_name(ambience['persona'], only_given_names=True),
+                                'user', gettext("User")) }}
+    {% else %}
+        {{ util.context_heading(gettext("New Direct Debit Authorization")) }}
+    {% endif %}
 {%- endblock %}
 
 {% set sidenav_active='cde_lastschrift' %}

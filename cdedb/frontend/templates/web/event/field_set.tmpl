@@ -19,12 +19,8 @@
 {% endblock %}
 
 {% block heading %}
-    <h1 class="title">
-        {% trans field="<em>%s</em>"|s|format(field_name|e) %}
-            Set {{ field }}
-        {% endtrans %}
-        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Set %(field)s")|format(field="<em>%s</em>"|s|format(field_name|e)|s)|s,
+                            ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 
 {% block breadcrumb %}

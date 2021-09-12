@@ -10,13 +10,8 @@
     {{ util.breadcrumb_link(cdedblink("event/participant_info"), gettext("Participant info"), active=True) }}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {% trans %}Additional information for participants{% endtrans %}
-        <small>
-            {{- util.make_icon('chalkboard-teacher', arialabel=gettext("Event")) }}
-            {{ ambience['event']['title'] -}}
-        </small>
-    </h1>
+    {{ util.context_heading(gettext("Additional information for participants"), ambience['event']['title'],
+                            'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block static_notifications %}
     {{ super() }}
