@@ -695,9 +695,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         """A wrapper around get_attachment_version to retrive the current version."""
         attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
         # Access checking is done inside get_attachment_version
-        return self.get_attachment_version(
-            rs, assembly_id=assembly_id, attachment_id=attachment_id,
-            version_nr=attachment["latest_version_nr"])
+        return self.redirect(rs, "assembly/get_attachment_version",
+                             params={"version_nr": attachment["latest_version_nr"]})
 
     @access("assembly")
     @REQUESTdata("version_nr")
