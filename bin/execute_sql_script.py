@@ -18,13 +18,14 @@ from cdedb.script import setup
 
 
 def execute_script(sql_input: Union[Path, str], *, dbuser: str, dbpassword: str,
-                   dbname: str) -> None:
+                   dbname: str, cursor: str, verbose: bool) -> None:
     with setup(
         persona_id=-1,
         dbuser=dbuser,
         dbpassword=dbpassword,
         dbname=dbname,
         check_system_user=False,
+        cursor=cursor,
     )().conn as conn:
         conn.set_session(autocommit=True)
 
@@ -34,6 +35,12 @@ def execute_script(sql_input: Union[Path, str], *, dbuser: str, dbpassword: str,
                     sql_input = f.read()
 
             curr.execute(sql_input)
+            if verbose:
+                print(curr.query)
+                print(curr.statusmessage)
+                if curr.rowcount != -1:
+                    for x in curr:
+                        print(x)
 
 
 if __name__ == "__main__":
@@ -42,6 +49,7 @@ if __name__ == "__main__":
 
     general = parser.add_argument_group("General options")
     general.add_argument("--dbname", "-d", default="cdb")
+    general.add_argument("--verbose", "-v", action="store_true")
     group = general.add_mutually_exclusive_group(required=True)
     group.add_argument("--file", "-f", type=Path)
     group.add_argument("--command", "-c")
@@ -50,6 +58,7 @@ if __name__ == "__main__":
     connection.add_argument("--username", "-U", default="cdb")
     connection.add_argument(
         "--dbpassword", default="987654321098765432109876543210")
+    connection.add_argument("--cursor", default="RealDictCursor")
 
     args = parser.parse_args()
 
@@ -58,4 +67,6 @@ if __name__ == "__main__":
         dbuser=args.username,
         dbpassword=args.dbpassword,
         dbname=args.dbname,
+        cursor=args.cursor,
+        verbose=args.verbose,
     )
