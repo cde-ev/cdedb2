@@ -71,8 +71,7 @@ steps:
     - name: tmp_dir
       path: /tmp
   commands:
-    - sleep 2
-    - make i18n-compile
+    - sleep 5
     - make sample-data
     - make sql-test
     - echo $DRONE_COMMIT_BEFORE
@@ -86,9 +85,7 @@ steps:
   - name: tmp_dir
     path: /tmp
   commands:
-  - sleep 5 # wait for db to come online
-  - make i18n-compile # required for sample-data target
-  - make sample-data # this creates the sql schema and copies the localconfig.py
+  - sleep 15
   - bin/check.py --verbose --first # everything before event
 - name: frontend tests e-z
   image: cdedb
