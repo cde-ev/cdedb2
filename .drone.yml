@@ -62,6 +62,17 @@ steps:
     path: /var/lib/postgresql/data
   depends_on:
   - build images
+- name: evolution-trial
+  image: cdedb
+  pull: never
+  depends_on:
+    - cdb
+  volumes:
+    - name: tmp_dir
+      path: /tmp
+  commands:
+    - sleep 5
+    - bin/docker-evolution-trial.sh $DRONE_TARGET_BRANCH $DRONE_COMMIT
 - name: frontend tests a-d
   image: cdedb
   pull: never # do not try to pull image from docker hub
@@ -140,4 +151,4 @@ trigger:
   branch:
   - master
   - stable
-  - ci/*
+#  - ci/*
