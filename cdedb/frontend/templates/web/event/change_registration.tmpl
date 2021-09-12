@@ -16,7 +16,7 @@
 {{ util.breadcrumb_link(cdedblink("event/change_registration"), gettext("Edit"), active=True) }}
 {% endblock %}
 {% block heading %}
-    {{ util.context_heading(gettext("Edit %(name)s")|format(name=util.persona_name(persona)),
+    {{ util.context_heading(gettext("Edit %(name)s")|format(name=util.persona_name(persona))|s,
                             ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 
