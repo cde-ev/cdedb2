@@ -2,7 +2,7 @@
 
 
 EXENAME=$(basename $0)
-DATABASE_NAME = cdb_test_evolution
+DATABASE_NAME=cdb_test_evolution
 
 OLDREVISION=$1
 NEWREVISION=$2
@@ -29,14 +29,14 @@ grep /tmp/newevolutions.txt -v -f /tmp/oldevolutions.txt \
 truncate -s0 /tmp/output-evolution.txt
 for evolution in $(cat /tmp/todoevolutions.txt); do
     echo "Apply evolution $evolution" | tee -a /tmp/output-evolution.txt
-    sudo -u cdb psql -U cdb -d $DATABASE_NAME \
+    python3 bin/execute_sql_script.py -U cdb -d $DATABASE_NAME \
          -f cdedb/database/evolutions/$evolution \
          2>&1 | tee -a /tmp/output-evolution.txt
 done
 
 # evolved db
 echo "Creating database description."
-sudo -u postgres psql -U postgres -d $DATABASE_NAME \
+psql postgresql://postgres:passwd@cdb -d $DATABASE_NAME \
      -f bin/describe_database.sql > /tmp/evolved-description.txt
 bin/normalize_database_description.py /tmp/evolved-description.txt
 
@@ -46,7 +46,7 @@ make -B tests/ancillary_files/sample_data.sql &> /dev/null
 # new db
 echo "Resetting and creating database description again."
 make sql-test &> /dev/null
-sudo -u postgres psql -U postgres -d cdb_test \
+psql postgresql://postgres:passwd@cdb -d $DATABASE_NAME \
      -f bin/describe_database.sql > /tmp/pristine-description.txt
 bin/normalize_database_description.py /tmp/pristine-description.txt
 
