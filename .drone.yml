@@ -74,6 +74,7 @@ steps:
     - sleep 2
     - make i18n-compile
     - make sample-data
+    - echo $DRONE_COMMIT_BEFORE
     - bin/docker-evolution-trial.sh $DRONE_TARGET_BRANCH $DRONE_COMMIT
 - name: frontend tests a-d
   image: cdedb
