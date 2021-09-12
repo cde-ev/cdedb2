@@ -640,7 +640,8 @@ class CdEFrontend(AbstractUserFrontend):
                             promotion[field] = datum['persona'][field]
                 # apply the actual changes
                 promotion.update(upgrades)
-                self.coreproxy.change_persona_realms(rs, promotion)
+                self.coreproxy.change_persona_realms(
+                    rs, promotion, change_note="Datenübernahme nach Massenaufnahme")
             if datum['resolution'].do_trial():
                 self.coreproxy.change_membership(
                     rs, datum['doppelganger_id'], is_member=True)
@@ -1263,7 +1264,7 @@ class CdEFrontend(AbstractUserFrontend):
                               'Subject': "Überweisung eingegangen",
                               },
                              {'persona': persona,
-                              'address': make_postal_address(persona),
+                              'address': make_postal_address(rs, persona),
                               'new_balance': persona['balance']})
         return True, count, memberships_gained
 
@@ -1859,7 +1860,7 @@ class CdEFrontend(AbstractUserFrontend):
         transaction = rs.ambience['transaction']
         persona = self.coreproxy.get_cde_user(
             rs, rs.ambience['lastschrift']['persona_id'])
-        addressee = make_postal_address(persona)
+        addressee = make_postal_address(rs, persona)
         if rs.ambience['lastschrift']['account_owner']:
             addressee[0] = rs.ambience['lastschrift']['account_owner']
         if rs.ambience['lastschrift']['account_address']:
@@ -2058,7 +2059,7 @@ class CdEFrontend(AbstractUserFrontend):
                         rrs, unwrap(lastschrift_list.keys()))
                     lastschrift['reference'] = lastschrift_reference(
                         persona['id'], lastschrift['id'])
-                address = make_postal_address(persona)
+                address = make_postal_address(rrs, persona)
                 transaction_subject = make_membership_fee_reference(persona)
                 endangered = (persona['balance'] < self.conf["MEMBERSHIP_FEE"]
                               and not persona['trial_member']
@@ -2347,7 +2348,7 @@ class CdEFrontend(AbstractUserFrontend):
                             rrs, skip=False)
                     return False
                 persona = self.coreproxy.get_cde_user(rrs, persona_id)
-                address = make_postal_address(persona)
+                address = make_postal_address(rrs, persona)
                 if not testrun:
                     expuls_update = {
                         'id': expuls_id,

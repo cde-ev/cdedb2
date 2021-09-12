@@ -268,7 +268,7 @@
     </div>
 
     <h3>{% trans %}Changes{% endtrans %}</h3>
-    <table class="table table-condensed table-hover">
+    <table class="table table-condensed table-hover" id="generation-overview">
         <thead>
             <tr>
                 <th></th>
@@ -281,7 +281,7 @@
         </thead>
         <tbody>
             {% for _, entry in entries|xdictsort('generation')|reverse %}
-                <tr>
+                <tr id="generation{{ entry['generation'] }}">
                     <td class="nowrap">{% trans %}Gen{% endtrans %} {{ entry['generation'] }}</td>
                     <td>{{ entry['ctime']|datetime(lang=lang) }}</td>
                     <td>{{ gettext(entry['code']|enum(enums['MemberChangeStati'])) }}</td>
