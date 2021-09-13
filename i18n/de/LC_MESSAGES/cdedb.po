@@ -12993,7 +12993,9 @@ msgstr "IBAN im üblichen Format, Leerzeichen sind erlaubt"
 #: cdedb/frontend/templates/web/util.tmpl:570
 msgid ""
 "Empty string values with defaultvalue not supported. default: {} value: {}"
-msgstr "Leere Zeichenketten-Werte mit Standardwert werden nicht unterstützt. Standard: {} Wert: {}"
+msgstr ""
+"Leere Zeichenketten-Werte mit Standardwert werden nicht unterstützt. "
+"Standard: {} Wert: {}"
 
 #: cdedb/frontend/templates/web/util.tmpl:664
 msgid "from"
