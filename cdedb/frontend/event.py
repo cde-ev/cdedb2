@@ -2863,13 +2863,8 @@ class EventFrontend(AbstractUserFrontend):
             return self.questionnaire_import_form(rs, event_id)
         assert data is not None
 
-        setter = {
-            'id': event_id,
-            'fields': data.get('fields', {}),
-        }
-        code = self.eventproxy.set_event(rs, setter)
-        code *= self.eventproxy.set_questionnaire(
-            rs, event_id, data.get('questionnaire', {}))
+        code = self.eventproxy.questionnaire_import(
+            rs, event_id, fields=data['fields'], questionnaire=data['questionnaire'])
 
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/configure_additional_questionnaire")

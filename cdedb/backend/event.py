@@ -41,6 +41,10 @@ from cdedb.query import Query, QueryOperators, QueryScope
 from cdedb.validation import parse_date, parse_datetime
 
 
+# type alias for questionnaire specification.
+CdEDBQuestionnaire = Dict[const.QuestionnaireUsages, List[CdEDBObject]]
+
+
 class EventBackend(AbstractBackend):
     """Take note of the fact that some personas are orgas and thus have
     additional actions available."""
@@ -3853,8 +3857,7 @@ class EventBackend(AbstractBackend):
     @access("event")
     def get_questionnaire(self, rs: RequestState, event_id: int,
                           kinds: Collection[const.QuestionnaireUsages] = None
-                          ) -> Dict[const.QuestionnaireUsages,
-                                    List[CdEDBObject]]:
+                          ) -> CdEDBQuestionnaire:
         """Retrieve the questionnaire rows for a specific event.
 
         Rows are seperated by kind. Specifying a kinds will get you only rows
@@ -3883,8 +3886,7 @@ class EventBackend(AbstractBackend):
 
     @access("event")
     def set_questionnaire(self, rs: RequestState, event_id: int,
-                          data: Optional[Dict[const.QuestionnaireUsages,
-                                              List[CdEDBObject]]]) -> DefaultReturnCode:
+                          data: Optional[CdEDBQuestionnaire]) -> DefaultReturnCode:
         """Replace current questionnaire rows for a specific event, by kind.
 
         This superseeds the current questionnaire for all given kinds.
@@ -4742,3 +4744,22 @@ class EventBackend(AbstractBackend):
                 self.event_log(rs, const.EventLogCodes.event_partial_import,
                                data['id'], change_note=data.get('summary'))
         return result, total_delta
+
+    @access("event")
+    def questionnaire_import(self, rs: RequestState, event_id: int,
+                             fields: CdEDBObjectMap, questionnaire: CdEDBQuestionnaire,
+                             ) -> DefaultReturnCode:
+        """Special import for custom datafields and questionnaire rows."""
+        event_id = affirm(vtypes.ID, event_id)
+        if questionnaire is None:
+            raise ValueError(n_(
+                "Cannot use questionnaire import to delete questionnaire."))
+        # validation of input is delegated to the setters.
+        if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
+            raise PrivilegeError(n_("Not privileged."))
+        self.assert_offline_lock(rs, event_id=event_id)
+
+        with Atomizer(rs):
+            ret = self.set_event(rs, {'id': event_id, 'fields': fields})
+            ret *= self.set_questionnaire(rs, event_id, questionnaire)
+        return ret
