@@ -80,18 +80,25 @@ steps:
   image: cdedb
   pull: never # do not try to pull image from docker hub
   depends_on:
-  - cdb # only needs db allowing mypy and lint to run parallel to this
+  - evolution-trial
+  when:
+    status:
+    - failure
+    - success
   volumes:
   - name: tmp_dir
     path: /tmp
   commands:
-  - sleep 15
   - bin/check.py --verbose --first # everything before event
 - name: frontend tests e-z
   image: cdedb
   pull: never # do not try to pull image from docker hub
   depends_on:
-  - cdb # only needs db allowing mypy and lint to run parallel to this
+  - evolution-trial
+  when:
+    status:
+    - failure
+    - success
   volumes:
   - name: tmp_dir
     path: /tmp
@@ -102,7 +109,11 @@ steps:
   image: cdedb
   pull: never # do not try to pull image from docker hub
   depends_on:
-  - cdb # only needs db allowing mypy and lint to run parallel to this
+  - evolution-trial
+  when:
+    status:
+    - failure
+    - success
   volumes:
   - name: tmp_dir
     path: /tmp
@@ -113,7 +124,11 @@ steps:
   image: cdedb
   pull: never
   depends_on:
-    - cdb
+  - evolution-trial
+  when:
+    status:
+    - failure
+    - success
   volumes:
   - name: tmp_dir
     path: /tmp
