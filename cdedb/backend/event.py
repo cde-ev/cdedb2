@@ -3854,7 +3854,7 @@ class EventBackend(AbstractBackend):
                     {"type": "lodgement", "block": blockers.keys()})
         return ret
 
-    @access("event")
+    @access("event", "droid_quick_partial_export")
     def get_questionnaire(self, rs: RequestState, event_id: int,
                           kinds: Collection[const.QuestionnaireUsages] = None
                           ) -> CdEDBQuestionnaire:
