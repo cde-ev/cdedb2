@@ -11207,13 +11207,30 @@ msgid ""
 "Upload a questionnaire configuration and or a collection of custom "
 "datafields."
 msgstr ""
-"Lade eine Fragebogenkonfiguration oder einen Satz selbstdefinierter Datenfelder hoch."
+"Lade eine Fragebogenkonfiguration oder einen Satz selbstdefinierter "
+"Datenfelder hoch."
 
-#: cdedb/frontend/templates/web/event/questionnaire_import.tmpl:56
+#: cdedb/frontend/templates/web/event/questionnaire_import.tmpl:52
+msgid "Proceed with caution"
+msgstr "Vorsicht"
+
+#: cdedb/frontend/templates/web/event/questionnaire_import.tmpl:53
+msgid ""
+"The names of newly created fields cannot be changed after creation without "
+"losing data. If you need to change the name of an existing datafield, you "
+"must create a new one with the appropriate name and delete the old one. This "
+"will cause all data of the old field to be lost."
+msgstr ""
+"Die Namen von neu angelegten Datenfeldern können nicht ohne Datenverlust "
+"geändert werden. Falls ein Datenfeld umbenannt werden muss, muss ein neues "
+"Feld mit dem gewünschten Namen angelegt werden und das alte Feld gelöscht "
+"werden. Dadurch gehen alle mit dem alten Feld verbundenen Daten verloren."
+
+#: cdedb/frontend/templates/web/event/questionnaire_import.tmpl:65
 msgid "Extend Questionnaire"
 msgstr "Fragebogen erweitern"
 
-#: cdedb/frontend/templates/web/event/questionnaire_import.tmpl:60
+#: cdedb/frontend/templates/web/event/questionnaire_import.tmpl:69
 msgid "Skip existing fields"
 msgstr "Bereits existierende Datenfelder überspringen"
 

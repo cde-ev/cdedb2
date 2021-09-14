@@ -48,6 +48,15 @@
         {% endtrans %}
     </p>
 
+
+    {% call util.bootstrap_panel(title=gettext("Proceed with caution"), icon="exclamation-triangle", aclass="panel-warning") %}
+        {% trans %}
+            The names of newly created fields cannot be changed after creation without losing data.
+            If you need to change the name of an existing datafield, you must create a new one with the appropriate
+            name and delete the old one. This will cause all data of the old field to be lost.
+        {% endtrans %}
+    {% endcall %}
+
     <form action="{{ cdedblink('event/questionnaire_import') }}" method="POST" id="importform"
           enctype="multipart/form-data">
         {{ util.anti_csrf_token('event/questionnaire_import') }}
