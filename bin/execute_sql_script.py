@@ -19,7 +19,7 @@ from cdedb.script import setup
 
 
 def execute_script(sql_input: Union[Path, str], *, dbuser: str, dbpassword: str,
-                   dbname: str, cursor: str, verbose: bool) -> None:
+                   dbname: str, cursor: str, verbose: int) -> None:
     factory = resolve_name(f"psycopg2.extras:{cursor}") if cursor else None
 
     with setup(
@@ -38,9 +38,10 @@ def execute_script(sql_input: Union[Path, str], *, dbuser: str, dbpassword: str,
                     sql_input = f.read()
 
             curr.execute(sql_input)
-            if verbose:
-                print(curr.query)
-                print(curr.statusmessage)
+            if verbose > 0:
+                if verbose > 1:
+                    print(curr.query)
+                    print(curr.statusmessage)
                 if curr.rowcount != -1:
                     for x in curr:
                         print(x)
@@ -52,7 +53,7 @@ if __name__ == "__main__":
 
     general = parser.add_argument_group("General options")
     general.add_argument("--dbname", "-d", default="cdb")
-    general.add_argument("--verbose", "-v", action="store_true")
+    general.add_argument("--verbose", "-v", action="count")
     group = general.add_mutually_exclusive_group(required=True)
     group.add_argument("--file", "-f", type=Path)
     group.add_argument("--command", "-c")

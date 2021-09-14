@@ -42,7 +42,7 @@ done
 # evolved db
 echo ""
 echo "Creating database description."
-python3 bin/execute_sql_script.py -d $DATABASE_NAME --cursor None -v \
+python3 bin/execute_sql_script.py -d $DATABASE_NAME -v \
      -f bin/describe_database.sql > /tmp/evolved-description.txt
 
 make i18n-compile
@@ -52,7 +52,7 @@ make -B tests/ancillary_files/sample_data.sql &> /dev/null
 echo ""
 echo "Resetting and creating database description again."
 make sql-test &> /dev/null
-python3 bin/execute_sql_script.py -d $DATABASE_NAME --cursor None -v \
+python3 bin/execute_sql_script.py -d $DATABASE_NAME -v \
      -f bin/describe_database.sql > /tmp/pristine-description.txt
 
 # perform check
