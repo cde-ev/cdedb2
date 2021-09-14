@@ -2872,8 +2872,10 @@ def _questionnaire_row(
         value['kind'] = kind
 
     fields_by_name = {f['field_name']: f for f in field_definitions.values()}
-    if value.get('field_name'):
-        if value.get('field_id') and value['field_id'] > 0:
+    if 'field_name' in value:
+        if not value['field_name']:
+            del value['field_name']
+        elif value.get('field_id'):
             msg = n_("Cannot specify both field id and field name.")
             errs.append(ValueError(argname_prefix + 'field_id', msg))
             errs.append(ValueError(argname_prefix + 'field_name', msg))
@@ -2884,29 +2886,29 @@ def _questionnaire_row(
                     n_("No field with name '%(name)s' exists."),
                     {"name": value['field_name']}))
             else:
-                value['field_id'] = fields_by_name[value['field_name']]['id']
-    if 'field_name' in value:
-        del value['field_name']
+                value['field_id'] = fields_by_name[value['field_name']].get('id')
+                if value['field_id']:
+                    del value['field_name']
     if 'field_id' not in value:
         value['field_id'] = None
 
-    if value['field_id'] and value['default_value']:
+    if value['field_id']:
         field = field_definitions.get(value['field_id'], None)
         if not field:
             raise ValidationSummary(
                 KeyError(argname_prefix + 'default_value',
                          n_("Referenced field does not exist.")))
-
-        value['default_value'] = _by_field_datatype(
-            value['default_value'], "default_value",
-            kind=field.get('kind', FieldDatatypes.str), **kwargs)
+        if value['default_value']:
+            value['default_value'] = _by_field_datatype(
+                value['default_value'], "default_value",
+                kind=field.get('kind', FieldDatatypes.str), **kwargs)
 
     field_id = value['field_id']
     if field_id and field_id in fee_modifier_fields:
         if not kind.allow_fee_modifier():
             msg = n_("Inappropriate questionnaire usage for fee modifier field.")
             errs.append(ValueError(argname_prefix + 'kind', msg))
-    if value['readonly'] and not k.allow_readonly():
+    if value['readonly'] and not kind.allow_readonly():
         msg = n_("Registration questionnaire rows may not be readonly.")
         errs.append(ValueError(argname_prefix + 'readonly', msg))
 
@@ -2939,7 +2941,7 @@ def _questionnaire(
         else:
             ret[k] = []
             for i, value in enumerate(v):
-                row_argname = argname + f"[{k}][{i+1}]"
+                row_argname = argname + f"[{k.name}][{i+1}]"
                 try:
                     value = _questionnaire_row(
                         value, field_definitions, fee_modifier_fields,
@@ -3547,6 +3549,8 @@ def _serialized_event_questionnaire(
                     newfields[-(i + 1)] = field
         val['fields'] = newfields
         field_definitions.update(newfields)
+    else:
+        val['fields'] = {}
 
     if 'questionnaire' in val:
         try:
@@ -3567,6 +3571,8 @@ def _serialized_event_questionnaire(
                     errs.extend(e)
 
             val['questionnaire'] = new_questionnaire
+    else:
+        val['questionnaire'] = {}
 
     if errs:
         raise errs
