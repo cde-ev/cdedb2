@@ -1,19 +1,19 @@
-{% set sidenav_active='partial_import' %}
+{% set sidenav_active='event_configure_additional_questionnaire' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
     {% trans title=ambience['event']['title'] %}
-        Config Import for Event {{ title }}
+        Questionnaire Import for Event {{ title }}
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
-{{ util.breadcrumb_link(cdedblink("event/config_import_form"), gettext("Config Import"), active=True) }}
+{{ util.breadcrumb_link(cdedblink("event/questionnaire_import_form"), gettext("Config Import"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {% trans %}Config Import{% endtrans %} <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
+        {% trans %}Questionnaire Import{% endtrans %} <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
     </h1>
 {% endblock %}
 {% block content %}
@@ -44,22 +44,14 @@
     {% endif %}
     <p>
         {% trans %}
-            Update of event data with prefabricated changesets (e.g. known
-            list of lodgements) or external programms. In the latter case,
-            please read the documentation first.
-        {% endtrans %}
-    </p>
-    <p>
-        {% trans %}
-            After the upload a summary of the changes will be displayed and
-            the import must be approved.
+            Upload a questionnaire configuration and or a collection of custom datafields.
         {% endtrans %}
     </p>
 
-    <form action="{{ cdedblink('event/config_import') }}" method="POST" id="importform"
+    <form action="{{ cdedblink('event/questionnaire_import') }}" method="POST" id="importform"
       enctype="multipart/form-data" class="form-horizontal">
-        {{ util.anti_csrf_token('event/config_import') }}
+        {{ util.anti_csrf_token('event/questionnaire_import') }}
         {{ util.form_input_file('json_file', label=gettext('JSON file'), accept="text/*,application/json") }}
-        {{ util.form_input_submit(gettext('Validate')) }}
+        {{ util.form_input_submit(gettext('Import')) }}
     </form>
 {% endblock %}

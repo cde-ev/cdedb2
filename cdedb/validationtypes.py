@@ -97,9 +97,9 @@ SerializedEventUpload = _NewType("SerializedEventUpload", SerializedEvent)
 SerializedPartialEvent = _NewType("SerializedPartialEvent", CdEDBObject)
 SerializedPartialEventUpload = _NewType(
     "SerializedPartialEventUpload", SerializedPartialEvent)
-SerializedEventConfig = _NewType("SerializedEventConfig", CdEDBObject)
-SerializedEventConfigUpload = _NewType(
-    "SerializedEventConfigUpload", SerializedEventConfig)
+SerializedEventQuestionnaire = _NewType("SerializedEventQuestionnaire", CdEDBObject)
+SerializedEventQuestionnaireUpload = _NewType(
+    "SerializedEventQuestionnaireUpload", SerializedEventQuestionnaire)
 
 PartialCourse = _NewType("PartialCourse", CdEDBObject)
 PartialLodgementGroup = _NewType("PartialLodgementGroup", CdEDBObject)

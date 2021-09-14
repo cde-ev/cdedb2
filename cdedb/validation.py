@@ -3469,11 +3469,11 @@ def _partial_registration_track(
 def _serialized_event_config_upload(
     val: Any, field_definitions: CdEDBObjectMap, fee_modifiers: CdEDBObjectMap,
     argname: str = "serialized_event_donfig_upload", **kwargs: Any,
-) -> SerializedEventConfigUpload:
+) -> SerializedEventQuestionnaireUpload:
 
     val = _input_file(val, argname, **kwargs)
     val = _json(val, argname, **kwargs)
-    return SerializedEventConfigUpload(_serialized_event_config(
+    return SerializedEventQuestionnaireUpload(_serialized_event_config(
         val, field_definitions, fee_modifiers, argname, **kwargs))
 
 
@@ -3481,7 +3481,7 @@ def _serialized_event_config_upload(
 def _serialized_event_config(
     val: Any, field_definitions: CdEDBObjectMap, fee_modifiers: CdEDBObjectMap,
     argname: str = "serialized_event_config", **kwargs: Any
-) -> SerializedEventConfig:
+) -> SerializedEventQuestionnaire:
 
     val = _mapping(val, argname, **kwargs)
 
@@ -3528,7 +3528,7 @@ def _serialized_event_config(
     if errs:
         raise errs
 
-    return SerializedEventConfig(val)
+    return SerializedEventQuestionnaire(val)
 
 
 MAILINGLIST_COMMON_FIELDS: Mapping[str, Any] = {

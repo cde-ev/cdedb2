@@ -2933,28 +2933,31 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard()
-    def config_import_form(self, rs: RequestState, event_id: int) -> Response:
-        return self.render(rs, "config_import")
+    def questionnaire_import_form(self, rs: RequestState, event_id: int) -> Response:
+        """Render form for uploading questionnaire data."""
+        return self.render(rs, "questionnaire_import")
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
     @REQUESTfile("json_file")
-    @REQUESTdata("config_import_data", "token")
-    def config_import(self, rs: RequestState, event_id: int,
-                      json_file: Optional[werkzeug.datastructures.FileStorage],
-                      config_import_data: Optional[str], token: Optional[str],
-                      ) -> Response:
-        if config_import_data:
-            data = check(rs, vtypes.SerializedEventConfig,
-                         json.loads(config_import_data),
+    @REQUESTdata("questionnaire_import_data", "token")
+    def questionnaire_import(
+        self, rs: RequestState, event_id: int,
+        json_file: Optional[werkzeug.datastructures.FileStorage],
+        questionnaire_import_data: Optional[str], token: Optional[str],
+    ) -> Response:
+        """Import questionnaire rows and custom datafields."""
+        if questionnaire_import_data:
+            data = check(rs, vtypes.SerializedEventQuestionnaire,
+                         json.loads(questionnaire_import_data),
                          field_definitions=rs.ambience['event']['fields'],
                          fee_modifiers=rs.ambience['event']['fee_modifiers'])
         else:
-            data = check(rs, vtypes.SerializedEventConfigUpload, json_file,
+            data = check(rs, vtypes.SerializedEventQuestionnaireUpload, json_file,
                          field_definitions=rs.ambience['event']['fields'],
                          fee_modifiers=rs.ambience['event']['fee_modifiers'])
         if rs.has_validation_errors():
-            return self.config_import_form(rs, event_id)
+            return self.questionnaire_import_form(rs, event_id)
         assert data is not None
 
         setter = {
@@ -2966,7 +2969,7 @@ class EventFrontend(AbstractUserFrontend):
             rs, event_id, data.get('questionnaire', {}))
 
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/show_event")
+        return self.redirect(rs, "event/configure_additional_questionnaire")
 
     @access("event")
     @event_guard()
