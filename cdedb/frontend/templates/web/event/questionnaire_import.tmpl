@@ -49,9 +49,21 @@
     </p>
 
     <form action="{{ cdedblink('event/questionnaire_import') }}" method="POST" id="importform"
-      enctype="multipart/form-data" class="form-horizontal">
+          enctype="multipart/form-data">
         {{ util.anti_csrf_token('event/questionnaire_import') }}
-        {{ util.form_input_file('json_file', label=gettext('JSON file'), accept="text/*,application/json") }}
-        {{ util.form_input_submit(gettext('Import')) }}
+        <div class="row">
+            <div class="col-md-6">
+                {{ util.form_input_checkbox("extend_questionnaire", label=gettext("Extend Questionnaire"),
+                                            defaultvalue="True", horizontal=False) }}
+            </div>
+            <div class="col-md-6">
+                {{ util.form_input_checkbox("skip_existing_fields", label=gettext("Skip existing fields"),
+                                            horizontal=False) }}
+            </div>
+        </div>
+        {{ util.form_input_file('json_file', label=gettext('JSON file'), accept="text/*,application/json",
+                                horizontal=False) }}
+        {{ util.form_input_submit(gettext('Save'), cancellink=cdedblink('event/configure_additional_questionnaire'),
+                                  horizontal=False) }}
     </form>
 {% endblock %}

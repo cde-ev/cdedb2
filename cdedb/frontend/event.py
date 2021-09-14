@@ -2940,22 +2940,29 @@ class EventFrontend(AbstractUserFrontend):
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
     @REQUESTfile("json_file")
-    @REQUESTdata("questionnaire_import_data", "token")
+    @REQUESTdata("extend_questionnaire", "skip_existing_fields",
+                 "questionnaire_import_data", "token")
     def questionnaire_import(
         self, rs: RequestState, event_id: int,
         json_file: Optional[werkzeug.datastructures.FileStorage],
+        extend_questionnaire: bool, skip_existing_fields: bool,
         questionnaire_import_data: Optional[str], token: Optional[str],
     ) -> Response:
         """Import questionnaire rows and custom datafields."""
+        kwargs = {
+            'field_definitions': rs.ambience['event']['fields'],
+            'fee_modifiers': rs.ambience['event']['fee_modifiers'],
+            'questionnaire': self.eventproxy.get_questionnaire(rs, event_id),
+            'extend_questionnaire': extend_questionnaire,
+            'skip_existing_fields': skip_existing_fields,
+        }
         if questionnaire_import_data:
             data = check(rs, vtypes.SerializedEventQuestionnaire,
                          json.loads(questionnaire_import_data),
-                         field_definitions=rs.ambience['event']['fields'],
-                         fee_modifiers=rs.ambience['event']['fee_modifiers'])
+                         **kwargs)
         else:
             data = check(rs, vtypes.SerializedEventQuestionnaireUpload, json_file,
-                         field_definitions=rs.ambience['event']['fields'],
-                         fee_modifiers=rs.ambience['event']['fee_modifiers'])
+                         **kwargs)
         if rs.has_validation_errors():
             return self.questionnaire_import_form(rs, event_id)
         assert data is not None

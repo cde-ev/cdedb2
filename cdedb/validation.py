@@ -3470,21 +3470,23 @@ def _partial_registration_track(
 
 
 @_add_typed_validator
-def _serialized_event_config_upload(
-    val: Any, field_definitions: CdEDBObjectMap, fee_modifiers: CdEDBObjectMap,
-    argname: str = "serialized_event_donfig_upload", **kwargs: Any,
+def _serialized_event_questionnaire_upload(
+    val: Any, argname: str = "serialized_event_questionnaire_upload", **kwargs: Any,
 ) -> SerializedEventQuestionnaireUpload:
 
     val = _input_file(val, argname, **kwargs)
     val = _json(val, argname, **kwargs)
-    return SerializedEventQuestionnaireUpload(_serialized_event_config(
-        val, field_definitions, fee_modifiers, argname, **kwargs))
+    return SerializedEventQuestionnaireUpload(
+        _serialized_event_questionnaire(val, argname, **kwargs))
 
 
 @_add_typed_validator
-def _serialized_event_config(
-    val: Any, field_definitions: CdEDBObjectMap, fee_modifiers: CdEDBObjectMap,
-    argname: str = "serialized_event_config", **kwargs: Any
+def _serialized_event_questionnaire(
+    val: Any, argname: str = "serialized_event_questionnaire, ", *,
+    field_definitions: CdEDBObjectMap, fee_modifiers: CdEDBObjectMap,
+    questionnaire: Dict[const.QuestionnaireUsages, List[CdEDBObject]],
+    extend_questionnaire: bool, skip_existing_fields: bool,
+    **kwargs: Any
 ) -> SerializedEventQuestionnaire:
 
     val = _mapping(val, argname, **kwargs)
@@ -3508,8 +3510,12 @@ def _serialized_event_config(
                 errs.extend(e)
             else:
                 if field_name in fields_by_name:
-                    errs.append(KeyError(
-                        field_argname, n_("A field with this name already exists.")))
+                    if not skip_existing_fields:
+                        errs.append(KeyError(
+                            field_argname,
+                            n_("A field with this name already exists"
+                               " ('%(field_name)s')."),
+                            {'field_name': field_name}))
                     continue
                 try:
                     field = _ALL_TYPED[EventField](
@@ -3524,10 +3530,23 @@ def _serialized_event_config(
 
     if 'questionnaire' in val:
         try:
-            val['questionnaire'] = _questionnaire(
+            new_questionnaire = _questionnaire(
                 val['questionnaire'], field_definitions, fee_modifiers, **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
+        else:
+            if extend_questionnaire:
+                new_questionnaire = {
+                    kind: questionnaire.get(kind, []) + new_questionnaire.get(kind, [])
+                    for kind in const.QuestionnaireUsages
+                }
+                try:
+                    new_questionnaire = _questionnaire(
+                        new_questionnaire, field_definitions, fee_modifiers, **kwargs)
+                except ValidationSummary as e:
+                    errs.extend(e)
+
+            val['questionnaire'] = new_questionnaire
 
     if errs:
         raise errs
