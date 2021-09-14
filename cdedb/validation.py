@@ -2838,6 +2838,7 @@ def _questionnaire_row(
         'field_id': Optional[ID],
         'field_name': Optional[RestrictiveIdentifier],
         'kind': const.QuestionnaireUsages,
+        'pos': int,
     }
 
     value = _examine_dictionary_fields(
@@ -2910,8 +2911,7 @@ def _questionnaire(
     errs = ValidationSummary()
     ret: Dict[int, List[CdEDBObject]] = {}
     fee_modifier_fields = {e['field_id'] for e in fee_modifiers.values()}
-    for i, (k, v) in enumerate(copy.deepcopy(val).items()):
-        row_argname = argname + f"[{k}][{i+1}]"
+    for k, v in copy.deepcopy(val).items():
         try:
             k = _ALL_TYPED[const.QuestionnaireUsages](k, argname, **kwargs)
             v = _iterable(v, argname, **kwargs)
@@ -2919,7 +2919,8 @@ def _questionnaire(
             errs.extend(e)
         else:
             ret[k] = []
-            for value in v:
+            for i, value in enumerate(v):
+                row_argname = argname + f"[{k}][{i+1}]"
                 try:
                     value = _questionnaire_row(
                         value, field_definitions, fee_modifier_fields,
@@ -2927,12 +2928,15 @@ def _questionnaire(
                 except ValidationSummary as e:
                     errs.extend(e)
                     continue
+                value['pos'] = i+1
                 ret[k].append(value)
 
     all_rows = itertools.chain.from_iterable(ret.values())
     for e1, e2 in itertools.combinations(all_rows, 2):
         if e1['field_id'] is not None and e1['field_id'] == e2['field_id']:
-            errs.append(ValueError('field_id', n_("Must not duplicate field.")))
+            errs.append(ValueError(
+                'field_id', n_("Must not duplicate field ('%(field_name)s')."),
+                {'field_name': field_definitions[e1['field_id']]['field_name']}))
 
     if errs:
         raise errs
