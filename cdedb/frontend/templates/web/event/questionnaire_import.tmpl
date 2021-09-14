@@ -9,7 +9,7 @@
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
-{{ util.breadcrumb_link(cdedblink("event/questionnaire_import_form"), gettext("Config Import"), active=True) }}
+{{ util.breadcrumb_link(cdedblink("event/questionnaire_import_form"), gettext("Questionnaire Import"), active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
