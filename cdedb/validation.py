@@ -313,7 +313,7 @@ def _augment_dict_validator(
         try:
             ret = _examine_dictionary_fields(
                 val, mandatory_fields, optional_fields,
-                **{"allow_superfluous": True, **kwargs})
+                **{"allow_superfluous": True, **kwargs})  # type: ignore[arg-type]
         except ValidationSummary as e:
             errs.extend(e)
 
@@ -2853,9 +2853,9 @@ def _questionnaire_row(
         'readonly': Optional[bool],  # type: ignore
         'default_value': Optional[str],  # type: ignore
     }
-    optional_fields = {
-        'field_id': Optional[ID],
-        'field_name': Optional[RestrictiveIdentifier],
+    optional_fields: TypeMapping = {
+        'field_id': Optional[ID],  # type: ignore[dict-item]
+        'field_name': Optional[RestrictiveIdentifier],  # type: ignore[dict-item]
         'kind': const.QuestionnaireUsages,
         'pos': int,
     }
@@ -2930,7 +2930,7 @@ def _questionnaire(
     val = _mapping(val, argname, **kwargs)
 
     errs = ValidationSummary()
-    ret: Dict[int, List[CdEDBObject]] = {}
+    ret: Dict[int, List[QuestionnaireRow]] = {}
     fee_modifier_fields = {e['field_id'] for e in fee_modifiers.values()}
     for k, v in copy.deepcopy(val).items():
         try:
@@ -3506,7 +3506,7 @@ def _serialized_event_questionnaire_upload(
 def _serialized_event_questionnaire(
     val: Any, argname: str = "serialized_event_questionnaire, ", *,
     field_definitions: CdEDBObjectMap, fee_modifiers: CdEDBObjectMap,
-    questionnaire: Dict[const.QuestionnaireUsages, List[CdEDBObject]],
+    questionnaire: Dict[const.QuestionnaireUsages, List[QuestionnaireRow]],
     extend_questionnaire: bool, skip_existing_fields: bool,
     **kwargs: Any
 ) -> SerializedEventQuestionnaire:
@@ -3560,13 +3560,13 @@ def _serialized_event_questionnaire(
             errs.extend(e)
         else:
             if extend_questionnaire:
-                new_questionnaire = {
+                tmp = {
                     kind: questionnaire.get(kind, []) + new_questionnaire.get(kind, [])
                     for kind in const.QuestionnaireUsages
                 }
                 try:
                     new_questionnaire = _questionnaire(
-                        new_questionnaire, field_definitions, fee_modifiers, **kwargs)
+                        tmp, field_definitions, fee_modifiers, **kwargs)
                 except ValidationSummary as e:
                     errs.extend(e)
 
