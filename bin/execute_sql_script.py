@@ -53,7 +53,7 @@ if __name__ == "__main__":
 
     general = parser.add_argument_group("General options")
     general.add_argument("--dbname", "-d", default="cdb")
-    general.add_argument("--verbose", "-v", action="count")
+    general.add_argument("--verbose", "-v", action="count", default=0)
     group = general.add_mutually_exclusive_group(required=True)
     group.add_argument("--file", "-f", type=Path)
     group.add_argument("--command", "-c")
