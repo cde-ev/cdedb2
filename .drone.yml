@@ -75,7 +75,7 @@ steps:
     - make i18n-compile # needed for sample-data step.
     - make sample-data # perform basic setup.
     - make sql-test # create the necessary test database.
-    - bin/docker-evolution-trial.sh origin/$DRONE_TARGET_BRANCH $DRONE_COMMIT
+    - bin/evolution-trial.sh origin/$DRONE_TARGET_BRANCH $DRONE_COMMIT
 - name: frontend tests a-d
   image: cdedb
   pull: never # do not try to pull image from docker hub
