@@ -4433,7 +4433,6 @@ etc;anything else""", f['entries_2'].value)
 
         self.submit(f)
 
-
     @unittest.skip("deprecated test")
     def test_log(self) -> None:
         # TODO This is a big anti-pattern for log tests. Logs shall be checked inline.
