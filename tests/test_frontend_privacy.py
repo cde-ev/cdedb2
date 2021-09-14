@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# pylint: disable=missing-module-docstring
 
 import datetime
 from typing import Dict, Set
@@ -362,7 +363,7 @@ class TestPrivacyFrontend(FrontendTest):
         inspected = USER_DICT['martin']
         self.get(self.show_user_link(inspected['id']))
         # members got first an un-quoted view on a profile, showing the basics
-        found = self._profile_base_view(inspected)
+        self._profile_base_view(inspected)
         # The username must not be visible, although "Email" occurs as field
         self.assertNonPresence(inspected['username'])
         self.assertNonPresence("Gesamtes Profil anzeigen")
@@ -597,7 +598,7 @@ class TestPrivacyFrontend(FrontendTest):
         f = self.response.forms['membersearchform']
         f['qval_fulltext'] = "Berta"
         self.submit(f)
-        self.assertTitle("Bertålotta Beispiel")
+        self.assertTitle("Bertå Beispiel")
 
         # first case: make berta not-searchable
         self.traverse({'href': '/core/persona/2/adminchange'})
@@ -633,10 +634,10 @@ class TestPrivacyFrontend(FrontendTest):
     @as_users("charly", "daniel", "garcia", "inga")
     def test_show_past_event(self) -> None:
         akira = "Akira Abukara"
-        berta = "Bertålotta Beispie"
-        charly = "Charly C. Clown"
+        berta = "Bertå Beispiel"
+        charly = "Charly Clown"
         emilia = "Emilia E. Eventis"
-        ferdinand = "Ferdinand F. Findus"
+        ferdinand = "Ferdinand Findus"
         # non-members should not have access if they are no cde admin
         if self.user_in('daniel'):
             self.get('/cde/past/event/list', status="403 FORBIDDEN")
@@ -672,7 +673,7 @@ class TestPrivacyFrontend(FrontendTest):
     def test_show_past_course(self) -> None:
         akira = "Akira Abukara"
         emilia = "Emilia E. Eventis"
-        ferdinand = "Ferdinand F. Findus"
+        ferdinand = "Ferdinand Findus"
         # non-members should not have access if they are no cde admin
         if self.user_in('daniel'):
             self.get('/cde/past/event/1/course/2/show', status="403 FORBIDDEN")

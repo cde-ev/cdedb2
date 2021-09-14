@@ -246,7 +246,7 @@
             "is_searchable": false,
             "is_archived": false,
             "is_purged": false,
-            "display_name": "Emilia",
+            "display_name": "Emmy",
             "given_names": "Emilia E.",
             "family_name": "Eventis",
             "title": null,
@@ -1646,7 +1646,7 @@
             "is_searchable": false,
             "is_archived": false,
             "is_purged": false,
-            "display_name": "Emilia",
+            "display_name": "Emmy",
             "given_names": "Emilia E.",
             "family_name": "Eventis",
             "title": null,
@@ -2510,10 +2510,10 @@
             "telephone": null,
             "mobile": null,
             "address_supplement": null,
-            "address": null,
-            "postal_code": null,
-            "location": null,
-            "country": null,
+            "address": "Auf der Düne 120",
+            "postal_code": "03205",
+            "location": "Musterstadt",
+            "country": "DE",
             "birth_name": null,
             "address_supplement2": null,
             "address2": null,
@@ -3059,10 +3059,10 @@
             "telephone": null,
             "mobile": null,
             "address_supplement": null,
-            "address": null,
-            "postal_code": null,
-            "location": null,
-            "country": null,
+            "address": "Auf der Düne 120",
+            "postal_code": "03205",
+            "location": "Musterstadt",
+            "country": "DE",
             "birth_name": null,
             "address_supplement2": null,
             "address2": null,
@@ -3515,7 +3515,7 @@
             "is_instructor": false,
             "is_orga": false
         },
-         {
+        {
             "persona_id": 4,
             "pevent_id": 1,
             "pcourse_id": 2,
@@ -3759,7 +3759,8 @@
             "field_name": "brings_balls",
             "kind": 2,
             "association": 1,
-            "entries": null
+            "entries": null,
+            "checkin": true
         },
         {
             "id": 2,
@@ -3780,7 +3781,8 @@
                     "etc",
                     "anything else"
                 ]
-            ]
+            ],
+            "checkin": false
         },
         {
             "id": 3,
@@ -3788,7 +3790,8 @@
             "field_name": "lodge",
             "kind": 1,
             "association": 1,
-            "entries": null
+            "entries": null,
+            "checkin": false
         },
         {
             "id": 4,
@@ -3796,7 +3799,8 @@
             "field_name": "may_reserve",
             "kind": 2,
             "association": 1,
-            "entries": null
+            "entries": null,
+            "checkin": false
         },
         {
             "id": 5,
@@ -3804,7 +3808,8 @@
             "field_name": "room",
             "kind": 1,
             "association": 2,
-            "entries": null
+            "entries": null,
+            "checkin": false
         },
         {
             "id": 6,
@@ -3829,7 +3834,8 @@
                     "none",
                     "no radiation"
                 ]
-            ]
+            ],
+            "checkin": false
         },
         {
             "id": 7,
@@ -3837,7 +3843,8 @@
             "field_name": "is_child",
             "kind": 2,
             "association": 1,
-            "entries": null
+            "entries": null,
+            "checkin": false
         },
         {
             "id": 8,
@@ -3845,7 +3852,8 @@
             "field_name": "anzahl_GROSSBUCHSTABEN",
             "kind": 3,
             "association": 1,
-            "entries": null
+            "entries": null,
+            "checkin": true
         }
     ],
     "event.fee_modifiers": [
@@ -4189,7 +4197,7 @@
             "checkin": null,
             "list_consent": true,
             "fields": {
-                "lodge": "Die üblichen Verdächtigen :)",
+                "lodge": "Die üblichen Verdächtigen, insb. Berta Beispiel und garcia@example.cde :)",
                 "is_child": false,
                 "anzahl_GROSSBUCHSTABEN": 4
             }
@@ -4316,6 +4324,22 @@
         {
             "id": 8,
             "persona_id": 15,
+            "real_persona_id": null,
+            "event_id": 3,
+            "notes": null,
+            "orga_notes": null,
+            "payment": null,
+            "amount_paid": "0.00",
+            "amount_owed": "0.00",
+            "parental_agreement": false,
+            "mixed_lodging": false,
+            "checkin": null,
+            "list_consent": false,
+            "fields": {}
+        },
+        {
+            "id": 9,
+            "persona_id": 7,
             "real_persona_id": null,
             "event_id": 3,
             "notes": null,
@@ -4490,6 +4514,14 @@
             "status": 2,
             "lodgement_id": null,
             "is_camping_mat": false
+        },
+        {
+            "id": 21,
+            "registration_id": 9,
+            "part_id": 5,
+            "status": 2,
+            "lodgement_id": null,
+            "is_camping_mat": false
         }
     ],
     "event.registration_tracks": [
@@ -4629,6 +4661,13 @@
         {
             "id": 20,
             "registration_id": 8,
+            "track_id": 4,
+            "course_id": null,
+            "course_instructor": null
+        },
+        {
+            "id": 21,
+            "registration_id": 9,
             "track_id": 4,
             "course_id": null,
             "course_instructor": null
@@ -5008,15 +5047,15 @@
             "query_name": "Test-Query",
             "scope": 30,
             "serialized_query": {
+                "scope": 30,
                 "is_search": true,
                 "query_name": "Test-Query",
-                "scope": 30,
                 "qsel_reg.id": true,
-                "qsel_persona.id": true,
-                "qsel_persona.birthday": true,
-                "qop_persona.birthday": 20,
-                "qval_persona.birthday": "2000-01-01",
                 "qord_primary": "persona.birthday",
+                "qsel_persona.id": true,
+                "qop_persona.birthday": 20,
+                "qsel_persona.birthday": true,
+                "qval_persona.birthday": "2000-01-01",
                 "qord_primary_ascending": true
             }
         }
@@ -7976,6 +8015,11 @@
             "mailinglist_id": 4,
             "persona_id": 6,
             "address": "ferdinand-unterhaltung@example.cde"
+        },
+        {
+            "mailinglist_id": 52,
+            "persona_id": 9,
+            "address": "inga-papierkorb@example.cde"
         }
     ],
     "ml.whitelist": [

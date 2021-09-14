@@ -1,2 +1,2 @@
-md5 (debian-bullseye-DI-rc1-amd64-netinst.iso) = 9dc0ba41fc337b4db56d3de463fc0274
-sha256 (debian-bullseye-DI-rc1-amd64-netinst.iso) = bb09a738bf722573125b4f532932cc07c13f3165222c2e4238dde4a3ee74c5ec
+sha256 (debian-11.0.0-amd64-netinst.iso) = ae6d563d2444665316901fe7091059ac34b8f67ba30f9159f7cef7d2fdc5bf8a
+sha512 (debian-11.0.0-amd64-netinst.iso) = 5f6aed67b159d7ccc1a90df33cc8a314aa278728a6f50707ebf10c02e46664e383ca5fa19163b0a1c6a4cb77a39587881584b00b45f512b4a470f1138eaa1801

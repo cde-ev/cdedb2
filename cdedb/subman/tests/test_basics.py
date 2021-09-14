@@ -1,3 +1,7 @@
+"""Basic testing for the subman library"""
+# We allow 120 line length here.
+# pylint: disable=line-too-long
+
 import enum
 import itertools
 import unittest

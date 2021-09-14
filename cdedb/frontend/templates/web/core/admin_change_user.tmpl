@@ -4,13 +4,13 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans given_names=values['given_names'], family_name=values['family_name'] %}
-        Edit {{ given_names }} {{ family_name }}
+    {% trans name=util.persona_name(values) %}
+        Edit {{ name }}
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(show_user_link(user, values['id']), values['given_names'] + " " + values['family_name'],
+    {{ util.breadcrumb_link(show_user_link(user, values['id']), util.persona_name(values),
             icon="user") }}
     {{ util.breadcrumb_link(cdedblink("core/admin_change_user_form"), gettext("Edit Userdata"), active=True) }}
 {% endblock %}
@@ -32,7 +32,7 @@
             {{ util.form_input_text(name="birth_name", label=gettext("Birth Name")) }}
         {% endif %}
         {{ util.form_input_text(name="name_supplement", label=gettext("Name Affix")) }}
-        {{ util.form_input_text(name="display_name", label=gettext("First Given Name")) }}
+        {{ util.form_input_text(name="display_name", label=gettext("Known as (Forename)")) }}
         {% if 'event' in admin_bits %}
             {% if "gender" in shown_fields %}
                 {{ util.form_input_select(name="gender", entries=enums['Genders']|enum_entries(processing=gettext),

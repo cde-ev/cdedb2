@@ -1,3 +1,5 @@
+"""data types for the CdEDB project"""
+
 import datetime
 import decimal
 from typing import Any, Dict, List, NewType as _NewType, Type

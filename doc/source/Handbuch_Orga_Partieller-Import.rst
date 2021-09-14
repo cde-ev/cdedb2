@@ -68,7 +68,7 @@ Anmeldung vorhanden ist, dürfen beim Import nicht vorkommen. Sie stellen
 Informationen zur Verfügung, die durch den partiellen Import nicht verändert
 werden können.
 
-Prinzipiell sind alle Elemente außer ``CDEDB_EXPORT_EVENT_VERSION``, ``id``
+Prinzipiell sind alle Elemente außer ``EVENT_SCHEMA_VERSION``, ``id``
 ``kind`` und ``timestamp`` optional, können also weggelassen werden. Es ist
 sogar explizit empfehlenswert nur die für die gewünschte Änderung nötigen
 Informationen einzutragen um nicht in Konflikt mit möglicherweise
@@ -165,6 +165,8 @@ Hier sind die Änderungen gelistet, die in den jeweiligen Inkrementierungen der
 Export-Version neu eingeführt wurden. Für jede Version ist angegeben, ob die
 Version für den partiellen Import strikt abwärtskompatibel sind oder nicht.
 
+* Version (15, 3): Hinzufügen von ``fee_modifiers`` pro Part. Alte Versionsnummer
+  entfernt.
 * Version (15, 2): Hinzufügen des Feldes ``participant_info`` für die Teilnehmer-Infos.
 * Version (15, 1): Umbenennung von ``courses_in_participant_list`` zu
   ``is_course_assignment_visible``.

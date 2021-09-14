@@ -215,12 +215,11 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         # logger are thread-safe!
         self.logger = logging.getLogger("cdedb.backend.{}".format(self.realm))
-        self.logger.debug("Instantiated {} with configpath {}.".format(
-            self, configpath))
+        self.logger.debug(f"Instantiated {self} with configpath {configpath}.")
         # Everybody needs access to the core backend
         # Import here since we otherwise have a cyclic import.
         # I don't see how we can get out of this ...
-        from cdedb.backend.core import CoreBackend
+        from cdedb.backend.core import CoreBackend  # pylint: disable=import-outside-toplevel
         self.core: CoreBackend
         if isinstance(self, CoreBackend):
             # self.core = cast('CoreBackend', self)
@@ -307,8 +306,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         """
         sanitized_params = tuple(
             self._sanitize_db_input(p) for p in params)
-        self.logger.debug("Execute PostgreSQL query {}.".format(cur.mogrify(
-            query, sanitized_params)))
+        self.logger.debug(f"Execute PostgreSQL query"
+                          f" {cur.mogrify(query, sanitized_params)}.")
         cur.execute(query, sanitized_params)
 
     def query_exec(self, rs: RequestState, query: str,
@@ -402,7 +401,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         return self.query_all(rs, query, (entities,))
 
     def sql_select_one(self, rs: RequestState, table: str, columns: Sequence[str],
-                       entity: EntityKey, entity_key: str = "id") -> Optional[CdEDBObject]:
+                       entity: EntityKey, entity_key: str = "id"
+                       ) -> Optional[CdEDBObject]:
         """Generic SQL select query for one row.
 
         See :py:meth:`sql_select` for thoughts on this.
@@ -485,7 +485,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         :returns: all results of the query
         """
         query.fix_custom_columns()
-        self.logger.debug("Performing general query {}.".format(query))
+        self.logger.debug(f"Performing general query {query}.")
         select = ", ".join('{} AS "{}"'.format(column, column.replace('"', ''))
                            for field in query.fields_of_interest
                            for column in field.split(','))
@@ -511,11 +511,13 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                 # for str as well as for other types
                 sql_param_str = "lower({0})"
 
-                def caser(x: T) -> T: return x.lower()  # type: ignore[attr-defined]
+                def caser(x: T) -> T:
+                    return x.lower()  # type: ignore[attr-defined]
             else:
                 sql_param_str = "{0}"
 
-                def caser(x: T) -> T: return x
+                def caser(x: T) -> T:
+                    return x
             columns = field.split(',')
             # Treat containsall and friends special since they want to find
             # each value in any column, without caring that the columns are
@@ -565,7 +567,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                     phrase = "{0} = ANY(%s)".format(sql_param_str)
                 else:
                     phrase = "NOT({0} = ANY(%s))".format(sql_param_str)
-                params.extend((tuple(caser(x) for x in value),) * len(columns))  # type: ignore[arg-type] # noqa
+                params.extend((tuple(caser(x) for x in value),) * len(columns))  # type: ignore[arg-type]
             elif operator in (_ops.match, _ops.unmatch):
                 if operator == _ops.match:
                     phrase = "{} ~* %s"
@@ -766,6 +768,8 @@ class Silencer:
         self.rs = rs
 
     def __enter__(self) -> None:
+        if self.rs.is_quiet:
+            raise RuntimeError("Already silenced. Reentrant use is unsupported.")
         self.rs.is_quiet = True
         _affirm_atomized_context(self.rs)
 

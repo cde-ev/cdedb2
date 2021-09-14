@@ -1,7 +1,6 @@
 {% set sidenav_active='ml_moderation' %}
 {% extends "web/ml/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% import "web/ml/generic.tmpl" as generic_ml with context %}
 {% block title %}
     {% trans title=ambience['mailinglist']['title'] %}{{ title }} – Message Moderation
     {% endtrans %}
@@ -39,8 +38,22 @@
              notification message will be sent. The latter is preferred for spam messages. If you whitelist a message,
              it is not only accepted, but its author can write emails without moderation in the future.
          {% endtrans %}
-    </p>
+        </p>
         {% if held %}
+            <p>
+                <form action="{{ cdedblink('ml/message_moderation_multi') }}" method="POST" id="moderateallform">
+                    {{ util.anti_csrf_token('ml/message_moderation_multi') }}
+                    {% for email in held %}
+                        {{ util.input_hidden("request_ids", email.request_id) }}
+                    {% endfor %}
+                    {% for action, label, icon, coloring in (
+                            ('accept', gettext('Accept All'), 'check', 'success'),
+                            ('discard', gettext('Discard All'), 'trash-alt', 'danger')) %}
+                        {{ util.input_submit(label=label, icon=icon, value=action, name="action",
+                                             aclass="btn btn-xs btn-" + coloring) }}
+                    {% endfor %}
+                </form>
+            </p>
             <ul>
                 {% for email in held %}
                     <li class="hide-hover-container clearfix-after">

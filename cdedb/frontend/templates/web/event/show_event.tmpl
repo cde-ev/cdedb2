@@ -428,6 +428,10 @@
                                                  title=gettext("Event is not concluded yet.") if ambience['event']['end'] >= now().date() else "") }}
                             {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
                         </form>
+                        <script nonce="{{ csp_nonce }}">
+                            $('#deleteeventform').cdedbProtectAction("{{ gettext("The event will be permanently deleted.") }}");
+                            $('#deleteeventform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
+                        </script>
                     </div>
                 </div>
                 <div class="col-sm-8">
@@ -439,14 +443,6 @@
                     </div>
                 </div>
             </div>
-            <script nonce="{{ csp_nonce }}">
-                $('#deleteeventform').cdedbProtectAction("{{ gettext("The event will be permanently deleted.") }}");
-                $('#deleteeventform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
-            </script>
-            <script nonce="{{ csp_nonce }}">
-                $('#fullexportform').cdedbProtectAction("{{ gettext("Are you sure to download a full export before locking?") }}");
-                $('#fullexportform').find('[name="agree_unlocked_download"]').prop('checked', true).parent().hide();
-            </script>
         {% endcall %}
     {% endif %}
 {% endblock %}

@@ -24,6 +24,7 @@ import email.mime.text
 import email.utils
 import functools
 import io
+import itertools
 import json
 import logging
 import pathlib
@@ -37,6 +38,7 @@ import threading
 import typing
 import urllib.error
 import urllib.parse
+import weakref
 from email.mime.nonmultipart import MIMENonMultipart
 from secrets import token_hex
 from typing import (
@@ -72,8 +74,8 @@ from cdedb.common import (
     CdEDBMultiDict, CdEDBObject, CustomJSONEncoder, EntitySorter, Error, Notification,
     NotificationType, PathLike, PrivilegeError, RequestState, Role, User,
     ValidationWarning, _tdelta, asciificator, decode_parameter, encode_parameter,
-    glue, json_serialize, make_proxy, make_root_logger, merge_dicts, n_, now,
-    roles_to_db_role, unwrap, xsorted,
+    get_localized_country_codes, glue, json_serialize, make_proxy, make_root_logger,
+    merge_dicts, n_, now, roles_to_db_role, unwrap,
 )
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -82,7 +84,6 @@ from cdedb.devsamples import HELD_MESSAGE_SAMPLE
 from cdedb.enums import ENUMS_DICT
 from cdedb.filter import JINJA_FILTERS, cdedbid_filter, safe_filter, sanitize_None
 from cdedb.query import Query
-from cdedb.validationdata import COUNTRY_CODES
 
 _LOGGER = logging.getLogger(__name__)
 _BASICCONF = BasicConfig()
@@ -126,8 +127,7 @@ class BaseApp(metaclass=abc.ABCMeta):
             syslog_level=self.conf["SYSLOG_LEVEL"],
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         self.logger = logging.getLogger(logger_name)  # logger are thread-safe!
-        self.logger.debug("Instantiated {} with configpath {}.".format(
-            self, configpath))
+        self.logger.debug(f"Instantiated {self} with configpath {configpath}.")
         # local variable to prevent closure over secrets
         url_parameter_salt = secrets["URL_PARAMETER_SALT"]
         self.decode_parameter = (
@@ -220,6 +220,14 @@ class BaseApp(metaclass=abc.ABCMeta):
         return self.encode_parameter(target, token_name, token_payload, persona_id)
 
 
+def raise_jinja(val: str) -> None:
+    """Helper to point out programming errors in jinja.
+
+    May not be used for handling of user input, user-errors or control flow.
+    """
+    raise RuntimeError(val)
+
+
 # This needs acces to config, and cannot be moved to filter.py
 def datetime_filter(val: Union[datetime.datetime, str, None],
                     formatstr: str = "%Y-%m-%d %H:%M (%Z)", lang: str = None,
@@ -238,7 +246,7 @@ def datetime_filter(val: Union[datetime.datetime, str, None],
     if val.tzinfo is not None:
         val = val.astimezone(_BASICCONF["DEFAULT_TIMEZONE"])
     else:
-        _LOGGER.warning("Found naive datetime object {}.".format(val))
+        _LOGGER.warning(f"Found naive datetime object {val}.")
 
     if lang:
         locale = icu.Locale(lang)
@@ -249,6 +257,38 @@ def datetime_filter(val: Union[datetime.datetime, str, None],
         return datetime_formatter.format(val)
     else:
         return val.strftime(formatstr)
+
+
+PeriodicMethod = Callable[[Any, RequestState, CdEDBObject], CdEDBObject]
+
+
+class PeriodicJob(Protocol):
+    cron: CdEDBObject
+
+    def __call__(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject:
+        ...
+
+
+def periodic(name: str, period: int = 1
+             ) -> Callable[[PeriodicMethod], PeriodicJob]:
+    """This decorator marks a function of a frontend for periodic execution.
+
+    This just adds a flag and all of the actual work is done by the
+    CronFrontend.
+
+    :param name: the name of this job
+    :param period: the interval in which to execute this job (e.g. period ==
+      2 means every second invocation of the CronFrontend)
+    """
+    def decorator(fun: PeriodicMethod) -> PeriodicJob:
+        fun = cast(PeriodicJob, fun)
+        fun.cron = {
+            'name': name,
+            'period': period,
+        }
+        return fun
+
+    return decorator
 
 
 class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
@@ -274,6 +314,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'query_mod': query_mod,
             'glue': glue,
             'enums': ENUMS_DICT,
+            'raise': raise_jinja,
             'encode_parameter': self.encode_parameter,
             'encode_anti_csrf': self.encode_anti_csrf_token,
             'staticurl': functools.partial(staticurl,
@@ -308,6 +349,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             comment_start_string="<<#",
             comment_end_string="#>>",
         )
+        self.jinja_env_tex.filters.update({'persona_name': make_persona_name})
         self.jinja_env_mail = self.jinja_env.overlay(
             autoescape=False,
             trim_blocks=True,
@@ -335,18 +377,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         also have additional roles with elevated privileges.
         """
         return "{}_admin".format(cls.realm) in rs.user.roles
-
-    @staticmethod
-    def get_localized_country_codes(rs: RequestState) -> List[Tuple[str, str]]:
-        """Generate a list of country code - name tupes in current language."""
-
-        def _format_country_code(code: str) -> str:
-            """Helper to make string hidden to pybabel."""
-            return f'CountryCodes.{code}'
-
-        return xsorted(
-            [(v, rs.gettext(_format_country_code(v))) for v in COUNTRY_CODES],
-            key=lambda x: x[1])
 
     def fill_template(self, rs: RequestState, modus: str, templatename: str,
                       params: CdEDBObject) -> str:
@@ -454,7 +484,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         # here come the always accessible things promised above
         data = {
-            'COUNTRY_CODES': self.get_localized_country_codes(rs),
+            'COUNTRY_CODES': get_localized_country_codes(rs),
             'ambience': rs.ambience,
             'cdedblink': _cdedblink,
             'doclink': _doclink,
@@ -505,7 +535,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     def send_csv_file(rs: RequestState, mimetype: str = 'text/csv',
                       filename: str = None, inline: bool = True, *,
                       path: Union[str, pathlib.Path] = None,
-                      afile: IO[AnyStr] = None,
+                      afile: IO[bytes] = None,
                       data: AnyStr = None) -> Response:
         """Wrapper around :py:meth:`send_file` for CSV files.
 
@@ -522,7 +552,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     @staticmethod
     def send_file(rs: RequestState, mimetype: str = None, filename: str = None,
                   inline: bool = True, *, path: PathLike = None,
-                  afile: IO[AnyStr] = None, data: AnyStr = None,
+                  afile: IO[bytes] = None, data: AnyStr = None,
                   encoding: str = 'utf-8') -> Response:
         """Wrapper around :py:meth:`werkzeug.wsgi.wrap_file` to offer a file for
         download.
@@ -543,31 +573,22 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if (path and afile) or (path and data) or (afile and data):
             raise ValueError(n_("Ambiguous input."))
 
-        data_buffer = io.BytesIO()
+        payload: Union[Iterable[bytes], bytes]
         if path:
-            path = pathlib.Path(path)
-            if not path.is_file():
-                raise werkzeug.exceptions.NotFound()
-            with open(path, 'rb') as f:
-                data_buffer.write(f.read())
+            f = pathlib.Path(path).open("rb")
+            payload = werkzeug.wsgi.wrap_file(rs.request.environ, f)
         elif afile:
-            content = afile.read()
-            if isinstance(content, str):
-                data_buffer.write(content.encode(encoding))
-            elif isinstance(content, bytes):
-                data_buffer.write(content)
-            else:
-                raise ValueError(n_("Invalid datatype read from file."))
+            payload = werkzeug.wsgi.wrap_file(rs.request.environ, afile)
         elif data:
             if isinstance(data, str):
-                data_buffer.write(data.encode(encoding))
+                payload = data.encode(encoding)
             elif isinstance(data, bytes):
-                data_buffer.write(data)
+                payload = data
             else:
                 raise ValueError(n_("Invalid input type."))
-        data_buffer.seek(0)
+        else:
+            raise RuntimeError(n_("Impossible."))
 
-        wrapped_file = werkzeug.wsgi.wrap_file(rs.request.environ, data_buffer)
         extra_args = {}
         if mimetype is not None:
             extra_args['mimetype'] = mimetype
@@ -577,8 +598,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             disposition += '; filename="{}"'.format(filename)
         headers.append(('Content-Disposition', disposition))
         headers.append(('X-Generation-Time', str(now() - rs.begin)))
-        return Response(wrapped_file, direct_passthrough=True, headers=headers,
-                        **extra_args)
+        return Response(payload, direct_passthrough=True, headers=headers, **extra_args)
 
     @staticmethod
     def send_json(rs: RequestState, data: Any) -> Response:
@@ -861,10 +881,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             with tempfile.NamedTemporaryFile(mode='w', prefix="cdedb-mail-",
                                              suffix=".txt", delete=False) as f:
                 f.write(str(msg))
-                self.logger.debug("Stored mail to {}.".format(f.name))
+                self.logger.debug(f"Stored mail to {f.name}.")
                 ret = f.name
-        self.logger.info("Sent email with subject '{}' to '{}'".format(
-            msg['Subject'], msg['To']))
+        self.logger.info(f"Sent email with subject '{msg['Subject']}' to '{msg['To']}'")
         return ret
 
     def redirect_show_user(self, rs: RequestState, persona_id: int,
@@ -928,22 +947,20 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         pdf_path = pathlib.Path(cwd, pdf_file)
 
         args = ("lualatex", "-interaction", "batchmode", target_file)
-        self.logger.info("Invoking {}".format(args))
+        self.logger.info(f"Invoking {args}")
         try:
             for _ in range(runs):
                 subprocess.run(args, cwd=cwd, check=True,
                                stdout=subprocess.DEVNULL)
         except subprocess.CalledProcessError as e:
             if pdf_path.exists():
-                self.logger.debug(
-                    "Deleting corrupted file {}".format(pdf_path))
+                self.logger.debug(f"Deleting corrupted file {pdf_path}")
                 pdf_path.unlink()
-            self.logger.debug("Exception \"{}\" caught and handled.".format(e))
+            self.logger.debug(f"Exception \"{e}\" caught and handled.")
             if self.conf["CDEDB_DEV"]:
                 tstamp = round(now().timestamp())
                 backup_path = "/tmp/cdedb-latex-error-{}.tex".format(tstamp)
-                self.logger.info("Copying source file to {}".format(
-                    backup_path))
+                self.logger.info(f"Copying source file to {backup_path}")
                 shutil.copy2(target_file, backup_path)
             errormsg = errormsg or n_(
                 "LaTeX compilation failed. Try downloading the "
@@ -1063,6 +1080,40 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             else:
                 return None
 
+    def check_anti_csrf(self, rs: RequestState, action: str,
+                        token_name: str, token_payload: str) -> Optional[str]:
+        """
+        A helper function to check the anti CSRF token
+
+        The anti CSRF token is a signed userid, added as hidden input to most
+        forms, used to mitigate Cross Site Request Forgery (CSRF) attacks. It is
+        checked before calling the handler function, if the handler function is
+        marked to be protected against CSRF attacks, which is the default for
+        all POST endpoints.
+
+        The anti CSRF token should be created using the util.anti_csrf_token
+        template macro.
+
+        :param action: The name of the endpoint, checked by 'decode_parameter'
+        :param token_name: The name of the anti CSRF token.
+        :param token_payload: The expected payload of the anti CSRF token.
+        :return: None if everything is ok, or an error message otherwise.
+        """
+        val = rs.request.values.get(token_name, "").strip()
+        if not val:
+            return n_("Anti CSRF token is required for this form.")
+        # noinspection PyProtectedMember
+        timeout, val = self.decode_parameter(
+            f"{self.realm}/{action}", token_name, val, rs.user.persona_id)
+        if not val:
+            if timeout:
+                return n_("Anti CSRF token expired. Please try again.")
+            else:
+                return n_("Anti CSRF token is forged.")
+        if val != token_payload:
+            return n_("Anti CSRF token is invalid.")
+        return None
+
 
 class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     """Base class for all frontends which have their own user realm.
@@ -1150,8 +1201,7 @@ class CdEMailmanClient(mailmanclient.Client):
             syslog_level=self.conf["SYSLOG_LEVEL"],
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         self.logger = logging.getLogger(logger_name)
-        self.logger.debug("Instantiated {} with configpath {}.".format(
-            self, conf._configpath))
+        self.logger.debug(f"Instantiated {self} with configpath {conf._configpath}.")
 
     def get_list_safe(self, address: str) -> Optional[
             mailmanclient.restobjects.mailinglist.MailingList]:
@@ -1184,8 +1234,15 @@ class CdEMailmanClient(mailmanclient.Client):
             return mmlist.held if mmlist else None
 
 
+# Type Aliases for the Worker class.
 WorkerTarget = Callable[[RequestState], bool]
-TaskInfo = NamedTuple("TaskInfo", (("task", WorkerTarget), ("name", str), ("doc", str)))
+WorkerTasks = Union[WorkerTarget, Sequence[WorkerTarget]]
+
+
+class WorkerTaskInfo(NamedTuple):
+    task: WorkerTarget
+    name: str
+    doc: str
 
 
 class Worker(threading.Thread):
@@ -1196,11 +1253,13 @@ class Worker(threading.Thread):
     concurrency is no concern.
     """
 
-    def __init__(self, conf: Config, tasks: Union[WorkerTarget, Sequence[WorkerTarget]],
-                 rs: RequestState) -> None:
+    # For details about this class variable dict see `Worker.create()`.
+    active_workers: ClassVar[Dict[str, "weakref.ReferenceType[Worker]"]] = {}
+
+    def __init__(self, conf: Config, tasks: WorkerTasks, rs: RequestState) -> None:
         """
-        :param tasks: Every task will called with the cloned request state as a single
-            argument.
+        :param tasks: Every task will be called with the cloned request state as a
+            single argument.
         """
         # noinspection PyProtectedMember
         rrs = RequestState(
@@ -1208,7 +1267,7 @@ class Worker(threading.Thread):
             request=rs.request, notifications=[], mapadapter=rs.urls,
             requestargs=rs.requestargs, errors=[],
             values=copy.deepcopy(rs.values), lang=rs.lang, gettext=rs.gettext,
-            ngettext=rs.ngettext, coders=rs._coders, begin=rs.begin)
+            ngettext=rs.ngettext, begin=rs.begin)
         # noinspection PyProtectedMember
         secrets = SecretsConfig(conf._configpath)
         connpool = connection_pool_factory(
@@ -1220,9 +1279,9 @@ class Worker(threading.Thread):
             return task.__doc__.splitlines()[0] if task.__doc__ else ""
 
         if isinstance(tasks, Sequence):
-            task_infos = [TaskInfo(t, t.__name__, get_doc(t)) for t in tasks]
+            task_infos = [WorkerTaskInfo(t, t.__name__, get_doc(t)) for t in tasks]
         else:
-            task_infos = [TaskInfo(tasks, tasks.__name__, get_doc(tasks))]
+            task_infos = [WorkerTaskInfo(tasks, tasks.__name__, get_doc(tasks))]
 
         def runner() -> None:
             """Implement the actual loop running the task inside the Thread."""
@@ -1259,6 +1318,41 @@ class Worker(threading.Thread):
                 logger.debug(f"{len(task_infos)} tasks completed successfully.")
 
         super().__init__(target=runner, daemon=False)
+
+    @classmethod
+    def create(cls, rs: RequestState, name: str, tasks: "WorkerTasks",
+               conf: Config, timeout: Optional[float] = 0.1) -> "Worker":
+        """Create a new Worker, remember and start it.
+
+        The state of the `cls.active_workers` dict is not shared between the threads of
+        a multithreaded instance of the application. Thus it should not be relied upon
+        for anything other than testing purposes.
+
+        In order to not mess with garbage collection of finished workers, we only keep
+        a weak reference to the instance. This means that the weakref object needs to
+        be called. If it returns `None`, the referenced object has already been garbage
+        collected. Otherwise it will return the `Worker` instance which can then be
+        joined. Workers will automatically be garbaage collected once they finish
+        execution unless a reference is specifically kept somewhere.
+
+        Note the pattern of assigning the result of this call first, because otherwise
+        there is a race condition between checking for truthyness and calling the
+        `is_alive` method where the Worker could finish in the meantime.
+
+        :param timeout: If this is not None, wait for the given number of seconds for
+            the worker thread to finish.
+        """
+        if name in cls.active_workers:
+            # Dereference the weakref.
+            old_worker = cls.active_workers[name]()
+            if old_worker and old_worker.is_alive():
+                raise RuntimeError("Worker already active.")
+        worker = cls(conf, tasks, rs)
+        cls.active_workers[name] = weakref.ref(worker)
+        worker.start()
+        if timeout is not None:
+            worker.join(timeout)
+        return worker
 
 
 def reconnoitre_ambience(obj: AbstractFrontend,
@@ -1355,7 +1449,7 @@ def reconnoitre_ambience(obj: AbstractFrontend,
             except KeyError:
                 raise werkzeug.exceptions.NotFound(
                     rs.gettext("Object {param}={value} not found").format(
-                        param=param, value=value))
+                        param=param, value=value)) from None
             except PrivilegeError as e:
                 if not obj.conf['CDEDB_DEV']:
                     msg = "Not privileged to view object {param}={value}: {exc}"
@@ -1414,7 +1508,7 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
                                       for role in access_list)
                 if rs.user.roles == {"anonymous"} and expects_persona:
                     params = {
-                        'wants': rs._coders['encode_parameter'](
+                        'wants': obj.encode_parameter(
                             "core/index", "wants", rs.request.url,
                             persona_id=rs.user.persona_id,
                             timeout=obj.conf["UNCRITICAL_PARAMETER_TIMEOUT"])
@@ -1422,7 +1516,7 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
                     ret = basic_redirect(rs, cdedburl(rs, "core/index", params))
                     # noinspection PyProtectedMember
                     notifications = json_serialize([
-                        rs._coders['encode_notification'](
+                        obj.encode_notification(
                             rs, "error", n_("You must login."))])
                     ret.set_cookie("displaynote", notifications)
                     return ret
@@ -1440,38 +1534,6 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
         )
 
         return cast(F, new_fun)
-
-    return decorator
-
-
-PeriodicMethod = Callable[[Any, RequestState, CdEDBObject], CdEDBObject]
-
-
-class PeriodicJob(Protocol):
-    cron: CdEDBObject
-
-    def __call__(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject:
-        ...
-
-
-def periodic(name: str, period: int = 1
-             ) -> Callable[[PeriodicMethod], PeriodicJob]:
-    """This decorator marks a function of a frontend for periodic execution.
-
-    This just adds a flag and all of the actual work is done by the
-    CronFrontend.
-
-    :param name: the name of this job
-    :param period: the interval in which to execute this job (e.g. period ==
-      2 means every second invocation of the CronFrontend)
-    """
-    def decorator(fun: PeriodicMethod) -> PeriodicJob:
-        fun = cast(PeriodicJob, fun)
-        fun.cron = {
-            'name': name,
-            'period': period,
-        }
-        return fun
 
     return decorator
 
@@ -1669,8 +1731,8 @@ def REQUESTdata(
                     if encoded and val:
                         # only decode if exists
                         # noinspection PyProtectedMember
-                        timeout, val = rs._coders['decode_parameter'](
-                            "{}/{}".format(obj.realm, fun.__name__),
+                        timeout, val = obj.decode_parameter(
+                            f"{obj.realm}/{fun.__name__}",
                             name, val, persona_id=rs.user.persona_id)
                         if timeout is True:
                             rs.notify("warning", n_("Link expired."))
@@ -2011,7 +2073,7 @@ def construct_redirect(request: werkzeug.Request,
         return ret
 
 
-def make_postal_address(persona: CdEDBObject) -> List[str]:
+def make_postal_address(rs: RequestState, persona: CdEDBObject) -> List[str]:
     """Prepare address info for formatting.
 
     Addresses have some specific formatting wishes, so we are flexible
@@ -2034,7 +2096,7 @@ def make_postal_address(persona: CdEDBObject) -> List[str]:
         ret.append("{} {}".format(p['postal_code'] or '',
                                   p['location'] or ''))
     if p['country']:
-        ret.append(p['country'])
+        ret.append(rs.default_gettext(f"CountryCodes.{p['country']}"))
     return ret
 
 
@@ -2063,52 +2125,131 @@ def make_event_fee_reference(persona: CdEDBObject, event: CdEDBObject) -> str:
     )
 
 
-def process_dynamic_input(rs: RequestState, existing: Collection[int],
-                          spec: validate.TypeMapping,
-                          additional: CdEDBObject = None
-                          ) -> Dict[int, Optional[CdEDBObject]]:
-    """Retrieve information provided by flux tables.
+def make_persona_name(persona: CdEDBObject,
+                      only_given_names: bool = False,
+                      only_display_name: bool = False,
+                      given_and_display_names: bool = False,
+                      with_family_name: bool = True,
+                      with_titles: bool = False) -> str:
+    """Format the name of a given persona according to the display name specification
 
-    This returns a data dict to update the database, which includes:
-    - existing, mapped to their (validated) input fields (from spec)
-    - existing, mapped to None (if they were marked to be deleted)
+    This is the Python pendant of the `util.persona_name()` macro.
+    For a full specification, which name variant should be used in which context, see
+    the documentation page about "User Experience Conventions".
+    """
+    display_name: str = persona.get('display_name', "")
+    given_names: str = persona['given_names']
+    ret = []
+    if with_titles and persona.get('title'):
+        ret.append(persona['title'])
+    if only_given_names:
+        ret.append(given_names)
+    elif only_display_name:
+        ret.append(display_name)
+    elif given_and_display_names:
+        if not display_name or display_name == given_names:
+            ret.append(given_names)
+        else:
+            ret.append(f"{given_names} ({display_name})")
+    elif display_name and display_name in given_names:
+        ret.append(display_name)
+    else:
+        ret.append(given_names)
+    if with_family_name:
+        ret.append(persona['family_name'])
+    if with_titles and persona.get('name_supplement'):
+        ret.append(persona['name_supplement'])
+    return " ".join(ret)
+
+
+def process_dynamic_input(
+    rs: RequestState, existing: Collection[int], spec: validate.TypeMapping, *,
+    additional: CdEDBObject = None, prefix: str = "",
+    constraint_maker: Callable[[int, str], List[RequestConstraint]] = None
+) -> Dict[int, Optional[CdEDBObject]]:
+    """Retrieve data from rs provided by 'dynamic_row_table' makro.
+
+    This takes a 'spec' of field_names mapped to their validation. Each field_name is
+    prepended with the 'prefix' and appended with the entity_id in the form of
+    "{prefix}{field_name}_{entity_id}" before being extracted from the RequestState.
+
+    During extraction with `request_extractor`, it is possible to pass some additional
+    constraints. To dynamically create them for each not-deleted entry, a
+    'constraint_maker' function is needed. It might look like the following:
+
+        def int_constraint_maker(field_id: int, prefix: str) -> List[RequestConstraint]:
+            # the field_name present in spec is assumed to be 'int' in this example
+            rs_field_name = f"{prefix}int_{field_id}"
+            msg = n_("Must be greater than zero.")
+            return [(
+                lambda d: d[rs_field_name] > 0, (rs_field_name, ValueError(msg))
+            )]
+
+    'process_dynamic_input' returns a data dict to update the database, which includes:
+    - existing entries, mapped to their (validated) input fields (from spec)
+    - existing entries, mapped to None (if they were marked to be deleted)
     - new entries, mapped to their (validated) input fields (from spec)
 
+    This adds some additional keys to some entities of the return dict:
+    - To each existing, not deleted entry: the 'id' of the entry.
+    - To each new and each existing, not deleted entry: all entries of 'additional'
+
     :param existing: ids of already existent objects
-    :param spec: name of input fields, mapped to their validation
+    :param spec: name of input fields, mapped to their validation. This uses the same
+        format as the `request_extractor`, but adds the 'prefix' to each key if present.
+    :param constraint_maker: a function accepting the id of a non-deleted entry and
+        the string prefix and gives back all constraints for this entry, which are
+        further passed to request_extractor
     :param additional: additional keys added to each output object
+    :param prefix: prefix in front of all concerned fields. Should be used when more
+        then one dynamic input table is present on the same page.
     """
-    delete_flags = request_extractor(rs, {f"delete_{anid}": bool for anid in existing})
-    deletes = {anid for anid in existing if delete_flags[f"delete_{anid}"]}
-    params: validate.TypeMapping = {
-        f"{key}_{anid}": value
-        for anid in existing if anid not in deletes
+    additional = additional or dict()
+
+    delete_spec = {f"{prefix}delete_{anid}": bool for anid in existing}
+    delete_flags = request_extractor(rs, delete_spec)
+    deletes = {anid for anid in existing if delete_flags[f"{prefix}delete_{anid}"]}
+    non_deleted_existing = {anid for anid in existing if anid not in deletes}
+
+    existing_data_spec: validate.TypeMapping = {
+        f"{prefix}{key}_{anid}": value
+        for anid in non_deleted_existing
         for key, value in spec.items()
     }
-    data = request_extractor(rs, params)
+    # generate the constraints for each existing entry which will not be deleted
+    constraints = list(itertools.chain.from_iterable(
+        constraint_maker(anid, prefix) for anid in non_deleted_existing)
+    ) if constraint_maker else None
+    data = request_extractor(rs, existing_data_spec, constraints)
+
+    # build the return dict of all existing entries
     ret: Dict[int, Optional[CdEDBObject]] = {
-        anid: {key: data[f"{key}_{anid}"] for key in spec}
-        for anid in existing if anid not in deletes
+        anid: {key: data[f"{prefix}{key}_{anid}"] for key in spec}
+        for anid in non_deleted_existing
     }
     for anid in existing:
         if anid in deletes:
             ret[anid] = None
         else:
             ret[anid]['id'] = anid  # type: ignore
+            ret[anid].update(additional)  # type: ignore
+
+    # extract the new entries which shall be created
     marker = 1
     while marker < 2 ** 10:
-        will_create = unwrap(
-            request_extractor(rs, {f"create_-{marker}": bool}))
+        will_create = unwrap(request_extractor(rs, {f"{prefix}create_-{marker}": bool}))
         if will_create:
-            params = {f"{key}_-{marker}": value for key, value in spec.items()}
-            data = request_extractor(rs, params)
-            ret[-marker] = {key: data[f"{key}_-{marker}"] for key in spec}
+            params = {f"{prefix}{key}_-{marker}": value for key, value in spec.items()}
+            constraints = (constraint_maker(-marker, prefix)
+                           if constraint_maker else None)
+            data = request_extractor(rs, params, constraints)
+            ret[-marker] = {key: data[f"{prefix}{key}_-{marker}"] for key in spec}
             if additional:
                 ret[-marker].update(additional)  # type: ignore
         else:
             break
         marker += 1
-    rs.values['create_last_index'] = marker - 1
+    rs.values[f'{prefix}create_last_index'] = marker - 1
     return ret
 
 

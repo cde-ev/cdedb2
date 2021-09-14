@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
+# pylint: disable=missing-module-docstring
 
 import unittest.mock
 from typing import Any
 
-from cdedb.common import CdEDBObject
 from tests.common import FrontendTest, as_users
 
 
@@ -53,7 +53,7 @@ class TestApplication(FrontendTest):
             def config_mock_getitem(key: str) -> Any:
                 if key in ["CDEDB_DEV", "CDEDB_TEST"]:
                     return False
-                return self.app.app.conf._configchain[key]
+                return self.app.app.conf._configchain[key]  # pylint: disable=protected-access
             config_mock.side_effect = config_mock_getitem
 
             self.get('/', status=500)
@@ -83,7 +83,7 @@ class TestApplication(FrontendTest):
             def config_mock_getitem(key: str) -> Any:
                 if key in ["CDEDB_DEV", "CDEDB_TEST"]:
                     return False
-                return self.app.app.conf._configchain[key]
+                return self.app.app.conf._configchain[key]  # pylint: disable=protected-access
             config_mock.side_effect = config_mock_getitem
 
             self.get('/', status=500)

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# pylint: disable=missing-module-docstring
 
 import datetime
 import pathlib
@@ -15,7 +16,7 @@ import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
 from cdedb.common import (
     NearlyNow, extract_roles, int_to_words, mixed_existence_sorter, nearly_now, now,
-    schulze_evaluate, unwrap, xsorted,
+    schulze_evaluate, unwrap, xsorted, inverse_diacritic_patterns,
 )
 from tests.common import ANONYMOUS, BasicTest
 
@@ -25,7 +26,7 @@ class TestCommon(BasicTest):
         unsorted = [3, 8, -3, 5, 0, -4]
         self.assertEqual(list(mixed_existence_sorter(unsorted)),
                          [0, 3, 5, 8, -3, -4])
-        self.assertEqual(sorted([-3, -4]), xsorted([-3, -4]))
+        self.assertEqual(sorted([-3, -4]), xsorted([-3, -4]))  # pylint: disable=bad-builtin
 
     def test_extract_roles(self) -> None:
         self.assertEqual({
@@ -42,7 +43,7 @@ class TestCommon(BasicTest):
                 }))
 
     def test_schulze_ordinary(self) -> None:
-        bar = '0'
+        bar = '0'  # pylint: disable=blacklisted-name
 
         def _ordinary_votes(spec: Dict[Optional[Tuple[str, ...]], int],
                             candidates: Tuple[str, ...]) -> List[str]:
@@ -251,7 +252,7 @@ class TestCommon(BasicTest):
             ("Corona", 2020),
         ]
         self.assertEqual(list(reversed(tuples)), xsorted(tuples))
-        self.assertEqual(tuples, xsorted(tuples, key=lambda x: str(x)))
+        self.assertEqual(tuples, xsorted(tuples, key=str))
 
     def test_unwrap(self) -> None:
         self.assertIsInstance(unwrap([1]), int)
@@ -312,18 +313,18 @@ class TestCommon(BasicTest):
         with self.subTest("untranslated"):
             assert matches_de is not None
             self.assertIsNone(matches_de["untranslated"],
-                              f"There are untranslated strings (de)."
-                              f" Make sure all strings are translated to German.")
+                              "There are untranslated strings (de)."
+                              " Make sure all strings are translated to German.")
         with self.subTest("fuzzy-de"):
             assert matches_de is not None
             self.assertIsNone(matches_de["fuzzy"],
-                              f"There are fuzzy translations (de). Double check these"
-                              f" and remove the '#, fuzzy' marker afterwards.")
+                              "There are fuzzy translations (de). Double check these"
+                              " and remove the '#, fuzzy' marker afterwards.")
         with self.subTest("fuzzy-en"):
             assert matches_en is not None
             self.assertIsNone(matches_en["fuzzy"],
-                              f"There are fuzzy translations (en). Double check these"
-                              f" and remove the '#, fuzzy' marker afterwards.")
+                              "There are fuzzy translations (en). Double check these"
+                              " and remove the '#, fuzzy' marker afterwards.")
 
     def test_ml_type_mismatch(self) -> None:
         pseudo_mailinglist = {"ml_type": const.MailinglistTypes.event_associated}
@@ -353,4 +354,10 @@ class TestCommon(BasicTest):
                          datetime.datetime.fromisoformat("2012-12-21T12:40:00"))
 
     def test_datetime_min(self) -> None:
-        self.assertEquals(datetime.date.min, datetime.date(1, 1, 1))
+        self.assertEqual(datetime.date.min, datetime.date(1, 1, 1))
+
+    def test_inverse_diacritic_patterns(self) -> None:
+        pattern = re.compile(inverse_diacritic_patterns("Bertå Böhm"))
+        self.assertTrue(pattern.match("Berta Böhm"))
+        self.assertTrue(pattern.match("Bertå Boehm"))
+        self.assertFalse(pattern.match("Bertä Böhm"))

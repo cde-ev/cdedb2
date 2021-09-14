@@ -65,7 +65,6 @@ class MockRequestState:
                                            localedir="/cdedb2/i18n").gettext
         self.ngettext = gettext.translation('cdedb', languages=["de"],
                                             localedir="/cdedb2/i18n").ngettext
-        self._coders = None
         self.begin = None
         self.conn = conn
         self._conn = conn

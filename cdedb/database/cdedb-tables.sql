@@ -720,6 +720,8 @@ CREATE TABLE event.field_definitions (
         kind                    integer NOT NULL,
         -- see cdedb.database.constants.FieldAssociations
         association             integer NOT NULL,
+        -- whether or not to display this field during checking
+        checkin                 boolean NOT NULL DEFAULT FALSE,
         -- the following array describes the available selections
         -- first entry of each tuple is the value, second entry the description
         -- the whole thing may be NULL, if the field does not enforce a

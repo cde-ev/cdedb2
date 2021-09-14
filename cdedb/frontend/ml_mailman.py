@@ -9,7 +9,7 @@ from mailmanclient import Client, MailingList
 
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, RequestState
-from cdedb.frontend.common import cdedburl, periodic
+from cdedb.frontend.common import cdedburl, periodic, make_persona_name
 from cdedb.frontend.ml_base import MlBaseFrontend
 
 POLICY_MEMBER_CONVERT = {
@@ -80,6 +80,7 @@ class MailmanMixin(MlBaseFrontend):
             # 'pass_types': ['multipart', 'text/plain', 'application/pdf'],
         }
         desired_templates = {
+            # pylint: disable=line-too-long
             # Funny split to protect trailing whitespace
             'list:member:regular:footer': '-- ' + f"""
 Dies ist eine Mailingliste des CdE e.V.
@@ -185,8 +186,7 @@ The original message as received by Mailman is attached.
             rs, db_list['id'], persona_ids)
         personas = self.coreproxy.get_personas(rs, persona_ids)
         db_subscribers = {
-            address: "{} {}".format(personas[pid]['given_names'],
-                                    personas[pid]['family_name'])
+            address: make_persona_name(personas[pid])
             for pid, address in db_addresses.items() if address
         }
         mm_subscribers = {m.email: m for m in mm_list.members}
@@ -209,8 +209,7 @@ The original message as received by Mailman is attached.
         personas = self.coreproxy.get_personas(
             rs, db_list['moderators'])
         db_moderators = {
-            persona['username']: "{} {}".format(persona['given_names'],
-                                                persona['family_name'])
+            persona['username']: make_persona_name(persona)
             for persona in personas.values() if persona['username']
         }
         mm_moderators = {m.email: m for m in mm_list.moderators}
@@ -232,7 +231,8 @@ The original message as received by Mailman is attached.
         for address in delete_owners:
             mm_list.remove_owner(address)
 
-    def mailman_sync_list_whites(self, rs: RequestState, mailman: Client,
+    @staticmethod
+    def mailman_sync_list_whites(rs: RequestState, mailman: Client,
                                  db_list: CdEDBObject,
                                  mm_list: MailingList) -> None:
         db_whitelist = db_list['whitelist']
@@ -283,7 +283,7 @@ The original message as received by Mailman is attached.
         mailman = self.get_mailman()
         # noinspection PyBroadException
         try:
-            _ = mailman.system  # cause the client to connect # noqa
+            _ = mailman.system  # cause the client to connect
         except Exception:  # sadly this throws many different exceptions
             self.logger.exception("Mailman client connection failed!")
             return store

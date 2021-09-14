@@ -63,7 +63,7 @@
     <<% for reg_id in ordered if orgas_only or registrations[reg_id]['list_consent'] -%>>
         <<% with registration = registrations[reg_id] -%>>
             % Vorname
-            <<< personas[registration['persona_id']]['given_names']|te >>> &
+            <<< personas[registration['persona_id']]|persona_name(with_family_name=False)|te >>> &
             % Nachname
             <<< personas[registration['persona_id']]['family_name']|te >>> &
             % E-Mail

@@ -78,13 +78,23 @@ apt-get install --yes --no-install-recommends                       \
     python3-ldap3 python3-passlib python3-bleach python3-magic      \
     python3-sphinx-rtd-theme python3-zxcvbn python3-markdown        \
     python3-mailmanclient python3-requests python3-qrcode           \
-    python3-vobject python3-typing-extensions                       \
+    python3-vobject python3-typing-extensions python3-graphviz      \
     \
-    python3-pip flake8 isort pylint3
+    python3-pip isort python3-freezegun
 # some packages interpret "recommends" very narrowly, breaking if they are missing
 apt-get install --yes python3-coverage
 
-python3 -m pip install --no-cache-dir mypy==0.790
+python3 -m pip install --no-cache-dir \
+    mypy==0.910 \
+    flake8==3.8.4 \
+    pylint==2.7.2 \
+    types-werkzeug \
+    types-pytz \
+    types-jinja2 \
+    types-python-dateutil \
+    types-freezegun \
+    types-bleach \
+    types-Markdown
 
 for file in /var/cache/apt/archives/*.deb
 do

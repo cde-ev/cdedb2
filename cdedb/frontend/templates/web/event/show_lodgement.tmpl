@@ -1,6 +1,7 @@
 {% extends "web/event/base.tmpl" %}
 {% set sidenav_active='event_lodgements' %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/event/generic.tmpl" as generic_event with context %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
@@ -22,7 +23,7 @@
     </h1>
 {% endblock %}
 {% block content %}
-    <div class="p">
+    <div class="p button-par">
         {{ util.href(cdedblink("event/change_lodgement_form"), gettext("Edit"), readonly=is_locked,
                      aclass="btn btn-sm btn-warning", icon='pen') }}
         {{ util.href(cdedblink("event/manage_inhabitants_form"), gettext("Manage Inhabitants"), readonly=is_locked,
@@ -49,26 +50,7 @@
                     {% if field['association'] == enums['FieldAssociations'].lodgement %}
                         <dt>{{ field['field_name'] }}</dt>
                         <dd>
-                            {% if field['entries'] %}
-                                {% for value, description in field['entries'] %}
-                                    {% if ambience['lodgement']['fields'].get(field['field_name']) == value %}
-                                        {{ description }}
-                                    {% endif %}
-                                {% endfor %}
-                            {% else %}
-                                {% if field['kind'] == enums['FieldDatatypes'].bool %}
-                                    {{ util.deko_checkbox(
-                                        checked=ambience['lodgement']['fields'].get(field['field_name'])) }}
-                                {% elif field['kind'] == enums['FieldDatatypes'].date %}
-                                    {{ ambience['lodgement']['fields'].get(field['field_name'])
-                                       |date(lang=lang, passthrough=True) }}
-                                {% elif field['kind'] == enums['FieldDatatypes'].datetime %}
-                                    {{ ambience['lodgement']['fields'].get(field['field_name'])
-                                       |datetime(lang=lang, passthrough=True) }}
-                                {% else %}
-                                    {{ ambience['lodgement']['fields'].get(field['field_name'])|linebreaks }}
-                                {% endif %}
-                            {% endif %}
+                            {{ generic_event.display_field(field, ambience['lodgement']['fields'].get(field['field_name'])) }}
                         </dd>
                     {% endif %}
                 {% endfor %}
@@ -106,8 +88,7 @@
                                 {% if affected_regs %}
                                     (
                                         {%- for reg_id in affected_regs -%}
-                                            {{ personas[registrations[reg_id]['persona_id']]['given_names'] }}
-                                            {{ personas[registrations[reg_id]['persona_id']]['family_name'] }}
+                                            {{ util.persona_name(personas[registrations[reg_id]['persona_id']]) }}
                                             {%- if not loop.last %}, {% endif %}
                                         {%- endfor -%}
                                     )
@@ -120,8 +101,8 @@
                                 <li>
                                     {{ util.href(cdedblink('event/show_registration',
                                                            {'registration_id': registration_id}),
-                                                 "{} {}".format(personas[registrations[registration_id]['persona_id']]['given_names'],
-                                                                personas[registrations[registration_id]['persona_id']]['family_name'])) }}
+                                                 util.persona_name(personas[registrations[registration_id]
+                                                        ['persona_id']])) }}
                                     {% if registrations[registration_id]['parts'][part_id]['is_camping_mat'] %}
                                         {{ util.make_icon('campground', title=gettext("Camping Mat")) }}
                                     {% endif %}

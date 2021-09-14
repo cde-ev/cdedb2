@@ -16,7 +16,6 @@ import re
 import shutil
 import string
 import tempfile
-import time
 from collections import OrderedDict, defaultdict
 from typing import Any, Collection, Dict, List, Optional, Sequence, Set, Tuple, cast
 
@@ -33,17 +32,17 @@ from cdedb.common import (
     Accounts, ArchiveError, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
     EntitySorter, Error, LineResolutions, LOG_FIELDS_COMMON, PERSONA_DEFAULTS,
     RequestState, SemesterSteps, TransactionType, asciificator, deduct_years,
-    determine_age_class, diacritic_patterns, get_hash, glue, int_to_words,
-    lastschrift_reference, merge_dicts, n_, now, unwrap, xsorted,
+    determine_age_class, diacritic_patterns, get_hash, get_localized_country_codes,
+    glue, int_to_words, lastschrift_reference, merge_dicts, n_, now, unwrap, xsorted,
 )
 from cdedb.database.connection import Atomizer
 from cdedb.filter import enum_entries_filter, money_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, CustomCSVDialect, REQUESTdata, REQUESTdatadict, REQUESTfile,
-    Worker, access, calculate_db_logparams, calculate_loglinks, cdedbid_filter,
+    access, calculate_db_logparams, calculate_loglinks, cdedbid_filter,
     check_validation as check, check_validation_optional as check_optional, csv_output,
-    make_membership_fee_reference, make_postal_address, periodic,
-    process_dynamic_input, request_extractor,
+    make_membership_fee_reference, make_postal_address, periodic, process_dynamic_input,
+    request_extractor, Worker,
 )
 from cdedb.query import (
     Query, QueryConstraint, QueryOperators, QueryScope,
@@ -346,8 +345,8 @@ class CdEFrontend(AbstractUserFrontend):
                 enum_entries_filter(
                     const.Genders,
                     rs.gettext if download is None else rs.default_gettext)),
-            'country': OrderedDict(self.get_localized_country_codes(rs)),
-            'country2': OrderedDict(self.get_localized_country_codes(rs)),
+            'country': OrderedDict(get_localized_country_codes(rs)),
+            'country2': OrderedDict(get_localized_country_codes(rs)),
         }
         return self.generic_user_search(
             rs, download, is_search, QueryScope.cde_user, QueryScope.cde_user,
@@ -536,7 +535,8 @@ class CdEFrontend(AbstractUserFrontend):
                     and self.coreproxy.verify_existence(rs, persona['username'])
                 ):
                     warnings.append(
-                        ("doppelganger", ValueError(n_("Email address already taken."))))
+                        ("doppelganger",
+                         ValueError(n_("Email address already taken."))))
                 if not dg['is_cde_realm']:
                     warnings.append(
                         ("doppelganger",
@@ -596,7 +596,8 @@ class CdEFrontend(AbstractUserFrontend):
             current = self.coreproxy.get_persona(rs, persona_id)
             if not current['is_cde_realm']:
                 # Promote to cde realm dependent on current realm
-                promotion: CdEDBObject = {field: None for field in CDE_TRANSITION_FIELDS}
+                promotion: CdEDBObject = {
+                    field: None for field in CDE_TRANSITION_FIELDS}
                 # The ream independent upgrades of the persona. They are applied at last
                 # to prevent unintentional overrides
                 upgrades = {
@@ -639,7 +640,8 @@ class CdEFrontend(AbstractUserFrontend):
                             promotion[field] = datum['persona'][field]
                 # apply the actual changes
                 promotion.update(upgrades)
-                self.coreproxy.change_persona_realms(rs, promotion)
+                self.coreproxy.change_persona_realms(
+                    rs, promotion, change_note="Datenübernahme nach Massenaufnahme")
             if datum['resolution'].do_trial():
                 self.coreproxy.change_membership(
                     rs, datum['doppelganger_id'], is_member=True)
@@ -835,7 +837,8 @@ class CdEFrontend(AbstractUserFrontend):
                     and not dataset['old_hash']):
                 # automatically select resolution if this is an easy case
                 dataset['resolution'] = LineResolutions.create
-                rs.values[f"resolution{dataset['lineno']}"] = LineResolutions.create.value
+                rs.values[
+                    f"resolution{dataset['lineno']}"] = LineResolutions.create.value
 
         if total_account_number != len(accountlines):
             rs.append_validation_error(
@@ -933,7 +936,7 @@ class CdEFrontend(AbstractUserFrontend):
             else:
                 params["has_none"].append(t.t_id)
             params["accounts"][str(t.account)] += 1
-            if t.event_id:
+            if t.event_id and t.type == TransactionType.EventFee:
                 params["events"][t.event_id] += 1
             if t.type == TransactionType.MembershipFee:
                 params["memberships"] += 1
@@ -1261,7 +1264,7 @@ class CdEFrontend(AbstractUserFrontend):
                               'Subject': "Überweisung eingegangen",
                               },
                              {'persona': persona,
-                              'address': make_postal_address(persona),
+                              'address': make_postal_address(rs, persona),
                               'new_balance': persona['balance']})
         return True, count, memberships_gained
 
@@ -1857,7 +1860,7 @@ class CdEFrontend(AbstractUserFrontend):
         transaction = rs.ambience['transaction']
         persona = self.coreproxy.get_cde_user(
             rs, rs.ambience['lastschrift']['persona_id'])
-        addressee = make_postal_address(persona)
+        addressee = make_postal_address(rs, persona)
         if rs.ambience['lastschrift']['account_owner']:
             addressee[0] = rs.ambience['lastschrift']['account_owner']
         if rs.ambience['lastschrift']['account_address']:
@@ -2056,7 +2059,7 @@ class CdEFrontend(AbstractUserFrontend):
                         rrs, unwrap(lastschrift_list.keys()))
                     lastschrift['reference'] = lastschrift_reference(
                         persona['id'], lastschrift['id'])
-                address = make_postal_address(persona)
+                address = make_postal_address(rrs, persona)
                 transaction_subject = make_membership_fee_reference(persona)
                 endangered = (persona['balance'] < self.conf["MEMBERSHIP_FEE"]
                               and not persona['trial_member']
@@ -2122,7 +2125,9 @@ class CdEFrontend(AbstractUserFrontend):
                      'meta_info': meta_info})
             return not testrun
 
-        Worker(self.conf, (send_billing_mail, send_archival_notification), rs).start()
+        Worker.create(
+            rs, "semester_bill",
+            (send_billing_mail, send_archival_notification), self.conf)
         rs.notify("success", n_("Started sending billing mails."))
         rs.notify("success", n_("Started sending archival notifications."))
         return self.redirect(rs, "cde/show_semester")
@@ -2228,7 +2233,8 @@ class CdEFrontend(AbstractUserFrontend):
                 self._send_mail(mail)
             return True
 
-        Worker(self.conf, (eject_member, automated_archival), rs).start()
+        Worker.create(
+            rs, "semester_eject", (eject_member, automated_archival), self.conf)
         rs.notify("success", n_("Started ejection."))
         rs.notify("success", n_("Started automated archival."))
         return self.redirect(rs, "cde/show_semester")
@@ -2290,8 +2296,7 @@ class CdEFrontend(AbstractUserFrontend):
                 self.cdeproxy.set_period(rrs, period_update)
                 return True
 
-        worker = Worker(self.conf, update_balance, rs)
-        worker.start()
+        Worker.create(rs, "semester_balance_update", update_balance, self.conf)
         rs.notify("success", n_("Started updating balance."))
         return self.redirect(rs, "cde/show_semester")
 
@@ -2343,7 +2348,7 @@ class CdEFrontend(AbstractUserFrontend):
                             rrs, skip=False)
                     return False
                 persona = self.coreproxy.get_cde_user(rrs, persona_id)
-                address = make_postal_address(persona)
+                address = make_postal_address(rrs, persona)
                 if not testrun:
                     expuls_update = {
                         'id': expuls_id,
@@ -2362,9 +2367,7 @@ class CdEFrontend(AbstractUserFrontend):
             self.cdeproxy.finish_expuls_addresscheck(rs, skip=True)
             rs.notify("success", n_("Not sending mail."))
         else:
-            worker = Worker(self.conf, send_addresscheck, rs)
-            worker.start()
-            time.sleep(1)
+            Worker.create(rs, "expuls_addresscheck", send_addresscheck, self.conf)
             rs.notify("success", n_("Started sending mail."))
         return self.redirect(rs, "cde/show_semester")
 
@@ -2517,7 +2520,7 @@ class CdEFrontend(AbstractUserFrontend):
         scope = QueryScope.past_event_user
         query = Query(
             scope, scope.get_spec(),
-            ("personas.id", "given_names", "family_name", "address",
+            ("personas.id", "given_names", "display_name", "family_name", "address",
              "address_supplement", "postal_code", "location", "country"),
             [("pevent_id", QueryOperators.equal, pevent_id), ],
             (("family_name", True), ("given_names", True),

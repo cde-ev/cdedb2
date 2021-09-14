@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
+# pylint: disable=missing-module-docstring
 
-import copy
 import datetime
 import decimal
 
@@ -8,8 +8,8 @@ import pytz
 
 import cdedb.database.constants as const
 from cdedb.common import (
-    CdEDBObject, PERSONA_CDE_FIELDS, PERSONA_CORE_FIELDS, PERSONA_EVENT_FIELDS,
-    QuotaException, CdEDBLog
+    PERSONA_CDE_FIELDS, PERSONA_CORE_FIELDS, PERSONA_EVENT_FIELDS, QuotaException,
+    CdEDBLog
 )
 from cdedb.query import Query, QueryOperators, QueryScope
 from tests.common import USER_DICT, BackendTest, as_users, nearly_now
@@ -20,14 +20,14 @@ class TestCdEBackend(BackendTest):
 
     @as_users("berta", "vera")
     def test_basics(self) -> None:
-        data = self.core.get_cde_user(self.key,self.user['id'])
+        data = self.core.get_cde_user(self.key, self.user['id'])
         data['display_name'] = "Zelda"
         setter = {k: v for k, v in data.items() if k in
                   {'id', 'display_name', 'telephone'}}
-        generation = self.core.changelog_get_generation(self.key,self.user['id'])
+        generation = self.core.changelog_get_generation(self.key, self.user['id'])
         num = self.core.change_persona(self.key, setter, generation, change_note='note')
         self.assertEqual(1, num)
-        new_data = self.core.get_cde_user(self.key,self.user['id'])
+        new_data = self.core.get_cde_user(self.key, self.user['id'])
         self.assertEqual(data, new_data)
 
     @as_users("berta")
@@ -50,7 +50,8 @@ class TestCdEBackend(BackendTest):
         # ID and not counted in general.
         self.core.get_cde_users(self.key, (1, 6))
 
-        query = Query(scope=QueryScope.cde_member, spec=QueryScope.cde_member.get_spec(),
+        query = Query(scope=QueryScope.cde_member,
+                      spec=QueryScope.cde_member.get_spec(),
                       fields_of_interest=["id"], constraints=[], order=[])
         with self.assertRaises(QuotaException):
             self.cde.submit_general_query(self.key, query)
@@ -142,7 +143,7 @@ class TestCdEBackend(BackendTest):
             scope=QueryScope.cde_user,
             spec=QueryScope.cde_user.get_spec(),
             fields_of_interest=("personas.id", "family_name",
-                                   "birthday"),
+                                "birthday"),
             constraints=[
                 ("given_names", QueryOperators.match, 'Berta'),
                 ("address", QueryOperators.oneof, ("Auf der Düne 42", "Im Garten 77")),

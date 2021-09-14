@@ -23,9 +23,9 @@ import cdedb.validationtypes as vtypes
 from cdedb.common import (
     ADMIN_KEYS, ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, LOG_FIELDS_COMMON,
     REALM_ADMINS, REALM_INHERITANCE, REALM_SPECIFIC_GENESIS_FIELDS, ArchiveError,
-    CdEDBObject, DefaultReturnCode, EntitySorter, PrivilegeError, Realm,
+    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, EntitySorter, PrivilegeError, Realm,
     RequestState, extract_roles, get_persona_fields_by_realm, implied_realms,
-    merge_dicts, n_, now, pairwise, unwrap, xsorted,
+    merge_dicts, n_, now, pairwise, unwrap, xsorted, sanitize_filename
 )
 
 from cdedb.database.connection import Atomizer
@@ -34,8 +34,9 @@ from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, access, basic_redirect,
     calculate_db_logparams, calculate_loglinks, check_validation as check,
     check_validation_optional as check_optional, make_membership_fee_reference,
-    periodic, request_dict_extractor, request_extractor,
+    periodic, request_dict_extractor, request_extractor, make_persona_name,
 )
+from cdedb.ml_type_aux import MailinglistGroup
 from cdedb.query import Query, QueryOperators, QueryScope
 from cdedb.subman.machine import SubscriptionPolicy
 from cdedb.validation import (
@@ -126,8 +127,7 @@ class CoreFrontend(AbstractFrontend):
                     begin = event['begin']
                     if (not begin or begin >= present.date()
                             or abs(begin.year - present.year) < 2):
-                        regs = self.eventproxy.list_registrations(rs,
-                                                                  event['id'])
+                        regs = self.eventproxy.list_registrations(rs, event['id'])
                         event['registrations'] = len(regs)
                         orga[event_id] = event
                 dashboard['orga'] = orga
@@ -353,7 +353,7 @@ class CoreFrontend(AbstractFrontend):
 
     @access("ml", modi={"POST"}, check_anti_csrf=False)
     @REQUESTdata("md_str")
-    def markdown_parse(self, rs: RequestState, md_str: str) -> Response:
+    def markdown_parse(self, rs: RequestState, md_str: str) -> Response:  # pylint: disable=no-self-use
         if rs.has_validation_errors():
             return Response("", mimetype='text/plain')
         html_str = markdown_parse_safe(md_str)
@@ -367,8 +367,11 @@ class CoreFrontend(AbstractFrontend):
             return self.index(rs)
 
         vcard = self._create_vcard(rs, persona_id)
+        persona = self.coreproxy.get_persona(rs, persona_id)
+        filename = sanitize_filename(make_persona_name(persona))
+
         return self.send_file(rs, data=vcard, mimetype='text/vcard',
-                              filename='vcard.vcf')
+                              filename=f'{filename}.vcf')
 
     @access("searchable", "cde_admin")
     @REQUESTdata("#confirm_id")
@@ -530,9 +533,15 @@ class CoreFrontend(AbstractFrontend):
         if ("meta_admin" in rs.user.roles
                 and "meta_admin" in rs.user.admin_views):
             access_levels.add("meta")
+        # There are administraive buttons on this page for all of these admins.
+        # All of these admins should see the Account Requests in the nav
+        # event_admins and ml_admins additionally always get links to the respective
+        # realm data.
+        if {"core_admin", "cde_admin", "event_admin", "ml_admin"} & rs.user.roles:
+            access_mode.add("any_admin")
         # Other admins see their realm if they are relative admin
         if is_relative_admin:
-            access_mode.add("relative_admin")
+            access_mode.add("any_admin")
             for realm in ("ml", "assembly", "event", "cde"):
                 if (f"{realm}_admin" in rs.user.roles
                         and f"{realm}_user" in rs.user.admin_views):
@@ -563,8 +572,8 @@ class CoreFrontend(AbstractFrontend):
                 if is_admin and not is_orga and is_participant:
                     access_mode.add("orga")
         # Mailinglist moderators see all users related to their mailinglist.
-        # This excludes users with relation "unsubscribed", because they are not
-        # directly shown on the management sites.
+        # This excludes users with relation "unsubscribed", since their email address
+        # is not relevant.
         if ml_id:
             # determinate if the user is relevant admin of this mailinglist
             ml_type = self.mlproxy.get_ml_type(rs, ml_id)
@@ -655,9 +664,74 @@ class CoreFrontend(AbstractFrontend):
 
         return self.render(rs, "show_user", {
             'data': data, 'past_events': past_events, 'meta_info': meta_info,
-            'is_relative_admin': is_relative_admin_view, 'reference': reference,
+            'is_relative_admin_view': is_relative_admin_view, 'reference': reference,
             'quoteable': quoteable, 'access_mode': access_mode,
         })
+
+    @access("event")
+    def show_user_events(self, rs: RequestState, persona_id: vtypes.ID) -> Response:
+        """Render overview which events a given user is registered for."""
+        if not (self.coreproxy.is_relative_admin(rs, persona_id)
+                or "event_admin" in rs.user.roles or rs.user.persona_id == persona_id):
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+        if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):
+            # reconnoitre_ambience leads to 404 if user does not exist at all.
+            rs.notify("error", n_("User is archived."))
+            return self.redirect_show_user(rs, persona_id)
+
+        registrations = self.eventproxy.list_persona_registrations(rs, persona_id)
+        registration_ids: Dict[int, int] = {}
+        registration_parts: Dict[int, Dict[int, const.RegistrationPartStati]] = {}
+        for event_id, reg in registrations.items():
+            registration_ids[event_id] = unwrap(reg.keys())
+            registration_parts[event_id] = unwrap(reg.values())
+        events = self.eventproxy.get_events(rs, registrations.keys())
+        return self.render(rs, "show_user_events",
+                           {'events': events, 'registration_ids': registration_ids,
+                            'registration_parts': registration_parts})
+
+    @access("event")
+    def show_user_events_self(self, rs: RequestState) -> Response:
+        """Shorthand to view event registrations for oneself."""
+        return self.redirect(rs, "core/show_user_events",
+                             {'persona_id': rs.user.persona_id})
+
+    @access("ml")
+    def show_user_mailinglists(self, rs: RequestState, persona_id: vtypes.ID
+                               ) -> Response:
+        """Render overview of mailinglist data of a certain user."""
+        if not (self.coreproxy.is_relative_admin(rs, persona_id)
+                or "ml_admin" in rs.user.roles or rs.user.persona_id == persona_id):
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+        if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):
+            # reconnoitre_ambience leads to 404 if user does not exist at all.
+            rs.notify("error", n_("User is archived."))
+            return self.redirect_show_user(rs, persona_id)
+
+        subscriptions = self.mlproxy.get_user_subscriptions(rs, persona_id)
+        mailinglists = self.mlproxy.get_mailinglists(rs, subscriptions.keys())
+        addresses = self.mlproxy.get_user_subscription_addresses(rs, persona_id)
+
+        grouped: Dict[MailinglistGroup, CdEDBObjectMap]
+        grouped = collections.defaultdict(dict)
+        for mailinglist_id, ml in mailinglists.items():
+            group_id = ml['ml_type_class'].sortkey
+            grouped[group_id][mailinglist_id] = {
+                'title': ml['title'],
+                'id': mailinglist_id,
+                'address': addresses.get(mailinglist_id)
+            }
+
+        return self.render(rs, "show_user_mailinglists", {
+            'groups': MailinglistGroup,
+            'mailinglists': grouped,
+            'subscriptions': subscriptions})
+
+    @access("ml")
+    def show_user_mailinglists_self(self, rs: RequestState) -> Response:
+        """Redirect to use `self` instead of persona_id to make ambience work."""
+        return self.redirect(rs, "core/show_user_mailinglists",
+                             {'persona_id': rs.user.persona_id})
 
     @access(*REALM_ADMINS)
     def show_history(self, rs: RequestState, persona_id: int) -> Response:
@@ -959,21 +1033,18 @@ class CoreFrontend(AbstractFrontend):
             data = tuple(xsorted(
                 data, key=lambda e: e['id'])[:num_preview_personas])
 
-        def name(x: CdEDBObject) -> str:
-            return f"{x['given_names']} {x['family_name']}"
-
         # Check if name occurs multiple times to add email address in this case
         counter: Dict[str, int] = collections.defaultdict(lambda: 0)
         for entry in data:
-            counter[name(entry)] += 1
+            counter[make_persona_name(entry)] += 1
 
         # Generate return JSON list
         ret = []
         for entry in xsorted(data, key=EntitySorter.persona):
+            name = make_persona_name(entry)
             result = {
                 'id': entry['id'],
-                'name': name(entry),
-                'display_name': entry['display_name'],
+                'name': name,
             }
             # Email/username is only delivered if we have relative_admins
             # rights, a search term with an @ (and more) matches the mail
@@ -983,7 +1054,7 @@ class CoreFrontend(AbstractFrontend):
                 '@' in t and len(t) > self.conf["NUM_PREVIEW_CHARS"]
                 and entry['username'] and t in entry['username']
                 for t in terms)
-            if counter[name(entry)] > 1 or searched_email or \
+            if counter[name] > 1 or searched_email or \
                     self.coreproxy.is_relative_admin(rs, entry['id']):
                 result['email'] = entry['username']
             ret.append(result)
@@ -1437,16 +1508,15 @@ class CoreFrontend(AbstractFrontend):
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
         merge_dicts(rs.values, rs.ambience['persona'])
-        if (target_realm
-                and rs.ambience['persona']['is_{}_realm'.format(target_realm)]):
+        if target_realm and rs.ambience['persona']['is_{}_realm'.format(target_realm)]:
             rs.notify("warning", n_("No promotion necessary."))
             return self.redirect_show_user(rs, persona_id)
         return self.render(rs, "promote_user")
 
     @access("core_admin", modi={"POST"})
     @REQUESTdatadict(*CDE_TRANSITION_FIELDS)
-    @REQUESTdata("target_realm")
-    def promote_user(self, rs: RequestState, persona_id: int,
+    @REQUESTdata("target_realm", "change_note")
+    def promote_user(self, rs: RequestState, persona_id: int, change_note: str,
                      target_realm: vtypes.Realm, data: CdEDBObject) -> Response:
         """Add a new realm to the users ."""
         for key in tuple(k for k in data.keys() if not data[k]):
@@ -1478,15 +1548,17 @@ class CoreFrontend(AbstractFrontend):
             return self.promote_user_form(  # type: ignore
                 rs, persona_id, internal=True)
         assert data is not None
-        code = self.coreproxy.change_persona_realms(rs, data)
+        code = self.coreproxy.change_persona_realms(rs, data, change_note)
         self.notify_return_code(rs, code)
         if code > 0 and target_realm == "cde":
+            persona = self.coreproxy.get_total_persona(rs, persona_id)
             meta_info = self.coreproxy.get_meta_info(rs)
             self.do_mail(rs, "welcome",
                          {'To': (persona['username'],),
                           'Subject': "Aufnahme in den CdE",
                           },
                          {'data': persona,
+                          'fee': self.conf['MEMBERSHIP_FEE'],
                           'email': "",
                           'cookie': "",
                           'meta_info': meta_info,
@@ -1694,8 +1766,7 @@ class CoreFrontend(AbstractFrontend):
                 ("old_password", ValueError(n_("Wrong password."))))
             rs.ignore_validation_errors()
             self.logger.info(
-                "Unsuccessful password change for persona {}.".format(
-                    rs.user.persona_id))
+                f"Unsuccessful password change for persona {rs.user.persona_id}.")
             return self.change_password_form(rs)
         else:
             count = self.coreproxy.logout(rs, other_sessions=True, this_session=False)
@@ -1745,16 +1816,16 @@ class CoreFrontend(AbstractFrontend):
                         persona_id=None,
                         timeout=self.conf["PARAMETER_TIMEOUT"]),
                         'cookie': message})
-                msg = "Sent password reset mail to {} for IP {}."
-                self.logger.info(msg.format(email, rs.request.remote_addr))
+                self.logger.info(f"Sent password reset mail to {email}"
+                                 f" for IP {rs.request.remote_addr}.")
                 rs.notify("success", n_("Email sent."))
         if admin_exception:
             self.do_mail(
                 rs, "admin_no_reset_password",
                 {'To': (email,), 'Subject': "Passwort zurücksetzen"},
             )
-            msg = "Sent password reset denial mail to admin {} for IP {}."
-            self.logger.info(msg.format(email, rs.request.remote_addr))
+            self.logger.info(f"Sent password reset denial mail to admin {email}"
+                             f" for IP {rs.request.remote_addr}.")
             rs.notify("success", n_("Email sent."))
         return self.redirect(rs, "core/index")
 
@@ -1793,8 +1864,8 @@ class CoreFrontend(AbstractFrontend):
                     persona_id=None,
                     timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"]),
                     'cookie': message})
-            msg = "Sent password reset mail to {} for admin {}."
-            self.logger.info(msg.format(email, rs.user.persona_id))
+            self.logger.info(f"Sent password reset mail to {email}"
+                             f" for admin {rs.user.persona_id}.")
             rs.notify("success", n_("Email sent."))
         return self.redirect_show_user(rs, persona_id)
 
@@ -1882,8 +1953,8 @@ class CoreFrontend(AbstractFrontend):
                      {'new_username': self.encode_parameter(
                          "core/do_username_change_form", "new_username",
                          new_username, rs.user.persona_id)})
-        self.logger.info("Sent username change mail to {} for {}.".format(
-            new_username, rs.user.username))
+        self.logger.info(f"Sent username change mail to {new_username}"
+                         f" for {rs.user.username}.")
         rs.notify("success", "Email sent.")
         return self.redirect(rs, "core/index")
 
@@ -2174,8 +2245,8 @@ class CoreFrontend(AbstractFrontend):
         attachment_count = self.coreproxy.genesis_forget_attachments(rs)
 
         if count or attachment_count:
-            msg = "genesis_forget: Deleted {} genesis cases and {} attachments"
-            self.logger.info(msg.format(count, attachment_count))
+            self.logger.info(f"genesis_forget: Deleted {count} genesis cases and"
+                             f" {attachment_count} attachments")
 
         return store
 
@@ -2186,9 +2257,11 @@ class CoreFrontend(AbstractFrontend):
     def genesis_get_attachment(self, rs: RequestState, attachment_hash: str
                                ) -> Response:
         """Retrieve attachment for genesis case."""
-        path = self.conf["STORAGE_DIR"] / 'genesis_attachment' / attachment_hash
-        mimetype = magic.from_file(str(path), mime=True)
-        return self.send_file(rs, path=path, mimetype=mimetype)
+        data = self.coreproxy.genesis_get_attachment(rs, attachment_hash)
+        mimetype = None
+        if data:
+            mimetype = magic.from_buffer(data, mime=True)
+        return self.send_file(rs, data=data, mimetype=mimetype)
 
     @access("core_admin", *("{}_admin".format(realm)
                             for realm in REALM_SPECIFIC_GENESIS_FIELDS))
@@ -2296,27 +2369,27 @@ class CoreFrontend(AbstractFrontend):
         with Atomizer(rs):
             code = self.coreproxy.genesis_modify_case(rs, data)
             success = bool(code)
+            new_id = None
             if success and data['case_status'] == const.GenesisStati.approved:
-                success = bool(self.coreproxy.genesis(rs, genesis_case_id))
+                new_id = self.coreproxy.genesis(rs, genesis_case_id)
+                success = bool(new_id)
         if not success:
             rs.notify("error", n_("Failed."))
             return self.genesis_list_cases(rs)
-        if case_status == const.GenesisStati.approved:
+        if case_status == const.GenesisStati.approved and new_id:
+            persona = self.coreproxy.get_persona(rs, new_id)
+            meta_info = self.coreproxy.get_meta_info(rs)
             success, cookie = self.coreproxy.make_reset_cookie(
-                rs, case['username'],
+                rs, persona['username'],
                 timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
+            email = self.encode_parameter("core/do_password_reset_form", "email",
+                                          persona['username'], persona_id=None,
+                                          timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
             self.do_mail(
-                rs, "genesis_approved",
-                {'To': (case['username'],),
-                 'Subject': "CdEDB-Account erstellt",
-                 },
-                {
-                    'email': self.encode_parameter(
-                        "core/do_password_reset_form", "email",
-                        case['username'], persona_id=None,
-                        timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"]),
-                    'cookie': cookie,
-                 })
+                rs, "welcome",
+                {'To': (persona['username'],), 'Subject': "Aufnahme in den CdE"},
+                {'data': persona, 'email': email, 'cookie': cookie,
+                 'fee': self.conf['MEMBERSHIP_FEE'], 'meta_info': meta_info})
             rs.notify("success", n_("Case approved."))
         else:
             self.do_mail(
