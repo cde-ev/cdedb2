@@ -81,7 +81,7 @@ class _RSFactory(Protocol):
 
 def setup(persona_id: int, dbuser: str, dbpassword: str,
           check_system_user: bool = True, dbname: str = 'cdb',
-          cursor: str = 'RealDictCursor',
+          cursor: psycopg2.extensions.cursor = psycopg2.extras.RealDictCursor,
           ) -> _RSFactory:
     """This sets up the database.
 
@@ -97,18 +97,13 @@ def setup(persona_id: int, dbuser: str, dbpassword: str,
     if check_system_user and getpass.getuser() != "www-data":
         raise RuntimeError("Must be run as user www-data.")
 
-    if cursor == 'None':
-        cursor_factory = None
-    else:
-        cursor_factory = getattr(psycopg2.extras, cursor)
-
     connection_parameters = {
             "dbname": dbname,
             "user": dbuser,
             "password": dbpassword,
             "port": 5432,
             "connection_factory": IrradiatedConnection,
-            "cursor_factory": cursor_factory,
+            "cursor_factory": cursor,
     }
     try:
         cdb = psycopg2.connect(**connection_parameters, host="localhost")
