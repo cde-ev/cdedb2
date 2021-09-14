@@ -92,7 +92,8 @@ EventAssociatedFields = _NewType("EventAssociatedFields", CdEDBObject)
 LodgementGroup = _NewType("LodgementGroup", CdEDBObject)
 Lodgement = _NewType("Lodgement", CdEDBObject)
 QuestionnaireRow = _NewType("QuestionnaireRow", CdEDBObject)
-Questionnaire = _NewType("Questionnaire", Dict[int, List[QuestionnaireRow]])  # TODO maybe cast keys to str
+# TODO maybe cast keys to str
+Questionnaire = _NewType("Questionnaire", Dict[int, List[QuestionnaireRow]])
 
 SerializedEvent = _NewType("SerializedEvent", CdEDBObject)
 SerializedEventUpload = _NewType("SerializedEventUpload", SerializedEvent)

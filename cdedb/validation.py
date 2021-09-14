@@ -3499,7 +3499,7 @@ def _serialized_event_questionnaire_upload(
     val = _input_file(val, argname, **kwargs)
     val = _json(val, argname, **kwargs)
     return SerializedEventQuestionnaireUpload(
-        _serialized_event_questionnaire(val, argname, **kwargs))
+        _serialized_event_questionnaire(val, argname, **kwargs))  # pylint: disable=missing-kwoa # noqa
 
 
 @_add_typed_validator

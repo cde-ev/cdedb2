@@ -4370,7 +4370,8 @@ etc;anything else""", f['entries_2'].value)
             data = json.load(datafile)
 
         def create_upload(data: CdEDBObject) -> webtest.Upload:
-            return webtest.Upload("questionnaire_import.json", json.dumps(data).encode(),
+            return webtest.Upload("questionnaire_import.json",
+                                  json.dumps(data).encode(),
                                   "application/octet-stream")
 
         # First: Try importing only the questionnaire.
