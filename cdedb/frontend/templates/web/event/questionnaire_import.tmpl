@@ -26,10 +26,10 @@
                     The following is a list of the observed violations.
                 {% endtrans %}
             </p>
-            <ul>
+            <ul id="importerrorsummary">
                 {%- for argname, errorlist in errors|dictsort %}
                     {%- for error in errorlist %}
-                        <li>
+                        <li id="importerror{{ loop.index }}">
                             {{ argname }}:
                             {% if error.args %}
                                 {{ util.format_error(error) }}

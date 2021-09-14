@@ -2638,8 +2638,8 @@ msgid "Questionnaire is not enabled yet."
 msgstr "Der Fragebogen ist noch nicht für die Teilnehmer freigeschaltet."
 
 #: cdedb/frontend/event.py:3713 cdedb/validation.py:2917
-msgid "Must not duplicate field."
-msgstr "Felder dürfen nicht doppelt auftreten."
+msgid "Must not duplicate field ('%(field_name)s')."
+msgstr "Felder dürfen nicht doppelt auftreten ('%(field_name)s')."
 
 #: cdedb/frontend/event.py:3720 cdedb/validation.py:4206
 msgid "Invalid field."
@@ -16242,3 +16242,15 @@ msgstr "Ungültige Eingabe für Enumeration %(enum)s."
 #: cdedb/validation.py:4333
 msgid "SubscriptionState.none is not written into the database."
 msgstr "SubscriptionState.none wird nicht in die Datenbank geschrieben."
+
+msgid "Questionnaire Import"
+msgstr "Fragebogenimport"
+
+msgid "Questionnaire Import for Event %(title)s"
+msgstr "Fragebogenimport zur Veranstaltung %(title)s"
+
+msgid "No field with name '%(name)s' exists."
+msgstr "Es gibt kein Feld mit dem Namen '%(name)s'."
+
+msgid "A field with this name already exists ('%(field_name)s')."
+msgstr "Es gibt bereits ein Feld mit diesem Namen ('%(field_name)s')."

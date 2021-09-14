@@ -1,0 +1,245 @@
+{
+"questionnaire": {
+    "QuestionnaireUsages.additional": [
+        {
+                    "title": "Akademiekleidung",
+                    "info": "Bitte gib hier Deine Kleidungsw\u00fcnsche an.",
+                    "input_size": 0,
+                    "readonly": false,
+                    "default_value": null,
+                    "field_name": null
+                },
+                {
+                    "title": "Unisex T-Shirt",
+                    "info": null,
+                    "input_size": 0,
+                    "readonly": true,
+                    "default_value": null,
+                    "field_name": "KleidungTShirtCreator"
+                },
+                {
+                    "title": "Unisex T-Shirt Gr\u00f6\u00dfe",
+                    "info": null,
+                    "input_size": 0,
+                    "readonly": true,
+                    "default_value": null,
+                    "field_name": "KleidungTShirtCreatorGroesse"
+                },
+                {
+                    "title": "Damen T-Shirt",
+                    "info": null,
+                    "input_size": 0,
+                    "readonly": true,
+                    "default_value": null,
+                    "field_name": "KleidungTShirtExpresser"
+                },
+                {
+                    "title": "Damen T-Shirt Gr\u00f6\u00dfe",
+                    "info": null,
+                    "input_size": 0,
+                    "readonly": true,
+                    "default_value": null,
+                    "field_name": "KleidungTShirtExpresserGroesse"
+                },
+                {
+                    "title": "Anmerkungen zur Kleidungsbestellung",
+                    "info": null,
+                    "input_size": 2,
+                    "readonly": true,
+                    "default_value": null,
+                    "field_name": "KleidungAnmerkungen"
+                }
+        ]
+},
+"fields": {
+  "KleidungAnmerkungen": {
+    "kind": 1,
+    "association": 1,
+    "entries": null
+  },
+  "KleidungTShirtCreator": {
+    "kind": 1,
+    "association": 1,
+    "entries": [
+      [
+        "None",
+        "Ich will kein Unisex-T-Shirt bestellen"
+      ],
+      [
+        "Black",
+        "Black"
+      ],
+      [
+        "Anthracite",
+        "Anthracite"
+      ],
+      [
+        "Spectra Yellow",
+        "Spectra Yellow"
+      ],
+      [
+        "Fresh Green",
+        "Fresh Green"
+      ],
+      [
+        "Varsity Green",
+        "Varsity Green"
+      ],
+      [
+        "Caribbean Blue",
+        "Caribbean Blue"
+      ],
+      [
+        "Royal Blue",
+        "Royal Blue"
+      ],
+      [
+        "French Navy",
+        "French Navy"
+      ],
+      [
+        "Red",
+        "Red"
+      ],
+      [
+        "Burgundy",
+        "Burgundy"
+      ],
+      [
+        "Bright Orange",
+        "Bright Orange"
+      ]
+    ]
+  },
+  "KleidungTShirtCreatorGroesse": {
+    "kind": 1,
+    "association": 1,
+    "entries": [
+      [
+        "None",
+        "-"
+      ],
+      [
+        "XS",
+        "XS"
+      ],
+      [
+        "S",
+        "S"
+      ],
+      [
+        "M",
+        "M"
+      ],
+      [
+        "L",
+        "L"
+      ],
+      [
+        "XL",
+        "XL"
+      ],
+      [
+        "XXL",
+        "XXL"
+      ],
+      [
+        "3XL",
+        "3XL"
+      ]
+    ]
+  },
+  "KleidungTShirtExpresser": {
+    "kind": 1,
+    "association": 1,
+    "entries": [
+      [
+        "None",
+        "Ich will kein Damen-T-Shirt bestellen"
+      ],
+      [
+        "Black",
+        "Black"
+      ],
+      [
+        "Anthracite",
+        "Anthracite"
+      ],
+      [
+        "Spectra Yellow",
+        "Spectra Yellow"
+      ],
+      [
+        "Fresh Green",
+        "Fresh Green"
+      ],
+      [
+        "Varsity Green",
+        "Varsity Green"
+      ],
+      [
+        "Caribbean Blue",
+        "Caribbean Blue"
+      ],
+      [
+        "Royal Blue",
+        "Royal Blue"
+      ],
+      [
+        "French Navy",
+        "French Navy"
+      ],
+      [
+        "Red",
+        "Red"
+      ],
+      [
+        "Burgundy",
+        "Burgundy"
+      ],
+      [
+        "Bright Orange",
+        "Bright Orange"
+      ]
+    ]
+  },
+  "KleidungTShirtExpresserGroesse": {
+    "kind": 1,
+    "association": 1,
+    "entries": [
+      [
+        "None",
+        "-"
+      ],
+      [
+        "XS",
+        "XS"
+      ],
+      [
+        "S",
+        "S"
+      ],
+      [
+        "M",
+        "M"
+      ],
+      [
+        "L",
+        "L"
+      ],
+      [
+        "XL",
+        "XL"
+      ],
+      [
+        "XXL",
+        "XXL"
+      ],
+      [
+        "3XL",
+        "3XL"
+      ]
+   ]
+}
+}
+}
