@@ -52,7 +52,7 @@ import re
 import string
 from enum import Enum
 from typing import (
-    Callable, Iterable, Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar,
+    Callable, Iterable, Mapping, Optional, Sequence, Set, Tuple, TypeVar,
     Union, cast, get_type_hints, overload, Generic
 )
 
@@ -4434,8 +4434,8 @@ def _db_subscription_state(
     """Validates whether a subscription state is written into the database."""
     val = _ALL_TYPED[const.SubscriptionState](val, argname, **kwargs)
     if val == const.SubscriptionState.none:
-        raise ValidationSummary(ValueError(argname,
-                                           n_("SubscriptionState.none is not written into the database.")))
+        raise ValidationSummary(ValueError(
+            argname, n_("SubscriptionState.none is not written into the database.")))
     return DatabaseSubscriptionState(val)
 
 
