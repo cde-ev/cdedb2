@@ -2390,10 +2390,10 @@ class TransactionObserver:
     unlikely.
     """
 
-    def __init__(self, rs: RequestState, frontend: AbstractFrontend, moniker: str):
+    def __init__(self, rs: RequestState, frontend: AbstractFrontend, name: str):
         self.rs = rs
         self.frontend = frontend
-        self.moniker = moniker
+        self.name = name
 
     def __enter__(self) -> "TransactionObserver":
         return self
@@ -2410,7 +2410,7 @@ class TransactionObserver:
                 },
                 {
                     'now': now(),
-                    'moniker': self.moniker,
+                    'name': self.name,
                     'atype': atype,
                     'value': value,
                     'tb': tb,
