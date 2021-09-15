@@ -2,7 +2,6 @@
 
 """The WSGI-application to tie it all together."""
 
-import gettext
 import json
 import os
 import pathlib
@@ -32,7 +31,7 @@ from cdedb.frontend.assembly import AssemblyFrontend
 from cdedb.frontend.cde import CdEFrontend
 from cdedb.frontend.common import (
     JINJA_FILTERS, BaseApp, FrontendEndpoint, Response, construct_redirect, docurl,
-    sanitize_None, staticurl, datetime_filter, AbstractFrontend,
+    sanitize_None, staticurl, datetime_filter, AbstractFrontend, setup_translations,
 )
 from cdedb.frontend.core import CoreFrontend
 from cdedb.frontend.event import EventFrontend
@@ -85,11 +84,7 @@ class Application(BaseApp):
         self.jinja_env.filters.update(JINJA_FILTERS)
         self.jinja_env.filters.update({'datetime': datetime_filter})
         self.jinja_env.policies['ext.i18n.trimmed'] = True  # type: ignore
-        self.translations = {
-            lang: gettext.translation(
-                'cdedb', languages=[lang],
-                localedir=str(self.conf["REPOSITORY_PATH"] / 'i18n'))
-            for lang in self.conf["I18N_LANGUAGES"]}
+        self.translations = setup_translations(self.conf)
         if pathlib.Path("/PRODUCTIONVM").is_file():
             # Sanity checks for the live instance
             if self.conf["CDEDB_DEV"] or self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
@@ -201,11 +196,8 @@ class Application(BaseApp):
             rs = RequestState(
                 sessionkey=sessionkey, apitoken=apitoken, user=user,
                 request=request, notifications=[], mapadapter=urls,
-                requestargs=args, errors=[], values=None, lang=lang,
-                gettext=self.translations[lang].gettext,
-                ngettext=self.translations[lang].ngettext, begin=begin,
-                default_gettext=self.translations["en"].gettext,
-                default_ngettext=self.translations["en"].ngettext
+                requestargs=args, errors=[], values=None, begin=begin,
+                lang=lang, translations=self.translations,
             )
             rs.values.update(args)
             component, action = endpoint.split('/')
