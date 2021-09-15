@@ -42,6 +42,7 @@ import urllib.parse
 import weakref
 from email.mime.nonmultipart import MIMENonMultipart
 from secrets import token_hex
+from types import TracebackType
 from typing import (
     IO, AbstractSet, Any, AnyStr, Callable, ClassVar, Collection, Dict,
     Iterable, List, Mapping, MutableMapping, NamedTuple, Optional, Sequence,
@@ -2379,6 +2380,46 @@ def calculate_loglinks(rs: RequestState, total: int,
     ret: Dict[str, Union[CdEDBMultiDict, List[CdEDBMultiDict]]]
     ret = dict(**loglinks, **{"pre-current": pre, "post-current": post})
     return ret
+
+
+class TransactionObserver:
+    """Helper to watch over a non-atomic transaction.
+
+    This is a substitute for the Atomizer which is not available in the
+    frontend. We are not able to guarantee atomic transactions, but we can
+    detect failed transactions and generate error notifications.
+
+    This should only be used in cases where a failure is deemed sufficiently
+    unlikely.
+    """
+
+    def __init__(self, rs: RequestState, frontend: AbstractFrontend, name: str):
+        self.rs = rs
+        self.frontend = frontend
+        self.name = name
+
+    def __enter__(self) -> "TransactionObserver":
+        return self
+
+    def __exit__(self, atype: Optional[Type[Exception]],
+                 value: Optional[Exception],
+                 tb: Optional[TracebackType]) -> Literal[False]:
+        if value:
+            self.frontend.do_mail(
+                self.rs, "transaction_error",
+                {
+                    'To': (self.frontend.conf['MANAGEMENT_ADDRESS'],
+                           self.frontend.conf['TROUBLESHOOTING_ADDRESS']),
+                    'Subject': "Transaktionsfehler",
+                },
+                {
+                    'now': now(),
+                    'name': self.name,
+                    'atype': atype,
+                    'value': value,
+                    'tb': tb,
+                })
+        return False
 
 
 def setup_translations(conf: Config) -> Mapping[str, gettext.NullTranslations]:
