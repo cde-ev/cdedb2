@@ -3536,7 +3536,6 @@ class EventBackend(AbstractBackend):
             # could happen.
             return False, None
         except Exception:
-            breakpoint()
             # This blanket catching of all exceptions is a last resort. We try
             # to do enough validation, so that this should never happen, but
             # an opaque error (as would happen without this) would be rather
