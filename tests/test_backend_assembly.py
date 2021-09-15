@@ -757,8 +757,8 @@ class TestAssemblyBackend(BackendTest):
         history_expectation[3]['version_nr'] = 3
         history_expectation[3]['file_hash'] = get_hash(b'12345')
         self.assertEqual(
-            history_expectation, self.assembly.get_attachment_versions(
-                self.key, new_id, latest_version_only=False))
+            history_expectation,
+            self.assembly.get_attachment_versions(self.key, new_id))
         with self.assertRaises(ValueError):
             self.assembly.delete_attachment(self.key, new_id)
 
