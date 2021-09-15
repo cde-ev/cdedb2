@@ -2405,7 +2405,8 @@ class TransactionObserver:
             self.frontend.do_mail(
                 self.rs, "transaction_error",
                 {
-                    'To': (self.frontend.conf['MANAGEMENT_ADDRESS'],),
+                    'To': (self.frontend.conf['MANAGEMENT_ADDRESS'],
+                           self.frontend.conf['TROUBLESHOOTING_ADDRESS']),
                     'Subject': "Transaktionsfehler",
                 },
                 {
