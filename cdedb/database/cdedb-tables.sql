@@ -486,6 +486,7 @@ CREATE INDEX idx_lastschrift_persona_id ON cde.lastschrift(persona_id);
 GRANT SELECT ON cde.lastschrift TO cdb_member;
 GRANT UPDATE, INSERT, DELETE ON cde.lastschrift TO cdb_admin;
 GRANT SELECT, UPDATE ON cde.lastschrift_id_seq TO cdb_admin;
+CREATE UNIQUE INDEX lastschrift_unique_active ON cde.lastschrift (persona_id) WHERE revoked_at IS NOT NULL;
 
 CREATE TABLE cde.lastschrift_transactions (
         id                      serial PRIMARY KEY,
