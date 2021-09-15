@@ -67,9 +67,6 @@ steps:
   pull: never
   depends_on:
     - cdb
-  volumes:
-    - name: tmp_dir
-      path: /tmp
   commands:
     - sleep 5
     - make i18n-compile # needed for sample-data step.
