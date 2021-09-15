@@ -23,7 +23,7 @@
     </h1>
 {% endblock %}
 {% block content %}
-    <div class="p">
+    <div class="p button-par">
         {{ util.href(cdedblink("event/change_lodgement_form"), gettext("Edit"), readonly=is_locked,
                      aclass="btn btn-sm btn-warning", icon='pen') }}
         {{ util.href(cdedblink("event/manage_inhabitants_form"), gettext("Manage Inhabitants"), readonly=is_locked,

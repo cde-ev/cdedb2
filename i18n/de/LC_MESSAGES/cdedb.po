@@ -7658,7 +7658,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/dearchive_user.tmpl:22
 msgid "Dearchive user"
-msgstr "Nutzer wiedherstellen"
+msgstr "Nutzer wiederherstellen"
 
 #: cdedb/frontend/templates/web/core/debug_email.tmpl:4
 msgid "View E-Mail"

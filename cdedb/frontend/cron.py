@@ -62,9 +62,8 @@ class CronFrontend(BaseApp):
         rs = RequestState(
             sessionkey=None, apitoken=None, user=user, request=None,  # type: ignore
             notifications=[], mapadapter=urls, requestargs={}, errors=[],
-            values=None, lang=lang, begin=None,
-            gettext=self.translations[lang].gettext,
-            ngettext=self.translations[lang].ngettext)
+            values=None, begin=None, lang=lang, translations=self.translations,
+        )
         rs._conn = self.connpool['cdb_admin']  # pylint: disable=protected-access
         return rs
 
