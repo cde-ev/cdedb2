@@ -25,6 +25,11 @@
                             icon="euro-sign") }}
 {% endblock %}
 
+{% block heading %}
+    {{ util.context_heading(gettext("Direct Debit Authorization"),
+                            util.persona_name(ambience['persona'], only_given_names=True), 'user', gettext("User")) }}
+{% endblock %}
+
 {% block content %}
     <div id="active-permit">
     {% if active_permit %}

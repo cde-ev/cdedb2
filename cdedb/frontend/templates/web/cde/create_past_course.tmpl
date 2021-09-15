@@ -16,6 +16,12 @@
 {{ util.breadcrumb_link(cdedblink("cde/create_past_course", {"pevent_id": ambience['pevent']['id']}),
         gettext("Create Course"), active=True) }}
 {% endblock %}
+
+{% block heading %}
+    {{ util.context_heading(gettext("Add Course"), ambience['pevent']['title'],
+                            'calendar-alt', gettext("Past Event")) }}
+{% endblock %}
+
 {% block content %}
     <script nonce="{{ csp_nonce }}">
         $(function() {

@@ -18,10 +18,8 @@
     {{ util.breadcrumb_link(cdedblink("event/configure_additional_questionnaire"), gettext("Configure Questionnaire"), active=True) }}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {% trans %}Configure Questionnaire{% endtrans %}
-        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Configure Questionnaire"), ambience['event']['title'],
+                            'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 
 {% block content %}

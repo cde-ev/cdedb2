@@ -14,11 +14,8 @@
 {{ util.breadcrumb_link(cdedblink("event/field_summary"), gettext("Configure Custom Fields"), active=True) }}
 {% endblock %}
 {% block heading %}
-    {{ util.doclink('Handbuch_Orga') }}
-    <h1 class="title">
-        {% trans %}Configure Custom Fields{% endtrans %}
-        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Configure Custom Fields"), ambience['event']['title'],
+                            'chalkboard-teacher', gettext("Event"), doclink="Handbuch_Orga") }}
 {% endblock %}
 
 {# Macro for a general field, that can have each role in the DynamicRow workflow.

@@ -16,12 +16,8 @@
     {{ util.breadcrumb_link(cdedblink("event/change_course"), gettext("Edit"), active=True) }}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {% trans course=ambience['course']['shortname'] %}
-            Edit course {{ course }}
-        {% endtrans %}
-        <small>{{ util.make_icon('chalkboard-teacher', arialabel=gettext("Event")) }} {{ ambience['event']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Edit course %(course)s")|format(course=ambience['course']['shortname']),
+                            ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 
 {% block content %}

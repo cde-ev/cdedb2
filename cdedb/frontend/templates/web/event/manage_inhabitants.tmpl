@@ -16,12 +16,8 @@
     {{ util.breadcrumb_link(cdedblink("event/manage_inhabitants"), gettext("Manage Inhabitants"), active=True) }}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {% trans lodgement=ambience['lodgement']['title']%}
-        	Inhabitants of {{ lodgement }}
-        {% endtrans %}
-        <small>{{ util.make_icon('chalkboard-teacher', arialabel=gettext("Event")) }} {{ ambience['event']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Inhabitants of %(lodgement)s")|format(lodgement=ambience['lodgement']['title']),
+                            ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('event/manage_inhabitants') }}" method="POST" id="manageinhabitantsform">

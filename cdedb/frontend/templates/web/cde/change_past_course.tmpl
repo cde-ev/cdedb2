@@ -18,6 +18,12 @@
 {{ util.breadcrumb_link(cdedblink("cde/change_past_course_form", {'pcourse_id' : ambience['pcourse']['id']}),
         gettext("Edit"), active=True) }}
 {% endblock %}
+
+{% block heading %}
+    {{ util.context_heading(gettext("Edit course %(course)s")|format(course=ambience['pcourse']['title']),
+                            ambience['pevent']['title'], 'calendar-alt', gettext("Past Event")) }}
+{% endblock %}
+
 {% block content %}
     <script nonce="{{ csp_nonce }}">
         $(function() {

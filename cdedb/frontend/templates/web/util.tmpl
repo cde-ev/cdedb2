@@ -259,7 +259,7 @@
 
 {# Helper macro to create a large, left-floated 'Help' button, linking to the off-page documentation as referenced by
    docurl(). #}
-{% macro doclink(topic, anchor=none) %}
+{% macro _doclink(topic, anchor=none) %}
     <a href="{{ docurl(topic, anchor) }}" class="btn btn-info pull-right" target="_blank">
         {{ make_icon('question-circle') }}
         {% trans %}Help{% endtrans %}
@@ -1080,3 +1080,20 @@ mailto:
         </div>
     {% endwith %}
 {%- endmacro %}
+
+
+{# Macro to unify the style of headings with context (events, personas, assemblies, ...) #}
+{# TODO: add possibility for second subtitle? (needed for assembly attachments) #}
+{% macro context_heading(title, subtitle=none, icon=none, icon_arialabel=none, doclink=none, doclink_anchor=none) %}
+    {% if doclink %}
+        {{ _doclink(doclink, anchor=doclink_anchor) }}
+    {% endif %}
+    <h1 class="title">
+        {{ title }}
+        {% if subtitle %}
+            <small>
+                {{ make_icon(icon, arialabel=icon_arialabel) }}{{ nbsp }}{{ subtitle }}
+            </small>
+        {% endif %}
+    </h1>
+{% endmacro %}

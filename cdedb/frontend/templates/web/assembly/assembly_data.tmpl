@@ -25,10 +25,8 @@
 {% endblock %}
 {% block heading %}
     {% if ambience["assembly"] %}
-        <h1 class="title">
-            {% trans %}Configuration{% endtrans %}
-            <small>{{ util.make_icon('bullhorn', arialabel=gettext("Assembly")) }} {{ ambience["assembly"]["title"] }}</small>
-        </h1>
+        {{ util.context_heading(gettext("Configuration"), ambience['assembly']['title'],
+                                'bullhorn', gettext("Assembly")) }}
     {% else %}
         {{ super() }}
     {% endif %}

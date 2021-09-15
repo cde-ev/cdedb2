@@ -19,11 +19,9 @@
             icon='book') }}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {% trans nr=ambience['course']['nr'], course=ambience['course']['shortname'] %}
-            Course {{ nr }}: {{ course }}
-        {% endtrans %}
-    </h1>
+    {{ util.context_heading(gettext("Course %(nr)s: %(course)s")|format(nr=ambience['course']['nr'],
+                                                                        course=ambience['course']['shortname']),
+                            ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
     <div class="subtitle">
         {{ ambience['course']['title'] }}
     </div>

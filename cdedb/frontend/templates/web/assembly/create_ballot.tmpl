@@ -4,13 +4,18 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block inner_navigation %}{{assembly_inner_navigation(ambience['assembly']) }}{% endblock %}
-{% block title %}{{ gettext("Create Ballot") }}{% endblock %}
+{% block title %}{{ gettext("Create Ballot") }} ({{ ambience['assembly']['title'] }}){% endblock %}
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
     {{ util.breadcrumb_link(cdedblink("assembly/list_ballots"), gettext("Ballots")) }}
     {{ util.breadcrumb_link(cdedblink("assembly/create_ballot"), gettext("Create Ballot"), active=True) }}
 {% endblock %}
+
+{% block heading %}
+    {{ util.context_heading(gettext("Create Ballot"), ambience['assembly']['title'], 'bullhorn', gettext("Assembly")) }}
+{% endblock %}
+
 {% block content %}
     <form action="{{ cdedblink('assembly/create_ballot') }}" method="POST" id="createballotform" class="form-horizontal">
         {{ util.anti_csrf_token('assembly/create_ballot') }}
