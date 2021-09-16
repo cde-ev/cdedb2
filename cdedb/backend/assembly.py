@@ -1683,6 +1683,9 @@ class AssemblyBackend(AbstractBackend):
                                         " attachment."))
             if cascade:
                 if "versions" in cascade:
+                    if not self.is_attachment_version_deletable(rs, attachment_id):
+                        raise ValueError(
+                            n_("Unable to delete any versions of this attachment."))
                     ret *= self.sql_delete(rs, "assembly.attachment_versions",
                                            (attachment_id,), "attachment_id")
                     for version in blockers["versions"]:
@@ -1691,6 +1694,12 @@ class AssemblyBackend(AbstractBackend):
                         if path.exists():
                             path.unlink()
                 if "attachment_ballot_links" in cascade:
+                    ballot_ids = self.get_attachment_ballots(rs, attachment_id)
+                    if not self.are_attachment_ballots_links_deletable(
+                        rs, attachment_id, ballot_ids):
+                        raise ValueError(
+                            n_("Unable to delete some attachment-ballot-links."))
+
                     ret *= self.sql_delete(rs, "assembly.attachment_ballot_links",
                                            (attachment_id,), entity_key="attachment_id")
                 blockers = self.delete_attachment_blockers(rs, attachment_id)
@@ -1726,6 +1735,14 @@ class AssemblyBackend(AbstractBackend):
         attachment_id = affirm(vtypes.ID, attachment_id)
         ballot_id = affirm(vtypes.ID, ballot_id)
         return not self.is_ballot_locked(rs, ballot_id)
+
+    @access("assembly")
+    def are_attachment_ballots_links_deletable(self, rs: RequestState,
+                                               attachment_id: int,
+                                               ballot_ids: Collection[int]) -> bool:
+        attachment_id = affirm(vtypes.ID, attachment_id)
+        ballot_ids = affirm_set(vtypes.ID, ballot_ids)
+        return not self.is_any_ballot_locked(rs, ballot_ids)
 
     @access("assembly")
     def get_attachment_ballots(self, rs: RequestState, attachment_id: int
