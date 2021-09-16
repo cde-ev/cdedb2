@@ -1844,9 +1844,9 @@ class AssemblyBackend(AbstractBackend):
 
     @internal
     def _get_latest_attachments_versions(self, rs: RequestState,
-                                        attachment_ids: Collection[int],
-                                        timestamp: Optional[datetime.datetime] = None,
-                                        ) -> CdEDBObjectMap:
+                                         attachment_ids: Collection[int],
+                                         timestamp: Optional[datetime.datetime] = None,
+                                         ) -> CdEDBObjectMap:
         """Helper to get only the latest (non-deleted) version of attachments.
 
         :param timestamp: If given, retrieve the latest version before then.
