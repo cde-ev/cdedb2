@@ -782,10 +782,10 @@ class AssemblyBackend(AbstractBackend):
                            ) -> Dict[int, bool]:
         """Helper to check whether the given ballots may be modified."""
         ballot_ids = affirm_set(vtypes.ID, ballot_ids)
-        q = "SELECT id FROM assembly.ballots WHERE id = ANY(%s) AND vote_begin < %s"
-        params = (ballot_ids, now())
-        locked_ballots = {e["id"] for e in self.query_all(rs, q, params)}
-        return {anid: anid in locked_ballots for anid in ballot_ids}
+        q = ("SELECT id, vote_begin < %s AS is_locked"
+             " FROM assembly.ballots WHERE id = ANY(%s)")
+        params = (now(), ballot_ids)
+        return {e['id']: e['is_locked'] for e in self.query_all(rs, q, params)}
 
     class _IsBallotLockedProtokol(Protocol):
         def __call__(self, rs: RequestState, anid: int) -> bool: ...
@@ -800,9 +800,7 @@ class AssemblyBackend(AbstractBackend):
         :returns: True if any of the ballots may not be edited.
         """
         ballot_ids = affirm_set(vtypes.ID, ballot_ids)
-        q = "SELECT id FROM assembly.ballots WHERE id = ANY(%s) AND vote_begin < %s"
-        params = (ballot_ids, now())
-        return bool(self.query_all(rs, q, params))
+        return any(locked for locked in self.are_ballots_locked(rs, ballot_ids).values)
 
     @access("assembly")
     def are_ballots_voting(self, rs: RequestState, ballot_ids: Collection[int]
@@ -812,14 +810,13 @@ class AssemblyBackend(AbstractBackend):
         :returns: True if any of the given ballots is open for voting.
         """
         ballot_ids = affirm_set(vtypes.ID, ballot_ids)
-        q = ("SELECT id FROM assembly.ballots WHERE id = ANY(%s)"
-             " AND vote_begin > %s"
-             " AND (vote_end < %s"
-                   " OR (extended = TRUE AND vote_extension_end < %s))")
+        q = """
+        SELECT id, (vote_end > %s OR (extended = True AND vote_extension_end < %s)
+                    AND vote_begin < %s) AS is_voting
+        FROM assembly.ballots WHERE id = ANY(%s)"""
         reference_time = now()
         params = (ballot_ids, reference_time, reference_time, reference_time)
-        voting_ballots = {e["id"] for e in self.query_all(rs, q, params)}
-        return {anid: anid in voting_ballots for anid in ballot_ids}
+        return {e["id"]: e['is_voting'] for e in self.query_all(rs, q, params)}
 
     class _IsBallotVotingProtokol(Protocol):
         def __call__(self, rs: RequestState, anid: int) -> bool: ...
@@ -1852,12 +1849,10 @@ class AssemblyBackend(AbstractBackend):
         with Atomizer(rs):
             attachments = self.get_attachments(rs, attachment_ids)
             assembly_ids = self.get_assembly_ids(rs, attachment_ids=attachment_ids)
-            are_assemblies_locked = self.are_assemblies_locked(rs, assembly_ids)
-            linked_ballots = {anid: self.get_attachment_ballots(rs, anid)
-                              for anid in attachment_ids}
-            return {anid: not (are_assemblies_locked[attachment["assembly_id"]]
-                               or self.is_any_ballot_locked(rs, linked_ballots[anid]))
-                    for anid, attachment in attachments.items()}
+            assembly_locks = self.are_assemblies_locked(rs, assembly_ids)
+            return {att_id: not (assembly_locks[att['attachment_id']]
+                                 or self.is_any_ballot_locked(rs, att['ballot_ids']))
+                    for att_id, att in attachments.items()}
 
     class _IsAttachmentVersionDeletableProtocol(Protocol):
         def __call__(self, rs: RequestState, anid: int) -> bool: ...
