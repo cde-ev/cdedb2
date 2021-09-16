@@ -1863,13 +1863,14 @@ class AssemblyBackend(AbstractBackend):
             ON max_version.attachment_id = version_data.attachment_id
                 AND max_version.version_nr = version_data.version_nr
             WHERE max_version.attachment_id = ANY(%s)"""
-        params: List[Any] = [attachment_ids]
+        # Be careful here, because the `attachment_ids` param needs to be at the end.
+        params: List[Any] = []
         conditions = ["dtime IS NULL"]
         if timestamp:
             conditions.append("ctime < %s")
             params.append(timestamp)
         query = base_query.format(condition=" AND ".join(conditions))
-        data = self.query_all(rs, query, params)
+        data = self.query_all(rs, query, params + [attachment_ids])
         return {e['attachment_id']: e for e in data}
 
     @access("assembly")
