@@ -31,11 +31,19 @@ grep /tmp/newevolutions.txt -v -f /tmp/oldevolutions.txt \
 # apply all evolutions and gather the output.
 truncate -s0 /tmp/output-evolution.txt
 for evolution in $(cat /tmp/todoevolutions.txt); do
-    echo ""
-    echo "Apply evolution $evolution" | tee -a /tmp/output-evolution.txt
-    python3 bin/execute_sql_script.py -d $DATABASE_NAME -v \
-         -f cdedb/database/evolutions/$evolution \
-         2>&1 | tee -a /tmp/output-evolution.txt
+    if [[ $evolution == *.sql ]]; then
+        echo ""
+        echo "Apply evolution $evolution" | tee -a /tmp/output-evolution.txt
+        python3 bin/execute_sql_script.py -d $DATABASE_NAME -v \
+             -f cdedb/database/evolutions/$evolution \
+             2>&1 | tee -a /tmp/output-evolution.txt
+    fi
+    if [[ $evolution == *.py ]]; then
+        echo ""
+        echo "Run migration script $evolution" | tee -a /tmp/output-evolution.txt
+        sudo -u www-data python3 cdedb/database/evolutions/$evolution \
+            2>&1 | tee -a /tmp/output-evolution.txt
+    fi
 done
 
 # evolved db
