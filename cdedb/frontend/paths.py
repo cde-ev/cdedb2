@@ -636,7 +636,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                              endpoint="get_attachment"),
                         # this is kept as legacy support
                         rule("/get", endpoint="",
-                             redirect_to='assembly/assembly/<assembly_id>/attachment/<attachment_id>/latest'),
+                             redirect_to='assembly/assembly/<assembly_id>/attachment'
+                                         '/<attachment_id>/latest'),
                         rule("/delete", methods=_POST,
                              endpoint="delete_attachment"),
                         rule("/add", methods=_GET,
@@ -648,7 +649,9 @@ CDEDB_PATHS = werkzeug.routing.Map((
                                  endpoint="get_attachment_version"),
                             # this is kept as legacy support
                             rule("/get", endpoint="",
-                                 redirect_to="assembly/assembly/<assembly_id>/attachment/<attachment_id>/version/<version_nr>"),
+                                 redirect_to="assembly/assembly/<assembly_id>"
+                                             "/attachment/<attachment_id>/version"
+                                             "/<version_nr>"),
                             rule("/delete", methods=_POST,
                                  endpoint="delete_attachment_version"),
                         )),
@@ -685,11 +688,14 @@ CDEDB_PATHS = werkzeug.routing.Map((
                         sub("/<int:attachment_id>", (
                             # this is kept as legacy support
                             rule("/get", endpoint="",
-                                 redirect_to='assembly/assembly/<assembly_id>/attachment/<attachment_id>/latest'),
+                                 redirect_to='assembly/assembly/<assembly_id>'
+                                             '/attachment/<attachment_id>/latest'),
                             sub("/version/<int:version>", (
                                 # this is kept as legacy support
                                 rule("/get", endpoint="",
-                                     redirect_to="assembly/assembly/<assembly_id>/attachment/<attachment_id>/version/<version>"),
+                                     redirect_to="assembly/assembly/<assembly_id>"
+                                                 "/attachment/<attachment_id>/version"
+                                                 "/<version>"),
                             )),
                         )),
                     )),

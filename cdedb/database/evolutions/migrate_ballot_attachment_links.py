@@ -56,4 +56,3 @@ GRANT SELECT, UPDATE ON assembly.attachment_ballot_links_id_seq TO cdb_member;""
     assembly.query_exec(
         rs, "ALTER TABLE assembly.attachments ALTER COLUMN assembly_id SET NOT NULL",
         ())
-

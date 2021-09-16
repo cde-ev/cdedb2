@@ -1037,7 +1037,7 @@ class AssemblyBackend(AbstractBackend):
             entity_key="ballot_id")
         if attachment_ballot_links:
             # Ballot still has attachments
-            blockers["attachment_link"] = [anid for anid in attachment_ballot_links]
+            blockers["attachment_link"] = [e["id"] for e in attachment_ballot_links]
 
         # Voters are people who _may_ vote in this ballot.
         voters = self.sql_select(rs, "assembly.voter_register", ("id", ),
@@ -1696,7 +1696,7 @@ class AssemblyBackend(AbstractBackend):
                 if "attachment_ballot_links" in cascade:
                     ballot_ids = self.get_attachment_ballots(rs, attachment_id)
                     if not self.are_attachment_ballots_links_deletable(
-                        rs, attachment_id, ballot_ids):
+                            rs, attachment_id, ballot_ids):
                         raise ValueError(
                             n_("Unable to delete some attachment-ballot-links."))
 
@@ -1769,7 +1769,8 @@ class AssemblyBackend(AbstractBackend):
             if not self.is_presider(rs, assembly_id=assembly_id):
                 raise PrivilegeError(n_("Must have privileged access to add"
                                         " attachment link."))
-            if not self.is_attachment_ballot_link_creatable(rs, attachment_id, ballot_id):
+            if not self.is_attachment_ballot_link_creatable(rs, attachment_id,
+                                                            ballot_id):
                 raise ValueError(n_("Cannot link attachment to ballot that has already"
                                     " begun voting."))
             ret = self.sql_insert(
@@ -1800,7 +1801,8 @@ class AssemblyBackend(AbstractBackend):
             if not self.is_presider(rs, assembly_id=assembly_id):
                 raise PrivilegeError(n_("Must have privileged access to delete"
                                         " attachment link."))
-            if not self.is_attachment_ballot_link_deletable(rs, attachment_id, ballot_id):
+            if not self.is_attachment_ballot_link_deletable(rs, attachment_id,
+                                                            ballot_id):
                 raise ValueError(n_("Cannot unlink attachment from ballot that has"
                                     " already begun voting."))
             query = ("DELETE FROM assembly.attachment_ballot_links"
@@ -1855,8 +1857,9 @@ class AssemblyBackend(AbstractBackend):
     class _IsAttachmentVersionDeletableProtocol(Protocol):
         def __call__(self, rs: RequestState, anid: int) -> bool: ...
 
-    is_attachment_version_deletable: _IsAttachmentVersionDeletableProtocol = singularize(
-        are_attachment_versions_deletable, "attachment_ids", "attachment_id")
+    is_attachment_version_deletable: _IsAttachmentVersionDeletableProtocol = \
+        singularize(are_attachment_versions_deletable, "attachment_ids",
+                    "attachment_id")
 
     @internal
     def _get_latest_attachments_versions(self, rs: RequestState,

@@ -467,10 +467,13 @@ class AssemblyFrontend(AbstractUserFrontend):
         attachments = self.assemblyproxy.get_attachments(rs, attachment_ids)
         attachments_versions = self.assemblyproxy.get_attachments_versions(
             rs, attachment_ids)
-        are_attachment_versions_creatable = self.assemblyproxy.are_attachment_versions_creatable(rs, attachment_ids)
-        are_attachment_versions_deletable = self.assemblyproxy.are_attachment_versions_deletable(rs, attachment_ids)
+        are_attachment_versions_creatable = \
+            self.assemblyproxy.are_attachment_versions_creatable(rs, attachment_ids)
+        are_attachment_versions_deletable = \
+            self.assemblyproxy.are_attachment_versions_deletable(rs, attachment_ids)
         are_attachments_deletable = {
-            attachment_id: attachment["num_versions"] <= 1 and are_attachment_versions_deletable[attachment_id]
+            attachment_id: (attachment["num_versions"] <= 1
+                            and are_attachment_versions_deletable[attachment_id])
             for attachment_id, attachment in attachments.items()}
         return self.render(rs, "list_attachments", {
             "attachments": attachments,
@@ -793,7 +796,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.redirect(rs, "assembly/list_attachments")
         latest_version = self.assemblyproxy.get_latest_attachment_version(
             rs, attachment_id)
-        is_deletable = self.assemblyproxy.is_attachment_version_deletable(rs, attachment_id)
+        is_deletable = self.assemblyproxy.is_attachment_version_deletable(rs,
+                                                                          attachment_id)
         return self.render(
             rs, "add_attachment_version", {
                 'latest_version': latest_version,
@@ -819,7 +823,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             tmp = pathlib.Path(attachment.filename).parts[-1]
             filename = check(rs, vtypes.Identifier, tmp, 'filename')
         attachment = check(rs, vtypes.PDFFile, attachment, 'attachment')
-        is_deletable = self.assemblyproxy.is_attachment_version_deletable(rs, attachment_id)
+        is_deletable = self.assemblyproxy.is_attachment_version_deletable(rs,
+                                                                          attachment_id)
         if not is_deletable and not ack_creation:
             rs.append_validation_error(
                 ("ack_creation", ValueError(n_("Must be checked."))))
@@ -1272,7 +1277,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             rs, assembly_id=assembly_id)
         attachment_versions = self.assemblyproxy.get_latest_attachments_version(
             rs, attachment_ids)
-        attachment_entries = [(attachment_id, version["title"]) for attachment_id, version in attachment_versions.items()]
+        attachment_entries = [(attachment_id, version["title"])
+                              for attachment_id, version in attachment_versions.items()]
 
         # add the current attachment to the values dict, since they are no part of them
         # by default
