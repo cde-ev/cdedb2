@@ -69,6 +69,12 @@ class AssemblyBackend(AbstractBackend):
     def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
 
+    def get_attachment_file_path(self, attachment_id: int, version_nr: int) -> Path:
+        return self.attachment_base_path / f"{attachment_id}_v{version_nr}"
+
+    def get_ballot_file_path(self, ballot_id: int) -> Path:
+        return self.ballot_result_base_path / str(ballot_id)
+
     @access("assembly")
     def are_assemblies_locked(self, rs: RequestState,
                               assembly_ids: Collection[int]
@@ -1367,7 +1373,7 @@ class AssemblyBackend(AbstractBackend):
         if not ballot['is_tallied']:
             return None
         else:
-            path = self.ballot_result_base_path / str(ballot_id)
+            path = self.get_ballot_file_path(ballot_id)
             if not path.exists():
                 # TODO raise an error here?
                 self.logger.warning(
@@ -1459,7 +1465,7 @@ class AssemblyBackend(AbstractBackend):
                 "voters": voter_names,
                 "votes": vote_list,
             }
-            path = self.ballot_result_base_path / str(ballot_id)
+            path = self.get_ballot_file_path(ballot_id)
             data = json_serialize(result)
             with open(path, 'w') as f:
                 f.write(data)
@@ -1609,7 +1615,7 @@ class AssemblyBackend(AbstractBackend):
             code = self.sql_insert(rs, "assembly.attachment_versions", version)
             if not code:
                 raise RuntimeError(n_("Something went wrong."))
-            path = self.attachment_base_path / f"{new_id}_v1"
+            path = self.get_attachment_file_path(new_id, 1)
             if path.exists():
                 raise RuntimeError(n_("File already exists."))
             with open(path, "wb") as f:
@@ -1688,9 +1694,8 @@ class AssemblyBackend(AbstractBackend):
                             n_("Unable to delete any versions of this attachment."))
                     ret *= self.sql_delete(rs, "assembly.attachment_versions",
                                            (attachment_id,), "attachment_id")
-                    for version in blockers["versions"]:
-                        filename = f"{attachment_id}_v{version}"
-                        path = self.attachment_base_path / filename
+                    for version_nr in blockers["versions"]:
+                        path = self.get_attachment_file_path(attachment_id, version_nr)
                         if path.exists():
                             path.unlink()
                 if "attachment_ballot_links" in cascade:
@@ -1982,7 +1987,7 @@ class AssemblyBackend(AbstractBackend):
             data['version_nr'] = version_nr
             data['file_hash'] = get_hash(content)
             ret = self.sql_insert(rs, "assembly.attachment_versions", data)
-            path = self.attachment_base_path / f"{attachment_id}_v{version_nr}"
+            path = self.get_attachment_file_path(attachment_id, version_nr)
             if path.exists():
                 raise ValueError(n_("File already exists."))
             with open(path, "wb") as f:
@@ -2031,7 +2036,7 @@ class AssemblyBackend(AbstractBackend):
             ret = self.query_exec(rs, query, params)
 
             if ret:
-                path = self.attachment_base_path / f"{attachment_id}_v{version_nr}"
+                path = self.get_attachment_file_path(attachment_id, version_nr)
                 if path.exists():
                     path.unlink()
                 assembly_id = self.get_assembly_id(rs, attachment_id=attachment_id)
@@ -2052,7 +2057,7 @@ class AssemblyBackend(AbstractBackend):
         if version_nr is None:
             latest_version = self.get_latest_attachment_version(rs, attachment_id)
             version_nr = latest_version["version_nr"]
-        path = self.attachment_base_path / f"{attachment_id}_v{version_nr}"
+        path = self.get_attachment_file_path(attachment_id, version_nr)
         if path.exists():
             with open(path, "rb") as f:
                 return f.read()
