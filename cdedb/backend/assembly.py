@@ -812,7 +812,7 @@ class AssemblyBackend(AbstractBackend):
         :returns: True if any of the ballots may not be edited.
         """
         ballot_ids = affirm_set(vtypes.ID, ballot_ids)
-        return any(locked for locked in self.are_ballots_locked(rs, ballot_ids).values)
+        return any(lock for lock in self.are_ballots_locked(rs, ballot_ids).values())
 
     @access("assembly")
     def are_ballots_voting(self, rs: RequestState, ballot_ids: Collection[int]
@@ -823,11 +823,11 @@ class AssemblyBackend(AbstractBackend):
         """
         ballot_ids = affirm_set(vtypes.ID, ballot_ids)
         q = """
-        SELECT id, (vote_end > %s OR (extended = True AND vote_extension_end < %s)
+        SELECT id, (vote_end > %s OR (extended = True AND vote_extension_end > %s)
                     AND vote_begin < %s) AS is_voting
         FROM assembly.ballots WHERE id = ANY(%s)"""
         reference_time = now()
-        params = (ballot_ids, reference_time, reference_time, reference_time)
+        params = (reference_time, reference_time, reference_time, ballot_ids)
         return {e["id"]: e['is_voting'] for e in self.query_all(rs, q, params)}
 
     class _IsBallotVotingProtokol(Protocol):
@@ -1839,7 +1839,7 @@ class AssemblyBackend(AbstractBackend):
             attachments = self.get_attachments(rs, attachment_ids)
             assembly_ids = self.get_assembly_ids(rs, attachment_ids=attachment_ids)
             assembly_locks = self.are_assemblies_locked(rs, assembly_ids)
-            return {att_id: not (assembly_locks[att['attachment_id']]
+            return {att_id: not (assembly_locks[att['assembly_id']]
                                  or self.is_any_ballot_locked(rs, att['ballot_ids']))
                     for att_id, att in attachments.items()}
 
