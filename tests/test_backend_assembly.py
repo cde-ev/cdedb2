@@ -178,6 +178,7 @@ class TestAssemblyBackend(BackendTest):
                 'description': 'Nach dem Leben, dem Universum und dem ganzen Rest.',
                 'extended': True,
                 'id': 1,
+                'is_locked': True,
                 'is_tallied': False,
                 'notes': None,
                 'abs_quorum': 2,
@@ -229,6 +230,7 @@ class TestAssemblyBackend(BackendTest):
                 'description': 'denkt an die Frutaner',
                 'extended': None,
                 'id': 4,
+                'is_locked': True,
                 'is_tallied': False,
                 'notes': None,
                 'abs_quorum': 0,
@@ -272,6 +274,7 @@ class TestAssemblyBackend(BackendTest):
             'description': 'Ulitmativ letzte Entscheidung',
             'extended': None,
             'id': 2,
+            'is_locked': False,
             'is_tallied': False,
             'notes': 'Nochmal alle auf diese wichtige Entscheidung hinweisen.',
             'abs_quorum': 0,
@@ -339,6 +342,7 @@ class TestAssemblyBackend(BackendTest):
             'extended': None,
             'quorum': 10,
             'id': new_id,
+            'is_locked': False,
             'is_tallied': False,
             'candidates': {
                 1002: {
@@ -676,7 +680,6 @@ class TestAssemblyBackend(BackendTest):
         expectation = {
             1: {
                 "attachment_id": new_id,
-                "id": 1001,
                 "version_nr": 1,
                 "title": "Rechenschaftsbericht",
                 "authors": "Farin",
@@ -692,7 +695,7 @@ class TestAssemblyBackend(BackendTest):
             self.assembly.remove_attachment_version(self.key, new_id, 1)
         data = {
             "attachment_id": new_id,
-            "title": "Rechensaftsbericht",
+            "title": "Rechenschaftsbericht",
             "authors": "Farin",
             "filename": "rechen_v2.pdf",
         }
@@ -764,14 +767,6 @@ class TestAssemblyBackend(BackendTest):
             self.assembly.delete_attachment(self.key, new_id)
 
         data = {
-            "attachment_id": new_id,
-            "version_nr": 2,
-            "title": "Rechenschaftsbericht",
-        }
-        self.assertTrue(self.assembly.change_attachment_version(self.key, data))
-        history_expectation[2].update(data)
-
-        data = {
             "assembly_id": assembly_id,
             "title": "Verfassung des Staates der CdEler",
             "authors": "Anton",
@@ -839,6 +834,16 @@ class TestAssemblyBackend(BackendTest):
             self.assembly.get_attachments_versions(self.key, (1001, 1002, 1003)))
         history_expectation = {
             1001: {
+                1: {
+                    'attachment_id': 1001,
+                    'authors': None,
+                    'ctime': nearly_now(),
+                    'dtime': nearly_now(),
+                    'file_hash': get_hash(b'123'),
+                    'filename': None,
+                    'title': None,
+                    'version_nr': 1,
+                },
                 2: {
                     'attachment_id': 1001,
                     'authors': 'Farin',
@@ -846,10 +851,19 @@ class TestAssemblyBackend(BackendTest):
                     'dtime': None,
                     'file_hash': get_hash(b'1234'),
                     'filename': 'rechen_v2.pdf',
-                    'id': 1002,
                     'title': 'Rechenschaftsbericht',
                     'version_nr': 2,
-                }
+                },
+                3: {
+                    'attachment_id': 1001,
+                    'authors': None,
+                    'ctime': nearly_now(),
+                    'dtime': nearly_now(),
+                    'file_hash': get_hash(b'12345'),
+                    'filename': None,
+                    'title': None,
+                    'version_nr': 3,
+                },
             },
             1002: {
                 1: {
@@ -859,7 +873,6 @@ class TestAssemblyBackend(BackendTest):
                     'dtime': None,
                     'file_hash': get_hash(b'abc'),
                     'filename': 'verf.pdf',
-                    'id': 1004,
                     'title': 'Verfassung des Staates der CdEler',
                     'version_nr': 1,
                 }
@@ -872,7 +885,6 @@ class TestAssemblyBackend(BackendTest):
                     'dtime': None,
                     'file_hash': get_hash(b'super secret'),
                     'filename': 'beschluss.pdf',
-                    'id': 1005,
                     'title': 'Beschlussvorlage',
                     'version_nr': 1,
                 },
