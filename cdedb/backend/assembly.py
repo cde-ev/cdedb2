@@ -1909,10 +1909,7 @@ class AssemblyBackend(AbstractBackend):
         with Atomizer(rs):
             if not self.may_access_attachments(rs, attachment_ids):
                 raise PrivilegeError(n_("Not privileged."))
-            attachments_versions = self._get_latest_attachments_versions(
-                rs, attachment_ids)
-        return {attachment_id: unwrap(version)
-                for attachment_id, version in attachments_versions.items()}
+            return self._get_latest_attachments_versions(rs, attachment_ids)
 
     class _GetLatestVersionProtocol(Protocol):
         def __call__(self, rs: RequestState, attachment_id: int) -> CdEDBObject: ...
