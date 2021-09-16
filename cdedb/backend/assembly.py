@@ -634,8 +634,12 @@ class AssemblyBackend(AbstractBackend):
 
         Possible blockers:
 
+        * assembly_is_locked: Wether the assembly has been locked. In contrast to
+                              individual objects linked to the assembly, this does not
+                              prevent deletion and cascading of this blocker will also
+                              cascade it for the individual objects.
         * ballots: These can have their own blockers like vote_begin.
-        * vote_begin: Ballots where voting has begun. Prevents deletion.
+        * ballot_is_locked: Whether any ballots are locked. Prevents deletion.
         * attendees: Rows of the assembly.attendees table.
         * attachments: All attachments associated with the assembly and it's
                        ballots.
@@ -651,16 +655,17 @@ class AssemblyBackend(AbstractBackend):
         assembly_id = affirm(vtypes.ID, assembly_id)
         blockers = {}
 
+        if self.is_assembly_locked(rs, assembly_id):
+            blockers["assembly_is_locked"] = [assembly_id]
+
         ballots = self.sql_select(
             rs, "assembly.ballots", ("id",), (assembly_id,),
             entity_key="assembly_id")
         if ballots:
             blockers["ballots"] = [e["id"] for e in ballots]
-            for ballot_id in blockers["ballots"]:
-                if "vote_begin" in self.delete_ballot_blockers(rs, ballot_id):
-                    if "vote_begin" not in blockers:
-                        blockers["vote_begin"] = []
-                    blockers["vote_begin"].append(ballot_id)
+            # Take special care with ballots, since they can prevent deletion entirely.
+            if self.is_any_ballot_locked(rs, blockers["ballots"]):
+                blockers["ballot_is_locked"] = [True]
 
         attendees = self.sql_select(
             rs, "assembly.attendees", ("id",), (assembly_id,),
@@ -704,7 +709,7 @@ class AssemblyBackend(AbstractBackend):
         """
         assembly_id = affirm(vtypes.ID, assembly_id)
         blockers = self.delete_assembly_blockers(rs, assembly_id)
-        if "vote_begin" in blockers:
+        if "ballot_is_locked" in blockers:
             raise ValueError(n_("Unable to remove active ballot."))
         cascade = affirm_set(str, cascade or set()) & blockers.keys()
 
@@ -719,19 +724,26 @@ class AssemblyBackend(AbstractBackend):
         with Atomizer(rs):
             assembly = self.get_assembly(rs, assembly_id)
             if cascade:
-                if "vote_begin" in cascade:
-                    raise ValueError(n_("Unable to cascade %(blocker)s."),
-                                     {"blocker": "vote_begin"})
+                if "assembly_is_locked" in cascade:
+                    # Temporarily reactivate the assembly so that it's objects may be
+                    # deleted.
+                    update = {
+                        'id': assembly_id,
+                        'is_active': True,
+                    }
+                    ret *= self.sql_update(rs, "assembly.assemblies", update)
                 if "ballots" in cascade:
                     with Silencer(rs):
+                        ballot_cascade = ("candidates", "attachment_ballot_links",
+                                          "voters")
                         for ballot_id in blockers["ballots"]:
-                            ret *= self.delete_ballot(rs, ballot_id)
+                            ret *= self.delete_ballot(rs, ballot_id, ballot_cascade)
                 if "attendees" in cascade:
                     ret *= self.sql_delete(rs, "assembly.attendees",
                                            blockers["attendees"])
                 if "attachments" in cascade:
                     with Silencer(rs):
-                        attachment_cascade = {"versions"}
+                        attachment_cascade = {"versions", "attachment_ballot_links"}
                         for attachment_id in blockers["attachments"]:
                             ret *= self.delete_attachment(
                                 rs, attachment_id, attachment_cascade)
@@ -838,6 +850,7 @@ class AssemblyBackend(AbstractBackend):
         afterwards this specific value will be used from there on.
         """
         ballot_ids = affirm_set(vtypes.ID, ballot_ids)
+        timestamp = now()
 
         with Atomizer(rs):
             data = self.sql_select(rs, "assembly.ballots", BALLOT_FIELDS, ballot_ids)
@@ -860,6 +873,7 @@ class AssemblyBackend(AbstractBackend):
                         e["quorum"] = math.ceil(total_count * e["rel_quorum"] / 100)
                     else:
                         e["quorum"] = 0
+                e["is_locked"] = timestamp > e["vote_begin"]
                 ret[e['id']] = e
             data = self.sql_select(
                 rs, "assembly.candidates",
@@ -901,11 +915,11 @@ class AssemblyBackend(AbstractBackend):
         data = affirm(vtypes.Ballot, data)
         ret = 1
         with Atomizer(rs):
-            current = unwrap(self.get_ballots(rs, (data['id'],)))
+            current = self.get_ballot(rs, data['id'])
             if not self.is_presider(rs, assembly_id=current['assembly_id']):
                 raise PrivilegeError(n_("Must have privileged access to change"
                                         " ballot."))
-            if now() > current['vote_begin']:
+            if current['is_locked']:
                 raise ValueError(n_("Unable to modify active ballot."))
             bdata = {k: v for k, v in data.items() if k in BALLOT_FIELDS}
             if len(bdata) > 1:
@@ -1007,14 +1021,14 @@ class AssemblyBackend(AbstractBackend):
 
         Possible blockers:
 
-        * vote_begin: Whether voting on the ballot has begun.
-                      Prevents deletion.
+        * ballot_is_locked: Whether the ballot is locked. Prevents deletion.
         * candidates: Rows in the assembly.candidates table.
-        * attachment_ballot_links: All attachment links associated with this ballot.
-        * votes: Votes that have been cast in this ballot. Prevents deletion.
+        * assembly_is_locked: Whether the assembly is locked. Prevents deletion.
+        * attachments: All attachments associated with this ballot.
         * voters: Rows in the assembly.voters table. These do not actually
                   mean that anyone has voted for that ballot, as they are
                   created upon assembly signup and/or ballot creation.
+        * votes: Votes that have been cast in this ballot. Prevents deletion.
 
         :returns: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
@@ -1026,21 +1040,18 @@ class AssemblyBackend(AbstractBackend):
             raise PrivilegeError(n_(
                 "Must have privileged access to delete ballot."))
 
-        # TODO use an Atomizer here?
         ballot = self.get_ballot(rs, ballot_id)
-        if now() > ballot['vote_begin']:
-            # Unable to remove active ballot
-            blockers["vote_begin"] = [ballot_id]
+        if ballot['is_locked']:
+            blockers['ballot_is_locked'] = [ballot_id]
         if ballot['candidates']:
-            # Ballot still has candidates
-            blockers["candidates"] = list(ballot["candidates"])
+            blockers['candidates'] = list(ballot['candidates'])
 
-        attachment_ballot_links = self.sql_select(
-            rs, "assembly.attachment_ballot_links", ("id",), (ballot_id,),
-            entity_key="ballot_id")
-        if attachment_ballot_links:
-            # Ballot still has attachments
-            blockers["attachment_link"] = [e["id"] for e in attachment_ballot_links]
+        if self.is_assembly_locked(rs, ballot['assembly_id']):
+            blockers['assembly_is_locked'] = [ballot['assembly_id']]
+
+        attachment_ids = self.list_attachments(rs, ballot_id=ballot_id)
+        if attachment_ids:
+            blockers["attachments"] = attachment_ids
 
         # Voters are people who _may_ vote in this ballot.
         voters = self.sql_select(rs, "assembly.voter_register", ("id", ),
@@ -1070,6 +1081,13 @@ class AssemblyBackend(AbstractBackend):
         """
         ballot_id = affirm(vtypes.ID, ballot_id)
         blockers = self.delete_ballot_blockers(rs, ballot_id)
+        if "ballot_is_locked" in blockers:
+            raise ValueError(n_("Cannot delete ballot once it has been locked."))
+        if "assembly_is_locked" in blockers:
+            raise ValueError(n_(
+                "Cannot delete ballot once the assembly has been locked."))
+        if "votes" in blockers:
+            raise ValueError(n_("Cannot delete ballot that has votes."))
         cascade = affirm_set(str, cascade or set()) & blockers.keys()
 
         if blockers.keys() - cascade:
@@ -1087,17 +1105,14 @@ class AssemblyBackend(AbstractBackend):
                                         " ballot."))
             # cascade specified blockers
             if cascade:
-                if "vote_begin" in cascade:
-                    raise ValueError(n_("Cannot delete ballot that has started"
-                                        " voting."))
-                if "votes" in cascade:
-                    raise ValueError(n_("Cannot delete ballot that has votes."))
                 if "candidates" in cascade:
                     ret *= self.sql_delete(
                         rs, "assembly.candidates", blockers["candidates"])
-                if "attachment_link" in cascade:
-                    ret *= self.sql_delete(rs, "assembly.attachment_ballot_links",
-                                           blockers["attachment_link"])
+                if "attachments" in cascade:
+                    # Do not silence this.
+                    for attachment_id in blockers["attachments"]:
+                        ret *= self.remove_attachment_ballot_link(
+                            rs, attachment_id, ballot_id)
                 if "voters" in cascade:
                     ret *= self.sql_delete(
                         rs, "assembly.voter_register", blockers["voters"])
@@ -1529,12 +1544,6 @@ class AssemblyBackend(AbstractBackend):
         with Atomizer(rs):
             # cascade specified blockers
             if cascade:
-                if "is_active" in cascade:
-                    ValueError(n_("Unable to cascade %(blocker)s."),
-                               {"blocker": "is_active"})
-                if "ballot" in cascade:
-                    ValueError(n_("Unable to cascade %(blocker)s."),
-                               {"blocker": "ballot"})
                 if "signup_end" in cascade:
                     update = {
                         'id': assembly_id,
@@ -1628,10 +1637,11 @@ class AssemblyBackend(AbstractBackend):
 
         Possible blockers:
 
+        * assembly_is_locked: Whether the linked assembly is locked. Prevents deletion.
+        * ballots: All linked ballots.
+        * ballot_is_locked: Whether a linked ballot is locked. Prevents deletion.
         * versions: All version entries for the attachment including versions,
             that were deleted.
-        * attachment_ballot_link: All links to ballots. Prevents deletion.
-        * is_active: The associated assembly has concluded. Prevents deletion.
 
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
@@ -1639,24 +1649,17 @@ class AssemblyBackend(AbstractBackend):
         attachment_id = affirm(vtypes.ID, attachment_id)
         blockers = {}
 
-        if not self.is_presider(rs, attachment_id=attachment_id):
-            raise PrivilegeError(n_(
-                "Must have privileged access to delete attachment."))
+        attachment = self.get_attachment(rs, attachment_id)
+        if self.is_assembly_locked(rs, attachment['assembly_id']):
+            blockers['assembly_is_locked'] = [attachment['assembly_id']]
+        if attachment['ballot_ids']:
+            blockers['ballots'] = attachment['ballot_ids']
+            if self.is_any_ballot_locked(rs, blockers['ballots']):
+                blockers['ballot_is_locked'] = [True]
 
         versions = self.get_attachment_versions(rs, attachment_id)
         if versions:
-            blockers["versions"] = list(versions)
-
-        attachment_ballot_links = self.sql_select(
-            rs, "assembly.attachment_ballot_links", ("id",),
-            (attachment_id,), entity_key="attachment_id")
-        if attachment_ballot_links:
-            blockers["attachment_ballot_links"] = [
-                e["id"] for e in attachment_ballot_links]
-
-        assembly_id = self.get_assembly_id(rs, attachment_id=attachment_id)
-        if self.is_assembly_locked(rs, assembly_id):
-            blockers["is_active"] = [assembly_id]
+            blockers['versions'] = list(versions)
 
         return blockers
 
@@ -1666,9 +1669,12 @@ class AssemblyBackend(AbstractBackend):
         """Remove an attachment."""
         attachment_id = affirm(vtypes.ID, attachment_id)
         blockers = self.delete_attachment_blockers(rs, attachment_id)
-        if blockers.keys() & {"is_active"}:
+        if "assembly_is_locked" in blockers:
             raise ValueError(n_(
-                "Unable to delete attachment once the assembly has been concluded."))
+                "Cannot delete attachment once the assembly has been locked."))
+        if "ballot_is_locked" in blockers:
+            raise ValueError(n_(
+                "Cannot delete attachment once any linked ballot has been locked."))
         cascade = affirm_set(str, cascade or set()) & blockers.keys()
 
         if blockers.keys() - cascade:
@@ -1685,25 +1691,19 @@ class AssemblyBackend(AbstractBackend):
                 raise PrivilegeError(n_("Must have privileged access to delete"
                                         " attachment."))
             if cascade:
+                current = self.get_attachment(rs, attachment_id)
                 if "versions" in cascade:
-                    if not self.is_attachment_version_deletable(rs, attachment_id):
-                        raise ValueError(
-                            n_("Unable to delete any versions of this attachment."))
                     ret *= self.sql_delete(rs, "assembly.attachment_versions",
                                            (attachment_id,), "attachment_id")
                     for version_nr in blockers["versions"]:
                         path = self.get_attachment_file_path(attachment_id, version_nr)
                         if path.exists():
                             path.unlink()
-                if "attachment_ballot_links" in cascade:
-                    ballot_ids = self.get_attachment_ballots(rs, attachment_id)
-                    if not self.are_attachment_ballots_links_deletable(
-                            rs, attachment_id, ballot_ids):
-                        raise ValueError(
-                            n_("Unable to delete some attachment-ballot-links."))
-
-                    ret *= self.sql_delete(rs, "assembly.attachment_ballot_links",
-                                           (attachment_id,), entity_key="attachment_id")
+                if "ballots" in cascade:
+                    with Silencer(rs):
+                        for ballot_id in current['ballot_ids']:
+                            ret *= self.remove_attachment_ballot_link(
+                                rs, attachment_id, ballot_id)
                 blockers = self.delete_attachment_blockers(rs, attachment_id)
 
             if not blockers:
@@ -1761,8 +1761,8 @@ class AssemblyBackend(AbstractBackend):
                                         " attachment link."))
             if not self.is_attachment_ballot_link_creatable(rs, attachment_id,
                                                             ballot_id):
-                raise ValueError(n_("Cannot link attachment to ballot that has already"
-                                    " begun voting."))
+                raise ValueError(n_(
+                    "Cannot link attachment to ballot that has been locked."))
             ret = self.sql_insert(
                 rs, "assembly.attachment_ballot_links",
                 {'attachment_id': attachment_id, 'ballot_id': ballot_id},
@@ -1963,8 +1963,8 @@ class AssemblyBackend(AbstractBackend):
         attachment_id = data['attachment_id']
         with Atomizer(rs):
             if not self.is_attachment_version_creatable(rs, attachment_id):
-                raise ValueError(n_("Unable to add attachment version once the assembly"
-                                    " has been concluded."))
+                raise ValueError(n_("Cannot add attachment version once the assembly"
+                                    " has been locked."))
             latest_version = self.get_latest_attachment_version(rs, attachment_id)
             version_nr = latest_version["version_nr"] + 1
             data['version_nr'] = version_nr
@@ -1995,8 +1995,9 @@ class AssemblyBackend(AbstractBackend):
                 raise PrivilegeError(n_("Must have privileged access to remove"
                                         " attachment version."))
             if not self.is_attachment_version_deletable(rs, attachment_id):
-                raise ValueError(n_("Unable to remove attachment version once the"
-                                    " assembly has been concluded."))
+                raise ValueError(n_(
+                    "Cannot remove attachment version once the assembly or"
+                    " any linked ballots have been locked."))
             versions = self.get_attachment_versions(rs, attachment_id)
             if version_nr not in versions:
                 raise ValueError(n_("This version does not exist."))
