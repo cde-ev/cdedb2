@@ -2004,6 +2004,10 @@ class AssemblyBackend(AbstractBackend):
                 raise ValueError(n_("This version does not exist."))
             if versions[version_nr]['dtime']:
                 raise ValueError(n_("This version has already been deleted."))
+            attachment = self.get_attachment(rs, attachment_id)
+            if attachment['num_versions'] <= 1:
+                raise ValueError(n_("Cannot remove the last remaining version"
+                                    " of an attachment."))
             deletor: Dict[str, Union[int, datetime.datetime, None]] = {
                 'attachment_id': attachment_id,
                 'version_nr': version_nr,
