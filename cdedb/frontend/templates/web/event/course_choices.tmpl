@@ -14,10 +14,8 @@
 {{ util.breadcrumb_link(cdedblink("event/course_choices"), gettext("Course Assignment"), active=True) }}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {% trans %}Course Choices{% endtrans %}
-        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Course Choices"), ambience['event']['title'],
+                            'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% macro course_cell(course_id, track_id, border_left=False, complain_empty=False, primary=False, filtered=False,
                      not_participating=False) %}

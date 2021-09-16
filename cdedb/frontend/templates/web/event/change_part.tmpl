@@ -14,12 +14,8 @@
 {% endblock %}
 
 {% block heading %}
-    <h1 class="title">
-        {% trans part_title=ambience['event']['parts'][part_id]['title'] %}
-            Edit part {{ part_title }}
-        {% endtrans %}
-        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Edit part %(part_title)s")|format(part_title=ambience['event']['parts'][part_id]['title']),
+                            ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 
 {% block breadcrumb %}

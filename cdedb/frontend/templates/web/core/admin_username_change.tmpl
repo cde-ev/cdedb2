@@ -10,6 +10,11 @@
     {{ util.breadcrumb_link(show_user_link(user, data['id']), util.persona_name(data), icon="user") }}
     {{ util.breadcrumb_link(cdedblink("core/admin_username_change_form"), gettext("Edit Email Address"), active=True) }}
 {% endblock %}
+
+{% block heading %}
+    {{ util.context_heading(gettext("Edit Email Address"), util.persona_name(data), 'user', gettext("User")) }}
+{% endblock %}
+
 {% block content %}
     <form action="{{ cdedblink('core/admin_username_change') }}" method="POST" id="usernamechangeform"
             class="form-horizontal">

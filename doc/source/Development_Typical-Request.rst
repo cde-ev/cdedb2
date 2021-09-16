@@ -49,8 +49,8 @@ mostly be possible to replace the direct call of a method of the backend
 object by a remote procedure call over the network, with the backend
 residing on an entirely different computer. This separation forces a clean
 design, but not actually doing network transparency has some
-development/maintenance upsides (like allowing atomic transactions with the
-:py:class:`cdedb.database.connection.Atomizer` in the frontend).
+development/maintenance upsides (e.g. less moving parts as we have only a
+single Python process).
 
 The backends are responsible for accessing the actual PostgreSQL database,
 which stores all state. The

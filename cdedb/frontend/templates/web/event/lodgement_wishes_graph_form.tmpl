@@ -9,12 +9,7 @@
 {% endblock %}
 
 {% block heading %}
-    <h1 class="title">
-        {% trans event_title=ambience['event']['title'] %}
-            Lodgement Wishes Graph
-        {% endtrans %}
-        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Lodgement Wishes Graph"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 
 {% block breadcrumb %}
@@ -87,9 +82,9 @@
         {% else %}
             {{ util.input_hidden('part_id', (ambience['event']['parts']|list)[0]) }}
         {% endif %}
-        {{ util.form_input_checkbox('all_participants', "All Participants",
+        {{ util.form_input_checkbox('all_participants', gettext("All Participants"),
                                     info=gettext("Include participants without wishes and not being wished")) }}
-        {{ util.form_input_checkbox('show_lodgements', "Show Lodgements",
+        {{ util.form_input_checkbox('show_lodgements', gettext("Show Lodgements"),
                                     info=gettext("Display assigned lodgements as clusters (reduces graph layout "
                                                  "quality)")) }}
         {{ util.form_input_submit(label=gettext("Go!"), readonly=not has_lodge_field) }}

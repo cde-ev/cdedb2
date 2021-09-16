@@ -342,7 +342,7 @@ class TestMlBackend(BackendTest):
             'title': 'Proletarier aller Länder',
         }
         self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
-        assert isinstance(new_data['moderators'], Set)
+        assert isinstance(new_data['moderators'], Set)  # pylint: disable=isinstance-second-argument-not-valid-type
         new_data['moderators'] |= {100000}
         with self.assertRaises(ValueError):
             self.ml.create_mailinglist(self.key, new_data)

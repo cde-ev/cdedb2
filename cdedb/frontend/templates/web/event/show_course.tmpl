@@ -19,24 +19,22 @@
             icon='book') }}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {% trans nr=ambience['course']['nr'], course=ambience['course']['shortname'] %}
-            Course {{ nr }}: {{ course }}
-        {% endtrans %}
-    </h1>
+    {{ util.context_heading(gettext("Course %(nr)s: %(course)s")|format(nr=ambience['course']['nr'],
+                                                                        course=ambience['course']['shortname']),
+                            ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
     <div class="subtitle">
         {{ ambience['course']['title'] }}
     </div>
 {% endblock %}
 
 {% block content %}
-    <div class="p">
+    <div class="p button-par">
         {{ util.href(cdedblink('event/change_course_form'), gettext("Edit"), readonly=is_locked,
                      aclass="btn btn-sm btn-warning", icon="pen") }}
         {{ util.href(cdedblink('event/manage_attendees_form'), gettext("Manage Attendees"), readonly=is_locked,
                      aclass="btn btn-sm btn-warning", icon="users") }}
         {{ util.href(util.mailto(to="; ".join(instructor_emails)), gettext("Email to course instructors"),
-                            icon="envelope", aclass="btn btn-sm btn-default", readonly=instructor_emails,
+                            icon="envelope", aclass="btn btn-sm btn-default", readonly=not instructor_emails,
                             title=(gettext("Send Mail to all course instructors.")
                                    if instructor_emails else
                                    gettext("No course instructors / email addresses available."))) }}

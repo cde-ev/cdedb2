@@ -15,10 +15,7 @@
 {{ util.breadcrumb_link(cdedblink("event/course_list"), gettext("Courselist"), active=True) }}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {% trans %}Courselist{% endtrans %}
-        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Courselist"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block static_notifications %}
     {{ super() }}

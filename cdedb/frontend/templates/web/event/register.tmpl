@@ -29,16 +29,12 @@
                             gettext("Registration Preview"), active=True) }}
 {% endif %}
 {% endblock %}
+
 {% block heading %}
-    <h1 class="title">
-        {% if preview %}
-            {% trans %}Registration Preview{% endtrans %}
-        {% else %}
-            {% trans %}Registration{% endtrans %}
-        {% endif %}
-        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Registration Preview") if preview else gettext("Registration"),
+                            ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
+
 {% block content %}
     <p>
         {% if ambience['event']['registration_soft_limit'] is none %}

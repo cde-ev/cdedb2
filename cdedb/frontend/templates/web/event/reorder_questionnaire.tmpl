@@ -33,14 +33,9 @@
 {% endblock %}
 
 {% block heading %}
-    <h1 class="title">
-        {% if kind == enums['QuestionnaireUsages'].registration %}
-            {% trans %}Reorder Registration{% endtrans %}
-        {% else %}
-            {% trans %}Reorder Questionnaire{% endtrans %}
-        {% endif %}
-        <small>{{ util.make_icon('chalkboard-teacher', arialabel=gettext("Event")) }} {{ ambience['event']['title'] }}</small>
-    </h1>
+    {{ util.context_heading((gettext("Reorder Registration") if kind == enums['QuestionnaireUsages'].registration
+                                else gettext("Reorder Questionnaire")),
+                            ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 
 {% block content %}

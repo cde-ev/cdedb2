@@ -12,6 +12,12 @@
 {{ util.breadcrumb_link(cdedblink("cde/lastschrift_change_form", {'persona_id': values['persona_id']}), gettext("Edit"),
 	active=True) }}
 {% endblock %}
+
+{% block heading %}
+    {{ util.context_heading(gettext("Edit Direct Debit Authorization"),
+                            util.persona_name(persona, only_given_names=True), 'user', gettext("User")) }}
+{% endblock %}
+
 {% block content %}
     <script nonce="{{ csp_nonce }}">
         $(function() {
@@ -28,7 +34,7 @@
         {{ util.form_input_text(name="iban", label=gettext("IBAN"), type="iban") }}
         {{ util.form_input_text(name="account_owner", label=gettext("Account holder (if different)")) }}
         {{ util.form_input_textarea(name="account_address", label=gettext("Account holder’s address (if different)")) }}
-        {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="5", info=util.markdownhint) }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="5", markdown=True) }}
 
         {{ util.form_input_submit(label=gettext("Save"),
             cancellink=cdedblink("cde/lastschrift_show", {'persona_id': ambience['lastschrift']['persona_id']})) }}

@@ -37,11 +37,10 @@ kannst und wie es weiter geht, soll Dir diese E-Mail zeigen.
 Vieles wird über die Vereinsdatenbank organisiert. Unter [1]
 kannst Du Deine persönlichen Zugangsdaten zur CdE-Datenbank erstellen.
 {% if not data['is_searchable'] %}
-
 Wenn Du Dich zum ersten Mal in unserer Datenbank anmeldest, kannst Du
 entscheiden, ob andere Ehemalige Deine Kontaktdaten einsehen dürfen oder
 nicht.
-{%- endif %}
+{% endif %}
 
 Für einen Überblick über alle CdE-Aktivitäten ist der schnelle Blick
 auf https://www.cde-ev.de ausreichend, aber auch nachstehend findest Du
@@ -57,13 +56,13 @@ kostenlos, und Du hast so Gelegenheit, den CdE auszuprobieren. Danach
 musst Du den Mitgliedsbeitrag bezahlen, um Mitglied zu bleiben. Nähere
 Informationen dazu findest Du unter https://www.cde-ev.de/faq/mitglied/ .
 Bei weiteren Fragen schreib eine E-Mail an <{{ MANAGEMENT_ADDRESS }}>.
-{%- else %}
+{% else %}
 Wie bleibt man Mitglied im CdE? Da z.B. durch den Druck der
 Vereinszeitschrift "exPuls" Kosten entstehen, wird eine
 Mitgliedsgebühr von {{ fee|money }} pro Halbjahr erhoben. Nähere
 Informationen dazu findest Du unter https://www.cde-ev.de/faq/mitglied/ .
 Bei weiteren Fragen schreib eine E-Mail an <{{ MANAGEMENT_ADDRESS }}>.
-{%- endif %}
+{% endif %}
 
 Der CdE ist seit 2006 ein eingetragener Verein. Die
 Mitgliederversammlung, auf der alle wesentlichen Entscheidungen, die

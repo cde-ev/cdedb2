@@ -7,6 +7,7 @@ import decimal
 import itertools
 import json
 import re
+import types
 from typing import Set, Tuple
 
 import webtest
@@ -15,7 +16,7 @@ import cdedb.database.constants as const
 from cdedb.common import (
     CdEDBObject, ADMIN_VIEWS_COOKIE_NAME, Role, extract_roles, now, LineResolutions
 )
-from cdedb.frontend.common import Worker
+from cdedb.frontend.common import Worker, make_postal_address
 from cdedb.query import QueryOperators
 from tests.common import (
     FrontendTest, UserIdentifier, USER_DICT, as_users, get_user, prepsql, storage,
@@ -944,7 +945,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Status ändern'})
         f = self.response.forms['modifymembershipform']
         self.submit(f)
-        self.assertPresence("Lastschriftmandat widerrufen.",
+        self.assertPresence("Lastschriftmandate widerrufen.",
                             div="notifications")
         self.assertNonPresence("Einzugsermächtigung", div="balance")
         self.logout()
@@ -2581,3 +2582,17 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Nutzerdaten-Log [1–1 von 1]")
         self.assertPresence("Bertå Beispiel")
+
+    @as_users("vera")
+    def test_postal_address(self) -> None:
+        frs = types.SimpleNamespace()
+        frs.translations = self.translations
+        persona_id = None
+        t = lambda g, p: g(f"CountryCodes.{p['country']}")
+        while persona_id := self.core.next_persona(self.key, persona_id,
+                                                   is_member=None, is_archived=False):
+            p = self.core.get_total_persona(self.key, persona_id)
+            if p['country']:
+                address = make_postal_address(frs, p)  # type: ignore[arg-type]
+                self.assertNotIn(p['country'], address)
+                self.assertIn(t(self.translations["de"].gettext, p), address)

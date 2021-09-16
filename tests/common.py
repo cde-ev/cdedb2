@@ -47,7 +47,7 @@ from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.application import Application
-from cdedb.frontend.common import AbstractFrontend, Worker
+from cdedb.frontend.common import AbstractFrontend, Worker, setup_translations
 from cdedb.frontend.cron import CronFrontend
 from cdedb.query import QueryOperators
 from cdedb.script import setup
@@ -147,9 +147,7 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
     connpool = connection_pool_factory(
         backend.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
         secrets, backend.conf["DB_PORT"])
-    translator = gettext.translation(
-        'cdedb', languages=['de'],
-        localedir=str(backend.conf["REPOSITORY_PATH"] / 'i18n'))
+    translations = setup_translations(backend.conf)
 
     def setup_requeststate(key: Optional[str], ip: str = "127.0.0.0"
                            ) -> RequestState:
@@ -173,10 +171,19 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
             apitoken = key
 
         rs = RequestState(
-            sessionkey=sessionkey, apitoken=apitoken, user=user,
-            request=None, notifications=[], mapadapter=None,  # type: ignore
-            requestargs=None, errors=[], values=None, lang="de",
-            gettext=translator.gettext, ngettext=translator.ngettext, begin=now())
+            sessionkey=sessionkey,
+            apitoken=apitoken,
+            user=user,
+            request=None,  # type: ignore[arg-type]
+            notifications=[],
+            mapadapter=None,  # type: ignore[arg-type]
+            requestargs=None,
+            errors=[],
+            values=None,
+            begin=now(),
+            lang="de",
+            translations=translations,
+        )
         rs._conn = connpool[roles_to_db_role(rs.user.roles)]
         rs.conn = rs._conn
         if "event" in rs.user.roles and hasattr(backend, "orga_info"):
@@ -324,6 +331,7 @@ class BackendTest(CdEDBTest):
     pastevent: ClassVar[PastEventBackend]
     ml: ClassVar[MlBackend]
     assembly: ClassVar[AssemblyBackend]
+    translations: ClassVar[Mapping[str, gettext.NullTranslations]]
     user: UserObject
     key: RequestState
 
@@ -340,6 +348,7 @@ class BackendTest(CdEDBTest):
         # Workaround to make orga info available for calls into the MLBackend.
         cls.ml.orga_info = lambda rs, persona_id: cls.event.orga_info(  # type: ignore
             rs.sessionkey, persona_id)
+        cls.translations = setup_translations(cls.conf)
 
     def setUp(self) -> None:
         """Reset login state."""
