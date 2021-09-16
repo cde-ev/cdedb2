@@ -455,6 +455,7 @@ class TestAssemblyBackend(BackendTest):
             }
             ballot_id = self.assembly.create_ballot(self.key, ballot_data)
 
+            # noinspection PyTypedDict
             ballot_data['rel_quorum'] = 3.141
             with self.assertRaises(ValueError) as cm:
                 self.assembly.create_ballot(self.key, ballot_data)
@@ -835,8 +836,7 @@ class TestAssemblyBackend(BackendTest):
             expectation, self.assembly.get_attachments(self.key, (1001, 1002, 1003)))
         self.assertEqual(
             history_expectation,
-            self.assembly.get_attachments_versions(
-                self.key, (1001, 1002, 1003), latest_version_only=False))
+            self.assembly.get_attachments_versions(self.key, (1001, 1002, 1003)))
         history_expectation = {
             1001: {
                 2: {
@@ -880,7 +880,7 @@ class TestAssemblyBackend(BackendTest):
         }
         self.assertEqual(
             history_expectation, self.assembly.get_attachments_versions(
-                self.key, (1001, 1002, 1003), latest_version_only=True))
+                self.key, (1001, 1002, 1003)))
         self.assertTrue(self.assembly.delete_attachment(self.key, 1003, {"versions"}))
         del expectation[1003]
         self.assertEqual(
