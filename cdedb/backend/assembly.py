@@ -1475,8 +1475,7 @@ class AssemblyBackend(AbstractBackend):
 
         * is_active: Only active assemblies may be concluded.
         * signup_end: An Assembly may only be concluded when signup is over.
-        * ballot: An Assembly may only be concluded when all ballots are
-                  tallied.
+        * ballot: An Assembly may only be concluded when all ballots are tallied.
         """
         assembly_id = affirm(vtypes.ID, assembly_id)
         blockers: CdEDBObject = {}
@@ -1665,8 +1664,8 @@ class AssemblyBackend(AbstractBackend):
         attachment_id = affirm(vtypes.ID, attachment_id)
         blockers = self.delete_attachment_blockers(rs, attachment_id)
         if blockers.keys() & {"is_active"}:
-            raise ValueError(n_("Unable to delete attachment once voting has "
-                                "begun or the assembly has been concluded."))
+            raise ValueError(n_(
+                "Unable to delete attachment once the assembly has been concluded."))
         cascade = affirm_set(str, cascade or set()) & blockers.keys()
 
         if blockers.keys() - cascade:
@@ -1743,7 +1742,7 @@ class AssemblyBackend(AbstractBackend):
     @access("assembly")
     def add_attachment_ballot_link(self, rs: RequestState, attachment_id: int,
                                    ballot_id: int) -> DefaultReturnCode:
-        """Create a new association attachment -> ballot."""
+        """Create a new association attachment <-> ballot."""
         attachment_id = affirm(vtypes.ID, attachment_id)
         ballot_id = affirm(vtypes.ID, ballot_id)
         with Atomizer(rs):
@@ -1930,7 +1929,7 @@ class AssemblyBackend(AbstractBackend):
         version is the definitive version of this attachment for this ballot.
 
         After the voting phase had started, the last attachment version which was
-        uploaded before the voting phase started is the definitve version of this
+        uploaded before the voting phase started is the definitive version of this
         attachment for this ballot.
 
         :returns: Dict[attachment_id: version]
@@ -1956,9 +1955,8 @@ class AssemblyBackend(AbstractBackend):
         attachment_id = data['attachment_id']
         with Atomizer(rs):
             if not self.is_attachment_version_creatable(rs, attachment_id):
-                raise ValueError(n_(
-                    "Unable to change attachment once voting has begun or the "
-                    "assembly has been concluded."))
+                raise ValueError(n_("Unable to add attachment version once the assembly"
+                                    " has been concluded."))
             latest_version = self.get_latest_attachment_version(rs, attachment_id)
             version_nr = latest_version["version_nr"] + 1
             data['version_nr'] = version_nr
@@ -1989,9 +1987,8 @@ class AssemblyBackend(AbstractBackend):
                 raise PrivilegeError(n_("Must have privileged access to remove"
                                         " attachment version."))
             if not self.is_attachment_version_deletable(rs, attachment_id):
-                raise ValueError(n_(
-                    "Unable to change attachment once voting has begun or the "
-                    "assembly has been concluded."))
+                raise ValueError(n_("Unable to remove attachment version once the"
+                                    " assembly has been concluded."))
             versions = self.get_attachment_versions(rs, attachment_id)
             if version_nr not in versions:
                 raise ValueError(n_("This version does not exist."))

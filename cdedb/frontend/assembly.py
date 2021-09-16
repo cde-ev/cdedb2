@@ -691,8 +691,9 @@ class AssemblyFrontend(AbstractUserFrontend):
             'ballot_id': new_id})
 
     @access("assembly")
-    def get_attachment(self, rs: RequestState, assembly_id: int, attachment_id: int) -> Response:
-        """A wrapper around get_attachment_version to retrive the current version."""
+    def get_attachment(self, rs: RequestState, assembly_id: int,
+                       attachment_id: int) -> Response:
+        """A wrapper around get_attachment_version to retrieve the current version."""
         attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
         # Access checking is done inside get_attachment_version
         return self.redirect(rs, "assembly/get_attachment_version",
@@ -772,7 +773,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
         # This is possible in theory but should not be done to avoid user errors
         if attachment['num_versions'] > 1:
-            rs.notify("error", n_("Remove all but the last version before delete the"
+            rs.notify("error", n_("Remove all but the last version before deleting the"
                                   " attachment."))
             return self.redirect(rs, "assembly/list_attachments")
 
