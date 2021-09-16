@@ -1747,18 +1747,6 @@ class AssemblyBackend(AbstractBackend):
         return not self.is_any_ballot_locked(rs, ballot_ids)
 
     @access("assembly")
-    def get_attachment_ballots(self, rs: RequestState, attachment_id: int
-                               ) -> Set[int]:
-        """Return all ballot_ids linked to an attachment.
-
-        For the other way round, use 'list_attachments'.
-        """
-        ret = self.sql_select(
-            rs, "assembly.attachment_ballot_links", ("id", "ballot_id"),
-            (attachment_id,), entity_key="attachment_id")
-        return {data["ballot_id"] for data in ret}
-
-    @access("assembly")
     def add_attachment_ballot_link(self, rs: RequestState, attachment_id: int,
                                    ballot_id: int) -> DefaultReturnCode:
         """Create a new association attachment <-> ballot."""
@@ -1857,9 +1845,9 @@ class AssemblyBackend(AbstractBackend):
     class _IsAttachmentVersionDeletableProtocol(Protocol):
         def __call__(self, rs: RequestState, anid: int) -> bool: ...
 
-    is_attachment_version_deletable: _IsAttachmentVersionDeletableProtocol = \
-        singularize(are_attachment_versions_deletable, "attachment_ids",
-                    "attachment_id")
+    is_attachment_version_deletable: _IsAttachmentVersionDeletableProtocol
+    is_attachment_version_deletable = singularize(
+        are_attachment_versions_deletable, "attachment_ids", "attachment_id")
 
     @internal
     def _get_latest_attachments_versions(self, rs: RequestState,
