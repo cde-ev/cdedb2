@@ -984,6 +984,7 @@ class AssemblyBackend(AbstractBackend):
             if not assembly['is_active']:
                 raise ValueError(n_("Assembly already concluded."))
             bdata = {k: v for k, v in data.items() if k in BALLOT_FIELDS}
+            # TODO: Do we want to allow creating a running ballot???
             # do a little dance, so that creating a running ballot does not
             # throw an error
             begin, bdata['vote_begin'] = bdata['vote_begin'], FUTURE_TIMESTAMP
