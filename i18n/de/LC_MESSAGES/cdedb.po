@@ -4478,6 +4478,9 @@ msgstr "Zusammenfassung"
 msgid "Attachment Overview"
 msgstr "Datei-Übersicht"
 
+msgid "Add Attachment"
+msgstr "Datei hinzufügen"
+
 #: cdedb/frontend/templates/web/assembly/base.tmpl:30
 #: cdedb/frontend/templates/web/assembly/base.tmpl:63
 #: cdedb/frontend/templates/web/assembly/index.tmpl:57
@@ -4791,8 +4794,8 @@ msgstr "Inaktive Versammlungen"
 
 #: cdedb/frontend/templates/web/assembly/list_attachments.tmpl:8
 #, python-format
-msgid "Attachment Overview (%(title)s)"
-msgstr "Datei-Übersicht (%(title)s)"
+msgid "Attachments (%(title)s)"
+msgstr "Dateien (%(title)s)"
 
 #: cdedb/frontend/templates/web/assembly/list_attachments.tmpl:29
 #: cdedb/frontend/templates/web/assembly/list_attachments.tmpl:33
@@ -5404,6 +5407,9 @@ msgstr "Die Datei wird irreversibel gelöscht."
 msgid "(Version %(version)s)"
 msgstr "(Version %(version)s)"
 
+msgid "(Version %(version)s, definitive)"
+msgstr "(Version %(version)s, maßgeblich)"
+
 #: cdedb/frontend/templates/web/assembly/util.tmpl:94
 #, python-format
 msgid "Edit Version %(version)s"
@@ -5420,8 +5426,8 @@ msgstr "Die Version der Datei wird ireversibel gelöscht."
 
 #: cdedb/frontend/templates/web/assembly/util.tmpl:127
 #, python-format
-msgid "Version %(version)s was deleted."
-msgstr "Version %(version)s wurde gelöscht."
+msgid "Version %(version_nr)s was deleted."
+msgstr "Version %(version_nr)s wurde gelöscht."
 
 #: cdedb/frontend/templates/web/assembly/util.tmpl:131
 msgid "by"
@@ -15244,6 +15250,9 @@ msgstr "Anhang geändert"
 #: cdedb/i18n_additional.py:33
 msgid "AssemblyLogCodes.attachment_removed"
 msgstr "Anhang entfernt"
+
+msgid "AssemblyLogCodes.attachment_ballot_link_created"
+msgstr "Anhang mit Abstimmung verknüpft"
 
 #: cdedb/i18n_additional.py:34
 msgid "AssemblyLogCodes.attachment_version_added"

@@ -165,12 +165,10 @@
 
 {% macro _print_attachment_version(version, is_only_version=False, is_definitive_version=False) %}
     {% set link_title = version["title"]|string %}
-    {% if not is_only_version or is_definitive_version %}
-        {% if is_definitive_version %}
-            {% set link_title = link_title + " " + gettext("(Version %(version)s, definitive)") %}
-        {% else %}
-            {% set link_title = link_title + " " + gettext("(Version %(version)s)") %}
-        {% endif %}
+    {% if is_definitive_version %}
+        {% set link_title = link_title + " " + gettext("(Version %(version)s, definitive)") %}
+    {% elif not is_only_version %}
+        {% set link_title = link_title + " " + gettext("(Version %(version)s)") %}
     {% endif %}
     {{ util.href(cdedblink("assembly/get_attachment_version",
                            {'attachment_id': version["attachment_id"], 'version_nr': version["version_nr"]}),
@@ -188,7 +186,7 @@
 
 {% macro show_attachments() -%}
     {% call util.bootstrap_panel(title=gettext("Files"), icon='file', aclass="panel-default panel-condensed mosp") %}
-        <div class="row">
+        <div class="row" id="attachments">
             {# TODO sorting #}
             {% for slice in definitive_versions.items()|slice(2) if definitive_versions %}
                 <div class="col-sm-6">
