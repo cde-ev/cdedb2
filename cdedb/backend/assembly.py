@@ -1613,6 +1613,7 @@ class AssemblyBackend(AbstractBackend):
         version = {k: v for k, v in data.items()
                    if k in ASSEMBLY_ATTACHMENT_VERSION_FIELDS}
         version["version_nr"] = 1
+        version["ctime"] = now()
         version['file_hash'] = get_hash(content)
         with Atomizer(rs):
             if self.is_assembly_locked(rs, assembly_id):
@@ -1971,6 +1972,7 @@ class AssemblyBackend(AbstractBackend):
             latest_version = self.get_latest_attachment_version(rs, attachment_id)
             version_nr = latest_version["version_nr"] + 1
             data['version_nr'] = version_nr
+            data['ctime'] = now()
             data['file_hash'] = get_hash(content)
             ret = self.sql_insert(rs, "assembly.attachment_versions", data)
             path = self.get_attachment_file_path(attachment_id, version_nr)
