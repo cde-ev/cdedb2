@@ -35,7 +35,8 @@
     {{ super() }}
     {% if not is_deletable %}
         {% call util.notification('warning') %}
-            {% trans %}This attachment version can not be deleted after it was created.{% endtrans %}
+            {% trans %}A linked ballot is in or after his voting phase, so only formal changes shall be applied to this attachment.
+            For all running votings stays the definitive version authoritative.{% endtrans %}
         {% endcall %}
     {% endif %}
 {% endblock %}
