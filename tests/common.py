@@ -217,7 +217,11 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
             @functools.wraps(attr)
             def wrapper(key: Optional[str], *args: Any, **kwargs: Any) -> Any:
                 rs = setup_requeststate(key)
-                return attr(rs, *args, **kwargs)
+                try:
+                    return attr(rs, *args, **kwargs)
+                except FileNotFoundError as e:
+                    raise RuntimeError("Did you forget to add a `@storage` decorator to"
+                                       " the test?") from e
 
             return wrapper
 
