@@ -1839,9 +1839,11 @@ class AssemblyBackend(AbstractBackend):
             attachments = self.get_attachments(rs, attachment_ids)
             assembly_ids = self.get_assembly_ids(rs, attachment_ids=attachment_ids)
             assembly_locks = self.are_assemblies_locked(rs, assembly_ids)
-            return {att_id: not (assembly_locks[att['assembly_id']]
-                                 or self.is_any_ballot_locked(rs, att['ballot_ids']))
-                    for att_id, att in attachments.items()}
+            return {
+                att_id: not (
+                    assembly_locks[att['assembly_id']]
+                    or self.is_any_ballot_locked(rs, att['ballot_ids'] or list())
+                ) for att_id, att in attachments.items()}
 
     class _IsAttachmentVersionDeletableProtocol(Protocol):
         def __call__(self, rs: RequestState, anid: int) -> bool: ...
