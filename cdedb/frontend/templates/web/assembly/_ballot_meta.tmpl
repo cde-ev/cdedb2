@@ -174,7 +174,8 @@
     {% endif %}
     {{ util.href(cdedblink("assembly/get_attachment_version",
                            {'attachment_id': version["attachment_id"], 'version_nr': version["version_nr"]}),
-                 link_title|format(version=version["version_nr"]) ,icon="file") }}
+                 link_title|format(version=version["version_nr"]), icon="file",
+                 aclass=("text-muted" if not is_definitive_version else "")) }}
     <div class="text-muted small">
         {% if version["authors"] %}
             {% trans %}by{% endtrans %} {{ version["authors"] }} <br />
@@ -196,10 +197,12 @@
                         {% for attachment_id, definitive_version in slice %}
                             <li class="hide-hover-container clearfix-after" id="attachment{{ attachment_id }}">
                                 <div class="p">
-                                    {% set is_only_version = (latest_versions[attachment_id] != definitive_version) %}
+                                    {% set is_only_version = (latest_versions[attachment_id] == definitive_version) %}
                                     {{ _print_attachment_version(definitive_version, is_only_version=is_only_version, is_definitive_version=True) }}
                                     {% if not is_only_version %}
-                                        {{ _print_attachment_version(latest_versions[attachment_id]) }}
+                                        <div style="margin-top: 5px">
+                                            {{ _print_attachment_version(latest_versions[attachment_id]) }}
+                                        </div>
                                     {% endif %}
                                 </div>
                             </li>
