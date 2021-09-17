@@ -31,8 +31,8 @@
             {% trans %}by{% endtrans %} {{ version["authors"] }} <br />
         {% endif %}
         {% trans ctime=version["ctime"]|datetime(lang=lang) %}uploaded {{ ctime }}{% endtrans %},
-        {# TODO add anchor #}
-        {{ util.href(cdedblink("assembly/list_attachments"), gettext("Details")) }}
+        {% set anchor = "#attachment{}_version{}".format(version["attachment_id"], version["version_nr"]) %}
+        {{ util.href(cdedblink("assembly/list_attachments") + anchor, gettext("Details")) }}
     </div>
 {% endmacro %}
 
