@@ -11,15 +11,8 @@
 {% endblock %}
 
 {% block heading %}
-    {{ util.doclink('Realm_Assembly_Voting-Procedere') }}
-    <h1 class="title">
-        {% trans %}
-            Detailed Results
-        {% endtrans %}
-        <small>
-            {{ util.make_icon('thumbs-up') }}{{ nbsp }}{{ ambience['ballot']['title'] }}
-        </small>
-    </h1>
+    {{ util.context_heading(gettext("Detailed Results"), ambience['ballot']['title'], 'thumbs-up', gettext("Ballot"),
+                            doclink='Realm_Assembly_Voting-Procedere') }}
 {% endblock %}
 
 {% block breadcrumb %}

@@ -20,12 +20,8 @@
     {{ util.breadcrumb_link(cdedblink("ml/change_mailinglist"), gettext("Configuration"), active=True) }}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {% trans %}Configuration{% endtrans %}
-        <small>
-            {{- util.make_icon('envelope', arialabel=gettext("Mailinglist")) }} {{ ambience['mailinglist']['title'] -}}
-        </small>
-    </h1>
+    {{ util.context_heading(gettext("Configuration"), ambience['mailinglist']['title'],
+                            'envelope', gettext("Mailinglist")) }}
 {% endblock %}
 {% block static_notifications %}
     {% if restricted %}
@@ -71,9 +67,8 @@
             domain_inp.on('input', update_domain);
             update_domain();
         </script>
-        {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
-                                    info=util.markdownhint) }}
-        {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="5", info=util.markdownhint) }}
+        {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5", markdown=True) }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="5", markdown=True) }}
 
     <h4 class="heading-underline">{% trans %}Moderation & Subscribers{% endtrans %}</h4>
         {{ util.form_input_select(name="mod_policy", label=gettext("Moderation"),

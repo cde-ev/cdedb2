@@ -31,14 +31,8 @@
 {% endif %}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {% if preview %}
-            {% trans %}Questionnaire Preview{% endtrans %}
-        {% else %}
-            {% trans %}Participant Questionnaire{% endtrans %}
-        {% endif %}
-        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Questionnaire Preview") if preview else gettext("Participant Questionnaire"),
+                            ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block content %}
     {% if preview %}

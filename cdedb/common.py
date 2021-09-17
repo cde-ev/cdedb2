@@ -8,6 +8,7 @@ import datetime
 import decimal
 import enum
 import functools
+import gettext  # pylint: disable=unused-import
 import hashlib
 import hmac
 import itertools
@@ -28,6 +29,7 @@ import icu
 import psycopg2.extras
 import pytz
 import werkzeug
+import werkzeug.datastructures
 import werkzeug.exceptions
 import werkzeug.routing
 
@@ -141,12 +143,11 @@ class RequestState:
                  mapadapter: werkzeug.routing.MapAdapter,
                  requestargs: Optional[Dict[str, int]],
                  errors: Collection[Error],
-                 values: Optional[CdEDBMultiDict], lang: str,
-                 gettext: Callable[[str], str],
-                 ngettext: Callable[[str, str, int], str],
+                 values: Optional[CdEDBMultiDict],
                  begin: Optional[datetime.datetime],
-                 default_gettext: Callable[[str], str] = None,
-                 default_ngettext: Callable[[str, str, int], str] = None):
+                 lang: str,
+                 translations: Mapping[str, gettext.NullTranslations],
+                 ) -> None:
         """
         :param mapadapter: URL generator (specific for this request)
         :param requestargs: verbatim copy of the arguments contained in the URL
@@ -155,11 +156,9 @@ class RequestState:
           filling forms in.
         :param lang: language code for i18n, currently only 'de' and 'en' are
             valid.
+        :param translations: A mapping of language (like the `lang` parameter) to
+            gettext translation object.
         :param begin: time where we started to process the request
-        :param default_gettext: default translation function used to ensure
-            stability across different locales
-        :param default_ngettext: default translation function used to ensure
-            stability across different locales
         """
         self.ambience: Dict[str, CdEDBObject] = {}
         self.sessionkey = sessionkey
@@ -174,10 +173,7 @@ class RequestState:
             values = werkzeug.datastructures.MultiDict(values)
         self.values = values or werkzeug.datastructures.MultiDict()
         self.lang = lang
-        self.gettext = gettext
-        self.ngettext = ngettext
-        self.default_gettext = default_gettext or gettext
-        self.default_ngettext = default_ngettext or ngettext
+        self.translations = translations
         self.begin = begin or now()
         # Visible version of the database connection
         # noinspection PyTypeChecker
@@ -194,6 +190,22 @@ class RequestState:
         # is executed and then to True with the corresponding methods
         # of this class
         self.validation_appraised: Optional[bool] = None
+
+    @property
+    def gettext(self) -> Callable[[str], str]:
+        return self.translations[self.lang].gettext
+
+    @property
+    def ngettext(self) -> Callable[[str, str, int], str]:
+        return self.translations[self.lang].ngettext
+
+    @property
+    def default_gettext(self) -> Callable[[str], str]:
+        return self.translations["en"].gettext
+
+    @property
+    def default_ngettext(self) -> Callable[[str, str, int], str]:
+        return self.translations["en"].ngettext
 
     def notify(self, ntype: NotificationType, message: str,
                params: CdEDBObject = None) -> None:
@@ -535,7 +547,7 @@ def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,
             return tuple(map(collate, sortkey))
         return sortkey
 
-    return sorted(iterable, key=lambda x: collate(key(x)),  # pylint: disable=bad-builtin
+    return sorted(iterable, key=lambda x: collate(key(x)),  # pylint: disable=bad-builtin # noqa
                   reverse=reverse)
 
 
@@ -2219,3 +2231,7 @@ EPSILON = 10 ** (-6)  #:
 #: Timestamp which lies in the future. Make a constant so we do not have to
 #: hardcode the value otherwere
 FUTURE_TIMESTAMP = datetime.datetime(9996, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
+
+#: Specification for the output date format of money transfers.
+#: Note how this differs from the input in that we use 4 digit years.
+PARSE_OUTPUT_DATEFORMAT = "%d.%m.%Y"

@@ -35,7 +35,7 @@
             {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone"), type="tel") }}
         {% endif %}
         {% if realm == "cde" %}
-            {{ util.form_input_text(name="weblink", label=gettext("WWW"), info=util.markdownhint) }}
+            {{ util.form_input_text(name="weblink", label=gettext("WWW"), markdown=True) }}
         {% endif %}
 
         {% if realm in ("cde", "event") %}
@@ -68,7 +68,7 @@
             {{ util.form_input_checkbox(name="paper_expuls", label=gettext("Printed exPuls"),
                                    anid="input_checkbox_is_searchable") }}
         {% endif %}
-        {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="7", info=util.markdownhint) }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="7", markdown=True) }}
 
 
         {{ util.form_input_submit(label=gettext("Create User"), cancellink=cdedblink("{}/user_search".format(realm))) }}

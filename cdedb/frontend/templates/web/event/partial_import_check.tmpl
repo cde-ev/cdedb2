@@ -12,10 +12,7 @@
 {{ util.breadcrumb_link(cdedblink("event/partial_import_form"), gettext("Partial Import"), active=True) }}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {% trans %}Partial Import{% endtrans %}
-        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Partial Import"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 
 {# The following macro generates the diff table for a changed registration, lodgement or course.

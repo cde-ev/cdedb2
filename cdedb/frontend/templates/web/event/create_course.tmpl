@@ -15,10 +15,8 @@
     {{ util.breadcrumb_link(cdedblink("event/create_course"), gettext("Add Course"), active=True) }}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {% trans %}Add Course{% endtrans %}
-        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Add Course"), ambience['event']['title'],
+                            'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 
 {% block content %}
@@ -28,7 +26,7 @@
         {{ util.form_input_text(name="nr", label=gettext("Number")) }}
         {{ util.form_input_text(name="title", label=gettext("Long Title")) }}
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
-        {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5", info=util.markdownhint) }}
+        {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5", markdown=True) }}
         <h4 class="heading-underline">{% trans %}Course{% endtrans %}</h4>
         {{ util.form_input_text(name="instructors", label=gettext("Instructor")) }}
         {{ util.form_input_text(name="min_size", label=gettext("Minimum Size (excl. instr.)")) }}
@@ -42,7 +40,7 @@
         {% endif %}
 
         <h4 class="heading-underline">{% trans %}Status{% endtrans %}</h4>
-        {{ util.form_input_textarea(name="notes", label=gettext("Orga-Notes"), rows="5", info=util.markdownhint) }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Orga-Notes"), rows="5", markdown=True) }}
 
         <h4 class="heading-underline">{% trans %}Fields{% endtrans %}</h4>
         {% for field_id, field in ambience['event']['fields']|keydictsort(EntitySorter.event_field)
