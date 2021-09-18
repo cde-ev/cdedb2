@@ -1694,6 +1694,11 @@ class AssemblyBackend(AbstractBackend):
                                         " attachment."))
             if cascade:
                 current = self.get_attachment(rs, attachment_id)
+                if "ballots" in cascade:
+                    with Silencer(rs):
+                        for ballot_id in current['ballot_ids']:
+                            ret *= self.remove_attachment_ballot_link(
+                                rs, attachment_id, ballot_id)
                 if "versions" in cascade:
                     ret *= self.sql_delete(rs, "assembly.attachment_versions",
                                            (attachment_id,), "attachment_id")
@@ -1701,11 +1706,6 @@ class AssemblyBackend(AbstractBackend):
                         path = self.get_attachment_file_path(attachment_id, version_nr)
                         if path.exists():
                             path.unlink()
-                if "ballots" in cascade:
-                    with Silencer(rs):
-                        for ballot_id in current['ballot_ids']:
-                            ret *= self.remove_attachment_ballot_link(
-                                rs, attachment_id, ballot_id)
                 blockers = self.delete_attachment_blockers(rs, attachment_id)
 
             if not blockers:
