@@ -158,6 +158,12 @@ class TestAssemblyBackend(BackendTest):
             "filename": "rechen.pdf",
         }
         self.assertTrue(self.assembly.add_attachment(self.key, attachment_data, b'123'))
+        log.append({
+            "code": const.AssemblyLogCodes.attachment_added,
+            "submitted_by": self.user['id'],
+            "assembly_id": new_id,
+            "change_note": attachment_data['title'],
+        })
         self.assertEqual({}, self.assembly.conclude_assembly_blockers(self.key, new_id))
         self.assertTrue(self.assembly.conclude_assembly(self.key, new_id))
         log.append({
@@ -167,7 +173,7 @@ class TestAssemblyBackend(BackendTest):
         })
         self.assertLogEqual(log, "assembly", offset=log_offset)
 
-        cascade = {"assembly_is_locked", "log", "presiders"}
+        cascade = {"assembly_is_locked", "log", "presiders", "attachments"}
         self.assertEqual(
             cascade, self.assembly.delete_assembly_blockers(self.key, new_id).keys())
         self.assertLess(0, self.assembly.delete_assembly(self.key, new_id, cascade))
