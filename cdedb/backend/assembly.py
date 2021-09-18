@@ -1863,7 +1863,7 @@ class AssemblyBackend(AbstractBackend):
         :param timestamp: If given, retrieve the latest version before then.
         :returns: Dict[attachment_id, version]
         """
-        base_query = """SELECT *
+        base_query = """SELECT {select_keys}
             FROM (
                 SELECT attachment_id, MAX(version_nr) AS version_nr
                 FROM assembly.attachment_versions
@@ -1880,7 +1880,10 @@ class AssemblyBackend(AbstractBackend):
         if timestamp:
             conditions.append("ctime < %s")
             params.append(timestamp)
-        query = base_query.format(condition=" AND ".join(conditions))
+        query = base_query.format(
+            select_keys=', '.join(
+                f'version_data.{k}' for k in ASSEMBLY_ATTACHMENT_VERSION_FIELDS),
+            condition=" AND ".join(conditions))
         data = self.query_all(rs, query, params + [attachment_ids])
         return {e['attachment_id']: e for e in data}
 
