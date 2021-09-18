@@ -245,6 +245,8 @@ def _examine_dictionary_fields(
       It should map keys to registered types.
       A missing key is an error in itself.
     :param optional_fields: Like :py:obj:`mandatory_fields`, but facultative.
+    :param argname: If given, prepend this to the argname of the individual validations.
+        This is useful, if you want to examine multiple dicts and tell the errors apart.
     :param allow_superfluous: If ``False`` keys which are neither in
       :py:obj:`mandatory_fields` nor in :py:obj:`optional_fields` are errors.
     """
@@ -256,14 +258,14 @@ def _examine_dictionary_fields(
         if key in mandatory_fields:
             try:
                 v = _ALL_TYPED[mandatory_fields[key]](
-                    value, argname=key, **kwargs)
+                    value, argname=error_name, **kwargs)
                 retval[key] = v
             except ValidationSummary as e:
                 errs.extend(e)
         elif key in optional_fields:
             try:
                 v = _ALL_TYPED[optional_fields[key]](
-                    value, argname=key, **kwargs)
+                    value, argname=error_name, **kwargs)
                 retval[key] = v
             except ValidationSummary as e:
                 errs.extend(e)
