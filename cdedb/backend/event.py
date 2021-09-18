@@ -3904,7 +3904,7 @@ class EventBackend(AbstractBackend):
                     if 'pos' in e:
                         del e['pos']
             # FIXME what is the correct type here?
-            data = affirm(vtypes.Questionnaire, current,  # type: ignore
+            data = affirm(vtypes.Questionnaire, current,  # type: ignore[assignment]
                           field_definitions=event['fields'],
                           fee_modifiers=event['fee_modifiers'])
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
@@ -4751,10 +4751,12 @@ class EventBackend(AbstractBackend):
                              ) -> DefaultReturnCode:
         """Special import for custom datafields and questionnaire rows."""
         event_id = affirm(vtypes.ID, event_id)
+        # validation of input is delegated to the setters, because it is rather
+        # involved and dependent on each other.
+        # Do not allow special use of `set_questionnaire` for deleting everything.
         if questionnaire is None:
             raise ValueError(n_(
                 "Cannot use questionnaire import to delete questionnaire."))
-        # validation of input is delegated to the setters.
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=event_id)
