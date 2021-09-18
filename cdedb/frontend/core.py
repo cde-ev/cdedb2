@@ -2112,6 +2112,10 @@ class CoreFrontend(AbstractFrontend):
                     ("gender", ValueError(n_(
                         "Must specify gender for %(realm)s realm."),
                         {"realm": data["realm"]})))
+        if 'birthday' in REALM_SPECIFIC_GENESIS_FIELDS.get(data['realm']):
+            if data['birthday'] == datetime.date.min:
+                rs.append_validation_error(
+                    ("birthday", ValueError(n_("Must not be empty."))))
         if rs.has_validation_errors():
             return self.genesis_request_form(rs)
         if self.coreproxy.verify_existence(rs, data['username']):
