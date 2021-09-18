@@ -1451,6 +1451,11 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             f = self.response.forms['deleteballotform']
             f['ack_delete'].checked = True
             self.submit(f)
+            self.traverse({'description': 'Abstimmungen'},
+                          {'description': 'Genauso wichtige Wahl'})
+            f = self.response.forms['deleteballotform']
+            f['ack_delete'].checked = True
+            self.submit(f)
 
             self.logout()
             self.login("anton")
