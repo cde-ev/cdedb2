@@ -117,7 +117,7 @@ class TestAssemblyBackend(BackendTest):
             "submitted_by": self.user['id'],
             "assembly_id": new_id,
         })
-        for p_id in new_assembly['presiders']:
+        for p_id in new_assembly['presiders']:  # type: ignore[union-attr]
             log.append({
                 "code": const.AssemblyLogCodes.assembly_presider_added,
                 "submitted_by": self.user['id'],
@@ -157,6 +157,7 @@ class TestAssemblyBackend(BackendTest):
             "authors": "Farin",
             "filename": "rechen.pdf",
         }
+        self.assertTrue(self.assembly.add_attachment(self.key, attachment_data, b'123'))
         self.assertEqual({}, self.assembly.conclude_assembly_blockers(self.key, new_id))
         self.assertTrue(self.assembly.conclude_assembly(self.key, new_id))
         log.append({
@@ -401,7 +402,7 @@ class TestAssemblyBackend(BackendTest):
             'shortname': 'aqua'}
         self.assertEqual(expectation, self.assembly.get_ballot(self.key, 2))
 
-        data = {
+        data: CdEDBObject = {
             'assembly_id': assembly_id,
             'use_bar': False,
             'candidates': {
@@ -859,7 +860,7 @@ class TestAssemblyBackend(BackendTest):
         # Check that everything can be retrieved correctly.
         self.assertEqual(
             b'123', self.assembly.get_attachment_content(self.key, new_id, 1))
-        expectation = {
+        expectation: CdEDBObject = {
             "id": new_id,
             "assembly_id": assembly_id,
             "ballot_ids": None,
@@ -1213,7 +1214,7 @@ class TestAssemblyBackend(BackendTest):
                 "assembly_id": assembly_id,
                 "change_note": attachment_data['title'],
             })
-            attachment_expectation = {
+            attachment_expectation: CdEDBObject = {
                 "assembly_id": assembly_id,
                 "ballot_ids": None,
                 "id": attachment_id,

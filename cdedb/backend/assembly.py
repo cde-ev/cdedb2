@@ -653,7 +653,7 @@ class AssemblyBackend(AbstractBackend):
             are the ids of the blockers.
         """
         assembly_id = affirm(vtypes.ID, assembly_id)
-        blockers = {}
+        blockers: DeletionBlockers = {}
 
         if self.is_assembly_locked(rs, assembly_id):
             blockers["assembly_is_locked"] = [assembly_id]

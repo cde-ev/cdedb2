@@ -751,7 +751,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
 
     @storage
     @as_users("werner")
-    def test_attachment(self):
+    def test_attachment(self) -> None:
         with open(self.testfile_dir / "rechen.pdf", 'rb') as datafile:
             data = datafile.read()
 
@@ -949,10 +949,8 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence("Formal geänderte Beschlussvorlage: Version 3",
                             div="8-1008")
 
-        return
-
     @as_users("kalif")
-    def test_attachment_legacy(self):
+    def test_attachment_legacy(self) -> None:
         # We have some legacy redirects to keep old attachment links functional.
 
         redirect = self.app.get("/assembly/assembly/3/attachment/1/get")
