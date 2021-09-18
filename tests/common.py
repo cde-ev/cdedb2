@@ -382,14 +382,21 @@ class BackendTest(CdEDBTest):
         users = {get_user(i)["id"] for i in identifiers}
         return self.user.get("id", -1) in users
 
-    def assertLogEqual(self, log_expectation: Sequence[CdEDBObject], base_offset: int,
-                       realm: str) -> None:
+    def assertLogEqual(self, log_expectation: Sequence[CdEDBObject], realm: str,
+                       **kwargs: Any) -> None:
         """Helper to compare a log expectation to the actual thing."""
-        offset, log = getattr(self, realm).retrieve_log(self.key, offset=base_offset)
+        _, log = getattr(self, realm).retrieve_log(self.key, **kwargs)
         log_expectation = tuple(log_expectation)
-        # self.assertEqual(base_offset + len(log_expectation), offset)
         for e in log:
             del e['id']
+        for e in log_expectation:
+            if 'ctime' not in e:
+                e['ctime'] = nearly_now()
+            if 'submitted_by' not in e:
+                e['submitted_by'] = self.user['id']
+            for k in ('persona_id', 'change_note'):
+                if k not in e:
+                    e[k] = None
         self.assertEqual(log_expectation, log)
 
     @staticmethod
