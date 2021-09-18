@@ -9,7 +9,6 @@ from typing import List
 import freezegun
 import webtest
 
-import cdedb.database.constants as const
 from cdedb.common import (
     CdEDBObject, ADMIN_VIEWS_COOKIE_NAME, ASSEMBLY_BAR_SHORTNAME, now, NearlyNow
 )
