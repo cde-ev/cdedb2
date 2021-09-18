@@ -3506,7 +3506,7 @@ def _serialized_event_questionnaire_upload(
 
 @_add_typed_validator
 def _serialized_event_questionnaire(
-    val: Any, argname: str = "serialized_event_questionnaire, ", *,
+    val: Any, argname: str = "serialized_event_questionnaire", *,
     field_definitions: CdEDBObjectMap, fee_modifiers: CdEDBObjectMap,
     questionnaire: Dict[const.QuestionnaireUsages, List[QuestionnaireRow]],
     extend_questionnaire: bool, skip_existing_fields: bool,
