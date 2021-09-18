@@ -989,6 +989,8 @@ class AssemblyBackend(AbstractBackend):
             # throw an error
             begin, bdata['vote_begin'] = bdata['vote_begin'], FUTURE_TIMESTAMP
             new_id = self.sql_insert(rs, "assembly.ballots", bdata)
+            self.assembly_log(rs, const.AssemblyLogCodes.ballot_created,
+                              data['assembly_id'], change_note=data['title'])
             if 'candidates' in data:
                 cdata = {
                     'id': new_id,
@@ -1010,9 +1012,8 @@ class AssemblyBackend(AbstractBackend):
                 'id': new_id,
                 'vote_begin': begin,
             }
-            self.set_ballot(rs, update)
-            self.assembly_log(rs, const.AssemblyLogCodes.ballot_created,
-                              data['assembly_id'], change_note=data['title'])
+            with Silencer(rs):
+                self.set_ballot(rs, update)
         return new_id
 
     @access("assembly")
@@ -1110,10 +1111,10 @@ class AssemblyBackend(AbstractBackend):
                     ret *= self.sql_delete(
                         rs, "assembly.candidates", blockers["candidates"])
                 if "attachments" in cascade:
-                    # Do not silence this.
-                    for attachment_id in blockers["attachments"]:
-                        ret *= self.remove_attachment_ballot_link(
-                            rs, attachment_id, ballot_id)
+                    with Silencer(rs):
+                        for attachment_id in blockers["attachments"]:
+                            ret *= self.remove_attachment_ballot_link(
+                                rs, attachment_id, ballot_id)
                 if "voters" in cascade:
                     ret *= self.sql_delete(
                         rs, "assembly.voter_register", blockers["voters"])
@@ -1689,11 +1690,12 @@ class AssemblyBackend(AbstractBackend):
         ret = 1
         with Atomizer(rs):
             assembly_id = self.get_assembly_id(rs, attachment_id=attachment_id)
+            current = self.get_attachment(rs, attachment_id)
+            latest_version = self.get_latest_attachment_version(rs, attachment_id)
             if not self.is_presider(rs, assembly_id=assembly_id):
                 raise PrivilegeError(n_("Must have privileged access to delete"
                                         " attachment."))
             if cascade:
-                current = self.get_attachment(rs, attachment_id)
                 if "ballots" in cascade:
                     with Silencer(rs):
                         for ballot_id in current['ballot_ids']:
@@ -1712,8 +1714,7 @@ class AssemblyBackend(AbstractBackend):
                 ret *= self.sql_delete_one(
                     rs, "assembly.attachments", attachment_id)
                 self.assembly_log(rs, const.AssemblyLogCodes.attachment_removed,
-                                  assembly_id,
-                                  change_note=str(attachment_id))
+                                  assembly_id, change_note=latest_version['title'])
             else:
                 raise ValueError(
                     n_("Deletion of %(type)s blocked by %(block)s."),
