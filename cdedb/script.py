@@ -51,7 +51,8 @@ class _RSFactory(Protocol):
 
 
 def setup(persona_id: int, dbuser: str, dbpassword: str,
-          check_system_user: bool = True, dbname: str = 'cdb'
+          check_system_user: bool = True, dbname: str = 'cdb',
+          cursor: psycopg2.extensions.cursor = psycopg2.extras.RealDictCursor,
           ) -> _RSFactory:
     """This sets up the database.
 
@@ -73,7 +74,7 @@ def setup(persona_id: int, dbuser: str, dbpassword: str,
             "password": dbpassword,
             "port": 5432,
             "connection_factory": IrradiatedConnection,
-            "cursor_factory": psycopg2.extras.RealDictCursor
+            "cursor_factory": cursor,
     }
     try:
         cdb = psycopg2.connect(**connection_parameters, host="localhost")

@@ -432,6 +432,8 @@ class CoreFrontend(AbstractFrontend):
 
         # Address data
         if persona['address']:
+            # Mask the `gettext` name, so that pybabel does not extract CountryCodes
+            g = rs.gettext
             vcard.add('adr')
             # extended should be empty because of compatibility issues, see
             # https://tools.ietf.org/html/rfc6350#section-6.3.1
@@ -440,7 +442,7 @@ class CoreFrontend(AbstractFrontend):
                 street=persona['address'] or '',
                 city=persona['location'] or '',
                 code=persona['postal_code'] or '',
-                country=persona['country'] or '')
+                country=g(f"CountryCodes.{persona['country']}"))
 
         # Contact data
         if persona['username']:
