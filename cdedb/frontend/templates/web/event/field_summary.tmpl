@@ -26,6 +26,10 @@
    aclass is used to pass classes to the row, such as drow-row, drow-prototype, drow-new
    newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes #}
 {% macro print_field(field_id, association, deletable, changeable, aclass="", newrow=False) %}
+    <div class="p button-par">
+        {{ util.href(cdedblink('event/questionnaire_import_form'), gettext("Questionnaire Import"), readonly=is_locked,
+                     aclass="btn btn-info btn-sm", icon='file-upload') }}
+    </div>
     <div class="col-md-6 {{ aclass }}" role="group">
         <div class="panel panel-default panel-condensed">
             <div class="panel-heading {% if "field_name_{}".format(field_id) in errors %}has-error{% endif %}">

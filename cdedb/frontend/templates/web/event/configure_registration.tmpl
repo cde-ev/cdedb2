@@ -31,6 +31,8 @@
         {{ util.href(cdedblink('event/reorder_questionnaire_form', {'kind': enums['QuestionnaireUsages'].registration.value}),
                      gettext("Reorder Registration"), readonly=is_locked,
                      aclass="btn btn-info btn-sm", icon='sort') }}
+        {{ util.href(cdedblink('event/questionnaire_import_form'), gettext("Questionnaire Import"), readonly=is_locked,
+                     aclass="btn btn-info btn-sm", icon='file-upload') }}
     </div>
     <form action="{{ cdedblink('event/configure_registration') }}" method="POST" id="configureregistrationform">
         {{ util.anti_csrf_token('event/configure_registration') }}
