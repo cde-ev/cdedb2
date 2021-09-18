@@ -15254,6 +15254,9 @@ msgstr "Anhang entfernt"
 msgid "AssemblyLogCodes.attachment_ballot_link_created"
 msgstr "Anhang mit Abstimmung verknüpft"
 
+msgid "AssemblyLogCodes.attachment_ballot_link_deleted"
+msgstr "Anhang von Abstimmung getrennt"
+
 #: cdedb/i18n_additional.py:34
 msgid "AssemblyLogCodes.attachment_version_added"
 msgstr "Anhangsversion hinzugefügt"

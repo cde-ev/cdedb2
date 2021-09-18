@@ -14480,6 +14480,12 @@ msgstr "Attachment version removed"
 msgid "AssemblyLogCodes.attachment_version_changed"
 msgstr "Attachment version changed"
 
+msgid "AssemblyLogCodes.attachment_ballot_link_created"
+msgstr "Attachment linked to ballot"
+
+msgid "AssemblyLogCodes.attachment_ballot_link_deleted"
+msgstr "Attachment removed from ballot"
+
 #: cdedb/i18n_additional.py:38
 msgid "AttachmentPolicy.allow"
 msgstr "HTML emails and all attachments allowed"
