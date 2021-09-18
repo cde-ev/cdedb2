@@ -2842,7 +2842,14 @@ class EventFrontend(AbstractUserFrontend):
         json_file: Optional[werkzeug.datastructures.FileStorage],
         extend_questionnaire: bool, skip_existing_fields: bool, token: Optional[str],
     ) -> Response:
-        """Import questionnaire rows and custom datafields."""
+        """Import questionnaire rows and custom datafields.
+
+        :param extend_questionnaire: If True, append the imported questionnaire rows to
+            any existing ones. Otherwise replace the existing ones.
+        :param skip_existing_fields: If True, the import of fields that already exist
+            is skipped, even if their definition is different from the existing one.
+            Otherwise, duplicate field names will cause an error and prevent the import.
+        """
         kwargs = {
             'field_definitions': rs.ambience['event']['fields'],
             'fee_modifiers': rs.ambience['event']['fee_modifiers'],
