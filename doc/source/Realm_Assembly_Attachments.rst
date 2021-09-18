@@ -19,10 +19,10 @@ An attachment_version has the following attributes:
 - an **id** (id)
 - the **attachment id** of its attachment
 - a **version number** (integer) starting at 1, incremented by one for each new attachment_version of an attachment
-- a **file_hash** of the real file containing the current stand of the attachment idea (file)
-- a **filename** (varchar)
-- a **title** (varchar)
-- the **authors** of the file (varchar)
+- a **file_hash** of the real file containing the current stand of the attachment idea (file). This is kept when the version is removed.
+- a **filename** (varchar). This is removed when the version is removed.
+- a **title** (varchar). This is removed when the version is removed.
+- the **authors** of the file (varchar). This is removed when the version is removed.
 - a **creation time** (timestamp)
 - a **deletion time** (timestamp)
 
@@ -36,14 +36,15 @@ An attachment_version may be created at any time during an assembly (independent
 
 Deletion
 --------
-An attachment can only be deleted if it has:
+An attachment can only be deleted if:
 
-- no attachment_ballot_links or only attachment_ballot_links which may be deleted.
-- no attachment_versions.
+- it has no attachment_ballot_links or only attachment_ballot_links which may be deleted.
+- the assembly is not archived. (Unless the entire assembly is being deleted cascadingly).
 
 An attachment_ballot_link can only be deleted if the ballot it links to is before its voting phase.
 
 An attachment_version must not be deleted if its attachment has at least one attachment_ballot_link which voting phase had started.
+Deletion of an attachment_version does not actually remove the entry, only the authors, filename and title attributes are deleted, as well as the file itself.
 
 Changing
 --------
