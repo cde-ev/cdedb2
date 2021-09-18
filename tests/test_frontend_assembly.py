@@ -1489,54 +1489,6 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self.assertPresence("Du hast für die folgenden Kandidaten gestimmt: Ja",
                                 div='own-vote', exact=True)
 
-    @storage
-    def test_log(self) -> None:
-        # First: generate data
-        self.test_entity_ballot_simple()
-        self.logout()
-        self.test_conclude_assembly()
-        # test_tally_and_get_result
-        self.traverse({'description': 'Versammlungen'},
-                      {'description': 'Internationaler Kongress'},
-                      {'description': 'Abstimmungen'},
-                      {'description': 'Antwort auf die letzte aller Fragen'},)
-        self.logout()
-        self.test_extend()
-        self.logout()
-
-        # Now check it
-        self.login(USER_DICT['anton'])
-        self.traverse({'description': 'Versammlungen'},
-                      {'description': 'Log'})
-        self.assertTitle("Versammlungs-Log [1–26 von 26]")
-        self.assertNonPresence("LogCodes")
-        f = self.response.forms['logshowform']
-        codes = [const.AssemblyLogCodes.assembly_created.value,
-                 const.AssemblyLogCodes.assembly_changed.value,
-                 const.AssemblyLogCodes.ballot_created.value,
-                 const.AssemblyLogCodes.ballot_changed.value,
-                 const.AssemblyLogCodes.ballot_deleted.value,
-                 const.AssemblyLogCodes.ballot_tallied.value,
-                 const.AssemblyLogCodes.assembly_presider_added.value,
-                 ]
-        f['codes'] = codes
-        f['assembly_id'] = 1
-        self.submit(f)
-        self.assertTitle("Versammlungs-Log [1–8 von 8]")
-
-        self.logout()
-        self.login("werner")
-        self.traverse({'description': 'Versammlungen'},
-                      {'description': 'Drittes CdE-Konzil'},
-                      {'description': 'Log'})
-        self.assertTitle("Drittes CdE-Konzil: Log [1–8 von 8]")
-
-        f = self.response.forms['logshowform']
-        f['codes'] = codes
-        f['offset'] = 2
-        self.submit(f)
-        self.assertTitle("Drittes CdE-Konzil: Log [3–52 von 6]")
-
 
 class TestMultiAssemblyFrontend(MultiAppFrontendTest, AssemblyTestHelpers):
     n = 2
