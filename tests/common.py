@@ -277,23 +277,22 @@ class BasicTest(unittest.TestCase):
 
         # Turn Iterator into Collection and ensure consistent order.
         keys = tuple(keys)
+        if not keys:
+            keys = tuple(next(iter(_SAMPLE_DATA[table].values())).keys())
         ret = {}
         for anid in ids:
-            if keys:
-                r = {}
-                for k in keys:
-                    r[k] = copy.deepcopy(_SAMPLE_DATA[table][anid][k])
-                    if table == 'core.personas':
-                        if k == 'balance':
-                            r[k] = decimal.Decimal(r[k])
-                        if k == 'birthday':
-                            r[k] = datetime.date.fromisoformat(r[k])
-                    if k in {'ctime', 'atime', 'vote_begin', 'vote_end',
-                             'vote_extension_end'}:
-                        r[k] = parse_datetime(r[k])
-                ret[anid] = r
-            else:
-                ret[anid] = copy.deepcopy(_SAMPLE_DATA[table][anid])
+            r = {}
+            for k in keys:
+                r[k] = copy.deepcopy(_SAMPLE_DATA[table][anid][k])
+                if table == 'core.personas':
+                    if k == 'balance':
+                        r[k] = decimal.Decimal(r[k])
+                    if k == 'birthday':
+                        r[k] = datetime.date.fromisoformat(r[k])
+                if k in {'ctime', 'atime', 'vote_begin', 'vote_end',
+                         'vote_extension_end', 'signup_end'}:
+                    r[k] = parse_datetime(r[k])
+            ret[anid] = r
         return ret
 
     def get_sample_datum(self, table: str, id_: int) -> CdEDBObject:
