@@ -382,6 +382,16 @@ class BackendTest(CdEDBTest):
         users = {get_user(i)["id"] for i in identifiers}
         return self.user.get("id", -1) in users
 
+    def assertLogEqual(self, log_expectation: Sequence[CdEDBObject], base_offset: int,
+                       realm: str) -> None:
+        """Helper to compare a log expectation to the actual thing."""
+        offset, log = getattr(self, realm).retrieve_log(self.key, offset=base_offset)
+        log_expectation = tuple(log_expectation)
+        # self.assertEqual(base_offset + len(log_expectation), offset)
+        for e in log:
+            del e['id']
+        self.assertEqual(log_expectation, log)
+
     @staticmethod
     def initialize_raw_backend(backendcls: Type[SessionBackend]
                                ) -> SessionBackend:
