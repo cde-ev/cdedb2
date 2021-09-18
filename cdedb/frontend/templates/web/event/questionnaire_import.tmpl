@@ -18,7 +18,7 @@
 {% endblock %}
 {% block content %}
     {% if errors %}
-        {% call util.bootstrap_panel(gettext("Validation errors"), aclass='panel panel-warning',
+        {% call util.bootstrap_panel(gettext("Validation errors"), aclass='panel panel-error',
                                      icon='exclamation-circle') %}
             <p class="text-warning">
                 {% trans %}
