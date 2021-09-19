@@ -86,10 +86,10 @@ class AssemblyBackend(AbstractBackend):
         data = self.query_all(rs, q, params)
         return {e["id"]: not e["is_active"] for e in data}
 
-    class _IsAssemblyLockedProtokol(Protocol):
+    class _IsAssemblyLockedProtocol(Protocol):
         def __call__(self, rs: RequestState, anid: int) -> bool: ...
 
-    is_assembly_locked: _IsAssemblyLockedProtokol = singularize(
+    is_assembly_locked: _IsAssemblyLockedProtocol = singularize(
         are_assemblies_locked, "assembly_ids", "assembly_id")
 
     @access("persona")
@@ -799,9 +799,9 @@ class AssemblyBackend(AbstractBackend):
         params = (now(), ballot_ids)
         return {e['id']: e['is_locked'] for e in self.query_all(rs, q, params)}
 
-    class _IsBallotLockedProtokol(Protocol):
+    class _IsBallotLockedProtocol(Protocol):
         def __call__(self, rs: RequestState, anid: int) -> bool: ...
-    is_ballot_locked: _IsBallotLockedProtokol = singularize(
+    is_ballot_locked: _IsBallotLockedProtocol = singularize(
         are_ballots_locked, "ballot_ids", "ballot_id")
 
     @access("assembly")
@@ -830,9 +830,9 @@ class AssemblyBackend(AbstractBackend):
         params = (reference_time, reference_time, reference_time, ballot_ids)
         return {e["id"]: e['is_voting'] for e in self.query_all(rs, q, params)}
 
-    class _IsBallotVotingProtokol(Protocol):
+    class _IsBallotVotingProtocol(Protocol):
         def __call__(self, rs: RequestState, anid: int) -> bool: ...
-    is_ballot_voting: _IsBallotVotingProtokol = singularize(
+    is_ballot_voting: _IsBallotVotingProtocol = singularize(
         are_ballots_voting, "ballot_ids", "ballot_id")
 
     @access("assembly")
@@ -1845,7 +1845,7 @@ class AssemblyBackend(AbstractBackend):
             return {
                 att_id: not (
                     assembly_locks[att['assembly_id']]
-                    or self.is_any_ballot_locked(rs, att['ballot_ids'] or list())
+                    or self.is_any_ballot_locked(rs, att['ballot_ids'])
                 ) for att_id, att in attachments.items()}
 
     class _IsAttachmentVersionDeletableProtocol(Protocol):
@@ -1919,7 +1919,7 @@ class AssemblyBackend(AbstractBackend):
         """Get the most recent version for the given attachments.
 
         This is independent from the context in which the attachment is viewed, in
-        contrast to 'get_definitive_attachments_version'.
+        contrast to `get_definitive_attachments_version`.
         """
         attachment_ids = affirm_set(vtypes.ID, attachment_ids)
         if not self.may_access_attachments(rs, attachment_ids):

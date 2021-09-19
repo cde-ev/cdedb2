@@ -165,7 +165,7 @@
 
 {% macro _print_attachment_version(version, is_only_version=False, is_definitive_version=False) %}
     {% set link_title = version["title"]|string %}
-    {% if is_definitive_version %}
+    {% if is_definitive_version and ambience["ballot"]["is_locked"] %}
         {% set link_title = link_title + " " + gettext("(Version %(version)s, definitive)") %}
     {% elif not is_only_version %}
         {% set link_title = link_title + " " + gettext("(Version %(version)s)") %}
@@ -193,9 +193,10 @@
                         {% for attachment_id, definitive_version in slice %}
                             <li class="hide-hover-container clearfix-after" id="attachment{{ attachment_id }}">
                                 <div class="p">
-                                    {% set is_only_version = (latest_versions[attachment_id] == definitive_version) %}
-                                    {{ _print_attachment_version(definitive_version, is_only_version=is_only_version, is_definitive_version=True) }}
-                                    {% if not is_only_version %}
+                                    {% set is_only_version = definitive_version["version_nr"] == 1 %}
+                                    {{ _print_attachment_version(definitive_version, is_only_version=is_only_version,
+                                                                 is_definitive_version=True) }}
+                                    {% if latest_versions[attachment_id] != definitive_version %}
                                         <div style="margin-top: 5px">
                                             {{ _print_attachment_version(latest_versions[attachment_id]) }}
                                         </div>

@@ -35,8 +35,10 @@
     {{ super() }}
     {% if not is_deletable %}
         {% call util.notification('warning') %}
-            {% trans %}A linked ballot is in or after his voting phase, so only formal changes shall be applied to this attachment.
-            For all running votings stays the definitive version authoritative.{% endtrans %}
+            {% trans %}
+                A linked ballot is in or after his voting phase, so only formal changes shall be applied to this attachment.
+                For all running votings stays the definitive version authoritative.
+            {% endtrans %}
         {% endcall %}
     {% endif %}
 {% endblock %}
@@ -50,7 +52,7 @@
         {{ util.form_input_text(name="filename", label=gettext("Filename"), info=gettext("Leave empty for current filename.")) }}
         {{ util.form_input_file(name="attachment", accept="application/pdf", info=gettext("Only PDFs allowed.")) }}
         {% if not is_deletable %}
-            {{ util.form_input_checkbox("ack_creation", gettext("Are you sure?")) }}
+            {{ util.form_input_checkbox("ack_creation", gettext("Are you sure? This attachment version can not be deleted after it was created.")) }}
         {% endif %}
         {{ util.form_input_submit(label=gettext("Upload"), cancellink=cdedblink('assembly/list_attachments')) }}
     </form>
