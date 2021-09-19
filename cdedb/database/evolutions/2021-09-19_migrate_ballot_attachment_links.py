@@ -3,10 +3,10 @@ from cdedb.script import Script, make_backend, setup
 assembly = make_backend("assembly", proxy=False)
 
 USER_ID = -1
-DRYRUN = False
+DRYRUN = True
 
 rs = setup(persona_id=USER_ID, dbuser="cdb",
-           dbname="cdb_test",
+           dbname="cdb",
            dbpassword="987654321098765432109876543210")()
 
 
