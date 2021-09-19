@@ -187,11 +187,9 @@
 {% macro show_attachments() -%}
     {% call util.bootstrap_panel(title=gettext("Files"), icon='file', aclass="panel-default panel-condensed mosp") %}
         <div class="row" id="attachments">
-            {# TODO sorting #}
-            {% for slice in definitive_versions.items()|slice(2) if definitive_versions %}
+            {% for slice in definitive_versions|keydictsort(EntitySorter.attachment)|slice(2) if definitive_versions %}
                 <div class="col-sm-6">
                     <ul class="slim" id="attachments-{{ "ballot-{}".format(ambience['ballot']['id'])}}">
-                        {# TODO sorting #}
                         {% for attachment_id, definitive_version in slice %}
                             <li class="hide-hover-container clearfix-after" id="attachment{{ attachment_id }}">
                                 <div class="p">

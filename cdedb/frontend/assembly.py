@@ -459,6 +459,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     @access("assembly")
     def list_attachments(self, rs: RequestState, assembly_id: int) -> Response:
+        """Render form."""
         if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):
             rs.notify("error", n_("May not access attachments for this assembly."))
             return self.redirect(rs, "assembly/index")
@@ -467,6 +468,15 @@ class AssemblyFrontend(AbstractUserFrontend):
         attachments = self.assemblyproxy.get_attachments(rs, attachment_ids)
         attachments_versions = self.assemblyproxy.get_attachments_versions(
             rs, attachment_ids)
+
+        def sortkey(att: CdEDBObject) -> Tuple[str, int]:
+            """This is an inline function and not in EntitySorter since its only used
+            here and needs some extra context."""
+            latest_version = attachments_versions[att["id"]][att["latest_version_nr"]]
+            return latest_version["title"], att["id"]
+
+        sorted_attachments = {
+            att["id"]: att for att in xsorted(attachments.values(), key=sortkey)}
         are_attachment_versions_creatable = \
             self.assemblyproxy.are_attachment_versions_creatable(rs, attachment_ids)
         are_attachment_versions_deletable = \
@@ -476,7 +486,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                             and are_attachment_versions_deletable[attachment_id])
             for attachment_id, attachment in attachments.items()}
         return self.render(rs, "list_attachments", {
-            "attachments": attachments,
+            "attachments": sorted_attachments,
             "attachments_versions": attachments_versions,
             "are_attachment_versions_creatable": are_attachment_versions_creatable,
             "are_attachment_versions_deletable": are_attachment_versions_deletable,

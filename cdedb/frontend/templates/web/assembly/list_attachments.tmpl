@@ -91,6 +91,7 @@
                                                                or ambience['assembly']['id'] in user.presider) %}
     {% if attachments %}
         <ul class="slim" id="attachments">
+            {# This is already sorted #}
             {% for attachment_id, attachment in attachments.items() %}
                 {% set attachment_versions = attachments_versions[attachment_id] %}
                 {% set latest_version = attachment_versions[attachment["latest_version_nr"]] %}
