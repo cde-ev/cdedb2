@@ -7,14 +7,14 @@
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
-{{ super() }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
-{{ util.breadcrumb_link(cdedblink("event/questionnaire_import_form"), gettext("Questionnaire Import"), active=True) }}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+    {{ util.breadcrumb_link(cdedblink("event/configure_additional_questionnaire"), gettext("Configure Questionnaire")) }}
+    {{ util.breadcrumb_link(cdedblink("event/questionnaire_import_form"), gettext("Questionnaire Import"), active=True) }}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {% trans %}Questionnaire Import{% endtrans %} <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Questionnaire Import"), ambience['event']['title'],
+                            'chalkboard-teacher', gettext("Event"), doclink="Handbuch_Orga_Fragebogenimport") }}
 {% endblock %}
 {% block content %}
     {% if errors %}
