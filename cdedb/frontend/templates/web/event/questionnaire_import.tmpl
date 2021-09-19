@@ -18,9 +18,9 @@
 {% endblock %}
 {% block content %}
     {% if errors %}
-        {% call util.bootstrap_panel(gettext("Validation errors"), aclass='panel panel-error',
+        {% call util.bootstrap_panel(gettext("Validation errors"), aclass='panel-danger',
                                      icon='exclamation-circle') %}
-            <p class="text-warning">
+            <p class="text-danger">
                 {% trans %}
                     Your upload contained errors and was not processed.
                     The following is a list of the observed violations.
