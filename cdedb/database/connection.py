@@ -10,13 +10,12 @@ This should be the only module which makes subsistantial use of psycopg.
 
 import logging
 from types import TracebackType
-from typing import Any, Collection, Mapping, NoReturn, Optional, Type
+from typing import Any, Collection, Literal, Mapping, Protocol, NoReturn, Optional, Type
 
 import psycopg2
 import psycopg2.extensions
 import psycopg2.extras
 from psycopg2.extensions import ISOLATION_LEVEL_SERIALIZABLE as SERIALIZABLE
-from typing_extensions import Literal, Protocol
 
 # We cannot import cdedb.config here.
 # from cdedb.config import SecretsConfig

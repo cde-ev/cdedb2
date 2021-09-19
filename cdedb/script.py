@@ -14,8 +14,7 @@ import gettext
 import tempfile
 import time
 from types import TracebackType
-from typing import Any, Optional, Set, Type, cast
-from typing_extensions import Protocol
+from typing import Any, Optional, Protocol, Set, Type, cast
 
 import psycopg2
 import psycopg2.extensions

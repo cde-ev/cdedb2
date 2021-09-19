@@ -42,8 +42,8 @@ import weakref
 from email.mime.nonmultipart import MIMENonMultipart
 from secrets import token_hex
 from typing import (
-    IO, AbstractSet, Any, AnyStr, Callable, ClassVar, Collection, Dict,
-    Iterable, List, Mapping, MutableMapping, NamedTuple, Optional, Sequence,
+    IO, AbstractSet, Any, AnyStr, Callable, ClassVar, Collection, Dict, Iterable, List,
+    Literal, Mapping, MutableMapping, NamedTuple, Optional, Protocol, Sequence,
     Tuple, Type, TypeVar, Union, cast, overload,
 )
 
@@ -56,7 +56,6 @@ import werkzeug.datastructures
 import werkzeug.exceptions
 import werkzeug.utils
 import werkzeug.wrappers
-from typing_extensions import Literal, Protocol
 
 import cdedb.query as query_mod
 import cdedb.validation as validate
@@ -1718,7 +1717,7 @@ def REQUESTdata(
 
                 if name not in kwargs:
 
-                    if getattr(hints[name], "__origin__", None) is Union:
+                    if typing.get_origin(hints[name]) is Union:
                         type_, _ = hints[name].__args__
                         optional = True
                     else:
@@ -1739,9 +1738,7 @@ def REQUESTdata(
                         if timeout is False:
                             rs.notify("warning", n_("Link invalid."))
 
-                    if getattr(
-                        type_, "__origin__", None
-                    ) is collections.abc.Collection:
+                    if typing.get_origin(type_) is collections.abc.Collection:
                         type_ = unwrap(type_.__args__)
                         vals = tuple(rs.request.values.getlist(name))
                         if vals:

@@ -10,11 +10,9 @@ import datetime
 import decimal
 from pathlib import Path
 from typing import (
-    Any, Callable, Collection, Dict, Iterable, List, Mapping, Optional, Sequence, Set,
-    Tuple,
+    Any, Callable, Collection, Dict, Iterable, List, Mapping, Optional, Protocol,
+    Sequence, Set, Tuple,
 )
-
-from typing_extensions import Protocol
 
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes

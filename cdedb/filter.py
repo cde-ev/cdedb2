@@ -8,10 +8,9 @@ import threading
 
 import logging
 from typing import (
-    Any, Callable, Collection, Container, Dict, Iterable, ItemsView, List,
+    Any, Callable, Collection, Container, Dict, Iterable, ItemsView, List, Literal,
     Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, overload
 )
-from typing_extensions import Literal
 
 import bleach
 import icu

@@ -9,9 +9,7 @@ members are also possible.
 import datetime
 import decimal
 from collections import OrderedDict
-from typing import Any, Collection, Dict, List, Optional, Tuple
-
-from typing_extensions import Protocol
+from typing import Any, Collection, Dict, List, Optional, Protocol, Tuple
 
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
