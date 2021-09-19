@@ -762,7 +762,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         for attachment_id in attachment_ids:
             self._test_one_attachment_redirect(attachment_id)
 
-    def _test_one_attachment_redirect(self, attachment_id) -> None:
+    def _test_one_attachment_redirect(self, attachment_id: int) -> None:
         attachment = self.assembly.get_attachment(self.key, attachment_id)
         assembly_id = attachment['assembly_id']
         ballot_ids = attachment['ballot_ids']
