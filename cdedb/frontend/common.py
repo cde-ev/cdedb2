@@ -1593,13 +1593,6 @@ def cdedburl(rs: RequestState, endpoint: str,
         for key in params:
             allparams[key] = params[key]
 
-    # Until Werkzeug 0.15, this workaround is necessary to keep duplicates.
-    allparams = allparams.to_dict(flat=False)
-    for key in allparams:
-        # And then, this needs to be done to keep <magic replacements> working
-        if len(allparams[key]) == 1:
-            allparams[key] = unwrap(allparams[key])
-
     return rs.urls.build(endpoint, allparams, force_external=force_external)
 
 
