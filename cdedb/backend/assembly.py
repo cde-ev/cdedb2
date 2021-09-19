@@ -1584,14 +1584,13 @@ class AssemblyBackend(AbstractBackend):
                                attachment_ids: Collection[int]) -> bool:
         """Helper to check whether the user may access the given attachments."""
         attachment_ids = affirm_set(vtypes.ID, attachment_ids)
-        with Atomizer(rs):
-            if not attachment_ids:
-                return True
-            assembly_ids = self.get_assembly_ids(rs, attachment_ids=attachment_ids)
-            if len(assembly_ids) != 1:
-                raise ValueError(n_("Can only access attachments from exactly "
-                                    "one assembly at a time."))
-            return self.may_access(rs, assembly_id=unwrap(assembly_ids))
+        if not attachment_ids:
+            return True
+        assembly_ids = self.get_assembly_ids(rs, attachment_ids=attachment_ids)
+        if len(assembly_ids) != 1:
+            raise ValueError(n_("Can only access attachments from exactly "
+                                "one assembly at a time."))
+        return self.may_access(rs, assembly_id=unwrap(assembly_ids))
 
     @access("assembly")
     def add_attachment(self, rs: RequestState, data: CdEDBObject,
@@ -1897,13 +1896,12 @@ class AssemblyBackend(AbstractBackend):
         """Retrieve all version information for given attachments."""
         attachment_ids = affirm_set(vtypes.ID, attachment_ids)
         ret: Dict[int, CdEDBObjectMap] = {anid: {} for anid in attachment_ids}
-        with Atomizer(rs):
-            if not self.may_access_attachments(rs, attachment_ids):
-                raise PrivilegeError(n_("Not privileged."))
-            data = self.sql_select(
-                rs, "assembly.attachment_versions",
-                ASSEMBLY_ATTACHMENT_VERSION_FIELDS, attachment_ids,
-                entity_key="attachment_id")
+        if not self.may_access_attachments(rs, attachment_ids):
+            raise PrivilegeError(n_("Not privileged."))
+        data = self.sql_select(
+            rs, "assembly.attachment_versions",
+            ASSEMBLY_ATTACHMENT_VERSION_FIELDS, attachment_ids,
+            entity_key="attachment_id")
         for entry in data:
             ret[entry["attachment_id"]][entry["version_nr"]] = entry
 
@@ -1924,10 +1922,9 @@ class AssemblyBackend(AbstractBackend):
         contrast to 'get_definitive_attachments_version'.
         """
         attachment_ids = affirm_set(vtypes.ID, attachment_ids)
-        with Atomizer(rs):
-            if not self.may_access_attachments(rs, attachment_ids):
-                raise PrivilegeError(n_("Not privileged."))
-            return self._get_latest_attachments_versions(rs, attachment_ids)
+        if not self.may_access_attachments(rs, attachment_ids):
+            raise PrivilegeError(n_("Not privileged."))
+        return self._get_latest_attachments_versions(rs, attachment_ids)
 
     class _GetLatestVersionProtocol(Protocol):
         def __call__(self, rs: RequestState, attachment_id: int) -> CdEDBObject: ...
@@ -2129,10 +2126,9 @@ class AssemblyBackend(AbstractBackend):
                         attachment_ids: Collection[int]) -> CdEDBObjectMap:
         """Retrieve data on attachments"""
         attachment_ids = affirm_set(vtypes.ID, attachment_ids)
-        with Atomizer(rs):
-            if not self.may_access_attachments(rs, attachment_ids):
-                raise PrivilegeError(n_("Not privileged."))
-            return self._get_attachment_infos(rs, attachment_ids)
+        if not self.may_access_attachments(rs, attachment_ids):
+            raise PrivilegeError(n_("Not privileged."))
+        return self._get_attachment_infos(rs, attachment_ids)
 
     class _GetAttachmentProtocol(Protocol):
         def __call__(self, rs: RequestState, attachment_id: int) -> CdEDBObject: ...
