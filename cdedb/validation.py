@@ -3913,21 +3913,14 @@ def _assembly_attachment(
 
 @_add_typed_validator
 def _assembly_attachment_version(
-    val: Any, argname: str = "assembly_attachment_version", *,
-    creation: bool = False, **kwargs: Any
+    val: Any, argname: str = "assembly_attachment_version", **kwargs: Any
 ) -> AssemblyAttachmentVersion:
     val = _mapping(val, argname, **kwargs)
 
-    if creation:
-        mandatory_fields = dict(ASSEMBLY_ATTACHMENT_VERSION_FIELDS,
-                                attachment_id=ID)
-        optional_fields: TypeMapping = {}
-    else:
-        mandatory_fields = {'attachment_id': ID, 'version_nr': ID}
-        optional_fields = {**ASSEMBLY_ATTACHMENT_VERSION_FIELDS}
+    mandatory_fields = dict(ASSEMBLY_ATTACHMENT_VERSION_FIELDS, attachment_id=ID)
+    optional_fields: TypeMapping = {}
 
-    val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs)
+    val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
 
     return AssemblyAttachmentVersion(val)
 

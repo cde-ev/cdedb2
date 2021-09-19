@@ -854,6 +854,7 @@ class AssemblyBackend(AbstractBackend):
 
         with Atomizer(rs):
             data = self.sql_select(rs, "assembly.ballots", BALLOT_FIELDS, ballot_ids)
+            are_voting = self.are_ballots_voting(rs, ballot_ids)
             ret = {}
             for e in data:
                 if e["quorum"] is None:
@@ -874,6 +875,7 @@ class AssemblyBackend(AbstractBackend):
                     else:
                         e["quorum"] = 0
                 e["is_locked"] = timestamp > e["vote_begin"]
+                e["is_voting"] = are_voting[e["id"]]
                 ret[e['id']] = e
             data = self.sql_select(
                 rs, "assembly.candidates",
@@ -1966,7 +1968,7 @@ class AssemblyBackend(AbstractBackend):
     def add_attachment_version(self, rs: RequestState, data: CdEDBObject,
                                content: bytes) -> DefaultReturnCode:
         """Add a new version of an attachment."""
-        data = affirm(vtypes.AssemblyAttachmentVersion, data, creation=True)
+        data = affirm(vtypes.AssemblyAttachmentVersion, data)
         content = affirm(bytes, content)
         attachment_id = data['attachment_id']
         with Atomizer(rs):

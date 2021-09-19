@@ -802,7 +802,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence("Anhangsversion entfernt", div="1-1001")
         self.assertPresence("Kassenprüferbericht 2: Version 3", div="1-1001")
         self.assertPresence("Anhang entfernt", div="2-1002")
-        self.assertPresence("2", div="2-1002")
+        self.assertPresence("Kassenprüferbericht", div="2-1002")
 
     @storage
     @as_users("werner")
