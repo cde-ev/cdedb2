@@ -823,8 +823,8 @@ class AssemblyBackend(AbstractBackend):
         """
         ballot_ids = affirm_set(vtypes.ID, ballot_ids)
         q = """
-        SELECT id, (vote_end > %s OR (extended = True AND vote_extension_end > %s)
-                    AND vote_begin < %s) AS is_voting
+        SELECT id, (vote_end > %s OR (extended = True AND vote_extension_end > %s))
+                    AND vote_begin < %s AS is_voting
         FROM assembly.ballots WHERE id = ANY(%s)"""
         reference_time = now()
         params = (reference_time, reference_time, reference_time, ballot_ids)

@@ -249,6 +249,7 @@ class TestAssemblyBackend(BackendTest):
                 'extended': True,
                 'id': 1,
                 'is_locked': True,
+                'is_voting': False,
                 'is_tallied': False,
                 'notes': None,
                 'abs_quorum': 2,
@@ -301,6 +302,7 @@ class TestAssemblyBackend(BackendTest):
                 'extended': None,
                 'id': 4,
                 'is_locked': True,
+                'is_voting': True,
                 'is_tallied': False,
                 'notes': None,
                 'abs_quorum': 0,
@@ -346,6 +348,7 @@ class TestAssemblyBackend(BackendTest):
             'extended': None,
             'id': ballot_id,
             'is_locked': False,
+            'is_voting': False,
             'is_tallied': False,
             'notes': 'Nochmal alle auf diese wichtige Entscheidung hinweisen.',
             'abs_quorum': 0,
@@ -450,6 +453,7 @@ class TestAssemblyBackend(BackendTest):
             'quorum': 10,
             'id': new_id,
             'is_locked': False,
+            'is_voting': False,
             'is_tallied': False,
             'candidates': {
                 1002: {
