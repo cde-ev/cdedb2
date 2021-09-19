@@ -18,12 +18,8 @@
     {{ util.breadcrumb_link(cdedblink("ml/change_ml_type"), gettext("Change Type")) }}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {% trans %}Change Type{% endtrans %}
-        <small>
-            {{- util.make_icon('envelope', arialabel=gettext("Mailinglist")) }} {{ ambience['mailinglist']['title'] -}}
-        </small>
-    </h1>
+    {{ util.context_heading(gettext("Change Type"), ambience['mailinglist']['title'],
+                            'envelope', gettext("Mailinglist")) }}
 {% endblock %}
 {% block content %}
     <script nonce="{{ csp_nonce }}">

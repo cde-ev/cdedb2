@@ -70,7 +70,7 @@ from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, EPSILON, EVENT_SCHEMA_VERSION, INFINITE_ENUM_MAGIC_NUMBER,
     REALM_SPECIFIC_GENESIS_FIELDS, CdEDBObjectMap, Error, InfiniteEnum,
     ValidationWarning, asciificator, compute_checkdigit, extract_roles, n_, now,
-    xsorted,
+    xsorted, LineResolutions,
 )
 from cdedb.config import BasicConfig
 from cdedb.database.constants import FieldAssociations, FieldDatatypes
@@ -1172,6 +1172,25 @@ def _persona(
     return Persona(val)
 
 
+@_add_typed_validator
+def _batch_admission_entry(
+    val: Any, argname: str = None, **kwargs: Any
+) -> BatchAdmissionEntry:
+    val = _mapping(val, argname, **kwargs)
+    mandatory_fields: Dict[str, Any] = {
+        'resolution': LineResolutions,
+        'doppelganger_id': Optional[int],
+        'pevent_id': Optional[int],
+        'pcourse_id': Optional[int],
+        'is_instructor': bool,
+        'is_orga': bool,
+        'persona': Any,  # TODO This should be more strict
+    }
+    optional_fields: TypeMapping = {}
+    return BatchAdmissionEntry(_examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, **kwargs))
+
+
 def parse_date(val: str) -> datetime.date:
     """Make a string into a date.
 
@@ -1730,6 +1749,20 @@ def _lastschrift(
     return Lastschrift(val)
 
 
+@_add_typed_validator
+def _money_transfer_entry(val: Any, argname: str = "money_transfer_entry",
+                       **kwargs: Any) -> MoneyTransferEntry:
+    val = _mapping(val, argname, **kwargs)
+    mandatory_fields: Dict[str, Any] = {
+        'persona_id': int,
+        'amount': decimal.Decimal,
+        'note': Optional[str],
+    }
+    optional_fields: TypeMapping = {}
+    return MoneyTransferEntry(_examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, **kwargs))
+
+
 # TODO move above
 @_add_typed_validator
 def _iban(
@@ -1808,6 +1841,21 @@ def _lastschrift_transaction(
         raise ValidationSummary(ValueError(argname, n_(
             "Modification of lastschrift transactions not supported.")))
     return LastschriftTransaction(_examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, **kwargs))
+
+
+@_add_typed_validator
+def _lastschrift_transaction_entry(
+        val: Any, argname: str = "lastschrift_transaction_entry",
+        **kwargs: Any) -> LastschriftTransactionEntry:
+    val = _mapping(val, argname, **kwargs)
+    mandatory_fields: Dict[str, Any] = {
+        'transaction_id': int,
+        'tally': Optional[decimal.Decimal],
+        'status': const.LastschriftTransactionStati,
+    }
+    optional_fields: TypeMapping = {}
+    return LastschriftTransactionEntry(_examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs))
 
 
@@ -2751,6 +2799,21 @@ def _event_associated_fields(
         raise errs
 
     return EventAssociatedFields(val)
+
+
+@_add_typed_validator
+def _fee_booking_entry(val: Any, argname: str = "fee_booking_entry",
+                       **kwargs: Any) -> FeeBookingEntry:
+    val = _mapping(val, argname, **kwargs)
+    mandatory_fields: Dict[str, Any] = {
+        'registration_id': int,
+        'date': Optional[datetime.date],
+        'original_date': datetime.date,
+        'amount': decimal.Decimal,
+    }
+    optional_fields: TypeMapping = {}
+    return FeeBookingEntry(_examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, **kwargs))
 
 
 LODGEMENT_GROUP_FIELDS: TypeMapping = {

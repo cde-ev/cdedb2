@@ -220,7 +220,7 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': 'VCard'})
         vcard = ["BEGIN:VCARD",
                  "VERSION:3.0",
-                 "ADR:;;Im Garten 77;Utopia;;34576;",
+                 "ADR:;;Im Garten 77;Utopia;;34576;Deutschland",
                  "BDAY:1981-02-11",
                  "EMAIL:berta@example.cde",
                  "FN:Bertålotta Beispiel",
@@ -1683,8 +1683,7 @@ class TestCoreFrontend(FrontendTest):
     def test_genesis_event(self) -> None:
         self._genesis_request(self.EVENT_GENESIS_DATA)
 
-        user = USER_DICT['vera']
-        self.login(user)
+        self.login('vera')
         self.traverse({'description': 'Accountanfrage'})
         self.assertTitle("Accountanfragen")
         self.assertPresence("zelda@example.cde", div='request-1001')
@@ -1801,6 +1800,10 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Anhang my_participation_certificate.pdf")
         f = self.response.forms['genesisform']
         f['notes'] = "Gimme!"
+        f['birthday'] = ""
+        self.submit(f, check_notification=False)
+        self.assertValidationError("birthday", "Darf nicht leer sein.")
+        f['birthday'] = self.CDE_GENESIS_DATA['birthday']
         self.submit(f)
         link = self.fetch_link()
         self.get(link)

@@ -23,10 +23,8 @@
     {{ util.breadcrumb_link(cdedblink("ml/advanced_management"), gettext("Advanced Management"), active=True) }}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {% trans %}Advanced Management{% endtrans %}
-        <small>{{ util.make_icon('envelope') }} {{ ambience['mailinglist']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Advanced Management"), ambience['mailinglist']['title'],
+                            'envelope', gettext("Mailinglist")) }}
 {% endblock %}
 {% block static_notifications %}
     {% if restricted %}

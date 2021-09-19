@@ -18,9 +18,8 @@
 {% endblock %}
 
 {% block heading %}
-    <h1 class="title">
-        {{ ambience['ballot']['title'] }}
-    </h1>
+    {{ util.context_heading(ambience["ballot"]["title"], ambience['assembly']['title'],
+                            'bullhorn', gettext("Assembly")) }}
 {% endblock %}
 
 {% block breadcrumb %}

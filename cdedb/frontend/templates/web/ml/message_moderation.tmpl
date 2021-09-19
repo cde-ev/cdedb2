@@ -15,12 +15,8 @@
 {% endblock %}
 
 {% block heading %}
-    <h1 class="title">
-        {% trans %}Message Moderation{% endtrans %}
-        <small>
-            {{ util.make_icon('envelope', arialabel=gettext("Mailinglist")) }} {{ ambience['mailinglist']['title'] }}
-        </small>
-    </h1>
+    {{ util.context_heading(gettext("Message Moderation"), ambience['mailinglist']['title'],
+                            'envelope', gettext("Mailinglist")) }}
 {% endblock %}
 
 {% block content %}

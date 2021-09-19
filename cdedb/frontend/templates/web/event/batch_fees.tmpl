@@ -13,10 +13,7 @@
     {{ util.breadcrumb_link(cdedblink("event/batch_fees"), gettext("Enter Money Transfers"), active=True) }}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {% trans %}Enter Money Transfers{% endtrans %}
-        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Enter Money Transfers"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('event/batch_fees') }}" method="POST" id="batchfeesform" enctype="multipart/form-data">

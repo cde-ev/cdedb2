@@ -210,7 +210,6 @@ sql-test-shallow: tests/ancillary_files/sample_data.sql
 cron:
 	sudo -u www-data /cdedb2/bin/cron_execute.py
 
-
 ################
 # Code testing #
 ################

@@ -17,10 +17,8 @@
                             icon='home') }}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {{ ambience['lodgement']['title'] }}
-        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(ambience['lodgement']['title'], ambience['event']['title'],
+                            'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block content %}
     <div class="p button-par">
@@ -58,7 +56,7 @@
 
     {% if ambience['lodgement']['notes'] %}
         {% call util.bootstrap_panel(title=gettext("Orga-Notes"), icon="tag",
-                                 aclass="panel panel-default panel-condensed") %}
+                                 aclass="panel-default panel-condensed") %}
             {{ ambience['lodgement']['notes']|md }}
         {% endcall %}
     {% endif %}

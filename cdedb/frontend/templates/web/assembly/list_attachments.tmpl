@@ -10,12 +10,8 @@
     {% endtrans %}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {% trans %}
-            Attachment Overview
-        {% endtrans %}
-        <small>{{ util.make_icon('bullhorn') }} {{ ambience['assembly']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Attachment Overview"), ambience['assembly']['title'],
+                            'bullhorn', gettext("Assembly")) }}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}

@@ -7,12 +7,14 @@ template for all services.
 """
 
 import abc
+import cgitb
 import collections.abc
 import copy
 import datetime
 import enum
 import functools
 import logging
+import sys
 from types import TracebackType
 from typing import (
     Any, Callable, ClassVar, Collection, Dict, Iterable, List, Mapping,
@@ -28,7 +30,7 @@ import cdedb.validationtypes as vtypes
 from cdedb.common import (
     LOCALE, CdEDBLog, CdEDBObject, CdEDBObjectMap, PathLike, PrivilegeError, PsycoJson,
     Realm, RequestState, Role, diacritic_patterns, glue, make_proxy, make_root_logger,
-    n_, unwrap,
+    n_, unwrap, DefaultReturnCode,
 )
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
@@ -141,6 +143,45 @@ def batchify(function: Callable[..., T],
         return ret
 
     return batchified
+
+
+def read_conditional_write_composer(
+        reader: Callable[..., Any], writer: Callable[..., int],
+        id_param_name: str = "anid", datum_param_name: str = "data",
+        id_key_name: str = "id",) -> Callable[..., int]:
+    """This takes two functions and returns a combined version.
+
+    The overall semantics are similar to the writer. However the write is
+    elided if the reader returns a value equal to the object to be written
+    (i.e. there is no change).
+
+    :param id_param_name: Name of the reader argument specifying the object
+        id.
+    :param datum_param_name: Name of the writer argument specifying the
+        object value.
+    :param id_key_name: Key associated to the id in the object value
+        dictionary.
+    """
+
+    @functools.wraps(writer)
+    def composed(self: AbstractBackend, rs: RequestState, *args: Any,
+                 **kwargs: Any) -> DefaultReturnCode:
+        ret = 1
+        reader_kwargs = kwargs.copy()
+        reader_args = args[:]
+        if datum_param_name in reader_kwargs:
+            data = reader_kwargs.pop(datum_param_name)
+            reader_kwargs[id_param_name] = data[id_key_name]
+        else:
+            data = reader_args[0]
+            reader_args = (data[id_key_name],) + reader_args[1:]
+        with Atomizer(rs):
+            current = reader(self, rs, *reader_args, **reader_kwargs)
+            if {k: v for k, v in current.items() if k in data} != data:
+                ret = writer(self, rs, *args, **kwargs)
+        return ret
+
+    return composed
 
 
 def access(*roles: Role) -> Callable[[F], F]:
@@ -472,6 +513,21 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         """
         query = f"DELETE FROM {table} WHERE {entity_key} = %s"
         return self.query_exec(rs, query, (entity,))
+
+    def cgitb_log(self) -> None:
+        """Log the current exception.
+
+        This uses the standard logger and formats the exception with cgitb.
+        We take special care to contain any exceptions as cgitb is prone to
+        produce them with its prying fingers.
+        """
+        # noinspection PyBroadException
+        try:
+            self.logger.error(cgitb.text(sys.exc_info(), context=7))
+        except Exception:
+            # cgitb is very invasive when generating the stack trace, which might go
+            # wrong.
+            pass
 
     def general_query(self, rs: RequestState, query: Query,
                       distinct: bool = True, view: str = None

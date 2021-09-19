@@ -333,6 +333,8 @@ _DEFAULTS = {
     "MAIL_DOMAIN": "db.cde-ev.de",
     # host to use for sending emails
     "MAIL_HOST": "localhost",
+    # email for internal system trouble notifications
+    "TROUBLESHOOTING_ADDRESS": "admin@cde-ev.de",
 
     # email for cde account requests
     "CDE_ADMIN_ADDRESS": "cde-admins@cde-ev.de",
@@ -344,7 +346,7 @@ _DEFAULTS = {
     "ASSEMBLY_ADMIN_ADDRESS": "vorstand@cde-ev.de",
 
     # email for privilege changes
-    "META_ADMIN_ADDRESS": "admin@lists.cde-ev.de",
+    "META_ADMIN_ADDRESS": "admin@cde-ev.de",
 
     # email for ballot tallies
     "BALLOT_TALLY_ADDRESS": "wahlbekanntmachung@lists.cde-ev.de",

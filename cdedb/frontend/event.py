@@ -22,7 +22,6 @@ from typing import (
     Union, cast,
 )
 
-import psycopg2.extensions
 import werkzeug.exceptions
 from werkzeug import Response
 
@@ -35,19 +34,19 @@ from cdedb.common import (
     CourseFilterPositions, DefaultReturnCode, EntitySorter, Error, InfiniteEnum,
     KeyFunction, LodgementsSortkeys, PartialImportError, RequestState, Sortkey,
     asciificator, deduct_years, determine_age_class, diacritic_patterns, get_hash,
-    get_localized_country_codes, glue, json_serialize, merge_dicts,
+    get_localized_country_codes, json_serialize, merge_dicts,
     mixed_existence_sorter, n_, now, unwrap, xsorted,
 )
-from cdedb.database.connection import Atomizer
 from cdedb.filter import (
-    date_filter, enum_entries_filter, keydictsort_filter, money_filter, safe_filter,
+    enum_entries_filter, keydictsort_filter, safe_filter,
 )
 from cdedb.frontend.common import (
     AbstractUserFrontend, CustomCSVDialect, RequestConstraint, REQUESTdata,
     REQUESTdatadict, REQUESTfile, access, calculate_db_logparams, calculate_loglinks,
     cdedbid_filter, cdedburl, check_validation as check,
     check_validation_optional as check_optional, event_guard, make_event_fee_reference,
-    periodic, process_dynamic_input, request_extractor, make_persona_name
+    periodic, process_dynamic_input, request_extractor, make_persona_name,
+    TransactionObserver,
 )
 from cdedb.frontend.event_lodgement_wishes import (
     create_lodgement_wishes_graph, detect_lodgement_wishes,
@@ -2176,8 +2175,8 @@ class EventFrontend(AbstractUserFrontend):
         })
         return datum
 
-    def book_fees(self, rs: RequestState, data: Collection[CdEDBObject],
-                  send_notifications: bool = False
+    def book_fees(self, rs: RequestState,
+                  data: Collection[CdEDBObject], send_notifications: bool = False
                   ) -> Tuple[bool, Optional[int]]:
         """Book all paid fees.
 
@@ -2187,56 +2186,27 @@ class EventFrontend(AbstractUserFrontend):
           * for negative outcome the line where an exception was triggered
             or None if it was a DB serialization error
         """
-        index = 0
-        try:
-            with Atomizer(rs):
-                count = 0
-                all_reg_ids = {datum['registration_id'] for datum in data}
-                all_regs = self.eventproxy.get_registrations(rs, all_reg_ids)
-                for index, datum in enumerate(data):
-                    reg_id = datum['registration_id']
-                    update = {
-                        'id': reg_id,
-                        'payment': datum['date'],
-                        'amount_paid': all_regs[reg_id]['amount_paid']
-                                       + datum['amount'],
+        relevant_keys = {'registration_id', 'date', 'original_date', 'amount'}
+        relevant_data = [{k: v for k, v in item.items() if k in relevant_keys}
+                         for item in data]
+        with TransactionObserver(rs, self, "book_fees"):
+            success, number = self.eventproxy.book_fees(
+                rs, rs.ambience['event']['id'], relevant_data)
+            if success and send_notifications:
+                persona_ids = tuple(e['persona_id'] for e in data)
+                personas = self.coreproxy.get_personas(rs, persona_ids)
+                subject = "Überweisung für {} eingetroffen".format(
+                    rs.ambience['event']['title'])
+                for persona in personas.values():
+                    headers: Dict[str, Union[str, Collection[str]]] = {
+                        'To': (persona['username'],),
+                        'Subject': subject,
                     }
-                    change_note = "{} am {} gezahlt.".format(
-                        money_filter(datum['amount']),
-                        date_filter(datum['original_date'], lang="de"))
-                    count += self.eventproxy.set_registration(rs, update, change_note)
-        except psycopg2.extensions.TransactionRollbackError:
-            # We perform a rather big transaction, so serialization errors
-            # could happen.
-            return False, None
-        except Exception:
-            # This blanket catching of all exceptions is a last resort. We try
-            # to do enough validation, so that this should never happen, but
-            # an opaque error (as would happen without this) would be rather
-            # frustrating for the users -- hence some extra error handling
-            # here.
-            self.logger.error(glue(
-                ">>>\n>>>\n>>>\n>>> Exception during fee transfer processing",
-                "<<<\n<<<\n<<<\n<<<"))
-            self.logger.exception("FIRST AS SIMPLE TRACEBACK")
-            self.logger.error("SECOND TRY CGITB")
-            self.cgitb_log()
-            return False, index
-        if send_notifications:
-            persona_ids = tuple(e['persona_id'] for e in data)
-            personas = self.coreproxy.get_personas(rs, persona_ids)
-            subject = "Überweisung für {} eingetroffen".format(
-                rs.ambience['event']['title'])
-            for persona in personas.values():
-                headers: Dict[str, Union[str, Collection[str]]] = {
-                    'To': (persona['username'],),
-                    'Subject': subject,
-                }
-                if rs.ambience['event']['orga_address']:
-                    headers['Reply-To'] = rs.ambience['event']['orga_address']
-                self.do_mail(rs, "transfer_received", headers,
-                             {'persona': persona})
-        return True, count
+                    if rs.ambience['event']['orga_address']:
+                        headers['Reply-To'] = rs.ambience['event']['orga_address']
+                    self.do_mail(rs, "transfer_received", headers,
+                                 {'persona': persona})
+            return success, number
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
@@ -4700,14 +4670,8 @@ class EventFrontend(AbstractUserFrontend):
             elif group_id < 0:
                 code *= self.eventproxy.create_lodgement_group(rs, group)
             else:
-                with Atomizer(rs):
-                    current = self.eventproxy.get_lodgement_group(rs, group_id)
-                    # Do not update unchanged
-                    if current != group:
-                        # TODO maybe we pass it in but simply ignore it?
-                        # do not pass the event_id in, since it must not change
-                        del group['event_id']
-                        code *= self.eventproxy.set_lodgement_group(rs, group)
+                del group['event_id']
+                code *= self.eventproxy.rcw_lodgement_group(rs, group)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/lodgement_group_summary")
 

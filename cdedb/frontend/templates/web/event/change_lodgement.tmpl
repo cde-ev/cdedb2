@@ -16,10 +16,8 @@
     {{ util.breadcrumb_link(cdedblink("event/change_lodgement"), gettext("Edit"), active=True) }}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {% trans lodgement=ambience['lodgement']['title'] %}Edit Lodgement {{ lodgement }}{% endtrans %}
-        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Edit Lodgement %(lodgement)s")|format(lodgement=ambience['lodgement']['title']),
+                            ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('event/change_lodgement') }}" method="POST" id="changelodgementform"
