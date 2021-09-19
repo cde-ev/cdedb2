@@ -21,7 +21,7 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'href': '/ml/'})
 
     @as_users("nina", "berta", "annika")
-    def test_manually_write_subscription_states(self) -> None:
+    def test_manual_syncs(self) -> None:
         self.traverse({'description': 'Mailinglisten'})
         self.assertTitle('Mailinglisten')
 
@@ -30,8 +30,14 @@ class TestMlFrontend(FrontendTest):
             self.assertPresence("Aktualisieren der Subscription States")
             f = self.response.forms['writesubscriptionstates']
             self.submit(f)
+            self.assertPresence("Mailman-Synchronisation")
+            f = self.response.forms['mailmansync']
+            self.submit(f, check_notification=False)
+            # This fails due to the test environment. Is kind of a nice check though.
+            self.assertPresence("Verbindungsfehler", div="notifications")
         else:
             self.assertNonPresence("Aktualisieren der Subscription States")
+            self.assertNonPresence("Mailman-Synchronisation")
 
     @as_users("annika", "anton", "berta", "martin", "nina", "vera", "viktor")
     def test_sidebar(self) -> None:
