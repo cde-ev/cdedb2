@@ -41,7 +41,10 @@ for evolution in $(cat /tmp/todoevolutions.txt); do
     if [[ $evolution == *.py ]]; then
         echo ""
         echo "Run migration script $evolution" | tee -a /tmp/output-evolution.txt
-        sudo -u www-data python3 cdedb/database/evolutions/$evolution \
+        sudo -u www-data \
+            EVOLUTION_TRIAL_OVERRIDE_DBNAME=$DATABASE_NAME \
+            EVOLUTION_TRIAL_OVERRIDE_DRY_RUN='' \
+            python3 cdedb/database/evolutions/$evolution \
             2>&1 | tee -a /tmp/output-evolution.txt
     fi
 done
