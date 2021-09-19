@@ -5,20 +5,20 @@ An attachment is the idea of a file (the file itself may change between arbitrar
 
 - an **id** (id)
 - the **assembly id** of the linked assembly (id)
-- 0 to n attachment_ballot_links of the linked assembly (attachment_ballot_link)
-- 1 to n attachment_versions (attachment_version)
+- 0 to n attachment_ballot_links linking the attachments to ballots of the linked assembly (attachment_ballot_link)
+- 1 to n attachment_versions containing the current stand of the abstract idea of the attachment (attachment_version)
 
 An attachment_ballot_link has the following attributes:
 
 - an **id** (id)
-- the **attachment id** of its attachment (id)
-- the **ballot id** of the linked ballot (id)
+- the **attachment id** of its attachment, must be from the same assembly as the ballot (id)
+- the **ballot id** of the linked ballot, must be from the same assembly as the attachment (id)
 
 An attachment_version has the following attributes:
 
 - an **id** (id)
 - the **attachment id** of its attachment
-- a **version number** (integer) starting at 1, incremented by one for each new attachment_version of an attachment
+- a **version number** (integer) starting at 1, incremented by one for each new attachment_version of this attachment
 - a **file_hash** of the real file containing the current stand of the attachment idea (file). This is kept when the version is removed.
 - a **filename** (varchar). This is removed when the version is removed.
 - a **title** (varchar). This is removed when the version is removed.
