@@ -2095,7 +2095,8 @@ class AssemblyBackend(AbstractBackend):
         attachment_ids = affirm_set(vtypes.ID, attachment_ids)
         query = f"""SELECT
                 {', '.join(ASSEMBLY_ATTACHMENT_FIELDS +
-                           ('num_versions', 'latest_version_nr', 'ballot_ids'))}
+                           ('num_versions', 'latest_version_nr',
+                            'COALESCE(ballot_ids, array[]::integer[]) AS ballot_ids'))}
             FROM (
                 (
                     SELECT {', '.join(ASSEMBLY_ATTACHMENT_FIELDS)}

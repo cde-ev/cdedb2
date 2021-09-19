@@ -765,7 +765,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
     def _test_one_attachment_redirect(self, attachment_id) -> None:
         attachment = self.assembly.get_attachment(self.key, attachment_id)
         assembly_id = attachment['assembly_id']
-        ballot_ids = attachment['ballot_ids'] or []
+        ballot_ids = attachment['ballot_ids']
         latest_version_nr = attachment['latest_version_nr']
 
         # Use get via the app, to avoid following the redirects.

@@ -873,7 +873,7 @@ class TestAssemblyBackend(BackendTest):
         expectation: CdEDBObject = {
             "id": new_id,
             "assembly_id": assembly_id,
-            "ballot_ids": None,
+            "ballot_ids": [],
             "num_versions": 1,
             "latest_version_nr": 1,
         }
@@ -974,7 +974,7 @@ class TestAssemblyBackend(BackendTest):
         expectation = {
             "id": new_id,
             "assembly_id": assembly_id,
-            "ballot_ids": None,
+            "ballot_ids": [],
             "num_versions": 2,
             "latest_version_nr": 2,
         }
@@ -1101,14 +1101,14 @@ class TestAssemblyBackend(BackendTest):
         expectation = {
             attachment_ids[0]: {
                 'assembly_id': assembly_id,
-                'ballot_ids': None,
+                'ballot_ids': [],
                 'id': attachment_ids[0],
                 'num_versions': 1,
                 'latest_version_nr': 2,
             },
             attachment_ids[1]: {
                 'assembly_id': assembly_id,
-                'ballot_ids': None,
+                'ballot_ids': [],
                 'id': attachment_ids[1],
                 'num_versions': 1,
                 'latest_version_nr': 1,
@@ -1226,7 +1226,7 @@ class TestAssemblyBackend(BackendTest):
             })
             attachment_expectation: CdEDBObject = {
                 "assembly_id": assembly_id,
-                "ballot_ids": None,
+                "ballot_ids": [],
                 "id": attachment_id,
                 "num_versions": 1,
                 "latest_version_nr": 1,
