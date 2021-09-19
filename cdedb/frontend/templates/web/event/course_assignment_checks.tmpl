@@ -13,10 +13,8 @@
 {{ util.breadcrumb_link(cdedblink("event/course_assignment_checks"), gettext("Checks"), active=True) }}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {% trans %}Course Assignment Checks{% endtrans %}
-        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Course Assignment Checks"), ambience['event']['title'],
+                            'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 
 {# A macro to place a "[1] instead of [2]" text for miss-assigned course instructors #}

@@ -6,7 +6,7 @@ event and assembly realm in the form of specific mailing lists.
 from datetime import datetime
 import itertools
 from typing import (
-    Any, Collection, Dict, List, Optional, Protocol,Set, Tuple, cast, overload,
+    Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, cast, overload,
 )
 
 import cdedb.database.constants as const

@@ -13,6 +13,7 @@ from cdedb.backend.common import (
     AbstractBackend, Silencer, access, affirm_set_validation as affirm_set,
     affirm_validation_typed as affirm,
     affirm_validation_typed_optional as affirm_optional, singularize,
+    read_conditional_write_composer,
 )
 from cdedb.backend.event import EventBackend
 from cdedb.common import (
@@ -157,6 +158,12 @@ class PastEventBackend(AbstractBackend):
             self.past_event_log(rs, const.PastEventLogCodes.institution_changed,
                                 pevent_id=None, change_note=current['title'])
         return ret
+
+    class _RCWInstitutionProtocol(Protocol):
+        def __call__(self, rs: RequestState, data: CdEDBObject
+                     ) -> DefaultReturnCode: ...
+    rcw_institution: _RCWInstitutionProtocol = read_conditional_write_composer(
+        get_institution, set_institution, id_param_name='institution_id')
 
     @access("cde_admin", "event_admin")
     def create_institution(self, rs: RequestState, data: CdEDBObject

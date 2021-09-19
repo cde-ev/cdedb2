@@ -10,10 +10,7 @@
     {% endtrans %}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {% trans %}Checkin{% endtrans %}
-        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Checkin"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}

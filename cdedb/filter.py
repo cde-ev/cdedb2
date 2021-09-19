@@ -413,7 +413,7 @@ def get_markdown_parser() -> markdown.Markdown:
     md = getattr(MARKDOWN_PARSER, 'md', None)
 
     if md is None:
-        extension_configs = {
+        extension_configs: Mapping[str, Mapping[str, Any]] = {
             "toc": {
                 "baselevel": 4,
                 "permalink": True,

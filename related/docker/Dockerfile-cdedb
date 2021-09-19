@@ -21,6 +21,7 @@ RUN echo 'slapd slapd/password1 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a
     sudo \
     make \
     gettext \
+    git \
     \
     apache2 \
     python3 \
@@ -82,7 +83,9 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     types-pytz \
     types-jinja2 \
     types-python-dateutil \
-    types-freezegun
+    types-freezegun \
+    types-bleach \
+    types-Markdown
 
 # TODO check wether it is sensible to lower privileges to cdedb user
 # create and configure directories for the apache user

@@ -15,6 +15,10 @@
         util.persona_name(current), icon="user", active="True") }}
 {% endblock %}
 
+{% block heading %}
+    {{ util.context_heading(gettext("Inspect Changes"), util.persona_name(current), 'user', gettext("User")) }}
+{% endblock %}
+
 {% macro show_diff(name, title, important=False) %}
     <div class="row {% if name not in diff and not important %}unimportant{% endif %}">
         <label class="col-sm-3">

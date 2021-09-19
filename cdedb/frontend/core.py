@@ -28,13 +28,13 @@ from cdedb.common import (
     merge_dicts, n_, now, pairwise, unwrap, xsorted, sanitize_filename
 )
 
-from cdedb.database.connection import Atomizer
 from cdedb.filter import date_filter, enum_entries_filter, markdown_parse_safe
 from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, access, basic_redirect,
     calculate_db_logparams, calculate_loglinks, check_validation as check,
     check_validation_optional as check_optional, make_membership_fee_reference,
     periodic, request_dict_extractor, request_extractor, make_persona_name,
+    TransactionObserver,
 )
 from cdedb.ml_type_aux import MailinglistGroup
 from cdedb.query import Query, QueryOperators, QueryScope
@@ -432,6 +432,8 @@ class CoreFrontend(AbstractFrontend):
 
         # Address data
         if persona['address']:
+            # Mask the `gettext` name, so that pybabel does not extract CountryCodes
+            g = rs.gettext
             vcard.add('adr')
             # extended should be empty because of compatibility issues, see
             # https://tools.ietf.org/html/rfc6350#section-6.3.1
@@ -440,7 +442,7 @@ class CoreFrontend(AbstractFrontend):
                 street=persona['address'] or '',
                 city=persona['location'] or '',
                 code=persona['postal_code'] or '',
-                country=persona['country'] or '')
+                country=g(f"CountryCodes.{persona['country']}"))
 
         # Contact data
         if persona['username']:
@@ -1586,39 +1588,20 @@ class CoreFrontend(AbstractFrontend):
         if rs.has_validation_errors():
             return self.modify_membership_form(rs, persona_id)
         # We really don't want to go halfway here.
-        with Atomizer(rs):
-            code = self.coreproxy.change_membership(rs, persona_id, is_member)
+        with TransactionObserver(rs, self, "modify_membership"):
+            code, revoked_permits, collateral_transactions = (
+                self.cdeproxy.change_membership(rs, persona_id, is_member))
             self.notify_return_code(rs, code)
-
-            if not is_member:
-                lastschrift_ids = self.cdeproxy.list_lastschrift(
-                    rs, persona_ids=(persona_id,), active=None)
-                lastschrifts = self.cdeproxy.get_lastschrifts(
-                    rs, lastschrift_ids.keys())
-                active_permits = []
-                for lastschrift in lastschrifts.values():
-                    if not lastschrift['revoked_at']:
-                        active_permits.append(lastschrift['id'])
-                if active_permits:
-                    transaction_ids = (
-                        self.cdeproxy.list_lastschrift_transactions(
-                            rs, lastschrift_ids=active_permits,
-                            stati=(const.LastschriftTransactionStati.issued,)))
-                    if transaction_ids:
-                        subject = ("Einzugsermächtigung zu ausstehender "
-                                   "Lastschrift widerrufen.")
-                        self.do_mail(rs, "pending_lastschrift_revoked",
-                                     {'To': (self.conf["MANAGEMENT_ADDRESS"],),
-                                      'Subject': subject},
-                                     {'persona_id': persona_id})
-                    for active_permit in active_permits:
-                        data = {
-                            'id': active_permit,
-                            'revoked_at': now(),
-                        }
-                        code = self.cdeproxy.set_lastschrift(rs, data)
-                        self.notify_return_code(rs, code,
-                                                success=n_("Permit revoked."))
+            if revoked_permits:
+                rs.notify("success", n_("%(num)s permits revoked."),
+                          {'num': len(revoked_permits)})
+            if collateral_transactions:
+                subject = ("Einzugsermächtigung zu ausstehender "
+                           "Lastschrift widerrufen.")
+                self.do_mail(rs, "pending_lastschrift_revoked",
+                             {'To': (self.conf["MANAGEMENT_ADDRESS"],),
+                              'Subject': subject},
+                             {'persona_id': persona_id})
 
         return self.redirect_show_user(rs, persona_id)
 
@@ -2370,7 +2353,7 @@ class CoreFrontend(AbstractFrontend):
             'reviewer': rs.user.persona_id,
             'realm': case['realm'],
         }
-        with Atomizer(rs):
+        with TransactionObserver(rs, self, "genesis_decide"):
             code = self.coreproxy.genesis_modify_case(rs, data)
             success = bool(code)
             new_id = None

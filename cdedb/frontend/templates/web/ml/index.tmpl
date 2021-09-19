@@ -22,7 +22,7 @@
 
 {% block content %}
     {% if user.admin_views.intersection(ALL_MGMT_ADMIN_VIEWS) %}
-        <div class="p">
+        <div class="p button-par">
             {{ util.href(cdedblink("ml/create_mailinglist_form"), gettext("Create Mailinglist"), icon="plus",
                     aclass="btn btn-sm btn-success") }}
             {% if "ml_admin" in user.roles %}

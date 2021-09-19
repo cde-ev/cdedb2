@@ -37,20 +37,6 @@ steps:
   # which would not be cleared from docker cache
   - docker build --file related/docker/Dockerfile-postgres --tag cdepostgres .
   - docker build --file related/docker/Dockerfile-cdedb --tag cdedb .
-- name: mypy
-  image: cdedb
-  pull: never # do not try to pull image from docker hub
-  depends_on:
-  - build images
-  commands:
-  - make mypy
-- name: lint
-  image: cdedb
-  pull: never # do not try to pull image from docker hub
-  depends_on:
-  - build images
-  commands:
-  - make lint
 - name: cdb # is used as the hostname for the container
   image: cdepostgres
   pull: never # do not try to pull image from docker hub
@@ -62,24 +48,62 @@ steps:
     path: /var/lib/postgresql/data
   depends_on:
   - build images
+- name: evolution-trial
+  image: cdedb
+  pull: never
+  depends_on:
+    - cdb
+  commands:
+    - sleep 5
+    - make i18n-compile # needed for sample-data step.
+    - make sample-data # perform basic setup.
+    - make sql-test # create the necessary test database.
+    - bin/evolution-trial.sh origin/$DRONE_TARGET_BRANCH $DRONE_COMMIT
+- name: mypy
+  image: cdedb
+  pull: never # do not try to pull image from docker hub
+  depends_on:
+    - evolution-trial # wait for all git operations to be done
+  when:
+    status:
+    - failure
+    - success
+  commands:
+    - make mypy
+- name: lint
+  image: cdedb
+  pull: never # do not try to pull image from docker hub
+  depends_on:
+    - evolution-trial # wait for all git operations to be done
+  when:
+    status:
+    - failure
+    - success
+  commands:
+    - make lint
 - name: frontend tests a-d
   image: cdedb
   pull: never # do not try to pull image from docker hub
   depends_on:
-  - cdb # only needs db allowing mypy and lint to run parallel to this
+  - evolution-trial
+  when:
+    status:
+    - failure
+    - success
   volumes:
   - name: tmp_dir
     path: /tmp
   commands:
-  - sleep 5 # wait for db to come online
-  - make i18n-compile # required for sample-data target
-  - make sample-data # this creates the sql schema and copies the localconfig.py
   - bin/check.py --verbose --first # everything before event
 - name: frontend tests e-z
   image: cdedb
   pull: never # do not try to pull image from docker hub
   depends_on:
-  - cdb # only needs db allowing mypy and lint to run parallel to this
+  - evolution-trial
+  when:
+    status:
+    - failure
+    - success
   volumes:
   - name: tmp_dir
     path: /tmp
@@ -90,7 +114,11 @@ steps:
   image: cdedb
   pull: never # do not try to pull image from docker hub
   depends_on:
-  - cdb # only needs db allowing mypy and lint to run parallel to this
+  - evolution-trial
+  when:
+    status:
+    - failure
+    - success
   volumes:
   - name: tmp_dir
     path: /tmp
@@ -101,7 +129,11 @@ steps:
   image: cdedb
   pull: never
   depends_on:
-    - cdb
+  - evolution-trial
+  when:
+    status:
+    - failure
+    - success
   volumes:
   - name: tmp_dir
     path: /tmp
@@ -140,4 +172,4 @@ trigger:
   branch:
   - master
   - stable
-  - ci/*
+#  - ci/*
