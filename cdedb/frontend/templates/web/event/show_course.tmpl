@@ -59,7 +59,7 @@
 
     {% if ambience['course']['notes'] %}
         {% call util.bootstrap_panel(title=gettext("Orga-Notes"), icon="tag",
-                                     aclass="panel panel-default panel-condensed") %}
+                                     aclass="panel-default panel-condensed") %}
             {{ ambience['course']['notes']|md }}
         {% endcall %}
     {% endif %}
