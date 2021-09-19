@@ -838,6 +838,16 @@ class FrontendTest(BackendTest):
         if self.response != oldresponse:
             self._log_generation_time(oldresponse)
 
+    def assertRedirect(self, url: str, *args: Any, target_url: str,
+                       verbose: bool = False, **kwargs: Any) -> webtest.TestResponse:
+        """Checck that a GET-request to the url returns a redirect to the target url."""
+        response: webtest.TestResponse = self.app.get(url, *args, **kwargs)
+        self.assertLessEqual(300, response.status_int)
+        self.assertGreater(400, response.status_int)
+        self.assertIn("You should be redirected", response)
+        self.assertIn(target_url, response)
+        return response
+
     def post(self, url: str, *args: Any, verbose: bool = False, **kwargs: Any) -> None:
         """Directly send a POST-request.
 

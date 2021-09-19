@@ -749,6 +749,64 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertNotIn("deleteballotform", self.response.forms)
 
     @storage
+    @as_users("charly", "viktor")
+    def test_attachment_redirects(self) -> None:
+        # Test that accessing the latest version and the legacy urls redirect to the
+        # correct page.
+        # attachment_ids = set.union(*
+        attachment_ids = set.union(*[
+            self.assembly.list_attachments(self.key, assembly_id=assembly_id)
+            for assembly_id in self.assembly.list_assemblies(self.key)
+        ])
+
+        for attachment_id in attachment_ids:
+            self._test_one_attachment_redirect(attachment_id)
+
+    def _test_one_attachment_redirect(self, attachment_id) -> None:
+        attachment = self.assembly.get_attachment(self.key, attachment_id)
+        assembly_id = attachment['assembly_id']
+        ballot_ids = attachment['ballot_ids'] or []
+        latest_version_nr = attachment['latest_version_nr']
+
+        # Use get via the app, to avoid following the redirects.
+        # Check that legacy urls with a version redirect to that version.
+        version_target = (f"/assembly/assembly/{assembly_id}"
+                          f"/attachment/{attachment_id}/version/{latest_version_nr}")
+
+        urls = (
+            # Shortcut that always redirects to the current version.
+            f"/assembly/assembly/{assembly_id}/attachment/{attachment_id}/latest",
+            # Legacy url with additional "/get".
+            f"/assembly/assembly/{assembly_id}"
+            f"/attachment/{attachment_id}/version/{latest_version_nr}/get",
+        ) + tuple(
+            # Legacy url with the ballot the attachment is linked to.
+            # This redirect should work with arbitrary ballot_ids in theory.
+            f"/assembly/assembly/{assembly_id}/ballot/{ballot_id}"
+            f"/attachment/{attachment_id}/version/{latest_version_nr}/get"
+            for ballot_id in ballot_ids
+        )
+        for url in urls:
+            with self.subTest(url=url):
+                self.assertRedirect(url, target_url=version_target)
+
+        # Check that legacy urls without a version redirect to the latest version.
+        non_version_target = urls[0]
+
+        urls = (
+            # Legacy url that used to retrieve the latest version.
+            f"/assembly/assembly/{assembly_id}/attachment/{attachment_id}/get",
+        ) + tuple(
+            # Legacy url for retrieving the latest version of a ballot attachment.
+            f"/assembly/assembly/{assembly_id}/ballot/{ballot_id}"
+            f"/attachment/{attachment_id}/get"
+            for ballot_id in ballot_ids
+        )
+        for url in urls:
+            with self.subTest(url=url):
+                self.assertRedirect(url, target_url=non_version_target)
+
+    @storage
     @as_users("werner")
     def test_attachment(self) -> None:
         with open(self.testfile_dir / "rechen.pdf", 'rb') as datafile:
@@ -765,12 +823,6 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         saved_response = self.response
         self.traverse({"href": "/assembly/assembly/3/attachment/1/latest"})
         self.assertEqual(data, self.response.body)
-        self.response = saved_response
-
-        # Test redirect of link to latest attachment version
-        redirect = self.app.get("/assembly/assembly/3/attachment/1/latest")
-        self.assertIn("You should be redirected", redirect)
-        self.assertIn("/assembly/assembly/3/attachment/1/version/1/", redirect)
         self.response = saved_response
 
         # Test Details link
@@ -947,27 +999,6 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence("Anhangsversion hinzugefügt", div="8-1008")
         self.assertPresence("Formal geänderte Beschlussvorlage: Version 3",
                             div="8-1008")
-
-    @as_users("kalif")
-    def test_attachment_legacy(self) -> None:
-        # We have some legacy redirects to keep old attachment links functional.
-
-        redirect = self.app.get("/assembly/assembly/3/attachment/1/get")
-        self.assertIn("You should be redirected", redirect)
-        self.assertIn("/assembly/assembly/3/attachment/1/latest", redirect)
-
-        redirect = self.app.get("/assembly/assembly/3/attachment/1/version/1/get")
-        self.assertIn("You should be redirected", redirect)
-        self.assertIn("/assembly/assembly/3/attachment/1/version/1", redirect)
-
-        redirect = self.app.get("/assembly/assembly/3/ballot/22323/attachment/1/get")
-        self.assertIn("You should be redirected", redirect)
-        self.assertIn("/assembly/assembly/3/attachment/1/latest", redirect)
-
-        redirect = self.app.get(
-            "/assembly/assembly/3/ballot/22323/attachment/1/version/1/get")
-        self.assertIn("You should be redirected", redirect)
-        self.assertIn("/assembly/assembly/3/attachment/1/version/1", redirect)
 
     @storage
     @as_users("werner", "inga", "kalif")
