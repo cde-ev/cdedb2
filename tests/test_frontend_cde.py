@@ -8,13 +8,14 @@ import itertools
 import json
 import re
 import types
-from typing import Set, Tuple
+from typing import Set, Tuple, cast
 
 import webtest
 
 import cdedb.database.constants as const
 from cdedb.common import (
-    CdEDBObject, ADMIN_VIEWS_COOKIE_NAME, Role, extract_roles, now, LineResolutions
+    CdEDBObject, ADMIN_VIEWS_COOKIE_NAME, Role, extract_roles, now, LineResolutions,
+    get_country_code_from_country, get_localized_country_codes, RequestState,
 )
 from cdedb.frontend.common import Worker, make_postal_address
 from cdedb.query import QueryOperators
@@ -2589,14 +2590,23 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("vera")
     def test_postal_address(self) -> None:
-        frs = types.SimpleNamespace()
-        frs.translations = self.translations
+        fake_rs = cast(RequestState, types.SimpleNamespace())
+        fake_rs.translations = self.translations
         persona_id = None
         t = lambda g, p: g(f"CountryCodes.{p['country']}")
         while persona_id := self.core.next_persona(self.key, persona_id,
                                                    is_member=None, is_archived=False):
             p = self.core.get_total_persona(self.key, persona_id)
             if p['country']:
-                address = make_postal_address(frs, p)  # type: ignore[arg-type]
+                address = make_postal_address(fake_rs, p)
                 self.assertNotIn(p['country'], address)
                 self.assertIn(t(self.translations["de"].gettext, p), address)
+
+    def test_country_code_from_country(self) -> None:
+        fake_rs = cast(RequestState, types.SimpleNamespace())
+        fake_rs.translations = self.translations
+        for lang in self.translations:
+            fake_rs.gettext = self.translations[lang].gettext  # type: ignore[misc]
+            for cc, country in get_localized_country_codes(fake_rs):
+                self.assertEqual(cc, get_country_code_from_country(fake_rs, country))
+                self.assertEqual(cc, get_country_code_from_country(fake_rs, cc))

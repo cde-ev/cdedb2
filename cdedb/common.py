@@ -551,16 +551,26 @@ def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,
                   reverse=reverse)
 
 
+def _format_country_code(code: str) -> str:
+    """Helper to make string hidden to pybabel."""
+    return f'CountryCodes.{code}'
+
+
 def get_localized_country_codes(rs: RequestState) -> List[Tuple[str, str]]:
     """Generate a list of country code - name tuples in current language."""
-
-    def _format_country_code(code: str) -> str:
-        """Helper to make string hidden to pybabel."""
-        return f'CountryCodes.{code}'
-
     return xsorted(
         [(v, rs.gettext(_format_country_code(v))) for v in COUNTRY_CODES],
         key=lambda x: x[1])
+
+
+def get_country_code_from_country(rs: RequestState, country: str) -> str:
+    """Match a country to it's country code."""
+
+    for lang, translator in rs.translations.items():
+        for cc in COUNTRY_CODES:
+            if translator.gettext(_format_country_code(cc)) == country:
+                return cc
+    return country
 
 
 Sortkey = Tuple[Union[str, int, datetime.datetime], ...]
