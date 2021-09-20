@@ -165,6 +165,8 @@ Hier sind die Änderungen gelistet, die in den jeweiligen Inkrementierungen der
 Export-Version neu eingeführt wurden. Für jede Version ist angegeben, ob die
 Version für den partiellen Import strikt abwärtskompatibel sind oder nicht.
 
+* Version (15, 4): Der gesamte Fragebogen ist jetzt unter ``questionnaire`` im
+  partiellen Export enthalten.
 * Version (15, 3): Hinzufügen von ``fee_modifiers`` pro Part. Alte Versionsnummer
   entfernt.
 * Version (15, 2): Hinzufügen des Feldes ``participant_info`` für die Teilnehmer-Infos.
