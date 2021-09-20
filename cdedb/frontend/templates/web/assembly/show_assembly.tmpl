@@ -128,7 +128,7 @@
     {% endif %}
 
     {% if "assembly_mgmt" in user.admin_views %}
-        {% if ambience['assembly']['is_active'] or "vote_begin" not in delete_blockers %}
+        {% if ambience['assembly']['is_active'] or "ballot_is_locked" not in delete_blockers %}
             {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
                 {% if ambience['assembly']['is_active'] %}
                     {% if not ambience['assembly']['presider_address'] %}
@@ -206,7 +206,7 @@
                         </div>
                     </div>
                 {% endif %}
-                {% if "vote_begin" not in delete_blockers %}
+                {% if "ballot_is_locked" not in delete_blockers %}
                     <div class="row">
                         <div class="col-sm-4">
                             <div class="p">

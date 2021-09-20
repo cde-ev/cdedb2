@@ -444,12 +444,12 @@ class AssemblyFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.show_assembly(rs, assembly_id)
         blockers = self.assemblyproxy.delete_assembly_blockers(rs, assembly_id)
-        if "vote_begin" in blockers:
+        if "ballot_is_locked" in blockers:
             rs.notify("error", n_("Unable to remove active ballot."))
             return self.show_assembly(rs, assembly_id)
 
         # Specify what to cascade
-        cascade = {"ballots", "attendees", "attachments", "log",
+        cascade = {"assembly_is_locked", "attachments", "attendees", "ballots", "log",
                    "mailinglists", "presiders"} & blockers.keys()
         code = self.assemblyproxy.delete_assembly(
             rs, assembly_id, cascade=cascade)
@@ -1365,7 +1365,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.show_ballot(rs, assembly_id, ballot_id)
         blockers = self.assemblyproxy.delete_ballot_blockers(rs, ballot_id)
-        if "vote_begin" in blockers:
+        if "ballot_is_locked" in blockers:
             rs.notify("error", n_("Unable to remove active ballot."))
             return self.show_ballot(rs, assembly_id, ballot_id)
 

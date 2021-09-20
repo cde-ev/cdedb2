@@ -387,9 +387,21 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence("(Anmeldung nicht mehr möglich)")
 
     # Use ferdinand since viktor is not a member and may not signup.
+    @storage
     @as_users("ferdinand")
     def test_create_delete_assembly(self) -> None:
         presider_address = "presider@lists.cde-ev.de"
+        with open(self.testfile_dir / "form.pdf", 'rb') as datafile:
+            attachment = datafile.read()
+        bdata = {
+            'title': 'Müssen wir wirklich regeln...',
+            'vote_begin': "2222-12-12 00:00:00",
+            'vote_end': "2223-5-1 00:00:00",
+            'abs_quorum': "0",
+            'rel_quorum': "0",
+            'votes': "",
+        }
+
         self._create_assembly(delta={'create_presider_list': True,
                                      'presider_address': presider_address})
         self.assertPresence("Häretiker", div='description')
@@ -399,14 +411,30 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence("Versammlungsleitungs-E-Mail-Adresse durch Adresse der"
                             " neuen Mailingliste ersetzt.", div="notifications")
         self.assertNotIn('createpresiderlistform', self.response.forms)
+        # Make sure assemblies with mailinglists can be deleted
         f = self.response.forms['createattendeelistform']
         self.submit(f)
         self.assertPresence("Versammlungsteilnehmer-Mailingliste angelegt.",
                             div="notifications")
+
+        # Assemblies with ballots which started voting can not be deleted.
+        # Other ballots are ok
         self.traverse({'description': "Abstimmungen"})
         self.assertPresence("Es wurden noch keine Abstimmungen angelegt.")
-        self.traverse({'description': r"\sÜbersicht"})
+        self._create_ballot(bdata, candidates=None)
+        self.assertTitle("Müssen wir wirklich regeln... (Drittes CdE-Konzil)")
+
+        # Make sure assemblies with attachments can be deleted
+        self.traverse("Dateien", "Datei hinzufügen")
+        f = self.response.forms['addattachmentform']
+        f['title'] = "Vorläufige Beschlussvorlage"
+        f['attachment'] = webtest.Upload("form", attachment, "application/octet-stream")
+        f['filename'] = "beschluss.pdf"
+        self.submit(f)
+        self.assertPresence("Vorläufige Beschlussvorlage")
+
         # Make sure assemblies with attendees can be deleted
+        self.traverse({'description': r"\sÜbersicht"})
         f = self.response.forms['signupform']
         self.submit(f)
         f = self.response.forms['deleteassemblyform']
@@ -574,6 +602,8 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             # Presiders can no longer be changed
             self.assertNotIn("addpresidersform", self.response.forms)
             self.assertNotIn("removepresiderform1", self.response.forms)
+            # deletion is not possible
+            self.assertNotIn("deleteassemblyform", self.response.forms)
 
     @storage
     @as_users("anton")
