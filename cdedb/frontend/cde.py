@@ -464,6 +464,9 @@ class CdEFrontend(AbstractUserFrontend):
             "1": str(const.Genders.male.value),
             "2": str(const.Genders.female.value),
             "3": str(const.Genders.not_specified.value),
+            "m": str(const.Genders.male.value),
+            "w": str(const.Genders.female.value),
+            "d": str(const.Genders.other.value),
         }
         gender = persona.get('gender') or "3"
         persona['gender'] = gender_convert.get(
