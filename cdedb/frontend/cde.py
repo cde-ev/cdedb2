@@ -488,9 +488,13 @@ class CdEFrontend(AbstractUserFrontend):
         merge_dicts(persona, PERSONA_DEFAULTS)
         persona, problems = validate_check(
             vtypes.Persona, persona, argname="persona", creation=True)
-        if persona and (persona['birthday'] > deduct_years(now().date(), 10)):
-            problems.extend([('birthday', ValueError(
-                n_("Persona is younger than 10 years.")))])
+        if persona:
+            if persona['birthday'] > deduct_years(now().date(), 10):
+                problems.append(
+                    ('birthday', ValueError(n_("Persona is younger than 10 years."))))
+            if persona['gender'] == const.Genders.not_specified:
+                warnings.append(
+                    ('gender', ValueError(n_("No gender specified."))))
 
         pevent_id, w, p = self.pasteventproxy.find_past_event(rs, datum['raw']['event'])
         warnings.extend(w)
