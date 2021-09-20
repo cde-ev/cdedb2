@@ -18,23 +18,6 @@
             active=True) }}
 {% endblock %}
 
-{% macro print_attachment_version(version, is_only_version=False) %}
-    {% set link_title = version["title"]|string %}
-    {% if not is_only_version %}
-        {% set link_title = link_title + " " + gettext("(Version %(version)s)")|format(version=version["version_nr"]) %}
-    {% endif %}
-    {# Here, the endpoint "get_attachment" is used to get the current version by default #}
-    {{ util.href(cdedblink("assembly/get_attachment", {'attachment_id': version["attachment_id"]}),
-                 link_title, icon="file") }}
-    <div class="text-muted small">
-        {% if version["authors"] %}
-            {% trans %}by{% endtrans %} {{ version["authors"] }} <br />
-        {% endif %}
-        {% trans ctime=version["ctime"]|datetime(lang=lang) %}uploaded {{ ctime }}{% endtrans %},
-        {% set anchor = "#attachment{}_version{}".format(version["attachment_id"], version["version_nr"]) %}
-        {{ util.href(cdedblink("assembly/list_attachments") + anchor, gettext("Details")) }}
-    </div>
-{% endmacro %}
 
 {% block content %}
     <div id="description">
@@ -132,7 +115,9 @@
                     <ul class="slim" id="attachments">
                         {% for attachment_id, version in slice %}
                             <li class="hide-hover-container clearfix-after" id="attachment{{ attachment_id }}_version{{ version["version_nr"] }}">
-                                {{ print_attachment_version(version, is_only_version=attachments[attachment_id]["num_versions"] == 1) }}
+                                {{ assembly_util.print_attachment_version_for_assembly(
+                                        version,
+                                        is_only_version=attachments[attachment_id]["num_versions"] == 1) }}
                             </li>
                         {% endfor %}
                     </ul>
