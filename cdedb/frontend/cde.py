@@ -641,11 +641,14 @@ class CdEFrontend(AbstractUserFrontend):
             return "low"
 
     @access("cde_admin", modi={"POST"})
+    @REQUESTfile("accounts_file")
     @REQUESTdata("membership", "trial_membership", "consent", "sendmail",
                  "finalized", "accounts")
     def batch_admission(self, rs: RequestState, membership: bool,
                         trial_membership: bool, consent: bool, sendmail: bool,
-                        finalized: bool, accounts: str) -> Response:
+                        finalized: bool, accounts: Optional[str],
+                        accounts_file: Optional[FileStorage],
+                        ) -> Response:
         """Make a lot of new accounts.
 
         This is rather involved to make this job easier for the administration.
@@ -657,8 +660,23 @@ class CdEFrontend(AbstractUserFrontend):
         The internal parameter finalized is used to explicitly signal at
         what point account creation will happen.
         """
-        accounts = accounts or ''
-        accountlines = accounts.splitlines()
+        accounts_file = check_optional(
+            rs, vtypes.CSVFile, accounts_file, "accounts_file")
+        if rs.has_validation_errors():
+            return self.batch_admission_form(rs)
+
+        if accounts_file and accounts:
+            rs.notify("warning", n_("Only one input method allowed."))
+            return self.batch_admission_form(rs)
+        elif accounts_file:
+            rs.values["accounts"] = accounts = accounts_file
+            accountlines = accounts.splitlines()
+        elif accounts:
+            accountlines = accounts.splitlines()
+        else:
+            rs.notify("error", n_("No input provided."))
+            return self.batch_admission_form(rs)
+
         fields = (
             'event', 'course', 'family_name', 'given_names', 'title',
             'name_supplement', 'birth_name', 'gender', 'address_supplement',

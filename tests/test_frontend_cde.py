@@ -1471,7 +1471,8 @@ class TestCdEFrontend(FrontendTest):
                       {'description': 'Massenaufnahme'})
         self.assertTitle("Accounts anlegen")
         f = self.response.forms['admissionform']
-        f['accounts'] = data
+        f['accounts_file'] = webtest.Upload(
+            "accounts.csv", data.replace("\n", "\r\n").encode(), "text/csv")
         self.submit(f, check_notification=False)
 
         self.assertTitle("Accounts anlegen")
