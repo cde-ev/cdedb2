@@ -1453,10 +1453,12 @@ class TestCdEFrontend(FrontendTest):
         self.assertCheckbox(True, "paper_expuls_checkbox")
         self.assertPresence("CdE-Mitglied (Probemitgliedschaft)",
                             div="membership")
+        self.assertNonPresence("Geburtsname", div='personal-information')
 
         self.response = save_response
         self.traverse("Link Zelda")
         self.assertPresence("Hyrule", div='address')
+        self.assertPresence("Geburtsname", div='personal-information')
 
     @as_users("vera")
     def test_batch_admission_review(self) -> None:

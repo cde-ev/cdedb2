@@ -501,6 +501,9 @@ class CdEFrontend(AbstractUserFrontend):
             if persona['gender'] == const.Genders.not_specified:
                 warnings.append(
                     ('gender', ValueError(n_("No gender specified."))))
+            birth_name = (persona['birth_name'] or "").strip()
+            if birth_name == (persona['family_name'] or "").strip():
+                persona['birth_name'] = None
 
         pevent_id, w, p = self.pasteventproxy.find_past_event(rs, datum['raw']['event'])
         warnings.extend(w)
