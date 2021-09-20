@@ -1438,10 +1438,12 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'PfingstAkademie 2014'})
         self.assertTitle("PfingstAkademie 2014")
         self.assertNonPresence("Willy Brandt")
+        self.assertPresence("Link Zelda", div='list-participants')
         self.assertPresence("Gerhard Schröder", div='list-participants')
         self.assertPresence("Angela Merkel", div='list-participants')
         self.assertPresence("Gustav Heinemann (1a. Swish -- und alles ist gut) (Orga)",
                             div='list-participants')
+        save_response = self.response
 
         self.traverse({'description': 'Swish -- und alles ist gut'})
         self.assertPresence("Janis Jalapeño (Kursleiter)")
@@ -1451,6 +1453,10 @@ class TestCdEFrontend(FrontendTest):
         self.assertCheckbox(True, "paper_expuls_checkbox")
         self.assertPresence("CdE-Mitglied (Probemitgliedschaft)",
                             div="membership")
+
+        self.response = save_response
+        self.traverse("Link Zelda")
+        self.assertPresence("Hyrule", div='address')
 
     @as_users("vera")
     def test_batch_admission_review(self) -> None:

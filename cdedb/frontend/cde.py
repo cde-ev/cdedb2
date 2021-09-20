@@ -33,6 +33,7 @@ from cdedb.common import (
     RequestState, SemesterSteps, TransactionType, asciificator, deduct_years,
     determine_age_class, diacritic_patterns, get_hash, get_localized_country_codes,
     glue, int_to_words, lastschrift_reference, merge_dicts, n_, now, unwrap, xsorted,
+    get_country_code_from_country,
 )
 from cdedb.filter import enum_entries_filter
 from cdedb.frontend.common import (
@@ -485,6 +486,8 @@ class CdEFrontend(AbstractUserFrontend):
         })
         if not (persona.get('country') and persona['country'].strip()):
             persona['country'] = self.conf["DEFAULT_COUNTRY"]
+        else:
+            persona['country'] = get_country_code_from_country(rs, persona['country'])
         merge_dicts(persona, PERSONA_DEFAULTS)
         persona, problems = validate_check(
             vtypes.Persona, persona, argname="persona", creation=True)
