@@ -34,16 +34,24 @@ GRANT SELECT, UPDATE ON assembly.attachment_ballot_links_id_seq TO cdb_member;""
 
     print("Retrieve old ballot links:")
     q = """
-    SELECT attachments.id, attachments.ballot_id, ballots.assembly_id
+    SELECT attachments.id, attachments.ballot_id,
+        attachments.assembly_id AS old_assembly_id, ballots.assembly_id
     FROM assembly.attachments
-    LEFT OUTER JOIN assembly.ballots ON attachments.ballot_id = ballots.id
-    WHERE attachments.assembly_id IS NULL"""
+    LEFT OUTER JOIN assembly.ballots ON attachments.ballot_id = ballots.id"""
     ballot_data = assembly.query_all(rs, q, ())
     q = "INSERT INTO assembly.attachment_ballot_links" \
         " (attachment_id, ballot_id) VALUES (%s, %s)"
     for e in ballot_data:
+        if e['old_assembly_id']:
+            if e['ballot_id']:
+                raise ValueError(
+                    f"Attachment ({e['id']}) was linked to both assembly and ballot!")
+            print(f"Keeping: <attachment id={e['id']}> ->"
+                  f" <assembly id={e['old_assembly_id']}>")
+
         print(f"Inserting: <attachment id={e['id']}> -> <ballot id={e['ballot_id']}>.")
         assembly.query_exec(rs, q, (e['id'], e['ballot_id']))
+
         print(f"Inserting: <attachment id={e['id']}> ->"
               f" <assembly id={e['assembly_id']}>.")
         assembly.query_exec(
