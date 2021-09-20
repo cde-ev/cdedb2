@@ -2396,6 +2396,9 @@ def _event_field(
     creation: bool = False, extra_suffix: str = "", **kwargs: Any
 ) -> EventField:
     """
+    :param field_name: If given, set the field name of the field to this.
+        This is handy for creating new fields during the questionnaire import,
+        where the field name serves as the key and thus is not part of the dict itself.
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
     :param extra_suffix: Suffix appended to all keys. This is due to the
