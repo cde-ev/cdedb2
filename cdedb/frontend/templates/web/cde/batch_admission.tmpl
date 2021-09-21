@@ -53,7 +53,7 @@
             </div>
         </div>
         {{ util.form_input_file(name="accounts_file", horizontal=False, label=gettext("Data"), accept="text/csv,.csv") }}
-        {{ util.form_input_textarea(name="accounts", label=gettext("Data"), horizontal=False, rows=8, anid='input-data') }}
+        {{ util.form_input_textarea(name="accounts", horizontal=False, rows=8, anid='input-data') }}
 
         <p class="help-block">
             {{ util.make_icon('info-circle') }} {% trans %}Enter one dataset per line.{% endtrans %}
