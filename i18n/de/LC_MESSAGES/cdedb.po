@@ -6203,8 +6203,14 @@ msgstr "Zusammenführen mit Account"
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:172
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:174
-msgid " (not a Member)"
-msgstr " (kein Mitglied)"
+msgid "(not a member)"
+msgstr "(kein Mitglied)"
+
+msgid "(trial member)"
+msgstr "(Probemitglied)"
+
+msgid "archived"
+msgstr "archiviert"
 
 #: cdedb/frontend/templates/web/cde/change_past_course.tmpl:7
 #, python-format

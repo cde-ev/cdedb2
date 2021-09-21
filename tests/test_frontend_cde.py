@@ -1588,7 +1588,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Ähnlicher Account", div="problems0")
         f['resolution0'] = LineResolutions.renew_and_update.value
         self.assertPresence("Hades Hell", div="doppelgangers0")
-        self.assertPresence("<None>", div="doppelgangers0")
+        self.assertPresence("(archiviert)", div="doppelgangers0")
         f['doppelganger_id0'] = 8
         self.submit(f, check_notification=False)
 

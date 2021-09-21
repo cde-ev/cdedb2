@@ -163,21 +163,49 @@
                                     {% trans %}Merge with Account{% endtrans %}
                                 </label>
                                 <div class="p strip-space">
-                                    {#- jinja does not support list comprehension ... #}
-                                    {%- set myentries = [('', '–')] %}
-                                    {%- for key, value in dataset['doppelgangers']|keydictsort(EntitySorter.persona) %}
-                                        {%- with description = "{} {} {} <{}> ({} {}), {}{}".format(
-                                                value['given_names'], value['family_name'],
-                                                "(" + value['birth_name'] + ")" if value['birth_name'] else "",
-                                                value['username'], gettext("born"),
-                                                value['birthday']|date(lang=lang) or "–", key|cdedbid,
-                                                '' if value['is_member'] else gettext(" (not a Member)")) %}
-                                            {%- do myentries.append((key, description)) %}
-                                        {%- endwith %}
-                                    {%- endfor %}
-                                    {{ util.input_checkboxes("doppelganger_id{}".format(dataset['lineno']),
-                                            myentries, radio=True,
-                                            arialabeledby="doppelgangers-{}-label".format(dataset['lineno'])) }}
+                                    <div role="radiogroup"
+                                         aria-labelledby="doppelgangers-{{ dataset['lineno'] }}-label">
+                                        <div class="radio">
+                                            <label>
+                                                {% with name = "doppelganger_id{}".format(dataset['lineno']) %}
+                                                    <input type="radio" name="{{ name }}" value=""
+                                                        {% if ''|stringIn(values.getlist(name)) or name not in values %}
+                                                           checked="checked"
+                                                        {% endif %} />
+                                                {% endwith %}
+                                                –
+                                            </label>
+                                        </div>
+                                        {%- for key, value in dataset['doppelgangers']|keydictsort(EntitySorter.persona) %}
+                                            <div class="radio">
+                                                <label>
+                                                    {% with name = "doppelganger_id{}".format(dataset['lineno']) %}
+                                                        <input type="radio" name="{{ name }}" value="{{ key }}"
+                                                            {% if key|stringIn(values.getlist(name)) %}checked="checked"{% endif %} />
+                                                    {% endwith %}
+                                                    {{ util.persona_name(value, given_and_display_names=True) }}
+                                                    {%- if value['birth_name'] %}
+                                                        ({{ value['birth_name'] }})
+                                                    {%- endif %}
+                                                    {% if value['is_archived'] %}
+                                                        (<i>{{ gettext("archived") }}</i>)
+                                                    {% else %}
+                                                        &lt;{{ value['username'] }}&gt;
+                                                    {% endif %}
+                                                    {%- if value['birthday'] %}
+                                                        ({{ gettext("born") }}
+                                                        {{ value['birthday']|date(lang=lang) or "-" }})
+                                                    {% endif %}
+                                                    {{ key|cdedbid }}
+                                                    {%- if not value['is_member'] %}
+                                                        {{ gettext("(not a member)") }}
+                                                    {%- elif value['trial_member'] %}
+                                                        {{ gettext("(trial member)") -}}
+                                                    {% endif -%}
+                                                </label>
+                                            </div>
+                                        {%- endfor %}
+                                    </div>
                                 </div>
                             </div>
                         {% endif %}
