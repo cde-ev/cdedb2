@@ -19,6 +19,25 @@
     {{ util.context_heading(gettext("Inspect Changes"), util.persona_name(current), 'user', gettext("User")) }}
 {% endblock %}
 
+{# Helper to take care of some special values (enums, date, country codes) #}
+{% macro format_property(name, persona) %}
+    {%- if persona[name] -%}
+        {% if name == 'birthday' %}
+            {{- persona['birthday']|date(lang=lang) -}}
+        {% elif name == 'gender' %}
+            {{- gettext(enums['Genders'](persona['gender'])|string) -}}
+        {% elif name == 'id' %}
+            {{- util.href(show_user_link(user, persona['id']), persona['id']|cdedbid, aclass='nowrap') -}}
+        {% elif name == 'country' or name == 'country2' %}
+            {{- util.gettext_country(persona['country']) -}}
+        {% else %}
+            {{- persona[name] -}}
+        {% endif %}
+    {%- else -%}
+        –
+    {%- endif -%}
+{% endmacro %}
+
 {% macro show_diff(name, title, important=False) %}
     <div class="row {% if name not in diff and not important %}unimportant{% endif %}">
         <label class="col-sm-3">
@@ -26,14 +45,14 @@
         </label>
         {% if name in diff %}
             <div class="col-sm-4 bg-danger">
-                {% if caller %}{{ caller(False) }}{% else %}{{ current[name] or "–" }}{% endif %}
+                {{ format_property(name, current) }}
             </div>
             <div class="col-sm-4 bg-success">
-                {% if caller %}{{ caller(True) }}{% else %}{{ pending[name] or "–" }}{% endif %}
+                {{ format_property(name, pending) }}
             </div>
         {% else %}
             <div class="col-sm-4">
-                {% if caller %}{{ caller(False) }}{% else %}{{ current[name] }}{% endif %}
+                {{ format_property(name, current) }}
             </div>
         {% endif %}
     </div>
@@ -59,17 +78,11 @@
         {{ show_diff('name_supplement', gettext("Name Affix"), True) }}
         {{ show_diff('display_name', gettext("Known as (Forename)")) }}
         {{ show_diff('birth_name', gettext("Birth Name")) }}
-        {% call(next) show_diff('birthday', gettext("Birthday"), True) %}
-            {% if next %}{{ pending['birthday']|date(lang=lang) }}{% else %}{{ current['birthday']|date(lang=lang) }}{% endif %}
-        {% endcall %}
-        {% call(next) show_diff('gender', gettext("Gender"), True) %}
-            {% if next %}{{ gettext(enums['Genders'](pending['gender'])|string) }}{% else %}{{ gettext(enums['Genders'](current['gender'])|string) }}{% endif %}
-        {% endcall %}
+        {{ show_diff('birthday', gettext("Birthday"), True) }}
+        {{ show_diff('gender', gettext("Gender"), True) }}
 
         <h4 class="heading-underline">{% trans %}Account & Membership{% endtrans %}</h4>
-        {% call(next) show_diff('id', gettext("CdEDB-ID"), True) %}
-            {{ util.href(show_user_link(user, pending['id']), pending['id']|cdedbid, aclass='nowrap') }}
-        {% endcall %}
+        {{ show_diff('id', gettext("CdEDB-ID"), True) }}
         {{ show_diff('is_member', gettext("CdE-Membership"), True) }}
         {{ show_diff('balance', gettext("Balance")) }}
 
@@ -84,18 +97,14 @@
         {{ show_diff('address_supplement', gettext("Address Supplement")) }}
         {{ show_diff('postal_code', gettext("ZIP")) }}
         {{ show_diff('location', gettext("City")) }}
-        {% call(next) show_diff('country', gettext("Country")) %}
-            {% if next %}{{ util.gettext_country(pending['country']) }}{% else %}{{ util.gettext_country(current['country']) }}{% endif %}
-        {% endcall %}
+        {{ show_diff('country', gettext("Country")) }}
 
         <h4 class="heading-underline">{% trans %}Second Address{% endtrans %}</h4>
         {{ show_diff('address2', gettext("Street, Nr.")) }}
         {{ show_diff('address_supplement2', gettext("Address Supplement")) }}
         {{ show_diff('postal_code2', gettext("ZIP")) }}
         {{ show_diff('location2', gettext("City")) }}
-        {% call(next) show_diff('country2', gettext("Country")) %}
-            {% if next %}{{ util.gettext_country(pending['country2']) }}{% else %}{{ util.gettext_country(current['country2']) }}{% endif %}
-        {% endcall %}
+        {{ show_diff('country2', gettext("Country")) }}
 
         <h4 class="heading-underline">{% trans %}Miscellaneous{% endtrans %}</h4>
         {{ show_diff('specialisation', gettext("Specialisation")) }}
