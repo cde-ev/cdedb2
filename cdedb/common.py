@@ -558,19 +558,33 @@ def _format_country_code(code: str) -> str:
 
 def get_localized_country_codes(rs: RequestState) -> List[Tuple[str, str]]:
     """Generate a list of country code - name tuples in current language."""
-    return xsorted(
-        [(v, rs.gettext(_format_country_code(v))) for v in COUNTRY_CODES],
-        key=lambda x: x[1])
+
+    if not hasattr(get_localized_country_codes, "localized_country_codes"):
+        localized_country_codes = {
+            lang: xsorted(
+                ((cc, rs.translations[lang].gettext(_format_country_code(cc)))
+                 for cc in COUNTRY_CODES),
+                key=lambda x: x[1]
+            )
+            for lang in rs.translations
+        }
+        get_localized_country_codes.localized_country_codes = localized_country_codes  # type: ignore[attr-defined]
+    return get_localized_country_codes.localized_country_codes[rs.lang]  # type: ignore[attr-defined]
 
 
 def get_country_code_from_country(rs: RequestState, country: str) -> str:
     """Match a country to its country code."""
 
-    for lang, translator in rs.translations.items():
-        for cc in COUNTRY_CODES:
-            if translator.gettext(_format_country_code(cc)) == country:
-                return cc
-    return country
+    if not hasattr(get_country_code_from_country, "reverse_country_code_map"):
+        reverse_map = {
+            lang: {
+                rs.translations[lang].gettext(_format_country_code(cc)): cc
+                for cc in COUNTRY_CODES
+            }
+            for lang in rs.translations
+        }
+        get_country_code_from_country.reverse_country_code_map = reverse_map  # type: ignore[attr-defined]
+    return get_country_code_from_country.reverse_country_code_map.get(country, country)  # type: ignore[attr-defined]
 
 
 Sortkey = Tuple[Union[str, int, datetime.datetime], ...]
