@@ -16,6 +16,7 @@ import cdedb.database.constants as const
 from cdedb.common import (
     CdEDBObject, ADMIN_VIEWS_COOKIE_NAME, Role, extract_roles, now, LineResolutions,
     get_country_code_from_country, get_localized_country_codes, RequestState,
+    format_country_code,
 )
 from cdedb.frontend.common import Worker, make_postal_address
 from cdedb.query import QueryOperators
@@ -2666,7 +2667,7 @@ class TestCdEFrontend(FrontendTest):
         fake_rs = cast(RequestState, types.SimpleNamespace())
         fake_rs.translations = self.translations
         persona_id = None
-        t = lambda g, p: g(f"CountryCodes.{p['country']}")
+        t = lambda g, p: g(format_country_code(p['country']))
         while persona_id := self.core.next_persona(self.key, persona_id,
                                                    is_member=None, is_archived=False):
             p = self.core.get_total_persona(self.key, persona_id)

@@ -75,8 +75,8 @@ from cdedb.common import (
     CdEDBMultiDict, CdEDBObject, CustomJSONEncoder, EntitySorter, Error, Notification,
     NotificationType, PathLike, PrivilegeError, RequestState, Role, User,
     ValidationWarning, _tdelta, asciificator, decode_parameter, encode_parameter,
-    get_localized_country_codes, glue, json_serialize, make_proxy, make_root_logger,
-    merge_dicts, n_, now, roles_to_db_role, unwrap,
+    format_country_code, get_localized_country_codes, glue, json_serialize, make_proxy,
+    make_root_logger, merge_dicts, n_, now, roles_to_db_role, unwrap,
 )
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -2087,9 +2087,7 @@ def make_postal_address(rs: RequestState, persona: CdEDBObject) -> List[str]:
         ret.append("{} {}".format(p['postal_code'] or '',
                                   p['location'] or ''))
     if p['country']:
-        # Mask the `gettext` name, so that pybabel does not try to extract this string.
-        g = rs.translations["de"].gettext
-        ret.append(g(f"CountryCodes.{p['country']}"))
+        ret.append(rs.translations["de"].gettext(format_country_code(p['country'])))
     return ret
 
 
