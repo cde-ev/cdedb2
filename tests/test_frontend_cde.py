@@ -2615,7 +2615,7 @@ class TestCdEFrontend(FrontendTest):
         fake_rs = cast(RequestState, types.SimpleNamespace())
         fake_rs.translations = self.translations
         for lang in self.translations:
-            fake_rs.gettext = self.translations[lang].gettext  # type: ignore[misc]
+            fake_rs.lang = lang
             for cc, country in get_localized_country_codes(fake_rs):
                 self.assertEqual(cc, get_country_code_from_country(fake_rs, country))
                 self.assertEqual(cc, get_country_code_from_country(fake_rs, cc))

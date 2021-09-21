@@ -568,8 +568,8 @@ def get_localized_country_codes(rs: RequestState) -> List[Tuple[str, str]]:
             )
             for lang in rs.translations
         }
-        get_localized_country_codes.localized_country_codes = localized_country_codes  # type: ignore[attr-defined]
-    return get_localized_country_codes.localized_country_codes[rs.lang]  # type: ignore[attr-defined]
+        get_localized_country_codes.localized_country_codes = localized_country_codes  # type: ignore[attr-defined] # noqa
+    return get_localized_country_codes.localized_country_codes[rs.lang]  # type: ignore[attr-defined] # noqa
 
 
 def get_country_code_from_country(rs: RequestState, country: str) -> str:
@@ -583,8 +583,11 @@ def get_country_code_from_country(rs: RequestState, country: str) -> str:
             }
             for lang in rs.translations
         }
-        get_country_code_from_country.reverse_country_code_map = reverse_map  # type: ignore[attr-defined]
-    return get_country_code_from_country.reverse_country_code_map.get(country, country)  # type: ignore[attr-defined]
+        get_country_code_from_country.reverse_map = reverse_map  # type: ignore[attr-defined] # noqa
+    for lang, v in get_country_code_from_country.reverse_map.items():  # type: ignore[attr-defined] # noqa
+        if ret := v.get(country):
+            return ret
+    return country
 
 
 Sortkey = Tuple[Union[str, int, datetime.datetime], ...]
