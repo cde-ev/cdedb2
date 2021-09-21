@@ -111,6 +111,8 @@
         <dl class="dl-horizontal">
             <dt>{% trans %}Academy{% endtrans %}</dt>
             <dd>{{ pevent['title'] or "–" }}</dd>
+            <dt>{% trans %}Course{% endtrans %}</dt>
+            <dd>{{ pcourse['title'] or "–" }}</dd>
             <dt>{% trans %}Attachment{% endtrans %}</dt>
             <dd>{% if ambience['genesis_case']['attachment_hash'] %}
                 {{ util.href(cdedblink("core/genesis_get_attachment", {'attachment_hash': ambience['genesis_case']['attachment_hash']}),

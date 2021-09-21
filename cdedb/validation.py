@@ -1430,10 +1430,11 @@ GENESIS_CASE_COMMON_FIELDS: TypeMapping = {
     'notes': str,
 }
 
-GENESIS_CASE_OPTIONAL_FIELDS: TypeMapping = {
+GENESIS_CASE_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'case_status': const.GenesisStati,
     'reviewer': ID,
     'pevent_id': Optional[ID],
+    'pcourse_id': Optional[ID],
 }
 
 GENESIS_CASE_ADDITIONAL_FIELDS: Mapping[str, Any] = {
@@ -1452,7 +1453,8 @@ GENESIS_CASE_ADDITIONAL_FIELDS: Mapping[str, Any] = {
 
 GENESIS_CASE_EXPOSED_FIELDS = {**GENESIS_CASE_COMMON_FIELDS,
                                **GENESIS_CASE_ADDITIONAL_FIELDS,
-                               'pevent_id': ID, }
+                               'pevent_id': Optional[ID],
+                               'pcourse_id': Optional[ID], }
 
 
 @_add_typed_validator
