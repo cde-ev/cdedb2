@@ -1431,6 +1431,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertEqual('True', f['finalized'].value)
         self.submit(f, check_notification=False)
         self.assertPresence("7 Accounts erstellt.", div="notifications")
+        self.assertPresence("4 Accounts aktualisiert.", div="notifications")
 
         # validate
         self.traverse({'description': 'Mitglieder'},

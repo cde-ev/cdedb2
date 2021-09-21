@@ -1423,19 +1423,20 @@ class CdEBackend(AbstractBackend):
 
     def _perform_one_batch_admission(self, rs: RequestState, datum: CdEDBObject,
                                      trial_membership: bool, consent: bool
-                                     ) -> int:
+                                     ) -> Optional[bool]:
         """Uninlined code from perform_batch_admission().
 
-        :returns: number of created accounts (0 or 1)
+        :returns: None if nothing happened. True if a new account was created. False if
+            an existing account was modified.
         """
-        ret = 0
+        ret = False
         batch_fields = (
             'family_name', 'given_names', 'title', 'name_supplement',
             'birth_name', 'gender', 'address_supplement', 'address',
             'postal_code', 'location', 'country', 'telephone',
             'mobile', 'birthday')  # email omitted as it is handled separately
         if datum['resolution'] == LineResolutions.skip:
-            return ret
+            return None
         elif datum['resolution'] == LineResolutions.create:
             new_persona = copy.deepcopy(datum['persona'])
             new_persona.update({
@@ -1445,7 +1446,7 @@ class CdEBackend(AbstractBackend):
                 'is_searchable': consent,
             })
             persona_id = self.core.create_persona(rs, new_persona)
-            ret = 1
+            ret = True
         elif datum['resolution'].is_modification():
             persona_id = datum['doppelganger_id']
             current = self.core.get_persona(rs, persona_id)
@@ -1532,16 +1533,23 @@ class CdEBackend(AbstractBackend):
     @access("cde_admin")
     def perform_batch_admission(self, rs: RequestState, data: List[CdEDBObject],
                                 trial_membership: bool, consent: bool
-                                ) -> Tuple[bool, Optional[int]]:
+                                ) -> Tuple[bool, Optional[int], Optional[int]]:
         """Atomized call to recruit new members.
 
         The frontend wants to do this in its entirety or not at all, so this
         needs to be in atomized context.
 
-        :returns: A tuple consisting of a boolean signalling success and an
-            optional integer that confers information if an error occured:
-            it is None if a TransactionRollbackError occured and otherwise
-            the index of the entry where the error happened.
+        :returns: A tuple consisting of a bool and two optional integers.:
+            A boolean signalling success.
+            If the operation was successful:
+                An integer signalling the number of newly created accounts.
+                An integer signalling the number of modified/renewed accounts.
+            If the operation was not successful:
+                If a TransactionRollbackError occrured:
+                    Both integer parameters are None.
+                Otherwise:
+                    The index where the error occured.
+                    The second parameter is None.
         """
         data = affirm_array(vtypes.BatchAdmissionEntry, data)
         trial_membership = affirm(bool, trial_membership)
@@ -1549,14 +1557,20 @@ class CdEBackend(AbstractBackend):
         # noinspection PyBroadException
         try:
             with Atomizer(rs):
-                count = 0
+                count_new = count_renewed = 0
                 for index, datum in enumerate(data, start=1):
-                    count += self._perform_one_batch_admission(
+                    account_created = self._perform_one_batch_admission(
                         rs, datum, trial_membership, consent)
+                    if account_created is None:
+                        pass
+                    elif account_created:
+                        count_new += 1
+                    else:
+                        count_renewed += 1
         except psycopg2.extensions.TransactionRollbackError:
             # We perform a rather big transaction, so serialization errors
             # could happen.
-            return False, None
+            return False, None, None
         except Exception:
             # This blanket catching of all exceptions is a last resort. We try
             # to do enough validation, so that this should never happen, but
@@ -1569,8 +1583,8 @@ class CdEBackend(AbstractBackend):
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
             self.cgitb_log()
-            return False, index
-        return True, count
+            return False, index, None
+        return True, count_new, count_renewed
 
     @access("searchable", "core_admin", "cde_admin")
     def submit_general_query(self, rs: RequestState,

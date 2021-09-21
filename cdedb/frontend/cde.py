@@ -580,8 +580,8 @@ class CdEFrontend(AbstractUserFrontend):
         return datum
 
     def perform_batch_admission(self, rs: RequestState, data: List[CdEDBObject],
-                                trial_membership: bool, consent: bool,
-                                sendmail: bool) -> Tuple[bool, Optional[int]]:
+                                trial_membership: bool, consent: bool, sendmail: bool
+                                ) -> Tuple[bool, Optional[int], Optional[int]]:
         """Resolve all entries in the batch admission form.
 
         :returns: Success information and for positive outcome the
@@ -596,10 +596,10 @@ class CdEFrontend(AbstractUserFrontend):
         relevant_data = [{k: v for k, v in item.items() if k in relevant_keys}
                          for item in data]
         with TransactionObserver(rs, self, "perform_batch_admission"):
-            success, count = self.cdeproxy.perform_batch_admission(
+            success, count_new, count_renewed = self.cdeproxy.perform_batch_admission(
                 rs, relevant_data, trial_membership, consent)
             if not success:
-                return success, count
+                return success, count_new, count_renewed
             # Send mail after the transaction succeeded
             if sendmail:
                 for datum in data:
@@ -623,7 +623,7 @@ class CdEFrontend(AbstractUserFrontend):
                                       'cookie': message if success else "",
                                       'meta_info': meta_info,
                                       })
-            return True, count
+            return True, count_new, count_renewed
 
     @staticmethod
     def similarity_score(ds1: CdEDBObject, ds2: CdEDBObject) -> str:
@@ -774,17 +774,21 @@ class CdEFrontend(AbstractUserFrontend):
             return self.batch_admission_form(rs, data=data, csvfields=fields)
 
         # Here we have survived all validation
-        success, num = self.perform_batch_admission(rs, data, trial_membership,
-                                                    consent, sendmail)
+        success, num_new, num_renewed = self.perform_batch_admission(
+            rs, data, trial_membership, consent, sendmail)
         if success:
-            rs.notify("success", n_("Created %(num)s accounts."), {'num': num})
+            if num_new:
+                rs.notify("success", n_("Created %(num)s accounts."), {'num': num_new})
+            if num_renewed:
+                rs.notify("success", n_("Modified %(num)s accounts."),
+                          {'num': num_renewed})
             return self.redirect(rs, "cde/index")
         else:
-            if num is None:
+            if num_new is None:
                 rs.notify("warning", n_("DB serialization error."))
             else:
                 rs.notify("error", n_("Unexpected error on line %(num)s."),
-                          {'num': num})
+                          {'num': num_new})
             return self.batch_admission_form(rs, data=data, csvfields=fields)
 
     @access("finance_admin")

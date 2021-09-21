@@ -1701,6 +1701,9 @@ msgstr "Nur Aufnahme von Mitglieder unterstützt."
 msgid "Created %(num)s accounts."
 msgstr "%(num)s Accounts erstellt."
 
+msgid "Modified %(num)s accounts."
+msgstr "%(num)s Accounts aktualisiert."
+
 #: cdedb/frontend/cde.py:753 cdedb/frontend/cde.py:868
 #: cdedb/frontend/cde.py:869 cdedb/frontend/cde.py:1165
 #: cdedb/frontend/cde.py:1343 cdedb/frontend/cde.py:1344
