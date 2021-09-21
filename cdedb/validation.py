@@ -1433,7 +1433,7 @@ GENESIS_CASE_COMMON_FIELDS: TypeMapping = {
 GENESIS_CASE_OPTIONAL_FIELDS: TypeMapping = {
     'case_status': const.GenesisStati,
     'reviewer': ID,
-    'pevent_id': ID,
+    'pevent_id': Optional[ID],
 }
 
 GENESIS_CASE_ADDITIONAL_FIELDS: Mapping[str, Any] = {

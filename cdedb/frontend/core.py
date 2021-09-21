@@ -2365,8 +2365,11 @@ class CoreFrontend(AbstractFrontend):
             new_id = None
             if success and data['case_status'] == const.GenesisStati.approved:
                 new_id = self.coreproxy.genesis(rs, genesis_case_id)
-                pcode = self.pasteventproxy.add_participant(
-                    rs, pevent_id=case['pevent_id'], pcourse_id=None, persona_id=new_id)
+                pcode = 1
+                if case['pevent_id']:
+                    self.pasteventproxy.add_participant(
+                        rs, pevent_id=case['pevent_id'], pcourse_id=None,
+                        persona_id=new_id)
                 success = bool(new_id)
         if not pcode and success:
             rs.notify("error", n_("Past event attendance could not be established."))
