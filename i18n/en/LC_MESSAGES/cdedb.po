@@ -17509,3 +17509,7 @@ msgstr ""
 #: cdedb/validation.py:4333 cdedb/validation.py:4396
 msgid "SubscriptionState.none is not written into the database."
 msgstr ""
+
+#: cdedb/frontend/cde.py:503
+msgid "No gender specified."
+msgstr ""
