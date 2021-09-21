@@ -29,7 +29,7 @@
         {% elif name == 'id' %}
             {{- util.href(show_user_link(user, persona['id']), persona['id']|cdedbid, aclass='nowrap') -}}
         {% elif name == 'country' or name == 'country2' %}
-            {{- util.gettext_country(persona['country']) -}}
+            {{- util.gettext_country(persona[name]) -}}
         {% else %}
             {{- persona[name] -}}
         {% endif %}
