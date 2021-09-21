@@ -487,10 +487,10 @@ class CdEFrontend(AbstractUserFrontend):
             'notes': None,
             'country2': self.conf["DEFAULT_COUNTRY"],
         })
-        if not (persona.get('country') and persona['country'].strip()):
-            persona['country'] = self.conf["DEFAULT_COUNTRY"]
-        else:
+        if (persona.get('country') or "").strip():
             persona['country'] = get_country_code_from_country(rs, persona['country'])
+        else:
+            persona['country'] = self.conf["DEFAULT_COUNTRY"]
         merge_dicts(persona, PERSONA_DEFAULTS)
         persona, problems = validate_check(
             vtypes.Persona, persona, argname="persona", creation=True)
