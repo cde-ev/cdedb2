@@ -49,14 +49,16 @@ GRANT SELECT, UPDATE ON assembly.attachment_ballot_links_id_seq TO cdb_member;""
             print(f"Keeping: <attachment id={e['id']}> ->"
                   f" <assembly id={e['old_assembly_id']}>")
 
-        print(f"Inserting: <attachment id={e['id']}> -> <ballot id={e['ballot_id']}>.")
-        assembly.query_exec(rs, q, (e['id'], e['ballot_id']))
+        if e['ballot_id']:
+            print(f"Inserting: <attachment id={e['id']}> ->"
+                  f" <ballot id={e['ballot_id']}>.")
+            assembly.query_exec(rs, q, (e['id'], e['ballot_id']))
 
-        print(f"Inserting: <attachment id={e['id']}> ->"
-              f" <assembly id={e['assembly_id']}>.")
-        assembly.query_exec(
-            rs, "UPDATE assembly.attachments SET assembly_id = %s WHERE id = %s",
-            (e['assembly_id'], e['id']))
+            print(f"Inserting: <attachment id={e['id']}> ->"
+                  f" <assembly id={e['assembly_id']}>.")
+            assembly.query_exec(
+                rs, "UPDATE assembly.attachments SET assembly_id = %s WHERE id = %s",
+                (e['assembly_id'], e['id']))
 
     print("Dropping column `assembly.attachments.ballot_id`.")
     assembly.query_exec(
