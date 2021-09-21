@@ -1789,6 +1789,9 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesisform']
         for field, entry in self.CDE_GENESIS_DATA.items():
             f[field] = entry
+        self.submit(f, check_notification=False)
+        self.assertValidationError('attachment')
+        f = self.response.forms['genesisform']
         f['birth_name'] = "Ganondorf"
         f['notes'] = ""  # Do not send this to test upload permanance.
         with open(self.testfile_dir / "form.pdf", 'rb') as datafile:

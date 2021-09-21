@@ -2079,6 +2079,9 @@ class CoreFrontend(AbstractFrontend):
                     "It seems like you took too long and "
                     "your previous upload was deleted.")))
                 rs.append_validation_error(e)
+        elif 'attachment_hash' in REALM_SPECIFIC_GENESIS_FIELDS.get(data['realm'], {}):
+            e = ("attachment", ValueError(n_("Attachment missing.")))
+            rs.append_validation_error(e)
 
         data = check(rs, vtypes.GenesisCase, data, creation=True,
                      _ignore_warnings=ignore_warnings)
