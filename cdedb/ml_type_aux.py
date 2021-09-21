@@ -2,12 +2,12 @@
 
 import enum
 import itertools
+import typing
 from collections import OrderedDict
 from typing import (
-    TYPE_CHECKING, Any, Collection, Dict, List, Mapping, Optional, Set, Type, Union,
+    TYPE_CHECKING, Any, Collection, Dict, List, Literal, Mapping, Optional, Set, Type,
+    Union,
 )
-
-from typing_extensions import Literal
 
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
@@ -98,7 +98,7 @@ class GeneralMailinglist:
             **cls.mandatory_validation_fields,
             **cls.optional_validation_fields,
         }.items():
-            if getattr(argtype, "__origin__", None) is list:
+            if typing.get_origin(argtype) is list:
                 ret[field] = "[str]"
             else:
                 ret[field] = "str"

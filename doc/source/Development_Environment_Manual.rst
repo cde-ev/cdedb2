@@ -18,7 +18,7 @@ Prerequisites
 
 We need some dependencies:
 
-* python (at least 3.6)
+* python (at least 3.8)
 * PostgreSQL (at least 9.4, for jsonb)
 * Apache (with mod_wsgi)
 * git
@@ -29,7 +29,7 @@ Further we depend on a number of python packages:
 
 * passlib
 * psycopg2 (at least 2.5.4, for jsonb support)
-* werkzeug (at least 0.14, for same-site flag for setcookie)
+* werkzeug (at least 0.15, for correct multi-params in urls)
 * dateutil (only needed for dev script, namely analyze_timing.py)
 * babel
 * docutils

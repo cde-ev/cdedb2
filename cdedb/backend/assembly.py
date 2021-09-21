@@ -32,9 +32,7 @@ import hmac
 import math
 from pathlib import Path
 from secrets import token_urlsafe
-from typing import Any, Collection, Dict, Optional, Set, Tuple, Union
-
-from typing_extensions import Protocol
+from typing import Any, Collection, Dict, Optional, Protocol, Set, Tuple, Union
 
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes

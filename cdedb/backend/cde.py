@@ -10,10 +10,9 @@ import copy
 import datetime
 import decimal
 from collections import OrderedDict
-from typing import Any, Collection, Dict, List, Optional, Tuple
+from typing import Any, Collection, Dict, List, Optional, Protocol, Tuple
 
 import psycopg2
-from typing_extensions import Protocol
 
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes

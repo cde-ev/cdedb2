@@ -5,9 +5,7 @@ concluded events.
 """
 
 import datetime
-from typing import Any, Collection, Dict, List, Optional, Set, Tuple, Union
-
-from typing_extensions import Protocol
+from typing import Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, Union
 
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
