@@ -106,12 +106,21 @@
         {% endif %}
     </dl>
 
-    <div style="margin-bottom: 8px;">
-        {% if ambience['genesis_case']['attachment_hash'] %}
-            {{ util.href(cdedblink("core/genesis_get_attachment", {'attachment_hash': ambience['genesis_case']['attachment_hash']}),
-                        gettext("Download Attachment"), aclass="btn btn-info", icon="download") }}
-        {% endif %}
-    </div>
+    {% if ambience['genesis_case']['realm'] == 'cde' or ambience['genesis_case']['attachment_hash'] %}
+        <h4 class="heading-underline">{% trans %}Academy Information{% endtrans %}</h4>
+        <dl class="dl-horizontal">
+            <dt>{% trans %}Academy{% endtrans %}</dt>
+            <dd>{{ pevent['title'] or "–" }}</dd>
+            <dt>{% trans %}Attachment{% endtrans %}</dt>
+            <dd>{% if ambience['genesis_case']['attachment_hash'] %}
+                {{ util.href(cdedblink("core/genesis_get_attachment", {'attachment_hash': ambience['genesis_case']['attachment_hash']}),
+                             gettext("Download Attachment"), icon="download") }}
+                {% else %}
+                    –
+                {% endif %}
+            </dd>
+        </dl>
+    {% endif %}
 
     <div class="button-par">
         {% if ambience['genesis_case']['case_status'] == enums['GenesisStati'].to_review %}

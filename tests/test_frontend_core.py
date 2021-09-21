@@ -1823,13 +1823,16 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'href': '/core/genesis/1001/show'})
         self.assertPresence("Ganondorf")
         self.assertNonPresence("Zickzack")
+        self.assertNonPresence("Geburtstagsfete")
         self.traverse({'href': '/core/genesis/1001/modify'})
         self.assertTitle("Accountanfrage bearbeiten")
         f = self.response.forms['genesismodifyform']
         f['birth_name'] = "Zickzack"
+        f['pevent_id'] = 2
         self.submit(f)
         self.assertPresence("Zickzack")
         self.assertNonPresence("Ganondorf")
+        self.assertPresence("Geburtstagsfete")
         self.traverse({'href': '/core/genesis/1001/modify'})
         self.assertTitle("Accountanfrage bearbeiten")
         f = self.response.forms['genesismodifyform']
@@ -1900,6 +1903,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertCheckbox(True, "paper_expuls_checkbox")
         self.assertPresence("12345")
         self.assertPresence("Zickzack")
+        self.assertPresence("Geburtstagsfete")
         self.traverse({'href': '/cde'})
         self.assertTitle('CdE-Mitgliederbereich')
         self.traverse({'description': 'Sonstiges'})

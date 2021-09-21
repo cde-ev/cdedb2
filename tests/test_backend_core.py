@@ -795,6 +795,7 @@ class TestCoreBackend(BackendTest):
             'location': "Marcuria",
             'country': "AQ",
             'attachment_hash': attachment_hash,
+            'pevent_id': None,
         }
         self.assertFalse(self.core.genesis_attachment_usage(
             self.key, attachment_hash))
