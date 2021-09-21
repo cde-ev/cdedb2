@@ -1284,6 +1284,7 @@ class TestCdEFrontend(FrontendTest):
         inputdata = inputdata.replace(wandering_birthday, unproblematic_birthday)
         f['resolution12'] = LineResolutions.skip.value
         f['resolution13'] = LineResolutions.skip.value
+        self.assertNonPresence("Ungültiger nationaler Teil", div="problems15")
         f['resolution15'] = LineResolutions.renew_and_update.value
         f['is_instructor15'] = True
         f['doppelganger_id15'] = '10'
