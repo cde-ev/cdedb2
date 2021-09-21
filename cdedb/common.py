@@ -564,7 +564,7 @@ def get_localized_country_codes(rs: RequestState) -> List[Tuple[str, str]]:
 
 
 def get_country_code_from_country(rs: RequestState, country: str) -> str:
-    """Match a country to it's country code."""
+    """Match a country to its country code."""
 
     for lang, translator in rs.translations.items():
         for cc in COUNTRY_CODES:
