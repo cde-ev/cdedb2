@@ -12,7 +12,7 @@ import decimal
 from collections import OrderedDict
 from typing import Any, Collection, Dict, List, Optional, Protocol, Tuple
 
-import psycopg2
+import psycopg2.extensions
 
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
@@ -1403,7 +1403,8 @@ class CdEBackend(AbstractBackend):
 
         # Unique event attendees per year:
         query = """SELECT
-            COUNT(DISTINCT persona_id) AS num, EXTRACT(year FROM events.tempus)::integer AS datum
+            COUNT(DISTINCT persona_id) AS num,
+            EXTRACT(year FROM events.tempus)::integer AS datum
         FROM
             (
                 past_event.institutions
