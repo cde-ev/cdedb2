@@ -1600,6 +1600,36 @@ class TestCdEFrontend(FrontendTest):
                                div="static-notifications")
         self.assertPresence("hades@example.cde", div="contact-email")
 
+    @as_users("vera")
+    def test_batch_admission_already_participant(self) -> None:
+        data = ("pa14;;Clown;Charly;;;;;;;;;;;;charly@example.cde;13.05.1984\n"
+                "pa14;Ω;Dino;Daniel;;;;;;;;;;;;daniel@example.cde;19.02.1963")
+
+        self.traverse("Mitglieder", "Nutzer verwalten", "Massenaufnahme")
+        f = self.response.forms['admissionform']
+        f['accounts'] = data
+        self.submit(f, check_notification=False)
+
+        f = self.response.forms['admissionform']
+        self.assertPresence("Ähnlicher Account", div="problems0")
+        f['resolution0'] = LineResolutions.renew_trial.value
+        self.assertPresence("Charly C. Clown", div="doppelgangers0")
+        self.assertPresence("<charly@example.cde>", div="doppelgangers0")
+        f['doppelganger_id0'] = 3
+
+        self.assertPresence("Ähnlicher Account", div="problems1")
+        f['resolution1'] = LineResolutions.renew_trial.value
+        self.assertPresence("Daniel D. Dino", div="doppelgangers1")
+        self.assertPresence("<daniel@example.cde>", div="doppelgangers1")
+        f['doppelganger_id1'] = 4
+
+        self.submit(f, check_notification=False)
+
+        f = self.response.forms['admissionform']
+        self.assertPresence("Teilnahme bereits erfasst", div="problems0")
+        self.assertPresence("Teilnahme bereits erfasst", div="problems1")
+        self.submit(f)
+
     @storage
     @as_users("farin")
     def test_money_transfers(self) -> None:

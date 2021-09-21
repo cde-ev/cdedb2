@@ -563,7 +563,7 @@ class CdEFrontend(AbstractUserFrontend):
         if datum['doppelganger_id'] and pevent_id:
             existing = self.pasteventproxy.list_participants(rs, pevent_id=pevent_id)
             if (datum['doppelganger_id'], pcourse_id) in existing:
-                problems.append(
+                warnings.append(
                     ("pevent_id", KeyError(n_("Participation already recorded."))))
 
         datum.update({

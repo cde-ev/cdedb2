@@ -530,11 +530,12 @@ class PastEventBackend(AbstractBackend):
                     self.remove_participant(rs, pevent_id, pcourse_id=None,
                                             persona_id=persona_id)
                 else:
-                    rs.notify("error", n_("User is already pure event participant."))
                     return 0
-            ret = self.sql_insert(rs, "past_event.participants", data)
-            self.past_event_log(rs, const.PastEventLogCodes.participant_added,
-                                pevent_id, persona_id=persona_id)
+            ret = self.sql_insert(rs, "past_event.participants", data,
+                                  drop_on_conflict=True)
+            if ret:
+                self.past_event_log(rs, const.PastEventLogCodes.participant_added,
+                                    pevent_id, persona_id=persona_id)
         return ret
 
     @access("cde_admin", "event_admin")
