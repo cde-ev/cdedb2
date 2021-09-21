@@ -270,23 +270,30 @@ The original message as received by Mailman is attached.
             self.mailman_sync_list_mods(rs, mailman, db_list, mm_list)
             self.mailman_sync_list_whites(rs, mailman, db_list, mm_list)
 
+
     @periodic("mailman_sync")
-    def mailman_sync(self, rs: RequestState, store: CdEDBObject) -> CdEDBObject:
+    def auto_mailman_sync(self, rs: RequestState, store: CdEDBObject) -> CdEDBObject:
+        self.mailman_sync(rs)
+        return store
+
+    def mailman_sync(self, rs: RequestState) -> bool:
         """Synchronize the mailing list software with the database.
 
         This has an @periodic decorator in the frontend.
+
+        :returns: Whether connection to Mailman has been successful.
         """
         if (self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or (
                 self.conf["CDEDB_DEV"] and not self.conf["CDEDB_TEST"])):
             self.logger.debug("Skipping mailman sync in dev/offline mode.")
-            return store
+            return True
         mailman = self.get_mailman()
         # noinspection PyBroadException
         try:
             _ = mailman.system  # cause the client to connect
         except Exception:  # sadly this throws many different exceptions
             self.logger.exception("Mailman client connection failed!")
-            return store
+            return False
         db_lists = self.mlproxy.get_mailinglists(
             rs, self.mlproxy.list_mailinglists(rs, active_only=False))
         db_lists = {lst['address']: lst for lst in db_lists.values()}
@@ -304,4 +311,4 @@ The original message as received by Mailman is attached.
                                    mm_lists[address])
         for address in deleted_lists:
             mailman.delete_list(address)
-        return store
+        return True

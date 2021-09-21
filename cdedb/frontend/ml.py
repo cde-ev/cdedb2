@@ -116,16 +116,6 @@ class MlFrontend(MailmanMixin, MlBaseFrontend):
     @access("ml_admin", modi={"POST"})
     def manual_mailman_sync(self, rs: RequestState) -> Response:
         """Trigger sync manually"""
-        rs.ignore_validation_errors()
-        code = 1
-        # Catch trivial connection errors manually.
-        # Other errors will raise as 500.
-        # noinspection PyBroadException
-        try:
-            self.get_mailman().system
-        except Exception:
-            code = 0
-        else:
-            self.mailman_sync(rs, {})
+        code = self.mailman_sync(rs)
         self.notify_return_code(rs, code, error=n_("Could not connect."))
         return self.redirect(rs, "ml/index")
