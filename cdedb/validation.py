@@ -54,7 +54,7 @@ import typing
 from enum import Enum
 from typing import (
     Callable, Iterable, Mapping, Optional, Protocol, Sequence, Set, Tuple, TypeVar,
-    Union, cast, get_type_hints, overload, Generic, get_origin, get_args
+    Union, cast, get_type_hints, overload, get_origin, get_args
 )
 
 import magic
