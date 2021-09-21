@@ -1569,6 +1569,7 @@ class CoreBackend(AbstractBackend):
             update = {
                 'id': persona_id,
                 'is_archived': False,
+                'is_active': True,
                 'username': new_username,
             }
             code = self.set_persona(

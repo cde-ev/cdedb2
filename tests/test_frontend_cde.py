@@ -1568,6 +1568,38 @@ class TestCdEFrontend(FrontendTest):
         self.assertEqual('False', f['finalized'].value)
         self.assertPresence("Warnung Eintrag geändert.")
 
+    @as_users("vera")
+    def test_batch_admission_doppelganger_archived(self) -> None:
+        data = "pa14;;Hell;Hades;;;;;;;;;;;;hades@example.cde;10.11.1977"
+
+        self.admin_view_profile("hades")
+        self.assertPresence("Der Benutzer ist archiviert.", div="static-notifications")
+        self.assertPresence("—", div="contact-email")
+        self.assertNonPresence("@", div="contact-email")
+
+        self.traverse("Mitglieder", "Nutzer verwalten", "Massenaufnahme")
+        f = self.response.forms['admissionform']
+        f['accounts'] = data
+        self.submit(f, check_notification=False)
+
+        f = self.response.forms['admissionform']
+        self.assertPresence("Ähnlicher Account", div="problems0")
+        f['resolution0'] = LineResolutions.renew_and_update.value
+        self.assertPresence("Hades Hell", div="doppelgangers0")
+        self.assertPresence("<None>", div="doppelgangers0")
+        f['doppelganger_id0'] = 8
+        self.submit(f, check_notification=False)
+
+        f = self.response.forms['admissionform']
+        self.submit(f)
+
+        self.admin_view_profile("hades")
+        self.assertNonPresence("Der Benutzer ist archiviert.",
+                               div="static-notifications")
+        self.assertNonPresence("Der Benutzer ist deaktiviert.",
+                               div="static-notifications")
+        self.assertPresence("hades@example.cde", div="contact-email")
+
     @storage
     @as_users("farin")
     def test_money_transfers(self) -> None:

@@ -1449,6 +1449,11 @@ class CdEBackend(AbstractBackend):
         elif datum['resolution'].is_modification():
             persona_id = datum['doppelganger_id']
             current = self.core.get_persona(rs, persona_id)
+            if current['is_archived']:
+                if current['is_purged']:
+                    raise RuntimeError(n_("Cannot restore purged account."))
+                self.core.dearchive_persona(
+                    rs, persona_id, datum['persona']['username'])
             if not current['is_cde_realm']:
                 # Promote to cde realm dependent on current realm
                 promotion: CdEDBObject = {

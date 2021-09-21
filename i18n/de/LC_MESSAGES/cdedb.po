@@ -9458,6 +9458,9 @@ msgstr "Orga-Schaltflächen"
 msgid "This user has been purged."
 msgstr "Der Benutzer wurde geleert."
 
+msgid "Cannot restore purged account."
+msgstr "Geleerter Account kann nicht wiederhergestellt werden."
+
 #: cdedb/frontend/templates/web/core/show_user.tmpl:44
 msgid "The user is archived."
 msgstr "Der Benutzer ist archiviert."
