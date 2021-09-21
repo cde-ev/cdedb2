@@ -20,39 +20,39 @@
 {% endblock %}
 
 {# Helper to take care of some special values (enums, date, country codes) #}
-{% macro format_property(name, persona) %}
-    {%- if persona[name] -%}
-        {% if name == 'birthday' %}
+{% macro format_property(key, persona) %}
+    {%- if persona[key] -%}
+        {% if key == 'birthday' %}
             {{- persona['birthday']|date(lang=lang) -}}
-        {% elif name == 'gender' %}
+        {% elif key == 'gender' %}
             {{- gettext(enums['Genders'](persona['gender'])|string) -}}
-        {% elif name == 'id' %}
+        {% elif key == 'id' %}
             {{- util.href(show_user_link(user, persona['id']), persona['id']|cdedbid, aclass='nowrap') -}}
-        {% elif name == 'country' or name == 'country2' %}
-            {{- util.gettext_country(persona[name]) -}}
+        {% elif key == 'country' or key == 'country2' %}
+            {{- util.gettext_country(persona[key]) -}}
         {% else %}
-            {{- persona[name] -}}
+            {{- persona[key] -}}
         {% endif %}
     {%- else -%}
         –
     {%- endif -%}
 {% endmacro %}
 
-{% macro show_diff(name, title, important=False) %}
-    <div class="row {% if name not in diff and not important %}unimportant{% endif %}">
+{% macro show_diff(key, title, important=False) %}
+    <div class="row {% if key not in diff and not important %}unimportant{% endif %}">
         <label class="col-sm-3">
             {{ title }}
         </label>
-        {% if name in diff %}
+        {% if key in diff %}
             <div class="col-sm-4 bg-danger">
-                {{ format_property(name, current) }}
+                {{ format_property(key, current) }}
             </div>
             <div class="col-sm-4 bg-success">
-                {{ format_property(name, pending) }}
+                {{ format_property(key, pending) }}
             </div>
         {% else %}
             <div class="col-sm-4">
-                {{ format_property(name, current) }}
+                {{ format_property(key, current) }}
             </div>
         {% endif %}
     </div>
