@@ -84,14 +84,18 @@
         {{ show_diff('address_supplement', gettext("Address Supplement")) }}
         {{ show_diff('postal_code', gettext("ZIP")) }}
         {{ show_diff('location', gettext("City")) }}
-        {{ show_diff('country', gettext("Country")) }}
+        {% call(next) show_diff('country', gettext("Country")) %}
+            {% if next %}{{ util.gettext_country(pending['country']) }}{% else %}{{ util.gettext_country(current['country']) }}{% endif %}
+        {% endcall %}
 
         <h4 class="heading-underline">{% trans %}Second Address{% endtrans %}</h4>
         {{ show_diff('address2', gettext("Street, Nr.")) }}
         {{ show_diff('address_supplement2', gettext("Address Supplement")) }}
         {{ show_diff('postal_code2', gettext("ZIP")) }}
         {{ show_diff('location2', gettext("City")) }}
-        {{ show_diff('country2', gettext("Country")) }}
+        {% call(next) show_diff('country2', gettext("Country")) %}
+            {% if next %}{{ util.gettext_country(pending['country2']) }}{% else %}{{ util.gettext_country(current['country2']) }}{% endif %}
+        {% endcall %}
 
         <h4 class="heading-underline">{% trans %}Miscellaneous{% endtrans %}</h4>
         {{ show_diff('specialisation', gettext("Specialisation")) }}
