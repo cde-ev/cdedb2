@@ -1478,7 +1478,6 @@ class TestCdEFrontend(FrontendTest):
         self.assertEqual("Berta B.", persona["given_names"])
         self.assertEqual("Berta B.", persona["display_name"])
 
-
     @as_users("vera")
     def test_batch_admission_review(self) -> None:
         # check that we force a review if an existing data set is been upgraded
