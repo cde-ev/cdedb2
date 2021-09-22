@@ -1177,6 +1177,7 @@ def _batch_admission_entry(
         'pcourse_id': Optional[int],
         'is_instructor': bool,
         'is_orga': bool,
+        'update_username': bool,
         'persona': Any,  # TODO This should be more strict
     }
     optional_fields: TypeMapping = {}

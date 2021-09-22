@@ -591,7 +591,7 @@ class CdEFrontend(AbstractUserFrontend):
         """
         relevant_keys = {
             'resolution', 'doppelganger_id', 'pevent_id', 'pcourse_id',
-            'is_instructor', 'is_orga', 'persona',
+            'is_instructor', 'is_orga', 'update_username', 'persona',
         }
         relevant_data = [{k: v for k, v in item.items() if k in relevant_keys}
                          for item in data]
@@ -706,6 +706,7 @@ class CdEFrontend(AbstractUserFrontend):
                 f"hash{lineno}": Optional[str],  # type: ignore
                 f"is_orga{lineno}": Optional[bool],  # type: ignore
                 f"is_instructor{lineno}": Optional[bool],  # type: ignore
+                f"update_username{lineno}": Optional[bool],  # type: ignore
             }
             tmp = request_extractor(rs, params)
             if tmp[f"resolution{lineno}"] is None:
@@ -715,6 +716,7 @@ class CdEFrontend(AbstractUserFrontend):
             dataset['doppelganger_id'] = tmp[f"doppelganger_id{lineno}"]
             dataset['is_orga'] = tmp[f"is_orga{lineno}"]
             dataset['is_instructor'] = tmp[f"is_instructor{lineno}"]
+            dataset['update_username'] = tmp[f"update_username{lineno}"]
             dataset['old_hash'] = tmp[f"hash{lineno}"]
             dataset['new_hash'] = get_hash(accountlines[lineno].encode())
             rs.values[f"hash{lineno}"] = dataset['new_hash']

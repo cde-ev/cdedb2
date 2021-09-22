@@ -1430,7 +1430,7 @@ class CdEBackend(AbstractBackend):
         """
         ret = False
         batch_fields = (
-            'family_name', 'given_names', 'title', 'name_supplement',
+            'family_name', 'given_names', 'display_name', 'title', 'name_supplement',
             'birth_name', 'gender', 'address_supplement', 'address',
             'postal_code', 'location', 'country', 'telephone',
             'mobile', 'birthday')  # email omitted as it is handled separately
@@ -1454,6 +1454,11 @@ class CdEBackend(AbstractBackend):
                     raise RuntimeError(n_("Cannot restore purged account."))
                 self.core.dearchive_persona(
                     rs, persona_id, datum['persona']['username'])
+                current['username'] = datum['persona']['username']
+            if datum['update_username']:
+                if current['username'] != datum['persona']['username']:
+                    self.core.change_username(
+                        rs, persona_id, datum['persona']['username'], password=None)
             if not current['is_cde_realm']:
                 # Promote to cde realm dependent on current realm
                 promotion: CdEDBObject = {
@@ -1513,8 +1518,6 @@ class CdEBackend(AbstractBackend):
                     rs, update, may_wait=False,
                     change_note="Probemitgliedschaft erneuert.")
             if datum['resolution'].do_update():
-                self.core.change_username(
-                    rs, persona_id, datum['persona']['username'], password=None)
                 update = {'id': datum['doppelganger_id']}
                 for field in batch_fields:
                     update[field] = datum['persona'][field]

@@ -154,6 +154,10 @@
                                 {% if dataset['pcourse_id'] %}
                                     &emsp;{{ util.input_checkbox("is_instructor{}".format(dataset['lineno']), label=gettext("Course instructor")) }}
                                 {% endif %}
+                                &emsp;
+                            {% endif %}
+                            {% if dataset['persona']['username'] and dataset['doppelgangers'] %}
+                                {{ util.input_checkbox("update_username{}".format(dataset['lineno']), label=gettext("Update E-Mail")) }}
                             {% endif %}
                         </div>
 
