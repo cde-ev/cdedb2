@@ -585,10 +585,6 @@ GRANT SELECT ON past_event.events to cdb_member;
 GRANT UPDATE, DELETE, INSERT ON past_event.events TO cdb_admin;
 GRANT SELECT, UPDATE ON past_event.events_id_seq TO cdb_admin;
 
--- create previously impossible reference
-ALTER TABLE core.genesis_cases ADD FOREIGN KEY (pevent_id) REFERENCES past_event.events(id);
-ALTER TABLE core.genesis_cases ADD FOREIGN KEY (pcourse_id) REFERENCES past_event.courses(id);
-
 CREATE TABLE past_event.courses (
         id                      serial PRIMARY KEY,
         pevent_id               integer NOT NULL REFERENCES past_event.events(id),
@@ -600,6 +596,10 @@ CREATE INDEX idx_courses_pevent_id ON past_event.courses(pevent_id);
 GRANT SELECT, INSERT, UPDATE ON past_event.courses TO cdb_persona;
 GRANT DELETE ON past_event.courses TO cdb_admin;
 GRANT SELECT, UPDATE ON past_event.courses_id_seq TO cdb_persona;
+
+-- create previously impossible reference
+ALTER TABLE core.genesis_cases ADD FOREIGN KEY (pevent_id) REFERENCES past_event.events(id);
+ALTER TABLE core.genesis_cases ADD FOREIGN KEY (pcourse_id) REFERENCES past_event.courses(id);
 
 CREATE TABLE past_event.participants (
         id                      serial PRIMARY KEY,
