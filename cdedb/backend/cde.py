@@ -1430,7 +1430,7 @@ class CdEBackend(AbstractBackend):
         """
         ret = False
         batch_fields = (
-            'family_name', 'given_names', 'title', 'name_supplement',
+            'family_name', 'given_names', 'display_name', 'title', 'name_supplement',
             'birth_name', 'gender', 'address_supplement', 'address',
             'postal_code', 'location', 'country', 'telephone',
             'mobile', 'birthday')  # email omitted as it is handled separately

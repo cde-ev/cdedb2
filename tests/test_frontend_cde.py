@@ -1349,8 +1349,8 @@ class TestCdEFrontend(FrontendTest):
                 self.assertFalse(re.search(piece, out))
 
         inputdata = f['accounts'].value
-        inputdata = inputdata.replace('"1a";"Beispiel";"Bertålotta"',
-                                      '"Ω";"Beispiel";"Bertålotta"')
+        inputdata = inputdata.replace('"1a";"Beispiel";"Berta B."',
+                                      '"Ω";"Beispiel";"Berta B."')
         f['accounts'] = inputdata
         f['resolution4'] = LineResolutions.renew_and_update.value
         f['doppelganger_id4'] = '2'
@@ -1468,6 +1468,15 @@ class TestCdEFrontend(FrontendTest):
         self.admin_view_profile("berta")
         self.assertPresence("berta@example.cde", div='contact-email')
         self.assertNonPresence("b@example.cde", div='contact-email')
+
+        # Approve Berta's change.
+        persona_id = 2
+        generation = self.core.changelog_get_generation(self.key, persona_id)
+        self.core.changelog_resolve_change(self.key, persona_id, generation, ack=True)
+        # Check that both given_names and display_name have changed.
+        persona = self.core.get_persona(self.key, persona_id)
+        self.assertEqual("Berta B.", persona["given_names"])
+        self.assertEqual("Berta B.", persona["display_name"])
 
 
     @as_users("vera")
