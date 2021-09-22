@@ -320,7 +320,7 @@ msgstr ""
 #: cdedb/backend/assembly.py:1970
 msgid "Cannot add attachment version once the assembly has been locked."
 msgstr ""
-"Es kann keine Dateiversion mehr hinzugefügt werden, sobald die Versammlung "
+"Es kann keine Dateiversion mehr hinzugefügt werden, nachdem die Versammlung "
 "gesperrt wurde."
 
 #: cdedb/backend/assembly.py:1985
