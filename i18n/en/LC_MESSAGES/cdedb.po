@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2021-09-22 01:43+0200\n"
+"POT-Creation-Date: 2021-09-22 16:35+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -4963,7 +4963,6 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:66
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:88
 #: cdedb/frontend/templates/web/cde/past_course_search.tmpl:71
-#: cdedb/frontend/templates/web/core/genesis_show_case.tmpl:112
 msgid "Academy"
 msgstr ""
 
@@ -5217,7 +5216,7 @@ msgid "Line %(lineno)s"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:94
-#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:172
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:196
 msgid "born"
 msgstr ""
 
@@ -5254,8 +5253,16 @@ msgstr ""
 msgid "Merge with Account"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:174
-msgid " (not a Member)"
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:191
+msgid "archived"
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:201
+msgid "(not a member)"
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:203
+msgid "(trial member)"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/change_past_course.tmpl:7
@@ -5272,6 +5279,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/change_past_course.tmpl:24
 #: cdedb/frontend/templates/web/cde/create_past_course.tmpl:22
 #: cdedb/frontend/templates/web/cde/show_past_course.tmpl:14
+#: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:74
+#: cdedb/frontend/templates/web/core/genesis_show_case.tmpl:112
 #: cdedb/frontend/templates/web/generic.tmpl:148
 #: cdedb/frontend/templates/web/generic.tmpl:220
 msgid "Past Event"
@@ -7321,10 +7330,6 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:52
 msgid "The following fields are only relevant for Event-Account Requests."
-msgstr ""
-
-#: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:74
-msgid "Add Academy"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:82
