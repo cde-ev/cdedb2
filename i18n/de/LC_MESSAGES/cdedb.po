@@ -7731,7 +7731,7 @@ msgstr "Akademie hinzufügen"
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:82
 msgid "Course can be specified if past event is given."
 msgstr ""
-"Ein Kurs can angegeben werden, wenn eine Vergangene Veranstaltung "
+"Ein Kurs kann angegeben werden, wenn eine Vergangene Veranstaltung "
 "eingetragen ist."
 
 #: cdedb/frontend/templates/web/core/genesis_request.tmpl:4
