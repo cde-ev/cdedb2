@@ -290,6 +290,10 @@
      */
     $.fn.cdedbMarkdownPreview = function (link, translations) {
         $(".mdjs").show();
+        const loading_spinner = `
+<span class="fas fa-sync fa-spin" aria-hidden="true"></span>
+<span class="sr-only">${translations["loading"]}</span>
+        `;
         const modal = `
 <div class="modal fade" id="mdpreview-modal" tabindex="-1" role="dialog" aria-labelledby="mdpreview-modal-label">
     <div class="modal-dialog" role="document">
@@ -303,7 +307,7 @@
                 </h4>
             </div>
             <div class="modal-body" id="mdpreview-html">
-                ${translations["loading"]}
+                ${loading_spinner}
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-default" data-dismiss="modal">
@@ -319,6 +323,7 @@
             if (!$("#mdpreview-modal").length) {  // check if modal is already present from a previous run
                 $("body").append(modal);
             }
+            $("#mdpreview-html").html(loading_spinner);
             $.post(link,
                 { md_str: input.val() },
                 function(result) {
