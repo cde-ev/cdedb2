@@ -1267,7 +1267,8 @@ class TestCdEFrontend(FrontendTest):
         f['resolution3'] = LineResolutions.skip.value
         f['resolution4'] = LineResolutions.renew_and_update.value
         f['doppelganger_id4'] = '2'
-        f['resolution5'] = LineResolutions.update.value
+        f['resolution5'] = LineResolutions.renew_trial.value
+        f['update_username5'] = True
         f['doppelganger_id5'] = '4'
         f['resolution6'] = LineResolutions.renew_and_update.value
         f['doppelganger_id6'] = '5'
@@ -1278,8 +1279,6 @@ class TestCdEFrontend(FrontendTest):
         inputdata = inputdata.replace("00000", "07751")
         inputdata = inputdata.replace("fPingst", "Pfingst")
         inputdata = inputdata.replace("wSish", "Swish")
-        inputdata = inputdata.replace(";m;", ";1;")
-        inputdata = inputdata.replace(";w;", ";2;")
         f['is_orga9'] = True
         inputdata = inputdata.replace(wandering_birthday, unproblematic_birthday)
         f['resolution12'] = LineResolutions.skip.value
@@ -1461,6 +1460,15 @@ class TestCdEFrontend(FrontendTest):
         self.traverse("Link Zelda")
         self.assertPresence("Hyrule", div='address')
         self.assertPresence("Geburtsname", div='personal-information')
+
+        self.admin_view_profile("daniel")
+        self.assertPresence("d@example.cde", div='contact-email')
+        self.assertNonPresence("daniel@example.cde", div='contact-email')
+
+        self.admin_view_profile("berta")
+        self.assertPresence("berta@example.cde", div='contact-email')
+        self.assertNonPresence("b@example.cde", div='contact-email')
+
 
     @as_users("vera")
     def test_batch_admission_review(self) -> None:
