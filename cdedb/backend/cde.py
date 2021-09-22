@@ -1297,7 +1297,8 @@ class CdEBackend(AbstractBackend):
         """Retrieve some generic statistics about members."""
         # Simple stats first.
         query = """SELECT
-            num_members, num_of_searchable, num_of_trial, num_ex_members, num_all
+            num_members, num_of_searchable, num_of_trial, num_of_printed_expuls,
+            num_ex_members, num_all
         FROM
             (
                 SELECT COUNT(*) AS num_members
@@ -1315,6 +1316,11 @@ class CdEBackend(AbstractBackend):
                 WHERE is_member = True AND trial_member = True
             ) AS trial_count,
             (
+                SELECT COUNT(*) AS num_of_printed_expuls
+                FROM core.personas
+                WHERE is_member = True and paper_expuls = True
+            ) AS printed_expuls_count,
+            (
                 SELECT COUNT(*) AS num_ex_members
                 FROM core.personas
                 WHERE is_cde_realm = True AND is_member = False
@@ -1329,7 +1335,7 @@ class CdEBackend(AbstractBackend):
 
         simple_stats = OrderedDict((k, data[k]) for k in (
             n_("num_members"), n_("num_of_searchable"), n_("num_of_trial"),
-            n_("num_ex_members"), n_("num_all")))
+            n_("num_of_printed_expuls"), n_("num_ex_members"), n_("num_all")))
 
         # TODO: improve this type annotation with a new mypy version.
         def query_stats(select: str, condition: str, order: str, limit: int = 0

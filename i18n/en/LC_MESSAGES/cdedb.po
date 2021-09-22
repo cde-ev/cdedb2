@@ -497,6 +497,10 @@ msgid "num_of_trial"
 msgstr "Trial Members"
 
 #: cdedb/backend/cde.py:938 cdedb/backend/cde.py:1290
+msgid "num_of_printed_expuls"
+msgstr "Paper exPuls"
+
+#: cdedb/backend/cde.py:938 cdedb/backend/cde.py:1290
 msgid "num_all"
 msgstr "All Accounts"
 
