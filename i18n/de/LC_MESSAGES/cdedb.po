@@ -18,6 +18,36 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "Generated-By: Babel 2.6.0\n"
 
+msgid "(Version %(version)s, definitive)"
+msgstr "(Version %(version)s, maßgeblich)"
+
+msgid "(trial member)"
+msgstr "(Probemitglied)"
+
+msgid "Add Attachment"
+msgstr "Datei hinzufügen"
+
+msgid "AssemblyLogCodes.attachment_ballot_link_created"
+msgstr "Anhang mit Abstimmung verknüpft"
+
+msgid "AssemblyLogCodes.attachment_ballot_link_deleted"
+msgstr "Anhang von Abstimmung getrennt"
+
+msgid "Cannot restore purged account."
+msgstr "Geleerter Account kann nicht wiederhergestellt werden."
+
+msgid "Modified %(num)s accounts."
+msgstr "%(num)s Accounts aktualisiert."
+
+msgid "No gender specified."
+msgstr "Kein Geschlecht angegeben."
+
+msgid "Update E-Mail"
+msgstr "E-Mail übernehmen"
+
+msgid "archived"
+msgstr "archiviert"
+
 #: bin/archive/migrate_execute.py:394
 msgid "Initial import."
 msgstr "Ursprünglicher Import."
@@ -4478,9 +4508,6 @@ msgstr "Zusammenfassung"
 msgid "Attachment Overview"
 msgstr "Datei-Übersicht"
 
-msgid "Add Attachment"
-msgstr "Datei hinzufügen"
-
 #: cdedb/frontend/templates/web/assembly/base.tmpl:30
 #: cdedb/frontend/templates/web/assembly/base.tmpl:63
 #: cdedb/frontend/templates/web/assembly/index.tmpl:57
@@ -4791,6 +4818,11 @@ msgstr "Dateien"
 #: cdedb/frontend/templates/web/assembly/index.tmpl:65
 msgid "Inactive Assemblies"
 msgstr "Inaktive Versammlungen"
+
+#: cdedb/frontend/templates/web/assembly/list_attachments.tmpl:8
+#, python-format
+msgid "Attachment Overview (%(title)s)"
+msgstr "Datei-Übersicht (%(title)s)"
 
 #: cdedb/frontend/templates/web/assembly/list_attachments.tmpl:8
 #, python-format
@@ -5407,9 +5439,6 @@ msgstr "Die Datei wird irreversibel gelöscht."
 msgid "(Version %(version)s)"
 msgstr "(Version %(version)s)"
 
-msgid "(Version %(version)s, definitive)"
-msgstr "(Version %(version)s, maßgeblich)"
-
 #: cdedb/frontend/templates/web/assembly/util.tmpl:94
 #, python-format
 msgid "Edit Version %(version)s"
@@ -5423,6 +5452,11 @@ msgstr "Version %(version)s löschen"
 #: cdedb/frontend/templates/web/assembly/util.tmpl:114
 msgid "The version of the attachment will be permanently deleted."
 msgstr "Die Version der Datei wird ireversibel gelöscht."
+
+#: cdedb/frontend/templates/web/assembly/util.tmpl:127
+#, python-format
+msgid "Version %(version)s was deleted."
+msgstr "Version %(version)s wurde gelöscht."
 
 #: cdedb/frontend/templates/web/assembly/util.tmpl:127
 #, python-format
@@ -6205,6 +6239,11 @@ msgstr "Zusammenführen mit Account"
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:174
 msgid " (not a Member)"
 msgstr " (kein Mitglied)"
+
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:172
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:174
+msgid "(not a member)"
+msgstr "(kein Mitglied)"
 
 #: cdedb/frontend/templates/web/cde/change_past_course.tmpl:7
 #, python-format
@@ -15250,12 +15289,6 @@ msgstr "Anhang geändert"
 #: cdedb/i18n_additional.py:33
 msgid "AssemblyLogCodes.attachment_removed"
 msgstr "Anhang entfernt"
-
-msgid "AssemblyLogCodes.attachment_ballot_link_created"
-msgstr "Anhang mit Abstimmung verknüpft"
-
-msgid "AssemblyLogCodes.attachment_ballot_link_deleted"
-msgstr "Anhang von Abstimmung getrennt"
 
 #: cdedb/i18n_additional.py:34
 msgid "AssemblyLogCodes.attachment_version_added"

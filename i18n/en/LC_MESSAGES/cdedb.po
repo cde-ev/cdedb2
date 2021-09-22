@@ -18,6 +18,12 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "Generated-By: Babel 2.6.0\n"
 
+msgid "AssemblyLogCodes.attachment_ballot_link_created"
+msgstr "Attachment linked to ballot"
+
+msgid "AssemblyLogCodes.attachment_ballot_link_deleted"
+msgstr "Attachment removed from ballot"
+
 #: bin/archive/migrate_execute.py:394
 msgid "Initial import."
 msgstr ""
@@ -1598,6 +1604,10 @@ msgstr ""
 
 #: cdedb/frontend/cde.py:496
 msgid "Persona is younger than 10 years."
+msgstr ""
+
+#: cdedb/frontend/cde.py:503
+msgid "No gender specified."
 msgstr ""
 
 #: cdedb/frontend/cde.py:508
@@ -14479,12 +14489,6 @@ msgstr "Attachment version removed"
 #: cdedb/i18n_additional.py:36
 msgid "AssemblyLogCodes.attachment_version_changed"
 msgstr "Attachment version changed"
-
-msgid "AssemblyLogCodes.attachment_ballot_link_created"
-msgstr "Attachment linked to ballot"
-
-msgid "AssemblyLogCodes.attachment_ballot_link_deleted"
-msgstr "Attachment removed from ballot"
 
 #: cdedb/i18n_additional.py:38
 msgid "AttachmentPolicy.allow"

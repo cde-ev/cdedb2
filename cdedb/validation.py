@@ -50,9 +50,10 @@ import logging
 import math
 import re
 import string
+import typing
 from enum import Enum
 from typing import (
-    Callable, Iterable, Mapping, Optional, Sequence, Set, Tuple, TypeVar,
+    Callable, Iterable, Mapping, Optional, Protocol, Sequence, Set, Tuple, TypeVar,
     Union, cast, get_type_hints, overload, Generic
 )
 
@@ -62,7 +63,6 @@ import pytz
 import pytz.tzinfo
 import werkzeug.datastructures
 import zxcvbn
-from typing_extensions import Protocol
 
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
@@ -126,18 +126,16 @@ class ValidatorStorage(Dict[Type[Any], Callable[..., Any]]):
         super().__setitem__(type_, validator)
 
     def __getitem__(self, type_: Type[T]) -> Callable[..., T]:
-        # TODO replace with get_origin etc in Python 3.8
-        if hasattr(type_, "__origin__"):
-            if type_.__origin__ is Union:  # type: ignore
-                inner_type, none_type = type_.__args__  # type: ignore
-                if none_type is not NoneType:
-                    raise KeyError("Complex unions not supported")
-                validator = self[inner_type]
-                return _allow_None(validator)  # type: ignore
-            elif type_.__origin__ is list:  # type: ignore
-                [inner_type] = type_.__args__  # type: ignore
-                return make_list_validator(inner_type)  # type: ignore
-            # TODO more container types like tuple
+        if typing.get_origin(type_) is Union:
+            inner_type, none_type = typing.get_args(type_)
+            if none_type is not NoneType:
+                raise KeyError("Complex unions not supported")
+            validator = self[inner_type]
+            return _allow_None(validator)  # type: ignore
+        elif typing.get_origin(type_) is list:
+            [inner_type] = typing.get_args(type_)
+            return make_list_validator(inner_type)  # type: ignore
+        # TODO more container types like tuple
         return super().__getitem__(type_)
 
 
@@ -1179,6 +1177,7 @@ def _batch_admission_entry(
         'pcourse_id': Optional[int],
         'is_instructor': bool,
         'is_orga': bool,
+        'update_username': bool,
         'persona': Any,  # TODO This should be more strict
     }
     optional_fields: TypeMapping = {}

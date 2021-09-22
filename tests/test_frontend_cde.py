@@ -8,13 +8,15 @@ import itertools
 import json
 import re
 import types
-from typing import Set, Tuple
+from typing import Set, Tuple, cast
 
 import webtest
 
 import cdedb.database.constants as const
 from cdedb.common import (
-    CdEDBObject, ADMIN_VIEWS_COOKIE_NAME, Role, extract_roles, now, LineResolutions
+    CdEDBObject, ADMIN_VIEWS_COOKIE_NAME, Role, extract_roles, now, LineResolutions,
+    get_country_code_from_country, get_localized_country_codes, RequestState,
+    format_country_code,
 )
 from cdedb.frontend.common import Worker, make_postal_address
 from cdedb.query import QueryOperators
@@ -1237,7 +1239,8 @@ class TestCdEFrontend(FrontendTest):
             (r"persona:\W*Ähnlicher Account gefunden.",),
             (r"course:\W*Kein Kurs verfügbar.",),
             (r"pevent_id:\W*Keine Veranstaltung gefunden.",
-             r"course:\W*Kein Kurs verfügbar.",),
+             r"course:\W*Kein Kurs verfügbar.",
+             r"gender:\W*Kein Geschlecht angegeben."),
             (r"pcourse_id:\W*Kein Kurs gefunden.",),
             (r"birthday:\W*Ungültige Eingabe für ein Datum.",),
             (r"postal_code:\W*Ungültige Postleitzahl.",),
@@ -1246,7 +1249,8 @@ class TestCdEFrontend(FrontendTest):
              r"pcourse_id\W*Lediglich nach Titel zugeordnet."),
             (r"pevent_id\W*Nur unscharfer Treffer.",
              r"pcourse_id\W*Nur unscharfer Treffer.",
-             r"birthday\W*Person ist jünger als 10 Jahre.",),
+             r"birthday\W*Person ist jünger als 10 Jahre.",
+             r"gender:\W*Kein Geschlecht angegeben."),
             (r"persona:\W*Ähnlicher Account gefunden.",),
             )
         for ex, out in zip(expectation, output):
@@ -1264,7 +1268,8 @@ class TestCdEFrontend(FrontendTest):
         f['resolution3'] = LineResolutions.skip.value
         f['resolution4'] = LineResolutions.renew_and_update.value
         f['doppelganger_id4'] = '2'
-        f['resolution5'] = LineResolutions.update.value
+        f['resolution5'] = LineResolutions.renew_trial.value
+        f['update_username5'] = True
         f['doppelganger_id5'] = '4'
         f['resolution6'] = LineResolutions.renew_and_update.value
         f['doppelganger_id6'] = '5'
@@ -1279,6 +1284,7 @@ class TestCdEFrontend(FrontendTest):
         inputdata = inputdata.replace(wandering_birthday, unproblematic_birthday)
         f['resolution12'] = LineResolutions.skip.value
         f['resolution13'] = LineResolutions.skip.value
+        self.assertNonPresence("Ungültiger nationaler Teil", div="problems15")
         f['resolution15'] = LineResolutions.renew_and_update.value
         f['is_instructor15'] = True
         f['doppelganger_id15'] = '10'
@@ -1344,8 +1350,8 @@ class TestCdEFrontend(FrontendTest):
                 self.assertFalse(re.search(piece, out))
 
         inputdata = f['accounts'].value
-        inputdata = inputdata.replace('"1a";"Beispiel";"Bertålotta"',
-                                      '"Ω";"Beispiel";"Bertålotta"')
+        inputdata = inputdata.replace('"1a";"Beispiel";"Berta B."',
+                                      '"Ω";"Beispiel";"Berta B."')
         f['accounts'] = inputdata
         f['resolution4'] = LineResolutions.renew_and_update.value
         f['doppelganger_id4'] = '2'
@@ -1425,6 +1431,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertEqual('True', f['finalized'].value)
         self.submit(f, check_notification=False)
         self.assertPresence("7 Accounts erstellt.", div="notifications")
+        self.assertPresence("4 Accounts aktualisiert.", div="notifications")
 
         # validate
         self.traverse({'description': 'Mitglieder'},
@@ -1433,10 +1440,12 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'PfingstAkademie 2014'})
         self.assertTitle("PfingstAkademie 2014")
         self.assertNonPresence("Willy Brandt")
+        self.assertPresence("Link Zelda", div='list-participants')
         self.assertPresence("Gerhard Schröder", div='list-participants')
         self.assertPresence("Angela Merkel", div='list-participants')
         self.assertPresence("Gustav Heinemann (1a. Swish -- und alles ist gut) (Orga)",
                             div='list-participants')
+        save_response = self.response
 
         self.traverse({'description': 'Swish -- und alles ist gut'})
         self.assertPresence("Janis Jalapeño (Kursleiter)")
@@ -1446,6 +1455,29 @@ class TestCdEFrontend(FrontendTest):
         self.assertCheckbox(True, "paper_expuls_checkbox")
         self.assertPresence("CdE-Mitglied (Probemitgliedschaft)",
                             div="membership")
+        self.assertNonPresence("Geburtsname", div='personal-information')
+
+        self.response = save_response
+        self.traverse("Link Zelda")
+        self.assertPresence("Hyrule", div='address')
+        self.assertPresence("Geburtsname", div='personal-information')
+
+        self.admin_view_profile("daniel")
+        self.assertPresence("d@example.cde", div='contact-email')
+        self.assertNonPresence("daniel@example.cde", div='contact-email')
+
+        self.admin_view_profile("berta")
+        self.assertPresence("berta@example.cde", div='contact-email')
+        self.assertNonPresence("b@example.cde", div='contact-email')
+
+        # Approve Berta's change.
+        persona_id = 2
+        generation = self.core.changelog_get_generation(self.key, persona_id)
+        self.core.changelog_resolve_change(self.key, persona_id, generation, ack=True)
+        # Check that both given_names and display_name have changed.
+        persona = self.core.get_persona(self.key, persona_id)
+        self.assertEqual("Berta B.", persona["given_names"])
+        self.assertEqual("Berta B.", persona["display_name"])
 
     @as_users("vera")
     def test_batch_admission_review(self) -> None:
@@ -1460,7 +1492,8 @@ class TestCdEFrontend(FrontendTest):
                       {'description': 'Massenaufnahme'})
         self.assertTitle("Accounts anlegen")
         f = self.response.forms['admissionform']
-        f['accounts'] = data
+        f['accounts_file'] = webtest.Upload(
+            "accounts.csv", data.replace("\n", "\r\n").encode(), "text/csv")
         self.submit(f, check_notification=False)
 
         self.assertTitle("Accounts anlegen")
@@ -1553,6 +1586,68 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['admissionform']
         self.assertEqual('False', f['finalized'].value)
         self.assertPresence("Warnung Eintrag geändert.")
+
+    @as_users("vera")
+    def test_batch_admission_doppelganger_archived(self) -> None:
+        data = "pa14;;Hell;Hades;;;;;;;;;;;;hades@example.cde;10.11.1977"
+
+        self.admin_view_profile("hades")
+        self.assertPresence("Der Benutzer ist archiviert.", div="static-notifications")
+        self.assertPresence("—", div="contact-email")
+        self.assertNonPresence("@", div="contact-email")
+
+        self.traverse("Mitglieder", "Nutzer verwalten", "Massenaufnahme")
+        f = self.response.forms['admissionform']
+        f['accounts'] = data
+        self.submit(f, check_notification=False)
+
+        f = self.response.forms['admissionform']
+        self.assertPresence("Ähnlicher Account", div="problems0")
+        f['resolution0'] = LineResolutions.renew_and_update.value
+        self.assertPresence("Hades Hell", div="doppelgangers0")
+        self.assertPresence("(archiviert)", div="doppelgangers0")
+        f['doppelganger_id0'] = 8
+        self.submit(f, check_notification=False)
+
+        f = self.response.forms['admissionform']
+        self.submit(f)
+
+        self.admin_view_profile("hades")
+        self.assertNonPresence("Der Benutzer ist archiviert.",
+                               div="static-notifications")
+        self.assertNonPresence("Der Benutzer ist deaktiviert.",
+                               div="static-notifications")
+        self.assertPresence("hades@example.cde", div="contact-email")
+
+    @as_users("vera")
+    def test_batch_admission_already_participant(self) -> None:
+        data = ("pa14;;Clown;Charly;;;;;;;;;;;;charly@example.cde;13.05.1984\n"
+                "pa14;Ω;Dino;Daniel;;;;;;;;;;;;daniel@example.cde;19.02.1963")
+
+        self.traverse("Mitglieder", "Nutzer verwalten", "Massenaufnahme")
+        f = self.response.forms['admissionform']
+        f['accounts'] = data
+        self.submit(f, check_notification=False)
+
+        f = self.response.forms['admissionform']
+        self.assertPresence("Ähnlicher Account", div="problems0")
+        f['resolution0'] = LineResolutions.renew_trial.value
+        self.assertPresence("Charly C. Clown", div="doppelgangers0")
+        self.assertPresence("<charly@example.cde>", div="doppelgangers0")
+        f['doppelganger_id0'] = 3
+
+        self.assertPresence("Ähnlicher Account", div="problems1")
+        f['resolution1'] = LineResolutions.renew_trial.value
+        self.assertPresence("Daniel D. Dino", div="doppelgangers1")
+        self.assertPresence("<daniel@example.cde>", div="doppelgangers1")
+        f['doppelganger_id1'] = 4
+
+        self.submit(f, check_notification=False)
+
+        f = self.response.forms['admissionform']
+        self.assertPresence("Teilnahme bereits erfasst", div="problems0")
+        self.assertPresence("Teilnahme bereits erfasst", div="problems1")
+        self.submit(f)
 
     @storage
     @as_users("farin")
@@ -2585,14 +2680,23 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("vera")
     def test_postal_address(self) -> None:
-        frs = types.SimpleNamespace()
-        frs.translations = self.translations
+        fake_rs = cast(RequestState, types.SimpleNamespace())
+        fake_rs.translations = self.translations
         persona_id = None
-        t = lambda g, p: g(f"CountryCodes.{p['country']}")
+        t = lambda g, p: g(format_country_code(p['country']))
         while persona_id := self.core.next_persona(self.key, persona_id,
                                                    is_member=None, is_archived=False):
             p = self.core.get_total_persona(self.key, persona_id)
             if p['country']:
-                address = make_postal_address(frs, p)  # type: ignore[arg-type]
+                address = make_postal_address(fake_rs, p)
                 self.assertNotIn(p['country'], address)
                 self.assertIn(t(self.translations["de"].gettext, p), address)
+
+    def test_country_code_from_country(self) -> None:
+        fake_rs = cast(RequestState, types.SimpleNamespace())
+        fake_rs.translations = self.translations
+        for lang in self.translations:
+            fake_rs.lang = lang
+            for cc, country in get_localized_country_codes(fake_rs):
+                self.assertEqual(cc, get_country_code_from_country(fake_rs, country))
+                self.assertEqual(cc, get_country_code_from_country(fake_rs, cc))

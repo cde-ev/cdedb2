@@ -94,9 +94,7 @@ class SubscriptionManager:
         of them may be appropriate to use from the current state.
         """
 
-        # TODO: `if exception := self.get_error(action, old_state)`.
-        exception = self._get_error(action, old_state)
-        if exception:
+        if exception := self._get_error(action, old_state):
             raise exception
 
     @staticmethod

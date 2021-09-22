@@ -181,7 +181,7 @@ max-line-length=88
 # Regexp for a line that is allowed to be longer than the limit.
 # default: ^\s*(# )?<?https?://\S+>?$
 # adjusted to cover mypy and flake8 ignore flags
-ignore-long-lines=# (type: ignore|noqa(: )?)\S*$
+ignore-long-lines=^.{0,88}(\s+# (type: ignore|noqa(: )?)\S*)+$
 
 # Allow the body of an if to be on the same line as the test if there is no
 # else.
@@ -210,7 +210,7 @@ expected-line-ending-format=
 [BASIC]
 
 # List of builtins function names that should not be used, separated by a comma
-bad-functions=sorted
+bad-functions=sorted,breakpoint
 
 # Good variable names which should always be accepted, separated by a comma
 good-names=i,j,k,ex,Run,_

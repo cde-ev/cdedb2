@@ -17,13 +17,12 @@ import logging
 import sys
 from types import TracebackType
 from typing import (
-    Any, Callable, ClassVar, Collection, Dict, Iterable, List, Mapping,
+    Any, Callable, ClassVar, Collection, Dict, Iterable, List, Literal, Mapping,
     Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast, overload,
 )
 
 import psycopg2.extensions
 import psycopg2.extras
-from typing_extensions import Literal
 
 import cdedb.validation as validate
 import cdedb.validationtypes as vtypes
