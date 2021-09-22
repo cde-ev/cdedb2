@@ -551,8 +551,12 @@ def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,
                   reverse=reverse)
 
 
-def _format_country_code(code: str) -> str:
-    """Helper to make string hidden to pybabel."""
+def format_country_code(code: str) -> str:
+    """Helper to make string hidden to pybabel.
+
+    All possible combined strings are given for translation
+    in `i18n_additional.py`
+    """
     return f'CountryCodes.{code}'
 
 
@@ -562,7 +566,7 @@ def get_localized_country_codes(rs: RequestState) -> List[Tuple[str, str]]:
     if not hasattr(get_localized_country_codes, "localized_country_codes"):
         localized_country_codes = {
             lang: xsorted(
-                ((cc, rs.translations[lang].gettext(_format_country_code(cc)))
+                ((cc, rs.translations[lang].gettext(format_country_code(cc)))
                  for cc in COUNTRY_CODES),
                 key=lambda x: x[1]
             )
@@ -578,7 +582,7 @@ def get_country_code_from_country(rs: RequestState, country: str) -> str:
     if not hasattr(get_country_code_from_country, "reverse_country_code_map"):
         reverse_map = {
             lang: {
-                rs.translations[lang].gettext(_format_country_code(cc)): cc
+                rs.translations[lang].gettext(format_country_code(cc)): cc
                 for cc in COUNTRY_CODES
             }
             for lang in rs.translations

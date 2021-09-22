@@ -24,8 +24,8 @@ from cdedb.common import (
     ADMIN_KEYS, ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, LOG_FIELDS_COMMON,
     REALM_ADMINS, REALM_INHERITANCE, REALM_SPECIFIC_GENESIS_FIELDS, ArchiveError,
     CdEDBObject, CdEDBObjectMap, DefaultReturnCode, EntitySorter, PrivilegeError, Realm,
-    RequestState, extract_roles, get_persona_fields_by_realm, implied_realms,
-    merge_dicts, n_, now, pairwise, unwrap, xsorted, sanitize_filename
+    RequestState, extract_roles, format_country_code, get_persona_fields_by_realm,
+    implied_realms, merge_dicts, n_, now, pairwise, unwrap, xsorted, sanitize_filename
 )
 
 from cdedb.filter import date_filter, enum_entries_filter, markdown_parse_safe
@@ -432,8 +432,6 @@ class CoreFrontend(AbstractFrontend):
 
         # Address data
         if persona['address']:
-            # Mask the `gettext` name, so that pybabel does not extract CountryCodes
-            g = rs.gettext
             vcard.add('adr')
             # extended should be empty because of compatibility issues, see
             # https://tools.ietf.org/html/rfc6350#section-6.3.1
@@ -442,7 +440,7 @@ class CoreFrontend(AbstractFrontend):
                 street=persona['address'] or '',
                 city=persona['location'] or '',
                 code=persona['postal_code'] or '',
-                country=g(f"CountryCodes.{persona['country']}"))
+                country=rs.gettext(format_country_code(persona['country'])))
 
         # Contact data
         if persona['username']:
