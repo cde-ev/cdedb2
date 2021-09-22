@@ -254,29 +254,29 @@ def _examine_dictionary_fields(
     errs = ValidationSummary()
     retval: Dict[str, Any] = {}
     for key, value in adict.items():
-        error_name = argname + "." + key if argname else key
+        sub_argname = argname + "." + key if argname else key
         if key in mandatory_fields:
             try:
                 v = _ALL_TYPED[mandatory_fields[key]](
-                    value, argname=error_name, **kwargs)
+                    value, argname=sub_argname, **kwargs)
                 retval[key] = v
             except ValidationSummary as e:
                 errs.extend(e)
         elif key in optional_fields:
             try:
                 v = _ALL_TYPED[optional_fields[key]](
-                    value, argname=error_name, **kwargs)
+                    value, argname=sub_argname, **kwargs)
                 retval[key] = v
             except ValidationSummary as e:
                 errs.extend(e)
         elif not allow_superfluous:
-            errs.append(KeyError(error_name, n_("Superfluous key found.")))
+            errs.append(KeyError(sub_argname, n_("Superfluous key found.")))
 
     missing_mandatory = set(mandatory_fields).difference(adict)
     if missing_mandatory:
         for key in missing_mandatory:
-            error_name = argname + "." + key if argname else key
-            errs.append(KeyError(error_name, n_("Mandatory key missing.")))
+            sub_argname = argname + "." + key if argname else key
+            errs.append(KeyError(sub_argname, n_("Mandatory key missing.")))
 
     if errs:
         raise errs
