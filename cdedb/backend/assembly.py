@@ -1605,8 +1605,7 @@ class AssemblyBackend(AbstractBackend):
                                 ballot_id=data.get('ballot_id')):
             raise PrivilegeError(n_("Must have privileged access to add"
                                     " attachment."))
-        locked_msg = n_("Unable to change attachment once voting has begun"
-                        " or the assembly has been concluded.")
+        locked_msg = n_("Cannot delete attachment once the assembly has been locked.")
         attachment = {k: v for k, v in data.items()
                       if k in ASSEMBLY_ATTACHMENT_FIELDS}
         assembly_id = attachment['assembly_id']
@@ -1795,8 +1794,8 @@ class AssemblyBackend(AbstractBackend):
                                         " attachment link."))
             if not self.is_attachment_ballot_link_deletable(rs, attachment_id,
                                                             ballot_id):
-                raise ValueError(n_("Cannot unlink attachment from ballot that has"
-                                    " already begun voting."))
+                raise ValueError(n_("Cannot unlink attachment from ballot"
+                                    " that has been locked."))
             query = ("DELETE FROM assembly.attachment_ballot_links"
                      " WHERE attachment_id = %s AND ballot_id = %s")
             ret = self.query_exec(rs, query, (attachment_id, ballot_id))

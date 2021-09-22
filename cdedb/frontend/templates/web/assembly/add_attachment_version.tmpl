@@ -37,7 +37,7 @@
         {% call util.notification('warning') %}
             {% trans %}
                 A linked ballot is in or after his voting phase, so only formal changes shall be applied to this attachment.
-                For all running votings stays the definitive version authoritative.
+                The definitive version will remain definitive for all ongoing votes.
             {% endtrans %}
         {% endcall %}
     {% endif %}
@@ -52,14 +52,14 @@
         {{ util.form_input_text(name="filename", label=gettext("Filename"), info=gettext("Leave empty for current filename.")) }}
         {{ util.form_input_file(name="attachment", accept="application/pdf", info=gettext("Only PDFs allowed.")) }}
         {% if not is_deletable %}
-            {{ util.form_input_checkbox("ack_creation", gettext("Are you sure? This attachment version can not be deleted after it was created.")) }}
+            {{ util.form_input_checkbox("ack_creation", gettext("Are you sure?") + " " + gettext("This attachment version cannot be deleted after it was created.")) }}
         {% endif %}
         {{ util.form_input_submit(label=gettext("Upload"), cancellink=cdedblink('assembly/list_attachments')) }}
     </form>
     {% if not is_deletable %}
         <script nonce="{{ csp_nonce }}">
             $('#addattachmentversionform').cdedbProtectAction(
-                "{{ gettext("This attachment version can not be deleted after it was created.") }}");
+                "{{ gettext("This attachment version cannot be deleted after it was created.") }}");
             $('#addattachmentversionform').find('[name="ack_creation"]').prop('checked', true).closest('div.form-group').hide();
         </script>
     {% endif %}
