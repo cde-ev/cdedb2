@@ -706,6 +706,7 @@ class CdEFrontend(AbstractUserFrontend):
                 f"hash{lineno}": Optional[str],  # type: ignore
                 f"is_orga{lineno}": Optional[bool],  # type: ignore
                 f"is_instructor{lineno}": Optional[bool],  # type: ignore
+                f"update_username{lineno}": Optional[bool],  # type: ignore
             }
             tmp = request_extractor(rs, params)
             if tmp[f"resolution{lineno}"] is None:
