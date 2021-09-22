@@ -522,6 +522,10 @@ msgstr "Alle Accounts"
 msgid "num_ex_members"
 msgstr "Inaktive Mitglieder"
 
+#: cdedb/backend/cde.py:938 cdedb/backend/cde.py:1290
+msgid "num_of_printed_expuls"
+msgstr "davon mit gedrucktem exPuls"
+
 #: cdedb/backend/cde.py:952 cdedb/backend/cde.py:1304
 msgid "members_by_country"
 msgstr "Mitglieder nach Land"
