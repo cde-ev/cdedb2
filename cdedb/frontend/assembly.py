@@ -1315,7 +1315,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         current_attachments = set(
             self.assemblyproxy.list_attachments(rs, ballot_id=ballot_id))
         # filter the None value – unset all attachments by selecting None option only
-        wished_attachments: set[int] = set(filter(None, data["linked_attachments"]))
+        wished_attachments: Set[int] = set(filter(None, data["linked_attachments"]))
         new_attachments = wished_attachments - current_attachments
         for attachment_id in new_attachments:
             code *= self.assemblyproxy.add_attachment_ballot_link(
