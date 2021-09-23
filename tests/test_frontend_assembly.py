@@ -950,7 +950,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.submit(f)
 
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
-        self.assertPresence("Maßgebliche Beschlussvorlage (Version 2, maßgeblich)",
+        self.assertPresence("Maßgebliche Beschlussvorlage (Version 2)",
                             div="attachments")
         # check that the correct version is linked
         saved_response = self.response
