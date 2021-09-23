@@ -1371,13 +1371,13 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertTitle("Versammlungs-Log [1–26 von 26]")
         self.assertNonPresence("LogCodes")
         f = self.response.forms['logshowform']
-        codes = [const.AssemblyLogCodes.assembly_created.value,
-                 const.AssemblyLogCodes.assembly_changed.value,
-                 const.AssemblyLogCodes.ballot_created.value,
-                 const.AssemblyLogCodes.ballot_changed.value,
-                 const.AssemblyLogCodes.ballot_deleted.value,
-                 const.AssemblyLogCodes.ballot_tallied.value,
-                 const.AssemblyLogCodes.assembly_presider_added.value,
+        codes = [const.AssemblyLogCodes.assembly_created,
+                 const.AssemblyLogCodes.assembly_changed,
+                 const.AssemblyLogCodes.ballot_created,
+                 const.AssemblyLogCodes.ballot_changed,
+                 const.AssemblyLogCodes.ballot_deleted,
+                 const.AssemblyLogCodes.ballot_tallied,
+                 const.AssemblyLogCodes.assembly_presider_added,
                  ]
         f['codes'] = codes
         f['assembly_id'] = 1

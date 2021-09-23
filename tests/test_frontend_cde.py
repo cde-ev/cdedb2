@@ -38,7 +38,7 @@ PERSONA_TEMPLATE = {
         "timeline": "tja",
         "interests": "hmmmm",
         "free_form": "jaaah",
-        "gender": "1",
+        "gender": str(const.Genders.female),
         "telephone": "030456790",
         "mobile": "01602047",
         "weblink": "www.zzz.cc",

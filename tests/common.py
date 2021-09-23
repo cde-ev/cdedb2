@@ -1355,7 +1355,8 @@ class FrontendTest(BackendTest):
         self.submit(f)
         self.assertTitle("Zelda Zeruda-Hime")
         for key, value in data.items():
-            if key not in {'birthday', 'telephone', 'mobile', 'country', 'country2'}:
+            if key not in {'birthday', 'telephone', 'mobile', 'country', 'country2',
+                           'gender'}:
                 # Omit values with heavy formatting in the frontend here
                 self.assertPresence(value)
         # Now test archival
