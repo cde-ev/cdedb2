@@ -1799,18 +1799,18 @@ etc;anything else""", f['entries_2'].value)
         self.traverse("Veranstaltungen", "Große Testakademie 2222")
         self._create_event_field({
             "field_name": "waitlist_position",
-            "kind": const.FieldDatatypes.int.value,
-            "association": const.FieldAssociations.registration.value,
+            "kind": const.FieldDatatypes.int,
+            "association": const.FieldAssociations.registration,
         })  # id 1001
         self._create_event_field({
             "field_name": "wrong1",
-            "kind": const.FieldDatatypes.str.value,
-            "association": const.FieldAssociations.registration.value,
+            "kind": const.FieldDatatypes.str,
+            "association": const.FieldAssociations.registration,
         })  # id 1002
         self._create_event_field({
             "field_name": "wrong2",
-            "kind": const.FieldDatatypes.int.value,
-            "association": const.FieldAssociations.course.value,
+            "kind": const.FieldDatatypes.int,
+            "association": const.FieldAssociations.course,
         })  # id 1003
 
         # Check that the incorrect fields do not work as the waitlist field.
@@ -2369,8 +2369,9 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['changeregistrationform']
         self.assertEqual(False, f['enable_part2.status'].checked)
         self.assertEqual(True, f['enable_part3.status'].checked)
-        self.assertEqual("2", f['part3.status'].value)
-        f['part3.status'] = 5
+        self.assertEqual(
+            str(const.RegistrationPartStati.participant), f['part3.status'].value)
+        f['part3.status'] = const.RegistrationPartStati.cancelled
         self.assertEqual(False, f['enable_fields.transportation'].checked)
         self.assertEqual(True, f['enable_fields.may_reserve'].checked)
         f['enable_fields.transportation'].checked = True
@@ -2380,16 +2381,20 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/registration/2/show'},
                       {'href': '/event/event/1/registration/2/change'})
         f = self.response.forms['changeregistrationform']
-        self.assertEqual("4", f['part2.status'].value)
-        self.assertEqual("5", f['part3.status'].value)
+        self.assertEqual(
+            str(const.RegistrationPartStati.guest), f['part2.status'].value)
+        self.assertEqual(
+            str(const.RegistrationPartStati.cancelled), f['part3.status'].value)
         self.assertEqual("pedes", f['fields.transportation'].value)
         self.traverse({'href': '/event/event/1/registration/query'},
                       {'description': 'Alle Anmeldungen'},
                       {'href': '/event/event/1/registration/3/show'},
                       {'href': '/event/event/1/registration/3/change'})
         f = self.response.forms['changeregistrationform']
-        self.assertEqual("2", f['part2.status'].value)
-        self.assertEqual("5", f['part3.status'].value)
+        self.assertEqual(
+            str(const.RegistrationPartStati.participant), f['part2.status'].value)
+        self.assertEqual(
+            str(const.RegistrationPartStati.cancelled), f['part3.status'].value)
         self.assertEqual("pedes", f['fields.transportation'].value)
 
         # Now, check with change_note
@@ -2467,8 +2472,9 @@ etc;anything else""", f['entries_2'].value)
         f['reg.mixed_lodging'].checked = False
         self.assertEqual("0.00", f['reg.amount_paid'].value)
         f['reg.amount_paid'] = "42.01"
-        self.assertEqual("3", f['part1.status'].value)
-        f['part1.status'] = 2
+        self.assertEqual(
+            str(const.RegistrationPartStati.waitlist), f['part1.status'].value)
+        f['part1.status'] = const.RegistrationPartStati.participant
         self.assertEqual("4", f['part2.lodgement_id'].value)
         f['part2.lodgement_id'] = 3
         self.assertEqual("2", f['track3.course_choice_1'].value)
@@ -2485,7 +2491,8 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("Wir wollen mal nicht so sein.", f['reg.orga_notes'].value)
         self.assertEqual(False, f['reg.mixed_lodging'].checked)
         self.assertEqual("42.01", f['reg.amount_paid'].value)
-        self.assertEqual("2", f['part1.status'].value)
+        self.assertEqual(
+            str(const.RegistrationPartStati.participant), f['part1.status'].value)
         self.assertEqual("3", f['part2.lodgement_id'].value)
         self.assertEqual("5", f['track3.course_choice_1'].value)
         self.assertEqual("etc", f['fields.transportation'].value)
@@ -2550,9 +2557,12 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['changeregistrationform']
         self.assertEqual("Du entkommst uns nicht.", f['reg.orga_notes'].value)
         self.assertEqual(False, f['reg.mixed_lodging'].checked)
-        self.assertEqual("1", f['part1.status'].value)
-        self.assertEqual("3", f['part2.status'].value)
-        self.assertEqual("-1", f['part3.status'].value)
+        self.assertEqual(
+            str(const.RegistrationPartStati.applied), f['part1.status'].value)
+        self.assertEqual(
+            str(const.RegistrationPartStati.waitlist), f['part2.status'].value)
+        self.assertEqual(
+            str(const.RegistrationPartStati.not_applied), f['part3.status'].value)
         self.assertEqual("4", f['part1.lodgement_id'].value)
         self.assertEqual("5", f['track1.course_id'].value)
         self.assertEqual("5", f['track1.course_choice_0'].value)
@@ -4199,7 +4209,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence('Chillout')
         f = self.response.forms['addregistrationform']
         f['persona.persona_id'] = "DB-2-7"
-        f['part4.status'] = 1
+        f['part4.status'] = const.RegistrationPartStati.applied
         self.submit(f)
         self.assertNonPresence('Partywoche')
         self.assertNonPresence('Chillout')
