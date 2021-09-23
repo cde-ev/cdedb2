@@ -2607,8 +2607,7 @@ class EventFrontend(AbstractUserFrontend):
             rs.notify("info", n_("Empty File."))
             return self.redirect(rs, "event/downloads")
         courses = self.eventproxy.get_courses(rs, course_ids)
-        active_courses = filter(
-            lambda c: c["active_segments"] != set(), courses.values())
+        active_courses = filter(lambda c: c["active_segments"], courses.values())
         sorted_courses = xsorted(active_courses, key=EntitySorter.course)
         data = self.fill_template(rs, "other", "dokuteam_courselist", {
             "sorted_courses": sorted_courses
