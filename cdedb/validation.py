@@ -54,7 +54,7 @@ import typing
 from enum import Enum
 from typing import (
     Callable, Iterable, Mapping, Optional, Protocol, Sequence, Set, Tuple, TypeVar,
-    Union, cast, get_type_hints, overload, Generic
+    Union, cast, get_type_hints, overload, get_origin, get_args
 )
 
 import magic
@@ -179,11 +179,6 @@ def validate_check_optional(
     type_: Type[T], value: Any, **kwargs: Any
 ) -> Tuple[Optional[T], List[Error]]:
     return validate_check(Optional[type_], value, **kwargs)  # type: ignore
-
-
-# TODO replace with get_origin etc in Python 3.8 from typing
-get_args = lambda t: getattr(t, '__args__', ()) if t is not Generic else Generic
-get_origin = lambda t: getattr(t, '__origin__', None)
 
 
 def is_optional(type_: Type[T]) -> bool:
@@ -1177,6 +1172,7 @@ def _batch_admission_entry(
         'pcourse_id': Optional[int],
         'is_instructor': bool,
         'is_orga': bool,
+        'update_username': bool,
         'persona': Any,  # TODO This should be more strict
     }
     optional_fields: TypeMapping = {}

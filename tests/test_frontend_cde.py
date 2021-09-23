@@ -16,6 +16,7 @@ import cdedb.database.constants as const
 from cdedb.common import (
     CdEDBObject, ADMIN_VIEWS_COOKIE_NAME, Role, extract_roles, now, LineResolutions,
     get_country_code_from_country, get_localized_country_codes, RequestState,
+    format_country_code,
 )
 from cdedb.frontend.common import Worker, make_postal_address
 from cdedb.query import QueryOperators
@@ -1267,7 +1268,8 @@ class TestCdEFrontend(FrontendTest):
         f['resolution3'] = LineResolutions.skip.value
         f['resolution4'] = LineResolutions.renew_and_update.value
         f['doppelganger_id4'] = '2'
-        f['resolution5'] = LineResolutions.update.value
+        f['resolution5'] = LineResolutions.renew_trial.value
+        f['update_username5'] = True
         f['doppelganger_id5'] = '4'
         f['resolution6'] = LineResolutions.renew_and_update.value
         f['doppelganger_id6'] = '5'
@@ -1278,8 +1280,6 @@ class TestCdEFrontend(FrontendTest):
         inputdata = inputdata.replace("00000", "07751")
         inputdata = inputdata.replace("fPingst", "Pfingst")
         inputdata = inputdata.replace("wSish", "Swish")
-        inputdata = inputdata.replace(";m;", ";1;")
-        inputdata = inputdata.replace(";w;", ";2;")
         f['is_orga9'] = True
         inputdata = inputdata.replace(wandering_birthday, unproblematic_birthday)
         f['resolution12'] = LineResolutions.skip.value
@@ -1350,8 +1350,8 @@ class TestCdEFrontend(FrontendTest):
                 self.assertFalse(re.search(piece, out))
 
         inputdata = f['accounts'].value
-        inputdata = inputdata.replace('"1a";"Beispiel";"Bertålotta"',
-                                      '"Ω";"Beispiel";"Bertålotta"')
+        inputdata = inputdata.replace('"1a";"Beispiel";"Berta B."',
+                                      '"Ω";"Beispiel";"Berta B."')
         f['accounts'] = inputdata
         f['resolution4'] = LineResolutions.renew_and_update.value
         f['doppelganger_id4'] = '2'
@@ -1461,6 +1461,23 @@ class TestCdEFrontend(FrontendTest):
         self.traverse("Link Zelda")
         self.assertPresence("Hyrule", div='address')
         self.assertPresence("Geburtsname", div='personal-information')
+
+        self.admin_view_profile("daniel")
+        self.assertPresence("d@example.cde", div='contact-email')
+        self.assertNonPresence("daniel@example.cde", div='contact-email')
+
+        self.admin_view_profile("berta")
+        self.assertPresence("berta@example.cde", div='contact-email')
+        self.assertNonPresence("b@example.cde", div='contact-email')
+
+        # Approve Berta's change.
+        persona_id = 2
+        generation = self.core.changelog_get_generation(self.key, persona_id)
+        self.core.changelog_resolve_change(self.key, persona_id, generation, ack=True)
+        # Check that both given_names and display_name have changed.
+        persona = self.core.get_persona(self.key, persona_id)
+        self.assertEqual("Berta B.", persona["given_names"])
+        self.assertEqual("Berta B.", persona["display_name"])
 
     @as_users("vera")
     def test_batch_admission_review(self) -> None:
@@ -2666,7 +2683,7 @@ class TestCdEFrontend(FrontendTest):
         fake_rs = cast(RequestState, types.SimpleNamespace())
         fake_rs.translations = self.translations
         persona_id = None
-        t = lambda g, p: g(f"CountryCodes.{p['country']}")
+        t = lambda g, p: g(format_country_code(p['country']))
         while persona_id := self.core.next_persona(self.key, persona_id,
                                                    is_member=None, is_archived=False):
             p = self.core.get_total_persona(self.key, persona_id)

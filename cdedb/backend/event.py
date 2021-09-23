@@ -14,7 +14,7 @@ from typing import (
     Sequence, Set, Tuple,
 )
 
-import psycopg2
+import psycopg2.extensions
 
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
@@ -3510,6 +3510,7 @@ class EventBackend(AbstractBackend):
         self.assert_offline_lock(rs, event_id=event_id)
 
         index = 0
+        # noinspection PyBroadException
         try:
             with Atomizer(rs):
                 count = 0

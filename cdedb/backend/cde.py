@@ -12,7 +12,7 @@ import decimal
 from collections import OrderedDict
 from typing import Any, Collection, Dict, List, Optional, Protocol, Tuple
 
-import psycopg2
+import psycopg2.extensions
 
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
@@ -1297,7 +1297,8 @@ class CdEBackend(AbstractBackend):
         """Retrieve some generic statistics about members."""
         # Simple stats first.
         query = """SELECT
-            num_members, num_of_searchable, num_of_trial, num_ex_members, num_all
+            num_members, num_of_searchable, num_of_trial, num_of_printed_expuls,
+            num_ex_members, num_all
         FROM
             (
                 SELECT COUNT(*) AS num_members
@@ -1315,6 +1316,11 @@ class CdEBackend(AbstractBackend):
                 WHERE is_member = True AND trial_member = True
             ) AS trial_count,
             (
+                SELECT COUNT(*) AS num_of_printed_expuls
+                FROM core.personas
+                WHERE is_member = True and paper_expuls = True
+            ) AS printed_expuls_count,
+            (
                 SELECT COUNT(*) AS num_ex_members
                 FROM core.personas
                 WHERE is_cde_realm = True AND is_member = False
@@ -1329,7 +1335,7 @@ class CdEBackend(AbstractBackend):
 
         simple_stats = OrderedDict((k, data[k]) for k in (
             n_("num_members"), n_("num_of_searchable"), n_("num_of_trial"),
-            n_("num_ex_members"), n_("num_all")))
+            n_("num_of_printed_expuls"), n_("num_ex_members"), n_("num_all")))
 
         # TODO: improve this type annotation with a new mypy version.
         def query_stats(select: str, condition: str, order: str, limit: int = 0
@@ -1397,7 +1403,8 @@ class CdEBackend(AbstractBackend):
 
         # Unique event attendees per year:
         query = """SELECT
-            COUNT(DISTINCT persona_id) AS num, EXTRACT(year FROM events.tempus)::integer AS datum
+            COUNT(DISTINCT persona_id) AS num,
+            EXTRACT(year FROM events.tempus)::integer AS datum
         FROM
             (
                 past_event.institutions
@@ -1430,7 +1437,7 @@ class CdEBackend(AbstractBackend):
         """
         ret = False
         batch_fields = (
-            'family_name', 'given_names', 'title', 'name_supplement',
+            'family_name', 'given_names', 'display_name', 'title', 'name_supplement',
             'birth_name', 'gender', 'address_supplement', 'address',
             'postal_code', 'location', 'country', 'telephone',
             'mobile', 'birthday')  # email omitted as it is handled separately
@@ -1454,6 +1461,11 @@ class CdEBackend(AbstractBackend):
                     raise RuntimeError(n_("Cannot restore purged account."))
                 self.core.dearchive_persona(
                     rs, persona_id, datum['persona']['username'])
+                current['username'] = datum['persona']['username']
+            if datum['update_username']:
+                if current['username'] != datum['persona']['username']:
+                    self.core.change_username(
+                        rs, persona_id, datum['persona']['username'], password=None)
             if not current['is_cde_realm']:
                 # Promote to cde realm dependent on current realm
                 promotion: CdEDBObject = {
@@ -1513,8 +1525,6 @@ class CdEBackend(AbstractBackend):
                     rs, update, may_wait=False,
                     change_note="Probemitgliedschaft erneuert.")
             if datum['resolution'].do_update():
-                self.core.change_username(
-                    rs, persona_id, datum['persona']['username'], password=None)
                 update = {'id': datum['doppelganger_id']}
                 for field in batch_fields:
                     update[field] = datum['persona'][field]

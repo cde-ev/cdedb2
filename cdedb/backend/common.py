@@ -388,7 +388,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
 
         See :py:meth:`sql_select` for thoughts on this.
 
-        :param unique: Whether to do nothing if conflicting with a constraint
+        :param drop_on_conflict: Whether to do nothing if conflicting with a constraint
         :returns: id of inserted row
         """
         keys = tuple(key for key in data)

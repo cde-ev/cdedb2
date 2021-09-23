@@ -547,12 +547,16 @@ def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,
             return tuple(map(collate, sortkey))
         return sortkey
 
-    return sorted(iterable, key=lambda x: collate(key(x)),  # pylint: disable=bad-builtin # noqa
+    return sorted(iterable, key=lambda x: collate(key(x)),  # pylint: disable=bad-builtin
                   reverse=reverse)
 
 
-def _format_country_code(code: str) -> str:
-    """Helper to make string hidden to pybabel."""
+def format_country_code(code: str) -> str:
+    """Helper to make string hidden to pybabel.
+
+    All possible combined strings are given for translation
+    in `i18n_additional.py`
+    """
     return f'CountryCodes.{code}'
 
 
@@ -562,14 +566,14 @@ def get_localized_country_codes(rs: RequestState) -> List[Tuple[str, str]]:
     if not hasattr(get_localized_country_codes, "localized_country_codes"):
         localized_country_codes = {
             lang: xsorted(
-                ((cc, rs.translations[lang].gettext(_format_country_code(cc)))
+                ((cc, rs.translations[lang].gettext(format_country_code(cc)))
                  for cc in COUNTRY_CODES),
                 key=lambda x: x[1]
             )
             for lang in rs.translations
         }
-        get_localized_country_codes.localized_country_codes = localized_country_codes  # type: ignore[attr-defined] # noqa
-    return get_localized_country_codes.localized_country_codes[rs.lang]  # type: ignore[attr-defined] # noqa
+        get_localized_country_codes.localized_country_codes = localized_country_codes  # type: ignore[attr-defined]
+    return get_localized_country_codes.localized_country_codes[rs.lang]  # type: ignore[attr-defined]
 
 
 def get_country_code_from_country(rs: RequestState, country: str) -> str:
@@ -578,13 +582,13 @@ def get_country_code_from_country(rs: RequestState, country: str) -> str:
     if not hasattr(get_country_code_from_country, "reverse_country_code_map"):
         reverse_map = {
             lang: {
-                rs.translations[lang].gettext(_format_country_code(cc)): cc
+                rs.translations[lang].gettext(format_country_code(cc)): cc
                 for cc in COUNTRY_CODES
             }
             for lang in rs.translations
         }
-        get_country_code_from_country.reverse_map = reverse_map  # type: ignore[attr-defined] # noqa
-    for lang, v in get_country_code_from_country.reverse_map.items():  # type: ignore[attr-defined] # noqa
+        get_country_code_from_country.reverse_map = reverse_map  # type: ignore[attr-defined]
+    for lang, v in get_country_code_from_country.reverse_map.items():  # type: ignore[attr-defined]
         if ret := v.get(country):
             return ret
     return country
