@@ -1846,7 +1846,7 @@ msgstr "Unbekannte Version angegeben."
 
 #: cdedb/frontend/assembly.py:914
 msgid "Invalid ballot specified."
-msgstr "Ungü"
+msgstr "Ungültige Abstimmung angegeben."
 
 #: cdedb/frontend/assembly.py:1004 cdedb/frontend/assembly.py:1162
 msgid "Ballot has not been tallied."
