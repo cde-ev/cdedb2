@@ -32,16 +32,19 @@
                 {% set latest_version = attachment_versions[attachment["latest_version_nr"]] %}
                 <li id="attachment{{ attachment_id }}_version{{ latest_version["version_nr"] }}">
                     <div class="p">
-                        {{ assembly_util.print_attachment_version_for_overview(
-                                latest_version,
-                                add=are_attachment_versions_creatable[attachment_id],
-                                delete=are_attachment_versions_deletable[attachment_id],
-                                delete_attachment=are_attachments_deletable[attachment_id]) }}
+                        <div class="hide-hover-container clearfix-after">
+                            {{ assembly_util.print_attachment_version_for_overview(
+                                    latest_version,
+                                    add=are_attachment_versions_creatable[attachment_id],
+                                    delete=are_attachment_versions_deletable[attachment_id],
+                                    delete_attachment=are_attachments_deletable[attachment_id]) }}
+                        </div>
                         {% if attachment_versions|length > 1 %}
                             <ul>
                                 {% for version_nr, version in attachment_versions|keydictsort(EntitySorter.attachment_version)|reverse %}
                                     {% if version_nr != latest_version['version_nr'] %}
-                                        <li id="attachment{{ attachment_id }}_version{{ version_nr }}">
+                                        <li id="attachment{{ attachment_id }}_version{{ version_nr }}"
+                                                class="hide-hover-container clearfix-after">
                                             {{ assembly_util.print_attachment_version_for_overview(
                                                     version,
                                                     add=False,
