@@ -14,13 +14,10 @@
 {% endblock %}
 
 {% block heading %}
-    <h1 class="title">
-        {% trans %}Add Version{% endtrans %}
-        <small>
-            {{- util.make_icon('bullhorn', arialabel=gettext("Assembly")) }} {{ ambience['assembly']['title'] -}}
-            {{ assembly_util.small_attachment_title(latest_version) }}
-        </small>
-    </h1>
+    {% call util.context_heading(gettext("Add Version"), ambience['assembly']['title'],
+                                 'bullhorn', gettext("Assembly")) %}
+        {{ assembly_util.small_attachment_title(latest_version) }}
+    {% endcall %}
 {% endblock %}
 
 {% block breadcrumb %}

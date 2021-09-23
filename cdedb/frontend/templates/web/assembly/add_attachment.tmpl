@@ -8,12 +8,7 @@
 {% endblock %}
 
 {% block heading %}
-    <h1 class="title">
-        {% trans %}Add File{% endtrans %}
-        <small>
-            {{- util.make_icon('bullhorn', arialabel=gettext("Assembly")) }} {{ ambience['assembly']['title'] -}}
-        </small>
-    </h1>
+    {{ util.context_heading(gettext("Add File"), ambience['assembly']['title'], 'bullhorn', gettext("Assembly")) }}
 {% endblock %}
 
 {% block breadcrumb %}

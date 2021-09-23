@@ -1126,7 +1126,6 @@ mailto:
 
 
 {# Macro to unify the style of headings with context (events, personas, assemblies, ...) #}
-{# TODO: add possibility for second subtitle? (needed for assembly attachments) #}
 {% macro context_heading(title, subtitle=none, icon=none, icon_arialabel=none, doclink=none, doclink_anchor=none) %}
     {% if doclink %}
         {{ _doclink(doclink, anchor=doclink_anchor) }}
@@ -1136,6 +1135,7 @@ mailto:
         {% if subtitle %}
             <small>
                 {{ make_icon(icon, arialabel=icon_arialabel) }}{{ nbsp }}{{ subtitle }}
+                {% if caller %}{{ caller() }}{% endif %}
             </small>
         {% endif %}
     </h1>
