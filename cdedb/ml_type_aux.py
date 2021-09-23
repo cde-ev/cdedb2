@@ -660,7 +660,10 @@ MLType = Type[GeneralMailinglist]
 
 def get_type(val: Union[str, int, MLTypeLike]) -> MLType:
     if isinstance(val, str):
-        val = int(val)
+        if val.startswith(MailinglistTypes.__name__):
+            val = MailinglistTypes[val.replace(MailinglistTypes.__name__ + ".", "")]
+        else:
+            val = int(val)
     if isinstance(val, int):
         val = MailinglistTypes(val)
     if isinstance(val, MailinglistTypes):
