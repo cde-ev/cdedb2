@@ -209,7 +209,6 @@ sql-test-shallow: tests/ancillary_files/sample_data.sql
 cron:
 	sudo -u www-data /cdedb2/bin/cron_execute.py
 
-
 ################
 # Code testing #
 ################
@@ -232,7 +231,7 @@ pylint:
 	@echo $(BANNERLINE)
 	@echo ""
 	# test_subman crashes pylint seemingly due to symlinking
-	$(PYLINT) cdedb tests --load-plugins=pylint.extensions.bad_builtin --ignore=test_subman.py
+	$(PYLINT) cdedb tests --ignore=test_subman.py
 
 template-line-length:
 	@echo $(BANNERLINE)

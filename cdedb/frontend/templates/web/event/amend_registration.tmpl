@@ -17,11 +17,10 @@
                                       or user.admin_views.intersection(('event_orga', 'event_mgmt')))) }}
 {{ util.breadcrumb_link(cdedblink("event/registration_status"), gettext("My Registration")) }}
 {{ util.breadcrumb_link(cdedblink("event/amend_registration"), gettext("Change"), active=True) }}
-{% endblock %}{% block heading %}
-    <h1 class="title">
-        {% trans %}Edit Registration{% endtrans %}
-        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
-    </h1>
+{% endblock %}
+
+{% block heading %}
+    {{ util.context_heading(gettext("Edit Registration"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 
 {% block content %}

@@ -80,7 +80,7 @@
 
 {% macro gettext_country(country) -%}
     {%- if country %}
-        {{ gettext("CountryCodes." + country) }}
+        {{- gettext("CountryCodes." + country) -}}
     {% endif %}
 {%- endmacro %}
 
@@ -259,7 +259,7 @@
 
 {# Helper macro to create a large, left-floated 'Help' button, linking to the off-page documentation as referenced by
    docurl(). #}
-{% macro doclink(topic, anchor=none) %}
+{% macro _doclink(topic, anchor=none) %}
     <a href="{{ docurl(topic, anchor) }}" class="btn btn-info pull-right" target="_blank">
         {{ make_icon('question-circle') }}
         {% trans %}Help{% endtrans %}
@@ -312,6 +312,23 @@
     {%- endif %}
 {%- endmacro %}
 
+{% macro markdown_preview(anid) %}
+    <p class="help-block no-color">
+        {{ make_icon('fab fa-markdown') }} {% trans %}Supports Markdown.{% endtrans %}
+        <span class="mdjs" style="display: none;">
+            <a id="{{ anid }}-mdpreview" title="{% trans %}Open Markdown Preview{% endtrans %}">
+                {{ gettext("Preview") }}
+            </a> |
+        </span>
+        {{ href(docurl("Handbuch_Markdown"), gettext("Tutorial"), title=gettext("Short Markdown summary")) }}
+    </p>
+    <script nonce="{{ csp_nonce }}">
+        $("#{{ anid }}").cdedbMarkdownPreview("{{ cdedblink("core/markdown_parse")|e }}",
+                                              {{ {"title": gettext("Markdown Preview"),
+                                                  "loading": gettext("Loading..."),
+                                                  "close": gettext("Close") }|tojson }})
+    </script>
+{%- endmacro %}
 
 {# ################### #
  # (Form) input macros #
@@ -343,7 +360,7 @@
 {% endmacro %}
 
 {% macro form_input_general(name=none, label='', anid=none, small=False, info='', displayerrors=True,
-        horizontal=True, labelid=none, addon='', differentiate_warnings=True) %}
+        horizontal=True, labelid=none, addon='', markdown=False, differentiate_warnings=True) %}
     <div class="form-group {% if name in errors %}
                                {% if differentiate_warnings and is_warning(name) %}
                                    has-warning
@@ -369,6 +386,7 @@
         {% if addon %}<span class="input-group-addon">{{ addon }}</span></div>{% endif %}
             {{- output_errors(name, displayerrors, differentiate_warnings=differentiate_warnings) }}
             {{- output_info(info) }}
+        {%- if markdown %}{{ markdown_preview(anid) }}{% endif %}
         {%- if horizontal %}</div>{% endif %}
     </div>
 {%- endmacro %}
@@ -410,11 +428,11 @@
 {%- endmacro %}
 
 {% macro form_input_text(name, label='', info='', displayerrors=True, readonly=False, actualreadonly=False,
-    defaultvalue='', anid=none, maxlength=none, type='text', placeholder=none, small=False, horizontal=True, aclass="",
-    attributes='', addon='', differentiate_warnings=True) %}
+        defaultvalue='', anid=none, maxlength=none, type='text', placeholder=none, small=False, horizontal=True,
+        aclass="", attributes='', addon='', markdown=False, differentiate_warnings=True) %}
     {%- set anid = anid or "input-text-{}".format(name) %}
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, addon=addon,
-                                differentiate_warnings=differentiate_warnings) %}
+                                markdown=markdown, differentiate_warnings=differentiate_warnings) %}
         {{- input_text(name, readonly, actualreadonly, defaultvalue, anid, maxlength=maxlength, type=type,
                 placeholder=placeholder, aclass="form-control " + aclass, attributes=attributes) }}
     {%- endcall %}
@@ -458,9 +476,10 @@
 {%- endmacro %}
 
 {% macro form_input_textarea(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid=none,
-        aclass=none, small=False, maxlength=none, rows=3, horizontal=True, attributes='', differentiate_warnings=True) %}
+        aclass=none, small=False, maxlength=none, rows=3, horizontal=True, attributes='', markdown=False,
+        differentiate_warnings=True) %}
     {%- set anid = anid or "input-textarea-{}".format(name) %}
-    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal,
+    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, markdown=markdown,
                                 differentiate_warnings=differentiate_warnings) %}
         {{- input_textarea(name, readonly, defaultvalue, anid, maxlength=maxlength, rows=rows, attributes=attributes,
                           aclass='form-control ' + (aclass or '')) }}
@@ -562,9 +581,18 @@
             </option>
         {%- endif %}
         {% set entries = entries|sort(attribute=1) if sort else entries %}
+        {# Relevant for default: Use default value if key is unset or empty string or none #}
+        {% set former_value = values.get(name, "")|string if values.get(name, "") is not none else "" %}
         {%- for value, label in entries %}
+            {% if value in ("", none) and defaultvalue %}
+                {# This leads to problems regarding defaultvalues. #}
+                {{ raise(gettext("Empty string values with defaultvalue not supported. default: {} value: {}")
+                    |format(defaultvalue|string, value|string)) }}
+            {% endif %}
             <option value="{{ value }}"
-                    {%- if values.get(name, defaultvalue)|string == value|string %} selected="selected"{% endif %}>
+                {%- if former_value == value|string or (former_value == "" and defaultvalue|string == value|string) %}
+                    selected="selected"
+                {% endif %}>
                 {{- label -}}
             </option>
         {%- endfor %}
@@ -1039,15 +1067,6 @@ mailto:
     {% endif %}
 {% endmacro %}
 
-{# Constant to be assigned to the "info" flag of form_input_textarea #}
-{% set markdownhint = gettext("Supports %(infolink)s.")|format(
-    infolink=href(
-        docurl("Handbuch_Markdown"),
-        gettext("Markdown"),
-        title=gettext("Short Markdown summary")
-    )
-)|s %}
-
 {% macro notification(ntype, id) %}
     {% with icontypes = {"success": "check-circle", "info": "info-circle", "warning": "exclamation-circle",
                          "error" : "times-circle"},
@@ -1061,3 +1080,20 @@ mailto:
         </div>
     {% endwith %}
 {%- endmacro %}
+
+
+{# Macro to unify the style of headings with context (events, personas, assemblies, ...) #}
+{# TODO: add possibility for second subtitle? (needed for assembly attachments) #}
+{% macro context_heading(title, subtitle=none, icon=none, icon_arialabel=none, doclink=none, doclink_anchor=none) %}
+    {% if doclink %}
+        {{ _doclink(doclink, anchor=doclink_anchor) }}
+    {% endif %}
+    <h1 class="title">
+        {{ title }}
+        {% if subtitle %}
+            <small>
+                {{ make_icon(icon, arialabel=icon_arialabel) }}{{ nbsp }}{{ subtitle }}
+            </small>
+        {% endif %}
+    </h1>
+{% endmacro %}

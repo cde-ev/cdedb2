@@ -17,13 +17,11 @@
                             icon='home') }}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {{ ambience['lodgement']['title'] }}
-        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(ambience['lodgement']['title'], ambience['event']['title'],
+                            'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block content %}
-    <div class="p">
+    <div class="p button-par">
         {{ util.href(cdedblink("event/change_lodgement_form"), gettext("Edit"), readonly=is_locked,
                      aclass="btn btn-sm btn-warning", icon='pen') }}
         {{ util.href(cdedblink("event/manage_inhabitants_form"), gettext("Manage Inhabitants"), readonly=is_locked,
@@ -58,7 +56,7 @@
 
     {% if ambience['lodgement']['notes'] %}
         {% call util.bootstrap_panel(title=gettext("Orga-Notes"), icon="tag",
-                                 aclass="panel panel-default panel-condensed") %}
+                                 aclass="panel-default panel-condensed") %}
             {{ ambience['lodgement']['notes']|md }}
         {% endcall %}
     {% endif %}

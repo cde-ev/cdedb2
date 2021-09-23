@@ -12,10 +12,7 @@
 {{ util.breadcrumb_link(cdedblink("event/lodgements"), gettext("Lodgements"), active=True) }}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {% trans %}Lodgements{% endtrans %}
-        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Lodgements"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 
 {% macro display_sorting_header(part_id, sortkey, label) %}
@@ -37,13 +34,15 @@
 
 
 {% block content %}
-    <div class="p">
+    <div class="p button-par">
         {{ util.href(cdedblink("event/create_lodgement_form"), gettext("Add Lodgement"), readonly=is_locked,
                      aclass='btn btn-sm btn-success', icon='plus') }}
         {{ util.href(cdedblink("event/lodgement_query"), gettext("Lodgement Query"),
                      aclass='btn btn-sm btn-info', icon='search') }}
         {{ util.href(cdedblink("event/lodgement_group_summary"), gettext("Manage Lodgement Groups"), readonly=is_locked,
                      aclass='btn btn-sm btn-info', icon='th-large') }}
+        {{ util.href(cdedblink("event/lodgement_wishes_graph_form"), gettext("Lodgement Wishes Graph"),
+                     aclass='btn btn-sm btn-info', icon='project-diagram') }}
     </div>
 
     <div class="table-condensed">

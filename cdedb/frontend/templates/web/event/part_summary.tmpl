@@ -11,12 +11,8 @@
     {% endtrans %}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {% trans %}
-        	Configure Event-Parts
-        {% endtrans %}
-        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Configure Event-Parts"), ambience['event']['title'],
+                            'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
@@ -38,17 +34,19 @@
         <div class="panel panel-info" id="part{{ part_id }}">
             <div class="panel-heading">
                 {{ part['title'] }}
-                <div class="pull-right">
+            </div>
+
+            <div class="panel-body">
+                <div class="p button-par">
                     {% if not has_registrations and part_id not in referenced_parts %}
                         <form action="{{ cdedblink('event/delete_part', {'part_id' : part_id}) }}"
                               method="POST"
                               id="deletepartform{{ part_id }}"
                               class="display-inline">
                             {{ util.anti_csrf_token('event/delete_part') }}
-                            {# I don't know how to make these error not display in a horribly broken way. #}
                             {{ util.output_errors("ack_delete", wrapper=True) }}
                             {{ util.input_checkbox(name="ack_delete", label=gettext("Are you sure?")) }}
-                            {{ util.input_submit(label=gettext("Delete Part"), aclass="btn btn-xs btn-danger", icon="trash") }}
+                            {{ util.input_submit(label=gettext("Delete Part"), aclass="btn btn-sm btn-danger", icon="trash") }}
                         </form>
                         <script nonce="{{ csp_nonce }}">
                             $('#deletepartform{{ part_id }}').cdedbProtectAction("{{ gettext("The event part will be permanently deleted.") }}");
@@ -56,11 +54,8 @@
                         </script>
                     {% endif %}
                     {{ util.href(cdedblink('event/change_part_form', {'part_id' : part_id}), gettext("Change Part"),
-                                           icon='pen', aclass='btn btn-xs btn-warning') }}
+                                           icon='pen', aclass='btn btn-sm btn-warning') }}
                 </div>
-            </div>
-
-            <div class="panel-body">
                 <div class="row">
                     <dl class="dl-horizontal col-md-6">
                         <dt>{% trans %}Shortname{% endtrans %}</dt>
@@ -88,7 +83,7 @@
                     </dl>
                 </div>
 
-                <hr />
+                <hr class="info"/>
 
                 <table class="table table-condensed">
                     <thead>
@@ -109,7 +104,7 @@
                     </tbody>
                 </table>
 
-                <hr />
+                <hr class="info"/>
 
                 <table class="table table-condensed">
                     <thead>
@@ -133,7 +128,6 @@
                         {% endfor %}
                     </tbody>
                 </table>
-
             </div>
         </div>
     {% endfor %}

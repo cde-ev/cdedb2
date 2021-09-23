@@ -22,7 +22,6 @@ from typing import (
     Union, cast,
 )
 
-import psycopg2.extensions
 import werkzeug.exceptions
 from werkzeug import Response
 
@@ -35,19 +34,22 @@ from cdedb.common import (
     CourseFilterPositions, DefaultReturnCode, EntitySorter, Error, InfiniteEnum,
     KeyFunction, LodgementsSortkeys, PartialImportError, RequestState, Sortkey,
     asciificator, deduct_years, determine_age_class, diacritic_patterns, get_hash,
-    get_localized_country_codes, glue, json_serialize, merge_dicts,
+    get_localized_country_codes, json_serialize, merge_dicts,
     mixed_existence_sorter, n_, now, unwrap, xsorted,
 )
-from cdedb.database.connection import Atomizer
 from cdedb.filter import (
-    date_filter, enum_entries_filter, keydictsort_filter, money_filter, safe_filter,
+    enum_entries_filter, keydictsort_filter, safe_filter,
 )
 from cdedb.frontend.common import (
     AbstractUserFrontend, CustomCSVDialect, RequestConstraint, REQUESTdata,
     REQUESTdatadict, REQUESTfile, access, calculate_db_logparams, calculate_loglinks,
     cdedbid_filter, cdedburl, check_validation as check,
     check_validation_optional as check_optional, event_guard, make_event_fee_reference,
-    periodic, process_dynamic_input, request_extractor, make_persona_name
+    periodic, process_dynamic_input, request_extractor, make_persona_name,
+    TransactionObserver,
+)
+from cdedb.frontend.event_lodgement_wishes import (
+    create_lodgement_wishes_graph, detect_lodgement_wishes,
 )
 from cdedb.query import (
     Query, QueryConstraint, QueryOperators, QueryScope, make_registration_query_aux,
@@ -674,7 +676,8 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard()
-    def change_part_form(self, rs: RequestState, event_id: int, part_id: int) -> Response:
+    def change_part_form(self, rs: RequestState, event_id: int, part_id: int
+                         ) -> Response:
         part = rs.ambience['event']['parts'][part_id]
 
         current = copy.deepcopy(part)
@@ -747,7 +750,8 @@ class EventFrontend(AbstractUserFrontend):
         #
         # process the dynamic track input
         #
-        def track_constraint_maker(track_id: int, prefix: str) -> List[RequestConstraint]:
+        def track_constraint_maker(track_id: int, prefix: str
+                                   ) -> List[RequestConstraint]:
             min_choice = f"{prefix}min_choices_{track_id}"
             num_choice = f"{prefix}num_choices_{track_id}"
             msg = n_("Must be less or equal than total Course Choices.")
@@ -1469,7 +1473,7 @@ class EventFrontend(AbstractUserFrontend):
         )
         QueryFilterGetter = Callable[
             [CdEDBObject, CdEDBObject, CdEDBObject], Collection[QueryConstraint]]
-        # Query filters for all the registration statistics defined and calculated above.
+        # Query filters for all the registration statistics defined and calculated above
         # They are customized and inserted into the query on the fly by get_query().
         # `e` is the event, `p` is the event_part, `t` is the track.
         registration_query_filters: Dict[str, QueryFilterGetter] = {
@@ -2171,8 +2175,8 @@ class EventFrontend(AbstractUserFrontend):
         })
         return datum
 
-    def book_fees(self, rs: RequestState, data: Collection[CdEDBObject],
-                  send_notifications: bool = False
+    def book_fees(self, rs: RequestState,
+                  data: Collection[CdEDBObject], send_notifications: bool = False
                   ) -> Tuple[bool, Optional[int]]:
         """Book all paid fees.
 
@@ -2182,56 +2186,27 @@ class EventFrontend(AbstractUserFrontend):
           * for negative outcome the line where an exception was triggered
             or None if it was a DB serialization error
         """
-        index = 0
-        try:
-            with Atomizer(rs):
-                count = 0
-                all_reg_ids = {datum['registration_id'] for datum in data}
-                all_regs = self.eventproxy.get_registrations(rs, all_reg_ids)
-                for index, datum in enumerate(data):
-                    reg_id = datum['registration_id']
-                    update = {
-                        'id': reg_id,
-                        'payment': datum['date'],
-                        'amount_paid': all_regs[reg_id]['amount_paid']
-                                       + datum['amount'],
+        relevant_keys = {'registration_id', 'date', 'original_date', 'amount'}
+        relevant_data = [{k: v for k, v in item.items() if k in relevant_keys}
+                         for item in data]
+        with TransactionObserver(rs, self, "book_fees"):
+            success, number = self.eventproxy.book_fees(
+                rs, rs.ambience['event']['id'], relevant_data)
+            if success and send_notifications:
+                persona_ids = tuple(e['persona_id'] for e in data)
+                personas = self.coreproxy.get_personas(rs, persona_ids)
+                subject = "Überweisung für {} eingetroffen".format(
+                    rs.ambience['event']['title'])
+                for persona in personas.values():
+                    headers: Dict[str, Union[str, Collection[str]]] = {
+                        'To': (persona['username'],),
+                        'Subject': subject,
                     }
-                    change_note = "{} am {} gezahlt.".format(
-                        money_filter(datum['amount']),
-                        date_filter(datum['original_date'], lang="de"))
-                    count += self.eventproxy.set_registration(rs, update, change_note)
-        except psycopg2.extensions.TransactionRollbackError:
-            # We perform a rather big transaction, so serialization errors
-            # could happen.
-            return False, None
-        except Exception:
-            # This blanket catching of all exceptions is a last resort. We try
-            # to do enough validation, so that this should never happen, but
-            # an opaque error (as would happen without this) would be rather
-            # frustrating for the users -- hence some extra error handling
-            # here.
-            self.logger.error(glue(
-                ">>>\n>>>\n>>>\n>>> Exception during fee transfer processing",
-                "<<<\n<<<\n<<<\n<<<"))
-            self.logger.exception("FIRST AS SIMPLE TRACEBACK")
-            self.logger.error("SECOND TRY CGITB")
-            self.cgitb_log()
-            return False, index
-        if send_notifications:
-            persona_ids = tuple(e['persona_id'] for e in data)
-            personas = self.coreproxy.get_personas(rs, persona_ids)
-            subject = "Überweisung für {} eingetroffen".format(
-                rs.ambience['event']['title'])
-            for persona in personas.values():
-                headers: Dict[str, Union[str, Collection[str]]] = {
-                    'To': (persona['username'],),
-                    'Subject': subject,
-                }
-                if rs.ambience['event']['orga_address']:
-                    headers['Reply-To'] = rs.ambience['event']['orga_address']
-                self.do_mail(rs, "transfer_received", headers,
-                             {'persona': persona})
-        return True, count
+                    if rs.ambience['event']['orga_address']:
+                        headers['Reply-To'] = rs.ambience['event']['orga_address']
+                    self.do_mail(rs, "transfer_received", headers,
+                                 {'persona': persona})
+            return success, number
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
@@ -2350,7 +2325,7 @@ class EventFrontend(AbstractUserFrontend):
             work_dir.mkdir()
             filename = "{}_nametags.tex".format(
                 rs.ambience['event']['shortname'])
-            with open(work_dir / filename, 'w') as f:
+            with open(work_dir / filename, 'w', encoding='utf-8') as f:
                 f.write(tex)
             src = self.conf["REPOSITORY_PATH"] / "misc/blank.png"
             shutil.copy(src, work_dir / "aka-logo.png")
@@ -2451,32 +2426,30 @@ class EventFrontend(AbstractUserFrontend):
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
 
-        reverse_wish = {}
+        rwish = collections.defaultdict(list)
         if event['lodge_field']:
-            for reg_id, reg in registrations.items():
-                rwish = set()
-                persona = personas[reg['persona_id']]
-                checks = {
-                    diacritic_patterns("{} {}".format(
-                        given_name, persona['family_name']))
-                    for given_name in persona['given_names'].split()}
-                checks.add(diacritic_patterns("{} {}".format(
-                    persona['display_name'], persona['family_name'])))
-                for oid, other in registrations.items():
-                    owish = other['fields'].get(
-                        event['fields'][event['lodge_field']]['field_name'])
-                    if not owish:
-                        continue
-                    if any(re.search(acheck, owish, flags=re.IGNORECASE)
-                                     for acheck in checks):
-                        rwish.add(oid)
-                reverse_wish[reg_id] = ", ".join(
-                    make_persona_name(personas[registrations[id]['persona_id']])
-                    for id in rwish)
+            wishes, problems = detect_lodgement_wishes(registrations, personas,
+                                                       event, None)
+            for wish in wishes:
+                if wish.negated:
+                    continue
+                rwish[wish.wished].append(wish.wishing)
+                if wish.bidirectional:
+                    rwish[wish.wishing].append(wish.wished)
+        else:
+            problems = []
+        reverse_wish = {
+            reg_id: ", ".join(
+                make_persona_name(
+                    personas[registrations[wishing_id]['persona_id']])
+                for wishing_id in rwish[reg_id])
+            for reg_id in registrations
+        }
 
         tex = self.fill_template(rs, "tex", "lodgement_puzzle", {
             'lodgements': lodgements, 'registrations': registrations,
-            'personas': personas, 'reverse_wish': reverse_wish})
+            'personas': personas, 'reverse_wish': reverse_wish,
+            'wish_problems': problems})
         file = self.serve_latex_document(rs, tex, "{}_lodgement_puzzle".format(
             rs.ambience['event']['shortname']), runs)
         if file:
@@ -2537,7 +2510,7 @@ class EventFrontend(AbstractUserFrontend):
             work_dir.mkdir()
             filename = "{}_course_lists.tex".format(
                 rs.ambience['event']['shortname'])
-            with open(work_dir / filename, 'w') as f:
+            with open(work_dir / filename, 'w', encoding='utf-8') as f:
                 f.write(tex)
             src = self.conf["REPOSITORY_PATH"] / "misc/blank.png"
             shutil.copy(src, work_dir / "event-logo.png")
@@ -2583,7 +2556,7 @@ class EventFrontend(AbstractUserFrontend):
             work_dir.mkdir()
             filename = "{}_lodgement_lists.tex".format(
                 rs.ambience['event']['shortname'])
-            with open(work_dir / filename, 'w') as f:
+            with open(work_dir / filename, 'w', encoding='utf-8') as f:
                 f.write(tex)
             src = self.conf["REPOSITORY_PATH"] / "misc/blank.png"
             shutil.copy(src, work_dir / "aka-logo.png")
@@ -2664,7 +2637,8 @@ class EventFrontend(AbstractUserFrontend):
                     order = [("persona.given_names", True)]
                     query = Query(QueryScope.registration, spec, fields_of_interest,
                                   constrains, order)
-                    query_res = self.eventproxy.submit_general_query(rs, query, event_id)
+                    query_res = self.eventproxy.submit_general_query(rs, query,
+                                                                     event_id)
                     course_key = f"track{track_id}.course_id"
                     # we have to replace the course id with the course number
                     result = tuple(
@@ -2681,7 +2655,7 @@ class EventFrontend(AbstractUserFrontend):
                     # save the result in one file per track
                     filename = f"{asciificator(track['shortname'])}.csv"
                     file = pathlib.Path(work_dir, filename)
-                    file.write_text(data)
+                    file.write_text(data, encoding='utf-8')
 
             # create a zip archive of all lists
             zipname = f"{rs.ambience['event']['shortname']}_dokuteam_participant_list"
@@ -3833,7 +3807,8 @@ class EventFrontend(AbstractUserFrontend):
 
         new_questionnaire = [self._sanitize_questionnaire_row(questionnaire[i])
                              for i in order]
-        code = self.eventproxy.set_questionnaire(rs, event_id, {kind: new_questionnaire})
+        code = self.eventproxy.set_questionnaire(rs, event_id,
+                                                 {kind: new_questionnaire})
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/reorder_questionnaire_form", {'kind': kind})
 
@@ -4653,14 +4628,8 @@ class EventFrontend(AbstractUserFrontend):
             elif group_id < 0:
                 code *= self.eventproxy.create_lodgement_group(rs, group)
             else:
-                with Atomizer(rs):
-                    current = self.eventproxy.get_lodgement_group(rs, group_id)
-                    # Do not update unchanged
-                    if current != group:
-                        # TODO maybe we pass it in but simply ignore it?
-                        # do not pass the event_id in, since it must not change
-                        del group['event_id']
-                        code *= self.eventproxy.set_lodgement_group(rs, group)
+                del group['event_id']
+                code *= self.eventproxy.rcw_lodgement_group(rs, group)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/lodgement_group_summary")
 
@@ -4697,6 +4666,60 @@ class EventFrontend(AbstractUserFrontend):
             'inhabitants': inhabitants, 'problems': problems,
             'groups': groups,
         })
+
+    @access("event")
+    @event_guard()
+    def lodgement_wishes_graph_form(self, rs: RequestState, event_id: int
+                                    ) -> Response:
+        event = rs.ambience['event']
+        if event['lodge_field']:
+            registration_ids = self.eventproxy.list_registrations(rs, event_id)
+            registrations = self.eventproxy.get_registrations(rs, registration_ids)
+            personas = self.coreproxy.get_event_users(rs, tuple(
+                reg['persona_id'] for reg in registrations.values()), event_id)
+
+            _wishes, problems = detect_lodgement_wishes(
+                registrations, personas, event, restrict_part_id=None)
+        else:
+            problems = []
+        return self.render(rs, "lodgement_wishes_graph_form",
+                           {'problems': problems})
+
+    @access("event")
+    @event_guard()
+    @REQUESTdata('all_participants', 'part_id', 'show_lodgements')
+    def lodgement_wishes_graph(self, rs: RequestState, event_id: int,
+                               all_participants: bool, part_id: Optional[int],
+                               show_lodgements: bool) -> Response:
+        if rs.has_validation_errors():
+            return self.redirect(rs, 'event/lodgement_wishes_graph_form')
+        event = rs.ambience['event']
+
+        if not event['lodge_field']:
+            rs.notify('error', n_("Lodgement wishes graph is only available if "
+                                  "the Field for Rooming Preferences is set in "
+                                  "event configuration."))
+            return self.redirect(rs, 'event/lodgement_wishes_graph_form')
+        if show_lodgements and not part_id:
+            rs.notify('error', n_("Lodgement clusters can only be displayed if "
+                                  "the graph is restricted to a specific "
+                                  "part."))
+            return self.redirect(rs, 'event/lodgement_wishes_graph_form')
+
+        registration_ids = self.eventproxy.list_registrations(rs, event_id)
+        registrations = self.eventproxy.get_registrations(rs, registration_ids)
+        lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
+        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        personas = self.coreproxy.get_event_users(rs, tuple(
+            reg['persona_id'] for reg in registrations.values()), event_id)
+
+        wishes, _problems = detect_lodgement_wishes(
+            registrations, personas, event, part_id)
+        graph = create_lodgement_wishes_graph(
+            rs, registrations, wishes, lodgements, event, personas, part_id,
+            all_participants, part_id if show_lodgements else None)
+        data: bytes = graph.pipe('svg')
+        return self.send_file(rs, "image/svg+xml", data=data)
 
     @access("event")
     @event_guard(check_offline=True)
@@ -4741,7 +4764,7 @@ class EventFrontend(AbstractUserFrontend):
         groups = self.eventproxy.list_lodgement_groups(rs, event_id)
         field_values = {
             "fields.{}".format(key): value
-            for key, value in rs.ambience['lodgement']['fields'].items()}  # noqa: F821
+            for key, value in rs.ambience['lodgement']['fields'].items()}
         merge_dicts(rs.values, rs.ambience['lodgement'], field_values)
         return self.render(rs, "change_lodgement", {'groups': groups})
 
@@ -4845,7 +4868,8 @@ class EventFrontend(AbstractUserFrontend):
                  if _check_not_this_lodgement(registration_id, part_id)],
                 key=lambda x: (
                     x['current'] is not None,
-                    EntitySorter.persona(personas[registrations[x['id']]['persona_id']]))
+                    EntitySorter.persona(
+                        personas[registrations[x['id']]['persona_id']]))
             )
             for part_id in rs.ambience['event']['parts']
         }
@@ -5426,10 +5450,12 @@ class EventFrontend(AbstractUserFrontend):
         :param kind: specifies the entity: registration, course or lodgement
 
         :returns: A tuple of values, containing
-            * entities: corresponding to the given ids (registrations, courses, lodgements)
+            * entities: corresponding to the given ids (registrations, courses,
+                lodgements)
             * ordered_ids: given ids, sorted by the corresponding EntitySorter
             * labels: name of the entities which will be displayed in the template
-            * field: the event field which will be changed, None if no field_id was given
+            * field: the event field which will be changed, None if no field_id was
+                given
         """
         if kind == const.FieldAssociations.registration:
             if not ids:
@@ -5460,11 +5486,12 @@ class EventFrontend(AbstractUserFrontend):
             groups = self.eventproxy.get_lodgement_groups(rs, group_ids)
             labels = {
                 lodg_id: f"{lodg['title']}" if lodg['group_id'] is None
-                         else safe_filter(f"{lodg['title']}, "
-                                          f"<em>{groups[lodg['group_id']]['title']}</em>")
+                         else safe_filter(f"{lodg['title']}, <em>"
+                                          f"{groups[lodg['group_id']]['title']}</em>")
                 for lodg_id, lodg in entities.items()}
             ordered_ids = xsorted(
-                entities.keys(), key=lambda anid: EntitySorter.lodgement(entities[anid]))
+                entities.keys(),
+                key=lambda anid: EntitySorter.lodgement(entities[anid]))
         else:
             # this should not happen, since we check before for validation errors
             raise NotImplementedError(f"Unknown kind {kind}")
@@ -5498,7 +5525,8 @@ class EventFrontend(AbstractUserFrontend):
                 rs, "event/field_set_form", {
                     'ids': (','.join(str(i) for i in ids) if ids else None),
                     'field_id': field_id, 'kind': kind.value})
-        _, ordered_ids, labels, _ = self.field_set_aux(rs, event_id, field_id, ids, kind)
+        _, ordered_ids, labels, _ = self.field_set_aux(rs, event_id, field_id, ids,
+                                                       kind)
         fields = [(field['id'], field['field_name'])
                   for field in xsorted(rs.ambience['event']['fields'].values(),
                                        key=EntitySorter.event_field)

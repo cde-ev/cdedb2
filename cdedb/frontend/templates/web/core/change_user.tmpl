@@ -56,7 +56,7 @@
             {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone"), type="tel") }}
         {% endif %}
         {% if "weblink" in shown_fields %}
-            {{ util.form_input_text(name="weblink", label=gettext("WWW"), info=util.markdownhint) }}
+            {{ util.form_input_text(name="weblink", label=gettext("WWW"), markdown=True) }}
         {% endif %}
 
         {% if "address" in shown_fields %}
@@ -92,15 +92,11 @@
         {% endif %}
         {% if "specialisation" in shown_fields %}
             <h4 class="heading-underline">{% trans %}Miscellaneous{% endtrans %}</h4>
-            {{ util.form_input_textarea(name="specialisation", label=gettext("Specialisation"),
-                                        info=util.markdownhint) }}
-            {{ util.form_input_textarea(name="affiliation", label=gettext("School, University, …"),
-                                        info=util.markdownhint) }}
-            {{ util.form_input_textarea(name="timeline", label=gettext("Year(s) of Graduation"),
-                                        info=util.markdownhint) }}
-            {{ util.form_input_textarea(name="interests", label=gettext("Interests"), info=util.markdownhint) }}
-            {{ util.form_input_textarea(name="free_form", label=gettext("Miscellaneous"), rows="5",
-                                        info=util.markdownhint) }}
+            {{ util.form_input_textarea(name="specialisation", label=gettext("Specialisation"), markdown=True) }}
+            {{ util.form_input_textarea(name="affiliation", label=gettext("School, University, …"), markdown=True) }}
+            {{ util.form_input_textarea(name="timeline", label=gettext("Year(s) of Graduation"), markdown=True) }}
+            {{ util.form_input_textarea(name="interests", label=gettext("Interests"), markdown=True) }}
+            {{ util.form_input_textarea(name="free_form", label=gettext("Miscellaneous"), rows="5", markdown=True) }}
         {% endif %}
         {{ util.form_input_submit(label=gettext("Save"), cancellink=show_user_link(user, user.persona_id), differentiate_warnings=True) }}
     </form>

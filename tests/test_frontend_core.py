@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# pylint: disable=missing-module-docstring
 
 import re
 import urllib.parse
@@ -219,7 +220,7 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': 'VCard'})
         vcard = ["BEGIN:VCARD",
                  "VERSION:3.0",
-                 "ADR:;;Im Garten 77;Utopia;;34576;",
+                 "ADR:;;Im Garten 77;Utopia;;34576;Deutschland",
                  "BDAY:1981-02-11",
                  "EMAIL:berta@example.cde",
                  "FN:Bertålotta Beispiel",
@@ -529,6 +530,17 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Hyrule", div='address2')
         self.assertPresence("Okarinas", div='additional')
         self.assertPresence("(Zelda)", div='personal-information')
+
+    @as_users("vera")
+    def test_automatic_country(self) -> None:
+        self.admin_view_profile('annika')
+        self.traverse({'description': 'Bearbeiten'})
+        f = self.response.forms['changedataform']
+        f['location2'] = "Kabul"
+        self.submit(f)
+        self.assertTitle("Annika Akademieteam")
+        self.assertNonPresence("Afghanistan")
+        self.assertPresence("Deutschland", div='address2')
 
     @as_users("vera")
     def test_adminchangedata_other(self) -> None:
@@ -1516,12 +1528,17 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Bereichsänderung für Emilia E. Eventis")
         f = self.response.forms['promotionform']
+        self.submit(f, check_notification=False)
+        self.assertValidationError('change_note', "Darf nicht leer sein.")
+        f['change_note'] = change_note = "Hat an einer Akademie teilgenommen."
         self.submit(f)
         self.assertTitle("Emilia E. Eventis")
         self.assertPresence("0,00 €", div='balance')
         self.assertCheckbox(True, "paper_expuls_checkbox")
         self.assertNonPresence("CdE-Mitglied", div="cde-membership")
         self.assertNonPresence("Probemitgliedschaft", div="cde-membership")
+        self.traverse("Änderungshistorie")
+        self.assertPresence(change_note, div="generation2")
 
         # Do another promotion, this time granting trial membership.
         self.admin_view_profile('nina')
@@ -1534,11 +1551,19 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Bereichsänderung für Nina Neubauer")
         f = self.response.forms['promotionform']
         f['trial_member'].checked = True
+        f['change_note'] = "Per Vorstandsbeschluss aufgenommen."
         self.submit(f)
         self.assertTitle("Nina Neubauer")
         self.assertPresence("0,00 €", div='balance')
         self.assertPresence("CdE-Mitglied", div="cde-membership")
         self.assertPresence("Probemitgliedschaft", div="cde-membership")
+
+        # check for correct welcome mail
+        mail = self.fetch_mail_content()
+        self.assertIn(USER_DICT['nina']['display_name'], mail)
+        self.assertIn("Ein herzliches Willkommen", mail)
+        self.assertIn("zum ersten Mal in unserer Datenbank anmeldest", mail)
+        self.assertIn("kostenlos", mail)  # check trial membership
 
     @as_users("vera")
     def test_nontrivial_promotion(self) -> None:
@@ -1554,13 +1579,18 @@ class TestCoreFrontend(FrontendTest):
         f['birthday'] = "foobar"
         self.submit(f, check_notification=False)
         self.assertValidationError("birthday", "Ungültige Eingabe für ein Datum")
+        self.assertValidationError('change_note', "Darf nicht leer sein.")
         self.assertTitle("Bereichsänderung für Kalif Karabatschi")
         # Now, do it right
         f['birthday'] = "21.6.1977"
         f['gender'] = 1
+        f['change_note'] = "Komplizierte Aufnahme"
         self.submit(f)
         self.assertTitle("Kalif Karabatschi")
         self.assertPresence("21.06.1977", div='personal-information')
+        # check that no welcome mail is sent - this is for cde promotion only
+        with self.assertRaises(IndexError):
+            self.fetch_mail_content()
 
     @as_users("vera")
     def test_ignore_warnings_postal_code(self) -> None:
@@ -1653,8 +1683,7 @@ class TestCoreFrontend(FrontendTest):
     def test_genesis_event(self) -> None:
         self._genesis_request(self.EVENT_GENESIS_DATA)
 
-        user = USER_DICT['vera']
-        self.login(user)
+        self.login('vera')
         self.traverse({'description': 'Accountanfrage'})
         self.assertTitle("Accountanfragen")
         self.assertPresence("zelda@example.cde", div='request-1001')
@@ -1771,6 +1800,10 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Anhang my_participation_certificate.pdf")
         f = self.response.forms['genesisform']
         f['notes'] = "Gimme!"
+        f['birthday'] = ""
+        self.submit(f, check_notification=False)
+        self.assertValidationError("birthday", "Darf nicht leer sein.")
+        f['birthday'] = self.CDE_GENESIS_DATA['birthday']
         self.submit(f)
         link = self.fetch_link()
         self.get(link)
@@ -2058,6 +2091,7 @@ class TestCoreFrontend(FrontendTest):
         f['target_realm'] = "assembly"
         self.submit(f)
         f = self.response.forms['promotionform']
+        f['change_note'] = promotion_change_note = "trivial promotion"
         self.submit(f)
         logs.append((1011, const.CoreLogCodes.realm_change))
 
@@ -2078,6 +2112,6 @@ class TestCoreFrontend(FrontendTest):
                       const.CoreLogCodes.realm_change.value,
                       const.CoreLogCodes.username_change.value]
         self.submit(f)
-        self.assertPresence("Bereiche geändert.")
+        self.assertPresence(promotion_change_note)
         self.assertPresence("zelda@example.cde")
         self.assertPresence("bertalotta@example.cde")

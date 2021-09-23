@@ -50,10 +50,11 @@ import logging
 import math
 import re
 import string
+import typing
 from enum import Enum
 from typing import (
-    Callable, Iterable, Mapping, Optional, Sequence, Set, Tuple, TypeVar,
-    Union, cast, get_type_hints, overload, Generic
+    Callable, Iterable, Mapping, Optional, Protocol, Sequence, Set, Tuple, TypeVar,
+    Union, cast, get_type_hints, overload, get_origin, get_args
 )
 
 import magic
@@ -62,7 +63,6 @@ import pytz
 import pytz.tzinfo
 import werkzeug.datastructures
 import zxcvbn
-from typing_extensions import Protocol
 
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
@@ -70,7 +70,7 @@ from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, EPSILON, EVENT_SCHEMA_VERSION, INFINITE_ENUM_MAGIC_NUMBER,
     REALM_SPECIFIC_GENESIS_FIELDS, CdEDBObjectMap, Error, InfiniteEnum,
     ValidationWarning, asciificator, compute_checkdigit, extract_roles, n_, now,
-    xsorted,
+    xsorted, LineResolutions,
 )
 from cdedb.config import BasicConfig
 from cdedb.database.constants import FieldAssociations, FieldDatatypes
@@ -126,18 +126,16 @@ class ValidatorStorage(Dict[Type[Any], Callable[..., Any]]):
         super().__setitem__(type_, validator)
 
     def __getitem__(self, type_: Type[T]) -> Callable[..., T]:
-        # TODO replace with get_origin etc in Python 3.8
-        if hasattr(type_, "__origin__"):
-            if type_.__origin__ is Union:  # type: ignore
-                inner_type, none_type = type_.__args__  # type: ignore
-                if none_type is not NoneType:
-                    raise KeyError("Complex unions not supported")
-                validator = self[inner_type]
-                return _allow_None(validator)  # type: ignore
-            elif type_.__origin__ is list:  # type: ignore
-                [inner_type] = type_.__args__  # type: ignore
-                return make_list_validator(inner_type)  # type: ignore
-            # TODO more container types like tuple
+        if typing.get_origin(type_) is Union:
+            inner_type, none_type = typing.get_args(type_)
+            if none_type is not NoneType:
+                raise KeyError("Complex unions not supported")
+            validator = self[inner_type]
+            return _allow_None(validator)  # type: ignore
+        elif typing.get_origin(type_) is list:
+            [inner_type] = typing.get_args(type_)
+            return make_list_validator(inner_type)  # type: ignore
+        # TODO more container types like tuple
         return super().__getitem__(type_)
 
 
@@ -155,7 +153,7 @@ def validate_assert(type_: Type[T], value: Any, **kwargs: Any) -> T:
         )
         e = errs[0]
         e.args = ("{} ({})".format(e.args[1], e.args[0]),) + e.args[2:]
-        raise e from errs
+        raise e from errs  # pylint: disable=raising-bad-type
 
 
 def validate_assert_optional(type_: Type[T], value: Any, **kwargs: Any) -> Optional[T]:
@@ -181,11 +179,6 @@ def validate_check_optional(
     type_: Type[T], value: Any, **kwargs: Any
 ) -> Tuple[Optional[T], List[Error]]:
     return validate_check(Optional[type_], value, **kwargs)  # type: ignore
-
-
-# TODO replace with get_origin etc in Python 3.8 from typing
-get_args = lambda t: getattr(t, '__args__', ()) if t is not Generic else Generic
-get_origin = lambda t: getattr(t, '__origin__', None)
 
 
 def is_optional(type_: Type[T]) -> bool:
@@ -1167,6 +1160,26 @@ def _persona(
     return Persona(val)
 
 
+@_add_typed_validator
+def _batch_admission_entry(
+    val: Any, argname: str = None, **kwargs: Any
+) -> BatchAdmissionEntry:
+    val = _mapping(val, argname, **kwargs)
+    mandatory_fields: Dict[str, Any] = {
+        'resolution': LineResolutions,
+        'doppelganger_id': Optional[int],
+        'pevent_id': Optional[int],
+        'pcourse_id': Optional[int],
+        'is_instructor': bool,
+        'is_orga': bool,
+        'update_username': bool,
+        'persona': Any,  # TODO This should be more strict
+    }
+    optional_fields: TypeMapping = {}
+    return BatchAdmissionEntry(_examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, **kwargs))
+
+
 def parse_date(val: str) -> datetime.date:
     """Make a string into a date.
 
@@ -1302,7 +1315,7 @@ def _phone(
 ) -> Phone:
     val = _printable_ascii(val, argname, **kwargs)
     orig = val.strip()
-    val = ''.join(c for c in val if c in '+1234567890')  # pylint: disable=not-an-iterable; # noqa
+    val = ''.join(c for c in val if c in '+1234567890')
 
     if len(val) < 7:
         raise ValidationSummary(ValueError(argname, n_("Too short.")))
@@ -1542,7 +1555,7 @@ def _csvfile(
     """
     val = _input_file(val, argname, **kwargs)
     mime = magic.from_buffer(val, mime=True)
-    if mime not in ("text/csv", "text/plain"):
+    if mime not in ("text/csv", "text/plain", "application/csv"):
         raise ValidationSummary(ValueError(
             argname, n_("Only text/csv allowed.")))
     val = _str(val.decode(encoding).strip(), argname, **kwargs)
@@ -1725,6 +1738,20 @@ def _lastschrift(
     return Lastschrift(val)
 
 
+@_add_typed_validator
+def _money_transfer_entry(val: Any, argname: str = "money_transfer_entry",
+                       **kwargs: Any) -> MoneyTransferEntry:
+    val = _mapping(val, argname, **kwargs)
+    mandatory_fields: Dict[str, Any] = {
+        'persona_id': int,
+        'amount': decimal.Decimal,
+        'note': Optional[str],
+    }
+    optional_fields: TypeMapping = {}
+    return MoneyTransferEntry(_examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, **kwargs))
+
+
 # TODO move above
 @_add_typed_validator
 def _iban(
@@ -1803,6 +1830,21 @@ def _lastschrift_transaction(
         raise ValidationSummary(ValueError(argname, n_(
             "Modification of lastschrift transactions not supported.")))
     return LastschriftTransaction(_examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, **kwargs))
+
+
+@_add_typed_validator
+def _lastschrift_transaction_entry(
+        val: Any, argname: str = "lastschrift_transaction_entry",
+        **kwargs: Any) -> LastschriftTransactionEntry:
+    val = _mapping(val, argname, **kwargs)
+    mandatory_fields: Dict[str, Any] = {
+        'transaction_id': int,
+        'tally': Optional[decimal.Decimal],
+        'status': const.LastschriftTransactionStati,
+    }
+    optional_fields: TypeMapping = {}
+    return LastschriftTransactionEntry(_examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs))
 
 
@@ -2323,16 +2365,18 @@ def _event_track(
     return EventTrack(val)
 
 
-def _EVENT_FIELD_COMMON_FIELDS(extra_suffix: str) -> TypeMapping: return {
-    'kind{}'.format(extra_suffix): const.FieldDatatypes,
-    'association{}'.format(extra_suffix): const.FieldAssociations,
-    'entries{}'.format(extra_suffix): Any,  # type: ignore
-}
+def _EVENT_FIELD_COMMON_FIELDS(extra_suffix: str) -> TypeMapping:
+    return {
+        'kind{}'.format(extra_suffix): const.FieldDatatypes,
+        'association{}'.format(extra_suffix): const.FieldAssociations,
+        'entries{}'.format(extra_suffix): Any,  # type: ignore
+    }
 
 
-def _EVENT_FIELD_OPTIONAL_FIELDS(extra_suffix: str) -> TypeMapping: return {
-    f'checkin{extra_suffix}': bool,
-}
+def _EVENT_FIELD_OPTIONAL_FIELDS(extra_suffix: str) -> TypeMapping:
+    return {
+        f'checkin{extra_suffix}': bool,
+    }
 
 
 @_add_typed_validator
@@ -2410,11 +2454,12 @@ def _event_field(
     return EventField(val)
 
 
-def _EVENT_FEE_MODIFIER_COMMON_FIELDS(extra_suffix: str) -> TypeMapping: return {
-    "modifier_name{}".format(extra_suffix): RestrictiveIdentifier,
-    "amount{}".format(extra_suffix): decimal.Decimal,
-    "field_id{}".format(extra_suffix): ID,
-}
+def _EVENT_FEE_MODIFIER_COMMON_FIELDS(extra_suffix: str) -> TypeMapping:
+    return {
+        "modifier_name{}".format(extra_suffix): RestrictiveIdentifier,
+        "amount{}".format(extra_suffix): decimal.Decimal,
+        "field_id{}".format(extra_suffix): ID,
+    }
 
 
 @_add_typed_validator
@@ -2712,7 +2757,7 @@ def _event_associated_fields(
         if field['association'] == association:
             dt = _ALL_TYPED[const.FieldDatatypes](
                 field['kind'], field['field_name'], **kwargs)
-            datatypes[field['field_name']] = cast(Type[Any], eval(  # pylint: disable=eval-used # noqa
+            datatypes[field['field_name']] = cast(Type[Any], eval(  # pylint: disable=eval-used
                 f"Optional[{dt.name}]",
                 {
                     'Optional': Optional,
@@ -2740,6 +2785,21 @@ def _event_associated_fields(
         raise errs
 
     return EventAssociatedFields(val)
+
+
+@_add_typed_validator
+def _fee_booking_entry(val: Any, argname: str = "fee_booking_entry",
+                       **kwargs: Any) -> FeeBookingEntry:
+    val = _mapping(val, argname, **kwargs)
+    mandatory_fields: Dict[str, Any] = {
+        'registration_id': int,
+        'date': Optional[datetime.date],
+        'original_date': datetime.date,
+        'amount': decimal.Decimal,
+    }
+    optional_fields: TypeMapping = {}
+    return FeeBookingEntry(_examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, **kwargs))
 
 
 LODGEMENT_GROUP_FIELDS: TypeMapping = {
@@ -3909,7 +3969,7 @@ def _vote(
         errs.append(KeyError(argname, n_("Missing candidates.")))
     if errs:
         raise errs
-    if ballot['votes'] and '>' in val:  # pylint: disable=unsupported-membership-test
+    if ballot['votes'] and '>' in val:
         # ordinary voting has more constraints
         # if no strictly greater we have a valid abstention
         groups = val.split('>')
@@ -3937,7 +3997,7 @@ def _regex(
         re.compile(val)
     except re.error as e:
         # TODO maybe provide more precise feedback?
-        raise ValidationSummary(
+        raise ValidationSummary(  # pylint: disable=raise-missing-from
             ValueError(argname,
                        n_("Invalid  regular expression (position %(pos)s)."),
                        {'pos': e.pos}))
@@ -3953,7 +4013,7 @@ def _non_regex(
     forbidden_chars = r'\*+?{}()[]|'
     msg = n_("Must not contain any forbidden characters"
              " (which are %(forbidden_chars)s while .^$ are allowed).")
-    if any(char in val for char in forbidden_chars):  # pylint: disable=unsupported-membership-test; # noqa
+    if any(char in val for char in forbidden_chars):
         raise ValidationSummary(
             ValueError(argname, msg, {"forbidden_chars": forbidden_chars}))
     return NonRegex(val)

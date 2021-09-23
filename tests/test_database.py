@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# pylint: disable=missing-module-docstring
 
 import unittest
 
@@ -24,6 +25,7 @@ class TestDatabase(unittest.TestCase):
             self.assertIsInstance(conn, psycopg2.extensions.connection)
             self.assertIsInstance(conn, IrradiatedConnection)
         with self.assertRaises(ValueError):
+            # pylint: disable=pointless-statement
             factory["nonexistentrole"]  # exception in __getitem__
 
     def test_less_users(self) -> None:
@@ -31,6 +33,7 @@ class TestDatabase(unittest.TestCase):
             _CONF["CDB_DATABASE_NAME"], ("cdb_anonymous", "cdb_admin"),
             _SECRECTSCONF, _CONF["DB_PORT"])
         with self.assertRaises(ValueError):
+            # pylint: disable=pointless-statement
             factory["cdb_persona"]  # exception in __getitem__
 
     def test_atomizer(self) -> None:

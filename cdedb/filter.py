@@ -1,3 +1,5 @@
+"""Filter definitions for jinja templates"""
+
 import datetime
 import decimal
 import enum
@@ -6,10 +8,9 @@ import threading
 
 import logging
 from typing import (
-    Any, Callable, Collection, Container, Dict, Iterable, ItemsView, List,
+    Any, Callable, Collection, Container, Dict, Iterable, ItemsView, List, Literal,
     Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, overload
 )
-from typing_extensions import Literal
 
 import bleach
 import icu
@@ -412,7 +413,7 @@ def get_markdown_parser() -> markdown.Markdown:
     md = getattr(MARKDOWN_PARSER, 'md', None)
 
     if md is None:
-        extension_configs = {
+        extension_configs: Mapping[str, Mapping[str, Any]] = {
             "toc": {
                 "baselevel": 4,
                 "permalink": True,

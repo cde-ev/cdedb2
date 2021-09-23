@@ -1,3 +1,5 @@
+"""Helpers for parsing bank statements"""
+
 import collections
 import datetime
 import decimal
@@ -9,7 +11,7 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
     Accounts, CdEDBObject, CdEDBObjectMap, Error, TransactionType, diacritic_patterns,
-    n_, now, EntitySorter, xsorted,
+    n_, now, EntitySorter, xsorted, PARSE_OUTPUT_DATEFORMAT
 )
 from cdedb.filter import cdedbid_filter
 from cdedb.validation import validate_check
@@ -70,10 +72,6 @@ STATEMENT_REFERENCE_DELIMITERS = ["ABWE", "ABWA", "SVWZ", "OAMT", "COAM",
 # Note that the order should be the same as in the above SEPA-specification
 # (which is reverse of the actual order in the reference).
 STATEMENT_RELEVANT_REFERENCE_DELIMITERS = ["SVWZ", "EREF"]
-
-# Specification for the output date format.
-# Note how this differs from the input in that we use 4 digit years.
-OUTPUT_DATEFORMAT = "%d.%m.%Y"
 
 # The following are some regEx definitions to match some expected
 # postings and references:
@@ -223,8 +221,8 @@ def parse_amount(amount: str) -> decimal.Decimal:
         amount = number_from_german(amount)
         try:
             ret = decimal.Decimal(amount)
-        except decimal.InvalidOperation:
-            raise ValueError("Could not parse.")
+        except decimal.InvalidOperation as e:
+            raise ValueError("Could not parse.") from e
     return ret
 
 
@@ -833,7 +831,7 @@ class Transaction:
         ret = {
             "reference": self.reference,
             "account": self.account.value,
-            "statement_date": self.statement_date.strftime(OUTPUT_DATEFORMAT),
+            "statement_date": self.statement_date.strftime(PARSE_OUTPUT_DATEFORMAT),
             "amount": self.amount_english,
             "amount_german": self.amount_german,
             "account_holder": self.account_holder,

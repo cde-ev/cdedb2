@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# pylint: disable=missing-module-docstring
 
 import datetime
 
@@ -174,6 +175,53 @@ class TestPastEventBackend(BackendTest):
         participants = self.pastevent.list_participants(self.key, pevent_id=1)
         self.assertNotIn((3, None), participants)
         self.assertIn((3, 2), participants)
+
+    @as_users("vera")
+    def test_rcw_mechanism(self) -> None:
+        institution_id = 1
+        data = self.pastevent.get_institution(
+            self.key, institution_id=institution_id)
+        self.pastevent.rcw_institution(self.key, data)
+        self.assertEqual(data, self.pastevent.get_institution(
+            self.key, institution_id=institution_id))
+
+        # positional argument
+        data['title'] = "Stavromula Beta"
+        self.pastevent.rcw_institution(self.key, data)
+        self.assertEqual(data, self.pastevent.get_institution(
+            self.key, institution_id=institution_id))
+        self.pastevent.rcw_institution(
+            self.key, {'id': data['id'], 'title': data['title']})
+        self.assertEqual(data, self.pastevent.get_institution(
+            self.key, institution_id=institution_id))
+        data['title'] = "Stavromula Gamma"
+        self.pastevent.rcw_institution(self.key, data)
+        self.assertEqual(data, self.pastevent.get_institution(
+            self.key, institution_id=institution_id))
+        data['title'] = "Stavromula Delta"
+        self.pastevent.rcw_institution(
+            self.key, {'id': data['id'], 'title': data['title']})
+        self.assertEqual(data, self.pastevent.get_institution(
+            self.key, institution_id=institution_id))
+
+        # keyword argument
+        data['title'] = "Stavromula Epsilon"
+        self.pastevent.rcw_institution(self.key, data=data)
+        self.assertEqual(data, self.pastevent.get_institution(
+            self.key, institution_id=institution_id))
+        self.pastevent.rcw_institution(
+            self.key, data={'id': data['id'], 'title': data['title']})
+        self.assertEqual(data, self.pastevent.get_institution(
+            self.key, institution_id=institution_id))
+        data['title'] = "Stavromula Zeta"
+        self.pastevent.rcw_institution(self.key, data=data)
+        self.assertEqual(data, self.pastevent.get_institution(
+            self.key, institution_id=institution_id))
+        data['title'] = "Stavromula Eta"
+        self.pastevent.rcw_institution(
+            self.key, data={'id': data['id'], 'title': data['title']})
+        self.assertEqual(data, self.pastevent.get_institution(
+            self.key, institution_id=institution_id))
 
     @as_users("vera")
     def test_past_log(self) -> None:

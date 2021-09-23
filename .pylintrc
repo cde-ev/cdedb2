@@ -16,7 +16,7 @@ persistent=yes
 
 # List of plugins (as comma separated values of python modules names) to load,
 # usually to register additional checkers.
-load-plugins=
+load-plugins=pylint.extensions.bad_builtin
 
 # Use multiple processes to speed up Pylint.
 jobs=4
@@ -59,37 +59,23 @@ confidence=
 # --enable=similarities". If you want to run only the classes checker, but have
 # no Warning level messages displayed, use"--disable=all --enable=classes
 # --disable=W"
-disable=standarderror-builtin,delslice-method,old-ne-operator,basestring-builtin,oct-method,long-builtin,range-builtin-not-iterating,dict-iter-method,unpacking-in-except,hex-method,unicode-builtin,next-method-called,zip-builtin-not-iterating,reload-builtin,unichr-builtin,reduce-builtin,dict-view-method,nonzero-method,long-suffix,print-statement,getslice-method,setslice-method,intern-builtin,buffer-builtin,cmp-method,input-builtin,execfile-builtin,metaclass-assignment,old-octal-literal,apply-builtin,old-division,raw_input-builtin,raising-string,map-builtin-not-iterating,coerce-method,indexing-exception,backtick,parameter-unpacking,round-builtin,file-builtin,no-absolute-import,filter-builtin-not-iterating,useless-suppression,old-raise-syntax,cmp-builtin,using-cmp-argument,xrange-builtin,import-star-module-level,coerce-builtin,suppressed-message,logging-format-interpolation,invalid-name,
-        C0111, C0103, C0301, C0302, C0321, C0330,
-        W0212, W0511, W0613,
-        R1705,
-        logging-fstring-interpolation,
-        redefined-outer-name,
-        unsubscriptable-object,
-        function-redefined,
-        pointless-statement,
-        unexpected-keyword-arg,
-        missing-kwoa,
-        no-self-use,
-        ungrouped-imports,
-        no-member,
-        too-many-ancestors,
-        too-many-instance-attributes,
-        too-few-public-methods,
-        too-many-public-methods,
-        too-many-branches,
-        too-many-arguments,
-        too-many-locals,
-        too-many-statements,
-        too-many-boolean-expressions,
-        too-many-nested-blocks,
-        too-many-return-statements,
-        unused-variable,
-        no-value-for-parameter,
-        broad-except,
-        no-name-in-module,
-        cell-var-in-loop,
-        useless-super-delegation,
+disable=
+    no-member,no-name-in-module,  # our test classes and some modules (mainly icu) cause errors here
+    unsubscriptable-object,  # some mypy annotations are seemingly not recognized as such
+    no-value-for-parameter, # REQUESTdatadict blurs function args
+    no-else-return,no-else-raise,no-else-break,no-else-continue,  # better readability
+    unused-argument,unused-variable,
+    broad-except,  # all our broad excepts have a reason (e.g. safety fallback)
+    redefined-outer-name,
+    useless-super-delegation,  # we sometimes do this to have type annotations
+    design, too-many-nested-blocks,  # lots of our methods are sadly huge, so these are not helpful
+    too-many-lines,  # enable again after fixing #80
+    logging-fstring-interpolation,  # we do not perform very extensive logging, so this is irrelevant
+    missing-class-docstring,missing-function-docstring,  # not applicable for our application structure
+    invalid-name,
+    similarities,
+    fixme,
+
 
 [REPORTS]
 
@@ -193,7 +179,9 @@ logging-modules=logging
 max-line-length=88
 
 # Regexp for a line that is allowed to be longer than the limit.
-ignore-long-lines=^\s*(# )?<?https?://\S+>?$
+# default: ^\s*(# )?<?https?://\S+>?$
+# adjusted to cover mypy and flake8 ignore flags
+ignore-long-lines=^.{0,88}(\s+# (type: ignore|noqa(: )?)\S*)+$
 
 # Allow the body of an if to be on the same line as the test if there is no
 # else.
@@ -222,7 +210,7 @@ expected-line-ending-format=
 [BASIC]
 
 # List of builtins function names that should not be used, separated by a comma
-bad-functions=sorted
+bad-functions=sorted,breakpoint
 
 # Good variable names which should always be accepted, separated by a comma
 good-names=i,j,k,ex,Run,_

@@ -10,11 +10,11 @@ import datetime
 import decimal
 from pathlib import Path
 from typing import (
-    Any, Callable, Collection, Dict, Iterable, List, Mapping, Optional, Sequence, Set,
-    Tuple,
+    Any, Callable, Collection, Dict, Iterable, List, Mapping, Optional, Protocol,
+    Sequence, Set, Tuple,
 )
 
-from typing_extensions import Protocol
+import psycopg2.extensions
 
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
@@ -22,7 +22,8 @@ from cdedb.backend.common import (
     PYTHON_TO_SQL_MAP, AbstractBackend, Silencer, DatabaseValue_s, access,
     affirm_set_validation as affirm_set, affirm_validation_typed as affirm,
     affirm_validation_typed_optional as affirm_optional, cast_fields, internal,
-    singularize,
+    singularize, read_conditional_write_composer,
+    affirm_array_validation as affirm_array,
 )
 from cdedb.common import (
     COURSE_FIELDS, COURSE_SEGMENT_FIELDS,
@@ -36,6 +37,7 @@ from cdedb.common import (
     glue, implying_realms, json_serialize, mixed_existence_sorter, n_, now, unwrap,
     xsorted, STORED_EVENT_QUERY_FIELDS,
 )
+from cdedb.filter import money_filter, date_filter
 from cdedb.database.connection import Atomizer
 from cdedb.query import Query, QueryOperators, QueryScope
 from cdedb.validation import parse_date, parse_datetime
@@ -481,14 +483,16 @@ class EventBackend(AbstractBackend):
             query.constraints.append(("event_id", QueryOperators.equal,
                                       event_id))
             query.spec['event_id'] = "id"
-        elif query.scope in {QueryScope.event_user, QueryScope.archived_past_event_user}:
+        elif query.scope in {QueryScope.event_user,
+                             QueryScope.archived_past_event_user}:
             if not self.is_admin(rs) and "core_admin" not in rs.user.roles:
                 raise PrivilegeError(n_("Admin only."))
             # Include only un-archived event-users
             query.constraints.append(("is_event_realm", QueryOperators.equal,
                                       True))
-            query.constraints.append(("is_archived", QueryOperators.equal,
-                                      query.scope == QueryScope.archived_past_event_user))
+            query.constraints.append(
+                ("is_archived", QueryOperators.equal,
+                 query.scope == QueryScope.archived_past_event_user))
             query.spec["is_event_realm"] = "bool"
             query.spec["is_archived"] = "bool"
             # Exclude users of any higher realm (implying event)
@@ -2795,7 +2799,7 @@ class EventBackend(AbstractBackend):
                 data = self.query_all(rs, query, (part_id, waitlist))
                 ret[part_id] = xsorted(
                     (reg['id'] for reg in data),
-                    key=lambda r_id: (fields_by_id[r_id].get(field_name, 0) or 0, r_id))  # pylint: disable=cell-var-from-loop # noqa
+                    key=lambda r_id: (fields_by_id[r_id].get(field_name, 0) or 0, r_id))  # pylint: disable=cell-var-from-loop
             return ret
 
     @access("event")
@@ -3168,7 +3172,7 @@ class EventBackend(AbstractBackend):
                                                     fupdate)
             if 'parts' in data:
                 parts = data['parts']
-                if not (set(event['parts'].keys()) >= {x for x in parts}):
+                if not event['parts'].keys() >= parts.keys():
                     raise ValueError(n_("Non-existing parts specified."))
                 existing = {e['part_id']: e['id'] for e in self.sql_select(
                     rs, "event.registration_parts", ("id", "part_id"),
@@ -3488,6 +3492,65 @@ class EventBackend(AbstractBackend):
         calculate_fees, "registration_ids", "registration_id")
 
     @access("event")
+    def book_fees(self, rs: RequestState, event_id: int, data: Collection[CdEDBObject],
+                  ) -> Tuple[bool, Optional[int]]:
+        """Book all paid fees.
+
+        :returns: Success information and
+
+          * for positive outcome the number of recorded transfers
+          * for negative outcome the line where an exception was triggered
+            or None if it was a DB serialization error
+        """
+        data = affirm_array(vtypes.FeeBookingEntry, data)
+
+        if (not self.is_orga(rs, event_id=event_id)
+                and not self.is_admin(rs)):
+            raise PrivilegeError(n_("Not privileged."))
+        self.assert_offline_lock(rs, event_id=event_id)
+
+        index = 0
+        # noinspection PyBroadException
+        try:
+            with Atomizer(rs):
+                count = 0
+                all_reg_ids = {datum['registration_id'] for datum in data}
+                all_regs = self.get_registrations(rs, all_reg_ids)
+                if any(reg['event_id'] != event_id for reg in all_regs.values()):
+                    raise ValueError(n_("Mismatched registrations,"
+                                        " not associated with the event."))
+                for index, datum in enumerate(data):
+                    reg_id = datum['registration_id']
+                    update = {
+                        'id': reg_id,
+                        'payment': datum['date'],
+                        'amount_paid': all_regs[reg_id]['amount_paid']
+                                       + datum['amount'],
+                    }
+                    change_note = "{} am {} gezahlt.".format(
+                        money_filter(datum['amount']),
+                        date_filter(datum['original_date'], lang="de"))
+                    count += self.set_registration(rs, update, change_note)
+        except psycopg2.extensions.TransactionRollbackError:
+            # We perform a rather big transaction, so serialization errors
+            # could happen.
+            return False, None
+        except Exception:
+            # This blanket catching of all exceptions is a last resort. We try
+            # to do enough validation, so that this should never happen, but
+            # an opaque error (as would happen without this) would be rather
+            # frustrating for the users -- hence some extra error handling
+            # here.
+            self.logger.error(glue(
+                ">>>\n>>>\n>>>\n>>> Exception during fee transfer processing",
+                "<<<\n<<<\n<<<\n<<<"))
+            self.logger.exception("FIRST AS SIMPLE TRACEBACK")
+            self.logger.error("SECOND TRY CGITB")
+            self.cgitb_log()
+            return False, index
+        return True, count
+
+    @access("event")
     def check_orga_addition_limit(self, rs: RequestState,
                                   event_id: int) -> bool:
         """Implement a rate limiting check for orgas adding persons.
@@ -3576,6 +3639,12 @@ class EventBackend(AbstractBackend):
                 change_note=title)
 
         return ret
+
+    class _RCWLodgementGroupProtocol(Protocol):
+        def __call__(self, rs: RequestState, data: CdEDBObject
+                     ) -> DefaultReturnCode: ...
+    rcw_lodgement_group: _RCWLodgementGroupProtocol = read_conditional_write_composer(
+        get_lodgement_group, set_lodgement_group, id_param_name='group_id')
 
     @access("event")
     def create_lodgement_group(self, rs: RequestState,

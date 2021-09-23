@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""General testing utilities for CdEDB2 testsuite"""
 
 import collections.abc
 import copy
@@ -46,7 +47,7 @@ from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.application import Application
-from cdedb.frontend.common import AbstractFrontend, Worker
+from cdedb.frontend.common import AbstractFrontend, Worker, setup_translations
 from cdedb.frontend.cron import CronFrontend
 from cdedb.query import QueryOperators
 from cdedb.script import setup
@@ -139,15 +140,14 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
     This is similar to the normal make_proxy but encorporates a different
     wrapper.
     """
+    # pylint: disable=protected-access
 
     sessionproxy = SessionBackend(backend.conf._configpath)
     secrets = SecretsConfig(backend.conf._configpath)
     connpool = connection_pool_factory(
         backend.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
         secrets, backend.conf["DB_PORT"])
-    translator = gettext.translation(
-        'cdedb', languages=['de'],
-        localedir=str(backend.conf["REPOSITORY_PATH"] / 'i18n'))
+    translations = setup_translations(backend.conf)
 
     def setup_requeststate(key: Optional[str], ip: str = "127.0.0.0"
                            ) -> RequestState:
@@ -171,11 +171,19 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
             apitoken = key
 
         rs = RequestState(
-            sessionkey=sessionkey, apitoken=apitoken, user=user,
-            request=None, notifications=[], mapadapter=None,  # type: ignore
-            requestargs=None, errors=[], values=None, lang="de",
-            gettext=translator.gettext, ngettext=translator.ngettext,
-            coders=None, begin=now())
+            sessionkey=sessionkey,
+            apitoken=apitoken,
+            user=user,
+            request=None,  # type: ignore[arg-type]
+            notifications=[],
+            mapadapter=None,  # type: ignore[arg-type]
+            requestargs=None,
+            errors=[],
+            values=None,
+            begin=now(),
+            lang="de",
+            translations=translations,
+        )
         rs._conn = connpool[roles_to_db_role(rs.user.roles)]
         rs.conn = rs._conn
         if "event" in rs.user.roles and hasattr(backend, "orga_info"):
@@ -323,6 +331,7 @@ class BackendTest(CdEDBTest):
     pastevent: ClassVar[PastEventBackend]
     ml: ClassVar[MlBackend]
     assembly: ClassVar[AssemblyBackend]
+    translations: ClassVar[Mapping[str, gettext.NullTranslations]]
     user: UserObject
     key: RequestState
 
@@ -339,6 +348,7 @@ class BackendTest(CdEDBTest):
         # Workaround to make orga info available for calls into the MLBackend.
         cls.ml.orga_info = lambda rs, persona_id: cls.event.orga_info(  # type: ignore
             rs.sessionkey, persona_id)
+        cls.translations = setup_translations(cls.conf)
 
     def setUp(self) -> None:
         """Reset login state."""
@@ -774,7 +784,8 @@ class FrontendTest(BackendTest):
             # path without host but with query string - capped at 64 chars
             # To enhance readability, we mark most chars as safe. All special chars are
             # allowed in linux file paths, but sadly windows is more restrictive...
-            url = urllib.parse.quote(self.response.request.path_qs, safe='/;@&=+$,~')[:64]
+            url = urllib.parse.quote(
+                self.response.request.path_qs, safe='/;@&=+$,~')[:64]
             # since / chars are forbidden in file paths, we replace them by _
             url = url.replace('/', '_')
             # create a temporary file in scrap_path with url as a prefix
@@ -1262,7 +1273,7 @@ class FrontendTest(BackendTest):
         f = self.response.forms['logshowform']
         # use internal value property as I don't see a way to get the
         # checkbox value otherwise
-        codes = [field._value for field in f.fields['codes']]
+        codes = [field._value for field in f.fields['codes']]  # pylint: disable=protected-access
         f['codes'] = codes
         self.assertGreater(len(codes), 1)
         self.submit(f)

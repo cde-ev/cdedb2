@@ -13,6 +13,11 @@
     {{ util.breadcrumb_link(show_user_link(user, current['id']), util.persona_name(current), icon="user") }}
     {{ util.breadcrumb_link(cdedblink("core/show_history"), gettext("Change History"), active=True) }}
 {% endblock %}
+
+{% block heading %}
+    {{ util.context_heading(gettext("Change History"), util.persona_name(current), 'user', gettext("User")) }}
+{% endblock %}
+
 {% set STATUS={enums["MemberChangeStati"].pending: ('pending','check',gettext("pending")),
                 enums["MemberChangeStati"].committed: ('','',''),
                 enums["MemberChangeStati"].superseded: ('superseded', 'sync', gettext("superseded")),
@@ -263,7 +268,7 @@
     </div>
 
     <h3>{% trans %}Changes{% endtrans %}</h3>
-    <table class="table table-condensed table-hover">
+    <table class="table table-condensed table-hover" id="generation-overview">
         <thead>
             <tr>
                 <th></th>
@@ -276,7 +281,7 @@
         </thead>
         <tbody>
             {% for _, entry in entries|xdictsort('generation')|reverse %}
-                <tr>
+                <tr id="generation{{ entry['generation'] }}">
                     <td class="nowrap">{% trans %}Gen{% endtrans %} {{ entry['generation'] }}</td>
                     <td>{{ entry['ctime']|datetime(lang=lang) }}</td>
                     <td>{{ gettext(entry['code']|enum(enums['MemberChangeStati'])) }}</td>

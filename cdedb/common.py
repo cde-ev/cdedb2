@@ -8,6 +8,7 @@ import datetime
 import decimal
 import enum
 import functools
+import gettext  # pylint: disable=unused-import
 import hashlib
 import hmac
 import itertools
@@ -28,6 +29,7 @@ import icu
 import psycopg2.extras
 import pytz
 import werkzeug
+import werkzeug.datastructures
 import werkzeug.exceptions
 import werkzeug.routing
 
@@ -136,19 +138,16 @@ class RequestState:
     enough to not be non-nice).
     """
 
-    def __init__(self, sessionkey: Optional[str], apitoken: Optional[str],
-                 user: User, request: werkzeug.Request,
-                 notifications: Collection[Notification],
+    def __init__(self, sessionkey: Optional[str], apitoken: Optional[str], user: User,
+                 request: werkzeug.Request, notifications: Collection[Notification],
                  mapadapter: werkzeug.routing.MapAdapter,
                  requestargs: Optional[Dict[str, int]],
                  errors: Collection[Error],
-                 values: Optional[CdEDBMultiDict], lang: str,
-                 gettext: Callable[[str], str],
-                 ngettext: Callable[[str, str, int], str],
-                 coders: Optional[Mapping[str, Callable]],  # type: ignore
+                 values: Optional[CdEDBMultiDict],
                  begin: Optional[datetime.datetime],
-                 default_gettext: Callable[[str], str] = None,
-                 default_ngettext: Callable[[str, str, int], str] = None):
+                 lang: str,
+                 translations: Mapping[str, gettext.NullTranslations],
+                 ) -> None:
         """
         :param mapadapter: URL generator (specific for this request)
         :param requestargs: verbatim copy of the arguments contained in the URL
@@ -157,13 +156,9 @@ class RequestState:
           filling forms in.
         :param lang: language code for i18n, currently only 'de' and 'en' are
             valid.
-        :param coders: Functions for encoding and decoding parameters primed
-          with secrets. This is hacky, but sadly necessary.
+        :param translations: A mapping of language (like the `lang` parameter) to
+            gettext translation object.
         :param begin: time where we started to process the request
-        :param default_gettext: default translation function used to ensure
-            stability across different locales
-        :param default_ngettext: default translation function used to ensure
-            stability across different locales
         """
         self.ambience: Dict[str, CdEDBObject] = {}
         self.sessionkey = sessionkey
@@ -178,11 +173,7 @@ class RequestState:
             values = werkzeug.datastructures.MultiDict(values)
         self.values = values or werkzeug.datastructures.MultiDict()
         self.lang = lang
-        self.gettext = gettext
-        self.ngettext = ngettext
-        self.default_gettext = default_gettext or gettext
-        self.default_ngettext = default_ngettext or ngettext
-        self._coders = coders or {}
+        self.translations = translations
         self.begin = begin or now()
         # Visible version of the database connection
         # noinspection PyTypeChecker
@@ -199,6 +190,22 @@ class RequestState:
         # is executed and then to True with the corresponding methods
         # of this class
         self.validation_appraised: Optional[bool] = None
+
+    @property
+    def gettext(self) -> Callable[[str], str]:
+        return self.translations[self.lang].gettext
+
+    @property
+    def ngettext(self) -> Callable[[str, str, int], str]:
+        return self.translations[self.lang].ngettext
+
+    @property
+    def default_gettext(self) -> Callable[[str], str]:
+        return self.translations["en"].gettext
+
+    @property
+    def default_ngettext(self) -> Callable[[str, str, int], str]:
+        return self.translations["en"].ngettext
 
     def notify(self, ntype: NotificationType, message: str,
                params: CdEDBObject = None) -> None:
@@ -305,7 +312,7 @@ def make_proxy(backend: B, internal: bool = False) -> B:
                 if not internal:
                     # Expose database connection for the backends
                     # noinspection PyProtectedMember
-                    rs.conn = rs._conn
+                    rs.conn = rs._conn  # pylint: disable=protected-access
                 return fun(rs, *args, **kwargs)
             finally:
                 if not internal:
@@ -326,7 +333,7 @@ def make_proxy(backend: B, internal: bool = False) -> B:
             return wrapit(attr)
 
         @staticmethod
-        def _get_backend_class() -> Type[B]:
+        def get_backend_class() -> Type[B]:
             return backend.__class__
 
     return cast(B, Proxy())
@@ -342,7 +349,7 @@ def make_root_logger(name: str, logfile_path: PathLike,
     """
     logger = logging.getLogger(name)
     if logger.handlers:
-        logger.debug("Logger {} already initialized.".format(name))
+        logger.debug(f"Logger {name} already initialized.")
         return logger
     logger.propagate = False
     logger.setLevel(log_level)
@@ -362,7 +369,7 @@ def make_root_logger(name: str, logfile_path: PathLike,
         console_handler.setLevel(console_log_level)
         console_handler.setFormatter(formatter)
         logger.addHandler(console_handler)
-    logger.debug("Configured logger {}.".format(name))
+    logger.debug(f"Configured logger {name}.")
     return logger
 
 
@@ -446,7 +453,7 @@ class NearlyNow(datetime.datetime):
     """
     _delta: datetime.timedelta
 
-    def __new__(cls, *args: Any, delta: datetime.timedelta = _NEARLY_DELTA_DEFAULT,  # pylint: disable=arguments-differ
+    def __new__(cls, *args: Any, delta: datetime.timedelta = _NEARLY_DELTA_DEFAULT,
                 **kwargs: Any) -> "NearlyNow":
         self = super().__new__(cls, *args, **kwargs)
         self._delta = delta
@@ -544,16 +551,47 @@ def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,
                   reverse=reverse)
 
 
+def format_country_code(code: str) -> str:
+    """Helper to make string hidden to pybabel.
+
+    All possible combined strings are given for translation
+    in `i18n_additional.py`
+    """
+    return f'CountryCodes.{code}'
+
+
 def get_localized_country_codes(rs: RequestState) -> List[Tuple[str, str]]:
     """Generate a list of country code - name tuples in current language."""
 
-    def _format_country_code(code: str) -> str:
-        """Helper to make string hidden to pybabel."""
-        return f'CountryCodes.{code}'
+    if not hasattr(get_localized_country_codes, "localized_country_codes"):
+        localized_country_codes = {
+            lang: xsorted(
+                ((cc, rs.translations[lang].gettext(format_country_code(cc)))
+                 for cc in COUNTRY_CODES),
+                key=lambda x: x[1]
+            )
+            for lang in rs.translations
+        }
+        get_localized_country_codes.localized_country_codes = localized_country_codes  # type: ignore[attr-defined]
+    return get_localized_country_codes.localized_country_codes[rs.lang]  # type: ignore[attr-defined]
 
-    return xsorted(
-        [(v, rs.gettext(_format_country_code(v))) for v in COUNTRY_CODES],
-        key=lambda x: x[1])
+
+def get_country_code_from_country(rs: RequestState, country: str) -> str:
+    """Match a country to its country code."""
+
+    if not hasattr(get_country_code_from_country, "reverse_country_code_map"):
+        reverse_map = {
+            lang: {
+                rs.translations[lang].gettext(format_country_code(cc)): cc
+                for cc in COUNTRY_CODES
+            }
+            for lang in rs.translations
+        }
+        get_country_code_from_country.reverse_map = reverse_map  # type: ignore[attr-defined]
+    for lang, v in get_country_code_from_country.reverse_map.items():  # type: ignore[attr-defined]
+        if ret := v.get(country):
+            return ret
+    return country
 
 
 Sortkey = Tuple[Union[str, int, datetime.datetime], ...]
@@ -778,7 +816,7 @@ def int_to_words(num: int, lang: str) -> str:
 
 class CustomJSONEncoder(json.JSONEncoder):
     """Custom JSON encoder to handle the types that occur for us."""
-    # pylint: disable=method-hidden,arguments-differ
+    # pylint: disable=arguments-differ
 
     @overload
     def default(self, obj: Union[datetime.date, datetime.datetime,
@@ -1356,6 +1394,37 @@ def n_(x: str) -> str:
     return x
 
 
+UMLAUT_MAP = {
+    "ä": "ae", "æ": "ae",
+    "Ä": "AE", "Æ": "AE",
+    "ö": "oe", "ø": "oe", "œ": "oe",
+    "Ö": "Oe", "Ø": "Oe", "Œ": "Oe",
+    "ü": "ue",
+    "Ü": "Ue",
+    "ß": "ss",
+    "à": "a", "á": "a", "â": "a", "ã": "a", "å": "a", "ą": "a",
+    "À": "A", "Á": "A", "Â": "A", "Ã": "A", "Å": "A", "Ą": "A",
+    "ç": "c", "č": "c", "ć": "c",
+    "Ç": "C", "Č": "C", "Ć": "C",
+    "è": "e", "é": "e", "ê": "e", "ë": "e", "ę": "e",
+    "È": "E", "É": "E", "Ê": "E", "Ë": "E", "Ę": "E",
+    "ì": "i", "í": "i", "î": "i", "ï": "i",
+    "Ì": "I", "Í": "I", "Î": "I", "Ï": "I",
+    "ł": "l",
+    "Ł": "L",
+    "ñ": "n", "ń": "n",
+    "Ñ": "N", "Ń": "N",
+    "ò": "o", "ó": "o", "ô": "o", "õ": "o", "ő": "o",
+    "Ò": "O", "Ó": "O", "Ô": "O", "Õ": "O", "Ő": "O",
+    "ù": "u", "ú": "u", "û": "u", "ű": "u",
+    "Ù": "U", "Ú": "U", "Û": "U", "Ű": "U",
+    "ý": "y", "ÿ": "y",
+    "Ý": "Y", "Ÿ": "Y",
+    "ź": "z",
+    "Ź": "Z",
+}
+
+
 def asciificator(s: str) -> str:
     """Pacify a string.
 
@@ -1363,39 +1432,10 @@ def asciificator(s: str) -> str:
     be used if your use case does not tolerate any fancy characters
     (like SEPA files).
     """
-    umlaut_map = {
-        "ä": "ae", "æ": "ae",
-        "Ä": "AE", "Æ": "AE",
-        "ö": "oe", "ø": "oe", "œ": "oe",
-        "Ö": "Oe", "Ø": "Oe", "Œ": "Oe",
-        "ü": "ue",
-        "Ü": "Ue",
-        "ß": "ss",
-        "à": "a", "á": "a", "â": "a", "ã": "a", "å": "a", "ą": "a",
-        "À": "A", "Á": "A", "Â": "A", "Ã": "A", "Å": "A", "Ą": "A",
-        "ç": "c", "č": "c", "ć": "c",
-        "Ç": "C", "Č": "C", "Ć": "C",
-        "è": "e", "é": "e", "ê": "e", "ë": "e", "ę": "e",
-        "È": "E", "É": "E", "Ê": "E", "Ë": "E", "Ę": "E",
-        "ì": "i", "í": "i", "î": "i", "ï": "i",
-        "Ì": "I", "Í": "I", "Î": "I", "Ï": "I",
-        "ł": "l",
-        "Ł": "L",
-        "ñ": "n", "ń": "n",
-        "Ñ": "N", "Ń": "N",
-        "ò": "o", "ó": "o", "ô": "o", "õ": "o", "ő": "o",
-        "Ò": "O", "Ó": "O", "Ô": "O", "Õ": "O", "Ő": "O",
-        "ù": "u", "ú": "u", "û": "u", "ű": "u",
-        "Ù": "U", "Ú": "U", "Û": "U", "Ű": "U",
-        "ý": "y", "ÿ": "y",
-        "Ý": "Y", "Ÿ": "Y",
-        "ź": "z",
-        "Ź": "Z",
-    }
     ret = ""
     for char in s:
-        if char in umlaut_map:
-            ret += umlaut_map[char]
+        if char in UMLAUT_MAP:
+            ret += UMLAUT_MAP[char]
         elif char in (  # pylint: disable=superfluous-parens
             string.ascii_letters + string.digits + " /-?:().,+"
         ):
@@ -1403,6 +1443,18 @@ def asciificator(s: str) -> str:
         else:
             ret += ' '
     return ret
+
+
+# According to https://en.wikipedia.org/wiki/Filename#Reserved_characters_and_words
+FILENAME_SANITIZE_MAP = str.maketrans({
+    x: '_'
+    for x in "/\\?%*:|\"<> ."
+})
+
+
+def sanitize_filename(name: str) -> str:
+    """Sanitize filenames by replacing forbidden and problematic characters with '_'."""
+    return name.translate(FILENAME_SANITIZE_MAP)
 
 
 MaybeStr = TypeVar("MaybeStr", str, Type[None])
@@ -1454,6 +1506,25 @@ def diacritic_patterns(s: str, two_way_replace: bool = False) -> str:
         for _, regex in umlaut_map:
             s = re.sub(regex, regex, s, flags=re.IGNORECASE)
     return s
+
+
+UMLAUT_TRANSLATE_TABLE = str.maketrans({
+    char: f"({char}|{repl})" if len(repl) > 1 else f"[{char}{repl}]"
+    for char, repl in UMLAUT_MAP.items()})
+
+
+def inverse_diacritic_patterns(s: str) -> str:
+    """
+    Replace diacritic letters in a search pattern with a regex that
+    matches either the diacritic letter or its ASCII representation.
+
+    This function does kind of the opposite thing than
+    :func:`diacritic_patterns`: Instead of enhancing a search expression such
+    that also searches for similiar words with diacritics, it takes a word with
+    diacritic characters and enhances it to a search expression that will find
+    the word even when written without the diacritics.
+    """
+    return s.translate(UMLAUT_TRANSLATE_TABLE)
 
 
 _tdelta = datetime.timedelta
@@ -1539,8 +1610,7 @@ def decode_parameter(salt: str, target: str, name: str, param: str,
         if persona_id:
             # Allow non-anonymous requests for parameters with anonymous access
             return decode_parameter(salt, target, name, param, persona_id=None)
-        _LOGGER.debug("Hash mismatch ({} != {}) for {}".format(
-            h.hexdigest(), mac, tohash))
+        _LOGGER.debug(f"Hash mismatch ({h.hexdigest()} != {mac}) for {tohash}")
         return False, None
     timestamp = message[:24]
     if timestamp == 24 * '.':
@@ -1548,7 +1618,7 @@ def decode_parameter(salt: str, target: str, name: str, param: str,
     else:
         ttl = datetime.datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S%z")
         if ttl <= now():
-            _LOGGER.debug("Expired protected parameter {}".format(tohash))
+            _LOGGER.debug(f"Expired protected parameter {tohash}")
             return True, None
     return None, message[26:]
 
@@ -2192,3 +2262,7 @@ EPSILON = 10 ** (-6)  #:
 #: Timestamp which lies in the future. Make a constant so we do not have to
 #: hardcode the value otherwere
 FUTURE_TIMESTAMP = datetime.datetime(9996, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
+
+#: Specification for the output date format of money transfers.
+#: Note how this differs from the input in that we use 4 digit years.
+PARSE_OUTPUT_DATEFORMAT = "%d.%m.%Y"

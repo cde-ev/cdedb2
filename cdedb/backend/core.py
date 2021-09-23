@@ -12,11 +12,10 @@ import decimal
 from pathlib import Path
 from secrets import token_hex
 from typing import (
-    Any, Collection, Dict, List, Optional, Set, Tuple, Union, cast, overload,
+    Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, Union, cast, overload,
 )
 
 from passlib.hash import sha512_crypt
-from typing_extensions import Protocol
 
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
@@ -298,8 +297,8 @@ class CoreBackend(AbstractBackend):
             current_generation = unwrap(self.changelog_get_generations(
                 rs, (data['id'],)))
             if generation is not None and current_generation != generation:
-                self.logger.info("Generation mismatch {} != {} for {}".format(
-                    current_generation, generation, data['id']))
+                self.logger.info(f"Generation mismatch ({current_generation} !="
+                                 f" {generation}) for {data['id']}")
                 return 0
 
             # get current state
@@ -676,8 +675,7 @@ class CoreBackend(AbstractBackend):
           without.
         """
         if not change_note:
-            self.logger.info(
-                "No change note specified (persona_id={}).".format(data['id']))
+            self.logger.info(f"No change note specified (persona_id={data['id']}).")
             change_note = "Allgemeine Änderung"
 
         current = self.sql_select_one(
@@ -776,27 +774,27 @@ class CoreBackend(AbstractBackend):
                                 force_review=force_review)
 
     @access("core_admin")
-    def change_persona_realms(self, rs: RequestState,
-                              data: CdEDBObject) -> DefaultReturnCode:
+    def change_persona_realms(self, rs: RequestState, data: CdEDBObject,
+                              change_note: str) -> DefaultReturnCode:
         """Special modification function for realm transitions."""
         data = affirm(vtypes.Persona, data, transition=True)
+        change_note = affirm(str, change_note)
         with Atomizer(rs):
             if data.get('is_cde_realm'):
                 # Fix balance
-                tmp = unwrap(self.get_total_personas(rs, (data['id'],)))
+                tmp = self.get_total_persona(rs, data['id'])
                 if tmp['balance'] is None:
                     data['balance'] = decimal.Decimal('0.0')
                 else:
                     data['balance'] = tmp['balance']
             ret = self.set_persona(
-                rs, data, may_wait=False,
-                change_note="Bereiche geändert.",
+                rs, data, may_wait=False, change_note=change_note,
                 allow_specials=("realms", "finance", "membership"))
             if data.get('trial_member'):
-                ret *= self.change_membership(rs, data['id'], is_member=True)
+                ret *= self.change_membership_easy_mode(rs, data['id'], is_member=True)
             self.core_log(
                 rs, const.CoreLogCodes.realm_change, data['id'],
-                change_note="Bereiche geändert.")
+                change_note=change_note)
         return ret
 
     @access("persona")
@@ -1118,9 +1116,16 @@ class CoreBackend(AbstractBackend):
                 return 0
 
     @access("core_admin", "cde_admin")
-    def change_membership(self, rs: RequestState, persona_id: int,
-                          is_member: bool) -> DefaultReturnCode:
-        """Special modification function for membership."""
+    def change_membership_easy_mode(self, rs: RequestState, persona_id: int,
+                                    is_member: bool) -> DefaultReturnCode:
+        """Special modification function for membership.
+
+        This variant only works for easy cases, that is if no active
+        lastschrift permits exist. Otherwise (i.e. in the general case) the
+        change_membership function from the cde-backend has to be used.
+
+        :param is_member: Desired target state of membership.
+        """
         persona_id = affirm(vtypes.ID, persona_id)
         is_member = affirm(bool, is_member)
         update: CdEDBObject = {
@@ -1134,6 +1139,15 @@ class CoreBackend(AbstractBackend):
                 raise RuntimeError(n_("Not a CdE account."))
             if current['is_member'] == is_member:
                 return 0
+
+            # Peek at the CdE-realm, this is somewhat of a transgression,
+            # but sadly necessary duct tape to keep the whole thing working.
+            query = ("SELECT id FROM cde.lastschrift"
+                     " WHERE persona_id = %s AND revoked_at IS NULL")
+            params = [persona_id]
+            if self.query_all(rs, query, params):
+                raise RuntimeError(n_("Active lastschrift permit found."))
+
             if not is_member:
                 delta = -current['balance']
                 new_balance = decimal.Decimal(0)
@@ -1362,10 +1376,25 @@ class CoreBackend(AbstractBackend):
                 raise ArchiveError(n_("Cannot archive admins."))
 
             #
-            # 2. Remove complicated attributes (membership, foto and password)
+            # 2. Handle lastschrift
+            #
+            lastschrift = self.sql_select(
+                rs, "cde.lastschrift", ("id", "revoked_at"), (persona_id,),
+                "persona_id")
+            if any(not ls['revoked_at'] for ls in lastschrift):
+                raise ArchiveError(n_("Active lastschrift exists."))
+            query = ("UPDATE cde.lastschrift"
+                     " SET (amount, iban, account_owner, account_address)"
+                     " = (%s, %s, %s, %s)"
+                     " WHERE persona_id = %s"
+                     " AND revoked_at < now() - interval '14 month'")
+            if lastschrift:
+                self.query_exec(rs, query, (0, "", "", "", persona_id))
+            #
+            # 3. Remove complicated attributes (membership, foto and password)
             #
             if persona['is_member']:
-                code = self.change_membership(rs, persona_id, is_member=False)
+                code = self.change_membership_easy_mode(rs, persona_id, is_member=False)
                 if not code:
                     raise ArchiveError(n_("Failed to revoke membership."))
             if persona['foto']:
@@ -1380,7 +1409,7 @@ class CoreBackend(AbstractBackend):
             query = "UPDATE core.personas SET password_hash = %s WHERE id = %s"
             self.query_exec(rs, query, (password_hash, persona_id))
             #
-            # 3. Strip all unnecessary attributes and mark as archived
+            # 4. Strip all unnecessary attributes and mark as archived
             #
             update = {
                 'id': persona_id,
@@ -1445,25 +1474,10 @@ class CoreBackend(AbstractBackend):
                 change_note="Archivierung vorbereitet.",
                 allow_specials=("archive", "username"))
             #
-            # 4. Delete all sessions and quotas
+            # 5. Delete all sessions and quotas
             #
             self.sql_delete(rs, "core.sessions", (persona_id,), "persona_id")
             self.sql_delete(rs, "core.quota", (persona_id,), "persona_id")
-            #
-            # 5. Handle lastschrift
-            #
-            lastschrift = self.sql_select(
-                rs, "cde.lastschrift", ("id", "revoked_at"), (persona_id,),
-                "persona_id")
-            if any(not ls['revoked_at'] for ls in lastschrift):
-                raise ArchiveError(n_("Active lastschrift exists."))
-            query = ("UPDATE cde.lastschrift"
-                     " SET (amount, iban, account_owner, account_address)"
-                     " = (%s, %s, %s, %s)"
-                     " WHERE persona_id = %s"
-                     " AND revoked_at < now() - interval '14 month'")
-            if lastschrift:
-                self.query_exec(rs, query, (0, "", "", "", persona_id))
             #
             # 6. Handle event realm
             #
@@ -1554,6 +1568,7 @@ class CoreBackend(AbstractBackend):
             update = {
                 'id': persona_id,
                 'is_archived': False,
+                'is_active': True,
                 'username': new_username,
             }
             code = self.set_persona(
@@ -1989,8 +2004,7 @@ class CoreBackend(AbstractBackend):
                 not self.conf["CDEDB_OFFLINE_DEPLOYMENT"]
                 and not self.verify_persona_password(rs, password, data["id"])):
             # log message to be picked up by fail2ban
-            self.logger.warning("CdEDB login failure from {} for {}".format(
-                ip, username))
+            self.logger.warning(f"CdEDB login failure from {ip} for {username}")
             return None
         if self.conf["LOCKDOWN"] and not (data['is_meta_admin']
                                           or data['is_core_admin']):
@@ -2036,7 +2050,8 @@ class CoreBackend(AbstractBackend):
             rs.conn = self.connpool['cdb_member']
         else:
             rs.conn = self.connpool['cdb_persona']
-        rs._conn = rs.conn  # Necessary to keep the mechanics happy
+        # Necessary to keep the mechanics happy.
+        rs._conn = rs.conn  # pylint: disable=protected-access
 
         # Get more information about user (for immediate use in frontend)
         data = self.sql_select_one(rs, "core.personas",
@@ -2284,7 +2299,7 @@ class CoreBackend(AbstractBackend):
     # # This should work but Literal seems to be broken.
     # # https://github.com/python/mypy/issues/7399
     # if TYPE_CHECKING:
-    #     from typing_extensions import Literal
+    #     from typing import Literal
     #     ret_type = Union[Tuple[Literal[False], str],
     #                      Tuple[Literal[True], None]]
     # else:
