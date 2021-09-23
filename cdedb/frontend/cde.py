@@ -492,8 +492,8 @@ class CdEFrontend(AbstractUserFrontend):
         else:
             persona['country'] = self.conf["DEFAULT_COUNTRY"]
         for k in ('telephone', 'mobile'):
-            if persona[k] and not persona[k].startswith(("0", "+")):
-                persona[k] = "0" + persona[k]
+            if persona[k] and not persona[k].strip().startswith(("0", "+")):
+                persona[k] = "0" + persona[k].strip()
         merge_dicts(persona, PERSONA_DEFAULTS)
         persona, problems = validate_check(
             vtypes.Persona, persona, argname="persona", creation=True)
