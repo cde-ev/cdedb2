@@ -82,7 +82,7 @@ def generate_event_registration_default_queries(
                     ("reg.id", True))
 
     all_part_stati_column = ",".join(
-        "part{0}.status".format(part_id) for part_id in event['parts'])
+        f"part{part_id}.status" for part_id in event['parts'])
 
     dokuteam_course_picture_fields_of_interest = [
         "persona.id", "persona.given_names", "persona.family_name"]
@@ -242,11 +242,13 @@ def generate_event_course_default_queries(
     :return: Dict of default queries
     """
 
+    takes_place = ",".join(f"track{anid}.takes_place" for anid in event["tracks"])
+
     queries = {
         n_("50_query_dokuteam_courselist"): Query(
             QueryScope.event_course, spec,
             ("course.nr", "course.shortname", "course.title"),
-            tuple(),
+            ((takes_place, QueryOperators.equal, True),),
             (("course.nr", True),)),
     }
 

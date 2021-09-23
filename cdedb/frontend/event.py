@@ -2607,8 +2607,12 @@ class EventFrontend(AbstractUserFrontend):
             rs.notify("info", n_("Empty File."))
             return self.redirect(rs, "event/downloads")
         courses = self.eventproxy.get_courses(rs, course_ids)
-        data = self.fill_template(
-            rs, "other", "dokuteam_courselist", {'courses': courses})
+        active_courses = filter(
+            lambda c: c["active_segments"] != set(), courses.values())
+        sorted_courses = xsorted(active_courses, key=EntitySorter.course)
+        data = self.fill_template(rs, "other", "dokuteam_courselist", {
+            "sorted_courses": sorted_courses
+        })
         return self.send_file(
             rs, data=data, inline=False,
             filename=f"{rs.ambience['event']['shortname']}_dokuteam_courselist.txt")

@@ -20,9 +20,8 @@ Vor der Akademie
 Kursliste
     Sobald alle Kurse in der Datenbank eingetragen wurden und feststeht, welche
     Kurse zustande kommen, kann eine Liste dieser an das Dokuteam gegeben werden.
-    Diese enthält Kursnummer, Kurskurzname und Kursname aller angelegten Kurse.
-
-    .. todo:: aller in mindestens einem part stattfindenden Kurse?
+    Diese enthält Kursnummer, Kurskurzname und Kursname aller angelegten Kurse,
+    die in mindestens einer Kursschiene stattfinden.
 
     Unter ``Veranstaltung/Kurse/Kurssuche`` die ``Dokuteam Kursliste`` Abfrage
 
@@ -38,9 +37,7 @@ Skriptinput Kursliste
     Um verschiedene Listen kurz vor der Akademie zu erstellen, benötigt das
     Dokuteam diese Input Datei.
     Sie enthält Kurzname und Name der Akademie sowie Kursnummer, Kurskurzname
-    und Kurstitel jedes Kurses.
-
-    .. todo:: aller in mindestens einem part stattfindenen Kurse?
+    und Kurstitel jedes Kurses, der in mindestens einer Kursschiene stattfindet.
 
     Unter ``Veranstaltung/Downloads`` die ``Dokuteam Kursliste`` Datei
 
@@ -51,9 +48,7 @@ Kursfoto
     Um die Kursfotobeschriftungen abgleichen zu können, benötigt das Dokuteam
     eine aktuelle Liste, wer in welchem Kurs ist und wer den Kurs leitet.
     Diese enthält Datenbank-ID, Vorname, Nachname, Kurs-Nummer und
-    hält-seinen-kurs von jedem Teilnehmer der gesammten Akademie.
-
-    .. todo:: einzelnen query je part?
+    hält-seinen-kurs von jedem Teilnehmer der gesamten Akademie.
 
     Unter ``Veranstaltung/Anmeldungen`` die ``Dokuteam Kursfoto`` Abfrage
 
@@ -65,8 +60,6 @@ Dokuforge
     und hält-seinen-kurs von jedem Teilnehmer der gesamten Akademie, der darüber
     hinaus seine Zustimmung zur Weitergabe seiner Daten an die Teilnehmerliste
     gegeben hat.
-
-    .. todo:: einzelnen query je part?
 
     Unter ``Veranstaltungen/Anmeldungen`` die ``Dokuteam Dokuforge`` Abfrage
 
