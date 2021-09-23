@@ -1324,9 +1324,9 @@ class TransactionType(enum.IntEnum):
         else:
             return "Sonstiges"
 
-    def __str__(self) -> str:
+    def to_string(self) -> str:
         """
-        Return a string represantation for the TransactionType.
+        Return a string representation for the TransactionType.
 
         These are _not_ translated on purpose, so that the generated download
         is the same regardless of locale.
