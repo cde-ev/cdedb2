@@ -1969,8 +1969,13 @@ class AssemblyBackend(AbstractBackend):
             if not self.is_attachment_version_creatable(rs, attachment_id):
                 raise ValueError(n_("Cannot add attachment version once the assembly"
                                     " has been locked."))
-            latest_version = self.get_latest_attachment_version(rs, attachment_id)
-            version_nr = latest_version["version_nr"] + 1
+            # Take care to include deleted attachment versions here
+            query = ("SELECT MAX(version_nr) AS max_version_nr"
+                     " FROM assembly.attachment_versions WHERE attachment_id = %s")
+            max_version = self.query_one(rs, query, (attachment_id, ))
+            if max_version is None:
+                raise ValueError(n_("Attachment does not exist."))
+            version_nr = max_version["max_version_nr"] + 1
             data['version_nr'] = version_nr
             data['ctime'] = now()
             data['file_hash'] = get_hash(content)

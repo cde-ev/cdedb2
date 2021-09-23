@@ -323,6 +323,9 @@ msgstr ""
 "Es kann keine Dateiversion mehr hinzugefügt werden, nachdem die Versammlung "
 "gesperrt wurde."
 
+msgid "Attachment does not exist."
+msgstr "Datei existiert nicht."
+
 #: cdedb/backend/assembly.py:1985
 msgid "Must have privileged access to add attachment version."
 msgstr "Fehlende Zugriffsrechte zum Hinzufügen einer neuen Dateiversion."

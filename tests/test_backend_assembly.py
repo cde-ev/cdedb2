@@ -1006,6 +1006,20 @@ class TestAssemblyBackend(BackendTest):
             b'1234', self.assembly.get_attachment_content(
                 self.key, attachment_id=new_id))
 
+        # Check that adding a new version is still possible
+        self.assertTrue(self.assembly.add_attachment_version(self.key, data, b'123456'))
+        log.append({
+            "code": const.AssemblyLogCodes.attachment_version_added,
+            "assembly_id": assembly_id,
+            "change_note": f"{data['title']}: Version 4",
+        })
+        self.assertEqual(
+            b'123456', self.assembly.get_attachment_content(
+                self.key, attachment_id=new_id, version_nr=4))
+        self.assertEqual(
+            b'123456', self.assembly.get_attachment_content(
+                self.key, attachment_id=new_id))
+
         # Check the attachments history.
         data.update({
             "version_nr": 2,
@@ -1027,9 +1041,12 @@ class TestAssemblyBackend(BackendTest):
             1: deleted_version,
             2: data,
             3: deleted_version.copy(),
+            4: data.copy(),
         }
         history_expectation[3]['version_nr'] = 3
         history_expectation[3]['file_hash'] = get_hash(b'12345')
+        history_expectation[4]['version_nr'] = 4
+        history_expectation[4]['file_hash'] = get_hash(b'123456')
         self.assertEqual(
             history_expectation,
             self.assembly.get_attachment_versions(self.key, new_id))
@@ -1103,8 +1120,8 @@ class TestAssemblyBackend(BackendTest):
                 'assembly_id': assembly_id,
                 'ballot_ids': [],
                 'id': attachment_ids[0],
-                'num_versions': 1,
-                'latest_version_nr': 2,
+                'num_versions': 2,
+                'latest_version_nr': 4,
             },
             attachment_ids[1]: {
                 'assembly_id': assembly_id,
@@ -1157,6 +1174,16 @@ class TestAssemblyBackend(BackendTest):
                     'filename': None,
                     'title': None,
                     'version_nr': 3,
+                },
+                4: {
+                    'attachment_id': attachment_ids[0],
+                    'authors': 'Farin',
+                    'ctime': nearly_now(),
+                    'dtime': None,
+                    'file_hash': get_hash(b'123456'),
+                    'filename': 'rechen_v2.pdf',
+                    'title': 'Rechenschaftsbericht',
+                    'version_nr': 4,
                 },
             },
             attachment_ids[1]: {
