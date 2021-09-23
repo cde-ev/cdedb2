@@ -33,7 +33,7 @@
     {% if not is_deletable %}
         {% call util.notification('warning') %}
             {% trans %}
-                A linked ballot is in or after his voting phase, so only formal changes shall be applied to this attachment.
+                A linked ballot has already been locked, so only formal changes should be applied to this attachment.
                 The definitive version will remain definitive for all ongoing votes.
             {% endtrans %}
         {% endcall %}

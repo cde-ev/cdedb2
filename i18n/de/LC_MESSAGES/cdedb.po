@@ -3895,11 +3895,10 @@ msgstr "Version hinzufügen"
 
 #: cdedb/frontend/templates/web/assembly/add_attachment_version.tmpl:38
 msgid ""
-"A linked ballot is in or after his voting phase, so only formal changes "
-"shall be applied to this attachment. The definitive version will remain "
+"A linked ballot has already been locked, so only formal changes should be applied to this attachment. The definitive version will remain "
 "definitive for all ongoing votes."
 msgstr ""
-"Eine verknüpfte Abstimmung hat bereits begonnen, daher sollten nur noch "
+"Eine verknüpfte Abstimmung wurde bereits gesperrt, daher sollten nur noch "
 "formale Korrekturen an dieser Datei vorgenommen werden. Die maßgebliche "
 "Version bleibt für alle bereits begeonnen Abstimmungen maßgeblich."
 
