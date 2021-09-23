@@ -185,7 +185,7 @@ class MailinglistDomain(enum.IntEnum):
 
     testmail = 100
 
-    def __str__(self) -> str:
+    def to_string(self) -> str:
         if self not in _DOMAIN_STR_MAP:
             raise NotImplementedError(n_("This domain is not supported."))
         return _DOMAIN_STR_MAP[self]
