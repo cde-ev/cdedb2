@@ -1104,11 +1104,6 @@ def make_course_query_spec(event: CdEDBObject) -> Dict[str, str]:
                     ("course.notes", "str"),
                     # This will be augmented with additional fields in the fly.
                 ])
-    spec.update({
-        "course_fields.xfield_{0}".format(field['field_name']):
-            const.FieldDatatypes(field['kind']).name
-        for field in course_fields.values()
-    })
 
     for track_id, track in tracks.items():
         spec["track{0}.is_offered".format(track_id)] = "bool"
@@ -1117,6 +1112,18 @@ def make_course_query_spec(event: CdEDBObject) -> Dict[str, str]:
         spec["track{0}.instructors".format(track_id)] = "int"
         for rank in range(track['num_choices']):
             spec["track{0}.num_choices{1}".format(track_id, rank)] = "int"
+
+    if len(tracks) > 1:
+        spec[",".join(f"track{track_id}.is_offered" for track_id in tracks)] = "bool"
+        spec[",".join(f"track{track_id}.takes_place" for track_id in tracks)] = "bool"
+        spec[",".join(f"track{track_id}.attendees" for track_id in tracks)] = "int"
+        spec[",".join(f"track{track_id}.instructors" for track_id in tracks)] = "int"
+
+    spec.update({
+        f"course_fields.xfield_{field['field_name']}":
+            const.FieldDatatypes(field['kind']).name
+        for field in course_fields.values()
+    })
 
     return spec
 
@@ -1169,11 +1176,7 @@ def make_course_query_aux(rs: RequestState, event: CdEDBObject,
         "course.max_size": gettext("course max size"),
         "course.notes": gettext("course notes"),
     }
-    titles.update({
-        "course_fields.xfield_{}".format(field['field_name']):
-            field['field_name']
-        for field in course_fields.values()
-    })
+
     for track_id, track in tracks.items():
         if len(tracks) > 1:
             prefix = "{shortname}: ".format(shortname=track['shortname'])
@@ -1195,6 +1198,23 @@ def make_course_query_aux(rs: RequestState, event: CdEDBObject,
                     prefix + gettext("{}. choices").format(
                         rank+1),
             })
+    if len(tracks) > 1:
+        prefix = "any track: "
+        titles.update({
+            ",".join(f"track{track_id}.takes_place" for track_id in tracks):
+                prefix + gettext("takes place"),
+            ",".join(f"track{track_id}.is_offered" for track_id in tracks):
+                prefix + gettext("is offered"),
+            ",".join(f"track{track_id}.attendees" for track_id in tracks):
+                prefix + gettext("attendees"),
+            ",".join(f"track{track_id}.instructors" for track_id in tracks):
+                prefix + gettext("instructors")
+        })
+
+    titles.update({
+        f"course_fields.xfield_{field['field_name']}": field['field_name']
+        for field in course_fields.values()
+    })
 
     return choices, titles
 
@@ -1218,11 +1238,6 @@ def make_lodgement_query_spec(event: CdEDBObject) -> Dict[str, str]:
                     ("lodgement_group.title", "int"),
                     # This will be augmented with additional fields in the fly.
                 ])
-    spec.update({
-        f"lodgement_fields.xfield_{field['field_name']}":
-            const.FieldDatatypes(field['kind']).name
-        for field in lodgement_fields.values()
-    })
 
     for part_id, part in parts.items():
         spec[f"part{part_id}.regular_inhabitants"] = "int"
@@ -1231,6 +1246,26 @@ def make_lodgement_query_spec(event: CdEDBObject) -> Dict[str, str]:
         spec[f"part{part_id}.group_regular_inhabitants"] = "int"
         spec[f"part{part_id}.group_camping_mat_inhabitants"] = "int"
         spec[f"part{part_id}.group_total_inhabitants"] = "int"
+
+    if len(parts) > 1:
+        spec[",".join(f"part{part_id}.regular_inhabitants"
+                      for part_id in parts)] = "int"
+        spec[",".join(f"part{part_id}.camping_mat_inhabitants"
+                      for part_id in parts)] = "int"
+        spec[",".join(f"part{part_id}.total_inhabitants"
+                      for part_id in parts)] = "int"
+        spec[",".join(f"part{part_id}.group_regular_inhabitants"
+                      for part_id in parts)] = "int"
+        spec[",".join(f"part{part_id}.group_camping_mat_inhabitants"
+                      for part_id in parts)] = "int"
+        spec[",".join(f"part{part_id}.group_total_inhabitants"
+                      for part_id in parts)] = "int"
+
+    spec.update({
+        f"lodgement_fields.xfield_{field['field_name']}":
+            const.FieldDatatypes(field['kind']).name
+        for field in lodgement_fields.values()
+    })
 
     return spec
 
@@ -1293,11 +1328,7 @@ def make_lodgement_query_aux(rs: RequestState, event: CdEDBObject,
         "lodgement_group.camping_mat_capacity":
             gettext(n_("Lodgement Group Camping Mat Capacity")),
     }
-    titles.update({
-        f"lodgement_fields.xfield_{field['field_name']}":
-            field['field_name']
-        for field in lodgement_fields.values()
-    })
+
     for part_id, part in parts.items():
         if len(parts) > 1:
             prefix = f"{part['shortname']}: "
@@ -1317,5 +1348,28 @@ def make_lodgement_query_aux(rs: RequestState, event: CdEDBObject,
             f"part{part_id}.group_total_inhabitants":
                 prefix + gettext(n_("Group Total Inhabitants")),
         })
+
+    if len(parts) > 1:
+        prefix = "any track: "
+        titles.update({
+            ",".join(f"part{part_id}.regular_inhabitants" for part_id in parts):
+                prefix + gettext(n_("Regular Inhabitants")),
+            ",".join(f"part{part_id}.camping_mat_inhabitants" for part_id in parts):
+                prefix + gettext(n_("Reserve Inhabitants")),
+            ",".join(f"part{part_id}.total_inhabitants" for part_id in parts):
+                prefix + gettext(n_("Total Inhabitants")),
+            ",".join(f"part{part_id}.group_regular_inhabitants" for part_id in parts):
+                prefix + gettext(n_("Group Regular Inhabitants")),
+            ",".join(f"part{part_id}.group_camping_mat_inhabitants"
+                     for part_id in parts):
+                prefix + gettext(n_("Group Reserve Inhabitants")),
+            ",".join(f"part{part_id}.group_total_inhabitants" for part_id in parts):
+                prefix + gettext(n_("Group Total Inhabitants")),
+        })
+
+    titles.update({
+        f"lodgement_fields.xfield_{field['field_name']}": field['field_name']
+        for field in lodgement_fields.values()
+    })
 
     return choices, titles
