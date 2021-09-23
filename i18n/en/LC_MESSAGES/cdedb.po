@@ -17517,3 +17517,6 @@ msgstr ""
 #: cdedb/frontend/cde.py:503
 msgid "No gender specified."
 msgstr ""
+
+msgid "%(num)s new members."
+msgstr ""

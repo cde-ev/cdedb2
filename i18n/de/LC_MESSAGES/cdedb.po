@@ -1702,11 +1702,11 @@ msgstr "Nur Aufnahme von Mitglieder unterstützt."
 #: cdedb/frontend/cde.py:749 cdedb/frontend/cde.py:864
 #: cdedb/frontend/cde.py:865
 #, python-format
-msgid "Created %(num)s accounts."
-msgstr "%(num)s Accounts erstellt."
+msgid "%(num)s new members."
+msgstr "%(num)s Neuaufnahmen."
 
-msgid "Modified %(num)s accounts."
-msgstr "%(num)s Accounts aktualisiert."
+msgid "Modified %(num)s existing members."
+msgstr "%(num)s Wiederaufnahmen."
 
 #: cdedb/frontend/cde.py:753 cdedb/frontend/cde.py:868
 #: cdedb/frontend/cde.py:869 cdedb/frontend/cde.py:1165
