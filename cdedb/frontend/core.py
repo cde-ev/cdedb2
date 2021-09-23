@@ -2376,11 +2376,11 @@ class CoreFrontend(AbstractFrontend):
             code = self.coreproxy.genesis_modify_case(rs, data)
             success = bool(code)
             new_id = None
+            pcode = 1
             if success and data['case_status'] == const.GenesisStati.approved:
                 new_id = self.coreproxy.genesis(rs, genesis_case_id)
-                pcode = 1
                 if case['pevent_id']:
-                    self.pasteventproxy.add_participant(
+                    pcode = self.pasteventproxy.add_participant(
                         rs, pevent_id=case['pevent_id'], pcourse_id=case['pcourse_id'],
                         persona_id=new_id)
                 success = bool(new_id)
