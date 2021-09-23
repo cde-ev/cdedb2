@@ -17461,6 +17461,12 @@ msgstr "{field} geleiteter Kurs"
 msgid "Any Choice"
 msgstr "Beliebige Kurswahl"
 
+msgid "any track: "
+msgstr "Bel. Schiene: "
+
+msgid "any part: "
+msgstr "Bel. Teil: "
+
 #: cdedb/query.py:988
 msgid "any track: instructs their course"
 msgstr "Bel. Schiene: Hält seinen/ihren Kurs"

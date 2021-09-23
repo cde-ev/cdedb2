@@ -968,7 +968,7 @@ def make_registration_query_aux(
                             for i in range(track['num_choices']))] = \
                 prefix + gettext("Any Choice")
     if len(event['tracks']) > 1:
-        prefix = "any track: "
+        prefix = gettext("any track: ")
         titles.update({
             ",".join(f"track{track_id}.is_course_instructor" for track_id in tracks):
                 prefix + gettext("instructs their course"),
@@ -1048,7 +1048,7 @@ def make_registration_query_aux(
             for field in lodge_fields.values()
         })
     if len(event['parts']) > 1:
-        prefix = "any part: "
+        prefix = gettext("any part: ")
         titles.update({
             ",".join(f"part{part_id}.status" for part_id in event['parts']):
                 prefix + gettext("registration status"),
@@ -1199,7 +1199,7 @@ def make_course_query_aux(rs: RequestState, event: CdEDBObject,
                         rank+1),
             })
     if len(tracks) > 1:
-        prefix = "any track: "
+        prefix = gettext("any track: ")
         titles.update({
             ",".join(f"track{track_id}.takes_place" for track_id in tracks):
                 prefix + gettext("takes place"),
@@ -1350,7 +1350,7 @@ def make_lodgement_query_aux(rs: RequestState, event: CdEDBObject,
         })
 
     if len(parts) > 1:
-        prefix = "any track: "
+        prefix = gettext("any part: ")
         titles.update({
             ",".join(f"part{part_id}.regular_inhabitants" for part_id in parts):
                 prefix + gettext(n_("Regular Inhabitants")),
