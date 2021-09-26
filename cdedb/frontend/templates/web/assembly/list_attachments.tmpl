@@ -4,44 +4,70 @@
 {% import "web/assembly/util.tmpl" as assembly_util with context %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint = 'weak' %}
+
 {% block title %}
     {% trans title=ambience['assembly']['title'] %}
-        Attachment Overview ({{ title }})
+        Attachments ({{ title }})
     {% endtrans %}
 {% endblock %}
+
 {% block heading %}
-    {{ util.context_heading(gettext("Attachment Overview"), ambience['assembly']['title'],
-                            'bullhorn', gettext("Assembly")) }}
+    {{ util.context_heading(gettext("Attachments"), ambience['assembly']['title'], 'bullhorn', gettext("Assembly")) }}
 {% endblock %}
+
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
-    {{ util.breadcrumb_link(cdedblink("assembly/list_attachments"), gettext("Attachment Overview"), icon="file", active=True) }}
-
+    {{ util.breadcrumb_link(cdedblink("assembly/list_attachments"), gettext("Attachments"), active=True) }}
 {% endblock %}
+
 {% block content %}
-    {% set edit = ambience['assembly']['is_active'] and ("assembly_presider" in user.admin_views
-                                                         or ambience['assembly']['id'] in user.presider) %}
-    {% set timestamp = now() %}
-    {% for ballot_id, ballot in [(None, None)] + ballots|keydictsort(EntitySorter.ballot) %}
-        {% set attachments = all_attachments[ballot_id] %}
-        {% set ballot_edit = edit and ((timestamp < ballot['vote_begin']) if ballot else True) %}
-        {% set title = gettext("General Files") %}
-        {% set icon = 'file' %}
-        {% if ballot %}
-            {% set title = gettext("Files for %(link)s")|format(
-                    link=util.href(cdedblink("assembly/show_ballot", {'ballot_id': ballot['id']}), ballot['title'],
-                                   icon="thumbs-up"))|s %}
-            {% set icon = None %}
-        {% endif %}
-        {% if attachments or ballot_edit %}
-            {{ assembly_util.attachment_box(attachments, attachment_histories[ballot_id], title=title,
-                                            ballot=ballot, new_attachment_button=edit, icon=icon, edit=ballot_edit) }}
-        {% endif %}
-    {% endfor %}
-    {% if not count and not edit %}
+    {% set edit_right = ambience['assembly']['is_active'] and ("assembly_presider" in user.admin_views
+                                                               or ambience['assembly']['id'] in user.presider) %}
+    {% if attachments %}
+        <ul class="slim" id="attachments">
+            {# This is already sorted #}
+            {% for attachment_id, attachment in attachments.items() %}
+                {% set attachment_versions = attachments_versions[attachment_id] %}
+                {% set latest_version = attachment_versions[attachment["latest_version_nr"]] %}
+                <li id="attachment{{ attachment_id }}_version{{ latest_version["version_nr"] }}">
+                    <div class="p">
+                        <div class="hide-hover-container clearfix-after">
+                            {{ assembly_util.print_attachment_version_for_overview(
+                                    latest_version,
+                                    add=are_attachment_versions_creatable[attachment_id],
+                                    delete=are_attachment_versions_deletable[attachment_id],
+                                    delete_attachment=are_attachments_deletable[attachment_id]) }}
+                        </div>
+                        {% if attachment_versions|length > 1 %}
+                            <ul>
+                                {% for version_nr, version in attachment_versions|keydictsort(EntitySorter.attachment_version)|reverse %}
+                                    {% if version_nr != latest_version['version_nr'] %}
+                                        <li id="attachment{{ attachment_id }}_version{{ version_nr }}"
+                                                class="hide-hover-container clearfix-after">
+                                            {{ assembly_util.print_attachment_version_for_overview(
+                                                    version,
+                                                    add=False,
+                                                    delete=are_attachment_versions_deletable[attachment_id],
+                                                    delete_attachment=False) }}
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    {% if not attachments %}
         <p class="text-muted">
             {% trans %}No attachments have been uploaded yet.{% endtrans %}
         </p>
+    {% endif %}
+
+    {% if edit_right %}
+        {{ util.href(cdedblink("assembly/add_attachment_form"),
+                    label=gettext("Add Attachment"), aclass="btn btn-success", icon=util.make_icon("plus")) }}
     {% endif %}
 {% endblock %}

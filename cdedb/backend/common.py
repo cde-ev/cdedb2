@@ -803,7 +803,10 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         if offset is not None:
             query = glue(query, "OFFSET {}".format(offset))
 
-        return total, self.query_all(rs, query, params)
+        data = self.query_all(rs, query, params)
+        for e in data:
+            e['code'] = code_validator(e['code'])
+        return total, data
 
 
 class Silencer:
