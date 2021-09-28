@@ -23,6 +23,7 @@ from cdedb.backend.session import SessionBackend
 from cdedb.common import (
     ADMIN_VIEWS_COOKIE_NAME, CdEDBObject, PathLike, QuotaException, RequestState,
     User, glue, make_proxy, make_root_logger, n_, now, roles_to_db_role,
+    IGNORE_WARNINGS_NAME
 )
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -237,6 +238,9 @@ class Application(BaseApp):
                     rs.extend_validation_errors(
                         ((handler.anti_csrf.name, ValueError(error)),))
                     rs.notify('error', error)
+
+            # Decide whether the user wants to ignore ValidationWarnings
+            rs.ignore_warnings = rs.request.values.get(IGNORE_WARNINGS_NAME, False)
 
             # Store database connection as private attribute.
             # It will be made accessible for the backends by the make_proxy.

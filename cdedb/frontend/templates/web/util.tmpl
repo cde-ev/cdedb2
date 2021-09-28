@@ -700,8 +700,9 @@
             {{ "col-sm-offset-2 col-sm-10" if small else "col-sm-offset-4 col-sm-8" }}
         "{% endif %}>
             {{- input_submit(gettext(label), value, name, anid, aclass, icon, readonly, title) }}
-            {% if differentiate_warnings and has_warnings() %}
-                {{ input_submit(gettext("Ignore Warnings"), name="ignore_warnings", anid=anid, aclass=aclass, icon=icon, readonly=readonly) }}
+            {% if has_warnings() %}
+                &emsp;{{ input_submit(gettext("Ignore Warnings"), name=IGNORE_WARNINGS_NAME, aclass="btn btn-warning",
+                                      icon="exclamation-circle", readonly=readonly) }}
             {% endif %}
             {%- if cancellink %}
                 &emsp;{{ href(cancellink, gettext(cancelvalue), icon="times", aclass="btn btn-default cancel") }}

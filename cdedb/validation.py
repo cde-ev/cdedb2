@@ -38,6 +38,11 @@ The parameter ``_ignore_warnings`` is present in some validators.
 If ``True``, ``ValidationWarning`` may be ignored instead of raised.
 Think of this like a toggle to enable less strict validation of some constants
 which might change externally like german postal codes.
+
+ValidationWarnings are always ignored in `validate_assert` which should be used only in
+the backend. The caller must specify if they should be ignored in `validate_check`,
+which is mostly used in the frontend and magically inserted in the wrapper method
+`frontend.common.check_validation`.
 """
 
 import copy
@@ -144,8 +149,17 @@ _ALL_TYPED = ValidatorStorage()
 
 
 def validate_assert(type_: Type[T], value: Any, **kwargs: Any) -> T:
+    """Check if value is of type type_ – otherwise, raise an error.
+
+    This should be used mostly in backend functions to check whether an input is
+    appropriate.
+
+    Note that this ignores all warnings on purpose!
+    """
+    if "_ignore_warnings" in kwargs:
+        raise RuntimeError("Not allowed to set '_ignore_warnings' toggle.")
     try:
-        return _ALL_TYPED[type_](value, **kwargs)
+        return _ALL_TYPED[type_](value, _ignore_warnings=True, **kwargs)
     except ValidationSummary as errs:
         old_format = [(e.args[0], e.__class__(*e.args[1:])) for e in errs]
         _LOGGER.debug(
@@ -164,8 +178,17 @@ def validate_assert_optional(type_: Type[T], value: Any, **kwargs: Any) -> Optio
 def validate_check(
     type_: Type[T], value: Any, **kwargs: Any
 ) -> Tuple[Optional[T], List[Error]]:
+    """Checks if value is of type type_.
+
+    This is mostly used in the frontend to check if the given input is valid.
+
+    Note that this needs an explicit information whether warnings shall be ignored or
+    not.
+    """
+    if "_ignore_warnings" in kwargs:
+        raise RuntimeError("Not allowed to set '_ignore_warnings' as kwarg.")
     try:
-        val = _ALL_TYPED[type_](value, **kwargs)
+        val = _ALL_TYPED[type_](value, _ignore_warnings=_ignore_warnings, **kwargs)
         return val, []
     except ValidationSummary as errs:
         old_format = [(e.args[0], e.__class__(*e.args[1:])) for e in errs]
@@ -177,9 +200,9 @@ def validate_check(
 
 
 def validate_check_optional(
-    type_: Type[T], value: Any, **kwargs: Any
+    type_: Type[T], value: Any, _ignore_warnings: bool, **kwargs: Any
 ) -> Tuple[Optional[T], List[Error]]:
-    return validate_check(Optional[type_], value, **kwargs)  # type: ignore
+    return validate_check(Optional[type_], value, _ignore_warnings, **kwargs)  # type: ignore
 
 
 def is_optional(type_: Type[T]) -> bool:

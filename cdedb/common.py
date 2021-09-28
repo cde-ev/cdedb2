@@ -184,6 +184,9 @@ class RequestState:
         self._conn: IrradiatedConnection = None  # type: ignore
         # Toggle to disable logging
         self.is_quiet = False
+        # Toggle to ignore validation warnings. The value is parsed directly inside
+        # application.py
+        self.ignore_warnings = False
         # Is true, if the application detected an invalid (or no) CSRF token
         self.csrf_alert = False
         # Used for validation enforcement, set to False if a validator
@@ -1834,6 +1837,10 @@ NOTIFICATION_TYPES: Set[NotificationType] = {"success", "info", "question",
 ANTI_CSRF_TOKEN_NAME = "_anti_csrf"
 #: The value the anti CSRF token is expected to have
 ANTI_CSRF_TOKEN_PAYLOAD = "_anti_csrf_check"
+
+#: The form field name used to ignore ValidationWarnings.
+#: This is added on-the-fly by util.form_input_submit if needed
+IGNORE_WARNINGS_NAME = "_magic_ignore_warnings"
 
 #: Map of available privilege levels to those present in the SQL database
 #: (where we have less differentiation for the sake of simplicity).
