@@ -1432,8 +1432,9 @@ class CdEBackend(AbstractBackend):
                                      ) -> Optional[bool]:
         """Uninlined code from perform_batch_admission().
 
-        :returns: None if nothing happened. True if a new account was created. False if
-            an existing account was modified.
+        :returns: None if nothing happened. True if a new member account was created or
+            membership was granted to an existing (non-member) account. False if
+            (trial-)membership was renewed for an existing (already member) account.
         """
         # Require an Atomizer.
         self.affirm_atomized_context(rs)
