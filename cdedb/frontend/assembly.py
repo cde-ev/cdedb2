@@ -72,8 +72,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     @access("core_admin", "assembly_admin", modi={"POST"})
     @REQUESTdatadict(*filter_none(PERSONA_FULL_ASSEMBLY_CREATION))
-    def create_user(self, rs: RequestState, data: CdEDBObject,
-                    ignore_warnings: bool = False) -> Response:
+    def create_user(self, rs: RequestState, data: CdEDBObject) -> Response:
         defaults = {
             'is_cde_realm': False,
             'is_event_realm': False,
@@ -82,7 +81,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             'is_active': True,
         }
         data.update(defaults)
-        return super().create_user(rs, data, ignore_warnings)
+        return super().create_user(rs, data)
 
     @access("core_admin", "assembly_admin")
     @REQUESTdata("download", "is_search")

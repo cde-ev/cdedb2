@@ -96,8 +96,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("core_admin", "ml_admin", modi={"POST"})
     @REQUESTdatadict(*filter_none(PERSONA_FULL_ML_CREATION))
-    def create_user(self, rs: RequestState, data: Dict[str, Any],
-                    ignore_warnings: bool = False) -> Response:
+    def create_user(self, rs: RequestState, data: Dict[str, Any]) -> Response:
         defaults = {
             'is_cde_realm': False,
             'is_event_realm': False,
@@ -106,7 +105,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             'is_active': True,
         }
         data.update(defaults)
-        return super().create_user(rs, data, ignore_warnings)
+        return super().create_user(rs, data)
 
     @access("core_admin", "ml_admin")
     @REQUESTdata("download", "is_search")

@@ -541,7 +541,7 @@ class TestValidation(unittest.TestCase):
                     inv['realm'] = "event"
                     if outv is not None:
                         outv['realm'] = "event"
-            self.do_validator_test(assertion, spec, {'_ignore_warnings': True})
+            self.do_validator_test(assertion, spec, {'ignore_warnings': True})
 
     def test_encoding(self) -> None:
         # Make sure decoding utf-8 as if it were utf-8-sig works.

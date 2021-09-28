@@ -386,8 +386,7 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("core_admin", "cde_admin", modi={"POST"})
     @REQUESTdatadict(*filter_none(PERSONA_FULL_CDE_CREATION))
-    def create_user(self, rs: RequestState, data: CdEDBObject,
-                    ignore_warnings: bool = False) -> Response:
+    def create_user(self, rs: RequestState, data: CdEDBObject) -> Response:
         defaults = {
             'is_cde_realm': True,
             'is_event_realm': True,
@@ -398,7 +397,7 @@ class CdEFrontend(AbstractUserFrontend):
             'paper_expuls': True,
         }
         data.update(defaults)
-        return super().create_user(rs, data, ignore_warnings)
+        return super().create_user(rs, data)
 
     @access("cde_admin")
     def batch_admission_form(self, rs: RequestState,

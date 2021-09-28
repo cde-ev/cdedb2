@@ -101,7 +101,7 @@ class TestCoreBackend(BackendTest):
 
             # Validate ml data
             persona = self.core.get_ml_user(self.key, persona_id)
-            affirm(vtypes.Persona, persona, _ignore_warnings=True)
+            affirm(vtypes.Persona, persona)
 
             # Validate event data if applicable
             if not persona['is_event_realm']:
@@ -109,10 +109,10 @@ class TestCoreBackend(BackendTest):
 
             persona = self.core.get_event_user(self.key, persona_id)
             if persona_id != USER_DICT["inga"]["id"]:
-                affirm(vtypes.Persona, persona, _ignore_warnings=True)
+                affirm(vtypes.Persona, persona)
             else:
                 with self.assertRaises(ValueError) as cm:
-                    affirm(vtypes.Persona, persona, _ignore_warnings=True)
+                    affirm(vtypes.Persona, persona)
                     self.assertIn("A birthday must be in the past. (birthday)",
                                   cm.exception.args)
 
@@ -122,10 +122,10 @@ class TestCoreBackend(BackendTest):
 
             persona = self.core.get_total_persona(self.key, persona_id)
             if persona_id != USER_DICT["inga"]["id"]:
-                affirm(vtypes.Persona, persona, _ignore_warnings=True)
+                affirm(vtypes.Persona, persona)
             else:
                 with self.assertRaises(ValueError) as cm:
-                    affirm(vtypes.Persona, persona, _ignore_warnings=True)
+                    affirm(vtypes.Persona, persona)
                     self.assertIn("A birthday must be in the past. (birthday)",
                                   cm.exception.args)
 

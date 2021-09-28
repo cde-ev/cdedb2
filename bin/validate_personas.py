@@ -30,7 +30,7 @@ with Script(rs, dry_run=False):
         # Validate ml data
         persona = core.get_ml_user(rs, persona_id)
         try:
-            affirm(vtypes.Persona, persona, _ignore_warnings=True)
+            affirm(vtypes.Persona, persona)
         except Exception as e:
             print("-" * 80)
             print(f"Error for persona {persona_id}:")
@@ -44,7 +44,7 @@ with Script(rs, dry_run=False):
 
         persona = core.get_event_user(rs, persona_id)
         try:
-            affirm(vtypes.Persona, persona, _ignore_warnings=True)
+            affirm(vtypes.Persona, persona)
         except Exception as e:
             print("-" * 80)
             print(f"Error for persona {persona_id}:")
@@ -58,7 +58,7 @@ with Script(rs, dry_run=False):
 
         persona = core.get_total_persona(rs, persona_id)
         try:
-            affirm(vtypes.Persona, persona, _ignore_warnings=True)
+            affirm(vtypes.Persona, persona)
         except Exception as e:
             print("-" * 80)
             print(f"Error for persona {persona_id}:")

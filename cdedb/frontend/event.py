@@ -148,8 +148,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("core_admin", "event_admin", modi={"POST"})
     @REQUESTdatadict(*filter_none(PERSONA_FULL_EVENT_CREATION))
-    def create_user(self, rs: RequestState, data: CdEDBObject,
-                    ignore_warnings: bool = False) -> Response:
+    def create_user(self, rs: RequestState, data: CdEDBObject) -> Response:
         defaults = {
             'is_cde_realm': False,
             'is_event_realm': True,
@@ -158,7 +157,7 @@ class EventFrontend(AbstractUserFrontend):
             'is_active': True,
         }
         data.update(defaults)
-        return super().create_user(rs, data, ignore_warnings=ignore_warnings)
+        return super().create_user(rs, data)
 
     @access("core_admin", "event_admin")
     @REQUESTdata("download", "is_search")
