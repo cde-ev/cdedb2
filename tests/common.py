@@ -217,7 +217,11 @@ def _make_backend_shim(backend: B, internal: bool = False) -> B:
             @functools.wraps(attr)
             def wrapper(key: Optional[str], *args: Any, **kwargs: Any) -> Any:
                 rs = setup_requeststate(key)
-                return attr(rs, *args, **kwargs)
+                try:
+                    return attr(rs, *args, **kwargs)
+                except FileNotFoundError as e:
+                    raise RuntimeError("Did you forget to add a `@storage` decorator to"
+                                       " the test?") from e
 
             return wrapper
 
@@ -273,23 +277,22 @@ class BasicTest(unittest.TestCase):
 
         # Turn Iterator into Collection and ensure consistent order.
         keys = tuple(keys)
+        if not keys:
+            keys = tuple(next(iter(_SAMPLE_DATA[table].values())).keys())
         ret = {}
         for anid in ids:
-            if keys:
-                r = {}
-                for k in keys:
-                    r[k] = copy.deepcopy(_SAMPLE_DATA[table][anid][k])
-                    if table == 'core.personas':
-                        if k == 'balance':
-                            r[k] = decimal.Decimal(r[k])
-                        if k == 'birthday':
-                            r[k] = datetime.date.fromisoformat(r[k])
-                    if k in {'ctime', 'atime', 'vote_begin', 'vote_end',
-                             'vote_extension_end'}:
-                        r[k] = parse_datetime(r[k])
-                ret[anid] = r
-            else:
-                ret[anid] = copy.deepcopy(_SAMPLE_DATA[table][anid])
+            r = {}
+            for k in keys:
+                r[k] = copy.deepcopy(_SAMPLE_DATA[table][anid][k])
+                if table == 'core.personas':
+                    if k == 'balance':
+                        r[k] = decimal.Decimal(r[k])
+                    if k == 'birthday':
+                        r[k] = datetime.date.fromisoformat(r[k])
+                if k in {'ctime', 'atime', 'vote_begin', 'vote_end',
+                         'vote_extension_end', 'signup_end'}:
+                    r[k] = parse_datetime(r[k])
+            ret[anid] = r
         return ret
 
     def get_sample_datum(self, table: str, id_: int) -> CdEDBObject:
@@ -378,6 +381,23 @@ class BackendTest(CdEDBTest):
         """Check whether the current user is any of the given users."""
         users = {get_user(i)["id"] for i in identifiers}
         return self.user.get("id", -1) in users
+
+    def assertLogEqual(self, log_expectation: Sequence[CdEDBObject], realm: str,
+                       **kwargs: Any) -> None:
+        """Helper to compare a log expectation to the actual thing."""
+        _, log = getattr(self, realm).retrieve_log(self.key, **kwargs)
+        log_expectation = tuple(log_expectation)
+        for e in log:
+            del e['id']
+        for e in log_expectation:
+            if 'ctime' not in e:
+                e['ctime'] = nearly_now()
+            if 'submitted_by' not in e:
+                e['submitted_by'] = self.user['id']
+            for k in ('persona_id', 'change_note'):
+                if k not in e:
+                    e[k] = None
+        self.assertEqual(log_expectation, log)
 
     @staticmethod
     def initialize_raw_backend(backendcls: Type[SessionBackend]
@@ -817,6 +837,16 @@ class FrontendTest(BackendTest):
         self.response = self.response.maybe_follow(**kwargs)
         if self.response != oldresponse:
             self._log_generation_time(oldresponse)
+
+    def assertRedirect(self, url: str, *args: Any, target_url: str,
+                       verbose: bool = False, **kwargs: Any) -> webtest.TestResponse:
+        """Checck that a GET-request to the url returns a redirect to the target url."""
+        response: webtest.TestResponse = self.app.get(url, *args, **kwargs)
+        self.assertLessEqual(300, response.status_int)
+        self.assertGreater(400, response.status_int)
+        self.assertIn("You should be redirected", response)
+        self.assertIn(target_url, response)
+        return response
 
     def post(self, url: str, *args: Any, verbose: bool = False, **kwargs: Any) -> None:
         """Directly send a POST-request.
