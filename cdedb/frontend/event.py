@@ -2802,6 +2802,48 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard()
+    def questionnaire_import_form(self, rs: RequestState, event_id: int) -> Response:
+        """Render form for uploading questionnaire data."""
+        return self.render(rs, "questionnaire_import")
+
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
+    @REQUESTfile("json_file")
+    @REQUESTdata("extend_questionnaire", "skip_existing_fields", "token")
+    def questionnaire_import(
+        self, rs: RequestState, event_id: int,
+        json_file: Optional[werkzeug.datastructures.FileStorage],
+        extend_questionnaire: bool, skip_existing_fields: bool, token: Optional[str],
+    ) -> Response:
+        """Import questionnaire rows and custom datafields.
+
+        :param extend_questionnaire: If True, append the imported questionnaire rows to
+            any existing ones. Otherwise replace the existing ones.
+        :param skip_existing_fields: If True, the import of fields that already exist
+            is skipped, even if their definition is different from the existing one.
+            Otherwise, duplicate field names will cause an error and prevent the import.
+        """
+        kwargs = {
+            'field_definitions': rs.ambience['event']['fields'],
+            'fee_modifiers': rs.ambience['event']['fee_modifiers'],
+            'questionnaire': self.eventproxy.get_questionnaire(rs, event_id),
+            'extend_questionnaire': extend_questionnaire,
+            'skip_existing_fields': skip_existing_fields,
+        }
+        data = check(rs, vtypes.SerializedEventQuestionnaireUpload, json_file,
+                     **kwargs)
+        if rs.has_validation_errors():
+            return self.questionnaire_import_form(rs, event_id)
+        assert data is not None
+
+        code = self.eventproxy.questionnaire_import(
+            rs, event_id, fields=data['fields'], questionnaire=data['questionnaire'])
+
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "event/configure_additional_questionnaire")
+
+    @access("event")
+    @event_guard()
     def partial_import_form(self, rs: RequestState, event_id: int) -> Response:
         """First step of partial import process: Render form to upload file"""
         return self.render(rs, "partial_import")

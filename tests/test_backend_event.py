@@ -585,7 +585,8 @@ class TestEventBackend(BackendTest):
         }
         with self.assertRaises(ValueError) as cm:
             self.event.set_questionnaire(self.key, event_id, questionnaire)
-        self.assertIn("Must not duplicate field. (field_id)", cm.exception.args)
+        self.assertEqual("Must not duplicate field ('brings_balls'). (field_id)",
+                         cm.exception.args[0] % cm.exception.args[1])
 
         # Event mustn't have registrations to alter fee modifiers.
         reg_ids = self.event.list_registrations(self.key, event_id)

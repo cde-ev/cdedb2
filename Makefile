@@ -153,7 +153,8 @@ endif
 
 TESTFILES := picture.pdf,picture.png,picture.jpg,form.pdf,rechen.pdf,ballot_result.json,sepapain.xml$\
 		,event_export.json,batch_admission.csv,money_transfers.csv,money_transfers_valid.csv$\
-		,partial_event_import.json,TestAka_partial_export_event.json,statement.csv
+		,partial_event_import.json,TestAka_partial_export_event.json,statement.csv$\
+		,questionnaire_import.json
 
 storage-test:
 	rm -rf -- ${TESTSTORAGEPATH}/*
