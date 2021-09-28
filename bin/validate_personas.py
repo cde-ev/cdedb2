@@ -1,24 +1,19 @@
 #!/usr/bin/env python3
 from typing import Optional
 
-from cdedb.script import make_backend, setup, Script, CoreBackend
+from cdedb.script import Script
 import cdedb.validationtypes as vtypes
 from cdedb.backend.common import affirm_validation_typed as affirm
 
-# Configuration
-
-# The admin id will need to be replaces before use.
-executing_admin_id = -1
-rs = setup(persona_id=executing_admin_id, dbuser="cdb_admin",
-           dbpassword="9876543210abcdefghijklmnopqrst")()
-
 # Prepare stuff
 
-core: CoreBackend = make_backend("core")
+script = Script(persona_id=-1, dbuser="cdb_admin")
+rs = script.rs()
+core = script.make_backend("core")
 
 # Execution
 
-with Script(rs, dry_run=False):
+with script:
     persona_id: Optional[int] = -1
     while True:
         persona_id = core.next_persona(
