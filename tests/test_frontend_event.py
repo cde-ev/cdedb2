@@ -2618,7 +2618,7 @@ etc;anything else""", f['entries_2'].value)
         # Test privacy: that I can see exactly the information I should see
         self.assertTitle("Akira Abukara")
         self.assertPresence("Geschlecht")
-        self.assertPresence("sonstiges")
+        self.assertPresence("divers")
         # self.assertPresence("Mitgliedschaft")
         self.assertNonPresence("Sichtbarkeit")
         self.assertPresence("28.12.2019")
