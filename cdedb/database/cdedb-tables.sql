@@ -226,7 +226,11 @@ CREATE TABLE core.genesis_cases (
         -- see cdedb.database.constants.GenesisStati
         case_status             integer NOT NULL DEFAULT 0,
         -- who moderated the request
-        reviewer                integer REFERENCES core.personas(id) DEFAULT NULL
+        reviewer                integer REFERENCES core.personas(id) DEFAULT NULL,
+        -- past event and course to be added to the new user
+        pevent_id               integer DEFAULT NULL, -- REFERENCES past_event.events(id)
+        pcourse_id              integer DEFAULT NULL -- REFERENCES past_event.courses(id)
+
 );
 CREATE INDEX idx_genesis_cases_case_status ON core.genesis_cases(case_status);
 GRANT SELECT, INSERT ON core.genesis_cases To cdb_anonymous;
@@ -592,6 +596,10 @@ CREATE INDEX idx_courses_pevent_id ON past_event.courses(pevent_id);
 GRANT SELECT, INSERT, UPDATE ON past_event.courses TO cdb_persona;
 GRANT DELETE ON past_event.courses TO cdb_admin;
 GRANT SELECT, UPDATE ON past_event.courses_id_seq TO cdb_persona;
+
+-- create previously impossible reference
+ALTER TABLE core.genesis_cases ADD FOREIGN KEY (pevent_id) REFERENCES past_event.events(id);
+ALTER TABLE core.genesis_cases ADD FOREIGN KEY (pcourse_id) REFERENCES past_event.courses(id);
 
 CREATE TABLE past_event.participants (
         id                      serial PRIMARY KEY,
