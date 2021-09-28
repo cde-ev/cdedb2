@@ -780,9 +780,9 @@ class CdEFrontend(AbstractUserFrontend):
             rs, data, trial_membership, consent, sendmail)
         if success:
             if num_new:
-                rs.notify("success", n_("Created %(num)s accounts."), {'num': num_new})
+                rs.notify("success", n_("%(num)s new members."), {'num': num_new})
             if num_renewed:
-                rs.notify("success", n_("Modified %(num)s accounts."),
+                rs.notify("success", n_("Modified %(num)s existing members."),
                           {'num': num_renewed})
             return self.redirect(rs, "cde/index")
         else:
