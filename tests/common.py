@@ -307,7 +307,7 @@ class CdEDBTest(BasicTest):
             dbuser="cdb",
             dbname=self.conf["CDB_DATABASE_NAME"],
             check_system_user=False,
-        )._conn as conn:
+        )._conn as conn:  # pylint: disable=protected-access
             conn.set_session(autocommit=True)
             with conn.cursor() as curr:
                 with open("tests/ancillary_files/clean_data.sql") as f:
