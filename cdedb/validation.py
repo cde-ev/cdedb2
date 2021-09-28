@@ -72,7 +72,7 @@ from cdedb.common import (
     ValidationWarning, asciificator, compute_checkdigit, extract_roles, n_, now,
     xsorted, LineResolutions,
 )
-from cdedb.config import BasicConfig
+from cdedb.config import BasicConfig, Config
 from cdedb.database.constants import FieldAssociations, FieldDatatypes
 from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS
 from cdedb.query import (
@@ -86,6 +86,7 @@ from cdedb.validationdata import (
 from cdedb.validationtypes import *  # pylint: disable=wildcard-import,unused-wildcard-import; # noqa: F403
 
 _BASICCONF = BasicConfig()
+_CONF = Config()
 NoneType = type(None)
 
 zxcvbn.matching.add_frequency_lists(FREQUENCY_LISTS)
@@ -574,6 +575,41 @@ def _str(val: Any, argname: str = None, **kwargs: Any) -> str:
     if not val:
         raise ValidationSummary(ValueError(argname, n_("Must not be empty.")))
     return val
+
+
+@_add_typed_validator
+def _shortname(val: Any, argname: str = None, *,
+               _ignore_warnings: bool = False, **kwargs: Any) -> Shortname:
+    """A string used as shortname with therefore limited length."""
+    val = _str(val, argname, _ignore_warnings=_ignore_warnings, **kwargs)
+    if len(val) > _CONF["SHORTNAME_LENGTH"] and not _ignore_warnings:
+        raise ValidationSummary(
+            ValidationWarning(argname, n_("Shortname is longer than {len} chars."),
+                              {'len': str(_CONF["SHORTNAME_LENGTH"])}))
+    return Shortname(val)
+
+
+@_add_typed_validator
+def _shortname_identifier(val: Any, argname: str = None, *,
+                          _ignore_warnings: bool = False,
+                          **kwargs: Any) -> ShortnameIdentifier:
+    """A string used as shortname and as programmatic accessible identifer."""
+    val = _identifier(val, argname, _ignore_warnings=_ignore_warnings, **kwargs)
+    val = _shortname(val, argname, _ignore_warnings=_ignore_warnings, **kwargs)
+    return ShortnameIdentifier(val)
+
+
+@_add_typed_validator
+def _shortname_restrictive_identifier(
+        val: Any, argname: str = None, *,
+        _ignore_warnings: bool = False,
+        **kwargs: Any) -> ShortnameRestrictiveIdentifier:
+    """A string used as shortname and is even more restricitve then an identifer."""
+    val = _restrictive_identifier(val, argname, _ignore_warnings=_ignore_warnings,
+                                  **kwargs)
+    val = _shortname_identifier(val, argname, _ignore_warnings=_ignore_warnings,
+                                **kwargs)
+    return ShortnameRestrictiveIdentifier(val)
 
 
 @_add_typed_validator
@@ -2034,7 +2070,7 @@ def _meta_info(
 
 INSTITUTION_COMMON_FIELDS: TypeMapping = {
     'title': str,
-    'shortname': str,
+    'shortname': Shortname,
 }
 
 
@@ -2061,7 +2097,7 @@ def _institution(
 
 PAST_EVENT_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
-    'shortname': str,
+    'shortname': Shortname,
     'institution': ID,
     'tempus': datetime.date,
     'description': Optional[str],
@@ -2100,7 +2136,7 @@ EVENT_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'institution': ID,
     'description': Optional[str],
-    'shortname': Identifier,
+    'shortname': ShortnameIdentifier,
 }
 
 EVENT_EXPOSED_OPTIONAL_FIELDS: Mapping[str, Any] = {
@@ -2230,7 +2266,7 @@ def _event(
 
 EVENT_PART_CREATION_MANDATORY_FIELDS: TypeMapping = {
     'title': str,
-    'shortname': str,
+    'shortname': Shortname,
     'part_begin': datetime.date,
     'part_end': datetime.date,
     'fee': NonNegativeDecimal,
@@ -2338,7 +2374,7 @@ def _event_part(
 
 EVENT_TRACK_COMMON_FIELDS: TypeMapping = {
     'title': str,
-    'shortname': str,
+    'shortname': Shortname,
     'num_choices': NonNegativeInt,
     'min_choices': NonNegativeInt,
     'sortkey': int,
@@ -2535,7 +2571,7 @@ COURSE_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'description': Optional[str],
     'nr': str,
-    'shortname': str,
+    'shortname': Shortname,
     'instructors': Optional[str],
     'max_size': Optional[NonNegativeInt],
     'min_size': Optional[NonNegativeInt],
@@ -3295,7 +3331,7 @@ PARTIAL_COURSE_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'description': Optional[str],
     'nr': Optional[str],
-    'shortname': str,
+    'shortname': Shortname,
     'instructors': Optional[str],
     'max_size': Optional[int],
     'min_size': Optional[int],
@@ -3805,7 +3841,7 @@ def _subscription_address(
 
 ASSEMBLY_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
-    'shortname': Identifier,
+    'shortname': ShortnameIdentifier,
     'description': Optional[str],
     'signup_end': datetime.datetime,
     'notes': Optional[str],
@@ -3987,14 +4023,14 @@ def _ballot(
 
 BALLOT_CANDIDATE_COMMON_FIELDS: TypeMapping = {
     'title': str,
-    'shortname': Identifier,
+    'shortname': ShortnameIdentifier,
 }
 
 
 @_add_typed_validator
 def _ballot_candidate(
     val: Any, argname: str = "ballot_candidate", *,
-    creation: bool = False, **kwargs: Any
+    creation: bool = False, _ignore_warnings: bool = False, **kwargs: Any
 ) -> BallotCandidate:
     """
     :param creation: If ``True`` test the data set on fitness for creation
@@ -4012,9 +4048,14 @@ def _ballot_candidate(
     val = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs)
 
+    errs = ValidationSummary()
+    if 'title' in val and len(val['title']) > 30 and not _ignore_warnings:
+        errs.append(ValidationWarning("title", n_("Title is too long.")))
     if val.get('shortname') == ASSEMBLY_BAR_SHORTNAME:
-        raise ValidationSummary(ValueError(
-            "shortname", n_("Mustn’t be the bar shortname.")))
+        errs.append(ValueError("shortname", n_("Mustn’t be the bar shortname.")))
+
+    if errs:
+        raise errs
 
     return BallotCandidate(val)
 
