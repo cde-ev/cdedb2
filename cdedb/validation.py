@@ -50,10 +50,11 @@ import logging
 import math
 import re
 import string
+import typing
 from enum import Enum
 from typing import (
-    Callable, Iterable, Mapping, Optional, Sequence, Set, Tuple, TypeVar,
-    Union, cast, get_type_hints, overload, Generic
+    Callable, Iterable, Mapping, Optional, Protocol, Sequence, Set, Tuple, TypeVar,
+    Union, cast, get_type_hints, overload, get_origin, get_args
 )
 
 import magic
@@ -62,7 +63,6 @@ import pytz
 import pytz.tzinfo
 import werkzeug.datastructures
 import zxcvbn
-from typing_extensions import Protocol
 
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
@@ -126,18 +126,16 @@ class ValidatorStorage(Dict[Type[Any], Callable[..., Any]]):
         super().__setitem__(type_, validator)
 
     def __getitem__(self, type_: Type[T]) -> Callable[..., T]:
-        # TODO replace with get_origin etc in Python 3.8
-        if hasattr(type_, "__origin__"):
-            if type_.__origin__ is Union:  # type: ignore
-                inner_type, none_type = type_.__args__  # type: ignore
-                if none_type is not NoneType:
-                    raise KeyError("Complex unions not supported")
-                validator = self[inner_type]
-                return _allow_None(validator)  # type: ignore
-            elif type_.__origin__ is list:  # type: ignore
-                [inner_type] = type_.__args__  # type: ignore
-                return make_list_validator(inner_type)  # type: ignore
-            # TODO more container types like tuple
+        if typing.get_origin(type_) is Union:
+            inner_type, none_type = typing.get_args(type_)
+            if none_type is not NoneType:
+                raise KeyError("Complex unions not supported")
+            validator = self[inner_type]
+            return _allow_None(validator)  # type: ignore
+        elif typing.get_origin(type_) is list:
+            [inner_type] = typing.get_args(type_)
+            return make_list_validator(inner_type)  # type: ignore
+        # TODO more container types like tuple
         return super().__getitem__(type_)
 
 
@@ -181,11 +179,6 @@ def validate_check_optional(
     type_: Type[T], value: Any, **kwargs: Any
 ) -> Tuple[Optional[T], List[Error]]:
     return validate_check(Optional[type_], value, **kwargs)  # type: ignore
-
-
-# TODO replace with get_origin etc in Python 3.8 from typing
-get_args = lambda t: getattr(t, '__args__', ()) if t is not Generic else Generic
-get_origin = lambda t: getattr(t, '__origin__', None)
 
 
 def is_optional(type_: Type[T]) -> bool:
@@ -1184,6 +1177,7 @@ def _batch_admission_entry(
         'pcourse_id': Optional[int],
         'is_instructor': bool,
         'is_orga': bool,
+        'update_username': bool,
         'persona': Any,  # TODO This should be more strict
     }
     optional_fields: TypeMapping = {}
@@ -1437,9 +1431,11 @@ GENESIS_CASE_COMMON_FIELDS: TypeMapping = {
     'notes': str,
 }
 
-GENESIS_CASE_OPTIONAL_FIELDS: TypeMapping = {
+GENESIS_CASE_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'case_status': const.GenesisStati,
     'reviewer': ID,
+    'pevent_id': Optional[ID],
+    'pcourse_id': Optional[ID],
 }
 
 GENESIS_CASE_ADDITIONAL_FIELDS: Mapping[str, Any] = {
@@ -1457,7 +1453,9 @@ GENESIS_CASE_ADDITIONAL_FIELDS: Mapping[str, Any] = {
 }
 
 GENESIS_CASE_EXPOSED_FIELDS = {**GENESIS_CASE_COMMON_FIELDS,
-                               **GENESIS_CASE_ADDITIONAL_FIELDS}
+                               **GENESIS_CASE_ADDITIONAL_FIELDS,
+                               'pevent_id': Optional[ID],
+                               'pcourse_id': Optional[ID], }
 
 
 @_add_typed_validator
@@ -3880,7 +3878,8 @@ BALLOT_OPTIONAL_FIELDS: Mapping[str, Any] = {
     **BALLOT_EXPOSED_OPTIONAL_FIELDS,
     'extended': Optional[bool],
     'is_tallied': bool,
-    'candidates': Mapping
+    'candidates': Mapping,
+    'linked_attachments': Optional[List[Optional[ID]]]
 }
 
 
@@ -4021,9 +4020,9 @@ def _ballot_candidate(
 
 
 ASSEMBLY_ATTACHMENT_FIELDS: Mapping[str, Any] = {
-    'assembly_id': Optional[ID],
-    'ballot_id': Optional[ID],
+    'assembly_id': ID,
 }
+
 
 ASSEMBLY_ATTACHMENT_VERSION_FIELDS: Mapping[str, Any] = {
     'title': str,
@@ -4034,50 +4033,28 @@ ASSEMBLY_ATTACHMENT_VERSION_FIELDS: Mapping[str, Any] = {
 
 @_add_typed_validator
 def _assembly_attachment(
-    val: Any, argname: str = "assembly_attachment", *,
-    creation: bool = False, **kwargs: Any
+    val: Any, argname: str = "assembly_attachment", **kwargs: Any
 ) -> AssemblyAttachment:
     val = _mapping(val, argname, **kwargs)
 
-    if creation:
-        mandatory_fields = {**ASSEMBLY_ATTACHMENT_VERSION_FIELDS}
-        optional_fields = {**ASSEMBLY_ATTACHMENT_FIELDS}
-    else:
-        mandatory_fields = dict(ASSEMBLY_ATTACHMENT_FIELDS, id=ID)
-        optional_fields = {}
+    mandatory_fields = dict(ASSEMBLY_ATTACHMENT_VERSION_FIELDS,
+                            **ASSEMBLY_ATTACHMENT_FIELDS)
 
-    val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs)
-
-    errs = ValidationSummary()
-    if val.get("assembly_id") and val.get("ballot_id"):
-        errs.append(ValueError(argname, n_("Only one host allowed.")))
-    if not val.get("assembly_id") and not val.get("ballot_id"):
-        errs.append(ValueError(argname, n_("No host given.")))
-
-    if errs:
-        raise errs
+    val = _examine_dictionary_fields(val, mandatory_fields, **kwargs)
 
     return AssemblyAttachment(val)
 
 
 @_add_typed_validator
 def _assembly_attachment_version(
-    val: Any, argname: str = "assembly_attachment_version", *,
-    creation: bool = False, **kwargs: Any
+    val: Any, argname: str = "assembly_attachment_version", **kwargs: Any
 ) -> AssemblyAttachmentVersion:
     val = _mapping(val, argname, **kwargs)
 
-    if creation:
-        mandatory_fields = dict(ASSEMBLY_ATTACHMENT_VERSION_FIELDS,
-                                attachment_id=ID)
-        optional_fields: TypeMapping = {}
-    else:
-        mandatory_fields = {'attachment_id': ID, 'version': ID}
-        optional_fields = {**ASSEMBLY_ATTACHMENT_VERSION_FIELDS}
+    mandatory_fields = dict(ASSEMBLY_ATTACHMENT_VERSION_FIELDS, attachment_id=ID)
+    optional_fields: TypeMapping = {}
 
-    val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs)
+    val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
 
     return AssemblyAttachmentVersion(val)
 

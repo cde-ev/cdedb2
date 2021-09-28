@@ -44,8 +44,8 @@ from email.mime.nonmultipart import MIMENonMultipart
 from secrets import token_hex
 from types import TracebackType
 from typing import (
-    IO, AbstractSet, Any, AnyStr, Callable, ClassVar, Collection, Dict,
-    Iterable, List, Mapping, MutableMapping, NamedTuple, Optional, Sequence,
+    IO, AbstractSet, Any, AnyStr, Callable, ClassVar, Collection, Dict, Iterable, List,
+    Literal, Mapping, MutableMapping, NamedTuple, Optional, Protocol, Sequence,
     Tuple, Type, TypeVar, Union, cast, overload,
 )
 
@@ -58,8 +58,6 @@ import werkzeug.datastructures
 import werkzeug.exceptions
 import werkzeug.utils
 import werkzeug.wrappers
-import werkzeug.wsgi
-from typing_extensions import Literal, Protocol
 
 import cdedb.query as query_mod
 import cdedb.validation as validate
@@ -77,8 +75,8 @@ from cdedb.common import (
     CdEDBMultiDict, CdEDBObject, CustomJSONEncoder, EntitySorter, Error, Notification,
     NotificationType, PathLike, PrivilegeError, RequestState, Role, User,
     ValidationWarning, _tdelta, asciificator, decode_parameter, encode_parameter,
-    get_localized_country_codes, glue, json_serialize, make_proxy, make_root_logger,
-    merge_dicts, n_, now, roles_to_db_role, unwrap,
+    format_country_code, get_localized_country_codes, glue, json_serialize, make_proxy,
+    make_root_logger, merge_dicts, n_, now, roles_to_db_role, unwrap,
 )
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -1374,14 +1372,6 @@ def reconnoitre_ambience(obj: AbstractFrontend,
             raise werkzeug.exceptions.BadRequest(
                 rs.gettext("Inconsistent request."))
 
-    def attachment_check(a: CdEDBObject) -> None:
-        if a['attachment']['ballot_id']:
-            do_assert(a['attachment']['ballot_id']
-                      == rs.requestargs.get('ballot_id'))
-        else:
-            do_assert(a['attachment']['assembly_id']
-                      == rs.requestargs['assembly_id'])
-
     scouts = (
         Scout(lambda anid: obj.coreproxy.get_persona(rs, anid), 'persona_id',
               'persona', ()),
@@ -1428,7 +1418,9 @@ def reconnoitre_ambience(obj: AbstractFrontend,
               ((lambda a: do_assert(rs.requestargs['field_id']
                                     in a['event']['fields'])),)),
         Scout(lambda anid: obj.assemblyproxy.get_attachment(rs, anid),
-              'attachment_id', 'attachment', (attachment_check,)),
+              'attachment_id', 'attachment',
+              ((lambda a: do_assert(a['attachment']['assembly_id']
+                                    == rs.requestargs['assembly_id'])),)),
         Scout(lambda anid: obj.assemblyproxy.get_assembly(rs, anid),
               'assembly_id', 'assembly', ()),
         Scout(lambda anid: obj.assemblyproxy.get_ballot(rs, anid),
@@ -1596,13 +1588,6 @@ def cdedburl(rs: RequestState, endpoint: str,
         for key in params:
             allparams[key] = params[key]
 
-    # Until Werkzeug 0.15, this workaround is necessary to keep duplicates.
-    allparams = allparams.to_dict(flat=False)
-    for key in allparams:
-        # And then, this needs to be done to keep <magic replacements> working
-        if len(allparams[key]) == 1:
-            allparams[key] = unwrap(allparams[key])
-
     return rs.urls.build(endpoint, allparams, force_external=force_external)
 
 
@@ -1720,7 +1705,7 @@ def REQUESTdata(
 
                 if name not in kwargs:
 
-                    if getattr(hints[name], "__origin__", None) is Union:
+                    if typing.get_origin(hints[name]) is Union:
                         type_, _ = hints[name].__args__
                         optional = True
                     else:
@@ -1741,9 +1726,7 @@ def REQUESTdata(
                         if timeout is False:
                             rs.notify("warning", n_("Link invalid."))
 
-                    if getattr(
-                        type_, "__origin__", None
-                    ) is collections.abc.Collection:
+                    if typing.get_origin(type_) is collections.abc.Collection:
                         type_ = unwrap(type_.__args__)
                         vals = tuple(rs.request.values.getlist(name))
                         if vals:
@@ -2098,9 +2081,7 @@ def make_postal_address(rs: RequestState, persona: CdEDBObject) -> List[str]:
         ret.append("{} {}".format(p['postal_code'] or '',
                                   p['location'] or ''))
     if p['country']:
-        # Mask the `gettext` name, so that pybabel does not try to extract this string.
-        g = rs.translations["de"].gettext
-        ret.append(g(f"CountryCodes.{p['country']}"))
+        ret.append(rs.translations["de"].gettext(format_country_code(p['country'])))
     return ret
 
 

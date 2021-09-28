@@ -10,10 +10,9 @@ import copy
 import datetime
 import decimal
 from collections import OrderedDict
-from typing import Any, Collection, Dict, List, Optional, Tuple
+from typing import Any, Collection, Dict, List, Optional, Protocol, Tuple
 
-import psycopg2
-from typing_extensions import Protocol
+import psycopg2.extensions
 
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
@@ -1298,7 +1297,8 @@ class CdEBackend(AbstractBackend):
         """Retrieve some generic statistics about members."""
         # Simple stats first.
         query = """SELECT
-            num_members, num_of_searchable, num_of_trial, num_ex_members, num_all
+            num_members, num_of_searchable, num_of_trial, num_of_printed_expuls,
+            num_ex_members, num_all
         FROM
             (
                 SELECT COUNT(*) AS num_members
@@ -1316,6 +1316,11 @@ class CdEBackend(AbstractBackend):
                 WHERE is_member = True AND trial_member = True
             ) AS trial_count,
             (
+                SELECT COUNT(*) AS num_of_printed_expuls
+                FROM core.personas
+                WHERE is_member = True and paper_expuls = True
+            ) AS printed_expuls_count,
+            (
                 SELECT COUNT(*) AS num_ex_members
                 FROM core.personas
                 WHERE is_cde_realm = True AND is_member = False
@@ -1330,7 +1335,7 @@ class CdEBackend(AbstractBackend):
 
         simple_stats = OrderedDict((k, data[k]) for k in (
             n_("num_members"), n_("num_of_searchable"), n_("num_of_trial"),
-            n_("num_ex_members"), n_("num_all")))
+            n_("num_of_printed_expuls"), n_("num_ex_members"), n_("num_all")))
 
         # TODO: improve this type annotation with a new mypy version.
         def query_stats(select: str, condition: str, order: str, limit: int = 0
@@ -1398,7 +1403,8 @@ class CdEBackend(AbstractBackend):
 
         # Unique event attendees per year:
         query = """SELECT
-            COUNT(DISTINCT persona_id) AS num, EXTRACT(year FROM events.tempus)::integer AS datum
+            COUNT(DISTINCT persona_id) AS num,
+            EXTRACT(year FROM events.tempus)::integer AS datum
         FROM
             (
                 past_event.institutions
@@ -1423,19 +1429,23 @@ class CdEBackend(AbstractBackend):
 
     def _perform_one_batch_admission(self, rs: RequestState, datum: CdEDBObject,
                                      trial_membership: bool, consent: bool
-                                     ) -> int:
+                                     ) -> Optional[bool]:
         """Uninlined code from perform_batch_admission().
 
-        :returns: number of created accounts (0 or 1)
+        :returns: None if nothing happened. True if a new member account was created or
+            membership was granted to an existing (non-member) account. False if
+            (trial-)membership was renewed for an existing (already member) account.
         """
-        ret = 0
+        # Require an Atomizer.
+        self.affirm_atomized_context(rs)
+
         batch_fields = (
-            'family_name', 'given_names', 'title', 'name_supplement',
+            'family_name', 'given_names', 'display_name', 'title', 'name_supplement',
             'birth_name', 'gender', 'address_supplement', 'address',
             'postal_code', 'location', 'country', 'telephone',
             'mobile', 'birthday')  # email omitted as it is handled separately
         if datum['resolution'] == LineResolutions.skip:
-            return ret
+            return None
         elif datum['resolution'] == LineResolutions.create:
             new_persona = copy.deepcopy(datum['persona'])
             new_persona.update({
@@ -1445,10 +1455,21 @@ class CdEBackend(AbstractBackend):
                 'is_searchable': consent,
             })
             persona_id = self.core.create_persona(rs, new_persona)
-            ret = 1
+            ret = True
         elif datum['resolution'].is_modification():
+            ret = False
             persona_id = datum['doppelganger_id']
             current = self.core.get_persona(rs, persona_id)
+            if current['is_archived']:
+                if current['is_purged']:
+                    raise RuntimeError(n_("Cannot restore purged account."))
+                self.core.dearchive_persona(
+                    rs, persona_id, datum['persona']['username'])
+                current['username'] = datum['persona']['username']
+            if datum['update_username']:
+                if current['username'] != datum['persona']['username']:
+                    self.core.change_username(
+                        rs, persona_id, datum['persona']['username'], password=None)
             if not current['is_cde_realm']:
                 # Promote to cde realm dependent on current realm
                 promotion: CdEDBObject = {
@@ -1498,8 +1519,10 @@ class CdEBackend(AbstractBackend):
                 self.core.change_persona_realms(
                     rs, promotion, change_note="Datenübernahme nach Massenaufnahme")
             if datum['resolution'].do_trial():
-                self.change_membership(
+                code, _, _ = self.change_membership(
                     rs, datum['doppelganger_id'], is_member=True)
+                # This will be true if the user was not a member before.
+                ret = bool(code)
                 update = {
                     'id': datum['doppelganger_id'],
                     'trial_member': True,
@@ -1508,8 +1531,6 @@ class CdEBackend(AbstractBackend):
                     rs, update, may_wait=False,
                     change_note="Probemitgliedschaft erneuert.")
             if datum['resolution'].do_update():
-                self.core.change_username(
-                    rs, persona_id, datum['persona']['username'], password=None)
                 update = {'id': datum['doppelganger_id']}
                 for field in batch_fields:
                     update[field] = datum['persona'][field]
@@ -1527,16 +1548,23 @@ class CdEBackend(AbstractBackend):
     @access("cde_admin")
     def perform_batch_admission(self, rs: RequestState, data: List[CdEDBObject],
                                 trial_membership: bool, consent: bool
-                                ) -> Tuple[bool, Optional[int]]:
+                                ) -> Tuple[bool, Optional[int], Optional[int]]:
         """Atomized call to recruit new members.
 
         The frontend wants to do this in its entirety or not at all, so this
         needs to be in atomized context.
 
-        :returns: A tuple consisting of a boolean signalling success and an
-            optional integer that confers information if an error occured:
-            it is None if a TransactionRollbackError occured and otherwise
-            the index of the entry where the error happened.
+        :returns: A tuple consisting of a bool and two optional integers.:
+            A boolean signalling success.
+            If the operation was successful:
+                An integer signalling the number of newly created accounts.
+                An integer signalling the number of modified/renewed accounts.
+            If the operation was not successful:
+                If a TransactionRollbackError occrured:
+                    Both integer parameters are None.
+                Otherwise:
+                    The index where the error occured.
+                    The second parameter is None.
         """
         data = affirm_array(vtypes.BatchAdmissionEntry, data)
         trial_membership = affirm(bool, trial_membership)
@@ -1544,14 +1572,20 @@ class CdEBackend(AbstractBackend):
         # noinspection PyBroadException
         try:
             with Atomizer(rs):
-                count = 0
+                count_new = count_renewed = 0
                 for index, datum in enumerate(data, start=1):
-                    count += self._perform_one_batch_admission(
+                    account_created = self._perform_one_batch_admission(
                         rs, datum, trial_membership, consent)
+                    if account_created is None:
+                        pass
+                    elif account_created:
+                        count_new += 1
+                    else:
+                        count_renewed += 1
         except psycopg2.extensions.TransactionRollbackError:
             # We perform a rather big transaction, so serialization errors
             # could happen.
-            return False, None
+            return False, None, None
         except Exception:
             # This blanket catching of all exceptions is a last resort. We try
             # to do enough validation, so that this should never happen, but
@@ -1564,8 +1598,8 @@ class CdEBackend(AbstractBackend):
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
             self.cgitb_log()
-            return False, index
-        return True, count
+            return False, index, None
+        return True, count_new, count_renewed
 
     @access("searchable", "core_admin", "cde_admin")
     def submit_general_query(self, rs: RequestState,

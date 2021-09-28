@@ -10,11 +10,11 @@ with the production environment.
 """
 
 import getpass
+import os
 import tempfile
 import time
 from types import TracebackType
-from typing import Any, Optional, Type
-from typing_extensions import Protocol
+from typing import Any, Optional, Protocol, Type
 
 import psycopg2
 import psycopg2.extensions
@@ -36,6 +36,9 @@ psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
 
 _CONFIG = Config()
 _TRANSLATIONS = setup_translations(_CONFIG)
+
+
+__all__ = ['setup', 'make_backend', 'Script', 'DryRunError']
 
 
 def mock_user(persona_id: int) -> User:
@@ -67,6 +70,9 @@ def setup(persona_id: int, dbuser: str, dbpassword: str,
     """
     if check_system_user and getpass.getuser() != "www-data":
         raise RuntimeError("Must be run as user www-data.")
+
+    # Allow overriding the dbname via environment variable for evolution trial.
+    dbname = os.environ.get('EVOLUTION_TRIAL_OVERRIDE_DBNAME', dbname)
 
     connection_parameters = {
             "dbname": dbname,
@@ -158,7 +164,7 @@ class Script(Atomizer):
     start_time: float
 
     def __init__(self, rs: RequestState, *, dry_run: bool = True) -> None:
-        self.dry_run = dry_run
+        self.dry_run = bool(os.environ.get('EVOLUTION_TRIAL_OVERRIDE_DRY_RUN', dry_run))
         super().__init__(rs)
 
     def __enter__(self) -> IrradiatedConnection:

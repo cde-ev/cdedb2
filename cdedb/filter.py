@@ -8,10 +8,9 @@ import threading
 
 import logging
 from typing import (
-    Any, Callable, Collection, Container, Dict, Iterable, ItemsView, List,
+    Any, Callable, Collection, Container, Dict, Iterable, ItemsView, List, Literal,
     Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, overload
 )
-from typing_extensions import Literal
 
 import bleach
 import icu
@@ -353,7 +352,9 @@ def get_bleach_cleaner() -> bleach.sanitizer.Cleaner:
         # customizations
         'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'colgroup', 'col', 'tr', 'th',
         'thead', 'table', 'tbody', 'td', 'hr', 'p', 'span', 'div', 'pre', 'tt',
-        'sup', 'sub', 'small', 'br', 'u', 'dl', 'dt', 'dd', 'details', 'summary']
+        'sup', 'sub', 'small', 'br', 'u', 'dl', 'dt', 'dd', 'details', 'summary',
+        's',
+    ]
     attributes = {
         'a': ['href', 'title'],
         'abbr': ['title'],

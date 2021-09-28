@@ -547,20 +547,51 @@ def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,
             return tuple(map(collate, sortkey))
         return sortkey
 
-    return sorted(iterable, key=lambda x: collate(key(x)),  # pylint: disable=bad-builtin # noqa
+    return sorted(iterable, key=lambda x: collate(key(x)),  # pylint: disable=bad-builtin
                   reverse=reverse)
+
+
+def format_country_code(code: str) -> str:
+    """Helper to make string hidden to pybabel.
+
+    All possible combined strings are given for translation
+    in `i18n_additional.py`
+    """
+    return f'CountryCodes.{code}'
 
 
 def get_localized_country_codes(rs: RequestState) -> List[Tuple[str, str]]:
     """Generate a list of country code - name tuples in current language."""
 
-    def _format_country_code(code: str) -> str:
-        """Helper to make string hidden to pybabel."""
-        return f'CountryCodes.{code}'
+    if not hasattr(get_localized_country_codes, "localized_country_codes"):
+        localized_country_codes = {
+            lang: xsorted(
+                ((cc, rs.translations[lang].gettext(format_country_code(cc)))
+                 for cc in COUNTRY_CODES),
+                key=lambda x: x[1]
+            )
+            for lang in rs.translations
+        }
+        get_localized_country_codes.localized_country_codes = localized_country_codes  # type: ignore[attr-defined]
+    return get_localized_country_codes.localized_country_codes[rs.lang]  # type: ignore[attr-defined]
 
-    return xsorted(
-        [(v, rs.gettext(_format_country_code(v))) for v in COUNTRY_CODES],
-        key=lambda x: x[1])
+
+def get_country_code_from_country(rs: RequestState, country: str) -> str:
+    """Match a country to its country code."""
+
+    if not hasattr(get_country_code_from_country, "reverse_country_code_map"):
+        reverse_map = {
+            lang: {
+                rs.translations[lang].gettext(format_country_code(cc)): cc
+                for cc in COUNTRY_CODES
+            }
+            for lang in rs.translations
+        }
+        get_country_code_from_country.reverse_map = reverse_map  # type: ignore[attr-defined]
+    for lang, v in get_country_code_from_country.reverse_map.items():  # type: ignore[attr-defined]
+        if ret := v.get(country):
+            return ret
+    return country
 
 
 Sortkey = Tuple[Union[str, int, datetime.datetime], ...]
@@ -653,16 +684,13 @@ class EntitySorter:
         return (ballot['title'], ballot['id'])
 
     @staticmethod
-    def get_attachment_sorter(histories: CdEDBObject) -> KeyFunction:
-        def attachment(attachment: CdEDBObject) -> Sortkey:
-            attachment = histories[attachment['id']][attachment['current_version']]
-            return (attachment['title'], attachment['attachment_id'])
-
-        return attachment
+    def attachment(attachment: CdEDBObject) -> Sortkey:
+        """This is used for dicts containing one version of different attachments."""
+        return (attachment["title"], attachment["attachment_id"])
 
     @staticmethod
     def attachment_version(version: CdEDBObject) -> Sortkey:
-        return (version['attachment_id'], version['version'])
+        return (version['attachment_id'], version['version_nr'])
 
     @staticmethod
     def past_event(past_event: CdEDBObject) -> Sortkey:
@@ -1971,7 +1999,7 @@ GENESIS_CASE_FIELDS = (
     "id", "ctime", "username", "given_names", "family_name",
     "gender", "birthday", "telephone", "mobile", "address_supplement",
     "address", "postal_code", "location", "country", "birth_name", "attachment_hash",
-    "realm", "notes", "case_status", "reviewer")
+    "realm", "notes", "case_status", "reviewer", "pevent_id", "pcourse_id")
 
 # The following dict defines, which additional fields are required for genesis
 # request for distinct realms. Additionally, it is used to define for which
@@ -1983,7 +2011,7 @@ REALM_SPECIFIC_GENESIS_FIELDS: Dict[Realm, Tuple[str, ...]] = {
               "country"),
     "cde": ("gender", "birthday", "telephone", "mobile",
             "address_supplement", "address", "postal_code", "location",
-            "country", "birth_name", "attachment_hash"),
+            "country", "birth_name", "attachment_hash", "pevent_id", "pcourse_id"),
 }
 
 # This overrides the more general PERSONA_DEFAULTS dict with some realm-specific
@@ -2182,9 +2210,9 @@ BALLOT_FIELDS = (
 
 #: Fields of an attachment in the assembly realm (attached either to an
 #: assembly or a ballot)
-ASSEMBLY_ATTACHMENT_FIELDS = ("id", "assembly_id", "ballot_id")
+ASSEMBLY_ATTACHMENT_FIELDS = ("id", "assembly_id")
 
-ASSEMBLY_ATTACHMENT_VERSION_FIELDS = ("attachment_id", "version", "title",
+ASSEMBLY_ATTACHMENT_VERSION_FIELDS = ("attachment_id", "version_nr", "title",
                                       "authors", "filename", "ctime", "dtime",
                                       "file_hash")
 

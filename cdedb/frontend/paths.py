@@ -637,29 +637,28 @@ CDEDB_PATHS = werkzeug.routing.Map((
                     rule("/add", methods=_POST,
                          endpoint="add_attachment"),
                     sub("/<int:attachment_id>", (
-                        rule("/get", methods=_GET,
+                        rule("/latest", methods=_GET,
                              endpoint="get_attachment"),
-                        rule("/show", methods=_GET,
-                             endpoint="show_attachment"),
-                        rule("/change", methods=_GET,
-                             endpoint="change_attachment_link_form"),
-                        rule("/change", methods=_POST,
-                             endpoint="change_attachment_link"),
+                        # this is kept as legacy support
+                        rule("/get", endpoint="",
+                             redirect_to='assembly/assembly/<assembly_id>/attachment'
+                                         '/<attachment_id>/latest'),
                         rule("/delete", methods=_POST,
                              endpoint="delete_attachment"),
                         rule("/add", methods=_GET,
-                             endpoint="add_attachment_form"),
+                             endpoint="add_attachment_version_form"),
                         rule("/add", methods=_POST,
-                             endpoint="add_attachment"),
-                        sub("/version/<int:version>", (
-                            rule("/get", methods=_GET,
-                                 endpoint="get_attachment"),
+                             endpoint="add_attachment_version"),
+                        sub("/version/<int:version_nr>", (
+                            rule("/", methods=_GET,
+                                 endpoint="get_attachment_version"),
+                            # this is kept as legacy support
+                            rule("/get", endpoint="",
+                                 redirect_to="assembly/assembly/<assembly_id>"
+                                             "/attachment/<attachment_id>/version"
+                                             "/<version_nr>"),
                             rule("/delete", methods=_POST,
-                                 endpoint="delete_attachment"),
-                            rule("/edit", methods=_GET,
-                                 endpoint="edit_attachment_version_form"),
-                            rule("/edit", methods=_POST,
-                                 endpoint="edit_attachment_version"),
+                                 endpoint="delete_attachment_version"),
                         )),
                     )),
                 )),
@@ -691,34 +690,17 @@ CDEDB_PATHS = werkzeug.routing.Map((
                     rule("/result/download", methods=_GET,
                          endpoint="get_result"),
                     sub("/attachment", (
-                        rule("/add", methods=_GET,
-                             endpoint="add_attachment_form"),
-                        rule("/add", methods=_POST,
-                             endpoint="add_attachment"),
                         sub("/<int:attachment_id>", (
-                            rule("/get", methods=_GET,
-                                 endpoint="get_attachment"),
-                            rule("/show", methods=_GET,
-                                 endpoint="show_attachment"),
-                            rule("/change", methods=_GET,
-                                 endpoint="change_attachment_link_form"),
-                            rule("/change", methods=_POST,
-                                 endpoint="change_attachment_link"),
-                            rule("/delete", methods=_POST,
-                                 endpoint="delete_attachment"),
-                            rule("/add", methods=_GET,
-                                 endpoint="add_attachment_form"),
-                            rule("/add", methods=_POST,
-                                 endpoint="add_attachment"),
+                            # this is kept as legacy support
+                            rule("/get", endpoint="",
+                                 redirect_to='assembly/assembly/<assembly_id>'
+                                             '/attachment/<attachment_id>/latest'),
                             sub("/version/<int:version>", (
-                                rule("/get", methods=_GET,
-                                     endpoint="get_attachment"),
-                                rule("/delete", methods=_POST,
-                                     endpoint="delete_attachment"),
-                                rule("/edit", methods=_GET,
-                                     endpoint="edit_attachment_version_form"),
-                                rule("/edit", methods=_POST,
-                                     endpoint="edit_attachment_version"),
+                                # this is kept as legacy support
+                                rule("/get", endpoint="",
+                                     redirect_to="assembly/assembly/<assembly_id>"
+                                                 "/attachment/<attachment_id>/version"
+                                                 "/<version>"),
                             )),
                         )),
                     )),

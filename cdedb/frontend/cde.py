@@ -33,6 +33,7 @@ from cdedb.common import (
     RequestState, SemesterSteps, TransactionType, asciificator, deduct_years,
     determine_age_class, diacritic_patterns, get_hash, get_localized_country_codes,
     glue, int_to_words, lastschrift_reference, merge_dicts, n_, now, unwrap, xsorted,
+    get_country_code_from_country,
 )
 from cdedb.filter import enum_entries_filter
 from cdedb.frontend.common import (
@@ -463,6 +464,9 @@ class CdEFrontend(AbstractUserFrontend):
             "1": str(const.Genders.male.value),
             "2": str(const.Genders.female.value),
             "3": str(const.Genders.not_specified.value),
+            "m": str(const.Genders.male.value),
+            "w": str(const.Genders.female.value),
+            "d": str(const.Genders.other.value),
         }
         gender = persona.get('gender') or "3"
         persona['gender'] = gender_convert.get(
@@ -483,14 +487,26 @@ class CdEFrontend(AbstractUserFrontend):
             'notes': None,
             'country2': self.conf["DEFAULT_COUNTRY"],
         })
-        if not (persona.get('country') and persona['country'].strip()):
+        if (persona.get('country') or "").strip():
+            persona['country'] = get_country_code_from_country(rs, persona['country'])
+        else:
             persona['country'] = self.conf["DEFAULT_COUNTRY"]
+        for k in ('telephone', 'mobile'):
+            if persona[k] and not persona[k].strip().startswith(("0", "+")):
+                persona[k] = "0" + persona[k].strip()
         merge_dicts(persona, PERSONA_DEFAULTS)
         persona, problems = validate_check(
             vtypes.Persona, persona, argname="persona", creation=True)
-        if persona and (persona['birthday'] > deduct_years(now().date(), 10)):
-            problems.extend([('birthday', ValueError(
-                n_("Persona is younger than 10 years.")))])
+        if persona:
+            if persona['birthday'] > deduct_years(now().date(), 10):
+                problems.append(
+                    ('birthday', ValueError(n_("Persona is younger than 10 years."))))
+            if persona['gender'] == const.Genders.not_specified:
+                warnings.append(
+                    ('gender', ValueError(n_("No gender specified."))))
+            birth_name = (persona['birth_name'] or "").strip()
+            if birth_name == (persona['family_name'] or "").strip():
+                persona['birth_name'] = None
 
         pevent_id, w, p = self.pasteventproxy.find_past_event(rs, datum['raw']['event'])
         warnings.extend(w)
@@ -550,7 +566,7 @@ class CdEFrontend(AbstractUserFrontend):
         if datum['doppelganger_id'] and pevent_id:
             existing = self.pasteventproxy.list_participants(rs, pevent_id=pevent_id)
             if (datum['doppelganger_id'], pcourse_id) in existing:
-                problems.append(
+                warnings.append(
                     ("pevent_id", KeyError(n_("Participation already recorded."))))
 
         datum.update({
@@ -564,8 +580,8 @@ class CdEFrontend(AbstractUserFrontend):
         return datum
 
     def perform_batch_admission(self, rs: RequestState, data: List[CdEDBObject],
-                                trial_membership: bool, consent: bool,
-                                sendmail: bool) -> Tuple[bool, Optional[int]]:
+                                trial_membership: bool, consent: bool, sendmail: bool
+                                ) -> Tuple[bool, Optional[int], Optional[int]]:
         """Resolve all entries in the batch admission form.
 
         :returns: Success information and for positive outcome the
@@ -575,15 +591,15 @@ class CdEFrontend(AbstractUserFrontend):
         """
         relevant_keys = {
             'resolution', 'doppelganger_id', 'pevent_id', 'pcourse_id',
-            'is_instructor', 'is_orga', 'persona',
+            'is_instructor', 'is_orga', 'update_username', 'persona',
         }
         relevant_data = [{k: v for k, v in item.items() if k in relevant_keys}
                          for item in data]
         with TransactionObserver(rs, self, "perform_batch_admission"):
-            success, count = self.cdeproxy.perform_batch_admission(
+            success, count_new, count_renewed = self.cdeproxy.perform_batch_admission(
                 rs, relevant_data, trial_membership, consent)
             if not success:
-                return success, count
+                return success, count_new, count_renewed
             # Send mail after the transaction succeeded
             if sendmail:
                 for datum in data:
@@ -607,7 +623,7 @@ class CdEFrontend(AbstractUserFrontend):
                                       'cookie': message if success else "",
                                       'meta_info': meta_info,
                                       })
-            return True, count
+            return True, count_new, count_renewed
 
     @staticmethod
     def similarity_score(ds1: CdEDBObject, ds2: CdEDBObject) -> str:
@@ -634,11 +650,14 @@ class CdEFrontend(AbstractUserFrontend):
             return "low"
 
     @access("cde_admin", modi={"POST"})
+    @REQUESTfile("accounts_file")
     @REQUESTdata("membership", "trial_membership", "consent", "sendmail",
                  "finalized", "accounts")
     def batch_admission(self, rs: RequestState, membership: bool,
                         trial_membership: bool, consent: bool, sendmail: bool,
-                        finalized: bool, accounts: str) -> Response:
+                        finalized: bool, accounts: Optional[str],
+                        accounts_file: Optional[FileStorage],
+                        ) -> Response:
         """Make a lot of new accounts.
 
         This is rather involved to make this job easier for the administration.
@@ -650,8 +669,23 @@ class CdEFrontend(AbstractUserFrontend):
         The internal parameter finalized is used to explicitly signal at
         what point account creation will happen.
         """
-        accounts = accounts or ''
-        accountlines = accounts.splitlines()
+        accounts_file = check_optional(
+            rs, vtypes.CSVFile, accounts_file, "accounts_file")
+        if rs.has_validation_errors():
+            return self.batch_admission_form(rs)
+
+        if accounts_file and accounts:
+            rs.notify("warning", n_("Only one input method allowed."))
+            return self.batch_admission_form(rs)
+        elif accounts_file:
+            rs.values["accounts"] = accounts = accounts_file
+            accountlines = accounts.splitlines()
+        elif accounts:
+            accountlines = accounts.splitlines()
+        else:
+            rs.notify("error", n_("No input provided."))
+            return self.batch_admission_form(rs)
+
         fields = (
             'event', 'course', 'family_name', 'given_names', 'title',
             'name_supplement', 'birth_name', 'gender', 'address_supplement',
@@ -672,6 +706,7 @@ class CdEFrontend(AbstractUserFrontend):
                 f"hash{lineno}": Optional[str],  # type: ignore
                 f"is_orga{lineno}": Optional[bool],  # type: ignore
                 f"is_instructor{lineno}": Optional[bool],  # type: ignore
+                f"update_username{lineno}": Optional[bool],  # type: ignore
             }
             tmp = request_extractor(rs, params)
             if tmp[f"resolution{lineno}"] is None:
@@ -681,6 +716,7 @@ class CdEFrontend(AbstractUserFrontend):
             dataset['doppelganger_id'] = tmp[f"doppelganger_id{lineno}"]
             dataset['is_orga'] = tmp[f"is_orga{lineno}"]
             dataset['is_instructor'] = tmp[f"is_instructor{lineno}"]
+            dataset['update_username'] = tmp[f"update_username{lineno}"]
             dataset['old_hash'] = tmp[f"hash{lineno}"]
             dataset['new_hash'] = get_hash(accountlines[lineno].encode())
             rs.values[f"hash{lineno}"] = dataset['new_hash']
@@ -740,17 +776,21 @@ class CdEFrontend(AbstractUserFrontend):
             return self.batch_admission_form(rs, data=data, csvfields=fields)
 
         # Here we have survived all validation
-        success, num = self.perform_batch_admission(rs, data, trial_membership,
-                                                    consent, sendmail)
+        success, num_new, num_renewed = self.perform_batch_admission(
+            rs, data, trial_membership, consent, sendmail)
         if success:
-            rs.notify("success", n_("Created %(num)s accounts."), {'num': num})
+            if num_new:
+                rs.notify("success", n_("%(num)s new members."), {'num': num_new})
+            if num_renewed:
+                rs.notify("success", n_("Modified %(num)s existing members."),
+                          {'num': num_renewed})
             return self.redirect(rs, "cde/index")
         else:
-            if num is None:
+            if num_new is None:
                 rs.notify("warning", n_("DB serialization error."))
             else:
                 rs.notify("error", n_("Unexpected error on line %(num)s."),
-                          {'num': num})
+                          {'num': num_new})
             return self.batch_admission_form(rs, data=data, csvfields=fields)
 
     @access("finance_admin")

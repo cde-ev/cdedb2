@@ -12,11 +12,10 @@ import decimal
 from pathlib import Path
 from secrets import token_hex
 from typing import (
-    Any, Collection, Dict, List, Optional, Set, Tuple, Union, cast, overload,
+    Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, Union, cast, overload,
 )
 
 from passlib.hash import sha512_crypt
-from typing_extensions import Protocol
 
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
@@ -1569,6 +1568,7 @@ class CoreBackend(AbstractBackend):
             update = {
                 'id': persona_id,
                 'is_archived': False,
+                'is_active': True,
                 'username': new_username,
             }
             code = self.set_persona(
@@ -2050,7 +2050,8 @@ class CoreBackend(AbstractBackend):
             rs.conn = self.connpool['cdb_member']
         else:
             rs.conn = self.connpool['cdb_persona']
-        rs._conn = rs.conn  # Necessary to keep the mechanics happy. pylint: disable=protected-access
+        # Necessary to keep the mechanics happy.
+        rs._conn = rs.conn  # pylint: disable=protected-access
 
         # Get more information about user (for immediate use in frontend)
         data = self.sql_select_one(rs, "core.personas",
@@ -2298,7 +2299,7 @@ class CoreBackend(AbstractBackend):
     # # This should work but Literal seems to be broken.
     # # https://github.com/python/mypy/issues/7399
     # if TYPE_CHECKING:
-    #     from typing_extensions import Literal
+    #     from typing import Literal
     #     ret_type = Union[Tuple[Literal[False], str],
     #                      Tuple[Literal[True], None]]
     # else:

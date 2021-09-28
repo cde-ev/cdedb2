@@ -169,7 +169,7 @@
                     {% if entries[c][bit] %}
                         {{ util.make_icon(icon) }} {{ desc }},
                         {# Dirty hack to workaround Jinjas set drawbacks #}
-                        {% set tmp = vars.update({'any_privilege': True}) %}
+                        {% do vars.update({'any_privilege': True}) %}
                     {% endif %}
                 {% endfor %}
                 {% if not vars['any_privilege'] %}<i>Keine</i>{% endif %}

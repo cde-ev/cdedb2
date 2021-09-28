@@ -59,7 +59,6 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3-markdown \
     python3-mailmanclient \
     python3-requests \
-    python3-typing-extensions \
     python3-qrcode \
     python3-vobject \
     python3-graphviz \

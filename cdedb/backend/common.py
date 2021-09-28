@@ -17,13 +17,12 @@ import logging
 import sys
 from types import TracebackType
 from typing import (
-    Any, Callable, ClassVar, Collection, Dict, Iterable, List, Mapping,
+    Any, Callable, ClassVar, Collection, Dict, Iterable, List, Literal, Mapping,
     Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast, overload,
 )
 
 import psycopg2.extensions
 import psycopg2.extras
-from typing_extensions import Literal
 
 import cdedb.validation as validate
 import cdedb.validationtypes as vtypes
@@ -389,7 +388,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
 
         See :py:meth:`sql_select` for thoughts on this.
 
-        :param unique: Whether to do nothing if conflicting with a constraint
+        :param drop_on_conflict: Whether to do nothing if conflicting with a constraint
         :returns: id of inserted row
         """
         keys = tuple(key for key in data)
@@ -804,7 +803,10 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         if offset is not None:
             query = glue(query, "OFFSET {}".format(offset))
 
-        return total, self.query_all(rs, query, params)
+        data = self.query_all(rs, query, params)
+        for e in data:
+            e['code'] = code_validator(e['code'])
+        return total, data
 
 
 class Silencer:

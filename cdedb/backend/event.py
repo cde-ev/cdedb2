@@ -10,12 +10,11 @@ import datetime
 import decimal
 from pathlib import Path
 from typing import (
-    Any, Callable, Collection, Dict, Iterable, List, Mapping, Optional, Sequence, Set,
-    Tuple,
+    Any, Callable, Collection, Dict, Iterable, List, Mapping, Optional, Protocol,
+    Sequence, Set, Tuple,
 )
 
 import psycopg2.extensions
-from typing_extensions import Protocol
 
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
@@ -3515,6 +3514,7 @@ class EventBackend(AbstractBackend):
         self.assert_offline_lock(rs, event_id=event_id)
 
         index = 0
+        # noinspection PyBroadException
         try:
             with Atomizer(rs):
                 count = 0
