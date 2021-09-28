@@ -16867,7 +16867,7 @@ msgstr "männlich"
 
 #: cdedb/i18n_additional.py:147 cdedb/i18n_additional.py:149
 msgid "Genders.other"
-msgstr "sonstiges"
+msgstr "divers"
 
 #: cdedb/i18n_additional.py:148 cdedb/i18n_additional.py:150
 msgid "Genders.not_specified"
