@@ -1454,19 +1454,9 @@ class AssemblyFrontend(AbstractUserFrontend):
                         ballot_id: int) -> Response:
         """Create, edit and delete candidates of a ballot."""
 
-        def constraint_maker(candidate_id: int, prefix: str) -> List[RequestConstraint]:
-            """Create constraints for each individual candidate"""
-            constraints: List[RequestConstraint] = [
-                (lambda c: c[f'shortname_{candidate_id}'] != ASSEMBLY_BAR_SHORTNAME,
-                 (f'shortname_{candidate_id}',
-                  ValueError(n_("Mustn’t be the bar shortname.")))),
-            ]
-            return constraints
-
-        spec = {'shortname': vtypes.RestrictiveIdentifier, 'title': str}
+        spec = {'shortname': vtypes.ShortnameRestrictiveIdentifier, 'title': str}
         candidates = process_dynamic_input(
-            rs, rs.ambience['ballot']['candidates'].keys(), spec,
-            constraint_maker=constraint_maker)
+            rs, vtypes.BallotCandidate, rs.ambience['ballot']['candidates'].keys(), spec)
 
         shortnames: Set[str] = set()
         for candidate_id, candidate in candidates.items():

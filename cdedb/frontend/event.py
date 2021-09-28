@@ -749,26 +749,16 @@ class EventFrontend(AbstractUserFrontend):
         #
         # process the dynamic track input
         #
-        def track_constraint_maker(track_id: int, prefix: str
-                                   ) -> List[RequestConstraint]:
-            min_choice = f"{prefix}min_choices_{track_id}"
-            num_choice = f"{prefix}num_choices_{track_id}"
-            msg = n_("Must be less or equal than total Course Choices.")
-            return [(
-                lambda d: d[min_choice] <= d[num_choice], (min_choice, ValueError(msg))
-            )]
-
         track_existing = rs.ambience['event']['parts'][part_id]['tracks']
         track_spec = {
             'title': str,
-            'shortname': str,
+            'shortname': vtypes.Shortname,
             'num_choices': vtypes.NonNegativeInt,
             'min_choices': vtypes.NonNegativeInt,
             'sortkey': int
         }
         track_data = process_dynamic_input(
-            rs, track_existing, track_spec, prefix="track_",
-            constraint_maker=track_constraint_maker)
+            rs, vtypes.EventTrack, track_existing, track_spec, prefix="track_")
 
         deleted_tracks = {anid for anid in track_data if track_data[anid] is None}
         new_tracks = {anid for anid in track_data if anid < 0}
@@ -782,6 +772,7 @@ class EventFrontend(AbstractUserFrontend):
         #
         # process the dynamic fee modifier input
         #
+        # TODO move in validation
         def fee_modifier_constraint_maker(
                 fee_modifier_id: int, prefix: str) -> List[RequestConstraint]:
             key = f"{prefix}field_id_{fee_modifier_id}"
@@ -809,7 +800,7 @@ class EventFrontend(AbstractUserFrontend):
             fee_modifier_data = dict()
         else:
             fee_modifier_data = process_dynamic_input(
-                rs, fee_modifier_existing, fee_modifier_spec,
+                rs, vtypes.EventFeeModifier, fee_modifier_existing, fee_modifier_spec,
                 prefix=fee_modifier_prefix,
                 constraint_maker=fee_modifier_constraint_maker)
 
@@ -4660,8 +4651,8 @@ class EventFrontend(AbstractUserFrontend):
         """Manipulate groups of lodgements."""
         group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
         spec = {'title': str}
-        groups = process_dynamic_input(
-            rs, group_ids.keys(), spec, additional={'event_id': event_id})
+        groups = process_dynamic_input(rs, vtypes.LodgementGroup, group_ids.keys(),
+                                       spec, additional={'event_id': event_id})
         if rs.has_validation_errors():
             return self.lodgement_group_summary_form(rs, event_id)
         code = 1
