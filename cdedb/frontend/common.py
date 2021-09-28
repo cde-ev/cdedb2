@@ -2153,10 +2153,16 @@ def make_persona_name(persona: CdEDBObject,
     return " ".join(ret)
 
 
+# TODO maybe retrieve the spec from the type_?
 def process_dynamic_input(
-    rs: RequestState, existing: Collection[int], spec: validate.TypeMapping, *,
-    additional: CdEDBObject = None, prefix: str = "",
-    constraint_maker: Callable[[int, str], List[RequestConstraint]] = None
+    rs: RequestState,
+    type_: Type[T],
+    existing: Collection[int],
+    spec: validate.TypeMapping,
+    *,
+    additional: CdEDBObject = None,
+    prefix: str = "",
+    constraint_maker: Callable[[int, str], List[RequestConstraint]] = None,
 ) -> Dict[int, Optional[CdEDBObject]]:
     """Retrieve data from rs provided by 'dynamic_row_table' makro.
 
@@ -2185,6 +2191,7 @@ def process_dynamic_input(
     - To each existing, not deleted entry: the 'id' of the entry.
     - To each new and each existing, not deleted entry: all entries of 'additional'
 
+    :param type_: validation_type of the entities
     :param existing: ids of already existent objects
     :param spec: name of input fields, mapped to their validation. This uses the same
         format as the `request_extractor`, but adds the 'prefix' to each key if present.
@@ -2213,7 +2220,7 @@ def process_dynamic_input(
     ) if constraint_maker else None
     data = request_extractor(rs, existing_data_spec, constraints)
 
-    # build the return dict of all existing entries
+    # build the return dict of all existing entries and check if they pass validation
     ret: Dict[int, Optional[CdEDBObject]] = {
         anid: {key: data[f"{prefix}{key}_{anid}"] for key in spec}
         for anid in non_deleted_existing
@@ -2224,6 +2231,8 @@ def process_dynamic_input(
         else:
             ret[anid]['id'] = anid  # type: ignore
             ret[anid].update(additional)  # type: ignore
+            check_validation(rs, type_, ret[anid], field_prefix=prefix,
+                             field_postfix=f"_{anid}")
 
     # extract the new entries which shall be created
     marker = 1
@@ -2237,6 +2246,9 @@ def process_dynamic_input(
             ret[-marker] = {key: data[f"{prefix}{key}_-{marker}"] for key in spec}
             if additional:
                 ret[-marker].update(additional)  # type: ignore
+            check_validation(
+                rs, type_, ret[-marker], field_prefix=prefix,
+                field_postfix=f"_-{marker}", creation=True)
         else:
             break
         marker += 1

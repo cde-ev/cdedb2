@@ -175,12 +175,15 @@ def validate_assert_optional(type_: Type[T], value: Any, **kwargs: Any) -> Optio
     return validate_assert(Optional[type_], value, **kwargs)  # type: ignore
 
 
-def validate_check(
-    type_: Type[T], value: Any, **kwargs: Any
-) -> Tuple[Optional[T], List[Error]]:
+def validate_check(type_: Type[T], value: Any, ignore_warnings: bool,
+                   field_prefix: str = "", field_postfix: str = "", **kwargs: Any
+                   ) -> Tuple[Optional[T], List[Error]]:
     """Checks if value is of type type_.
 
-    This is mostly used in the frontend to check if the given input is valid.
+    This is mostly used in the frontend to check if the given input is valid. To display
+    validation errors for fields which name differs from the name of the attribute of
+    the given value, one can specify a field_prefix and -postfix which will be appended
+    at the field name. This is especially useful for 'process_dynamic_input'.
 
     Note that this needs an explicit information whether warnings shall be ignored or
     not.
@@ -191,7 +194,12 @@ def validate_check(
         val = _ALL_TYPED[type_](value, ignore_warnings=ignore_warnings, **kwargs)
         return val, []
     except ValidationSummary as errs:
-        old_format = [(e.args[0], e.__class__(*e.args[1:])) for e in errs]
+        old_format = [
+            (
+                (field_prefix + (e.args[0] or "") + field_postfix) or None,
+                e.__class__(*e.args[1:])
+            ) for e in errs
+        ]
         _LOGGER.debug(
             f"{old_format} for '{str(type_)}'"
             f" with input {value}, {kwargs}."
