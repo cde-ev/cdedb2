@@ -55,7 +55,7 @@ class Script:
     def __init__(self, persona_id: int, dbuser: str, dbname: str = 'cdb',
                  check_system_user: bool = True, dry_run: bool = True,
                  cursor: psycopg2.extensions.cursor = psycopg2.extras.RealDictCursor,
-                 configpath: PathLike = "/etc/cdedb-application-config.py",
+                 configpath: Optional[PathLike] = "/etc/cdedb-application-config.py",
                  **config: Any):
         """Setup a helper class containing everything you might need for a script.
 
@@ -80,14 +80,14 @@ class Script:
         self.dry_run = dry_run
 
         # Setup config and connection.
-        self._conn = None
-        self._atomizer = None
+        self._conn: psycopg2.extensions.connection = None
+        self._atomizer: Optional[ScriptAtomizer] = None
         self._tempfile = None
         self.configpath = None
         if config and configpath:
             raise ValueError("Mustn't specify both config and configpath.")
         elif config:
-            with tempfile.NamedTemporaryFile("w", ".py", delete=False) as f:
+            with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False) as f:
                 for k, v in config.items():
                     f.write(f"{k} = {v}\n")
                 f.flush()
@@ -104,7 +104,7 @@ class Script:
                  ) -> None:
         """Create and save a dabase connection."""
         if self._conn:
-            return None
+            return
         secrets = SecretsConfig(self.configpath)
 
         # Allow overriding the dbname via environment variable for evolution trial.
@@ -128,7 +128,7 @@ class Script:
             self._conn = psycopg2.connect(**connection_parameters, host="cdb")
         self._conn.set_client_encoding("UTF8")
 
-    def make_backend(self, realm: str, *, proxy: bool = True):  # type: ignore[untyped-def]
+    def make_backend(self, realm: str, *, proxy: bool = True):  # type: ignore[no-untyped-def]
         """Create backend, either as a proxy or not."""
         backend = self.backend_map[realm](self.configpath)
         return make_proxy(backend) if proxy else backend
@@ -157,16 +157,18 @@ class Script:
 
     def __del__(self) -> None:
         """When deleting this instance, delete the temporary file if it still exists."""
-        if self._tempfile:
+        if self._tempfile and self.configpath:
             self.configpath.unlink(missing_ok=True)
 
-    def __enter__(self):
+    def __enter__(self) -> IrradiatedConnection:
         """Thin wrapper around `ScriptAtomizer`."""
         if not self._atomizer:
             self._atomizer = ScriptAtomizer(self.rs(), dry_run=self.dry_run)
         return self._atomizer.__enter__()
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type: Optional[Type[Exception]],
+                 exc_val: Optional[Exception],
+                 exc_tb: Optional[TracebackType]) -> bool:
         """Thin wrapper around `ScriptAtomizer`."""
         if self._atomizer is None:
             raise RuntimeError("Impossible.")
