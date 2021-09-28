@@ -684,16 +684,13 @@ class EntitySorter:
         return (ballot['title'], ballot['id'])
 
     @staticmethod
-    def get_attachment_sorter(histories: CdEDBObject) -> KeyFunction:
-        def attachment(attachment: CdEDBObject) -> Sortkey:
-            attachment = histories[attachment['id']][attachment['current_version']]
-            return (attachment['title'], attachment['attachment_id'])
-
-        return attachment
+    def attachment(attachment: CdEDBObject) -> Sortkey:
+        """This is used for dicts containing one version of different attachments."""
+        return (attachment["title"], attachment["attachment_id"])
 
     @staticmethod
     def attachment_version(version: CdEDBObject) -> Sortkey:
-        return (version['attachment_id'], version['version'])
+        return (version['attachment_id'], version['version_nr'])
 
     @staticmethod
     def past_event(past_event: CdEDBObject) -> Sortkey:
@@ -2213,9 +2210,9 @@ BALLOT_FIELDS = (
 
 #: Fields of an attachment in the assembly realm (attached either to an
 #: assembly or a ballot)
-ASSEMBLY_ATTACHMENT_FIELDS = ("id", "assembly_id", "ballot_id")
+ASSEMBLY_ATTACHMENT_FIELDS = ("id", "assembly_id")
 
-ASSEMBLY_ATTACHMENT_VERSION_FIELDS = ("attachment_id", "version", "title",
+ASSEMBLY_ATTACHMENT_VERSION_FIELDS = ("attachment_id", "version_nr", "title",
                                       "authors", "filename", "ctime", "dtime",
                                       "file_hash")
 
