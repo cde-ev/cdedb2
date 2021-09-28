@@ -15,21 +15,20 @@ from pathlib import Path
 from pkgutil import resolve_name
 from typing import Union
 
-from cdedb.script import setup
+from cdedb.script import Script
 
 
-def execute_script(sql_input: Union[Path, str], *, dbuser: str, dbpassword: str,
+def execute_script(sql_input: Union[Path, str], *, dbuser: str,
                    dbname: str, cursor: str, verbose: int) -> None:
     factory = resolve_name(f"psycopg2.extras:{cursor}") if cursor else None
 
-    with setup(
+    with Script(
         persona_id=-1,
         dbuser=dbuser,
-        dbpassword=dbpassword,
         dbname=dbname,
         check_system_user=False,
         cursor=factory,
-    )().conn as conn:
+    )._conn as conn:
         conn.set_session(autocommit=True)
 
         with conn.cursor() as curr:
@@ -60,8 +59,6 @@ if __name__ == "__main__":
 
     connection = parser.add_argument_group("Connection options")
     connection.add_argument("--username", "-U", default="cdb")
-    connection.add_argument(
-        "--dbpassword", default="987654321098765432109876543210")
     connection.add_argument("--cursor", default=None)
 
     args = parser.parse_args()
@@ -69,7 +66,6 @@ if __name__ == "__main__":
     execute_script(
         args.file or args.command,
         dbuser=args.username,
-        dbpassword=args.dbpassword,
         dbname=args.dbname,
         cursor=args.cursor,
         verbose=args.verbose,

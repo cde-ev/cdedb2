@@ -6,7 +6,7 @@ import re
 from typing import Any, Dict, List
 
 from cdedb.common import CustomJSONEncoder, nearly_now, RequestState
-from cdedb.script import make_backend, setup
+from cdedb.script import Script
 from cdedb.backend.core import CoreBackend
 
 # per default, we sort entries in a table by their id. Here we can specify any arbitrary
@@ -103,8 +103,9 @@ def main() -> None:
     args = parser.parse_args()
 
     # Setup rs
-    rs = setup(1, "cdb_admin", "9876543210abcdefghijklmnopqrst")()
-    core = make_backend("core", proxy=False)
+    script = Script(1, "cdb_admin")
+    rs = script.rs()
+    core = script.make_backend("core", proxy=False)
 
     data = dump_sql_data(rs, core)
 
