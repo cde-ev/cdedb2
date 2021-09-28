@@ -26,7 +26,7 @@ def prepare_aux(data: CdEDBObject) -> AuxData:
     # the methds inherited from `AbstractBackend`.
     # Small config hack, by writing a dict into config file for password retrieval.
     rs = Script(1, "nobody", dbname="nobody",
-                CDB_DATABASE_ROLES="{'nobody': 'nobody'}", configpath=None).rs()
+                CDB_DATABASE_ROLES="{'nobody': 'nobody'}").rs()
     core = CoreBackend  # No need to instantiate, we only use statics.
 
     # Extract some data about the databse tables using the database connection.

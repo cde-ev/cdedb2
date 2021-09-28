@@ -40,8 +40,7 @@ class TestScript(unittest.TestCase):
 
         with self.assertRaises(psycopg2.OperationalError) as cm:
             Script(-1, dbname=os.environ['CDEDB_TEST_DATABASE'], dbuser="cdb_admin",
-                   check_system_user=False, configpath=None,
-                   CDB_DATABASE_ROLES="{'cdb_admin': 'abc'}")
+                   check_system_user=False, CDB_DATABASE_ROLES="{'cdb_admin': 'abc'}")
         # the vm is german while the postgresql docker image is english
         self.assertTrue(
             ("Passwort-Authentifizierung für Benutzer"

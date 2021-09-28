@@ -55,7 +55,7 @@ class Script:
     def __init__(self, persona_id: int, dbuser: str, dbname: str = 'cdb',
                  check_system_user: bool = True, dry_run: bool = True,
                  cursor: psycopg2.extensions.cursor = psycopg2.extras.RealDictCursor,
-                 configpath: Optional[PathLike] = "/etc/cdedb-application-config.py",
+                 configpath: Optional[PathLike] = None,
                  **config: Any):
         """Setup a helper class containing everything you might need for a script.
 
@@ -68,7 +68,7 @@ class Script:
         :param dry_run: Whether or not to keep any changes after a transaction.
         :param cursor: CursorFactory for the cursor used by this connection.
         :param configpath: Path to additional config file. Mutually exclusive with
-            `config`.
+            `config`. In production this has a default.
         :param config: Additional config options via keyword arguments. Mutually
             exclusive with `configpath`.
         """
@@ -84,6 +84,8 @@ class Script:
         self._atomizer: Optional[ScriptAtomizer] = None
         self._tempfile = None
         self.configpath = None
+        if pathlib.Path("/PRODUCTIONVM").exists():
+            self.configpath = "/etc/cdedb-application-config.py"
         if config and configpath:
             raise ValueError("Mustn't specify both config and configpath.")
         elif config:
