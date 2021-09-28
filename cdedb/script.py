@@ -11,10 +11,11 @@ with the production environment.
 
 import getpass
 import os
+import pathlib
 import tempfile
 import time
 from types import TracebackType
-from typing import Any, Optional, Protocol, Type
+from typing import Any, Optional, Type
 
 import psycopg2
 import psycopg2.extensions
@@ -26,7 +27,7 @@ from cdedb.backend.core import CoreBackend
 from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.past_event import PastEventBackend
-from cdedb.config import Config
+from cdedb.config import Config, SecretsConfig
 from cdedb.common import ALL_ROLES, PathLike, RequestState, User, make_proxy
 from cdedb.database.connection import Atomizer, IrradiatedConnection
 from cdedb.frontend.common import setup_translations
@@ -38,63 +39,109 @@ _CONFIG = Config()
 _TRANSLATIONS = setup_translations(_CONFIG)
 
 
-__all__ = ['setup', 'make_backend', 'Script', 'DryRunError']
+__all__ = ['DryRunError', 'Script', 'ScriptAtomizer']
 
 
-def mock_user(persona_id: int) -> User:
-    return User(
-        persona_id=persona_id,
-        roles=ALL_ROLES,
-    )
+class Script:
+    backend_map = {
+        "core": CoreBackend,
+        "cde": CdEBackend,
+        "past_event": PastEventBackend,
+        "ml": MlBackend,
+        "assembly": AssemblyBackend,
+        "event": EventBackend,
+    }
 
+    def __init__(self, persona_id: int, dbuser: str, dbname: str = 'cdb',
+                 check_system_user: bool = True, dry_run: bool = True,
+                 cursor: psycopg2.extensions.cursor = psycopg2.extras.RealDictCursor,
+                 configpath: PathLike = "/etc/cdedb-application-config.py",
+                 **config: Any):
+        """Setup a helper class containing everything you might need for a script.
 
-class _RSFactory(Protocol):
-    # pylint: disable=pointless-statement
-    def __call__(self, persona_id: int = -1) -> RequestState: ...
+        :param persona_id: Default ID for the user performing the actions.
+        :param dbuser: Database user for the connection.
+        :param dbname: Database against which to run the script. Defaults to `'cdb'`.
+            May be overridden via environment variable during the evolution trial.
+        :param check_system_user: Whether or not ot check for the correct invoking user,
+            you need to have a really good reason to turn this off.
+        :param dry_run: Whether or not to keep any changes after a transaction.
+        :param cursor: CursorFactory for the cursor used by this connection.
+        :param configpath: Path to additional config file. Mutually exclusive with
+            `config`.
+        :param config: Additional config options via keyword arguments. Mutually
+            exclusive with `configpath`.
+        """
 
+        if check_system_user and getpass.getuser() != "www-data":
+            raise RuntimeError("Must be run as user www-data.")
 
-def setup(persona_id: int, dbuser: str, dbpassword: str,
-          check_system_user: bool = True, dbname: str = 'cdb',
-          cursor: psycopg2.extensions.cursor = psycopg2.extras.RealDictCursor,
-          ) -> _RSFactory:
-    """This sets up the database.
+        self.persona_id = persona_id
+        self.dry_run = dry_run
 
-    :param persona_id: default ID for the owner of the generated request state
-    :param dbuser: data base user for connection
-    :param dbpassword: password for database user
-    :param check_system_user: toggle check for correct invoking user,
-        you need to provide a really good reason to turn this off.
-    :returns: a factory, that optionally takes a persona ID and gives
-        you a facsimile request state object that can be used to call
-        into the backends.
-    """
-    if check_system_user and getpass.getuser() != "www-data":
-        raise RuntimeError("Must be run as user www-data.")
+        # Setup config and connection.
+        self._conn = None
+        self._atomizer = None
+        self._tempfile = None
+        self.configpath = None
+        if config and configpath:
+            raise ValueError("Mustn't specify both config and configpath.")
+        elif config:
+            with tempfile.NamedTemporaryFile("w", ".py", delete=False) as f:
+                for k, v in config.items():
+                    f.write(f"{k} = {v}\n")
+                f.flush()
+                self._tempfile = f
+                self.configpath = pathlib.Path(f.name)
+        elif configpath:
+            configpath = pathlib.Path(configpath)
+            if configpath.is_file():
+                self.configpath = configpath
+        self.config = Config(self.configpath)
+        self._connect(dbuser, dbname, cursor)
 
-    # Allow overriding the dbname via environment variable for evolution trial.
-    dbname = os.environ.get('EVOLUTION_TRIAL_OVERRIDE_DBNAME', dbname)
+    def _connect(self, dbuser: str, dbname: str, cursor: psycopg2.extensions.cursor
+                 ) -> None:
+        """Create and save a dabase connection."""
+        if self._conn:
+            return None
+        secrets = SecretsConfig(self.configpath)
 
-    connection_parameters = {
+        # Allow overriding the dbname via environment variable for evolution trial.
+        dbname = os.environ.get('EVOLUTION_TRIAL_OVERRIDE_DBNAME', dbname)
+
+        connection_parameters = {
             "dbname": dbname,
             "user": dbuser,
-            "password": dbpassword,
+            "password": secrets["CDB_DATABASE_ROLES"][dbuser],
             "port": 5432,
             "connection_factory": IrradiatedConnection,
             "cursor_factory": cursor,
-    }
-    try:
-        cdb = psycopg2.connect(**connection_parameters, host="localhost")
-    except psycopg2.OperationalError as e:  # DB inside Docker listens on "cdb"
-        if "Passwort-Authentifizierung" in e.args[0]:
-            raise  # fail fast if wrong password is the problem
-        cdb = psycopg2.connect(**connection_parameters, host="cdb")
-    cdb.set_client_encoding("UTF8")
+        }
+        try:
+            self._conn = psycopg2.connect(**connection_parameters, host="localhost")
+        except psycopg2.OperationalError as e:  # DB inside Docker listens on "cdb"
+            if "Passwort-Authentifizierung" in e.args[0]:
+                raise  # fail fast if wrong password is the problem
+            if "Password-Authentication" in e.args[0]:
+                raise
+            self._conn = psycopg2.connect(**connection_parameters, host="cdb")
+        self._conn.set_client_encoding("UTF8")
 
-    def rs(persona_id: int = persona_id) -> RequestState:
+    def make_backend(self, realm: str, *, proxy: bool = True):  # type: ignore[untyped-def]
+        """Create backend, either as a proxy or not."""
+        backend = self.backend_map[realm](self.configpath)
+        return make_proxy(backend) if proxy else backend
+
+    def rs(self, persona_id: int = None) -> RequestState:
+        """Create a RequestState."""
         rs = RequestState(
             sessionkey=None,
             apitoken=None,
-            user=mock_user(persona_id),
+            user=User(
+                persona_id=self.persona_id if persona_id is None else persona_id,
+                roles=ALL_ROLES,
+            ),
             request=None,  # type: ignore[arg-type]
             notifications=[],
             mapadapter=None,  # type: ignore[arg-type]
@@ -105,47 +152,25 @@ def setup(persona_id: int, dbuser: str, dbpassword: str,
             lang="de",
             translations=_TRANSLATIONS,
         )
-        rs.conn = rs._conn = cdb
+        rs.conn = rs._conn = self._conn
         return rs
 
-    return rs
+    def __del__(self) -> None:
+        """When deleting this instance, delete the temporary file if it still exists."""
+        if self._tempfile:
+            self.configpath.unlink(missing_ok=True)
 
+    def __enter__(self):
+        """Thin wrapper around `ScriptAtomizer`."""
+        if not self._atomizer:
+            self._atomizer = ScriptAtomizer(self.rs(), dry_run=self.dry_run)
+        return self._atomizer.__enter__()
 
-# No return type annotation on purpose, because it confuses IDE autocompletion.
-def make_backend(realm: str, proxy: bool = True, *,  # type: ignore[no-untyped-def]
-                 configpath: PathLike = None, **config: Any):
-    """Instantiate backend objects and wrap them in proxy shims.
-
-    :param realm: selects backend to return
-    :param proxy: If True, wrap the backend in a proxy, otherwise return
-        the raw backend, which gives access to the low-level SQL methods.
-    """
-    if realm not in backend_map:
-        raise ValueError("Unrecognized realm")
-    if config and configpath:
-        raise ValueError("Mustn't specify both config and configpath.")
-    elif config:
-        with tempfile.NamedTemporaryFile("w", suffix=".py") as f:
-            for k, v in config.items():
-                f.write(f"{k} = {v}\n")
-            f.flush()
-            backend = backend_map[realm](f.name)
-    else:
-        backend = backend_map[realm](configpath)
-    if proxy:
-        return make_proxy(backend)
-    else:
-        return backend
-
-
-backend_map = {
-    "core": CoreBackend,
-    "cde": CdEBackend,
-    "past_event": PastEventBackend,
-    "ml": MlBackend,
-    "assembly": AssemblyBackend,
-    "event": EventBackend,
-}
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Thin wrapper around `ScriptAtomizer`."""
+        if self._atomizer is None:
+            raise RuntimeError("Impossible.")
+        return self._atomizer.__exit__(exc_type, exc_val, exc_tb)
 
 
 class DryRunError(Exception):
@@ -155,7 +180,7 @@ class DryRunError(Exception):
     """
 
 
-class Script(Atomizer):
+class ScriptAtomizer(Atomizer):
     """Subclassing Atomizer to add some time logging and a dry run mode.
 
     :param dry_run: If True, do not commit changes if script ran successfully,
