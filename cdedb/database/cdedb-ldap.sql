@@ -170,12 +170,6 @@ CREATE FUNCTION make_persona_dn(persona_id INT)
   RETURNS varchar LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
 $$ SELECT 'uid=' || $1 || ',ou=users,dc=cde-ev,dc=de'; $$ ;
 
--- This seems to be allowed, see
--- https://datatracker.ietf.org/doc/html/rfc4512#section-2.3.2
-CREATE FUNCTION make_mailinglist_cn(mailinglist_address VARCHAR)
-  RETURNS varchar LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
-$$ SELECT $1 ; $$ ;
-
 CREATE FUNCTION make_persona_display_name(display_name VARCHAR, given_names VARCHAR, family_name VARCHAR)
   RETURNS varchar LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
 $$
@@ -285,7 +279,9 @@ CREATE VIEW ldap_groups (id, cn, description) AS
     UNION (
         SELECT
            make_ml_subscribers_entity_id(id),
-           make_mailinglist_cn(address) AS cn,
+           -- This seems to be allowed, see
+           -- https://datatracker.ietf.org/doc/html/rfc4512#section-2.3.2
+           address AS cn,
            title || ' <' || address || '>' AS description
         FROM ml.mailinglists
     )
@@ -293,7 +289,9 @@ CREATE VIEW ldap_groups (id, cn, description) AS
     UNION (
         SELECT
            make_ml_moderators_entity_id(id),
-           make_mailinglist_cn(address) AS cn,
+           -- This seems to be allowed, see
+           -- https://datatracker.ietf.org/doc/html/rfc4512#section-2.3.2
+           address AS cn,
            title || ' <' || address || '>' AS description
         FROM ml.mailinglists
     )
@@ -637,7 +635,7 @@ CREATE VIEW ldap_entries (id, dn, oc_map_id, parent, keyval) AS
         UNION (
             SELECT
                make_ml_subscribers_entity_id(id),
-               'cn=' || make_mailinglist_cn(address) || ',ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de' AS dn,
+               'cn=' || address || ',ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de' AS dn,
                oc_groupOfUniqueNames_id() AS oc_map_id,
                make_organization_entity_id(node_ml_subscribers_group_id()) AS parent,
                make_ml_subscribers_entity_id(id) as keyval
@@ -647,7 +645,7 @@ CREATE VIEW ldap_entries (id, dn, oc_map_id, parent, keyval) AS
         UNION (
             SELECT
                make_ml_moderators_entity_id(id),
-               'cn=' || make_mailinglist_cn(address) || ',ou=ml-moderators,ou=groups,dc=cde-ev,dc=de' AS dn,
+               'cn=' || address || ',ou=ml-moderators,ou=groups,dc=cde-ev,dc=de' AS dn,
                oc_groupOfUniqueNames_id() AS oc_map_id,
                make_organization_entity_id(node_ml_moderators_group_id()) AS parent,
                make_ml_moderators_entity_id(id) as keyval
