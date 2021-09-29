@@ -28,7 +28,8 @@ class TestLDAP(BasicTest):
 
     # all users which have a password
     USERS = {
-        f'uid={user["id"]},ou=users,dc=cde-ev,dc=de': user['password'] for user in USER_DICT.values() if user['password']
+        f'uid={user["id"]},ou=users,dc=cde-ev,dc=de': user['password']
+        for user in USER_DICT.values() if user['password']
     }
 
     @classmethod
@@ -39,7 +40,8 @@ class TestLDAP(BasicTest):
 
     def single_result_search(
         self, search_filter: str, expectation: Dict[str, List[str]], *,
-        user: str = test_dua_dn, password: str = test_dua_pw, search_base: str = root_dn,
+        user: str = test_dua_dn, password: str = test_dua_pw,
+        search_base: str = root_dn,
         attributes: Union[List[str], str] = ALL_ATTRIBUTES
     ) -> None:
         with ldap3.Connection(
@@ -83,8 +85,9 @@ class TestLDAP(BasicTest):
                         self.assertNotEqual(len(conn.entries), 0)
                     else:
                         self.assertEqual(len(conn.entries), 0)
-                except AssertionError:
-                    raise RuntimeError(f"The above error occured with user '{user}'")
+                except AssertionError as e:
+                    raise RuntimeError(
+                        f"The above error occurred with user '{user}'") from e
 
     def test_anonymous_bind(self) -> None:
         conn = ldap3.Connection(self.server)
@@ -93,7 +96,9 @@ class TestLDAP(BasicTest):
 
     def test_simple_password_bind(self) -> None:
         # try to bind to nonexistent dua
-        conn = ldap3.Connection(self.server, user='cn=nonexistent,ou=dua,dc=cde-ev,dc=de', password=self.test_dua_pw)
+        conn = ldap3.Connection(
+            self.server, user='cn=nonexistent,ou=dua,dc=cde-ev,dc=de',
+            password=self.test_dua_pw)
         self.assertFalse(conn.bind())
 
         # try to bind to existent dua with wrong password
@@ -101,23 +106,28 @@ class TestLDAP(BasicTest):
         self.assertFalse(conn.bind())
 
         # bind with a dua
-        conn = ldap3.Connection(self.server, user=self.test_dua_dn, password=self.test_dua_pw)
+        conn = ldap3.Connection(self.server, user=self.test_dua_dn,
+                                password=self.test_dua_pw)
         self.assertTrue(conn.bind())
         self.assertEqual('dn:' + self.test_dua_dn, conn.extend.standard.who_am_i())
         self.assertTrue(conn.unbind())
 
         # try to bind to nonexistent user
-        conn = ldap3.Connection(self.server, user='uid=0,ou=users,dc=cde-ev,dc=de', password='secret')
+        conn = ldap3.Connection(self.server, user='uid=0,ou=users,dc=cde-ev,dc=de',
+                                password='secret')
         self.assertFalse(conn.bind())
 
         # try to bind to existend user with wrong password
-        conn = ldap3.Connection(self.server, user='uid=1,ou=users,dc=cde-ev,dc=de', password='wrongPW')
+        conn = ldap3.Connection(self.server, user='uid=1,ou=users,dc=cde-ev,dc=de',
+                                password='wrongPW')
         self.assertFalse(conn.bind())
 
         # bind with a users
-        conn = ldap3.Connection(self.server, user='uid=1,ou=users,dc=cde-ev,dc=de', password='secret')
+        conn = ldap3.Connection(self.server, user='uid=1,ou=users,dc=cde-ev,dc=de',
+                                password='secret')
         self.assertTrue(conn.bind())
-        self.assertEqual('dn:' + 'uid=1,ou=users,dc=cde-ev,dc=de', conn.extend.standard.who_am_i())
+        self.assertEqual(
+            'dn:' + 'uid=1,ou=users,dc=cde-ev,dc=de', conn.extend.standard.who_am_i())
         self.assertTrue(conn.unbind())
 
     def test_anonymous_search(self) -> None:
@@ -155,6 +165,7 @@ class TestLDAP(BasicTest):
         attributes = ["memberOf"]
         expectation = {
             'memberOf': [
+                # pylint: disable=line-too-long
                 'cn=2,ou=event-orgas,ou=groups,dc=cde-ev,dc=de',
                 'cn=3,ou=event-orgas,ou=groups,dc=cde-ev,dc=de',
                 'cn=42@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
@@ -403,6 +414,7 @@ class TestLDAP(BasicTest):
         # Garcia has status fields, is orga, subscriber and ml moderator
         user_id = 7
         expectation = {
+            # pylint: disable=line-too-long
             'cn=is_active,ou=status,ou=groups,dc=cde-ev,dc=de',
             'cn=is_assembly_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
             'cn=is_cde_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
@@ -444,6 +456,7 @@ class TestLDAP(BasicTest):
         # Kalif has status fields, is presider, subscriber and moderator
         user_id = 23
         expectation = {
+            # pylint: disable=line-too-long
             'cn=everyone@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=is_active,ou=status,ou=groups,dc=cde-ev,dc=de',
             'cn=is_assembly_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
@@ -471,7 +484,8 @@ class TestLDAP(BasicTest):
             ")"
         )
         self.no_result_search(search_filter, except_users={"cn=cloud"})
-        with ldap3.Connection(self.server, user=self.admin_dua_dn, password=self.admin_dua_pw) as conn:
+        with ldap3.Connection(self.server, user=self.admin_dua_dn,
+                              password=self.admin_dua_pw) as conn:
             conn.search(search_base=self.root_dn, search_filter=search_filter)
             result_names = {entry.entry_dn for entry in conn.entries}
             self.assertEqual(result_names, expectation)
