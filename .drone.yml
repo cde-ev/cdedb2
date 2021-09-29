@@ -72,7 +72,7 @@ steps:
   commands:
     - make mypy
 - name: lint
-  image: cdedb
+  image: cdedb:20210705
   pull: never # do not try to pull image from docker hub
   depends_on:
     - evolution-trial # wait for all git operations to be done
@@ -127,7 +127,7 @@ steps:
   commands:
   - bin/check.py --verbose --first # everything before event
 - name: frontend tests e-z
-  image: cdedb
+  image: cdedb:20210705
   pull: never # do not try to pull image from docker hub
   depends_on:
   - testsuite-setup
@@ -142,7 +142,7 @@ steps:
   commands:
   - bin/check.py --verbose --second # event and following
 - name: non-frontend tests
-  image: cdedb
+  image: cdedb:20210705
   pull: never # do not try to pull image from docker hub
   depends_on:
   - testsuite-setup
