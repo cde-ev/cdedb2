@@ -83,7 +83,7 @@ class TestLDAP(BasicTest):
                         self.assertNotEqual(len(conn.entries), 0)
                     else:
                         self.assertEqual(len(conn.entries), 0)
-                except AssertionError as e:
+                except AssertionError:
                     raise RuntimeError(f"The above error occured with user '{user}'")
 
     def test_anonymous_bind(self) -> None:
