@@ -56,17 +56,18 @@ Our LDAP Tree looks as follows::
         └── ...
 
 
-LDAP Attributes
----------------
+LDAP Entities
+-------------
 
-Each tool accessing the ldap server has an own ``ou=dsa`` entry to authenticate
-against LDAP.
-Each **dsa** (DirectorySystemAgent) has the following attributes:
+Groups
+^^^^^^
 
-- ``cn`` a name which must be unique for each dsa
-- ``userPassword`` the password they use to bind against LDAP
+A group represent a collection of users. They are used to represent some
+attributes (status attributes like ``is_active``, mailinglist subscriptions etc)
+of users in an LDAP-fashion.
 
-Each **group** has the following attributes:
+Each group implements the ``groupOfUniqueNames`` objectclass and has the
+following attributes:
 
 - ``cn`` ID for events and assemblies; list address for mailinglists;
   some bools of ``core.personas``
@@ -74,12 +75,53 @@ Each **group** has the following attributes:
   assemblies and mailinglist.
 - ``uniqueMember`` the DN of one group member
 
-Each **user** has the following attributes:
+Users
+^^^^^
+
+An LDAP user represents an user account of the CdEDB. Each user implements the
+``inetOrgPerson`` objectclass and has the following attributes:
 
 - ``cn`` their full name: "``given_names`` ``family_name``"
-- ``displayName`` the full name which should be used to address this user.
-- ``givenName`` the first name of the user.
+- ``displayName`` the full name which should be used to address this user,
+constructed via the same logic used in the CdEDB, including a family name.
+- ``givenName`` the first name of the user (CdEDBs ``given_names``).
+- ``sn`` the last name of the user (CdEDBs ``family_name``).
 - ``mail`` the users mail address. This may also be used as login username,
   since the CdEDB enforces uniqueness here.
-- ``uid`` the CdEDB-ID.
+- ``uid`` the CdEDB-ID without letters or checksum.
 - ``userPassword`` the password this user has set in the CdEDB.
+- ``memberOf`` listing all dns of the groups this user is a member of.
+
+DirectoryUserAgents
+^^^^^^^^^^^^^^^^^^^
+
+To access the LDAP with a third-party tool, the tool needs to authenticate
+itself against the LDAP.
+
+Sadly, there are great differences: Some tools use a static user from within the
+LDAP to retrieve their data, others use the credentials of the user they are
+currently serving, some do a mixture of both.
+In general, we advise to use the second method (use the user credentials) to
+retrieve data from LDAP.
+
+However, to grant compatibility, each tool which **requires** an own LDAP user
+get an own entry inside ``ou=dua``. Sadly, there is no common specification
+of duas with a common accepted objectclass.
+Therefore, we (ab)use the ``person`` objectclass for them, containing the
+following attributes:
+
+- ``cn`` a name which must be unique for each dua
+- ``userPassword`` the password they use to bind against LDAP
+
+
+Security Restrictions
+---------------------
+
+The following restrictions were applied to protect the data inside the LDAP
+against unprivileged access:
+
+- Users may only access exactly their own data.
+- Duas can access every user data, exept for their group memberships. Group
+access is only provided to some duas manually.
+- Password hashes can not be retrieved from LDAP, only authentication inside
+LDAP is allowed.
