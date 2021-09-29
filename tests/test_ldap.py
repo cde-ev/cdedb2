@@ -10,7 +10,7 @@ from tests.common import BasicTest, USER_DICT
 
 class TestLDAP(BasicTest):
 
-    root_dn = f'dc=cde-ev,dc=de'
+    root_dn = 'dc=cde-ev,dc=de'
     test_dua_dn = f'cn=test,ou=dua,{root_dn}'
     test_dua_pw = 'secret'
     admin_dua_dn = f'cn=admin,ou=dua,{root_dn}'
