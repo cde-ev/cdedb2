@@ -188,16 +188,22 @@ $$
 $$;
 
 ---
---- ldap helper tables (in public schema)
+--- ldap helper tables
+---
+
+---
 --- this add some helper tables to satisfy the requirements of the ldap back-sql
 --- schema. Some of them add real new data which is required for middle-nodes in
 --- the ldap there, others are just query views on existent data which is
 --- scattered over multiple tables.
 ---
 
+DROP SCHEMA IF EXISTS ldap CASCADE;
+CREATE SCHEMA ldap;
+GRANT ALL PRIVILEGES ON SCHEMA ldap TO cdb_admin;
+
 -- helper nodes to satisfy the ldap-tree conventions
-DROP TABLE IF EXISTS ldap_organizations;
-CREATE TABLE ldap_organizations (
+CREATE TABLE ldap.organizations (
 	id serial PRIMARY KEY,
 	dn varchar NOT NULL,
 	oc_map_id integer NOT NULL,  -- REFERENCES ldap_oc_mappings(id)
@@ -208,9 +214,8 @@ CREATE TABLE ldap_organizations (
 	additional_object_class1 varchar DEFAULT NULL,
 	additional_object_class2 varchar DEFAULT NULL
 );
-GRANT ALL ON ldap_organizations TO cdb_admin;
 
-INSERT INTO ldap_organizations (id, dn, oc_map_id, parent, display_name, additional_object_class1, additional_object_class2) VALUES
+INSERT INTO ldap.organizations (id, dn, oc_map_id, parent, display_name, additional_object_class1, additional_object_class2) VALUES
     -- The overall organization
         (node_cde_id(), 'dc=cde-ev,dc=de', oc_organization_id(), 0, 'CdE e.V.', 'dcObject', 'top'),
     -- All organizational units
@@ -225,15 +230,13 @@ INSERT INTO ldap_organizations (id, dn, oc_map_id, parent, display_name, additio
         (node_assembly_presiders_group_id(), 'ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de', oc_organizationalUnit_id(), make_organization_entity_id(node_groups_id()), 'Assembly Presiders', NULL, NULL);
 
 -- ldap Directory System Users
-DROP TABLE IF EXISTS ldap_duas;
-CREATE TABLE ldap_duas (
+CREATE TABLE ldap.duas (
 	id serial PRIMARY KEY,
 	cn varchar NOT NULL,
     password_hash varchar NOT NULL
 );
-GRANT ALL ON ldap_duas TO cdb_admin;
 
-INSERT INTO ldap_duas (cn, password_hash) VALUES
+INSERT INTO ldap.duas (cn, password_hash) VALUES
     ('admin', '$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1'),
     ('apache', '$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1'),
     ('cloud', '$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1'),
@@ -241,15 +244,13 @@ INSERT INTO ldap_duas (cn, password_hash) VALUES
     ('dokuwiki', '$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1');
 
 -- static ldap groups operating only on core.personas
-DROP TABLE IF EXISTS ldap_static_groups;
-CREATE TABLE ldap_static_groups (
+CREATE TABLE ldap.static_groups (
 	id serial PRIMARY KEY,
 	cn varchar NOT NULL,
 	description varchar
 );
-GRANT ALL ON ldap_static_groups TO cdb_admin;
 
-INSERT INTO ldap_static_groups (id, cn, description) VALUES
+INSERT INTO ldap.static_groups (id, cn, description) VALUES
     (node_static_group_is_active_id(), 'is_active', 'Aktive Nutzer.'),
     (node_static_group_is_member_id(), 'is_member', 'Nutzer, die aktuell Mitglied im CdE sind.'),
     (node_static_group_is_searchable_id(), 'is_searchable', 'Nutzer, die aktuell Mitglied im CdE und und in der Datenbank suchbar sind.'),
@@ -265,15 +266,15 @@ INSERT INTO ldap_static_groups (id, cn, description) VALUES
     (node_static_group_is_finance_admin_id(), 'is_finance_admin', 'Finanz-Administratoren'),
     (node_static_group_is_cdelokal_admin_id(), 'is_cdelokal_admin', 'CdELokal-Administratoren');
 
--- A view containing all ldap_groups and their unique attributes.
-CREATE VIEW ldap_groups (id, cn, description) AS
+-- A view containing all ldap.groups and their unique attributes.
+CREATE VIEW ldap.groups (id, cn, description) AS
     -- static groups
     (
         SELECT
            make_static_group_entity_id(id),
            cn,
            description
-        FROM ldap_static_groups
+        FROM ldap.static_groups
     )
     -- mailinglists subscribers
     UNION (
@@ -312,12 +313,11 @@ CREATE VIEW ldap_groups (id, cn, description) AS
         FROM assembly.assemblies
     )
 ;
-GRANT ALL ON ldap_groups TO cdb_admin;
 
--- A view containing all members of all ldap_groups. Since each group can have
+-- A view containing all members of all ldap.groups. Since each group can have
 -- mulitple members, we need an extra query view to track them.
 -- This is also honored in 'ldap_attr_mapping'.
-CREATE VIEW ldap_group_members (group_id, group_dn, member_id, member_dn) AS
+CREATE VIEW ldap.group_members (group_id, group_dn, member_id, member_dn) AS
     -- static groups
         -- is_active
         (
@@ -502,11 +502,16 @@ CREATE VIEW ldap_group_members (group_id, group_dn, member_id, member_dn) AS
         FROM assembly.presiders
     )
 ;
-GRANT ALL ON ldap_group_members TO cdb_admin;
+
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA ldap TO cdb_admin;
+
 
 
 ---
 --- ldap tables for back-sql (in public schema)
+---
+
+---
 --- this is taken with minimal modifications from
 --- servers/slapd/back-sql/rdbms_depend/pgsql/backsql_create.sql
 --- in the openldap sources
@@ -532,12 +537,12 @@ CREATE TABLE ldap_oc_mappings (
 GRANT ALL ON ldap_oc_mappings TO cdb_admin;
 
 INSERT INTO ldap_oc_mappings (id, name, keytbl, keycol, create_proc, delete_proc, expect_return) VALUES
-    (oc_organization_id(), 'organization', 'ldap_organizations', 'id', 'SELECT ''TODO''', 'SELECT ''TODO''', 0),
+    (oc_organization_id(), 'organization', 'ldap.organizations', 'id', 'SELECT ''TODO''', 'SELECT ''TODO''', 0),
     (oc_inetOrgPerson_id(), 'inetOrgPerson', 'core.personas', 'id', 'SELECT ''TODO''', 'SELECT ''TODO''', 0),
-    (oc_organizationalUnit_id(), 'organizationalUnit', 'ldap_organizations', 'id', 'SELECT ''TODO''', 'SELECT ''TODO''', 0),
+    (oc_organizationalUnit_id(), 'organizationalUnit', 'ldap.organizations', 'id', 'SELECT ''TODO''', 'SELECT ''TODO''', 0),
     -- TODO This is temporary, since there is no standard objectclass for duas...
-    (oc_person_id(), 'person', 'ldap_duas', 'id', 'SELECT ''TODO''', 'SELECT ''TODO''', 0),
-    (oc_groupOfUniqueNames_id(), 'groupOfUniqueNames', 'ldap_groups', 'id', 'SELECT ''TODO''', 'SELECT ''TODO''', 0);
+    (oc_person_id(), 'person', 'ldap.duas', 'id', 'SELECT ''TODO''', 'SELECT ''TODO''', 0),
+    (oc_groupOfUniqueNames_id(), 'groupOfUniqueNames', 'ldap.groups', 'id', 'SELECT ''TODO''', 'SELECT ''TODO''', 0);
 
 
 -- Map ldap object class attributes to sql queries to extract them.
@@ -559,12 +564,12 @@ GRANT ALL ON ldap_attr_mappings TO cdb_admin;
 
 INSERT INTO ldap_attr_mappings (oc_map_id, name, sel_expr, from_tbls, join_where, add_proc, delete_proc, param_order, expect_return) VALUES
     -- Attributes of organizations
-        (oc_organization_id(), 'o', 'ldap_organizations.display_name', 'ldap_organizations', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
+        (oc_organization_id(), 'o', 'ldap.organizations.display_name', 'ldap.organizations', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
     -- Attributes of organizationalUnits
-        (oc_organizationalUnit_id(), 'o', 'ldap_organizations.display_name', 'ldap_organizations', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
+        (oc_organizationalUnit_id(), 'o', 'ldap.organizations.display_name', 'ldap.organizations', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
     -- Attributes of duas
-        (oc_person_id(), 'cn', 'ldap_duas.cn', 'ldap_duas', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
-        (oc_person_id(), 'userPassword', '''{CRYPT}'' || ldap_duas.password_hash', 'ldap_duas', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
+        (oc_person_id(), 'cn', 'ldap.duas.cn', 'ldap.duas', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
+        (oc_person_id(), 'userPassword', '''{CRYPT}'' || ldap.duas.password_hash', 'ldap.duas', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
     -- Attributes of inetOrgPerson
     -- Naming was chosen accordingly to the following RFC:
     -- https://datatracker.ietf.org/doc/html/rfc2798 (defining inetOrgPerson)
@@ -579,11 +584,11 @@ INSERT INTO ldap_attr_mappings (oc_map_id, name, sel_expr, from_tbls, join_where
         -- this seems to be interpreted as string and therefore needs to be casted to a VARCHAR
         (oc_inetOrgPerson_id(), 'uid', 'CAST (personas.id as VARCHAR)', 'core.personas', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
         (oc_inetOrgPerson_id(), 'userPassword', '''{CRYPT}'' || personas.password_hash', 'core.personas', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
-        (oc_inetOrgPerson_id(), 'memberOf', 'ldap_group_members.group_dn', 'ldap_group_members, core.personas', 'core.personas.id = ldap_group_members.member_id', 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
+        (oc_inetOrgPerson_id(), 'memberOf', 'ldap.group_members.group_dn', 'ldap.group_members, core.personas', 'core.personas.id = ldap.group_members.member_id', 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
     -- Attributes of groupOfUniqueNames
-        (oc_groupOfUniqueNames_id(), 'cn', 'ldap_groups.cn', 'ldap_groups', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
-        (oc_groupOfUniqueNames_id(), 'description', 'ldap_groups.description', 'ldap_groups', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
-        (oc_groupOfUniqueNames_id(), 'uniqueMember', 'ldap_group_members.member_dn', 'ldap_group_members, ldap_groups', 'ldap_groups.id = ldap_group_members.group_id', 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0);
+        (oc_groupOfUniqueNames_id(), 'cn', 'ldap.groups.cn', 'ldap.groups', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
+        (oc_groupOfUniqueNames_id(), 'description', 'ldap.groups.description', 'ldap.groups', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
+        (oc_groupOfUniqueNames_id(), 'uniqueMember', 'ldap.group_members.member_dn', 'ldap.group_members, ldap.groups', 'ldap.groups.id = ldap.group_members.group_id', 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0);
 
 -- 'Stores' the real ldap entries.
 -- This is a SQL View collecting all entries which shall be inserted in ldap
@@ -598,7 +603,7 @@ CREATE VIEW ldap_entries (id, dn, oc_map_id, parent, keyval) AS
            oc_map_id,
            parent,
            id AS keyval
-        FROM ldap_organizations
+        FROM ldap.organizations
     )
     -- Directory System Agents
     UNION (
@@ -608,7 +613,7 @@ CREATE VIEW ldap_entries (id, dn, oc_map_id, parent, keyval) AS
            oc_person_id() AS oc_map_id,
            make_organization_entity_id(node_dua_id()) AS parent,
            id as keyval
-        FROM ldap_duas
+        FROM ldap.duas
     )
     -- personas
     UNION (
@@ -630,7 +635,7 @@ CREATE VIEW ldap_entries (id, dn, oc_map_id, parent, keyval) AS
                oc_groupOfUniqueNames_id() AS oc_map_id,
                make_organization_entity_id(node_static_group_id()) AS parent,
                make_static_group_entity_id(id) as keyval
-            FROM ldap_static_groups
+            FROM ldap.static_groups
         )
         -- mailinglists subscribers
         UNION (
@@ -683,7 +688,7 @@ CREATE VIEW ldap_entry_objclasses (entry_id, oc_name) AS
         SELECT
            make_organization_entity_id(id) AS entry_id,
            additional_object_class1 AS oc_name
-        FROM ldap_organizations
+        FROM ldap.organizations
         WHERE additional_object_class1 IS NOT NULL
     )
     -- organizations part 2
@@ -691,7 +696,7 @@ CREATE VIEW ldap_entry_objclasses (entry_id, oc_name) AS
         SELECT
            make_organization_entity_id(id) AS entry_id,
            additional_object_class2 AS oc_name
-        FROM ldap_organizations
+        FROM ldap.organizations
         WHERE additional_object_class2 IS NOT NULL
     )
     -- Directory System Agents
@@ -699,12 +704,12 @@ CREATE VIEW ldap_entry_objclasses (entry_id, oc_name) AS
         SELECT
            make_dua_entity_id(id) AS entry_id,
            'simpleSecurityObject' AS oc_name
-        FROM ldap_duas
+        FROM ldap.duas
     )
 ;
 GRANT ALL ON ldap_entry_objclasses TO cdb_admin;
 
 -- create previously impossible references
-ALTER TABLE ldap_organizations ADD FOREIGN KEY (oc_map_id) REFERENCES ldap_oc_mappings(id);
+ALTER TABLE ldap.organizations ADD FOREIGN KEY (oc_map_id) REFERENCES ldap_oc_mappings(id);
 -- this SHOULD be a reference. However, one can not create foreign keys on query views...
--- ALTER TABLE ldap_organizations ADD FOREIGN KEY (parent) REFERENCES ldap_entries(id);
+-- ALTER TABLE ldap.organizations ADD FOREIGN KEY (parent) REFERENCES ldap_entries(id);

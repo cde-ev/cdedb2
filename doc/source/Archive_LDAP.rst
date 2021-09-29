@@ -25,7 +25,7 @@ additions reside in cdedb/database/cdedb-ldap.sql.
 All data which is prefilled here is static and needed for ldap to work.
 We use sql query views to 'insert' data from other existent tables in the needed
 format into the ldap tables.
-Currently, there is only one table (``ldap_duas``) which is filled with test
+Currently, there is only one table (``ldap.duas``) which is filled with test
 specific sample data.
 
 We now configure the SQL-backend for LDAP via a corresponding LDIF file (as
