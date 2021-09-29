@@ -83,7 +83,7 @@ An LDAP user represents an user account of the CdEDB. Each user implements the
 
 - ``cn`` their full name: "``given_names`` ``family_name``"
 - ``displayName`` the full name which should be used to address this user,
-constructed via the same logic used in the CdEDB, including a family name.
+  constructed via the same logic used in the CdEDB, including a family name.
 - ``givenName`` the first name of the user (CdEDBs ``given_names``).
 - ``sn`` the last name of the user (CdEDBs ``family_name``).
 - ``mail`` the users mail address. This may also be used as login username,
@@ -122,6 +122,6 @@ against unprivileged access:
 
 - Users may only access exactly their own data.
 - Duas can access every user data, exept for their group memberships. Group
-access is only provided to some duas manually.
+  access is only provided to some duas manually.
 - Password hashes can not be retrieved from LDAP, only authentication inside
-LDAP is allowed.
+  LDAP is allowed.
