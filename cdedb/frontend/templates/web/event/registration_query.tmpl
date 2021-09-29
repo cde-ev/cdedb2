@@ -10,10 +10,8 @@
     {% endtrans %}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {% trans %}Registrations{% endtrans %}
-        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Registrations"), ambience['event']['title'],
+                            'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -53,7 +51,7 @@
             "persona.username": gettext("E-Mail"),
             "persona.family_name": gettext("Family Name"),
             "persona.given_names": gettext("Given Names"),
-            "persona.display_name": gettext("First Given Name"),
+            "persona.display_name": gettext("Known as (Forename)"),
             "persona.title": gettext("Title_[[of a persona]]"),
             "persona.name_supplement": gettext("Name Affix"),
             "persona.gender": gettext("Gender"),

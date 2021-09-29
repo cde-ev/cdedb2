@@ -12,10 +12,7 @@
 {{ util.breadcrumb_link(cdedblink("event/stats"), gettext("Statistics"), active=True) }}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {% trans %}Statistics{% endtrans %}
-        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Statistics"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block content %}
     <h3>{% trans %}Participant Statistics{% endtrans %}</h3>
@@ -40,7 +37,7 @@
         'cancelled': gettext("Registration Cancelled"),
         'rejected': gettext("Rejected"),
     } %}
-        <table class="table table-slim table-condensed table-stats">
+        <table id="participant-stats" class="table table-slim table-condensed table-stats">
             <thead>
                 <tr>
                     <th colspan="2"></th>
@@ -90,7 +87,7 @@
             'attendees': gettext("Attendees"),
             'no course': gettext("No Course"),
         } %} {# The 'In x. Choice' labels are already translated #}
-            <table class="table table-condensed table-slim table-stats">
+            <table id="course-stats" class="table table-condensed table-slim table-stats">
                 <thead>
                     <tr>
                         <th></th>

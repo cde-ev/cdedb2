@@ -11,9 +11,11 @@
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("core/genesis_list_cases"), gettext("Account Requests")) }}
+{# Since the dataset is no full persona (esp. it does not contain a display_name entry), we can not use the
+   util.persona_name makro here. #}
 {{ util.breadcrumb_link(cdedblink("core/genesis_modify_form", {'case_id': values['case_id']}),
-                        gettext("Edit Account Request from %(given_names)s %(family_name)s")|format(
-                            given_names=values["given_names"], family_name=values["family_name"]),
+                        gettext("Edit Account Request from %(name)s")|format(
+                            name=values['given_names']+" "+values['family_name']),
                         active="True", icon="user") }}
 {% endblock %}
 {% block content %}
@@ -68,6 +70,17 @@
                                     aclass="genesis-realm-specific") }}
             {{ util.form_input_select(name="country", label=gettext("Country"), entries=COUNTRY_CODES, small=True,
                                       defaultvalue=DEFAULT_COUNTRY, aclass="genesis-realm-specific") }}
+            {{ util.form_input_select(name="pevent_id", entries=choices['pevent_id'].items(), small=True,
+                                      nulloption=nbsp, label=gettext("Past Event"), aclass="input-sm",
+                                      sort=True) }}
+            {% if values.get('pevent_id') %}
+                {{ util.form_input_select(name="pcourse_id", entries=choices['pcourse_id'].items(), small=True,
+                                          nulloption=nbsp, label=gettext("Course"), aclass="input-sm",
+                                          defaultvalue='', sort=True) }}
+            {% else %}
+                {{ util.form_input_static(aclass='text-info', icon='info-circle', small=True, label=gettext("Course"),
+                                          value=gettext("Course can be specified if past event is given.")) }}
+            {% endif %}
 
             <script nonce="{{ csp_nonce }}">
                 var $select = $('#realm-select');

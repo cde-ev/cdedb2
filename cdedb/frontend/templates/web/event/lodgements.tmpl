@@ -12,10 +12,7 @@
 {{ util.breadcrumb_link(cdedblink("event/lodgements"), gettext("Lodgements"), active=True) }}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {% trans %}Lodgements{% endtrans %}
-        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Lodgements"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 
 {% macro display_sorting_header(part_id, sortkey, label) %}
@@ -37,13 +34,15 @@
 
 
 {% block content %}
-    <div class="p">
+    <div class="p button-par">
         {{ util.href(cdedblink("event/create_lodgement_form"), gettext("Add Lodgement"), readonly=is_locked,
                      aclass='btn btn-sm btn-success', icon='plus') }}
         {{ util.href(cdedblink("event/lodgement_query"), gettext("Lodgement Query"),
                      aclass='btn btn-sm btn-info', icon='search') }}
         {{ util.href(cdedblink("event/lodgement_group_summary"), gettext("Manage Lodgement Groups"), readonly=is_locked,
                      aclass='btn btn-sm btn-info', icon='th-large') }}
+        {{ util.href(cdedblink("event/lodgement_wishes_graph_form"), gettext("Lodgement Wishes Graph"),
+                     aclass='btn btn-sm btn-info', icon='project-diagram') }}
     </div>
 
     <div class="table-condensed">
@@ -56,7 +55,7 @@
                 <th colspan="{{ ambience['event']['parts']|length * 2 }}" class="b-left">
                     {% trans %}Inhabitants{% endtrans -%}</th>
                 <th colspan="2" class="b-left">{% trans %}Capacity{% endtrans %}</th>
-                {% if ambience['event']['parts']|length < 4 %}
+                {% if ambience['event']['parts']|length < 6 %}
                     <th rowspan="2" class="b-left"></th>
                 {% endif %}
             </tr>
@@ -103,7 +102,7 @@
                         {% endfor %}
                         <td class="text-right" id="group_regular_capacity_{{ group_id }}">{{ group_regular_sum[group_id] }}</td>
                         <td class="text-right" id="group_camping_mat_capacity_{{ group_id }}">+ {{ group_camping_mat_sum[group_id] }}</td>
-                        {% if ambience['event']['parts']|length < 4 %}
+                        {% if ambience['event']['parts']|length < 6 %}
                             <td class="b-left"> </td>
                         {% endif %}
                     </tr>
@@ -130,9 +129,9 @@
                             </td>
                         {% endfor %}
                         <td class="b-left text-right" id="lodge_regular_capacity_{{ lodgement_id }}">{{ lodgement['regular_capacity'] }}</td>
-                        <td class=" text-right" id="lodge_camping_mat_capacity{{ lodgement_id }}">+ {{ lodgement['camping_mat_capacity'] }}</td>
-                        {% if ambience['event']['parts']|length < 4 %}
-                            <td class="b-left">
+                        <td class="text-right" id="lodge_camping_mat_capacity{{ lodgement_id }}">+ {{ lodgement['camping_mat_capacity'] }}</td>
+                        {% if ambience['event']['parts']|length < 6 %}
+                            <td class="nowrap b-left">
                                 {{ util.href(cdedblink("event/change_lodgement_form", {'lodgement_id': lodgement_id}),
                                              readonly=is_locked, aclass='btn btn-xs btn-warning', icon='pen',
                                              title=gettext("Edit")) }}
@@ -159,7 +158,7 @@
                 {% endfor %}
                     <td class="b-left text-right" id="total_regular">{{ regular_sum }}</td>
                     <td class=" text-right" id="total_camping_mat">+ {{ camping_mat_sum }}</td>
-                    {% if ambience['event']['parts']|length < 4 %}
+                    {% if ambience['event']['parts']|length < 6 %}
                         <td class="b-left"> </td>
                     {% endif %}
             </tr>

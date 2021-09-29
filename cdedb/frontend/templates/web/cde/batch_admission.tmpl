@@ -20,10 +20,8 @@
 {% endblock %}
 
 {% block heading %}
-    {{ util.doclink("Handbuch_Verwaltungsteam", anchor="massenaufnahme-von-mitgliedern") }}
-    <h1 class="title">
-        {% trans %}Create Accounts{% endtrans %}
-    </h1>
+    {{ util.context_heading(gettext("Create Accounts"),
+                            doclink="Handbuch_Verwaltungsteam", doclink_anchor="massenaufnahme-von-mitgliedern") }}
 {% endblock %}
 
 {% macro ba_submit_button() %}
@@ -39,7 +37,8 @@
 {% endmacro %}
 
 {% block content %}
-    <form action="{{ cdedblink('cde/batch_admission') }}" method="POST" id="admissionform">
+    <form action="{{ cdedblink('cde/batch_admission') }}" method="POST" id="admissionform"
+          enctype="multipart/form-data">
         {{ util.anti_csrf_token('cde/batch_admission') }}
         {{ util.input_hidden("finalized") }}
         <div class="row">
@@ -53,7 +52,8 @@
                 {{ util.form_input_checkbox("sendmail", label=gettext("Send Welcome Mail"), horizontal=False) }}
             </div>
         </div>
-        {{ util.form_input_textarea(name="accounts", label=gettext("Data"), horizontal=False, rows=8, anid='input-data') }}
+        {{ util.form_input_file(name="accounts_file", horizontal=False, label=gettext("Data"), accept="text/csv,.csv") }}
+        {{ util.form_input_textarea(name="accounts", horizontal=False, rows=8, anid='input-data') }}
 
         <p class="help-block">
             {{ util.make_icon('info-circle') }} {% trans %}Enter one dataset per line.{% endtrans %}
@@ -84,6 +84,8 @@
                     <span class="row-key" data-row="{{ dataset['lineno'] }}">
                         {% trans lineno=dataset['lineno'] + 1 %}Line {{ lineno }}{% endtrans -%}
                     </span>:
+                    {# We don't use util.person_name() here, b/c dataset['raw'] is no full persona object, esp. it
+                       misses a 'display_name' entry #}
                     {{ dataset['raw']['given_names'] }} {{ dataset['raw']['family_name'] }}
                     {% if dataset['raw']['username'] %}
                         &lt;{{ dataset['raw']['username'] }}&gt;
@@ -102,7 +104,7 @@
 
                 <div class="batch-line-body">
                     {% if dataset['problems'] or dataset['warnings'] %}
-                        <ul class="list-unstyled">
+                        <ul class="list-unstyled" id="problems{{ dataset['lineno'] }}">
                             {% for key, problem in dataset['problems'] %}
                                 <li class="text-danger">
                                     {{ util.make_icon('exclamation-circle', title=gettext("Error")) }}
@@ -152,30 +154,62 @@
                                 {% if dataset['pcourse_id'] %}
                                     &emsp;{{ util.input_checkbox("is_instructor{}".format(dataset['lineno']), label=gettext("Course instructor")) }}
                                 {% endif %}
+                                &emsp;
+                            {% endif %}
+                            {% if dataset['persona']['username'] and dataset['doppelgangers'] %}
+                                {{ util.input_checkbox("update_username{}".format(dataset['lineno']), label=gettext("Update E-Mail")) }}
                             {% endif %}
                         </div>
 
                         {% if dataset['doppelgangers'] %}
-                            <div class="col-md-6">
+                            <div class="col-md-6" id="doppelgangers{{ dataset['lineno'] }}">
                                 <label id="doppelgangers-{{ dataset['lineno'] }}-label">
                                     {% trans %}Merge with Account{% endtrans %}
                                 </label>
                                 <div class="p strip-space">
-                                    {#- jinja does not support list comprehension ... #}
-                                    {%- set myentries = [('', '–')] %}
-                                    {%- for key, value in dataset['doppelgangers']|keydictsort(EntitySorter.persona) %}
-                                        {%- with description = "{} {} {} <{}> ({} {}), {}{}".format(
-                                                value['given_names'], value['family_name'],
-                                                "(" + value['birth_name'] + ")" if value['birth_name'] else "",
-                                                value['username'], gettext("born"),
-                                                value['birthday']|date(lang=lang) or "–", key|cdedbid,
-                                                '' if value['is_member'] else gettext(" (not a Member)")) %}
-                                            {%- do myentries.append((key, description)) %}
-                                        {%- endwith %}
-                                    {%- endfor %}
-                                    {{ util.input_checkboxes("doppelganger_id{}".format(dataset['lineno']),
-                                            myentries, radio=True,
-                                            arialabeledby="doppelgangers-{}-label".format(dataset['lineno'])) }}
+                                    <div role="radiogroup"
+                                         aria-labelledby="doppelgangers-{{ dataset['lineno'] }}-label">
+                                        <div class="radio">
+                                            <label>
+                                                {% with name = "doppelganger_id{}".format(dataset['lineno']) %}
+                                                    <input type="radio" name="{{ name }}" value=""
+                                                        {% if ''|stringIn(values.getlist(name)) or name not in values %}
+                                                           checked="checked"
+                                                        {% endif %} />
+                                                {% endwith %}
+                                                –
+                                            </label>
+                                        </div>
+                                        {%- for key, value in dataset['doppelgangers']|keydictsort(EntitySorter.persona) %}
+                                            <div class="radio">
+                                                <label>
+                                                    {% with name = "doppelganger_id{}".format(dataset['lineno']) %}
+                                                        <input type="radio" name="{{ name }}" value="{{ key }}"
+                                                            {% if key|stringIn(values.getlist(name)) %}checked="checked"{% endif %} />
+                                                    {% endwith %}
+                                                    {{ util.persona_name(value, given_and_display_names=True) }}
+                                                    {%- if value['birth_name'] %}
+                                                        ({{ value['birth_name'] }})
+                                                    {%- endif %}
+                                                    {% if value['is_archived'] %}
+                                                        (<i>{{ gettext("archived") }}</i>)
+                                                    {% else %}
+                                                        &lt;{{ value['username'] }}&gt;
+                                                    {% endif %}
+                                                    {%- if value['birthday'] %}
+                                                        ({{ gettext("born") }}
+                                                        {{ value['birthday']|date(lang=lang) or "-" }})
+                                                    {% endif %}
+                                                    {{ key|cdedbid }}
+                                                    {%- if not value['is_member'] %}
+                                                        {{ gettext("(not a member)") }}
+                                                    {%- elif value['trial_member'] %}
+                                                        {{ gettext("(trial member)") -}}
+                                                    {% endif -%}
+                                                </label>
+                                            </div>
+                                        {%- endfor %}
+                                    </div>
                                 </div>
                             </div>
                         {% endif %}

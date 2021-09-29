@@ -1,7 +1,7 @@
 {
     "EVENT_SCHEMA_VERSION": [
         15,
-        3
+        4
     ],
     "kind": "partial",
     "id": 1,
@@ -156,7 +156,7 @@
             "list_consent": true,
             "fields": {
                 "anzahl_GROSSBUCHSTABEN": 4,
-                "lodge": "Die \u00fcblichen Verd\u00e4chtigen :)",
+                "lodge": "Die \u00fcblichen Verd\u00e4chtigen, insb. Berta Beispiel und garcia@example.cde :)",
                 "is_child": false
             },
             "amount_paid": "0.00",
@@ -290,7 +290,7 @@
                 "is_member": false,
                 "id": 5,
                 "username": "emilia@example.cde",
-                "display_name": "Emilia",
+                "display_name": "Emmy",
                 "family_name": "Eventis",
                 "given_names": "Emilia E.",
                 "title": null,
@@ -721,12 +721,14 @@
             "anzahl_GROSSBUCHSTABEN": {
                 "association": 1,
                 "entries": null,
-                "kind": 3
+                "kind": 3,
+                "checkin": true
             },
             "brings_balls": {
                 "kind": 2,
                 "association": 1,
-                "entries": null
+                "entries": null,
+                "checkin": true
             },
             "transportation": {
                 "kind": 1,
@@ -744,22 +746,26 @@
                         "etc",
                         "anything else"
                     ]
-                ]
+                ],
+                "checkin": false
             },
             "lodge": {
                 "kind": 1,
                 "association": 1,
-                "entries": null
+                "entries": null,
+                "checkin": false
             },
             "may_reserve": {
                 "kind": 2,
                 "association": 1,
-                "entries": null
+                "entries": null,
+                "checkin": false
             },
             "room": {
                 "kind": 1,
                 "association": 2,
-                "entries": null
+                "entries": null,
+                "checkin": false
             },
             "contamination": {
                 "kind": 1,
@@ -781,13 +787,77 @@
                         "none",
                         "no radiation"
                     ]
-                ]
+                ],
+                "checkin": false
             },
             "is_child": {
                 "kind": 2,
                 "association": 1,
-                "entries": null
+                "entries": null,
+                "checkin": false
             }
+        },
+        "questionnaire": {
+            "QuestionnaireUsages.registration": [
+                {
+                    "title": "Ich bin unter 13 Jahre alt.",
+                    "info": null,
+                    "input_size": null,
+                    "readonly": null,
+                    "default_value": null,
+                    "field_name": "is_child"
+                }
+            ],
+            "QuestionnaireUsages.additional": [
+                {
+                    "title": "Unter\u00fcberschrift",
+                    "info": "mit Text darunter",
+                    "input_size": null,
+                    "readonly": null,
+                    "default_value": null,
+                    "field_name": null
+                },
+                {
+                    "title": "B\u00e4lle",
+                    "info": "Du bringst genug B\u00e4lle mit um einen ganzen Kurs abzuwerfen.",
+                    "input_size": null,
+                    "readonly": false,
+                    "default_value": "True",
+                    "field_name": "brings_balls"
+                },
+                {
+                    "title": null,
+                    "info": "nur etwas Text",
+                    "input_size": null,
+                    "readonly": null,
+                    "default_value": null,
+                    "field_name": null
+                },
+                {
+                    "title": "Weitere \u00dcberschrift",
+                    "info": null,
+                    "input_size": null,
+                    "readonly": null,
+                    "default_value": null,
+                    "field_name": null
+                },
+                {
+                    "title": "Vehikel",
+                    "info": null,
+                    "input_size": null,
+                    "readonly": false,
+                    "default_value": "etc",
+                    "field_name": "transportation"
+                },
+                {
+                    "title": "Hauswunsch",
+                    "info": null,
+                    "input_size": 3,
+                    "readonly": false,
+                    "default_value": null,
+                    "field_name": "lodge"
+                }
+            ]
         }
     }
 }

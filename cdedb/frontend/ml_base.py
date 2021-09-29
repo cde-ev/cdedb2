@@ -55,7 +55,8 @@ class MlBaseFrontend(AbstractUserFrontend):
         mailinglist_infos = self.mlproxy.get_mailinglists(rs, mailinglists)
         sub_states = const.SubscriptionState.subscribing_states()
         subscriptions = self.mlproxy.get_user_subscriptions(
-            rs, rs.user.persona_id, states=sub_states)
+            rs, rs.user.persona_id,
+            states=sub_states | {const.SubscriptionState.pending})
         grouped: Dict[MailinglistGroup, CdEDBObjectMap]
         grouped = collections.defaultdict(dict)
         for mailinglist_id, title in mailinglists.items():
@@ -79,9 +80,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         """
         mailinglist_ids = self.mlproxy.list_mailinglists(rs)
 
-        code = 1
-        for ml_id in mailinglist_ids:
-            code *= self.mlproxy.write_subscription_states(rs, ml_id)
+        code = self.mlproxy.write_subscription_states(rs, mailinglist_ids)
         self.notify_return_code(rs, code)
 
         return self.redirect(rs, "ml/index")
@@ -159,7 +158,8 @@ class MlBaseFrontend(AbstractUserFrontend):
         mailinglist_infos = self.mlproxy.get_mailinglists(rs, mailinglists)
         sub_states = const.SubscriptionState.subscribing_states()
         subscriptions = self.mlproxy.get_user_subscriptions(
-            rs, rs.user.persona_id, states=sub_states)
+            rs, rs.user.persona_id,
+            states=sub_states | {const.SubscriptionState.pending})
         grouped: Dict[MailinglistGroup, CdEDBObjectMap]
         grouped = collections.defaultdict(dict)
         for ml_id in mailinglists:
@@ -299,7 +299,8 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs.append_validation_error(
                 ("target_persona_id", ValueError(n_(
                     "User does not exist or is archived."))))
-        if not self.coreproxy.verify_persona(rs, source_persona_id, allowed_roles={"ml"}):
+        if not self.coreproxy.verify_persona(rs, source_persona_id,
+                                             allowed_roles={"ml"}):
             rs.append_validation_error(
                 ("source_persona_id", ValueError(n_(
                     "Source persona must be a ml-only user and no admin."))))
@@ -608,10 +609,11 @@ class MlBaseFrontend(AbstractUserFrontend):
             requests, key=lambda anid: EntitySorter.persona(personas[anid])))
         restricted = not self.mlproxy.may_manage(rs, mailinglist_id,
                                                  allow_restricted=False)
+        allow_unsub = self.mlproxy.get_ml_type(rs, mailinglist_id).allow_unsub
         return self.render(rs, "management", {
             'subscribers': subscribers, 'requests': requests,
             'moderators': moderators, 'explicits': explicits,
-            'restricted': restricted})
+            'restricted': restricted, 'allow_unsub': allow_unsub})
 
     @access("ml")
     @mailinglist_guard()
@@ -666,14 +668,15 @@ class MlBaseFrontend(AbstractUserFrontend):
         personas = self.coreproxy.get_personas(rs, personas_state.keys())
         addresses = self.mlproxy.get_subscription_addresses(
             rs, mailinglist_id, explicits_only=True)
-        columns = ['db_id', 'given_names', 'family_name', 'subscription_state',
-                   'email', 'subscription_address']
+        columns = ['db_id', 'given_names', 'display_name', 'family_name',
+                   'subscription_state', 'email', 'subscription_address']
         output = []
 
         for persona in personas:
             pair = {
                 'db_id': cdedbid(persona),
                 'given_names': personas[persona]['given_names'],
+                'display_name': personas[persona]['display_name'],
                 'family_name': personas[persona]['family_name'],
                 'subscription_state': personas_state[persona].name,
                 'email': personas[persona]['username'],
@@ -1150,7 +1153,6 @@ class MlBaseFrontend(AbstractUserFrontend):
         """Write the current state of implicit subscribers to the database."""
         mailinglist_ids = self.mlproxy.list_mailinglists(rs)
 
-        for ml_id in mailinglist_ids:
-            self.mlproxy.write_subscription_states(rs, ml_id)
+        self.mlproxy.write_subscription_states(rs, mailinglist_ids)
 
         return store

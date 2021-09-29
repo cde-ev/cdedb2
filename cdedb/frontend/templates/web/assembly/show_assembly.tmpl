@@ -2,17 +2,23 @@
 {% extends "web/assembly/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/assembly/util.tmpl" as assembly_util with context %}
+
 {% block scripts %}
     {{ util.cdedb_script('cdedb_helper.js') }}
     {{ util.cdedb_script('cdedb_searchpersona.js') }}
 {% endblock %}
+
 {% set jshint = 'weak' %}
+
 {% block title %}{{ ambience['assembly']['title'] }}{% endblock %}
+
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn",
             active=True) }}
 {% endblock %}
+
+
 {% block content %}
     <div id="description">
         {{ ambience['assembly']['description']|md }}
@@ -41,7 +47,8 @@
             <dt>{% trans %}Presiders{% endtrans %}</dt>
             <dd id="assembly-presiders">
                 {% for anid, entry in presiders|keydictsort(EntitySorter.persona) %}
-                    {{ util.persona_anchor(entry) }}{% if not loop.last %},{% endif %}
+                    {{ util.persona_anchor(entry, only_given_names=True, with_titles=True) }}
+                    {%- if not loop.last %},{% endif %}
                 {% endfor %}
             </dd>
         {% endif %}
@@ -54,7 +61,8 @@
             <ul>
                 {% for anid, entry in presiders|keydictsort(EntitySorter.persona) %}
                     <li class="hide-hover-container clearfix-after">
-                        {{ util.persona_anchor(entry) }} ({{ anid|cdedbid }})
+                        {{ util.persona_anchor(entry, only_given_names=True, with_titles=True) }}
+                        ({{ anid|cdedbid }})
                         <form action="{{ cdedblink('assembly/remove_presider') }}" method="POST"
                                 id="removepresiderform{{ anid }}" class="hide-hover display-inline">
                             {{ util.anti_csrf_token('assembly/remove_presider') }}
@@ -99,57 +107,28 @@
         {% endcall %}
     {% endif %}
 
-    {% if attachments or has_ballot_attachments or ("assembly_presider" in user.admin_views
-                                                    or ambience['assembly']['id'] in user.presider) %}
+    {% if attachments_version %}
         {% call util.bootstrap_panel(title=gettext("Files"), icon='file', anid='attachmentspanel') %}
         <div class="row">
-            {% if attachments or ("assembly_presider" in user.admin_views
-                                  or ambience['assembly']['id'] in user.presider) %}
+            {% for slice in attachments_version|keydictsort(EntitySorter.attachment)|slice(2) %}
                 <div class="col-sm-6">
-                    <h4>{% trans %}General Files{% endtrans %}</h4>
                     <ul class="slim" id="attachments">
-                        {% for attachment_id, attachment in attachments|keydictsort(EntitySorter.get_attachment_sorter(attachment_histories)) %}
-                            <li class="hide-hover-container clearfix-after">
-                                {{ assembly_util.print_attachment(
-                                        attachment, attachment_histories[attachment_id],
-                                        edit=("assembly_presider" in user.admin_views
-                                              and ambience['assembly']['is_active'])) }}
+                        {% for attachment_id, version in slice %}
+                            <li class="hide-hover-container clearfix-after" id="attachment{{ attachment_id }}_version{{ version["version_nr"] }}">
+                                {{ assembly_util.print_attachment_version_for_assembly(
+                                        version,
+                                        is_only_version=attachments[attachment_id]["num_versions"] == 1) }}
                             </li>
                         {% endfor %}
                     </ul>
-                    {% if ambience['assembly']['is_active'] and ("assembly_presider" in user.admin_views
-                                                                 or ambience['assembly']['id'] in user.presider) %}
-                        <div class="p">
-                            {{ util.href(cdedblink("assembly/add_attachment_form"), gettext("Add File"),
-                                         aclass="btn btn-success btn-sm", icon="plus") }}
-                        </div>
-                    {% endif %}
                 </div>
-            {% endif %}
-
-            {% if has_ballot_attachments %}
-                <div class="col-sm-6">
-                <h4>{% trans %}Ballot Files{% endtrans %}</h4>
-                    {% for ballot_id, ballot in ballots|keydictsort(EntitySorter.ballot) %}
-                        {% if ballot_attachments[ballot_id] %}
-                            <ul class="slim">
-                                {% for battachment_id, battachment in ballot_attachments[ballot_id].items() %}
-                                    <li>
-                                        {{ assembly_util.print_attachment(
-                                                battachment, attachment_histories[battachment_id], ballot=ballot) }}
-                                    </li>
-                                {% endfor %}
-                            </ul>
-                        {% endif %}
-                    {% endfor %}
-                </div>
-            {% endif %}
+            {% endfor %}
         </div>
         {% endcall %}
     {% endif %}
 
     {% if "assembly_mgmt" in user.admin_views %}
-        {% if ambience['assembly']['is_active'] or "vote_begin" not in delete_blockers %}
+        {% if ambience['assembly']['is_active'] or "ballot_is_locked" not in delete_blockers %}
             {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
                 {% if ambience['assembly']['is_active'] %}
                     {% if not ambience['assembly']['presider_address'] %}
@@ -227,7 +206,7 @@
                         </div>
                     </div>
                 {% endif %}
-                {% if "vote_begin" not in delete_blockers %}
+                {% if "ballot_is_locked" not in delete_blockers %}
                     <div class="row">
                         <div class="col-sm-4">
                             <div class="p">

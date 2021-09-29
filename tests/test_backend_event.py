@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# pylint: disable=missing-module-docstring
 
 import collections.abc
 import copy
@@ -94,7 +95,8 @@ class TestEventBackend(BackendTest):
                     'fee_modifiers': {
                         -1: {
                             'amount': decimal.Decimal("-7.00"),
-                            'field_id': 1003,  # TODO allow specifying a negative id here?
+                            # TODO allow specifying a negative id here?
+                            'field_id': 1003,
                             'modifier_name': "is_child",
                         }
                     },
@@ -112,6 +114,7 @@ class TestEventBackend(BackendTest):
                     'field_name': "instrument",
                     'kind': 1,
                     'entries': None,
+                    'checkin': False,
                 },
                 -2: {
                     'association': 1,
@@ -119,12 +122,14 @@ class TestEventBackend(BackendTest):
                     'kind': 5,
                     'entries': [["2109-08-16", "In the first coming"],
                                 ["2110-08-16", "During the second coming"]],
+                    'checkin': True,
                 },
                 -3: {
                     'association': const.FieldAssociations.registration,
                     'field_name': "is_child",
                     'kind': const.FieldDatatypes.bool,
                     'entries': None,
+                    'checkin': False,
                 }
             },
         }
@@ -148,6 +153,8 @@ class TestEventBackend(BackendTest):
         data['end'] = datetime.date(2110, 8, 20)
         data['is_open'] = True
         # TODO dynamically adapt ids from the database result
+        data['parts'][-1].update({'id': 1001})
+        data['parts'][-2].update({'id': 1002})
         data['parts'][-1]['tracks'][-1].update({'id': 1001, 'part_id': 1001})
         data['parts'][-2]['tracks'][-1].update({'id': 1002, 'part_id': 1002})
         data['tracks'] = {1001: data['parts'][-1]['tracks'][-1],
@@ -169,9 +176,12 @@ class TestEventBackend(BackendTest):
                         set(x['title'] for x in tmp['parts'][part]['tracks'].values()))
                     data['parts'][part]['tracks'] = tmp['parts'][part]['tracks']
                     self.assertEqual(
-                        set(x['modifier_name'] for x in data['parts'][part]['fee_modifiers'].values()),
-                        set(x['modifier_name'] for x in tmp['parts'][part]['fee_modifiers'].values()))
-                    data['parts'][part]['fee_modifiers'] = tmp['parts'][part]['fee_modifiers']
+                        set(x['modifier_name']
+                            for x in data['parts'][part]['fee_modifiers'].values()),
+                        set(x['modifier_name']
+                            for x in tmp['parts'][part]['fee_modifiers'].values()))
+                    data['parts'][part]['fee_modifiers'] = (
+                        tmp['parts'][part]['fee_modifiers'])
                     del data['parts'][oldpart]
                     break
         field_map = {}
@@ -211,7 +221,8 @@ class TestEventBackend(BackendTest):
             'fee': decimal.Decimal("1.23"),
             'waitlist_field': None,
             'tracks': {
-                1002: {'title': "Second lecture v2",
+                1002: {'id': 1002,
+                       'title': "Second lecture v2",
                        'shortname': "Second v2",
                        'num_choices': 5,
                        'min_choices': 4,
@@ -230,6 +241,7 @@ class TestEventBackend(BackendTest):
             'field_name': "kuea",
             'kind': 1,
             'entries': None,
+            'checkin': False,
         }
         changed_field = {
             'association': 2,
@@ -238,6 +250,7 @@ class TestEventBackend(BackendTest):
                 ["2110-08-15", "early second coming"],
                 ["2110-08-17", "late second coming"],
             ],
+            'checkin': True,
         }
         self.event.set_event(self.key, {
             'id': new_id,
@@ -266,7 +279,8 @@ class TestEventBackend(BackendTest):
                                  set(x['title']
                                      for x in tmp['parts'][part]['tracks'].values()))
                 data['parts'][part]['tracks'] = tmp['parts'][part]['tracks']
-                data['parts'][part]['fee_modifiers'] = tmp['parts'][part]['fee_modifiers']
+                data['parts'][part]['fee_modifiers'] = (
+                    tmp['parts'][part]['fee_modifiers'])
         del data['parts'][part_map["First coming"]]
         changed_part['id'] = part_map["Second coming"]
         changed_part['event_id'] = new_id
@@ -571,7 +585,8 @@ class TestEventBackend(BackendTest):
         }
         with self.assertRaises(ValueError) as cm:
             self.event.set_questionnaire(self.key, event_id, questionnaire)
-        self.assertIn("Must not duplicate field. (field_id)", cm.exception.args)
+        self.assertEqual("Must not duplicate field ('brings_balls'). (field_id)",
+                         cm.exception.args[0] % cm.exception.args[1])
 
         # Event mustn't have registrations to alter fee modifiers.
         reg_ids = self.event.list_registrations(self.key, event_id)
@@ -647,7 +662,8 @@ class TestEventBackend(BackendTest):
         expectation = {
             'anzahl_GROSSBUCHSTABEN': 4,
             'arrival': datetime.datetime(2222, 11, 9, 8, 55, 44, tzinfo=pytz.utc),
-            'lodge': 'Die üblichen Verdächtigen :)',
+            'lodge': 'Die üblichen Verdächtigen, insb. Berta Beispiel und '
+                     'garcia@example.cde :)',
             'is_child': False,
         }
         self.assertEqual(expectation, data['fields'])
@@ -1004,7 +1020,8 @@ class TestEventBackend(BackendTest):
                 'event_id': 1,
                 'fields': {
                     'anzahl_GROSSBUCHSTABEN': 4,
-                    'lodge': 'Die üblichen Verdächtigen :)',
+                    'lodge': 'Die üblichen Verdächtigen, insb. Berta Beispiel '
+                             'und garcia@example.cde :)',
                     'is_child': False,
                 },
                 'list_consent': True,
@@ -2019,7 +2036,8 @@ class TestEventBackend(BackendTest):
             if name != "Test-Query":
                 self.assertIn(name, expectation)
                 q = expectation[name]
-                self.assertEqual(set(q.fields_of_interest), set(query.fields_of_interest))
+                self.assertEqual(set(q.fields_of_interest),
+                                 set(query.fields_of_interest))
                 self.assertEqual(set(q.constraints), set(query.constraints))
                 self.assertEqual(set(q.order), set(query.order))
                 self.assertEqual(q.query_id, query.query_id)
@@ -2310,7 +2328,8 @@ class TestEventBackend(BackendTest):
                 'event_id': 1,
                 'field_name': 'behaviour',
                 'id': 11000,
-                'kind': 1,
+                'kind': const.FieldDatatypes.str,
+                'checkin': False,
             },
             11001: {
                 'association': const.FieldAssociations.registration,
@@ -2319,6 +2338,7 @@ class TestEventBackend(BackendTest):
                 'field_name': "solidarity",
                 'id': 11001,
                 'kind': const.FieldDatatypes.bool,
+                'checkin': False,
             }
         })
         # questionnaire rows
@@ -2520,6 +2540,7 @@ class TestEventBackend(BackendTest):
                 'field_name': 'behaviour',
                 'id': 1001,
                 'kind': const.FieldDatatypes.str,
+                'checkin': False,
             },
             1002: {
                 'association': const.FieldAssociations.registration,
@@ -2528,6 +2549,7 @@ class TestEventBackend(BackendTest):
                 'field_name': 'solidarity',
                 'id': 1002,
                 'kind': const.FieldDatatypes.bool,
+                'checkin': False,
             },
         })
         stored_data['event.fee_modifiers'][1001] = {
@@ -3205,7 +3227,8 @@ class TestEventBackend(BackendTest):
                 with self.assertRaises(error) as cm:
                     self.event.set_event(self.key, data)
                 if error_msg is not None:
-                    self.assertEqual(error_msg, cm.exception.args[0] % cm.exception.args[1])
+                    self.assertEqual(error_msg,
+                                     cm.exception.args[0] % cm.exception.args[1])
             else:
                 self.assertTrue(self.event.set_event(self.key, data))
         reg_data = {
@@ -3297,7 +3320,7 @@ class TestEventBackend(BackendTest):
                          self.event.get_waitlist_position(
                              self.key, event_id=1, persona_id=5))
         self.login(USER_DICT["emilia"])
-        self.event._get_waitlist(self.key, event_id=1)
+        self.event._get_waitlist(self.key, event_id=1)  # pylint: disable=protected-access
         self.assertEqual({1: 4, 2: 2, 3: 2},
                          self.event.get_waitlist_position(
                              self.key, event_id=1))
@@ -3424,6 +3447,7 @@ class TestEventBackend(BackendTest):
                     'field_name': "instrument",
                     'kind': 1,
                     'entries': None,
+                    'checkin': False,
                 },
                 -2: {
                     'association': 1,
@@ -3431,6 +3455,7 @@ class TestEventBackend(BackendTest):
                     'kind': 5,
                     'entries': [["2109-8-16", "In the first coming"],
                                 ["2110-8-16", "During the second coming"]],
+                    'checkin': True,
                 },
             },
         }
@@ -3480,7 +3505,8 @@ class TestEventBackend(BackendTest):
             'part_end': datetime.date(2110, 9, 21),
             'fee': decimal.Decimal("1.23"),
             'tracks': {
-                1002: {'title': "Second lecture v2",  # hardcoded id 5
+                1002: {'id': 1002,
+                       'title': "Second lecture v2",  # hardcoded id 5
                        'shortname': "Second v2",
                        'num_choices': 5,
                        'min_choices': 4,
@@ -3491,6 +3517,7 @@ class TestEventBackend(BackendTest):
             'field_name': "kuea",
             'kind': 1,
             'entries': None,
+            'checkin': False,
         }
         changed_field = {
             'association': 1,
@@ -3499,6 +3526,7 @@ class TestEventBackend(BackendTest):
                 ["2110-8-15", "early second coming"],
                 ["2110-8-17", "late second coming"],
             ],
+            'checkin': True,
         }
         self.event.add_event_orgas(self.key, new_id, {2, 1})
         self.event.remove_event_orga(self.key, new_id, 2)

@@ -1,9 +1,7 @@
 import argparse
 import json
 from itertools import chain
-from typing import Any, Callable, Dict, List, Set, Sized, Tuple, Type
-
-from typing_extensions import TypedDict
+from typing import Any, Callable, Dict, List, Set, Sized, Tuple, Type, TypedDict
 
 from cdedb.backend.common import PsycoJson, DatabaseValue_s
 from cdedb.backend.core import CoreBackend

@@ -16,12 +16,8 @@
 {% endblock %}
 
 {% block heading %}
-    <h1 class="title">
-        {% trans %}
-            Select Field
-        {% endtrans %}
-        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Select Field"), ambience['event']['title'],
+                            'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 
 {% block breadcrumb %}

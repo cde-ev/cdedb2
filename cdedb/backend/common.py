@@ -7,28 +7,29 @@ template for all services.
 """
 
 import abc
+import cgitb
 import collections.abc
 import copy
 import datetime
 import enum
 import functools
 import logging
+import sys
 from types import TracebackType
 from typing import (
-    Any, Callable, ClassVar, Collection, Dict, Iterable, List, Mapping,
+    Any, Callable, ClassVar, Collection, Dict, Iterable, List, Literal, Mapping,
     Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast, overload,
 )
 
 import psycopg2.extensions
 import psycopg2.extras
-from typing_extensions import Literal
 
 import cdedb.validation as validate
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
     LOCALE, CdEDBLog, CdEDBObject, CdEDBObjectMap, PathLike, PrivilegeError, PsycoJson,
     Realm, RequestState, Role, diacritic_patterns, glue, make_proxy, make_root_logger,
-    n_, unwrap,
+    n_, unwrap, DefaultReturnCode,
 )
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
@@ -143,6 +144,45 @@ def batchify(function: Callable[..., T],
     return batchified
 
 
+def read_conditional_write_composer(
+        reader: Callable[..., Any], writer: Callable[..., int],
+        id_param_name: str = "anid", datum_param_name: str = "data",
+        id_key_name: str = "id",) -> Callable[..., int]:
+    """This takes two functions and returns a combined version.
+
+    The overall semantics are similar to the writer. However the write is
+    elided if the reader returns a value equal to the object to be written
+    (i.e. there is no change).
+
+    :param id_param_name: Name of the reader argument specifying the object
+        id.
+    :param datum_param_name: Name of the writer argument specifying the
+        object value.
+    :param id_key_name: Key associated to the id in the object value
+        dictionary.
+    """
+
+    @functools.wraps(writer)
+    def composed(self: AbstractBackend, rs: RequestState, *args: Any,
+                 **kwargs: Any) -> DefaultReturnCode:
+        ret = 1
+        reader_kwargs = kwargs.copy()
+        reader_args = args[:]
+        if datum_param_name in reader_kwargs:
+            data = reader_kwargs.pop(datum_param_name)
+            reader_kwargs[id_param_name] = data[id_key_name]
+        else:
+            data = reader_args[0]
+            reader_args = (data[id_key_name],) + reader_args[1:]
+        with Atomizer(rs):
+            current = reader(self, rs, *reader_args, **reader_kwargs)
+            if {k: v for k, v in current.items() if k in data} != data:
+                ret = writer(self, rs, *args, **kwargs)
+        return ret
+
+    return composed
+
+
 def access(*roles: Role) -> Callable[[F], F]:
     """The @access decorator marks a function of a backend for publication.
 
@@ -215,12 +255,11 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         # logger are thread-safe!
         self.logger = logging.getLogger("cdedb.backend.{}".format(self.realm))
-        self.logger.debug("Instantiated {} with configpath {}.".format(
-            self, configpath))
+        self.logger.debug(f"Instantiated {self} with configpath {configpath}.")
         # Everybody needs access to the core backend
         # Import here since we otherwise have a cyclic import.
         # I don't see how we can get out of this ...
-        from cdedb.backend.core import CoreBackend
+        from cdedb.backend.core import CoreBackend  # pylint: disable=import-outside-toplevel
         self.core: CoreBackend
         if isinstance(self, CoreBackend):
             # self.core = cast('CoreBackend', self)
@@ -307,8 +346,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         """
         sanitized_params = tuple(
             self._sanitize_db_input(p) for p in params)
-        self.logger.debug("Execute PostgreSQL query {}.".format(cur.mogrify(
-            query, sanitized_params)))
+        self.logger.debug(f"Execute PostgreSQL query"
+                          f" {cur.mogrify(query, sanitized_params)}.")
         cur.execute(query, sanitized_params)
 
     def query_exec(self, rs: RequestState, query: str,
@@ -349,7 +388,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
 
         See :py:meth:`sql_select` for thoughts on this.
 
-        :param unique: Whether to do nothing if conflicting with a constraint
+        :param drop_on_conflict: Whether to do nothing if conflicting with a constraint
         :returns: id of inserted row
         """
         keys = tuple(key for key in data)
@@ -402,7 +441,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         return self.query_all(rs, query, (entities,))
 
     def sql_select_one(self, rs: RequestState, table: str, columns: Sequence[str],
-                       entity: EntityKey, entity_key: str = "id") -> Optional[CdEDBObject]:
+                       entity: EntityKey, entity_key: str = "id"
+                       ) -> Optional[CdEDBObject]:
         """Generic SQL select query for one row.
 
         See :py:meth:`sql_select` for thoughts on this.
@@ -473,6 +513,21 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         query = f"DELETE FROM {table} WHERE {entity_key} = %s"
         return self.query_exec(rs, query, (entity,))
 
+    def cgitb_log(self) -> None:
+        """Log the current exception.
+
+        This uses the standard logger and formats the exception with cgitb.
+        We take special care to contain any exceptions as cgitb is prone to
+        produce them with its prying fingers.
+        """
+        # noinspection PyBroadException
+        try:
+            self.logger.error(cgitb.text(sys.exc_info(), context=7))
+        except Exception:
+            # cgitb is very invasive when generating the stack trace, which might go
+            # wrong.
+            pass
+
     def general_query(self, rs: RequestState, query: Query,
                       distinct: bool = True, view: str = None
                       ) -> Tuple[CdEDBObject, ...]:
@@ -485,7 +540,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         :returns: all results of the query
         """
         query.fix_custom_columns()
-        self.logger.debug("Performing general query {}.".format(query))
+        self.logger.debug(f"Performing general query {query}.")
         select = ", ".join('{} AS "{}"'.format(column, column.replace('"', ''))
                            for field in query.fields_of_interest
                            for column in field.split(','))
@@ -511,11 +566,13 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                 # for str as well as for other types
                 sql_param_str = "lower({0})"
 
-                def caser(x: T) -> T: return x.lower()  # type: ignore[attr-defined]
+                def caser(x: T) -> T:
+                    return x.lower()  # type: ignore[attr-defined]
             else:
                 sql_param_str = "{0}"
 
-                def caser(x: T) -> T: return x
+                def caser(x: T) -> T:
+                    return x
             columns = field.split(',')
             # Treat containsall and friends special since they want to find
             # each value in any column, without caring that the columns are
@@ -746,7 +803,10 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         if offset is not None:
             query = glue(query, "OFFSET {}".format(offset))
 
-        return total, self.query_all(rs, query, params)
+        data = self.query_all(rs, query, params)
+        for e in data:
+            e['code'] = code_validator(e['code'])
+        return total, data
 
 
 class Silencer:
@@ -766,6 +826,8 @@ class Silencer:
         self.rs = rs
 
     def __enter__(self) -> None:
+        if self.rs.is_quiet:
+            raise RuntimeError("Already silenced. Reentrant use is unsupported.")
         self.rs.is_quiet = True
         _affirm_atomized_context(self.rs)
 

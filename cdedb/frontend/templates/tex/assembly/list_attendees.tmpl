@@ -1,5 +1,5 @@
 <<# This is just a part of a tex document, so we do not inherit the base template. #>>
 
 <<%- for id, attendee in attendees.items() -%>>
-\participant{<<< attendee['given_names'] >>>}{<<< attendee['family_name'] >>>}
+\participant{<<< attendee|persona_name(only_given_names=True)|te >>>}
 <<% endfor %>>

@@ -157,7 +157,7 @@
             "persona_id": 1,
             "list_consent": true,
             "fields": {
-                "lodge": "Die \u00fcblichen Verd\u00e4chtigen :)",
+                "lodge": "Die \u00fcblichen Verd\u00e4chtigen, insb. Berta Beispiel und garcia@example.cde :)",
                 "is_child": false,
                 "anzahl_GROSSBUCHSTABEN": 4
             },
@@ -314,7 +314,8 @@
             "kind": 1,
             "id": 2,
             "field_name": "transportation",
-            "association": 1
+            "association": 1,
+            "checkin": false
         },
         "6": {
             "event_id": 1,
@@ -339,7 +340,8 @@
             "kind": 1,
             "id": 6,
             "field_name": "contamination",
-            "association": 3
+            "association": 3,
+            "checkin": false
         },
         "4": {
             "event_id": 1,
@@ -347,7 +349,8 @@
             "kind": 2,
             "id": 4,
             "field_name": "may_reserve",
-            "association": 1
+            "association": 1,
+            "checkin": false
         },
         "1": {
             "event_id": 1,
@@ -355,7 +358,8 @@
             "kind": 2,
             "id": 1,
             "field_name": "brings_balls",
-            "association": 1
+            "association": 1,
+            "checkin": true
         },
         "3": {
             "event_id": 1,
@@ -363,7 +367,8 @@
             "kind": 1,
             "id": 3,
             "field_name": "lodge",
-            "association": 1
+            "association": 1,
+            "checkin": false
         },
         "5": {
             "event_id": 1,
@@ -371,7 +376,8 @@
             "kind": 1,
             "id": 5,
             "field_name": "room",
-            "association": 2
+            "association": 2,
+            "checkin": false
         },
         "7": {
             "event_id": 1,
@@ -379,7 +385,8 @@
             "kind": 2,
             "id": 7,
             "field_name": "is_child",
-            "association": 1
+            "association": 1,
+            "checkin": false
         },
         "8": {
             "association": 1,
@@ -387,12 +394,13 @@
             "event_id": 1,
             "field_name": "anzahl_GROSSBUCHSTABEN",
             "id": 8,
-            "kind": 3
+            "kind": 3,
+            "checkin": true
         }
     },
     "EVENT_SCHEMA_VERSION": [
         15,
-        3
+        4
     ],
     "event.registration_parts": {
         "2": {
@@ -1203,7 +1211,7 @@
             "is_member": false,
             "is_event_realm": true,
             "family_name": "Eventis",
-            "display_name": "Emilia",
+            "display_name": "Emmy",
             "address": "Hohle Gasse 13",
             "is_ml_realm": true,
             "is_cde_admin": false,

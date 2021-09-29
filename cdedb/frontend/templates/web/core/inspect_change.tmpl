@@ -4,32 +4,55 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans given_names=current['given_names'], family_name=current['family_name'] %}
-    	Inspect Changes for {{ given_names }} {{ family_name }}
+    {% trans names=util.persona_name(current) %}
+    	Inspect Changes for {{ name }}
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("core/list_pending_changes"), gettext("Inspect Changes")) }}
 {{ util.breadcrumb_link(cdedblink('core/inspect_change', {'persona_id': pending['id']}),
-        "{} {}".format(current['given_names'], current['family_name']), icon="user", active="True") }}
+        util.persona_name(current), icon="user", active="True") }}
 {% endblock %}
 
-{% macro show_diff(name, title, important=False) %}
-    <div class="row {% if name not in diff and not important %}unimportant{% endif %}">
+{% block heading %}
+    {{ util.context_heading(gettext("Inspect Changes"), util.persona_name(current), 'user', gettext("User")) }}
+{% endblock %}
+
+{# Helper to take care of some special values (enums, date, country codes) #}
+{% macro format_property(key, persona) %}
+    {%- if persona[key] -%}
+        {% if key == 'birthday' %}
+            {{- persona['birthday']|date(lang=lang) -}}
+        {% elif key == 'gender' %}
+            {{- gettext(enums['Genders'](persona['gender'])|string) -}}
+        {% elif key == 'id' %}
+            {{- util.href(show_user_link(user, persona['id']), persona['id']|cdedbid, aclass='nowrap') -}}
+        {% elif key == 'country' or key == 'country2' %}
+            {{- util.gettext_country(persona[key]) -}}
+        {% else %}
+            {{- persona[key] -}}
+        {% endif %}
+    {%- else -%}
+        –
+    {%- endif -%}
+{% endmacro %}
+
+{% macro show_diff(key, title, important=False) %}
+    <div class="row {% if key not in diff and not important %}unimportant{% endif %}">
         <label class="col-sm-3">
             {{ title }}
         </label>
-        {% if name in diff %}
+        {% if key in diff %}
             <div class="col-sm-4 bg-danger">
-                {% if caller %}{{ caller(False) }}{% else %}{{ current[name] or "–" }}{% endif %}
+                {{ format_property(key, current) }}
             </div>
             <div class="col-sm-4 bg-success">
-                {% if caller %}{{ caller(True) }}{% else %}{{ pending[name] or "–" }}{% endif %}
+                {{ format_property(key, pending) }}
             </div>
         {% else %}
             <div class="col-sm-4">
-                {% if caller %}{{ caller(False) }}{% else %}{{ current[name] }}{% endif %}
+                {{ format_property(key, current) }}
             </div>
         {% endif %}
     </div>
@@ -53,19 +76,13 @@
         {{ show_diff('given_names', gettext("Given Names"), True) }}
         {{ show_diff('family_name', gettext("Family Name"), True) }}
         {{ show_diff('name_supplement', gettext("Name Affix"), True) }}
-        {{ show_diff('display_name', gettext("First Given Name")) }}
+        {{ show_diff('display_name', gettext("Known as (Forename)")) }}
         {{ show_diff('birth_name', gettext("Birth Name")) }}
-        {% call(next) show_diff('birthday', gettext("Birthday"), True) %}
-            {% if next %}{{ pending['birthday']|date(lang=lang) }}{% else %}{{ current['birthday']|date(lang=lang) }}{% endif %}
-        {% endcall %}
-        {% call(next) show_diff('gender', gettext("Gender"), True) %}
-            {% if next %}{{ gettext(enums['Genders'](pending['gender'])|string) }}{% else %}{{ gettext(enums['Genders'](current['gender'])|string) }}{% endif %}
-        {% endcall %}
+        {{ show_diff('birthday', gettext("Birthday"), True) }}
+        {{ show_diff('gender', gettext("Gender"), True) }}
 
         <h4 class="heading-underline">{% trans %}Account & Membership{% endtrans %}</h4>
-        {% call(next) show_diff('id', gettext("CdEDB-ID"), True) %}
-            {{ util.href(show_user_link(user, pending['id']), pending['id']|cdedbid, aclass='nowrap') }}
-        {% endcall %}
+        {{ show_diff('id', gettext("CdEDB-ID"), True) }}
         {{ show_diff('is_member', gettext("CdE-Membership"), True) }}
         {{ show_diff('balance', gettext("Balance")) }}
 

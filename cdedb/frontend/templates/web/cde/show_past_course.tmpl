@@ -10,10 +10,8 @@
 {% set jshint='strong' %}
 {% block title %}{{ ambience['pcourse']['title'] }} ({{ ambience['pevent']['title'] }}){% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {{ ambience['pcourse']['nr'] }}. {{ ambience['pcourse']['title'] }}
-        <small>{{ util.make_icon('calendar-alt') }} {{ ambience['pevent']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(ambience['pcourse']['nr'] + ". " + ambience['pcourse']['title'],
+                            ambience['pevent']['title'], 'calendar-alt', gettext("Past Event")) }}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -79,7 +77,7 @@
                     {% if participant['viewable'] %}
                         {{ util.persona_anchor(personas[anid], quote_me=not is_admin) }}
                     {% else %}
-                        {{ personas[anid]['given_names'] }} {{ personas[anid]['family_name'] }}
+                        {{ util.persona_name(personas[anid]) }}
                     {% endif %}
                     {% if participant['is_instructor'] %}</strong>{% endif %}
                     {% if participant['is_instructor'] %}({% trans %}Course instructor{% endtrans %}){% endif %}

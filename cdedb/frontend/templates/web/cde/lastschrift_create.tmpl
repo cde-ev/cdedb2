@@ -8,19 +8,17 @@
         New Direct Debit Authorization
     {% endtrans %}
     {% if ambience['persona'] %}
-        ({{ ambience['persona']['given_names'] }} {{ ambience['persona']['family_name'] }})
+        ({{ util.persona_name(ambience['persona'], only_given_names=True) }})
     {% endif %}
 {%- endblock %}
 {% block heading -%}
-    <h1>
-        {% trans %}New Direct Debit Authorization{% endtrans %}
-        {% if ambience['persona'] %}
-            <small>
-                {{ util.make_icon('user') }} {{ ambience['persona']['given_names'] }}
-                {{ ambience['persona']['family_name'] }}
-            </small>
-        {% endif %}
-    </h1>
+    {% if ambience['persona'] %}
+        {{ util.context_heading(gettext("New Direct Debit Authorization"),
+                                util.persona_name(ambience['persona'], only_given_names=True),
+                                'user', gettext("User")) }}
+    {% else %}
+        {{ util.context_heading(gettext("New Direct Debit Authorization")) }}
+    {% endif %}
 {%- endblock %}
 
 {% set sidenav_active='cde_lastschrift' %}
@@ -30,8 +28,7 @@
                             readonly="finance" not in user.admin_views) }}
     {% if ambience['persona'] %}
         {{ util.breadcrumb_link(cdedblink("cde/lastschrift_show", {'persona_id': values['persona_id']}),
-                                "{} {}".format(ambience['persona']['given_names'],
-                                               ambience['persona']['family_name']),
+                                util.persona_name(ambience['persona'], only_given_names=True),
                                 icon="euro-sign",
                                 readonly="finance" not in user.admin_views) }}
     {% endif %}
@@ -57,7 +54,7 @@
         {{ util.form_input_text(name="iban", label=gettext("IBAN"), type="iban") }}
         {{ util.form_input_text(name="account_owner", label=gettext("Account holder (if different)")) }}
         {{ util.form_input_textarea(name="account_address", label=gettext("Account holder’s address (if different)")) }}
-        {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="5", info=util.markdownhint) }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="5", markdown=True) }}
         {% if ambience['persona'] %}
             {{ util.form_input_submit(label=gettext("Create"), cancellink=cdedblink('cde/lastschrift_show')) }}
         {% else %}

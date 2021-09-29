@@ -12,15 +12,12 @@
 {{ util.breadcrumb_link(cdedblink("event/partial_import_form"), gettext("Partial Import"), active=True) }}
 {% endblock %}
 {% block heading %}
-    {{ util.doclink('Handbuch_Orga_Partieller-Import') }}
-    <h1 class="title">
-        {% trans %}Partial Import{% endtrans %} <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Partial Import"), ambience['event']['title'],
+                            'chalkboard-teacher', gettext("Event"), doclink="Handbuch_Orga_Partieller-Import") }}
 {% endblock %}
 {% block content %}
     {% if errors %}
-        {% call util.bootstrap_panel(gettext("Validation errors"), aclass='panel panel-warning',
-                                     icon='exclamation-circle') %}
+        {% call util.bootstrap_panel(gettext("Validation errors"), aclass='panel-warning', icon='exclamation-circle') %}
             <p class="text-warning">
                 {% trans %}
                     Your upload contained errors and was not processed.

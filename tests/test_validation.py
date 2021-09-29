@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# pylint: disable=missing-module-docstring
 
 import copy
 import datetime
@@ -508,7 +509,7 @@ class TestValidation(unittest.TestCase):
                  {'id': 1, 'postal_code': "47239"},
                  None),
             )
-            if assertion == GenesisCase:
+            if assertion == GenesisCase:  # pylint: disable=comparison-with-callable
                 for inv, outv, _ in spec:
                     inv['realm'] = "event"
                     if outv is not None:
@@ -535,7 +536,7 @@ class TestValidation(unittest.TestCase):
                  {'id': 1, 'postal_code': "47239"},
                  None),
             )
-            if assertion == GenesisCase:
+            if assertion == GenesisCase:  # pylint: disable=comparison-with-callable
                 for inv, outv, _ in spec:
                     inv['realm'] = "event"
                     if outv is not None:

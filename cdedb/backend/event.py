@@ -10,11 +10,11 @@ import datetime
 import decimal
 from pathlib import Path
 from typing import (
-    Any, Callable, Collection, Dict, Iterable, List, Mapping, Optional, Sequence, Set,
-    Tuple,
+    Any, Callable, Collection, Dict, Iterable, List, Mapping, Optional, Protocol,
+    Sequence, Set, Tuple,
 )
 
-from typing_extensions import Protocol
+import psycopg2.extensions
 
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
@@ -22,7 +22,8 @@ from cdedb.backend.common import (
     PYTHON_TO_SQL_MAP, AbstractBackend, Silencer, DatabaseValue_s, access,
     affirm_set_validation as affirm_set, affirm_validation_typed as affirm,
     affirm_validation_typed_optional as affirm_optional, cast_fields, internal,
-    singularize,
+    singularize, read_conditional_write_composer,
+    affirm_array_validation as affirm_array,
 )
 from cdedb.common import (
     COURSE_FIELDS, COURSE_SEGMENT_FIELDS,
@@ -36,9 +37,14 @@ from cdedb.common import (
     glue, implying_realms, json_serialize, mixed_existence_sorter, n_, now, unwrap,
     xsorted, STORED_EVENT_QUERY_FIELDS,
 )
+from cdedb.filter import money_filter, date_filter
 from cdedb.database.connection import Atomizer
 from cdedb.query import Query, QueryOperators, QueryScope
 from cdedb.validation import parse_date, parse_datetime
+
+
+# type alias for questionnaire specification.
+CdEDBQuestionnaire = Dict[const.QuestionnaireUsages, List[CdEDBObject]]
 
 
 class EventBackend(AbstractBackend):
@@ -481,14 +487,16 @@ class EventBackend(AbstractBackend):
             query.constraints.append(("event_id", QueryOperators.equal,
                                       event_id))
             query.spec['event_id'] = "id"
-        elif query.scope in {QueryScope.event_user, QueryScope.archived_past_event_user}:
+        elif query.scope in {QueryScope.event_user,
+                             QueryScope.archived_past_event_user}:
             if not self.is_admin(rs) and "core_admin" not in rs.user.roles:
                 raise PrivilegeError(n_("Admin only."))
             # Include only un-archived event-users
             query.constraints.append(("is_event_realm", QueryOperators.equal,
                                       True))
-            query.constraints.append(("is_archived", QueryOperators.equal,
-                                      query.scope == QueryScope.archived_past_event_user))
+            query.constraints.append(
+                ("is_archived", QueryOperators.equal,
+                 query.scope == QueryScope.archived_past_event_user))
             query.spec["is_event_realm"] = "bool"
             query.spec["is_archived"] = "bool"
             # Exclude users of any higher realm (implying event)
@@ -1899,18 +1907,19 @@ class EventBackend(AbstractBackend):
         for field in field_data:
             self._validate_special_event_field(rs, event_id, "fee_modifier", field)
 
-        for x in mixed_existence_sorter(new_modifiers):
-            new_modifier = copy.deepcopy(modifiers[x])
-            assert new_modifier is not None
-            new_modifier['part_id'] = part_id
-            ret *= self.sql_insert(rs, "event.fee_modifiers", new_modifier)
-            self.event_log(rs, const.EventLogCodes.fee_modifier_created, event_id,
-                           change_note=new_modifier['modifier_name'])
-
+        # the order of deleting, updating and creating matters: The field of a deleted
+        # modifier may be used in another existing or new modifier at the same request.
         if updated_modifiers or deleted_modifiers:
             current_modifier_data = {e['id']: e for e in self.sql_select(
                 rs, "event.fee_modifiers", FEE_MODIFIER_FIELDS,
                 updated_modifiers | deleted_modifiers)}
+
+            if deleted_modifiers:
+                ret *= self.sql_delete(rs, "event.fee_modifiers", deleted_modifiers)
+                for x in mixed_existence_sorter(deleted_modifiers):
+                    current = current_modifier_data[x]
+                    self.event_log(rs, const.EventLogCodes.fee_modifier_deleted,
+                                   event_id, change_note=current['modifier_name'])
 
             for x in mixed_existence_sorter(updated_modifiers):
                 updated_modifier = copy.deepcopy(modifiers[x])
@@ -1926,12 +1935,13 @@ class EventBackend(AbstractBackend):
                     self.event_log(rs, const.EventLogCodes.fee_modifier_changed,
                                    event_id, change_note=current['modifier_name'])
 
-            if deleted_modifiers:
-                ret *= self.sql_delete(rs, "event.fee_modifiers", deleted_modifiers)
-                for x in mixed_existence_sorter(deleted_modifiers):
-                    current = current_modifier_data[x]
-                    self.event_log(rs, const.EventLogCodes.fee_modifier_deleted,
-                                   event_id, change_note=current['modifier_name'])
+        for x in mixed_existence_sorter(new_modifiers):
+            new_modifier = copy.deepcopy(modifiers[x])
+            assert new_modifier is not None
+            new_modifier['part_id'] = part_id
+            ret *= self.sql_insert(rs, "event.fee_modifiers", new_modifier)
+            self.event_log(rs, const.EventLogCodes.fee_modifier_created, event_id,
+                           change_note=new_modifier['modifier_name'])
 
         return ret
 
@@ -2022,7 +2032,6 @@ class EventBackend(AbstractBackend):
                 ret *= self.add_event_orgas(rs, data['id'], data['orgas'])
             if 'fields' in data:
                 ret *= self._set_event_fields(rs, data['id'], data['fields'])
-
             # This also includes taking care of course tracks and fee modifiers, since
             # they are each linked to a single event part.
             if 'parts' in data:
@@ -2617,53 +2626,85 @@ class EventBackend(AbstractBackend):
         return ret
 
     @access("event", "ml_admin")
-    def list_registrations(self, rs: RequestState, event_id: int,
-                           persona_id: int = None) -> Dict[int, int]:
+    def list_registrations_personas(self, rs: RequestState, event_id: int,
+                                    persona_ids: Collection[int] = None
+                                    ) -> Dict[int, int]:
         """List all registrations of an event.
 
-        If an ordinary event_user is requesting this, just participants of this
-        event are returned and he himself must have the status 'participant'.
-
-        :param persona_id: If passed restrict to registrations by this persona.
+        :param persona_ids: If passed restrict to registrations by these personas.
         :returns: Mapping of registration ids to persona_ids.
         """
+        if not persona_ids:
+            persona_ids = set()
         event_id = affirm(vtypes.ID, event_id)
-        persona_id = affirm_optional(vtypes.ID, persona_id)
+        persona_ids = affirm_set(vtypes.ID, persona_ids)
+
+        # ml_admins are allowed to do this to be able to manage
+        # subscribers of event mailinglists.
+        if (persona_ids != {rs.user.persona_id}
+                and not self.is_orga(rs, event_id=event_id)
+                and not self.is_admin(rs)
+                and "ml_admin" not in rs.user.roles):
+            raise PrivilegeError(n_("Not privileged."))
+
         query = "SELECT id, persona_id FROM event.registrations"
         conditions = ["event_id = %s"]
         params: List[Any] = [event_id]
-        # condition for limited access, f. e. for the online participant list.
-        # ml_admins are allowed to do this to be able to manage
-        # subscribers of event mailinglists.
-        is_limited = (persona_id != rs.user.persona_id
-                      and not self.is_orga(rs, event_id=event_id)
-                      and not self.is_admin(rs)
-                      and "ml_admin" not in rs.user.roles)
-        if is_limited:
-            query = """SELECT DISTINCT
-                regs.id, regs.persona_id
-            FROM
-                event.registrations AS regs
-                LEFT OUTER JOIN
-                    event.registration_parts AS rparts
-                ON rparts.registration_id = regs.id"""
-            conditions = ["regs.event_id = %s", "rparts.status = %s"]
-            params.append(const.RegistrationPartStati.participant)
-        elif persona_id:
-            conditions.append("persona_id = %s")
-            params.append(persona_id)
-        if conditions:
-            query += " WHERE " + " AND ".join(conditions)
+        if persona_ids:
+            conditions.append("persona_id = ANY(%s)")
+            params.append(persona_ids)
+        query += " WHERE " + " AND ".join(conditions)
+        data = self.query_all(rs, query, params)
+        return {e['id']: e['persona_id'] for e in data}
+
+    @access("event", "ml_admin")
+    def list_registrations(self, rs: RequestState, event_id: int, persona_id: int = None
+                           ) -> Dict[int, int]:
+        """Manual singularization of list_registrations_personas
+
+        Handles default values properly.
+        """
+        if persona_id:
+            return self.list_registrations_personas(rs, event_id, {persona_id})
+        else:
+            return self.list_registrations_personas(rs, event_id)
+
+    @access("event")
+    def list_participants(self, rs: RequestState, event_id: int) -> Dict[int, int]:
+        """List all participants of an event.
+
+        Just participants of this event are returned and the requester himself must
+        have the status 'participant'.
+
+        :returns: Mapping of registration ids to persona_ids.
+        """
+        event_id = affirm(vtypes.ID, event_id)
+
+        # In this case, privilege check is performed afterwards since it depends on
+        # the result of the query.
+        query = """SELECT DISTINCT
+            regs.id, regs.persona_id
+        FROM
+            event.registrations AS regs
+            LEFT OUTER JOIN
+                event.registration_parts AS rparts
+            ON rparts.registration_id = regs.id"""
+        conditions = ["regs.event_id = %s", "rparts.status = %s"]
+        params = [event_id, const.RegistrationPartStati.participant]
+        query += " WHERE " + " AND ".join(conditions)
         data = self.query_all(rs, query, params)
         ret = {e['id']: e['persona_id'] for e in data}
-        if is_limited and rs.user.persona_id not in ret.values():
+
+        if not (rs.user.persona_id in ret.values()
+                or self.is_orga(rs, event_id=event_id)
+                or self.is_admin(rs)):
             raise PrivilegeError(n_("Not privileged."))
         return ret
 
     @access("persona")
-    def check_registration_status(
-            self, rs: RequestState, persona_id: int, event_id: int,
-            stati: Collection[const.RegistrationPartStati]) -> bool:
+    def check_registrations_status(
+            self, rs: RequestState, persona_ids: Collection[int], event_id: int,
+            stati: Collection[const.RegistrationPartStati]) -> Dict[int, bool]:
         """Check if any status for a given event matches one of the given stati.
 
         This is mostly used to determine mailinglist eligibility. Thus,
@@ -2672,28 +2713,40 @@ class EventBackend(AbstractBackend):
         A user may do this for themselves, an orga for their event and an
         event or ml admin for every user.
         """
+        persona_ids = affirm_set(vtypes.ID, persona_ids)
         event_id = affirm(vtypes.ID, event_id)
         stati = affirm_set(const.RegistrationPartStati, stati)
 
+        # By default, assume no participation.
+        ret = {anid: False for anid in persona_ids}
+
         # First, rule out people who can not participate at any event.
-        if (persona_id == rs.user.persona_id and
+        if (persona_ids == {rs.user.persona_id} and
                 "event" not in rs.user.roles):
-            return False
+            return ret
 
         # Check if eligible to check registration status for other users.
-        if not (persona_id == rs.user.persona_id
+        if not (persona_ids == {rs.user.persona_id}
                 or self.is_orga(rs, event_id=event_id)
                 or self.is_admin(rs)
                 or "ml_admin" in rs.user.roles):
             raise PrivilegeError(n_("Not privileged."))
 
-        registration_ids = self.list_registrations(
-            rs, event_id, persona_id)
+        registration_ids = self.list_registrations_personas(rs, event_id, persona_ids)
         if not registration_ids:
-            return False
-        reg_id = unwrap(registration_ids.keys())
-        reg = self.get_registration(rs, reg_id)
-        return any(part['status'] in stati for part in reg['parts'].values())
+            return {anid: False for anid in persona_ids}
+
+        registrations = self.get_registrations(rs, registration_ids)
+        ret.update({reg['persona_id']:
+                        any(part['status'] in stati for part in reg['parts'].values())
+                    for reg in registrations.values()})
+        return ret
+
+    class _GetRegistrationStatusProtocol(Protocol):
+        def __call__(self, rs: RequestState, persona_id: int, event_id: int,
+                     stati: Collection[const.RegistrationPartStati]) -> bool: ...
+    check_registration_status: _GetRegistrationStatusProtocol = singularize(
+        check_registrations_status, "persona_ids", "persona_id")
 
     @access("event")
     def get_registration_map(self, rs: RequestState, event_ids: Collection[int]
@@ -2741,7 +2794,7 @@ class EventBackend(AbstractBackend):
                 if not part['waitlist_field']:
                     ret[part_id] = None
                     continue
-                field = event['fields'][part['waitlist_field']]
+                field_name = event['fields'][part['waitlist_field']]['field_name']
                 query = ("SELECT reg.id, rparts.status"
                          " FROM event.registrations AS reg"
                          " LEFT OUTER JOIN event.registration_parts AS rparts"
@@ -2749,9 +2802,9 @@ class EventBackend(AbstractBackend):
                          " WHERE rparts.part_id = %s AND rparts.status = %s")
                 data = self.query_all(rs, query, (part_id, waitlist))
                 ret[part_id] = xsorted(
-                    (reg['id'] for reg in data), key=lambda r_id:
-                    (fields_by_id[r_id].get(field['field_name'], 0), r_id))  # pylint: disable=cell-var-from-loop
-        return ret
+                    (reg['id'] for reg in data),
+                    key=lambda r_id: (fields_by_id[r_id].get(field_name, 0) or 0, r_id))  # pylint: disable=cell-var-from-loop
+            return ret
 
     @access("event")
     def get_waitlist(self, rs: RequestState, event_id: int,
@@ -3123,7 +3176,7 @@ class EventBackend(AbstractBackend):
                                                     fupdate)
             if 'parts' in data:
                 parts = data['parts']
-                if not (set(event['parts'].keys()) >= {x for x in parts}):
+                if not event['parts'].keys() >= parts.keys():
                     raise ValueError(n_("Non-existing parts specified."))
                 existing = {e['part_id']: e['id'] for e in self.sql_select(
                     rs, "event.registration_parts", ("id", "part_id"),
@@ -3443,6 +3496,65 @@ class EventBackend(AbstractBackend):
         calculate_fees, "registration_ids", "registration_id")
 
     @access("event")
+    def book_fees(self, rs: RequestState, event_id: int, data: Collection[CdEDBObject],
+                  ) -> Tuple[bool, Optional[int]]:
+        """Book all paid fees.
+
+        :returns: Success information and
+
+          * for positive outcome the number of recorded transfers
+          * for negative outcome the line where an exception was triggered
+            or None if it was a DB serialization error
+        """
+        data = affirm_array(vtypes.FeeBookingEntry, data)
+
+        if (not self.is_orga(rs, event_id=event_id)
+                and not self.is_admin(rs)):
+            raise PrivilegeError(n_("Not privileged."))
+        self.assert_offline_lock(rs, event_id=event_id)
+
+        index = 0
+        # noinspection PyBroadException
+        try:
+            with Atomizer(rs):
+                count = 0
+                all_reg_ids = {datum['registration_id'] for datum in data}
+                all_regs = self.get_registrations(rs, all_reg_ids)
+                if any(reg['event_id'] != event_id for reg in all_regs.values()):
+                    raise ValueError(n_("Mismatched registrations,"
+                                        " not associated with the event."))
+                for index, datum in enumerate(data):
+                    reg_id = datum['registration_id']
+                    update = {
+                        'id': reg_id,
+                        'payment': datum['date'],
+                        'amount_paid': all_regs[reg_id]['amount_paid']
+                                       + datum['amount'],
+                    }
+                    change_note = "{} am {} gezahlt.".format(
+                        money_filter(datum['amount']),
+                        date_filter(datum['original_date'], lang="de"))
+                    count += self.set_registration(rs, update, change_note)
+        except psycopg2.extensions.TransactionRollbackError:
+            # We perform a rather big transaction, so serialization errors
+            # could happen.
+            return False, None
+        except Exception:
+            # This blanket catching of all exceptions is a last resort. We try
+            # to do enough validation, so that this should never happen, but
+            # an opaque error (as would happen without this) would be rather
+            # frustrating for the users -- hence some extra error handling
+            # here.
+            self.logger.error(glue(
+                ">>>\n>>>\n>>>\n>>> Exception during fee transfer processing",
+                "<<<\n<<<\n<<<\n<<<"))
+            self.logger.exception("FIRST AS SIMPLE TRACEBACK")
+            self.logger.error("SECOND TRY CGITB")
+            self.cgitb_log()
+            return False, index
+        return True, count
+
+    @access("event")
     def check_orga_addition_limit(self, rs: RequestState,
                                   event_id: int) -> bool:
         """Implement a rate limiting check for orgas adding persons.
@@ -3531,6 +3643,12 @@ class EventBackend(AbstractBackend):
                 change_note=title)
 
         return ret
+
+    class _RCWLodgementGroupProtocol(Protocol):
+        def __call__(self, rs: RequestState, data: CdEDBObject
+                     ) -> DefaultReturnCode: ...
+    rcw_lodgement_group: _RCWLodgementGroupProtocol = read_conditional_write_composer(
+        get_lodgement_group, set_lodgement_group, id_param_name='group_id')
 
     @access("event")
     def create_lodgement_group(self, rs: RequestState,
@@ -3803,11 +3921,10 @@ class EventBackend(AbstractBackend):
                     {"type": "lodgement", "block": blockers.keys()})
         return ret
 
-    @access("event")
+    @access("event", "droid_quick_partial_export")
     def get_questionnaire(self, rs: RequestState, event_id: int,
                           kinds: Collection[const.QuestionnaireUsages] = None
-                          ) -> Dict[const.QuestionnaireUsages,
-                                    List[CdEDBObject]]:
+                          ) -> CdEDBQuestionnaire:
         """Retrieve the questionnaire rows for a specific event.
 
         Rows are seperated by kind. Specifying a kinds will get you only rows
@@ -3836,8 +3953,7 @@ class EventBackend(AbstractBackend):
 
     @access("event")
     def set_questionnaire(self, rs: RequestState, event_id: int,
-                          data: Optional[Dict[const.QuestionnaireUsages,
-                                              List[CdEDBObject]]]) -> DefaultReturnCode:
+                          data: Optional[CdEDBQuestionnaire]) -> DefaultReturnCode:
         """Replace current questionnaire rows for a specific event, by kind.
 
         This superseeds the current questionnaire for all given kinds.
@@ -3855,7 +3971,7 @@ class EventBackend(AbstractBackend):
                     if 'pos' in e:
                         del e['pos']
             # FIXME what is the correct type here?
-            data = affirm(vtypes.Questionnaire, current,  # type: ignore
+            data = affirm(vtypes.Questionnaire, current,  # type: ignore[assignment]
                           field_definitions=event['fields'],
                           fee_modifiers=event['fee_modifiers'])
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
@@ -4181,6 +4297,7 @@ class EventBackend(AbstractBackend):
                 rs, "event.course_choices",
                 ("registration_id", "track_id", "course_id", "rank"),
                 registrations.keys(), entity_key="registration_id")
+            questionnaire = self.get_questionnaire(rs, event_id)
             persona_ids = tuple(reg['persona_id']
                                 for reg in registrations.values())
             personas = self.core.get_event_users(rs, persona_ids, event_id)
@@ -4289,6 +4406,20 @@ class EventBackend(AbstractBackend):
             del field['event_id']
             del field['id']
         export_event['fields'] = new_fields
+        new_questionnaire = {
+            str(usage): rows
+            for usage, rows in questionnaire.items()
+        }
+        for usage, rows in new_questionnaire.items():
+            for q in rows:
+                if q['field_id']:
+                    q['field_name'] = event['fields'][q['field_id']]['field_name']
+                else:
+                    q['field_name'] = None
+                del q['pos']
+                del q['kind']
+                del q['field_id']
+        export_event['questionnaire'] = new_questionnaire
         ret['event'] = export_event
         # personas
         for reg_id, registration in ret['registrations'].items():
@@ -4680,3 +4811,24 @@ class EventBackend(AbstractBackend):
                 self.event_log(rs, const.EventLogCodes.event_partial_import,
                                data['id'], change_note=data.get('summary'))
         return result, total_delta
+
+    @access("event")
+    def questionnaire_import(self, rs: RequestState, event_id: int,
+                             fields: CdEDBObjectMap, questionnaire: CdEDBQuestionnaire,
+                             ) -> DefaultReturnCode:
+        """Special import for custom datafields and questionnaire rows."""
+        event_id = affirm(vtypes.ID, event_id)
+        # validation of input is delegated to the setters, because it is rather
+        # involved and dependent on each other.
+        # Do not allow special use of `set_questionnaire` for deleting everything.
+        if questionnaire is None:
+            raise ValueError(n_(
+                "Cannot use questionnaire import to delete questionnaire."))
+        if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
+            raise PrivilegeError(n_("Not privileged."))
+        self.assert_offline_lock(rs, event_id=event_id)
+
+        with Atomizer(rs):
+            ret = self.set_event(rs, {'id': event_id, 'fields': fields})
+            ret *= self.set_questionnaire(rs, event_id, questionnaire)
+        return ret

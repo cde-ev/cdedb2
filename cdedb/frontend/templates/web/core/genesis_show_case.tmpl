@@ -4,16 +4,21 @@
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans given_names=ambience['genesis_case']["given_names"], family_name=ambience['genesis_case']["family_name"] %}
-        Account Request of {{ given_names }} {{ family_name }}
+    {# Since the dataset is no full persona (esp. it does not contain a display_name entry), we can not use the
+       util.persona_name makro here. #}
+    {% trans name="%s %s"|format(ambience['genesis_case']['given_names'], ambience['genesis_case']['family_name']) %}
+        Account Request of {{ name }}
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("core/genesis_list_cases"), gettext("Account Requests")) }}
+{# Since the dataset is no full persona (esp. it does not contain a display_name entry), we can not use the
+   util.persona_name makro here. #}
 {{ util.breadcrumb_link(cdedblink("core/genesis_show_case"),
-                        gettext("Details of %(given_names)s %(family_name)s")|format(
-                            given_names=ambience['genesis_case']["given_names"], family_name=ambience['genesis_case']["family_name"]),
+                        gettext("Details of %(name)s")|format(
+                            name="%s %s"|format(ambience['genesis_case']['given_names'],
+                                                ambience['genesis_case']['family_name'])),
                         active="True", icon="user") }}
 {% endblock %}
 {% block content %}
@@ -56,6 +61,8 @@
     <dl class="dl-horizontal">
         <dt>{% trans %}Name{% endtrans %}</dt>
         <dd id="given-names">
+            {# We don't use util.person_name() here, b/c a genesis case is no full persona object, esp. it misses a
+               'display_name' entry #}
             {{ ambience['genesis_case']['given_names'] }} {{ ambience['genesis_case']['family_name'] }}
         </dd>
         {% if ambience['genesis_case']['birth_name'] %}
@@ -99,12 +106,23 @@
         {% endif %}
     </dl>
 
-    <div style="margin-bottom: 8px;">
-        {% if ambience['genesis_case']['attachment_hash'] %}
-            {{ util.href(cdedblink("core/genesis_get_attachment", {'attachment_hash': ambience['genesis_case']['attachment_hash']}),
-                        gettext("Download Attachment"), aclass="btn btn-info", icon="download") }}
-        {% endif %}
-    </div>
+    {% if ambience['genesis_case']['realm'] == 'cde' or ambience['genesis_case']['attachment_hash'] %}
+        <h4 class="heading-underline">{% trans %}Academy Information{% endtrans %}</h4>
+        <dl class="dl-horizontal">
+            <dt>{% trans %}Past Event{% endtrans %}</dt>
+            <dd>{{ pevent['title'] or "–" }}</dd>
+            <dt>{% trans %}Course{% endtrans %}</dt>
+            <dd>{{ pcourse['title'] or "–" }}</dd>
+            <dt>{% trans %}Attachment{% endtrans %}</dt>
+            <dd>{% if ambience['genesis_case']['attachment_hash'] %}
+                {{ util.href(cdedblink("core/genesis_get_attachment", {'attachment_hash': ambience['genesis_case']['attachment_hash']}),
+                             gettext("Download Attachment"), icon="download") }}
+                {% else %}
+                    –
+                {% endif %}
+            </dd>
+        </dl>
+    {% endif %}
 
     <div class="button-par">
         {% if ambience['genesis_case']['case_status'] == enums['GenesisStati'].to_review %}

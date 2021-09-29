@@ -11,8 +11,10 @@ Persona = NewType("Persona", object)
 # Is expected to have an `allow_unsub` attribute.
 ML = NewType("ML", object)
 
+
 class PrivilegeError(RuntimeError):
     """Exception for signalling missing privileges."""
+
 
 class ListManager:
     def __init__(self) -> None:
@@ -26,7 +28,7 @@ class ListManager:
     def get_implicit_subscribers(self, ml: ML) -> Collection[Persona]: ...
 
     def get_subscription_states(self, ml: ML, states: Collection[SubscriptionState],
-                                 ) -> Dict[Persona, SubscriptionState]: ...
+                                ) -> Dict[Persona, SubscriptionState]: ...
 
     def get_subscription(self, persona: Persona, ml: ML) -> SubscriptionState: ...
 
@@ -79,7 +81,7 @@ class ListManager:
             state = old_subscribers[persona]
             if self.subman.is_obsolete(policy=policy, old_state=state,
                                        is_implied=persona in new_implicits):
-                datum =  persona, ml, SubscriptionState.none
+                datum = persona, ml, SubscriptionState.none
                 delete.append(datum)
 
         # Remove those who may not stay subscribed.

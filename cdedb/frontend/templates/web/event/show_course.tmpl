@@ -1,6 +1,7 @@
 {% extends "web/event/base.tmpl" %}
 {% set sidenav_active='event_course_stats' %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/event/generic.tmpl" as generic_event with context %}
 {% block scripts %}
     {{ util.cdedb_script('cdedb_helper.js') }}
 {% endblock %}
@@ -18,24 +19,22 @@
             icon='book') }}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {% trans nr=ambience['course']['nr'], course=ambience['course']['shortname'] %}
-            Course {{ nr }}: {{ course }}
-        {% endtrans %}
-    </h1>
+    {{ util.context_heading(gettext("Course %(nr)s: %(course)s")|format(nr=ambience['course']['nr'],
+                                                                        course=ambience['course']['shortname']),
+                            ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
     <div class="subtitle">
         {{ ambience['course']['title'] }}
     </div>
 {% endblock %}
 
 {% block content %}
-    <div class="p">
+    <div class="p button-par">
         {{ util.href(cdedblink('event/change_course_form'), gettext("Edit"), readonly=is_locked,
                      aclass="btn btn-sm btn-warning", icon="pen") }}
         {{ util.href(cdedblink('event/manage_attendees_form'), gettext("Manage Attendees"), readonly=is_locked,
                      aclass="btn btn-sm btn-warning", icon="users") }}
         {{ util.href(util.mailto(to="; ".join(instructor_emails)), gettext("Email to course instructors"),
-                            icon="envelope", aclass="btn btn-sm btn-default", readonly=instructor_emails,
+                            icon="envelope", aclass="btn btn-sm btn-default", readonly=not instructor_emails,
                             title=(gettext("Send Mail to all course instructors.")
                                    if instructor_emails else
                                    gettext("No course instructors / email addresses available."))) }}
@@ -52,26 +51,7 @@
                     {% if field['association'] == enums['FieldAssociations'].course %}
                         <dt>{{ field['field_name'] }}</dt>
                         <dd>
-                            {% if field['entries'] %}
-                                {% for value, description in field['entries'] %}
-                                    {% if ambience['course']['fields'].get(field['field_name']) == value %}
-                                        {{ description }}
-                                    {% endif %}
-                                {% endfor %}
-                            {% else %}
-                                {% if field['kind'] == enums['FieldDatatypes'].bool %}
-                                    {{ util.deko_checkbox(
-                                        checked=ambience['course']['fields'].get(field['field_name'])) }}
-                                {% elif field['kind'] == enums['FieldDatatypes'].date %}
-                                    {{ ambience['course']['fields'].get(field['field_name'])
-                                       |date(lang=lang, passthrough=True) }}
-                                {% elif field['kind'] == enums['FieldDatatypes'].datetime %}
-                                    {{ ambience['course']['fields'].get(field['field_name'])
-                                       |datetime(lang=lang, passthrough=True) }}
-                                {% else %}
-                                    {{ ambience['course']['fields'].get(field['field_name'])|linebreaks }}
-                                {% endif %}
-                            {% endif %}
+                            {{ generic_event.display_field(field, ambience['course']['fields'].get(field['field_name'])) }}
                         </dd>
                     {% endif %}
                 {% endfor %}
@@ -79,7 +59,7 @@
 
     {% if ambience['course']['notes'] %}
         {% call util.bootstrap_panel(title=gettext("Orga-Notes"), icon="tag",
-                                     aclass="panel panel-default panel-condensed") %}
+                                     aclass="panel-default panel-condensed") %}
             {{ ambience['course']['notes']|md }}
         {% endcall %}
     {% endif %}
@@ -141,10 +121,8 @@
                                 <li>
                                     {{ util.href(cdedblink('event/show_registration',
                                                            {'registration_id': registration_id}),
-                                                 "{} {}".format(personas[registrations[registration_id]
-                                                        ['persona_id']]['given_names'],
-                                                                personas[registrations[registration_id]
-                                                        ['persona_id']]['family_name'])) }}
+                                                 util.persona_name(personas[registrations[registration_id]
+                                                        ['persona_id']])) }}
                                     {% if registrations[registration_id]['tracks'][track_id]['course_instructor']
                                             == ambience['course']['id'] %}
                                         ({% trans %}Instr.{% endtrans %})

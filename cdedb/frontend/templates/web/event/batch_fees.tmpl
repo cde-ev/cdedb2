@@ -13,10 +13,7 @@
     {{ util.breadcrumb_link(cdedblink("event/batch_fees"), gettext("Enter Money Transfers"), active=True) }}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {% trans %}Enter Money Transfers{% endtrans %}
-        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Enter Money Transfers"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('event/batch_fees') }}" method="POST" id="batchfeesform" enctype="multipart/form-data">
@@ -54,9 +51,11 @@
                 <span  class="row-key" data-row="{{ dataset['lineno'] }}">
                     {% trans lineno=dataset['lineno'] %}Line {{ lineno }}{% endtrans %}
                 </span>:
-                {% trans amount=dataset['amount']|money(lang=lang), given_names=dataset['raw']['given_names'],
-                         family_name=dataset['raw']['family_name'] -%}
-                    {{ amount }} for {{ given_names }} {{ family_name }}
+                {# We don't use util.person_name() here, b/c dataset['raw'] is no full persona object, esp. it misses a
+                   'display_name' entry #}
+                {% trans amount=dataset['amount']|money(lang=lang), name=("%s %s"|format(
+                        dataset['raw']['given_names'], dataset['raw']['family_name'])) -%}
+                    {{ amount }} for {{ name }}
                 {% endtrans %}
             </strong>
             <div class="batch-line-body">

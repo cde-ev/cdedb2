@@ -15,10 +15,8 @@
 {{ util.breadcrumb_link(cdedblink("event/participant_list"), gettext("Participant List"), active=True) }}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {% trans %}Participant List{% endtrans %}
-        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Participant List"), ambience['event']['title'],
+                            'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 
 
@@ -110,10 +108,10 @@
                     {% with persona = personas[registrations[registration_id]['persona_id']] %}
                     <tr id="row-{{ loop.index }}">
                         {% if persona['is_searchable'] and persona['is_member'] %}
-                            <td>{{ profile_link(persona, persona['given_names']) }}</td>
+                            <td>{{ profile_link(persona, util.persona_name(persona, with_family_name=False)) }}</td>
                             <td>{{ profile_link(persona, persona['family_name']) }}</td>
                         {% else %}
-                            <td>{{ persona['given_names'] }}</td>
+                            <td>{{ util.persona_name(persona, with_family_name=False) }}</td>
                             <td>{{ persona['family_name'] }}</td>
                         {% endif %}
                         <td>{{ util.username_mailto(persona) }}</td>
@@ -153,10 +151,10 @@
                     {% with persona = personas[registrations[registration_id]['persona_id']] %}
                     <tr id="row-{{ loop.index }}">
                         {% if persona['is_searchable'] and persona['is_member'] %}
-                            <td>{{ profile_link(persona, persona['given_names']) }}</td>
+                            <td>{{ profile_link(persona, util.persona_name(persona, with_family_name=False)) }}</td>
                             <td>{{ profile_link(persona, persona['family_name']) }}</td>
                         {% else %}
-                            <td>{{ persona['given_names'] }}</td>
+                            <td>{{ util.persona_name(persona, with_family_name=False) }}</td>
                             <td>{{ persona['family_name'] }}</td>
                         {% endif %}
                         <td>{{ util.username_mailto(persona) }}</td>

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# pylint: disable=missing-module-docstring
 
 import copy
 import datetime
@@ -509,14 +510,15 @@ class TestCoreBackend(BackendTest):
                 if persona[key] is None:
                     persona[key] = True
         merge_dicts(data, persona)
-        self.assertLess(0, self.core.change_persona_realms(self.key, data))
+        change_note = "Bereichsänderung"
+        self.assertLess(0, self.core.change_persona_realms(self.key, data, change_note))
         log_entry = {
             'id': 1001,
             'ctime': nearly_now(),
             'code': const.CoreLogCodes.realm_change,
             'persona_id': persona_id,
             'submitted_by': self.user['id'],
-            'change_note': 'Bereiche geändert.'
+            'change_note': change_note,
         }
         _, expected_log = self.core.retrieve_log(self.key)
         self.assertIn(log_entry, expected_log)
@@ -653,6 +655,8 @@ class TestCoreBackend(BackendTest):
             'reviewer': None,
             'attachment_hash': None,
             'birth_name': None,
+            'pevent_id': None,
+            'pcourse_id': None,
         })
         value = self.core.genesis_get_case(self.key, case_id)
         del value['ctime']
@@ -729,6 +733,8 @@ class TestCoreBackend(BackendTest):
             'telephone': None,
             'attachment_hash': None,
             'birth_name': None,
+            'pevent_id': None,
+            'pcourse_id': None,
         })
         value = self.core.genesis_get_case(self.key, case_id)
         del value['ctime']
@@ -793,6 +799,8 @@ class TestCoreBackend(BackendTest):
             'location': "Marcuria",
             'country': "AQ",
             'attachment_hash': attachment_hash,
+            'pevent_id': None,
+            'pcourse_id': None,
         }
         self.assertFalse(self.core.genesis_attachment_usage(
             self.key, attachment_hash))
@@ -1065,11 +1073,8 @@ class TestCoreBackend(BackendTest):
         self.core.archive_persona(self.key, 4, "Archived for testing.")
         self.core.dearchive_persona(self.key, 4, new_username="daniel@example.cde")
         # The following call sometimes failed with the error "editing
-        # archived members impossbile". The solution may be to add some
-        # sleep to let the DB settle, but this seems kind of bogus.
-        #
-        # import time
-        # time.sleep(1)
+        # archived members impossbile". This could be pampered over with a
+        # sleep to let the DB settle, but this would only hide a real problem.
         data = {
             'id': 4,
             'is_active': True,

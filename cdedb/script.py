@@ -10,12 +10,11 @@ with the production environment.
 """
 
 import getpass
-import gettext
+import os
 import tempfile
 import time
 from types import TracebackType
-from typing import Any, Optional, Set, Type, cast
-from typing_extensions import Protocol
+from typing import Any, Optional, Protocol, Type
 
 import psycopg2
 import psycopg2.extensions
@@ -27,52 +26,26 @@ from cdedb.backend.core import CoreBackend
 from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.past_event import PastEventBackend
-from cdedb.common import ALL_ROLES, PathLike, RequestState, make_proxy
+from cdedb.config import Config
+from cdedb.common import ALL_ROLES, PathLike, RequestState, User, make_proxy
 from cdedb.database.connection import Atomizer, IrradiatedConnection
+from cdedb.frontend.common import setup_translations
 
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
 
-
-class User:
-    """Mock User (with all roles) to allow backend access."""
-    def __init__(self, persona_id: int):
-        self.persona_id = persona_id
-        self.roles = ALL_ROLES
-        self.orga: Set[int] = set()
-        self.moderator: Set[int] = set()
-        self.presider: Set[int] = set()
-        self.username = None
-        self.display_name = None
-        self.given_names = None
-        self.family_name = None
+_CONFIG = Config()
+_TRANSLATIONS = setup_translations(_CONFIG)
 
 
-class MockRequestState:
-    """Mock RequestState to allow backend usage."""
-    def __init__(self, persona_id: int, conn: IrradiatedConnection):
-        self.ambience = None
-        self.sessionkey = None
-        self.user = User(persona_id)
-        self.request = None
-        self.notifications = None
-        self.urls = None
-        self.requestargs = None
-        self.urlmap = None
-        self.values = None
-        self.lang = "de"
-        self.gettext = gettext.translation('cdedb', languages=["de"],
-                                           localedir="/cdedb2/i18n").gettext
-        self.ngettext = gettext.translation('cdedb', languages=["de"],
-                                            localedir="/cdedb2/i18n").ngettext
-        self._coders = None
-        self.begin = None
-        self.conn = conn
-        self._conn = conn
-        self.is_quiet = False
-        self._errors = None
-        self.validation_appraised = True
-        self.csrf_alert = False
+__all__ = ['setup', 'make_backend', 'Script', 'DryRunError']
+
+
+def mock_user(persona_id: int) -> User:
+    return User(
+        persona_id=persona_id,
+        roles=ALL_ROLES,
+    )
 
 
 class _RSFactory(Protocol):
@@ -81,7 +54,8 @@ class _RSFactory(Protocol):
 
 
 def setup(persona_id: int, dbuser: str, dbpassword: str,
-          check_system_user: bool = True, dbname: str = 'cdb'
+          check_system_user: bool = True, dbname: str = 'cdb',
+          cursor: psycopg2.extensions.cursor = psycopg2.extras.RealDictCursor,
           ) -> _RSFactory:
     """This sets up the database.
 
@@ -97,13 +71,16 @@ def setup(persona_id: int, dbuser: str, dbpassword: str,
     if check_system_user and getpass.getuser() != "www-data":
         raise RuntimeError("Must be run as user www-data.")
 
+    # Allow overriding the dbname via environment variable for evolution trial.
+    dbname = os.environ.get('EVOLUTION_TRIAL_OVERRIDE_DBNAME', dbname)
+
     connection_parameters = {
             "dbname": dbname,
             "user": dbuser,
             "password": dbpassword,
             "port": 5432,
             "connection_factory": IrradiatedConnection,
-            "cursor_factory": psycopg2.extras.RealDictCursor
+            "cursor_factory": cursor,
     }
     try:
         cdb = psycopg2.connect(**connection_parameters, host="localhost")
@@ -114,13 +91,28 @@ def setup(persona_id: int, dbuser: str, dbpassword: str,
     cdb.set_client_encoding("UTF8")
 
     def rs(persona_id: int = persona_id) -> RequestState:
-        return cast(RequestState, MockRequestState(persona_id, cdb))
+        rs = RequestState(
+            sessionkey=None,
+            apitoken=None,
+            user=mock_user(persona_id),
+            request=None,  # type: ignore[arg-type]
+            notifications=[],
+            mapadapter=None,  # type: ignore[arg-type]
+            requestargs=None,
+            errors=[],
+            values=None,
+            begin=None,
+            lang="de",
+            translations=_TRANSLATIONS,
+        )
+        rs.conn = rs._conn = cdb
+        return rs
 
     return rs
 
 
 # No return type annotation on purpose, because it confuses IDE autocompletion.
-def make_backend(realm: str, proxy: bool = True, *,  # type: ignore
+def make_backend(realm: str, proxy: bool = True, *,  # type: ignore[no-untyped-def]
                  configpath: PathLike = None, **config: Any):
     """Instantiate backend objects and wrap them in proxy shims.
 
@@ -172,14 +164,14 @@ class Script(Atomizer):
     start_time: float
 
     def __init__(self, rs: RequestState, *, dry_run: bool = True) -> None:
-        self.dry_run = dry_run
+        self.dry_run = bool(os.environ.get('EVOLUTION_TRIAL_OVERRIDE_DRY_RUN', dry_run))
         super().__init__(rs)
 
     def __enter__(self) -> IrradiatedConnection:
         self.start_time = time.monotonic()
         return super().__enter__()
 
-    def __exit__(self, exc_type: Optional[Type[Exception]],  # type: ignore
+    def __exit__(self, exc_type: Optional[Type[Exception]],  # type: ignore[override]
                  exc_val: Optional[Exception],
                  exc_tb: Optional[TracebackType]) -> bool:
         """Calculate time taken and provide success message.

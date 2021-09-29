@@ -12,10 +12,7 @@
 {{ util.breadcrumb_link(cdedblink("event/partial_import_form"), gettext("Partial Import"), active=True) }}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {% trans %}Partial Import{% endtrans %}
-        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Partial Import"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 
 {# The following macro generates the diff table for a changed registration, lodgement or course.
@@ -102,7 +99,7 @@
             <div class="row">
                 <div class="col-md-8">
                     {% call util.bootstrap_panel(gettext("Changed registrations"),
-                                                 aclass='panel panel-info details-panel',
+                                                 aclass='panel-info details-panel',
                                                  icon='user', anid='box-changed-registrations') %}
                         {% if summary['changed_registrations']|length > 3 %}
                             <div class="form-group details-toggles hidden">
@@ -119,8 +116,7 @@
                                 <li>
                                     <details>
                                         <summary>
-                                            {{ personas[registrations[reg_id]['persona_id']]['given_names'] }}
-                                            {{ personas[registrations[reg_id]['persona_id']]['family_name'] }}
+                                            {{ util.persona_name(personas[registrations[reg_id]['persona_id']]) }}
                                         </summary>
                                         {{ diff_table(reg_diff, reg_titles, reg_choices) }}
                                     </details>
@@ -130,7 +126,7 @@
                     {% endcall %}
                 </div>
                 <div class="col-md-4">
-                    {% call util.bootstrap_panel(gettext("Changed registration attributes"), aclass='panel panel-info',
+                    {% call util.bootstrap_panel(gettext("Changed registration attributes"), aclass='panel-info',
                                                  icon='user', anid='box-changed-registration-fields') %}
                         <ul class="slim">
                             {% for field in summary['changed_registration_fields'] %}
@@ -146,13 +142,12 @@
             <!-- New registrations -->
             {% if summary['new_registration_ids'] %}
                 <div class="col-md-6">
-                    {% call util.bootstrap_panel(gettext("New registrations"), aclass='panel panel-success',
+                    {% call util.bootstrap_panel(gettext("New registrations"), aclass='panel-success',
                                                  icon='user', anid='box-new-registrations') %}
                         <ul class="slim">
                             {% for reg_id in summary['new_registration_ids'] %}
                                 <li>
-                                    {{ personas[delta['registrations'][reg_id]['persona_id']]['given_names'] }}
-                                    {{ personas[delta['registrations'][reg_id]['persona_id']]['family_name'] }}
+                                    {{ util.persona_name(personas[delta['registrations'][reg_id]['persona_id']]) }}
                                 </li>
                             {% endfor %}
                         </ul>
@@ -163,13 +158,12 @@
             <!-- Deleted registrations -->
             {% if summary['real_deleted_registration_ids'] %}
                 <div class="col-md-6">
-                    {% call util.bootstrap_panel(gettext("Deleted registrations"), aclass='panel panel-danger',
+                    {% call util.bootstrap_panel(gettext("Deleted registrations"), aclass='panel-danger',
                                                  icon='user', anid='box-deleted-registrations') %}
                         <ul class="slim">
                             {% for reg_id in summary['real_deleted_registration_ids'] %}
                                 <li>
-                                    {{ personas[registrations[reg_id]['persona_id']]['given_names'] }}
-                                    {{ personas[registrations[reg_id]['persona_id']]['family_name'] }}
+                                    {{ util.persona_name(personas[registrations[reg_id]['persona_id']]) }}
                                 </li>
                             {% endfor %}
                         </ul>
@@ -184,8 +178,7 @@
         {% if summary['changed_courses'] %}
             <div class="row">
                 <div class="col-md-8">
-                    {% call util.bootstrap_panel(gettext("Changed courses"),
-                                                 aclass='panel panel-info details-panel',
+                    {% call util.bootstrap_panel(gettext("Changed courses"), aclass='panel-info details-panel',
                                                  icon='book', anid='box-changed-courses') %}
                         {% if summary['changed_courses']|length > 3 %}
                             <div class="form-group details-toggles hidden">
@@ -217,7 +210,7 @@
                     {% endcall %}
                 </div>
                 <div class="col-md-4">
-                    {% call util.bootstrap_panel(gettext("Changed course attributes"), aclass='panel panel-info',
+                    {% call util.bootstrap_panel(gettext("Changed course attributes"), aclass='panel-info',
                                                  icon='book', anid='box-changed-course-fields') %}
                         <ul class="slim">
                             {% for field in summary['changed_course_fields'] %}
@@ -233,7 +226,7 @@
             <!-- New Courses-->
             {% if summary['new_course_ids'] %}
                 <div class="col-md-6">
-                    {% call util.bootstrap_panel(gettext("New courses"), aclass='panel panel-success', icon='book',
+                    {% call util.bootstrap_panel(gettext("New courses"), aclass='panel-success', icon='book',
                                                  anid='box-new-courses') %}
                         <ul class="slim">
                             {% for course_id in summary['new_course_ids'] %}
@@ -249,7 +242,7 @@
             <!-- Deleted Courses -->
             {% if summary['real_deleted_course_ids'] %}
                 <div class="col-md-6">
-                    {% call util.bootstrap_panel(gettext("Deleted courses"), aclass='panel panel-danger', icon='book',
+                    {% call util.bootstrap_panel(gettext("Deleted courses"), aclass='panel-danger', icon='book',
                                                  anid='box-deleted-courses') %}
                         <ul class="slim">
                             {% for course_id in summary['real_deleted_course_ids'] %}
@@ -270,8 +263,7 @@
         {% if summary['changed_lodgements'] %}
             <div class="row">
                 <div class="col-md-8">
-                    {% call util.bootstrap_panel(gettext("Changed lodgements"),
-                                                 aclass='panel panel-info details-panel',
+                    {% call util.bootstrap_panel(gettext("Changed lodgements"), aclass='panel-info details-panel',
                                                  icon='home', anid='box-changed-lodgements') %}
                         {% if summary['changed_lodgements']|length > 3 %}
                             <div class="form-group details-toggles hidden">
@@ -301,7 +293,7 @@
                     {% endcall %}
                 </div>
                 <div class="col-md-4">
-                    {% call util.bootstrap_panel(gettext("Changed lodgement attributes"), aclass='panel panel-info',
+                    {% call util.bootstrap_panel(gettext("Changed lodgement attributes"), aclass='panel-info',
                                                  icon='home', anid='box-changed-lodgement-fields') %}
                         <ul class="slim">
                             {% for field in summary['changed_lodgement_fields'] %}
@@ -317,7 +309,7 @@
             <!-- New Lodgements -->
             {% if summary['new_lodgement_ids'] %}
                 <div class="col-md-6">
-                    {% call util.bootstrap_panel(gettext("New lodgements"), aclass='panel panel-success', icon='home',
+                    {% call util.bootstrap_panel(gettext("New lodgements"), aclass='panel-success', icon='home',
                                                  anid='box-new-lodgements') %}
                         <ul class="slim">
                             {% for lodgement_id in summary['new_lodgement_ids'] %}
@@ -333,7 +325,7 @@
             <!-- Deleted Lodgements -->
             {% if summary['real_deleted_lodgement_ids'] %}
                 <div class="col-md-6">
-                    {% call util.bootstrap_panel(gettext("Deleted lodgements"), aclass='panel panel-danger',
+                    {% call util.bootstrap_panel(gettext("Deleted lodgements"), aclass='panel-danger',
                                                  icon='home', anid='box-deleted-lodgements') %}
                         <ul class="slim">
                             {% for lodgement_id in summary['real_deleted_lodgement_ids'] %}
@@ -351,7 +343,7 @@
     {% if (summary['changed_lodgement_groups']
            or summary['new_lodgement_group_ids']
            or summary['real_deleted_lodgement_group_ids']) %}
-        {% call util.bootstrap_panel(gettext("Lodgement Groups"), aclass='panel panel-info',
+        {% call util.bootstrap_panel(gettext("Lodgement Groups"), aclass='panel-info',
                                      icon='th-large', anid='box-lodgement-groups') %}
             <div class="row">
                 {% if summary['new_lodgement_group_ids'] %}

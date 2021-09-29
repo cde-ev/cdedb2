@@ -14,7 +14,7 @@
             {{ util.form_input_text(name="birth_name", label=gettext("Birth Name")) }}
         {% endif %}
         {{ util.form_input_text(name="name_supplement", label=gettext("Name Affix")) }}
-        {{ util.form_input_text(name="display_name", label=gettext("First Given Name")) }}
+        {{ util.form_input_text(name="display_name", label=gettext("Known as (Forename)")) }}
         {% if realm == "cde" %}
             {{ util.form_input_textarea(name="specialisation", label=gettext("Specialisation")) }}
             {{ util.form_input_textarea(name="affiliation", label=gettext("School, University, …")) }}
@@ -35,7 +35,7 @@
             {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone"), type="tel") }}
         {% endif %}
         {% if realm == "cde" %}
-            {{ util.form_input_text(name="weblink", label=gettext("WWW"), info=util.markdownhint) }}
+            {{ util.form_input_text(name="weblink", label=gettext("WWW"), markdown=True) }}
         {% endif %}
 
         {% if realm in ("cde", "event") %}
@@ -68,7 +68,7 @@
             {{ util.form_input_checkbox(name="paper_expuls", label=gettext("Printed exPuls"),
                                    anid="input_checkbox_is_searchable") }}
         {% endif %}
-        {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="7", info=util.markdownhint) }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="7", markdown=True) }}
 
 
         {{ util.form_input_submit(label=gettext("Create User"), cancellink=cdedblink("{}/user_search".format(realm))) }}
@@ -122,7 +122,7 @@
         "family_name": gettext("Family Name"),
         "birth_name": gettext("Birth Name"),
         "given_names": gettext("Given Names"),
-        "display_name": gettext("First Given Name"),
+        "display_name": gettext("Known as (Forename)"),
         "title": gettext("Title_[[of a persona]]"),
         "name_supplement": gettext("Name Affix"),
         "gender": gettext("Gender"),
@@ -194,7 +194,7 @@
         "family_name": gettext("Family Name"),
         "birth_name": gettext("Birth Name"),
         "given_names": gettext("Given Names"),
-        "display_name": gettext("First Given Name"),
+        "display_name": gettext("Known as (Forename)"),
         "title": gettext("Title_[[of a persona]]"),
         "name_supplement": gettext("Name Affix"),
         "gender": gettext("Gender"),

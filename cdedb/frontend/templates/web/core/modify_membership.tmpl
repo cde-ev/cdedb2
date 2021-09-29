@@ -1,17 +1,22 @@
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans given_names=ambience['persona']['given_names'], family_name=ambience['persona']['family_name'] %}
-    	Modify Memberhip for {{ given_names }} {{ family_name }}
+    {% trans name=util.persona_name(ambience['persona']) %}
+    	Modify Memberhip for {{ name }}
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), "{} {}".format(ambience['persona']['given_names'],
-                                                                                  ambience['persona']['family_name']),
-        icon="user") }}
+{{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), util.persona_name(ambience['persona']),
+                        icon="user") }}
 {{ util.breadcrumb_link(cdedblink("core/modify_membership"), gettext("Modify Membership"), active="True") }}
 {% endblock %}
+
+{% block heading %}
+    {{ util.context_heading(gettext("Modify Membership"), util.persona_name(ambience['persona']),
+                            'user', gettext("User")) }}
+{% endblock %}
+
 {% block content %}
    {% if ambience['persona']['is_member'] %}
         <p>

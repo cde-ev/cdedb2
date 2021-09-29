@@ -15,18 +15,10 @@
 {{ util.breadcrumb_link(cdedblink("event/change_registrations_form"), gettext("Edit"), active=True) }}
 {% endblock %}
 {% block heading %}
-    <h1 class="title">
-        {% trans %}Edit Registrations{% endtrans %}
-        <small>{{ util.make_icon('chalkboard-teacher') }} {{ ambience['event']['title'] }}</small>
-    </h1>
+    {{ util.context_heading(gettext("Edit Registrations"), ambience['event']['title'],
+                            'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 
-{% macro output_name(persona) %}
-    {{ persona['title'] }}
-    {{ persona['given_names'] }}
-    {{ persona['family_name'] }}
-    {{ persona['name_supplement'] }}
-{% endmacro %}
 {% macro form_input_optional(name='', label='', anid=none, info='') %}
     <div class="form-group {% if name in errors %}has-error{% endif %}">
         {% if label %}
@@ -84,7 +76,8 @@
         <h3 class="heading-underline">{% trans %}Registrations{% endtrans %}</h3>
         {% call util.form_input_general(label=gettext("Full Name"), displayerrors=False) %}
             {% for reg_id, reg in registrations.items() %}
-                {{ util.input_static(value=output_name(personas[reg['persona_id']])) }}
+                {{ util.input_static(value=util.persona_name(
+                       personas[reg['persona_id']], given_and_display_names=True, with_titles=True)) }}
             {% endfor %}
         {% endcall %}
 

@@ -82,7 +82,7 @@ def generate_event_registration_default_queries(
                     ("reg.id", True))
 
     all_part_stati_column = ",".join(
-        "part{0}.status".format(part_id) for part_id in event['parts'])
+        f"part{part_id}.status" for part_id in event['parts'])
 
     dokuteam_course_picture_fields_of_interest = [
         "persona.id", "persona.given_names", "persona.family_name"]
@@ -242,11 +242,13 @@ def generate_event_course_default_queries(
     :return: Dict of default queries
     """
 
+    takes_place = ",".join(f"track{anid}.takes_place" for anid in event["tracks"])
+
     queries = {
         n_("50_query_dokuteam_courselist"): Query(
             QueryScope.event_course, spec,
             ("course.nr", "course.shortname", "course.title"),
-            tuple(),
+            ((takes_place, QueryOperators.equal, True),),
             (("course.nr", True),)),
     }
 
@@ -340,6 +342,8 @@ _DEFAULTS = {
     "MAIL_DOMAIN": "db.cde-ev.de",
     # host to use for sending emails
     "MAIL_HOST": "localhost",
+    # email for internal system trouble notifications
+    "TROUBLESHOOTING_ADDRESS": "admin@cde-ev.de",
 
     # email for cde account requests
     "CDE_ADMIN_ADDRESS": "cde-admins@cde-ev.de",
@@ -351,7 +355,7 @@ _DEFAULTS = {
     "ASSEMBLY_ADMIN_ADDRESS": "vorstand@cde-ev.de",
 
     # email for privilege changes
-    "META_ADMIN_ADDRESS": "admin@lists.cde-ev.de",
+    "META_ADMIN_ADDRESS": "admin@cde-ev.de",
 
     # email for ballot tallies
     "BALLOT_TALLY_ADDRESS": "wahlbekanntmachung@lists.cde-ev.de",
@@ -644,7 +648,7 @@ class BasicConfig(Mapping[str, Any]):
     # noinspection PyUnresolvedReferences
     def __init__(self) -> None:
         try:
-            import cdedb.localconfig as config_mod
+            import cdedb.localconfig as config_mod  # pylint: disable=import-outside-toplevel
             config = {
                 key: getattr(config_mod, key)
                 for key in _BASIC_DEFAULTS.keys() & set(dir(config_mod))
@@ -679,7 +683,7 @@ class Config(BasicConfig):
         :param configpath: path to file with overrides
         """
         super().__init__()
-        _LOGGER.debug("Initialising Config with path {}".format(configpath))
+        _LOGGER.debug(f"Initialising Config with path {configpath}")
         self._configpath = configpath
         config_keys = _DEFAULTS.keys() | _BASIC_DEFAULTS.keys()
 
@@ -687,8 +691,9 @@ class Config(BasicConfig):
             spec = importlib.util.spec_from_file_location(
                 "primaryconf", str(configpath)
             )
+            if not spec:
+                raise ImportError
             primaryconf = importlib.util.module_from_spec(spec)
-            # noinspection PyUnresolvedReferences
             spec.loader.exec_module(primaryconf)  # type: ignore
             primaryconf = {
                 key: getattr(primaryconf, key)
@@ -699,7 +704,7 @@ class Config(BasicConfig):
 
         try:
             # noinspection PyUnresolvedReferences
-            import cdedb.localconfig as secondaryconf_mod
+            import cdedb.localconfig as secondaryconf_mod  # pylint: disable=import-outside-toplevel
             secondaryconf = {
                 key: getattr(secondaryconf_mod, key)
                 for key in config_keys & set(dir(secondaryconf_mod))
@@ -729,8 +734,9 @@ class SecretsConfig(Mapping[str, Any]):
             spec = importlib.util.spec_from_file_location(
                 "primaryconf", str(configpath)
             )
+            if not spec:
+                raise ImportError
             primaryconf = importlib.util.module_from_spec(spec)
-            # noinspection PyUnresolvedReferences
             spec.loader.exec_module(primaryconf)  # type: ignore
             primaryconf = {
                 key: getattr(primaryconf, key)
@@ -741,7 +747,7 @@ class SecretsConfig(Mapping[str, Any]):
 
         try:
             # noinspection PyUnresolvedReferences
-            import cdedb.localconfig as secondaryconf_mod
+            import cdedb.localconfig as secondaryconf_mod  # pylint: disable=import-outside-toplevel
             secondaryconf = {
                 key: getattr(secondaryconf_mod, key)
                 for key in _SECRECTS_DEFAULTS.keys() & set(

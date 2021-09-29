@@ -12,19 +12,23 @@ Host and port are automatically choosen like in the cdedb app itself.
 
 import argparse
 from pathlib import Path
+from pkgutil import resolve_name
 from typing import Union
 
 from cdedb.script import setup
 
 
 def execute_script(sql_input: Union[Path, str], *, dbuser: str, dbpassword: str,
-                   dbname: str) -> None:
+                   dbname: str, cursor: str, verbose: int) -> None:
+    factory = resolve_name(f"psycopg2.extras:{cursor}") if cursor else None
+
     with setup(
         persona_id=-1,
         dbuser=dbuser,
         dbpassword=dbpassword,
         dbname=dbname,
         check_system_user=False,
+        cursor=factory,
     )().conn as conn:
         conn.set_session(autocommit=True)
 
@@ -34,6 +38,13 @@ def execute_script(sql_input: Union[Path, str], *, dbuser: str, dbpassword: str,
                     sql_input = f.read()
 
             curr.execute(sql_input)
+            if verbose > 0:
+                if verbose > 1:
+                    print(curr.query)
+                    print(curr.statusmessage)
+                if curr.rowcount != -1:
+                    for x in curr:
+                        print(x)
 
 
 if __name__ == "__main__":
@@ -42,6 +53,7 @@ if __name__ == "__main__":
 
     general = parser.add_argument_group("General options")
     general.add_argument("--dbname", "-d", default="cdb")
+    general.add_argument("--verbose", "-v", action="count", default=0)
     group = general.add_mutually_exclusive_group(required=True)
     group.add_argument("--file", "-f", type=Path)
     group.add_argument("--command", "-c")
@@ -50,6 +62,7 @@ if __name__ == "__main__":
     connection.add_argument("--username", "-U", default="cdb")
     connection.add_argument(
         "--dbpassword", default="987654321098765432109876543210")
+    connection.add_argument("--cursor", default=None)
 
     args = parser.parse_args()
 
@@ -58,4 +71,6 @@ if __name__ == "__main__":
         dbuser=args.username,
         dbpassword=args.dbpassword,
         dbname=args.dbname,
+        cursor=args.cursor,
+        verbose=args.verbose,
     )

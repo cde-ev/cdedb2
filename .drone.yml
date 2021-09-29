@@ -38,20 +38,6 @@ steps:
   - docker build --file related/docker/Dockerfile-postgres --tag cdepostgres .
   - docker build --file related/docker/Dockerfile-cdedb --tag cdedb:20210705 .
   - docker build --file related/docker/Dockerfile-ldap --tag ldap:20210705 .
-- name: mypy
-  image: cdedb:20210705
-  pull: never # do not try to pull image from docker hub
-  depends_on:
-  - build images
-  commands:
-  - make mypy
-- name: lint
-  image: cdedb:20210705
-  pull: never # do not try to pull image from docker hub
-  depends_on:
-  - build images
-  commands:
-  - make lint
 - name: cdb # is used as the hostname for the container
   image: cdepostgres
   pull: never # do not try to pull image from docker hub
@@ -63,11 +49,48 @@ steps:
     path: /var/lib/postgresql/data
   depends_on:
   - build images
+- name: evolution-trial
+  image: cdedb:20210705
+  pull: never # do not try to pull image from docker hub
+  depends_on:
+    - cdb
+  commands:
+    - sleep 5
+    - make i18n-compile # needed for sample-data step.
+    - make sample-data # perform basic setup.
+    - make sql-test # create the necessary test database.
+    - bin/evolution-trial.sh origin/$DRONE_TARGET_BRANCH $DRONE_COMMIT
+- name: mypy
+  image: cdedb:20210705
+  pull: never # do not try to pull image from docker hub
+  depends_on:
+    - evolution-trial # wait for all git operations to be done
+  when:
+    status:
+    - failure
+    - success
+  commands:
+    - make mypy
+- name: lint
+  image: cdedb
+  pull: never # do not try to pull image from docker hub
+  depends_on:
+    - evolution-trial # wait for all git operations to be done
+  when:
+    status:
+    - failure
+    - success
+  commands:
+    - make lint
 - name: testsuite-setup
   image: cdedb:20210705
   pull: never # do not try to pull image from docker hub
   depends_on:
-  - cdb
+    - evolution-trial # wait for all git operations to be done
+  when:
+    status:
+      - failure
+      - success
   commands:
   - sleep 5
   - pg_isready --host=cdb --timeout=10 # wait for database to come online
@@ -160,4 +183,4 @@ trigger:
   branch:
   - master
   - stable
-  - ci/*
+#  - ci/*

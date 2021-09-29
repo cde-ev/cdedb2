@@ -164,10 +164,48 @@
 {%- endmacro %}
 
 
-
-{% macro show_attachments(edit_mode) -%}
-    {{ assembly_util.attachment_box(attachments, attachment_histories, edit=edit_mode, title=gettext("Files"),
-                                    ballot=ambience['ballot'], new_attachment_button=True, full_history=False) }}
+{% macro show_attachments() -%}
+    {% call util.bootstrap_panel(title=gettext("Files"), icon='file', aclass="panel-default panel-condensed mosp") %}
+        <div class="row" id="attachments">
+            {% for slice in definitive_versions|keydictsort(EntitySorter.attachment)|slice(2) if definitive_versions %}
+                <div class="col-sm-6">
+                    <ul class="slim" id="attachments-{{ "ballot-{}".format(ambience['ballot']['id'])}}">
+                        {% for attachment_id, definitive_version in slice %}
+                            <li class="hide-hover-container clearfix-after" id="attachment{{ attachment_id }}">
+                                <div class="p">
+                                    {% set is_only_version = definitive_version["version_nr"] == 1 %}
+                                    {{ assembly_util.print_attachment_version_for_ballot(
+                                            version=definitive_version,
+                                            is_only_version=is_only_version,
+                                            is_definitive_version=True) }}
+                                    {% if latest_versions[attachment_id] != definitive_version %}
+                                        <div style="margin-top: 5px">
+                                            {{ assembly_util.print_attachment_version_for_ballot(
+                                                    version=latest_versions[attachment_id],
+                                                    is_only_version=False,
+                                                    is_definitive_version=False) }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% else %}
+                <div class="col-sm-12 p text-muted">
+                    {% if ambience['ballot']['vote_begin'] < now() %}
+                        {% trans %}
+                            This ballot does not have any attachments.
+                        {% endtrans %}
+                    {% else %}
+                        {% trans %}
+                            This ballot does not yet have any attachments.
+                        {% endtrans %}
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    {% endcall %}
 {%- endmacro %}
 
 

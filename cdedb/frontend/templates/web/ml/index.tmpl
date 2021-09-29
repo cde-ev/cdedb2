@@ -10,8 +10,8 @@
 {% endblock %}
 
 {% macro format_entry(mailinglist_id, title) %}
-    <li class="hide-hover-container clearfix-after">
-        {{ util.state_checkbox(state) }}
+    <li class="hide-hover-container clearfix-after" id="mailinglist{{ mailinglist_id }}">
+        {{ util.state_checkbox(subscriptions[mailinglist_id]) }}
         {{ util.href(cdedblink("ml/show_mailinglist", {'mailinglist_id': mailinglist_id}), title) }}
         {% if user.persona_id in mailinglist_infos[mailinglist_id]['moderators'] %}
             {{ util.href(cdedblink('ml/management',{'mailinglist_id' : mailinglist_id}), gettext("Manage"), icon='list',
@@ -22,7 +22,7 @@
 
 {% block content %}
     {% if user.admin_views.intersection(ALL_MGMT_ADMIN_VIEWS) %}
-        <div class="p">
+        <div class="p button-par">
             {{ util.href(cdedblink("ml/create_mailinglist_form"), gettext("Create Mailinglist"), icon="plus",
                     aclass="btn btn-sm btn-success") }}
             {% if "ml_admin" in user.roles %}

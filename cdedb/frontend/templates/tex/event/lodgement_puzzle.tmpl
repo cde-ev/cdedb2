@@ -26,6 +26,16 @@
     \usepackage[top=.5cm,bottom=.5cm, left=.5cm, right=.5cm]{geometry}
 <<% endblock %>>
 <<% block content %>>
+    <<% if wish_problems %>>
+        \section*{<<% trans %>>Lodgement Wish Problems<<% endtrans %>>}
+        \begin{itemize}
+            <<% for ntype, message, params in wish_problems %>>
+                \item <<< gettext(message)|format(**params)|te >>>
+            <<% endfor %>>
+        \end{itemize}
+        \clearpage
+    <<% endif %>>
+
     <<% for lodgement_id, lodgement in lodgements|keydictsort(EntitySorter.lodgement) %>>
         <<% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %>>
             \lodgement{<<< lodgement['title']|te >>>}{<<< part['title']|te >>>}{<<< lodgement['regular_capacity']|te >>>}%
@@ -36,8 +46,7 @@
     <<% for registration_id, registration in registrations.items() %>> <<# This is already sorted. #>>
         <<% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %>>
             <<% if enums['RegistrationPartStati'](registration['parts'][part_id]['status']).is_present() %>>
-                \participant{<<< personas[registration['persona_id']]['given_names']|te >>>
-                             <<< personas[registration['persona_id']]['family_name']|te >>>}%
+                \participant{<<< personas[registration['persona_id']]|persona_name(given_and_display_names=True)|te >>>}%
                     {<<% if ambience['event']['parts']|length > 1 %>><<< part['title']|te >>>; <<% endif %>>%
                      <<< personas[registration['persona_id']]['birthday'].year|te >>>%
                      <<% if registration['parts'][part_id]['status'] == enums['RegistrationPartStati'].guest -%>>

@@ -1,27 +1,20 @@
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans given_names=ambience['persona']['given_names'], family_name=ambience['persona']['family_name'] %}
-        {{ given_names }} {{ family_name }} – Mailinglist Data
+    {% trans name=util.persona_name(ambience['persona']) %}
+        {{ name }} – Mailinglist Data
     {% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), "{} {}".format(
-        ambience['persona']['given_names'], ambience['persona']['family_name']), icon="user") }}
+    {{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), util.persona_name(ambience['persona']),
+                            icon="user") }}
     {{ util.breadcrumb_link(cdedblink("core/show_user_mailinglists"), gettext("Mailinglists"), active=True) }}
 {% endblock %}
 
 {% block heading %}
-    <h1 class="title">
-        {% trans %}
-            Mailinglist Data
-        {% endtrans %}
-        <small>
-            {{ util.make_icon('user', arialabel="User") }}
-            {{ ambience['persona']['given_names'] }} {{ ambience['persona']['family_name'] }}
-        </small>
-    </h1>
+    {{ util.context_heading(gettext("Mailinglist Data"), util.persona_name(ambience['persona']),
+                            'user', gettext("User")) }}
 {% endblock %}
 
 {% block content %}
@@ -29,9 +22,7 @@
         <dl class="dl-horizontal">
             <dt>{% trans %}Name{% endtrans %}</dt>
             <dd>
-                {{ util.output_given_displayname(ambience['persona']['given_names'],
-                                                 ambience['persona']['display_name']) }}
-                {{ ambience['persona']['family_name'] }}
+                {{ util.persona_name(ambience['persona'], given_and_display_names=True, with_titles=True) }}
             </dd>
             <dt>{% trans %}CdEDB-ID{% endtrans %}</dt>
             <dd id="cdedb-id">

@@ -178,9 +178,10 @@ endif
 	sudo cp tests/ancillary_files/kandidaten.pdf /var/lib/cdedb/assembly_attachment/3_v1
 	sudo chown --recursive www-data:www-data /var/lib/cdedb
 
-TESTFILES := picture.pdf,picture.png,picture.jpg,form.pdf,ballot_result.json,sepapain.xml$\
+TESTFILES := picture.pdf,picture.png,picture.jpg,form.pdf,rechen.pdf,ballot_result.json,sepapain.xml$\
 		,event_export.json,batch_admission.csv,money_transfers.csv,money_transfers_valid.csv$\
-		,partial_event_import.json,TestAka_partial_export_event.json,statement.csv
+		,partial_event_import.json,TestAka_partial_export_event.json,statement.csv$\
+		,questionnaire_import.json
 
 storage-test:
 	rm -rf -- ${TESTSTORAGEPATH}/*
@@ -242,13 +243,12 @@ sql-test-shallow: tests/ancillary_files/sample_data.sql
 cron:
 	sudo -u www-data /cdedb2/bin/cron_execute.py
 
-
 ################
 # Code testing #
 ################
 
 mypy:
-	$(MYPY) bin cdedb tests
+	$(MYPY) bin/*.py cdedb tests
 
 BANNERLINE := "================================================================================"
 
@@ -265,7 +265,7 @@ pylint:
 	@echo $(BANNERLINE)
 	@echo ""
 	# test_subman crashes pylint seemingly due to symlinking
-	$(PYLINT) cdedb tests --load-plugins=pylint.extensions.bad_builtin --ignore=test_subman.py
+	$(PYLINT) cdedb tests --ignore=test_subman.py
 
 template-line-length:
 	@echo $(BANNERLINE)

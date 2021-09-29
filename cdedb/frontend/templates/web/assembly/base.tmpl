@@ -17,7 +17,7 @@
                     aclass="list-group-item", icon="align-justify", active=(sidenav_active == 'assembly_summary')) }}
 
             {{ util.href(cdedblink("assembly/list_attachments", {'assembly_id': data['id']}),
-                    gettext("Attachment Overview"), aclass="list-group-item", icon="file",
+                    gettext("Attachments"), aclass="list-group-item", icon="file",
                     active=(sidenav_active == 'assembly_attachments')) }}
 
             {% if ("assembly_presider" in user.admin_views or ambience['assembly']['id'] in user.presider) %}

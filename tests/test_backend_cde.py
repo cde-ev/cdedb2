@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# pylint: disable=missing-module-docstring
 
 import datetime
 import decimal
@@ -167,7 +168,7 @@ class TestCdEBackend(BackendTest):
 
     @as_users("vera")
     def test_demotion(self) -> None:
-        self.assertLess(0, self.core.change_membership(self.key, 2, False))
+        self.assertLess(0, self.cde.change_membership(self.key, 2, False)[0])
 
     @as_users("farin")
     def test_lastschrift(self) -> None:
