@@ -251,20 +251,20 @@ CREATE TABLE ldap.static_groups (
 );
 
 INSERT INTO ldap.static_groups (id, cn, description) VALUES
-    (node_static_group_is_active_id(), 'is_active', 'Aktive Nutzer.'),
-    (node_static_group_is_member_id(), 'is_member', 'Nutzer, die aktuell Mitglied im CdE sind.'),
-    (node_static_group_is_searchable_id(), 'is_searchable', 'Nutzer, die aktuell Mitglied im CdE und und in der Datenbank suchbar sind.'),
-    (node_static_group_is_ml_realm_id(), 'is_ml_realm', 'Nutzer, die auf Mailinglisten stehen dürfen.'),
-    (node_static_group_is_event_realm_id(), 'is_event_realm', 'Nutzer, die an Veranstaltungen teilnehmen dürfen.'),
-    (node_static_group_is_assembly_realm_id(), 'is_assembly_realm', 'Nutzer, die an Versammlungen teilnehmen dürfen.'),
-    (node_static_group_is_cde_realm_id(), 'is_cde_realm', 'Nutzer, die jemals Mitglied im CdE waren oder sind.'),
-    (node_static_group_is_ml_admin_id(), 'is_ml_admin', 'Mailinglisten-Administratoren'),
-    (node_static_group_is_event_admin_id(), 'is_event_admin', 'Veranstaltungs-Administratoren'),
-    (node_static_group_is_assembly_admin_id(), 'is_assembly_admin', 'Versammlungs-Administratoren'),
-    (node_static_group_is_cde_admin_id(), 'is_cde_admin', 'CdE-Administratoren'),
-    (node_static_group_is_core_admin_id(), 'is_core_admin', 'Core-Administratoren'),
-    (node_static_group_is_finance_admin_id(), 'is_finance_admin', 'Finanz-Administratoren'),
-    (node_static_group_is_cdelokal_admin_id(), 'is_cdelokal_admin', 'CdELokal-Administratoren');
+    (node_static_group_is_active_id(),              'is_active',            'Aktive Nutzer.'),
+    (node_static_group_is_member_id(),              'is_member',            'Nutzer, die aktuell Mitglied im CdE sind.'),
+    (node_static_group_is_searchable_id(),          'is_searchable',        'Nutzer, die aktuell Mitglied im CdE und und in der Datenbank suchbar sind.'),
+    (node_static_group_is_ml_realm_id(),            'is_ml_realm',          'Nutzer, die auf Mailinglisten stehen dürfen.'),
+    (node_static_group_is_event_realm_id(),         'is_event_realm',       'Nutzer, die an Veranstaltungen teilnehmen dürfen.'),
+    (node_static_group_is_assembly_realm_id(),      'is_assembly_realm',    'Nutzer, die an Versammlungen teilnehmen dürfen.'),
+    (node_static_group_is_cde_realm_id(),           'is_cde_realm',         'Nutzer, die jemals Mitglied im CdE waren oder sind.'),
+    (node_static_group_is_ml_admin_id(),            'is_ml_admin',          'Mailinglisten-Administratoren'),
+    (node_static_group_is_event_admin_id(),         'is_event_admin',       'Veranstaltungs-Administratoren'),
+    (node_static_group_is_assembly_admin_id(),      'is_assembly_admin',    'Versammlungs-Administratoren'),
+    (node_static_group_is_cde_admin_id(),           'is_cde_admin',         'CdE-Administratoren'),
+    (node_static_group_is_core_admin_id(),          'is_core_admin',        'Core-Administratoren'),
+    (node_static_group_is_finance_admin_id(),       'is_finance_admin',     'Finanz-Administratoren'),
+    (node_static_group_is_cdelokal_admin_id(),      'is_cdelokal_admin',    'CdELokal-Administratoren');
 
 -- A view containing all ldap.groups and their unique attributes.
 CREATE VIEW ldap.groups (id, cn, description) AS
