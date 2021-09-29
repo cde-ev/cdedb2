@@ -8251,7 +8251,7 @@
         }
     ],
     "ml.log": [],
-    "ldap_agents": [
+    "ldap_duas": [
             {
                 "id": 999999999,
                 "cn": "test",

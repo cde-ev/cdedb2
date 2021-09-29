@@ -14,7 +14,7 @@ CREATE FUNCTION oc_organizationalUnit_id()
   RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
 $$ SELECT 2; $$;
 
-CREATE FUNCTION oc_organizationalRole_id()
+CREATE FUNCTION oc_person_id()
   RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
 $$ SELECT 3; $$;
 
@@ -43,7 +43,7 @@ CREATE FUNCTION node_groups_id()
   RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
 $$ SELECT 11; $$;
 
-CREATE FUNCTION node_dsa_id()
+CREATE FUNCTION node_dua_id()
   RETURNS int LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
 $$ SELECT 12; $$;
 
@@ -132,7 +132,7 @@ CREATE FUNCTION make_organization_entity_id(organization_id INT)
   RETURNS bigint LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
 $$ SELECT CAST (1 * 2^32 + $1 AS BIGINT); $$ ;
 
-CREATE FUNCTION make_dsa_entity_id(dsa_id INT)
+CREATE FUNCTION make_dua_entity_id(dua_id INT)
   RETURNS bigint LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
 $$ SELECT CAST (2 * 2^32 + $1 AS BIGINT); $$ ;
 
@@ -216,7 +216,7 @@ INSERT INTO ldap_organizations (id, dn, oc_map_id, parent, display_name, additio
     -- All organizational units
         (node_users_id(), 'ou=users,dc=cde-ev,dc=de', oc_organizationalUnit_id(), make_organization_entity_id(node_cde_id()), 'Users', NULL, NULL),
         (node_groups_id(), 'ou=groups,dc=cde-ev,dc=de', oc_organizationalUnit_id(), make_organization_entity_id(node_cde_id()), 'Groups', NULL, NULL),
-        (node_dsa_id(), 'ou=dsa,dc=cde-ev,dc=de', oc_organizationalUnit_id(), make_organization_entity_id(node_cde_id()), 'Directory System Agent', NULL, NULL),
+        (node_dua_id(), 'ou=dua,dc=cde-ev,dc=de', oc_organizationalUnit_id(), make_organization_entity_id(node_cde_id()), 'Directory System Agent', NULL, NULL),
     -- Additional organizational units holding group of groups
         (node_static_group_id(), 'ou=status,ou=groups,dc=cde-ev,dc=de', oc_organizationalUnit_id(), make_organization_entity_id(node_groups_id()), 'Status', NULL, NULL),
         (node_ml_subscribers_group_id(), 'ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de', oc_organizationalUnit_id(), make_organization_entity_id(node_groups_id()), 'Mailinglists Subscribers', NULL, NULL),
@@ -224,16 +224,16 @@ INSERT INTO ldap_organizations (id, dn, oc_map_id, parent, display_name, additio
         (node_event_orgas_group_id(), 'ou=event-orgas,ou=groups,dc=cde-ev,dc=de', oc_organizationalUnit_id(), make_organization_entity_id(node_groups_id()), 'Event Orgas', NULL, NULL),
         (node_assembly_presiders_group_id(), 'ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de', oc_organizationalUnit_id(), make_organization_entity_id(node_groups_id()), 'Assembly Presiders', NULL, NULL);
 
--- ldap Directory System Agents
-DROP TABLE IF EXISTS ldap_agents;
-CREATE TABLE ldap_agents (
+-- ldap Directory System Users
+DROP TABLE IF EXISTS ldap_duas;
+CREATE TABLE ldap_duas (
 	id serial PRIMARY KEY,
 	cn varchar NOT NULL,
     password_hash varchar NOT NULL
 );
-GRANT ALL ON ldap_agents TO cdb_admin;
+GRANT ALL ON ldap_duas TO cdb_admin;
 
-INSERT INTO ldap_agents (cn, password_hash) VALUES
+INSERT INTO ldap_duas (cn, password_hash) VALUES
     ('admin', '$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1'),
     ('apache', '$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1'),
     ('cloud', '$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1'),
@@ -535,7 +535,8 @@ INSERT INTO ldap_oc_mappings (id, name, keytbl, keycol, create_proc, delete_proc
     (oc_organization_id(), 'organization', 'ldap_organizations', 'id', 'SELECT ''TODO''', 'SELECT ''TODO''', 0),
     (oc_inetOrgPerson_id(), 'inetOrgPerson', 'core.personas', 'id', 'SELECT ''TODO''', 'SELECT ''TODO''', 0),
     (oc_organizationalUnit_id(), 'organizationalUnit', 'ldap_organizations', 'id', 'SELECT ''TODO''', 'SELECT ''TODO''', 0),
-    (oc_organizationalRole_id(), 'organizationalRole', 'ldap_agents', 'id', 'SELECT ''TODO''', 'SELECT ''TODO''', 0),
+    -- TODO This is temporary, since there is no standard objectclass for duas...
+    (oc_person_id(), 'person', 'ldap_duas', 'id', 'SELECT ''TODO''', 'SELECT ''TODO''', 0),
     (oc_groupOfUniqueNames_id(), 'groupOfUniqueNames', 'ldap_groups', 'id', 'SELECT ''TODO''', 'SELECT ''TODO''', 0);
 
 
@@ -561,9 +562,9 @@ INSERT INTO ldap_attr_mappings (oc_map_id, name, sel_expr, from_tbls, join_where
         (oc_organization_id(), 'o', 'ldap_organizations.display_name', 'ldap_organizations', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
     -- Attributes of organizationalUnits
         (oc_organizationalUnit_id(), 'o', 'ldap_organizations.display_name', 'ldap_organizations', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
-    -- Attributes of agents
-        (oc_organizationalRole_id(), 'cn', 'ldap_agents.cn', 'ldap_agents', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
-        (oc_organizationalRole_id(), 'userPassword', '''{CRYPT}'' || ldap_agents.password_hash', 'ldap_agents', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
+    -- Attributes of duas
+        (oc_person_id(), 'cn', 'ldap_duas.cn', 'ldap_duas', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
+        (oc_person_id(), 'userPassword', '''{CRYPT}'' || ldap_duas.password_hash', 'ldap_duas', NULL, 'SELECT ''TODO''', 'SELECT ''TODO''', 3, 0),
     -- Attributes of inetOrgPerson
     -- Naming was chosen accordingly to the following RFC:
     -- https://datatracker.ietf.org/doc/html/rfc2798 (defining inetOrgPerson)
@@ -602,12 +603,12 @@ CREATE VIEW ldap_entries (id, dn, oc_map_id, parent, keyval) AS
     -- Directory System Agents
     UNION (
         SELECT
-           make_dsa_entity_id(id),
-           'cn=' || cn || ',ou=dsa,dc=cde-ev,dc=de' AS dn,
-           oc_organizationalRole_id() AS oc_map_id,
-           make_organization_entity_id(node_dsa_id()) AS parent,
+           make_dua_entity_id(id),
+           'cn=' || cn || ',ou=dua,dc=cde-ev,dc=de' AS dn,
+           oc_person_id() AS oc_map_id,
+           make_organization_entity_id(node_dua_id()) AS parent,
            id as keyval
-        FROM ldap_agents
+        FROM ldap_duas
     )
     -- personas
     UNION (
@@ -696,9 +697,9 @@ CREATE VIEW ldap_entry_objclasses (entry_id, oc_name) AS
     -- Directory System Agents
     UNION (
         SELECT
-           make_dsa_entity_id(id) AS entry_id,
+           make_dua_entity_id(id) AS entry_id,
            'simpleSecurityObject' AS oc_name
-        FROM ldap_agents
+        FROM ldap_duas
     )
 ;
 GRANT ALL ON ldap_entry_objclasses TO cdb_admin;

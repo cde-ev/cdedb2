@@ -1,7 +1,7 @@
 LDAP
 ====
 
-We expose some information about our users via LDAP.
+We expose some (readonly) information about our users via LDAP.
 This information is meant to be used by other CdE-brewed and third-party-tools
 living in the CdE ecosystem to
 
@@ -20,7 +20,7 @@ LDAP Tree
 Our LDAP Tree looks as follows::
 
     dc=cde-ev,dc=de
-    ├── ou=dsa
+    ├── ou=dua
     │   ├── cn=test
     │   └── ...
     ├── ou=groups
