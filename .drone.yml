@@ -103,6 +103,10 @@ steps:
   detach: true # detach to keep running for the following steps
   depends_on:
   - testsuite-setup
+  when:
+    status:
+      - failure
+      - success
   environment:
     # we use the database without a name as only readonly access is required
     # and this will work regardless of the id the testing container gets
@@ -113,6 +117,10 @@ steps:
   depends_on:
   - testsuite-setup
   - ldap
+  when:
+    status:
+      - failure
+      - success
   volumes:
   - name: tmp_dir
     path: /tmp
@@ -124,6 +132,10 @@ steps:
   depends_on:
   - testsuite-setup
   - ldap
+  when:
+    status:
+      - failure
+      - success
   volumes:
   - name: tmp_dir
     path: /tmp
@@ -135,6 +147,10 @@ steps:
   depends_on:
   - testsuite-setup
   - ldap
+  when:
+    status:
+      - failure
+      - success
   volumes:
   - name: tmp_dir
     path: /tmp
@@ -146,6 +162,10 @@ steps:
   pull: never
   depends_on:
     - testsuite-setup
+  when:
+    status:
+      - failure
+      - success
   volumes:
   - name: tmp_dir
     path: /tmp
