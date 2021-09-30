@@ -14,7 +14,7 @@ import os
 import tempfile
 import time
 from types import TracebackType
-from typing import Any, Optional, Type, Dict, Tuple
+from typing import Any, Dict, IO, Optional, Tuple, Type
 
 import psycopg2
 import psycopg2.extensions
@@ -48,10 +48,11 @@ class TempConfig:
             raise ValueError("Mustn't specify both config and configpath.")
         self._configpath = configpath
         self._config = config
-        self._f = tempfile.NamedTemporaryFile("w", suffix=".py")
+        self._f: Optional[IO[str]] = None
 
     def __enter__(self) -> Optional[PathLike]:
         if self._config:
+            self._f = tempfile.NamedTemporaryFile("w", suffix=".py")
             f = self._f.__enter__()
             for k, v in self._config.items():
                 f.write(f"{k} = {v}")
