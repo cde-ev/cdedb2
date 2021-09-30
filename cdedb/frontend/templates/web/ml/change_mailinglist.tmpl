@@ -55,9 +55,11 @@
         {{ util.form_input_checkbox(name="is_active", label=gettext("Active"), readonly=readonly) }}
         {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]"), actualreadonly=readonly) }}
         {{ util.form_input_text(name="local_part", label=gettext("Address"), actualreadonly=readonly,
-                                addon='@' + enums['MailinglistDomain'](ambience['mailinglist']['domain'])|string) }}
-        {{ util.form_input_select(name="domain", label=gettext("Domain"), actualreadonly=readonly, defaultvalue=ambience['mailinglist']['domain'].value,
-                    entries=available_domains|enum_entries(processing=gettext, prefix="@")) }}
+                                addon='@' + enums['MailinglistDomain'](ambience['mailinglist']['domain']).to_string()) }}
+        {{ util.form_input_select(
+                name="domain", label=gettext("Domain"), actualreadonly=readonly,
+                defaultvalue=ambience['mailinglist']['domain'].value,
+                entries=available_domains|enum_entries(processing=gettext, prefix="@")) }}
         <script nonce="{{ csp_nonce }}">
             domain_inp = $("#changelistform [name='domain']");
             function update_domain() {
