@@ -185,7 +185,6 @@ def work(args: argparse.Namespace) -> None:
 
     print("Connect to database")
     conn = Script(
-        persona_id=-1,
         dbuser="cdb_admin",
         dbname=db_name,
         check_system_user=False,

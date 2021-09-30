@@ -4,8 +4,9 @@ from cdedb.script import Script
 
 # Configuration
 
-event_id = -1
-part_id = -1
+admin_id = -1
+event_id = 1
+part_id = 1
 new_track = {
     'title': "Neue Kursschiene",
     'shortname': "Neu",
@@ -16,7 +17,7 @@ new_track = {
 
 # Setup
 
-s = Script(persona_id=-1, dbuser="cdb_admin")
+s = Script(persona_id=admin_id, dbuser="cdb_admin")
 event = s.make_backend("event")
 
 update_event = {

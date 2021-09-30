@@ -1,10 +1,6 @@
 #!/usr/bin/env python3
 import cProfile
-import datetime
-import timeit
-from typing import NamedTuple, Set
 
-from cdedb.common import now
 from cdedb.script import Script
 
 # Configuration

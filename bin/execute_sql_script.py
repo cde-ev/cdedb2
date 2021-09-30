@@ -23,7 +23,6 @@ def execute_script(sql_input: Union[Path, str], *, dbuser: str,
     factory = resolve_name(f"psycopg2.extras:{cursor}") if cursor else None
 
     with Script(
-        persona_id=-1,
         dbuser=dbuser,
         dbname=dbname,
         check_system_user=False,

@@ -103,7 +103,7 @@ def main() -> None:
     args = parser.parse_args()
 
     # Setup rs
-    script = Script(1, "cdb_admin")
+    script = Script(dbuser="cdb_admin")
     rs = script.rs()
     core = script.make_backend("core", proxy=False)
 

@@ -39,7 +39,7 @@ class TestScript(unittest.TestCase):
         self.assertEqual(23, rs_factory(23).user.persona_id)
 
         with self.assertRaises(psycopg2.OperationalError) as cm:
-            Script(-1, dbname=os.environ['CDEDB_TEST_DATABASE'], dbuser="cdb_admin",
+            Script(dbname=os.environ['CDEDB_TEST_DATABASE'], dbuser="cdb_admin",
                    check_system_user=False, CDB_DATABASE_ROLES="{'cdb_admin': 'abc'}")
         # the vm is german while the postgresql docker image is english
         self.assertTrue(

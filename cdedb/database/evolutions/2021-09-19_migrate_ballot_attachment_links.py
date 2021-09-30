@@ -1,13 +1,8 @@
 from cdedb.script import Script
 
-# Configure
-
-USER_ID = -1
-DRYRUN = True
-
 # Setup
 
-script = Script(persona_id=USER_ID, dbuser="cdb")
+script = Script(dbuser="cdb")
 rs = script.rs()
 assembly = script.make_backend("assembly", proxy=False)
 
