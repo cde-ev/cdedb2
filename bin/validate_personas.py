@@ -7,10 +7,10 @@ from cdedb.backend.common import affirm_validation_typed as affirm
 
 # Configuration
 
-# The admin id will need to be replaces before use.
+# This script does not write log entries and thus does not need a valid id.
 executing_admin_id = -1
-rs = setup(persona_id=executing_admin_id, dbuser="cdb_admin",
-           dbpassword="9876543210abcdefghijklmnopqrst")()
+rs = setup(persona_id=executing_admin_id, dbuser="cdb_persona",
+           dbpassword="abcdefghijklmnopqrstuvwxyzabcd")()
 
 # Prepare stuff
 

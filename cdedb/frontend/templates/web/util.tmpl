@@ -614,6 +614,49 @@
     {%- endcall %}
 {%- endmacro%}
 
+{% macro input_multi_select(name, entries, readonly=False, actualreadonly=False, anid=none,
+        aclass='form-control', nulloption=none, arialabel=none, attributes="", sort=False) %}
+    <select multiple {{ dict(
+        name=name if not actualreadonly else ("readonly" + name),
+        id=anid,
+        class=aclass,
+        disabled="disabled" if readonly or actualreadonly,
+        **{ 'aria-label': arialabel }
+    )|xmlattr }} {{ attributes }}>
+        {%- if nulloption is not none %}
+            <option value=""{% if values.get(name) == [] %} selected="selected"{% endif %}>
+                {{- nulloption -}}
+            </option>
+        {%- endif %}
+        {% set entries = entries|sort(attribute=1) if sort else entries %}
+        {# This is necessary to convert the values to strings so we can check if they are currently selected #}
+        {% set current_values = [] %}
+        {% for value in values.get(name) %}
+            {% do current_values.append(value|string) %}
+        {% endfor %}
+        {%- for value, label in entries %}
+            <option value="{{ value }}"{%- if value|string in current_values %} selected="selected"{% endif %}>
+                {{- label -}}
+            </option>
+        {%- endfor %}
+    </select>
+    {# select tags do not support the readonly attribute, so we emulate it with a disabled select and a hidden input. #}
+    {% if actualreadonly %}
+        {{ input_hidden(name) }}
+    {% endif %}
+{%- endmacro %}
+
+{% macro form_input_multi_select(name, entries, label="", info='', displayerrors=True, readonly=False, actualreadonly=False,
+        defaultvalue=none, nulloption=none, anid=none, small=False, horizontal=True, aclass="", attributes="",
+        differentiate_warnings=True, sort=False) %}
+    {%- set anid = anid or "input-multi-select-{}".format(name) %}
+    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal,
+                                differentiate_warnings=differentiate_warnings) %}
+        {{- input_multi_select(name, entries, readonly, actualreadonly, anid, nulloption=nulloption,
+                aclass="form-control " + aclass, attributes=attributes, sort=sort) }}
+    {%- endcall %}
+{%- endmacro%}
+
 {% macro input_static(value, anid=none) %}
     <div class="form-control-static"{% if anid %} id="{{ anid }}"{% endif %}>{{ value }}</div>
 {%- endmacro %}
@@ -1083,7 +1126,6 @@ mailto:
 
 
 {# Macro to unify the style of headings with context (events, personas, assemblies, ...) #}
-{# TODO: add possibility for second subtitle? (needed for assembly attachments) #}
 {% macro context_heading(title, subtitle=none, icon=none, icon_arialabel=none, doclink=none, doclink_anchor=none) %}
     {% if doclink %}
         {{ _doclink(doclink, anchor=doclink_anchor) }}
@@ -1093,6 +1135,7 @@ mailto:
         {% if subtitle %}
             <small>
                 {{ make_icon(icon, arialabel=icon_arialabel) }}{{ nbsp }}{{ subtitle }}
+                {% if caller %}{{ caller() }}{% endif %}
             </small>
         {% endif %}
     </h1>

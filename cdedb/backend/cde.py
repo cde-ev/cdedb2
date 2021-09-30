@@ -1435,10 +1435,13 @@ class CdEBackend(AbstractBackend):
                                      ) -> Optional[bool]:
         """Uninlined code from perform_batch_admission().
 
-        :returns: None if nothing happened. True if a new account was created. False if
-            an existing account was modified.
+        :returns: None if nothing happened. True if a new member account was created or
+            membership was granted to an existing (non-member) account. False if
+            (trial-)membership was renewed for an existing (already member) account.
         """
-        ret = False
+        # Require an Atomizer.
+        self.affirm_atomized_context(rs)
+
         batch_fields = (
             'family_name', 'given_names', 'display_name', 'title', 'name_supplement',
             'birth_name', 'gender', 'address_supplement', 'address',
@@ -1457,6 +1460,7 @@ class CdEBackend(AbstractBackend):
             persona_id = self.core.create_persona(rs, new_persona)
             ret = True
         elif datum['resolution'].is_modification():
+            ret = False
             persona_id = datum['doppelganger_id']
             current = self.core.get_persona(rs, persona_id)
             if current['is_archived']:
@@ -1518,8 +1522,10 @@ class CdEBackend(AbstractBackend):
                 self.core.change_persona_realms(
                     rs, promotion, change_note="Datenübernahme nach Massenaufnahme")
             if datum['resolution'].do_trial():
-                self.change_membership(
+                code, _, _ = self.change_membership(
                     rs, datum['doppelganger_id'], is_member=True)
+                # This will be true if the user was not a member before.
+                ret = bool(code)
                 update = {
                     'id': datum['doppelganger_id'],
                     'trial_member': True,

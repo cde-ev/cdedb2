@@ -227,6 +227,7 @@ def _examine_dictionary_fields(
     mandatory_fields: TypeMapping,
     optional_fields: TypeMapping = None,
     *,
+    argname: str = "",
     allow_superfluous: bool = False,
     **kwargs: Any,
 ) -> Dict[str, Any]:
@@ -237,6 +238,8 @@ def _examine_dictionary_fields(
       It should map keys to registered types.
       A missing key is an error in itself.
     :param optional_fields: Like :py:obj:`mandatory_fields`, but facultative.
+    :param argname: If given, prepend this to the argname of the individual validations.
+        This is useful, if you want to examine multiple dicts and tell the errors apart.
     :param allow_superfluous: If ``False`` keys which are neither in
       :py:obj:`mandatory_fields` nor in :py:obj:`optional_fields` are errors.
     """
@@ -244,27 +247,29 @@ def _examine_dictionary_fields(
     errs = ValidationSummary()
     retval: Dict[str, Any] = {}
     for key, value in adict.items():
+        sub_argname = argname + "." + key if argname else key
         if key in mandatory_fields:
             try:
                 v = _ALL_TYPED[mandatory_fields[key]](
-                    value, argname=key, **kwargs)
+                    value, argname=sub_argname, **kwargs)
                 retval[key] = v
             except ValidationSummary as e:
                 errs.extend(e)
         elif key in optional_fields:
             try:
                 v = _ALL_TYPED[optional_fields[key]](
-                    value, argname=key, **kwargs)
+                    value, argname=sub_argname, **kwargs)
                 retval[key] = v
             except ValidationSummary as e:
                 errs.extend(e)
         elif not allow_superfluous:
-            errs.append(KeyError(key, n_("Superfluous key found.")))
+            errs.append(KeyError(sub_argname, n_("Superfluous key found.")))
 
     missing_mandatory = set(mandatory_fields).difference(adict)
     if missing_mandatory:
         for key in missing_mandatory:
-            errs.append(KeyError(key, n_("Mandatory key missing.")))
+            sub_argname = argname + "." + key if argname else key
+            errs.append(KeyError(sub_argname, n_("Mandatory key missing.")))
 
     if errs:
         raise errs
@@ -303,7 +308,7 @@ def _augment_dict_validator(
         try:
             ret = _examine_dictionary_fields(
                 val, mandatory_fields, optional_fields,
-                **{"allow_superfluous": True, **kwargs})
+                **{"allow_superfluous": True, **kwargs})  # type: ignore[arg-type]
         except ValidationSummary as e:
             errs.extend(e)
 
@@ -1426,9 +1431,11 @@ GENESIS_CASE_COMMON_FIELDS: TypeMapping = {
     'notes': str,
 }
 
-GENESIS_CASE_OPTIONAL_FIELDS: TypeMapping = {
+GENESIS_CASE_OPTIONAL_FIELDS: Mapping[str, Any] = {
     'case_status': const.GenesisStati,
     'reviewer': ID,
+    'pevent_id': Optional[ID],
+    'pcourse_id': Optional[ID],
 }
 
 GENESIS_CASE_ADDITIONAL_FIELDS: Mapping[str, Any] = {
@@ -1446,7 +1453,9 @@ GENESIS_CASE_ADDITIONAL_FIELDS: Mapping[str, Any] = {
 }
 
 GENESIS_CASE_EXPOSED_FIELDS = {**GENESIS_CASE_COMMON_FIELDS,
-                               **GENESIS_CASE_ADDITIONAL_FIELDS}
+                               **GENESIS_CASE_ADDITIONAL_FIELDS,
+                               'pevent_id': Optional[ID],
+                               'pcourse_id': Optional[ID], }
 
 
 @_add_typed_validator
@@ -2381,10 +2390,13 @@ def _EVENT_FIELD_OPTIONAL_FIELDS(extra_suffix: str) -> TypeMapping:
 
 @_add_typed_validator
 def _event_field(
-    val: Any, argname: str = "event_field", *,
+    val: Any, argname: str = "event_field", *, field_name: str = None,
     creation: bool = False, extra_suffix: str = "", **kwargs: Any
 ) -> EventField:
     """
+    :param field_name: If given, set the field name of the field to this.
+        This is handy for creating new fields during the questionnaire import,
+        where the field name serves as the key and thus is not part of the dict itself.
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
     :param extra_suffix: Suffix appended to all keys. This is due to the
@@ -2393,6 +2405,9 @@ def _event_field(
     val = _mapping(val, argname, **kwargs)
 
     field_name_key = "field_name{}".format(extra_suffix)
+    if field_name is not None:
+        val = dict(val)
+        val[field_name_key] = field_name
     if creation:
         spec = {**_EVENT_FIELD_COMMON_FIELDS(extra_suffix),
                 field_name_key: RestrictiveIdentifier}
@@ -2404,7 +2419,7 @@ def _event_field(
                                **_EVENT_FIELD_OPTIONAL_FIELDS(extra_suffix))
 
     val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs)
+        val, mandatory_fields, optional_fields, argname=argname, **kwargs)
 
     entries_key = "entries{}".format(extra_suffix)
     kind_key = "kind{}".format(extra_suffix)
@@ -2889,6 +2904,86 @@ def _by_field_datatype(
     return ByFieldDatatype(val)
 
 
+def _questionnaire_row(
+    val: Any, field_definitions: CdEDBObjectMap, fee_modifier_fields: Set[int],
+    kind: const.QuestionnaireUsages, argname: str = "questionnaire_row", **kwargs: Any,
+) -> QuestionnaireRow:
+
+    argname_prefix = argname + "." if argname else ""
+    value = _mapping(val, argname, **kwargs)
+
+    mandatory_fields: TypeMapping = {
+        'title': Optional[str],  # type: ignore
+        'info': Optional[str],  # type: ignore
+        'input_size': Optional[int],  # type: ignore
+        'readonly': Optional[bool],  # type: ignore
+        'default_value': Optional[str],  # type: ignore
+    }
+    optional_fields: TypeMapping = {
+        'field_id': Optional[ID],  # type: ignore[dict-item]
+        'field_name': Optional[RestrictiveIdentifier],  # type: ignore[dict-item]
+        'kind': const.QuestionnaireUsages,
+        'pos': int,
+    }
+
+    value = _examine_dictionary_fields(
+        value, mandatory_fields, optional_fields, argname=argname, **kwargs)
+
+    errs = ValidationSummary()
+    if 'kind' in value:
+        if value['kind'] != kind:
+            msg = n_("Incorrect kind for this part of the questionnaire")
+            errs.append(ValueError(argname_prefix + 'kind', msg))
+    else:
+        value['kind'] = kind
+
+    fields_by_name = {f['field_name']: f for f in field_definitions.values()}
+    if 'field_name' in value:
+        if not value['field_name']:
+            del value['field_name']
+        elif value.get('field_id'):
+            msg = n_("Cannot specify both field id and field name.")
+            errs.append(ValueError(argname_prefix + 'field_id', msg))
+            errs.append(ValueError(argname_prefix + 'field_name', msg))
+        else:
+            if value['field_name'] not in fields_by_name:
+                errs.append(KeyError(
+                    argname_prefix + 'field_name',
+                    n_("No field with name '%(name)s' exists."),
+                    {"name": value['field_name']}))
+            else:
+                value['field_id'] = fields_by_name[value['field_name']].get('id')
+                if value['field_id']:
+                    del value['field_name']
+    if 'field_id' not in value:
+        value['field_id'] = None
+
+    if value['field_id']:
+        field = field_definitions.get(value['field_id'], None)
+        if not field:
+            raise ValidationSummary(
+                KeyError(argname_prefix + 'default_value',
+                         n_("Referenced field does not exist.")))
+        if value['default_value']:
+            value['default_value'] = _by_field_datatype(
+                value['default_value'], "default_value",
+                kind=field.get('kind', FieldDatatypes.str), **kwargs)
+
+    field_id = value['field_id']
+    if field_id and field_id in fee_modifier_fields:
+        if not kind.allow_fee_modifier():
+            msg = n_("Inappropriate questionnaire usage for fee modifier field.")
+            errs.append(ValueError(argname_prefix + 'kind', msg))
+    if value['readonly'] and not kind.allow_readonly():
+        msg = n_("Registration questionnaire rows may not be readonly.")
+        errs.append(ValueError(argname_prefix + 'readonly', msg))
+
+    if errs:
+        raise errs
+
+    return QuestionnaireRow(value)
+
+
 # TODO change parameter order to make more consistent?
 # TODO type fee_modifiers
 @_add_typed_validator
@@ -2901,7 +2996,7 @@ def _questionnaire(
     val = _mapping(val, argname, **kwargs)
 
     errs = ValidationSummary()
-    ret: Dict[int, List[CdEDBObject]] = {}
+    ret: Dict[int, List[QuestionnaireRow]] = {}
     fee_modifier_fields = {e['field_id'] for e in fee_modifiers.values()}
     for k, v in copy.deepcopy(val).items():
         try:
@@ -2911,68 +3006,24 @@ def _questionnaire(
             errs.extend(e)
         else:
             ret[k] = []
-            mandatory_fields: TypeMapping = {
-                'field_id': Optional[ID],  # type: ignore
-                'title': Optional[str],  # type: ignore
-                'info': Optional[str],  # type: ignore
-                'input_size': Optional[int],  # type: ignore
-                'readonly': Optional[bool],  # type: ignore
-                'default_value': Optional[str],  # type: ignore
-            }
-            optional_fields = {
-                'kind': const.QuestionnaireUsages,
-            }
-            for value in v:
+            for i, value in enumerate(v):
+                row_argname = argname + f"[{k.name}][{i+1}]"
                 try:
-                    value = _mapping(value, argname, **kwargs)
+                    value = _questionnaire_row(
+                        value, field_definitions, fee_modifier_fields,
+                        kind=k, argname=row_argname, **kwargs)
                 except ValidationSummary as e:
                     errs.extend(e)
                     continue
-
-                try:
-                    value = _examine_dictionary_fields(
-                        value, mandatory_fields, optional_fields, **kwargs)
-                except ValidationSummary as e:
-                    errs.extend(e)
-                    continue
-
-                if 'kind' in value:
-                    if value['kind'] != k:
-                        msg = n_("Incorrect kind for this part of the questionnaire")
-                        errs.append(ValueError('kind', msg))
-                else:
-                    value['kind'] = k
-
-                if value['field_id'] and value['default_value']:
-                    field = field_definitions.get(value['field_id'], None)
-                    if not field:
-                        errs.append(KeyError('default_value', n_(
-                            "Referenced field does not exist.")))
-                        continue
-
-                    try:
-                        value['default_value'] = _by_field_datatype(
-                            value['default_value'], "default_value",
-                            kind=field.get('kind', FieldDatatypes.str), **kwargs)
-                    except ValidationSummary as e:
-                        errs.extend(e)
-
-                field_id = value['field_id']
-                if field_id and field_id in fee_modifier_fields:
-                    if not k.allow_fee_modifier():
-                        msg = n_("Inappropriate questionnaire usage for fee"
-                                 " modifier field.")
-                        errs.append(ValueError('kind', msg))
-                if value['readonly'] and not k.allow_readonly():
-                    msg = n_("Registration questionnaire rows may not be readonly.")
-                    errs.append(ValueError('readonly', msg))
+                value['pos'] = i+1
                 ret[k].append(value)
 
     all_rows = itertools.chain.from_iterable(ret.values())
     for e1, e2 in itertools.combinations(all_rows, 2):
         if e1['field_id'] is not None and e1['field_id'] == e2['field_id']:
-            errs.append(ValueError('field_id', n_(
-                "Must not duplicate field.")))
+            errs.append(ValueError(
+                'field_id', n_("Must not duplicate field ('%(field_name)s')."),
+                {'field_name': field_definitions[e1['field_id']]['field_name']}))
 
     if errs:
         raise errs
@@ -3506,6 +3557,95 @@ def _partial_registration_track(
     return PartialRegistrationTrack(val)
 
 
+@_add_typed_validator
+def _serialized_event_questionnaire_upload(
+    val: Any, argname: str = "serialized_event_questionnaire_upload", **kwargs: Any,
+) -> SerializedEventQuestionnaireUpload:
+
+    val = _input_file(val, argname, **kwargs)
+    val = _json(val, argname, **kwargs)
+    return SerializedEventQuestionnaireUpload(
+        _serialized_event_questionnaire(val, argname, **kwargs))  # pylint: disable=missing-kwoa # noqa
+
+
+@_add_typed_validator
+def _serialized_event_questionnaire(
+    val: Any, argname: str = "serialized_event_questionnaire", *,
+    field_definitions: CdEDBObjectMap, fee_modifiers: CdEDBObjectMap,
+    questionnaire: Dict[const.QuestionnaireUsages, List[QuestionnaireRow]],
+    extend_questionnaire: bool, skip_existing_fields: bool,
+    **kwargs: Any
+) -> SerializedEventQuestionnaire:
+
+    val = _mapping(val, argname, **kwargs)
+
+    optional_fields: TypeMapping = {
+        'fields': Mapping,
+        'questionnaire': Mapping,
+    }
+    val = _examine_dictionary_fields(val, {}, optional_fields, **kwargs)
+
+    errs = ValidationSummary()
+    field_definitions = copy.deepcopy(field_definitions)
+    fields_by_name = {f['field_name']: f for f in field_definitions.values()}
+    if 'fields' in val:
+        newfields = {}
+        for i, (field_name, field) in enumerate(val['fields'].items()):
+            field_argname = f"fields[{i+1}]"
+            try:
+                field_name = _str(field_name, field_argname, **kwargs)
+            except ValidationSummary as e:
+                errs.extend(e)
+            else:
+                if field_name in fields_by_name:
+                    if not skip_existing_fields:
+                        errs.append(KeyError(
+                            field_argname,
+                            n_("A field with this name already exists"
+                               " ('%(field_name)s')."),
+                            {'field_name': field_name}))
+                    continue
+                try:
+                    field = _ALL_TYPED[EventField](
+                        field, field_argname, creation=True, field_name=field_name,
+                        **kwargs)
+                except ValidationSummary as e:
+                    errs.extend(e)
+                else:
+                    newfields[-(i + 1)] = field
+        val['fields'] = newfields
+        field_definitions.update(newfields)
+    else:
+        val['fields'] = {}
+
+    if 'questionnaire' in val:
+        try:
+            new_questionnaire = _questionnaire(
+                val['questionnaire'], field_definitions, fee_modifiers, **kwargs)
+        except ValidationSummary as e:
+            errs.extend(e)
+        else:
+            if extend_questionnaire:
+                tmp = {
+                    kind: questionnaire.get(kind, []) + new_questionnaire.get(kind, [])
+                    for kind in const.QuestionnaireUsages
+                }
+                try:
+                    new_questionnaire = _questionnaire(
+                        tmp, field_definitions, fee_modifiers, **kwargs)
+                except ValidationSummary as e:
+                    errs.extend(e)
+
+            val['questionnaire'] = new_questionnaire
+    else:
+        val['questionnaire'] = {}
+
+    if errs:
+        raise errs
+
+    return SerializedEventQuestionnaire(val)
+
+
 MAILINGLIST_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'local_part': EmailLocalPart,
@@ -3738,7 +3878,8 @@ BALLOT_OPTIONAL_FIELDS: Mapping[str, Any] = {
     **BALLOT_EXPOSED_OPTIONAL_FIELDS,
     'extended': Optional[bool],
     'is_tallied': bool,
-    'candidates': Mapping
+    'candidates': Mapping,
+    'linked_attachments': Optional[List[Optional[ID]]]
 }
 
 
@@ -3879,9 +4020,9 @@ def _ballot_candidate(
 
 
 ASSEMBLY_ATTACHMENT_FIELDS: Mapping[str, Any] = {
-    'assembly_id': Optional[ID],
-    'ballot_id': Optional[ID],
+    'assembly_id': ID,
 }
+
 
 ASSEMBLY_ATTACHMENT_VERSION_FIELDS: Mapping[str, Any] = {
     'title': str,
@@ -3892,50 +4033,28 @@ ASSEMBLY_ATTACHMENT_VERSION_FIELDS: Mapping[str, Any] = {
 
 @_add_typed_validator
 def _assembly_attachment(
-    val: Any, argname: str = "assembly_attachment", *,
-    creation: bool = False, **kwargs: Any
+    val: Any, argname: str = "assembly_attachment", **kwargs: Any
 ) -> AssemblyAttachment:
     val = _mapping(val, argname, **kwargs)
 
-    if creation:
-        mandatory_fields = {**ASSEMBLY_ATTACHMENT_VERSION_FIELDS}
-        optional_fields = {**ASSEMBLY_ATTACHMENT_FIELDS}
-    else:
-        mandatory_fields = dict(ASSEMBLY_ATTACHMENT_FIELDS, id=ID)
-        optional_fields = {}
+    mandatory_fields = dict(ASSEMBLY_ATTACHMENT_VERSION_FIELDS,
+                            **ASSEMBLY_ATTACHMENT_FIELDS)
 
-    val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs)
-
-    errs = ValidationSummary()
-    if val.get("assembly_id") and val.get("ballot_id"):
-        errs.append(ValueError(argname, n_("Only one host allowed.")))
-    if not val.get("assembly_id") and not val.get("ballot_id"):
-        errs.append(ValueError(argname, n_("No host given.")))
-
-    if errs:
-        raise errs
+    val = _examine_dictionary_fields(val, mandatory_fields, **kwargs)
 
     return AssemblyAttachment(val)
 
 
 @_add_typed_validator
 def _assembly_attachment_version(
-    val: Any, argname: str = "assembly_attachment_version", *,
-    creation: bool = False, **kwargs: Any
+    val: Any, argname: str = "assembly_attachment_version", **kwargs: Any
 ) -> AssemblyAttachmentVersion:
     val = _mapping(val, argname, **kwargs)
 
-    if creation:
-        mandatory_fields = dict(ASSEMBLY_ATTACHMENT_VERSION_FIELDS,
-                                attachment_id=ID)
-        optional_fields: TypeMapping = {}
-    else:
-        mandatory_fields = {'attachment_id': ID, 'version': ID}
-        optional_fields = {**ASSEMBLY_ATTACHMENT_VERSION_FIELDS}
+    mandatory_fields = dict(ASSEMBLY_ATTACHMENT_VERSION_FIELDS, attachment_id=ID)
+    optional_fields: TypeMapping = {}
 
-    val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs)
+    val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
 
     return AssemblyAttachmentVersion(val)
 

@@ -61,9 +61,9 @@
 
                 {% set implicit_realms = [] %}
                 {% if values['target_realm'] == 'cde' %}
-                    {% set tmp = implicit_realms.extend(['event', 'assembly', 'ml']) %}
+                    {% do implicit_realms.extend(['event', 'assembly', 'ml']) %}
                 {% elif values['target_realm'] in ('event', 'assembly') %}
-                    {% set tmp = implicit_realms.extend(['ml']) %}
+                    {% do implicit_realms.extend(['ml']) %}
                 {% endif %}
                 {% call util.form_input_static(label=gettext("Implied new Realms")) %}
                     <ul>

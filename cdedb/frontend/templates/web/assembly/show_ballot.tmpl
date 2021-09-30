@@ -89,9 +89,7 @@
     {% endif %}
 
 
-    {% if attachments or edit_mode %}
-        {{ ballot_meta.show_attachments(edit_mode) }}
-    {% endif %}
+    {{ ballot_meta.show_attachments() }}
 
     {{ ballot_meta.show_navigation(page_name="assembly/show_ballot") }}
 

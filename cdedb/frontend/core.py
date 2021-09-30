@@ -2077,11 +2077,18 @@ class CoreFrontend(AbstractFrontend):
                     "It seems like you took too long and "
                     "your previous upload was deleted.")))
                 rs.append_validation_error(e)
+        elif 'attachment_hash' in REALM_SPECIFIC_GENESIS_FIELDS.get(data['realm'], {}):
+            e = ("attachment", ValueError(n_("Attachment missing.")))
+            rs.append_validation_error(e)
+
         data = check(rs, vtypes.GenesisCase, data, creation=True,
                      _ignore_warnings=ignore_warnings)
         if rs.has_validation_errors():
             return self.genesis_request_form(rs)
         assert data is not None
+        # past events and courses may not be set here
+        data['pevent_id'] = None
+        data['pcourse_id'] = None
         if len(data['notes']) > self.conf["MAX_RATIONALE"]:
             rs.append_validation_error(
                 ("notes", ValueError(n_("Rationale too long."))))
@@ -2272,10 +2279,15 @@ class CoreFrontend(AbstractFrontend):
         if (not self.is_admin(rs)
                 and "{}_admin".format(case['realm']) not in rs.user.roles):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        reviewer = None
+        reviewer = pevent = pcourse = None
         if case['reviewer']:
             reviewer = self.coreproxy.get_persona(rs, case['reviewer'])
-        return self.render(rs, "genesis_show_case", {'reviewer': reviewer})
+        if case['pevent_id']:
+            pevent = self.pasteventproxy.get_past_event(rs, case['pevent_id'])
+        if case['pcourse_id']:
+            pcourse = self.pasteventproxy.get_past_course(rs, case['pcourse_id'])
+        return self.render(rs, "genesis_show_case",
+                           {'reviewer': reviewer, 'pevent': pevent, 'pcourse': pcourse})
 
     @access("core_admin", *("{}_admin".format(realm)
                             for realm in REALM_SPECIFIC_GENESIS_FIELDS))
@@ -2290,12 +2302,19 @@ class CoreFrontend(AbstractFrontend):
             rs.notify("error", n_("Case not to review."))
             return self.genesis_list_cases(rs)
         merge_dicts(rs.values, case)
-        realm_options = [option
+        realm_options = [(option.realm, rs.gettext(option.name))
                          for option in GENESIS_REALM_OPTION_NAMES
                          if option.realm in REALM_SPECIFIC_GENESIS_FIELDS]
+
+        courses: Dict[int, str] = {}
+        if case['pevent_id']:
+            courses = self.pasteventproxy.list_past_courses(rs, case['pevent_id'])
+        choices = {"pevent_id": self.pasteventproxy.list_past_events(rs),
+                   "pcourse_id": courses}
+
         return self.render(rs, "genesis_modify_form", {
             'REALM_SPECIFIC_GENESIS_FIELDS': REALM_SPECIFIC_GENESIS_FIELDS,
-            'realm_options': realm_options})
+            'realm_options': realm_options, 'choices': choices})
 
     @access("core_admin", *("{}_admin".format(realm)
                             for realm in REALM_SPECIFIC_GENESIS_FIELDS),
@@ -2355,9 +2374,17 @@ class CoreFrontend(AbstractFrontend):
             code = self.coreproxy.genesis_modify_case(rs, data)
             success = bool(code)
             new_id = None
+            pcode = 1
             if success and data['case_status'] == const.GenesisStati.approved:
                 new_id = self.coreproxy.genesis(rs, genesis_case_id)
+                if case['pevent_id']:
+                    pcode = self.pasteventproxy.add_participant(
+                        rs, pevent_id=case['pevent_id'], pcourse_id=case['pcourse_id'],
+                        persona_id=new_id)
                 success = bool(new_id)
+        if not pcode and success:
+            rs.notify("error", n_("Past event attendance could not be established."))
+            return self.genesis_list_cases(rs)
         if not success:
             rs.notify("error", n_("Failed."))
             return self.genesis_list_cases(rs)
