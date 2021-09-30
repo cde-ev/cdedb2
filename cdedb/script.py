@@ -11,11 +11,10 @@ with the production environment.
 
 import getpass
 import os
-import pathlib
 import tempfile
 import time
 from types import TracebackType
-from typing import Any, Optional, Type
+from typing import Any, Optional, Type, Dict, Tuple
 
 import psycopg2
 import psycopg2.extensions
@@ -23,6 +22,7 @@ import psycopg2.extras
 
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
+from cdedb.backend.common import AbstractBackend
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
@@ -40,6 +40,31 @@ _TRANSLATIONS = setup_translations(_CONFIG)
 
 
 __all__ = ['DryRunError', 'Script', 'ScriptAtomizer']
+
+
+class TempConfig:
+    def __init__(self, configpath: PathLike = None, **config: Any):
+        if config and configpath:
+            raise ValueError("Mustn't specify both config and configpath.")
+        self._configpath = configpath
+        self._config = config
+        self._f = tempfile.NamedTemporaryFile("w", suffix=".py")
+
+    def __enter__(self) -> Optional[PathLike]:
+        if self._config:
+            f = self._f.__enter__()
+            for k, v in self._config.items():
+                f.write(f"{k} = {v}")
+            f.flush()
+            return f.name
+        return self._configpath
+
+    def __exit__(self, exc_type: Optional[Type[Exception]],
+                 exc_val: Optional[Exception],
+                 exc_tb: Optional[TracebackType]) -> Optional[bool]:
+        if self._f:
+            return self._f.__exit__(exc_type, exc_val, exc_tb)
+        return False
 
 
 class Script:
@@ -79,27 +104,12 @@ class Script:
         self.persona_id = persona_id
         self.dry_run = dry_run
 
-        # Setup config and connection.
-        self._conn: psycopg2.extensions.connection = None
+        # Setup internals.
         self._atomizer: Optional[ScriptAtomizer] = None
-        self._tempfile = None
-        self.configpath = None
-        if pathlib.Path("/PRODUCTIONVM").exists():
-            self.configpath = "/etc/cdedb-application-config.py"
-        if config and configpath:
-            raise ValueError("Mustn't specify both config and configpath.")
-        elif config:
-            with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False) as f:
-                for k, v in config.items():
-                    f.write(f"{k} = {v}\n")
-                f.flush()
-                self._tempfile = f
-                self.configpath = pathlib.Path(f.name)
-        elif configpath:
-            configpath = pathlib.Path(configpath)
-            if configpath.is_file():
-                self.configpath = configpath
-        self.config = Config(self.configpath)
+        self._conn: psycopg2.extensions.connection = None
+        self._tempconfig = TempConfig(configpath, **config)
+        self._backends: Dict[Tuple[str, bool], AbstractBackend] = {}
+        self._request_states: Dict[int, RequestState] = {}
         self._connect(dbuser, dbname, cursor)
 
     def _connect(self, dbuser: str, dbname: str, cursor: psycopg2.extensions.cursor
@@ -107,10 +117,8 @@ class Script:
         """Create and save a dabase connection."""
         if self._conn:
             return
-        secrets = SecretsConfig(self.configpath)
-
-        # Allow overriding the dbname via environment variable for evolution trial.
-        dbname = os.environ.get('EVOLUTION_TRIAL_OVERRIDE_DBNAME', dbname)
+        with self._tempconfig as p:
+            secrets = SecretsConfig(p)
 
         connection_parameters = {
             "dbname": dbname,
@@ -132,16 +140,26 @@ class Script:
 
     def make_backend(self, realm: str, *, proxy: bool = True):  # type: ignore[no-untyped-def]
         """Create backend, either as a proxy or not."""
-        backend = self.backend_map[realm](self.configpath)
-        return make_proxy(backend) if proxy else backend
+        if ret := self._backends.get((realm, proxy)):
+            return ret
+        with self._tempconfig as p:
+            backend = self.backend_map[realm](p)
+        self._backends.update({
+            (realm, True): make_proxy(backend),
+            (realm, False): backend,
+        })
+        return self._backends[(realm, proxy)]
 
     def rs(self, persona_id: int = None) -> RequestState:
         """Create a RequestState."""
+        persona_id = self.persona_id if persona_id is None else persona_id
+        if ret := self._request_states.get(persona_id):
+            return ret
         rs = RequestState(
             sessionkey=None,
             apitoken=None,
             user=User(
-                persona_id=self.persona_id if persona_id is None else persona_id,
+                persona_id=persona_id,
                 roles=ALL_ROLES,
             ),
             request=None,  # type: ignore[arg-type]
@@ -155,12 +173,8 @@ class Script:
             translations=_TRANSLATIONS,
         )
         rs.conn = rs._conn = self._conn
+        self._request_states[persona_id] = rs
         return rs
-
-    def __del__(self) -> None:
-        """When deleting this instance, delete the temporary file if it still exists."""
-        if self._tempfile and self.configpath:
-            self.configpath.unlink(missing_ok=True)
 
     def __enter__(self) -> IrradiatedConnection:
         """Thin wrapper around `ScriptAtomizer`."""
