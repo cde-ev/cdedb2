@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# pylint: disable=missing-module-docstring
 
 from typing import Dict, List, Set, Union
 
@@ -448,7 +449,9 @@ class TestLDAP(BasicTest):
             ")"
         )
         self.no_result_search(search_filter, except_users={"cn=cloud"})
-        with ldap3.Connection(self.server, user=self.admin_dua_dn, password=self.admin_dua_pw) as conn:
+        with ldap3.Connection(
+                self.server, user=self.admin_dua_dn, password=self.admin_dua_pw
+        ) as conn:
             conn.search(search_base=self.root_dn, search_filter=search_filter)
             result_names: Set[str] = {entry.entry_dn for entry in conn.entries}
             self.assertEqual(result_names, expectation)
@@ -484,8 +487,9 @@ class TestLDAP(BasicTest):
             ")"
         )
         self.no_result_search(search_filter, except_users={"cn=cloud"})
-        with ldap3.Connection(self.server, user=self.admin_dua_dn,
-                              password=self.admin_dua_pw) as conn:
+        with ldap3.Connection(
+            self.server, user=self.admin_dua_dn, password=self.admin_dua_pw
+        ) as conn:
             conn.search(search_base=self.root_dn, search_filter=search_filter)
             result_names = {entry.entry_dn for entry in conn.entries}
             self.assertEqual(result_names, expectation)
