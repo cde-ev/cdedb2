@@ -1,4 +1,4 @@
-FROM debian:buster-20200607
+FROM debian:bullseye-20210816
 
 RUN echo slapd slapd/internal/adminpw password secret | debconf-set-selections \
     && echo slapd slapd/internal/generated_adminpw password secret | debconf-set-selections \
