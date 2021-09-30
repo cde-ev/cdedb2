@@ -77,32 +77,46 @@ class Script:
         "event": EventBackend,
     }
 
-    def __init__(self, persona_id: int, dbuser: str, dbname: str = 'cdb',
-                 check_system_user: bool = True, dry_run: bool = True,
+    def __init__(self, *, persona_id: int = None, dry_run: bool = None,
+                 dbuser: str = 'cdb_anonymous', dbname: str = 'cdb',
                  cursor: psycopg2.extensions.cursor = psycopg2.extras.RealDictCursor,
-                 configpath: Optional[PathLike] = None,
+                 check_system_user: bool = True, configpath: Optional[PathLike] = None,
                  **config: Any):
         """Setup a helper class containing everything you might need for a script.
 
+        The parameters `persona_id`, `dry_run` and `configpath` may be left out, in
+        which case they will be read from the environment or set to a reasonable
+        default.
+
+        The database name and the `dry_run` parameter may be overridden specifically by
+        the `evolution_trial` script.
+
         :param persona_id: Default ID for the user performing the actions.
-        :param dbuser: Database user for the connection.
+        :param dry_run: Whether or not to keep any changes after a transaction.
+        :param dbuser: Database user for the connection. Defaults to `'cdb_anonymous'`
         :param dbname: Database against which to run the script. Defaults to `'cdb'`.
             May be overridden via environment variable during the evolution trial.
+        :param cursor: CursorFactory for the cursor used by this connection.
         :param check_system_user: Whether or not ot check for the correct invoking user,
             you need to have a really good reason to turn this off.
-        :param dry_run: Whether or not to keep any changes after a transaction.
-        :param cursor: CursorFactory for the cursor used by this connection.
         :param configpath: Path to additional config file. Mutually exclusive with
             `config`. In production this has a default.
         :param config: Additional config options via keyword arguments. Mutually
             exclusive with `configpath`.
         """
-
         if check_system_user and getpass.getuser() != "www-data":
             raise RuntimeError("Must be run as user www-data.")
 
-        self.persona_id = persona_id
-        self.dry_run = dry_run
+        # Read configurable data from environment and/or input.
+        configpath = configpath or os.environ.get("SCRIPT_CONFIGPATH")
+        # Allow overriding for evolution trial.
+        if persona_id is None:
+            persona_id = int(os.environ.get("SCRIPT_PERSONA_ID", -1))
+        self.persona_id = int(os.environ.get("EVOLUTION_TRIAL_OVERRIDE_PERSONA_ID", persona_id))
+        if dry_run is None:
+            dry_run = bool(os.environ.get("SCRIPT_DRY_RUN", True))
+        self.dry_run = bool(os.environ.get("EVOLUTION_TRIAL_OVERRIDE_DRY_RUN", dry_run))
+        dbname = os.environ.get("EVOLUTION_TRIAL_OVERRIDE_DBNAME", dbname)
 
         # Setup internals.
         self._atomizer: Optional[ScriptAtomizer] = None
@@ -207,7 +221,7 @@ class ScriptAtomizer(Atomizer):
     start_time: float
 
     def __init__(self, rs: RequestState, *, dry_run: bool = True) -> None:
-        self.dry_run = bool(os.environ.get('EVOLUTION_TRIAL_OVERRIDE_DRY_RUN', dry_run))
+        self.dry_run = dry_run
         super().__init__(rs)
 
     def __enter__(self) -> IrradiatedConnection:
