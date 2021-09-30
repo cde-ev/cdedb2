@@ -1,0 +1,1 @@
+../cdedb-ldap.sql
