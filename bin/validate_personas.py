@@ -7,7 +7,7 @@ from cdedb.backend.common import affirm_validation_typed as affirm
 
 # Prepare stuff
 
-script = Script(persona_id=-1, dbuser="cdb_admin")
+script = Script(dbuser="cdb_persona")
 rs = script.rs()
 core = script.make_backend("core")
 
