@@ -148,18 +148,20 @@ class ValidatorStorage(Dict[Type[Any], Callable[..., Any]]):
 _ALL_TYPED = ValidatorStorage()
 
 
-def validate_assert(type_: Type[T], value: Any, **kwargs: Any) -> T:
+def validate_assert(type_: Type[T], value: Any, ignore_warnings: bool,
+                    **kwargs: Any) -> T:
     """Check if value is of type type_ – otherwise, raise an error.
 
     This should be used mostly in backend functions to check whether an input is
     appropriate.
 
-    Note that this ignores all warnings on purpose!
+    Note that this needs an explicit information whether warnings shall be ignored or
+    not.
     """
     if "ignore_warnings" in kwargs:
         raise RuntimeError("Not allowed to set 'ignore_warnings' toggle.")
     try:
-        return _ALL_TYPED[type_](value, ignore_warnings=True, **kwargs)
+        return _ALL_TYPED[type_](value, ignore_warnings=ignore_warnings, **kwargs)
     except ValidationSummary as errs:
         old_format = [(e.args[0], e.__class__(*e.args[1:])) for e in errs]
         _LOGGER.debug(
@@ -171,8 +173,9 @@ def validate_assert(type_: Type[T], value: Any, **kwargs: Any) -> T:
         raise e from errs  # pylint: disable=raising-bad-type
 
 
-def validate_assert_optional(type_: Type[T], value: Any, **kwargs: Any) -> Optional[T]:
-    return validate_assert(Optional[type_], value, **kwargs)  # type: ignore
+def validate_assert_optional(type_: Type[T], value: Any, ignore_warnings: bool,
+                             **kwargs: Any) -> Optional[T]:
+    return validate_assert(Optional[type_], value, ignore_warnings **kwargs)  # type: ignore
 
 
 def validate_check(type_: Type[T], value: Any, ignore_warnings: bool,

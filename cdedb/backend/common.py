@@ -843,16 +843,22 @@ def _affirm_validation(assertion: str, value: T, **kwargs: Any) -> T:
 
 
 def affirm_validation_typed(assertion: Type[T], value: Any, **kwargs: Any) -> T:
-    """Wrapper to call asserts in :py:mod:`cdedb.validation`."""
-    return validate.validate_assert(assertion, value, **kwargs)
+    """Wrapper to call asserts in :py:mod:`cdedb.validation`.
+
+    Note that this ignores all warnings on purpose!
+    """
+    return validate.validate_assert(assertion, value, ignore_warnings=True, **kwargs)
 
 
 def affirm_validation_typed_optional(
     assertion: Type[T], value: Any, **kwargs: Any
 ) -> Optional[T]:
-    """Wrapper to call asserts in :py:mod:`cdedb.validation`."""
+    """Wrapper to call asserts in :py:mod:`cdedb.validation`.
+
+    Note that this ignores all warnings on purpose!
+    """
     return validate.validate_assert(
-        Optional[assertion], value, **kwargs)  # type: ignore
+        Optional[assertion], value, ignore_warnings=True, **kwargs)  # type: ignore
 
 
 def affirm_array_validation(
