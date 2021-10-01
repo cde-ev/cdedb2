@@ -5,13 +5,15 @@ import copy
 import datetime
 import decimal
 import unittest
-from typing import Any, Dict, Iterable, List, Mapping, Tuple, Type, Union
+from typing import Any, Dict, Iterable, List, Mapping, Tuple, Type, Union, Optional
 
 import pytz
 
 import cdedb.database.constants as const
-import cdedb.validation as validate
-from cdedb.common import ValidationWarning
+from cdedb.common import ValidationWarning, Error
+from cdedb.validation import (
+    T, validate_assert, validate_assert_optional, validate_check,
+    validate_check_optional)
 from cdedb.validationtypes import (
     IBAN, JSON, Email, GenesisCase, PasswordStrength, Persona, Phone, PrintableASCII,
     PrintableASCIIType, SafeStr, StringType, Vote
@@ -19,6 +21,32 @@ from cdedb.validationtypes import (
 
 
 class TestValidation(unittest.TestCase):
+    @staticmethod
+    def validate_check(
+        type_: Type[T], value: Any, **kwargs: Any
+    ) -> Tuple[Optional[T], List[Error]]:
+        """A thin wrapper around validate_check to ignore warnings."""
+        return validate_check(type_, value, ignore_warnings=True, **kwargs)
+
+    @staticmethod
+    def validate_check_optional(
+        type_: Type[T], value: Any, **kwargs: Any
+    ) -> Tuple[Optional[T], List[Error]]:
+        """A thin wrapper around validate_check_optional to ignore warnings."""
+        return validate_check_optional(type_, value, ignore_warnings=True, **kwargs)
+
+    @staticmethod
+    def validate_assert(type_: Type[T], value: Any, **kwargs: Any) -> T:
+        """A thin wrapper around validate_affirm to ignore warnings."""
+        return validate_assert(type_, value, ignore_warnings=True, **kwargs)
+
+    @staticmethod
+    def validate_assert_optional(
+        type_: Type[T], value: Any, **kwargs: Any
+    ) -> Optional[T]:
+        """A thin wrapper around validate_affirm_optional to ignore warnings."""
+        return validate_assert_optional(type_, value, ignore_warnings=True, **kwargs)
+
     def do_validator_test(
         self,
         type_: Type[Any],
@@ -30,58 +58,58 @@ class TestValidation(unittest.TestCase):
             with self.subTest(inval=inval):
                 if not exception:
                     self.assertEqual(
-                        validate.validate_check(type_, inval, **extraparams),
+                        self.validate_check(type_, inval, **extraparams),
                         (retval, []),
                     )
                     self.assertEqual(
-                        validate.validate_assert(type_, inval, **extraparams),
+                        self.validate_assert(type_, inval, **extraparams),
                         retval,
                     )
                 else:
                     self.assertEqual(
                         None,
-                        validate.validate_check(type_, inval, **extraparams)[0],
+                        self.validate_check(type_, inval, **extraparams)[0],
                     )
                     self.assertNotEqual(
                         [],
-                        validate.validate_check(type_, inval, **extraparams)[1],
+                        self.validate_check(type_, inval, **extraparams)[1],
                     )
                     exception_args = None
                     if isinstance(exception, Exception):
                         exception_args = exception.args
                         exception = type(exception)
                     with self.assertRaises(exception) as cm:
-                        validate.validate_assert(type_, inval, **extraparams)
+                        self.validate_assert(type_, inval, **extraparams)
                     if exception_args:
                         self.assertEqual(cm.exception.args, exception_args)
-                onepass = validate.validate_check(type_, inval, **extraparams)[0]
-                twopass = validate.validate_check(type_, onepass, **extraparams)[0]
+                onepass = self.validate_check(type_, inval, **extraparams)[0]
+                twopass = self.validate_check(type_, onepass, **extraparams)[0]
                 self.assertEqual(onepass, twopass)
 
     def test_optional(self) -> None:
-        self.assertEqual((12, []), validate.validate_check(int, 12))
-        self.assertEqual(None, validate.validate_check(int, None)[0])
-        self.assertLess(0, len(validate.validate_check(int, None)[1]))
-        self.assertEqual(None, validate.validate_check(int, "garbage")[0])
-        self.assertLess(0, len(validate.validate_check(int, "garbage")[1]))
-        self.assertEqual((12, []), validate.validate_check(int, "12"))
-        self.assertEqual((12, []), validate.validate_check_optional(int, 12))
-        self.assertEqual((None, []), validate.validate_check_optional(int, None))
-        self.assertEqual((12, []), validate.validate_check_optional(int, "12"))
-        self.assertEqual(None, validate.validate_check_optional(int, "garbage")[0])
-        self.assertLess(0, len(validate.validate_check_optional(int, "garbage")[1]))
+        self.assertEqual((12, []), self.validate_check(int, 12))
+        self.assertEqual(None, self.validate_check(int, None)[0])
+        self.assertLess(0, len(self.validate_check(int, None)[1]))
+        self.assertEqual(None, self.validate_check(int, "garbage")[0])
+        self.assertLess(0, len(self.validate_check(int, "garbage")[1]))
+        self.assertEqual((12, []), self.validate_check(int, "12"))
+        self.assertEqual((12, []), self.validate_check_optional(int, 12))
+        self.assertEqual((None, []), self.validate_check_optional(int, None))
+        self.assertEqual((12, []), self.validate_check_optional(int, "12"))
+        self.assertEqual(None, self.validate_check_optional(int, "garbage")[0])
+        self.assertLess(0, len(self.validate_check_optional(int, "garbage")[1]))
 
-        self.assertEqual(12, validate.validate_assert(int, 12))
+        self.assertEqual(12, self.validate_assert(int, 12))
         with self.assertRaises(TypeError):
-            validate.validate_assert(int, None)
+            self.validate_assert(int, None)
         with self.assertRaises(ValueError):
-            validate.validate_assert(int, "garbage")
-        self.assertEqual(12, validate.validate_assert(int, "12"))
-        self.assertEqual(12, validate.validate_assert_optional(int, 12))
-        self.assertEqual(None, validate.validate_assert_optional(int, None))
-        self.assertEqual(12, validate.validate_assert_optional(int, "12"))
+            self.validate_assert(int, "garbage")
+        self.assertEqual(12, self.validate_assert(int, "12"))
+        self.assertEqual(12, self.validate_assert_optional(int, 12))
+        self.assertEqual(None, self.validate_assert_optional(int, None))
+        self.assertEqual(12, self.validate_assert_optional(int, "12"))
         with self.assertRaises(ValueError):
-            validate.validate_assert_optional(int, "garbage")
+            self.validate_assert_optional(int, "garbage")
 
     def test_int(self) -> None:
         self.do_validator_test(int, (
@@ -480,7 +508,7 @@ class TestValidation(unittest.TestCase):
                 (b'{"open": 1', None, ValueError),
                 (b"\xff", None, ValueError)):
             with self.subTest(input=input_):
-                result, errs = validate.validate_check(JSON, input_)
+                result, errs = self.validate_check(JSON, input_)
                 self.assertEqual(output, result)
                 if error is None:
                     self.assertFalse(errs)
