@@ -22,7 +22,8 @@ import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
     AbstractBackend, access, affirm_set_validation as affirm_set,
     affirm_validation_typed as affirm,
-    affirm_validation_typed_optional as affirm_optional, internal, singularize,
+    affirm_validation_typed_optional as affirm_optional,
+    verify_validation as verify, internal, singularize,
 )
 from cdedb.common import (
     ADMIN_KEYS, ALL_ROLES, GENESIS_CASE_FIELDS, GENESIS_REALM_OVERRIDE,
@@ -38,7 +39,6 @@ from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import Atomizer, connection_pool_factory
 from cdedb.query import Query, QueryOperators, QueryScope
-from cdedb.validation import validate_check
 
 
 class CoreBackend(AbstractBackend):
@@ -2360,7 +2360,7 @@ class CoreBackend(AbstractBackend):
                 return False, msg  # type: ignore
         if not new_password:
             return False, n_("No new password provided.")
-        _val, errs = validate_check(vtypes.PasswordStrength, new_password)
+        _, errs = verify(vtypes.PasswordStrength, new_password)
         if errs:
             return False, n_("Password too weak.")
         # escalate db privilege role in case of resetting passwords
@@ -2463,8 +2463,8 @@ class CoreBackend(AbstractBackend):
         if persona['birthday']:
             inputs.extend(persona['birthday'].isoformat().split('-'))
 
-        password, errs = validate_check(vtypes.PasswordStrength, password,
-                                        argname=argname, admin=admin, inputs=inputs)
+        password, errs = verify(vtypes.PasswordStrength, password, argname=argname,
+                                admin=admin, inputs=inputs)
 
         return password, errs
 

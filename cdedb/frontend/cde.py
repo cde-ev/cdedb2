@@ -41,15 +41,15 @@ from cdedb.frontend.common import (
     access, calculate_db_logparams, calculate_loglinks, cdedbid_filter,
     check_validation as check, check_validation_optional as check_optional, csv_output,
     make_membership_fee_reference, make_postal_address, periodic, process_dynamic_input,
-    request_extractor, Worker, TransactionObserver,
+    request_extractor, Worker, TransactionObserver, verify_validation as verify,
+    verify_validation_optional as verify_optional
 )
 from cdedb.query import (
     Query, QueryConstraint, QueryOperators, QueryScope,
 )
 from cdedb.validation import (
     LASTSCHRIFT_COMMON_FIELDS, PAST_EVENT_FIELDS, PAST_COURSE_COMMON_FIELDS,
-    PERSONA_FULL_CDE_CREATION, TypeMapping, filter_none, validate_check,
-    validate_check_optional
+    PERSONA_FULL_CDE_CREATION, TypeMapping, filter_none
 )
 
 MEMBERSEARCH_DEFAULTS = {
@@ -494,7 +494,7 @@ class CdEFrontend(AbstractUserFrontend):
             if persona[k] and not persona[k].strip().startswith(("0", "+")):
                 persona[k] = "0" + persona[k].strip()
         merge_dicts(persona, PERSONA_DEFAULTS)
-        persona, problems = validate_check(
+        persona, problems = verify(
             vtypes.Persona, persona, argname="persona", creation=True)
         if persona:
             if persona['birthday'] > deduct_years(now().date(), 10):
@@ -1053,19 +1053,19 @@ class CdEFrontend(AbstractUserFrontend):
 
         :returns: The processed input datum.
         """
-        amount, problems = validate_check(
+        amount, problems = verify(
             vtypes.PositiveDecimal, datum['raw']['amount'], argname="amount")
-        persona_id, p = validate_check(
+        persona_id, p = verify(
             vtypes.CdedbID, datum['raw']['persona_id'].strip(),
             argname="persona_id")
         problems.extend(p)
-        family_name, p = validate_check(
+        family_name, p = verify(
             str, datum['raw']['family_name'], argname="family_name")
         problems.extend(p)
-        given_names, p = validate_check(
+        given_names, p = verify(
             str, datum['raw']['given_names'], argname="given_names")
         problems.extend(p)
-        note, p = validate_check_optional(str, datum['raw']['note'], argname="note")
+        note, p = verify_optional(str, datum['raw']['note'], argname="note")
         problems.extend(p)
 
         if persona_id:

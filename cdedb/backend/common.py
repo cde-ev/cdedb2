@@ -29,7 +29,7 @@ import cdedb.validationtypes as vtypes
 from cdedb.common import (
     LOCALE, CdEDBLog, CdEDBObject, CdEDBObjectMap, PathLike, PrivilegeError, PsycoJson,
     Realm, RequestState, Role, diacritic_patterns, glue, make_proxy, make_root_logger,
-    n_, unwrap, DefaultReturnCode,
+    n_, unwrap, DefaultReturnCode, Error
 )
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
@@ -879,6 +879,20 @@ def affirm_set_validation(
         affirm_validation_typed(assertion, value, **kwargs)
         for value in values
     )
+
+
+def verify_validation(
+    type_: Type[T], value: Any, **kwargs: Any
+) -> Tuple[Optional[T], List[Error]]:
+    """Wrapper to call checks in :py:mod:`cdedb.validation`.
+
+    This should only be used if the error handling must be done in the backend to
+    retrieve the errors and not raising them (like affirm would do).
+
+    Note that this ignores all warnings on purpose!
+    """
+    ret, errs = validate.validate_check(type_, value, ignore_warnings=True, **kwargs)
+    return ret, errs
 
 
 def cast_fields(data: CdEDBObject, fields: CdEDBObjectMap) -> CdEDBObject:

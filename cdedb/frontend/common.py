@@ -1983,8 +1983,9 @@ def assembly_guard(fun: F) -> F:
 
 def check_validation(rs: RequestState, type_: Type[T], value: Any,
                      name: str = None, **kwargs: Any) -> Optional[T]:
-    """Helper to perform parameter sanitization.
+    """Wrapper to call checks in :py:mod:`cdedb.validation`.
 
+    This performs the check and appends all occurred errors to the RequestState.
     This also ignores warnings appropriately due to rs.ignore_warnings.
 
     :param type_: type to check for
@@ -2004,7 +2005,7 @@ def check_validation(rs: RequestState, type_: Type[T], value: Any,
 
 def check_validation_optional(rs: RequestState, type_: Type[T], value: Any,
                               name: str = None, **kwargs: Any) -> Optional[T]:
-    """Helper to perform parameter sanitization.
+    """Wrapper to call checks in :py:mod:`cdedb.validation`.
 
     This is similar to :func:`~cdedb.frontend.common.check_validation`
     but also allows optional/falsy values.
@@ -2024,6 +2025,37 @@ def check_validation_optional(rs: RequestState, type_: Type[T], value: Any,
             type_, value, ignore_warnings=rs.ignore_warnings, **kwargs)
     rs.extend_validation_errors(errs)
     return ret
+
+
+# TODO how to handle warnings here?
+def verify_validation(
+    type_: Type[T], value: Any, **kwargs: Any
+) -> Tuple[Optional[T], List[Error]]:
+    """Wrapper to call checks in :py:mod:`cdedb.validation`.
+
+    This is similar to :func:`~cdedb.frontend.common.check_validation` but returns
+    all encountered errors instead of appending them to the RequestState.
+    This should only be used if the error handling differs from the default handling.
+
+    Note that this ignores all warnings on purpose!
+    """
+    ret, errs = validate.validate_check(type_, value, ignore_warnings=True, **kwargs)
+    return ret, errs
+
+
+# TODO how to handle warnings here?
+def verify_validation_optional(
+    type_: Type[T], value: Any, **kwargs: Any
+) -> Tuple[Optional[T], List[Error]]:
+    """Wrapper to call checks in :py:mod:`cdedb.validation`.
+
+    This is similar to :func:`~cdedb.frontend.common.verify_validation` but also allows
+    optional/falsy values.
+
+    Note that this ignores all warnings on purpose!
+    """
+    ret, errs = validate.validate_check(type_, value, ignore_warnings=True, **kwargs)
+    return ret, errs
 
 
 def basic_redirect(rs: RequestState, url: str) -> werkzeug.Response:

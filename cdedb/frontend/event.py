@@ -46,7 +46,7 @@ from cdedb.frontend.common import (
     cdedbid_filter, cdedburl, check_validation as check,
     check_validation_optional as check_optional, event_guard, make_event_fee_reference,
     periodic, process_dynamic_input, request_extractor, make_persona_name,
-    TransactionObserver,
+    TransactionObserver, verify_validation as verify
 )
 from cdedb.frontend.event_lodgement_wishes import (
     create_lodgement_wishes_graph, detect_lodgement_wishes,
@@ -57,7 +57,7 @@ from cdedb.query import (
 )
 from cdedb.validation import (
     COURSE_COMMON_FIELDS, EVENT_EXPOSED_FIELDS, LODGEMENT_COMMON_FIELDS,
-    PERSONA_FULL_EVENT_CREATION, TypeMapping, filter_none, validate_check,
+    PERSONA_FULL_EVENT_CREATION, TypeMapping, filter_none,
     EVENT_PART_COMMON_FIELDS, EVENT_PART_CREATION_MANDATORY_FIELDS
 )
 from cdedb.validationtypes import VALIDATOR_LOOKUP
@@ -2088,18 +2088,18 @@ class EventFrontend(AbstractUserFrontend):
         infos = []
         # Allow an amount of zero to allow non-modification of amount_paid.
         amount: Optional[decimal.Decimal]
-        amount, problems = validate_check(vtypes.NonNegativeDecimal,
+        amount, problems = verify(vtypes.NonNegativeDecimal,
             datum['raw']['amount'].strip(), argname="amount")
-        persona_id, p = validate_check(vtypes.CdedbID,
+        persona_id, p = verify(vtypes.CdedbID,
             datum['raw']['id'].strip(), argname="persona_id")
         problems.extend(p)
-        family_name, p = validate_check(str,
+        family_name, p = verify(str,
             datum['raw']['family_name'], argname="family_name")
         problems.extend(p)
-        given_names, p = validate_check(str,
+        given_names, p = verify(str,
             datum['raw']['given_names'], argname="given_names")
         problems.extend(p)
-        date, p = validate_check(datetime.date,
+        date, p = verify(datetime.date,
             datum['raw']['date'].strip(), argname="date")
         problems.extend(p)
 
@@ -5844,7 +5844,7 @@ class EventFrontend(AbstractUserFrontend):
 
         data = None
 
-        anid, errs = validate_check(vtypes.ID, phrase, argname="phrase")
+        anid, errs = verify(vtypes.ID, phrase, argname="phrase")
         if not errs:
             assert anid is not None
             tmp = self.eventproxy.get_registrations(rs, (anid,))
@@ -5862,7 +5862,7 @@ class EventFrontend(AbstractUserFrontend):
             terms = [t.strip() for t in phrase.split(' ') if t]
             valid = True
             for t in terms:
-                _, errs = validate_check(vtypes.NonRegex, t, argname="phrase")
+                _, errs = verify(vtypes.NonRegex, t, argname="phrase")
                 if errs:
                     valid = False
             if not valid:
@@ -5929,7 +5929,7 @@ class EventFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
 
-        anid, errs = validate_check(vtypes.CdedbID, phrase, argname="phrase")
+        anid, errs = verify(vtypes.CdedbID, phrase, argname="phrase")
         if not errs:
             reg_ids = self.eventproxy.list_registrations(
                 rs, event_id, persona_id=anid)
@@ -5938,7 +5938,7 @@ class EventFrontend(AbstractUserFrontend):
                 return self.redirect(rs, "event/show_registration",
                                      {'registration_id': reg_id})
 
-        anid, errs = validate_check(vtypes.ID, phrase, argname="phrase")
+        anid, errs = verify(vtypes.ID, phrase, argname="phrase")
         if not errs:
             assert anid is not None
             regs = self.eventproxy.get_registrations(rs, (anid,))
@@ -5951,7 +5951,7 @@ class EventFrontend(AbstractUserFrontend):
         terms = tuple(t.strip() for t in phrase.split(' ') if t)
         valid = True
         for t in terms:
-            _, errs = validate_check(vtypes.NonRegex, t, argname="phrase")
+            _, errs = verify(vtypes.NonRegex, t, argname="phrase")
             if errs:
                 valid = False
         if not valid:
