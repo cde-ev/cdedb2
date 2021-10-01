@@ -21,8 +21,8 @@ import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
     AbstractBackend, access, affirm_set_validation as affirm_set,
-    affirm_validation_typed as affirm,
-    affirm_validation_typed_optional as affirm_optional,
+    affirm_validation as affirm,
+    affirm_validation_optional as affirm_optional,
     verify_validation as verify, internal, singularize,
 )
 from cdedb.common import (

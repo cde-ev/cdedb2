@@ -19,8 +19,8 @@ import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
     AbstractBackend, access, affirm_set_validation as affirm_set,
     affirm_array_validation as affirm_array,
-    affirm_validation_typed as affirm,
-    affirm_validation_typed_optional as affirm_optional, batchify, singularize,
+    affirm_validation as affirm,
+    affirm_validation_optional as affirm_optional, batchify, singularize,
 )
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.common import (

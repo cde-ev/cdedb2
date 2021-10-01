@@ -723,18 +723,17 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         assert issubclass(code_validator, enum.IntEnum)
         codes = affirm_set_validation(code_validator, codes or set())
         entity_ids = affirm_set_validation(vtypes.ID, entity_ids or set())
-        offset: Optional[int] = affirm_validation_typed_optional(
+        offset: Optional[int] = affirm_validation_optional(
             vtypes.NonNegativeInt, offset)
-        length: Optional[int] = affirm_validation_typed_optional(
-            vtypes.PositiveInt, length)
+        length: Optional[int] = affirm_validation_optional(vtypes.PositiveInt, length)
         additional_columns = affirm_set_validation(
             vtypes.RestrictiveIdentifier, additional_columns or set())
-        persona_id = affirm_validation_typed_optional(vtypes.ID, persona_id)
-        submitted_by = affirm_validation_typed_optional(vtypes.ID, submitted_by)
-        reviewed_by = affirm_validation_typed_optional(vtypes.ID, reviewed_by)
-        change_note = affirm_validation_typed_optional(vtypes.Regex, change_note)
-        time_start = affirm_validation_typed_optional(datetime.datetime, time_start)
-        time_stop = affirm_validation_typed_optional(datetime.datetime, time_stop)
+        persona_id = affirm_validation_optional(vtypes.ID, persona_id)
+        submitted_by = affirm_validation_optional(vtypes.ID, submitted_by)
+        reviewed_by = affirm_validation_optional(vtypes.ID, reviewed_by)
+        change_note = affirm_validation_optional(vtypes.Regex, change_note)
+        time_start = affirm_validation_optional(datetime.datetime, time_start)
+        time_stop = affirm_validation_optional(datetime.datetime, time_stop)
 
         length = length or self.conf["DEFAULT_LOG_LENGTH"]
         additional_columns: List[str] = list(additional_columns or [])
@@ -836,13 +835,7 @@ class Silencer:
         self.rs.is_quiet = False
 
 
-def _affirm_validation(assertion: str, value: T, **kwargs: Any) -> T:
-    """Wrapper to call asserts in :py:mod:`cdedb.validation`."""
-    checker = getattr(validate, "assert_{}".format(assertion))
-    return checker(value, **kwargs)
-
-
-def affirm_validation_typed(assertion: Type[T], value: Any, **kwargs: Any) -> T:
+def affirm_validation(assertion: Type[T], value: Any, **kwargs: Any) -> T:
     """Wrapper to call asserts in :py:mod:`cdedb.validation`.
 
     Note that this ignores all warnings on purpose!
@@ -850,7 +843,7 @@ def affirm_validation_typed(assertion: Type[T], value: Any, **kwargs: Any) -> T:
     return validate.validate_assert(assertion, value, ignore_warnings=True, **kwargs)
 
 
-def affirm_validation_typed_optional(
+def affirm_validation_optional(
     assertion: Type[T], value: Any, **kwargs: Any
 ) -> Optional[T]:
     """Wrapper to call asserts in :py:mod:`cdedb.validation`.
@@ -866,7 +859,7 @@ def affirm_array_validation(
 ) -> Tuple[T, ...]:
     """Wrapper to call asserts in :py:mod:`cdedb.validation` for an array."""
     return tuple(
-        affirm_validation_typed(assertion, value, **kwargs)
+        affirm_validation(assertion, value, **kwargs)
         for value in values
     )
 
@@ -876,7 +869,7 @@ def affirm_set_validation(
 ) -> Set[T]:
     """Wrapper to call asserts in :py:mod:`cdedb.validation` for a set."""
     return set(
-        affirm_validation_typed(assertion, value, **kwargs)
+        affirm_validation(assertion, value, **kwargs)
         for value in values
     )
 

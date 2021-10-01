@@ -3,7 +3,7 @@ from typing import Optional
 
 from cdedb.script import make_backend, setup, Script, CoreBackend
 import cdedb.validationtypes as vtypes
-from cdedb.backend.common import affirm_validation_typed as affirm
+from cdedb.backend.common import affirm_validation as affirm
 
 # Configuration
 

@@ -20,8 +20,8 @@ import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
     PYTHON_TO_SQL_MAP, AbstractBackend, Silencer, DatabaseValue_s, access,
-    affirm_set_validation as affirm_set, affirm_validation_typed as affirm,
-    affirm_validation_typed_optional as affirm_optional, cast_fields, internal,
+    affirm_set_validation as affirm_set, affirm_validation as affirm,
+    affirm_validation_optional as affirm_optional, cast_fields, internal,
     singularize, read_conditional_write_composer,
     affirm_array_validation as affirm_array,
 )
