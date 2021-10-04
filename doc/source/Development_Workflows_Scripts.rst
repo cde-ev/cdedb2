@@ -36,7 +36,7 @@ via environment variables if left out. ::
     SHOW_ERROR_DETAILS = True
 
 The created ``Script`` object has a ``.rs()`` method, that will return a
-``RequestState`` for the default user. The return is cached, to there is no actual
+``RequestState`` for the default user. The return is cached, so there is no actual
 difference between calling ``script.rs()`` every time or storing it into a local
 variable other than ease of use. The method optionally takes a ``persona_id`` parameter,
 which when given will create a new request state for that user instead of the default
