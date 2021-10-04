@@ -7,10 +7,9 @@ from cdedb.script import Script
 
 # The admin id will need to be replaces before use.
 executing_admin_id = -1
-DRY_RUN = False
 
 # Prepare stuff
-script = Script(persona_id=executing_admin_id, dbuser="cdb_admin", dry_run=DRY_RUN)
+script = Script(persona_id=executing_admin_id, dbuser="cdb_admin")
 user_rs = script.rs()
 
 ml = script.make_backend("ml", proxy=False)

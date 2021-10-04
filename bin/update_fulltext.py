@@ -7,12 +7,11 @@ from cdedb.common import PERSONA_ALL_FIELDS
 from cdedb.script import Script
 
 # config
-DRY_RUN = True
 CHECK = True
 
 # setup
 
-script = Script(persona_id=-1, dbuser="cdb_admin", dry_run=DRY_RUN)
+script = Script(persona_id=-1, dbuser="cdb_admin")
 rs = script.rs()
 core = script.make_backend("core", proxy=False)
 
