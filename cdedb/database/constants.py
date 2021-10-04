@@ -191,7 +191,7 @@ class MailinglistDomain(enum.IntEnum):
             raise NotImplementedError(n_("This domain is not supported."))
         return _DOMAIN_STR_MAP[self]
 
-    def display_str(self):
+    def display_str(self) -> str:
         """Return a readable string representation to be displayed in the UI."""
         return self.get_domain()
 
