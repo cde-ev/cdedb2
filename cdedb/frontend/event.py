@@ -2098,19 +2098,20 @@ class EventFrontend(AbstractUserFrontend):
         infos = []
         # Allow an amount of zero to allow non-modification of amount_paid.
         amount: Optional[decimal.Decimal]
-        amount, problems = validate_check(vtypes.NonNegativeDecimal,
-            datum['raw']['amount'].strip(), argname="amount")
-        persona_id, p = validate_check(vtypes.CdedbID,
-            datum['raw']['id'].strip(), argname="persona_id")
+        amount, problems = validate_check(
+            vtypes.NonNegativeDecimal,
+            (datum['raw']['amount'] or "").strip(), argname="amount")
+        persona_id, p = validate_check(
+            vtypes.CdedbID, (datum['raw']['id'] or "").strip(), argname="persona_id")
         problems.extend(p)
-        family_name, p = validate_check(str,
-            datum['raw']['family_name'], argname="family_name")
+        family_name, p = validate_check(
+            str, datum['raw']['family_name'], argname="family_name")
         problems.extend(p)
-        given_names, p = validate_check(str,
-            datum['raw']['given_names'], argname="given_names")
+        given_names, p = validate_check(
+            str, datum['raw']['given_names'], argname="given_names")
         problems.extend(p)
-        date, p = validate_check(datetime.date,
-            datum['raw']['date'].strip(), argname="date")
+        date, p = validate_check(
+            datetime.date, (datum['raw']['date'] or "").strip(), argname="date")
         problems.extend(p)
 
         registration_id = None
