@@ -531,7 +531,12 @@ class CoreBackend(AbstractBackend):
         query = query.format(fields=', '.join(fields),
                              conditions=' AND '.join(conditions))
         data = self.query_all(rs, query, params)
-        return {e['generation']: e for e in data}
+        ret = {}
+        for d in data:
+            if d.get('gender'):
+                d['gender'] = const.Genders(d['gender'])
+            ret[d['generation']] = d
+        return ret
 
     @internal
     @access("persona", "droid")
