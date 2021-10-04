@@ -43,6 +43,10 @@ __all__ = ['DryRunError', 'Script', 'ScriptAtomizer']
 
 
 class TempConfig:
+    """Provide a thin wrapper around a temporary file.
+
+    The advantage ot this is that it works with both a given configpath or
+    config keyword arguments."""
     def __init__(self, configpath: PathLike = None, **config: Any):
         if config and configpath:
             raise ValueError("Mustn't specify both config and configpath.")
@@ -101,7 +105,7 @@ class Script:
         :param check_system_user: Whether or not ot check for the correct invoking user,
             you need to have a really good reason to turn this off.
         :param configpath: Path to additional config file. Mutually exclusive with
-            `config`. In production this has a default.
+            `config`.
         :param config: Additional config options via keyword arguments. Mutually
             exclusive with `configpath`.
         """
