@@ -2118,10 +2118,10 @@ etc;anything else""", f['entries_2'].value)
 0.0;DB-666-1;Y;Z;77.04.18;stuff
 """
         self.submit(f, check_notification=False)
-        self.assertPresence("Nicht genug Geld.", div="line2_warnings")
-        self.assertPresence("Zu viel Geld.", div="line3_warnings")
-        self.assertPresence("Keine Anmeldung gefunden.", div="line4_problems")
-        self.assertPresence("Kein Account mit ID 666 gefunden.", div="line5_problems")
+        self.assertPresence("Nicht genug Geld.", div="line1_warnings")
+        self.assertPresence("Zu viel Geld.", div="line2_warnings")
+        self.assertPresence("Keine Anmeldung gefunden.", div="line3_problems")
+        self.assertPresence("Kein Account mit ID 666 gefunden.", div="line4_problems")
         f = self.response.forms['batchfeesform']
         f['full_payment'].checked = True
         f['fee_data'] = """
@@ -2130,14 +2130,14 @@ etc;anything else""", f['entries_2'].value)
 451.00;DB-9-4;Iota;Inga;30.12.19
 """
         self.submit(f, check_notification=False)
-        self.assertPresence("Nicht genug Geld.", div="line1_warnings")
-        self.assertPresence("Zu viel Geld.", div="line3_warnings")
+        self.assertPresence("Nicht genug Geld.", div="line0_warnings")
+        self.assertPresence("Zu viel Geld.", div="line2_warnings")
         f = self.response.forms['batchfeesform']
         f['force'].checked = True
         f['send_notifications'].checked = True
         self.submit(f, check_notification=False)
-        self.assertPresence("Nicht genug Geld", div="line1_warnings")
-        self.assertPresence("Zu viel Geld", div="line3_warnings")
+        self.assertPresence("Nicht genug Geld", div="line0_warnings")
+        self.assertPresence("Zu viel Geld", div="line2_warnings")
         # submit again because of checksum
         f = self.response.forms['batchfeesform']
         self.submit(f)

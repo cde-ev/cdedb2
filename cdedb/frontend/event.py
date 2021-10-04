@@ -2244,16 +2244,9 @@ class EventFrontend(AbstractUserFrontend):
         reader = csv.DictReader(
             fee_data_lines, fieldnames=fields, dialect=CustomCSVDialect())
         data = []
-        lineno = 0
-        for raw_entry in reader:
-            dataset: CdEDBObject = {'raw': raw_entry}
-            lineno += 1
-            dataset['lineno'] = lineno
-            data.append(self.examine_fee(
-                rs, dataset, expected_fees, full_payment))
-        if lineno != len(fee_data_lines):
-            rs.append_validation_error(
-                ("fee_data", ValueError(n_("Lines didn’t match up."))))
+        for lineno, raw_entry in enumerate(reader):
+            dataset: CdEDBObject = {'raw': raw_entry, 'lineno': lineno}
+            data.append(self.examine_fee(rs, dataset, expected_fees, full_payment))
         open_issues = any(e['problems'] for e in data)
         saldo: decimal.Decimal = sum(
             (e['amount'] for e in data if e['amount']), decimal.Decimal("0.00"))
