@@ -380,7 +380,7 @@ class MlBackend(AbstractBackend):
                 e['ml_type'] = const.MailinglistTypes(e['ml_type'])
                 e['ml_type_class'] = ml_type.TYPE_MAP[e['ml_type']]
                 e['domain'] = const.MailinglistDomain(e['domain'])
-                e['domain_str'] = e['domain'].display_str()
+                e['domain_str'] = e['domain'].get_domain()
                 e['mod_policy'] = const.ModerationPolicy(e['mod_policy'])
                 e['attachment_policy'] = const.AttachmentPolicy(e['attachment_policy'])
                 e['registration_stati'] = [

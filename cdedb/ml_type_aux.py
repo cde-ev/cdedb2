@@ -34,7 +34,7 @@ class BackendContainer:
 def get_full_address(val: CdEDBObject) -> str:
     """Construct the full address of a mailinglist."""
     if isinstance(val, dict):
-        return val['local_part'] + '@' + MailinglistDomain(val['domain']).display_str()
+        return val['local_part'] + '@' + MailinglistDomain(val['domain']).get_domain()
     else:
         raise ValueError(n_("Cannot determine full address for %(input)s."),
                          {'input': val})
