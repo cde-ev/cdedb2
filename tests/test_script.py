@@ -59,7 +59,7 @@ class TestScript(unittest.TestCase):
         self.assertEqual(
             42,
             configured_script.make_backend("core", proxy=False).conf["LOCKDOWN"])
-        # This way of writing to a tempporary file mirrors exactly what happens
+        # This way of writing to a temporary file mirrors exactly what happens
         # inside `make_backend`.
         with tempfile.NamedTemporaryFile("w", suffix=".py") as f:
             f.write("LOCKDOWN = 42")

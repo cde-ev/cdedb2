@@ -130,7 +130,7 @@ class Script:
 
     def _connect(self, dbuser: str, dbname: str, cursor: psycopg2.extensions.cursor
                  ) -> None:
-        """Create and save a dabase connection."""
+        """Create and save a database connection."""
         if self._conn:
             return
         with self._tempconfig as p:
