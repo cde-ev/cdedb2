@@ -9,7 +9,7 @@ from typing import Any
 import webtest
 
 import cdedb.frontend.parse_statement as parse
-from cdedb.common import CdEDBObject, now
+from cdedb.common import Accounts, CdEDBObject, now
 from cdedb.frontend.common import CustomCSVDialect
 from tests.common import FrontendTest, as_users, storage
 
@@ -268,7 +268,7 @@ class TestParseFrontend(FrontendTest):
 
         # check transactions files
         # check account 00
-        self.csv_submit(f, button="excel", value="8068900")
+        self.csv_submit(f, button="excel", value=str(Accounts.Account0))
         result = list(csv.DictReader(self.response.text.split("\n"),
                                      fieldnames=parse.EXCEL_EXPORT_FIELDS,
                                      dialect=CustomCSVDialect))
@@ -357,7 +357,7 @@ class TestParseFrontend(FrontendTest):
         )
 
         # check account 01
-        self.csv_submit(f, button="excel", value="8068901")
+        self.csv_submit(f, button="excel", value=str(Accounts.Account1))
         result = list(csv.DictReader(self.response.text.split("\n"),
                                      fieldnames=parse.EXCEL_EXPORT_FIELDS,
                                      dialect=CustomCSVDialect))

@@ -1259,7 +1259,7 @@ class Accounts(enum.Enum):
     # Fallback if Account is none of the above
     Unknown = 0
 
-    def __str__(self) -> str:
+    def display_str(self) -> str:
         return str(self.value)
 
 
