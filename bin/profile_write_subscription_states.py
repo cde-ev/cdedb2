@@ -10,14 +10,14 @@ executing_admin_id = -1
 DRY_RUN = False
 
 # Prepare stuff
-s = Script(persona_id=executing_admin_id, dbuser="cdb_admin", dry_run=DRY_RUN)
-user_rs = s.rs()
+script = Script(persona_id=executing_admin_id, dbuser="cdb_admin", dry_run=DRY_RUN)
+user_rs = script.rs()
 
-ml = s.make_backend("ml", proxy=False)
+ml = script.make_backend("ml", proxy=False)
 
 # Execution
 
-with s:
+with script:
     def run(n: int) -> None:
         for _ in range(n):
             ml_ids = ml.list_mailinglists(user_rs)

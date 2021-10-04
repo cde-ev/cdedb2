@@ -12,16 +12,16 @@ CHECK = True
 
 # setup
 
-s = Script(persona_id=-1, dbuser="cdb_admin", dry_run=DRY_RUN)
-rs = s.rs()
-core = s.make_backend("core", proxy=False)
+script = Script(persona_id=-1, dbuser="cdb_admin", dry_run=DRY_RUN)
+rs = script.rs()
+core = script.make_backend("core", proxy=False)
 
 # work
 
 ALL_FIELDS = PERSONA_ALL_FIELDS + ("fulltext",)
 count = 0
 
-with s:
+with script:
     persona_id = core.next_persona(rs, -1, is_member=None, is_archived=None)
     while persona_id is not None:
         persona = core.retrieve_persona(rs, persona_id, ALL_FIELDS)
