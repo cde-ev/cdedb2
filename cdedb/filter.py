@@ -556,7 +556,7 @@ def enum_entries_filter(enum: enum.EnumMeta, processing: Callable[[Any], str] = 
     if raw:
         pre = lambda x: x
     else:
-        pre = (lambda x: x.to_string()) if hasattr(enum, "to_string") else str  # type: ignore[assignment]
+        pre = (lambda x: x.display_str()) if hasattr(enum, "display_str") else str  # type: ignore[assignment]
     to_sort = ((entry, prefix + processing(pre(entry)))  # type: ignore[var-annotated]
                for entry in enum)
     return xsorted(to_sort, key=lambda e: e[0].value)

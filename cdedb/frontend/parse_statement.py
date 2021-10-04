@@ -837,7 +837,7 @@ class Transaction:
             "account_holder": self.account_holder,
             "posting": self.posting,
             "transaction_type": self.type,
-            "category": self.type.to_string(),
+            "category": self.type.display_str(),
             "transaction_type_confidence": self.type_confidence.value,
             "transaction_type_confidence_str": str(self.type_confidence),
             "cdedbid":

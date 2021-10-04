@@ -315,7 +315,7 @@ class TestMlBackend(BackendTest):
         self.assertIn(new_id, self.ml.list_mailinglists(self.key))
         new_data['id'] = new_id
         new_data['address'] = ml_type.get_full_address(new_data)
-        new_data['domain_str'] = new_data['domain'].to_string()  # type: ignore[attr-defined]
+        new_data['domain_str'] = new_data['domain'].display_str()  # type: ignore[attr-defined]
         atype = new_data['ml_type']
         assert isinstance(atype, const.MailinglistTypes)
         new_data['ml_type_class'] = ml_type.get_type(atype)
