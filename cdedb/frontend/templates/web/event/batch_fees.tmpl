@@ -1,20 +1,29 @@
 {% set sidenav_active='event_batch_fees' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block scripts %}{{ util.cdedb_script('cdedb_csv_tools.js') }}{% endblock %}
+
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_csv_tools.js') }}
+{% endblock %}
+
+{% set jshint='strong' %}
+
 {% block title %}
     {% trans title=ambience['event']['title'] %}
         Enter Money Transfers ({{ title }})
     {% endtrans %}
 {% endblock %}
+
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
     {{ util.breadcrumb_link(cdedblink("event/batch_fees"), gettext("Enter Money Transfers"), active=True) }}
 {% endblock %}
+
 {% block heading %}
     {{ util.context_heading(gettext("Enter Money Transfers"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
+
 {% block content %}
     <form action="{{ cdedblink('event/batch_fees') }}" method="POST" id="batchfeesform" enctype="multipart/form-data">
         {{ util.anti_csrf_token('event/batch_fees') }}
