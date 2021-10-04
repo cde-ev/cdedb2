@@ -36,7 +36,7 @@
             {% for dataset in data %}
                 <strong>
                     <span class="row-key" data-row="{{ dataset['lineno'] }}">
-                        {% trans lineno=dataset['lineno'] %}Line {{ lineno }}{% endtrans -%}
+                        {% trans lineno=dataset['lineno'] + 1 %}Line {{ lineno }}{% endtrans -%}
                     </span>:
                     {# Since the dataset is no full persona (esp. it does not contain a display_name entry),
                        we can not use the util.persona_name makro here. #}
