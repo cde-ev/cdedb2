@@ -2803,7 +2803,8 @@ class CoreBackend(AbstractBackend):
 
         This is for batch admission, where we may encounter datasets to
         already existing accounts. In that case we do not want to create
-        a new account.
+        a new account. It is also used during genesis to avoid creation
+        of duplicate accounts.
 
         :returns: A dict of possibly matching account data.
         """

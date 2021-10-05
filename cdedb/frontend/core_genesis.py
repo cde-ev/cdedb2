@@ -22,7 +22,7 @@ from cdedb.frontend.common import (
 )
 from cdedb.frontend.core_base import CoreBaseFrontend
 from cdedb.validation import (
-    GENESIS_CASE_EXPOSED_FIELDS,
+    GENESIS_CASE_EXPOSED_FIELDS, PERSONA_COMMON_FIELDS
 )
 
 # Name of each realm's option in the genesis form
@@ -295,8 +295,14 @@ class CoreGenesisMixin(CoreBaseFrontend):
             pevent = self.pasteventproxy.get_past_event(rs, case['pevent_id'])
         if case['pcourse_id']:
             pcourse = self.pasteventproxy.get_past_course(rs, case['pcourse_id'])
-        return self.render(rs, "genesis_show_case",
-                           {'reviewer': reviewer, 'pevent': pevent, 'pcourse': pcourse})
+        persona_data = {k: v for k, v in case.items() if k in PERSONA_COMMON_FIELDS}
+        persona_data['id'] = 1
+        persona_data['gender'] = const.Genders.not_specified
+        doppelgangers = self.coreproxy.find_doppelgangers(rs, persona_data)
+        return self.render(rs, "genesis/genesis_show_case", {
+            'reviewer': reviewer, 'pevent': pevent, 'pcourse': pcourse,
+            'doppelgangers': doppelgangers,
+        })
 
     @access("core_admin", *("{}_admin".format(realm)
                             for realm in REALM_SPECIFIC_GENESIS_FIELDS))

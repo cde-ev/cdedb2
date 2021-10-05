@@ -124,6 +124,22 @@
         </dl>
     {% endif %}
 
+    {% if doppelgangers %}
+        <h4 class="heading-underline">{% trans %}Doppelgänger{% endtrans %}</h4>
+        <p>
+        {% trans %}
+            This genesis request looks similar to these existing accounts. Maybe consider updating one of these
+            instead of creating a new account?
+        {% endtrans %}
+        </p>
+        <ul>
+            {% for persona_id, persona in doppelgangers|keydictsort(EntitySorter.persona) %}
+                <li>{{ util.print_doppelganger(persona, link=True) }}</li>
+            {% endfor %}
+        </ul>
+
+    {% endif %}
+
     <div class="button-par">
         {% if ambience['genesis_case']['case_status'] == enums['GenesisStati'].to_review %}
             <form action="{{ cdedblink('core/genesis_decide') }}" method="POST"
