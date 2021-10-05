@@ -2375,8 +2375,15 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual(True, f['enable_fields.may_reserve'].checked)
         f['enable_fields.transportation'].checked = True
         f['fields.transportation'] = "pedes"
+        f['fields.may_reserve'] = True
         self.submit(f)
-        self.traverse({'description': 'Alle Anmeldungen'},
+        self.get("/event/event/1/registration/multiedit?reg_ids=2,3")
+        f = self.response.forms['changeregistrationform']
+        self.assertEqual(True, f['enable_fields.transportation'].checked)
+        self.assertEqual(True, f['enable_fields.may_reserve'].checked)
+        self.assertEqual("pedes", f['fields.transportation'].value)
+        self.assertEqual(True, f['fields.may_reserve'].checked)
+        self.traverse('Anmeldungen', 'Alle Anmeldungen',
                       {'href': '/event/event/1/registration/2/show'},
                       {'href': '/event/event/1/registration/2/change'})
         f = self.response.forms['changeregistrationform']
