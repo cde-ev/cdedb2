@@ -66,7 +66,7 @@ If the ``Script`` was created with ``dry_run=True`` (the default), all changes m
 within this transaction will be rolled back at the end.
 At the end of your work you should provide some feedback about whether or not
 the changes were successful and maybe a recap of the changes, so that the deployed can
-decice whether or not to run the script in not-dry_run mode. ::
+decide whether or not to run the script in not-dry_run mode. ::
 
     mailinglist_id = 1
     ml_data = {...}
