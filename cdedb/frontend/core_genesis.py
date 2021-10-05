@@ -350,7 +350,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         if data['username'] != rs.ambience['genesis_case']['username']:
             if self.coreproxy.verify_existence(rs, data['username']):
                 rs.append_validation_error(
-                    ("username", ValueError(n_("Username taken."))))
+                    ("username", ValueError(n_("Email address already taken."))))
                 rs.ignore_validation_errors()
                 return self.genesis_modify_form(rs, genesis_case_id)
         assert data is not None
