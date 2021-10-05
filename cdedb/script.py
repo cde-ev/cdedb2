@@ -128,6 +128,9 @@ class Script:
         self._atomizer: Optional[ScriptAtomizer] = None
         self._conn: psycopg2.extensions.connection = None
         self._tempconfig = TempConfig(configpath, **config)
+        with self._tempconfig as p:
+            self.config = Config(p)
+            self._secrets = SecretsConfig(p)
         self._backends: Dict[Tuple[str, bool], AbstractBackend] = {}
         self._request_states: Dict[int, RequestState] = {}
         self._connect(dbuser, dbname, cursor)
@@ -137,13 +140,11 @@ class Script:
         """Create and save a database connection."""
         if self._conn:
             return
-        with self._tempconfig as p:
-            secrets = SecretsConfig(p)
 
         connection_parameters = {
             "dbname": dbname,
             "user": dbuser,
-            "password": secrets["CDB_DATABASE_ROLES"][dbuser],
+            "password": self._secrets["CDB_DATABASE_ROLES"][dbuser],
             "port": 5432,
             "connection_factory": IrradiatedConnection,
             "cursor_factory": cursor,
