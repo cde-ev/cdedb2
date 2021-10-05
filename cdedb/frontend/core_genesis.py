@@ -48,7 +48,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
                          for option in GENESIS_REALM_OPTION_NAMES
                          if option.realm in REALM_SPECIFIC_GENESIS_FIELDS]
         meta_info = self.coreproxy.get_meta_info(rs)
-        return self.render(rs, "genesis_request", {
+        return self.render(rs, "genesis/genesis_request", {
             'max_rationale': self.conf["MAX_RATIONALE"],
             'allowed_genders': allowed_genders,
             'REALM_SPECIFIC_GENESIS_FIELDS': REALM_SPECIFIC_GENESIS_FIELDS,
@@ -138,7 +138,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
             case_id = new_id
 
         # Send verification mail for new case or resend for old case.
-        self.do_mail(rs, "genesis_verify",
+        self.do_mail(rs, "genesis/genesis_verify",
                      {
                          'To': (data['username'],),
                          'Subject': "Accountanfrage verifizieren",
@@ -215,7 +215,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
             if assembly_count:
                 notify |= {self.conf["ASSEMBLY_ADMIN_ADDRESS"]}
             self.do_mail(
-                rs, "genesis_requests_pending",
+                rs, "genesis/genesis_requests_pending",
                 {'To': tuple(notify),
                  'Subject': "Offene CdEDB Accountanfragen"},
                 {'count': len(data)})
@@ -276,7 +276,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         cases_by_realm = {
             realm: {k: v for k, v in cases.items() if v['realm'] == realm}
             for realm in realms}
-        return self.render(rs, "genesis_list_cases", {
+        return self.render(rs, "genesis/genesis_list_cases", {
             'cases_by_realm': cases_by_realm})
 
     @access("core_admin", *("{}_admin".format(realm)
@@ -321,7 +321,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         choices = {"pevent_id": self.pasteventproxy.list_past_events(rs),
                    "pcourse_id": courses}
 
-        return self.render(rs, "genesis_modify_form", {
+        return self.render(rs, "genesis/genesis_modify_form", {
             'REALM_SPECIFIC_GENESIS_FIELDS': REALM_SPECIFIC_GENESIS_FIELDS,
             'realm_options': realm_options, 'choices': choices})
 
@@ -414,7 +414,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
             rs.notify("success", n_("Case approved."))
         else:
             self.do_mail(
-                rs, "genesis_declined",
+                rs, "genesis/genesis_declined",
                 {'To': (case['username'],),
                  'Subject': "CdEDB Accountanfrage abgelehnt"},
             )

@@ -161,7 +161,7 @@ class TestCron(CronTest):
         ctime=(now() - datetime.timedelta(hours=6))))
     def test_genesis_remind_new(self) -> None:
         self.execute('genesis_remind')
-        self.assertEqual(["genesis_requests_pending"],
+        self.assertEqual(["genesis/genesis_requests_pending"],
                          [mail.template for mail in self.mails])
 
     @prepsql(genesis_template())
@@ -185,7 +185,7 @@ class TestCron(CronTest):
                         store={"tstamp": 1, "ids": [1001]}))
     def test_genesis_remind_older(self) -> None:
         self.execute('genesis_remind')
-        self.assertEqual(["genesis_requests_pending"],
+        self.assertEqual(["genesis/genesis_requests_pending"],
                          [mail.template for mail in self.mails])
 
     @storage
