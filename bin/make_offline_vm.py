@@ -19,7 +19,7 @@ from typing import Collection
 from psycopg2.extras import Json, DictCursor
 
 from cdedb.common import CdEDBObject
-from cdedb.script import setup
+from cdedb.script import Script
 
 # This is 'secret' the hashed
 PHASH = ("$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/"
@@ -184,13 +184,11 @@ def work(args: argparse.Namespace) -> None:
         'event.course_choices', 'event.questionnaire_rows', 'event.log')
 
     print("Connect to database")
-    conn = setup(
-        persona_id=-1,
+    conn = Script(
         dbuser="cdb_admin",
-        dbpassword="9876543210abcdefghijklmnopqrst",
         dbname=db_name,
         check_system_user=False,
-    )().conn
+    )._conn
 
     with conn as con:
         with conn.cursor() as cur:
