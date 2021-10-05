@@ -132,9 +132,9 @@
             instead of creating a new account?
         {% endtrans %}
         </p>
-        <ul>
+        <ul id="doppelgangers">
             {% for persona_id, persona in doppelgangers|keydictsort(EntitySorter.persona) %}
-                <li>{{ util.print_doppelganger(persona, link=True) }}</li>
+                <li id="doppelganger{{ loop.index0 }}">{{ util.print_doppelganger(persona, link=True) }}</li>
             {% endfor %}
         </ul>
 
@@ -143,13 +143,13 @@
     <div class="button-par">
         {% if ambience['genesis_case']['case_status'] == enums['GenesisStati'].to_review %}
             <form action="{{ cdedblink('core/genesis_decide') }}" method="POST"
-             id="genesiseventapprovalform" style="display: inline;">
+             id="genesisapprovalform" style="display: inline;">
                 {{ util.anti_csrf_token('core/genesis_decide') }}
                 {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].approved.value) }}
                 {{ util.input_submit(label=gettext("Approve"), aclass="btn btn-success") }}
             </form>
             <form action="{{ cdedblink('core/genesis_decide') }}" method="POST"
-             id="genesiseventrejectionform" class="rejection-form" style="display: inline;">
+             id="genesisrejectionform" class="rejection-form" style="display: inline;">
                 {{ util.anti_csrf_token('core/genesis_decide') }}
                 {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].rejected.value) }}
                 {{ util.input_submit(label=gettext("Reject"), icon="ban", aclass="btn btn-danger") }}
