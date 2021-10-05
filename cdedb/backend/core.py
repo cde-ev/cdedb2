@@ -2808,7 +2808,7 @@ class CoreBackend(AbstractBackend):
 
         :returns: A dict of possibly matching account data.
         """
-        persona = affirm(vtypes.Persona, persona)
+        persona = affirm(vtypes.Persona, persona, _ignore_warnings=True)
         scores: Dict[int, int] = collections.defaultdict(lambda: 0)
         queries: List[Tuple[int, str, Tuple[Any, ...]]] = [
             (10, "given_names = %s OR display_name = %s",
