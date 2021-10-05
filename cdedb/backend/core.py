@@ -2819,8 +2819,8 @@ class CoreBackend(AbstractBackend):
             (10, "birthday = %s", (persona['birthday'],)),
             (5, "location = %s", (persona['location'],)),
             (5, "postal_code = %s", (persona['postal_code'],)),
-            (20, "given_names = %s AND family_name = %s",
-             (persona['family_name'], persona['given_names'],)),
+            (20, "(given_names = %s OR display_name = %s) AND family_name = %s",
+             (persona['given_names'], persona['given_names'], persona['family_name'],)),
             (21, "username = %s", (persona['username'],)),
         ]
         # Omit queries where some parameters are None
