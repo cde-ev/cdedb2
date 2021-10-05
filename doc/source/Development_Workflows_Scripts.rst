@@ -15,48 +15,58 @@ Setting up a script
 .. note:: The following code snippets are basic examples, in an actual script
           you might need completely different imports or even none at all.
 
-The first thing that should be done are all the required imports and other
-prerequisites like setting up backends using ``make_backend``. ::
+The first thing that should be done is importing everything that might me needed.
+Lastly you should import the ``Script`` class from the ``cdedb.script`` module.
+Usually you wont need to import anything else from there. ::
 
     from pprint import pprint
-    from cdedb.script import setup, make_backend, Script
-    import cdedb.database.constants as const
     from cdedb.common import SubscriptionError, SubscriptionInfo
+    import cdedb.database.constants as const
 
-    ml = make_backend("ml")
+    from cdedb.script import Script
 
 Configuring a script
 --------------------
 
-In this section should come the bits that might need to be adjusted when
-actually running the script against the production environment. ::
+In this section should come everything that you might want to configure about the
+script. Note that ``persona_id``, ``dry_run`` and ``configpath`` can be set
+via environment variables if left out. ::
 
-    rs = setup(persona_id=-1, dbuser="cdb_admin",
-        dbpassword="9876543210abcdefghijklmnopqrst")
-    DRY_RUN = True
+    script = Script(dbuser="cdb_admin", configpath="/etc/cdedb-application-config.py")
     SHOW_ERROR_DETAILS = True
 
-The ``persona_id``, ``dbuser`` and ``dbpassword`` arguments will have to be
-adjusted later. You should also provide a flag for running the script in dry
-run mode, i.e. without actually commiting any changes made.
+The created ``Script`` object has a ``.rs()`` method, that will return a
+``RequestState`` for the default user. The return is cached, so there is no actual
+difference between calling ``script.rs()`` every time or storing it into a local
+variable other than ease of use. The method optionally takes a ``persona_id`` parameter,
+which when given will create a new request state for that user instead of the default
+user. Note that the resulting request state will always have all privileges regardless
+of the persona id. ::
 
-``setup`` returns a ``RequestState`` factory, which you can call with a
-persona id, to get a fake ``RequestState`` for that user. If called without
-an argument this will default to the ``persona_id`` passed to ``setup``.
-If you do not need different ``RequestState``\s, you might want to call this
-once to avoid mistakes down the line. ::
+    rs = script.rs()
+    user_rs = script.rs(persona_id=42)
 
-    rs = rs()
+The ``Script`` object also provides a ``make_backend`` method, that will create a new
+instance of the specified backend. If called using ``proxy=False`` you will get a raw
+backend, which allows you to access non-published methods like ``query_exec``. Otherwise
+you will get a proxy wrapping the created backend. ::
+
+    mlproxy = script.make_backend("ml")
+    core = script.make_backend("core", proxy=False)
+
+
 
 Doing the actual work
 ---------------------
 
 Before starting the actual script, you might want to specify some constants or
-variables to (re)use later. Then you should do the actual work inside a
-`Script` context manager, providing the `RequestState` and the `DRY_RUN` flag.
-
+variables to (re)use later. Then you should do the actual work inside the context of a
+transaction. The ``Script`` class can be used as a context manager to achieve this.
+If the ``Script`` was created with ``dry_run=True`` (the default), all changes made
+within this transaction will be rolled back at the end.
 At the end of your work you should provide some feedback about whether or not
-the changes were successful and maybe a recap of the changes. ::
+the changes were successful and maybe a recap of the changes, so that the deployed can
+decide whether or not to run the script in not-dry_run mode. ::
 
     mailinglist_id = 1
     ml_data = {...}
@@ -64,14 +74,14 @@ the changes were successful and maybe a recap of the changes. ::
     successes = set()
     errors = {}
     infos = {}
-    with Script(rs(), dry_run=DRY_RUN):
+    with script:
         subscribers = ml.get_subscription_states(
-            rs(), mailinglist_id, relevant_states)
-        new_ml_id = ml.create_malinglist(rs(), ml_data)
+            script.rs(), mailinglist_id, relevant_states)
+        new_ml_id = ml.create_malinglist(script.rs(), ml_data)
         for persona_id in subscribers:
             try:
                 code = ml.do_subscription_action(
-                    rs(persona_id), const.SubscriptionAction.subscribe,
+                    script.rs(persona_id), const.SubscriptionAction.subscribe,
                     new_ml_id)
             except SubscriptionInfo as e:
                 infos[persona_id] = e
@@ -93,9 +103,17 @@ the changes were successful and maybe a recap of the changes. ::
                 print("Errors:")
                 pprint(errors)
 
-The `Script` context manager is a subclass of `cdedb.connection.Atomizer`. If
-the `dry_run` parameter is True or an Exception occurred all changes will
-be rolled back, otherwise they will be committed.
+Using the ``Script`` as a context manager gives you a convenience wrapper around the
+``ScriptAtomizer`` class, which is a subclass of `cdedb.connection.Atomizer`.
 
-Make sure the output gives a good sense of whether everything went well so
-the deployer can then decide whether to run the script in not-dry_run mode.
+
+Setting environment variables.
+------------------------------
+
+When running the script, most parameters can be set via environment variables. Note
+that this needs to happen after switching the executing user to ``www-data``. ::
+
+    sudo -u www-data SCRIPT_PERSONA_ID=1 SCRIPT_DRY_RUN="" SCRIPT_CONFIGPATH="/etc/cdedb-application-config.py" python3 bin/some_script.py
+
+Note that in order to deactivate dry run mode, the ``SCRIPT_DRY_RUN`` environment
+variable needs to be falsy, so the only viable option is setting it to an empty string.

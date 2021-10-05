@@ -1147,14 +1147,14 @@ class CdEFrontend(AbstractUserFrontend):
             transferlines, fieldnames=fields, dialect=CustomCSVDialect())
         data = []
         for lineno, raw_entry in enumerate(reader):
-            dataset: CdEDBObject = {'raw': raw_entry, 'lineno': lineno + 1}
+            dataset: CdEDBObject = {'raw': raw_entry, 'lineno': lineno}
             data.append(self.examine_money_transfer(rs, dataset))
         for ds1, ds2 in itertools.combinations(data, 2):
             if ds1['persona_id'] and ds1['persona_id'] == ds2['persona_id']:
                 warning = (None, ValueError(
                     n_("More than one transfer for this account "
                        "(lines %(first)s and %(second)s)."),
-                    {'first': ds1['lineno'], 'second': ds2['lineno']}))
+                    {'first': ds1['lineno'] + 1, 'second': ds2['lineno'] + 1}))
                 ds1['warnings'].append(warning)
                 ds2['warnings'].append(warning)
         if len(data) != len(transferlines):

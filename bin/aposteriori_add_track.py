@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
 
-from cdedb.script import make_backend, setup
+from cdedb.script import Script
 
 # Configuration
 
-rs = setup(persona_id=-1, dbuser="cdb_admin",
-           dbpassword="9876543210abcdefghijklmnopqrst")
-
-event_id = -1
-part_id = -1
+admin_id = -1
+event_id = 1
+part_id = 1
 new_track = {
     'title': "Neue Kursschiene",
     'shortname': "Neu",
@@ -17,9 +15,10 @@ new_track = {
     'sortkey': 1,
 }
 
-# Execution
+# Setup
 
-event = make_backend("event")
+script = Script(persona_id=admin_id, dbuser="cdb_admin")
+event = script.make_backend("event")
 
 update_event = {
     'id': event_id,
@@ -31,4 +30,7 @@ update_event = {
         }
     }
 }
-event.set_event(rs(), update_event)
+
+# Execution
+
+event.set_event(script.rs(), update_event)

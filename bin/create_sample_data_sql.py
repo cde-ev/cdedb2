@@ -6,7 +6,7 @@ from typing import Any, Callable, Dict, List, Set, Sized, Tuple, Type, TypedDict
 from cdedb.backend.common import PsycoJson, DatabaseValue_s
 from cdedb.backend.core import CoreBackend
 from cdedb.common import RequestState, CdEDBObject
-from cdedb.script import setup
+from cdedb.script import Script
 
 
 class AuxData(TypedDict):
@@ -24,8 +24,9 @@ class AuxData(TypedDict):
 def prepare_aux(data: CdEDBObject) -> AuxData:
     # Note that we do not care about the actual backend but rather about
     # the methds inherited from `AbstractBackend`.
-    rs_maker = setup(1, "nobody", "nobody", dbname="nobody")
-    rs = rs_maker()
+    # Small config hack, by writing a dict into config file for password retrieval.
+    rs = Script(dbuser="nobody", dbname="nobody",
+                CDB_DATABASE_ROLES="{'nobody': 'nobody'}").rs()
     core = CoreBackend  # No need to instantiate, we only use statics.
 
     # Extract some data about the databse tables using the database connection.
