@@ -2035,6 +2035,13 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesismodifyform']
         f['birthday'] = "1987-06-05"
         self.submit(f)
+
+        # Check that we cannot assign a username that is already taken.
+        f['username'] = self.user['username']
+        self.submit(f, check_notification=False)
+        self.assertValidationError("username", "Emailadresse bereits vergeben.")
+        self.traverse("Abbrechen")
+
         self.assertTitle("Accountanfrage von Zelda Zeruda")
         f = self.response.forms['genesiseventapprovalform']
         self.submit(f)
