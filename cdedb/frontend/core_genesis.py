@@ -347,6 +347,12 @@ class CoreGenesisMixin(CoreBaseFrontend):
             rs, vtypes.GenesisCase, data, _ignore_warnings=ignore_warnings)
         if rs.has_validation_errors():
             return self.genesis_modify_form(rs, genesis_case_id)
+        if data['username'] != rs.ambience['genesis_case']['username']:
+            if self.coreproxy.verify_existence(rs, data['username']):
+                rs.append_validation_error(
+                    ("username", ValueError(n_("Username taken."))))
+                rs.ignore_validation_errors()
+                return self.genesis_modify_form(rs, genesis_case_id)
         assert data is not None
         case = rs.ambience['genesis_case']
         if (not self.is_admin(rs)
