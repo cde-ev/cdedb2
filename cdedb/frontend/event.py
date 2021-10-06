@@ -2098,19 +2098,20 @@ class EventFrontend(AbstractUserFrontend):
         infos = []
         # Allow an amount of zero to allow non-modification of amount_paid.
         amount: Optional[decimal.Decimal]
-        amount, problems = validate_check(vtypes.NonNegativeDecimal,
-            datum['raw']['amount'].strip(), argname="amount")
-        persona_id, p = validate_check(vtypes.CdedbID,
-            datum['raw']['id'].strip(), argname="persona_id")
+        amount, problems = validate_check(
+            vtypes.NonNegativeDecimal,
+            (datum['raw']['amount'] or "").strip(), argname="amount")
+        persona_id, p = validate_check(
+            vtypes.CdedbID, (datum['raw']['id'] or "").strip(), argname="persona_id")
         problems.extend(p)
-        family_name, p = validate_check(str,
-            datum['raw']['family_name'], argname="family_name")
+        family_name, p = validate_check(
+            str, datum['raw']['family_name'], argname="family_name")
         problems.extend(p)
-        given_names, p = validate_check(str,
-            datum['raw']['given_names'], argname="given_names")
+        given_names, p = validate_check(
+            str, datum['raw']['given_names'], argname="given_names")
         problems.extend(p)
-        date, p = validate_check(datetime.date,
-            datum['raw']['date'].strip(), argname="date")
+        date, p = validate_check(
+            datetime.date, (datum['raw']['date'] or "").strip(), argname="date")
         problems.extend(p)
 
         registration_id = None
@@ -2243,16 +2244,9 @@ class EventFrontend(AbstractUserFrontend):
         reader = csv.DictReader(
             fee_data_lines, fieldnames=fields, dialect=CustomCSVDialect())
         data = []
-        lineno = 0
-        for raw_entry in reader:
-            dataset: CdEDBObject = {'raw': raw_entry}
-            lineno += 1
-            dataset['lineno'] = lineno
-            data.append(self.examine_fee(
-                rs, dataset, expected_fees, full_payment))
-        if lineno != len(fee_data_lines):
-            rs.append_validation_error(
-                ("fee_data", ValueError(n_("Lines didn’t match up."))))
+        for lineno, raw_entry in enumerate(reader):
+            dataset: CdEDBObject = {'raw': raw_entry, 'lineno': lineno}
+            data.append(self.examine_fee(rs, dataset, expected_fees, full_payment))
         open_issues = any(e['problems'] for e in data)
         saldo: decimal.Decimal = sum(
             (e['amount'] for e in data if e['amount']), decimal.Decimal("0.00"))
@@ -2799,6 +2793,48 @@ class EventFrontend(AbstractUserFrontend):
         ret['export'] = self.eventproxy.partial_export_event(rs, event_id)
         ret['message'] = "success"
         return self.send_json(rs, ret)
+
+    @access("event")
+    @event_guard()
+    def questionnaire_import_form(self, rs: RequestState, event_id: int) -> Response:
+        """Render form for uploading questionnaire data."""
+        return self.render(rs, "questionnaire_import")
+
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
+    @REQUESTfile("json_file")
+    @REQUESTdata("extend_questionnaire", "skip_existing_fields", "token")
+    def questionnaire_import(
+        self, rs: RequestState, event_id: int,
+        json_file: Optional[werkzeug.datastructures.FileStorage],
+        extend_questionnaire: bool, skip_existing_fields: bool, token: Optional[str],
+    ) -> Response:
+        """Import questionnaire rows and custom datafields.
+
+        :param extend_questionnaire: If True, append the imported questionnaire rows to
+            any existing ones. Otherwise replace the existing ones.
+        :param skip_existing_fields: If True, the import of fields that already exist
+            is skipped, even if their definition is different from the existing one.
+            Otherwise, duplicate field names will cause an error and prevent the import.
+        """
+        kwargs = {
+            'field_definitions': rs.ambience['event']['fields'],
+            'fee_modifiers': rs.ambience['event']['fee_modifiers'],
+            'questionnaire': self.eventproxy.get_questionnaire(rs, event_id),
+            'extend_questionnaire': extend_questionnaire,
+            'skip_existing_fields': skip_existing_fields,
+        }
+        data = check(rs, vtypes.SerializedEventQuestionnaireUpload, json_file,
+                     **kwargs)
+        if rs.has_validation_errors():
+            return self.questionnaire_import_form(rs, event_id)
+        assert data is not None
+
+        code = self.eventproxy.questionnaire_import(
+            rs, event_id, fields=data['fields'], questionnaire=data['questionnaire'])
+
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "event/configure_additional_questionnaire")
 
     @access("event")
     @event_guard()
@@ -4163,66 +4199,62 @@ class EventFrontend(AbstractUserFrontend):
         # Get information about registrations, courses and lodgements
         tracks = rs.ambience['event']['tracks']
         registrations = self.eventproxy.get_registrations(rs, reg_ids)
+        reg_vals = registrations.values()
         if not registrations:
             rs.notify("error", n_("No participants found to edit."))
             return self.redirect(rs, 'event/registration_query')
 
         personas = self.coreproxy.get_event_users(
-            rs, [r['persona_id'] for r in registrations.values()], event_id)
-        for reg_id, reg in registrations.items():
+            rs, [r['persona_id'] for r in reg_vals], event_id)
+        for reg in reg_vals:
             reg['gender'] = personas[reg['persona_id']]['gender']
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         course_choices = {
-            track_id: [course_id
-                       for course_id, course
+            track_id: [course_id for course_id, course
                        in keydictsort_filter(courses, EntitySorter.course)
                        if track_id in course['segments']]
-            for track_id in tracks}
+            for track_id in tracks
+        }
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
 
         representative = next(iter(registrations.values()))
 
         # iterate registrations to check for differing values
-        reg_values = {}
+        reg_data = {}
         for key, value in representative.items():
-            if all(r[key] == value for r in registrations.values()):
-                reg_values['reg.{}'.format(key)] = value
-                reg_values['enable_reg.{}'.format(key)] = True
+            if all(r[key] == value for r in reg_vals):
+                reg_data[f'reg.{key}'] = value
+                reg_data[f'enable_reg.{key}'] = True
 
         # do the same for registration parts', tracks' and field values
-        for part_id in rs.ambience['event']['parts']:
+        for part_id, part in rs.ambience['event']['parts'].items():
             for key, value in representative['parts'][part_id].items():
-                if all(r['parts'][part_id][key] == value for r in
-                       registrations.values()):
-                    reg_values['part{}.{}'.format(part_id, key)] = value
-                    reg_values['enable_part{}.{}'.format(part_id, key)] = True
-            for track_id in rs.ambience['event']['parts'][part_id]['tracks']:
+                if all(r['parts'][part_id][key] == value for r in reg_vals):
+                    reg_data[f'part{part_id}.{key}'] = value
+                    reg_data[f'enable_part{part_id}.{key}'] = True
+            for track_id in part['tracks']:
                 for key, value in representative['tracks'][track_id].items():
-                    if all(r['tracks'][track_id][key] == value for r in
-                           registrations.values()):
-                        reg_values['track{}.{}'.format(track_id, key)] = value
-                        reg_values[
-                            'enable_track{}.{}'.format(track_id, key)] = True
+                    if all(r['tracks'][track_id][key] == value for r in reg_vals):
+                        reg_data[f'track{track_id}.{key}'] = value
+                        reg_data[f'enable_track{track_id}.{key}'] = True
 
-        for field_id in rs.ambience['event']['fields']:
-            key = rs.ambience['event']['fields'][field_id]['field_name']
-            present = {r['fields'][key] for r in registrations.values()
-                       if key in r['fields']}
-            # If none of the registration has a value for this field yet, we
-            # consider them equal
+        for field_id, field in rs.ambience['event']['fields'].items():
+            key = field['field_name']
+            # Collect all existing values.
+            present = [r['fields'][key] for r in reg_vals if key in r['fields']]
+            # If no registration has a value, consider everything equal.
             if not present:
-                reg_values['enable_fields.{}'.format(key)] = True
+                reg_data[f'enable_fields.{key}'] = True
             # If all registrations have a value, we have to compare them
             elif len(present) == len(registrations):
                 value = representative['fields'][key]
-                if all(key in r['fields'] and r['fields'][key] == value
-                       for r in registrations.values()):
-                    reg_values['enable_fields.{}'.format(key)] = True
-                    reg_values['fields.{}'.format(key)] = unwrap(present)
+                if all(r['fields'][key] == value for r in reg_vals):
+                    reg_data[f'enable_fields.{key}'] = True
+                    reg_data[f'fields.{key}'] = value
 
-        merge_dicts(rs.values, reg_values)
+        merge_dicts(rs.values, reg_data)
 
         reg_order = xsorted(
             registrations.keys(),

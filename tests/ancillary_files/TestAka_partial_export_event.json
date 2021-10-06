@@ -1,7 +1,7 @@
 {
     "EVENT_SCHEMA_VERSION": [
         15,
-        3
+        4
     ],
     "kind": "partial",
     "id": 1,
@@ -796,6 +796,68 @@
                 "entries": null,
                 "checkin": false
             }
+        },
+        "questionnaire": {
+            "QuestionnaireUsages.registration": [
+                {
+                    "title": "Ich bin unter 13 Jahre alt.",
+                    "info": null,
+                    "input_size": null,
+                    "readonly": null,
+                    "default_value": null,
+                    "field_name": "is_child"
+                }
+            ],
+            "QuestionnaireUsages.additional": [
+                {
+                    "title": "Unter\u00fcberschrift",
+                    "info": "mit Text darunter",
+                    "input_size": null,
+                    "readonly": null,
+                    "default_value": null,
+                    "field_name": null
+                },
+                {
+                    "title": "B\u00e4lle",
+                    "info": "Du bringst genug B\u00e4lle mit um einen ganzen Kurs abzuwerfen.",
+                    "input_size": null,
+                    "readonly": false,
+                    "default_value": "True",
+                    "field_name": "brings_balls"
+                },
+                {
+                    "title": null,
+                    "info": "nur etwas Text",
+                    "input_size": null,
+                    "readonly": null,
+                    "default_value": null,
+                    "field_name": null
+                },
+                {
+                    "title": "Weitere \u00dcberschrift",
+                    "info": null,
+                    "input_size": null,
+                    "readonly": null,
+                    "default_value": null,
+                    "field_name": null
+                },
+                {
+                    "title": "Vehikel",
+                    "info": null,
+                    "input_size": null,
+                    "readonly": false,
+                    "default_value": "etc",
+                    "field_name": "transportation"
+                },
+                {
+                    "title": "Hauswunsch",
+                    "info": null,
+                    "input_size": 3,
+                    "readonly": false,
+                    "default_value": null,
+                    "field_name": "lodge"
+                }
+            ]
         }
     }
 }

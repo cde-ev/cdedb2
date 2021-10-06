@@ -226,7 +226,11 @@ CREATE TABLE core.genesis_cases (
         -- see cdedb.database.constants.GenesisStati
         case_status             integer NOT NULL DEFAULT 0,
         -- who moderated the request
-        reviewer                integer REFERENCES core.personas(id) DEFAULT NULL
+        reviewer                integer REFERENCES core.personas(id) DEFAULT NULL,
+        -- past event and course to be added to the new user
+        pevent_id               integer DEFAULT NULL, -- REFERENCES past_event.events(id)
+        pcourse_id              integer DEFAULT NULL -- REFERENCES past_event.courses(id)
+
 );
 CREATE INDEX idx_genesis_cases_case_status ON core.genesis_cases(case_status);
 GRANT SELECT, INSERT ON core.genesis_cases To cdb_anonymous;
@@ -592,6 +596,10 @@ CREATE INDEX idx_courses_pevent_id ON past_event.courses(pevent_id);
 GRANT SELECT, INSERT, UPDATE ON past_event.courses TO cdb_persona;
 GRANT DELETE ON past_event.courses TO cdb_admin;
 GRANT SELECT, UPDATE ON past_event.courses_id_seq TO cdb_persona;
+
+-- create previously impossible reference
+ALTER TABLE core.genesis_cases ADD FOREIGN KEY (pevent_id) REFERENCES past_event.events(id);
+ALTER TABLE core.genesis_cases ADD FOREIGN KEY (pcourse_id) REFERENCES past_event.courses(id);
 
 CREATE TABLE past_event.participants (
         id                      serial PRIMARY KEY,
@@ -1092,21 +1100,19 @@ GRANT SELECT, INSERT, UPDATE ON assembly.votes TO cdb_member;
 GRANT SELECT, UPDATE ON assembly.votes_id_seq TO cdb_member;
 
 CREATE TABLE assembly.attachments (
+       -- This serves as a common reference point for attachment versions, but does
+       -- not contain any actual data other than the linked assembly.
        id                       serial PRIMARY KEY,
-       -- Each attachment may only be attached to one thing (either an
-       -- assembly or a ballot).
-       assembly_id              integer REFERENCES assembly.assemblies(id),
-       ballot_id                integer REFERENCES assembly.ballots(id)
+       assembly_id              integer NOT NULL REFERENCES assembly.assemblies(id)
 );
 CREATE INDEX idx_attachments_assembly_id ON assembly.attachments(assembly_id);
-CREATE INDEX idx_attachments_ballot_id ON assembly.attachments(ballot_id);
 GRANT SELECT, UPDATE, INSERT, DELETE ON assembly.attachments TO cdb_member;
 GRANT SELECT, UPDATE ON assembly.attachments_id_seq TO cdb_member;
 
 CREATE TABLE assembly.attachment_versions (
         id                      bigserial PRIMARY KEY,
-        attachment_id           integer REFERENCES assembly.attachments(id),
-        version                 integer NOT NULL DEFAULT 1,
+        attachment_id           integer NOT NULL REFERENCES assembly.attachments(id),
+        version_nr              integer NOT NULL DEFAULT 1,
         title                   varchar,
         authors                 varchar,
         filename                varchar,
@@ -1116,9 +1122,18 @@ CREATE TABLE assembly.attachment_versions (
         file_hash               varchar NOT NULL
 );
 CREATE INDEX idx_attachment_versions_attachment_id ON assembly.attachment_versions(attachment_id);
-CREATE UNIQUE INDEX idx_attachment_version_constraint ON assembly.attachment_versions(attachment_id, version);
+CREATE UNIQUE INDEX idx_attachment_version_constraint ON assembly.attachment_versions(attachment_id, version_nr);
 GRANT SELECT, INSERT, DELETE, UPDATE on assembly.attachment_versions TO cdb_member;
 GRANT SELECT, UPDATE on assembly.attachment_versions_id_seq TO cdb_member;
+
+CREATE TABLE assembly.attachment_ballot_links (
+        id                      bigserial PRIMARY KEY,
+        attachment_id           integer NOT NULL REFERENCES assembly.attachments(id),
+        ballot_id               integer NOT NULL REFERENCES assembly.ballots(id)
+);
+CREATE UNIQUE INDEX idx_attachment_ballot_links_constraint ON assembly.attachment_ballot_links(attachment_id, ballot_id);
+GRANT SELECT, INSERT, DELETE, UPDATE ON assembly.attachment_ballot_links TO cdb_member;
+GRANT SELECT, UPDATE ON assembly.attachment_ballot_links_id_seq TO cdb_member;
 
 CREATE TABLE assembly.log (
         id                      bigserial PRIMARY KEY,

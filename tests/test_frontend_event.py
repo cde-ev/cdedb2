@@ -2118,10 +2118,10 @@ etc;anything else""", f['entries_2'].value)
 0.0;DB-666-1;Y;Z;77.04.18;stuff
 """
         self.submit(f, check_notification=False)
-        self.assertPresence("Nicht genug Geld.", div="line2_warnings")
-        self.assertPresence("Zu viel Geld.", div="line3_warnings")
-        self.assertPresence("Keine Anmeldung gefunden.", div="line4_problems")
-        self.assertPresence("Kein Account mit ID 666 gefunden.", div="line5_problems")
+        self.assertPresence("Nicht genug Geld.", div="line1_warnings")
+        self.assertPresence("Zu viel Geld.", div="line2_warnings")
+        self.assertPresence("Keine Anmeldung gefunden.", div="line3_problems")
+        self.assertPresence("Kein Account mit ID 666 gefunden.", div="line4_problems")
         f = self.response.forms['batchfeesform']
         f['full_payment'].checked = True
         f['fee_data'] = """
@@ -2130,14 +2130,14 @@ etc;anything else""", f['entries_2'].value)
 451.00;DB-9-4;Iota;Inga;30.12.19
 """
         self.submit(f, check_notification=False)
-        self.assertPresence("Nicht genug Geld.", div="line1_warnings")
-        self.assertPresence("Zu viel Geld.", div="line3_warnings")
+        self.assertPresence("Nicht genug Geld.", div="line0_warnings")
+        self.assertPresence("Zu viel Geld.", div="line2_warnings")
         f = self.response.forms['batchfeesform']
         f['force'].checked = True
         f['send_notifications'].checked = True
         self.submit(f, check_notification=False)
-        self.assertPresence("Nicht genug Geld", div="line1_warnings")
-        self.assertPresence("Zu viel Geld", div="line3_warnings")
+        self.assertPresence("Nicht genug Geld", div="line0_warnings")
+        self.assertPresence("Zu viel Geld", div="line2_warnings")
         # submit again because of checksum
         f = self.response.forms['batchfeesform']
         self.submit(f)
@@ -2375,8 +2375,15 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual(True, f['enable_fields.may_reserve'].checked)
         f['enable_fields.transportation'].checked = True
         f['fields.transportation'] = "pedes"
+        f['fields.may_reserve'] = True
         self.submit(f)
-        self.traverse({'description': 'Alle Anmeldungen'},
+        self.get("/event/event/1/registration/multiedit?reg_ids=2,3")
+        f = self.response.forms['changeregistrationform']
+        self.assertEqual(True, f['enable_fields.transportation'].checked)
+        self.assertEqual(True, f['enable_fields.may_reserve'].checked)
+        self.assertEqual("pedes", f['fields.transportation'].value)
+        self.assertEqual(True, f['fields.may_reserve'].checked)
+        self.traverse('Anmeldungen', 'Alle Anmeldungen',
                       {'href': '/event/event/1/registration/2/show'},
                       {'href': '/event/event/1/registration/2/change'})
         f = self.response.forms['changeregistrationform']
@@ -2618,7 +2625,7 @@ etc;anything else""", f['entries_2'].value)
         # Test privacy: that I can see exactly the information I should see
         self.assertTitle("Akira Abukara")
         self.assertPresence("Geschlecht")
-        self.assertPresence("sonstiges")
+        self.assertPresence("divers")
         # self.assertPresence("Mitgliedschaft")
         self.assertNonPresence("Sichtbarkeit")
         self.assertPresence("28.12.2019")
@@ -4359,6 +4366,80 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Teilnehmerliste CdE-Party 2050")
         self.assertNonPresence("Charly")
         self.assertPresence("N. N.")
+
+    @storage
+    @as_users("garcia", "annika")
+    def test_questionnaire_import(self) -> None:
+        self.traverse("Veranstaltungen", "Große Testakademie 2222",
+                      "Fragebogen konfigurieren", "Fragebogenimport")
+        self.assertTitle("Fragebogenimport zur Veranstaltung Große Testakademie 2222")
+        with open(self.testfile_dir / "questionnaire_import.json", 'rb') as datafile:
+            data = json.load(datafile)
+
+        def create_upload(data: CdEDBObject) -> webtest.Upload:
+            return webtest.Upload("questionnaire_import.json",
+                                  json.dumps(data).encode(),
+                                  "application/octet-stream")
+
+        # First: Try importing only the questionnaire.
+        f = self.response.forms["importform"]
+        f['json_file'] = create_upload({'questionnaire': data['questionnaire']})
+        self.submit(f, check_notification=False)
+        self.assertPresence("Es gibt kein Feld mit dem Namen 'KleidungAnmerkungen'.",
+                            div="importerrorsummary")
+
+        # Second: Try importing only the fields. This should work.
+        f['json_file'] = create_upload({'fields': data['fields']})
+        self.submit(f)
+
+        # Try submitting the same import again.
+        self.assertEqual(f['skip_existing_fields'].checked, False)
+        self.submit(f, check_notification=False)
+        self.assertPresence(
+            "Es gibt bereits ein Feld mit diesem Namen ('KleidungAnmerkungen').",
+            div="importerrorsummary")
+        f['skip_existing_fields'].checked = True
+        self.submit(f)
+
+        # Third: Try to import the questionnaire again. This should now work.
+        f['json_file'] = create_upload({'questionnaire': data['questionnaire']})
+        self.submit(f)
+
+        # Try resubmitting:
+        self.assertEqual(f['extend_questionnaire'].checked, True)
+        self.submit(f, check_notification=False)
+        self.assertPresence(
+            "Felder dürfen nicht doppelt auftreten ('KleidungAnmerkungen').",
+            div="importerrorsummary")
+        f['extend_questionnaire'].checked = False
+        self.submit(f)
+
+        # Fourth: Try submitting the entire thing.
+        f['json_file'] = create_upload(data)
+        self.submit(f)
+        # This only works because we configured the checkboxes accordingly.
+        self.traverse("Fragebogenimport")
+        f = self.response.forms["importform"]
+        f['json_file'] = create_upload(data)
+        self.submit(f, check_notification=False)
+        self.assertPresence(
+            "Es gibt bereits ein Feld mit diesem Namen ('KleidungAnmerkungen').",
+            div="importerrorsummary")
+        self.assertPresence(
+            "Felder dürfen nicht doppelt auftreten ('KleidungAnmerkungen').",
+            div="importerrorsummary")
+
+        # Fifth: Reset Questionnaire and fields and try the full import again:
+        self.event.set_questionnaire(self.key, 1, None)
+        event = self.event.get_event(self.key, 1)
+        self.event.set_event(
+            self.key,
+            {
+                'id': 1,
+                'fields': {id_: None for id_ in event['fields'] if id_ > 1000},
+            })
+
+        self.submit(f)
 
     @unittest.skip("deprecated test")
     def test_log(self) -> None:

@@ -655,6 +655,8 @@ class TestCoreBackend(BackendTest):
             'reviewer': None,
             'attachment_hash': None,
             'birth_name': None,
+            'pevent_id': None,
+            'pcourse_id': None,
         })
         value = self.core.genesis_get_case(self.key, case_id)
         del value['ctime']
@@ -731,6 +733,8 @@ class TestCoreBackend(BackendTest):
             'telephone': None,
             'attachment_hash': None,
             'birth_name': None,
+            'pevent_id': None,
+            'pcourse_id': None,
         })
         value = self.core.genesis_get_case(self.key, case_id)
         del value['ctime']
@@ -795,6 +799,8 @@ class TestCoreBackend(BackendTest):
             'location': "Marcuria",
             'country': "AQ",
             'attachment_hash': attachment_hash,
+            'pevent_id': None,
+            'pcourse_id': None,
         }
         self.assertFalse(self.core.genesis_attachment_usage(
             self.key, attachment_hash))

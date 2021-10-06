@@ -684,16 +684,13 @@ class EntitySorter:
         return (ballot['title'], ballot['id'])
 
     @staticmethod
-    def get_attachment_sorter(histories: CdEDBObject) -> KeyFunction:
-        def attachment(attachment: CdEDBObject) -> Sortkey:
-            attachment = histories[attachment['id']][attachment['current_version']]
-            return (attachment['title'], attachment['attachment_id'])
-
-        return attachment
+    def attachment(attachment: CdEDBObject) -> Sortkey:
+        """This is used for dicts containing one version of different attachments."""
+        return (attachment["title"], attachment["attachment_id"])
 
     @staticmethod
     def attachment_version(version: CdEDBObject) -> Sortkey:
-        return (version['attachment_id'], version['version'])
+        return (version['attachment_id'], version['version_nr'])
 
     @staticmethod
     def past_event(past_event: CdEDBObject) -> Sortkey:
@@ -1953,7 +1950,7 @@ def roles_to_admin_views(roles: Set[Role]) -> Set[AdminView]:
 #: If the partial export and import are unaffected the minor version may be
 #: incremented.
 #: If you increment this, it must be incremented in make_offline_vm.py as well.
-EVENT_SCHEMA_VERSION = (15, 3)
+EVENT_SCHEMA_VERSION = (15, 4)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3
@@ -2002,7 +1999,7 @@ GENESIS_CASE_FIELDS = (
     "id", "ctime", "username", "given_names", "family_name",
     "gender", "birthday", "telephone", "mobile", "address_supplement",
     "address", "postal_code", "location", "country", "birth_name", "attachment_hash",
-    "realm", "notes", "case_status", "reviewer")
+    "realm", "notes", "case_status", "reviewer", "pevent_id", "pcourse_id")
 
 # The following dict defines, which additional fields are required for genesis
 # request for distinct realms. Additionally, it is used to define for which
@@ -2014,7 +2011,7 @@ REALM_SPECIFIC_GENESIS_FIELDS: Dict[Realm, Tuple[str, ...]] = {
               "country"),
     "cde": ("gender", "birthday", "telephone", "mobile",
             "address_supplement", "address", "postal_code", "location",
-            "country", "birth_name", "attachment_hash"),
+            "country", "birth_name", "attachment_hash", "pevent_id", "pcourse_id"),
 }
 
 # This overrides the more general PERSONA_DEFAULTS dict with some realm-specific
@@ -2213,9 +2210,9 @@ BALLOT_FIELDS = (
 
 #: Fields of an attachment in the assembly realm (attached either to an
 #: assembly or a ballot)
-ASSEMBLY_ATTACHMENT_FIELDS = ("id", "assembly_id", "ballot_id")
+ASSEMBLY_ATTACHMENT_FIELDS = ("id", "assembly_id")
 
-ASSEMBLY_ATTACHMENT_VERSION_FIELDS = ("attachment_id", "version", "title",
+ASSEMBLY_ATTACHMENT_VERSION_FIELDS = ("attachment_id", "version_nr", "title",
                                       "authors", "filename", "ctime", "dtime",
                                       "file_hash")
 

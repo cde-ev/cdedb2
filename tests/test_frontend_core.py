@@ -1789,6 +1789,9 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesisform']
         for field, entry in self.CDE_GENESIS_DATA.items():
             f[field] = entry
+        self.submit(f, check_notification=False)
+        self.assertValidationError('attachment')
+        f = self.response.forms['genesisform']
         f['birth_name'] = "Ganondorf"
         f['notes'] = ""  # Do not send this to test upload permanance.
         with open(self.testfile_dir / "form.pdf", 'rb') as datafile:
@@ -1823,13 +1826,24 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'href': '/core/genesis/1001/show'})
         self.assertPresence("Ganondorf")
         self.assertNonPresence("Zickzack")
+        self.assertNonPresence("PfingstAkademie")
         self.traverse({'href': '/core/genesis/1001/modify'})
         self.assertTitle("Accountanfrage bearbeiten")
         f = self.response.forms['genesismodifyform']
         f['birth_name'] = "Zickzack"
+        f['pevent_id'] = 1
         self.submit(f)
         self.assertPresence("Zickzack")
         self.assertNonPresence("Ganondorf")
+        self.assertPresence("PfingstAkademie 2014")
+
+        self.traverse({'href': '/core/genesis/1001/modify'})
+        self.assertTitle("Accountanfrage bearbeiten")
+        f = self.response.forms['genesismodifyform']
+        f['pcourse_id'] = 2
+        self.submit(f)
+        self.assertPresence("Goethe")
+
         self.traverse({'href': '/core/genesis/1001/modify'})
         self.assertTitle("Accountanfrage bearbeiten")
         f = self.response.forms['genesismodifyform']
@@ -1900,6 +1914,8 @@ class TestCoreFrontend(FrontendTest):
         self.assertCheckbox(True, "paper_expuls_checkbox")
         self.assertPresence("12345")
         self.assertPresence("Zickzack")
+        self.assertPresence("PfingstAkademie 2014")
+        self.assertPresence("Goethe")
         self.traverse({'href': '/cde'})
         self.assertTitle('CdE-Mitgliederbereich')
         self.traverse({'description': 'Sonstiges'})
