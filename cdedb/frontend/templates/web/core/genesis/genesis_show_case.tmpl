@@ -126,7 +126,7 @@
 
     {% if doppelgangers %}
         <h4 class="heading-underline">{% trans %}Doppelgangers{% endtrans %}</h4>
-        <p class="text-warning">
+        <p class="text-warning">{{ util.make_icon('exclamation-triangle', title=gettext("Warning")) }}
         {% trans %}
             This genesis request looks similar to these existing accounts. Maybe consider updating one of these
             instead of creating a new account?
