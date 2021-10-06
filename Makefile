@@ -71,33 +71,6 @@ doc:
 	bin/create_email_template_list.sh .
 	$(MAKE) -C doc html
 
-.ONESHELL:
-ldap-reset:
-	@echo "Remove slapd ..."
-	sudo apt-get remove --purge -y slapd > /dev/null
-	echo "... apt update ..."
-	sudo apt-get update > /dev/null
-	# pre-set slapd configurations
-	sudo debconf-set-selections <<EOF
-	slapd slapd/internal/adminpw password secret
-	slapd slapd/internal/generated_adminpw password secret
-	slapd slapd/password1 password secret
-	slapd slapd/password2 password secret
-	slapd slapd/domain string cde-ev.de
-	slapd shared/organization string CdEDB
-	EOF
-	echo "... and reinstall slapd."
-	sudo apt-get install -y slapd > /dev/null
-	echo
-	echo "remove pre-installed mdb. This uses the same olcSuffix and blocks our sql database"
-	sudo rm /etc/ldap/slapd.d/cn=config/olcDatabase={1}mdb.ldif
-	sudo rm -r /var/lib/ldap
-	# restart slapd to finish removal of mdb
-	sudo systemctl restart slapd
-	echo
-	echo "apply our custom configurations"
-	sudo ldapmodify -Y EXTERNAL -H ldapi:/// -f /cdedb2/sql-ldap.ldif
-
 reload:
 	$(MAKE) i18n-compile
 ifeq ($(wildcard /CONTAINER),/CONTAINER)
@@ -242,6 +215,20 @@ sql-test-shallow: tests/ancillary_files/sample_data.sql
 
 cron:
 	sudo -u www-data /cdedb2/bin/cron_execute.py
+
+
+########
+# LDAP #
+########
+
+ldap-create:
+	sudo SCRIPT_DRY_RUN="" $(PYTHONBIN) ldap/create-ldap.py
+
+ldap-update:
+	sudo SCRIPT_DRY_RUN="" $(PYTHONBIN) ldap/update-ldap.py
+
+ldap-remove:
+	sudo SCRIPT_DRY_RUN="" $(PYTHONBIN) ldap/remove-ldap.py
 
 ################
 # Code testing #
