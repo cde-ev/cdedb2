@@ -19679,3 +19679,6 @@ msgstr ""
 "Diese Accountanfrage scheint sehr ähnlich zu diesen bereits existierenden "
 "Accounts zu sein. Möglicherweise sollte einer der bestehenden Accounts "
 "aktualisiert werden, anstatt einen neuen Account zu erstellen."
+
+msgid "Doppelgangers"
+msgstr "Ähnliche Accounts"

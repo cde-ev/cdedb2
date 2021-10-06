@@ -296,7 +296,9 @@ class CoreGenesisMixin(CoreBaseFrontend):
         if case['pcourse_id']:
             pcourse = self.pasteventproxy.get_past_course(rs, case['pcourse_id'])
         persona_data = {k: v for k, v in case.items() if k in PERSONA_COMMON_FIELDS}
+        # Set a valid placeholder value, that will pass the input validation.
         persona_data['id'] = 1
+        # We don't actually compare genders, so this is to make sure it is not empty.
         persona_data['gender'] = const.Genders.not_specified
         doppelgangers = self.coreproxy.find_doppelgangers(rs, persona_data)
         return self.render(rs, "genesis/genesis_show_case", {
