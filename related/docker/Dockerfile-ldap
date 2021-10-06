@@ -1,6 +1,6 @@
 FROM debian:bullseye-20210816
 
-RUN python3 ./ldap/create-ldap.py
+RUN python3 ./ldap/create-ldap.py \
     && python3 ./ldap/update-ldap.py
 
 RUN cat ./ldap/output/slapd-debconf.txt | debconf-set-selections \
