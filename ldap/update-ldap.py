@@ -8,7 +8,8 @@ import jinja2
 from cdedb.script import Script
 
 # Setup
-script = Script(check_system_user=False)
+script = Script(dbuser="cdb_admin", check_system_user=False)
+core = script.make_backend("core", proxy=False)
 
 TEMPLATE_DIR = script.config["REPOSITORY_PATH"] / "ldap/templates"
 OUTPUT_DIR = script.config["REPOSITORY_PATH"] / "ldap/output"
@@ -17,7 +18,20 @@ ENV = jinja2.Environment(loader=jinja2.FileSystemLoader(str(TEMPLATE_DIR)))
 
 
 # Do the work
-# TODO insert duas here instead of in the cdedb-ldap.sql file
+
+print("Drop all existing and add new Duas in the database schema\n")
+template = ENV.get_template("add-duas.tmpl")
+out = template.render(encrypt=core.encrypt_password, secrets=script._secrets)
+sql_file: pathlib.Path = OUTPUT_DIR / "add-duas.sql"
+with open(sql_file, mode="w") as f:
+    f.write(out)
+
+with script._conn as conn:
+    conn.set_session(autocommit=True)
+    with conn.cursor() as curr:
+        with sql_file.open() as f:
+            sql_input = f.read()
+        curr.execute(sql_input)
 
 print("Remove existing cdedb-ldap\n")
 subprocess.run(["systemctl", "stop", "slapd"])

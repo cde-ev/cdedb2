@@ -640,6 +640,13 @@ _SECRECTS_DEFAULTS = {
         "PASSWORD2": "secret"
     },
     "LDAP_OLC_ROOT_PW": "secret",
+    "LDAP_DUA_PW": {
+        "admin": "secret",
+        "apache": "secret",
+        "cloud": "secret",
+        "cyberaka": "secret",
+        "dokuwiki": "secret",
+    },
 }
 
 

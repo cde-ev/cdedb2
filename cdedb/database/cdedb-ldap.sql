@@ -235,13 +235,7 @@ CREATE TABLE ldap.duas (
 	cn varchar NOT NULL,
     password_hash varchar NOT NULL
 );
-
-INSERT INTO ldap.duas (cn, password_hash) VALUES
-    ('admin', '$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1'),
-    ('apache', '$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1'),
-    ('cloud', '$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1'),
-    ('cyberaka', '$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1'),
-    ('dokuwiki', '$6$cde$n3UPrRR3mIYr21BnAeSgx3vfVp.mTChOUzN1nUxv8T12mLqUOWnyIvxpd9awmOSFuBI5R5IVmK5kBQ0dBgoIb1');
+GRANT ALL ON ldap.duas_id_seq TO cdb_admin;
 
 -- static ldap groups operating only on core.personas
 CREATE TABLE ldap.static_groups (
