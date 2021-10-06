@@ -25,7 +25,8 @@ cp /media/cdrom0/server* /etc/ssl/apache2/
 chmod 600 /etc/ssl/apache2/server.key
 chmod 644 /etc/ssl/apache2/server.pem
 
-install --mode=640 --group=openldap /media/cdrom0/odbc.ini /etc/odbc.ini
+# TODO run the python scripts in /cdedb2/ldap ?
+# install --mode=640 --group=openldap /media/cdrom0/odbc.ini /etc/odbc.ini
 
 echo ""
 echo "Getting the system up to date..."

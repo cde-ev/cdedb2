@@ -12,7 +12,7 @@ First we install odbc::
 
 And configure it via /etc/odbc.ini
 
-.. literalinclude:: ../../related/auto-build/files/stage2/odbc.ini
+.. literalinclude:: ../../ldap/templates/odbc.tmpl
 
 The ``Driver`` must be as specified in /etc/odbcinst.ini (which should be
 prefilled by the Debian package). To check odbc functionality we use the
