@@ -631,7 +631,15 @@ _SECRECTS_DEFAULTS = {
 
         # zero-config partial export in offline mode
         "quick_partial_export": "y1f2i3d4x5b6",
-    }
+    },
+
+    # ldap related stuff
+    "LDAP_SLAPD": {
+        "ADMIN_PASSWORD": "secret",
+        "PASSWORD1": "secret",
+        "PASSWORD2": "secret"
+    },
+    "LDAP_OLC_ROOT_PW": "secret",
 }
 
 

@@ -3,11 +3,13 @@
 # - If a line begins with a single space, it is considered a continuation of the previous line (even if the previous line is a comment) and the single leading space is removed.
 # - Entries are separated by blank lines.
 
+{% if config["CDEDB_DEV"] %}
 # set log level to debug
 dn: cn=config
 changetype: modify
 replace: olcLogLevel
 olcLogLevel: -1
+{% endif %}
 
 # load sql-backend module
 dn: cn=module{0},cn=config
@@ -108,7 +110,7 @@ olcAccess:
 # In theory, it should be possible to give more fine granular access to duas.
 # This would allow specific duas access to only users which are members of
 # specific groups, using the 'memberOf' attribute of users.
-# To filter users by attribute should be possible by using the 'filter' <what>
+# To filter users by attribute should be possible by using the 'filter' >what<
 # clause, providing a valid ldap search filter.
 # A filter like 'filter=(objectClass=*)' or 'filter=(objectClass=inetOrgPerson)'
 # works, but filtering after any other user attribute does not yield any hits...
@@ -127,14 +129,14 @@ olcAccess:
 #
 # this user better exist or else there be dragons
 olcRootDN: cn=admin,ou=dua,dc=cde-ev,dc=de
-olcRootPW: secret
+olcRootPW: {{ secrets["LDAP_OLC_ROOT_PW"] }}
 olcDatabase: sql
 olcDbHost: localhost
 olcDbName: cdb
 # the credentials are irrelevant as we use odbc,
 # but the parameters mustn't be empty
 olcDbUser: cdb_admin
-olcDbPass: 9876543210abcdefghijklmnopqrst
+olcDbPass: {{ secrets["CDB_DATABASE_ROLES"]["cdb_admin"] }}
 #
 # SQL-backend configuration options (unused commented out)
 olcSqlConcatPattern: ?||?
