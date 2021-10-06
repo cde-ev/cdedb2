@@ -49,3 +49,13 @@ if mdb_config.exists():
 if ldap_dir.exists():
     shutil.rmtree(ldap_dir)
 subprocess.run(["systemctl", "start", "slapd"])
+
+print("\n\nCompile our custom ldap configuration template and apply it:\n")
+template = ENV.get_template("config-ldap.tmpl")
+# TODO set more values here dynamically form the config?
+out = template.render(config=script.config, secrets=script._secrets)
+ldif_file: pathlib.Path = OUTPUT_DIR / "config-ldap.ldif"
+with open(ldif_file, mode="w") as f:
+    f.write(out)
+subprocess.run([f"ldapmodify -Y EXTERNAL -H ldapi:/// -f {ldif_file}"], check=True,
+               shell=True)

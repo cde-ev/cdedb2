@@ -29,7 +29,7 @@ if ldap_dir.exists():
     shutil.rmtree(ldap_dir)
 subprocess.run(["systemctl", "start", "slapd"])
 
-print("Compile our custom ldap configuration template and apply it:\n")
+print("Compile our custom ldap database template and apply it:\n")
 template = ENV.get_template("cdedb-ldap.tmpl")
 # TODO set more values here dynamically form the config?
 out = template.render(config=script.config, secrets=script._secrets)
