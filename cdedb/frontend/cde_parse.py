@@ -55,7 +55,7 @@ class CdEParseMixin(CdEBaseFrontend):
             'event_entries': event_entries,
             'events': events,
         }
-        return self.render(rs, "parse_statement", params)
+        return self.render(rs, "parse/parse_statement", params)
 
     def organize_transaction_data(
             self, rs: RequestState, transactions: List[parse.Transaction],
@@ -282,7 +282,7 @@ class CdEParseMixin(CdEBaseFrontend):
         data = data or []
         csvfields = csvfields or tuple()
         csv_position = {key: ind for ind, key in enumerate(csvfields)}
-        return self.render(rs, "money_transfers", {
+        return self.render(rs, "parse/money_transfers", {
             'data': data, 'csvfields': csv_position, 'saldo': saldo,
         })
 
@@ -425,7 +425,7 @@ class CdEParseMixin(CdEBaseFrontend):
                     persona_ids = tuple(e['persona_id'] for e in data)
                     personas = self.coreproxy.get_cde_users(rs, persona_ids)
                     persona = personas[datum['persona_id']]
-                    self.do_mail(rs, "transfer_received",
+                    self.do_mail(rs, "parse/transfer_received",
                                  {'To': (persona['username'],),
                                   'Subject': "Überweisung eingegangen",
                                   },

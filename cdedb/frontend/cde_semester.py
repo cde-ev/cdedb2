@@ -40,7 +40,7 @@ class CdESemesterMixin(CdEBaseFrontend):
         expuls = self.cdeproxy.get_expuls(rs, expuls_id)
         expuls_history = self.cdeproxy.get_expuls_history(rs)
         stats = self.cdeproxy.finance_statistics(rs)
-        return self.render(rs, "show_semester", {
+        return self.render(rs, "semester/show_semester", {
             'period': period, 'expuls': expuls, 'stats': stats,
             'period_history': period_history, 'expuls_history': expuls_history,
             'current_period_step': current_period_step,
@@ -96,7 +96,7 @@ class CdESemesterMixin(CdEBaseFrontend):
                         subject = "Mitgliedschaft verlängert"
 
                     self.do_mail(
-                        rrs, "billing",
+                        rrs, "semester/billing",
                         {'To': (persona['username'],),
                          'Subject': subject},
                         {'persona': persona,
@@ -117,7 +117,7 @@ class CdESemesterMixin(CdEBaseFrontend):
 
                 if persona:
                     self.do_mail(
-                        rrs, "imminent_archival",
+                        rrs, "semester/imminent_archival",
                         {'To': (persona['username'],),
                          'Subject': "Bevorstehende Löschung Deines"
                                     " CdE-Datenbank-Accounts"},
@@ -153,7 +153,7 @@ class CdESemesterMixin(CdEBaseFrontend):
                     transaction_subject = make_membership_fee_reference(persona)
                     meta_info = self.coreproxy.get_meta_info(rrs)
                     self.do_mail(
-                        rrs, "ejection",
+                        rrs, "semester/ejection",
                         {'To': (persona['username'],),
                          'Subject': "Austritt aus dem CdE e.V."},
                         {'persona': persona,
@@ -245,7 +245,7 @@ class CdESemesterMixin(CdEBaseFrontend):
                 if persona:
                     address = make_postal_address(rrs, persona)
                     self.do_mail(
-                        rrs, "addresscheck",
+                        rrs, "semester/addresscheck",
                         {'To': (persona['username'],),
                          'Subject': "Adressabfrage für den exPuls"},
                         {'persona': persona, 'address': address})
@@ -303,6 +303,6 @@ class CdESemesterMixin(CdEBaseFrontend):
                 | {entry['persona_id'] for entry in log if entry['persona_id']})
         personas = self.coreproxy.get_personas(rs, persona_ids)
         loglinks = calculate_loglinks(rs, total, offset, length)
-        return self.render(rs, "view_cde_log", {
+        return self.render(rs, "semester/view_cde_log", {
             'log': log, 'total': total, 'length': _length,
             'personas': personas, 'loglinks': loglinks})
