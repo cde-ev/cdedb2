@@ -2060,7 +2060,7 @@ class TestCoreFrontend(FrontendTest):
         self.traverse("Accountanfragen", "Details")
         self.assertTitle(f"Accountanfrage von {self.user['given_names']}"
                          f" {self.user['family_name']}")
-        self.assertPresence("Ähnlicher Account gefunden.")
+        self.assertPresence("Ähnliche Accounts")
         self.assertPresence(self.user['username'], div="doppelgangers")
         self.assertPresence(self.user['username'], div="doppelganger0")
         f = self.response.forms['genesisrejectionform']
@@ -2077,13 +2077,13 @@ class TestCoreFrontend(FrontendTest):
         self.traverse("Accountanfragen", "Details")
         self.assertTitle(f"Accountanfrage von {self.EVENT_GENESIS_DATA['given_names']}"
                          f" {self.EVENT_GENESIS_DATA['family_name']}")
-        self.assertNonPresence("Ähnlicher Account gefunden.")
+        self.assertNonPresence("Ähnliche Accounts")
         f = self.response.forms['genesisapprovalform']
         self.submit(f)
         self.traverse("Accountanfragen", "Details")
         self.assertTitle(f"Accountanfrage von {self.EVENT_GENESIS_DATA['given_names']}"
                          f" {self.EVENT_GENESIS_DATA['family_name']}")
-        self.assertPresence("Ähnlicher Account gefunden.")
+        self.assertPresence("Ähnliche Accounts")
         self.assertPresence(self.EVENT_GENESIS_DATA['username'], div="doppelgangers")
         self.assertPresence(self.EVENT_GENESIS_DATA['username'], div="doppelganger0")
         f = self.response.forms['genesisrejectionform']
