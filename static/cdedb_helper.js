@@ -291,8 +291,10 @@
     $.fn.cdedbMarkdownPreview = function (link, translations) {
         $(".mdjs").show();
         const loading_spinner = `
-<span class="fas fa-sync fa-spin" aria-hidden="true"></span>
-<span class="sr-only">${translations["loading"]}</span>
+<div class="text-center">
+    <span class="fas fa-sync fa-spin" aria-hidden="true"></span>
+    <span class="sr-only">${translations["loading"]}</span>
+</div>
         `;
         const modal = `
 <div class="modal fade" id="mdpreview-modal" tabindex="-1" role="dialog" aria-labelledby="mdpreview-modal-label">
