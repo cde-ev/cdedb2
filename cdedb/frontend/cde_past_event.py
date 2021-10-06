@@ -76,7 +76,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
                         'pevent_id': result[0]['courses.pevent_id'],
                         'pcourse_id': result[0]['courses.id']})
 
-        return self.render(rs, "past_course_search", {
+        return self.render(rs, "past_event/past_course_search", {
             'spec': spec, 'result': result, 'count': count})
 
     @access("cde_admin")
@@ -99,7 +99,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
             is_referenced.add(event['institution'])
         for pevent in pevents.values():
             is_referenced.add(pevent['institution'])
-        return self.render(rs, "institution_summary", {
+        return self.render(rs, "past_event/institution_summary", {
             'institutions': institutions, 'is_referenced': is_referenced})
 
     @access("cde_admin", modi={"POST"})
@@ -246,7 +246,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
             rs, pevent_id=pevent_id)
         is_participant = any(anid == rs.user.persona_id
                              for anid, _ in participant_infos.keys())
-        return self.render(rs, "show_past_event", {
+        return self.render(rs, "past_event/show_past_event", {
             'courses': courses, 'personas': personas, 'institutions': institutions,
             'participants': participants, 'extra_participants': extra_participants,
             'orgas': orgas, 'extra_orgas': extra_orgas,
@@ -259,7 +259,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
         """Display concluded course."""
         participants, personas, extra_participants = self._process_participants(
             rs, pevent_id, pcourse_id=pcourse_id)
-        return self.render(rs, "show_past_course", {
+        return self.render(rs, "past_event/show_past_course", {
             'participants': participants, 'personas': personas,
             'extra_participants': extra_participants})
 
@@ -295,7 +295,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
                 continue
             years.setdefault(stats[anid]['tempus'].year, []).append(anid)
 
-        return self.render(rs, "list_past_events", {
+        return self.render(rs, "past_event/list_past_events", {
             'events': events,
             'stats': stats,
             'years': years,
@@ -311,7 +311,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
         institution_ids = self.pasteventproxy.list_institutions(rs).keys()
         institutions = self.pasteventproxy.get_institutions(rs, institution_ids)
         merge_dicts(rs.values, rs.ambience['pevent'])
-        return self.render(rs, "change_past_event", {
+        return self.render(rs, "past_event/change_past_event", {
             'institutions': institutions})
 
     @access("cde_admin", modi={"POST"})
@@ -333,7 +333,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
         """Render form."""
         institution_ids = self.pasteventproxy.list_institutions(rs).keys()
         institutions = self.pasteventproxy.get_institutions(rs, institution_ids)
-        return self.render(rs, "create_past_event", {
+        return self.render(rs, "past_event/create_past_event", {
             'institutions': institutions})
 
     @access("cde_admin", modi={"POST"})
@@ -395,7 +395,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
                                 pcourse_id: int) -> Response:
         """Render form."""
         merge_dicts(rs.values, rs.ambience['pcourse'])
-        return self.render(rs, "change_past_course")
+        return self.render(rs, "past_event/change_past_course")
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdatadict(*PAST_COURSE_COMMON_FIELDS)
@@ -415,7 +415,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
     def create_past_course_form(self, rs: RequestState, pevent_id: int
                                 ) -> Response:
         """Render form."""
-        return self.render(rs, "create_past_course")
+        return self.render(rs, "past_event/create_past_course")
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdatadict(*PAST_COURSE_COMMON_FIELDS)
@@ -540,6 +540,6 @@ class CdEPastEventMixin(CdEBaseFrontend):
         pevent_ids = self.pasteventproxy.list_past_events(rs)
         pevents = self.pasteventproxy.get_past_events(rs, pevent_ids)
         loglinks = calculate_loglinks(rs, total, offset, length)
-        return self.render(rs, "view_past_log", {
+        return self.render(rs, "past_event/view_past_log", {
             'log': log, 'total': total, 'length': _length,
             'personas': personas, 'pevents': pevents, 'loglinks': loglinks})

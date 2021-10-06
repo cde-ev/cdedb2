@@ -63,7 +63,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
                 personas[lastschrifts[anid]['persona_id']]))
         lastschrifts = OrderedDict(
             (last_id, lastschrifts[last_id]) for last_id in last_order)
-        return self.render(rs, "lastschrift_index", {
+        return self.render(rs, "lastschrift/lastschrift_index", {
             'lastschrifts': lastschrifts, 'personas': personas,
             'transactions': transactions, 'all_lastschrifts': all_lastschrifts})
 
@@ -96,7 +96,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
                 active_permit = lastschrift['id']
         active_open = bool(
             active_permit and self.determine_open_permits(rs, (active_permit,)))
-        return self.render(rs, "lastschrift_show", {
+        return self.render(rs, "lastschrift/lastschrift_show", {
             'lastschrifts': lastschrifts,
             'active_permit': active_permit, 'active_open': active_open,
             'personas': personas, 'transactions': transactions,
@@ -109,7 +109,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         merge_dicts(rs.values, rs.ambience['lastschrift'])
         persona = self.coreproxy.get_persona(
             rs, rs.ambience['lastschrift']['persona_id'])
-        return self.render(rs, "lastschrift_change", {'persona': persona})
+        return self.render(rs, "lastschrift/lastschrift_change", {'persona': persona})
 
     @access("finance_admin", modi={"POST"})
     @REQUESTdatadict(*LASTSCHRIFT_COMMON_FIELDS)
@@ -130,7 +130,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
     def lastschrift_create_form(self, rs: RequestState, persona_id: int = None
                                 ) -> Response:
         """Render form."""
-        return self.render(rs, "lastschrift_create")
+        return self.render(rs, "lastschrift/lastschrift_create")
 
     @access("finance_admin", modi={"POST"})
     @REQUESTdatadict(*LASTSCHRIFT_COMMON_FIELDS)
@@ -174,7 +174,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         if transaction_ids:
             subject = glue("Einzugsermächtigung zu ausstehender Lastschrift"
                            "widerrufen.")
-            self.do_mail(rs, "pending_lastschrift_revoked",
+            self.do_mail(rs, "lastschrift/pending_lastschrift_revoked",
                          {'To': (self.conf["MANAGEMENT_ADDRESS"],),
                           'Subject': subject},
                          {'persona_id': persona_id})
@@ -385,7 +385,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
                 'glaeubiger_id': self.conf["SEPA_GLAEUBIGERID"],
             }
             subject = "Anstehender Lastschrifteinzug Initiative 25+"
-            self.do_mail(rs, "sepa_pre-notification",
+            self.do_mail(rs, "lastschrift/sepa_pre-notification",
                          {'To': (persona['username'],),
                           'Subject': subject},
                          {'data': data})
@@ -506,7 +506,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         if transaction_ids:
             subject = glue("Einzugsermächtigung zu ausstehender Lastschrift"
                            "widerrufen.")
-            self.do_mail(rs, "pending_lastschrift_revoked",
+            self.do_mail(rs, "lastschrift/pending_lastschrift_revoked",
                          {'To': (self.conf["MANAGEMENT_ADDRESS"],),
                           'Subject': subject},
                          {'persona_id': persona_id})
@@ -573,7 +573,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             persona = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
             not_minor = not determine_age_class(
                 persona['birthday'], now().date()).is_minor()
-        return self.render(rs, "lastschrift_subscription_form_fill",
+        return self.render(rs, "lastschrift/lastschrift_subscription_form_fill",
                            {"persona": persona, "not_minor": not_minor})
 
     @access("anonymous")
@@ -648,4 +648,4 @@ class CdELastschriftMixin(CdEBaseFrontend):
     @access("anonymous")
     def i25p_index(self, rs: RequestState) -> Response:
         """Show information about 'Initiative 25+'."""
-        return self.render(rs, "i25p_index")
+        return self.render(rs, "lastschrift/i25p_index")
