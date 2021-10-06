@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
-"""Services related to parsing and booking bank transfers for the cde realm."""
+"""Services related to parsing and booking bank transfers for the cde realm.
+
+Everything here requires the "finance_admin" role.
+"""
 
 import csv
 import datetime

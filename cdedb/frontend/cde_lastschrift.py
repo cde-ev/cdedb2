@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 
-"""Lastschrift related services for the cde realm."""
+"""Lastschrift related services for the cde realm.
+
+Viewing general information on the Initiative 25+ and filling in a lastschrift form
+requires no privileges. Viewing ones own lastschrift requires the "member" role.
+Everything else here requires the "finance_admin" role.
+"""
 
 import datetime
 import decimal

@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 
-"""Past event related services for the cde realm."""
+"""Past event related services for the cde realm.
+
+Viewing and searching past events and courses requires the "member" role,
+administrative tasks, like creating and modifying past events and courses requires
+"cde_admin".
+"""
 
 import copy
 import csv

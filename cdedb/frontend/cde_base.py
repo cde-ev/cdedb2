@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 
-"""Basic services for the cde realm."""
+"""Basic services for the cde realm.
+
+General user management is available to both the "core_admin" and "cde_admin" roles.
+The more involved batch admission and the finance log require the "cde_admin" role.
+"""
 
 import collections
 import copy

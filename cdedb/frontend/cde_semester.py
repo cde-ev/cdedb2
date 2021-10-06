@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 
-"""Semester management services for the cde realm."""
+"""Semester management services for the cde realm.
+
+Everything here requires the "finance_admin" role, except viewing the semester log,
+which requires "cde_admin". Note that every "finance_admin" is also a "cde_admin".
+"""
 
 import datetime
 from typing import Collection, Optional
@@ -284,7 +288,7 @@ class CdESemesterMixin(CdEBaseFrontend):
                      change_note: Optional[str],
                      time_start: Optional[datetime.datetime],
                      time_stop: Optional[datetime.datetime]) -> Response:
-        """View general activity."""
+        """View semester activity."""
         length = length or self.conf["DEFAULT_LOG_LENGTH"]
         # length is the requested length, _length the theoretically
         # shown length for an infinite amount of log entries.
