@@ -7,12 +7,16 @@ on boilerplate.
 
 Additionally this provides some level of guidance on how to interact
 with the production environment.
+
+Note that some imports are only made when they are actually needed, so that this
+facility may be used in a minimized environment, such as the ldap docker container.
 """
 
 import getpass
 import os
 import tempfile
 import time
+from pkgutil import resolve_name
 from types import TracebackType
 from typing import Any, Dict, IO, Mapping, Optional, Tuple, Type, TYPE_CHECKING
 
@@ -122,7 +126,7 @@ class Script:
             self.config = Config(p)
             self._secrets = SecretsConfig(p)
         if TYPE_CHECKING:
-            import gettext
+            import gettext  # pylint: disable=import-outside-toplevel
             self._translations: Optional[Mapping[str, gettext.NullTranslations]]
             self._backends: Dict[Tuple[str, bool], AbstractBackend]
         self._translations = None
@@ -159,7 +163,6 @@ class Script:
         if ret := self._backends.get((realm, proxy)):
             return ret
         with self._tempconfig as p:
-            from pkgutil import resolve_name
             backend_name = self.backend_map[realm]
             backend = resolve_name(f"cdedb.backend.{realm}.{backend_name}")(p)
         self._backends.update({
@@ -174,7 +177,7 @@ class Script:
         if ret := self._request_states.get(persona_id):
             return ret
         if self._translations is None:
-            from cdedb.frontend.common import setup_translations
+            from cdedb.frontend.common import setup_translations  # pylint: disable=import-outside-toplevel
             self._translations = setup_translations(self.config)
         rs = RequestState(
             sessionkey=None,
