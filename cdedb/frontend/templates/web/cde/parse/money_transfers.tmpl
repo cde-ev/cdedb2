@@ -1,17 +1,25 @@
 {% set sidenav_active='cde_transfers' %}
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block scripts %}{{ util.cdedb_script('cdedb_csv_tools.js') }}{% endblock %}
+
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_csv_tools.js') }}
+{% endblock %}
+
+{% set jshint='strong' %}
+
 {% block title %}
     {% trans %}
         Enter Money Transfers
     {% endtrans %}
 {% endblock %}
+
 {% block breadcrumb %}
-{{ super() }}
-{{ util.breadcrumb_link(cdedblink("cde/user_search"), gettext("Manage Users")) }}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("cde/user_search"), gettext("Manage Users")) }}
 {{ util.breadcrumb_link(cdedblink("cde/batch_admission_form"), gettext("Enter Bank Transfers"), active=True) }}
 {% endblock %}
+
 {% block content %}
     <form action="{{ cdedblink('cde/money_transfers') }}" method="POST" id="transfersform" enctype="multipart/form-data">
         {{ util.anti_csrf_token('cde/money_transfers') }}
@@ -36,7 +44,7 @@
             {% for dataset in data %}
                 <strong>
                     <span class="row-key" data-row="{{ dataset['lineno'] }}">
-                        {% trans lineno=dataset['lineno'] %}Line {{ lineno }}{% endtrans -%}
+                        {% trans lineno=dataset['lineno'] + 1 %}Line {{ lineno }}{% endtrans -%}
                     </span>:
                     {# Since the dataset is no full persona (esp. it does not contain a display_name entry),
                        we can not use the util.persona_name makro here. #}

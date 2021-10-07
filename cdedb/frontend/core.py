@@ -2292,7 +2292,7 @@ class CoreFrontend(AbstractFrontend):
             rs.notify("error", n_("Case not to review."))
             return self.genesis_list_cases(rs)
         merge_dicts(rs.values, case)
-        realm_options = [option
+        realm_options = [(option.realm, rs.gettext(option.name))
                          for option in GENESIS_REALM_OPTION_NAMES
                          if option.realm in REALM_SPECIFIC_GENESIS_FIELDS]
 

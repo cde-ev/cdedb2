@@ -16507,7 +16507,7 @@ msgstr "Archivierungsbenachrichtigungen versandt"
 
 #: cdedb/i18n_additional.py:51 cdedb/i18n_additional.py:53
 msgid "CdeLogCodes.automated_archival_done"
-msgstr "Automatische ARchivierung abgeschlossen"
+msgstr "Automatische Archivierung abgeschlossen"
 
 #: cdedb/i18n_additional.py:53 cdedb/i18n_additional.py:55
 msgid "CoreLogCodes.persona_creation"

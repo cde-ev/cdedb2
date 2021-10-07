@@ -50,10 +50,9 @@ from cdedb.frontend.application import Application
 from cdedb.frontend.common import AbstractFrontend, Worker, setup_translations
 from cdedb.frontend.cron import CronFrontend
 from cdedb.query import QueryOperators
-from cdedb.script import setup
+from cdedb.script import Script
 
 _BASICCONF = BasicConfig()
-_SECRETSCONF = SecretsConfig()
 
 # TODO: use TypedDict to specify UserObject.
 UserObject = Mapping[str, Any]
@@ -303,13 +302,12 @@ class CdEDBTest(BasicTest):
     """Reset the DB for every test."""
 
     def setUp(self) -> None:
-        with setup(
+        with Script(
             persona_id=-1,
             dbuser="cdb",
-            dbpassword=_SECRETSCONF["CDB_DATABASE_ROLES"]["cdb"],
             dbname=self.conf["CDB_DATABASE_NAME"],
             check_system_user=False,
-        )().conn as conn:
+        ).rs().conn as conn:
             conn.set_session(autocommit=True)
             with conn.cursor() as curr:
                 with open("tests/ancillary_files/clean_data.sql") as f:
