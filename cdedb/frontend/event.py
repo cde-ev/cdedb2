@@ -3276,10 +3276,18 @@ class EventFrontend(AbstractUserFrontend):
             for track_id, track in tracks.items()
         }
         for track_id in present_tracks:
-            reg_tracks[track_id]['choices'] = tuple(
+            all_choices = list(
                 choice_getter(track_id, i)
                 for i in range(tracks[track_id]['num_choices'])
                 if choice_getter(track_id, i) is not None)
+
+            if reg_tracks[track_id]["course_instructor"] in all_choices:
+                i_choice = all_choices.index(reg_tracks[track_id]["course_instructor"])
+                rs.add_validation_error(
+                    (f"course_choice{track_id}_{i_choice}",
+                     ValueError(n_("You may not choose your own course.")))
+                )
+            reg_tracks[track_id]['choices'] = tuple(all_choices)
 
         f = lambda entry: rs.ambience['event']['fields'][entry['field_id']]
         params: TypeMapping = {
@@ -4045,12 +4053,20 @@ class EventFrontend(AbstractUserFrontend):
             choices_tuple = tuple(
                 extractor(i)
                 for i in range(track['num_choices']) if extractor(i))
-            choices_set = set(choices_tuple)
-            if len(choices_set) != len(choices_tuple):
-                rs.extend_validation_errors(
-                    ("track{}.course_choice_{}".format(track_id, i),
-                     ValueError(n_("Must choose different courses.")))
-                    for i in range(track['num_choices']))
+            choices_set = set()
+            own_course = new_tracks[track_id]["course_instructor"]
+            for i_choice, choice in enumerate(choices_tuple):
+                if own_course == choice:
+                    rs.add_validation_error(
+                        (f"track{track_id}.course_choice_{i_choice}",
+                         ValueError(n_("Must not choose your own course.")))
+                    )
+                if choice in choices_set:
+                    rs.append_validation_error(
+                        (f"track{track_id}.course_choice_{i_choice}",
+                         ValueError(n_("Must choose different courses."))))
+                else:
+                    choices_set.add(choice)
             new_tracks[track_id]['choices'] = choices_tuple
         new_fields = {
             key.split('.', 1)[1]: value for key, value in raw_fields.items()}
