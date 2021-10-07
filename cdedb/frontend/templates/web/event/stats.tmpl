@@ -66,7 +66,7 @@
                                 {% set query = get_query(key, part_id) %}
                                 {% set datum = row[part_id] %}
                                 {% if query %}
-                                    {{ util.href(cdedblink('event/registration_query', query.serialize()), datum) }}
+                                    {{ util.href(cdedblink('event/registration_query', query.serialize()) + "#query-results", datum) }}
                                 {% else %}
                                     {{ datum }}
                                 {% endif %}
@@ -114,8 +114,7 @@
                                         {% set query = get_query(key, track['part_id'], track_id) %}
                                         {% set page = get_query_page(key) %}
                                         {% if query %}
-                                            {{ util.href(cdedblink(page, query.serialize()),
-                                                         row[track_id]) }}
+                                            {{ util.href(cdedblink(page, query.serialize()) + "#query-results", row[track_id]) }}
                                         {% else %}
                                             {{ row[track_id] }}
                                         {% endif %}
