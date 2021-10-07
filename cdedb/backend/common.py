@@ -875,17 +875,15 @@ def affirm_set_validation(
 
 
 def verify_validation(
-    type_: Type[T], value: Any, **kwargs: Any
+    type_: Type[T], value: Any, *, ignore_warnings: bool = True, **kwargs: Any
 ) -> Tuple[Optional[T], List[Error]]:
-    """Wrapper to call checks in :py:mod:`cdedb.validation`.
+    """Convenient wrapper to call checks in :py:mod:`cdedb.validation`.
 
     This should only be used if the error handling must be done in the backend to
     retrieve the errors and not raising them (like affirm would do).
-
-    Note that this ignores all warnings on purpose!
     """
-    ret, errs = validate.validate_check(type_, value, ignore_warnings=True, **kwargs)
-    return ret, errs
+    return validate.validate_check(
+        type_, value, ignore_warnings=ignore_warnings, **kwargs)
 
 
 def cast_fields(data: CdEDBObject, fields: CdEDBObjectMap) -> CdEDBObject:

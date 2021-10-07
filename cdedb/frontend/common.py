@@ -2027,35 +2027,29 @@ def check_validation_optional(rs: RequestState, type_: Type[T], value: Any,
     return ret
 
 
-# TODO how to handle warnings here?
 def verify_validation(
-    type_: Type[T], value: Any, **kwargs: Any
+    type_: Type[T], value: Any, *, ignore_warnings: bool = True, **kwargs: Any
 ) -> Tuple[Optional[T], List[Error]]:
-    """Wrapper to call checks in :py:mod:`cdedb.validation`.
+    """Convenient wrapper to call checks in :py:mod:`cdedb.validation`.
 
     This is similar to :func:`~cdedb.frontend.common.check_validation` but returns
     all encountered errors instead of appending them to the RequestState.
     This should only be used if the error handling differs from the default handling.
-
-    Note that this ignores all warnings on purpose!
     """
-    ret, errs = validate.validate_check(type_, value, ignore_warnings=True, **kwargs)
-    return ret, errs
+    return validate.validate_check(
+        type_, value, ignore_warnings=ignore_warnings, **kwargs)
 
 
-# TODO how to handle warnings here?
 def verify_validation_optional(
-    type_: Type[T], value: Any, **kwargs: Any
+    type_: Type[T], value: Any, *, ignore_warnings: bool = True, **kwargs: Any
 ) -> Tuple[Optional[T], List[Error]]:
-    """Wrapper to call checks in :py:mod:`cdedb.validation`.
+    """Convenient wrapper to call checks in :py:mod:`cdedb.validation`.
 
     This is similar to :func:`~cdedb.frontend.common.verify_validation` but also allows
     optional/falsy values.
-
-    Note that this ignores all warnings on purpose!
     """
-    ret, errs = validate.validate_check(type_, value, ignore_warnings=True, **kwargs)
-    return ret, errs
+    return validate.validate_check_optional(
+        type_, value, ignore_warnings=ignore_warnings, **kwargs)
 
 
 def basic_redirect(rs: RequestState, url: str) -> werkzeug.Response:
