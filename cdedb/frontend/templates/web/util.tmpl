@@ -775,7 +775,7 @@
         {% for column in columns %}
             {% set func = column['func'] %}
             {% set name = '{}{}_{}'.format(prefix, column['name'], id) %}
-            <td {% if name in errors %}class="has-error"{% endif %}>
+            <td {% if name in errors %}class="{{ "has-warning" if is_warning(name) else "has-error" }}"{% endif %}>
                 {# TODO set the remaining items of colum as attributes to func #}
                 {# this is a call for a generic util.input_* macro specified by the caller #}
                 {{ func(name=name,

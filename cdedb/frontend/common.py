@@ -662,8 +662,11 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
             _LOGGER.debug(debugstring)
             params['debugstring'] = debugstring
-        if rs.retrieve_validation_errors() and not rs.notifications:
-            rs.notify("error", n_("Failed validation."))
+        if (errors := rs.retrieve_validation_errors()) and not rs.notifications:
+            if all(isinstance(kind, ValidationWarning) for param, kind in errors):
+                rs.notify("warning", n_("There are warnings."))
+            else:
+                rs.notify("error", n_("Failed validation."))
         if self.conf["LOCKDOWN"]:
             rs.notify("info", n_("The database currently undergoes "
                                  "maintenance and is unavailable."))
@@ -2244,7 +2247,9 @@ def process_dynamic_input(
     constraints = list(itertools.chain.from_iterable(
         constraint_maker(anid, prefix) for anid in non_deleted_existing)
     ) if constraint_maker else None
-    data = request_extractor(rs, existing_data_spec, constraints)
+    # use request_dict_extractor to avoid the validation inside request_extractor
+    # this is postponed to a later point to use the validation for the whole object
+    data = request_dict_extractor(rs, existing_data_spec)
 
     # build the return dict of all existing entries and check if they pass validation
     ret: Dict[int, Optional[CdEDBObject]] = {
