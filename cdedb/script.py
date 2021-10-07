@@ -14,7 +14,7 @@ import os
 import tempfile
 import time
 from types import TracebackType
-from typing import Any, Dict, IO, Optional, Tuple, Type, TYPE_CHECKING
+from typing import Any, Dict, IO, Mapping, Optional, Tuple, Type, TYPE_CHECKING
 
 import psycopg2
 import psycopg2.extensions
@@ -123,7 +123,7 @@ class Script:
             self._secrets = SecretsConfig(p)
         if TYPE_CHECKING:
             import gettext
-            self._translations: Dict[str, gettext.NullTranslations]
+            self._translations: Optional[Mapping[str, gettext.NullTranslations]]
             self._backends: Dict[Tuple[str, bool], AbstractBackend]
         self._translations = None
         self._backends = {}
