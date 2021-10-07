@@ -4,14 +4,14 @@ import subprocess
 import shutil
 import pathlib
 
-from util import LdapScript, encrypt_password
+from util import LdapScript
 
 # Setup
 script = LdapScript(dbuser="cdb_admin")
 
 # Do the work
 print("Compile add-duas.sql file")
-sql_path = script.render_save("add-duas.sql", encrypt=encrypt_password,
+sql_path = script.render_save("add-duas.sql", encrypt=script.encrypt_password,
                               secrets=script._secrets)
 
 print("Compile cdedb-ldap.ldif file")
