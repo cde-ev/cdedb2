@@ -2914,7 +2914,7 @@ def _lodgement_group(
     else:
         # no event_id, since the associated event should be fixed.
         mandatory_fields = {'id': ID}
-        optional_fields = {**LODGEMENT_GROUP_FIELDS}
+        optional_fields = dict(LODGEMENT_GROUP_FIELDS, event_id=ID)
 
     return LodgementGroup(_examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs))
@@ -4074,7 +4074,7 @@ def _ballot_candidate(
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
     """
-    val = _mapping(val, argname, **kwargs)
+    val = _mapping(val, argname, ignore_warnings=ignore_warnings, **kwargs)
 
     if creation:
         mandatory_fields = {**BALLOT_CANDIDATE_COMMON_FIELDS}
@@ -4083,11 +4083,12 @@ def _ballot_candidate(
         mandatory_fields = {'id': ID}
         optional_fields = {**BALLOT_CANDIDATE_COMMON_FIELDS}
 
-    val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs)
+    val = _examine_dictionary_fields(val, mandatory_fields, optional_fields,
+                                     ignore_warnings=ignore_warnings, **kwargs)
 
     errs = ValidationSummary()
-    if 'title' in val and len(val['title']) > 30 and not ignore_warnings:
+    # The title is no shortname per se, but this should be short too.
+    if len(val.get("title", "")) > _CONF["SHORTNAME_LENGTH"] and not ignore_warnings:
         errs.append(ValidationWarning("title", n_("Title is too long.")))
     if val.get('shortname') == ASSEMBLY_BAR_SHORTNAME:
         errs.append(ValueError("shortname", n_("Mustn’t be the bar shortname.")))

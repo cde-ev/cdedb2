@@ -300,7 +300,7 @@ _DEFAULTS = {
     # maximum length of rationale for requesting an account
     "MAX_RATIONALE": 500,
     # for shortnames longer than this, a ValidationWarning will be raised
-    "SHORTNAME_LENGTH": 10,
+    "SHORTNAME_LENGTH": 30,
     # minimal number of input characters to start a search for personas
     # fitting an intelligent input field
     "NUM_PREVIEW_CHARS": 3,
@@ -318,9 +318,6 @@ _DEFAULTS = {
     "I18N_LANGUAGES": ("de", "en", "la"),
     # Advertised languages in the UI
     "I18N_ADVERTISED_LANGUAGES": ("de", "en"),
-    # for candidate titles in assemblies which are longer than this, a ValidationWarning
-    # will be raised
-    "ASSEMBLY_CANDIDATE_TITLE_LENGTH": 30,
 
     ###############
     # email stuff #
