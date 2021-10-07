@@ -9,7 +9,8 @@ if [ ! -e /var/lib/ldap/container_already_initalized ]; then
     # consequently we give the app container time to create the sample-data
     sleep 20
 
-    # TODO run the add-duas.sql script produced by create-ldap.py
+    # the duas must be manually added by applying ldap/output/add-duas.sql
+    # in dev and test instances, they are included in the sample-data.
 
     # remove pre-installed mdb. This uses the same olcSuffix and blocks our sql database
     rm /etc/ldap/slapd.d/cn=config/olcDatabase=\{1\}mdb.ldif

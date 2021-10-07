@@ -24,13 +24,17 @@ if script.dry_run:
     print("Skip during dry run        -- Remove existing cdedb-ldap.")
     print("Skip during dry run        -- Apply cdedb-ldap.ldif.")
 else:
-    print("Drop all existing and add new duas.")
-    with script._conn as conn:
-        conn.set_session(autocommit=True)
-        with conn.cursor() as curr:
-            with sql_path.open() as f:
-                sql_input = f.read()
-            curr.execute(sql_input)
+    if script.config["CDEDB_DEV"] or script.config["CDEDB_TEST"]:
+        print("Skip in test and dev       -- Drop all existing and add new duas.")
+        print("                              Are included in sample-data.")
+    else:
+        print("Drop all existing and add new duas.")
+        with script._conn as conn:
+            conn.set_session(autocommit=True)
+            with conn.cursor() as curr:
+                with sql_path.open() as f:
+                    sql_input = f.read()
+                curr.execute(sql_input)
 
     print("Remove existing cdedb-ldap")
     subprocess.run(["systemctl", "stop", "slapd"])
