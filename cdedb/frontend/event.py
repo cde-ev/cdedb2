@@ -1512,6 +1512,7 @@ class EventFrontend(AbstractUserFrontend):
                 participant_filter(p),
                 ("reg.checkin", QueryOperators.empty, None),),
             ' orgas': lambda e, p, t: (
+                participant_filter(p),
                 ('persona.id', QueryOperators.oneof,
                  rs.ambience['event']['orgas']),),
             'waitlist': lambda e, p, t: (
