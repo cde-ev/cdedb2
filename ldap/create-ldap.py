@@ -5,7 +5,7 @@ import shutil
 import jinja2
 import pathlib
 
-from cdedb.script import Script
+from util import Script
 
 # Setup
 script = Script(check_system_user=False)
