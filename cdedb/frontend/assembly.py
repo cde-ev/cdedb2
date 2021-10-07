@@ -24,8 +24,7 @@ from cdedb.common import (
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, AbstractUserFrontend, access,
     assembly_guard, calculate_db_logparams, calculate_loglinks, cdedburl,
-    check_validation as check, periodic, process_dynamic_input, request_extractor,
-    RequestConstraint
+    check_validation as check, periodic, process_dynamic_input, request_extractor
 )
 from cdedb.validation import (
     ASSEMBLY_COMMON_FIELDS, BALLOT_EXPOSED_FIELDS, PERSONA_FULL_ASSEMBLY_CREATION,

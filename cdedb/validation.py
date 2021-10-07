@@ -5,12 +5,12 @@
 
 """User data input mangling.
 
-We provide a set of functions testing arbitary user provided data for
+We provide a set of functions testing arbitrary user provided data for
 fitness. Those functions returning a mangled value also convert to more
-approriate python types (most input is given as strings which are
+appropriate python types (most input is given as strings which are
 converted to e.g. :py:class:`datetime.datetime`).
 
-We offer three variants.
+We offer two variants:
 
 * ``validate_check`` return a tuple ``(mangled_value, errors)``.
 * ``validate_affirm`` on success return the mangled value,
@@ -21,10 +21,10 @@ The raw validator implementations are functions with signature
 ``ignore_warnings``.
 These functions are registered and than wrapped to generate the above variants.
 
-They return the the validated and optionally converted value
+They return the the validated and converted value
 and raise a ``ValidationSummary`` when encountering errors.
 Each exception summary contains a list of errors
-which store the ``argname`` of the validator where the error occured
+which store the ``argname`` of the validator where the error occurred
 as well as an explanation of what exactly is wrong.
 A ``ValueError`` may also store a third argument.
 This optional argument should be a ``Mapping[str, Any]``
@@ -35,14 +35,18 @@ For instance ``_int`` will try to convert the input into an int
 which would be useful for string inputs especially.
 
 The parameter ``ignore_warnings`` is present in some validators.
-If ``True``, ``ValidationWarning`` may be ignored instead of raised.
+If ``True``, Errors of type ``ValidationWarning`` may be ignored instead of raised.
 Think of this like a toggle to enable less strict validation of some constants
 which might change externally like german postal codes.
 
-ValidationWarnings are always ignored in `validate_assert` which should be used only in
-the backend. The caller must specify if they should be ignored in `validate_check`,
-which is mostly used in the frontend and magically inserted in the wrapper method
-`frontend.common.check_validation`.
+We provide convenient wrappers around the validation functions for frontend and backend:
+
+* ``check_validation`` wraps ``validate_check`` in frontend.common
+* ``affirm_validation`` wraps ``validation_assert`` in backend.common
+* ``verify_validation`` wraps ``validate_check`` in frontend.common and backend.common
+
+These function should be used where available, since the do some additional work,
+f.e. ``check_validation`` registers all errors in the RequestState object.
 """
 
 import copy
@@ -627,7 +631,7 @@ def _shortname(val: Any, argname: str = None, *,
 def _shortname_identifier(val: Any, argname: str = None, *,
                           ignore_warnings: bool = False,
                           **kwargs: Any) -> ShortnameIdentifier:
-    """A string used as shortname and as programmatic accessible identifer."""
+    """A string used as shortname and as programmatically accessible identifier."""
     val = _identifier(val, argname, ignore_warnings=ignore_warnings, **kwargs)
     val = _shortname(val, argname, ignore_warnings=ignore_warnings, **kwargs)
     return ShortnameIdentifier(val)
@@ -638,7 +642,7 @@ def _shortname_restrictive_identifier(
         val: Any, argname: str = None, *,
         ignore_warnings: bool = False,
         **kwargs: Any) -> ShortnameRestrictiveIdentifier:
-    """A string used as shortname and is even more restricitve then an identifer."""
+    """A string used as shortname and as restrictive identifier"""
     val = _restrictive_identifier(val, argname, ignore_warnings=ignore_warnings,
                                   **kwargs)
     val = _shortname_identifier(val, argname, ignore_warnings=ignore_warnings,

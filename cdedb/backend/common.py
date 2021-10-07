@@ -838,7 +838,10 @@ class Silencer:
 def affirm_validation(assertion: Type[T], value: Any, **kwargs: Any) -> T:
     """Wrapper to call asserts in :py:mod:`cdedb.validation`.
 
-    Note that this ignores all warnings on purpose!
+    ValidationWarnings are used to hint the user to re-think about a given valid entry.
+    The user may decide that the given entry is fine by ignoring the warning.
+    Therefore, the frontend has to handle ValidationWarnings properly, while the backend
+    must **ignore** them always to reduce redundancy between frontend and backend.
     """
     return validate.validate_assert(assertion, value, ignore_warnings=True, **kwargs)
 
@@ -848,7 +851,8 @@ def affirm_validation_optional(
 ) -> Optional[T]:
     """Wrapper to call asserts in :py:mod:`cdedb.validation`.
 
-    Note that this ignores all warnings on purpose!
+    This is similar to :func:`~cdedb.backend.common.affirm_validation`
+    but also allows optional/falsy values.
     """
     return validate.validate_assert_optional(
         Optional[assertion], value, ignore_warnings=True, **kwargs)  # type: ignore
