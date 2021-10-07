@@ -53,7 +53,7 @@ from cdedb.frontend.event_lodgement_wishes import (
 )
 from cdedb.query import (
     Query, QueryConstraint, QueryOperators, QueryScope, make_registration_query_aux,
-    make_lodgement_query_aux, make_course_query_aux,
+    make_lodgement_query_aux, make_course_query_aux, QueryOrder
 )
 from cdedb.validation import (
     COURSE_COMMON_FIELDS, EVENT_EXPOSED_FIELDS, LODGEMENT_COMMON_FIELDS,
@@ -1588,10 +1588,21 @@ class EventFrontend(AbstractUserFrontend):
             ' u16': ('persona.birthday',),
             ' u14': ('persona.birthday',),
             ' checked in': ('reg.checkin',),
+            'waitlist': ('reg.payment', 'ctime.creation_time',),
             'total involved': ('part{part}.status',),
             'instructors': ('course_instructor{track}.id',),
             'all instructors': ('course{track}.id',
                                 'course_instructor{track}.id',),
+        }
+
+        # overwrites the default query order
+        QueryOrderGetter = Callable[
+            [CdEDBObject, CdEDBObject, CdEDBObject], Collection[QueryOrder]]
+        registration_query_order: Dict[str, QueryOrderGetter] = {
+            'waitlist': lambda e, p, t: (
+                ((f'reg_fields.xfield_{e["fields"][p["waitlist_field"]]["field_name"]}', True),
+                 ("reg.payment", True), ("ctime.creation_time", True),)
+                if p["waitlist_field"] else (("reg.payment", True), ("ctime.creation_time", True),)),
         }
         for name, track_regs in regs_in_choice_x.items():
             query_additional_fields[name] = ('track{track}.course_id',)
@@ -1613,8 +1624,9 @@ class EventFrontend(AbstractUserFrontend):
                 q.constraints.append(c)
             if category in query_additional_fields:
                 for f in query_additional_fields[category]:
-                    q.fields_of_interest.append(f.format(track=track_id,
-                                                         part=part_id))
+                    q.fields_of_interest.append(f.format(track=track_id, part=part_id))
+            if category in registration_query_order:
+                q.order = registration_query_order[category](e, p, t)
             return q
 
         def get_query_page(category: str) -> Optional[str]:
