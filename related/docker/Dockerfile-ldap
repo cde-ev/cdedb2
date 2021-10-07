@@ -1,9 +1,32 @@
 FROM debian:bullseye-20210816
 
-RUN python3 ./ldap/create-ldap.py \
-    && python3 ./ldap/update-ldap.py
+# Install the most basic packages to get the ldap.util.py run
+RUN apt-get update && apt-get install --yes --no-install-recommends \
+    python3 \
+    \
+    python3-bleach \
+    python3-icu \
+    python3-jinja2 \
+    python3-markdown \
+    python3-passlib \
+    python3-psycopg2 \
+    python3-tz \
+    python3-werkzeug
 
-RUN cat ./ldap/output/slapd-debconf.txt | debconf-set-selections \
+# copy the whole cdedb2-repo in /cdedb2
+COPY . /cdedb2
+
+# create the log file, ensure python finds the cdedb module and touch the CONTAINER file
+RUN mkdir /var/log/cdedb \
+    && ln -s /cdedb2/cdedb/ /usr/lib/python3/dist-packages/cdedb \
+    && touch /CONTAINER
+
+# execute the create-ldap.py and update-ldap.py in DRY_RUN mode to render the templates
+RUN python3 /cdedb2/ldap/create-ldap.py \
+    && python3 /cdedb2/ldap/update-ldap.py
+
+# Install the ldap specific packages with our custom slapd config
+RUN cat /cdedb2/ldap/output/slapd-debconf.txt | debconf-set-selections \
     \
     && apt-get update && apt-get install --yes --no-install-recommends \
     slapd \
@@ -11,7 +34,12 @@ RUN cat ./ldap/output/slapd-debconf.txt | debconf-set-selections \
     unixodbc \
     odbc-postgresql
 
-COPY ./related/docker/ldap-entrypoint.sh ./ldap/output/odbc.ini .ldap/output/config-ldap.ldif ./ldap/output/cdedb-ldap.ldif /app/
+# Copy all relevant files into the /app directory
+RUN mkdir /app \
+    && cp /cdedb2/related/docker/ldap-entrypoint.sh /app/ \
+    && cp /cdedb2/ldap/output/odbc.ini /app/ \
+    && cp /cdedb2/ldap/output/config-ldap.ldif /app/ \
+    && cp /cdedb2/ldap/output/cdedb-ldap.ldif /app/
 
 RUN mv /app/ldap-entrypoint.sh /ldap-entrypoint.sh \
     && mv /app/odbc.ini /etc/odbc.ini
