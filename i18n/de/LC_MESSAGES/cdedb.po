@@ -19671,3 +19671,14 @@ msgstr "Ungültige Eingabe für Enumeration %(enum)s."
 #: cdedb/validation.py:4398 cdedb/validation.py:4464
 msgid "SubscriptionState.none is not written into the database."
 msgstr "SubscriptionState.none wird nicht in die Datenbank geschrieben."
+
+msgid ""
+"This genesis request looks similar to these existing accounts. Maybe "
+"consider updating one of these instead of creating a new account?"
+msgstr ""
+"Diese Accountanfrage scheint sehr ähnlich zu diesen bereits existierenden "
+"Accounts zu sein. Möglicherweise sollte einer der bestehenden Accounts "
+"aktualisiert werden, anstatt einen neuen Account zu erstellen."
+
+msgid "Doppelgangers"
+msgstr "Ähnliche Accounts"

@@ -2803,11 +2803,14 @@ class CoreBackend(AbstractBackend):
 
         This is for batch admission, where we may encounter datasets to
         already existing accounts. In that case we do not want to create
-        a new account.
+        a new account. It is also used during genesis to avoid creation
+        of duplicate accounts.
 
         :returns: A dict of possibly matching account data.
         """
-        persona = affirm(vtypes.Persona, persona)
+        persona = affirm(vtypes.Persona, persona, _ignore_warnings=True)
+        if persona['birthday'] == datetime.date.min:
+            persona['birthday'] = None
         scores: Dict[int, int] = collections.defaultdict(lambda: 0)
         queries: List[Tuple[int, str, Tuple[Any, ...]]] = [
             (10, "given_names = %s OR display_name = %s",
@@ -2819,8 +2822,8 @@ class CoreBackend(AbstractBackend):
             (10, "birthday = %s", (persona['birthday'],)),
             (5, "location = %s", (persona['location'],)),
             (5, "postal_code = %s", (persona['postal_code'],)),
-            (20, "given_names = %s AND family_name = %s",
-             (persona['family_name'], persona['given_names'],)),
+            (20, "(given_names = %s OR display_name = %s) AND family_name = %s",
+             (persona['given_names'], persona['given_names'], persona['family_name'],)),
             (21, "username = %s", (persona['username'],)),
         ]
         # Omit queries where some parameters are None
