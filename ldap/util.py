@@ -15,6 +15,7 @@ import tempfile
 from types import TracebackType
 from typing import Any, IO, Optional, Type, Union
 
+import jinja2
 from passlib.hash import sha512_crypt
 import psycopg2
 import psycopg2.extensions
@@ -27,16 +28,15 @@ psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
 
 
+# This is copied from cdedb.backend.core to avoid unnecessary imports
 def encrypt_password(password: str) -> str:
     """We currently use passlib for password protection."""
     return sha512_crypt.hash(password)
 
-###########
-# Scripts #
-###########
 
 PathLike = Union[pathlib.Path, str]
 _CONFIG = Config()
+
 
 class TempConfig:
     """Provide a thin wrapper around a temporary file.
@@ -68,7 +68,7 @@ class TempConfig:
         return False
 
 
-class Script:
+class LdapScript:
     def __init__(self, *, dry_run: bool = None,
                  dbuser: str = 'cdb_anonymous', dbname: str = 'cdb',
                  cursor: psycopg2.extensions.cursor = psycopg2.extras.RealDictCursor,
@@ -110,9 +110,23 @@ class Script:
             self._secrets = SecretsConfig(p)
         self._connect(dbuser, dbname, cursor)
 
+        # Setup some special stuff for ldap
+        self.template_dir = self.config["REPOSITORY_PATH"] / "ldap/templates"
+        self.output_dir = self.config["REPOSITORY_PATH"] / "ldap/output"
+        self.env = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(str(self.template_dir)))
+
+        if not self.output_dir.exists():
+            self.output_dir.mkdir()
+
     def _connect(self, dbuser: str, dbname: str, cursor: psycopg2.extensions.cursor
                  ) -> None:
         """Create and save a database connection."""
+        # We do not allow a real database connection for docker, since postgres runs in
+        # an extra container
+        if pathlib.Path("/CONTAINER").is_file():
+            return
+
         if self._conn:
             return
 
@@ -133,3 +147,13 @@ class Script:
                 raise
             self._conn = psycopg2.connect(**connection_parameters, host="cdb")
         self._conn.set_client_encoding("UTF8")
+
+    def render_save(self, name: str, **kwargs) -> pathlib.Path:
+        """Render a given template with the specified args and save it in self.output"""
+        basename, ending = name.split(".")
+        template = self.env.get_template(f"{basename}.tmpl")
+        out = template.render(kwargs)
+        path = self.output_dir / f"{basename}.{ending}"
+        with open(path, mode="w") as f:
+            f.write(out)
+        return path

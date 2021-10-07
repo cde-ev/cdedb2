@@ -3,37 +3,21 @@
 import subprocess
 import shutil
 import pathlib
-import jinja2
 
-from util import Script, encrypt_password
+from util import LdapScript, encrypt_password
 
 # Setup
-script = Script(dbuser="cdb_admin", check_system_user=False)
-
-TEMPLATE_DIR = script.config["REPOSITORY_PATH"] / "ldap/templates"
-OUTPUT_DIR = script.config["REPOSITORY_PATH"] / "ldap/output"
-
-ENV = jinja2.Environment(loader=jinja2.FileSystemLoader(str(TEMPLATE_DIR)))
-
-
-def render_save(name: str, **kwargs) -> pathlib.Path:
-    basename, ending = name.split(".")
-    template = ENV.get_template(f"{basename}.tmpl")
-    out = template.render(kwargs)
-    path = OUTPUT_DIR / f"{basename}.{ending}"
-    with open(path, mode="w") as f:
-        f.write(out)
-    return path
-
+script = LdapScript(dbuser="cdb_admin")
 
 # Do the work
-
 print("Compile add-duas.sql file")
-sql_path = render_save("add-duas.sql", encrypt=encrypt_password, secrets=script._secrets)
+sql_path = script.render_save("add-duas.sql", encrypt=encrypt_password,
+                              secrets=script._secrets)
 
 print("Compile cdedb-ldap.ldif file")
 # TODO set more values here dynamically form the config?
-ldif_path = render_save("cdedb-ldap.ldif", config=script.config, secrets=script._secrets)
+ldif_path = script.render_save("cdedb-ldap.ldif", config=script.config,
+                               secrets=script._secrets)
 
 if script.dry_run:
     print("Skip during dry run        -- Drop all existing and add new duas.")

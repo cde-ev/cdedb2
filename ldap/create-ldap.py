@@ -2,41 +2,26 @@
 
 import subprocess
 import shutil
-import jinja2
 import pathlib
 
-from util import Script
+from util import LdapScript
 
 # Setup
-script = Script(check_system_user=False)
-
-TEMPLATE_DIR = script.config["REPOSITORY_PATH"] / "ldap/templates"
-OUTPUT_DIR = script.config["REPOSITORY_PATH"] / "ldap/output"
-
-ENV = jinja2.Environment(loader=jinja2.FileSystemLoader(str(TEMPLATE_DIR)))
-
-
-def render_save(name: str, **kwargs) -> pathlib.Path:
-    basename, ending = name.split(".")
-    template = ENV.get_template(f"{basename}.tmpl")
-    out = template.render(kwargs)
-    path = OUTPUT_DIR / f"{basename}.{ending}"
-    with open(path, mode="w") as f:
-        f.write(out)
-    return path
+script = LdapScript()
 
 
 # Do the work
 print("Compile odbc.ini file")
 # TODO what about the password, servername and port here?
-odbc_path = render_save("odbc.ini", secrets=script._secrets)
+odbc_path = script.render_save("odbc.ini", secrets=script._secrets)
 
 print("Compile slapd-debconf.txt")
-debconf_path = render_save("slapd-debconf.txt", secrets=script._secrets)
+debconf_path = script.render_save("slapd-debconf.txt", secrets=script._secrets)
 
 print("Compile custom config-ldap.ldif")
 # TODO set more values here dynamically form the config?
-ldif_path = render_save("config-ldap.ldif", config=script.config, secrets=script._secrets)
+ldif_path = script.render_save("config-ldap.ldif", config=script.config,
+                               secrets=script._secrets)
 
 if script.dry_run:
     print("Skip during dry run        -- Update apt")

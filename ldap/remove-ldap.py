@@ -2,10 +2,10 @@
 
 import subprocess
 
-from cdedb.script import Script
+from util import LdapScript
 
 # Setup
-script = Script(check_system_user=False)
+script = LdapScript()
 
 # Do the work
 if script.dry_run:
