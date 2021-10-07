@@ -175,7 +175,7 @@ def validate_assert(type_: Type[T], value: Any, ignore_warnings: bool,
 
 def validate_assert_optional(type_: Type[T], value: Any, ignore_warnings: bool,
                              **kwargs: Any) -> Optional[T]:
-    return validate_assert(Optional[type_], value, ignore_warnings **kwargs)  # type: ignore
+    return validate_assert(Optional[type_], value, ignore_warnings, **kwargs)  # type: ignore
 
 
 def validate_check(type_: Type[T], value: Any, ignore_warnings: bool,

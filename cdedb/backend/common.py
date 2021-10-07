@@ -850,7 +850,7 @@ def affirm_validation_optional(
 
     Note that this ignores all warnings on purpose!
     """
-    return validate.validate_assert(
+    return validate.validate_assert_optional(
         Optional[assertion], value, ignore_warnings=True, **kwargs)  # type: ignore
 
 
