@@ -20,7 +20,7 @@ from cdedb.backend.common import (
     affirm_validation_typed_optional as affirm_optional, cast_fields, internal,
     singularize,
 )
-from cdedb.backend.new_event_base import EventBaseBackend
+from cdedb.backend.event_base import EventBaseBackend
 from cdedb.common import (
     CdEDBObject, CdEDBObjectMap, CourseFilterPositions, DefaultReturnCode,
     DeletionBlockers, InfiniteEnum, PrivilegeError, PsycoJson, REGISTRATION_FIELDS,

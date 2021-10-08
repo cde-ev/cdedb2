@@ -17,14 +17,18 @@ from cdedb.backend.common import (
 from cdedb.backend.event_base import EventBaseBackend
 from cdedb.backend.event_helpers import EventBackendHelpers
 from cdedb.backend.event_lodgement import EventLodgementBackend
-from cdedb.common import CdEDBObject, CdEDBOptionalMap, DefaultReturnCode, \
-    EVENT_SCHEMA_VERSION, PartialImportError, PrivilegeError, RequestState, get_hash, \
-    json_serialize, mixed_existence_sorter, n_, unwrap
+from cdedb.backend.event_registration import EventRegistrationBackend
+from cdedb.common import (
+    CdEDBObject, CdEDBOptionalMap, DefaultReturnCode,
+    EVENT_SCHEMA_VERSION, PartialImportError, PrivilegeError, RequestState, get_hash,
+    json_serialize, mixed_existence_sorter, n_, unwrap,
+)
 from cdedb.common import (DeletionBlockers)
 from cdedb.database.connection import Atomizer
 
 
-class EventBackend(EventLodgementBackend, EventBaseBackend, EventBackendHelpers):
+class EventBackend(EventRegistrationBackend, EventLodgementBackend, EventBaseBackend,
+                   EventBackendHelpers):
     @access("event_admin")
     def delete_event_blockers(self, rs: RequestState,
                               event_id: int) -> DeletionBlockers:
