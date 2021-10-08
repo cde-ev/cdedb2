@@ -536,8 +536,7 @@ def map_dict_filter(d: Dict[str, str], processing: Callable[[Any], str]
 
 
 def enum_entries_filter(enum: enum.EnumMeta, processing: Callable[[Any], str] = None,
-                        raw: bool = False,
-                        prefix: str = "") -> List[Tuple[int, str]]:
+                        raw: bool = False, prefix: str = "") -> List[Tuple[int, str]]:
     """
     Transform an Enum into a list of of (value, string) tuple entries. The
     string is piped trough the passed processing callback function to get the
@@ -557,10 +556,10 @@ def enum_entries_filter(enum: enum.EnumMeta, processing: Callable[[Any], str] = 
     if raw:
         pre = lambda x: x
     else:
-        pre = str
-    to_sort = ((entry.value, prefix + processing(pre(entry)))  # type: ignore
+        pre = (lambda x: x.display_str()) if hasattr(enum, "display_str") else str  # type: ignore[assignment]
+    to_sort = ((entry, prefix + processing(pre(entry)))  # type: ignore[var-annotated]
                for entry in enum)
-    return xsorted(to_sort)
+    return xsorted(to_sort, key=lambda e: e[0].value)
 
 
 def dict_entries_filter(items: List[Tuple[Any, Mapping[T, S]]],

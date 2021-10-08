@@ -1583,7 +1583,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Bereichsänderung für Kalif Karabatschi")
         # Now, do it right
         f['birthday'] = "21.6.1977"
-        f['gender'] = 1
+        f['gender'] = const.Genders.female
         f['change_note'] = "Komplizierte Aufnahme"
         self.submit(f)
         self.assertTitle("Kalif Karabatschi")
@@ -1672,7 +1672,7 @@ class TestCoreFrontend(FrontendTest):
 
     EVENT_GENESIS_DATA = ML_GENESIS_DATA.copy()
     EVENT_GENESIS_DATA.update({
-        'realm': "event", 'gender': const.Genders.female.value,
+        'realm': "event", 'gender': const.Genders.female,
         'birthday': "1987-06-05", 'address': "An der Eiche", 'postal_code': "12345",
         'location': "Marcuria", 'country': "AQ"
     })
@@ -2023,7 +2023,7 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['genesismodifyform']
         f['realm'] = "event"
-        f['gender'] = "1"
+        f['gender'] = const.Genders.female
         f['birthday'] = "1987-06-05"
         f['address'] = "An der Eiche"
         f['postal_code'] = "12345"
