@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
-"""The event backend provides means to organize events and provides a user
-variant for external participants.
+"""
+The `EventCourseBackend` subclasses the `EventBaseBackend` and provides functionality
+for managing courses belonging to an event.
 """
 
 from typing import (

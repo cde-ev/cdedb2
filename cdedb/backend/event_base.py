@@ -1,7 +1,17 @@
 #!/usr/bin/env python3
 
-"""The event backend provides means to organize events and provides a user
-variant for external participants.
+"""
+The `EventBaseBackend` provides backend functionality related to events in general.
+
+There are several subclasses in separate files which provide additional functionality
+related to more specific aspects of event management.
+
+This subclasses `EventBackendHelpers`, which provides a collection of internal
+low-level helpers which are used here and in the subclasses.
+
+All parts are combined together in the `EventBackend` class via multiple inheritance,
+together with a handful of high-level methods, that use functionalities of multiple
+backend parts.
 """
 
 import collections

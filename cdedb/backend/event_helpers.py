@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
-"""This collection of helpers contains mainly low-level helper functions that are
-used internally in the event backend."""
+"""
+The `EventBackendHelpers` class provides a collection of internal low-level helpers
+used by the `EventBaseBackend` and its subclasses.
+"""
 
 import collections
 import copy
@@ -26,8 +28,6 @@ from cdedb.validation import parse_date, parse_datetime
 
 
 class EventBackendHelpers(AbstractBackend):
-    """This collection of helpers contains mainly low-level helper functions that are
-    used internally in the event backend."""
     realm = "event"
 
     def __init__(self, configpath: PathLike = None):
@@ -86,9 +86,9 @@ class EventBackendHelpers(AbstractBackend):
         return self.sql_insert(rs, "event.log", data)
 
     def _get_event_fields(self, rs: RequestState, event_id: int) -> CdEDBObjectMap:
-        """
-        Helper function to retrieve the custom field definitions of an event.
-        This is required by multiple backend functions.
+        """Helper function to retrieve the custom field definitions of an event.
+
+        This is used by multiple backend functions.
 
         :return: A dict mapping each event id to the dict of its fields
         """
@@ -137,9 +137,11 @@ class EventBackendHelpers(AbstractBackend):
     def _delete_course_track(self, rs: RequestState, track_id: int,
                              cascade: Collection[str] = None
                              ) -> DefaultReturnCode:
-        """Remove course track.
+        """Helper to remove a course track.
 
-        This has to be called from an atomized context.
+        This is used by `_set_tracks` and `_delete_event_part`.
+
+        :note: This has to be called inside an atomized context.
 
         :param cascade: Specify which deletion blockers to cascadingly
             remove or ignore. If None or empty, cascade none.
@@ -193,9 +195,9 @@ class EventBackendHelpers(AbstractBackend):
 
     def _set_tracks(self, rs: RequestState, event_id: int, part_id: int,
                     data: CdEDBOptionalMap) -> DefaultReturnCode:
-        """Helper for handling of course tracks.
+        """Helper for creating, updating and/or deleting of tracks for one event part.
 
-        This is basically uninlined code from ``set_event()``.
+        This is used by `_set_event_parts`.
 
         :note: This has to be called inside an atomized context.
         """
@@ -262,9 +264,10 @@ class EventBackendHelpers(AbstractBackend):
 
     def _delete_field_values(self, rs: RequestState,
                              field_data: CdEDBObject) -> None:
-        """
-        Helper function for ``set_event()`` to clean up all the JSON data, when
-        removing a field definition.
+        """Helper function for deleting the data stored in a custom data field.
+
+        This is used by `_delete_event_field`, when successfully deleting a field
+        definition.
 
         :param field_data: The data of the field definition to be deleted
         """
@@ -283,10 +286,14 @@ class EventBackendHelpers(AbstractBackend):
 
     def _cast_field_values(self, rs: RequestState, field_data: CdEDBObject,
                            new_kind: const.FieldDatatypes) -> None:
-        """
-        Helper function for ``set_event()`` to cast the existing JSON data to
-        a new datatype (or set it to None, if casting fails), when a field
-        defintion is updated with a new datatype.
+        """Helper to cast existing field data to a new type.
+
+        This is used by `_set_event_fields`, if the datatype of an existing field is
+        changed.
+
+        If casting fails, the value will be set to `None`, causing data to be lost.
+
+        :note: This has to be called inside an atomized context.
 
         :param field_data: The data of the field definition to be updated
         :param new_kind: The new kind/datatype of the field.
@@ -309,6 +316,7 @@ class EventBackendHelpers(AbstractBackend):
             const.FieldDatatypes.bool: bool,
         }
 
+        self.affirm_atomized_context(rs)
         data = self.sql_select(rs, table, ("id", "fields",),
                                (field_data['event_id'],), entity_key='event_id')
         for entry in data:
@@ -368,9 +376,11 @@ class EventBackendHelpers(AbstractBackend):
     def _delete_event_part(self, rs: RequestState, part_id: int,
                            cascade: Collection[str] = None
                            ) -> DefaultReturnCode:
-        """Remove event part.
+        """Helper to remove one event part.
 
-        This has to be called from an atomized context.
+        Used by `delete_event` and `_set_event_parts`.
+
+        :note: This has to be called inside an atomized context.
 
         :param cascade: Specify which deletion blockers to cascadingly
             remove or ignore. If None or empty, cascade none.
@@ -421,9 +431,9 @@ class EventBackendHelpers(AbstractBackend):
     @internal
     def _set_event_parts(self, rs: RequestState, event_id: int,
                          parts: CdEDBOptionalMap) -> DefaultReturnCode:
-        """Helper for handling the setting of event parts..
+        """Helper for handling the setting of event parts.
 
-        This is basically uninlined code from ``set_event()``.
+        Used by `set_event`.
 
         :note: This has to be called inside an atomized context.
         """
@@ -562,9 +572,11 @@ class EventBackendHelpers(AbstractBackend):
     def _delete_event_field(self, rs: RequestState, field_id: int,
                             cascade: Collection[str] = None
                             ) -> DefaultReturnCode:
-        """Remove an event field.
+        """Helper to remove an event field.
 
-        This needs to be called from an atomized context.
+        Used by `delete_event` and `_set_event_fields`.
+
+        :note: This has to be called inside an atomized context.
 
         :param cascade: Specify which deletion blockers to cascadingly
             remove or ignore. If None or empty, cascade none.
@@ -643,10 +655,9 @@ class EventBackendHelpers(AbstractBackend):
     @internal
     def _set_event_fields(self, rs: RequestState, event_id: int,
                           fields: CdEDBOptionalMap) -> DefaultReturnCode:
-
         """Helper for creating, updating or deleting custom event fields.
 
-        This is basically uninlined code from ``set_event()``.
+        Used by `set_event`.
 
         :note: This has to be called inside an atomized context.
         """
@@ -704,6 +715,12 @@ class EventBackendHelpers(AbstractBackend):
     @internal
     def _set_event_fee_modifiers(self, rs: RequestState, event_id: int, part_id: int,
                                  modifiers: CdEDBOptionalMap) -> DefaultReturnCode:
+        """Helper for creating, updating and deleting fee modifiers for one event part.
+
+        Used by `_set_event_parts`.
+
+        :note: This has to be called inside an atomized context.
+        """
         ret = 1
         if not modifiers:
             return ret
@@ -787,7 +804,11 @@ class EventBackendHelpers(AbstractBackend):
 
     @access("event")
     def has_registrations(self, rs: RequestState, event_id: int) -> bool:
-        """Determine whether there exist registrations for an event."""
+        """Determine whether there exist registrations for an event.
+
+        This is very low-level but also rather useful, so it is published contrary to
+        the other methods in this class which are mostly internal.
+        """
         event_id = affirm(vtypes.ID, event_id)
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
             raise PrivilegeError(n_("Not privileged."))
@@ -799,7 +820,9 @@ class EventBackendHelpers(AbstractBackend):
         """
         Helper function to get course segments of all courses of an event.
 
-        Required for _set_course_choices().
+        Required for _set_course_choices(). This should be called outside of looping
+        over tracks and/or registrations, to avoid having to query the same information
+        multiple times.
 
         :returns: A dict mapping each course id (of the event) to a list of
             track ids (which correspond to its segments)
@@ -823,7 +846,7 @@ class EventBackendHelpers(AbstractBackend):
                             ) -> DefaultReturnCode:
         """Helper for handling of course choices.
 
-        This is basically uninlined code from ``set_registration()``.
+        Used when setting or creating registrations.
 
         :note: This has to be called inside an atomized context.
 
@@ -870,6 +893,8 @@ class EventBackendHelpers(AbstractBackend):
 
         This does some additional sanitizing besides applying the
         translation.
+
+        Used during the full import.
         """
         extra_translations = extra_translations or {}
         ret = copy.deepcopy(data)
@@ -902,6 +927,8 @@ class EventBackendHelpers(AbstractBackend):
         apply the diff to the imported state in ``data``. Any IDs which
         were not previously present in the DB into which we import have
         to be kept track of -- this is done in ``translations``.
+
+        Used during the full import.
 
         :param data: Data set to put in.
         :param current: Current state.

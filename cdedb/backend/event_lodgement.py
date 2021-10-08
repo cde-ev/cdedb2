@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
-"""The event backend provides means to organize events and provides a user
-variant for external participants.
+"""
+The `EventLodgementBackend` subclasses the `EventBaseBackend` and provides
+functionality for managing lodgements and lodgement groups belonging to an event.
 """
 
 from typing import Collection, Dict, Protocol

@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
-"""The event backend provides means to organize events and provides a user
-variant for external participants.
+"""
+The `EventQueryBackend` subclasses the `EventBaseBackend` and provides functionality
+for querying information about an event aswell as storing and retrieving such queries.
 """
 
 from typing import (

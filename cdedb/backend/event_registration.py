@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
-"""The event backend provides means to organize events and provides a user
-variant for external participants.
+"""
+The `EventRegistrationBackend` subclasses the `EventBaseBackend` and provides
+functionality for managing registrations belonging to an event, including managing the
+waitlist, calculating and booking event fees and checking the status of multiple
+registrations at once for the mailinglist realm.
 """
 
 import copy
