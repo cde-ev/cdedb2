@@ -227,14 +227,8 @@ class EventBaseBackend(EventBackendHelpers):
                 if 'orgas' in ret[anid]:
                     raise RuntimeError()
                 ret[anid]['orgas'] = orgas
-            data = self.sql_select(
-                rs, "event.field_definitions", FIELD_DEFINITION_FIELDS,
-                event_ids, entity_key="event_id")
-            for anid in event_ids:
-                fields = {d['id']: d for d in data if d['event_id'] == anid}
-                if 'fields' in ret[anid]:
-                    raise RuntimeError()
-                ret[anid]['fields'] = fields
+            for event_id, fields in self._get_events_fields(rs, event_ids).items():
+                ret[event_id]['fields'] = fields
         for anid in event_ids:
             ret[anid]['begin'] = min((p['part_begin']
                                       for p in ret[anid]['parts'].values()))
@@ -770,6 +764,7 @@ class EventBaseBackend(EventBackendHelpers):
             del registration['real_persona_id']
             parts = part_lookup[registration_id]
             for part in parts.values():
+                part['status'] = const.RegistrationPartStati(part['status'])
                 del part['registration_id']
                 del part['part_id']
             registration['parts'] = parts

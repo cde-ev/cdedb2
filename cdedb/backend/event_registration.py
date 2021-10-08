@@ -436,13 +436,11 @@ class EventRegistrationBackend(EventBaseBackend):
             pdata = self.sql_select(
                 rs, "event.registration_parts", REGISTRATION_PART_FIELDS,
                 registration_ids, entity_key="registration_id")
+            for p in pdata:
+                p['status'] = const.RegistrationPartStati(p['status'])
+                ret[p['registration_id']].setdefault('parts', {})[p['part_id']] = p
+            # Limit to registrations matching stati filter in any part.
             for anid in tuple(ret):
-                if 'parts' in ret[anid]:
-                    raise RuntimeError()
-                ret[anid]['parts'] = {
-                    e['part_id']: e for e in pdata if e['registration_id'] == anid
-                }
-                # Limit to registrations matching stati filter in any part.
                 if not any(e['status'] in stati for e in ret[anid]['parts'].values()):
                     del ret[anid]
 

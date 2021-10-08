@@ -384,8 +384,11 @@ class CdEBackend(AbstractBackend):
                                LASTSCHRIFT_TRANSACTION_FIELDS, ids)
         # We only need these for access checking, which is done inside.
         self.get_lastschrifts(rs, {e["lastschrift_id"] for e in data})
-
-        return {e['id']: e for e in data}
+        ret = {}
+        for e in data:
+            e['status'] = const.LastschriftTransactionStati(e['status'])
+            ret[e['id']] = e
+        return ret
 
     class _GetLastschriftTransactionProtocol(Protocol):
         def __call__(self, rs: RequestState, anid: int) -> CdEDBObject: ...

@@ -9,14 +9,14 @@ import collections
 import copy
 from pathlib import Path
 from typing import (
-    Any, Callable, Collection, Dict, List, Mapping, Optional, Sequence,
+    Any, Callable, Collection, Dict, List, Mapping, Optional, Protocol, Sequence, Set,
 )
 
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
     AbstractBackend, access, affirm_set_validation as affirm_set,
-    affirm_validation_typed as affirm, internal,
+    affirm_validation_typed as affirm, internal, singularize,
 )
 from cdedb.common import (
     COURSE_TRACK_FIELDS, CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap,
@@ -85,17 +85,34 @@ class EventBackendHelpers(AbstractBackend):
         }
         return self.sql_insert(rs, "event.log", data)
 
-    def _get_event_fields(self, rs: RequestState, event_id: int) -> CdEDBObjectMap:
-        """Helper function to retrieve the custom field definitions of an event.
+    def _get_events_fields(self, rs: RequestState, event_ids: Collection[int],
+                           field_ids: Optional[Collection[int]] = None,
+                           ) -> Dict[int, CdEDBObjectMap]:
+        """Helper function to retrieve the custom field definitions for some events.
 
         This is used by multiple backend functions.
 
+        :param field_ids: If given, only include fields with these ids.
         :return: A dict mapping each event id to the dict of its fields
         """
         data = self.sql_select(
             rs, "event.field_definitions", FIELD_DEFINITION_FIELDS,
-            [event_id], entity_key="event_id")
-        return {d['id']: d for d in data}
+            event_ids, entity_key="event_id")
+        ret: Dict[int, CdEDBObjectMap] = {event_id: {} for event_id in event_ids}
+        for field in data:
+            field['association'] = const.FieldAssociations(field['association'])
+            field['kind'] = const.FieldDatatypes(field['kind'])
+            # Optionally limit to the specified fields.
+            if field_ids is not None and field['id'] not in field_ids:
+                continue
+            ret[field['event_id']][field['id']] = field
+        return ret
+
+    class _GetEventFieldsProtocol(Protocol):
+        def __call__(self, rs: RequestState, event_id: int,
+                     field_ids: Optional[Collection[int]] = None) -> CdEDBObjectMap: ...
+    _get_event_fields: _GetEventFieldsProtocol = singularize(
+        _get_events_fields, "event_ids", "event_id")
 
     def _delete_course_track_blockers(self, rs: RequestState,
                                       track_id: int) -> DeletionBlockers:
@@ -455,14 +472,12 @@ class EventBackendHelpers(AbstractBackend):
             raise ValueError(n_("At least one event part required."))
 
         # Do some additional validation for any given waitlist fields.
-        waitlist_fields = {p['waitlist_field'] for p in parts.values()
-                           if p and 'waitlist_field' in p} - {None}
-        waitlist_field_data = self.sql_select(
-            rs, "event.field_definitions", ("id", "event_id", "kind", "association"),
-            waitlist_fields)
+        waitlist_fields: Set[int] = set(
+            filter(None, (p.get('waitlist_field') for p in parts.values() if p)))
+        waitlist_field_data = self._get_event_fields(rs, event_id, waitlist_fields)
         if len(waitlist_fields) != len(waitlist_field_data):
             raise ValueError(n_("Unknown field."))
-        for field in waitlist_field_data:
+        for field in waitlist_field_data.values():
             self._validate_special_event_field(rs, event_id, "waitlist", field)
 
         for x in mixed_existence_sorter(new_parts):
@@ -666,8 +681,8 @@ class EventBackendHelpers(AbstractBackend):
             return ret
         self.affirm_atomized_context(rs)
 
-        existing_fields = {unwrap(e) for e in self.sql_select(
-            rs, "event.field_definitions", ("id",), (event_id,), entity_key="event_id")}
+        current_field_data = self._get_event_fields(rs, event_id)
+        existing_fields = current_field_data.keys()
         new_fields = {x for x in fields if x < 0}
         updated_fields = {x for x in fields if x > 0 and fields[x] is not None}
         deleted_fields = {x for x in fields if x > 0 and fields[x] is None}
@@ -739,12 +754,10 @@ class EventBackendHelpers(AbstractBackend):
 
         # Do some additional validation of the linked fields.
         field_ids = {fm['field_id'] for fm in modifiers.values() if fm}
-        field_data = self.sql_select(
-            rs, "event.field_definitions", ("id", "event_id", "kind", "association"),
-            field_ids)
+        field_data = self._get_event_fields(rs, event_id, field_ids)
         if len(field_ids) != len(field_data):
             raise ValueError(n_("Unknown field."))
-        for field in field_data:
+        for field in field_data.values():
             self._validate_special_event_field(rs, event_id, "fee_modifier", field)
 
         # the order of deleting, updating and creating matters: The field of a deleted

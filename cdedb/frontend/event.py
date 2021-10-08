@@ -4108,7 +4108,7 @@ class EventFrontend(AbstractUserFrontend):
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
         defaults = {
             "part{}.status".format(part_id):
-                const.RegistrationPartStati.participant.value
+                const.RegistrationPartStati.participant
             for part_id in rs.ambience['event']['parts']
         }
         merge_dicts(rs.values, defaults)

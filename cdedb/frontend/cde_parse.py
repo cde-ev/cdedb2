@@ -99,7 +99,7 @@ class CdEParseMixin(CdEBaseFrontend):
                     params["has_warning"].append(t.t_id)
             else:
                 params["has_none"].append(t.t_id)
-            params["accounts"][str(t.account)] += 1
+            params["accounts"][t.account] += 1
             if t.event_id and t.type == TransactionType.EventFee:
                 params["events"][t.event_id] += 1
             if t.type == TransactionType.MembershipFee:

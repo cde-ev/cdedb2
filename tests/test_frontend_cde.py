@@ -38,7 +38,7 @@ PERSONA_TEMPLATE = {
         "timeline": "tja",
         "interests": "hmmmm",
         "free_form": "jaaah",
-        "gender": "1",
+        "gender": str(const.Genders.female),
         "telephone": "030456790",
         "mobile": "01602047",
         "weblink": "www.zzz.cc",
@@ -1983,21 +1983,21 @@ class TestCdEFrontend(FrontendTest):
         # Verify Log
         self.traverse({'description': 'CdE-Log'})
         f = self.response.forms['logshowform']
-        f['codes'] = [const.CdeLogCodes.expuls_addresscheck.value,
-                      const.CdeLogCodes.expuls_addresscheck_skipped.value,
-                      const.CdeLogCodes.expuls_advance.value]
+        f['codes'] = [const.CdeLogCodes.expuls_addresscheck,
+                      const.CdeLogCodes.expuls_addresscheck_skipped,
+                      const.CdeLogCodes.expuls_advance]
         self.submit(f)
         self.assertTitle("CdE-Log [1–4 von 4]")
         f = self.response.forms['logshowform']
-        f['codes'] = [const.CdeLogCodes.expuls_advance.value]
+        f['codes'] = [const.CdeLogCodes.expuls_advance]
         self.submit(f)
         self.assertTitle("CdE-Log [1–2 von 2]")
         f = self.response.forms['logshowform']
-        f['codes'] = [const.CdeLogCodes.expuls_addresscheck.value]
+        f['codes'] = [const.CdeLogCodes.expuls_addresscheck]
         self.submit(f)
         self.assertTitle("CdE-Log [1–1 von 1]")
         f = self.response.forms['logshowform']
-        f['codes'] = [const.CdeLogCodes.expuls_addresscheck_skipped.value]
+        f['codes'] = [const.CdeLogCodes.expuls_addresscheck_skipped]
         self.submit(f)
         self.assertTitle("CdE-Log [1–1 von 1]")
 
