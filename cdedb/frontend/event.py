@@ -1596,15 +1596,23 @@ class EventFrontend(AbstractUserFrontend):
                                 'course_instructor{track}.id',),
         }
 
+        def waitlist_query_order(
+            e: CdEDBObject, p: CdEDBObject, t: CdEDBObject
+        ) -> List[QueryOrder]:
+            order = [("reg.payment", True), ("ctime.creation_time", True)]
+            if p["waitlist_field"]:
+                field_name = e["fields"][p["waitlist_field"]]["field_name"]
+                waitlist_field_position = (f'reg_fields.xfield_{field_name}', True)
+                order.insert(0, waitlist_field_position)
+            return order
+
         # overwrites the default query order
         QueryOrderGetter = Callable[
-            [CdEDBObject, CdEDBObject, CdEDBObject], Collection[QueryOrder]]
+            [CdEDBObject, CdEDBObject, CdEDBObject], List[QueryOrder]]
         registration_query_order: Dict[str, QueryOrderGetter] = {
-            'waitlist': lambda e, p, t: (
-                ((f'reg_fields.xfield_{e["fields"][p["waitlist_field"]]["field_name"]}', True),
-                 ("reg.payment", True), ("ctime.creation_time", True),)
-                if p["waitlist_field"] else (("reg.payment", True), ("ctime.creation_time", True),)),
+            'waitlist': waitlist_query_order,
         }
+
         for name, track_regs in regs_in_choice_x.items():
             query_additional_fields[name] = ('track{track}.course_id',)
 

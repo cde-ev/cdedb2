@@ -22,7 +22,7 @@ import pytz
 
 import cdedb.database.constants as const
 from cdedb.common import (
-    CdEDBObject, EntitySorter, PathLike, deduct_years, n_, now, xsorted,
+    CdEDBObject, PathLike, deduct_years, n_, now,
 )
 from cdedb.query import Query, QueryOperators, QueryScope
 
