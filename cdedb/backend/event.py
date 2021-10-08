@@ -15,8 +15,10 @@ from cdedb.backend.common import (
     affirm_validation_typed as affirm,
 )
 from cdedb.backend.event_base import EventBaseBackend
+from cdedb.backend.event_course import EventCourseBackend
 from cdedb.backend.event_helpers import EventBackendHelpers
 from cdedb.backend.event_lodgement import EventLodgementBackend
+from cdedb.backend.event_query import EventQueryBackend
 from cdedb.backend.event_registration import EventRegistrationBackend
 from cdedb.common import (
     CdEDBObject, CdEDBOptionalMap, DefaultReturnCode,
@@ -27,8 +29,8 @@ from cdedb.common import (DeletionBlockers)
 from cdedb.database.connection import Atomizer
 
 
-class EventBackend(EventRegistrationBackend, EventLodgementBackend, EventBaseBackend,
-                   EventBackendHelpers):
+class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
+                   EventRegistrationBackend, EventBaseBackend, EventBackendHelpers):
     @access("event_admin")
     def delete_event_blockers(self, rs: RequestState,
                               event_id: int) -> DeletionBlockers:
