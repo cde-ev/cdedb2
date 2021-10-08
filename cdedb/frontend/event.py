@@ -1445,7 +1445,7 @@ class EventFrontend(AbstractUserFrontend):
                     for track_id in tracks}
 
         # The base query object to use for links to event/registration_query
-        persona_order = ("persona.family_name", True), ("persona.given_names", True),
+        persona_order = ("persona.family_name", True), ("persona.given_names", True)
         base_registration_query = Query(
             QueryScope.registration,
             QueryScope.registration.get_spec(event=rs.ambience['event']),
@@ -1626,16 +1626,16 @@ class EventFrontend(AbstractUserFrontend):
         registration_query_order: Dict[str, QueryOrderGetter] = {
             'waitlist': waitlist_query_order,
             'all instructors': lambda e, p, t: (
-                (f"track{t['id']}.course_instructor", True), *persona_order,),
+                [(f"track{t['id']}.course_instructor", True), *persona_order]),
             'instructors': lambda e, p, t: (
-                (f"track{t['id']}.course_instructor", True), *persona_order,),
+                [(f"track{t['id']}.course_instructor", True), *persona_order]),
             'attendees': lambda e, p, t: (
-                (f"track{t['id']}.course_id", True), *persona_order,),
+                [(f"track{t['id']}.course_id", True), *persona_order]),
         }
         for name, track_regs in regs_in_choice_x.items():
             registration_query_order[name] = functools.partial(
                 lambda e, p, t, t_r: (
-                    ((f"track{t['id']}.course_id", True), *persona_order,)
+                    [(f"track{t['id']}.course_id", True), *persona_order]
                 ), t_r=track_regs
             )
 
