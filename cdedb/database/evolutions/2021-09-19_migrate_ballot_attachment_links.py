@@ -1,16 +1,12 @@
-from cdedb.script import Script, make_backend, setup
+from cdedb.script import Script
 
-assembly = make_backend("assembly", proxy=False)
+# Setup
 
-USER_ID = -1
-DRYRUN = True
+script = Script(dbuser="cdb")
+rs = script.rs()
+assembly = script.make_backend("assembly", proxy=False)
 
-rs = setup(persona_id=USER_ID, dbuser="cdb",
-           dbname="cdb",
-           dbpassword="987654321098765432109876543210")()
-
-
-with Script(rs, dry_run=DRYRUN):
+with script:
     print("Adding NOT NULL constraint to `assembly.attachment_versions.attachment_id`.")
     assembly.query_exec(rs, "ALTER TABLE assembly.attachment_versions ALTER COLUMN"
                             " attachment_id SET NOT NULL", ())

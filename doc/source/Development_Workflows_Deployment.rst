@@ -39,20 +39,16 @@ following steps to deploy a new revision.
     sudo -i
     cdedb-update.sh
     sudo -u cdb psql -U cdb -d cdb -f evolution.sql
-    sudo -u www-data python3 bin/some_script.py
+    sudo -u www-data SCRIPT_CONFIGPATH="/etc/cdedb-application-config.py" SCRIPT_PERSONA_ID=X SCRIPT_DRY_RUN="" python3 bin/some_script.py
     cdedb-restart.sh
-
-  .. note:: Before running a script using the :doc:`Development_Workflows_Scripts`
-            functionality the database password needs to be adjusted to the
-            production value. The plaintext passwords can be found in
-            ``/etc/cdedb-application-config.py``.
 
 * Send update information to the Aktivenforum. These should include a short summary of
   the relevant changes, including information for whom this is most relevant (i.e.
   "@Orgas" for most changes to the event realm), aswell as the shortlog of all the
-  changes.
+  changes. The update information should include everything since the last update
+  information, which might not be the same as everything since the last release.
 
   ::
 
-    git shortlog stable..master
+    git shortlog release/X..stable
 
