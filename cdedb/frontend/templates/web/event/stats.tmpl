@@ -62,11 +62,13 @@
                             <th colspan="2">{{ HEADINGS.get(key, key) }}</th>
                         {% endif %}
                         {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
-                            <td id="part_{{ key.replace(" ","") }}_{{ part_id }}" class="text-right">
+                            <td class="text-right">
                                 {% set query = get_query(key, part_id) %}
                                 {% set datum = row[part_id] %}
                                 {% if query %}
-                                    {{ util.href(cdedblink('event/registration_query', query.serialize()) + "#query-results", datum) }}
+                                    {{ util.href(
+                                        cdedblink('event/registration_query', query.serialize()) + "#query-results",
+                                        datum, anid="part_" + key.replace(" ", "") + "_" + part_id|string) }}
                                 {% else %}
                                     {{ datum }}
                                 {% endif %}
