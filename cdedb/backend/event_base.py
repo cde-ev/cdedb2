@@ -13,22 +13,23 @@ from typing import (
 
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
-from cdedb.backend.common import (DatabaseValue_s, PYTHON_TO_SQL_MAP, Silencer, access,
-                                  affirm_set_validation as affirm_set,
-                                  affirm_validation_typed as affirm,
-                                  affirm_validation_typed_optional as affirm_optional,
-                                  cast_fields, internal, singularize)
+from cdedb.backend.common import (
+    DatabaseValue_s, PYTHON_TO_SQL_MAP, Silencer, access,
+    affirm_set_validation as affirm_set, affirm_validation_typed as affirm,
+    affirm_validation_typed_optional as affirm_optional, cast_fields, internal,
+    singularize,
+)
 from cdedb.backend.event_helpers import EventBackendHelpers
-from cdedb.common import (COURSE_FIELDS, COURSE_SEGMENT_FIELDS, COURSE_TRACK_FIELDS,
-                          CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
-                          DeletionBlockers, EVENT_FIELDS, EVENT_PART_FIELDS,
-                          EVENT_SCHEMA_VERSION, FEE_MODIFIER_FIELDS,
-                          FIELD_DEFINITION_FIELDS, LODGEMENT_FIELDS,
-                          LODGEMENT_GROUP_FIELDS, PERSONA_EVENT_FIELDS, PrivilegeError,
-                          PsycoJson, QUESTIONNAIRE_ROW_FIELDS, REGISTRATION_FIELDS,
-                          REGISTRATION_PART_FIELDS, REGISTRATION_TRACK_FIELDS,
-                          RequestState, STORED_EVENT_QUERY_FIELDS, glue,
-                          implying_realms, json_serialize, n_, now, unwrap, xsorted)
+from cdedb.common import (
+    COURSE_FIELDS, COURSE_SEGMENT_FIELDS, COURSE_TRACK_FIELDS, CdEDBLog, CdEDBObject,
+    CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, EVENT_FIELDS,
+    EVENT_PART_FIELDS, EVENT_SCHEMA_VERSION, FEE_MODIFIER_FIELDS,
+    FIELD_DEFINITION_FIELDS, LODGEMENT_FIELDS, LODGEMENT_GROUP_FIELDS,
+    PERSONA_EVENT_FIELDS, PrivilegeError, PsycoJson, QUESTIONNAIRE_ROW_FIELDS,
+    REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS, REGISTRATION_TRACK_FIELDS,
+    RequestState, STORED_EVENT_QUERY_FIELDS, glue, implying_realms, json_serialize, n_,
+    now, unwrap, xsorted,
+)
 from cdedb.database.connection import Atomizer
 from cdedb.query import Query, QueryOperators, QueryScope
 
