@@ -1445,20 +1445,21 @@ class EventFrontend(AbstractUserFrontend):
                     for track_id in tracks}
 
         # The base query object to use for links to event/registration_query
+        persona_order = ("persona.family_name", True), ("persona.given_names", True),
         base_registration_query = Query(
             QueryScope.registration,
             QueryScope.registration.get_spec(event=rs.ambience['event']),
             ["reg.id", "persona.given_names", "persona.family_name",
              "persona.username"],
             [],
-            (("persona.family_name", True), ("persona.given_names", True),)
+            (*persona_order,)
         )
         base_course_query = Query(
             QueryScope.event_course,
             QueryScope.event_course.get_spec(event=rs.ambience['event']),
-            ["course.nr", "course.shortname"],
+            ["course.course_id"],
             [],
-            (("course.nr", True), ("course.shortname", True),)
+            (("course.course_id", True),)
         )
         # Some reusable query filter definitions
         involved_filter = lambda p: (
@@ -1585,16 +1586,29 @@ class EventFrontend(AbstractUserFrontend):
 
         query_additional_fields: Dict[str, Collection[str]] = {
             ' payed': ('reg.payment',),
+            ' all minors': ('persona.birthday',),
             ' u18': ('persona.birthday',),
             ' u16': ('persona.birthday',),
             ' u14': ('persona.birthday',),
             ' checked in': ('reg.checkin',),
             'waitlist': ('reg.payment', 'ctime.creation_time',),
             'total involved': ('part{part}.status',),
-            'instructors': ('course_instructor{track}.id',),
-            'all instructors': ('course{track}.id',
-                                'course_instructor{track}.id',),
+            ' not payed': ('part{part}.status',),
+            ' no parental agreement': ('part{part}.status',),
+            'no lodgement': ('part{part}.status',),
+            'cancelled': ('reg.amount_paid',),
+            'rejected': ('reg.amount_paid',),
+            'total': ('part{part}.status',),
+
+            'all instructors': ('track{track}.course_id',
+                                'track{track}.course_instructor',),
+            'instructors': ('track{track}.course_instructor',),
+            'attendees': ('track{track}.course_id',),
+            'courses': ('course.instructors',),
+            'cancelled courses': ('course.instructors',),
         }
+        for name, track_regs in regs_in_choice_x.items():
+            query_additional_fields[name] = ('track{track}.course_id',)
 
         def waitlist_query_order(
             e: CdEDBObject, p: CdEDBObject, t: CdEDBObject
@@ -1611,10 +1625,19 @@ class EventFrontend(AbstractUserFrontend):
             [CdEDBObject, CdEDBObject, CdEDBObject], List[QueryOrder]]
         registration_query_order: Dict[str, QueryOrderGetter] = {
             'waitlist': waitlist_query_order,
+            'all instructors': lambda e, p, t: (
+                (f"track{t['id']}.course_instructor", True), *persona_order,),
+            'instructors': lambda e, p, t: (
+                (f"track{t['id']}.course_instructor", True), *persona_order,),
+            'attendees': lambda e, p, t: (
+                (f"track{t['id']}.course_id", True), *persona_order,),
         }
-
         for name, track_regs in regs_in_choice_x.items():
-            query_additional_fields[name] = ('track{track}.course_id',)
+            registration_query_order[name] = functools.partial(
+                lambda e, p, t, t_r: (
+                    ((f"track{t['id']}.course_id", True), *persona_order,)
+                ), t_r=track_regs
+            )
 
         def get_query(category: str, part_id: int, track_id: int = None
                       ) -> Optional[Query]:
