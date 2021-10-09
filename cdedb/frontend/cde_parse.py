@@ -21,7 +21,7 @@ from werkzeug.datastructures import FileStorage
 import cdedb.frontend.parse_statement as parse
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    Accounts, CdEDBObject, EntitySorter, RequestState, TransactionType,
+    Accounts, CdEDBObject, ConfidenceLevel, EntitySorter, RequestState, TransactionType,
     diacritic_patterns, get_hash, merge_dicts, n_, xsorted,
 )
 from cdedb.frontend.cde_base import CdEBaseFrontend

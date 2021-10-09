@@ -3,15 +3,14 @@
 import collections
 import datetime
 import decimal
-import enum
 import json
 import re
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    Accounts, CdEDBObject, CdEDBObjectMap, Error, TransactionType, diacritic_patterns,
-    n_, now, EntitySorter, xsorted, PARSE_OUTPUT_DATEFORMAT
+    Accounts, CdEDBObject, CdEDBObjectMap, ConfidenceLevel, EntitySorter, Error,
+    PARSE_OUTPUT_DATEFORMAT, TransactionType, diacritic_patterns, n_, now, xsorted,
 )
 from cdedb.filter import cdedbid_filter
 from cdedb.validation import validate_check
@@ -267,35 +266,6 @@ def number_from_german(number: str) -> str:
 def simplify_amount(amt: Union[decimal.Decimal, int, str]) -> str:
     """Helper to convert a number to german and strip decimal zeros."""
     return str(number_to_german(amt)).rstrip("0").rstrip(",")
-
-
-@enum.unique
-class ConfidenceLevel(enum.IntEnum):
-    """Store the different Levels of Confidence about the prediction."""
-    Null = 0
-    Low = 1
-    Medium = 2
-    High = 3
-    Full = 4
-
-    @classmethod
-    def destroy(cls) -> "ConfidenceLevel":
-        return cls.Null
-
-    def decrease(self, amount: int = 1) -> "ConfidenceLevel":
-        if self.value - amount > self.__class__.Null.value:
-            return self.__class__(self.value - amount)
-        else:
-            return self.__class__.Null
-
-    def increase(self, amount: int = 1) -> "ConfidenceLevel":
-        if self.value + amount < self.__class__.Full.value:
-            return self.__class__(self.value + amount)
-        else:
-            return self.__class__.Full
-
-    def __format__(self, format_spec: str) -> str:
-        return str(self)
 
 
 class Transaction:
