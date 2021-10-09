@@ -3872,8 +3872,8 @@ msgstr "Mehrere (%(count)s) DB-IDs in Zeile %(t_id)s gefunden."
 #: cdedb/frontend/parse_statement.py:644 cdedb/frontend/parse_statement.py:648
 #: cdedb/frontend/parse_statement.py:660 cdedb/frontend/parse_statement.py:664
 #, python-format
-msgid "(%(p)s) not found in (%(ref)s)."
-msgstr "(%(p)s) nicht in (%(ref)s) gefunden."
+msgid "(%(p)s) not found in reference."
+msgstr "(%(p)s) nicht im Verwendungszweck gefunden."
 
 #: cdedb/frontend/parse_statement.py:651 cdedb/frontend/parse_statement.py:655
 #: cdedb/frontend/parse_statement.py:667 cdedb/frontend/parse_statement.py:671

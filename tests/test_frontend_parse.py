@@ -138,13 +138,13 @@ class TestParseFrontend(FrontendTest):
         self.assertPresence("cdedbid: Unsicher über Mitgliedszuordnung.",
                             div="transaction6_errors")
         self.assertPresence(
-            "given_names: (Anton Armin A.) nicht in (DB-1-9;DB-1-9) gefunden.",
+            "given_names: (Anton Armin A.) nicht im Verwendungszweck gefunden.",
             div="transaction6_warnings")
         self.assertPresence(
-            "family_name: (Administrator) nicht in (DB-1-9;DB-1-9) gefunden.",
+            "family_name: (Administrator) nicht im Verwendungszweck gefunden.",
             div="transaction6_warnings")
         self.assertEqual(f["cdedbid6"].value, "DB-1-9")
-        f["persona_id_confirm6"].checked = True
+        f["persona_confirm6"].checked = True
 
         # Fix line 9:
         self.assertPresence("cdedbid: Braucht Mitgliedszuordnung.",
@@ -159,14 +159,14 @@ class TestParseFrontend(FrontendTest):
                             div="transaction11_errors")
         self.assertEqual(f["account_holder11"].value, "Anton & Berta")
         self.assertEqual(f["cdedbid11"].value, "DB-1-9")
-        f["persona_id_confirm11"].checked = True
+        f["persona_confirm11"].checked = True
 
         # Check transactions with warnings.
 
         # Line 8:
         self.assertPresence(
-            "given_names: (Garcia G.) nicht in (DB-7-8, Garci G."
-            " Generalis;DB-6-8) gefunden.", div="transaction8_warnings")
+            "given_names: (Garcia G.) nicht im Verwendungszweck gefunden.",
+            div="transaction8_warnings")
 
         self.submit(f, button="validate", check_notification=False)
 
@@ -181,7 +181,7 @@ class TestParseFrontend(FrontendTest):
         self.assertPresence("cdedbid: Unsicher über Mitgliedszuordnung.",
                             div="transaction9_errors")
         self.assertEqual(f["cdedbid9"].value, "DB-4-3")
-        f["persona_id_confirm9"].checked = True
+        f["persona_confirm9"].checked = True
 
         self.submit(f, button="validate", check_notification=False)
 
@@ -208,9 +208,6 @@ class TestParseFrontend(FrontendTest):
             family_name="Administrator",
             given_names="Anton Armin A.",
             statement_date="28.12.2018",
-            transaction_type_confidence_str="ConfidenceLevel.Full",
-            persona_id_confidence_str="ConfidenceLevel.Full",
-            event_id_confidence_str="ConfidenceLevel.Full",
         )
         self.check_dict(
             result[1],
@@ -219,9 +216,6 @@ class TestParseFrontend(FrontendTest):
             family_name="Generalis",
             given_names="Garcia G.",
             statement_date="27.12.2018",
-            transaction_type_confidence_str="ConfidenceLevel.Full",
-            persona_id_confidence_str="ConfidenceLevel.High",
-            event_id_confidence_str="ConfidenceLevel.High",
         )
         self.check_dict(
             result[2],
@@ -230,9 +224,6 @@ class TestParseFrontend(FrontendTest):
             family_name="Eventis",
             given_names="Emilia E.",
             statement_date="20.12.2018",
-            transaction_type_confidence_str="ConfidenceLevel.Full",
-            persona_id_confidence_str="ConfidenceLevel.Full",
-            event_id_confidence_str="ConfidenceLevel.High",
         )
 
         # check membership_fees.csv
@@ -280,7 +271,7 @@ class TestParseFrontend(FrontendTest):
             family_name="Administrator",
             given_names="Anton Armin A.",
             category_old="Mitgliedsbeitrag",
-            account="8068900",
+            account_nr="8068900",
         )
         self.check_dict(
             result[1],
@@ -290,7 +281,7 @@ class TestParseFrontend(FrontendTest):
             family_name="Beispiel",
             given_names="Bertålotta",
             category_old="Mitgliedsbeitrag",
-            account="8068900",
+            account_nr="8068900",
         )
         self.check_dict(
             result[2],
@@ -300,7 +291,7 @@ class TestParseFrontend(FrontendTest):
             family_name="Generalis",
             given_names="Garcia G.",
             category_old="Mitgliedsbeitrag",
-            account="8068900",
+            account_nr="8068900",
         )
         self.check_dict(
             result[3],
@@ -310,7 +301,7 @@ class TestParseFrontend(FrontendTest):
             family_name="Dino",
             given_names="Daniel D.",
             category_old="Mitgliedsbeitrag",
-            account="8068900",
+            account_nr="8068900",
             reference="Mitgliedsbeitrag",
             account_holder="Daniel Dino",
         )
@@ -322,7 +313,7 @@ class TestParseFrontend(FrontendTest):
             family_name="Administrator",
             given_names="Anton Armin A.",
             category_old="Spende",
-            account="8068900",
+            account_nr="8068900",
             reference="Anton Armin A. Administrator DB-1-9 Spende",
         )
         self.check_dict(
@@ -333,7 +324,7 @@ class TestParseFrontend(FrontendTest):
             family_name="Administrator",
             given_names="Anton Armin A.",
             category_old="Mitgliedsbeitrag",
-            account="8068900",
+            account_nr="8068900",
         )
         self.check_dict(
             result[6],
@@ -343,7 +334,7 @@ class TestParseFrontend(FrontendTest):
             family_name="Eventis",
             given_names="Emilia E.",
             category_old="TestAka",
-            account="8068900",
+            account_nr="8068900",
         )
         self.check_dict(
             result[7],
@@ -353,7 +344,7 @@ class TestParseFrontend(FrontendTest):
             family_name="",
             given_names="",
             category_old="Spende",
-            account="8068900",
+            account_nr="8068900",
         )
 
         # check account 01
@@ -370,7 +361,7 @@ class TestParseFrontend(FrontendTest):
             family_name="",
             given_names="",
             category_old="Sonstiges",
-            account="8068901",
+            account_nr="8068901",
             In_reference="Genutzte Freiposten",
         )
         self.check_dict(
@@ -381,7 +372,7 @@ class TestParseFrontend(FrontendTest):
             family_name="",
             given_names="",
             category_old="Sonstiges",
-            account="8068901",
+            account_nr="8068901",
             reference="KONTOFUEHRUNGSGEBUEHREN",
         )
         self.check_dict(
@@ -392,7 +383,7 @@ class TestParseFrontend(FrontendTest):
             family_name="",
             given_names="",
             category_old="TestAka",
-            account="8068901",
+            account_nr="8068901",
             account_holder="Anton Administrator",
             In_reference="Kursleitererstattung Anton Armin A. Administrator",
         )
@@ -404,7 +395,7 @@ class TestParseFrontend(FrontendTest):
             family_name="Administrator",
             given_names="Anton Armin A.",
             category_old="TestAka",
-            account="8068901",
+            account_nr="8068901",
         )
         self.check_dict(
             result[4],
@@ -414,5 +405,5 @@ class TestParseFrontend(FrontendTest):
             family_name="Generalis",
             given_names="Garcia G.",
             category_old="TestAka",
-            account="8068901",
+            account_nr="8068901",
         )

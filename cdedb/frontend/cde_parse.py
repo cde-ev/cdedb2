@@ -60,18 +60,17 @@ class CdEParseMixin(CdEBaseFrontend):
         }
         return self.render(rs, "parse/parse_statement", params)
 
+    @staticmethod
     def organize_transaction_data(
-            self, rs: RequestState, transactions: List[parse.Transaction],
-            start: Optional[datetime.date], end: Optional[datetime.date],
-            timestamp: datetime.datetime) -> Tuple[CdEDBObject, CdEDBObject]:
+        rs: RequestState, transactions: List[parse.Transaction],
+        start: Optional[datetime.date], end: Optional[datetime.date],
+        timestamp: datetime.datetime
+    ) -> Tuple[CdEDBObject, CdEDBObject]:
         """Organize transactions into data and params usable in the form."""
-
-        get_persona = functools.partial(self.coreproxy.get_persona, rs)
-        get_event = functools.partial(self.eventproxy.get_event, rs)
 
         data = {"{}{}".format(k, t.t_id): v
                 for t in transactions
-                for k, v in t.to_dict(get_persona, get_event).items()}
+                for k, v in t.to_dict().items()}
         data["count"] = len(transactions)
         data["start"] = start
         data["end"] = end
@@ -100,8 +99,8 @@ class CdEParseMixin(CdEBaseFrontend):
             else:
                 params["has_none"].append(t.t_id)
             params["accounts"][t.account] += 1
-            if t.event_id and t.type == TransactionType.EventFee:
-                params["events"][t.event_id] += 1
+            if t.event and t.type == TransactionType.EventFee:
+                params["events"][t.event['id']] += 1
             if t.type == TransactionType.MembershipFee:
                 params["memberships"] += 1
         return data, params
@@ -155,7 +154,7 @@ class CdEParseMixin(CdEBaseFrontend):
         transactions = []
 
         for i, line in enumerate(reversed(list(reader))):
-            if not len(line) == 23:
+            if not len(line) == len(parse.STATEMENT_CSV_FIELDS) + 1:
                 p = ("statement_file",
                      ValueError(n_("Line %(lineno)s does not have "
                                    "the correct number of "
@@ -164,10 +163,10 @@ class CdEParseMixin(CdEBaseFrontend):
                                 ))
                 rs.append_validation_error(p)
                 continue
-            line["id"] = i  # type: ignore
+            line["id"] = i  # type: ignore[assignment]
             t = parse.Transaction.from_csv(line)
             t.analyze(events, get_persona)
-            t.inspect(get_persona)
+            t.inspect()
 
             transactions.append(t)
         if rs.has_validation_errors():
@@ -196,23 +195,23 @@ class CdEParseMixin(CdEBaseFrontend):
 
         def params_generator(i: int) -> TypeMapping:
             return {
-                f"reference{i}": Optional[str],  # type: ignore
+                f"reference{i}": Optional[str],  # type: ignore[dict-item]
                 f"account{i}": Accounts,
                 f"statement_date{i}": datetime.date,
                 f"amount{i}": decimal.Decimal,
-                f"account_holder{i}": Optional[str],  # type: ignore
+                f"account_holder{i}": Optional[str],  # type: ignore[dict-item]
                 f"posting{i}": str,
-                f"iban{i}": Optional[vtypes.IBAN],  # type: ignore
+                f"iban{i}": Optional[vtypes.IBAN],  # type: ignore[dict-item]
                 f"t_id{i}": vtypes.ID,
-                f"transaction_type{i}": TransactionType,
-                f"transaction_type_confidence{i}": int,
-                f"transaction_type_confirm{i}": Optional[bool],  # type: ignore
-                f"cdedbid{i}": Optional[vtypes.CdedbID],  # type: ignore
-                f"persona_id_confidence{i}": Optional[int],  # type: ignore
-                f"persona_id_confirm{i}": Optional[bool],  # type: ignore
-                f"event_id{i}": Optional[vtypes.ID],  # type: ignore
-                f"event_id_confidence{i}": Optional[int],  # type: ignore
-                f"event_id_confirm{i}": Optional[bool],  # type: ignore
+                f"type{i}": TransactionType,
+                f"type_confidence{i}": ConfidenceLevel,
+                f"type_confirm{i}": bool,
+                f"cdedbid{i}": Optional[vtypes.CdedbID],  # type: ignore[dict-item]
+                f"persona_confidence{i}": ConfidenceLevel,
+                f"persona_confirm{i}": bool,
+                f"event_id{i}": Optional[vtypes.ID],  # type: ignore[dict-item]
+                f"event_confidence{i}": ConfidenceLevel,
+                f"event_confirm{i}": bool,
             }
 
         get_persona = functools.partial(self.coreproxy.get_persona, rs)
@@ -222,7 +221,8 @@ class CdEParseMixin(CdEBaseFrontend):
         for i in range(1, count + 1):
             t = request_extractor(rs, params_generator(i))
             t = parse.Transaction({k.rstrip(str(i)): v for k, v in t.items()})
-            t.inspect(get_persona)
+            t.get_data(get_persona=get_persona, get_event=get_event)
+            t.inspect()
             transactions.append(t)
 
         data, params = self.organize_transaction_data(
@@ -243,7 +243,7 @@ class CdEParseMixin(CdEBaseFrontend):
             event_data = self.eventproxy.get_event(rs, aux)
             filename = event_data["shortname"]
             transactions = [t for t in transactions
-                            if t.event_id == aux
+                            if t.event and t.event['id'] == aux
                             and t.type == TransactionType.EventFee]
             fields = parse.EVENT_EXPORT_FIELDS
             write_header = False
@@ -265,8 +265,7 @@ class CdEParseMixin(CdEBaseFrontend):
             filename += "_{}".format(start)
         else:
             filename += "_{}_bis_{}.csv".format(start, end)
-        csv_data = [t.to_dict(get_persona, get_event)
-                    for t in transactions]
+        csv_data = [t.to_dict() for t in transactions]
         csv_data = csv_output(csv_data, fields, write_header)
         return self.send_csv_file(rs, "text/csv", filename, data=csv_data)
 
