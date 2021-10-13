@@ -1452,14 +1452,14 @@ class EventFrontend(AbstractUserFrontend):
             ["reg.id", "persona.given_names", "persona.family_name",
              "persona.username"],
             [],
-            (*persona_order,)
+            persona_order,
         )
         base_course_query = Query(
             QueryScope.event_course,
             QueryScope.event_course.get_spec(event=rs.ambience['event']),
             ["course.course_id"],
             [],
-            (("course.course_id", True),)
+            (("course.nr", True),)
         )
         # Some reusable query filter definitions
         involved_filter = lambda p: (
@@ -1630,12 +1630,12 @@ class EventFrontend(AbstractUserFrontend):
             'instructors': lambda e, p, t: (
                 [(f"track{t['id']}.course_instructor", True), *persona_order]),
             'attendees': lambda e, p, t: (
-                [(f"track{t['id']}.course_id", True), *persona_order]),
+                [(f"course{t['id']}.nr", True), *persona_order]),
         }
         for name, track_regs in regs_in_choice_x.items():
             registration_query_order[name] = functools.partial(
                 lambda e, p, t, t_r: (
-                    [(f"track{t['id']}.course_id", True), *persona_order]
+                    [(f"course{t['id']}.nr", True), *persona_order]
                 ), t_r=track_regs
             )
 

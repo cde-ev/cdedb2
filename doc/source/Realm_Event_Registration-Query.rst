@@ -60,7 +60,7 @@ The following fields are avalable in the dynamic tables:
 * ``lodgement{part_id}.group_id``
 * ``lodgement_group{part_id}.title``
 * ``track{track_id}.course_id`` *This is magically replaced by "{nr}. {shortname}" linking to the course.*
-* ``track{track_id}.course_instructor``
+* ``track{track_id}.course_instructor`` *This is magically replaced by "{nr}. {shortname}" linking to the course.*
 * ``track{track_id}.is_course_instructor``
 * ``course{track_id}.xfield_{field_name}`` *For every track and every custom course datafield.*
 * ``course{track_id}.nr``
