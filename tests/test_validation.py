@@ -23,65 +23,76 @@ class TestValidation(unittest.TestCase):
         self,
         type_: Type[Any],
         spec: Iterable[Tuple[Any, Any, Union[Type[Exception], Exception, None]]],
-        extraparams: Mapping[str, Any] = None
+        extraparams: Mapping[str, Any] = None, ignore_warnings: bool = True
     ) -> None:
         extraparams = extraparams or {}
         for inval, retval, exception in spec:
             with self.subTest(inval=inval):
                 if not exception:
                     self.assertEqual(
-                        validate.validate_check(type_, inval, **extraparams),
+                        validate.validate_check(type_, inval, ignore_warnings, **extraparams),
                         (retval, []),
                     )
                     self.assertEqual(
-                        validate.validate_assert(type_, inval, **extraparams),
+                        validate.validate_assert(type_, inval, ignore_warnings, **extraparams),
                         retval,
                     )
                 else:
                     self.assertEqual(
                         None,
-                        validate.validate_check(type_, inval, **extraparams)[0],
+                        validate.validate_check(type_, inval, ignore_warnings, **extraparams)[0],
                     )
                     self.assertNotEqual(
                         [],
-                        validate.validate_check(type_, inval, **extraparams)[1],
+                        validate.validate_check(type_, inval, ignore_warnings, **extraparams)[1],
                     )
                     exception_args = None
                     if isinstance(exception, Exception):
                         exception_args = exception.args
                         exception = type(exception)
                     with self.assertRaises(exception) as cm:
-                        validate.validate_assert(type_, inval, **extraparams)
+                        validate.validate_assert(type_, inval, ignore_warnings, **extraparams)
                     if exception_args:
                         self.assertEqual(cm.exception.args, exception_args)
-                onepass = validate.validate_check(type_, inval, **extraparams)[0]
-                twopass = validate.validate_check(type_, onepass, **extraparams)[0]
+                onepass = validate.validate_check(type_, inval, ignore_warnings, **extraparams)[0]
+                twopass = validate.validate_check(type_, onepass, ignore_warnings, **extraparams)[0]
                 self.assertEqual(onepass, twopass)
 
     def test_optional(self) -> None:
-        self.assertEqual((12, []), validate.validate_check(int, 12))
-        self.assertEqual(None, validate.validate_check(int, None)[0])
-        self.assertLess(0, len(validate.validate_check(int, None)[1]))
-        self.assertEqual(None, validate.validate_check(int, "garbage")[0])
-        self.assertLess(0, len(validate.validate_check(int, "garbage")[1]))
-        self.assertEqual((12, []), validate.validate_check(int, "12"))
-        self.assertEqual((12, []), validate.validate_check_optional(int, 12))
-        self.assertEqual((None, []), validate.validate_check_optional(int, None))
-        self.assertEqual((12, []), validate.validate_check_optional(int, "12"))
-        self.assertEqual(None, validate.validate_check_optional(int, "garbage")[0])
-        self.assertLess(0, len(validate.validate_check_optional(int, "garbage")[1]))
+        ignore_warnings = True
+        self.assertEqual((12, []), validate.validate_check(int, 12, ignore_warnings))
+        self.assertEqual(None, validate.validate_check(int, None, ignore_warnings)[0])
+        self.assertLess(0, len(validate.validate_check(int, None, ignore_warnings)[1]))
+        self.assertEqual(
+            None, validate.validate_check(int, "garbage", ignore_warnings)[0])
+        self.assertLess(
+            0, len(validate.validate_check(int, "garbage", ignore_warnings)[1]))
+        self.assertEqual((12, []), validate.validate_check(int, "12", ignore_warnings))
+        self.assertEqual(
+            (12, []), validate.validate_check_optional(int, 12, ignore_warnings))
+        self.assertEqual(
+            (None, []), validate.validate_check_optional(int, None, ignore_warnings))
+        self.assertEqual(
+            (12, []), validate.validate_check_optional(int, "12", ignore_warnings))
+        self.assertEqual(
+            None, validate.validate_check_optional(int, "garbage", ignore_warnings)[0])
+        self.assertLess(
+            0, len(validate.validate_check_optional(int, "garbage", ignore_warnings)[1]))
 
-        self.assertEqual(12, validate.validate_assert(int, 12))
+        self.assertEqual(12, validate.validate_assert(int, 12, ignore_warnings))
         with self.assertRaises(TypeError):
-            validate.validate_assert(int, None)
+            validate.validate_assert(int, None, ignore_warnings)
         with self.assertRaises(ValueError):
-            validate.validate_assert(int, "garbage")
-        self.assertEqual(12, validate.validate_assert(int, "12"))
-        self.assertEqual(12, validate.validate_assert_optional(int, 12))
-        self.assertEqual(None, validate.validate_assert_optional(int, None))
-        self.assertEqual(12, validate.validate_assert_optional(int, "12"))
+            validate.validate_assert(int, "garbage", ignore_warnings)
+        self.assertEqual(12, validate.validate_assert(int, "12", ignore_warnings))
+        self.assertEqual(
+            12, validate.validate_assert_optional(int, 12, ignore_warnings))
+        self.assertEqual(
+            None, validate.validate_assert_optional(int, None, ignore_warnings))
+        self.assertEqual(
+            12, validate.validate_assert_optional(int, "12", ignore_warnings))
         with self.assertRaises(ValueError):
-            validate.validate_assert_optional(int, "garbage")
+            validate.validate_assert_optional(int, "garbage", ignore_warnings)
 
     def test_int(self) -> None:
         self.do_validator_test(int, (
@@ -361,8 +372,10 @@ class TestValidation(unittest.TestCase):
             (convert_example, base_example, None),
             (stripped_example, stripped_example, None),
             (key_example, key_example, KeyError),
-            (value_example, value_example, ValidationWarning),
         ))
+        self.do_validator_test(
+            Persona, [(value_example, value_example, ValidationWarning)],
+            ignore_warnings=False)
 
     def test_event_user_data(self) -> None:
         base_example: Dict[str, Any] = {
@@ -399,8 +412,9 @@ class TestValidation(unittest.TestCase):
             (convert_example, base_example, None),
             (stripped_example, stripped_example, None),
             (key_example, None, KeyError),
-            (value_example, None, ValidationWarning),
         ))
+        self.do_validator_test(
+            Persona, [(value_example, None, ValidationWarning)], ignore_warnings=False)
 
     def test_enum_validators(self) -> None:
         stati = const.RegistrationPartStati
@@ -480,7 +494,8 @@ class TestValidation(unittest.TestCase):
                 (b'{"open": 1', None, ValueError),
                 (b"\xff", None, ValueError)):
             with self.subTest(input=input_):
-                result, errs = validate.validate_check(JSON, input_)
+                result, errs = validate.validate_check(
+                    JSON, input_, ignore_warnings=True)
                 self.assertEqual(output, result)
                 if error is None:
                     self.assertFalse(errs)
@@ -514,7 +529,7 @@ class TestValidation(unittest.TestCase):
                     inv['realm'] = "event"
                     if outv is not None:
                         outv['realm'] = "event"
-            self.do_validator_test(assertion, spec, None)
+            self.do_validator_test(assertion, spec, None, ignore_warnings=False)
             spec = (
                 ({'id': 1, 'postal_code': "ABC", 'country': ""}, None, ValueError),
                 ({'id': 1, 'postal_code': "ABC", 'country': None}, None, ValueError),
@@ -541,7 +556,7 @@ class TestValidation(unittest.TestCase):
                     inv['realm'] = "event"
                     if outv is not None:
                         outv['realm'] = "event"
-            self.do_validator_test(assertion, spec, {'ignore_warnings': True})
+            self.do_validator_test(assertion, spec, ignore_warnings=True)
 
     def test_encoding(self) -> None:
         # Make sure decoding utf-8 as if it were utf-8-sig works.
