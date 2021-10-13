@@ -531,7 +531,12 @@ class CoreBackend(AbstractBackend):
         query = query.format(fields=', '.join(fields),
                              conditions=' AND '.join(conditions))
         data = self.query_all(rs, query, params)
-        return {e['generation']: e for e in data}
+        ret = {}
+        for d in data:
+            if d.get('gender'):
+                d['gender'] = const.Genders(d['gender'])
+            ret[d['generation']] = d
+        return ret
 
     @internal
     @access("persona", "droid")
@@ -546,7 +551,12 @@ class CoreBackend(AbstractBackend):
         if "id" not in columns:
             columns += ("id",)
         data = self.sql_select(rs, "core.personas", columns, persona_ids)
-        return {d['id']: d for d in data}
+        ret = {}
+        for d in data:
+            if d.get('gender'):
+                d['gender'] = const.Genders(d['gender'])
+            ret[d['id']] = d
+        return ret
 
     class _RetrievePersonaProtocol(Protocol):
         def __call__(self, rs: RequestState, persona_id: int,
@@ -1038,7 +1048,11 @@ class CoreBackend(AbstractBackend):
         privilege_change_ids = affirm_set(vtypes.ID, privilege_change_ids)
         data = self.sql_select(
             rs, "core.privilege_changes", PRIVILEGE_CHANGE_FIELDS, privilege_change_ids)
-        return {e["id"]: e for e in data}
+        ret = {}
+        for e in data:
+            e['status'] = const.PrivilegeChangeStati(e['status'])
+            ret[e['id']] = e
+        return ret
 
     class _GetPrivilegeChangeProtocol(Protocol):
         def __call__(self, rs: RequestState, privilege_change_id: int
@@ -2709,11 +2723,14 @@ class CoreBackend(AbstractBackend):
         genesis_case_ids = affirm_set(vtypes.ID, genesis_case_ids)
         data = self.sql_select(rs, "core.genesis_cases", GENESIS_CASE_FIELDS,
                                genesis_case_ids)
-        if ("core_admin" not in rs.user.roles
-                and any("{}_admin".format(e['realm']) not in rs.user.roles
-                        for e in data)):
-            raise PrivilegeError(n_("Not privileged."))
-        return {e['id']: e for e in data}
+        ret = {}
+        for e in data:
+            if "core_admin" not in rs.user.roles:
+                if f"{e['realm']}_admin" not in rs.user.roles:
+                    raise PrivilegeError(n_("Not privileged."))
+            e['case_status'] = const.GenesisStati(e['case_status'])
+            ret[e['id']] = e
+        return ret
 
     class _GenesisGetCaseProtocol(Protocol):
         def __call__(self, rs: RequestState, genesis_case_id: int) -> CdEDBObject: ...
@@ -2790,11 +2807,14 @@ class CoreBackend(AbstractBackend):
 
         This is for batch admission, where we may encounter datasets to
         already existing accounts. In that case we do not want to create
-        a new account.
+        a new account. It is also used during genesis to avoid creation
+        of duplicate accounts.
 
         :returns: A dict of possibly matching account data.
         """
-        persona = affirm(vtypes.Persona, persona)
+        persona = affirm(vtypes.Persona, persona, _ignore_warnings=True)
+        if persona['birthday'] == datetime.date.min:
+            persona['birthday'] = None
         scores: Dict[int, int] = collections.defaultdict(lambda: 0)
         queries: List[Tuple[int, str, Tuple[Any, ...]]] = [
             (10, "given_names = %s OR display_name = %s",
@@ -2806,8 +2826,8 @@ class CoreBackend(AbstractBackend):
             (10, "birthday = %s", (persona['birthday'],)),
             (5, "location = %s", (persona['location'],)),
             (5, "postal_code = %s", (persona['postal_code'],)),
-            (20, "given_names = %s AND family_name = %s",
-             (persona['family_name'], persona['given_names'],)),
+            (20, "(given_names = %s OR display_name = %s) AND family_name = %s",
+             (persona['given_names'], persona['given_names'], persona['family_name'],)),
             (21, "username = %s", (persona['username'],)),
         ]
         # Omit queries where some parameters are None

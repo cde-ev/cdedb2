@@ -179,8 +179,9 @@
             {{ util.form_input_submit(name="validate", label=gettext("Validate"), horizontal=False) }}
             {% if not params["has_error"] %}
                 {{ util.input_submit(label=gettext("GnuCash Download"), value="gnucash", name="gnucash", icon='download') }}
-                {% for account in params["accounts"]|sort %}
-                    {{ util.input_submit(label=(gettext("Excel Download") + " " + account), value=account, name="excel", icon='download') }}
+                {% for account in enums["Accounts"] if account in params["accounts"] %}
+                    {{ util.input_submit(label=(gettext("Excel Download") + " " + account.display_str()),
+                        value=account, name="excel", icon='download') }}
                 {% endfor %}
                 {% if params["memberships"] %}
                     {{ util.input_submit(label=gettext("Download Membership Fees"), value="membership",

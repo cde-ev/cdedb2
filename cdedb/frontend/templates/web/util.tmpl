@@ -1131,3 +1131,30 @@ mailto:
         {% endif %}
     </h1>
 {% endmacro %}
+
+
+{% macro print_doppelganger(persona, link=False) %}
+    {% if link %}
+        {{ persona_anchor(persona, given_and_display_names=True) }}
+    {% else %}
+        {{ persona_name(persona, given_and_display_names=True) }}
+    {% endif %}
+    {%- if persona['birth_name'] %}
+        ({{ persona['birth_name'] }})
+    {%- endif %}
+    {% if persona['is_archived'] %}
+        (<i>{{ gettext("archived") }}</i>)
+    {% else %}
+        &lt;{{ persona['username'] }}&gt;
+    {% endif %}
+    {%- if persona['birthday'] %}
+        ({{ gettext("born") }}
+        {{ persona['birthday']|date(lang=lang) or "-" }})
+    {% endif %}
+    {{ persona['id']|cdedbid }}
+    {%- if not persona['is_member'] %}
+        {{ gettext("(not a member)") }}
+    {%- elif persona['trial_member'] %}
+        {{ gettext("(trial member)") -}}
+    {% endif -%}
+{% endmacro %}

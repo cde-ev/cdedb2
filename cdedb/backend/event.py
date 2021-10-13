@@ -996,14 +996,8 @@ class EventBackend(AbstractBackend):
                 if 'orgas' in ret[anid]:
                     raise RuntimeError()
                 ret[anid]['orgas'] = orgas
-            data = self.sql_select(
-                rs, "event.field_definitions", FIELD_DEFINITION_FIELDS,
-                event_ids, entity_key="event_id")
-            for anid in event_ids:
-                fields = {d['id']: d for d in data if d['event_id'] == anid}
-                if 'fields' in ret[anid]:
-                    raise RuntimeError()
-                ret[anid]['fields'] = fields
+            for event_id, fields in self._get_events_fields(rs, event_ids).items():
+                ret[event_id]['fields'] = fields
         for anid in event_ids:
             ret[anid]['begin'] = min((p['part_begin']
                                       for p in ret[anid]['parts'].values()))
@@ -1020,18 +1014,34 @@ class EventBackend(AbstractBackend):
         def __call__(self, rs: RequestState, event_id: int) -> CdEDBObject: ...
     get_event: _GetEventProtocol = singularize(get_events, "event_ids", "event_id")
 
-    def _get_event_fields(self, rs: RequestState,
-                          event_id: int) -> CdEDBObjectMap:
+    def _get_events_fields(self, rs: RequestState, event_ids: Collection[int],
+                           field_ids: Optional[Collection[int]] = None,
+                           ) -> Dict[int, CdEDBObjectMap]:
         """
         Helper function to retrieve the custom field definitions of an event.
         This is required by multiple backend functions.
 
+        :param field_ids: If given, only include fields with these ids.
         :return: A dict mapping each event id to the dict of its fields
         """
         data = self.sql_select(
             rs, "event.field_definitions", FIELD_DEFINITION_FIELDS,
-            [event_id], entity_key="event_id")
-        return {d['id']: d for d in data}
+            event_ids, entity_key="event_id")
+        ret: Dict[int, CdEDBObjectMap] = {event_id: {} for event_id in event_ids}
+        for field in data:
+            field['association'] = const.FieldAssociations(field['association'])
+            field['kind'] = const.FieldDatatypes(field['kind'])
+            # Optionally limit to the specified fields.
+            if field_ids is not None and field['id'] not in field_ids:
+                continue
+            ret[field['event_id']][field['id']] = field
+        return ret
+
+    class _GetEventFieldsProtocol(Protocol):
+        def __call__(self, rs: RequestState, event_id: int,
+                     field_ids: Optional[Collection[int]] = None) -> CdEDBObjectMap: ...
+    _get_event_fields: _GetEventFieldsProtocol = singularize(
+        _get_events_fields, "event_ids", "event_id")
 
     def _delete_course_track_blockers(self, rs: RequestState,
                                       track_id: int) -> DeletionBlockers:
@@ -1379,14 +1389,12 @@ class EventBackend(AbstractBackend):
             raise ValueError(n_("At least one event part required."))
 
         # Do some additional validation for any given waitlist fields.
-        waitlist_fields = {p['waitlist_field'] for p in parts.values()
-                           if p and 'waitlist_field' in p} - {None}
-        waitlist_field_data = self.sql_select(
-            rs, "event.field_definitions", ("id", "event_id", "kind", "association"),
-            waitlist_fields)
+        waitlist_fields: Set[int] = set(
+            filter(None, (p.get('waitlist_field') for p in parts.values() if p)))
+        waitlist_field_data = self._get_event_fields(rs, event_id, waitlist_fields)
         if len(waitlist_fields) != len(waitlist_field_data):
             raise ValueError(n_("Unknown field."))
-        for field in waitlist_field_data:
+        for field in waitlist_field_data.values():
             self._validate_special_event_field(rs, event_id, "waitlist", field)
 
         for x in mixed_existence_sorter(new_parts):
@@ -1589,8 +1597,8 @@ class EventBackend(AbstractBackend):
             return ret
         self.affirm_atomized_context(rs)
 
-        existing_fields = {unwrap(e) for e in self.sql_select(
-            rs, "event.field_definitions", ("id",), (event_id,), entity_key="event_id")}
+        current_field_data = self._get_event_fields(rs, event_id)
+        existing_fields = current_field_data.keys()
         new_fields = {x for x in fields if x < 0}
         updated_fields = {x for x in fields if x > 0 and fields[x] is not None}
         deleted_fields = {x for x in fields if x > 0 and fields[x] is None}
@@ -1610,8 +1618,6 @@ class EventBackend(AbstractBackend):
                 rs, "event.fee_modifiers", ("field_id",),
                 updated_fields | deleted_fields,
                 entity_key="field_id")}
-            current_field_data = {e['id']: e for e in self.sql_select(
-                rs, "event.field_definitions", FIELD_DEFINITION_FIELDS, updated_fields)}
             for x in mixed_existence_sorter(updated_fields):
                 updated_field = copy.deepcopy(fields[x])
                 assert updated_field is not None
@@ -1899,12 +1905,10 @@ class EventBackend(AbstractBackend):
 
         # Do some additional validation of the linked fields.
         field_ids = {fm['field_id'] for fm in modifiers.values() if fm}
-        field_data = self.sql_select(
-            rs, "event.field_definitions", ("id", "event_id", "kind", "association"),
-            field_ids)
+        field_data = self._get_event_fields(rs, event_id, field_ids)
         if len(field_ids) != len(field_data):
             raise ValueError(n_("Unknown field."))
-        for field in field_data:
+        for field in field_data.values():
             self._validate_special_event_field(rs, event_id, "fee_modifier", field)
 
         # the order of deleting, updating and creating matters: The field of a deleted
@@ -2997,13 +3001,11 @@ class EventBackend(AbstractBackend):
             pdata = self.sql_select(
                 rs, "event.registration_parts", REGISTRATION_PART_FIELDS,
                 registration_ids, entity_key="registration_id")
+            for p in pdata:
+                p['status'] = const.RegistrationPartStati(p['status'])
+                ret[p['registration_id']].setdefault('parts', {})[p['part_id']] = p
+            # Limit to registrations matching stati filter in any part.
             for anid in tuple(ret):
-                if 'parts' in ret[anid]:
-                    raise RuntimeError()
-                ret[anid]['parts'] = {
-                    e['part_id']: e for e in pdata if e['registration_id'] == anid
-                }
-                # Limit to registrations matching stati filter in any part.
                 if not any(e['status'] in stati for e in ret[anid]['parts'].values()):
                     del ret[anid]
 
@@ -4350,6 +4352,7 @@ class EventBackend(AbstractBackend):
             del registration['real_persona_id']
             parts = part_lookup[registration_id]
             for part in parts.values():
+                part['status'] = const.RegistrationPartStati(part['status'])
                 del part['registration_id']
                 del part['part_id']
             registration['parts'] = parts

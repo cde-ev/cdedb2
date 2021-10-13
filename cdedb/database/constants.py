@@ -185,10 +185,15 @@ class MailinglistDomain(enum.IntEnum):
 
     testmail = 100
 
-    def __str__(self) -> str:
+    def get_domain(self) -> str:
+        """Return the actual domain for this enum member."""
         if self not in _DOMAIN_STR_MAP:
             raise NotImplementedError(n_("This domain is not supported."))
         return _DOMAIN_STR_MAP[self]
+
+    def display_str(self) -> str:
+        """Return a readable string representation to be displayed in the UI."""
+        return self.get_domain()
 
 
 # Instead of importing this, call str() on a MailinglistDomain.

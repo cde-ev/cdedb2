@@ -1262,7 +1262,7 @@ class Accounts(enum.Enum):
     # Fallback if Account is none of the above
     Unknown = 0
 
-    def __str__(self) -> str:
+    def display_str(self) -> str:
         return str(self.value)
 
 
@@ -1324,32 +1324,30 @@ class TransactionType(enum.IntEnum):
         else:
             return "Sonstiges"
 
-    def __str__(self) -> str:
+    def display_str(self) -> str:
         """
-        Return a string represantation for the TransactionType.
+        Return a string representation for the TransactionType meant to be displayed.
 
         These are _not_ translated on purpose, so that the generated download
         is the same regardless of locale.
         """
-        to_string = {TransactionType.MembershipFee.name: "Mitgliedsbeitrag",
-                     TransactionType.EventFee.name: "Teilnehmerbeitrag",
-                     TransactionType.Donation.name: "Spende",
-                     TransactionType.I25p.name: "Initiative25+",
-                     TransactionType.Other.name: "Sonstiges",
-                     TransactionType.EventFeeRefund.name:
-                         "Teilnehmererstattung",
-                     TransactionType.InstructorRefund.name: "KL-Erstattung",
-                     TransactionType.EventExpenses.name:
-                         "Veranstaltungsausgabe",
-                     TransactionType.Expenses.name: "Ausgabe",
-                     TransactionType.AccountFee.name: "Kontogebühr",
-                     TransactionType.OtherPayment.name: "Andere Zahlung",
-                     TransactionType.Unknown.name: "Unbekannt",
-                     }
-        if self.name in to_string:
-            return to_string[self.name]
-        else:
-            return repr(self)
+        display_str = {
+            TransactionType.MembershipFee: "Mitgliedsbeitrag",
+            TransactionType.EventFee: "Teilnehmerbeitrag",
+            TransactionType.Donation: "Spende",
+            TransactionType.I25p: "Initiative25+",
+            TransactionType.Other: "Sonstiges",
+            TransactionType.EventFeeRefund:
+                "Teilnehmererstattung",
+            TransactionType.InstructorRefund: "KL-Erstattung",
+            TransactionType.EventExpenses:
+                "Veranstaltungsausgabe",
+            TransactionType.Expenses: "Ausgabe",
+            TransactionType.AccountFee: "Kontogebühr",
+            TransactionType.OtherPayment: "Andere Zahlung",
+            TransactionType.Unknown: "Unbekannt",
+        }
+        return display_str.get(self, str(self))
 
 
 class SemesterSteps(enum.Enum):

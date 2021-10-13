@@ -68,7 +68,7 @@
                         }}
                     </div>
                 {% else %}
-                    {{ util.input_hidden(name="association_{}".format(field_id), value=association.value) }}
+                    {{ util.input_hidden(name="association_{}".format(field_id), value=association) }}
                 {% endif %}
                 {{ util.form_input_textarea(name="entries_{}".format(field_id), label=gettext("Options"),
                                             attributes=('data-basename="entries_"'|s if newrow else ('readonly' if not changeable else '')),
@@ -102,7 +102,7 @@
         <div class="tab-content" id="associations_tabcontent">
             {% for association in enums['FieldAssociations'] %}
                 <div class="tab-pane active" role="tabpanel" id="tab_{{ association.name }}"
-                        data-association-id="{{ association.value }}">
+                        data-association-id="{{ association }}">
                     <h3 class="heading-underline">{{ util.make_icon(association.get_icon()) }} {{ gettext(association|string) }}</h3>
                     {% set relevant_fields = [] %}
                     {# Old items, already stored in the database #}
@@ -113,7 +113,7 @@
 
                     {# Items that were added by the user but failed validation. They are still new and have no official id. #}
                     {% for i in range(1, values.get('create_last_index', 0) + 1)
-                            if values.get("association_{}".format(-i), '')|int == association.value %}
+                            if values.get("association_{}".format(-i), '') == association|string %}
                         {% do relevant_fields.append((-i, None)) %}
                     {% endfor %}
 

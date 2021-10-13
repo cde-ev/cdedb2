@@ -187,25 +187,7 @@
                                                         <input type="radio" name="{{ name }}" value="{{ key }}"
                                                             {% if key|stringIn(values.getlist(name)) %}checked="checked"{% endif %} />
                                                     {% endwith %}
-                                                    {{ util.persona_name(value, given_and_display_names=True) }}
-                                                    {%- if value['birth_name'] %}
-                                                        ({{ value['birth_name'] }})
-                                                    {%- endif %}
-                                                    {% if value['is_archived'] %}
-                                                        (<i>{{ gettext("archived") }}</i>)
-                                                    {% else %}
-                                                        &lt;{{ value['username'] }}&gt;
-                                                    {% endif %}
-                                                    {%- if value['birthday'] %}
-                                                        ({{ gettext("born") }}
-                                                        {{ value['birthday']|date(lang=lang) or "-" }})
-                                                    {% endif %}
-                                                    {{ key|cdedbid }}
-                                                    {%- if not value['is_member'] %}
-                                                        {{ gettext("(not a member)") }}
-                                                    {%- elif value['trial_member'] %}
-                                                        {{ gettext("(trial member)") -}}
-                                                    {% endif -%}
+                                                    {{ util.print_doppelganger(value) }}
                                                 </label>
                                             </div>
                                         {%- endfor %}
