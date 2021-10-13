@@ -30,32 +30,39 @@ class TestValidation(unittest.TestCase):
             with self.subTest(inval=inval):
                 if not exception:
                     self.assertEqual(
-                        validate.validate_check(type_, inval, ignore_warnings, **extraparams),
+                        validate.validate_check(
+                            type_, inval, ignore_warnings, **extraparams),
                         (retval, []),
                     )
                     self.assertEqual(
-                        validate.validate_assert(type_, inval, ignore_warnings, **extraparams),
+                        validate.validate_assert(
+                            type_, inval, ignore_warnings, **extraparams),
                         retval,
                     )
                 else:
                     self.assertEqual(
                         None,
-                        validate.validate_check(type_, inval, ignore_warnings, **extraparams)[0],
+                        validate.validate_check(
+                            type_, inval, ignore_warnings, **extraparams)[0],
                     )
                     self.assertNotEqual(
                         [],
-                        validate.validate_check(type_, inval, ignore_warnings, **extraparams)[1],
+                        validate.validate_check(
+                            type_, inval, ignore_warnings, **extraparams)[1],
                     )
                     exception_args = None
                     if isinstance(exception, Exception):
                         exception_args = exception.args
                         exception = type(exception)
                     with self.assertRaises(exception) as cm:
-                        validate.validate_assert(type_, inval, ignore_warnings, **extraparams)
+                        validate.validate_assert(
+                            type_, inval, ignore_warnings, **extraparams)
                     if exception_args:
                         self.assertEqual(cm.exception.args, exception_args)
-                onepass = validate.validate_check(type_, inval, ignore_warnings, **extraparams)[0]
-                twopass = validate.validate_check(type_, onepass, ignore_warnings, **extraparams)[0]
+                onepass = validate.validate_check(
+                    type_, inval, ignore_warnings, **extraparams)[0]
+                twopass = validate.validate_check(
+                    type_, onepass, ignore_warnings, **extraparams)[0]
                 self.assertEqual(onepass, twopass)
 
     def test_optional(self) -> None:
