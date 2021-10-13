@@ -1457,8 +1457,9 @@ class AssemblyFrontend(AbstractUserFrontend):
             'shortname': vtypes.ShortnameRestrictiveIdentifier,
             'title': vtypes.LegacyShortname
         }
+        existing_candidates = rs.ambience['ballot']['candidates'].keys()
         candidates = process_dynamic_input(
-            rs, vtypes.BallotCandidate, rs.ambience['ballot']['candidates'].keys(), spec)
+            rs, vtypes.BallotCandidate, existing_candidates, spec)
 
         shortnames: Set[str] = set()
         for candidate_id, candidate in candidates.items():
