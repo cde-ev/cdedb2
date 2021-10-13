@@ -31,6 +31,7 @@ Shortname = _NewType("Shortname", str)
 ShortnameIdentifier = _NewType("ShortnameIdentifier", Shortname)
 ShortnameRestrictiveIdentifier = _NewType(
     "ShortnameRestrictiveIdentifier", ShortnameIdentifier)
+LegacyShortname = _NewType("LegacyShortname", str)
 PrintableASCIIType = _NewType("PrintableASCIIType", str)
 PrintableASCII = _NewType("PrintableASCII", str)  # TODO make these subtypes?
 Alphanumeric = _NewType("Alphanumeric", str)

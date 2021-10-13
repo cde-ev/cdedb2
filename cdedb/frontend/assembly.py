@@ -1453,7 +1453,10 @@ class AssemblyFrontend(AbstractUserFrontend):
                         ballot_id: int) -> Response:
         """Create, edit and delete candidates of a ballot."""
 
-        spec = {'shortname': vtypes.ShortnameRestrictiveIdentifier, 'title': str}
+        spec = {
+            'shortname': vtypes.ShortnameRestrictiveIdentifier,
+            'title': vtypes.LegacyShortname
+        }
         candidates = process_dynamic_input(
             rs, vtypes.BallotCandidate, rs.ambience['ballot']['candidates'].keys(), spec)
 

@@ -300,7 +300,9 @@ _DEFAULTS = {
     # maximum length of rationale for requesting an account
     "MAX_RATIONALE": 500,
     # for shortnames longer than this, a ValidationWarning will be raised
-    "SHORTNAME_LENGTH": 30,
+    "SHORTNAME_LENGTH": 10,
+    # a bit longer, but still a shortname
+    "LEGACY_SHORTNAME_LENGTH": 30,
     # minimal number of input characters to start a search for personas
     # fitting an intelligent input field
     "NUM_PREVIEW_CHARS": 3,

@@ -651,6 +651,18 @@ def _shortname_restrictive_identifier(
 
 
 @_add_typed_validator
+def _legacy_shortname(val: Any, argname: str = None, *,
+                      ignore_warnings: bool = False, **kwargs: Any) -> LegacyShortname:
+    """A string used as shortname, but with increased but still limited length."""
+    val = _str(val, argname, ignore_warnings=ignore_warnings, **kwargs)
+    if len(val) > _CONF["LEGACY_SHORTNAME_LENGTH"] and not ignore_warnings:
+        raise ValidationSummary(
+            ValidationWarning(argname, n_("Shortname is longer than {len} chars."),
+                              {'len': str(_CONF["LEGACY_SHORTNAME_LENGTH"])}))
+    return LegacyShortname(val)
+
+
+@_add_typed_validator
 def _bytes(
     val: Any, argname: str = None, *,
     encoding: str = "utf-8", **kwargs: Any
@@ -2609,7 +2621,7 @@ COURSE_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'description': Optional[str],
     'nr': str,
-    'shortname': Shortname,
+    'shortname': LegacyShortname,
     'instructors': Optional[str],
     'max_size': Optional[NonNegativeInt],
     'min_size': Optional[NonNegativeInt],
@@ -3369,7 +3381,7 @@ PARTIAL_COURSE_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'description': Optional[str],
     'nr': Optional[str],
-    'shortname': Shortname,
+    'shortname': LegacyShortname,
     'instructors': Optional[str],
     'max_size': Optional[int],
     'min_size': Optional[int],
@@ -4060,7 +4072,7 @@ def _ballot(
 
 
 BALLOT_CANDIDATE_COMMON_FIELDS: TypeMapping = {
-    'title': str,
+    'title': LegacyShortname,
     'shortname': ShortnameIdentifier,
 }
 
@@ -4087,9 +4099,6 @@ def _ballot_candidate(
                                      ignore_warnings=ignore_warnings, **kwargs)
 
     errs = ValidationSummary()
-    # The title is no shortname per se, but this should be short too.
-    if len(val.get("title", "")) > _CONF["SHORTNAME_LENGTH"] and not ignore_warnings:
-        errs.append(ValidationWarning("title", n_("Title is too long.")))
     if val.get('shortname') == ASSEMBLY_BAR_SHORTNAME:
         errs.append(ValueError("shortname", n_("Mustn’t be the bar shortname.")))
 
