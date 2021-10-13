@@ -2549,6 +2549,15 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f, check_notification=False)
         self.assertValidationError(
             'persona.persona_id', "Dieser Nutzer ist kein Veranstaltungsnutzer.")
+        # Check invalid course choices
+        f['track1.course_choice_0'] = 5
+        f['track1.course_choice_1'] = 5
+        f['track1.course_instructor'] = 5
+        self.submit(f, check_notification=False)
+        self.assertValidationError(
+            "track1.course_choice_0", "Geleiteter Kurs kann nicht gewählt werden.")
+        self.assertValidationError(
+            "track1.course_choice_1", "Bitte verschiedene Kurse wählen.")
         # Now add an actually valid user.
         f['persona.persona_id'] = USER_DICT['charly']['DB-ID']
         f['reg.orga_notes'] = "Du entkommst uns nicht."
@@ -2559,6 +2568,8 @@ etc;anything else""", f['entries_2'].value)
         f['part1.lodgement_id'] = 4
         f['track1.course_id'] = 5
         f['track1.course_choice_0'] = 5
+        f['track1.course_choice_1'] = 4
+        f['track1.course_instructor'] = 2
         self.submit(f)
         self.assertTitle("\nAnmeldung von Charly Clown (Große Testakademie 2222)\n")
         self.assertPresence("Du entkommst uns nicht.")
@@ -2572,6 +2583,8 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("4", f['part1.lodgement_id'].value)
         self.assertEqual("5", f['track1.course_id'].value)
         self.assertEqual("5", f['track1.course_choice_0'].value)
+        self.assertEqual("4", f['track1.course_choice_1'].value)
+        self.assertEqual("2", f['track1.course_instructor'].value)
 
     @as_users("garcia")
     def test_add_illegal_registration(self) -> None:
