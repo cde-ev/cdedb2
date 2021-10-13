@@ -3276,7 +3276,7 @@ class EventFrontend(AbstractUserFrontend):
             for track_id, track in tracks.items()
         }
         for track_id in present_tracks:
-            all_choices = list(
+            all_choices = tuple(
                 choice_getter(track_id, i)
                 for i in range(tracks[track_id]['num_choices'])
                 if choice_getter(track_id, i) is not None)
@@ -3287,7 +3287,7 @@ class EventFrontend(AbstractUserFrontend):
                     (f"course_choice{track_id}_{i_choice}",
                      ValueError(n_("You may not choose your own course.")))
                 )
-            reg_tracks[track_id]['choices'] = tuple(all_choices)
+            reg_tracks[track_id]['choices'] = all_choices
 
         f = lambda entry: rs.ambience['event']['fields'][entry['field_id']]
         params: TypeMapping = {
@@ -4059,7 +4059,7 @@ class EventFrontend(AbstractUserFrontend):
                 if own_course == choice:
                     rs.add_validation_error(
                         (f"track{track_id}.course_choice_{i_choice}",
-                         ValueError(n_("Must not choose your own course.")))
+                         ValueError(n_("Instructed course must not be chosen.")))
                     )
                 if choice in choices_set:
                     rs.append_validation_error(
