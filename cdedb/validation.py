@@ -39,13 +39,15 @@ If ``True``, Errors of type ``ValidationWarning`` may be ignored instead of rais
 Think of this like a toggle to enable less strict validation of some constants
 which might change externally like german postal codes.
 
-We provide convenient wrappers around the validation functions for frontend and backend:
+Following a model of encapsulation, the entry points of the validation facillity
+``validate_check`` and ``validation_assert`` should never be called directly.
+Instead, we provide some convenient wrappers around them for frontend and backend:
 
 * ``check_validation`` wraps ``validate_check`` in frontend.common
 * ``affirm_validation`` wraps ``validation_assert`` in backend.common
 * ``verify_validation`` wraps ``validate_check`` in frontend.common and backend.common
 
-These function should be used where available, since the do some additional work,
+Note that some of this functions may do some additional work,
 f.e. ``check_validation`` registers all errors in the RequestState object.
 """
 
