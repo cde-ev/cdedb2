@@ -53,6 +53,7 @@ import icu
 import jinja2
 import mailmanclient.restobjects.mailinglist
 import mailmanclient.restobjects.held_message
+import markupsafe
 import werkzeug
 import werkzeug.datastructures
 import werkzeug.exceptions
@@ -1608,7 +1609,7 @@ def staticurl(path: str, version: str = "") -> str:
 
 @overload
 def staticlink(rs: RequestState, label: str, path: str, version: str = "",
-               html: Literal[True] = True) -> jinja2.Markup: ...
+               html: Literal[True] = True) -> markupsafe.Markup: ...
 
 
 @overload
@@ -1617,14 +1618,14 @@ def staticlink(rs: RequestState, label: str, path: str, version: str = "",
 
 
 def staticlink(rs: RequestState, label: str, path: str, version: str = "",
-               html: bool = True) -> Union[jinja2.Markup, str]:
+               html: bool = True) -> Union[markupsafe.Markup, str]:
     """Create a link to a static resource.
 
     This can either create a basic html link or a fully qualified, static https link.
 
     .. note:: This will be overridden by _staticlink in templates, see fill_template.
     """
-    link: Union[jinja2.Markup, str]
+    link: Union[markupsafe.Markup, str]
     if html:
         return safe_filter(f'<a href="{staticurl(path, version=version)}">{label}</a>')
     else:
@@ -1642,7 +1643,7 @@ def docurl(topic: str, anchor: str = "") -> str:
 
 @overload
 def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
-            html: Literal[True] = True) -> jinja2.Markup: ...
+            html: Literal[True] = True) -> markupsafe.Markup: ...
 
 
 @overload
@@ -1651,13 +1652,13 @@ def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
 
 
 def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
-            html: bool = True) -> Union[jinja2.Markup, str]:
+            html: bool = True) -> Union[markupsafe.Markup, str]:
     """Create a link to our documentation.
 
     This can either create a basic html link or a fully qualified, static https link.
     .. note:: This will be overridden by _doclink in templates, see fill_template.
     """
-    link: Union[jinja2.Markup, str]
+    link: Union[markupsafe.Markup, str]
     if html:
         return safe_filter(f'<a href="{docurl(topic, anchor=anchor)}">{label}</a>')
     else:
