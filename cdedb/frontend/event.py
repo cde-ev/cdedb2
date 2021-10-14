@@ -53,7 +53,7 @@ from cdedb.frontend.event_lodgement_wishes import (
 )
 from cdedb.query import (
     Query, QueryConstraint, QueryOperators, QueryScope, make_registration_query_aux,
-    make_lodgement_query_aux, make_course_query_aux,
+    make_lodgement_query_aux, make_course_query_aux, QueryOrder
 )
 from cdedb.validation import (
     COURSE_COMMON_FIELDS, EVENT_EXPOSED_FIELDS, LODGEMENT_COMMON_FIELDS,
@@ -1445,20 +1445,21 @@ class EventFrontend(AbstractUserFrontend):
                     for track_id in tracks}
 
         # The base query object to use for links to event/registration_query
+        persona_order = ("persona.family_name", True), ("persona.given_names", True)
         base_registration_query = Query(
             QueryScope.registration,
             QueryScope.registration.get_spec(event=rs.ambience['event']),
             ["reg.id", "persona.given_names", "persona.family_name",
              "persona.username"],
             [],
-            (("persona.family_name", True), ("persona.given_names", True),)
+            persona_order,
         )
         base_course_query = Query(
             QueryScope.event_course,
             QueryScope.event_course.get_spec(event=rs.ambience['event']),
-            ["course.nr", "course.shortname"],
+            ["course.course_id"],
             [],
-            (("course.nr", True), ("course.shortname", True),)
+            (("course.nr", True),)
         )
         # Some reusable query filter definitions
         involved_filter = lambda p: (
@@ -1512,6 +1513,7 @@ class EventFrontend(AbstractUserFrontend):
                 participant_filter(p),
                 ("reg.checkin", QueryOperators.empty, None),),
             ' orgas': lambda e, p, t: (
+                participant_filter(p),
                 ('persona.id', QueryOperators.oneof,
                  rs.ambience['event']['orgas']),),
             'waitlist': lambda e, p, t: (
@@ -1584,17 +1586,58 @@ class EventFrontend(AbstractUserFrontend):
 
         query_additional_fields: Dict[str, Collection[str]] = {
             ' payed': ('reg.payment',),
+            ' all minors': ('persona.birthday',),
             ' u18': ('persona.birthday',),
             ' u16': ('persona.birthday',),
             ' u14': ('persona.birthday',),
             ' checked in': ('reg.checkin',),
+            'waitlist': ('reg.payment', 'ctime.creation_time',),
             'total involved': ('part{part}.status',),
-            'instructors': ('course_instructor{track}.id',),
-            'all instructors': ('course{track}.id',
-                                'course_instructor{track}.id',),
+            ' not payed': ('part{part}.status',),
+            ' no parental agreement': ('part{part}.status',),
+            'no lodgement': ('part{part}.status',),
+            'cancelled': ('reg.amount_paid',),
+            'rejected': ('reg.amount_paid',),
+            'total': ('part{part}.status',),
+
+            'all instructors': ('track{track}.course_id',
+                                'track{track}.course_instructor',),
+            'instructors': ('track{track}.course_instructor',),
+            'attendees': ('track{track}.course_id',),
+            'courses': ('course.instructors',),
+            'cancelled courses': ('course.instructors',),
         }
         for name, track_regs in regs_in_choice_x.items():
             query_additional_fields[name] = ('track{track}.course_id',)
+
+        def waitlist_query_order(
+            e: CdEDBObject, p: CdEDBObject, t: CdEDBObject
+        ) -> List[QueryOrder]:
+            order = [("reg.payment", True), ("ctime.creation_time", True)]
+            if p["waitlist_field"]:
+                field_name = e["fields"][p["waitlist_field"]]["field_name"]
+                waitlist_field_position = (f'reg_fields.xfield_{field_name}', True)
+                order.insert(0, waitlist_field_position)
+            return order
+
+        # overwrites the default query order
+        QueryOrderGetter = Callable[
+            [CdEDBObject, CdEDBObject, CdEDBObject], List[QueryOrder]]
+        registration_query_order: Dict[str, QueryOrderGetter] = {
+            'waitlist': waitlist_query_order,
+            'all instructors': lambda e, p, t: (
+                [(f"track{t['id']}.course_instructor", True), *persona_order]),
+            'instructors': lambda e, p, t: (
+                [(f"track{t['id']}.course_instructor", True), *persona_order]),
+            'attendees': lambda e, p, t: (
+                [(f"course{t['id']}.nr", True), *persona_order]),
+        }
+        for name, track_regs in regs_in_choice_x.items():
+            registration_query_order[name] = functools.partial(
+                lambda e, p, t, t_r: (
+                    [(f"course{t['id']}.nr", True), *persona_order]
+                ), t_r=track_regs
+            )
 
         def get_query(category: str, part_id: int, track_id: int = None
                       ) -> Optional[Query]:
@@ -1613,8 +1656,9 @@ class EventFrontend(AbstractUserFrontend):
                 q.constraints.append(c)
             if category in query_additional_fields:
                 for f in query_additional_fields[category]:
-                    q.fields_of_interest.append(f.format(track=track_id,
-                                                         part=part_id))
+                    q.fields_of_interest.append(f.format(track=track_id, part=part_id))
+            if category in registration_query_order:
+                q.order = registration_query_order[category](e, p, t)
             return q
 
         def get_query_page(category: str) -> Optional[str]:

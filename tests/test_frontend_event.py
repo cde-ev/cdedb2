@@ -1842,8 +1842,8 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Veranstaltungsteil geändert",
                             div=str(self.EVENT_LOG_OFFSET + 4) + "-1004")
 
-        # Check that the default query applies the correct ordering.
-        self.traverse('Anmeldungen', 'Warteliste Wu')
+        # Check that the linked stat query applies the correct ordering.
+        self.traverse('Statistik', {'linkid': 'part_waitlist_1'})
         f = self.response.forms['queryform']
         self.assertEqual(f['qord_primary'].value,
                          "reg_fields.xfield_waitlist_position")

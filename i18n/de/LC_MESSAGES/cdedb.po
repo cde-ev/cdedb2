@@ -14845,7 +14845,7 @@ msgstr "Abgemeldet"
 
 #: cdedb/frontend/templates/web/event/stats.tmpl:38
 #: cdedb/frontend/templates/web/event/stats.tmpl:41
-msgid "Rejected"
+msgid "Registration Rejected"
 msgstr "Abgelehnt"
 
 #: cdedb/frontend/templates/web/event/stats.tmpl:81
