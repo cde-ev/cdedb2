@@ -4304,6 +4304,8 @@ def _query_input(
 
         if not entry:
             continue
+        if entry not in spec:
+            continue
 
         tmp = "qord_" + postfix + "_ascending"
         try:
