@@ -3354,8 +3354,11 @@ class EventFrontend(AbstractUserFrontend):
             rs.notify("error", n_("Event locked."))
             return self.redirect(rs, "event/show_event")
         if rs.ambience['event']['is_archived']:
-            rs.notify("warning", n_("Event is already archived."))
+            rs.notify("error", n_("Event is already archived."))
             return self.redirect(rs, "event/show_event")
+        if self.eventproxy.list_registrations(rs, event_id, rs.user.persona_id):
+            rs.notify("error", n_("Already registered."))
+            return self.redirect(rs, "event/registration_status")
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         reg_questionnaire = unwrap(self.eventproxy.get_questionnaire(
@@ -4181,11 +4184,9 @@ class EventFrontend(AbstractUserFrontend):
                     ("persona.persona_id", ValueError(n_(
                         "This user is not an event user."))))
         if (not rs.has_validation_errors()
-                and self.eventproxy.list_registrations(rs, event_id,
-                                                       persona_id=persona_id)):
-            rs.append_validation_error(
-                ("persona.persona_id",
-                  ValueError(n_("Already registered."))))
+                and self.eventproxy.list_registrations(rs, event_id, persona_id)):
+            rs.append_validation_error(("persona.persona_id",
+                                        ValueError(n_("Already registered."))))
         registration = self.process_orga_registration_input(
             rs, rs.ambience['event'], do_fields=False,
             do_real_persona_id=self.conf["CDEDB_OFFLINE_DEPLOYMENT"])
