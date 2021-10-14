@@ -266,7 +266,8 @@ class Application(BaseApp):
             try:
                 ret = handler(rs, **args)
                 if rs.validation_appraised is False:
-                    raise RuntimeError(f"Input validation forgotten: {handler}")
+                    raise RuntimeError(f"Input validation forgotten: {handler}",
+                                       rs.retrieve_validation_errors())
                 return ret
             except QuotaException as e:
                 # Handle this earlier, since it needs database access.
