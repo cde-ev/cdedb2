@@ -2042,7 +2042,7 @@ def verify_validation(
 
 
 def verify_validation_optional(
-    type_: Type[T], value: Any, *, ignore_warnings: bool = True, **kwargs: Any
+    type_: Type[T], value: Any, *, ignore_warnings: bool = False, **kwargs: Any
 ) -> Tuple[Optional[T], List[Error]]:
     """Convenient wrapper to call checks in :py:mod:`cdedb.validation`.
 
