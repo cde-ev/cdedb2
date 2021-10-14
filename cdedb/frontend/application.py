@@ -266,8 +266,10 @@ class Application(BaseApp):
             try:
                 ret = handler(rs, **args)
                 if rs.validation_appraised is False:
-                    raise RuntimeError(f"Input validation forgotten: {handler}",
-                                       rs.retrieve_validation_errors())
+                    self.logger.error(
+                        f"User {rs.user.persona_id} has evaded input validation"
+                        f" with errors {rs.retrieve_validation_errors()}")
+                    raise RuntimeError(f"Input validation forgotten: {handler}")
                 return ret
             except QuotaException as e:
                 # Handle this earlier, since it needs database access.
