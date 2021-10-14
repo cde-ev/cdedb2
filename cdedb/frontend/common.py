@@ -463,10 +463,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         def _has_warnings() -> bool:
             """Determine if there are any warnings among the errors."""
-            all_errors = rs.retrieve_validation_errors()
-            return any(
-                isinstance(kind, ValidationWarning)
-                for param, kind in all_errors)
+            return bool(validate.get_warnings(rs.retrieve_validation_errors()))
 
         def _make_backend_checker(rs: RequestState, backend: AbstractBackend,
                                   method_name: str) -> Callable[..., Any]:

@@ -39,7 +39,7 @@ from cdedb.query import (
     QueryConstraint, QueryOperators, QueryScope,
 )
 from cdedb.validation import (
-    PERSONA_FULL_CDE_CREATION, TypeMapping, filter_none,
+    PERSONA_FULL_CDE_CREATION, TypeMapping, filter_none, get_errors, get_warnings
 )
 
 MEMBERSEARCH_DEFAULTS = {
@@ -511,6 +511,11 @@ class CdEBaseFrontend(AbstractUserFrontend):
             if (datum['doppelganger_id'], pcourse_id) in existing:
                 warnings.append(
                     ("pevent_id", KeyError(n_("Participation already recorded."))))
+
+        # ensure each ValidationWarning is considered as warning, even if it appears
+        # during a call to check. Remove all ValidationWarnings from problems
+        warnings.extend(get_warnings(problems))
+        problems = get_errors(problems)
 
         datum.update({
             'persona': persona,

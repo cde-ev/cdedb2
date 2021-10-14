@@ -224,6 +224,22 @@ def is_optional(type_: Type[T]) -> bool:
     return get_origin(type_) is Union and NoneType in get_args(type_)
 
 
+def get_errors(errors: List[Error]) -> List[Error]:
+    """Returns those errors which are not considered as warnings."""
+    def is_error(e: Error) -> bool:
+        _, exception = e
+        return not isinstance(exception, ValidationWarning)
+    return list(filter(is_error, errors))
+
+
+def get_warnings(errors: List[Error]) -> List[Error]:
+    """Returns those errors which are considered as warnings."""
+    def is_warning(e: Error) -> bool:
+        _, exception = e
+        return isinstance(exception, ValidationWarning)
+    return list(filter(is_warning, errors))
+
+
 def _allow_None(fun: Callable[..., T]) -> Callable[..., Optional[T]]:
     """Wrap a validator to allow ``None`` as valid input.
 
