@@ -29,7 +29,7 @@ from cdedb.backend.common import (
     affirm_validation_typed_optional as affirm_optional, cast_fields, internal,
     singularize,
 )
-from cdedb.backend.event_helpers import EventBackendHelpers
+from cdedb.backend.event_lowlevel import EventLowLevelBackend
 from cdedb.common import (
     COURSE_FIELDS, COURSE_TRACK_FIELDS, CdEDBLog, CdEDBObject, CdEDBObjectMap,
     DefaultReturnCode, EVENT_FIELDS, EVENT_PART_FIELDS, EVENT_SCHEMA_VERSION,
@@ -44,7 +44,7 @@ from cdedb.database.connection import Atomizer
 CdEDBQuestionnaire = Dict[const.QuestionnaireUsages, List[CdEDBObject]]
 
 
-class EventBaseBackend(EventBackendHelpers):
+class EventBaseBackend(EventLowLevelBackend):
     @access("event")
     def is_offline_locked(self, rs: RequestState, *, event_id: int = None,
                           course_id: int = None) -> bool:

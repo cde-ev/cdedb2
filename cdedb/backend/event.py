@@ -16,7 +16,7 @@ from cdedb.backend.common import (
 )
 from cdedb.backend.event_base import EventBaseBackend
 from cdedb.backend.event_course import EventCourseBackend
-from cdedb.backend.event_helpers import EventBackendHelpers
+from cdedb.backend.event_lowlevel import EventLowLevelBackend
 from cdedb.backend.event_lodgement import EventLodgementBackend
 from cdedb.backend.event_query import EventQueryBackend
 from cdedb.backend.event_registration import EventRegistrationBackend
@@ -30,7 +30,7 @@ from cdedb.database.connection import Atomizer
 
 
 class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
-                   EventRegistrationBackend, EventBaseBackend, EventBackendHelpers):
+                   EventRegistrationBackend, EventBaseBackend, EventLowLevelBackend):
     @access("event_admin")
     def delete_event_blockers(self, rs: RequestState,
                               event_id: int) -> DeletionBlockers:

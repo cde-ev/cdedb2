@@ -27,7 +27,7 @@ from cdedb.common import (
 from cdedb.validation import parse_date, parse_datetime
 
 
-class EventBackendHelpers(AbstractBackend):
+class EventLowLevelBackend(AbstractBackend):
     realm = "event"
 
     def __init__(self, configpath: PathLike = None):
