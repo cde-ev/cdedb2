@@ -1243,6 +1243,7 @@ class TestCdEFrontend(FrontendTest):
              r"gender:\W*Kein Geschlecht angegeben."),
             (r"pcourse_id:\W*Kein Kurs gefunden.",),
             (r"birthday:\W*Ungültige Eingabe für ein Datum.",),
+            # TODO check that this is actually a warning and no problem
             (r"postal_code:\W*Ungültige Postleitzahl.",),
             (r"Zeilen 13 und 14 sind identisch.",),
             (r"Zeilen 13 und 14 sind identisch.",
@@ -1257,7 +1258,7 @@ class TestCdEFrontend(FrontendTest):
             for piece in ex:
                 self.assertTrue(re.search(piece, out))
         for i in range(0, 15):
-            if i in (1, 7):
+            if i in (1, 7, 11):
                 exp = str(LineResolutions.create.value)
             else:
                 exp = ''
