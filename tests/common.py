@@ -1172,7 +1172,7 @@ class FrontendTest(BackendTest):
             notification=notification)
 
     def _assertValidationComplain(
-            self, kind: str, fieldname: str, message: str, index: int,
+            self, kind: str, fieldname: str, message: str, index: Optional[int],
             notification: Optional[str]) -> None:
         """Common helper for assertValidationError and assertValidationWarning."""
         if kind == "error":

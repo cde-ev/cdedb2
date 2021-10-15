@@ -84,7 +84,8 @@ class TestValidation(unittest.TestCase):
         self.assertEqual(
             None, validate.validate_check_optional(int, "garbage", ignore_warnings)[0])
         self.assertLess(
-            0, len(validate.validate_check_optional(int, "garbage", ignore_warnings)[1]))
+            0, len(validate.validate_check_optional(int, "garbage", ignore_warnings)[1])
+        )
 
         self.assertEqual(12, validate.validate_assert(int, 12, ignore_warnings))
         with self.assertRaises(TypeError):
