@@ -2848,6 +2848,10 @@ class EventFrontend(AbstractUserFrontend):
         In the first iteration the data is extracted from a file upload and
         in further iterations it is embedded in the page.
         """
+        # ignore ValidationWarnings here to not prevent submission.
+        # TODO We show them later in the diff.
+        rs.ignore_warnings = True
+
         if partial_import_data:
             data = check(rs, vtypes.SerializedPartialEvent,
                          json.loads(partial_import_data))
