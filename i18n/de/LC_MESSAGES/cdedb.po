@@ -18,8 +18,22 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "Generated-By: Babel 2.6.0\n"
 
+msgid "Doppelgangers"
+msgstr "Ähnliche Accounts"
+
+msgid "Imports into an offline instance must happen via shell scripts."
+msgstr "In einer Offlineinstanz ist der Import nur per Kommandozeile möglich."
+
 msgid "Modified %(num)s existing members."
 msgstr "%(num)s Wiederaufnahmen."
+
+msgid ""
+"This genesis request looks similar to these existing accounts. Maybe "
+"consider updating one of these instead of creating a new account?"
+msgstr ""
+"Diese Accountanfrage scheint sehr ähnlich zu diesen bereits existierenden "
+"Accounts zu sein. Möglicherweise sollte einer der bestehenden Accounts "
+"aktualisiert werden, anstatt einen neuen Account zu erstellen."
 
 #: bin/archive/migrate_execute.py:394
 msgid "Initial import."
@@ -14845,6 +14859,11 @@ msgstr "Abgemeldet"
 
 #: cdedb/frontend/templates/web/event/stats.tmpl:38
 #: cdedb/frontend/templates/web/event/stats.tmpl:41
+msgid "Registration Rejected"
+msgstr "Abgelehnt"
+
+#: cdedb/frontend/templates/web/event/stats.tmpl:38
+#: cdedb/frontend/templates/web/event/stats.tmpl:41
 msgid "Rejected"
 msgstr "Abgelehnt"
 
@@ -19671,17 +19690,3 @@ msgstr "Ungültige Eingabe für Enumeration %(enum)s."
 #: cdedb/validation.py:4398 cdedb/validation.py:4464
 msgid "SubscriptionState.none is not written into the database."
 msgstr "SubscriptionState.none wird nicht in die Datenbank geschrieben."
-
-msgid ""
-"This genesis request looks similar to these existing accounts. Maybe "
-"consider updating one of these instead of creating a new account?"
-msgstr ""
-"Diese Accountanfrage scheint sehr ähnlich zu diesen bereits existierenden "
-"Accounts zu sein. Möglicherweise sollte einer der bestehenden Accounts "
-"aktualisiert werden, anstatt einen neuen Account zu erstellen."
-
-msgid "Doppelgangers"
-msgstr "Ähnliche Accounts"
-
-msgid "Imports into an offline instance must happen via shell scripts."
-msgstr "In einer Offlineinstanz ist der Import nur per Kommandozeile möglich."

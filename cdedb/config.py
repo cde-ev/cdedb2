@@ -22,7 +22,7 @@ import pytz
 
 import cdedb.database.constants as const
 from cdedb.common import (
-    CdEDBObject, EntitySorter, PathLike, deduct_years, n_, now, xsorted,
+    CdEDBObject, PathLike, deduct_years, n_, now,
 )
 from cdedb.query import Query, QueryOperators, QueryScope
 
@@ -186,18 +186,6 @@ def generate_event_registration_default_queries(
               const.RegistrationPartStati.participant.value),), default_sort),
     }
 
-    def get_waitlist_order(part: CdEDBObject) -> str:
-        if part['waitlist_field']:
-            field = event['fields'][part['waitlist_field']]
-            return f"reg_fields.xfield_{field['field_name']}"
-        return "ctime.creation_time"
-
-    def waitlist_query_name(part: CdEDBObject) -> str:
-        ret = gettext("17_query_event_registration_waitlist")
-        if len(event['parts']) > 1:
-            ret += f" {part['shortname']}"
-        return ret
-
     if len(event['parts']) > 1:
         queries.update({
             n_("16_query_event_registration_waitlist"): Query(
@@ -209,20 +197,6 @@ def generate_event_registration_default_queries(
                   const.RegistrationPartStati.waitlist.value),),
                 (("ctime.creation_time", True),)),
         })
-
-    queries.update({
-        n_("17_query_event_registration_waitlist") + f"_{i}_part{part['id']}":
-            Query(
-                QueryScope.registration, spec,
-                ("persona.given_names", "persona.family_name"),
-                ((f"part{part['id']}.status", QueryOperators.equal,
-                  const.RegistrationPartStati.waitlist.value),),
-                ((get_waitlist_order(part), True),),
-                name=waitlist_query_name(part)
-            )
-        for i, part in enumerate(xsorted(
-            event['parts'].values(), key=EntitySorter.event_part))
-    })
 
     return queries
 

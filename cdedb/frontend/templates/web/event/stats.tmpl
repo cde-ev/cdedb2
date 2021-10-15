@@ -35,7 +35,7 @@
         ' no parental agreement': gettext("Parental Consent Pending"),
         'no lodgement': gettext("No Lodgement"),
         'cancelled': gettext("Registration Cancelled"),
-        'rejected': gettext("Rejected"),
+        'rejected': gettext("Registration Rejected"),
     } %}
         <table id="participant-stats" class="table table-slim table-condensed table-stats">
             <thead>
@@ -62,11 +62,13 @@
                             <th colspan="2">{{ HEADINGS.get(key, key) }}</th>
                         {% endif %}
                         {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
-                            <td id="part_{{ key.replace(" ","") }}_{{ part_id }}" class="text-right">
+                            <td class="text-right">
                                 {% set query = get_query(key, part_id) %}
                                 {% set datum = row[part_id] %}
                                 {% if query %}
-                                    {{ util.href(cdedblink('event/registration_query', query.serialize()), datum) }}
+                                    {{ util.href(
+                                        cdedblink('event/registration_query', query.serialize()) + "#query-results",
+                                        datum, anid="part_" + key.replace(" ", "") + "_" + part_id|string) }}
                                 {% else %}
                                     {{ datum }}
                                 {% endif %}
@@ -114,8 +116,7 @@
                                         {% set query = get_query(key, track['part_id'], track_id) %}
                                         {% set page = get_query_page(key) %}
                                         {% if query %}
-                                            {{ util.href(cdedblink(page, query.serialize()),
-                                                         row[track_id]) }}
+                                            {{ util.href(cdedblink(page, query.serialize()) + "#query-results", row[track_id]) }}
                                         {% else %}
                                             {{ row[track_id] }}
                                         {% endif %}
