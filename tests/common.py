@@ -1145,10 +1145,46 @@ class FrontendTest(BackendTest):
         :raise AssertionError: If field is not found, field is not within
             .has-error container or error message is not found
         """
+        self._assertValidationComplain(
+            kind="error", fieldname=fieldname, message=message, index=index,
+            notification=notification)
+
+    def assertValidationWarning(
+            self, fieldname: str, message: str = "", index: int = None,
+            notification: Optional[str] = "Deine Eingaben scheinen fehlerhaft") -> None:
+        """
+        Check for a specific form input field to be highlighted as .has-warning
+        and a specific warning message to be shown near the field. Also check that an
+        .alert-warning notification (with the given text) is indicating validation
+        warning.
+
+        :param fieldname: The field's 'name' attribute
+        :param index: If more than one field with the given name exists,
+            specify which one should be checked.
+        :param message: The expected warning message displayed below the input
+        :param notification: The expected notification displayed at the top of the page
+            This can be a regex. If this is None, skip the notification check.
+        :raise AssertionError: If field is not found, field is not within
+            .has-warning container or error message is not found
+        """
+        self._assertValidationComplain(
+            kind="warning", fieldname=fieldname, message=message, index=index,
+            notification=notification)
+
+    def _assertValidationComplain(
+            self, kind: str, fieldname: str, message: str, index: int,
+            notification: Optional[str]) -> None:
+        """Common helper for assertValidationError and assertValidationWarning."""
+        if kind == "error":
+            alert_type = "danger"
+        elif kind == "warning":
+            alert_type = "warning"
+        else:
+            raise NotImplementedError
+
         if notification is not None:
-            self.assertIn("alert alert-danger", self.response.text)
-            self.assertPresence(notification, div="notifications",
-                                regex=True)
+            self.assertIn(f"alert alert-{alert_type}", self.response.text)
+            self.assertPresence(notification, div="notifications", regex=True)
 
         nodes = self.response.lxml.xpath(
             '(//input|//select|//textarea)[@name="{}"]'.format(fieldname))
@@ -1172,10 +1208,11 @@ class FrontendTest(BackendTest):
         # From https://devhints.io/xpath#class-check
         container = node.xpath(
             "ancestor::*[contains(concat(' ',normalize-space(@class),' '),"
-            "' has-error ')]")
+            f"' has-{kind} ')]")
         if not container:
+            # print(self.response)
             raise AssertionError(
-                f"Input with name {f!r} is not contained in an .has-error box")
+                f"Input with name {f!r} is not contained in an .has-{kind} box")
         msg = f"Expected error message not found near input with name {f!r}."
         self.assertIn(message, container[0].text_content(), msg)
 
