@@ -1371,8 +1371,11 @@ etc;anything else""", f['entries_2'].value)
         f['course_choice3_1'] = 4
         # Now, we did it right.
         self.submit(f)
-        self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
         text = self.fetch_mail_content()
+        # This should work only once.
+        self.submit(f, check_notification=False)
+        self.assertPresence("Bereits angemeldet", div='notifications')
+        self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
         if self.user_in('charly'):
             self.assertIn("461,49", text)
         elif self.user_in('daniel'):
