@@ -10,7 +10,7 @@ registrations at once for the mailinglist realm.
 import copy
 import decimal
 from typing import (
-    Any, Collection, Dict, List, Optional, Protocol, Tuple,
+    Any, Collection, Dict, List, Mapping, Optional, Protocol, Sequence, Tuple,
 )
 
 import psycopg2.extensions
@@ -35,6 +35,75 @@ from cdedb.filter import date_filter, money_filter
 
 
 class EventRegistrationBackend(EventBaseBackend):
+    def _get_event_course_segments(self, rs: RequestState,
+                                   event_id: int) -> Dict[int, List[int]]:
+        """
+        Helper function to get course segments of all courses of an event.
+
+        Required for _set_course_choices(). This should be called outside of looping
+        over tracks and/or registrations, to avoid having to query the same information
+        multiple times.
+
+        :returns: A dict mapping each course id (of the event) to a list of
+            track ids (which correspond to its segments)
+        """
+        query = """
+            SELECT courses.id, array_agg(segments.track_id) AS segments
+            FROM (
+                event.courses AS courses
+                LEFT OUTER JOIN event.course_segments AS segments
+                ON courses.id = segments.course_id
+            )
+            WHERE courses.event_id = %s
+            GROUP BY courses.id"""
+        return {row['id']: row['segments']
+                for row in self.query_all(rs, query, (event_id,))}
+
+    def _set_course_choices(self, rs: RequestState, registration_id: int,
+                            track_id: int, choices: Optional[Sequence[int]],
+                            course_segments: Mapping[int, Collection[int]],
+                            new_registration: bool = False
+                            ) -> DefaultReturnCode:
+        """Helper for handling of course choices.
+
+        Used when setting or creating registrations.
+
+        :note: This has to be called inside an atomized context.
+
+        :param course_segments: Dict, course segments, as returned by
+            _get_event_course_segments()
+        :param new_registration: Performance optimization for creating
+            registrations: If true, the deletion of existing choices is skipped.
+        """
+        ret = 1
+        self.affirm_atomized_context(rs)
+        if choices is None:
+            # Nothing specified, hence nothing to do
+            return ret
+        for course_id in choices:
+            if track_id not in course_segments[course_id]:
+                raise ValueError(n_("Wrong track for course."))
+        if not new_registration:
+            query = ("DELETE FROM event.course_choices"
+                     " WHERE registration_id = %s AND track_id = %s")
+            self.query_exec(rs, query, (registration_id, track_id))
+        for rank, course_id in enumerate(choices):
+            new_choice = {
+                "registration_id": registration_id,
+                "track_id": track_id,
+                "course_id": course_id,
+                "rank": rank,
+            }
+            ret *= self.sql_insert(rs, "event.course_choices",
+                                   new_choice)
+        return ret
+
+    def _get_registration_info(self, rs: RequestState,
+                               reg_id: int) -> Optional[CdEDBObject]:
+        """Helper to retrieve basic registration information."""
+        return self.sql_select_one(
+            rs, "event.registrations", ("persona_id", "event_id"), reg_id)
+
     @access("event")
     def list_persona_registrations(
         self, rs: RequestState, persona_id: int
