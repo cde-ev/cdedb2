@@ -2500,6 +2500,9 @@ msgstr "*Hier gibt es noch nichts.*"
 msgid "Failed validation."
 msgstr "Validierung fehlgeschlagen."
 
+msgid "Input seems faulty. Please double-check if you really want to save it."
+msgstr "Deine Eingaben scheinen fehlerhaft. Bitte prüfe nochmal, ob du sie wirklich so absenden möchtest."
+
 #: cdedb/frontend/common.py:417 cdedb/frontend/common.py:418
 #: cdedb/frontend/common.py:427 cdedb/frontend/common.py:428
 msgid "Must not be used in web templates."
@@ -19095,6 +19098,9 @@ msgstr "Kann Wert {val} nicht in bytes konvertieren."
 #: cdedb/validation.py:602
 msgid "Must be a bytes object."
 msgstr "Muss ein bytes-Objekt sein."
+
+msgid "Shortname is longer than %(len)s chars."
+msgstr "Kurzname ist länger als %(len)s Zeichen."
 
 #: cdedb/validation.py:601 cdedb/validation.py:606 cdedb/validation.py:608
 #: cdedb/validation.py:611

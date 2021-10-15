@@ -640,7 +640,7 @@ def _shortname(val: Any, argname: str = None, *,
     val = _str(val, argname, ignore_warnings=ignore_warnings, **kwargs)
     if len(val) > _CONF["SHORTNAME_LENGTH"] and not ignore_warnings:
         raise ValidationSummary(
-            ValidationWarning(argname, n_("Shortname is longer than {len} chars."),
+            ValidationWarning(argname, n_("Shortname is longer than %(len)s chars."),
                               {'len': str(_CONF["SHORTNAME_LENGTH"])}))
     return Shortname(val)
 
@@ -675,7 +675,7 @@ def _legacy_shortname(val: Any, argname: str = None, *,
     val = _str(val, argname, ignore_warnings=ignore_warnings, **kwargs)
     if len(val) > _CONF["LEGACY_SHORTNAME_LENGTH"] and not ignore_warnings:
         raise ValidationSummary(
-            ValidationWarning(argname, n_("Shortname is longer than {len} chars."),
+            ValidationWarning(argname, n_("Shortname is longer than %(len) chars."),
                               {'len': str(_CONF["LEGACY_SHORTNAME_LENGTH"])}))
     return LegacyShortname(val)
 

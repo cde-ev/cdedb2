@@ -662,7 +662,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if (errors := rs.retrieve_validation_errors()) and not rs.notifications:
             if all(isinstance(kind, ValidationWarning) for param, kind in errors):
                 rs.notify("warning", n_("Input seems faulty. Please double-check if"
-                                        " you really want to save it. "))
+                                        " you really want to save it."))
             else:
                 rs.notify("error", n_("Failed validation."))
         if self.conf["LOCKDOWN"]:
