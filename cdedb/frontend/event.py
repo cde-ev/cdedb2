@@ -5700,6 +5700,11 @@ class EventFrontend(AbstractUserFrontend):
                      json: werkzeug.datastructures.FileStorage) -> Response:
         """Unlock an event after offline usage and incorporate the offline
         changes."""
+        # for the sake of simplicity, we ignore all ValidationWarnings here.
+        # Since the data is incorporated from an offline instance, they were already
+        # considered to be reasonable.
+        rs.ignore_warnings = True
+
         data = check(rs, vtypes.SerializedEventUpload, json)
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
