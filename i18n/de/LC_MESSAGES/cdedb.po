@@ -3119,6 +3119,9 @@ msgstr "Manche Kursschienen können nicht gelöscht werden."
 msgid "Registrations exist, no track creation possible."
 msgstr "Anmeldungen vorhanden, kein Erstellung von Kursschienen möglich."
 
+msgid "Fee Modifier linked to non-existing field."
+msgstr "Das mit dem Beitragsmodifikator verbundene Feld existiert nicht."
+
 #: cdedb/frontend/event.py:791 cdedb/frontend/event.py:792
 msgid "Fee Modifier linked to non-fitting field."
 msgstr "Unpassendes Datenfeld für Beitragsmodifikator."
