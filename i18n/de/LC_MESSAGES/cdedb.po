@@ -2501,7 +2501,7 @@ msgid "Failed validation."
 msgstr "Validierung fehlgeschlagen."
 
 msgid "Input seems faulty. Please double-check if you really want to save it."
-msgstr "Deine Eingaben scheinen fehlerhaft. Bitte prüfe nochmal, ob du sie wirklich so absenden möchtest."
+msgstr "Die Eingaben scheinen fehlerhaft. Bitte prüfe nochmals, ob du sie wirklich absenden möchtest."
 
 #: cdedb/frontend/common.py:417 cdedb/frontend/common.py:418
 #: cdedb/frontend/common.py:427 cdedb/frontend/common.py:428

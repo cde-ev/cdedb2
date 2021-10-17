@@ -181,6 +181,7 @@ def validate_assert(type_: Type[T], value: Any, ignore_warnings: bool,
 
 def validate_assert_optional(type_: Type[T], value: Any, ignore_warnings: bool,
                              **kwargs: Any) -> Optional[T]:
+    """Wrapper to avoid a lot of type-ignore statements due to a mypy bug."""
     return validate_assert(Optional[type_], value, ignore_warnings, **kwargs)  # type: ignore
 
 
@@ -219,6 +220,7 @@ def validate_check(type_: Type[T], value: Any, ignore_warnings: bool,
 def validate_check_optional(
     type_: Type[T], value: Any, ignore_warnings: bool, **kwargs: Any
 ) -> Tuple[Optional[T], List[Error]]:
+    """Wrapper to avoid a lot of type-ignore statements due to a mypy bug."""
     return validate_check(Optional[type_], value, ignore_warnings, **kwargs)  # type: ignore
 
 

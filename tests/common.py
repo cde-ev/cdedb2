@@ -1145,7 +1145,7 @@ class FrontendTest(BackendTest):
         :raise AssertionError: If field is not found, field is not within
             .has-error container or error message is not found
         """
-        self._assertValidationComplain(
+        self._assertValidationComplaint(
             kind="error", fieldname=fieldname, message=message, index=index,
             notification=notification)
 
@@ -1167,11 +1167,11 @@ class FrontendTest(BackendTest):
         :raise AssertionError: If field is not found, field is not within
             .has-warning container or error message is not found
         """
-        self._assertValidationComplain(
+        self._assertValidationComplaint(
             kind="warning", fieldname=fieldname, message=message, index=index,
             notification=notification)
 
-    def _assertValidationComplain(
+    def _assertValidationComplaint(
             self, kind: str, fieldname: str, message: str, index: Optional[int],
             notification: Optional[str]) -> None:
         """Common helper for assertValidationError and assertValidationWarning."""
@@ -1210,7 +1210,6 @@ class FrontendTest(BackendTest):
             "ancestor::*[contains(concat(' ',normalize-space(@class),' '),"
             f"' has-{kind} ')]")
         if not container:
-            # print(self.response)
             raise AssertionError(
                 f"Input with name {f!r} is not contained in an .has-{kind} box")
         msg = f"Expected error message not found near input with name {f!r}."
