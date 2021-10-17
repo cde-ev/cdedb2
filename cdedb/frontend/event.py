@@ -772,19 +772,6 @@ class EventFrontend(AbstractUserFrontend):
         #
         # process the dynamic fee modifier input
         #
-        # TODO move in validation
-        def fee_modifier_constraint_maker(
-                fee_modifier_id: int, prefix: str) -> List[RequestConstraint]:
-            key = f"{prefix}field_id_{fee_modifier_id}"
-            fields = rs.ambience['event']['fields']
-            legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['fee_modifier']
-            msg = n_("Fee Modifier linked to non-fitting field.")
-            return [(
-                lambda d: (fields[d[key]]['association'] in legal_assocs
-                           and fields[d[key]]['kind'] in legal_datatypes),
-                (key, ValueError(msg))
-            )]
-
         fee_modifier_existing = [
             mod['id'] for mod in rs.ambience['event']['fee_modifiers'].values()
             if mod['part_id'] == part_id
@@ -801,8 +788,23 @@ class EventFrontend(AbstractUserFrontend):
         else:
             fee_modifier_data = process_dynamic_input(
                 rs, vtypes.EventFeeModifier, fee_modifier_existing, fee_modifier_spec,
-                prefix=fee_modifier_prefix,
-                constraint_maker=fee_modifier_constraint_maker)
+                prefix=fee_modifier_prefix)
+
+        # Check if each linked field exists and is inside the spec
+        legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['fee_modifier']
+        missing_msg = n_("Fee Modifier linked to non-existing field.")
+        spec_msg = n_("Fee Modifier linked to non-fitting field.")
+        for anid, modifier in fee_modifier_data.items():
+            if modifier is None:
+                continue
+            field = rs.ambience["event"]["fields"].get(modifier["field_id"])
+            if field is None:
+                rs.append_validation_error(
+                    (f"{fee_modifier_prefix}field_id_{anid}", ValueError(missing_msg)))
+            elif (field["association"] not in legal_assocs
+                  or field["kind"] not in legal_datatypes):
+                rs.append_validation_error(
+                    (f"{fee_modifier_prefix}field_id_{anid}", ValueError(spec_msg)))
 
         # Check if each linked field and fee modifier name is unique.
         used_fields: Set[int] = set()
