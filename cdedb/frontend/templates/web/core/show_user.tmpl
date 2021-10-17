@@ -76,8 +76,10 @@
                     <form action="{{ cdedblink("core/logout_all") }}" method="POST" id="logoutallform"
                           class="display-inline">
                         {{ util.anti_csrf_token('core/logout_all') }}
-                        {{ util.input_submit(label=gettext("Logout Everywhere"), title=gettext("Logout Everywhere"),
-                                             icon="power-off", aclass="btn btn-danger btn-sm") }}
+                        {{ util.input_submit(label=(gettext("Logout Everywhere (%(count)s)")
+                                                    |format(count=active_session_count)),
+                                             title=gettext("Logout Everywhere"), icon="power-off",
+                                             aclass="btn btn-danger btn-sm") }}
                     </form>
                     {{ util.href(docurl('Realm_Core_Privacy'), gettext("Who can see my data?"),aclass="btn btn-info btn-sm pull-right", icon="question-circle") }}
                 {% endif %}

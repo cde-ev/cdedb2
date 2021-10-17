@@ -2099,6 +2099,14 @@ class CoreBackend(AbstractBackend):
         query += " WHERE " + " AND ".join(constraints)
         return self.query_exec(rs, query, params)
 
+    @access("persona")
+    def count_active_sessions(self, rs: RequestState) -> int:
+        """Retrieve number of currently active sessions"""
+        query = ("SELECT COUNT(*) FROM core.sessions"
+                 " WHERE is_active = True AND persona_id = %s")
+        count = unwrap(self.query_one(rs, query, (rs.user.persona_id,))) or 0
+        return count
+
     @access("core_admin")
     def deactivate_old_sessions(self, rs: RequestState) -> DefaultReturnCode:
         """Deactivate old leftover sessions."""
