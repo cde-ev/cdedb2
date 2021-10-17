@@ -1667,7 +1667,7 @@ def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
 
 # noinspection PyPep8Naming
 def REQUESTdata(
-    *spec: str, _hints: validate.TypeMapping = None
+    *spec: str, _hints: validate.TypeMapping = None, _postpone_validation: bool = False
 ) -> Callable[[F], F]:
     """Decorator to extract parameters from requests and validate them.
 
@@ -1688,6 +1688,8 @@ def REQUESTdata(
         are valid as a type.
         To extract an encoded parameter one may prepended the name of it
         with an octothorpe (``#``).
+    :param _postpone_validation: Whether or not validation should be applied inside.
+        This should be used rarely, but sometimes its necessary.
     """
 
     def wrap(fun: F) -> F:
@@ -1736,7 +1738,9 @@ def REQUESTdata(
                             # We have to be careful, since empty lists are
                             # problematic for the werkzeug MultiDict
                             rs.values[name] = None
-                        if optional:
+                        if _postpone_validation:
+                            kwargs[name] = tuple(vals)
+                        elif optional:
                             kwargs[name] = tuple(
                                 check_validation_optional(rs, type_, val, name)
                                 for val in vals
@@ -1748,7 +1752,9 @@ def REQUESTdata(
                             )
                     else:
                         rs.values[name] = val
-                        if optional:
+                        if _postpone_validation:
+                            kwargs[name] = val
+                        elif optional:
                             kwargs[name] = check_validation_optional(
                                 rs, type_, val, name)
                         else:
@@ -1807,7 +1813,8 @@ RequestConstraint = Tuple[Callable[[CdEDBObject], bool], Error]
 
 def request_extractor(
         rs: RequestState, spec: validate.TypeMapping,
-        constraints: Collection[RequestConstraint] = None) -> CdEDBObject:
+        constraints: Collection[RequestConstraint] = None,
+        postpone_validation: bool = False) -> CdEDBObject:
     """Utility to apply REQUESTdata later than usual.
 
     This is intended to bu used, when the parameter list is not known before
@@ -1827,9 +1834,10 @@ def request_extractor(
     :param spec: handed through to the decorator
     :param constraints: additional constraints that shoud produce
       validation errors
+    :param postpone_validation: handed through to the decorator
     :returns: dict containing the requested values
     """
-    @REQUESTdata(*spec, _hints=spec)
+    @REQUESTdata(*spec, _hints=spec, _postpone_validation=postpone_validation)
     def fun(_: None, rs: RequestState, **kwargs: Any) -> CdEDBObject:
         if not rs.has_validation_errors():
             for checker, error in constraints or []:
