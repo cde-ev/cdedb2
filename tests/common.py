@@ -1151,7 +1151,7 @@ class FrontendTest(BackendTest):
 
     def assertValidationWarning(
             self, fieldname: str, message: str = "", index: int = None,
-            notification: Optional[str] = "Deine Eingaben scheinen fehlerhaft") -> None:
+            notification: Optional[str] = "Eingaben scheinen fehlerhaft") -> None:
         """
         Check for a specific form input field to be highlighted as .has-warning
         and a specific warning message to be shown near the field. Also check that an

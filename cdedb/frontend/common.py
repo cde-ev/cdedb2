@@ -25,7 +25,6 @@ import email.utils
 import functools
 import gettext
 import io
-import itertools
 import json
 import logging
 import pathlib
@@ -2251,11 +2250,12 @@ def process_dynamic_input(
             ret[anid] = None
         else:
             entry = ret[anid]
+            assert entry is not None
             entry["id"] = anid
             entry.update(additional)
             # apply the promised validation
             ret[anid] = check_validation(rs, type_, entry, field_prefix=prefix,
-                                         field_postfix=f"_{anid}")
+                                         field_postfix=f"_{anid}")  # type: ignore
 
     # extract the new entries which shall be created
     marker = 1
@@ -2268,7 +2268,7 @@ def process_dynamic_input(
             entry.update(additional)
             ret[-marker] = check_validation(
                 rs, type_, entry, field_prefix=prefix, field_postfix=f"_-{marker}",
-                creation=True)
+                creation=True)  # type: ignore
         else:
             break
         marker += 1
