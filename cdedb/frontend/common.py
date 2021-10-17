@@ -2249,13 +2249,8 @@ def process_dynamic_input(
         for anid in non_deleted_existing
         for key, value in spec.items()
     }
-    # generate the constraints for each existing entry which will not be deleted
-    constraints = list(itertools.chain.from_iterable(
-        constraint_maker(anid, prefix) for anid in non_deleted_existing)
-    ) if constraint_maker else None
-    # use request_dict_extractor to avoid the validation inside request_extractor
-    # this is postponed to a later point to use the validation for the whole object
-    data = request_dict_extractor(rs, existing_data_spec)
+    # validation is postponed to a later point to use the validator for the whole object
+    data = request_extractor(rs, existing_data_spec, postpone_validation=True)
 
     # build the return dict of all existing entries and check if they pass validation
     ret: Dict[int, Optional[CdEDBObject]] = {
@@ -2266,10 +2261,12 @@ def process_dynamic_input(
         if anid in deletes:
             ret[anid] = None
         else:
-            ret[anid]['id'] = anid  # type: ignore
-            ret[anid].update(additional)  # type: ignore
-            check_validation(rs, type_, ret[anid], field_prefix=prefix,
-                             field_postfix=f"_{anid}")
+            entry = ret[anid]
+            entry["id"] = anid
+            entry.update(additional)
+            # apply the promised validation
+            ret[anid] = check_validation(rs, type_, entry, field_prefix=prefix,
+                                         field_postfix=f"_{anid}")
 
     # extract the new entries which shall be created
     marker = 1
@@ -2277,15 +2274,12 @@ def process_dynamic_input(
         will_create = unwrap(request_extractor(rs, {f"{prefix}create_-{marker}": bool}))
         if will_create:
             params = {f"{prefix}{key}_-{marker}": value for key, value in spec.items()}
-            constraints = (constraint_maker(-marker, prefix)
-                           if constraint_maker else None)
-            data = request_extractor(rs, params, constraints)
-            ret[-marker] = {key: data[f"{prefix}{key}_-{marker}"] for key in spec}
-            if additional:
-                ret[-marker].update(additional)  # type: ignore
-            check_validation(
-                rs, type_, ret[-marker], field_prefix=prefix,
-                field_postfix=f"_-{marker}", creation=True)
+            data = request_extractor(rs, params, postpone_validation=True)
+            entry = {key: data[f"{prefix}{key}_-{marker}"] for key in spec}
+            entry.update(additional)
+            ret[-marker] = check_validation(
+                rs, type_, entry, field_prefix=prefix, field_postfix=f"_-{marker}",
+                creation=True)
         else:
             break
         marker += 1
