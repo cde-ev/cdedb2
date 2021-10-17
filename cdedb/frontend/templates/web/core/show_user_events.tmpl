@@ -24,7 +24,7 @@
     <ul>
         {% for event_id, event in events|keydictsort(EntitySorter.event) %}
             <li>
-                {% if 'event_admin' in user.roles or event_id in user.orga %}
+                {% if 'event_admin' in user.roles %}
                     {{ util.href(cdedblink("event/show_registration",
                                            {'event_id': event_id, 'registration_id': registration_ids[event_id]}),
                                  event['title']) }}
