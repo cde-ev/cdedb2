@@ -2035,7 +2035,7 @@ def check_validation_optional(rs: RequestState, type_: Type[T], value: Any,
     return ret
 
 
-def verify_validation(
+def inspect_validation(
     type_: Type[T], value: Any, *, ignore_warnings: bool = False, **kwargs: Any
 ) -> Tuple[Optional[T], List[Error]]:
     """Convenient wrapper to call checks in :py:mod:`cdedb.validation`.
@@ -2048,12 +2048,12 @@ def verify_validation(
         type_, value, ignore_warnings=ignore_warnings, **kwargs)
 
 
-def verify_validation_optional(
+def inspect_validation_optional(
     type_: Type[T], value: Any, *, ignore_warnings: bool = False, **kwargs: Any
 ) -> Tuple[Optional[T], List[Error]]:
     """Convenient wrapper to call checks in :py:mod:`cdedb.validation`.
 
-    This is similar to :func:`~cdedb.frontend.common.verify_validation` but also allows
+    This is similar to :func:`~cdedb.frontend.common.inspect_validation` but also allows
     optional/falsy values.
     """
     return validate.validate_check_optional(

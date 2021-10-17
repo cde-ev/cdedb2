@@ -33,7 +33,7 @@ from cdedb.frontend.common import (
     AbstractUserFrontend, CustomCSVDialect, REQUESTdata, REQUESTdatadict, REQUESTfile,
     access, calculate_db_logparams, calculate_loglinks, check_validation as check,
     check_validation_optional as check_optional, make_membership_fee_reference,
-    request_extractor, TransactionObserver, verify_validation as verify,
+    request_extractor, TransactionObserver, inspect_validation as inspect,
 )
 from cdedb.query import (
     QueryConstraint, QueryOperators, QueryScope,
@@ -438,7 +438,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             if persona[k] and not persona[k].strip().startswith(("0", "+")):
                 persona[k] = "0" + persona[k].strip()
         merge_dicts(persona, PERSONA_DEFAULTS)
-        persona, problems = verify(
+        persona, problems = inspect(
             vtypes.Persona, persona, argname="persona", creation=True)
         if persona:
             if persona['birthday'] > deduct_years(now().date(), 10):

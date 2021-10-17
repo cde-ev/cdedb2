@@ -45,7 +45,7 @@ Instead, we provide some convenient wrappers around them for frontend and backen
 
 * ``check_validation`` wraps ``validate_check`` in frontend.common
 * ``affirm_validation`` wraps ``validation_assert`` in backend.common
-* ``verify_validation`` wraps ``validate_check`` in frontend.common and backend.common
+* ``inspect_validation`` wraps ``validate_check`` in frontend.common and backend.common
 
 Note that some of this functions may do some additional work,
 f.e. ``check_validation`` registers all errors in the RequestState object.

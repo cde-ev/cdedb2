@@ -23,7 +23,7 @@ from cdedb.backend.common import (
     AbstractBackend, access, affirm_set_validation as affirm_set,
     affirm_validation as affirm,
     affirm_validation_optional as affirm_optional,
-    verify_validation as verify, internal, singularize,
+    inspect_validation as inspect, internal, singularize,
 )
 from cdedb.common import (
     ADMIN_KEYS, ALL_ROLES, GENESIS_CASE_FIELDS, GENESIS_REALM_OVERRIDE,
@@ -2374,7 +2374,7 @@ class CoreBackend(AbstractBackend):
                 return False, msg  # type: ignore
         if not new_password:
             return False, n_("No new password provided.")
-        _, errs = verify(vtypes.PasswordStrength, new_password)
+        _, errs = inspect(vtypes.PasswordStrength, new_password)
         if errs:
             return False, n_("Password too weak.")
         # escalate db privilege role in case of resetting passwords
@@ -2477,8 +2477,8 @@ class CoreBackend(AbstractBackend):
         if persona['birthday']:
             inputs.extend(persona['birthday'].isoformat().split('-'))
 
-        password, errs = verify(vtypes.PasswordStrength, password, argname=argname,
-                                admin=admin, inputs=inputs)
+        password, errs = inspect(vtypes.PasswordStrength, password, argname=argname,
+                                 admin=admin, inputs=inputs)
 
         return password, errs
 

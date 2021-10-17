@@ -15,7 +15,7 @@ from typing import Optional
 import psycopg2.extensions
 
 import cdedb.validationtypes as vtypes
-from cdedb.backend.common import verify_validation as verify
+from cdedb.backend.common import inspect_validation as inspect
 from cdedb.common import (
     PERSONA_STATUS_FIELDS, PathLike, User, droid_roles, extract_roles,
     make_root_logger, now,
@@ -70,8 +70,8 @@ class SessionBackend:
         """
         persona_id = None
         data = None
-        sessionkey, sessionkey_errs = verify(vtypes.PrintableASCII, sessionkey)
-        ip, ip_errs = verify(vtypes.PrintableASCII, ip)
+        sessionkey, sessionkey_errs = inspect(vtypes.PrintableASCII, sessionkey)
+        ip, ip_errs = inspect(vtypes.PrintableASCII, ip)
         if not sessionkey_errs and not ip_errs:
             query = ("SELECT persona_id, ip, is_active, atime, ctime"
                      " FROM core.sessions WHERE sessionkey = %s")

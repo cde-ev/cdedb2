@@ -46,7 +46,7 @@ from cdedb.frontend.common import (
     cdedbid_filter, cdedburl, check_validation as check,
     check_validation_optional as check_optional, event_guard, make_event_fee_reference,
     periodic, process_dynamic_input, request_extractor, make_persona_name,
-    TransactionObserver, verify_validation as verify
+    TransactionObserver, inspect_validation as inspect
 )
 from cdedb.frontend.event_lodgement_wishes import (
     create_lodgement_wishes_graph, detect_lodgement_wishes,
@@ -2094,18 +2094,18 @@ class EventFrontend(AbstractUserFrontend):
         infos = []
         # Allow an amount of zero to allow non-modification of amount_paid.
         amount: Optional[decimal.Decimal]
-        amount, problems = verify(vtypes.NonNegativeDecimal,
+        amount, problems = inspect(vtypes.NonNegativeDecimal,
             (datum['raw']['amount'] or "").strip(), argname="amount")
-        persona_id, p = verify(vtypes.CdedbID,
+        persona_id, p = inspect(vtypes.CdedbID,
             (datum['raw']['id'] or "").strip(), argname="persona_id")
         problems.extend(p)
-        family_name, p = verify(str,
+        family_name, p = inspect(str,
             datum['raw']['family_name'], argname="family_name")
         problems.extend(p)
-        given_names, p = verify(str,
+        given_names, p = inspect(str,
             datum['raw']['given_names'], argname="given_names")
         problems.extend(p)
-        date, p = verify(datetime.date,
+        date, p = inspect(datetime.date,
             (datum['raw']['date'] or "").strip(), argname="date")
         problems.extend(p)
 
@@ -5848,7 +5848,7 @@ class EventFrontend(AbstractUserFrontend):
 
         data = None
 
-        anid, errs = verify(vtypes.ID, phrase, argname="phrase")
+        anid, errs = inspect(vtypes.ID, phrase, argname="phrase")
         if not errs:
             assert anid is not None
             tmp = self.eventproxy.get_registrations(rs, (anid,))
@@ -5866,7 +5866,7 @@ class EventFrontend(AbstractUserFrontend):
             terms = [t.strip() for t in phrase.split(' ') if t]
             valid = True
             for t in terms:
-                _, errs = verify(vtypes.NonRegex, t, argname="phrase")
+                _, errs = inspect(vtypes.NonRegex, t, argname="phrase")
                 if errs:
                     valid = False
             if not valid:
@@ -5933,7 +5933,7 @@ class EventFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
 
-        anid, errs = verify(vtypes.CdedbID, phrase, argname="phrase")
+        anid, errs = inspect(vtypes.CdedbID, phrase, argname="phrase")
         if not errs:
             reg_ids = self.eventproxy.list_registrations(
                 rs, event_id, persona_id=anid)
@@ -5942,7 +5942,7 @@ class EventFrontend(AbstractUserFrontend):
                 return self.redirect(rs, "event/show_registration",
                                      {'registration_id': reg_id})
 
-        anid, errs = verify(vtypes.ID, phrase, argname="phrase")
+        anid, errs = inspect(vtypes.ID, phrase, argname="phrase")
         if not errs:
             assert anid is not None
             regs = self.eventproxy.get_registrations(rs, (anid,))
@@ -5955,7 +5955,7 @@ class EventFrontend(AbstractUserFrontend):
         terms = tuple(t.strip() for t in phrase.split(' ') if t)
         valid = True
         for t in terms:
-            _, errs = verify(vtypes.NonRegex, t, argname="phrase")
+            _, errs = inspect(vtypes.NonRegex, t, argname="phrase")
             if errs:
                 valid = False
         if not valid:

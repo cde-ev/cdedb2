@@ -878,7 +878,7 @@ def affirm_set_validation(
     )
 
 
-def verify_validation(
+def inspect_validation(
     type_: Type[T], value: Any, *, ignore_warnings: bool = True, **kwargs: Any
 ) -> Tuple[Optional[T], List[Error]]:
     """Convenient wrapper to call checks in :py:mod:`cdedb.validation`.

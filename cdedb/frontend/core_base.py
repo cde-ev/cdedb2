@@ -34,7 +34,7 @@ from cdedb.frontend.common import (
     calculate_db_logparams, calculate_loglinks, check_validation as check,
     check_validation_optional as check_optional, make_membership_fee_reference,
     periodic, request_dict_extractor, request_extractor, make_persona_name,
-    TransactionObserver, verify_validation as verify
+    TransactionObserver, inspect_validation as inspect
 )
 from cdedb.ml_type_aux import MailinglistGroup
 from cdedb.query import Query, QueryOperators, QueryScope
@@ -810,12 +810,12 @@ class CoreBaseFrontend(AbstractFrontend):
         """
         if rs.has_validation_errors():
             return self.index(rs)
-        anid, errs = verify(vtypes.CdedbID, phrase, argname="phrase")
+        anid, errs = inspect(vtypes.CdedbID, phrase, argname="phrase")
         if not errs:
             assert anid is not None
             if self.coreproxy.verify_id(rs, anid, is_archived=None):
                 return self.redirect_show_user(rs, anid)
-        anid, errs = verify(vtypes.ID, phrase, argname="phrase")
+        anid, errs = inspect(vtypes.ID, phrase, argname="phrase")
         if not errs:
             assert anid is not None
             if self.coreproxy.verify_id(rs, anid, is_archived=None):
@@ -968,14 +968,14 @@ class CoreBaseFrontend(AbstractFrontend):
         # Core admins are allowed to search by raw ID or CDEDB-ID
         if "core_admin" in rs.user.roles:
             anid: Optional[vtypes.ID]
-            anid, errs = verify(vtypes.CdedbID, phrase, argname="phrase")
+            anid, errs = inspect(vtypes.CdedbID, phrase, argname="phrase")
             if not errs:
                 assert anid is not None
                 tmp = self.coreproxy.get_personas(rs, (anid,))
                 if tmp:
                     data = (unwrap(tmp),)
             else:
-                anid, errs = verify(vtypes.ID, phrase, argname="phrase")
+                anid, errs = inspect(vtypes.ID, phrase, argname="phrase")
                 if not errs:
                     assert anid is not None
                     tmp = self.coreproxy.get_personas(rs, (anid,))
@@ -991,7 +991,7 @@ class CoreBaseFrontend(AbstractFrontend):
             terms = tuple(t.strip() for t in phrase.split(' ') if t)
             valid = True
             for t in terms:
-                _, errs = verify(vtypes.NonRegex, t, argname="phrase")
+                _, errs = inspect(vtypes.NonRegex, t, argname="phrase")
                 if errs:
                     valid = False
             if not valid:
