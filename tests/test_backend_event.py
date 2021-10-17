@@ -3298,32 +3298,54 @@ class TestEventBackend(BackendTest):
                         'status': const.RegistrationPartStati.waitlist,
                     },
                     2: {
-                        'status': const.RegistrationPartStati.waitlist
-                    } if anid in {2, 3} else {},
+                        'status': (const.RegistrationPartStati.waitlist
+                                   if anid in {2, 3}
+                                   else const.RegistrationPartStati.participant)
+                    },
                     3: {
-                        'status': const.RegistrationPartStati.waitlist
-                    } if anid in {2, 3} else {},
+                        'status': (const.RegistrationPartStati.waitlist
+                                   if anid in {2, 3}
+                                   else const.RegistrationPartStati.participant)
+                    },
                 },
                 'fields': {
-                    'waitlist': i,
+                    'waitlist': i+1,
                 },
             }
             for i, anid in enumerate((5, 4, 3, 2, 1))
         ]
         for rdata in regs:
             self.event.set_registration(self.key, rdata)
-        self.assertEqual({1: [5, 4, 3, 2, 1], 2: [3, 2], 3: [3, 2]},
-                         self.event.get_waitlist(self.key, event_id=1))
+        # Registration 3 belongs to Garcia (persona_id 7).
+        expectation = {1: [5, 4, 3, 2, 1], 2: [3, 2], 3: [3, 2]}
+        self.assertEqual(expectation, self.event.get_waitlist(self.key, event_id=1))
         self.assertEqual({1: 3, 2: 1, 3: 1},
                          self.event.get_waitlist_position(self.key, event_id=1))
+        # Registration 2 belongs to Emilia (persona_id 5).
         self.assertEqual({1: 4, 2: 2, 3: 2},
                          self.event.get_waitlist_position(
                              self.key, event_id=1, persona_id=5))
+        # Unset waitlist field data.
+        reg_id = 4
+        reg_data = {
+            'id': reg_id,
+            'fields': {
+                'waitlist': None,
+            },
+        }
+        self.event.set_registration(self.key, reg_data)
+        # The altered registration will be placed first in the waitlist, because
+        # it defaults to 0.
+        for waitlist in expectation.values():
+            if reg_id in waitlist:
+                waitlist.remove(reg_id)
+                waitlist.insert(0, reg_id)
+        self.assertEqual(expectation, self.event.get_waitlist(self.key, event_id=1))
+
+        # Check that users can check their own waitlist position.
         self.login(USER_DICT["emilia"])
-        self.event._get_waitlist(self.key, event_id=1)  # pylint: disable=protected-access
         self.assertEqual({1: 4, 2: 2, 3: 2},
-                         self.event.get_waitlist_position(
-                             self.key, event_id=1))
+                         self.event.get_waitlist_position(self.key, event_id=1))
         with self.assertRaises(PrivilegeError):
             self.event.get_waitlist_position(
                 self.key, event_id=1, persona_id=1)

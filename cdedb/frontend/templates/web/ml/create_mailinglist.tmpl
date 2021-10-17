@@ -33,8 +33,9 @@
         {{ util.form_input_checkbox(name="is_active", label=gettext("Active"), defaultvalue='True') }}
         {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]")) }}
         {{ util.form_input_text(name="local_part", label=gettext("Address")) }}
-        {{ util.form_input_select(name="domain", entries=available_domains|enum_entries(processing=gettext, prefix="@"),
-                                  label=gettext("Domain")) }}
+        {{ util.form_input_select(
+                name="domain", label=gettext("Domain"),
+                entries=available_domains|enum_entries(processing=gettext, prefix="@")) }}
             <script nonce="{{ csp_nonce }}">
                 $("#createlistform [name='local_part']").parents('.form-group')
                     .replaceWith(`{{ util.form_input_text(name="local_part", label=gettext("Address"), addon=" ") }}`);

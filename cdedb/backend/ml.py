@@ -375,10 +375,17 @@ class MlBackend(AbstractBackend):
         with Atomizer(rs):
             data = self.sql_select(rs, "ml.mailinglists", MAILINGLIST_FIELDS,
                                    mailinglist_ids)
-            ret = {e['id']: e for e in data}
-            # Maybe more elegant than using get_ml_type?
-            # for k in ret:
-            #    ret[k]['type'] = ml_type.TYPE_MAP[ret[k]['ml_type']]
+            ret = {}
+            for e in data:
+                e['ml_type'] = const.MailinglistTypes(e['ml_type'])
+                e['ml_type_class'] = ml_type.TYPE_MAP[e['ml_type']]
+                e['domain'] = const.MailinglistDomain(e['domain'])
+                e['domain_str'] = e['domain'].get_domain()
+                e['mod_policy'] = const.ModerationPolicy(e['mod_policy'])
+                e['attachment_policy'] = const.AttachmentPolicy(e['attachment_policy'])
+                e['registration_stati'] = [
+                    const.RegistrationPartStati(v) for v in e['registration_stati']]
+                ret[e['id']] = e
             data = self.sql_select(
                 rs, "ml.moderators", ("persona_id", "mailinglist_id"), mailinglist_ids,
                 entity_key="mailinglist_id")
@@ -391,15 +398,10 @@ class MlBackend(AbstractBackend):
             data = self.sql_select(
                 rs, "ml.whitelist", ("address", "mailinglist_id"), mailinglist_ids,
                 entity_key="mailinglist_id")
-        for anid in mailinglist_ids:
-            whitelist = {d['address'] for d in data if d['mailinglist_id'] == anid}
-            if 'whitelist' in ret[anid]:
-                raise RuntimeError()
-            ret[anid]['whitelist'] = whitelist
-        for anid in mailinglist_ids:
-            ret[anid]['domain_str'] = str(const.MailinglistDomain(
-                ret[anid]['domain']))
-            ret[anid]['ml_type_class'] = ml_type.TYPE_MAP[ret[anid]['ml_type']]
+        for ml in ret.values():
+            ml['whitelist'] = set()
+        for e in data:
+            ret[e['mailinglist_id']]['whitelist'].add(e['address'])
         return ret
 
     class _GetMailinglistProtocol(Protocol):

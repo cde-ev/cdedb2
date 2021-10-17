@@ -40,7 +40,7 @@
               to True
    title      A HTML `title` attribute (hover text) to add to the link
    rel        Allows to set the rel attribute #}
-{% macro href(ref, label, readonly=False, icon=none, aclass='', active=False, title=none, rel=none) -%}
+{% macro href(ref, label, readonly=False, icon=none, aclass='', active=False, title=none, rel=none, anid="") -%}
 {% if readonly %}<span {% else %}<a href="{{ ref }}" {% if rel %} rel="{{ rel }}" {% endif %}{% endif %}
 {{ dict(
     class=" ".join([
@@ -49,6 +49,7 @@
         ("disabled" if 'btn' in aclass else "link-disabled") if readonly else "",
     ]),
     title=title,
+    id=anid,
     **{ "aria-current": "page" if active }
 )|xmlattr }}{# We use the `active` attribute for navigation only #}>
 {{- make_icon(icon) + "&nbsp;"|s if icon }}{{ label }}
@@ -1139,4 +1140,31 @@ mailto:
             </small>
         {% endif %}
     </h1>
+{% endmacro %}
+
+
+{% macro print_doppelganger(persona, link=False) %}
+    {% if link %}
+        {{ persona_anchor(persona, given_and_display_names=True) }}
+    {% else %}
+        {{ persona_name(persona, given_and_display_names=True) }}
+    {% endif %}
+    {%- if persona['birth_name'] %}
+        ({{ persona['birth_name'] }})
+    {%- endif %}
+    {% if persona['is_archived'] %}
+        (<i>{{ gettext("archived") }}</i>)
+    {% else %}
+        &lt;{{ persona['username'] }}&gt;
+    {% endif %}
+    {%- if persona['birthday'] %}
+        ({{ gettext("born") }}
+        {{ persona['birthday']|date(lang=lang) or "-" }})
+    {% endif %}
+    {{ persona['id']|cdedbid }}
+    {%- if not persona['is_member'] %}
+        {{ gettext("(not a member)") }}
+    {%- elif persona['trial_member'] %}
+        {{ gettext("(trial member)") -}}
+    {% endif -%}
 {% endmacro %}

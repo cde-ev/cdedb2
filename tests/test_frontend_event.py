@@ -144,7 +144,7 @@ class TestEventFrontend(FrontendTest):
             "title": "Dr.",
             "name_supplement": 'von und zu',
             "birthday": "1987-06-05",
-            "gender": "1",
+            "gender": const.Genders.female,
             "telephone": "030456790",
             # "mobile"
             "address": "Street 7",
@@ -840,8 +840,8 @@ class TestEventFrontend(FrontendTest):
         self.assertNotIn('field_name_9', f.fields)
         f['create_-1'].checked = True
         f['field_name_-1'] = "food_stuff"
-        f['association_-1'] = const.FieldAssociations.registration.value
-        f['kind_-1'] = const.FieldDatatypes.str.value
+        f['association_-1'] = const.FieldAssociations.registration
+        f['kind_-1'] = const.FieldDatatypes.str
         f['entries_-1'] = """all;everything goes
         vegetarian;no meat
         vegan;plants only"""
@@ -874,8 +874,8 @@ etc;anything else""", f['entries_2'].value)
         f['delete_1'].checked = True
         f['create_-1'].checked = True
         f['field_name_-1'] = f['field_name_1'].value
-        f['association_-1'] = const.FieldAssociations.registration.value
-        f['kind_-1'] = const.FieldDatatypes.str.value
+        f['association_-1'] = const.FieldAssociations.registration
+        f['kind_-1'] = const.FieldDatatypes.str
         self.submit(f, check_notification=False)
         self.assertValidationError('field_name_-1', "Feldname nicht eindeutig.")
         f = self.response.forms['fieldsummaryform']
@@ -896,12 +896,12 @@ etc;anything else""", f['entries_2'].value)
 
         f['create_-1'].checked = True
         f['field_name_-1'] = "food_stuff"
-        f['association_-1'] = const.FieldAssociations.registration.value
-        f['kind_-1'] = const.FieldDatatypes.str.value
+        f['association_-1'] = const.FieldAssociations.registration
+        f['kind_-1'] = const.FieldDatatypes.str
         f['create_-2'].checked = True
         f['field_name_-2'] = "food_stuff"
-        f['association_-2'] = const.FieldAssociations.registration.value
-        f['kind_-2'] = const.FieldDatatypes.str.value
+        f['association_-2'] = const.FieldAssociations.registration
+        f['kind_-2'] = const.FieldDatatypes.str
         self.submit(f, check_notification=False)
         self.assertValidationError('field_name_-1', "Feldname nicht eindeutig.")
         self.assertValidationError('field_name_-2', "Feldname nicht eindeutig.")
@@ -912,7 +912,7 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['fieldsummaryform']
         f['create_-1'].checked = True
         f['field_name_-1'] = "invalid"
-        f['association_-1'] = const.FieldAssociations.registration.value
+        f['association_-1'] = const.FieldAssociations.registration
         f['kind_-1'].force_value("invalid")
         self.submit(f, check_notification=False)
         self.assertTitle("Datenfelder konfigurieren (Große Testakademie 2222)")
@@ -920,7 +920,7 @@ etc;anything else""", f['entries_2'].value)
             "kind_-1", "Ungültige Eingabe für Enumeration <enum 'FieldDatatypes'>.")
         f['create_-1'].checked = True
         f['field_name_-1'] = "invalid"
-        f['association_-1'] = const.FieldAssociations.registration.value
+        f['association_-1'] = const.FieldAssociations.registration
         f['kind_-1'].force_value(sum(x for x in const.FieldDatatypes))
         self.submit(f, check_notification=False)
         self.assertTitle("Datenfelder konfigurieren (Große Testakademie 2222)")
@@ -945,15 +945,15 @@ etc;anything else""", f['entries_2'].value)
         # options, delete and recreate "lodge" field with int type.
         self.get("/event/event/1/field/summary")
         f = self.response.forms['fieldsummaryform']
-        f['kind_2'] = const.FieldDatatypes.datetime.value
+        f['kind_2'] = const.FieldDatatypes.datetime
         f['entries_2'] = ""
         f['delete_3'].checked = True
         self.submit(f)
         f = self.response.forms['fieldsummaryform']
         f['create_-1'].checked = True
         f['field_name_-1'] = "lodge"
-        f['association_-1'] = const.FieldAssociations.registration.value
-        f['kind_-1'] = const.FieldDatatypes.int.value
+        f['association_-1'] = const.FieldAssociations.registration
+        f['kind_-1'] = const.FieldDatatypes.int
         self.submit(f)
 
         # No page of the orga area should be broken by this
@@ -981,7 +981,7 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['fieldsummaryform']
         f['create_-1'].checked = True
         f['field_name_-1'] = "notevil"
-        f['association_-1'] = const.FieldAssociations.registration.value
+        f['association_-1'] = const.FieldAssociations.registration
         f['entries_-1'] = """True;definitely
         False;no way!"""
         self.submit(f)
@@ -1011,8 +1011,8 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['fieldsummaryform']
         f['create_-1'].checked = True
         f['field_name_-1'] = "notevil"
-        f['association_-1'] = const.FieldAssociations.registration.value
-        f['kind_-1'] = const.FieldDatatypes.date.value
+        f['association_-1'] = const.FieldAssociations.registration
+        f['kind_-1'] = const.FieldDatatypes.date
         f['entries_-1'] = """2018-01-01;new year
         2018-10-03;party!
         2018-04-01;April fools"""
@@ -1041,8 +1041,8 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['fieldsummaryform']
         f['create_-1'].checked = True
         f['field_name_-1'] = "CapitalLetters"
-        f['association_-1'] = const.FieldAssociations.registration.value
-        f['kind_-1'] = const.FieldDatatypes.str.value
+        f['association_-1'] = const.FieldAssociations.registration
+        f['kind_-1'] = const.FieldDatatypes.str
         self.submit(f)
         self.get("/event/event/1/field/setselect?kind=1")
         f = self.response.forms['selectfieldform']
@@ -1378,8 +1378,11 @@ etc;anything else""", f['entries_2'].value)
         f['course_choice3_0'] = 5
         # Now, we did it right.
         self.submit(f)
-        self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
         text = self.fetch_mail_content()
+        # This should work only once.
+        self.submit(f, check_notification=False)
+        self.assertPresence("Bereits angemeldet", div='notifications')
+        self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
         if self.user_in('charly'):
             self.assertIn("461,49", text)
         elif self.user_in('daniel'):
@@ -1536,26 +1539,26 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['fieldsummaryform']
         f['create_-1'].checked = True
         f['field_name_-1'] = "is_child"
-        f['kind_-1'] = const.FieldDatatypes.bool.value
-        f['association_-1'] = const.FieldAssociations.registration.value
+        f['kind_-1'] = const.FieldDatatypes.bool
+        f['association_-1'] = const.FieldAssociations.registration
         self.submit(f)
         f = self.response.forms['fieldsummaryform']
         f['create_-1'].checked = True
         f['field_name_-1'] = "plus_one"
-        f['kind_-1'] = const.FieldDatatypes.bool.value
-        f['association_-1'] = const.FieldAssociations.registration.value
+        f['kind_-1'] = const.FieldDatatypes.bool
+        f['association_-1'] = const.FieldAssociations.registration
         self.submit(f)
         f = self.response.forms['fieldsummaryform']
         f['create_-1'].checked = True
         f['field_name_-1'] = "partner"
-        f['kind_-1'] = const.FieldDatatypes.str.value
-        f['association_-1'] = const.FieldAssociations.registration.value
+        f['kind_-1'] = const.FieldDatatypes.str
+        f['association_-1'] = const.FieldAssociations.registration
         self.submit(f)
         f = self.response.forms['fieldsummaryform']
         f['create_-1'].checked = True
         f['field_name_-1'] = "eats_meats"
-        f['kind_-1'] = const.FieldDatatypes.str.value
-        f['association_-1'] = const.FieldAssociations.registration.value
+        f['kind_-1'] = const.FieldDatatypes.str
+        f['association_-1'] = const.FieldAssociations.registration
         f['entries_-1'] = """meat;Eat meat everyday!
         half-vegetarian;Sometimes
         vegetarian;Meat is Murder!
@@ -1564,8 +1567,8 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['fieldsummaryform']
         f['create_-1'].checked = True
         f['field_name_-1'] = "favorite_day"
-        f['kind_-1'] = const.FieldDatatypes.date.value
-        f['association_-1'] = const.FieldAssociations.registration.value
+        f['kind_-1'] = const.FieldDatatypes.date
+        f['association_-1'] = const.FieldAssociations.registration
         self.submit(f)
 
         self.traverse("Veranstaltungsteile")
@@ -1686,18 +1689,18 @@ etc;anything else""", f['entries_2'].value)
         self.traverse("Veranstaltungen", "Alle Veranstaltungen", "CdE-Party 2050")
         self._create_event_field({
             "field_name": "field_is_child1",
-            "kind": const.FieldDatatypes.bool.value,
-            "association": const.FieldAssociations.registration.value,
+            "kind": const.FieldDatatypes.bool,
+            "association": const.FieldAssociations.registration,
         })  # id 1001
         self._create_event_field({
             "field_name": "field_is_child2",
-            "kind": const.FieldDatatypes.str.value,
-            "association": const.FieldAssociations.registration.value,
+            "kind": const.FieldDatatypes.str,
+            "association": const.FieldAssociations.registration,
         })  # id 1002
         self._create_event_field({
             "field_name": "field_is_child3",
-            "kind": const.FieldDatatypes.bool.value,
-            "association": const.FieldAssociations.course.value,
+            "kind": const.FieldDatatypes.bool,
+            "association": const.FieldAssociations.course,
         })  # id 1003
 
         self.traverse("Veranstaltungsteile")
@@ -1735,8 +1738,8 @@ etc;anything else""", f['entries_2'].value)
 
         self.traverse("Datenfelder konfigurieren")
         f = self.response.forms['fieldsummaryform']
-        f['kind_1002'] = const.FieldDatatypes.bool.value
-        f['association_1003'] = const.FieldAssociations.registration.value
+        f['kind_1002'] = const.FieldDatatypes.bool
+        f['association_1003'] = const.FieldAssociations.registration
         self.submit(f)
 
         self.traverse("Veranstaltungsteile")
@@ -1808,18 +1811,18 @@ etc;anything else""", f['entries_2'].value)
         self.traverse("Veranstaltungen", "Große Testakademie 2222")
         self._create_event_field({
             "field_name": "waitlist_position",
-            "kind": const.FieldDatatypes.int.value,
-            "association": const.FieldAssociations.registration.value,
+            "kind": const.FieldDatatypes.int,
+            "association": const.FieldAssociations.registration,
         })  # id 1001
         self._create_event_field({
             "field_name": "wrong1",
-            "kind": const.FieldDatatypes.str.value,
-            "association": const.FieldAssociations.registration.value,
+            "kind": const.FieldDatatypes.str,
+            "association": const.FieldAssociations.registration,
         })  # id 1002
         self._create_event_field({
             "field_name": "wrong2",
-            "kind": const.FieldDatatypes.int.value,
-            "association": const.FieldAssociations.course.value,
+            "kind": const.FieldDatatypes.int,
+            "association": const.FieldAssociations.course,
         })  # id 1003
 
         # Check that the incorrect fields do not work as the waitlist field.
@@ -1851,8 +1854,8 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Veranstaltungsteil geändert",
                             div=str(self.EVENT_LOG_OFFSET + 4) + "-1004")
 
-        # Check that the default query applies the correct ordering.
-        self.traverse('Anmeldungen', 'Warteliste Wu')
+        # Check that the linked stat query applies the correct ordering.
+        self.traverse('Statistik', {'linkid': 'part_waitlist_1'})
         f = self.response.forms['queryform']
         self.assertEqual(f['qord_primary'].value,
                          "reg_fields.xfield_waitlist_position")
@@ -2272,8 +2275,8 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms["fieldsummaryform"]
         f["create_-1"].checked = True
         f["field_name_-1"] = "anzahl_GROSSBUCHSTABEN"
-        f["association_-1"] = const.FieldAssociations.registration.value
-        f["kind_-1"] = const.FieldDatatypes.int.value
+        f["association_-1"] = const.FieldAssociations.registration
+        f["kind_-1"] = const.FieldDatatypes.int
         self.submit(f)
 
         self.traverse("Anmeldungen", "Großbuchstaben")
@@ -2378,8 +2381,9 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['changeregistrationform']
         self.assertEqual(False, f['enable_part2.status'].checked)
         self.assertEqual(True, f['enable_part3.status'].checked)
-        self.assertEqual("2", f['part3.status'].value)
-        f['part3.status'] = 5
+        self.assertEqual(
+            str(const.RegistrationPartStati.participant), f['part3.status'].value)
+        f['part3.status'] = const.RegistrationPartStati.cancelled
         self.assertEqual(False, f['enable_fields.transportation'].checked)
         self.assertEqual(True, f['enable_fields.may_reserve'].checked)
         f['enable_fields.transportation'].checked = True
@@ -2396,16 +2400,20 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/registration/2/show'},
                       {'href': '/event/event/1/registration/2/change'})
         f = self.response.forms['changeregistrationform']
-        self.assertEqual("4", f['part2.status'].value)
-        self.assertEqual("5", f['part3.status'].value)
+        self.assertEqual(
+            str(const.RegistrationPartStati.guest), f['part2.status'].value)
+        self.assertEqual(
+            str(const.RegistrationPartStati.cancelled), f['part3.status'].value)
         self.assertEqual("pedes", f['fields.transportation'].value)
         self.traverse({'href': '/event/event/1/registration/query'},
                       {'description': 'Alle Anmeldungen'},
                       {'href': '/event/event/1/registration/3/show'},
                       {'href': '/event/event/1/registration/3/change'})
         f = self.response.forms['changeregistrationform']
-        self.assertEqual("2", f['part2.status'].value)
-        self.assertEqual("5", f['part3.status'].value)
+        self.assertEqual(
+            str(const.RegistrationPartStati.participant), f['part2.status'].value)
+        self.assertEqual(
+            str(const.RegistrationPartStati.cancelled), f['part3.status'].value)
         self.assertEqual("pedes", f['fields.transportation'].value)
 
         # Now, check with change_note
@@ -2483,8 +2491,9 @@ etc;anything else""", f['entries_2'].value)
         f['reg.mixed_lodging'].checked = False
         self.assertEqual("0.00", f['reg.amount_paid'].value)
         f['reg.amount_paid'] = "42.01"
-        self.assertEqual("3", f['part1.status'].value)
-        f['part1.status'] = 2
+        self.assertEqual(
+            str(const.RegistrationPartStati.waitlist), f['part1.status'].value)
+        f['part1.status'] = const.RegistrationPartStati.participant
         self.assertEqual("4", f['part2.lodgement_id'].value)
         f['part2.lodgement_id'] = 3
         self.assertEqual("2", f['track3.course_choice_1'].value)
@@ -2501,7 +2510,8 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("Wir wollen mal nicht so sein.", f['reg.orga_notes'].value)
         self.assertEqual(False, f['reg.mixed_lodging'].checked)
         self.assertEqual("42.01", f['reg.amount_paid'].value)
-        self.assertEqual("2", f['part1.status'].value)
+        self.assertEqual(
+            str(const.RegistrationPartStati.participant), f['part1.status'].value)
         self.assertEqual("3", f['part2.lodgement_id'].value)
         self.assertEqual("5", f['track3.course_choice_1'].value)
         self.assertEqual("etc", f['fields.transportation'].value)
@@ -2562,9 +2572,9 @@ etc;anything else""", f['entries_2'].value)
         f['persona.persona_id'] = USER_DICT['charly']['DB-ID']
         f['reg.orga_notes'] = "Du entkommst uns nicht."
         f['reg.mixed_lodging'].checked = False
-        f['part1.status'] = 1
-        f['part2.status'] = 3
-        f['part3.status'] = -1
+        f['part1.status'] = const.RegistrationPartStati.applied
+        f['part2.status'] = const.RegistrationPartStati.waitlist
+        f['part3.status'] = const.RegistrationPartStati.not_applied
         f['part1.lodgement_id'] = 4
         f['track1.course_id'] = 5
         f['track1.course_choice_0'] = 5
@@ -2577,9 +2587,12 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['changeregistrationform']
         self.assertEqual("Du entkommst uns nicht.", f['reg.orga_notes'].value)
         self.assertEqual(False, f['reg.mixed_lodging'].checked)
-        self.assertEqual("1", f['part1.status'].value)
-        self.assertEqual("3", f['part2.status'].value)
-        self.assertEqual("-1", f['part3.status'].value)
+        self.assertEqual(
+            str(const.RegistrationPartStati.applied), f['part1.status'].value)
+        self.assertEqual(
+            str(const.RegistrationPartStati.waitlist), f['part2.status'].value)
+        self.assertEqual(
+            str(const.RegistrationPartStati.not_applied), f['part3.status'].value)
         self.assertEqual("4", f['part1.lodgement_id'].value)
         self.assertEqual("5", f['track1.course_id'].value)
         self.assertEqual("5", f['track1.course_choice_0'].value)
@@ -2592,7 +2605,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Neue Anmeldung (Große Testakademie 2222)")
         f = self.response.forms["addregistrationform"]
         f["persona.persona_id"] = USER_DICT['charly']['DB-ID']
-        f["part1.status"] = 1
+        f["part1.status"] = const.RegistrationPartStati.applied
         f["track1.course_choice_0"] = 5
         f["track1.course_choice_1"] = 5
         self.submit(f, check_notification=False)
@@ -2615,7 +2628,7 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['addregistrationform']
         f['persona.persona_id'] = "DB-5-1"
         f['reg.parental_agreement'].checked = True
-        f['part4.status'] = -1
+        f['part4.status'] = const.RegistrationPartStati.not_applied
         self.submit(f)
         self.assertTitle("Anmeldung von Emilia E. Eventis (CdE-Party 2050)")
         self.traverse({'description': 'Bearbeiten'})
@@ -4228,7 +4241,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence('Chillout')
         f = self.response.forms['addregistrationform']
         f['persona.persona_id'] = "DB-2-7"
-        f['part4.status'] = 1
+        f['part4.status'] = const.RegistrationPartStati.applied
         self.submit(f)
         self.assertNonPresence('Partywoche')
         self.assertNonPresence('Chillout')
@@ -4341,7 +4354,7 @@ etc;anything else""", f['entries_2'].value)
         # add charly as participant with list consent
         f = self.response.forms["addregistrationform"]
         f["persona.persona_id"] = USER_DICT["charly"]["DB-ID"]
-        f["part4.status"] = const.RegistrationPartStati.participant.value
+        f["part4.status"] = const.RegistrationPartStati.participant
         f["reg.list_consent"].checked = True
         self.submit(f)
 
