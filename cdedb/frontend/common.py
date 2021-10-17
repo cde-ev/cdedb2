@@ -2213,6 +2213,11 @@ def process_dynamic_input(
     - To each existing, not deleted entry: the 'id' of the entry.
     - To each new and each existing, not deleted entry: all entries of 'additional'
 
+    Take care to check for validation_errors directly after calling this function!
+    Since the validation facillity is used inside, a ValidationError inside an entry
+    causes the entry to be set to None (similar to all deleted entries), which may have
+    unwanted side-effects if you simply proceed.
+
     :param type_: validation_type of the entities
     :param existing: ids of already existent objects
     :param spec: name of input fields, mapped to their validation. This uses the same

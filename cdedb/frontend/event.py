@@ -759,6 +759,8 @@ class EventFrontend(AbstractUserFrontend):
         }
         track_data = process_dynamic_input(
             rs, vtypes.EventTrack, track_existing, track_spec, prefix="track_")
+        if rs.has_validation_errors():
+            return self.change_part_form(rs, event_id, part_id)
 
         deleted_tracks = {anid for anid in track_data if track_data[anid] is None}
         new_tracks = {anid for anid in track_data if anid < 0}
@@ -789,6 +791,8 @@ class EventFrontend(AbstractUserFrontend):
             fee_modifier_data = process_dynamic_input(
                 rs, vtypes.EventFeeModifier, fee_modifier_existing, fee_modifier_spec,
                 prefix=fee_modifier_prefix)
+        if rs.has_validation_errors():
+            return self.change_part_form(rs, event_id, part_id)
 
         # Check if each linked field exists and is inside the spec
         legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['fee_modifier']

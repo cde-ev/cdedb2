@@ -1460,6 +1460,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         existing_candidates = rs.ambience['ballot']['candidates'].keys()
         candidates = process_dynamic_input(
             rs, vtypes.BallotCandidate, existing_candidates, spec)
+        if rs.has_validation_errors():
+            return self.show_ballot(rs, assembly_id, ballot_id)
 
         shortnames: Set[str] = set()
         for candidate_id, candidate in candidates.items():
