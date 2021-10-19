@@ -8,9 +8,7 @@ used by the `EventBaseBackend` and its subclasses.
 import collections
 import copy
 from pathlib import Path
-from typing import (
-    Any, Callable, Collection, Dict, Optional, Protocol, Set,
-)
+from typing import Any, Callable, Collection, Dict, Optional, Protocol, Set
 
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
@@ -19,9 +17,9 @@ from cdedb.backend.common import (
     affirm_validation as affirm, internal, singularize,
 )
 from cdedb.common import (
-    COURSE_TRACK_FIELDS, CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap,
-    DefaultReturnCode, DeletionBlockers, EVENT_FIELD_SPEC, EVENT_PART_FIELDS,
-    FEE_MODIFIER_FIELDS, FIELD_DEFINITION_FIELDS, PathLike, PrivilegeError, PsycoJson,
+    COURSE_TRACK_FIELDS, EVENT_FIELD_SPEC, EVENT_PART_FIELDS, FEE_MODIFIER_FIELDS,
+    FIELD_DEFINITION_FIELDS, CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap,
+    DefaultReturnCode, DeletionBlockers, PathLike, PrivilegeError, PsycoJson,
     RequestState, mixed_existence_sorter, n_, unwrap,
 )
 from cdedb.validation import parse_date, parse_datetime

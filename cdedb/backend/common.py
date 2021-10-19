@@ -27,9 +27,9 @@ import psycopg2.extras
 import cdedb.validation as validate
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    LOCALE, CdEDBLog, CdEDBObject, CdEDBObjectMap, PathLike, PrivilegeError, PsycoJson,
-    Realm, RequestState, Role, diacritic_patterns, glue, make_proxy, make_root_logger,
-    n_, unwrap, DefaultReturnCode, Error
+    LOCALE, CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, Error, PathLike,
+    PrivilegeError, PsycoJson, Realm, RequestState, Role, diacritic_patterns, glue,
+    make_proxy, make_root_logger, n_, unwrap,
 )
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
@@ -259,7 +259,9 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         # Everybody needs access to the core backend
         # Import here since we otherwise have a cyclic import.
         # I don't see how we can get out of this ...
-        from cdedb.backend.core import CoreBackend  # pylint: disable=import-outside-toplevel
+        from cdedb.backend.core import (  # pylint: disable=import-outside-toplevel
+            CoreBackend,  
+        )
         self.core: CoreBackend
         if isinstance(self, CoreBackend):
             # self.core = cast('CoreBackend', self)

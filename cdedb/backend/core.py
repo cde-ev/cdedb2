@@ -21,8 +21,7 @@ import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
     AbstractBackend, access, affirm_set_validation as affirm_set,
-    affirm_validation as affirm,
-    affirm_validation_optional as affirm_optional,
+    affirm_validation as affirm, affirm_validation_optional as affirm_optional,
     inspect_validation as inspect, internal, singularize,
 )
 from cdedb.common import (
@@ -33,7 +32,7 @@ from cdedb.common import (
     CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, Error,
     PathLike, PrivilegeError, PsycoJson, QuotaException, Realm, RequestState, Role,
     User, decode_parameter, encode_parameter, extract_realms, extract_roles, get_hash,
-    glue, implied_realms, merge_dicts, n_, now, privilege_tier, unwrap, xsorted
+    glue, implied_realms, merge_dicts, n_, now, privilege_tier, unwrap, xsorted,
 )
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES

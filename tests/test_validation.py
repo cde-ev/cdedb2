@@ -14,7 +14,7 @@ import cdedb.validation as validate
 from cdedb.common import ValidationWarning
 from cdedb.validationtypes import (
     IBAN, JSON, Email, GenesisCase, PasswordStrength, Persona, Phone, PrintableASCII,
-    PrintableASCIIType, SafeStr, StringType, Vote
+    PrintableASCIIType, SafeStr, StringType, Vote,
 )
 
 

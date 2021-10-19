@@ -15,15 +15,12 @@ import cdedb.validationtypes as vtypes
 from cdedb.common import (
     REALM_SPECIFIC_GENESIS_FIELDS, CdEDBObject, RequestState, merge_dicts, n_, now,
 )
-
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, REQUESTfile, access, check_validation as check,
-    periodic, TransactionObserver,
+    REQUESTdata, REQUESTdatadict, REQUESTfile, TransactionObserver, access,
+    check_validation as check, periodic,
 )
 from cdedb.frontend.core_base import CoreBaseFrontend
-from cdedb.validation import (
-    GENESIS_CASE_EXPOSED_FIELDS, PERSONA_COMMON_FIELDS
-)
+from cdedb.validation import GENESIS_CASE_EXPOSED_FIELDS, PERSONA_COMMON_FIELDS
 
 # Name of each realm's option in the genesis form
 GenesisRealmOptionName = collections.namedtuple(

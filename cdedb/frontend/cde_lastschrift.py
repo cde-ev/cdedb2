@@ -24,17 +24,16 @@ from werkzeug import Response
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap,
-    EntitySorter, RequestState, asciificator, determine_age_class, glue, int_to_words,
-    lastschrift_reference, merge_dicts, n_, now, xsorted,
+    CdEDBObject, CdEDBObjectMap, EntitySorter, RequestState, asciificator,
+    determine_age_class, glue, int_to_words, lastschrift_reference, merge_dicts, n_,
+    now, xsorted,
 )
 from cdedb.frontend.cde_base import CdEBaseFrontend
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, access, cdedbid_filter,
-    check_validation as check, make_postal_address, periodic, )
-from cdedb.validation import (
-    LASTSCHRIFT_COMMON_FIELDS
+    REQUESTdata, REQUESTdatadict, access, cdedbid_filter, check_validation as check,
+    make_postal_address, periodic,
 )
+from cdedb.validation import LASTSCHRIFT_COMMON_FIELDS
 
 
 class CdELastschriftMixin(CdEBaseFrontend):

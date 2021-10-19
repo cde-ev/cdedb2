@@ -10,14 +10,14 @@ from typing import Collection, Dict, Protocol
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
-    Silencer, access, affirm_set_validation as affirm_set,
-    affirm_validation as affirm, cast_fields, read_conditional_write_composer,
-    singularize,
+    Silencer, access, affirm_set_validation as affirm_set, affirm_validation as affirm,
+    cast_fields, read_conditional_write_composer, singularize,
 )
 from cdedb.backend.event_base import EventBaseBackend
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, LODGEMENT_FIELDS,
-    LODGEMENT_GROUP_FIELDS, PrivilegeError, PsycoJson, RequestState, n_, unwrap,
+    LODGEMENT_FIELDS, LODGEMENT_GROUP_FIELDS, CdEDBObject, CdEDBObjectMap,
+    DefaultReturnCode, DeletionBlockers, PrivilegeError, PsycoJson, RequestState, n_,
+    unwrap,
 )
 from cdedb.database.connection import Atomizer
 

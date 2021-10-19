@@ -3,33 +3,33 @@
 """The ml backend provides mailing lists. This provides services to the
 event and assembly realm in the form of specific mailing lists.
 """
-from datetime import datetime
 import itertools
+from datetime import datetime
 from typing import (
     Any, Collection, Dict, List, Optional, Protocol, Set, Tuple, cast, overload,
 )
 
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
+import cdedb.subman as subman
 import cdedb.validationtypes as vtypes
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.common import (
     AbstractBackend, access, affirm_array_validation as affirm_array,
-    affirm_set_validation as affirm_set, affirm_validation as affirm,
-    internal, singularize,
+    affirm_set_validation as affirm_set, affirm_validation as affirm, internal,
+    singularize,
 )
 from cdedb.backend.event import EventBackend
-import cdedb.subman as subman
 from cdedb.common import (
-    MAILINGLIST_FIELDS, MOD_ALLOWED_FIELDS, RESTRICTED_MOD_ALLOWED_FIELDS, CdEDBLog,
-    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, PathLike,
-    PrivilegeError, RequestState, implying_realms, make_proxy, n_, unwrap, xsorted,
-    ADMIN_KEYS,
+    ADMIN_KEYS, MAILINGLIST_FIELDS, MOD_ALLOWED_FIELDS, RESTRICTED_MOD_ALLOWED_FIELDS,
+    CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers,
+    PathLike, PrivilegeError, RequestState, implying_realms, make_proxy, n_, unwrap,
+    xsorted,
 )
-from cdedb.subman.machine import SubscriptionAction, SubscriptionPolicy
 from cdedb.database.connection import Atomizer
 from cdedb.ml_type_aux import MLType, MLTypeLike
 from cdedb.query import Query, QueryOperators, QueryScope
+from cdedb.subman.machine import SubscriptionAction, SubscriptionPolicy
 
 SubStates = Collection[const.SubscriptionState]
 

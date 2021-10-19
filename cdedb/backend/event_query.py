@@ -5,20 +5,18 @@ The `EventQueryBackend` subclasses the `EventBaseBackend` and provides functiona
 for querying information about an event aswell as storing and retrieving such queries.
 """
 
-from typing import (
-    Collection, Dict, List, Tuple,
-)
+from typing import Collection, Dict, List, Tuple
 
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
-    DatabaseValue_s, PYTHON_TO_SQL_MAP, access, affirm_set_validation as affirm_set,
+    PYTHON_TO_SQL_MAP, DatabaseValue_s, access, affirm_set_validation as affirm_set,
     affirm_validation as affirm,
 )
 from cdedb.backend.event_base import EventBaseBackend
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, DefaultReturnCode, PrivilegeError, RequestState,
-    STORED_EVENT_QUERY_FIELDS, implying_realms, json_serialize, n_,
+    STORED_EVENT_QUERY_FIELDS, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
+    PrivilegeError, RequestState, implying_realms, json_serialize, n_,
 )
 from cdedb.database.connection import Atomizer
 from cdedb.query import Query, QueryOperators, QueryScope

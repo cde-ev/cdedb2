@@ -34,31 +34,29 @@ from cdedb.common import (
     CourseFilterPositions, DefaultReturnCode, EntitySorter, Error, InfiniteEnum,
     KeyFunction, LodgementsSortkeys, PartialImportError, RequestState, Sortkey,
     asciificator, deduct_years, determine_age_class, diacritic_patterns, get_hash,
-    get_localized_country_codes, json_serialize, merge_dicts,
-    mixed_existence_sorter, n_, now, unwrap, xsorted,
+    get_localized_country_codes, json_serialize, merge_dicts, mixed_existence_sorter,
+    n_, now, unwrap, xsorted,
 )
-from cdedb.filter import (
-    enum_entries_filter, keydictsort_filter, safe_filter,
-)
+from cdedb.filter import enum_entries_filter, keydictsort_filter, safe_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, CustomCSVDialect, RequestConstraint, REQUESTdata,
-    REQUESTdatadict, REQUESTfile, access, calculate_db_logparams, calculate_loglinks,
-    cdedbid_filter, cdedburl, check_validation as check,
-    check_validation_optional as check_optional, event_guard, make_event_fee_reference,
-    periodic, process_dynamic_input, request_extractor, make_persona_name,
-    TransactionObserver, inspect_validation as inspect
+    REQUESTdatadict, REQUESTfile, TransactionObserver, access, calculate_db_logparams,
+    calculate_loglinks, cdedbid_filter, cdedburl, check_validation as check,
+    check_validation_optional as check_optional, event_guard,
+    inspect_validation as inspect, make_event_fee_reference, make_persona_name,
+    periodic, process_dynamic_input, request_extractor,
 )
 from cdedb.frontend.event_lodgement_wishes import (
     create_lodgement_wishes_graph, detect_lodgement_wishes,
 )
 from cdedb.query import (
-    Query, QueryConstraint, QueryOperators, QueryScope, make_registration_query_aux,
-    make_lodgement_query_aux, make_course_query_aux, QueryOrder
+    Query, QueryConstraint, QueryOperators, QueryOrder, QueryScope,
+    make_course_query_aux, make_lodgement_query_aux, make_registration_query_aux,
 )
 from cdedb.validation import (
-    COURSE_COMMON_FIELDS, EVENT_EXPOSED_FIELDS, LODGEMENT_COMMON_FIELDS,
+    COURSE_COMMON_FIELDS, EVENT_EXPOSED_FIELDS, EVENT_PART_COMMON_FIELDS,
+    EVENT_PART_CREATION_MANDATORY_FIELDS, LODGEMENT_COMMON_FIELDS,
     PERSONA_FULL_EVENT_CREATION, TypeMapping, filter_none,
-    EVENT_PART_COMMON_FIELDS, EVENT_PART_CREATION_MANDATORY_FIELDS
 )
 from cdedb.validationtypes import VALIDATOR_LOOKUP
 

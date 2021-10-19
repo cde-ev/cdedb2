@@ -3,17 +3,15 @@
 
 import datetime
 import json
-from typing import Collection, Optional, NamedTuple
+from typing import Collection, NamedTuple, Optional
 
 import freezegun
 import pytz
 
 import cdedb.database.constants as const
-from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, get_hash, now, nearly_now,
-)
+from cdedb.common import CdEDBObject, CdEDBObjectMap, get_hash, nearly_now, now
 from tests.common import (
-    BackendTest, UserIdentifier, USER_DICT, as_users, prepsql, storage,
+    USER_DICT, BackendTest, UserIdentifier, as_users, prepsql, storage,
 )
 
 

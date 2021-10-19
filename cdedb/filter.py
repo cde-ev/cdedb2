@@ -3,13 +3,12 @@
 import datetime
 import decimal
 import enum
+import logging
 import re
 import threading
-
-import logging
 from typing import (
-    Any, Callable, Collection, Container, Dict, Iterable, ItemsView, List, Literal,
-    Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, overload
+    Any, Callable, Collection, Container, Dict, ItemsView, Iterable, List, Literal,
+    Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, overload,
 )
 
 import bleach
@@ -19,8 +18,8 @@ import markdown
 import markdown.extensions.toc
 import markupsafe
 
-from cdedb.common import CdEDBObject, compute_checkdigit, xsorted
 import cdedb.database.constants as const
+from cdedb.common import CdEDBObject, compute_checkdigit, xsorted
 
 _LOGGER = logging.getLogger(__name__)
 

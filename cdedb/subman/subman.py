@@ -24,10 +24,9 @@ from typing import AbstractSet, Collection, Optional
 
 from .exceptions import SubscriptionError
 from .machine import (
-    n_, SubscriptionAction, SubscriptionPolicy, SubscriptionState,
-    ActionStateErrorMatrix, SUBSCRIPTION_ERROR_MATRIX,
+    SUBSCRIPTION_ERROR_MATRIX, ActionStateErrorMatrix, SubscriptionAction,
+    SubscriptionPolicy, SubscriptionState, n_,
 )
-
 
 StateColl = Collection[SubscriptionState]
 StateSet = AbstractSet[SubscriptionState]

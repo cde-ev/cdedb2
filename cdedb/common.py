@@ -20,9 +20,9 @@ import re
 import string
 import sys
 from typing import (
-    Generic, TYPE_CHECKING, Any, Callable, Collection, Container, Dict, Generator,
+    TYPE_CHECKING, Any, Callable, Collection, Container, Dict, Generator, Generic,
     Iterable, KeysView, List, Mapping, MutableMapping, Optional, Set, Tuple, Type,
-    TypeVar, Union, cast, overload
+    TypeVar, Union, cast, overload,
 )
 
 import icu

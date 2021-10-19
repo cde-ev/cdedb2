@@ -5,8 +5,8 @@ import decimal
 from typing import Any, Dict, List, NewType as _NewType, Type
 
 from cdedb.common import CdEDBObject
-from cdedb.subman import SubscriptionState
 from cdedb.query import Query
+from cdedb.subman import SubscriptionState
 
 # SIMPLE/PRIMITIVE/ATOMIC TYPES
 

@@ -14,11 +14,11 @@ import lxml.etree
 import webtest
 
 import cdedb.database.constants as const
-from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, CdEDBObject, now, IGNORE_WARNINGS_NAME
+from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, now
 from cdedb.filter import iban_filter
 from cdedb.frontend.common import CustomCSVDialect
 from cdedb.query import QueryOperators
-from tests.common import UserObject, USER_DICT, FrontendTest, as_users, prepsql, storage
+from tests.common import USER_DICT, FrontendTest, UserObject, as_users, prepsql, storage
 
 
 class TestEventFrontend(FrontendTest):

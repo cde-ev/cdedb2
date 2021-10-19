@@ -9,11 +9,11 @@ import webtest
 
 import cdedb.database.constants as const
 from cdedb.common import (
-    ADMIN_VIEWS_COOKIE_NAME, CdEDBObject, get_hash, IGNORE_WARNINGS_NAME
+    ADMIN_VIEWS_COOKIE_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, get_hash,
 )
 from cdedb.query import QueryOperators
 from tests.common import (
-    FrontendTest, UserIdentifier, UserObject, USER_DICT, as_users, storage
+    USER_DICT, FrontendTest, UserIdentifier, UserObject, as_users, storage,
 )
 
 

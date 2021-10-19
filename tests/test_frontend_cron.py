@@ -6,8 +6,8 @@ import datetime
 import decimal
 import json
 import numbers
-from typing import Any, Dict, Set, Union, cast
 import unittest.mock
+from typing import Any, Dict, Set, Union, cast
 
 import cdedb.database.constants as const
 from cdedb.common import RequestState, now, xsorted

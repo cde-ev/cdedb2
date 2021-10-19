@@ -5,9 +5,7 @@ The `EventCourseBackend` subclasses the `EventBaseBackend` and provides function
 for managing courses belonging to an event.
 """
 
-from typing import (
-    Collection, List, Protocol,
-)
+from typing import Collection, List, Protocol
 
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
