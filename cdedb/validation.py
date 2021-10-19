@@ -4302,7 +4302,7 @@ def _query_input(
             errs.extend(e)
             continue
 
-        if not entry:
+        if not entry or entry not in spec:
             continue
 
         tmp = "qord_" + postfix + "_ascending"
