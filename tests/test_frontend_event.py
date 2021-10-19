@@ -1369,6 +1369,13 @@ etc;anything else""", f['entries_2'].value)
             'course_choice3_1',
             "Du kannst diesen Kurs nicht als 1. und 2. Wahl wählen.")
         f['course_choice3_1'] = 4
+        # Chose instructed course also as course choice -> expecting error
+        self.submit(f, check_notification=False)
+        self.assertTitle("Anmeldung für Große Testakademie 2222")
+        self.assertValidationError(
+            'course_choice3_0',
+            "Bitte wähle nicht deinen eigenen Kurs.")
+        f['course_choice3_0'] = 5
         # Now, we did it right.
         self.submit(f)
         text = self.fetch_mail_content()
@@ -1395,13 +1402,14 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence("Kaffeekränzchen")
         self.assertPresence("Arbeitssitzung")
         f = self.response.forms['amendregistrationform']
+        self.assertEqual("5", f['course_choice3_0'].value)
         self.assertEqual("4", f['course_choice3_1'].value)
         self.assertEqual("", f['course_choice3_2'].value)
         self.assertEqual("2", f['course_instructor3'].value)
         self.assertPresence("Ich freu mich schon so zu kommen")
         f['notes'] = "Ich kann es kaum erwarten!"
         f['course_choice3_0'] = 4
-        f['course_choice3_1'] = 1
+        f['course_choice3_1'] = 2
         f['course_choice3_2'] = 5
         f['course_instructor3'] = 1
         self.submit(f)
@@ -1411,6 +1419,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Anmeldung für Große Testakademie 2222 ändern")
         f = self.response.forms['amendregistrationform']
         self.assertEqual("4", f['course_choice3_0'].value)
+        self.assertEqual("2", f['course_choice3_1'].value)
         self.assertEqual("5", f['course_choice3_2'].value)
         self.assertEqual("1", f['course_instructor3'].value)
         self.assertPresence("Ich kann es kaum erwarten!")
@@ -2550,6 +2559,15 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f, check_notification=False)
         self.assertValidationError(
             'persona.persona_id', "Dieser Nutzer ist kein Veranstaltungsnutzer.")
+        # Check invalid course choices
+        f['track1.course_choice_0'] = 5
+        f['track1.course_choice_1'] = 5
+        f['track1.course_instructor'] = 5
+        self.submit(f, check_notification=False)
+        self.assertValidationError(
+            "track1.course_choice_0", "Geleiteter Kurs kann nicht gewählt werden.")
+        self.assertValidationError(
+            "track1.course_choice_1", "Bitte verschiedene Kurse wählen.")
         # Now add an actually valid user.
         f['persona.persona_id'] = USER_DICT['charly']['DB-ID']
         f['reg.orga_notes'] = "Du entkommst uns nicht."
@@ -2560,6 +2578,8 @@ etc;anything else""", f['entries_2'].value)
         f['part1.lodgement_id'] = 4
         f['track1.course_id'] = 5
         f['track1.course_choice_0'] = 5
+        f['track1.course_choice_1'] = 4
+        f['track1.course_instructor'] = 2
         self.submit(f)
         self.assertTitle("\nAnmeldung von Charly Clown (Große Testakademie 2222)\n")
         self.assertPresence("Du entkommst uns nicht.")
@@ -2576,6 +2596,8 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("4", f['part1.lodgement_id'].value)
         self.assertEqual("5", f['track1.course_id'].value)
         self.assertEqual("5", f['track1.course_choice_0'].value)
+        self.assertEqual("4", f['track1.course_choice_1'].value)
+        self.assertEqual("2", f['track1.course_instructor'].value)
 
     @as_users("garcia")
     def test_add_illegal_registration(self) -> None:
