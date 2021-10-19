@@ -260,7 +260,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         # Import here since we otherwise have a cyclic import.
         # I don't see how we can get out of this ...
         from cdedb.backend.core import (  # pylint: disable=import-outside-toplevel
-            CoreBackend,  
+            CoreBackend,
         )
         self.core: CoreBackend
         if isinstance(self, CoreBackend):
