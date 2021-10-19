@@ -2271,6 +2271,10 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
 
         self.traverse("Anmeldungen", "Großbuchstaben")
+        # Remove the old constraint, because all field data is now empty.
+        f = self.response.forms["queryform"]
+        f["qop_reg_fields.xfield_anzahl_GROSSBUCHSTABEN"] = ""
+        self.submit(f)
         self.assertPresence("anzahl_GROSSBUCHSTABEN", div="query-result")
 
     @as_users("annika")
