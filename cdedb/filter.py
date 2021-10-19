@@ -217,8 +217,12 @@ def phone_filter(val: Optional[str]) -> Optional[str]:
     if val is None:
         return None
 
-    # default to german if no region is provided
-    phone = phonenumbers.parse(val, region="DE")
+    try:
+        # default to german if no region is provided
+        phone = phonenumbers.parse(val, region="DE")
+    except phonenumbers.NumberParseException:
+        # default to the raw value if it can not be parsed
+        return val
 
     # show german numbers in national, others in international format
     if phone.country_code == 49:
