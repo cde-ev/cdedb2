@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-The `EventBackendHelpers` class provides a collection of internal low-level helpers
+The `EventLowLevelBackend` class provides a collection of internal low-level helpers
 used by the `EventBaseBackend` and its subclasses.
 """
 
