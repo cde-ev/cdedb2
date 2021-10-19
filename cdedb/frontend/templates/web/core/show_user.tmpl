@@ -352,13 +352,13 @@
                 {% if data['telephone'] %}
                     <dt>{% trans %}Phone{% endtrans %}</dt>
                     <dd id="contact-telephone">
-                        {{ util.tel_link(data['telephone']) }}
+                        {{ util.tel_link(data['telephone']|phone) }}
                     </dd>
                 {% endif %}
                 {% if data['mobile'] %}
                     <dt>{% trans %}Mobile Phone{% endtrans %}</dt>
                     <dd id="contact-mobile">
-                        {{ util.tel_link(data['mobile']) }}
+                        {{ util.tel_link(data['mobile']|phone) }}
                     </dd>
                 {% endif %}
                 {% if data['weblink'] %}
