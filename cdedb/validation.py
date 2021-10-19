@@ -1316,9 +1316,9 @@ def _single_digit_int(
 
 @_add_typed_validator
 def _phone(
-    val: Any, argname: str = None, **kwargs: Any
+    val: Any, argname: str = None, *,  _ignore_warnings: bool = False, **kwargs: Any
 ) -> Phone:
-    raw = _printable_ascii(val, argname, **kwargs)
+    raw = _printable_ascii(val, argname, **kwargs, _ignore_warnings=_ignore_warnings)
 
     try:
         # default to german if no region is provided
@@ -1326,9 +1326,9 @@ def _phone(
     except phonenumbers.NumberParseException:
         msg = n_("Phone number can not be parsed.")
         raise ValidationSummary(ValueError(argname, msg))
-    # TODO enable strict phone-number-checking here?
-    # if not phonenumbers.is_valid_number(phone):
-    #     raise ValidationSummary(ValueError(argname, n_("Phone number is not valid")))
+    if not phonenumbers.is_valid_number(phone) and not _ignore_warnings:
+        msg = n_("Phone number seems to be not valid.")
+        raise ValidationSummary(ValidationWarning(argname, msg))
 
     # handle the phone number as normalized string internally
     phone_str = phonenumbers.format_number(phone, phonenumbers.PhoneNumberFormat.E164)
