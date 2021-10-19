@@ -40,7 +40,7 @@
               to True
    title      A HTML `title` attribute (hover text) to add to the link
    rel        Allows to set the rel attribute #}
-{% macro href(ref, label, readonly=False, icon=none, aclass='', active=False, title=none, rel=none) -%}
+{% macro href(ref, label, readonly=False, icon=none, aclass='', active=False, title=none, rel=none, anid="") -%}
 {% if readonly %}<span {% else %}<a href="{{ ref }}" {% if rel %} rel="{{ rel }}" {% endif %}{% endif %}
 {{ dict(
     class=" ".join([
@@ -49,6 +49,7 @@
         ("disabled" if 'btn' in aclass else "link-disabled") if readonly else "",
     ]),
     title=title,
+    id=anid,
     **{ "aria-current": "page" if active }
 )|xmlattr }}{# We use the `active` attribute for navigation only #}>
 {{- make_icon(icon) + "&nbsp;"|s if icon }}{{ label }}

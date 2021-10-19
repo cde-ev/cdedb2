@@ -3270,21 +3270,20 @@ class EventBackend(AbstractBackend):
                 raise ValueError(n_("This user does not exist or is archived."))
             if not self.core.verify_persona(rs, data['persona_id'], {"event"}):
                 raise ValueError(n_("This user is not an event user."))
+            if self.list_registrations(rs, data['event_id'], data['persona_id']):
+                raise ValueError(n_("Already registered."))
             self.assert_offline_lock(rs, event_id=data['event_id'])
             data['fields'] = fdata
-            data['amount_owed'] = self._calculate_single_fee(
-                rs, data, event=event)
+            data['amount_owed'] = self._calculate_single_fee(rs, data, event=event)
             data['fields'] = PsycoJson(fdata)
-            course_segments = self._get_event_course_segments(rs,
-                                                              data['event_id'])
+            course_segments = self._get_event_course_segments(rs, data['event_id'])
             part_ids = {e['id'] for e in self.sql_select(
                 rs, "event.event_parts", ("id",), (data['event_id'],),
                 entity_key="event_id")}
             if part_ids != set(data['parts'].keys()):
                 raise ValueError(n_("Missing part dataset."))
             track_ids = {e['id'] for e in self.sql_select(
-                rs, "event.course_tracks", ("id",), part_ids,
-                entity_key="part_id")}
+                rs, "event.course_tracks", ("id",), part_ids, entity_key="part_id")}
             if track_ids != set(data['tracks'].keys()):
                 raise ValueError(n_("Missing track dataset."))
             rdata = {k: v for k, v in data.items() if k in REGISTRATION_FIELDS}
