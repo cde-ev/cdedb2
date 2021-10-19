@@ -14,7 +14,7 @@ import lxml.etree
 import webtest
 
 import cdedb.database.constants as const
-from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, CdEDBObject, now
+from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, CdEDBObject, now, IGNORE_WARNINGS_NAME
 from cdedb.filter import iban_filter
 from cdedb.frontend.common import CustomCSVDialect
 from cdedb.query import QueryOperators
@@ -756,6 +756,10 @@ class TestEventFrontend(FrontendTest):
                       {'href': '/event/event/1/part/2/change'})
         f = self.response.forms['changepartform']
         f['track_num_choices_2'] = "2"
+        self.submit(f, check_notification=False)
+        self.assertValidationWarning("track_shortname_1", "länger als 10 Zeichen.")
+        # prevent warnings about too long shortname for this test
+        f['track_shortname_1'] = "Morgen"
         self.submit(f)
 
         # Change course choices as Orga
@@ -3948,9 +3952,13 @@ etc;anything else""", f['entries_2'].value)
 
         # Erste Hälfte
         self.traverse({"href": "/event/event/1/part/2/change"})
-        f = self.response.forms['changepartform']
+        f = self.response.forms["changepartform"]
+        self.submit(f, check_notification=False)
+        self.assertValidationWarning("track_shortname_1", "länger als 10 Zeichen.")
+        f = self.response.forms["changepartform"]
         f['part_begin'] = past_past_date
         f['part_end'] = past_date
+        f[IGNORE_WARNINGS_NAME].checked = True
         self.submit(f)
 
         # Zweite Hälfte
@@ -4098,8 +4106,12 @@ etc;anything else""", f['entries_2'].value)
         # Erste Hälfte
         self.traverse({"href": "/event/event/1/part/2/change"})
         f = self.response.forms["changepartform"]
+        self.submit(f, check_notification=False)
+        self.assertValidationWarning("track_shortname_1", "länger als 10 Zeichen.")
+        f = self.response.forms["changepartform"]
         f['part_begin'] = "2003-11-01"
         f['part_end'] = "2003-11-11"
+        f[IGNORE_WARNINGS_NAME].checked = True
         self.submit(f)
         self.assertTitle("Veranstaltungsteile konfigurieren (Große Testakademie 2222)")
 
@@ -4278,6 +4290,12 @@ etc;anything else""", f['entries_2'].value)
         for part_id in [1, 2, 3]:
             self.traverse({"href": f"/event/event/1/part/{part_id}/change"})
             f = self.response.forms['changepartform']
+            if part_id == 2:
+                self.submit(f, check_notification=False)
+                self.assertValidationWarning(
+                    "track_shortname_1", "länger als 10 Zeichen.")
+                f = self.response.forms["changepartform"]
+                f[IGNORE_WARNINGS_NAME].checked = True
             f['fee'] = 0
             self.submit(f)
 
@@ -4331,6 +4349,10 @@ etc;anything else""", f['entries_2'].value)
                       "Veranstaltungsteile")
         self.traverse({"href": "/event/event/1/part/2/change"})
         f = self.response.forms['changepartform']
+        self.submit(f, check_notification=False)
+        self.assertValidationWarning("track_shortname_1", "länger als 10 Zeichen.")
+        f = self.response.forms["changepartform"]
+        f[IGNORE_WARNINGS_NAME].checked = True
         f['track_num_choices_1'] = 0
         f['track_min_choices_1'] = 0
         f['track_num_choices_2'] = 0

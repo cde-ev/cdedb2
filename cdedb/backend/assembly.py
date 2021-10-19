@@ -38,8 +38,8 @@ import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
     AbstractBackend, Silencer, access, affirm_set_validation as affirm_set,
-    affirm_validation_typed as affirm,
-    affirm_validation_typed_optional as affirm_optional, internal, singularize,
+    affirm_validation as affirm,
+    affirm_validation_optional as affirm_optional, internal, singularize,
 )
 from cdedb.common import (
     ASSEMBLY_ATTACHMENT_FIELDS, ASSEMBLY_ATTACHMENT_VERSION_FIELDS,

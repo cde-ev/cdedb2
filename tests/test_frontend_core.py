@@ -8,7 +8,9 @@ from typing import Dict, Optional
 import webtest
 
 import cdedb.database.constants as const
-from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, CdEDBObject, get_hash
+from cdedb.common import (
+    ADMIN_VIEWS_COOKIE_NAME, CdEDBObject, get_hash, IGNORE_WARNINGS_NAME
+)
 from cdedb.query import QueryOperators
 from tests.common import (
     FrontendTest, UserIdentifier, UserObject, USER_DICT, as_users, storage
@@ -1595,6 +1597,7 @@ class TestCoreFrontend(FrontendTest):
     @as_users("vera")
     def test_ignore_warnings_postal_code(self) -> None:
         self.admin_view_profile("vera")
+
         self.traverse({'description': 'Bearbeiten \\(normal\\)'})
         f = self.response.forms['changedataform']
         f['postal_code'] = "11111"
@@ -1603,8 +1606,10 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Ungültige Postleitzahl")
         self.assertPresence("Warnungen ignorieren")
         f = self.response.forms['changedataform']
-        self.submit(f, button="ignore_warnings")
+        f[IGNORE_WARNINGS_NAME].checked = True
+        self.submit(f)
         self.assertTitle("Vera Verwaltung")
+
         self.traverse({'description': 'Bearbeiten \\(mit Adminrechten\\)'})
         f = self.response.forms['changedataform']
         self.assertNonPresence("Warnungen ignorieren")
@@ -1612,7 +1617,9 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Ungültige Postleitzahl")
         self.assertPresence("Warnungen ignorieren")
         f = self.response.forms['changedataform']
-        self.submit(f, button="ignore_warnings")
+        f[IGNORE_WARNINGS_NAME].checked = True
+        self.submit(f)
+
         self.get("/core/genesis/request")
         self.assertTitle("Account anfordern")
         f = self.response.forms['genesisform']
@@ -1631,10 +1638,12 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Ungültige Postleitzahl")
         self.assertPresence("Warnungen ignorieren")
         f = self.response.forms['genesisform']
-        self.submit(f, button="ignore_warnings")
+        f[IGNORE_WARNINGS_NAME].checked = True
+        self.submit(f)
         link = self.fetch_link()
         self.get(link)
         self.follow()
+
         self.traverse({'description': 'Accountanfragen'},
                       {'description': 'Details'},
                       {'description': 'Bearbeiten'})
@@ -1644,7 +1653,8 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Ungültige Postleitzahl")
         self.assertPresence("Warnungen ignorieren")
         f = self.response.forms['genesismodifyform']
-        self.submit(f, button="ignore_warnings")
+        f[IGNORE_WARNINGS_NAME].checked = True
+        self.submit(f)
         f = self.response.forms['genesisapprovalform']
         self.submit(f)
 

@@ -1942,8 +1942,11 @@ msgstr "Nächster exPuls initialisiert."
 msgid "Failed validation."
 msgstr "Validierung fehlgeschlagen."
 
-#: cdedb/frontend/common.py:418 cdedb/frontend/common.py:419
-#: cdedb/frontend/common.py:428 cdedb/frontend/common.py:429
+msgid "Input seems faulty. Please double-check if you really want to save it."
+msgstr "Die Eingaben scheinen fehlerhaft. Bitte prüfe nochmals, ob du sie wirklich absenden möchtest."
+
+#: cdedb/frontend/common.py:417 cdedb/frontend/common.py:418
+#: cdedb/frontend/common.py:427 cdedb/frontend/common.py:428
 msgid "Must not be used in web templates."
 msgstr "Darf nicht in Web-Templates verwendet werden."
 
@@ -2493,7 +2496,10 @@ msgstr "Manche Kursschienen können nicht gelöscht werden."
 msgid "Registrations exist, no track creation possible."
 msgstr "Anmeldungen vorhanden, kein Erstellung von Kursschienen möglich."
 
-#: cdedb/frontend/event.py:791
+msgid "Fee Modifier linked to non-existing field."
+msgstr "Das mit dem Beitragsmodifikator verbundene Feld existiert nicht."
+
+#: cdedb/frontend/event.py:791 cdedb/frontend/event.py:792
 msgid "Fee Modifier linked to non-fitting field."
 msgstr "Unpassendes Datenfeld für Beitragsmodifikator."
 
@@ -16319,7 +16325,11 @@ msgstr "Kann Wert {val} nicht in bytes konvertieren."
 msgid "Must be a bytes object."
 msgstr "Muss ein bytes-Objekt sein."
 
-#: cdedb/validation.py:606
+msgid "Shortname is longer than %(len)s chars."
+msgstr "Kurzname ist länger als %(len)s Zeichen."
+
+#: cdedb/validation.py:601 cdedb/validation.py:606 cdedb/validation.py:608
+#: cdedb/validation.py:611
 msgid "Must be a mapping."
 msgstr "Muss eine Map sein."
 

@@ -33,13 +33,13 @@ from cdedb.frontend.common import (
     AbstractUserFrontend, CustomCSVDialect, REQUESTdata, REQUESTdatadict, REQUESTfile,
     access, calculate_db_logparams, calculate_loglinks, check_validation as check,
     check_validation_optional as check_optional, make_membership_fee_reference,
-    request_extractor, TransactionObserver,
+    request_extractor, TransactionObserver, inspect_validation as inspect,
 )
 from cdedb.query import (
     QueryConstraint, QueryOperators, QueryScope,
 )
 from cdedb.validation import (
-    PERSONA_FULL_CDE_CREATION, TypeMapping, filter_none, validate_check
+    PERSONA_FULL_CDE_CREATION, TypeMapping, filter_none, get_errors, get_warnings
 )
 
 MEMBERSEARCH_DEFAULTS = {
@@ -330,8 +330,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
 
     @access("core_admin", "cde_admin", modi={"POST"})
     @REQUESTdatadict(*filter_none(PERSONA_FULL_CDE_CREATION))
-    def create_user(self, rs: RequestState, data: CdEDBObject,
-                    ignore_warnings: bool = False) -> Response:
+    def create_user(self, rs: RequestState, data: CdEDBObject) -> Response:
         defaults = {
             'is_cde_realm': True,
             'is_event_realm': True,
@@ -342,7 +341,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             'paper_expuls': True,
         }
         data.update(defaults)
-        return super().create_user(rs, data, ignore_warnings)
+        return super().create_user(rs, data)
 
     @access("cde_admin")
     def batch_admission_form(self, rs: RequestState,
@@ -439,7 +438,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             if persona[k] and not persona[k].strip().startswith(("0", "+")):
                 persona[k] = "0" + persona[k].strip()
         merge_dicts(persona, PERSONA_DEFAULTS)
-        persona, problems = validate_check(
+        persona, problems = inspect(
             vtypes.Persona, persona, argname="persona", creation=True)
         if persona:
             if persona['birthday'] > deduct_years(now().date(), 10):
@@ -512,6 +511,11 @@ class CdEBaseFrontend(AbstractUserFrontend):
             if (datum['doppelganger_id'], pcourse_id) in existing:
                 warnings.append(
                     ("pevent_id", KeyError(n_("Participation already recorded."))))
+
+        # ensure each ValidationWarning is considered as warning, even if it appears
+        # during a call to check. Remove all ValidationWarnings from problems
+        warnings.extend(get_warnings(problems))
+        problems = get_errors(problems)
 
         datum.update({
             'persona': persona,

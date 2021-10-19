@@ -59,11 +59,10 @@ class CoreGenesisMixin(CoreBaseFrontend):
     @access("anonymous", modi={"POST"})
     @REQUESTdatadict(*GENESIS_CASE_EXPOSED_FIELDS)
     @REQUESTfile("attachment")
-    @REQUESTdata("attachment_filename", "ignore_warnings")
+    @REQUESTdata("attachment_filename")
     def genesis_request(self, rs: RequestState, data: CdEDBObject,
                         attachment: Optional[werkzeug.datastructures.FileStorage],
-                        attachment_filename: str = None,
-                        ignore_warnings: bool = False) -> Response:
+                        attachment_filename: str = None) -> Response:
         """Voice the desire to become a persona.
 
         This initiates the genesis process.
@@ -90,8 +89,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
             e = ("attachment", ValueError(n_("Attachment missing.")))
             rs.append_validation_error(e)
 
-        data = check(rs, vtypes.GenesisCase, data, creation=True,
-                     _ignore_warnings=ignore_warnings)
+        data = check(rs, vtypes.GenesisCase, data, creation=True)
         if rs.has_validation_errors():
             return self.genesis_request_form(rs)
         assert data is not None
@@ -130,8 +128,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
                           n_("Email address already in DB. Reset password."))
                 return self.redirect(rs, "core/index")
         else:
-            new_id = self.coreproxy.genesis_request(
-                rs, data, ignore_warnings=ignore_warnings)
+            new_id = self.coreproxy.genesis_request(rs, data)
             if not new_id:
                 rs.notify("error", n_("Failed."))
                 return self.genesis_request_form(rs)
@@ -337,16 +334,14 @@ class CoreGenesisMixin(CoreBaseFrontend):
                             for realm in REALM_SPECIFIC_GENESIS_FIELDS),
             modi={"POST"})
     @REQUESTdatadict(*GENESIS_CASE_EXPOSED_FIELDS)
-    @REQUESTdata("ignore_warnings")
     def genesis_modify(self, rs: RequestState, genesis_case_id: int,
-                       data: CdEDBObject, ignore_warnings: bool = False
-                       ) -> Response:
+                       data: CdEDBObject) -> Response:
         """Edit a case to fix potential issues before creation."""
         data['id'] = genesis_case_id
         # In contrast to the genesis_request, the attachment can not be changed here.
         del data['attachment_hash']
         data = check(
-            rs, vtypes.GenesisCase, data, _ignore_warnings=ignore_warnings)
+            rs, vtypes.GenesisCase, data)
         if rs.has_validation_errors():
             return self.genesis_modify_form(rs, genesis_case_id)
         assert data is not None
@@ -363,8 +358,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         if case['case_status'] != const.GenesisStati.to_review:
             rs.notify("error", n_("Case not to review."))
             return self.genesis_list_cases(rs)
-        code = self.coreproxy.genesis_modify_case(
-            rs, data, ignore_warnings=ignore_warnings)
+        code = self.coreproxy.genesis_modify_case(rs, data)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "core/genesis_show_case")
 
