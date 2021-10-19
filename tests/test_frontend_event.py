@@ -14,7 +14,7 @@ import lxml.etree
 import webtest
 
 import cdedb.database.constants as const
-from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, CdEDBObject, now
+from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, CdEDBObject, now, IGNORE_WARNINGS_NAME
 from cdedb.filter import iban_filter
 from cdedb.frontend.common import CustomCSVDialect
 from cdedb.query import QueryOperators
@@ -756,6 +756,10 @@ class TestEventFrontend(FrontendTest):
                       {'href': '/event/event/1/part/2/change'})
         f = self.response.forms['changepartform']
         f['track_num_choices_2'] = "2"
+        self.submit(f, check_notification=False)
+        self.assertValidationWarning("track_shortname_1", "länger als 10 Zeichen.")
+        # prevent warnings about too long shortname for this test
+        f['track_shortname_1'] = "Morgen"
         self.submit(f)
 
         # Change course choices as Orga
@@ -1369,6 +1373,13 @@ etc;anything else""", f['entries_2'].value)
             'course_choice3_1',
             "Du kannst diesen Kurs nicht als 1. und 2. Wahl wählen.")
         f['course_choice3_1'] = 4
+        # Chose instructed course also as course choice -> expecting error
+        self.submit(f, check_notification=False)
+        self.assertTitle("Anmeldung für Große Testakademie 2222")
+        self.assertValidationError(
+            'course_choice3_0',
+            "Bitte wähle nicht deinen eigenen Kurs.")
+        f['course_choice3_0'] = 5
         # Now, we did it right.
         self.submit(f)
         text = self.fetch_mail_content()
@@ -1395,13 +1406,14 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence("Kaffeekränzchen")
         self.assertPresence("Arbeitssitzung")
         f = self.response.forms['amendregistrationform']
+        self.assertEqual("5", f['course_choice3_0'].value)
         self.assertEqual("4", f['course_choice3_1'].value)
         self.assertEqual("", f['course_choice3_2'].value)
         self.assertEqual("2", f['course_instructor3'].value)
         self.assertPresence("Ich freu mich schon so zu kommen")
         f['notes'] = "Ich kann es kaum erwarten!"
         f['course_choice3_0'] = 4
-        f['course_choice3_1'] = 1
+        f['course_choice3_1'] = 2
         f['course_choice3_2'] = 5
         f['course_instructor3'] = 1
         self.submit(f)
@@ -1411,6 +1423,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Anmeldung für Große Testakademie 2222 ändern")
         f = self.response.forms['amendregistrationform']
         self.assertEqual("4", f['course_choice3_0'].value)
+        self.assertEqual("2", f['course_choice3_1'].value)
         self.assertEqual("5", f['course_choice3_2'].value)
         self.assertEqual("1", f['course_instructor3'].value)
         self.assertPresence("Ich kann es kaum erwarten!")
@@ -2248,6 +2261,9 @@ etc;anything else""", f['entries_2'].value)
         f["qsel_persona.family_name"] = False
         f["qsel_persona.username"] = False
         f["qsel_reg_fields.xfield_anzahl_GROSSBUCHSTABEN"].checked = True
+        f["qop_reg_fields.xfield_anzahl_GROSSBUCHSTABEN"] = \
+            QueryOperators.nonempty.value
+        f["qord_primary"] = "reg_fields.xfield_anzahl_GROSSBUCHSTABEN"
         f["query_name"] = "Großbuchstaben"
         self.submit(f, button="store_query", check_button_attrs=True)
         self.assertPresence("anzahl_GROSSBUCHSTABEN", div="query-result")
@@ -2271,6 +2287,10 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
 
         self.traverse("Anmeldungen", "Großbuchstaben")
+        # Remove the old constraint, because all field data is now empty.
+        f = self.response.forms["queryform"]
+        f["qop_reg_fields.xfield_anzahl_GROSSBUCHSTABEN"] = ""
+        self.submit(f)
         self.assertPresence("anzahl_GROSSBUCHSTABEN", div="query-result")
 
     @as_users("annika")
@@ -2550,6 +2570,15 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f, check_notification=False)
         self.assertValidationError(
             'persona.persona_id', "Dieser Nutzer ist kein Veranstaltungsnutzer.")
+        # Check invalid course choices
+        f['track1.course_choice_0'] = 5
+        f['track1.course_choice_1'] = 5
+        f['track1.course_instructor'] = 5
+        self.submit(f, check_notification=False)
+        self.assertValidationError(
+            "track1.course_choice_0", "Geleiteter Kurs kann nicht gewählt werden.")
+        self.assertValidationError(
+            "track1.course_choice_1", "Bitte verschiedene Kurse wählen.")
         # Now add an actually valid user.
         f['persona.persona_id'] = USER_DICT['charly']['DB-ID']
         f['reg.orga_notes'] = "Du entkommst uns nicht."
@@ -2560,6 +2589,8 @@ etc;anything else""", f['entries_2'].value)
         f['part1.lodgement_id'] = 4
         f['track1.course_id'] = 5
         f['track1.course_choice_0'] = 5
+        f['track1.course_choice_1'] = 4
+        f['track1.course_instructor'] = 2
         self.submit(f)
         self.assertTitle("\nAnmeldung von Charly Clown (Große Testakademie 2222)\n")
         self.assertPresence("Du entkommst uns nicht.")
@@ -2576,6 +2607,8 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("4", f['part1.lodgement_id'].value)
         self.assertEqual("5", f['track1.course_id'].value)
         self.assertEqual("5", f['track1.course_choice_0'].value)
+        self.assertEqual("4", f['track1.course_choice_1'].value)
+        self.assertEqual("2", f['track1.course_instructor'].value)
 
     @as_users("garcia")
     def test_add_illegal_registration(self) -> None:
@@ -3919,9 +3952,13 @@ etc;anything else""", f['entries_2'].value)
 
         # Erste Hälfte
         self.traverse({"href": "/event/event/1/part/2/change"})
-        f = self.response.forms['changepartform']
+        f = self.response.forms["changepartform"]
+        self.submit(f, check_notification=False)
+        self.assertValidationWarning("track_shortname_1", "länger als 10 Zeichen.")
+        f = self.response.forms["changepartform"]
         f['part_begin'] = past_past_date
         f['part_end'] = past_date
+        f[IGNORE_WARNINGS_NAME].checked = True
         self.submit(f)
 
         # Zweite Hälfte
@@ -4069,8 +4106,12 @@ etc;anything else""", f['entries_2'].value)
         # Erste Hälfte
         self.traverse({"href": "/event/event/1/part/2/change"})
         f = self.response.forms["changepartform"]
+        self.submit(f, check_notification=False)
+        self.assertValidationWarning("track_shortname_1", "länger als 10 Zeichen.")
+        f = self.response.forms["changepartform"]
         f['part_begin'] = "2003-11-01"
         f['part_end'] = "2003-11-11"
+        f[IGNORE_WARNINGS_NAME].checked = True
         self.submit(f)
         self.assertTitle("Veranstaltungsteile konfigurieren (Große Testakademie 2222)")
 
@@ -4249,6 +4290,12 @@ etc;anything else""", f['entries_2'].value)
         for part_id in [1, 2, 3]:
             self.traverse({"href": f"/event/event/1/part/{part_id}/change"})
             f = self.response.forms['changepartform']
+            if part_id == 2:
+                self.submit(f, check_notification=False)
+                self.assertValidationWarning(
+                    "track_shortname_1", "länger als 10 Zeichen.")
+                f = self.response.forms["changepartform"]
+                f[IGNORE_WARNINGS_NAME].checked = True
             f['fee'] = 0
             self.submit(f)
 
@@ -4302,6 +4349,10 @@ etc;anything else""", f['entries_2'].value)
                       "Veranstaltungsteile")
         self.traverse({"href": "/event/event/1/part/2/change"})
         f = self.response.forms['changepartform']
+        self.submit(f, check_notification=False)
+        self.assertValidationWarning("track_shortname_1", "länger als 10 Zeichen.")
+        f = self.response.forms["changepartform"]
+        f[IGNORE_WARNINGS_NAME].checked = True
         f['track_num_choices_1'] = 0
         f['track_min_choices_1'] = 0
         f['track_num_choices_2'] = 0

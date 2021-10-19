@@ -111,10 +111,12 @@ class CdEPastEventMixin(CdEBaseFrontend):
     def institution_summary(self, rs: RequestState) -> Response:
         """Manipulate organisations which are behind events."""
         institution_ids = self.pasteventproxy.list_institutions(rs)
-        spec = {'title': str, 'shortname': str}
-        institutions = process_dynamic_input(rs, institution_ids.keys(), spec)
+        spec = {'title': str, 'shortname': vtypes.Shortname}
+        institutions = process_dynamic_input(
+            rs, vtypes.Institution, institution_ids.keys(), spec)
         if rs.has_validation_errors():
             return self.institution_summary_form(rs)
+
         code = 1
         for institution_id, institution in institutions.items():
             if institution is None:

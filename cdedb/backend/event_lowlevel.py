@@ -16,7 +16,7 @@ import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
     AbstractBackend, access, affirm_set_validation as affirm_set,
-    affirm_validation_typed as affirm, internal, singularize,
+    affirm_validation as affirm, internal, singularize,
 )
 from cdedb.common import (
     COURSE_TRACK_FIELDS, CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap,

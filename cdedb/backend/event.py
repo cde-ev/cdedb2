@@ -11,13 +11,12 @@ from typing import Any, Collection, Dict, Mapping, Set, Tuple
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
-    Silencer, access, affirm_set_validation as affirm_set,
-    affirm_validation_typed as affirm,
+    Silencer, access, affirm_set_validation as affirm_set, affirm_validation as affirm,
 )
 from cdedb.backend.event_base import EventBaseBackend
 from cdedb.backend.event_course import EventCourseBackend
-from cdedb.backend.event_lowlevel import EventLowLevelBackend
 from cdedb.backend.event_lodgement import EventLodgementBackend
+from cdedb.backend.event_lowlevel import EventLowLevelBackend
 from cdedb.backend.event_query import EventQueryBackend
 from cdedb.backend.event_registration import EventRegistrationBackend
 from cdedb.common import (

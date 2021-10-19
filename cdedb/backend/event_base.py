@@ -24,9 +24,8 @@ from typing import (
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
-    Silencer, access, affirm_set_validation as affirm_set,
-    affirm_validation_typed as affirm,
-    affirm_validation_typed_optional as affirm_optional, cast_fields, internal,
+    Silencer, access, affirm_set_validation as affirm_set, affirm_validation as affirm,
+    affirm_validation_optional as affirm_optional, cast_fields, internal,
     singularize,
 )
 from cdedb.backend.event_lowlevel import EventLowLevelBackend

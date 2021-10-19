@@ -12,7 +12,7 @@ from typing import (
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
-    access, affirm_set_validation as affirm_set, affirm_validation_typed as affirm,
+    access, affirm_set_validation as affirm_set, affirm_validation as affirm,
     cast_fields, singularize,
 )
 from cdedb.backend.event_base import EventBaseBackend

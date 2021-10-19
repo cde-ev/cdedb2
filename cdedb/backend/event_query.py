@@ -13,7 +13,7 @@ import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
     DatabaseValue_s, PYTHON_TO_SQL_MAP, access, affirm_set_validation as affirm_set,
-    affirm_validation_typed as affirm,
+    affirm_validation as affirm,
 )
 from cdedb.backend.event_base import EventBaseBackend
 from cdedb.common import (

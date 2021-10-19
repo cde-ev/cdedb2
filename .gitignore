@@ -42,3 +42,6 @@ i18n/cdedb.pot
 i18n/*/LC_MESSAGES/cdedb.mo
 i18n/*/LC_MESSAGES/cdedb.spellcheck
 messages.mo
+
+# virtual environment
+.venv

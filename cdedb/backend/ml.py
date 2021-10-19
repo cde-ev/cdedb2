@@ -15,7 +15,7 @@ import cdedb.validationtypes as vtypes
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.common import (
     AbstractBackend, access, affirm_array_validation as affirm_array,
-    affirm_set_validation as affirm_set, affirm_validation_typed as affirm,
+    affirm_set_validation as affirm_set, affirm_validation as affirm,
     internal, singularize,
 )
 from cdedb.backend.event import EventBackend

@@ -19,8 +19,8 @@ import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
     access, affirm_array_validation as affirm_array,
-    affirm_set_validation as affirm_set, affirm_validation_typed as affirm,
-    affirm_validation_typed_optional as affirm_optional, cast_fields, internal,
+    affirm_set_validation as affirm_set, affirm_validation as affirm,
+    affirm_validation_optional as affirm_optional, cast_fields, internal,
     singularize,
 )
 from cdedb.backend.event_base import EventBaseBackend
