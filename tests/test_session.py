@@ -208,7 +208,7 @@ class TestMultiSessionFrontend(MultiAppFrontendTest):
             with self.subTest(app_index=i):
                 self.get("/core/self/show")
                 self.assertTitle(user['default_name_format'])
-                self.assertPresence(f"Von allen Geräten abmelden ({self.n - 1})")
+                self.assertPresence(f"Von allen ({self.n - 1}) Geräten abmelden")
                 self.assertNotIn('loginform', self.response.forms)
 
         # Now terminate all sessions and check that they are all inactive.

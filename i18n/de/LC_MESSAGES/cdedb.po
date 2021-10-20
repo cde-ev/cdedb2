@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2021-10-17 19:11+0000\n"
+"POT-Creation-Date: 2021-10-20 19:44+0000\n"
 "PO-Revision-Date: 2020-12-06 11:30+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -8463,12 +8463,12 @@ msgstr "Bearbeiten (mit Adminrechten)"
 
 #: cdedb/frontend/templates/web/core/show_user.tmpl:79
 #, python-format
-msgid "Logout Everywhere (%(count)s)"
-msgstr "Von allen Geräten abmelden (%(count)s)"
+msgid "Log out from all (%(count)s) devices"
+msgstr "Von allen (%(count)s) Geräten abmelden"
 
 #: cdedb/frontend/templates/web/core/show_user.tmpl:81
 msgid "Logout Everywhere"
-msgstr "Von allen Geräten abmelden"
+msgstr "Überall abmelden"
 
 #: cdedb/frontend/templates/web/core/show_user.tmpl:87
 msgid "Restore Account"

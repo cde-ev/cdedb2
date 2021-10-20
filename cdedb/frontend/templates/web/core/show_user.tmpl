@@ -76,7 +76,7 @@
                     <form action="{{ cdedblink("core/logout_all") }}" method="POST" id="logoutallform"
                           class="display-inline">
                         {{ util.anti_csrf_token('core/logout_all') }}
-                        {{ util.input_submit(label=(gettext("Logout Everywhere (%(count)s)")
+                        {{ util.input_submit(label=(gettext("Log out from all (%(count)s) devices")
                                                     |format(count=active_session_count)),
                                              title=gettext("Logout Everywhere"), icon="power-off",
                                              aclass="btn btn-danger btn-sm") }}
