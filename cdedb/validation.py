@@ -65,7 +65,7 @@ import typing
 from enum import Enum
 from typing import (
     Callable, Iterable, Mapping, Optional, Protocol, Sequence, Set, Tuple, TypeVar,
-    Union, cast, get_type_hints, overload, get_origin, get_args
+    Union, cast, get_args, get_origin, get_type_hints, overload,
 )
 
 import magic
@@ -79,9 +79,9 @@ import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, EPSILON, EVENT_SCHEMA_VERSION, INFINITE_ENUM_MAGIC_NUMBER,
-    REALM_SPECIFIC_GENESIS_FIELDS, CdEDBObjectMap, Error, InfiniteEnum,
+    REALM_SPECIFIC_GENESIS_FIELDS, CdEDBObjectMap, Error, InfiniteEnum, LineResolutions,
     ValidationWarning, asciificator, compute_checkdigit, extract_roles, n_, now,
-    xsorted, LineResolutions,
+    xsorted,
 )
 from cdedb.config import BasicConfig, Config
 from cdedb.database.constants import FieldAssociations, FieldDatatypes

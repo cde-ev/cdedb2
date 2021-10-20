@@ -16,8 +16,8 @@ from cdedb.common import (
 from cdedb.database.constants import (
     MailinglistDomain, MailinglistTypes, RegistrationPartStati,
 )
-from cdedb.subman.machine import SubscriptionPolicy
 from cdedb.query import Query, QueryOperators, QueryScope
+from cdedb.subman.machine import SubscriptionPolicy
 
 SubscriptionPolicyMap = Dict[int, SubscriptionPolicy]
 TypeMapping = Mapping[str, Type[Any]]

@@ -28,7 +28,7 @@ help:
 	@echo ""
 	@echo "Code testing:"
 	@echo "mypy           -- let mypy run over our codebase (bin, cdedb, tests)"
-	@echo "lint           -- run linters (flake8 and pylint)"
+	@echo "lint           -- run linters (isort, flake8 and pylint)"
 	@echo "check          -- run (parts of the) test suite"
 	@echo "xss-check      -- check for xss vulnerabilities"
 	@echo "dump-html      -- run frontend tests and store all encountered pages inside"
@@ -39,6 +39,7 @@ help:
 
 # Executables
 PYTHONBIN ?= python3
+ISORT ?= $(PYTHONBIN) -m isort
 FLAKE8 ?= $(PYTHONBIN) -m flake8
 PYLINT ?= $(PYTHONBIN) -m pylint
 COVERAGE ?= $(PYTHONBIN) -m coverage
@@ -210,14 +211,24 @@ sql-test-shallow: tests/ancillary_files/sample_data.sql
 cron:
 	sudo -u www-data /cdedb2/bin/cron_execute.py
 
-################
-# Code testing #
-################
+###############################
+# Code testing and formatting #
+###############################
+
+format:
+	$(ISORT) cdedb tests
 
 mypy:
 	$(MYPY) bin/*.py cdedb tests
 
 BANNERLINE := "================================================================================"
+
+isort:
+	@echo $(BANNERLINE)
+	@echo "All of isort"
+	@echo $(BANNERLINE)
+	@echo ""
+	$(ISORT) --check-only cdedb tests
 
 flake8:
 	@echo $(BANNERLINE)
@@ -241,7 +252,7 @@ template-line-length:
 	@echo ""
 	grep -E -R '^.{121,}' cdedb/frontend/templates/ | grep 'tmpl:'
 
-lint: flake8 pylint
+lint: isort flake8 pylint
 
 prepare-check:
 ifneq ($(TESTPREPARATION), manual)

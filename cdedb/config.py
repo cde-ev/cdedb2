@@ -21,9 +21,7 @@ from typing import Any, Callable, Dict, Iterator, Mapping
 import pytz
 
 import cdedb.database.constants as const
-from cdedb.common import (
-    CdEDBObject, PathLike, deduct_years, n_, now,
-)
+from cdedb.common import CdEDBObject, PathLike, deduct_years, n_, now
 from cdedb.query import Query, QueryOperators, QueryScope
 
 _LOGGER = logging.getLogger(__name__)

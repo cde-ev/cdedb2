@@ -17,25 +17,22 @@ backend parts.
 import collections
 import copy
 import datetime
-from typing import (
-    Any, Collection, Dict, Iterable, List, Optional, Protocol, Set, Tuple,
-)
+from typing import Any, Collection, Dict, Iterable, List, Optional, Protocol, Set, Tuple
 
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
     Silencer, access, affirm_set_validation as affirm_set, affirm_validation as affirm,
-    affirm_validation_optional as affirm_optional, cast_fields, internal,
-    singularize,
+    affirm_validation_optional as affirm_optional, cast_fields, internal, singularize,
 )
 from cdedb.backend.event_lowlevel import EventLowLevelBackend
 from cdedb.common import (
-    COURSE_FIELDS, COURSE_TRACK_FIELDS, CdEDBLog, CdEDBObject, CdEDBObjectMap,
-    DefaultReturnCode, EVENT_FIELDS, EVENT_PART_FIELDS, EVENT_SCHEMA_VERSION,
-    FEE_MODIFIER_FIELDS, FIELD_DEFINITION_FIELDS, LODGEMENT_FIELDS,
-    LODGEMENT_GROUP_FIELDS, PERSONA_EVENT_FIELDS, PrivilegeError,
+    COURSE_FIELDS, COURSE_TRACK_FIELDS, EVENT_FIELDS, EVENT_PART_FIELDS,
+    EVENT_SCHEMA_VERSION, FEE_MODIFIER_FIELDS, FIELD_DEFINITION_FIELDS,
+    LODGEMENT_FIELDS, LODGEMENT_GROUP_FIELDS, PERSONA_EVENT_FIELDS,
     QUESTIONNAIRE_ROW_FIELDS, REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS,
-    REGISTRATION_TRACK_FIELDS, RequestState, glue, n_, now, unwrap, xsorted,
+    REGISTRATION_TRACK_FIELDS, CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
+    PrivilegeError, RequestState, glue, n_, now, unwrap, xsorted,
 )
 from cdedb.database.connection import Atomizer
 

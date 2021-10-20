@@ -13,7 +13,7 @@ import datetime
 import itertools
 import operator
 from collections import OrderedDict
-from typing import Any, Collection, Dict, List, Optional, Sequence, Tuple, Set
+from typing import Any, Collection, Dict, List, Optional, Sequence, Set, Tuple
 
 from werkzeug import Response
 from werkzeug.datastructures import FileStorage
@@ -21,25 +21,20 @@ from werkzeug.datastructures import FileStorage
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap,
-    Error, LineResolutions, LOG_FIELDS_COMMON, PERSONA_DEFAULTS,
-    RequestState, deduct_years,
-    get_hash, get_localized_country_codes,
-    merge_dicts, n_, now, xsorted,
-    get_country_code_from_country,
+    LOG_FIELDS_COMMON, PERSONA_DEFAULTS, CdEDBObject, CdEDBObjectMap, Error,
+    LineResolutions, RequestState, deduct_years, get_country_code_from_country,
+    get_hash, get_localized_country_codes, merge_dicts, n_, now, xsorted,
 )
 from cdedb.filter import enum_entries_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, CustomCSVDialect, REQUESTdata, REQUESTdatadict, REQUESTfile,
-    access, calculate_db_logparams, calculate_loglinks, check_validation as check,
-    check_validation_optional as check_optional, make_membership_fee_reference,
-    request_extractor, TransactionObserver, inspect_validation as inspect,
+    TransactionObserver, access, calculate_db_logparams, calculate_loglinks,
+    check_validation as check, check_validation_optional as check_optional,
+    inspect_validation as inspect, make_membership_fee_reference, request_extractor,
 )
-from cdedb.query import (
-    QueryConstraint, QueryOperators, QueryScope,
-)
+from cdedb.query import QueryConstraint, QueryOperators, QueryScope
 from cdedb.validation import (
-    PERSONA_FULL_CDE_CREATION, TypeMapping, filter_none, get_errors, get_warnings
+    PERSONA_FULL_CDE_CREATION, TypeMapping, filter_none, get_errors, get_warnings,
 )
 
 MEMBERSEARCH_DEFAULTS = {

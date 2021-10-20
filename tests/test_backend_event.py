@@ -14,8 +14,8 @@ import pytz
 import cdedb.database.constants as const
 from cdedb.backend.common import cast_fields
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, InfiniteEnum, PartialImportError, PrivilegeError,
-    CourseFilterPositions, nearly_now
+    CdEDBObject, CdEDBObjectMap, CourseFilterPositions, InfiniteEnum,
+    PartialImportError, PrivilegeError, nearly_now,
 )
 from cdedb.query import Query, QueryOperators, QueryScope
 from tests.common import USER_DICT, BackendTest, as_users, json_keys_to_int, storage

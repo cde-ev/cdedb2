@@ -13,8 +13,8 @@ from cdedb.common import (
     Accounts, AgeClasses, CourseChoiceToolActions, CourseFilterPositions,
     LineResolutions, LodgementsSortkeys, TransactionType,
 )
-from cdedb.subman.machine import SubscriptionAction, SubscriptionPolicy
 from cdedb.query import QueryOperators, QueryScope
+from cdedb.subman.machine import SubscriptionAction, SubscriptionPolicy
 
 #: The list of normal enums
 ALL_ENUMS: Tuple[Type[Enum], ...] = (

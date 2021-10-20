@@ -26,14 +26,12 @@ from cdedb.common import (
 )
 from cdedb.frontend.cde_base import CdEBaseFrontend
 from cdedb.frontend.common import (
-    CustomCSVDialect, REQUESTdata, REQUESTfile, access, check_validation as check,
-    check_validation_optional as check_optional, csv_output, make_postal_address,
-    request_extractor, TransactionObserver, inspect_validation as inspect,
-    inspect_validation_optional as inspect_optional
+    CustomCSVDialect, REQUESTdata, REQUESTfile, TransactionObserver, access,
+    check_validation as check, check_validation_optional as check_optional, csv_output,
+    inspect_validation as inspect, inspect_validation_optional as inspect_optional,
+    make_postal_address, request_extractor,
 )
-from cdedb.validation import (
-    TypeMapping
-)
+from cdedb.validation import TypeMapping
 
 
 class CdEParseMixin(CdEBaseFrontend):

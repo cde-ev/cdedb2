@@ -25,23 +25,22 @@ from cdedb.common import (
     REALM_ADMINS, REALM_INHERITANCE, REALM_SPECIFIC_GENESIS_FIELDS, ArchiveError,
     CdEDBObject, CdEDBObjectMap, DefaultReturnCode, EntitySorter, PrivilegeError, Realm,
     RequestState, extract_roles, format_country_code, get_persona_fields_by_realm,
-    implied_realms, merge_dicts, n_, now, pairwise, unwrap, xsorted, sanitize_filename
+    implied_realms, merge_dicts, n_, now, pairwise, sanitize_filename, unwrap, xsorted,
 )
-
 from cdedb.filter import date_filter, enum_entries_filter, markdown_parse_safe
 from cdedb.frontend.common import (
-    AbstractFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, access, basic_redirect,
-    calculate_db_logparams, calculate_loglinks, check_validation as check,
-    check_validation_optional as check_optional, make_membership_fee_reference,
-    periodic, request_dict_extractor, request_extractor, make_persona_name,
-    TransactionObserver, inspect_validation as inspect
+    AbstractFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, TransactionObserver,
+    access, basic_redirect, calculate_db_logparams, calculate_loglinks,
+    check_validation as check, check_validation_optional as check_optional,
+    inspect_validation as inspect, make_membership_fee_reference, make_persona_name,
+    periodic, request_dict_extractor, request_extractor,
 )
 from cdedb.ml_type_aux import MailinglistGroup
 from cdedb.query import Query, QueryOperators, QueryScope
 from cdedb.subman.machine import SubscriptionPolicy
 from cdedb.validation import (
-    TypeMapping, PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
-    PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS,
+    PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
+    PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS, TypeMapping,
 )
 from cdedb.validationtypes import CdedbID
 

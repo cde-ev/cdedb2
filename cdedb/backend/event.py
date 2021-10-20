@@ -20,11 +20,10 @@ from cdedb.backend.event_lowlevel import EventLowLevelBackend
 from cdedb.backend.event_query import EventQueryBackend
 from cdedb.backend.event_registration import EventRegistrationBackend
 from cdedb.common import (
-    CdEDBObject, CdEDBOptionalMap, DefaultReturnCode,
-    EVENT_SCHEMA_VERSION, PartialImportError, PrivilegeError, RequestState, get_hash,
+    EVENT_SCHEMA_VERSION, CdEDBObject, CdEDBOptionalMap, DefaultReturnCode,
+    DeletionBlockers, PartialImportError, PrivilegeError, RequestState, get_hash,
     json_serialize, mixed_existence_sorter, n_, unwrap,
 )
-from cdedb.common import (DeletionBlockers)
 from cdedb.database.connection import Atomizer
 
 

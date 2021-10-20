@@ -44,14 +44,14 @@ from secrets import token_hex
 from types import TracebackType
 from typing import (
     IO, AbstractSet, Any, AnyStr, Callable, ClassVar, Collection, Dict, Iterable, List,
-    Literal, Mapping, MutableMapping, NamedTuple, Optional, Protocol, Sequence,
-    Tuple, Type, TypeVar, Union, cast, overload,
+    Literal, Mapping, MutableMapping, NamedTuple, Optional, Protocol, Sequence, Tuple,
+    Type, TypeVar, Union, cast, overload,
 )
 
 import icu
 import jinja2
-import mailmanclient.restobjects.mailinglist
 import mailmanclient.restobjects.held_message
+import mailmanclient.restobjects.mailinglist
 import markupsafe
 import werkzeug
 import werkzeug.datastructures
@@ -71,13 +71,13 @@ from cdedb.backend.ml import MlBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.common import (
     ALL_MGMT_ADMIN_VIEWS, ALL_MOD_ADMIN_VIEWS, ANTI_CSRF_TOKEN_NAME,
-    ANTI_CSRF_TOKEN_PAYLOAD, REALM_SPECIFIC_GENESIS_FIELDS, PERSONA_DEFAULTS,
-    CdEDBMultiDict, CdEDBObject, CustomJSONEncoder, EntitySorter, Error, Notification,
-    NotificationType, PathLike, PrivilegeError, RequestState, Role, User,
-    ValidationWarning, _tdelta, asciificator, decode_parameter, encode_parameter,
-    format_country_code, get_localized_country_codes, glue, json_serialize, make_proxy,
-    make_root_logger, merge_dicts, n_, now, roles_to_db_role, unwrap,
-    IGNORE_WARNINGS_NAME
+    ANTI_CSRF_TOKEN_PAYLOAD, IGNORE_WARNINGS_NAME, PERSONA_DEFAULTS,
+    REALM_SPECIFIC_GENESIS_FIELDS, CdEDBMultiDict, CdEDBObject, CustomJSONEncoder,
+    EntitySorter, Error, Notification, NotificationType, PathLike, PrivilegeError,
+    RequestState, Role, User, ValidationWarning, _tdelta, asciificator,
+    decode_parameter, encode_parameter, format_country_code,
+    get_localized_country_codes, glue, json_serialize, make_proxy, make_root_logger,
+    merge_dicts, n_, now, roles_to_db_role, unwrap,
 )
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
