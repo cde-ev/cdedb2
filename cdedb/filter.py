@@ -558,9 +558,8 @@ def enum_entries_filter(enum: Iterable[enum.Enum],
     if raw:
         pre = lambda x: x
     else:
-        pre = lambda x: (x.display_str() if hasattr(x, "display_str") else str(x))  # type: ignore[assignment]
-    to_sort = ((entry, prefix + processing(pre(entry)))  # type: ignore[var-annotated]
-               for entry in enum)
+        pre = lambda x: (x.display_str() if hasattr(x, "display_str") else str(x))
+    to_sort = ((entry, prefix + processing(pre(entry))) for entry in enum)
     return xsorted(to_sort, key=lambda e: e[0].value)
 
 
