@@ -6,7 +6,7 @@ from typing import Dict, List, Set, Union
 import ldap3
 from ldap3 import ALL_ATTRIBUTES
 
-from tests.common import BasicTest, USER_DICT
+from tests.common import USER_DICT, BasicTest
 
 
 class TestLDAP(BasicTest):

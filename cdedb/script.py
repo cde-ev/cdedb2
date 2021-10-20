@@ -18,16 +18,16 @@ import tempfile
 import time
 from pkgutil import resolve_name
 from types import TracebackType
-from typing import Any, Dict, IO, Mapping, Optional, Tuple, Type, TYPE_CHECKING
+from typing import IO, TYPE_CHECKING, Any, Dict, Mapping, Optional, Tuple, Type
 
 import psycopg2
 import psycopg2.extensions
 import psycopg2.extras
 
-from cdedb.config import Config, SecretsConfig
 from cdedb.common import (
-    ALL_ROLES, PathLike, RequestState, User, make_proxy, AbstractBackend
+    ALL_ROLES, AbstractBackend, PathLike, RequestState, User, make_proxy,
 )
+from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import Atomizer, IrradiatedConnection
 
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
@@ -177,7 +177,9 @@ class Script:
         if ret := self._request_states.get(persona_id):
             return ret
         if self._translations is None:
-            from cdedb.frontend.common import setup_translations  # pylint: disable=import-outside-toplevel
+            from cdedb.frontend.common import (
+                setup_translations,  # pylint: disable=import-outside-toplevel
+            )
             self._translations = setup_translations(self.config)
         rs = RequestState(
             sessionkey=None,
