@@ -21,8 +21,8 @@ import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
     AbstractBackend, access, affirm_set_validation as affirm_set,
-    affirm_validation_typed as affirm,
-    affirm_validation_typed_optional as affirm_optional, internal, singularize,
+    affirm_validation as affirm, affirm_validation_optional as affirm_optional,
+    inspect_validation as inspect, internal, singularize,
 )
 from cdedb.common import (
     ADMIN_KEYS, ALL_ROLES, GENESIS_CASE_FIELDS, GENESIS_REALM_OVERRIDE,
@@ -32,13 +32,12 @@ from cdedb.common import (
     CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, Error,
     PathLike, PrivilegeError, PsycoJson, QuotaException, Realm, RequestState, Role,
     User, decode_parameter, encode_parameter, extract_realms, extract_roles, get_hash,
-    glue, implied_realms, merge_dicts, n_, now, privilege_tier, unwrap, xsorted
+    glue, implied_realms, merge_dicts, n_, now, privilege_tier, unwrap, xsorted,
 )
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import Atomizer, connection_pool_factory
 from cdedb.query import Query, QueryOperators, QueryScope
-from cdedb.validation import validate_check
 
 
 class CoreBackend(AbstractBackend):
@@ -531,7 +530,12 @@ class CoreBackend(AbstractBackend):
         query = query.format(fields=', '.join(fields),
                              conditions=' AND '.join(conditions))
         data = self.query_all(rs, query, params)
-        return {e['generation']: e for e in data}
+        ret = {}
+        for d in data:
+            if d.get('gender'):
+                d['gender'] = const.Genders(d['gender'])
+            ret[d['generation']] = d
+        return ret
 
     @internal
     @access("persona", "droid")
@@ -546,7 +550,12 @@ class CoreBackend(AbstractBackend):
         if "id" not in columns:
             columns += ("id",)
         data = self.sql_select(rs, "core.personas", columns, persona_ids)
-        return {d['id']: d for d in data}
+        ret = {}
+        for d in data:
+            if d.get('gender'):
+                d['gender'] = const.Genders(d['gender'])
+            ret[d['id']] = d
+        return ret
 
     class _RetrievePersonaProtocol(Protocol):
         def __call__(self, rs: RequestState, persona_id: int,
@@ -751,7 +760,6 @@ class CoreBackend(AbstractBackend):
     def change_persona(self, rs: RequestState, data: CdEDBObject,
                        generation: int = None, may_wait: bool = True,
                        change_note: str = None,
-                       ignore_warnings: bool = False,
                        force_review: bool = False) -> DefaultReturnCode:
         """Change a data set. Note that you need privileges to edit someone
         elses data set.
@@ -761,11 +769,10 @@ class CoreBackend(AbstractBackend):
           the check
         :param may_wait: override for system requests (which may not wait)
         :param change_note: Descriptive line for changelog
-        :param ignore_warnings: Ignore errors of type ValidationWarning.
         :param force_review: force a change to be reviewed, even if it may be committed
           without.
         """
-        data = affirm(vtypes.Persona, data, _ignore_warnings=ignore_warnings)
+        data = affirm(vtypes.Persona, data)
         generation = affirm_optional(int, generation)
         may_wait = affirm(bool, may_wait)
         change_note = affirm_optional(str, change_note)
@@ -1040,7 +1047,11 @@ class CoreBackend(AbstractBackend):
         privilege_change_ids = affirm_set(vtypes.ID, privilege_change_ids)
         data = self.sql_select(
             rs, "core.privilege_changes", PRIVILEGE_CHANGE_FIELDS, privilege_change_ids)
-        return {e["id"]: e for e in data}
+        ret = {}
+        for e in data:
+            e['status'] = const.PrivilegeChangeStati(e['status'])
+            ret[e['id']] = e
+        return ret
 
     class _GetPrivilegeChangeProtocol(Protocol):
         def __call__(self, rs: RequestState, privilege_change_id: int
@@ -1922,8 +1933,7 @@ class CoreBackend(AbstractBackend):
 
     @access(*REALM_ADMINS)
     def create_persona(self, rs: RequestState, data: CdEDBObject,
-                       submitted_by: int = None, ignore_warnings: bool = False
-                       ) -> DefaultReturnCode:
+                       submitted_by: int = None) -> DefaultReturnCode:
         """Instantiate a new data set.
 
         This does the house-keeping and inserts the corresponding entry in
@@ -1932,8 +1942,7 @@ class CoreBackend(AbstractBackend):
         :param submitted_by: Allow to override the submitter for genesis.
         :returns: The id of the newly created persona.
         """
-        data = affirm(vtypes.Persona, data,
-                      creation=True, _ignore_warnings=ignore_warnings)
+        data = affirm(vtypes.Persona, data, creation=True)
         submitted_by = affirm_optional(vtypes.ID, submitted_by)
         # zap any admin attempts
         data.update({
@@ -2364,7 +2373,7 @@ class CoreBackend(AbstractBackend):
                 return False, msg  # type: ignore
         if not new_password:
             return False, n_("No new password provided.")
-        _val, errs = validate_check(vtypes.PasswordStrength, new_password)
+        _, errs = inspect(vtypes.PasswordStrength, new_password)
         if errs:
             return False, n_("Password too weak.")
         # escalate db privilege role in case of resetting passwords
@@ -2467,8 +2476,8 @@ class CoreBackend(AbstractBackend):
         if persona['birthday']:
             inputs.extend(persona['birthday'].isoformat().split('-'))
 
-        password, errs = validate_check(vtypes.PasswordStrength, password,
-                                        argname=argname, admin=admin, inputs=inputs)
+        password, errs = inspect(vtypes.PasswordStrength, password, argname=argname,
+                                 admin=admin, inputs=inputs)
 
         return password, errs
 
@@ -2528,19 +2537,16 @@ class CoreBackend(AbstractBackend):
         return success, msg
 
     @access("anonymous")
-    def genesis_request(self, rs: RequestState, data: CdEDBObject,
-                        ignore_warnings: bool = False
+    def genesis_request(self, rs: RequestState, data: CdEDBObject
                         ) -> Optional[DefaultReturnCode]:
         """Log a request for a new account.
 
         This is the initial entry point for such a request.
 
-        :param ignore_warnings: Ignore errors with kind ValidationWarning
         :returns: id of the new request or None if the username is already
           taken
         """
-        data = affirm(vtypes.GenesisCase, data,
-                      creation=True, _ignore_warnings=ignore_warnings)
+        data = affirm(vtypes.GenesisCase, data, creation=True)
 
         if self.verify_existence(rs, data['username']):
             return None
@@ -2716,11 +2722,14 @@ class CoreBackend(AbstractBackend):
         genesis_case_ids = affirm_set(vtypes.ID, genesis_case_ids)
         data = self.sql_select(rs, "core.genesis_cases", GENESIS_CASE_FIELDS,
                                genesis_case_ids)
-        if ("core_admin" not in rs.user.roles
-                and any("{}_admin".format(e['realm']) not in rs.user.roles
-                        for e in data)):
-            raise PrivilegeError(n_("Not privileged."))
-        return {e['id']: e for e in data}
+        ret = {}
+        for e in data:
+            if "core_admin" not in rs.user.roles:
+                if f"{e['realm']}_admin" not in rs.user.roles:
+                    raise PrivilegeError(n_("Not privileged."))
+            e['case_status'] = const.GenesisStati(e['case_status'])
+            ret[e['id']] = e
+        return ret
 
     class _GenesisGetCaseProtocol(Protocol):
         def __call__(self, rs: RequestState, genesis_case_id: int) -> CdEDBObject: ...
@@ -2728,14 +2737,10 @@ class CoreBackend(AbstractBackend):
         genesis_get_cases, "genesis_case_ids", "genesis_case_id")
 
     @access(*REALM_ADMINS)
-    def genesis_modify_case(self, rs: RequestState, data: CdEDBObject,
-                            ignore_warnings: bool = False) -> DefaultReturnCode:
-        """Modify a persona creation case.
-
-        :param ignore_warnings: Ignore errors with kind ValidationWarning
-        """
-        data = affirm(vtypes.GenesisCase, data,
-                      _ignore_warnings=ignore_warnings)
+    def genesis_modify_case(self, rs: RequestState, data: CdEDBObject
+                            ) -> DefaultReturnCode:
+        """Modify a persona creation case."""
+        data = affirm(vtypes.GenesisCase, data)
 
         with Atomizer(rs):
             current = self.sql_select_one(
@@ -2779,16 +2784,14 @@ class CoreBackend(AbstractBackend):
             merge_dicts(data, PERSONA_DEFAULTS)
             # Fix realms, so that the persona validator does the correct thing
             data.update(GENESIS_REALM_OVERRIDE[case['realm']])
-            data = affirm(vtypes.Persona, data,
-                          creation=True, _ignore_warnings=True)
+            data = affirm(vtypes.Persona, data, creation=True)
             if case['case_status'] != const.GenesisStati.approved:
                 raise ValueError(n_("Invalid genesis state."))
             roles = extract_roles(data)
             if extract_realms(roles) != \
                     ({case['realm']} | implied_realms(case['realm'])):
                 raise PrivilegeError(n_("Wrong target realm."))
-            ret = self.create_persona(
-                rs, data, submitted_by=case['reviewer'], ignore_warnings=True)
+            ret = self.create_persona(rs, data, submitted_by=case['reviewer'])
             update = {
                 'id': case_id,
                 'case_status': const.GenesisStati.successful,
@@ -2803,11 +2806,14 @@ class CoreBackend(AbstractBackend):
 
         This is for batch admission, where we may encounter datasets to
         already existing accounts. In that case we do not want to create
-        a new account.
+        a new account. It is also used during genesis to avoid creation
+        of duplicate accounts.
 
         :returns: A dict of possibly matching account data.
         """
-        persona = affirm(vtypes.Persona, persona)
+        persona = affirm(vtypes.Persona, persona, _ignore_warnings=True)
+        if persona['birthday'] == datetime.date.min:
+            persona['birthday'] = None
         scores: Dict[int, int] = collections.defaultdict(lambda: 0)
         queries: List[Tuple[int, str, Tuple[Any, ...]]] = [
             (10, "given_names = %s OR display_name = %s",
@@ -2819,8 +2825,8 @@ class CoreBackend(AbstractBackend):
             (10, "birthday = %s", (persona['birthday'],)),
             (5, "location = %s", (persona['location'],)),
             (5, "postal_code = %s", (persona['postal_code'],)),
-            (20, "given_names = %s AND family_name = %s",
-             (persona['family_name'], persona['given_names'],)),
+            (20, "(given_names = %s OR display_name = %s) AND family_name = %s",
+             (persona['given_names'], persona['given_names'], persona['family_name'],)),
             (21, "username = %s", (persona['username'],)),
         ]
         # Omit queries where some parameters are None

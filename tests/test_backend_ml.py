@@ -5,9 +5,7 @@ from typing import Collection, Set, cast
 
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
-from cdedb.common import (
-    CdEDBObject, PrivilegeError, RequestState, nearly_now,
-)
+from cdedb.common import CdEDBObject, PrivilegeError, RequestState, nearly_now
 from cdedb.database.constants import SubscriptionState as SS
 from cdedb.subman.exceptions import SubscriptionError
 from cdedb.subman.machine import SubscriptionAction as SA
@@ -315,7 +313,7 @@ class TestMlBackend(BackendTest):
         self.assertIn(new_id, self.ml.list_mailinglists(self.key))
         new_data['id'] = new_id
         new_data['address'] = ml_type.get_full_address(new_data)
-        new_data['domain_str'] = str(new_data['domain'])
+        new_data['domain_str'] = new_data['domain'].display_str()  # type: ignore[attr-defined]
         atype = new_data['ml_type']
         assert isinstance(atype, const.MailinglistTypes)
         new_data['ml_type_class'] = ml_type.get_type(atype)

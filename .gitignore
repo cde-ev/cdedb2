@@ -44,3 +44,6 @@ messages.mo
 
 # local ldap config files
 ldap/output
+
+# virtual environment
+.venv

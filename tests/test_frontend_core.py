@@ -8,10 +8,12 @@ from typing import Dict, Optional
 import webtest
 
 import cdedb.database.constants as const
-from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, CdEDBObject, get_hash
+from cdedb.common import (
+    ADMIN_VIEWS_COOKIE_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, get_hash,
+)
 from cdedb.query import QueryOperators
 from tests.common import (
-    FrontendTest, UserIdentifier, UserObject, USER_DICT, as_users, storage
+    USER_DICT, FrontendTest, UserIdentifier, UserObject, as_users, storage,
 )
 
 
@@ -1583,7 +1585,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Bereichsänderung für Kalif Karabatschi")
         # Now, do it right
         f['birthday'] = "21.6.1977"
-        f['gender'] = 1
+        f['gender'] = const.Genders.female
         f['change_note'] = "Komplizierte Aufnahme"
         self.submit(f)
         self.assertTitle("Kalif Karabatschi")
@@ -1595,6 +1597,7 @@ class TestCoreFrontend(FrontendTest):
     @as_users("vera")
     def test_ignore_warnings_postal_code(self) -> None:
         self.admin_view_profile("vera")
+
         self.traverse({'description': 'Bearbeiten \\(normal\\)'})
         f = self.response.forms['changedataform']
         f['postal_code'] = "11111"
@@ -1603,8 +1606,10 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Ungültige Postleitzahl")
         self.assertPresence("Warnungen ignorieren")
         f = self.response.forms['changedataform']
-        self.submit(f, button="ignore_warnings")
+        f[IGNORE_WARNINGS_NAME].checked = True
+        self.submit(f)
         self.assertTitle("Vera Verwaltung")
+
         self.traverse({'description': 'Bearbeiten \\(mit Adminrechten\\)'})
         f = self.response.forms['changedataform']
         self.assertNonPresence("Warnungen ignorieren")
@@ -1612,7 +1617,9 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Ungültige Postleitzahl")
         self.assertPresence("Warnungen ignorieren")
         f = self.response.forms['changedataform']
-        self.submit(f, button="ignore_warnings")
+        f[IGNORE_WARNINGS_NAME].checked = True
+        self.submit(f)
+
         self.get("/core/genesis/request")
         self.assertTitle("Account anfordern")
         f = self.response.forms['genesisform']
@@ -1631,10 +1638,12 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Ungültige Postleitzahl")
         self.assertPresence("Warnungen ignorieren")
         f = self.response.forms['genesisform']
-        self.submit(f, button="ignore_warnings")
+        f[IGNORE_WARNINGS_NAME].checked = True
+        self.submit(f)
         link = self.fetch_link()
         self.get(link)
         self.follow()
+
         self.traverse({'description': 'Accountanfragen'},
                       {'description': 'Details'},
                       {'description': 'Bearbeiten'})
@@ -1644,13 +1653,16 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Ungültige Postleitzahl")
         self.assertPresence("Warnungen ignorieren")
         f = self.response.forms['genesismodifyform']
-        self.submit(f, button="ignore_warnings")
-        f = self.response.forms['genesiseventapprovalform']
+        f[IGNORE_WARNINGS_NAME].checked = True
+        self.submit(f)
+        f = self.response.forms['genesisapprovalform']
         self.submit(f)
 
     def _genesis_request(self, data: CdEDBObject, realm: Optional[str] = None) -> None:
         if realm:
             self.get('/core/genesis/request?realm=' + realm)
+        elif self.user:
+            self.get('/core/genesis/request')
         else:
             self.get('/')
             self.traverse({'description': 'Account anfordern'})
@@ -1670,7 +1682,7 @@ class TestCoreFrontend(FrontendTest):
 
     EVENT_GENESIS_DATA = ML_GENESIS_DATA.copy()
     EVENT_GENESIS_DATA.update({
-        'realm': "event", 'gender': const.Genders.female.value,
+        'realm': "event", 'gender': const.Genders.female,
         'birthday': "1987-06-05", 'address': "An der Eiche", 'postal_code': "12345",
         'location': "Marcuria", 'country': "AQ"
     })
@@ -1722,7 +1734,7 @@ class TestCoreFrontend(FrontendTest):
             div='no-ml-request')
         self.traverse({'href': '/core/genesis/1001/show'})
         self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
-        f = self.response.forms['genesiseventapprovalform']
+        f = self.response.forms['genesisapprovalform']
         self.submit(f)
         link = self.fetch_link()
         self.logout()
@@ -1881,7 +1893,7 @@ class TestCoreFrontend(FrontendTest):
             "Aktuell stehen keine CdE-Mitglieds-Account-Anfragen zur Bestätigung aus.")
         self.traverse({'href': '/core/genesis/1001/show'})
         self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
-        f = self.response.forms['genesiseventapprovalform']
+        f = self.response.forms['genesisapprovalform']
         self.submit(f)
         link = self.fetch_link()
         self.traverse({'href': '^/$'})
@@ -2021,7 +2033,7 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['genesismodifyform']
         f['realm'] = "event"
-        f['gender'] = "1"
+        f['gender'] = const.Genders.female
         f['birthday'] = "1987-06-05"
         f['address'] = "An der Eiche"
         f['postal_code'] = "12345"
@@ -2035,9 +2047,58 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesismodifyform']
         f['birthday'] = "1987-06-05"
         self.submit(f)
+
+        # Check that we cannot assign a username that is already taken.
+        f['username'] = self.user['username']
+        self.submit(f, check_notification=False)
+        self.assertValidationError("username", "Emailadresse bereits vergeben.")
+        self.traverse("Abbrechen")
+
         self.assertTitle("Accountanfrage von Zelda Zeruda")
-        f = self.response.forms['genesiseventapprovalform']
+        f = self.response.forms['genesisapprovalform']
         self.submit(f)
+
+    @as_users("vera")
+    def test_genesis_doppelganger(self) -> None:
+        # Create a new request almost identical to the current user.
+        dg_data = {k: self.user[k] for k in self.ML_GENESIS_DATA if k in self.user}
+        dg_data["username"] = "notme@example.cde"
+        dg_data["notes"] = "Bestimmt jemand anderes1"
+        dg_data["realm"] = "ml"
+        self._genesis_request(dg_data)
+
+        self.traverse("Accountanfragen", "Details")
+        self.assertTitle(f"Accountanfrage von {self.user['given_names']}"
+                         f" {self.user['family_name']}")
+        self.assertPresence("Ähnliche Accounts")
+        self.assertPresence(self.user['username'], div="doppelgangers")
+        self.assertPresence(self.user['username'], div="doppelganger0")
+        f = self.response.forms['genesisrejectionform']
+        # Rejection causes info not success notification.
+        self.submit(f, check_notification=False)
+        self.assertPresence("Anfrage abgewiesen", div="notifications")
+
+        # Create two almost identical requests, approve one and check that the second
+        # one finds a doppelgänger.
+        self._genesis_request(self.EVENT_GENESIS_DATA)
+        self._genesis_request(
+            dict(self.EVENT_GENESIS_DATA, username="notzelda@example.cde"))
+
+        self.traverse("Accountanfragen", "Details")
+        self.assertTitle(f"Accountanfrage von {self.EVENT_GENESIS_DATA['given_names']}"
+                         f" {self.EVENT_GENESIS_DATA['family_name']}")
+        self.assertNonPresence("Ähnliche Accounts")
+        f = self.response.forms['genesisapprovalform']
+        self.submit(f)
+        self.traverse("Accountanfragen", "Details")
+        self.assertTitle(f"Accountanfrage von {self.EVENT_GENESIS_DATA['given_names']}"
+                         f" {self.EVENT_GENESIS_DATA['family_name']}")
+        self.assertPresence("Ähnliche Accounts")
+        self.assertPresence(self.EVENT_GENESIS_DATA['username'], div="doppelgangers")
+        self.assertPresence(self.EVENT_GENESIS_DATA['username'], div="doppelganger0")
+        f = self.response.forms['genesisrejectionform']
+        self.submit(f, check_notification=False)
+        self.assertPresence("Anfrage abgewiesen", div="notifications")
 
     def test_resolve_api(self) -> None:
         at = urllib.parse.quote_plus('@')
@@ -2094,7 +2155,7 @@ class TestCoreFrontend(FrontendTest):
         logs.append((1007, const.CoreLogCodes.password_reset_cookie))
 
         self.traverse({'href': 'core/genesis/1002/show'})
-        f = self.response.forms['genesiseventapprovalform']
+        f = self.response.forms['genesisapprovalform']
         self.submit(f)
         logs.append((1008, const.CoreLogCodes.genesis_approved))
         logs.append((1009, const.CoreLogCodes.persona_creation))

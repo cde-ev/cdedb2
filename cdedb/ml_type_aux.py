@@ -16,8 +16,8 @@ from cdedb.common import (
 from cdedb.database.constants import (
     MailinglistDomain, MailinglistTypes, RegistrationPartStati,
 )
-from cdedb.subman.machine import SubscriptionPolicy
 from cdedb.query import Query, QueryOperators, QueryScope
+from cdedb.subman.machine import SubscriptionPolicy
 
 SubscriptionPolicyMap = Dict[int, SubscriptionPolicy]
 TypeMapping = Mapping[str, Type[Any]]
@@ -34,7 +34,7 @@ class BackendContainer:
 def get_full_address(val: CdEDBObject) -> str:
     """Construct the full address of a mailinglist."""
     if isinstance(val, dict):
-        return val['local_part'] + '@' + str(MailinglistDomain(val['domain']))
+        return val['local_part'] + '@' + MailinglistDomain(val['domain']).get_domain()
     else:
         raise ValueError(n_("Cannot determine full address for %(input)s."),
                          {'input': val})
@@ -660,7 +660,10 @@ MLType = Type[GeneralMailinglist]
 
 def get_type(val: Union[str, int, MLTypeLike]) -> MLType:
     if isinstance(val, str):
-        val = int(val)
+        if val.startswith(MailinglistTypes.__name__):
+            val = MailinglistTypes[val.replace(MailinglistTypes.__name__ + ".", "")]
+        else:
+            val = int(val)
     if isinstance(val, int):
         val = MailinglistTypes(val)
     if isinstance(val, MailinglistTypes):

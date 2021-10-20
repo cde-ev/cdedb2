@@ -22,17 +22,16 @@ from cdedb.common import (
     schulze_evaluate, unwrap, xsorted,
 )
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, REQUESTfile, AbstractUserFrontend, access,
+    AbstractUserFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, access,
     assembly_guard, calculate_db_logparams, calculate_loglinks, cdedburl,
     check_validation as check, periodic, process_dynamic_input, request_extractor,
-    RequestConstraint
 )
+from cdedb.query import QueryScope
 from cdedb.validation import (
     ASSEMBLY_COMMON_FIELDS, BALLOT_EXPOSED_FIELDS, PERSONA_FULL_ASSEMBLY_CREATION,
     filter_none,
 )
 from cdedb.validationtypes import CdedbID, Email
-from cdedb.query import QueryScope
 
 #: Magic value to signal abstention during voting. Used during the emulation
 #: of classical voting. This can not occur as a shortname since it contains
@@ -72,8 +71,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     @access("core_admin", "assembly_admin", modi={"POST"})
     @REQUESTdatadict(*filter_none(PERSONA_FULL_ASSEMBLY_CREATION))
-    def create_user(self, rs: RequestState, data: CdEDBObject,
-                    ignore_warnings: bool = False) -> Response:
+    def create_user(self, rs: RequestState, data: CdEDBObject) -> Response:
         defaults = {
             'is_cde_realm': False,
             'is_event_realm': False,
@@ -82,7 +80,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             'is_active': True,
         }
         data.update(defaults)
-        return super().create_user(rs, data, ignore_warnings)
+        return super().create_user(rs, data)
 
     @access("core_admin", "assembly_admin")
     @REQUESTdata("download", "is_search")
@@ -1455,19 +1453,15 @@ class AssemblyFrontend(AbstractUserFrontend):
                         ballot_id: int) -> Response:
         """Create, edit and delete candidates of a ballot."""
 
-        def constraint_maker(candidate_id: int, prefix: str) -> List[RequestConstraint]:
-            """Create constraints for each individual candidate"""
-            constraints: List[RequestConstraint] = [
-                (lambda c: c[f'shortname_{candidate_id}'] != ASSEMBLY_BAR_SHORTNAME,
-                 (f'shortname_{candidate_id}',
-                  ValueError(n_("Mustn’t be the bar shortname.")))),
-            ]
-            return constraints
-
-        spec = {'shortname': vtypes.RestrictiveIdentifier, 'title': str}
+        spec = {
+            'shortname': vtypes.ShortnameRestrictiveIdentifier,
+            'title': vtypes.LegacyShortname
+        }
+        existing_candidates = rs.ambience['ballot']['candidates'].keys()
         candidates = process_dynamic_input(
-            rs, rs.ambience['ballot']['candidates'].keys(), spec,
-            constraint_maker=constraint_maker)
+            rs, vtypes.BallotCandidate, existing_candidates, spec)
+        if rs.has_validation_errors():
+            return self.show_ballot(rs, assembly_id, ballot_id)
 
         shortnames: Set[str] = set()
         for candidate_id, candidate in candidates.items():

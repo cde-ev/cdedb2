@@ -41,7 +41,7 @@
         {% if 'event' in admin_bits %}
             {% if "gender" in shown_fields %}
                 {{ util.form_input_select(name="gender", entries=enums['Genders']|enum_entries(processing=gettext),
-                                          label=gettext("Gender"), sort=True) }}
+                                          label=gettext("Gender")) }}
             {% endif %}
             {% if "birthday" in shown_fields %}
                 {{ util.form_input_text(name="birthday", label=gettext("Birthday"), placeholder="YYYY-MM-DD", type="date") }}
@@ -116,6 +116,6 @@
                 {{ util.form_input_textarea(name="change_note", label=gettext("Changenotes")) }}
             </div>
         </div>
-        {{ util.form_input_submit(label=gettext("Save"), cancellink=show_user_link(user, values['persona_id']), differentiate_warnings=True) }}
+        {{ util.form_input_submit(label=gettext("Save"), cancellink=show_user_link(user, values['persona_id'])) }}
     </form>
 {% endblock %}

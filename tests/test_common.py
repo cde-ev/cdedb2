@@ -15,9 +15,10 @@ import pytz
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
 from cdedb.common import (
-    NearlyNow, extract_roles, int_to_words, mixed_existence_sorter, nearly_now, now,
-    schulze_evaluate, unwrap, xsorted, inverse_diacritic_patterns,
+    NearlyNow, extract_roles, int_to_words, inverse_diacritic_patterns,
+    mixed_existence_sorter, nearly_now, now, schulze_evaluate, unwrap, xsorted,
 )
+from cdedb.enums import ALL_ENUMS
 from tests.common import ANONYMOUS, BasicTest
 
 
@@ -361,3 +362,11 @@ class TestCommon(BasicTest):
         self.assertTrue(pattern.match("Berta Böhm"))
         self.assertTrue(pattern.match("Bertå Boehm"))
         self.assertFalse(pattern.match("Bertä Böhm"))
+
+    def test_enum_str_conversion(self) -> None:
+        for enum_ in ALL_ENUMS:
+            for member in enum_:
+                enum_name, member_name = str(member).split('.', 1)
+                self.assertEqual(enum_.__name__, enum_name)
+                self.assertEqual(member.name, member_name)
+                self.assertEqual(member, enum_[member_name])

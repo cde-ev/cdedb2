@@ -15,13 +15,13 @@ from typing import Optional
 import psycopg2.extensions
 
 import cdedb.validationtypes as vtypes
+from cdedb.backend.common import inspect_validation as inspect
 from cdedb.common import (
-    PERSONA_STATUS_FIELDS, PathLike, User, droid_roles, extract_roles,
-    make_root_logger, now,
+    PERSONA_STATUS_FIELDS, PathLike, User, droid_roles, extract_roles, make_root_logger,
+    now,
 )
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import connection_pool_factory
-from cdedb.validation import validate_check
 
 
 class SessionBackend:
@@ -70,8 +70,8 @@ class SessionBackend:
         """
         persona_id = None
         data = None
-        sessionkey, sessionkey_errs = validate_check(vtypes.PrintableASCII, sessionkey)
-        ip, ip_errs = validate_check(vtypes.PrintableASCII, ip)
+        sessionkey, sessionkey_errs = inspect(vtypes.PrintableASCII, sessionkey)
+        ip, ip_errs = inspect(vtypes.PrintableASCII, ip)
         if not sessionkey_errs and not ip_errs:
             query = ("SELECT persona_id, ip, is_active, atime, ctime"
                      " FROM core.sessions WHERE sessionkey = %s")

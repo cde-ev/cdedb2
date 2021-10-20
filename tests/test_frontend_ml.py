@@ -4,15 +4,23 @@
 import csv
 import re
 import unittest.mock
-from typing import Any, List, Tuple
+from typing import Any, List, Set, Tuple
+
+import webtest
 
 import cdedb.database.constants as const
 from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, CdEDBObject
-from cdedb.devsamples import MockHeldMessage, HELD_MESSAGE_SAMPLE
+from cdedb.devsamples import HELD_MESSAGE_SAMPLE, MockHeldMessage
 from cdedb.frontend.common import CustomCSVDialect
 from cdedb.ml_type_aux import CdeLokalMailinglist
 from cdedb.query import QueryOperators
 from tests.common import USER_DICT, FrontendTest, as_users, prepsql
+
+
+def _get_registration_part_stati(f: webtest.Form) -> Set[const.RegistrationPartStati]:
+    return set(filter(
+        None, (f.get("registration_stati", index=i).value
+               for i in range(len(const.RegistrationPartStati)))))
 
 
 class TestMlFrontend(FrontendTest):
@@ -762,18 +770,18 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'description': 'Mailingliste anlegen'})
         self.assertTitle("Mailingliste anlegen")
         f = self.response.forms['selectmltypeform']
-        f['ml_type'] = const.MailinglistTypes.member_mandatory.value
+        f['ml_type'] = const.MailinglistTypes.member_mandatory
         self.submit(f)
         f = self.response.forms['createlistform']
         self.assertEqual(f['maxsize'].value, '64')
         f['title'] = "Munkelwand"
-        f['mod_policy'] = 1
-        f['attachment_policy'] = 2
-        f['subject_prefix'] = "[munkel]"
+        f['mod_policy'] = const.ModerationPolicy.unmoderated
+        f['attachment_policy'] = const.AttachmentPolicy.pdf_only
+        f['subject_prefix'] = "munkel"
         f['maxsize'] = 512
         f['is_active'].checked = True
         f['notes'] = "Noch mehr Gemunkel."
-        f['domain'] = 1
+        f['domain'] = const.MailinglistDomain.lists
         f['local_part'] = 'munkelwand'
         # Check that there must be some moderators
         errormsg = "Darf nicht leer sein."
@@ -814,7 +822,7 @@ class TestMlFrontend(FrontendTest):
         # Check if the attachment policy hint works
         self.assertPresence("Admin-Team")
         f = self.response.forms['changelistform']
-        f['domain'] = const.MailinglistDomain.testmail.value
+        f['domain'] = const.MailinglistDomain.testmail
         f['maxsize'] = "intentionally no valid maxsize"
         self.submit(f, check_notification=False)
         self.assertValidationError("maxsize", "Ungültige Eingabe für eine Ganzzahl.")
@@ -825,7 +833,7 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Werbung")
         self.traverse({'href': '/ml/mailinglist/2/change'}, )
         self.assertPresence("Admin-Team")
-        f['domain'] = const.MailinglistDomain.lists.value
+        f['domain'] = const.MailinglistDomain.lists
         self.submit(f)
         self.assertTitle("Werbung")
         self.traverse({'href': '/ml/mailinglist/2/change'}, )
@@ -890,11 +898,11 @@ class TestMlFrontend(FrontendTest):
 
         for ml_type in const.MailinglistTypes:
             with self.subTest(ml_type=ml_type):
-                f['ml_type'] = ml_type.value
+                f['ml_type'] = ml_type
                 f['event_id'] = event_id
                 f['registration_stati'] = [
-                    const.RegistrationPartStati.participant.value,
-                    const.RegistrationPartStati.waitlist.value,
+                    const.RegistrationPartStati.participant,
+                    const.RegistrationPartStati.waitlist,
                 ]
                 f['assembly_id'] = assembly_id
                 # no ml type should allow event *and* assembly fields to be set
@@ -944,12 +952,17 @@ class TestMlFrontend(FrontendTest):
         self.get("/ml/mailinglist/9/change")
         self.assertTitle("Teilnehmer-Liste – Konfiguration")
         f = self.response.forms['changelistform']
-        tmp = {f.get("registration_stati", index=i).value for i in range(7)}
-        self.assertEqual({"2", "4", None}, tmp)
-        f['registration_stati'] = [3, 5]
+        reality = _get_registration_part_stati(f)
+        expectation = {str(const.RegistrationPartStati.participant),
+                       str(const.RegistrationPartStati.guest)}
+        self.assertEqual(expectation, reality)
+        f['registration_stati'] = [const.RegistrationPartStati.waitlist,
+                                   const.RegistrationPartStati.cancelled]
         self.submit(f)
-        tmp = {f.get("registration_stati", index=i).value for i in range(7)}
-        self.assertEqual({"3", "5", None}, tmp)
+        reality = _get_registration_part_stati(f)
+        expectation = {str(const.RegistrationPartStati.waitlist),
+                       str(const.RegistrationPartStati.cancelled)}
+        self.assertEqual(expectation, reality)
 
     @as_users("nina")
     def test_delete_ml(self) -> None:
@@ -1039,9 +1052,9 @@ class TestMlFrontend(FrontendTest):
                 self.login("anton")
                 mdata = {
                     'title': 'TestAkaList',
-                    'ml_type': const.MailinglistTypes.event_associated.value,
+                    'ml_type': const.MailinglistTypes.event_associated,
                     'local_part': 'testaka',
-                    'domain': const.MailinglistDomain.aka.value,
+                    'domain': const.MailinglistDomain.aka,
                     'event_id': "1",
                     'moderators': user['DB-ID'],
                 }
@@ -1186,13 +1199,13 @@ class TestMlFrontend(FrontendTest):
         f['event_id'].force_value(1)
         f['is_active'].force_value(False)
         # these properties can be changed by full moderators only
-        f['registration_stati'] = [const.RegistrationPartStati.guest.value]
+        f['registration_stati'] = [const.RegistrationPartStati.guest]
         # these properties can be changed by every moderator
         f['description'] = "Wir machen Party!"
         f['notes'] = "Nur geladene Gäste."
-        f['mod_policy'] = const.ModerationPolicy.unmoderated.value
+        f['mod_policy'] = const.ModerationPolicy.unmoderated
         f['subject_prefix'] = "party"
-        f['attachment_policy'] = const.AttachmentPolicy.allow.value
+        f['attachment_policy'] = const.AttachmentPolicy.allow
         f['maxsize'] = 1111
         self.submit(f)
 
@@ -1205,21 +1218,21 @@ class TestMlFrontend(FrontendTest):
         self.assertEqual(str(old_ml['event_id']), f['event_id'].value)
 
         # ... these have only changed if the moderator is privileged ...
-        reality = {f.get("registration_stati", index=i).value for i in range(7)}
+        reality = _get_registration_part_stati(f)
         if self.user_in('berta'):
-            expectation = {None, str(const.RegistrationPartStati.guest.value)}
+            expectation = {str(const.RegistrationPartStati.guest)}
         else:
-            expectation = {str(status)
-                           for status in old_ml['registration_stati']} | {None}
+            expectation = {str(const.RegistrationPartStati(status))
+                           for status in old_ml['registration_stati']}
         self.assertEqual(expectation, reality)
 
         # ... and these have changed.
         self.assertEqual("Wir machen Party!", f['description'].value)
         self.assertEqual("Nur geladene Gäste.", f['notes'].value)
-        self.assertEqual(str(const.ModerationPolicy.unmoderated.value),
+        self.assertEqual(str(const.ModerationPolicy.unmoderated),
                          f['mod_policy'].value)
         self.assertEqual("party", f['subject_prefix'].value)
-        self.assertEqual(str(const.AttachmentPolicy.allow.value),
+        self.assertEqual(str(const.AttachmentPolicy.allow),
                          f['attachment_policy'].value)
         self.assertEqual("1111", f['maxsize'].value)
 
@@ -1319,7 +1332,7 @@ class TestMlFrontend(FrontendTest):
         self.traverse({"description": "Mailinglisten"},
                       {"description": "Mailingliste anlegen"})
         f = self.response.forms['selectmltypeform']
-        f['ml_type'] = const.MailinglistTypes.cdelokal.value
+        f['ml_type'] = const.MailinglistTypes.cdelokal
         self.assertEqual(len(f['ml_type'].options), 2)
         self.submit(f)
         f = self.response.forms['createlistform']
@@ -1329,7 +1342,7 @@ class TestMlFrontend(FrontendTest):
         f['description'] = "If anyone else lives here, please come by, " \
                            "I am lonely."
         f['local_part'] = "littlewhinging"
-        f['domain'] = const.MailinglistDomain.cdelokal.value
+        f['domain'] = const.MailinglistDomain.cdelokal
         self.assertEqual(len(f['domain'].options),
                          len(CdeLokalMailinglist.domains))
         moderator = USER_DICT["berta"]
@@ -1342,28 +1355,28 @@ class TestMlFrontend(FrontendTest):
     def test_1342(self) -> None:
         self.get("/ml/mailinglist/60/change")
         f = self.response.forms['changelistform']
-        tmp = {f.get("registration_stati", index=i).value for i in range(7)}
+        reality = _get_registration_part_stati(f)
         sample_data_stati = set(
-            str(x) for x in self.get_sample_data(
+            str(const.RegistrationPartStati(x)) for x in self.get_sample_data(
                 "ml.mailinglists", (60,), ("registration_stati",)
             )[60]["registration_stati"])
-        self.assertEqual(sample_data_stati | {None}, tmp)
-        stati = [const.RegistrationPartStati.waitlist.value,
-                 const.RegistrationPartStati.guest.value]
+        self.assertEqual(sample_data_stati, reality)
+        stati = [const.RegistrationPartStati.waitlist,
+                 const.RegistrationPartStati.guest]
         f['registration_stati'] = stati
         self.submit(f)
         self.traverse({"description": "Konfiguration"})
         f = self.response.forms['changelistform']
-        tmp = {f.get("registration_stati", index=i).value for i in range(7)}
-        self.assertEqual({str(x) for x in stati} | {None}, tmp)
+        reality = _get_registration_part_stati(f)
+        self.assertEqual({str(x) for x in stati}, reality)
 
-        stati = [const.RegistrationPartStati.not_applied.value]
+        stati = [const.RegistrationPartStati.not_applied]
         f['registration_stati'] = stati
         self.submit(f)
         self.traverse({"description": "Konfiguration"})
         f = self.response.forms['changelistform']
-        tmp = {f.get("registration_stati", index=i).value for i in range(7)}
-        self.assertEqual({str(x) for x in stati} | {None}, tmp)
+        reality = _get_registration_part_stati(f)
+        self.assertEqual({str(x) for x in stati}, reality)
 
     @staticmethod
     def _prepare_moderation_mock(client_class: unittest.mock.Mock) -> Tuple[
@@ -1534,7 +1547,11 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Mailinglisten-Log [1–9 von 9]")
         self.assertNonPresence("LogCodes")
         f = self.response.forms['logshowform']
-        f['codes'] = [10, 11, 20, 21, 22]
+        f['codes'] = [const.MlLogCodes.moderator_added,
+                      const.MlLogCodes.moderator_removed,
+                      const.MlLogCodes.subscription_requested,
+                      const.MlLogCodes.subscribed,
+                      const.MlLogCodes.subscription_changed]
         f['mailinglist_id'] = 4
 
         self.submit(f)

@@ -15,11 +15,11 @@ import enum
 import re
 from typing import Any, Collection, Dict, Tuple
 
-from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, RequestState, EntitySorter, n_,
-    get_localized_country_codes, xsorted,
-)
 import cdedb.database.constants as const
+from cdedb.common import (
+    CdEDBObject, CdEDBObjectMap, EntitySorter, RequestState,
+    get_localized_country_codes, n_, xsorted,
+)
 from cdedb.filter import enum_entries_filter, keydictsort_filter
 
 
