@@ -1483,7 +1483,7 @@ class TestEventBackend(BackendTest):
                      'default_value': None,
                      'info': None,
                      'pos': 0,
-                     'readonly': None,
+                     'readonly': False,
                      'input_size': None,
                      'title': 'Ich bin unter 13 Jahre alt.',
                      'kind': const.QuestionnaireUsages.registration,
@@ -1620,7 +1620,7 @@ class TestEventBackend(BackendTest):
                     'default_value': None,
                     'info': "Du kannst freiwillig etwas mehr bezahlen um zukünftige"
                             " Akademien zu unterstützen.",
-                    'readonly': None,
+                    'readonly': False,
                     'input_size': None,
                     'title': "Ich möchte den Solidaritätszuschlag bezahlen.",
                 },
