@@ -56,7 +56,8 @@ from cdedb.query import (
 from cdedb.validation import (
     COURSE_COMMON_FIELDS, EVENT_EXPOSED_FIELDS, EVENT_PART_COMMON_FIELDS,
     EVENT_PART_CREATION_MANDATORY_FIELDS, LODGEMENT_COMMON_FIELDS,
-    PERSONA_FULL_EVENT_CREATION, TypeMapping, filter_none,
+    PERSONA_FULL_EVENT_CREATION, QUESTIONNAIRE_ROW_MANDATORY_FIELDS, TypeMapping,
+    filter_none,
 )
 from cdedb.validationtypes import VALIDATOR_LOOKUP
 
@@ -3623,10 +3624,7 @@ class EventFrontend(AbstractUserFrontend):
                            kind: const.QuestionnaireUsages
                            ) -> Optional[DefaultReturnCode]:
         """Deduplicated code to set questionnaire rows of one kind."""
-        other_kinds = set()
-        for x in const.QuestionnaireUsages:
-            if x != kind:
-                other_kinds.add(x)
+        other_kinds = set(const.QuestionnaireUsages) - {kind}
         old_questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, kinds=(kind,)))
         other_questionnaire = self.eventproxy.get_questionnaire(
@@ -3745,14 +3743,8 @@ class EventFrontend(AbstractUserFrontend):
         """
         del_flags = request_extractor(rs, {f"delete_{i}": bool for i in range(num)})
         deletes = {i for i in range(num) if del_flags['delete_{}'.format(i)]}
-        spec: TypeMapping = {
-            'field_id': Optional[vtypes.ID],  # type: ignore
-            'title': Optional[str],  # type: ignore
-            'info': Optional[str],  # type: ignore
-            'input_size': Optional[int],  # type: ignore
-            'readonly': Optional[bool],  # type: ignore
-            'default_value': Optional[str],  # type: ignore
-        }
+        spec: TypeMapping = dict(QUESTIONNAIRE_ROW_MANDATORY_FIELDS,
+                                 field_id=Optional[vtypes.ID])  # type: ignore[arg-type]
         marker = 1
         while marker < 2 ** 10:
             if not unwrap(request_extractor(rs, {f"create_-{marker}": bool})):
@@ -3824,7 +3816,8 @@ class EventFrontend(AbstractUserFrontend):
             if data[dv_key] is None or field_id is None:
                 data[dv_key] = None
                 continue
-            data[dv_key] = check_optional(rs, vtypes.ByFieldDatatype,
+            data[dv_key] = check_optional(
+                rs, vtypes.ByFieldDatatype,
                 data[dv_key], dv_key, kind=reg_fields[field_id]['kind'])
         questionnaire = {
             kind: list(

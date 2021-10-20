@@ -3010,6 +3010,15 @@ def _by_field_datatype(
     return ByFieldDatatype(val)
 
 
+QUESTIONNAIRE_ROW_MANDATORY_FIELDS: TypeMapping = {
+    'title': Optional[str],  # type: ignore
+    'info': Optional[str],  # type: ignore
+    'input_size': Optional[int],  # type: ignore
+    'readonly': Optional[bool],  # type: ignore
+    'default_value': Optional[str],  # type: ignore
+}
+
+
 def _questionnaire_row(
     val: Any, field_definitions: CdEDBObjectMap, fee_modifier_fields: Set[int],
     kind: const.QuestionnaireUsages, argname: str = "questionnaire_row", **kwargs: Any,
@@ -3018,13 +3027,6 @@ def _questionnaire_row(
     argname_prefix = argname + "." if argname else ""
     value = _mapping(val, argname, **kwargs)
 
-    mandatory_fields: TypeMapping = {
-        'title': Optional[str],  # type: ignore
-        'info': Optional[str],  # type: ignore
-        'input_size': Optional[int],  # type: ignore
-        'readonly': Optional[bool],  # type: ignore
-        'default_value': Optional[str],  # type: ignore
-    }
     optional_fields: TypeMapping = {
         'field_id': Optional[ID],  # type: ignore[dict-item]
         'field_name': Optional[RestrictiveIdentifier],  # type: ignore[dict-item]
@@ -3033,7 +3035,8 @@ def _questionnaire_row(
     }
 
     value = _examine_dictionary_fields(
-        value, mandatory_fields, optional_fields, argname=argname, **kwargs)
+        value, QUESTIONNAIRE_ROW_MANDATORY_FIELDS, optional_fields,
+        argname=argname, **kwargs)
 
     errs = ValidationSummary()
     if 'kind' in value:
