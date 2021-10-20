@@ -3079,6 +3079,7 @@ def _questionnaire_row(
                 kind=field.get('kind', FieldDatatypes.str), **kwargs)
 
     field_id = value['field_id']
+    value['readonly'] = bool(value['readonly']) if field_id else None
     if field_id and field_id in fee_modifier_fields:
         if not kind.allow_fee_modifier():
             msg = n_("Inappropriate questionnaire usage for fee modifier field.")
