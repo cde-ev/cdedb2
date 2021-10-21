@@ -31,7 +31,6 @@ from cdedb.frontend.common import (
     inspect_validation as inspect, inspect_validation_optional as inspect_optional,
     make_postal_address, request_extractor,
 )
-from cdedb.validation import TypeMapping
 
 
 class CdEParseMixin(CdEBaseFrontend):
@@ -193,7 +192,7 @@ class CdEParseMixin(CdEBaseFrontend):
         """
         rs.ignore_validation_errors()
 
-        def params_generator(i: int) -> TypeMapping:
+        def params_generator(i: int) -> vtypes.TypeMapping:
             return {
                 f"reference{i}": Optional[str],  # type: ignore
                 f"account{i}": Accounts,
