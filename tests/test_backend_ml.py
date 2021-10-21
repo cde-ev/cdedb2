@@ -5,9 +5,7 @@ from typing import Collection, Set, cast
 
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
-from cdedb.common import (
-    CdEDBObject, PrivilegeError, RequestState, nearly_now,
-)
+from cdedb.common import CdEDBObject, PrivilegeError, RequestState, nearly_now
 from cdedb.database.constants import SubscriptionState as SS
 from cdedb.subman.exceptions import SubscriptionError
 from cdedb.subman.machine import SubscriptionAction as SA

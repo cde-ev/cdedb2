@@ -25,7 +25,6 @@ import email.utils
 import functools
 import gettext
 import io
-import itertools
 import json
 import logging
 import pathlib
@@ -45,14 +44,15 @@ from secrets import token_hex
 from types import TracebackType
 from typing import (
     IO, AbstractSet, Any, AnyStr, Callable, ClassVar, Collection, Dict, Iterable, List,
-    Literal, Mapping, MutableMapping, NamedTuple, Optional, Protocol, Sequence,
-    Tuple, Type, TypeVar, Union, cast, overload,
+    Literal, Mapping, MutableMapping, NamedTuple, Optional, Protocol, Sequence, Tuple,
+    Type, TypeVar, Union, cast, overload,
 )
 
 import icu
 import jinja2
-import mailmanclient.restobjects.mailinglist
 import mailmanclient.restobjects.held_message
+import mailmanclient.restobjects.mailinglist
+import markupsafe
 import werkzeug
 import werkzeug.datastructures
 import werkzeug.exceptions
@@ -71,12 +71,13 @@ from cdedb.backend.ml import MlBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.common import (
     ALL_MGMT_ADMIN_VIEWS, ALL_MOD_ADMIN_VIEWS, ANTI_CSRF_TOKEN_NAME,
-    ANTI_CSRF_TOKEN_PAYLOAD, REALM_SPECIFIC_GENESIS_FIELDS, PERSONA_DEFAULTS,
-    CdEDBMultiDict, CdEDBObject, CustomJSONEncoder, EntitySorter, Error, Notification,
-    NotificationType, PathLike, PrivilegeError, RequestState, Role, User,
-    ValidationWarning, _tdelta, asciificator, decode_parameter, encode_parameter,
-    format_country_code, get_localized_country_codes, glue, json_serialize, make_proxy,
-    make_root_logger, merge_dicts, n_, now, roles_to_db_role, unwrap,
+    ANTI_CSRF_TOKEN_PAYLOAD, IGNORE_WARNINGS_NAME, PERSONA_DEFAULTS,
+    REALM_SPECIFIC_GENESIS_FIELDS, CdEDBMultiDict, CdEDBObject, CustomJSONEncoder,
+    EntitySorter, Error, Notification, NotificationType, PathLike, PrivilegeError,
+    RequestState, Role, User, ValidationWarning, _tdelta, asciificator,
+    decode_parameter, encode_parameter, format_country_code,
+    get_localized_country_codes, glue, json_serialize, make_proxy, make_root_logger,
+    merge_dicts, n_, now, roles_to_db_role, unwrap,
 )
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -327,6 +328,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 "UNCRITICAL_PARAMETER_TIMEOUT"],
             'ANTI_CSRF_TOKEN_NAME': ANTI_CSRF_TOKEN_NAME,
             'ANTI_CSRF_TOKEN_PAYLOAD': ANTI_CSRF_TOKEN_PAYLOAD,
+            'IGNORE_WARNINGS_NAME': IGNORE_WARNINGS_NAME,
             'GIT_COMMIT': self.conf["GIT_COMMIT"],
             'I18N_LANGUAGES': self.conf["I18N_LANGUAGES"],
             'I18N_ADVERTISED_LANGUAGES': self.conf["I18N_ADVERTISED_LANGUAGES"],
@@ -461,10 +463,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         def _has_warnings() -> bool:
             """Determine if there are any warnings among the errors."""
-            all_errors = rs.retrieve_validation_errors()
-            return any(
-                isinstance(kind, ValidationWarning)
-                for param, kind in all_errors)
+            return bool(validate.get_warnings(rs.retrieve_validation_errors()))
 
         def _make_backend_checker(rs: RequestState, backend: AbstractBackend,
                                   method_name: str) -> Callable[..., Any]:
@@ -660,8 +659,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
             _LOGGER.debug(debugstring)
             params['debugstring'] = debugstring
-        if rs.retrieve_validation_errors() and not rs.notifications:
-            rs.notify("error", n_("Failed validation."))
+        if (errors := rs.retrieve_validation_errors()) and not rs.notifications:
+            if all(isinstance(kind, ValidationWarning) for param, kind in errors):
+                rs.notify("warning", n_("Input seems faulty. Please double-check if"
+                                        " you really want to save it."))
+            else:
+                rs.notify("error", n_("Failed validation."))
         if self.conf["LOCKDOWN"]:
             rs.notify("info", n_("The database currently undergoes "
                                  "maintenance and is unavailable."))
@@ -780,7 +783,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                             submit_general_query: Callable[[RequestState, Query],
                                                            Tuple[CdEDBObject, ...]], *,
                             endpoint: str = "user_search",
-                            choices: Dict[str, collections.OrderedDict] = None,  # type: ignore
+                            choices: Mapping[str, Mapping[Any, str]] = None,
                             query: Query = None) -> werkzeug.Response:
         """Perform user search.
 
@@ -1136,12 +1139,10 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     # @access("realm_admin", modi={"POST"})
     # @REQUESTdatadict(...)
     @abc.abstractmethod
-    def create_user(self, rs: RequestState, data: CdEDBObject,
-                    ignore_warnings: bool = False) -> werkzeug.Response:
+    def create_user(self, rs: RequestState, data: CdEDBObject) -> werkzeug.Response:
         """Create new user account."""
         merge_dicts(data, PERSONA_DEFAULTS)
-        data = check_validation(
-            rs, vtypes.Persona, data, creation=True, _ignore_warnings=ignore_warnings)
+        data = check_validation(rs, vtypes.Persona, data, creation=True)
         if data:
             exists = self.coreproxy.verify_existence(rs, data['username'])
             if exists:
@@ -1150,8 +1151,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
                       ValueError("User with this E-Mail exists already.")),))
         if rs.has_validation_errors() or not data:
             return self.create_user_form(rs)
-        new_id = self.coreproxy.create_persona(
-            rs, data, ignore_warnings=ignore_warnings)
+        new_id = self.coreproxy.create_persona(rs, data)
         if new_id:
             success, message = self.coreproxy.make_reset_cookie(rs, data[
                 'username'])
@@ -1608,7 +1608,7 @@ def staticurl(path: str, version: str = "") -> str:
 
 @overload
 def staticlink(rs: RequestState, label: str, path: str, version: str = "",
-               html: Literal[True] = True) -> jinja2.Markup: ...
+               html: Literal[True] = True) -> markupsafe.Markup: ...
 
 
 @overload
@@ -1617,14 +1617,14 @@ def staticlink(rs: RequestState, label: str, path: str, version: str = "",
 
 
 def staticlink(rs: RequestState, label: str, path: str, version: str = "",
-               html: bool = True) -> Union[jinja2.Markup, str]:
+               html: bool = True) -> Union[markupsafe.Markup, str]:
     """Create a link to a static resource.
 
     This can either create a basic html link or a fully qualified, static https link.
 
     .. note:: This will be overridden by _staticlink in templates, see fill_template.
     """
-    link: Union[jinja2.Markup, str]
+    link: Union[markupsafe.Markup, str]
     if html:
         return safe_filter(f'<a href="{staticurl(path, version=version)}">{label}</a>')
     else:
@@ -1642,7 +1642,7 @@ def docurl(topic: str, anchor: str = "") -> str:
 
 @overload
 def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
-            html: Literal[True] = True) -> jinja2.Markup: ...
+            html: Literal[True] = True) -> markupsafe.Markup: ...
 
 
 @overload
@@ -1651,13 +1651,13 @@ def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
 
 
 def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
-            html: bool = True) -> Union[jinja2.Markup, str]:
+            html: bool = True) -> Union[markupsafe.Markup, str]:
     """Create a link to our documentation.
 
     This can either create a basic html link or a fully qualified, static https link.
     .. note:: This will be overridden by _doclink in templates, see fill_template.
     """
-    link: Union[jinja2.Markup, str]
+    link: Union[markupsafe.Markup, str]
     if html:
         return safe_filter(f'<a href="{docurl(topic, anchor=anchor)}">{label}</a>')
     else:
@@ -1667,7 +1667,7 @@ def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
 
 # noinspection PyPep8Naming
 def REQUESTdata(
-    *spec: str, _hints: validate.TypeMapping = None
+    *spec: str, _hints: validate.TypeMapping = None, _postpone_validation: bool = False
 ) -> Callable[[F], F]:
     """Decorator to extract parameters from requests and validate them.
 
@@ -1688,6 +1688,8 @@ def REQUESTdata(
         are valid as a type.
         To extract an encoded parameter one may prepended the name of it
         with an octothorpe (``#``).
+    :param _postpone_validation: Whether or not validation should be applied inside.
+        This should be used rarely, but sometimes its necessary.
     """
 
     def wrap(fun: F) -> F:
@@ -1736,7 +1738,9 @@ def REQUESTdata(
                             # We have to be careful, since empty lists are
                             # problematic for the werkzeug MultiDict
                             rs.values[name] = None
-                        if optional:
+                        if _postpone_validation:
+                            kwargs[name] = tuple(vals)
+                        elif optional:
                             kwargs[name] = tuple(
                                 check_validation_optional(rs, type_, val, name)
                                 for val in vals
@@ -1748,7 +1752,9 @@ def REQUESTdata(
                             )
                     else:
                         rs.values[name] = val
-                        if optional:
+                        if _postpone_validation:
+                            kwargs[name] = val
+                        elif optional:
                             kwargs[name] = check_validation_optional(
                                 rs, type_, val, name)
                         else:
@@ -1807,7 +1813,8 @@ RequestConstraint = Tuple[Callable[[CdEDBObject], bool], Error]
 
 def request_extractor(
         rs: RequestState, spec: validate.TypeMapping,
-        constraints: Collection[RequestConstraint] = None) -> CdEDBObject:
+        constraints: Collection[RequestConstraint] = None,
+        postpone_validation: bool = False) -> CdEDBObject:
     """Utility to apply REQUESTdata later than usual.
 
     This is intended to bu used, when the parameter list is not known before
@@ -1827,9 +1834,10 @@ def request_extractor(
     :param spec: handed through to the decorator
     :param constraints: additional constraints that shoud produce
       validation errors
+    :param postpone_validation: handed through to the decorator
     :returns: dict containing the requested values
     """
-    @REQUESTdata(*spec, _hints=spec)
+    @REQUESTdata(*spec, _hints=spec, _postpone_validation=postpone_validation)
     def fun(_: None, rs: RequestState, **kwargs: Any) -> CdEDBObject:
         if not rs.has_validation_errors():
             for checker, error in constraints or []:
@@ -1984,7 +1992,10 @@ def assembly_guard(fun: F) -> F:
 
 def check_validation(rs: RequestState, type_: Type[T], value: Any,
                      name: str = None, **kwargs: Any) -> Optional[T]:
-    """Helper to perform parameter sanitization.
+    """Wrapper to call checks in :py:mod:`cdedb.validation`.
+
+    This performs the check and appends all occurred errors to the RequestState.
+    This also ignores warnings appropriately due to rs.ignore_warnings.
 
     :param type_: type to check for
     :param name: name of the parameter to check (bonus points if you find
@@ -1992,19 +2003,23 @@ def check_validation(rs: RequestState, type_: Type[T], value: Any,
       capabilities, but I didn't see how this should be done).
     """
     if name is not None:
-        ret, errs = validate.validate_check(type_, value, argname=name, **kwargs)
+        ret, errs = validate.validate_check(
+            type_, value, ignore_warnings=rs.ignore_warnings, argname=name, **kwargs)
     else:
-        ret, errs = validate.validate_check(type_, value, **kwargs)
+        ret, errs = validate.validate_check(
+            type_, value, ignore_warnings=rs.ignore_warnings, **kwargs)
     rs.extend_validation_errors(errs)
     return ret
 
 
 def check_validation_optional(rs: RequestState, type_: Type[T], value: Any,
                               name: str = None, **kwargs: Any) -> Optional[T]:
-    """Helper to perform parameter sanitization.
+    """Wrapper to call checks in :py:mod:`cdedb.validation`.
 
     This is similar to :func:`~cdedb.frontend.common.check_validation`
     but also allows optional/falsy values.
+
+    This also ignores warnings appropriately due to rs.ignore_warnings.
 
     :param type_: type to check for
     :param name: name of the parameter to check (bonus points if you find
@@ -2013,11 +2028,37 @@ def check_validation_optional(rs: RequestState, type_: Type[T], value: Any,
     """
     if name is not None:
         ret, errs = validate.validate_check_optional(
-            type_, value, argname=name, **kwargs)
+            type_, value, ignore_warnings=rs.ignore_warnings, argname=name, **kwargs)
     else:
-        ret, errs = validate.validate_check_optional(type_, value, **kwargs)
+        ret, errs = validate.validate_check_optional(
+            type_, value, ignore_warnings=rs.ignore_warnings, **kwargs)
     rs.extend_validation_errors(errs)
     return ret
+
+
+def inspect_validation(
+    type_: Type[T], value: Any, *, ignore_warnings: bool = False, **kwargs: Any
+) -> Tuple[Optional[T], List[Error]]:
+    """Convenient wrapper to call checks in :py:mod:`cdedb.validation`.
+
+    This is similar to :func:`~cdedb.frontend.common.check_validation` but returns
+    all encountered errors instead of appending them to the RequestState.
+    This should only be used if the error handling differs from the default handling.
+    """
+    return validate.validate_check(
+        type_, value, ignore_warnings=ignore_warnings, **kwargs)
+
+
+def inspect_validation_optional(
+    type_: Type[T], value: Any, *, ignore_warnings: bool = False, **kwargs: Any
+) -> Tuple[Optional[T], List[Error]]:
+    """Convenient wrapper to call checks in :py:mod:`cdedb.validation`.
+
+    This is similar to :func:`~cdedb.frontend.common.inspect_validation` but also allows
+    optional/falsy values.
+    """
+    return validate.validate_check_optional(
+        type_, value, ignore_warnings=ignore_warnings, **kwargs)
 
 
 def basic_redirect(rs: RequestState, url: str) -> werkzeug.Response:
@@ -2147,28 +2188,21 @@ def make_persona_name(persona: CdEDBObject,
     return " ".join(ret)
 
 
+# TODO maybe retrieve the spec from the type_?
 def process_dynamic_input(
-    rs: RequestState, existing: Collection[int], spec: validate.TypeMapping, *,
-    additional: CdEDBObject = None, prefix: str = "",
-    constraint_maker: Callable[[int, str], List[RequestConstraint]] = None
+    rs: RequestState,
+    type_: Type[T],
+    existing: Collection[int],
+    spec: validate.TypeMapping,
+    *,
+    additional: CdEDBObject = None,
+    prefix: str = "",
 ) -> Dict[int, Optional[CdEDBObject]]:
     """Retrieve data from rs provided by 'dynamic_row_table' makro.
 
     This takes a 'spec' of field_names mapped to their validation. Each field_name is
     prepended with the 'prefix' and appended with the entity_id in the form of
     "{prefix}{field_name}_{entity_id}" before being extracted from the RequestState.
-
-    During extraction with `request_extractor`, it is possible to pass some additional
-    constraints. To dynamically create them for each not-deleted entry, a
-    'constraint_maker' function is needed. It might look like the following:
-
-        def int_constraint_maker(field_id: int, prefix: str) -> List[RequestConstraint]:
-            # the field_name present in spec is assumed to be 'int' in this example
-            rs_field_name = f"{prefix}int_{field_id}"
-            msg = n_("Must be greater than zero.")
-            return [(
-                lambda d: d[rs_field_name] > 0, (rs_field_name, ValueError(msg))
-            )]
 
     'process_dynamic_input' returns a data dict to update the database, which includes:
     - existing entries, mapped to their (validated) input fields (from spec)
@@ -2179,12 +2213,15 @@ def process_dynamic_input(
     - To each existing, not deleted entry: the 'id' of the entry.
     - To each new and each existing, not deleted entry: all entries of 'additional'
 
+    Take care to check for validation_errors directly after calling this function!
+    Since the validation facillity is used inside, a ValidationError inside an entry
+    causes the entry to be set to None (similar to all deleted entries), which may have
+    unwanted side-effects if you simply proceed.
+
+    :param type_: validation_type of the entities
     :param existing: ids of already existent objects
     :param spec: name of input fields, mapped to their validation. This uses the same
         format as the `request_extractor`, but adds the 'prefix' to each key if present.
-    :param constraint_maker: a function accepting the id of a non-deleted entry and
-        the string prefix and gives back all constraints for this entry, which are
-        further passed to request_extractor
     :param additional: additional keys added to each output object
     :param prefix: prefix in front of all concerned fields. Should be used when more
         then one dynamic input table is present on the same page.
@@ -2201,13 +2238,10 @@ def process_dynamic_input(
         for anid in non_deleted_existing
         for key, value in spec.items()
     }
-    # generate the constraints for each existing entry which will not be deleted
-    constraints = list(itertools.chain.from_iterable(
-        constraint_maker(anid, prefix) for anid in non_deleted_existing)
-    ) if constraint_maker else None
-    data = request_extractor(rs, existing_data_spec, constraints)
+    # validation is postponed to a later point to use the validator for the whole object
+    data = request_extractor(rs, existing_data_spec, postpone_validation=True)
 
-    # build the return dict of all existing entries
+    # build the return dict of all existing entries and check if they pass validation
     ret: Dict[int, Optional[CdEDBObject]] = {
         anid: {key: data[f"{prefix}{key}_{anid}"] for key in spec}
         for anid in non_deleted_existing
@@ -2216,8 +2250,13 @@ def process_dynamic_input(
         if anid in deletes:
             ret[anid] = None
         else:
-            ret[anid]['id'] = anid  # type: ignore
-            ret[anid].update(additional)  # type: ignore
+            entry = ret[anid]
+            assert entry is not None
+            entry["id"] = anid
+            entry.update(additional)
+            # apply the promised validation
+            ret[anid] = check_validation(rs, type_, entry, field_prefix=prefix,
+                                         field_postfix=f"_{anid}")  # type: ignore
 
     # extract the new entries which shall be created
     marker = 1
@@ -2225,12 +2264,12 @@ def process_dynamic_input(
         will_create = unwrap(request_extractor(rs, {f"{prefix}create_-{marker}": bool}))
         if will_create:
             params = {f"{prefix}{key}_-{marker}": value for key, value in spec.items()}
-            constraints = (constraint_maker(-marker, prefix)
-                           if constraint_maker else None)
-            data = request_extractor(rs, params, constraints)
-            ret[-marker] = {key: data[f"{prefix}{key}_-{marker}"] for key in spec}
-            if additional:
-                ret[-marker].update(additional)  # type: ignore
+            data = request_extractor(rs, params, postpone_validation=True)
+            entry = {key: data[f"{prefix}{key}_-{marker}"] for key in spec}
+            entry.update(additional)
+            ret[-marker] = check_validation(
+                rs, type_, entry, field_prefix=prefix, field_postfix=f"_-{marker}",
+                creation=True)  # type: ignore
         else:
             break
         marker += 1

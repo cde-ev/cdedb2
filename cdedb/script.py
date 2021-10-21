@@ -14,7 +14,7 @@ import os
 import tempfile
 import time
 from types import TracebackType
-from typing import Any, Dict, IO, Optional, Tuple, Type
+from typing import IO, Any, Dict, Optional, Tuple, Type
 
 import psycopg2
 import psycopg2.extensions
@@ -27,8 +27,8 @@ from cdedb.backend.core import CoreBackend
 from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.past_event import PastEventBackend
-from cdedb.config import Config, SecretsConfig
 from cdedb.common import ALL_ROLES, PathLike, RequestState, User, make_proxy
+from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import Atomizer, IrradiatedConnection
 from cdedb.frontend.common import setup_translations
 

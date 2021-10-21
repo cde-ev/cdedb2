@@ -5,12 +5,12 @@
 
 """User data input mangling.
 
-We provide a set of functions testing arbitary user provided data for
+We provide a set of functions testing arbitrary user provided data for
 fitness. Those functions returning a mangled value also convert to more
-approriate python types (most input is given as strings which are
+appropriate python types (most input is given as strings which are
 converted to e.g. :py:class:`datetime.datetime`).
 
-We offer three variants.
+We offer two variants:
 
 * ``validate_check`` return a tuple ``(mangled_value, errors)``.
 * ``validate_affirm`` on success return the mangled value,
@@ -18,13 +18,13 @@ We offer three variants.
 
 The raw validator implementations are functions with signature
 ``(val, argname, **kwargs)`` of which many support the keyword arguments
-``_ignore_warnings``.
+``ignore_warnings``.
 These functions are registered and than wrapped to generate the above variants.
 
-They return the the validated and optionally converted value
+They return the the validated and converted value
 and raise a ``ValidationSummary`` when encountering errors.
 Each exception summary contains a list of errors
-which store the ``argname`` of the validator where the error occured
+which store the ``argname`` of the validator where the error occurred
 as well as an explanation of what exactly is wrong.
 A ``ValueError`` may also store a third argument.
 This optional argument should be a ``Mapping[str, Any]``
@@ -34,10 +34,21 @@ Validators may try to convert the value into the appropriate type.
 For instance ``_int`` will try to convert the input into an int
 which would be useful for string inputs especially.
 
-The parameter ``_ignore_warnings`` is present in some validators.
-If ``True``, ``ValidationWarning`` may be ignored instead of raised.
+The parameter ``ignore_warnings`` is present in some validators.
+If ``True``, Errors of type ``ValidationWarning`` may be ignored instead of raised.
 Think of this like a toggle to enable less strict validation of some constants
 which might change externally like german postal codes.
+
+Following a model of encapsulation, the entry points of the validation facillity
+``validate_check`` and ``validation_assert`` should never be called directly.
+Instead, we provide some convenient wrappers around them for frontend and backend:
+
+* ``check_validation`` wraps ``validate_check`` in frontend.common
+* ``affirm_validation`` wraps ``validation_assert`` in backend.common
+* ``inspect_validation`` wraps ``validate_check`` in frontend.common and backend.common
+
+Note that some of this functions may do some additional work,
+f.e. ``check_validation`` registers all errors in the RequestState object.
 """
 
 import copy
@@ -54,7 +65,7 @@ import typing
 from enum import Enum
 from typing import (
     Callable, Iterable, Mapping, Optional, Protocol, Sequence, Set, Tuple, TypeVar,
-    Union, cast, get_type_hints, overload, get_origin, get_args
+    Union, cast, get_args, get_origin, get_type_hints, overload,
 )
 
 import magic
@@ -68,11 +79,11 @@ import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME, EPSILON, EVENT_SCHEMA_VERSION, INFINITE_ENUM_MAGIC_NUMBER,
-    REALM_SPECIFIC_GENESIS_FIELDS, CdEDBObjectMap, Error, InfiniteEnum,
+    REALM_SPECIFIC_GENESIS_FIELDS, CdEDBObjectMap, Error, InfiniteEnum, LineResolutions,
     ValidationWarning, asciificator, compute_checkdigit, extract_roles, n_, now,
-    xsorted, LineResolutions,
+    xsorted,
 )
-from cdedb.config import BasicConfig
+from cdedb.config import BasicConfig, Config
 from cdedb.database.constants import FieldAssociations, FieldDatatypes
 from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS
 from cdedb.query import (
@@ -86,6 +97,7 @@ from cdedb.validationdata import (
 from cdedb.validationtypes import *  # pylint: disable=wildcard-import,unused-wildcard-import; # noqa: F403
 
 _BASICCONF = BasicConfig()
+_CONF = Config()
 NoneType = type(None)
 
 zxcvbn.matching.add_frequency_lists(FREQUENCY_LISTS)
@@ -142,9 +154,20 @@ class ValidatorStorage(Dict[Type[Any], Callable[..., Any]]):
 _ALL_TYPED = ValidatorStorage()
 
 
-def validate_assert(type_: Type[T], value: Any, **kwargs: Any) -> T:
+def validate_assert(type_: Type[T], value: Any, ignore_warnings: bool,
+                    **kwargs: Any) -> T:
+    """Check if value is of type type_ – otherwise, raise an error.
+
+    This should be used mostly in backend functions to check whether an input is
+    appropriate.
+
+    Note that this needs an explicit information whether warnings shall be ignored or
+    not.
+    """
+    if "ignore_warnings" in kwargs:
+        raise RuntimeError("Not allowed to set 'ignore_warnings' toggle.")
     try:
-        return _ALL_TYPED[type_](value, **kwargs)
+        return _ALL_TYPED[type_](value, ignore_warnings=ignore_warnings, **kwargs)
     except ValidationSummary as errs:
         old_format = [(e.args[0], e.__class__(*e.args[1:])) for e in errs]
         _LOGGER.debug(
@@ -156,18 +179,37 @@ def validate_assert(type_: Type[T], value: Any, **kwargs: Any) -> T:
         raise e from errs  # pylint: disable=raising-bad-type
 
 
-def validate_assert_optional(type_: Type[T], value: Any, **kwargs: Any) -> Optional[T]:
-    return validate_assert(Optional[type_], value, **kwargs)  # type: ignore
+def validate_assert_optional(type_: Type[T], value: Any, ignore_warnings: bool,
+                             **kwargs: Any) -> Optional[T]:
+    """Wrapper to avoid a lot of type-ignore statements due to a mypy bug."""
+    return validate_assert(Optional[type_], value, ignore_warnings, **kwargs)  # type: ignore
 
 
-def validate_check(
-    type_: Type[T], value: Any, **kwargs: Any
-) -> Tuple[Optional[T], List[Error]]:
+def validate_check(type_: Type[T], value: Any, ignore_warnings: bool,
+                   field_prefix: str = "", field_postfix: str = "", **kwargs: Any
+                   ) -> Tuple[Optional[T], List[Error]]:
+    """Checks if value is of type type_.
+
+    This is mostly used in the frontend to check if the given input is valid. To display
+    validation errors for fields which name differs from the name of the attribute of
+    the given value, one can specify a field_prefix and -postfix which will be appended
+    at the field name. This is especially useful for 'process_dynamic_input'.
+
+    Note that this needs an explicit information whether warnings shall be ignored or
+    not.
+    """
+    if "ignore_warnings" in kwargs:
+        raise RuntimeError("Not allowed to set 'ignore_warnings' as kwarg.")
     try:
-        val = _ALL_TYPED[type_](value, **kwargs)
+        val = _ALL_TYPED[type_](value, ignore_warnings=ignore_warnings, **kwargs)
         return val, []
     except ValidationSummary as errs:
-        old_format = [(e.args[0], e.__class__(*e.args[1:])) for e in errs]
+        old_format = [
+            (
+                (field_prefix + (e.args[0] or "") + field_postfix) or None,
+                e.__class__(*e.args[1:])
+            ) for e in errs
+        ]
         _LOGGER.debug(
             f"{old_format} for '{str(type_)}'"
             f" with input {value}, {kwargs}."
@@ -176,13 +218,30 @@ def validate_check(
 
 
 def validate_check_optional(
-    type_: Type[T], value: Any, **kwargs: Any
+    type_: Type[T], value: Any, ignore_warnings: bool, **kwargs: Any
 ) -> Tuple[Optional[T], List[Error]]:
-    return validate_check(Optional[type_], value, **kwargs)  # type: ignore
+    """Wrapper to avoid a lot of type-ignore statements due to a mypy bug."""
+    return validate_check(Optional[type_], value, ignore_warnings, **kwargs)  # type: ignore
 
 
 def is_optional(type_: Type[T]) -> bool:
     return get_origin(type_) is Union and NoneType in get_args(type_)
+
+
+def get_errors(errors: List[Error]) -> List[Error]:
+    """Returns those errors which are not considered as warnings."""
+    def is_error(e: Error) -> bool:
+        _, exception = e
+        return not isinstance(exception, ValidationWarning)
+    return list(filter(is_error, errors))
+
+
+def get_warnings(errors: List[Error]) -> List[Error]:
+    """Returns those errors which are considered as warnings."""
+    def is_warning(e: Error) -> bool:
+        _, exception = e
+        return isinstance(exception, ValidationWarning)
+    return list(filter(is_warning, errors))
 
 
 def _allow_None(fun: Callable[..., T]) -> Callable[..., Optional[T]]:
@@ -574,6 +633,53 @@ def _str(val: Any, argname: str = None, **kwargs: Any) -> str:
     if not val:
         raise ValidationSummary(ValueError(argname, n_("Must not be empty.")))
     return val
+
+
+@_add_typed_validator
+def _shortname(val: Any, argname: str = None, *,
+               ignore_warnings: bool = False, **kwargs: Any) -> Shortname:
+    """A string used as shortname with therefore limited length."""
+    val = _str(val, argname, ignore_warnings=ignore_warnings, **kwargs)
+    if len(val) > _CONF["SHORTNAME_LENGTH"] and not ignore_warnings:
+        raise ValidationSummary(
+            ValidationWarning(argname, n_("Shortname is longer than %(len)s chars."),
+                              {'len': str(_CONF["SHORTNAME_LENGTH"])}))
+    return Shortname(val)
+
+
+@_add_typed_validator
+def _shortname_identifier(val: Any, argname: str = None, *,
+                          ignore_warnings: bool = False,
+                          **kwargs: Any) -> ShortnameIdentifier:
+    """A string used as shortname and as programmatically accessible identifier."""
+    val = _identifier(val, argname, ignore_warnings=ignore_warnings, **kwargs)
+    val = _shortname(val, argname, ignore_warnings=ignore_warnings, **kwargs)
+    return ShortnameIdentifier(val)
+
+
+@_add_typed_validator
+def _shortname_restrictive_identifier(
+        val: Any, argname: str = None, *,
+        ignore_warnings: bool = False,
+        **kwargs: Any) -> ShortnameRestrictiveIdentifier:
+    """A string used as shortname and as restrictive identifier"""
+    val = _restrictive_identifier(val, argname, ignore_warnings=ignore_warnings,
+                                  **kwargs)
+    val = _shortname_identifier(val, argname, ignore_warnings=ignore_warnings,
+                                **kwargs)
+    return ShortnameRestrictiveIdentifier(val)
+
+
+@_add_typed_validator
+def _legacy_shortname(val: Any, argname: str = None, *,
+                      ignore_warnings: bool = False, **kwargs: Any) -> LegacyShortname:
+    """A string used as shortname, but with increased but still limited length."""
+    val = _str(val, argname, ignore_warnings=ignore_warnings, **kwargs)
+    if len(val) > _CONF["LEGACY_SHORTNAME_LENGTH"] and not ignore_warnings:
+        raise ValidationSummary(
+            ValidationWarning(argname, n_("Shortname is longer than %(len)s chars."),
+                              {'len': str(_CONF["LEGACY_SHORTNAME_LENGTH"])}))
+    return LegacyShortname(val)
 
 
 @_add_typed_validator
@@ -1390,31 +1496,31 @@ def _phone(
 @_add_typed_validator
 def _german_postal_code(
     val: Any, argname: str = None, *,
-    aux: str = "", _ignore_warnings: bool = False, **kwargs: Any
+    aux: str = "", ignore_warnings: bool = False, **kwargs: Any
 ) -> GermanPostalCode:
     """
     :param aux: Additional information. In this case the country belonging
         to the postal code.
-    :param _ignore_warnings: If True, ignore invalid german postcodes.
+    :param ignore_warnings: If True, ignore invalid german postcodes.
     """
     val = _printable_ascii(
-        val, argname, _ignore_warnings=_ignore_warnings, **kwargs)
+        val, argname, ignore_warnings=ignore_warnings, **kwargs)
     val = val.strip()
     if not aux or aux.strip() == "DE":
         msg = n_("Invalid german postal code.")
         if not (len(val) == 5 and val.isdigit()):
             raise ValidationSummary(ValueError(argname, msg))
-        if val not in GERMAN_POSTAL_CODES and not _ignore_warnings:
+        if val not in GERMAN_POSTAL_CODES and not ignore_warnings:
             raise ValidationSummary(ValidationWarning(argname, msg))
     return GermanPostalCode(val)
 
 
 @_add_typed_validator
 def _country(
-    val: Any, argname: str = None, *, _ignore_warnings: bool = False,
+    val: Any, argname: str = None, *, ignore_warnings: bool = False,
     **kwargs: Any
 ) -> Country:
-    val = _ALL_TYPED[str](val, argname, _ignore_warnings=_ignore_warnings, **kwargs)
+    val = _ALL_TYPED[str](val, argname, ignore_warnings=ignore_warnings, **kwargs)
     # TODO be more strict and do not strip
     val = val.strip()
     if val not in COUNTRY_CODES:
@@ -2034,7 +2140,7 @@ def _meta_info(
 
 INSTITUTION_COMMON_FIELDS: TypeMapping = {
     'title': str,
-    'shortname': str,
+    'shortname': Shortname,
 }
 
 
@@ -2061,7 +2167,7 @@ def _institution(
 
 PAST_EVENT_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
-    'shortname': str,
+    'shortname': Shortname,
     'institution': ID,
     'tempus': datetime.date,
     'description': Optional[str],
@@ -2100,7 +2206,7 @@ EVENT_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'institution': ID,
     'description': Optional[str],
-    'shortname': Identifier,
+    'shortname': ShortnameIdentifier,
 }
 
 EVENT_EXPOSED_OPTIONAL_FIELDS: Mapping[str, Any] = {
@@ -2230,7 +2336,7 @@ def _event(
 
 EVENT_PART_CREATION_MANDATORY_FIELDS: TypeMapping = {
     'title': str,
-    'shortname': str,
+    'shortname': Shortname,
     'part_begin': datetime.date,
     'part_end': datetime.date,
     'fee': NonNegativeDecimal,
@@ -2338,7 +2444,7 @@ def _event_part(
 
 EVENT_TRACK_COMMON_FIELDS: TypeMapping = {
     'title': str,
-    'shortname': str,
+    'shortname': Shortname,
     'num_choices': NonNegativeInt,
     'min_choices': NonNegativeInt,
     'sortkey': int,
@@ -2535,7 +2641,7 @@ COURSE_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'description': Optional[str],
     'nr': str,
-    'shortname': str,
+    'shortname': LegacyShortname,
     'instructors': Optional[str],
     'max_size': Optional[NonNegativeInt],
     'min_size': Optional[NonNegativeInt],
@@ -2840,7 +2946,7 @@ def _lodgement_group(
     else:
         # no event_id, since the associated event should be fixed.
         mandatory_fields = {'id': ID}
-        optional_fields = {**LODGEMENT_GROUP_FIELDS}
+        optional_fields = dict(LODGEMENT_GROUP_FIELDS, event_id=ID)
 
     return LodgementGroup(_examine_dictionary_fields(
         val, mandatory_fields, optional_fields, **kwargs))
@@ -3295,7 +3401,7 @@ PARTIAL_COURSE_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
     'description': Optional[str],
     'nr': Optional[str],
-    'shortname': str,
+    'shortname': LegacyShortname,
     'instructors': Optional[str],
     'max_size': Optional[int],
     'min_size': Optional[int],
@@ -3805,7 +3911,7 @@ def _subscription_address(
 
 ASSEMBLY_COMMON_FIELDS: Mapping[str, Any] = {
     'title': str,
-    'shortname': Identifier,
+    'shortname': ShortnameIdentifier,
     'description': Optional[str],
     'signup_end': datetime.datetime,
     'notes': Optional[str],
@@ -3986,21 +4092,21 @@ def _ballot(
 
 
 BALLOT_CANDIDATE_COMMON_FIELDS: TypeMapping = {
-    'title': str,
-    'shortname': Identifier,
+    'title': LegacyShortname,
+    'shortname': ShortnameIdentifier,
 }
 
 
 @_add_typed_validator
 def _ballot_candidate(
     val: Any, argname: str = "ballot_candidate", *,
-    creation: bool = False, **kwargs: Any
+    creation: bool = False, ignore_warnings: bool = False, **kwargs: Any
 ) -> BallotCandidate:
     """
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
     """
-    val = _mapping(val, argname, **kwargs)
+    val = _mapping(val, argname, ignore_warnings=ignore_warnings, **kwargs)
 
     if creation:
         mandatory_fields = {**BALLOT_CANDIDATE_COMMON_FIELDS}
@@ -4009,12 +4115,15 @@ def _ballot_candidate(
         mandatory_fields = {'id': ID}
         optional_fields = {**BALLOT_CANDIDATE_COMMON_FIELDS}
 
-    val = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, **kwargs)
+    val = _examine_dictionary_fields(val, mandatory_fields, optional_fields,
+                                     ignore_warnings=ignore_warnings, **kwargs)
 
+    errs = ValidationSummary()
     if val.get('shortname') == ASSEMBLY_BAR_SHORTNAME:
-        raise ValidationSummary(ValueError(
-            "shortname", n_("Mustn’t be the bar shortname.")))
+        errs.append(ValueError("shortname", n_("Mustn’t be the bar shortname.")))
+
+    if errs:
+        raise errs
 
     return BallotCandidate(val)
 
@@ -4302,7 +4411,7 @@ def _query_input(
             errs.extend(e)
             continue
 
-        if not entry:
+        if not entry or entry not in spec:
             continue
 
         tmp = "qord_" + postfix + "_ascending"
@@ -4321,7 +4430,7 @@ def _query_input(
         scope, dict(spec), fields_of_interest, constraints, order, name, query_id))
 
 
-# TODO ignore _ignore_warnings here too?
+# TODO ignore ignore_warnings here too?
 @_add_typed_validator
 def _query(
     val: Any, argname: str = None, **kwargs: Any

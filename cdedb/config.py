@@ -21,9 +21,7 @@ from typing import Any, Callable, Dict, Iterator, Mapping
 import pytz
 
 import cdedb.database.constants as const
-from cdedb.common import (
-    CdEDBObject, EntitySorter, PathLike, deduct_years, n_, now, xsorted,
-)
+from cdedb.common import CdEDBObject, PathLike, deduct_years, n_, now
 from cdedb.query import Query, QueryOperators, QueryScope
 
 _LOGGER = logging.getLogger(__name__)
@@ -186,18 +184,6 @@ def generate_event_registration_default_queries(
               const.RegistrationPartStati.participant.value),), default_sort),
     }
 
-    def get_waitlist_order(part: CdEDBObject) -> str:
-        if part['waitlist_field']:
-            field = event['fields'][part['waitlist_field']]
-            return f"reg_fields.xfield_{field['field_name']}"
-        return "ctime.creation_time"
-
-    def waitlist_query_name(part: CdEDBObject) -> str:
-        ret = gettext("17_query_event_registration_waitlist")
-        if len(event['parts']) > 1:
-            ret += f" {part['shortname']}"
-        return ret
-
     if len(event['parts']) > 1:
         queries.update({
             n_("16_query_event_registration_waitlist"): Query(
@@ -209,20 +195,6 @@ def generate_event_registration_default_queries(
                   const.RegistrationPartStati.waitlist.value),),
                 (("ctime.creation_time", True),)),
         })
-
-    queries.update({
-        n_("17_query_event_registration_waitlist") + f"_{i}_part{part['id']}":
-            Query(
-                QueryScope.registration, spec,
-                ("persona.given_names", "persona.family_name"),
-                ((f"part{part['id']}.status", QueryOperators.equal,
-                  const.RegistrationPartStati.waitlist.value),),
-                ((get_waitlist_order(part), True),),
-                name=waitlist_query_name(part)
-            )
-        for i, part in enumerate(xsorted(
-            event['parts'].values(), key=EntitySorter.event_part))
-    })
 
     return queries
 
@@ -299,6 +271,10 @@ _DEFAULTS = {
     "EMAIL_PARAMETER_TIMEOUT": datetime.timedelta(days=2),
     # maximum length of rationale for requesting an account
     "MAX_RATIONALE": 500,
+    # for shortnames longer than this, a ValidationWarning will be raised
+    "SHORTNAME_LENGTH": 10,
+    # a bit longer, but still a shortname
+    "LEGACY_SHORTNAME_LENGTH": 30,
     # minimal number of input characters to start a search for personas
     # fitting an intelligent input field
     "NUM_PREVIEW_CHARS": 3,

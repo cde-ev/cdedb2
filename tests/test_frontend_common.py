@@ -7,11 +7,13 @@ import string
 
 import pytz
 
+import cdedb.database.constants as const
 import cdedb.enums
-from cdedb.filter import date_filter, tex_escape_filter
+from cdedb.filter import date_filter, enum_entries_filter, tex_escape_filter
 from cdedb.frontend.common import (
     cdedbid_filter, datetime_filter, decode_parameter, encode_parameter,
 )
+from cdedb.ml_type_aux import TYPE_MAP
 from tests.common import FrontendTest
 
 
@@ -149,3 +151,14 @@ class TestFrontendCommon(FrontendTest):
                     for member in enum:
                         self.assertNotEqual(
                             translation.gettext(str(member)), str(member))
+
+    def test_mltype_domain_enum_entries(self) -> None:
+        for type_ in TYPE_MAP.values():
+            self.assertEqual(
+                [(e, e.display_str()) for e in type_.domains],
+                enum_entries_filter(type_.domains)
+            )
+        self.assertEqual(
+            [(e, e.display_str()) for e in const.MailinglistDomain],
+            enum_entries_filter(const.MailinglistDomain)
+        )

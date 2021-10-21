@@ -52,15 +52,15 @@ The following fields are avalable in the dynamic tables:
 
 * ``reg_fields.xfield_{field_name}`` *For every custom registration datafield.*
 * ``part{part_id}.status``
-* ``part{part_id}.lodgement_id``
+* ``part{part_id}.lodgement_id`` *This is magically replaced by "{title}" linking to the lodgement.*
 * ``part{part_id}.is_camping_mat``
 * ``lodgement{part_id}.xfield_{field_name}`` *For every part and every custom lodgement datafield.*
 * ``lodgement{part_id}.title``
 * ``lodgement{part_id}.notes``
 * ``lodgement{part_id}.group_id``
 * ``lodgement_group{part_id}.title``
-* ``track{track_id}.course_id``
-* ``track{track_id}.course_instructor``
+* ``track{track_id}.course_id`` *This is magically replaced by "{nr}. {shortname}" linking to the course.*
+* ``track{track_id}.course_instructor`` *This is magically replaced by "{nr}. {shortname}" linking to the course.*
 * ``track{track_id}.is_course_instructor``
 * ``course{track_id}.xfield_{field_name}`` *For every track and every custom course datafield.*
 * ``course{track_id}.nr``

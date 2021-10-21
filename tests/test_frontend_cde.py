@@ -14,16 +14,15 @@ import webtest
 
 import cdedb.database.constants as const
 from cdedb.common import (
-    CdEDBObject, ADMIN_VIEWS_COOKIE_NAME, Role, extract_roles, now, LineResolutions,
-    get_country_code_from_country, get_localized_country_codes, RequestState,
-    format_country_code,
+    ADMIN_VIEWS_COOKIE_NAME, CdEDBObject, LineResolutions, RequestState, Role,
+    extract_roles, format_country_code, get_country_code_from_country,
+    get_localized_country_codes, now,
 )
 from cdedb.frontend.common import Worker, make_postal_address
 from cdedb.query import QueryOperators
 from tests.common import (
-    FrontendTest, UserIdentifier, USER_DICT, as_users, get_user, prepsql, storage,
+    USER_DICT, FrontendTest, UserIdentifier, as_users, get_user, prepsql, storage,
 )
-
 
 PERSONA_TEMPLATE = {
         "username": 'zelda@example.cde',
@@ -1243,6 +1242,7 @@ class TestCdEFrontend(FrontendTest):
              r"gender:\W*Kein Geschlecht angegeben."),
             (r"pcourse_id:\W*Kein Kurs gefunden.",),
             (r"birthday:\W*Ungültige Eingabe für ein Datum.",),
+            # TODO check that this is actually a warning and no problem
             (r"postal_code:\W*Ungültige Postleitzahl.",),
             (r"Zeilen 13 und 14 sind identisch.",),
             (r"Zeilen 13 und 14 sind identisch.",
@@ -1257,7 +1257,7 @@ class TestCdEFrontend(FrontendTest):
             for piece in ex:
                 self.assertTrue(re.search(piece, out))
         for i in range(0, 15):
-            if i in (1, 7):
+            if i in (1, 7, 11):
                 exp = str(LineResolutions.create.value)
             else:
                 exp = ''

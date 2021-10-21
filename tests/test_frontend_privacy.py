@@ -2,12 +2,12 @@
 # pylint: disable=missing-module-docstring
 
 import datetime
-from typing import Dict, Set
 import urllib.parse
+from typing import Dict, Set
 
 from cdedb.common import CdEDBObject
 from tests.common import (
-    FrontendTest, UserIdentifier, UserObject, USER_DICT, admin_views, as_users,
+    USER_DICT, FrontendTest, UserIdentifier, UserObject, admin_views, as_users,
 )
 
 # TODO Profilfoto

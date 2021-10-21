@@ -3,13 +3,12 @@
 import datetime
 import decimal
 import enum
+import logging
 import re
 import threading
-
-import logging
 from typing import (
-    Any, Callable, Collection, Container, Dict, Iterable, ItemsView, List, Literal,
-    Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, overload
+    Any, Callable, Collection, Container, Dict, ItemsView, Iterable, List, Literal,
+    Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, overload,
 )
 
 import bleach
@@ -17,9 +16,10 @@ import icu
 import jinja2
 import markdown
 import markdown.extensions.toc
+import markupsafe
 
-from cdedb.common import CdEDBObject, compute_checkdigit, xsorted
 import cdedb.database.constants as const
+from cdedb.common import CdEDBObject, compute_checkdigit, xsorted
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -46,10 +46,10 @@ def safe_filter(val: None) -> None: ...
 
 
 @overload
-def safe_filter(val: str) -> jinja2.Markup: ...
+def safe_filter(val: str) -> markupsafe.Markup: ...
 
 
-def safe_filter(val: Optional[str]) -> Optional[jinja2.Markup]:
+def safe_filter(val: Optional[str]) -> Optional[markupsafe.Markup]:
     """Custom jinja filter to mark a string as safe.
 
     This prevents autoescaping of this entity. To be used for dynamically
@@ -59,7 +59,7 @@ def safe_filter(val: Optional[str]) -> Optional[jinja2.Markup]:
     """
     if val is None:
         return None
-    return jinja2.Markup(val)
+    return markupsafe.Markup(val)
 
 
 def date_filter(val: Union[datetime.date, str, None],
@@ -208,10 +208,10 @@ def escape_filter(val: None) -> None: ...
 
 
 @overload
-def escape_filter(val: str) -> jinja2.Markup: ...
+def escape_filter(val: str) -> markupsafe.Markup: ...
 
 
-def escape_filter(val: Optional[str]) -> Optional[jinja2.Markup]:
+def escape_filter(val: Optional[str]) -> Optional[markupsafe.Markup]:
     """Custom jinja filter to reconcile escaping with the finalize method
     (which suppresses all ``None`` values and thus mustn't be converted to
     strings first).
@@ -224,7 +224,7 @@ def escape_filter(val: Optional[str]) -> Optional[jinja2.Markup]:
     if val is None:
         return None
     else:
-        return jinja2.escape(val)
+        return markupsafe.escape(val)
 
 
 LATEX_ESCAPE_REGEX = (
@@ -314,12 +314,12 @@ def linebreaks_filter(val: None, replacement: str) -> None: ...
 
 
 @overload
-def linebreaks_filter(val: Union[str, jinja2.Markup],
-                      replacement: str) -> jinja2.Markup: ...
+def linebreaks_filter(val: Union[str, markupsafe.Markup],
+                      replacement: str) -> markupsafe.Markup: ...
 
 
-def linebreaks_filter(val: Union[None, str, jinja2.Markup],
-                      replacement: str = "<br>") -> Optional[jinja2.Markup]:
+def linebreaks_filter(val: Union[None, str, markupsafe.Markup],
+                      replacement: str = "<br>") -> Optional[markupsafe.Markup]:
     """Custom jinja filter to convert line breaks to <br>.
 
     This filter escapes the input value (if required), replaces the linebreaks
@@ -328,9 +328,9 @@ def linebreaks_filter(val: Union[None, str, jinja2.Markup],
     if val is None:
         return None
     # escape the input. This function consumes an unescaped string or a
-    # jinja2.Markup safe html object and returns an escaped string.
-    val = jinja2.escape(val)
-    return val.replace('\n', jinja2.Markup(replacement))
+    # markupsafe.Markup safe html object and returns an escaped string.
+    val = markupsafe.escape(val)
+    return val.replace('\n', markupsafe.Markup(replacement))
 
 
 #: bleach internals are not thread-safe, so we have to be a bit defensive
@@ -379,14 +379,14 @@ def bleach_filter(val: None) -> None: ...
 
 
 @overload
-def bleach_filter(val: str) -> jinja2.Markup: ...
+def bleach_filter(val: str) -> markupsafe.Markup: ...
 
 
-def bleach_filter(val: Optional[str]) -> Optional[jinja2.Markup]:
+def bleach_filter(val: Optional[str]) -> Optional[markupsafe.Markup]:
     """Custom jinja filter to convert sanitize html with bleach."""
     if val is None:
         return None
-    return jinja2.Markup(get_bleach_cleaner().clean(val))
+    return markupsafe.Markup(get_bleach_cleaner().clean(val))
 
 
 #: The Markdown parser has internal state, so we have to be a bit defensive
@@ -439,7 +439,7 @@ def get_markdown_parser() -> markdown.Markdown:
     return md
 
 
-def markdown_parse_safe(val: str) -> jinja2.Markup:
+def markdown_parse_safe(val: str) -> markupsafe.Markup:
     md = get_markdown_parser()
     return bleach_filter(md.convert(val))
 
@@ -449,10 +449,10 @@ def md_filter(val: None) -> None: ...
 
 
 @overload
-def md_filter(val: str) -> jinja2.Markup: ...
+def md_filter(val: str) -> markupsafe.Markup: ...
 
 
-def md_filter(val: Optional[str]) -> Optional[jinja2.Markup]:
+def md_filter(val: Optional[str]) -> Optional[markupsafe.Markup]:
     """Custom jinja filter to convert markdown to html."""
     if val is None:
         return None
@@ -535,8 +535,10 @@ def map_dict_filter(d: Dict[str, str], processing: Callable[[Any], str]
     return {k: processing(v) for k, v in d.items()}.items()
 
 
-def enum_entries_filter(enum: enum.EnumMeta, processing: Callable[[Any], str] = None,
-                        raw: bool = False, prefix: str = "") -> List[Tuple[int, str]]:
+def enum_entries_filter(enum: Iterable[enum.Enum],
+                        processing: Callable[[Any], str] = None,
+                        raw: bool = False, prefix: str = "",
+                        ) -> List[Tuple[enum.Enum, str]]:
     """
     Transform an Enum into a list of of (value, string) tuple entries. The
     string is piped trough the passed processing callback function to get the
@@ -556,9 +558,8 @@ def enum_entries_filter(enum: enum.EnumMeta, processing: Callable[[Any], str] = 
     if raw:
         pre = lambda x: x
     else:
-        pre = (lambda x: x.display_str()) if hasattr(enum, "display_str") else str  # type: ignore[assignment]
-    to_sort = ((entry, prefix + processing(pre(entry)))  # type: ignore[var-annotated]
-               for entry in enum)
+        pre = lambda x: (x.display_str() if hasattr(x, "display_str") else str(x))
+    to_sort = ((entry, prefix + processing(pre(entry))) for entry in enum)
     return xsorted(to_sort, key=lambda e: e[0].value)
 
 
