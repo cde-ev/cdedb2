@@ -1667,7 +1667,7 @@ def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
 
 # noinspection PyPep8Naming
 def REQUESTdata(
-    *spec: str, _hints: validate.TypeMapping = None, _postpone_validation: bool = False
+    *spec: str, _hints: vtypes.TypeMapping = None, _postpone_validation: bool = False
 ) -> Callable[[F], F]:
     """Decorator to extract parameters from requests and validate them.
 
@@ -1812,7 +1812,7 @@ RequestConstraint = Tuple[Callable[[CdEDBObject], bool], Error]
 
 
 def request_extractor(
-        rs: RequestState, spec: validate.TypeMapping,
+        rs: RequestState, spec: vtypes.TypeMapping,
         constraints: Collection[RequestConstraint] = None,
         postpone_validation: bool = False) -> CdEDBObject:
     """Utility to apply REQUESTdata later than usual.
@@ -2193,7 +2193,7 @@ def process_dynamic_input(
     rs: RequestState,
     type_: Type[T],
     existing: Collection[int],
-    spec: validate.TypeMapping,
+    spec: vtypes.TypeMapping,
     *,
     additional: CdEDBObject = None,
     prefix: str = "",
@@ -2233,7 +2233,7 @@ def process_dynamic_input(
     deletes = {anid for anid in existing if delete_flags[f"{prefix}delete_{anid}"]}
     non_deleted_existing = {anid for anid in existing if anid not in deletes}
 
-    existing_data_spec: validate.TypeMapping = {
+    existing_data_spec: vtypes.TypeMapping = {
         f"{prefix}{key}_{anid}": value
         for anid in non_deleted_existing
         for key, value in spec.items()

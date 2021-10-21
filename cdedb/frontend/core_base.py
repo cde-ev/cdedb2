@@ -40,7 +40,7 @@ from cdedb.query import Query, QueryOperators, QueryScope
 from cdedb.subman.machine import SubscriptionPolicy
 from cdedb.validation import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
-    PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS, TypeMapping,
+    PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS,
 )
 from cdedb.validationtypes import CdedbID
 
@@ -191,7 +191,7 @@ class CoreBaseFrontend(AbstractFrontend):
     def change_meta_info(self, rs: RequestState) -> Response:
         """Change the meta info constants."""
         info = self.coreproxy.get_meta_info(rs)
-        data_params: TypeMapping = {
+        data_params: vtypes.TypeMapping = {
             key: Optional[str]  # type: ignore
             for key in info
         }

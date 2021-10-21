@@ -34,7 +34,7 @@ from cdedb.frontend.common import (
 )
 from cdedb.query import QueryConstraint, QueryOperators, QueryScope
 from cdedb.validation import (
-    PERSONA_FULL_CDE_CREATION, TypeMapping, filter_none, get_errors, get_warnings,
+    PERSONA_FULL_CDE_CREATION, filter_none, get_errors, get_warnings,
 )
 
 MEMBERSEARCH_DEFAULTS = {
@@ -641,7 +641,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
         for lineno, raw_entry in enumerate(reader):
             total_account_number += 1
             dataset: CdEDBObject = {'raw': raw_entry}
-            params: TypeMapping = {
+            params: vtypes.TypeMapping = {
                 # as on the first submit no values for the resolution are transmitted,
                 # we have to cast None -> LineResolutions.none after extraction
                 f"resolution{lineno}": Optional[LineResolutions],  # type: ignore
