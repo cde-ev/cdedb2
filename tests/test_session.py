@@ -3,11 +3,11 @@
 
 import datetime
 import secrets
-from typing import List, NamedTuple, Sequence, Optional, cast
+from typing import List, NamedTuple, Optional, Sequence, cast
 
 from cdedb.common import RequestState, User, now
 from tests.common import (
-    UserIdentifier, USER_DICT, BackendTest, MultiAppFrontendTest, execsql, get_user,
+    USER_DICT, BackendTest, MultiAppFrontendTest, UserIdentifier, execsql, get_user,
 )
 
 SessionEntry = NamedTuple(

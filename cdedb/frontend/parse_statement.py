@@ -10,11 +10,11 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    Accounts, CdEDBObject, CdEDBObjectMap, Error, TransactionType, diacritic_patterns,
-    n_, now, EntitySorter, xsorted, PARSE_OUTPUT_DATEFORMAT
+    PARSE_OUTPUT_DATEFORMAT, Accounts, CdEDBObject, CdEDBObjectMap, EntitySorter, Error,
+    TransactionType, diacritic_patterns, n_, now, xsorted,
 )
 from cdedb.filter import cdedbid_filter
-from cdedb.validation import validate_check
+from cdedb.frontend.common import inspect_validation as inspect
 
 # This is the specification of the order of the fields in the input.
 # This could be changed in the online banking, but we woud lose backwards
@@ -240,8 +240,7 @@ def _reconstruct_cdedbid(db_id: str) -> Tuple[Optional[int], List[Error]]:
     checkdigit = db_id[-1].upper()
 
     # Check the DB-ID
-    p_id, p = validate_check(
-        vtypes.CdedbID, "DB-{}-{}".format(value, checkdigit), argname="persona_id")
+    p_id, p = inspect(vtypes.CdedbID, f"DB-{value}-{checkdigit}", argname="persona_id")
 
     return p_id, p
 

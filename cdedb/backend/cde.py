@@ -17,25 +17,22 @@ import psycopg2.extensions
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
-    AbstractBackend, access, affirm_set_validation as affirm_set,
-    affirm_array_validation as affirm_array,
-    affirm_validation_typed as affirm,
-    affirm_validation_typed_optional as affirm_optional, batchify, singularize,
+    AbstractBackend, access, affirm_array_validation as affirm_array,
+    affirm_set_validation as affirm_set, affirm_validation as affirm,
+    affirm_validation_optional as affirm_optional, batchify, singularize,
 )
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.common import (
     EXPULS_PERIOD_FIELDS, LASTSCHRIFT_FIELDS, LASTSCHRIFT_TRANSACTION_FIELDS,
-    ORG_PERIOD_FIELDS, CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
-    DeletionBlockers, PrivilegeError, QuotaException, RequestState, implying_realms,
-    merge_dicts, n_, now, unwrap, glue, LineResolutions, PathLike, make_proxy,
-    PARSE_OUTPUT_DATEFORMAT, ArchiveError,
+    ORG_PERIOD_FIELDS, PARSE_OUTPUT_DATEFORMAT, ArchiveError, CdEDBLog, CdEDBObject,
+    CdEDBObjectMap, DefaultReturnCode, DeletionBlockers, LineResolutions, PathLike,
+    PrivilegeError, QuotaException, RequestState, glue, implying_realms, make_proxy,
+    merge_dicts, n_, now, unwrap,
 )
 from cdedb.database.connection import Atomizer
 from cdedb.filter import money_filter
 from cdedb.query import Query, QueryOperators, QueryScope
-from cdedb.validation import (
-    PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS, is_optional,
-)
+from cdedb.validation import PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS, is_optional
 
 
 class CdEBackend(AbstractBackend):

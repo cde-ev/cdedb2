@@ -21,9 +21,7 @@ from typing import Any, Callable, Dict, Iterator, Mapping
 import pytz
 
 import cdedb.database.constants as const
-from cdedb.common import (
-    CdEDBObject, PathLike, deduct_years, n_, now,
-)
+from cdedb.common import CdEDBObject, PathLike, deduct_years, n_, now
 from cdedb.query import Query, QueryOperators, QueryScope
 
 _LOGGER = logging.getLogger(__name__)
@@ -273,6 +271,10 @@ _DEFAULTS = {
     "EMAIL_PARAMETER_TIMEOUT": datetime.timedelta(days=2),
     # maximum length of rationale for requesting an account
     "MAX_RATIONALE": 500,
+    # for shortnames longer than this, a ValidationWarning will be raised
+    "SHORTNAME_LENGTH": 10,
+    # a bit longer, but still a shortname
+    "LEGACY_SHORTNAME_LENGTH": 30,
     # minimal number of input characters to start a search for personas
     # fitting an intelligent input field
     "NUM_PREVIEW_CHARS": 3,

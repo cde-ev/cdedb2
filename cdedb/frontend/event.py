@@ -34,31 +34,29 @@ from cdedb.common import (
     CourseFilterPositions, DefaultReturnCode, EntitySorter, Error, InfiniteEnum,
     KeyFunction, LodgementsSortkeys, PartialImportError, RequestState, Sortkey,
     asciificator, deduct_years, determine_age_class, diacritic_patterns, get_hash,
-    get_localized_country_codes, json_serialize, merge_dicts,
-    mixed_existence_sorter, n_, now, unwrap, xsorted,
+    get_localized_country_codes, json_serialize, merge_dicts, mixed_existence_sorter,
+    n_, now, unwrap, xsorted,
 )
-from cdedb.filter import (
-    enum_entries_filter, keydictsort_filter, safe_filter,
-)
+from cdedb.filter import enum_entries_filter, keydictsort_filter, safe_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, CustomCSVDialect, RequestConstraint, REQUESTdata,
-    REQUESTdatadict, REQUESTfile, access, calculate_db_logparams, calculate_loglinks,
-    cdedbid_filter, cdedburl, check_validation as check,
-    check_validation_optional as check_optional, event_guard, make_event_fee_reference,
-    periodic, process_dynamic_input, request_extractor, make_persona_name,
-    TransactionObserver,
+    REQUESTdatadict, REQUESTfile, TransactionObserver, access, calculate_db_logparams,
+    calculate_loglinks, cdedbid_filter, cdedburl, check_validation as check,
+    check_validation_optional as check_optional, event_guard,
+    inspect_validation as inspect, make_event_fee_reference, make_persona_name,
+    periodic, process_dynamic_input, request_extractor,
 )
 from cdedb.frontend.event_lodgement_wishes import (
     create_lodgement_wishes_graph, detect_lodgement_wishes,
 )
 from cdedb.query import (
-    Query, QueryConstraint, QueryOperators, QueryScope, make_registration_query_aux,
-    make_lodgement_query_aux, make_course_query_aux, QueryOrder
+    Query, QueryConstraint, QueryOperators, QueryOrder, QueryScope,
+    make_course_query_aux, make_lodgement_query_aux, make_registration_query_aux,
 )
 from cdedb.validation import (
-    COURSE_COMMON_FIELDS, EVENT_EXPOSED_FIELDS, LODGEMENT_COMMON_FIELDS,
-    PERSONA_FULL_EVENT_CREATION, TypeMapping, filter_none, validate_check,
-    EVENT_PART_COMMON_FIELDS, EVENT_PART_CREATION_MANDATORY_FIELDS
+    COURSE_COMMON_FIELDS, EVENT_EXPOSED_FIELDS, EVENT_PART_COMMON_FIELDS,
+    EVENT_PART_CREATION_MANDATORY_FIELDS, LODGEMENT_COMMON_FIELDS,
+    PERSONA_FULL_EVENT_CREATION, TypeMapping, filter_none,
 )
 from cdedb.validationtypes import VALIDATOR_LOOKUP
 
@@ -148,8 +146,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("core_admin", "event_admin", modi={"POST"})
     @REQUESTdatadict(*filter_none(PERSONA_FULL_EVENT_CREATION))
-    def create_user(self, rs: RequestState, data: CdEDBObject,
-                    ignore_warnings: bool = False) -> Response:
+    def create_user(self, rs: RequestState, data: CdEDBObject) -> Response:
         defaults = {
             'is_cde_realm': False,
             'is_event_realm': True,
@@ -158,7 +155,7 @@ class EventFrontend(AbstractUserFrontend):
             'is_active': True,
         }
         data.update(defaults)
-        return super().create_user(rs, data, ignore_warnings=ignore_warnings)
+        return super().create_user(rs, data)
 
     @access("core_admin", "event_admin")
     @REQUESTdata("download", "is_search")
@@ -189,7 +186,7 @@ class EventFrontend(AbstractUserFrontend):
         otherwise.
         """
         events = self.pasteventproxy.list_past_events(rs)
-        choices = {
+        choices: Dict[str, Dict[Any, str]] = {
             'pevent_id': OrderedDict(
                 xsorted(events.items(), key=operator.itemgetter(1))),
             'gender': OrderedDict(
@@ -750,26 +747,18 @@ class EventFrontend(AbstractUserFrontend):
         #
         # process the dynamic track input
         #
-        def track_constraint_maker(track_id: int, prefix: str
-                                   ) -> List[RequestConstraint]:
-            min_choice = f"{prefix}min_choices_{track_id}"
-            num_choice = f"{prefix}num_choices_{track_id}"
-            msg = n_("Must be less or equal than total Course Choices.")
-            return [(
-                lambda d: d[min_choice] <= d[num_choice], (min_choice, ValueError(msg))
-            )]
-
         track_existing = rs.ambience['event']['parts'][part_id]['tracks']
         track_spec = {
             'title': str,
-            'shortname': str,
+            'shortname': vtypes.Shortname,
             'num_choices': vtypes.NonNegativeInt,
             'min_choices': vtypes.NonNegativeInt,
             'sortkey': int
         }
         track_data = process_dynamic_input(
-            rs, track_existing, track_spec, prefix="track_",
-            constraint_maker=track_constraint_maker)
+            rs, vtypes.EventTrack, track_existing, track_spec, prefix="track_")
+        if rs.has_validation_errors():
+            return self.change_part_form(rs, event_id, part_id)
 
         deleted_tracks = {anid for anid in track_data if track_data[anid] is None}
         new_tracks = {anid for anid in track_data if anid < 0}
@@ -783,18 +772,6 @@ class EventFrontend(AbstractUserFrontend):
         #
         # process the dynamic fee modifier input
         #
-        def fee_modifier_constraint_maker(
-                fee_modifier_id: int, prefix: str) -> List[RequestConstraint]:
-            key = f"{prefix}field_id_{fee_modifier_id}"
-            fields = rs.ambience['event']['fields']
-            legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['fee_modifier']
-            msg = n_("Fee Modifier linked to non-fitting field.")
-            return [(
-                lambda d: (fields[d[key]]['association'] in legal_assocs
-                           and fields[d[key]]['kind'] in legal_datatypes),
-                (key, ValueError(msg))
-            )]
-
         fee_modifier_existing = [
             mod['id'] for mod in rs.ambience['event']['fee_modifiers'].values()
             if mod['part_id'] == part_id
@@ -810,9 +787,26 @@ class EventFrontend(AbstractUserFrontend):
             fee_modifier_data = dict()
         else:
             fee_modifier_data = process_dynamic_input(
-                rs, fee_modifier_existing, fee_modifier_spec,
-                prefix=fee_modifier_prefix,
-                constraint_maker=fee_modifier_constraint_maker)
+                rs, vtypes.EventFeeModifier, fee_modifier_existing, fee_modifier_spec,
+                prefix=fee_modifier_prefix)
+        if rs.has_validation_errors():
+            return self.change_part_form(rs, event_id, part_id)
+
+        # Check if each linked field exists and is inside the spec
+        legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['fee_modifier']
+        missing_msg = n_("Fee Modifier linked to non-existing field.")
+        spec_msg = n_("Fee Modifier linked to non-fitting field.")
+        for anid, modifier in fee_modifier_data.items():
+            if modifier is None:
+                continue
+            field = rs.ambience["event"]["fields"].get(modifier["field_id"])
+            if field is None:
+                rs.append_validation_error(
+                    (f"{fee_modifier_prefix}field_id_{anid}", ValueError(missing_msg)))
+            elif (field["association"] not in legal_assocs
+                  or field["kind"] not in legal_datatypes):
+                rs.append_validation_error(
+                    (f"{fee_modifier_prefix}field_id_{anid}", ValueError(spec_msg)))
 
         # Check if each linked field and fee modifier name is unique.
         used_fields: Set[int] = set()
@@ -2142,20 +2136,19 @@ class EventFrontend(AbstractUserFrontend):
         infos = []
         # Allow an amount of zero to allow non-modification of amount_paid.
         amount: Optional[decimal.Decimal]
-        amount, problems = validate_check(
-            vtypes.NonNegativeDecimal,
+        amount, problems = inspect(vtypes.NonNegativeDecimal,
             (datum['raw']['amount'] or "").strip(), argname="amount")
-        persona_id, p = validate_check(
-            vtypes.CdedbID, (datum['raw']['id'] or "").strip(), argname="persona_id")
+        persona_id, p = inspect(vtypes.CdedbID,
+            (datum['raw']['id'] or "").strip(), argname="persona_id")
         problems.extend(p)
-        family_name, p = validate_check(
-            str, datum['raw']['family_name'], argname="family_name")
+        family_name, p = inspect(str,
+            datum['raw']['family_name'], argname="family_name")
         problems.extend(p)
-        given_names, p = validate_check(
-            str, datum['raw']['given_names'], argname="given_names")
+        given_names, p = inspect(str,
+            datum['raw']['given_names'], argname="given_names")
         problems.extend(p)
-        date, p = validate_check(
-            datetime.date, (datum['raw']['date'] or "").strip(), argname="date")
+        date, p = inspect(datetime.date,
+            (datum['raw']['date'] or "").strip(), argname="date")
         problems.extend(p)
 
         registration_id = None
@@ -2903,6 +2896,10 @@ class EventFrontend(AbstractUserFrontend):
         In the first iteration the data is extracted from a file upload and
         in further iterations it is embedded in the page.
         """
+        # ignore ValidationWarnings here to not prevent submission.
+        # TODO We show them later in the diff.
+        rs.ignore_warnings = True
+
         if partial_import_data:
             data = check(rs, vtypes.SerializedPartialEvent,
                          json.loads(partial_import_data))
@@ -3320,10 +3317,18 @@ class EventFrontend(AbstractUserFrontend):
             for track_id, track in tracks.items()
         }
         for track_id in present_tracks:
-            reg_tracks[track_id]['choices'] = tuple(
+            all_choices = tuple(
                 choice_getter(track_id, i)
                 for i in range(tracks[track_id]['num_choices'])
                 if choice_getter(track_id, i) is not None)
+
+            if reg_tracks[track_id]["course_instructor"] in all_choices:
+                i_choice = all_choices.index(reg_tracks[track_id]["course_instructor"])
+                rs.add_validation_error(
+                    (f"course_choice{track_id}_{i_choice}",
+                     ValueError(n_("You may not choose your own course.")))
+                )
+            reg_tracks[track_id]['choices'] = all_choices
 
         f = lambda entry: rs.ambience['event']['fields'][entry['field_id']]
         params: TypeMapping = {
@@ -4092,12 +4097,20 @@ class EventFrontend(AbstractUserFrontend):
             choices_tuple = tuple(
                 extractor(i)
                 for i in range(track['num_choices']) if extractor(i))
-            choices_set = set(choices_tuple)
-            if len(choices_set) != len(choices_tuple):
-                rs.extend_validation_errors(
-                    ("track{}.course_choice_{}".format(track_id, i),
-                     ValueError(n_("Must choose different courses.")))
-                    for i in range(track['num_choices']))
+            choices_set = set()
+            own_course = new_tracks[track_id]["course_instructor"]
+            for i_choice, choice in enumerate(choices_tuple):
+                if own_course == choice:
+                    rs.add_validation_error(
+                        (f"track{track_id}.course_choice_{i_choice}",
+                         ValueError(n_("Instructed course must not be chosen.")))
+                    )
+                if choice in choices_set:
+                    rs.append_validation_error(
+                        (f"track{track_id}.course_choice_{i_choice}",
+                         ValueError(n_("Must choose different courses."))))
+                else:
+                    choices_set.add(choice)
             new_tracks[track_id]['choices'] = choices_tuple
         new_fields = {
             key.split('.', 1)[1]: value for key, value in raw_fields.items()}
@@ -4696,8 +4709,8 @@ class EventFrontend(AbstractUserFrontend):
         """Manipulate groups of lodgements."""
         group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
         spec = {'title': str}
-        groups = process_dynamic_input(
-            rs, group_ids.keys(), spec, additional={'event_id': event_id})
+        groups = process_dynamic_input(rs, vtypes.LodgementGroup, group_ids.keys(),
+                                       spec, additional={'event_id': event_id})
         if rs.has_validation_errors():
             return self.lodgement_group_summary_form(rs, event_id)
         code = 1
@@ -5756,6 +5769,11 @@ class EventFrontend(AbstractUserFrontend):
                      json: werkzeug.datastructures.FileStorage) -> Response:
         """Unlock an event after offline usage and incorporate the offline
         changes."""
+        # for the sake of simplicity, we ignore all ValidationWarnings here.
+        # Since the data is incorporated from an offline instance, they were already
+        # considered to be reasonable.
+        rs.ignore_warnings = True
+
         data = check(rs, vtypes.SerializedEventUpload, json)
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
@@ -5889,7 +5907,7 @@ class EventFrontend(AbstractUserFrontend):
 
         data = None
 
-        anid, errs = validate_check(vtypes.ID, phrase, argname="phrase")
+        anid, errs = inspect(vtypes.ID, phrase, argname="phrase")
         if not errs:
             assert anid is not None
             tmp = self.eventproxy.get_registrations(rs, (anid,))
@@ -5907,7 +5925,7 @@ class EventFrontend(AbstractUserFrontend):
             terms = [t.strip() for t in phrase.split(' ') if t]
             valid = True
             for t in terms:
-                _, errs = validate_check(vtypes.NonRegex, t, argname="phrase")
+                _, errs = inspect(vtypes.NonRegex, t, argname="phrase")
                 if errs:
                     valid = False
             if not valid:
@@ -5974,7 +5992,7 @@ class EventFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
 
-        anid, errs = validate_check(vtypes.CdedbID, phrase, argname="phrase")
+        anid, errs = inspect(vtypes.CdedbID, phrase, argname="phrase")
         if not errs:
             reg_ids = self.eventproxy.list_registrations(
                 rs, event_id, persona_id=anid)
@@ -5983,7 +6001,7 @@ class EventFrontend(AbstractUserFrontend):
                 return self.redirect(rs, "event/show_registration",
                                      {'registration_id': reg_id})
 
-        anid, errs = validate_check(vtypes.ID, phrase, argname="phrase")
+        anid, errs = inspect(vtypes.ID, phrase, argname="phrase")
         if not errs:
             assert anid is not None
             regs = self.eventproxy.get_registrations(rs, (anid,))
@@ -5996,7 +6014,7 @@ class EventFrontend(AbstractUserFrontend):
         terms = tuple(t.strip() for t in phrase.split(' ') if t)
         valid = True
         for t in terms:
-            _, errs = validate_check(vtypes.NonRegex, t, argname="phrase")
+            _, errs = inspect(vtypes.NonRegex, t, argname="phrase")
             if errs:
                 valid = False
         if not valid:

@@ -19,22 +19,17 @@ from werkzeug import Response
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, EntitySorter, LOG_FIELDS_COMMON, RequestState,
+    LOG_FIELDS_COMMON, CdEDBObject, CdEDBObjectMap, EntitySorter, RequestState,
     merge_dicts, n_, xsorted,
 )
-from cdedb.frontend.common import (
-    CustomCSVDialect, REQUESTdata, REQUESTdatadict, access, calculate_db_logparams,
-    calculate_loglinks, check_validation as check, csv_output, process_dynamic_input,
-    TransactionObserver,
-)
-from cdedb.query import (
-    Query, QueryOperators, QueryScope,
-)
-from cdedb.validation import (
-    PAST_EVENT_FIELDS, PAST_COURSE_COMMON_FIELDS,
-)
-
 from cdedb.frontend.cde_base import CdEBaseFrontend
+from cdedb.frontend.common import (
+    CustomCSVDialect, REQUESTdata, REQUESTdatadict, TransactionObserver, access,
+    calculate_db_logparams, calculate_loglinks, check_validation as check, csv_output,
+    process_dynamic_input,
+)
+from cdedb.query import Query, QueryOperators, QueryScope
+from cdedb.validation import PAST_COURSE_COMMON_FIELDS, PAST_EVENT_FIELDS
 
 COURSESEARCH_DEFAULTS = {
     'qsel_courses.title': True,
@@ -111,10 +106,12 @@ class CdEPastEventMixin(CdEBaseFrontend):
     def institution_summary(self, rs: RequestState) -> Response:
         """Manipulate organisations which are behind events."""
         institution_ids = self.pasteventproxy.list_institutions(rs)
-        spec = {'title': str, 'shortname': str}
-        institutions = process_dynamic_input(rs, institution_ids.keys(), spec)
+        spec = {'title': str, 'shortname': vtypes.Shortname}
+        institutions = process_dynamic_input(
+            rs, vtypes.Institution, institution_ids.keys(), spec)
         if rs.has_validation_errors():
             return self.institution_summary_form(rs)
+
         code = 1
         for institution_id, institution in institutions.items():
             if institution is None:
