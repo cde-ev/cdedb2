@@ -710,7 +710,6 @@ class Transaction:
 
     def inspect(self) -> None:
         """Inspect transaction for problems."""
-        cl = ConfidenceLevel
         cutoff = ConfidenceLevel.High
         if not self.type:
             self.type = TransactionType.Unknown
