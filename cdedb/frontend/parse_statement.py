@@ -208,6 +208,13 @@ def get_event_name_pattern(event: CdEDBObject) -> str:
     return result_pattern
 
 
+def format_events(events: CdEDBObjectMap) -> List[Tuple[(CdEDBObject, str)]]:
+    return [
+        (e, get_event_name_pattern(e))
+        for e in xsorted(events.values(), key=EntitySorter.event, reverse=True)
+    ]
+
+
 def parse_amount(amount: str) -> decimal.Decimal:
     """Safely determine how to interpret a string as Decimal."""
     if not amount:
@@ -495,10 +502,6 @@ class Transaction:
         confidence = ConfidenceLevel.Full
 
         # Try to find and match an event.
-        events = [
-            (e, get_event_name_pattern(e))
-            for e in xsorted(events.values(), key=EntitySorter.event, reverse=True)
-        ]
         self._match_event(events)
         # Try to find and match cdedbids.
         self._match_members(get_persona)
@@ -596,16 +599,16 @@ class Transaction:
             raise RuntimeError("Impossible!")
 
     def get_data(self, *, get_persona: BackendGetter = None,
-                 get_event: BackendGetter = None) -> None:
+                 events: CdEDBObjectMap = None) -> None:
         """Try retrieving the persona and event belonging to this transaction."""
         if self._persona_id and get_persona:
             try:
                 self.persona = get_persona(self._persona_id)
             except KeyError:
                 self._persona_id = None
-        if self._event_id and get_event:
+        if self._event_id and events:
             try:
-                self.event = get_event(self._event_id)
+                self.event = events[self._event_id]
             except KeyError:
                 self._event_id = None
 
@@ -697,18 +700,18 @@ class Transaction:
                 self.persona_confidence = best_confidence
                 self.persona = best_match.persona
 
-    def _match_event(self, processed_events: List[Tuple[CdEDBObject, str]]) -> None:
+    def _match_event(self, events: CdEDBObjectMap) -> None:
         """
         Assign all matching Events to self.event_matches.
 
-        :param processed_events: This should be a sorted list of events, and
-            event name patterns derived from them.
+        :param events: Collection of events as returned by `EventBackend.get_events`.
 
         Assign the best match to self.best_event_match and
         the confidence of the best match to self.best_event_confidence.
         """
+        self.get_data(events=events)
+        # Return early if we already matched an event.
         if self.event:
-            # Return early if we already matched an event.
             return
 
         confidence = ConfidenceLevel.Full
@@ -716,7 +719,7 @@ class Transaction:
         Event = collections.namedtuple("Event", ("event", "confidence"))
 
         matched_events = []
-        for e, pattern in processed_events:
+        for e, pattern in format_events(events):
             if e["is_archived"]:
                 confidence = confidence.decrease()
 

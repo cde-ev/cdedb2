@@ -137,8 +137,8 @@ class CdEParseMixin(CdEBaseFrontend):
         assert statement_file is not None
         statementlines = statement_file.splitlines()
 
-        event_list = self.eventproxy.list_events(rs)
-        events = self.eventproxy.get_events(rs, event_list)
+        event_ids = self.eventproxy.list_events(rs)
+        events = self.eventproxy.get_events(rs, event_ids)
 
         get_persona = functools.partial(self.coreproxy.get_persona, rs)
 
@@ -192,13 +192,14 @@ class CdEParseMixin(CdEBaseFrontend):
         rs.ignore_validation_errors()
 
         get_persona = functools.partial(self.coreproxy.get_persona, rs)
-        get_event = functools.partial(self.eventproxy.get_event, rs)
+        event_ids = self.eventproxy.list_events(rs)
+        events = self.eventproxy.get_events(rs, event_ids)
 
         transactions = []
         for i in range(1, count + 1):
             t_data = request_extractor(rs, parse.Transaction.get_request_params(i))
             t = parse.Transaction(t_data, index=i)
-            t.get_data(get_persona=get_persona, get_event=get_event)
+            t.get_data(get_persona=get_persona, events=events)
             t.inspect()
             transactions.append(t)
 
