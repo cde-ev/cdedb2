@@ -641,6 +641,11 @@ class CoreBaseFrontend(AbstractFrontend):
         if "cde" in access_levels and {"event", "cde"} & roles:
             past_events = self.pasteventproxy.participation_info(rs, persona_id)
 
+        # Retrieve number of active sessions if the user is viewing his own profile
+        active_session_count = None
+        if rs.user.persona_id == persona_id:
+            active_session_count = self.coreproxy.count_active_sessions(rs)
+
         # Check whether we should display an option for using the quota
         quoteable = (not quote_me
                      and "cde" not in access_levels
@@ -655,6 +660,7 @@ class CoreBaseFrontend(AbstractFrontend):
             'data': data, 'past_events': past_events, 'meta_info': meta_info,
             'is_relative_admin_view': is_relative_admin_view, 'reference': reference,
             'quoteable': quoteable, 'access_mode': access_mode,
+            'active_session_count': active_session_count,
         })
 
     @access("event")
