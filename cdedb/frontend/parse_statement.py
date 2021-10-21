@@ -15,21 +15,64 @@ from cdedb.common import (
 from cdedb.filter import cdedbid_filter
 from cdedb.frontend.common import inspect_validation as inspect
 
-# This is the specification of the order of the fields in the input.
-# This could be changed in the online banking, but we woud lose backwards
-# compability with multiple years of saved csv exports.
-# Note that "reference" is a `restkey` rather than a real key.
-STATEMENT_CSV_FIELDS = ("myBLZ", "myAccNr", "statementNr",
-                        "statementDate", "currency", "valuta", "date",
-                        "currency2", "amount", "textKey",
-                        "customerReference", "instituteReference",
-                        "transaction", "posting", "primanota",
-                        "textKey2", "BLZ", "KontoNr", "BIC", "IBAN",
-                        "accHolder", "accHolder2")
-# Since the reference is split over multiple columns, gather all of them here.
-STATEMENT_CSV_RESTKEY = "reference"
+# This is the specification of keys in the file exported from the bank. This is
+# configurable in the online banking interface, but changes will cause loss of
+# backwards compatibility.
+# The export contains these keys in the first row. This will be checked.
+STATEMENT_CSV_ACCOUNT_KEY = "Kontonummer"
+STATEMENT_CSV_STATEMENT_NR_KEY = "Auszugsnummer"
+STATEMENT_CSV_STATEMENT_DATE_KEY = "Buchungsdatum"
+STATEMENT_CSV_AMOUNT_KEY = "Betrag"
+STATEMENT_CSV_ACCOUNT_HOLDER_KEYS = [
+    "Auftraggeber-/Empfängername 1",
+    "Auftraggeber-/Empfängername 2",
+]
+STATEMENT_CSV_IBAN_KEY = "Auftraggeber-/Empfängerkonto"
+STATEMENT_CSV_REFERENCE_KEYS = [
+    "Verwendungszweck " + str(i + 1) for i in range(14)
+]
+STATEMENT_CSV_OTHER_REFERENCE_KEYS = [
+    "Ende-zu-Ende-Referenz",
+]
+STATEMENT_CSV_KREF_KEY = "Kundenreferenz (KREF)"
+STATEMENT_CSV_POSTING_KEY = "Buchungstext"
+STATEMENT_CSV_GVC_KEY = "Geschäftsvorfallcode"
+
+STATEMENT_CSV_ALL_KEY = {
+    STATEMENT_CSV_ACCOUNT_KEY,
+    STATEMENT_CSV_STATEMENT_NR_KEY,
+    STATEMENT_CSV_STATEMENT_DATE_KEY,
+    STATEMENT_CSV_AMOUNT_KEY,
+    *STATEMENT_CSV_ACCOUNT_HOLDER_KEYS,
+    STATEMENT_CSV_IBAN_KEY,
+    *STATEMENT_CSV_REFERENCE_KEYS,
+    *STATEMENT_CSV_OTHER_REFERENCE_KEYS,
+    STATEMENT_CSV_KREF_KEY,
+    STATEMENT_CSV_POSTING_KEY,
+    STATEMENT_CSV_GVC_KEY,
+}
+
+# Map common GVCs to readable descriptions.
+GVC_DESCRIPTIONS = {
+    '088': 'Eilüberweisung',
+    '105': 'Basislastschrift',
+    '109': 'Rückruf Basislastschrift',
+    '116': 'Überweisung',
+    '152': 'Gutschrift Dauerauftrag',
+    '153': 'Gutschrift Lohn/Gehalt/Rente',
+    '159': 'Überweisung Retoure',
+    '166': 'Gutschrfit',
+    '169': 'Gutschrift Spende',
+    '171': 'Einzug Basislastschrift',
+    '191': 'Sammelüberweisung',
+    '192': 'Sammeleinzug Basislastschrift',
+    '201': 'Auslandsüberweisung',
+    '808': 'Gebühren',
+    '814': 'Verwahrentgelt',
+}
+
 # Specification for how the date is formatted in the input.
-STATEMENT_INPUT_DATEFORMAT = "%d.%m.%y"
+STATEMENT_INPUT_DATEFORMAT = "%d.%m.%Y"
 
 # This specifies the export fields for the (eventual) use with GnuCash.
 # Since this is not yet currently in use this is very much subject to change.
@@ -259,7 +302,7 @@ def number_to_german(number: Union[decimal.Decimal, int, str]) -> str:
         ret = "{:,.2f}".format(number)
     else:
         ret = str(number)
-    ret = ret.replace(",", "_").replace(".", ",").replace("_", ".")
+    ret = ret.replace(",", "").replace(".", ",")
     return ret
 
 
@@ -288,16 +331,13 @@ class Transaction:
         # These fields are all very essential and need to be present.
         self.t_id = data["t_id"]
         self.account = data["account"]
+        self.statement_nr = data["statement_nr"]
         self.statement_date = data["statement_date"]
         self.amount = data["amount"]
         self.reference = data["reference"]
-        ref_parts_default = {
-                STATEMENT_RELEVANT_REFERENCE_DELIMITERS[0]: self.reference
-            }
-        self.reference_parts = data.get("reference_parts", ref_parts_default)
+        self.other_references = data["other_references"]
         self.account_holder = data["account_holder"]
         self.iban = data["iban"]
-        self.bic = data.get("bic")
         self.posting = data["posting"]
 
         # We need the following fields, but we actually set them later.
@@ -343,87 +383,61 @@ class Transaction:
         errors = []
 
         try:
-            data["account"] = Accounts(int(raw["myAccNr"]))
+            data["account"] = Accounts(int(raw[STATEMENT_CSV_ACCOUNT_KEY]))
         except ValueError:
             errors.append(
-                ("MyAccNr",
+                ("account",
                  ValueError("Unknown Account %(acc)s in Transaction %(t_id)s",
-                            {"acc": raw["myAccNr"], "t_id": data["t_id"]})))
+                            {"acc": raw[STATEMENT_CSV_ACCOUNT_KEY],
+                             "t_id": data["t_id"]})))
             data["account"] = Accounts.Unknown
 
+        data["statement_nr"] = int(raw[STATEMENT_CSV_STATEMENT_NR_KEY])
         try:
             data["statement_date"] = datetime.datetime.strptime(
-                raw["statementDate"], STATEMENT_INPUT_DATEFORMAT).date()
+                raw[STATEMENT_CSV_STATEMENT_DATE_KEY], STATEMENT_INPUT_DATEFORMAT
+            ).date()
         except ValueError:
-            errors.append(
-                ("statementDate",
-                 ValueError("Incorrect Date Format in Transaction %(t_id)s",
-                            {"t_id": t_id})))
+            errors.append(("statementDate",
+                           ValueError("Incorrect Date Format in Transaction %(t_id)s",
+                                      {"t_id": t_id})))
             data["statement_date"] = datetime.datetime.now().date()
 
         try:
-            data["amount"] = parse_amount(raw["amount"])
+            data["amount"] = parse_amount(raw[STATEMENT_CSV_AMOUNT_KEY])
         except ValueError as e:
             if "Could not parse." in e.args:
                 errors.append(
                     ("amount",
                      ValueError("Could not parse Transaction Amount (%(amt)s)"
                                 "for Transaction %(t_id)s",
-                                {"amt": raw["amount"], "t_id": t_id})))
+                                {"amt": raw[STATEMENT_CSV_AMOUNT_KEY], "t_id": t_id})))
                 data["amount"] = decimal.Decimal(0)
             else:
                 raise
         else:
             # Check whether the original input can be reconstructed
-            if raw["amount"] != number_to_german(data["amount"]):
+            raw_amount = raw[STATEMENT_CSV_AMOUNT_KEY]
+            reconstructed_amount = number_to_german(data["amount"])
+            if raw_amount != reconstructed_amount:
                 errors.append(
                     ("amount",
                      ValueError("Problem in line %(t_id)s: raw value "
                                 "%(amt_r)s != parsed value %(amt_p)s.",
                                 {"t_id": t_id,
-                                 "amt_r": raw["amount"],
-                                 "amt_p": number_to_german(data["amount"]),
+                                 "amt_r": raw_amount,
+                                 "amt_p": reconstructed_amount,
                                  })))
 
-        if STATEMENT_CSV_RESTKEY in raw:
-            # The complete reference might be split over multiple columns.
-            reference = "".join(raw[STATEMENT_CSV_RESTKEY])
+        data["reference"] = "".join(raw[k] for k in STATEMENT_CSV_REFERENCE_KEYS)
+        data["other_references"] = [raw[k] for k in STATEMENT_CSV_OTHER_REFERENCE_KEYS]
 
-            # Split the reference at all SEPA reference delimiters.
-            reference_parts = {}
-            for delimiter in STATEMENT_REFERENCE_DELIMITERS:
-                pattern = re.compile(r"{}\+(.*)$".format(delimiter))
-                result = pattern.findall(reference)
-                if result:
-                    reference_parts[delimiter] = result[0]
-                    reference = pattern.sub("", reference)
-            if reference_parts:
-                # Construct a single reference string.
-                data["reference"] = ";".join(
-                    v for k, v in reference_parts.items()
-                    if v and v != "NOTPROVIDED")
-                # Save the actually useful parts separately.
-                data["reference_parts"] = {
-                    k: v for k, v in reference_parts.items()
-                    if (v and v != "NOTPROVIDED"
-                        and k in STATEMENT_RELEVANT_REFERENCE_DELIMITERS)}
-            else:
-                data["reference"] = "".join(raw[STATEMENT_CSV_RESTKEY])
-                data["reference_parts"] = {
-                    STATEMENT_RELEVANT_REFERENCE_DELIMITERS[0]:
-                        data["reference"]
-                }
-        else:
-            data["reference"] = ""
-            data["reference_parts"] = {
-                STATEMENT_RELEVANT_REFERENCE_DELIMITERS[0]: ""
-            }
+        data["account_holder"] = "".join(
+            raw[k] for k in STATEMENT_CSV_ACCOUNT_HOLDER_KEYS)
+        data["iban"] = raw[STATEMENT_CSV_IBAN_KEY]
 
-        data["account_holder"] = "".join([raw["accHolder"], raw["accHolder2"]])
-        data["iban"] = raw["IBAN"]
-        data["bic"] = raw["BIC"]
-
-        data["posting"] = str(raw["posting"]).split(" ", 1)[0]
+        data["posting"] = GVC_DESCRIPTIONS.get(
+            raw[STATEMENT_CSV_GVC_KEY], raw[STATEMENT_CSV_POSTING_KEY])
 
         data["errors"] = errors
         data["warnings"] = []

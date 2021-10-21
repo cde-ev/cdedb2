@@ -129,9 +129,7 @@ class CdEParseMixin(CdEBaseFrontend):
         assert statement_file.filename is not None
         filename = pathlib.Path(statement_file.filename).parts[-1]
         start, end, timestamp = parse.dates_from_filename(filename)
-        # The statements from BFS are encoded in latin-1
-        statement_file = check(rs, vtypes.CSVFile, statement_file,
-                               "statement_file", encoding="latin-1")
+        statement_file = check(rs, vtypes.CSVFile, statement_file, "statement_file")
         if rs.has_validation_errors():
             return self.parse_statement_form(rs)
         assert statement_file is not None
@@ -143,20 +141,15 @@ class CdEParseMixin(CdEBaseFrontend):
         get_persona = functools.partial(self.coreproxy.get_persona, rs)
 
         # This does not use the cde csv dialect, but rather the bank's.
-        reader = csv.DictReader(statementlines, delimiter=";",
-                                quotechar='"',
-                                fieldnames=parse.STATEMENT_CSV_FIELDS,
-                                restkey=parse.STATEMENT_CSV_RESTKEY,
-                                restval="")
+        reader = csv.DictReader(statementlines, delimiter=";", quotechar='"')
 
         transactions = []
 
         for i, line in enumerate(reversed(list(reader))):
-            if not len(line) == len(parse.STATEMENT_CSV_FIELDS) + 1:
+            if not line.keys() == parse.STATEMENT_CSV_ALL_KEY:
                 p = ("statement_file",
                      ValueError(n_("Line %(lineno)s does not have "
-                                   "the correct number of "
-                                   "columns."),
+                                   "the correct columns."),
                                 {'lineno': i + 1}
                                 ))
                 rs.append_validation_error(p)
