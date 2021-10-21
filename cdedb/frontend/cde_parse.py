@@ -192,34 +192,13 @@ class CdEParseMixin(CdEBaseFrontend):
         """
         rs.ignore_validation_errors()
 
-        def params_generator(i: int) -> TypeMapping:
-            return {
-                f"reference{i}": Optional[str],  # type: ignore[dict-item]
-                f"account{i}": Accounts,
-                f"statement_date{i}": datetime.date,
-                f"amount{i}": decimal.Decimal,
-                f"account_holder{i}": Optional[str],  # type: ignore[dict-item]
-                f"posting{i}": str,
-                f"iban{i}": Optional[vtypes.IBAN],  # type: ignore[dict-item]
-                f"t_id{i}": vtypes.ID,
-                f"type{i}": TransactionType,
-                f"type_confidence{i}": ConfidenceLevel,
-                f"type_confirm{i}": bool,
-                f"cdedbid{i}": Optional[vtypes.CdedbID],  # type: ignore[dict-item]
-                f"persona_confidence{i}": ConfidenceLevel,
-                f"persona_confirm{i}": bool,
-                f"event_id{i}": Optional[vtypes.ID],  # type: ignore[dict-item]
-                f"event_confidence{i}": ConfidenceLevel,
-                f"event_confirm{i}": bool,
-            }
-
         get_persona = functools.partial(self.coreproxy.get_persona, rs)
         get_event = functools.partial(self.eventproxy.get_event, rs)
 
         transactions = []
         for i in range(1, count + 1):
-            t = request_extractor(rs, params_generator(i))
-            t = parse.Transaction({k.rstrip(str(i)): v for k, v in t.items()})
+            t_data = request_extractor(rs, parse.Transaction.get_request_params(i))
+            t = parse.Transaction(t_data, index=i)
             t.get_data(get_persona=get_persona, get_event=get_event)
             t.inspect()
             transactions.append(t)

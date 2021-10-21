@@ -19,6 +19,8 @@ from cdedb.frontend.common import inspect_validation as inspect
 # This could be changed in the online banking, but we woud lose backwards
 # compability with multiple years of saved csv exports.
 # Note that "reference" is a `restkey` rather than a real key.
+from cdedb.validation import TypeMapping
+
 STATEMENT_CSV_FIELDS = ("myBLZ", "myAccNr", "statementNr",
                         "statementDate", "currency", "valuta", "date",
                         "currency2", "amount", "textKey",
@@ -268,8 +270,12 @@ def simplify_amount(amt: Union[decimal.Decimal, int, str]) -> str:
 class Transaction:
     """Class to hold all transaction information,"""
 
-    def __init__(self, data: CdEDBObject) -> None:
+    def __init__(self, data: CdEDBObject, index: int = None) -> None:
         """We reconstruct a Transaction from the validation form dict here."""
+        # Fix parameter suffix.
+        if index is not None:
+            data = {k.rstrip(str(index)): v for k, v in data.items()}
+
         # These fields are all very essential and need to be present.
         self.t_id = data["t_id"]
         self.account = data["account"]
@@ -414,6 +420,36 @@ class Transaction:
         data["warnings"] = []
 
         return Transaction(data)
+
+    @staticmethod
+    def get_request_params(index: int = None) -> TypeMapping:
+        """Returns a specification for the parameters that should be extracted from
+        the request to create a `Transaction` object.
+
+        The return should be used with `request_extractor`. The data thusly extracted
+        can be used to call `Transaction.__init__`. The appended suffix can be passed
+        there too, where it will automatically be stripped away.
+        """
+        suffix = "" if index is None else str(index)
+        return {
+            f"reference{suffix}": Optional[str],  # type: ignore[dict-item]
+            f"account{suffix}": Accounts,
+            f"statement_date{suffix}": datetime.date,
+            f"amount{suffix}": decimal.Decimal,
+            f"account_holder{suffix}": Optional[str],  # type: ignore[dict-item]
+            f"posting{suffix}": str,
+            f"iban{suffix}": Optional[vtypes.IBAN],  # type: ignore[dict-item]
+            f"t_id{suffix}": vtypes.ID,
+            f"type{suffix}": TransactionType,
+            f"type_confidence{suffix}": ConfidenceLevel,
+            f"type_confirm{suffix}": bool,
+            f"cdedbid{suffix}": Optional[vtypes.CdedbID],  # type: ignore[dict-item]
+            f"persona_confidence{suffix}": ConfidenceLevel,
+            f"persona_confirm{suffix}": bool,
+            f"event_id{suffix}": Optional[vtypes.ID],  # type: ignore[dict-item]
+            f"event_confidence{suffix}": ConfidenceLevel,
+            f"event_confirm{suffix}": bool,
+        }
 
     def _find_cdedbids(self, confidence: ConfidenceLevel = ConfidenceLevel.Full
                        ) -> Dict[int, ConfidenceLevel]:
