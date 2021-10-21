@@ -1090,7 +1090,7 @@ class CoreBaseFrontend(AbstractFrontend):
                     is_search: bool, query: Query = None) -> Response:
         """Perform search."""
         events = self.pasteventproxy.list_past_events(rs)
-        choices = {
+        choices: Dict[str, Dict[Any, str]] = {
             'pevent_id': collections.OrderedDict(
                 xsorted(events.items(), key=operator.itemgetter(1))),
             'gender': collections.OrderedDict(
@@ -1130,7 +1130,7 @@ class CoreBaseFrontend(AbstractFrontend):
         otherwise.
         """
         events = self.pasteventproxy.list_past_events(rs)
-        choices = {
+        choices: Dict[str, Dict[Any, str]] = {
             'pevent_id': collections.OrderedDict(
                 xsorted(events.items(), key=operator.itemgetter(1))),
             'gender': collections.OrderedDict(

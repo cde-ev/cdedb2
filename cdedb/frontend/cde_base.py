@@ -299,7 +299,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
         otherwise.
         """
         events = self.pasteventproxy.list_past_events(rs)
-        choices = {
+        choices: Dict[str, Dict[Any, str]] = {
             'pevent_id': OrderedDict(
                 xsorted(events.items(), key=operator.itemgetter(1))),
             'gender': OrderedDict(
