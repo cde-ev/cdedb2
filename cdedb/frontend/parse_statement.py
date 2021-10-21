@@ -102,6 +102,10 @@ REFERENCE_REFUND_EXPENSES = re.compile(
 REFERENCE_MEMBERSHIP = re.compile(
     r"Mitglied(schaft)?(sbeitrag)?|(Halb)?Jahresbeitrag", flags=re.I)
 
+# Match a reference indicating an event fee.
+REFERENCE_EVENT_FEE = re.compile(
+    r"Teiln(ahme|ehmer)[-\s]*(beitrag)?", flags=re.I)
+
 # Match a donation.
 REFERENCE_DONATION = re.compile(
     r"Spende", flags=re.I)
@@ -580,6 +584,12 @@ class Transaction:
             elif self.event and self.amount > AMOUNT_MIN_EVENT_FEE:
                 self.type = TransactionType.EventFee
                 self.type_confidence = confidence
+
+            # Look for event fee without event match.
+            elif self.amount > AMOUNT_MIN_EVENT_FEE and re.search(REFERENCE_EVENT_FEE,
+                                                                  self.reference):
+                self.type = TransactionType.EventFee
+                self.type_confidence = confidence.decrease()
 
             elif self.persona:
                 self.type = TransactionType.MembershipFee
