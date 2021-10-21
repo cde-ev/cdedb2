@@ -27,19 +27,32 @@
     {% endif %}
     {% call util.bootstrap_panel(title=gettext("Line %(lineno)s")|format(lineno=t_id), aclass=aclass,
                                  icon=anicon, anid="transaction-container{}".format(t_id)) %}
-    {% with transaction_keys =
-        ("reference", "account", "statement_date", "amount",
-        "account_holder", "posting", "iban", "t_id") %}
     <div class="batch-line-body">
         <div class="row">
             <div class="col-md-6">
+                {% for key in ("reference", "account", "statement_date", "amount", "account_holder", "posting", "iban",
+                               "t_id", "type_confidence", "persona_confidence", "event_confidence") %}
+                    {{ util.input_hidden(name=key + t_id|string) }}
+                {% endfor %}
                 <ul>
-                    {% for key in transaction_keys %}
+                    <li>
+                        {% trans %}Reference{% endtrans %}: {{ data["reference{}".format(t_id)] }}
+                    </li>
+                    <li>
+                        {% trans %}Statement Date{% endtrans %}: {{ data["statement_date{}".format(t_id)] }}
+                    </li>
+                    <li>
+                        {% trans %}Amount{% endtrans %}: {{ data["amount{}".format(t_id)] }}
+                    </li>
+                    <li>
+                        {% trans %}Account holder{% endtrans %}: {{ data["account_holder{}".format(t_id)] }}
+                    </li>
+                    {% if data["persona{}".format(t_id)] %}
                         <li>
-                            {{ key }}: {{ data["{}{}".format(key, t_id)] }}
-                            {{ util.input_hidden(name="{}{}".format(key, t_id)) }}
+                            {% trans %}Matched User{% endtrans %}:
+                            {{ util.print_doppelganger(data["persona{}".format(t_id)]) }}
                         </li>
-                    {% endfor %}
+                    {% endif %}
                 </ul>
                 <ul id="transaction{{ t_id }}_errors" class="list-unstyled">
                         {% for key, problem in data["errors{}".format(t_id)] %}
@@ -63,20 +76,17 @@
             <div class="col-md-6">
                 <div class="row">
                     <div class="col-md-1">
-                        {{ util.input_checkbox(name="transaction_type_confirm{}".format(t_id)) }}
-                        {{ util.input_hidden(name="transaction_type_confidence{}".format(t_id)) }}
+                        {{ util.input_checkbox(name="type_confirm{}".format(t_id)) }}
                     </div>
                     <div class="col-md-11">
-                        {{ util.form_input_select(name="transaction_type{}".format(t_id),
+                        {{ util.form_input_select(name="type{}".format(t_id),
                                     entries=TransactionType|enum_entries,
-                                    label=gettext("Transaction Type"), horizontal=False, small=True,
-                                    sort=True) }}
+                                    label=gettext("Transaction Type"), horizontal=False, small=True) }}
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-1">
-                        {{ util.input_checkbox(name="persona_id_confirm{}".format(t_id)) }}
-                        {{ util.input_hidden(name="persona_id_confidence{}".format(t_id)) }}
+                        {{ util.input_checkbox(name="persona_confirm{}".format(t_id)) }}
                     </div>
                     <div class="col-md-11">
                         {{ util.form_input_text(name="cdedbid{}".format(t_id), small=True, horizontal=False,
@@ -91,8 +101,7 @@
                 </div>
                 <div class="row">
                     <div class="col-md-1">
-                        {{ util.input_checkbox(name="event_id_confirm{}".format(t_id)) }}
-                        {{ util.input_hidden(name="event_id_confidence{}".format(t_id)) }}
+                        {{ util.input_checkbox(name="event_confirm{}".format(t_id)) }}
                     </div>
                     <div class="col-md-11">
                         {{ util.form_input_select(name="event_id{}".format(t_id), entries=event_entries, small=True,
@@ -119,20 +128,19 @@
             {% endif %}
         {% endif %}
     </div>
-    {% endwith %}
     {% endcall %}
 {% endmacro %}
 
 {% block content %}
-    <form action="{{ cdedblink('cde/parse_statement') }}" method="POST" id="statementform" enctype="multipart/form-data">
-        {{ util.anti_csrf_token('cde/parse_statement') }}
-        {{ util.form_input_file(name="statement_file", label=gettext("Statement"), horizontal=False, accept="text/csv,.csv",
-                info=gettext("Directly paste the Bank Statement from Bank für Sozialwirtschaft here.")) }}
+    {% if not data %}
+        <form action="{{ cdedblink('cde/parse_statement') }}" method="POST" id="statementform" enctype="multipart/form-data">
+            {{ util.anti_csrf_token('cde/parse_statement') }}
+            {{ util.form_input_file(name="statement_file", label=gettext("Statement"), horizontal=False, accept="text/csv,.csv",
+                    info=gettext("Directly paste the Bank Statement from Bank für Sozialwirtschaft here.")) }}
 
-        {{ util.form_input_submit(label=gettext("Parse"), horizontal=False) }}
-    </form>
-
-    {% if data %}
+            {{ util.form_input_submit(label=gettext("Parse"), horizontal=False) }}
+        </form>
+    {% else %}
         <h2>{% trans %}Validation results{% endtrans %}</h2>
         <form action="{{ cdedblink("cde/parse_download") }}" method="POST" id="parsedownloadform">
             {{ util.anti_csrf_token("cde/parse_download") }}
