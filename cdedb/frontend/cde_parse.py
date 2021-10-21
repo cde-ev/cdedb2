@@ -21,8 +21,8 @@ from werkzeug.datastructures import FileStorage
 import cdedb.frontend.parse_statement as parse
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    Accounts, CdEDBObject, ConfidenceLevel, EntitySorter, RequestState, TransactionType,
-    diacritic_patterns, get_hash, merge_dicts, n_, xsorted,
+    CdEDBObject, EntitySorter, RequestState, TransactionType, diacritic_patterns,
+    get_hash, merge_dicts, n_, xsorted,
 )
 from cdedb.frontend.cde_base import CdEBaseFrontend
 from cdedb.frontend.common import (
@@ -31,7 +31,6 @@ from cdedb.frontend.common import (
     inspect_validation as inspect, inspect_validation_optional as inspect_optional,
     make_postal_address, request_extractor,
 )
-from cdedb.validation import TypeMapping
 
 
 class CdEParseMixin(CdEBaseFrontend):
