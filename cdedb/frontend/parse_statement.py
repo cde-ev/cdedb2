@@ -19,8 +19,6 @@ from cdedb.frontend.common import inspect_validation as inspect
 # This could be changed in the online banking, but we woud lose backwards
 # compability with multiple years of saved csv exports.
 # Note that "reference" is a `restkey` rather than a real key.
-from cdedb.validation import TypeMapping
-
 STATEMENT_CSV_FIELDS = ("myBLZ", "myAccNr", "statementNr",
                         "statementDate", "currency", "valuta", "date",
                         "currency2", "amount", "textKey",
@@ -422,7 +420,7 @@ class Transaction:
         return Transaction(data)
 
     @staticmethod
-    def get_request_params(index: int = None) -> TypeMapping:
+    def get_request_params(index: int = None) -> vtypes.TypeMapping:
         """Returns a specification for the parameters that should be extracted from
         the request to create a `Transaction` object.
 
