@@ -30,9 +30,10 @@ from cdedb.common import (
     COURSE_FIELDS, COURSE_TRACK_FIELDS, EVENT_FIELDS, EVENT_PART_FIELDS,
     EVENT_SCHEMA_VERSION, FEE_MODIFIER_FIELDS, FIELD_DEFINITION_FIELDS,
     LODGEMENT_FIELDS, LODGEMENT_GROUP_FIELDS, PERSONA_EVENT_FIELDS,
-    QUESTIONNAIRE_ROW_FIELDS, REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS,
-    REGISTRATION_TRACK_FIELDS, CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
-    PrivilegeError, RequestState, glue, n_, now, unwrap, xsorted,
+    PERSONA_STATUS_FIELDS, QUESTIONNAIRE_ROW_FIELDS, REGISTRATION_FIELDS,
+    REGISTRATION_PART_FIELDS, REGISTRATION_TRACK_FIELDS, CdEDBLog, CdEDBObject,
+    CdEDBObjectMap, DefaultReturnCode, PrivilegeError, RequestState, glue, n_, now,
+    unwrap, xsorted,
 )
 from cdedb.database.connection import Atomizer
 
@@ -836,12 +837,7 @@ class EventBaseBackend(EventLowLevelBackend):
         for reg_id, registration in ret['registrations'].items():
             persona = personas[backup_registrations[reg_id]['persona_id']]
             persona['is_orga'] = persona['id'] in event['orgas']
-            for attr in ('is_active', 'is_meta_admin', 'is_archived',
-                         'is_assembly_admin', 'is_assembly_realm',
-                         'is_cde_admin', 'is_finance_admin', 'is_cde_realm',
-                         'is_core_admin', 'is_event_admin',
-                         'is_event_realm', 'is_ml_admin', 'is_ml_realm',
-                         'is_searchable', 'is_cdelokal_admin', 'is_purged'):
+            for attr in set(PERSONA_STATUS_FIELDS) - {'is_member'}:
                 del persona[attr]
             registration['persona'] = persona
         return ret

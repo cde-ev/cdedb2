@@ -1423,6 +1423,7 @@ class CoreBackend(AbstractBackend):
                 'is_ml_admin': False,
                 'is_assembly_admin': False,
                 'is_cdelokal_admin': False,
+                'is_auditor': False,
                 # Do no touch the realms, to preserve integrity and
                 # allow reactivation.
                 # 'is_cde_realm'
@@ -1932,18 +1933,8 @@ class CoreBackend(AbstractBackend):
         data = affirm(vtypes.Persona, data, creation=True)
         submitted_by = affirm_optional(vtypes.ID, submitted_by)
         # zap any admin attempts
-        data.update({
-            'is_meta_admin': False,
-            'is_archived': False,
-            'is_assembly_admin': False,
-            'is_cde_admin': False,
-            'is_finance_admin': False,
-            'is_core_admin': False,
-            'is_event_admin': False,
-            'is_ml_admin': False,
-            'is_cdelokal_admin': False,
-            'is_purged': False,
-        })
+        data |= {'is_archived': False, 'is_purged': False}
+        data |= {k: False for k in ADMIN_KEYS}
         # Check if admin has rights to create the user in its realms
         if not any(admin <= rs.user.roles
                    for admin in privilege_tier(extract_roles(data),

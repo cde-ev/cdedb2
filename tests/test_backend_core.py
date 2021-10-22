@@ -688,6 +688,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_purged': False,
             'is_cdelokal_admin': False,
+            'is_auditor': False,
             'id': new_id,
             'display_name': 'Zelda',
             'is_active': True,
@@ -765,6 +766,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_purged': False,
             'is_cdelokal_admin': False,
+            'is_auditor': False,
             'id': new_id,
             'display_name': 'Zelda',
             'is_active': True,
@@ -830,8 +832,7 @@ class TestCoreBackend(BackendTest):
         expectation.update(update)
         new_id = self.core.genesis(self.key, case_id)
         self.assertLess(0, new_id)
-        expectation = {k: v for k, v in expectation.items() if
-                       k in PERSONA_CDE_FIELDS}
+        expectation = {k: v for k, v in expectation.items() if k in PERSONA_CDE_FIELDS}
         expectation.update({
             'is_meta_admin': False,
             'is_archived': False,
@@ -844,6 +845,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_purged': False,
             'is_cdelokal_admin': False,
+            'is_auditor': False,
             'id': new_id,
             'display_name': 'Zelda',
             'is_active': True,

@@ -1123,6 +1123,7 @@
             "given_names": "Garcia G.",
             "is_ml_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "id": 7,
             "is_cde_realm": true,
             "title": null
@@ -1158,6 +1159,7 @@
             "given_names": "Anton Armin A.",
             "is_ml_admin": true,
             "is_cdelokal_admin": true,
+            "is_auditor": true,
             "id": 1,
             "is_cde_realm": true,
             "title": null
@@ -1193,6 +1195,7 @@
             "given_names": "Inga",
             "is_ml_admin": false,
             "is_cdelokal_admin": true,
+            "is_auditor": false,
             "id": 9,
             "is_cde_realm": true,
             "title": null
@@ -1228,6 +1231,7 @@
             "given_names": "Emilia E.",
             "is_ml_admin": false,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "id": 5,
             "is_cde_realm": false,
             "title": null
@@ -1258,6 +1262,7 @@
             "is_ml_admin": true,
             "is_ml_realm": true,
             "is_cdelokal_admin": true,
+            "is_auditor": true,
             "is_searchable": true,
             "location": "Tokyo",
             "mobile": null,
@@ -1293,6 +1298,7 @@
             "is_ml_admin": false,
             "is_ml_realm": true,
             "is_cdelokal_admin": false,
+            "is_auditor": false,
             "is_searchable": true,
             "location": "Utopia",
             "mobile": "0163/123456789",
