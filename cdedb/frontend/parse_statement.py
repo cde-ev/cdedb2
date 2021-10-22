@@ -404,7 +404,7 @@ class Transaction:
                 raw[STATEMENT_CSV_STATEMENT_DATE_KEY], STATEMENT_INPUT_DATEFORMAT
             ).date()
         except ValueError:
-            errors.append(("statementDate",
+            errors.append((STATEMENT_CSV_STATEMENT_DATE_KEY,
                            ValueError("Incorrect Date Format in Transaction %(t_id)s",
                                       {"t_id": t_id})))
             data["statement_date"] = datetime.datetime.now().date()
@@ -414,7 +414,7 @@ class Transaction:
         except ValueError as e:
             if "Could not parse." in e.args:
                 errors.append(
-                    ("amount",
+                    (STATEMENT_CSV_AMOUNT_KEY,
                      ValueError("Could not parse Transaction Amount (%(amt)s)"
                                 "for Transaction %(t_id)s",
                                 {"amt": raw[STATEMENT_CSV_AMOUNT_KEY], "t_id": t_id})))
