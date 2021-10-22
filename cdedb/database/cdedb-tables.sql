@@ -331,7 +331,8 @@ CREATE TABLE core.log (
 );
 CREATE INDEX idx_core_log_code ON core.log(code);
 CREATE INDEX idx_core_log_persona_id ON core.log(persona_id);
-GRANT SELECT, DELETE ON core.log TO cdb_admin;
+GRANT SELECT ON core.log TO cdb_member;
+GRANT DELETE ON core.log TO cdb_admin;
 GRANT INSERT ON core.log TO cdb_anonymous;
 GRANT SELECT, UPDATE ON core.log_id_seq TO cdb_anonymous;
 
@@ -549,7 +550,8 @@ CREATE TABLE cde.log (
 );
 CREATE INDEX idx_cde_log_code ON cde.log(code);
 CREATE INDEX idx_cde_log_persona_id ON cde.log(persona_id);
-GRANT SELECT, INSERT, DELETE ON cde.log TO cdb_admin;
+GRANT SELECT ON cde.log TO cdb_member;
+GRANT INSERT, DELETE ON cde.log TO cdb_admin;
 GRANT SELECT, UPDATE ON cde.log_id_seq TO cdb_admin;
 
 ---
@@ -636,7 +638,8 @@ CREATE TABLE past_event.log (
 );
 CREATE INDEX idx_past_event_log_code ON past_event.log(code);
 CREATE INDEX idx_past_event_log_event_id ON past_event.log(pevent_id);
-GRANT SELECT, INSERT, DELETE ON past_event.log TO cdb_admin;
+GRANT SELECT ON part_event.log TO cdb_member;
+GRANT INSERT, DELETE ON past_event.log TO cdb_admin;
 GRANT SELECT, UPDATE ON past_event.log_id_seq TO cdb_admin;
 
 ---

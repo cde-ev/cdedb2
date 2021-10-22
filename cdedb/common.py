@@ -1910,6 +1910,7 @@ DB_ROLE_MAPPING: role_map_type = collections.OrderedDict((
     ("member", "cdb_member"),
     ("cde", "cdb_member"),
     ("assembly", "cdb_member"),
+    ("auditor", "cdb_member"),
 
     ("event", "cdb_persona"),
     ("ml", "cdb_persona"),
