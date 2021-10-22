@@ -6140,10 +6140,7 @@ class EventFrontend(AbstractUserFrontend):
                  entry['submitted_by']}
                 | {entry['persona_id'] for entry in log if entry['persona_id']})
         personas = self.coreproxy.get_personas(rs, persona_ids)
-        if self.is_admin(rs) or (event_id and event_id in rs.user.orga):
-            registration_map = self.eventproxy.get_registration_map(rs, event_ids)
-        else:
-            registration_map = {}
+        registration_map = self.eventproxy.get_registration_map(rs, (event_id,))
         loglinks = calculate_loglinks(rs, total, offset, length)
         return self.render(rs, "view_event_log", {
             'log': log, 'total': total, 'length': _length, 'personas': personas,
