@@ -106,7 +106,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             self.assemblyproxy.submit_general_query,
             endpoint="archived_user_search")
 
-    @access("assembly_admin")
+    @access("assembly_admin", "auditor")
     @REQUESTdata(*LOG_FIELDS_COMMON, "assembly_id")
     def view_log(self, rs: RequestState,
                  codes: Collection[const.AssemblyLogCodes],

@@ -6069,7 +6069,7 @@ class EventFrontend(AbstractUserFrontend):
         rs.notify("warning", n_("No registration found."))
         return self.show_event(rs, event_id)
 
-    @access("event_admin")
+    @access("event_admin", "auditor")
     @REQUESTdata(*LOG_FIELDS_COMMON, "event_id")
     def view_log(self, rs: RequestState, codes: Collection[const.EventLogCodes],
                  event_id: Optional[vtypes.ID], offset: Optional[int],
@@ -6098,7 +6098,10 @@ class EventFrontend(AbstractUserFrontend):
                 | {entry['persona_id'] for entry in log if entry['persona_id']})
         personas = self.coreproxy.get_personas(rs, persona_ids)
         event_ids = {entry['event_id'] for entry in log if entry['event_id']}
-        registration_map = self.eventproxy.get_registration_map(rs, event_ids)
+        if self.is_admin(rs):
+            registration_map = self.eventproxy.get_registration_map(rs, event_ids)
+        else:
+            registration_map = {}
         events = self.eventproxy.get_events(rs, event_ids)
         all_events = self.eventproxy.list_events(rs)
         loglinks = calculate_loglinks(rs, total, offset, length)
@@ -6137,7 +6140,10 @@ class EventFrontend(AbstractUserFrontend):
                  entry['submitted_by']}
                 | {entry['persona_id'] for entry in log if entry['persona_id']})
         personas = self.coreproxy.get_personas(rs, persona_ids)
-        registration_map = self.eventproxy.get_registration_map(rs, (event_id,))
+        if self.is_admin(rs) or (event_id and event_id in rs.user.orga):
+            registration_map = self.eventproxy.get_registration_map(rs, event_ids)
+        else:
+            registration_map = {}
         loglinks = calculate_loglinks(rs, total, offset, length)
         return self.render(rs, "view_event_log", {
             'log': log, 'total': total, 'length': _length, 'personas': personas,

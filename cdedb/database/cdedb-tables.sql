@@ -638,7 +638,7 @@ CREATE TABLE past_event.log (
 );
 CREATE INDEX idx_past_event_log_code ON past_event.log(code);
 CREATE INDEX idx_past_event_log_event_id ON past_event.log(pevent_id);
-GRANT SELECT ON part_event.log TO cdb_member;
+GRANT SELECT ON past_event.log TO cdb_member;
 GRANT INSERT, DELETE ON past_event.log TO cdb_admin;
 GRANT SELECT, UPDATE ON past_event.log_id_seq TO cdb_admin;
 

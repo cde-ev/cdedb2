@@ -24,7 +24,7 @@
             {% endif %}
         </div>
 
-        {% if user.admin_views.intersection(('cde_user', 'finance')|set) %}
+        {% if user.admin_views.intersection(('cde_user', 'finance')|set) or 'auditor' in user.roles %}
             <div class="list-group tear-down">
                 {% if "cde_user" in user.admin_views %}
                     {{ util.href(cdedblink("cde/user_search"), gettext("Manage Users"), aclass="list-group-item", icon="users",
@@ -41,6 +41,8 @@
                             icon="euro-sign", active=(sidenav_active=='cde_transfers')) }}
                     {{ util.href(cdedblink("cde/show_semester"), gettext("Semester Management"), aclass="list-group-item",
                             icon="hourglass-half", active=(sidenav_active=='cde_semester')) }}
+                {% endif %}
+                {% if "finance" in user.admin_views or 'auditor' in user.roles %}
                     {{ util.href(cdedblink("cde/view_cde_log"), gettext("CdE Log"), aclass="list-group-item", icon="far fa-list-alt",
                             active=(sidenav_active=='cde_log')) }}
                     {{ util.href(cdedblink("cde/view_finance_log"), gettext("Finance Log"), aclass="list-group-item", icon="far fa-list-alt",
@@ -49,7 +51,7 @@
             </div>
         {% endif %}
 
-        {% if "member" in user.roles or "past_event" in user.admin_views %}
+        {% if user.roles.intersection(("member", "auditor")|set) or "past_event" in user.admin_views %}
             <div class="list-group tear-down">
                 {{ util.href(cdedblink("cde/list_past_events"), gettext("Past Events"), icon="calendar-alt",
                         aclass="list-group-item", active=(sidenav_active=='cde_past_events')) }}
@@ -60,6 +62,8 @@
                 {% if "past_event" in user.admin_views %}
                     {{ util.href(cdedblink("cde/institution_summary"), gettext("Manage Institutions"), icon="briefcase",
                             aclass="list-group-item", active=(sidenav_active=='cde_past_events_org')) }}
+                {% endif %}
+                {% if "past_event" in user.admin_views or 'auditor' in user.roles %}
                     {{ util.href(cdedblink("cde/view_past_log"), gettext("Past Events Log"), icon="far fa-list-alt",
                             aclass="list-group-item", active=(sidenav_active=='cde_past_events_log')) }}
                     </div>

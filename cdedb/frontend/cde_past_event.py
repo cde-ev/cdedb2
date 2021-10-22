@@ -509,7 +509,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
         else:
             return self.redirect(rs, "cde/show_past_event")
 
-    @access("cde_admin")
+    @access("cde_admin", "auditor")
     @REQUESTdata(*LOG_FIELDS_COMMON, "pevent_id")
     def view_past_log(self, rs: RequestState,
                       codes: Collection[const.PastEventLogCodes],

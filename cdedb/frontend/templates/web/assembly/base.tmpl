@@ -51,7 +51,7 @@
             {{ util.href(cdedblink("assembly/index"), gettext("Overview"), icon="caret-right",
                     aclass="list-group-item", active=(sidenav_active == 'assembly_index')) }}
         </div>
-        {% if user.admin_views.intersection(('assembly_user', 'assembly_mgmt')) %}
+        {% if user.admin_views.intersection(('assembly_user', 'assembly_mgmt')) or 'auditor' in user.roles %}
             <div class="list-group tear-down">
                 {% if 'assembly_user' in user.admin_views %}
                     {{ util.href(cdedblink("assembly/user_search"), gettext("Manage Users"), icon="users",
@@ -59,7 +59,7 @@
                     {{ util.href(cdedblink("assembly/archived_user_search"), gettext("Search Archived Users"), aclass="list-group-item",
                                  icon="inbox", active=(sidenav_active=='assembly_manage_archive')) }}
                 {% endif %}
-                {% if 'assembly_mgmt' in user.admin_views %}
+                {% if 'assembly_mgmt' in user.admin_views or 'auditor' in user.roles %}
                     {{ util.href(cdedblink("assembly/view_log"), gettext("Log"), icon="far fa-list-alt",
                                  aclass="list-group-item", active=(sidenav_active == 'assembly_log')) }}
                 {% endif %}

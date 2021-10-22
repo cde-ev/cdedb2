@@ -97,7 +97,7 @@ class EventBaseBackend(EventLowLevelBackend):
         def __call__(self, rs: RequestState, persona_id: int) -> Set[int]: ...
     orga_info: _OrgaInfoProtocol = singularize(orga_infos, "persona_ids", "persona_id")
 
-    @access("event")
+    @access("event", "auditor")
     def retrieve_log(self, rs: RequestState,
                      codes: Collection[const.EventLogCodes] = None,
                      event_id: int = None, offset: int = None,
@@ -112,7 +112,7 @@ class EventBaseBackend(EventLowLevelBackend):
         """
         event_id = affirm_optional(vtypes.ID, event_id)
         if (not (event_id and self.is_orga(rs, event_id=event_id))
-                and not self.is_admin(rs)):
+                and not self.is_admin(rs) and "auditor" not in rs.user.roles):
             raise PrivilegeError(n_("Not privileged."))
         event_ids = [event_id] if event_id else None
         return self.generic_retrieve_log(

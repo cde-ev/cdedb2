@@ -264,7 +264,7 @@ class AssemblyBackend(AbstractBackend):
                   change_note)
         return self.query_exec(rs, query, params)
 
-    @access("assembly")
+    @access("assembly", "auditor")
     def retrieve_log(self, rs: RequestState,
                      codes: Collection[const.AssemblyLogCodes] = None,
                      assembly_id: int = None, offset: int = None,
@@ -279,11 +279,12 @@ class AssemblyBackend(AbstractBackend):
         """
         assembly_id = affirm_optional(vtypes.ID, assembly_id)
         if assembly_id is None:
-            if not self.is_admin(rs):
+            if not self.is_admin(rs) and "auditor" not in rs.user.roles:
                 raise PrivilegeError(n_("Must be admin to access global log."))
             assembly_ids = None
         else:
-            if not self.is_presider(rs, assembly_id=assembly_id):
+            if (not self.is_presider(rs, assembly_id=assembly_id)
+                    and "auditor" not in rs.user.roles):
                 raise PrivilegeError(n_("Must have privileged access to view"
                                         " assembly log."))
             assembly_ids = [assembly_id]

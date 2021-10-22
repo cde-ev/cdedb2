@@ -227,7 +227,7 @@ class CoreBackend(AbstractBackend):
                 data.update(members=0, total=0)
             return self.sql_insert(rs, "cde.finance_log", data)
 
-    @access("core_admin")
+    @access("core_admin", "auditor")
     def retrieve_log(self, rs: RequestState,
                      codes: Collection[const.CoreLogCodes] = None,
                      offset: int = None, length: int = None,
@@ -246,7 +246,7 @@ class CoreBackend(AbstractBackend):
             submitted_by=submitted_by, change_note=change_note,
             time_start=time_start, time_stop=time_stop)
 
-    @access("core_admin")
+    @access("core_admin", "auditor")
     def retrieve_changelog_meta(
             self, rs: RequestState,
             stati: Collection[const.MemberChangeStati] = None,
