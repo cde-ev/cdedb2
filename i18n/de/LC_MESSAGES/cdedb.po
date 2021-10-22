@@ -9510,6 +9510,9 @@ msgstr "Andere Verwendungszwecke"
 msgid "Statement Date"
 msgstr "Ausszugsdatum"
 
+msgid "Posting"
+msgstr "Buchungsart"
+
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:52
 msgid "Matched User"
 msgstr "Zugeordneter Benutzer"

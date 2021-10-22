@@ -54,6 +54,9 @@
                         {% trans %}Amount{% endtrans %}: {{ data["amount{}".format(t_id)] }}
                     </li>
                     <li>
+                        {% trans %}Posting{% endtrans %}: {{ data["posting{}".format(t_id)] }}
+                    </li>
+                    <li>
                         {% trans %}Account holder{% endtrans %}: {{ data["account_holder{}".format(t_id)] }}
                     </li>
                     {% if data["persona{}".format(t_id)] %}
