@@ -61,6 +61,10 @@ CREATE TABLE core.personas (
         is_cdelokal_admin       boolean NOT NULL DEFAULT False,
         CONSTRAINT personas_admin_cdelokal
             CHECK (NOT is_cdelokal_admin OR is_ml_realm),
+        -- allows auditing, i.e. viewing of all logs
+        is_auditor              boolean NOT NULL DEFAULT False,
+        CONSTRAINT personas_auditor
+            CHECK (NOT is_auditor OR is_cde_realm),
         -- allows usage of cde functionality
         is_cde_realm            boolean NOT NULL,
         CONSTRAINT personas_realm_cde_implicits
@@ -181,7 +185,7 @@ CREATE INDEX idx_personas_is_ml_realm ON core.personas(is_ml_realm);
 CREATE INDEX idx_personas_is_assembly_realm ON core.personas(is_assembly_realm);
 CREATE INDEX idx_personas_is_member ON core.personas(is_member);
 CREATE INDEX idx_personas_is_searchable ON core.personas(is_searchable);
-GRANT SELECT (id, username, password_hash, is_active, is_meta_admin, is_core_admin, is_cde_admin, is_finance_admin, is_event_admin, is_ml_admin, is_assembly_admin, is_cdelokal_admin, is_cde_realm, is_event_realm, is_ml_realm, is_assembly_realm, is_member, is_searchable, is_archived, is_purged) ON core.personas TO cdb_anonymous;
+GRANT SELECT (id, username, password_hash, is_active, is_meta_admin, is_core_admin, is_cde_admin, is_finance_admin, is_event_admin, is_ml_admin, is_assembly_admin, is_cdelokal_admin, is_auditor, is_cde_realm, is_event_realm, is_ml_realm, is_assembly_realm, is_member, is_searchable, is_archived, is_purged) ON core.personas TO cdb_anonymous;
 GRANT UPDATE (username, password_hash) ON core.personas TO cdb_persona;
 GRANT SELECT, UPDATE (display_name, given_names, family_name, title, name_supplement, gender, birthday, telephone, mobile, address_supplement, address, postal_code, location, country, fulltext) ON core.personas TO cdb_persona;
 GRANT SELECT, UPDATE ON core.personas TO cdb_member; -- TODO maybe restrict notes to cdb_admin
@@ -259,6 +263,7 @@ CREATE TABLE core.privilege_changes (
         is_ml_admin             boolean DEFAULT NULL,
         is_assembly_admin       boolean DEFAULT NULL,
         is_cdelokal_admin       boolean DEFAULT NULL,
+        is_auditor              boolean DEFAULT NULL,
         -- justification supplied by the submitter
         notes                   varchar,
         -- persona who approved the change
@@ -359,6 +364,7 @@ CREATE TABLE core.changelog (
         is_ml_admin             boolean,
         is_assembly_admin       boolean,
         is_cdelokal_admin       boolean,
+        is_auditor              boolean,
         is_cde_realm            boolean,
         is_event_realm          boolean,
         is_ml_realm             boolean,
