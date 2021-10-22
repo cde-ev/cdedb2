@@ -22,8 +22,7 @@ import cdedb.frontend.parse_statement as parse
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
     Accounts, CdEDBObject, EntitySorter, RequestState, TransactionType,
-    diacritic_patterns,
-    get_hash, merge_dicts, n_, xsorted,
+    diacritic_patterns, get_hash, merge_dicts, n_, xsorted,
 )
 from cdedb.frontend.cde_base import CdEBaseFrontend
 from cdedb.frontend.common import (
@@ -227,6 +226,9 @@ class CdEParseMixin(CdEBaseFrontend):
             write_header = True
         elif excel is not None:
             account, _ = inspect(Accounts, excel)
+            if not account:
+                rs.notify("error", n_("Unknown account."))
+                return self.parse_statement_form(rs, data, params)
             filename = "transactions_" + str(account.value)
             transactions = [t for t in transactions if t.account == account]
             fields = parse.EXCEL_EXPORT_FIELDS
