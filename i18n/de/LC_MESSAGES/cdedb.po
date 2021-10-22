@@ -2555,8 +2555,8 @@ msgstr "%(num)s Accounts aktualisiert."
 #: cdedb/frontend/cde.py:996 cdedb/frontend/cde_parse.py:159
 #: cdedb/frontend/cde_parse.py:160
 #, python-format
-msgid "Line %(lineno)s does not have the correct number of columns."
-msgstr "Zeile %(lineno)s hat nicht die korrekte Anzahl Spalten."
+msgid "Line %(lineno)s does not have the correct columns."
+msgstr "Zeile %(lineno)s hat nicht die korrekten Spalten."
 
 #: cdedb/frontend/cde.py:982 cdedb/frontend/cde.py:1017
 #: cdedb/frontend/cde.py:1019 cdedb/frontend/cde.py:1097
@@ -9503,8 +9503,15 @@ msgid "Reference"
 msgstr "Verwendungszweck"
 
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:42
+msgid "Other References"
+msgstr "Andere Verwendungszwecke"
+
+#: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:42
 msgid "Statement Date"
 msgstr "Ausszugsdatum"
+
+msgid "Posting"
+msgstr "Buchungsart"
 
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:52
 msgid "Matched User"
