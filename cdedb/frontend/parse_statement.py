@@ -457,7 +457,7 @@ class Transaction:
         return [self.reference, *self.other_references]
 
     @property
-    def full_reference(self) -> List[str]:
+    def full_reference(self) -> str:
         return REFERENCE_SEPARATOR.join(self.all_references)
 
     @staticmethod
@@ -473,7 +473,7 @@ class Transaction:
         :param hidden_only: If True, only return the keys used for hidden form inputs.
         """
         suffix = "" if index is None else str(index)
-        ret = {
+        ret: vtypes.TypeMapping = {
             f"t_id{suffix}": vtypes.ID,
             f"account{suffix}": Accounts,
             f"statement_nr{suffix}": vtypes.ID,
@@ -490,12 +490,12 @@ class Transaction:
             f"event_confidence{suffix}": ConfidenceLevel,
         }
         if not hidden_only:
-            ret.update({
+            ret = dict(**ret, **{  # type: ignore[arg-type]
                 f"type{suffix}": TransactionType,
                 f"type_confirm{suffix}": bool,
-                f"cdedbid{suffix}": Optional[vtypes.CdedbID],  # type: ignore[dict-item]
+                f"cdedbid{suffix}": Optional[vtypes.CdedbID],
                 f"persona_confirm{suffix}": bool,
-                f"event_id{suffix}": Optional[vtypes.ID],  # type: ignore[dict-item]
+                f"event_id{suffix}": Optional[vtypes.ID],
                 f"event_confirm{suffix}": bool,
             })
         return ret

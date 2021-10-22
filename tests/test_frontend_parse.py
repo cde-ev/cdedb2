@@ -47,7 +47,7 @@ class TestParseFrontend(FrontendTest):
     def get_transaction_with_references(
         reference: str, other_references: List[str] = None
     ) -> parse.Transaction:
-        transaction_data = collections.defaultdict(str)
+        transaction_data: CdEDBObject = collections.defaultdict(str)
         transaction_data.update({
             "reference": reference,
             "other_references": parse.REFERENCE_SEPARATOR.join(other_references or []),
