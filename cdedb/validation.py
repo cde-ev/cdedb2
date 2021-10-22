@@ -1144,6 +1144,7 @@ PERSONA_COMMON_FIELDS: Mapping[str, Any] = {
     'is_ml_admin': bool,
     'is_assembly_admin': bool,
     'is_cdelokal_admin': bool,
+    'is_auditor': bool,
     'is_cde_realm': bool,
     'is_event_realm': bool,
     'is_ml_realm': bool,
