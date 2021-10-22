@@ -25,6 +25,7 @@ class TestParseFrontend(FrontendTest):
         self.response.text = self.response.text[1:]
 
     def test_reconstruct_cdedbid(self) -> None:
+        # pylint: disable=protected-access
         for val, ret_val in (
             ("DB-1-9", 1),
             ("db-27", 2),
@@ -55,6 +56,7 @@ class TestParseFrontend(FrontendTest):
         return parse.Transaction(transaction_data)
 
     def test_find_cdedbids(self) -> None:
+        # pylint: disable=protected-access
         cl = parse.ConfidenceLevel
         t = self.get_transaction_with_references(
             "DB-2-7 DB-35",
