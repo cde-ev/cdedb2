@@ -235,7 +235,7 @@ class CdEParseMixin(CdEBaseFrontend):
             rs.notify("error", n_("Unknown action."))
             return self.parse_statement_form(rs, data, params)
         if end is None:
-            filename += "_{}".format(start)
+            filename += "_{}.csv".format(start)
         else:
             filename += "_{}_bis_{}.csv".format(start, end)
         csv_data = [t.to_dict() for t in transactions]
