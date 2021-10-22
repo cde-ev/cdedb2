@@ -1950,7 +1950,9 @@ ALL_ADMIN_VIEWS: Set[AdminView] = {
     "ml_mgmt_cdelokal", "ml_mod_cdelokal",
     "assembly_user", "assembly_mgmt", "assembly_presider",
     "ml_mgmt_assembly", "ml_mod_assembly",
-    "genesis"}
+    "auditor",
+    "genesis",
+}
 
 ALL_MOD_ADMIN_VIEWS: Set[AdminView] = {
     "ml_mod", "ml_mod_cde", "ml_mod_event", "ml_mod_cdelokal",
@@ -1983,6 +1985,8 @@ def roles_to_admin_views(roles: Set[Role]) -> Set[AdminView]:
     if "assembly_admin" in roles:
         result |= {"assembly_user", "assembly_mgmt", "assembly_presider",
                    "ml_mgmt_assembly", "ml_mod_assembly"}
+    if "auditor" in roles:
+        result |= {"auditor"}
     if roles & ({'core_admin'} | set(
             "{}_admin".format(realm)
             for realm in REALM_SPECIFIC_GENESIS_FIELDS)):
