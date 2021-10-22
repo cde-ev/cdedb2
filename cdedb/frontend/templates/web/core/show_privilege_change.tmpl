@@ -24,15 +24,7 @@
 
     <h4 class="heading-underline">{% trans %}Admin Privileges{% endtrans %}</h4>
     <div class="diff-view" id="diff-view">
-        {% for privilege in ("is_meta_admin",
-                             "is_core_admin",
-                             "is_cde_admin",
-                             "is_finance_admin",
-                             "is_event_admin",
-                             "is_ml_admin",
-                             "is_cdelokal_admin",
-                             "is_assembly_admin",
-                             ) %}
+        {% for privilege in admin_keys %}
             {% if ambience['privilege_change'][privilege] is not none %}
                 <div class="row">
                     <label class="col-sm-3">

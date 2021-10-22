@@ -1263,13 +1263,13 @@ class CoreBaseFrontend(AbstractFrontend):
     @access("meta_admin", modi={"POST"})
     @REQUESTdata("is_meta_admin", "is_core_admin", "is_cde_admin",
                  "is_finance_admin", "is_event_admin", "is_ml_admin",
-                 "is_assembly_admin", "is_cdelokal_admin", "notes")
+                 "is_assembly_admin", "is_cdelokal_admin", "is_auditor", "notes")
     def change_privileges(self, rs: RequestState, persona_id: int,
                           is_meta_admin: bool, is_core_admin: bool,
                           is_cde_admin: bool, is_finance_admin: bool,
                           is_event_admin: bool, is_ml_admin: bool,
                           is_assembly_admin: bool, is_cdelokal_admin: bool,
-                          notes: str) -> Response:
+                          is_auditor: bool, notes: str) -> Response:
         """Grant or revoke admin bits."""
         if rs.has_validation_errors():
             return self.change_privileges_form(rs, persona_id)
@@ -1282,60 +1282,35 @@ class CoreBaseFrontend(AbstractFrontend):
             return self.redirect(
                 rs, "core/show_privilege_change", {"case_id": case_id})
 
+        reason_map = {
+            "is_cde_realm": rs.gettext("non-cde user"),
+            "is_event_realm": rs.gettext("non-event user"),
+            "is_ml_realm": rs.gettext("non-ml user"),
+            "is_assembly_realm": rs.gettext("non-assembly user"),
+            "is_cde_admin": rs.gettext("non-cde admin"),
+        }
         persona = self.coreproxy.get_persona(rs, persona_id)
-
         data = {
             "persona_id": persona_id,
             "notes": notes,
         }
-
-        for key in ADMIN_KEYS:
-            if locals()[key] != persona[key]:
-                data[key] = locals()[key]
-
-        # see also cdedb.frontend.templates.core.change_privileges
-        # and initialize_privilege_change in cdedb.backend.core
-
-        errors = []
-
-        if (any(k in data for k in
-                ["is_meta_admin", "is_core_admin", "is_cde_admin",
-                 "is_cdelokal_admin"])
-                and not rs.ambience['persona']['is_cde_realm']):
-            errors.append(n_(
-                "Cannot grant meta, core, CdE or CdElokal admin privileges"
-                " to non CdE users."))
-
-        if data.get('is_finance_admin'):
-            if (data.get('is_cde_admin') is False
-                    or (not rs.ambience['persona']['is_cde_admin']
-                        and not data.get('is_cde_admin'))):
-                errors.append(n_(
-                    "Cannot grant finance admin privileges to non CdE admins."))
-
-        if (any(k in data for k in ["is_ml_admin", "is_cdelokal_admin"])
-                and not rs.ambience['persona']['is_ml_realm']):
-            errors.append(n_(
-                "Cannot grant mailinglist or CdElokal admin privileges"
-                " to non mailinglist users."))
-
-        if ("is_event_admin" in data and
-                not rs.ambience['persona']['is_event_realm']):
-            errors.append(n_(
-                "Cannot grant event admin privileges to non event users."))
-
-        if ("is_assembly_admin" in data and
-                not rs.ambience['persona']['is_assembly_realm']):
-            errors.append(n_(
-                "Cannot grant assembly admin privileges to non assembly "
-                "users."))
+        for admin, required in ADMIN_KEYS.items():
+            if locals()[admin] != persona[admin]:
+                data[admin] = locals()[admin]
+            if data.get(admin):
+                err = (admin, ValueError(n_(
+                    "Cannot grant this privilege to %(reason)s."),
+                    {"reason": reason_map.get(required, n_("this user"))}))
+                if data.get(required) is False:
+                    rs.append_validation_error(err)
+                if not rs.ambience["persona"][required] and not data.get(required):
+                    rs.append_validation_error(err)
 
         if "is_meta_admin" in data and data["persona_id"] == rs.user.persona_id:
-            errors.append(n_("Cannot modify own meta admin privileges."))
+            rs.append_validation_error(("is_meta_admin", ValueError(n_(
+                "Cannot modify own meta admin privileges."))))
 
-        if errors:
-            for e in errors:
-                rs.notify("error", e)
+        if rs.has_validation_errors():
             return self.change_privileges_form(rs, persona_id)
 
         if ADMIN_KEYS & data.keys():
@@ -1391,8 +1366,9 @@ class CoreBaseFrontend(AbstractFrontend):
         submitter = self.coreproxy.get_persona(
             rs, privilege_change["submitted_by"])
 
-        return self.render(rs, "show_privilege_change",
-                           {"persona": persona, "submitter": submitter})
+        return self.render(rs, "show_privilege_change", {
+            "persona": persona, "submitter": submitter, "admin_keys": ADMIN_KEYS,
+        })
 
     @access("meta_admin", modi={"POST"})
     @REQUESTdata("ack")

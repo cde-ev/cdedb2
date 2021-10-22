@@ -1880,10 +1880,18 @@ else:
     role_map_type = collections.OrderedDict
 
 #: List of all roles we consider admin roles. Changes in these roles must be
-#: approved by two meta admins in total.
-ADMIN_KEYS = {"is_meta_admin", "is_core_admin", "is_cde_admin",
-              "is_finance_admin", "is_event_admin", "is_ml_admin",
-              "is_assembly_admin", "is_cdelokal_admin"}
+#: approved by two meta admins in total. Values are required roles.
+ADMIN_KEYS = {
+    "is_meta_admin": "is_cde_realm",
+    "is_core_admin": "is_cde_realm",
+    "is_cde_admin": "is_cde_realm",
+    "is_finance_admin": "is_cde_admin",
+    "is_event_admin": "is_event_realm",
+    "is_ml_admin": "is_ml_realm",
+    "is_assembly_admin": "is_assembly_realm",
+    "is_cdelokal_admin": "is_ml_realm",
+    "is_auditor": "is_cde_realm",
+}
 
 #: List of all admin roles who actually have a corresponding realm with a user role.
 REALM_ADMINS = {"core_admin", "cde_admin", "event_admin", "ml_admin", "assembly_admin"}
