@@ -177,8 +177,8 @@ class Script:
         if ret := self._request_states.get(persona_id):
             return ret
         if self._translations is None:
-            from cdedb.frontend.common import (
-                setup_translations,  # pylint: disable=import-outside-toplevel
+            from cdedb.frontend.common import (  # pylint: disable=import-outside-toplevel
+                setup_translations,
             )
             self._translations = setup_translations(self.config)
         rs = RequestState(
