@@ -148,7 +148,7 @@ class CdEParseMixin(CdEBaseFrontend):
 
         transactions = []
 
-        for i, line in enumerate(reversed(list(reader))):
+        for i, line in enumerate(reader):
             if not line.keys() <= parse.STATEMENT_CSV_ALL_KEY:
                 p = ("statement_file",
                      ValueError(n_("Line %(lineno)s does not have "

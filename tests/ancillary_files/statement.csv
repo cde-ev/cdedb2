@@ -1,14 +1,14 @@
 Kontonummer;Auszugsnummer;Buchungsdatum;Betrag;Auftraggeber-/Empfängername 1;Auftraggeber-/Empfängername 2;Auftraggeber-/Empfängerkonto;Auftraggeber-/Empfängerbank;Kundenreferenz (KREF);Buchungstext;Geschäftsvorfallcode;Ende-zu-Ende-Referenz;Verwendungszweck 1;Verwendungszweck 2;Verwendungszweck 3;Verwendungszweck 4;Verwendungszweck 5;Verwendungszweck 6;Verwendungszweck 7;Verwendungszweck 8;Verwendungszweck 9;Verwendungszweck 10;Verwendungszweck 11;Verwendungszweck 12;Verwendungszweck 13;Verwendungszweck 14
-8068900;1;19.12.2018;1234,50;Martin M;eister;;;NOTPROVIDED;GUTSCHRIFT;166;;Spende;;;;;;;;;;;;;
-8068900;2;20.12.2018;100,00;Emilia Eventis;;;;NOTPROVIDED;GUTSCHRIFT               *5;166;;Emilia E. Eventis;, Db-5-1, Grosse T;estakademie 2222;;;;;;;;;;;
-8068900;3;21.12.2018;10,00;Anton & Berta;;;;NOTPROVIDED;GUTSCHRIFT;166;;Mitgliedsbeitrag für Anton Armin A. Administrator DB-1-9 und Bertalotta Beispiel DB-2.7;;;;;;;;;;;;;
-8068900;4;22.12.2018;50,00;Anton;;;;NOTPROVIDED;GUTSCHRIFT;166;;Anton Armin A. Administrator DB-1-9 Spende;;;;;;;;;;;;;
-8068900;5;23.12.2018;2,50;Daniel Dino;;;;NOTPROVIDED;GS DAUERAUFTRAG;152;;Mitgliedsbeitrag;;;;;;;;;;;;;
-8068900;6;24.12.2018;2,50;Garcia Generalis;;;;NOTPROVIDED;GS DAUERAUFTRAG;152;DB-6-8;DB-7-8, Garci  G. Gen;eralis;;;;;;;;;;;;
-8068900;7;25.12.2018;5,00;Berta Beispiel;;;;DB-2-7, Beispiel,;GUTSCHRIFT               *5;166;DB-2-7, Beispiel, Bertalotta;;;;;;;;;;;;;;
-8068900;8;26.12.2018;10,00;Anton Administrator;;;;NOTPROVIDED;GUTSCHRIFT               *5;166;DB-1-9;DB-1-9;;;;;;;;;;;;;
-8068901;1;27.12.2018;584,49;Garcia Generalis;;;;NOTPROVIDED;GUTSCHRIFT               *5;166;;Garcia G. Generalis;, cb-7-8, Grosse Testa;kademie 2222;;;;;;;;;;;
-8068901;2;28.12.2018;584,49;Anton Administrator;;;;NOTPROVIDED;GUTSCHRIFT               *5;166;;Anton Armin A. Ad;ministrator;, DB-1-9, Große Testa;kademie 2222;;;;;;;;;;
-8068901;3;29.12.2018;-584,49;Anton Administrator;;;;NOTPROVIDED;ÜBERWEISUNG;116;;Kursleitererstattung Anton Armin A. Ad;ministrator Große Testakademie 2222;;;;;;;;;;;;
-8068901;4;30.12.2018;-52,50;;;;;NONREF;KONTOFUEHRUNGSGEBUEHREN;808;;KONTOFUEHRUNGSGEBUEHREN;;;;;;;;;;;;;
 8068901;5;31.12.2018;-18,54;;;;;NONREF;BUCHUNGSPOSTENGEBUEHREN;808;;Gebührenpfl. Posten. 206;Genutzte Freiposten. 300;;;;;;;;;;;;
+8068901;4;30.12.2018;-52,50;;;;;NONREF;KONTOFUEHRUNGSGEBUEHREN;808;;KONTOFUEHRUNGSGEBUEHREN;;;;;;;;;;;;;
+8068901;3;29.12.2018;-584,49;Anton Administrator;;;;NOTPROVIDED;ÜBERWEISUNG;116;;Kursleitererstattung Anton Armin A. Ad;ministrator Große Testakademie 2222;;;;;;;;;;;;
+8068901;2;28.12.2018;584,49;Anton Administrator;;;;NOTPROVIDED;GUTSCHRIFT               *5;166;;Anton Armin A. Ad;ministrator;, DB-1-9, Große Testa;kademie 2222;;;;;;;;;;
+8068901;1;27.12.2018;584,49;Garcia Generalis;;;;NOTPROVIDED;GUTSCHRIFT               *5;166;;Garcia G. Generalis;, cb-7-8, Grosse Testa;kademie 2222;;;;;;;;;;;
+8068900;8;26.12.2018;10,00;Anton Administrator;;;;NOTPROVIDED;GUTSCHRIFT               *5;166;DB-1-9;DB-1-9;;;;;;;;;;;;;
+8068900;7;25.12.2018;5,00;Berta Beispiel;;;;DB-2-7, Beispiel,;GUTSCHRIFT               *5;166;DB-2-7, Beispiel, Bertalotta;;;;;;;;;;;;;;
+8068900;6;24.12.2018;2,50;Garcia Generalis;;;;NOTPROVIDED;GS DAUERAUFTRAG;152;DB-6-8;DB-7-8, Garci  G. Gen;eralis;;;;;;;;;;;;
+8068900;5;23.12.2018;2,50;Daniel Dino;;;;NOTPROVIDED;GS DAUERAUFTRAG;152;;Mitgliedsbeitrag;;;;;;;;;;;;;
+8068900;4;22.12.2018;50,00;Anton;;;;NOTPROVIDED;GUTSCHRIFT;166;;Anton Armin A. Administrator DB-1-9 Spende;;;;;;;;;;;;;
+8068900;3;21.12.2018;10,00;Anton & Berta;;;;NOTPROVIDED;GUTSCHRIFT;166;;Mitgliedsbeitrag für Anton Armin A. Administrator DB-1-9 und Bertalotta Beispiel DB-2.7;;;;;;;;;;;;;
+8068900;2;20.12.2018;100,00;Emilia Eventis;;;;NOTPROVIDED;GUTSCHRIFT               *5;166;;Emilia E. Eventis;, Db-5-1, Grosse T;estakademie 2222;;;;;;;;;;;
+8068900;1;19.12.2018;1234,50;Martin M;eister;;;NOTPROVIDED;GUTSCHRIFT;166;;Spende;;;;;;;;;;;;;
