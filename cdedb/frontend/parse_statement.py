@@ -28,6 +28,7 @@ STATEMENT_CSV_ACCOUNT_HOLDER_KEYS = [
     "Auftraggeber-/Empfängername 2",
 ]
 STATEMENT_CSV_IBAN_KEY = "Auftraggeber-/Empfängerkonto"
+STATEMENT_CSV_BIC_KEY = "Auftraggeber-/Empfängerbank"
 STATEMENT_CSV_REFERENCE_KEYS = [
     "Verwendungszweck " + str(i + 1) for i in range(14)
 ]
@@ -45,6 +46,7 @@ STATEMENT_CSV_ALL_KEY = {
     STATEMENT_CSV_AMOUNT_KEY,
     *STATEMENT_CSV_ACCOUNT_HOLDER_KEYS,
     STATEMENT_CSV_IBAN_KEY,
+    STATEMENT_CSV_BIC_KEY,
     *STATEMENT_CSV_REFERENCE_KEYS,
     *STATEMENT_CSV_OTHER_REFERENCE_KEYS,
     STATEMENT_CSV_KREF_KEY,
@@ -73,6 +75,7 @@ GVC_DESCRIPTIONS = {
 
 # Specification for how the date is formatted in the input.
 STATEMENT_INPUT_DATEFORMAT = "%d.%m.%Y"
+REFERENCE_SEPARATOR = ";"
 
 # This specifies the export fields for the (eventual) use with GnuCash.
 # Since this is not yet currently in use this is very much subject to change.
@@ -117,16 +120,13 @@ STATEMENT_RELEVANT_REFERENCE_DELIMITERS = ["SVWZ", "EREF"]
 # postings and references:
 
 # Match the Posting for the Account fee special case.
-POSTING_ACCOUNT_FEE = re.compile(
-    r"BUCHUNGSPOSTENGEBUEHREN|KONTOFUEHRUNGSGEBUEHREN", flags=re.I)
+POSTING_ACCOUNT_FEE = re.compile(r"^Gebühren$", flags=re.I)
 
 # Match the Posting for most (active) outgoing transactions.
-POSTING_REFUND = re.compile(
-    r"(Sammel-?)?(ü|ue|u|\s+)berweisung", flags=re.I)
+POSTING_REFUND = re.compile(r"^(Sammel)?überweisung$", flags=re.I)
 
 # Match the Posting for a (incoming) direct debit.
-POSTING_DIRECT_DEBIT = re.compile(
-    r"SAMMELEINZ\.BASIS-LS", flags=re.I)
+POSTING_DIRECT_DEBIT = re.compile(r"^(Sammel)Einzug Basislastschrift$", flags=re.I)
 
 # Match a refund of an event participant fee.
 REFERENCE_REFUND_EVENT_FEE = re.compile(
@@ -165,11 +165,11 @@ STATEMENT_DB_ID_EXACT = re.compile(
 # This matches something very close to a correct DB-ID. Either the D or the B
 # might be missing and there may be some additional whitespaces/delimiters.
 STATEMENT_DB_ID_CLOSE = re.compile(
-    r"(?:D\w|\wB)[-.\s]*([0-9][-.\s0-9]{0,9}[0-9X])", flags=re.I)
+    r"(?:D\w|\wB)[-./\s]*([0-9][-./\s0-9]{0,9}[0-9X])", flags=re.I)
 # Helper Patterns to remove the format markers from the DB-ID.
 STATEMENT_DB_ID_REMOVE = (
     re.compile(r"^DB", flags=re.I),
-    re.compile(r"[-.\s]$", flags=re.I),
+    re.compile(r"[-./\s]", flags=re.I),
 )
 
 # Minimum amount for us to consider a transaction an Event fee.
@@ -285,6 +285,10 @@ def _reconstruct_cdedbid(db_id: str) -> Tuple[Optional[int], List[Error]]:
     of the persona_id and the checkdigit and then validates it.
     """
 
+    db_id, p = inspect(str, db_id)
+    if not db_id:
+        return None, p
+
     value = db_id[:-1]
     for pattern in STATEMENT_DB_ID_REMOVE:
         value = re.sub(pattern, "", value)
@@ -335,9 +339,11 @@ class Transaction:
         self.statement_date = data["statement_date"]
         self.amount = data["amount"]
         self.reference = data["reference"]
-        self.other_references = data["other_references"]
+        self.other_references = (data["other_references"] or "").split(
+            REFERENCE_SEPARATOR)
         self.account_holder = data["account_holder"]
         self.iban = data["iban"]
+        self.bic = data["bic"]
         self.posting = data["posting"]
 
         # We need the following fields, but we actually set them later.
@@ -430,11 +436,13 @@ class Transaction:
                                  })))
 
         data["reference"] = "".join(raw[k] for k in STATEMENT_CSV_REFERENCE_KEYS)
-        data["other_references"] = [raw[k] for k in STATEMENT_CSV_OTHER_REFERENCE_KEYS]
+        data["other_references"] = REFERENCE_SEPARATOR.join(
+            raw[k] for k in STATEMENT_CSV_OTHER_REFERENCE_KEYS if raw[k])
 
         data["account_holder"] = "".join(
             raw[k] for k in STATEMENT_CSV_ACCOUNT_HOLDER_KEYS)
         data["iban"] = raw[STATEMENT_CSV_IBAN_KEY]
+        data["bic"] = raw[STATEMENT_CSV_BIC_KEY]
 
         data["posting"] = GVC_DESCRIPTIONS.get(
             raw[STATEMENT_CSV_GVC_KEY], raw[STATEMENT_CSV_POSTING_KEY])
@@ -444,35 +452,53 @@ class Transaction:
 
         return Transaction(data)
 
+    @property
+    def all_references(self) -> List[str]:
+        return [self.reference, *self.other_references]
+
+    @property
+    def full_reference(self) -> List[str]:
+        return REFERENCE_SEPARATOR.join(self.all_references)
+
     @staticmethod
-    def get_request_params(index: int = None) -> vtypes.TypeMapping:
+    def get_request_params(index: int = None, *, hidden_only: bool = False
+                           ) -> vtypes.TypeMapping:
         """Returns a specification for the parameters that should be extracted from
         the request to create a `Transaction` object.
 
         The return should be used with `request_extractor`. The data thusly extracted
         can be used to call `Transaction.__init__`. The appended suffix can be passed
         there too, where it will automatically be stripped away.
+
+        :param hidden_only: If True, only return the keys used for hidden form inputs.
         """
         suffix = "" if index is None else str(index)
-        return {
-            f"reference{suffix}": Optional[str],  # type: ignore[dict-item]
+        ret = {
+            f"t_id{suffix}": vtypes.ID,
             f"account{suffix}": Accounts,
+            f"statement_nr{suffix}": vtypes.ID,
             f"statement_date{suffix}": datetime.date,
             f"amount{suffix}": decimal.Decimal,
+            f"reference{suffix}": Optional[str],  # type: ignore[dict-item]
+            f"other_references{suffix}": Optional[str],  # type: ignore[dict-item]
             f"account_holder{suffix}": Optional[str],  # type: ignore[dict-item]
-            f"posting{suffix}": str,
             f"iban{suffix}": Optional[vtypes.IBAN],  # type: ignore[dict-item]
-            f"t_id{suffix}": vtypes.ID,
-            f"type{suffix}": TransactionType,
+            f"bic{suffix}": Optional[str],  # type: ignore[dict-item]
+            f"posting{suffix}": str,
             f"type_confidence{suffix}": ConfidenceLevel,
-            f"type_confirm{suffix}": bool,
-            f"cdedbid{suffix}": Optional[vtypes.CdedbID],  # type: ignore[dict-item]
             f"persona_confidence{suffix}": ConfidenceLevel,
-            f"persona_confirm{suffix}": bool,
-            f"event_id{suffix}": Optional[vtypes.ID],  # type: ignore[dict-item]
             f"event_confidence{suffix}": ConfidenceLevel,
-            f"event_confirm{suffix}": bool,
         }
+        if not hidden_only:
+            ret.update({
+                f"type{suffix}": TransactionType,
+                f"type_confirm{suffix}": bool,
+                f"cdedbid{suffix}": Optional[vtypes.CdedbID],  # type: ignore[dict-item]
+                f"persona_confirm{suffix}": bool,
+                f"event_id{suffix}": Optional[vtypes.ID],  # type: ignore[dict-item]
+                f"event_confirm{suffix}": bool,
+            })
+        return ret
 
     def _find_cdedbids(self, confidence: ConfidenceLevel = ConfidenceLevel.Full
                        ) -> Dict[int, ConfidenceLevel]:
@@ -484,17 +510,14 @@ class Transaction:
         patterns = [STATEMENT_DB_ID_EXACT, STATEMENT_DB_ID_CLOSE]
         orig_confidence = confidence
         for pattern in patterns:
-            for kind in STATEMENT_RELEVANT_REFERENCE_DELIMITERS:
-                if kind in self.reference_parts:
-                    result = re.findall(pattern, self.reference_parts[kind])
-                    if result:
-                        for db_id in result:
-                            p_id, p = _reconstruct_cdedbid(db_id)
-
-                            if not p:
-                                assert p_id is not None
-                                if p_id not in ret:
-                                    ret[p_id] = confidence
+            for ref in self.all_references:
+                if result := re.findall(pattern, ref):
+                    for db_id in result:
+                        p_id, p = _reconstruct_cdedbid(db_id)
+                        if not p:
+                            assert p_id is not None
+                            if p_id not in ret:
+                                ret[p_id] = confidence
 
                 confidence = confidence.decrease(1)
 
@@ -541,21 +564,21 @@ class Transaction:
             if re.search(POSTING_REFUND, self.posting):
 
                 # Special case for incoming (or outgoing) donations.
-                if re.search(REFERENCE_DONATION, self.reference):
+                if re.search(REFERENCE_DONATION, self.full_reference):
                     self.type = TransactionType.Donation
                     self.type_confidence = ConfidenceLevel.Full
                     return
 
                 # Check for refund of participant fee:
-                if re.search(REFERENCE_REFUND_EVENT_FEE, self.reference):
+                if re.search(REFERENCE_REFUND_EVENT_FEE, self.full_reference):
                     self.type = TransactionType.EventFeeRefund
                     self.type_confidence = confidence
                 # Check for refund of instructor fee:
-                elif re.search(REFERENCE_REFUND_INSTRUCTOR, self.reference):
+                elif re.search(REFERENCE_REFUND_INSTRUCTOR, self.full_reference):
                     self.type = TransactionType.InstructorRefund
                     self.type_confidence = confidence
 
-                elif re.search(REFERENCE_REFUND_EXPENSES, self.reference):
+                elif re.search(REFERENCE_REFUND_EXPENSES, self.full_reference):
                     if self.event:
                         self.type = TransactionType.EventExpenses
                     else:
@@ -585,13 +608,13 @@ class Transaction:
                 self.type_confidence = confidence
 
             # Special case for incoming (or outgoing) donations.
-            elif re.search(REFERENCE_DONATION, self.reference):
+            elif re.search(REFERENCE_DONATION, self.full_reference):
                 self.type = TransactionType.Donation
                 self.type_confidence = ConfidenceLevel.Full
                 return
 
             # Look for Membership fees.
-            elif re.search(REFERENCE_MEMBERSHIP, self.reference):
+            elif re.search(REFERENCE_MEMBERSHIP, self.full_reference):
                 self.type = TransactionType.MembershipFee
                 self.type_confidence = confidence
 
@@ -601,7 +624,7 @@ class Transaction:
 
             # Look for event fee without event match.
             elif self.amount > AMOUNT_MIN_EVENT_FEE and re.search(REFERENCE_EVENT_FEE,
-                                                                  self.reference):
+                                                                  self.full_reference):
                 self.type = TransactionType.EventFee
                 self.type_confidence = confidence.decrease()
 
@@ -681,7 +704,7 @@ class Transaction:
             given_names = persona['given_names']
             gn_pattern = d_p(re.escape(given_names), two_way_replace=True)
             try:
-                if not re.search(gn_pattern, self.reference, flags=re.I):
+                if not re.search(gn_pattern, self.full_reference, flags=re.I):
                     self.warnings.append(
                         ("given_names", KeyError(n_("(%(p)s) not found in reference."),
                                                  {"p": given_names})))
@@ -696,7 +719,7 @@ class Transaction:
             family_name = persona['family_name']
             fn_pattern = d_p(re.escape(family_name), two_way_replace=True)
             try:
-                if not re.search(fn_pattern, self.reference, flags=re.I):
+                if not re.search(fn_pattern, self.full_reference, flags=re.I):
                     self.warnings.append(
                         ("family_name", KeyError(n_("(%(p)s) not found in reference."),
                                                  {"p": family_name})))
@@ -856,8 +879,10 @@ class Transaction:
 
         ret = {
             "reference": self.reference,
+            "other_references": REFERENCE_SEPARATOR.join(self.other_references),
             "account": self.account,
             "account_nr": self.account.value,
+            "statement_nr": self.statement_nr,
             "statement_date": self.statement_date.strftime(PARSE_OUTPUT_DATEFORMAT),
             "amount": self.amount_english,
             "amount_german": self.amount_german,
