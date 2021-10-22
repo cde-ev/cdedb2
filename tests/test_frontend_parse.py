@@ -9,7 +9,7 @@ from typing import Any, List
 import webtest
 
 import cdedb.frontend.parse_statement as parse
-from cdedb.common import Accounts, CdEDBObject, now
+from cdedb.common import Accounts, CdEDBObject
 from cdedb.frontend.common import CustomCSVDialect
 from tests.common import FrontendTest, as_users, storage
 
