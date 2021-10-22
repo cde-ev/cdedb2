@@ -13,12 +13,53 @@
 {% endblock %}
 
 {% block content %}
-    {% set columns =  [dict(name="title", label=gettext("Name"), func=util.input_text),
-                       dict(name="shortname", label=gettext("Shortname"), func=util.input_text)] %}
-
     <form action="{{ cdedblink('cde/institution_summary') }}" method="POST" id="institutionsummaryform">
         {{ util.anti_csrf_token('cde/institution_summary') }}
-        {{ util.dynamic_row_table("Institution", columns, institutions, locked=is_referenced, sortkey=EntitySorter.institution) }}
+
+        <table class="table table-condensed" id="drow-table">
+            <thead>
+                <tr>
+                    <th>{% trans %}Name{% endtrans %}</th>
+                    <th>{% trans %}Shortname{% endtrans %}</th>
+                    <th></th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% call(id, aclass) util.dynamic_row_meta(sorted_institution_ids) %}
+                    {% set newrow = id < 0 %}
+                    <tr class="{{ aclass }}" role="group" aria-label="Institution {{ id }}">
+                        <td class={{ util.has_errors(drow_name("title", id)) }}>
+                            {{ util.input_text(drow_name("title", id), aclass='drow-input form-control',
+                                    attributes=('data-basename="title_"'|s if newrow else ''), arialabel=gettext("Name")) }}
+                            {{ util.output_errors(drow_name("title", id)) }}
+                        </td>
+                        <td class={{ util.has_errors(drow_name("shortname", id)) }}>
+                            {{ util.input_text(drow_name("shortname", id), aclass='drow-input form-control',
+                                    attributes=('data-basename="shortname_"'|s if newrow else ''), arialabel=gettext("Shortname")) }}
+                            {{ util.output_errors(drow_name("shortname", id)) }}
+                        </td>
+                        <td>
+                            <span class="drow-buttonspace">
+                                {% if newrow %}
+                                    {{ util.input_checkbox(drow_create(id), label=gettext("Add"),
+                                                           attributes='data-basename="create_"'|s, aclass='drow-indicator') }}
+                                {% else %}
+                                    {{ util.input_checkbox(drow_delete(id), label=gettext("Delete"),
+                                                           readonly=id in is_referenced, aclass='drow-indicator') }}
+                                {% endif %}
+                            </span>
+                        </td>
+                    </tr>
+                {% endcall %}
+            </tbody>
+        </table>
+
+        <p>
+            <button type="button" class="btn btn-success softhide pull-right" id="drow-addbutton">
+                {{ util.make_icon('plus') }} {% trans %}Add Institution{% endtrans %}
+            </button>
+        </p>
         {{ util.input_submit(label=gettext("Save")) }}
     </form>
 

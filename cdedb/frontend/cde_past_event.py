@@ -85,6 +85,9 @@ class CdEPastEventMixin(CdEBaseFrontend):
         institution_ids = self.pasteventproxy.list_institutions(rs)
         institutions = self.pasteventproxy.get_institutions(
             rs, institution_ids.keys())
+        sorted_institution_ids = [
+            e["id"] for e in xsorted(institutions.values(),
+                                     key=EntitySorter.institution)]
         current = {
             "{}_{}".format(key, institution_id): value
             for institution_id, institution in institutions.items()
@@ -100,7 +103,8 @@ class CdEPastEventMixin(CdEBaseFrontend):
         for pevent in pevents.values():
             is_referenced.add(pevent['institution'])
         return self.render(rs, "past_event/institution_summary", {
-            'institutions': institutions, 'is_referenced': is_referenced})
+            "sorted_institution_ids": sorted_institution_ids,
+            "is_referenced": is_referenced})
 
     @access("cde_admin", modi={"POST"})
     def institution_summary(self, rs: RequestState) -> Response:
