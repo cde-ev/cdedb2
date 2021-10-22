@@ -21,7 +21,8 @@ from werkzeug.datastructures import FileStorage
 import cdedb.frontend.parse_statement as parse
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    CdEDBObject, EntitySorter, RequestState, TransactionType, diacritic_patterns,
+    Accounts, CdEDBObject, EntitySorter, RequestState, TransactionType,
+    diacritic_patterns,
     get_hash, merge_dicts, n_, xsorted,
 )
 from cdedb.frontend.cde_base import CdEBaseFrontend
@@ -225,10 +226,9 @@ class CdEParseMixin(CdEBaseFrontend):
             fields = parse.GNUCASH_EXPORT_FIELDS
             write_header = True
         elif excel is not None:
-            account = excel
-            filename = "transactions_" + account
-            transactions = [t for t in transactions
-                            if str(t.account) == account]
+            account, _ = inspect(Accounts, excel)
+            filename = "transactions_" + str(account.value)
+            transactions = [t for t in transactions if t.account == account]
             fields = parse.EXCEL_EXPORT_FIELDS
             write_header = False
         else:
