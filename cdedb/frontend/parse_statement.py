@@ -76,6 +76,7 @@ GVC_DESCRIPTIONS = {
 # Specification for how the date is formatted in the input.
 STATEMENT_INPUT_DATEFORMAT = "%d.%m.%Y"
 REFERENCE_SEPARATOR = ";"
+STATEMENT_REFERENCE_IGNORES = {"", "NOTPROVIDED"}
 
 # This specifies the export fields for the (eventual) use with GnuCash.
 # Since this is not yet currently in use this is very much subject to change.
@@ -435,9 +436,11 @@ class Transaction:
                                  "amt_p": reconstructed_amount,
                                  })))
 
-        data["reference"] = "".join(raw[k] for k in STATEMENT_CSV_REFERENCE_KEYS)
+        data["reference"] = "".join(
+            raw[k].strip("'") for k in STATEMENT_CSV_REFERENCE_KEYS)
         data["other_references"] = REFERENCE_SEPARATOR.join(
-            raw[k] for k in STATEMENT_CSV_OTHER_REFERENCE_KEYS if raw[k])
+            raw[k].strip("'") for k in STATEMENT_CSV_OTHER_REFERENCE_KEYS
+            if raw[k] not in STATEMENT_REFERENCE_IGNORES)
 
         data["account_holder"] = "".join(
             raw[k] for k in STATEMENT_CSV_ACCOUNT_HOLDER_KEYS)
