@@ -9503,6 +9503,10 @@ msgid "Reference"
 msgstr "Verwendungszweck"
 
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:42
+msgid "Other References"
+msgstr "Andere Verwendungszwecke"
+
+#: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:42
 msgid "Statement Date"
 msgstr "Ausszugsdatum"
 
