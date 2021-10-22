@@ -967,8 +967,9 @@ class TestCoreFrontend(FrontendTest):
         f['is_finance_admin'] = True
         f['notes'] = "Berta ist jetzt Praktikant der Finanz Vorstände."
         self.submit(f, check_notification=False)
-        self.assertPresence("Nur CdE Admins können Finanz Admin werden.",
-                            div='notifications')
+        self.assertValidationError(
+            "is_finance_admin",
+            "Diese Rolle kann nicht an nicht-CdE-Admin vergeben werden.")
         f['is_cde_admin'] = True
         f['notes'] = "Dann ist Berta jetzt eben CdE und Finanz Admin."
         self.submit(f)
