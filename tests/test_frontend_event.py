@@ -410,6 +410,15 @@ class TestEventFrontend(FrontendTest):
         self.assertTitle("Kursliste Große Testakademie 2222")
         self.assertPresence("ToFi")
         self.assertPresence("Wir werden die Bäume drücken.")
+        f = self.response.forms['coursefilterform']
+        f['track_ids'] = [1, 3]
+        self.submit(f)
+        self.assertTitle("Kursliste Große Testakademie 2222")
+        self.assertNonPresence("Kurzer Kurs")
+        f = self.response.forms['coursefilterform']
+        f['track_ids'] = [2, 3]
+        self.submit(f)
+        self.assertPresence("γ. Kurzer Kurs")
 
     @as_users("annika", "garcia", "ferdinand")
     def test_change_event(self) -> None:

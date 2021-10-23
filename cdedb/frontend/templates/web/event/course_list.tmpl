@@ -45,8 +45,20 @@
 {% endblock %}
 {% block content %}
     {% if courses %}
+        {% if ambience['event']['tracks']|length > 1 %}
+            {% call util.bootstrap_panel(title=gettext("Filter"), icon="search", aclass='panel-primary') %}
+                <form action="{{ cdedblink('event/course_list') }}" method="GET" id="coursefilterform"
+                      aria-label="{% trans %}Filter{% endtrans %}">
+                    {% trans %}Show only courses in tracks:{% endtrans %}
+                    {{ util.input_checkboxes(name="track_ids", slice=3,
+                        entries=ambience['event']['tracks']|keydictsort(EntitySorter.course_track)|dict_entries('id', 'title')) }}
+                    {{ util.input_submit(label=gettext("Go!"), icon="filter") }}
+                </form>
+            {% endcall %}
+        {% endif %}
+
         <div id="list-courses">
-        {% for anid, entry in courses|keydictsort(EntitySorter.course) if entry['segments'] %}
+        {% for anid, entry in courses|keydictsort(EntitySorter.course) if entry['segments'].intersection(track_ids) %}
             <div class="hide-hover-container">
                 <h3>{{ entry['nr'] }}. {{ entry['title'] }}</h3>
                 {% if ambience['event']['id'] in user.orga or 'event_orga' in user.admin_views %}

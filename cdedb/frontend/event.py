@@ -248,17 +248,22 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "show_event", params)
 
     @access("anonymous")
-    def course_list(self, rs: RequestState, event_id: int) -> Response:
+    @REQUESTdata("track_ids")
+    def course_list(self, rs: RequestState, event_id: int,
+                    track_ids: Collection[int] = None) -> Response:
         """List courses from an event."""
         if (not rs.ambience['event']['is_course_list_visible']
                 and not (event_id in rs.user.orga or self.is_admin(rs))):
             rs.notify("warning", n_("Course list not published yet."))
             return self.redirect(rs, "event/show_event")
+        if rs.has_validation_errors() or not track_ids:
+            track_ids = rs.ambience['event']['tracks'].keys()
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = None
         if course_ids:
             courses = self.eventproxy.get_courses(rs, course_ids.keys())
-        return self.render(rs, "course_list", {'courses': courses})
+        return self.render(rs, "course_list",
+                           {'courses': courses, 'track_ids': track_ids})
 
     @access("event")
     @REQUESTdata("part_id", "sortkey", "reverse")
