@@ -1216,8 +1216,8 @@ def _persona(
     if creation:
         temp = _examine_dictionary_fields(
             val, PERSONA_TYPE_FIELDS, {}, allow_superfluous=True, **kwargs)
-        temp |= {'is_archived': False, 'is_purged': False}
-        temp |= {k: False for k in ADMIN_KEYS}
+        temp.update({'is_archived': False, 'is_purged': False})
+        temp.update({k: False for k in ADMIN_KEYS})
         roles = extract_roles(temp)
         optional_fields: TypeMapping = {}
         mandatory_fields: Dict[str, Any] = {**PERSONA_TYPE_FIELDS,

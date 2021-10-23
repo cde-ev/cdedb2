@@ -1933,8 +1933,8 @@ class CoreBackend(AbstractBackend):
         data = affirm(vtypes.Persona, data, creation=True)
         submitted_by = affirm_optional(vtypes.ID, submitted_by)
         # zap any admin attempts
-        data |= {'is_archived': False, 'is_purged': False}
-        data |= {k: False for k in ADMIN_KEYS}
+        data.update({'is_archived': False, 'is_purged': False})
+        data.update({k: False for k in ADMIN_KEYS})
         # Check if admin has rights to create the user in its realms
         if not any(admin <= rs.user.roles
                    for admin in privilege_tier(extract_roles(data),
