@@ -2093,6 +2093,7 @@ class CoreBaseFrontend(AbstractFrontend):
             rs.append_validation_error(
                 ("ack_delete", ValueError(n_("Must be checked."))))
         if not note:
+            rs.ignore_validation_errors()
             rs.notify("error", n_("Must supply archival note."))
         if rs.has_validation_errors():
             return self.show_user(
