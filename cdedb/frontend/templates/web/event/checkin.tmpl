@@ -18,10 +18,26 @@
 {{ util.breadcrumb_link(cdedblink("event/checkin"), gettext("Checkin"), active=True) }}
 {% endblock %}
 {% block content %}
-    {% call util.bootstrap_panel(gettext("Search Name"), icon='search', aclass='panel-primary panel-condensed softhide',
-                                 anid='searchpanel') %}
-        <input type="search" id="selector" class="form-control" aria-label="{% trans %}Name to Search{% endtrans %}" />
-    {% endcall %}
+    <div class="panel panel-primary panel-condensed" id="searchpanel">
+        <div class="panel-heading">
+            <h3 class="panel-title">{{ util.make_icon("search") }}{{ gettext("Filter") }}</h3>
+        </div>
+        {% if ambience['event']['parts']|length > 1 %}
+            <div class="panel-body">
+                <form action="{{ cdedblink('event/checkin') }}" method="GET" id="checkinfilterform"
+                          aria-label="{% trans %}Filter{% endtrans %}">
+                    {% trans %}Show only participants in parts:{% endtrans %}
+                    {{ util.input_checkboxes(name="part_ids", slice=6,
+                        entries=ambience['event']['parts']|keydictsort(EntitySorter.event_part)|dict_entries('id', 'shortname')) }}
+                    {{ util.input_submit(label=gettext("Go!"), icon="filter") }}
+                </form>
+            </div>
+        {% endif %}
+        <div class="panel-footer text-right softhide" id="namesearch">
+            <input type="search" id="selector" class="form-control" aria-label="{% trans %}Name to Search{% endtrans %}",
+            placeholder="{{ gettext("Search Name") }}"/>
+        </div>
+    </div>
 
     <div class="list-group list-group-hover" id="checkin-list">
         {% for registration_id, registration in registrations.items() %}
@@ -99,7 +115,9 @@
                               style="display: inline;" class="checkinform">
                             {{ util.anti_csrf_token('event/checkin') }}
                             {{ util.input_hidden(name="registration_id", value=registration_id) }}
-                            {{ util.input_hidden(name="part_ids", value=part_ids_param) }}
+                            {% for part_id in part_ids %}
+                                {{ util.input_hidden(name="part_ids", value=part_id) }}
+                            {% endfor %}
                             {{ util.input_submit(label=gettext("Checkin"), aclass="btn btn-primary btn-sm",
                                                  readonly=is_locked) }}
                         </form>
@@ -109,7 +127,7 @@
         {% endfor %}
     </div>
     <script nonce="{{ csp_nonce }}">
-        $("#searchpanel").show();
+        $("#namesearch").show();
         $("#selector").focus()
             .on('keydown paste input', function(){
                 /* Source: https://stackoverflow.com/a/3561711 and https://stackoverflow.com/a/874722 */

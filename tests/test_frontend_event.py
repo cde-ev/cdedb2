@@ -3598,28 +3598,37 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence("anzahl_GROSSBUCHSTABEN", div="checkin-list")
 
         # Check the filtering per event part.
-        # TODO place and check actual links.
         self.assertPresence("Anton Armin", div="checkin-list")
         self.assertPresence("Bertålotta Beispiel", div="checkin-list")
         self.assertPresence("Emilia E.", div="checkin-list")
-        self.get("/event/event/1/checkin?part_ids=1,2,3")
+        f = self.response.forms['checkinfilterform']
+        f['part_ids'] = [1, 2, 3]
+        self.submit(f)
         self.assertPresence("Anton Armin", div="checkin-list")
         self.assertPresence("Bertålotta Beispiel", div="checkin-list")
         self.assertPresence("Emilia E.", div="checkin-list")
-        self.get("/event/event/1/checkin?part_ids=1")
+        f = self.response.forms['checkinfilterform']
+        f['part_ids'] = [1]
+        self.submit(f)
         self.assertNonPresence("Anton Armin", div="checkin-list")
         self.assertPresence("Bertålotta Beispiel", div="checkin-list")
         self.assertNonPresence("Emilia E.", div="checkin-list")
-        self.get("/event/event/1/checkin?part_ids=2")
+        f = self.response.forms['checkinfilterform']
+        f['part_ids'] = [2]
+        self.submit(f)
         self.assertNonPresence("Anton Armin", div="checkin-list")
         self.assertNonPresence("Bertålotta Beispiel", div="checkin-list")
         self.assertPresence("Emilia E.", div="checkin-list")
-        self.get("/event/event/1/checkin?part_ids=3")
+        f = self.response.forms['checkinfilterform']
+        f['part_ids'] = [3]
+        self.submit(f)
         self.assertPresence("Anton Armin", div="checkin-list")
         self.assertNonPresence("Bertålotta Beispiel", div="checkin-list")
         self.assertPresence("Emilia E.", div="checkin-list")
         # TODO this check does not really make sense with the existing data.
-        self.get("/event/event/1/checkin?part_ids=2,3")
+        f = self.response.forms['checkinfilterform']
+        f['part_ids'] = [2, 3]
+        self.submit(f)
         self.assertPresence("Anton Armin", div="checkin-list")
         self.assertNonPresence("Bertålotta Beispiel", div="checkin-list")
         self.assertPresence("Emilia E.", div="checkin-list")
