@@ -1307,9 +1307,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['archivepersonaform']
         f['ack_delete'].checked = True
         self.submit(f, check_notification=False)
-        self.assertValidationError(
-            "note", "Darf nicht leer sein",
-            notification="Archivierungsnotiz muss angegeben werden.")
+        self.assertValidationError("note", "Darf nicht leer sein")
         self.assertTitle("Charly Clown")
         self.assertNonPresence("Der Benutzer ist archiviert.")
         self.assertPresence("Zirkusstadt", div='address')
