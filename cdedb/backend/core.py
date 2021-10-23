@@ -2272,19 +2272,21 @@ class CoreBackend(AbstractBackend):
         return ret
 
     @access("anonymous")
-    def verify_existence(self, rs: RequestState, email: str) -> bool:
+    def verify_existence(self, rs: RequestState, email: str,
+                         include_genesis: bool = True) -> bool:
         """Check wether a certain email belongs to any persona."""
         email = affirm(vtypes.Email, email)
         query = "SELECT COUNT(*) AS num FROM core.personas WHERE username = %s"
-        num1 = unwrap(self.query_one(rs, query, (email,))) or 0
-        query = glue("SELECT COUNT(*) AS num FROM core.genesis_cases",
-                     "WHERE username = %s AND case_status = ANY(%s)")
-        # This should be all stati which are not final.
-        stati = (const.GenesisStati.unconfirmed,
-                 const.GenesisStati.to_review,
-                 const.GenesisStati.approved)  # approved is a temporary state.
-        num2 = unwrap(self.query_one(rs, query, (email, stati))) or 0
-        return bool(num1 + num2)
+        num = unwrap(self.query_one(rs, query, (email,))) or 0
+        if include_genesis:
+            query = glue("SELECT COUNT(*) AS num FROM core.genesis_cases",
+                         "WHERE username = %s AND case_status = ANY(%s)")
+            # This should be all stati which are not final.
+            stati = (const.GenesisStati.unconfirmed,
+                     const.GenesisStati.to_review,
+                     const.GenesisStati.approved)  # approved is a temporary state.
+            num += unwrap(self.query_one(rs, query, (email, stati))) or 0
+        return bool(num)
 
     RESET_COOKIE_PAYLOAD = "X"
 
