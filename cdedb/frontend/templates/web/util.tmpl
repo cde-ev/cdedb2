@@ -361,7 +361,7 @@
 {% endmacro %}
 
 {% macro form_input_general(name=none, label='', anid=none, small=False, info='', displayerrors=True,
-        horizontal=True, labelid=none, addon='', markdown=False) %}
+        horizontal=True, labelid=none, addon='', markdown=False, wide=False) %}
     <div class="form-group {% if name in errors %}
                                {% if is_warning(name) %}
                                    has-warning
@@ -378,7 +378,7 @@
         {%- endif %}
         {%- if horizontal %}
             <div class="
-                {{ "col-sm-6" if small else "col-sm-8" }}
+                {{ "col-sm-6" if (small and not wide) else "col-sm-8" }}
                 {{ ("col-sm-offset-2" if small else "col-sm-offset-4") if not label }}
             ">
         {%- endif %}
@@ -506,24 +506,31 @@
 {%- endmacro %}
 
 {% macro input_checkboxes(name, entries, readonly=False, actualreadonly=False, defaultvalue='', inline=False,
-        radio=False, aclass=none, arialabeledby='', sort=False) %}
+        radio=False, aclass=none, arialabeledby='', sort=False, slice=1, checkboxclass='') %}
     <div{{ dict(
+        class="row",
         role="radiogroup" if radio else "group",
         **{'aria-labelledby': arialabeledby}
     )|xmlattr }}>
         {%- if arialabel %}<legend class="sr-only">{{ arialabel }}</legend>{% endif %}
         {% set entries = entries|sort(attribute=1) if sort else entries %}
-        {%- for entry_value, entry_label in entries %}
-            {% if not inline -%}
-                <div class="{{ "radio" if radio else "checkbox"}}{{" disabled" if readonly}}">
-            {%- endif -%}
-                {{ input_checkbox(name, entry_label, entry_value, defaultvalue, readonly, inline=inline, radio=radio,
-                                  aclass=aclass) }}
-            {%- if not inline %}</div>{% endif %}
-            {# checkboxes do not support the readonly attribute, so we emulate it with a disabled select and a hidden input. #}
-            {%- if actualreadonly -%}
-                {{ input_hidden(name) }}
-            {%- endif -%}
+        {% set col_width = 12 // slice %}
+        {%- for column in entries|slice(slice) %}
+            <div class="col-sm-{{ col_width }}">
+                {%- for entry_value, entry_label in column %}
+                    {% if not inline -%}
+                        <div class="{{ "radio" if radio else "checkbox"}}{{" disabled" if readonly}}
+                                    {{ " " + checkboxclass if checkboxclass }}">
+                    {%- endif -%}
+                        {{ input_checkbox(name, entry_label, entry_value, defaultvalue, readonly, inline=inline, radio=radio,
+                                          aclass=aclass) }}
+                    {%- if not inline %}</div>{% endif %}
+                    {# checkboxes do not support the readonly attribute, so we emulate it with a disabled select and a hidden input. #}
+                    {%- if actualreadonly -%}
+                        {{ input_hidden(name) }}
+                    {%- endif -%}
+                {%- endfor %}
+            </div>
         {%- endfor %}
     </div>
 {%- endmacro %}
@@ -551,11 +558,12 @@
 {#- This is the version for multiple checkboxes as opposed to input_checkbox().
     entries is of type [(str, str)]. #}
 {% macro form_input_checkboxes(name, entries, label='', info='', displayerrors=True, readonly=False, actualreadonly=False,
-        defaultvalue='', small=False, radio=False, horizontal=True, aclass=none, labelid=none, sort=False) %}
+        defaultvalue='', small=False, wide=False, radio=False, horizontal=True, aclass=none, labelid=none, sort=False, slice=1,
+        checkboxclass='') %}
     {%- if not labelid %}{% set labelid = "inputgroup-{}-label".format(name) %}{% endif %}
-    {%- call form_input_general(name, label, '', small, info, displayerrors, horizontal, labelid) %}
+    {%- call form_input_general(name, label, '', small, info, displayerrors, horizontal, labelid, wide=wide) %}
         {{- input_checkboxes(name, entries, readonly=readonly, actualreadonly=actualreadonly, defaultvalue=defaultvalue,
-                             radio=radio, aclass=aclass, arialabeledby=labelid, sort=sort) }}
+                             radio=radio, aclass=aclass, arialabeledby=labelid, sort=sort, slice=slice, checkboxclass='') }}
     {%- endcall %}
 {%- endmacro %}
 
