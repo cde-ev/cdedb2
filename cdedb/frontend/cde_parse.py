@@ -21,8 +21,8 @@ from werkzeug.datastructures import FileStorage
 import cdedb.frontend.parse_statement as parse
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    CdEDBObject, EntitySorter, RequestState, TransactionType, diacritic_patterns,
-    get_hash, merge_dicts, n_, xsorted,
+    Accounts, CdEDBObject, EntitySorter, RequestState, TransactionType,
+    diacritic_patterns, get_hash, merge_dicts, n_, xsorted,
 )
 from cdedb.frontend.cde_base import CdEBaseFrontend
 from cdedb.frontend.common import (
@@ -52,6 +52,8 @@ class CdEParseMixin(CdEBaseFrontend):
         params = {
             'params': params or None,
             'data': data,
+            'transaction_keys': parse.Transaction.get_request_params(hidden_only=True),
+            'ref_sep': parse.REFERENCE_SEPARATOR,
             'TransactionType': parse.TransactionType,
             'event_entries': event_entries,
             'events': events,
@@ -129,9 +131,7 @@ class CdEParseMixin(CdEBaseFrontend):
         assert statement_file.filename is not None
         filename = pathlib.Path(statement_file.filename).parts[-1]
         start, end, timestamp = parse.dates_from_filename(filename)
-        # The statements from BFS are encoded in latin-1
-        statement_file = check(rs, vtypes.CSVFile, statement_file,
-                               "statement_file", encoding="latin-1")
+        statement_file = check(rs, vtypes.CSVFile, statement_file, "statement_file")
         if rs.has_validation_errors():
             return self.parse_statement_form(rs)
         assert statement_file is not None
@@ -143,20 +143,15 @@ class CdEParseMixin(CdEBaseFrontend):
         get_persona = functools.partial(self.coreproxy.get_persona, rs)
 
         # This does not use the cde csv dialect, but rather the bank's.
-        reader = csv.DictReader(statementlines, delimiter=";",
-                                quotechar='"',
-                                fieldnames=parse.STATEMENT_CSV_FIELDS,
-                                restkey=parse.STATEMENT_CSV_RESTKEY,
-                                restval="")
+        reader = csv.DictReader(statementlines, delimiter=";", quotechar='"')
 
         transactions = []
 
-        for i, line in enumerate(reversed(list(reader))):
-            if not len(line) == len(parse.STATEMENT_CSV_FIELDS) + 1:
+        for i, line in enumerate(reader):
+            if not line.keys() <= parse.STATEMENT_CSV_ALL_KEY:
                 p = ("statement_file",
                      ValueError(n_("Line %(lineno)s does not have "
-                                   "the correct number of "
-                                   "columns."),
+                                   "the correct columns."),
                                 {'lineno': i + 1}
                                 ))
                 rs.append_validation_error(p)
@@ -230,17 +225,19 @@ class CdEParseMixin(CdEBaseFrontend):
             fields = parse.GNUCASH_EXPORT_FIELDS
             write_header = True
         elif excel is not None:
-            account = excel
-            filename = "transactions_" + account
-            transactions = [t for t in transactions
-                            if str(t.account) == account]
+            account, _ = inspect(Accounts, excel)
+            if not account:
+                rs.notify("error", n_("Unknown account."))
+                return self.parse_statement_form(rs, data, params)
+            filename = "transactions_" + str(account.value)
+            transactions = [t for t in transactions if t.account == account]
             fields = parse.EXCEL_EXPORT_FIELDS
             write_header = False
         else:
             rs.notify("error", n_("Unknown action."))
             return self.parse_statement_form(rs, data, params)
         if end is None:
-            filename += "_{}".format(start)
+            filename += "_{}.csv".format(start)
         else:
             filename += "_{}_bis_{}.csv".format(start, end)
         csv_data = [t.to_dict() for t in transactions]
