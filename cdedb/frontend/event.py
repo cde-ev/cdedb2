@@ -1808,6 +1808,10 @@ class EventFrontend(AbstractUserFrontend):
         This allows flexible filtering of the displayed registrations.
         """
         tracks = rs.ambience['event']['tracks']
+        if not tracks:
+            rs.ignore_validation_errors()
+            rs.notify("error", n_("Event without tracks forbids courses."))
+            return self.redirect(rs, 'event/course_stats')
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         all_reg_ids = self.eventproxy.list_registrations(rs, event_id)
