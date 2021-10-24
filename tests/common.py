@@ -302,7 +302,7 @@ class BasicTest(unittest.TestCase):
         return ret
 
     def get_sample_datum(self, table: str, id_: int) -> CdEDBObject:
-        return self.get_sample_data(table, [id_], [])[id_]
+        return self.get_sample_data(table, [id_])[id_]
 
 
 class CdEDBTest(BasicTest):

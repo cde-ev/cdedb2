@@ -134,7 +134,7 @@ class TestCdEBackend(BackendTest):
                 ("birthday", QueryOperators.less, datetime.datetime.now())],
             order=(("family_name", True),),)
         result = self.cde.submit_general_query(self.key, query)
-        self.assertEqual({2, 3, 4, 6, 7, 13, 15, 16, 22, 23, 27, 32, 100},
+        self.assertEqual({2, 3, 4, 6, 7, 13, 15, 16, 22, 23, 27, 32, 37, 100},
                          {e['id'] for e in result})
 
     @as_users("vera")
