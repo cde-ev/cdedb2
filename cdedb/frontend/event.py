@@ -44,7 +44,7 @@ from cdedb.frontend.common import (
     calculate_loglinks, cdedbid_filter, cdedburl, check_validation as check,
     check_validation_optional as check_optional, event_guard,
     inspect_validation as inspect, make_event_fee_reference, make_persona_name,
-    periodic, process_dynamic_input, request_extractor,
+    periodic, process_dynamic_input, request_extractor, drow_name
 )
 from cdedb.frontend.event_lodgement_wishes import (
     create_lodgement_wishes_graph, detect_lodgement_wishes,
@@ -4686,21 +4686,22 @@ class EventFrontend(AbstractUserFrontend):
                                      ) -> Response:
         group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
         groups = self.eventproxy.get_lodgement_groups(rs, group_ids)
+        sorted_group_ids = [
+            e["id"] for e in xsorted(groups.values(), key=EntitySorter.lodgement_group)]
 
         current = {
-            "{}_{}".format(key, group_id): value
+            drow_name(field_name=key, entity_id=group_id): value
             for group_id, group in groups.items()
             for key, value in group.items() if key != 'id'}
         merge_dicts(rs.values, current)
 
-        is_referenced = set()
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
-        for lodgement in lodgements.values():
-            is_referenced.add(lodgement['group_id'])
+        referenced_groups = {l["group_id"] for l in lodgements.values()}
 
         return self.render(rs, "lodgement_group_summary", {
-            'lodgement_groups': groups, 'is_referenced': is_referenced})
+            "sorted_group_ids": sorted_group_ids,
+            "referenced_groups": referenced_groups})
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
