@@ -42,9 +42,9 @@ from cdedb.frontend.common import (
     AbstractUserFrontend, CustomCSVDialect, RequestConstraint, REQUESTdata,
     REQUESTdatadict, REQUESTfile, TransactionObserver, access, calculate_db_logparams,
     calculate_loglinks, cdedbid_filter, cdedburl, check_validation as check,
-    check_validation_optional as check_optional, event_guard,
+    check_validation_optional as check_optional, drow_name, event_guard,
     inspect_validation as inspect, make_event_fee_reference, make_persona_name,
-    periodic, process_dynamic_input, request_extractor, drow_name
+    periodic, process_dynamic_input, request_extractor,
 )
 from cdedb.frontend.event_lodgement_wishes import (
     create_lodgement_wishes_graph, detect_lodgement_wishes,
@@ -4722,11 +4722,12 @@ class EventFrontend(AbstractUserFrontend):
 
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
-        referenced_groups = {l["group_id"] for l in lodgements.values()}
+        # filter the implicit lodgement group "None"
+        referenced_groups: Set[int] = set(
+            filter(None, {l["group_id"] for l in lodgements.values()}))
 
         msg = n_("Lodgement group is referenced and can not be deleted.")
-        # filter the implicit lodgement group "None"
-        for anid in filter(None, referenced_groups):
+        for anid in referenced_groups:
             if groups[anid] is None:
                 rs.append_validation_error((drow_name("title", anid), ValueError(msg)))
         if rs.has_validation_errors():

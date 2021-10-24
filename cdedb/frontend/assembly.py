@@ -24,7 +24,8 @@ from cdedb.common import (
 from cdedb.frontend.common import (
     AbstractUserFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, access,
     assembly_guard, calculate_db_logparams, calculate_loglinks, cdedburl,
-    check_validation as check, periodic, process_dynamic_input, request_extractor, drow_name
+    check_validation as check, drow_name, periodic, process_dynamic_input,
+    request_extractor,
 )
 from cdedb.query import QueryScope
 from cdedb.validation import (

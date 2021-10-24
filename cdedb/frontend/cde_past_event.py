@@ -26,7 +26,7 @@ from cdedb.frontend.cde_base import CdEBaseFrontend
 from cdedb.frontend.common import (
     CustomCSVDialect, REQUESTdata, REQUESTdatadict, TransactionObserver, access,
     calculate_db_logparams, calculate_loglinks, check_validation as check, csv_output,
-    process_dynamic_input, drow_name
+    drow_name, process_dynamic_input,
 )
 from cdedb.query import Query, QueryOperators, QueryScope
 from cdedb.validation import PAST_COURSE_COMMON_FIELDS, PAST_EVENT_FIELDS

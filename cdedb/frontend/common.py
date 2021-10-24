@@ -2192,19 +2192,19 @@ def make_persona_name(persona: CdEDBObject,
     return " ".join(ret)
 
 
-def drow_name(field_name, entity_id, prefix=""):
+def drow_name(field_name: str, entity_id: int, prefix: str = "") -> str:
     return f"{prefix}{field_name}_{entity_id}"
 
 
-def drow_create(entity_id, prefix=""):
+def drow_create(entity_id: int, prefix: str = "") -> str:
     return drow_name("create", entity_id, prefix)
 
 
-def drow_delete(entity_id, prefix=""):
+def drow_delete(entity_id: int, prefix: str = "") -> str:
     return drow_name("delete", entity_id, prefix)
 
 
-def drow_last_index(prefix=""):
+def drow_last_index(prefix: str = "") -> str:
     return f"{prefix}create_last_index"
 
 
