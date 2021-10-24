@@ -631,6 +631,7 @@ class TestAssemblyBackend(BackendTest):
         base_time = now()
         delta = datetime.timedelta(seconds=42)
         with freezegun.freeze_time(base_time) as frozen_time:
+            NUMBER_OF_MEMBERS = 9
             assembly_data = {
                 'description': None,
                 'notes': None,
@@ -673,17 +674,26 @@ class TestAssemblyBackend(BackendTest):
                           cm.exception.args[0])
 
             # Initial quorum should be number of members.
-            self.assertEqual(8, self.assembly.get_ballot(self.key, ballot_id)["quorum"])
+            self.assertEqual(
+                self.assembly.get_ballot(self.key, ballot_id)["quorum"],
+                NUMBER_OF_MEMBERS
+            )
 
             # Adding a non-member attendee increases the quorum.
             self.assembly.external_signup(self.key, assembly_id, 4)
-            self.assertEqual(9, self.assembly.get_ballot(self.key, ballot_id)["quorum"])
+            self.assertEqual(
+                self.assembly.get_ballot(self.key, ballot_id)["quorum"],
+                NUMBER_OF_MEMBERS + 1
+            )
 
             frozen_time.tick(delta=4*delta)
             self.assembly.check_voting_period_extension(self.key, ballot_id)
             # Now adding an attendee does not change the quorum.
             self.assembly.external_signup(self.key, assembly_id, 11)
-            self.assertEqual(9, self.assembly.get_ballot(self.key, ballot_id)["quorum"])
+            self.assertEqual(
+                self.assembly.get_ballot(self.key, ballot_id)["quorum"],
+                NUMBER_OF_MEMBERS + 1
+            )
 
     def test_extension(self) -> None:
         base_time = now()

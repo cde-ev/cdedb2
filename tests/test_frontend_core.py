@@ -1230,7 +1230,7 @@ class TestCoreFrontend(FrontendTest):
                 f[field].checked = True
         self.submit(f)
         self.assertTitle("Allgemeine Nutzerverwaltung")
-        self.assertPresence("Ergebnis [13]", div='query-results')
+        self.assertPresence("Ergebnis [14]", div='query-results')
         self.assertPresence("Jalapeño", div='query-result')
 
     @as_users("vera")
