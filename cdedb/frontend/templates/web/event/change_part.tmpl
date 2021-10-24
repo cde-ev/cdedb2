@@ -62,7 +62,8 @@
             </thead>
 
             <tbody>
-                {% call(id, row_class, is_new_row) util.dynamic_row_meta(sorted_fee_modifer_ids, add_prototype_row=not has_registrations) %}
+                {% call(id, row_class, is_new_row) util.dynamic_row_meta(sorted_fee_modifer_ids, prefix="fee_modifier",
+                                                                         add_prototype_row=not has_registrations) %}
                     <tr class="{{ row_class }}" role="group" aria-label="Institution {{ id }}">
                         <td class={{ util.has_errors(drow_name("modifier_name", id, prefix="fee_modifier")) }}>
                             {{ util.input_text(drow_name("modifier_name", id, prefix="fee_modifier"),
@@ -121,7 +122,8 @@
             </thead>
 
             <tbody>
-                {% call(id, row_class, is_new_row) util.dynamic_row_meta(sorted_track_ids, add_prototype_row=not has_registrations) %}
+                {% call(id, row_class, is_new_row) util.dynamic_row_meta(sorted_track_ids, prefix="track",
+                                                                         add_prototype_row=not has_registrations) %}
                     <tr class="{{ row_class }}" role="group" aria-label="Institution {{ id }}">
                         <td class={{ util.has_errors(drow_name("title", id, prefix="track")) }}>
                             {{ util.input_text(drow_name("title", id, prefix="track"),
