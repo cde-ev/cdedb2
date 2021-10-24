@@ -272,7 +272,7 @@ class MlBackend(AbstractBackend):
         if not (self.is_admin(rs) or (mailinglist_ids
                 and all(self.may_manage(rs, ml_id)
                         for ml_id in mailinglist_ids))
-                and "autitor" not in rs.user.roles):
+                or "auditor" in rs.user.roles):
             raise PrivilegeError(n_("Not privileged."))
         return self.generic_retrieve_log(
             rs, const.MlLogCodes, "mailinglist", "ml.log", codes=codes,
