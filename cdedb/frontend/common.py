@@ -2193,7 +2193,8 @@ def make_persona_name(persona: CdEDBObject,
 
 
 def drow_name(field_name: str, entity_id: int, prefix: str = "") -> str:
-    return f"{prefix}_{field_name}_{entity_id}"
+    prefix = prefix + "_" if prefix else ""
+    return f"{prefix}{field_name}_{entity_id}"
 
 
 def drow_create(entity_id: int, prefix: str = "") -> str:
