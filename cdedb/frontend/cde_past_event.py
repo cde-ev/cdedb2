@@ -111,6 +111,18 @@ class CdEPastEventMixin(CdEBaseFrontend):
         spec = {'title': str, 'shortname': vtypes.Shortname}
         institutions = process_dynamic_input(
             rs, vtypes.Institution, institution_ids.keys(), spec)
+
+        event_ids = self.eventproxy.list_events(rs)
+        events = self.eventproxy.get_events(rs, event_ids.keys())
+        pevent_ids = self.pasteventproxy.list_past_events(rs)
+        pevents = self.pasteventproxy.get_past_events(rs, pevent_ids.keys())
+        referenced_institutions = {e['institution'] for e in events.values()}
+        referenced_institutions |= {p['institution'] for p in pevents.values()}
+
+        msg = n_("Institution is referenced and can not be deleted.")
+        for anid in referenced_institutions:
+            if institutions[anid] is None:
+                rs.append_validation_error((drow_name("title", anid), ValueError(msg)))
         if rs.has_validation_errors():
             return self.institution_summary_form(rs)
 
