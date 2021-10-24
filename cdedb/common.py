@@ -671,6 +671,10 @@ class EntitySorter:
         return (course_track['sortkey'], course_track['id'])
 
     @staticmethod
+    def fee_modifier(fee_modifier: CdEDBObject) -> Sortkey:
+        return (fee_modifier['modifier_name'], fee_modifier['id'])
+
+    @staticmethod
     def event_field(event_field: CdEDBObject) -> Sortkey:
         return (event_field['field_name'], event_field['id'])
 
