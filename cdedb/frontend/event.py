@@ -4719,8 +4719,19 @@ class EventFrontend(AbstractUserFrontend):
         spec = {'title': str}
         groups = process_dynamic_input(rs, vtypes.LodgementGroup, group_ids.keys(),
                                        spec, additional={'event_id': event_id})
+
+        lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
+        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        referenced_groups = {l["group_id"] for l in lodgements.values()}
+
+        msg = n_("Lodgement group is referenced and can not be deleted.")
+        # filter the implicit lodgement group "None"
+        for anid in filter(None, referenced_groups):
+            if groups[anid] is None:
+                rs.append_validation_error((drow_name("title", anid), ValueError(msg)))
         if rs.has_validation_errors():
             return self.lodgement_group_summary_form(rs, event_id)
+
         code = 1
         for group_id, group in groups.items():
             if group is None:
