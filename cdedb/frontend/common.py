@@ -2276,7 +2276,7 @@ def process_dynamic_input(
             entry["id"] = anid
             entry.update(additional)
             # apply the promised validation
-            ret[anid] = check_validation(rs, type_, entry, field_prefix=prefix,
+            ret[anid] = check_validation(rs, type_, entry, field_prefix=f"{prefix}_",
                                          field_postfix=f"_{anid}")  # type: ignore
 
     # extract the new entries which shall be created
@@ -2292,8 +2292,8 @@ def process_dynamic_input(
                 key: data[drow_name(key, -marker, prefix)] for key in spec}
             entry.update(additional)
             ret[-marker] = check_validation(
-                rs, type_, entry, field_prefix=prefix, field_postfix=f"_{-marker}",
-                creation=True)  # type: ignore
+                rs, type_, entry, field_prefix=f"{prefix}_",
+                field_postfix=f"_{-marker}", creation=True)  # type: ignore
         else:
             break
         marker += 1
