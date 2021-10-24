@@ -67,19 +67,22 @@
                     <tr class="{{ row_class }}" role="group" aria-label="Institution {{ id }}">
                         <td class={{ util.has_errors(drow_name("modifier_name", id, prefix="fee_modifier")) }}>
                             {{ util.input_text(drow_name("modifier_name", id, prefix="fee_modifier"),
-                                    aclass='drow-input form-control', attributes=('data-basename="modifier_name_"'|s),
+                                    aclass='drow-input form-control',
+                                    attributes=util.drow_basename("modifier_name", prefix="fee_modifier"),
                                     arialabel=gettext("Fee Modifier"), readonly=has_registrations) }}
                             {{ util.output_errors(drow_name("modifier_name", id, prefix="fee_modifier")) }}
                         </td>
                         <td class={{ util.has_errors(drow_name("amount", id, prefix="fee_modifier")) }}>
                             {{ util.input_text(drow_name("amount", id, prefix="fee_modifier"),
-                                    aclass='drow-input form-control', attributes=('data-basename="amount_"'|s),
+                                    aclass='drow-input form-control',
+                                    attributes=util.drow_basename("amount", prefix="fee_modifier"),
                                     arialabel=gettext("Amount"), readonly=has_registrations) }}
                             {{ util.output_errors(drow_name("amount", id, prefix="fee_modifier")) }}
                         </td>
                         <td class={{ util.has_errors(drow_name("field_id", id, prefix="fee_modifier")) }}>
                             {{ util.input_select(drow_name("field_id", id, prefix="fee_modifier"),
-                                    aclass='drow-input form-control', attributes=('data-basename="field_id_"'|s),
+                                    aclass='drow-input form-control',
+                                    attributes=util.drow_basename("field_id", prefix="fee_modifier"),
                                     arialabel=gettext("Linked Field"), readonly=has_registrations,
                                     entries=fee_modifier_fields) }}
                             {{ util.output_errors(drow_name("field_id", id, prefix="fee_modifier")) }}
@@ -88,7 +91,8 @@
                             <span class="drow-buttonspace">
                                 {% if is_new_row %}
                                     {{ util.input_checkbox(drow_create(id, prefix="fee_modifier"), label=gettext("Add"),
-                                            attributes='data-basename="create_"'|s, aclass='drow-indicator') }}
+                                            attributes=util.drow_basename("create", prefix="fee_modifier"),
+                                            aclass='drow-indicator') }}
                                 {% else %}
                                     {{ util.input_checkbox(drow_delete(id, prefix="fee_modifier"), label=gettext("Delete"),
                                             readonly=has_registrations, aclass='drow-indicator') }}
@@ -127,20 +131,22 @@
                     <tr class="{{ row_class }}" role="group" aria-label="Institution {{ id }}">
                         <td class={{ util.has_errors(drow_name("title", id, prefix="track")) }}>
                             {{ util.input_text(drow_name("title", id, prefix="track"),
-                                    aclass='drow-input form-control', attributes=('data-basename="title_"'|s),
+                                    aclass='drow-input form-control',
+                                    attributes=util.drow_basename("title", prefix="track"),
                                     arialabel=gettext("Coursetrack")) }}
                             {{ util.output_errors(drow_name("title", id, prefix="track")) }}
                         </td>
                         <td class={{ util.has_errors(drow_name("shortname", id, prefix="track")) }}>
                             {{ util.input_text(drow_name("shortname", id, prefix="track"),
-                                    aclass='drow-input form-control', attributes=('data-basename="shortname_"'|s),
+                                    aclass='drow-input form-control',
+                                    attributes=util.drow_basename("shortname", prefix="track"),
                                     arialabel=gettext("Shortname")) }}
                             {{ util.output_errors(drow_name("shortname", id, prefix="track")) }}
                         </td>
                         <td class={{ util.has_errors(drow_name("num_choices", id, prefix="track")) }}>
                             {{ util.input_text(drow_name("num_choices", id, prefix="track"),
                                     aclass='drow-input form-control input-num-choices',
-                                    attributes=('data-basename="num_choices_"'|s),
+                                    attributes=util.drow_basename("num_choices", prefix="track"),
                                     defaultvalue=DEFAULT_NUM_COURSE_CHOICES,
                                     arialabel=gettext("Course Choices")) }}
                             {{ util.output_errors(drow_name("num_choices", id, prefix="track")) }}
@@ -148,14 +154,15 @@
                         <td class={{ util.has_errors(drow_name("min_choices", id, prefix="track")) }}>
                             {{ util.input_text(drow_name("min_choices", id, prefix="track"),
                                     aclass='drow-input form-control input-min-choices',
-                                    attributes=('data-basename="min_choices_"'|s),
+                                    attributes=util.drow_basename("min_choices", prefix="track"),
                                     defaultvalue=DEFAULT_NUM_COURSE_CHOICES,
                                     arialabel=gettext("Req. Choices")) }}
                             {{ util.output_errors(drow_name("min_choices", id, prefix="track")) }}
                         </td>
                         <td class={{ util.has_errors(drow_name("sortkey", id, prefix="track")) }}>
                             {{ util.input_text(drow_name("sortkey", id, prefix="track"),
-                                    aclass='drow-input form-control', attributes=('data-basename="sortkey_"'|s),
+                                    aclass='drow-input form-control',
+                                    attributes=util.drow_basename("sortkey", prefix="track"),
                                     arialabel=gettext("Sortkey")) }}
                             {{ util.output_errors(drow_name("sortkey", id, prefix="track")) }}
                         </td>
@@ -163,7 +170,8 @@
                             <span class="drow-buttonspace">
                                 {% if is_new_row %}
                                     {{ util.input_checkbox(drow_create(id, prefix="track"), label=gettext("Add"),
-                                            attributes='data-basename="create_"'|s, aclass='drow-indicator') }}
+                                            attributes=util.drow_basename("create", prefix="track"),
+                                            aclass='drow-indicator') }}
                                 {% else %}
                                     {{ util.input_checkbox(drow_delete(id, prefix="track"), label=gettext("Delete"),
                                             readonly=has_registrations or id in referenced_tracks,

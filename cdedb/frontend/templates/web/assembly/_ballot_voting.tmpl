@@ -334,19 +334,19 @@
                     <tr class="{{ row_class }}" role="group" aria-label="Candidate {{ id }}">
                         <td class={{ util.has_errors(drow_name("shortname", id)) }}>
                             {{ util.input_text(drow_name("shortname", id), aclass='drow-input form-control',
-                                    attributes=('data-basename="shortname_"'|s), arialabel=gettext("Shortname")) }}
+                                    attributes=util.drow_basename("shortname"), arialabel=gettext("Shortname")) }}
                             {{ util.output_errors(drow_name("shortname", id)) }}
                         </td>
                         <td class={{ util.has_errors(drow_name("title", id)) }}>
                             {{ util.input_text(drow_name("title", id), aclass='drow-input form-control',
-                                    attributes=('data-basename="title_"'|s), arialabel=gettext("Name")) }}
+                                    attributes=util.drow_basename("title"), arialabel=gettext("Name")) }}
                             {{ util.output_errors(drow_name("title", id)) }}
                         </td>
                         <td>
                             <span class="drow-buttonspace">
                                 {% if is_new_row %}
                                     {{ util.input_checkbox(drow_create(id), label=gettext("Add"),
-                                            attributes='data-basename="create_"'|s, aclass='drow-indicator') }}
+                                            attributes=util.drow_basename("create"), aclass='drow-indicator') }}
                                 {% else %}
                                     {{ util.input_checkbox(drow_delete(id), label=gettext("Delete"),
                                             aclass='drow-indicator') }}
