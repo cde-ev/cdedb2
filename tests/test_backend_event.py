@@ -3942,7 +3942,7 @@ class TestEventBackend(BackendTest):
         result = self.event.retrieve_log(self.key, offset=offset)
         self.assertEqual(expectation, result)
 
-    def _get_reg_data(self, persona_id: int, event_id: int) -> None:
+    def _get_reg_data(self, persona_id: int, event_id: int) -> CdEDBObject:
         event = self.event.get_event(self.key, event_id)
         return {
             'persona_id': persona_id,
