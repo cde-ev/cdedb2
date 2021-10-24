@@ -4704,7 +4704,7 @@ class EventFrontend(AbstractUserFrontend):
 
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
-        referenced_groups = {l["group_id"] for l in lodgements.values()}
+        referenced_groups = {e["group_id"] for e in lodgements.values()}
 
         return self.render(rs, "lodgement_group_summary", {
             "sorted_group_ids": sorted_group_ids,
