@@ -169,7 +169,7 @@ class TestAssemblyBackend(BackendTest):
             "submitted_by": self.user['id'],
             "assembly_id": new_id,
         })
-        self.assertLogEqual(log, "assembly", offset=log_offset)
+        self.assertLogEqual(log, realm="assembly", offset=log_offset)
 
         cascade = {"assembly_is_locked", "log", "presiders", "attachments"}
         self.assertEqual(
@@ -181,7 +181,7 @@ class TestAssemblyBackend(BackendTest):
             "submitted_by": self.user['id'],
             "change_note": expectation["title"],
         }]
-        self.assertLogEqual(log, "assembly", offset=log_offset)
+        self.assertLogEqual(log, realm="assembly", offset=log_offset)
 
     @as_users("viktor")
     def test_ticket_176(self) -> None:
@@ -571,7 +571,8 @@ class TestAssemblyBackend(BackendTest):
             15: 'Welche Sprache ist die Beste?',
             new_id: 'Verstehen wir Spaß'}
         self.assertEqual(expectation, self.assembly.list_ballots(self.key, assembly_id))
-        self.assertLogEqual(log, "assembly", offset=log_offset, assembly_id=assembly_id)
+        self.assertLogEqual(
+            log, realm="assembly", offset=log_offset, assembly_id=assembly_id)
 
     @as_users("werner")
     def test_quorum(self) -> None:
@@ -1234,7 +1235,8 @@ class TestAssemblyBackend(BackendTest):
         del expectation[new_id]
         self.assertEqual(
             expectation, self.assembly.get_attachments(self.key, attachment_ids))
-        self.assertLogEqual(log, "assembly", offset=log_offset, assembly_id=assembly_id)
+        self.assertLogEqual(
+            log, realm="assembly", offset=log_offset, assembly_id=assembly_id)
 
     @storage
     @as_users("werner")
@@ -1360,7 +1362,8 @@ class TestAssemblyBackend(BackendTest):
                     self.assembly.get_definitive_attachments_version(
                         self.key, ballot_id)
                 )
-        self.assertLogEqual(log, "assembly", offset=log_offset, assembly_id=assembly_id)
+        self.assertLogEqual(
+            log, realm="assembly", offset=log_offset, assembly_id=assembly_id)
 
     @as_users("werner")
     @prepsql("""INSERT INTO assembly.assemblies
