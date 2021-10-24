@@ -26,7 +26,7 @@ from cdedb.frontend.cde_base import CdEBaseFrontend
 from cdedb.frontend.common import (
     CustomCSVDialect, REQUESTdata, REQUESTdatadict, TransactionObserver, access,
     calculate_db_logparams, calculate_loglinks, check_validation as check, csv_output,
-    process_dynamic_input,
+    process_dynamic_input, drow_name
 )
 from cdedb.query import Query, QueryOperators, QueryScope
 from cdedb.validation import PAST_COURSE_COMMON_FIELDS, PAST_EVENT_FIELDS
@@ -83,28 +83,26 @@ class CdEPastEventMixin(CdEBaseFrontend):
     def institution_summary_form(self, rs: RequestState) -> Response:
         """Render form."""
         institution_ids = self.pasteventproxy.list_institutions(rs)
-        institutions = self.pasteventproxy.get_institutions(
-            rs, institution_ids.keys())
+        institutions = self.pasteventproxy.get_institutions(rs, institution_ids.keys())
         sorted_institution_ids = [
             e["id"] for e in xsorted(institutions.values(),
                                      key=EntitySorter.institution)]
         current = {
-            "{}_{}".format(key, institution_id): value
+            drow_name(field_name=key, entity_id=institution_id): value
             for institution_id, institution in institutions.items()
             for key, value in institution.items() if key != 'id'}
         merge_dicts(rs.values, current)
-        is_referenced = set()
+
         event_ids = self.eventproxy.list_events(rs)
         events = self.eventproxy.get_events(rs, event_ids.keys())
         pevent_ids = self.pasteventproxy.list_past_events(rs)
         pevents = self.pasteventproxy.get_past_events(rs, pevent_ids.keys())
-        for event in events.values():
-            is_referenced.add(event['institution'])
-        for pevent in pevents.values():
-            is_referenced.add(pevent['institution'])
+        referenced_institutions = {e['institution'] for e in events.values()}
+        referenced_institutions |= {p['institution'] for p in pevents.values()}
+
         return self.render(rs, "past_event/institution_summary", {
             "sorted_institution_ids": sorted_institution_ids,
-            "is_referenced": is_referenced})
+            "referenced_institutions": referenced_institutions})
 
     @access("cde_admin", modi={"POST"})
     def institution_summary(self, rs: RequestState) -> Response:

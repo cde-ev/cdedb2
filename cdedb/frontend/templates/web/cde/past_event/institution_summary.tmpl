@@ -26,27 +26,26 @@
             </thead>
 
             <tbody>
-                {% call(id, aclass) util.dynamic_row_meta(sorted_institution_ids) %}
-                    {% set newrow = id < 0 %}
-                    <tr class="{{ aclass }}" role="group" aria-label="Institution {{ id }}">
+                {% call(id, row_class, is_new_row) util.dynamic_row_meta(sorted_institution_ids) %}
+                    <tr class="{{ row_class }}" role="group" aria-label="Institution {{ id }}">
                         <td class={{ util.has_errors(drow_name("title", id)) }}>
                             {{ util.input_text(drow_name("title", id), aclass='drow-input form-control',
-                                    attributes=('data-basename="title_"'|s if newrow else ''), arialabel=gettext("Name")) }}
+                                    attributes=('data-basename="title_"'|s), arialabel=gettext("Name")) }}
                             {{ util.output_errors(drow_name("title", id)) }}
                         </td>
                         <td class={{ util.has_errors(drow_name("shortname", id)) }}>
                             {{ util.input_text(drow_name("shortname", id), aclass='drow-input form-control',
-                                    attributes=('data-basename="shortname_"'|s if newrow else ''), arialabel=gettext("Shortname")) }}
+                                    attributes=('data-basename="shortname_"'|s), arialabel=gettext("Shortname")) }}
                             {{ util.output_errors(drow_name("shortname", id)) }}
                         </td>
                         <td>
                             <span class="drow-buttonspace">
-                                {% if newrow %}
+                                {% if is_new_row %}
                                     {{ util.input_checkbox(drow_create(id), label=gettext("Add"),
-                                                           attributes='data-basename="create_"'|s, aclass='drow-indicator') }}
+                                            attributes='data-basename="create_"'|s, aclass='drow-indicator') }}
                                 {% else %}
                                     {{ util.input_checkbox(drow_delete(id), label=gettext("Delete"),
-                                                           readonly=id in is_referenced, aclass='drow-indicator') }}
+                                            readonly=id in referenced_institutions, aclass='drow-indicator') }}
                                 {% endif %}
                             </span>
                         </td>
