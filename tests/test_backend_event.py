@@ -3942,9 +3942,9 @@ class TestEventBackend(BackendTest):
         result = self.event.retrieve_log(self.key, offset=offset)
         self.assertEqual(expectation, result)
 
-    def _get_reg_data(self, persona_id: int, event_id: int) -> CdEDBObject:
+    def _create_registration(self, persona_id: int, event_id: int) -> int:
         event = self.event.get_event(self.key, event_id)
-        return {
+        return self.event.create_registration(self.key, {
             'persona_id': persona_id,
             'event_id': event['id'],
             'mixed_lodging': True,
@@ -3958,7 +3958,7 @@ class TestEventBackend(BackendTest):
                 t_id: {}
                 for p_id in event['parts'] for t_id in event['parts'][p_id]['tracks']
             }
-        }
+        })
 
     @as_users("annika")
     def test_registration_timestamps(self) -> None:
@@ -3969,8 +3969,7 @@ class TestEventBackend(BackendTest):
         delta = datetime.timedelta(seconds=42)
         with freezegun.freeze_time(base_time) as frozen_time:
             for event_id in event_ids:
-                reg_id = self.event.create_registration(
-                    self.key, self._get_reg_data(persona_id, event_id))
+                reg_id = self._create_registration(persona_id, event_id)
                 frozen_time.tick(delta)
                 self.event.set_registration(
                     self.key, {'id': reg_id, 'notes': "Important change!"})
