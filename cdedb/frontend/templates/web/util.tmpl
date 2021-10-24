@@ -776,24 +776,25 @@
 {# Macro to take care of all the meta dynamic row stuff.
 
 This macro must be called, and the call body have to provide a generic row. The calling macro must take
-  * the id of the row and
-  * css-classes which are used for internal handling
+  * id: the id of the row
+  * row_class: css-class which is used to identify existing, new and prototype rows internally
+  * is_new_row: bool which shows if the current row is a new row (drow-new or drow-prototype)
 as arguments. #}
 {% macro dynamic_row_meta(existing_ids, prefix="", add_prototype_row=True) %}
     {# Old items, already stored in the database #}
     {% for id in existing_ids %}
-        {{- caller(id, 'drow-row') }}
+        {{- caller(id=id, row_class='drow-row', is_new_row=False) }}
     {% endfor %}
 
     {# Items that were added by the user but failed validation. They are still new and have no official id. #}
     {% set last_index = values.get(drow_last_index(prefix), 0) %}
     {% for i in range(1, last_index + 1) %}
-        {{- caller(-i, 'drow-new')  }}
+        {{- caller(id=-i, row_class='drow-new', is_new_row=True)  }}
     {% endfor %}
 
     {# Prototype row. For non-JS users: an empty row with 'create'-checkbox, for JS: prototype for new rows. #}
     {% if add_prototype_row %}
-        {{- caller(-last_index - 1, 'drow-prototype')  }}
+        {{- caller(id=-last_index - 1, row_class='drow-prototype', is_new_row=True)  }}
     {% endif %}
 {% endmacro %}
 
