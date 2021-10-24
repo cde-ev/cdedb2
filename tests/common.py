@@ -41,8 +41,9 @@ from cdedb.backend.ml import MlBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.common import (
-    ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, CdEDBObject, CdEDBObjectMap, PathLike,
-    PrivilegeError, RequestState, merge_dicts, nearly_now, now, roles_to_db_role,
+    ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS, CdEDBLog, CdEDBObject, CdEDBObjectMap,
+    PathLike, PrivilegeError, RequestState, merge_dicts, nearly_now, now,
+    roles_to_db_role,
 )
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -387,7 +388,8 @@ class BackendTest(CdEDBTest):
         return self.user.get("id", -1) in users
 
     def assertLogEqual(self, log_expectation: Sequence[CdEDBObject], *,
-                       realm: str = None, log_retriever: Callable = None,
+                       realm: str = None,
+                       log_retriever: Callable[..., CdEDBLog] = None,
                        **kwargs: Any) -> None:
         """Helper to compare a log expectation to the actual thing."""
         if realm and not log_retriever:

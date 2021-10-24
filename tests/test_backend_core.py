@@ -1383,7 +1383,6 @@ class TestCoreBackend(BackendTest):
                     keys = ("change_note", "code", "ctime", "generation", "id",
                             "persona_id", "reviewed_by", "submitted_by")
                 self.assertLogEqual(
-                    self.get_sample_data(table, keys=keys).values(),
-                    log_retriever=retriever,
+                    tuple(self.get_sample_data(table, keys=keys).values()),
+                    log_retriever=retriever,  # type: ignore[arg-type]
                 )
-
