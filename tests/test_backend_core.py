@@ -1360,8 +1360,30 @@ class TestCoreBackend(BackendTest):
     @as_users("vera")
     def test_changelog_meta(self) -> None:
         expectation = self.get_sample_data(
-            "core.changelog", range(1, 33),
-            ("id", "submitted_by", "reviewed_by", "ctime", "generation",
-             "change_note", "code", "persona_id"))
+            "core.changelog", ids=None,
+            keys=("id", "submitted_by", "reviewed_by", "ctime", "generation",
+                  "change_note", "code", "persona_id"))
         self.assertEqual((len(expectation), tuple(expectation.values())),
                          self.core.retrieve_changelog_meta(self.key))
+
+    @as_users("katarina")
+    def test_auditor(self) -> None:
+        for retriever, table in (
+            (self.core.retrieve_log, "core.log"),
+            (self.core.retrieve_changelog_meta, "core.changelog"),
+            (self.cde.retrieve_cde_log, "cde.log"),
+            (self.cde.retrieve_finance_log, "cde.finance_log"),
+            (self.event.retrieve_log, "event.log"),
+            (self.assembly.retrieve_log, "assembly.log"),
+            (self.ml.retrieve_log, "ml.log"),
+        ):
+            with self.subTest(log=table):
+                keys = None
+                if table == "core.changelog":
+                    keys = ("change_note", "code", "ctime", "generation", "id",
+                            "persona_id", "reviewed_by", "submitted_by")
+                self.assertLogEqual(
+                    self.get_sample_data(table, keys=keys).values(),
+                    log_retriever=retriever,
+                )
+

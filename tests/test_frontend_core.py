@@ -2193,3 +2193,19 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence(promotion_change_note)
         self.assertPresence("zelda@example.cde")
         self.assertPresence("bertalotta@example.cde")
+
+    @as_users("katarina")
+    def test_auditor(self) -> None:
+        realm_logs = {
+            "Index": ("Account-Log", "Nutzerdaten-Log",),
+            "Mitglieder": ("CdE-Log", "Finanz-Log", "Verg.-Veransaltungen-Log",),
+            "Veranstaltungen": ("Log",),
+            "Mailinglisten": ("Log",),
+            "Versammlungen": ("Log",),
+        }
+        for realm, logs in realm_logs.items():
+            self.traverse(realm, *logs, realm)
+            self._click_admin_view_button("Kassenprüfer")
+            for log in logs:
+                self.assertNonPresence(log, div="sidebar-navigation")
+            self._click_admin_view_button("Kassenprüfer")

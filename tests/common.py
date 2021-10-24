@@ -646,6 +646,16 @@ USER_DICT: Dict[str, UserObject] = {
         'family_name': "Finanzvorstand",
         'default_name_format': "Farin Finanzvorstand",
     },
+    "katarina": {
+        'id': 37,
+        'DB-ID': "DB-37-X",
+        'username': "katarina@example.cde",
+        'password': "secret",
+        'diplay_name': "Katarina",
+        'given_names': "Katarina",
+        'family_name': "Kassenprüfer",
+        'default_name_format': "Katarina Kassenprüfer",
+    },
     "viktor": {
         'id': 48,
         'DB-ID': "DB-48-5",
