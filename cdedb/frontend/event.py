@@ -4724,7 +4724,7 @@ class EventFrontend(AbstractUserFrontend):
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
         # filter the implicit lodgement group "None"
         referenced_groups: Set[int] = set(
-            filter(None, {l["group_id"] for l in lodgements.values()}))
+            filter(None, {e["group_id"] for e in lodgements.values()}))
 
         msg = n_("Lodgement group is referenced and can not be deleted.")
         for anid in referenced_groups:
