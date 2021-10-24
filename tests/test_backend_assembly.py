@@ -398,7 +398,7 @@ class TestAssemblyBackend(BackendTest):
         for key in ('use_bar', 'notes', 'vote_extension_end', 'rel_quorum'):
             expectation[key] = data[key]
         expectation['abs_quorum'] = 0
-        expectation['quorum'] = 10
+        expectation['quorum'] = 11
         expectation['candidates'][6]['title'] = data['candidates'][6]['title']
         expectation['candidates'][6]['shortname'] = data['candidates'][6]['shortname']
         del expectation['candidates'][7]
