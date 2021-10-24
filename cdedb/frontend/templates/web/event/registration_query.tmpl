@@ -83,8 +83,14 @@
                 {{ util.href(util.mailto(bcc=";".join(usernames)), gettext("bcc email to all"),
                              icon="envelope", aclass="btn btn-default",
                              title=gettext("Send Mail to all registrations listed below as BCC.")) }}
+                {{ util.href(util.mailto(";".join(usernames)), gettext("email to all"),
+                             icon="envelope", aclass="btn btn-default",
+                             title=gettext("Send Mail to all registrations listed below.")) }}
             {% else %}
                 {{ util.href("#", gettext("bcc email to all"), readonly=True,
+                             icon="envelope", aclass="btn btn-default",
+                             title=gettext("Email button is only available, if the email field is shown.")) }}
+                {{ util.href("#", gettext("email to all"), readonly=True,
                              icon="envelope", aclass="btn btn-default",
                              title=gettext("Email button is only available, if the email field is shown.")) }}
             {% endif %}
