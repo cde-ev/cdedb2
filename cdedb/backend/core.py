@@ -2788,6 +2788,8 @@ class CoreBackend(AbstractBackend):
         case_id = affirm(vtypes.ID, case_id)
         with Atomizer(rs):
             case = unwrap(self.genesis_get_cases(rs, (case_id,)))
+            if self.verify_existence(rs, case['username'], include_genesis=False):
+                raise ValueError(n_("Email address already taken."))
             data = {k: v for k, v in case.items()
                     if k in PERSONA_ALL_FIELDS and k != "id"}
             data['display_name'] = data['given_names']
