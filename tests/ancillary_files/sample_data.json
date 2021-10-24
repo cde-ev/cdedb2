@@ -1255,6 +1255,63 @@
             "fulltext": null
         },
         {
+            "id": 37,
+            "username": "katarina@example.cde",
+            "password_hash": "$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/",
+            "is_active": true,
+            "notes": null,
+            "is_meta_admin": false,
+            "is_core_admin": false,
+            "is_cde_admin": false,
+            "is_finance_admin": false,
+            "is_event_admin": false,
+            "is_ml_admin": false,
+            "is_assembly_admin": false,
+            "is_cdelokal_admin": false,
+            "is_auditor": true,
+            "is_cde_realm": true,
+            "is_event_realm": true,
+            "is_ml_realm": true,
+            "is_assembly_realm": true,
+            "is_member": true,
+            "is_searchable": true,
+            "is_archived": false,
+            "is_purged": false,
+            "display_name": "Katarina",
+            "given_names": "Katarina",
+            "family_name": "Kassenprüfer",
+            "title": null,
+            "name_supplement":  null,
+            "gender": 1,
+            "birthday": "1999-12-31",
+            "telephone": null,
+            "mobile": null,
+            "address_supplement": null,
+            "address": null,
+            "postal_code":  null,
+            "location": null,
+            "country": "DE",
+            "birth_name":  null,
+            "address_supplement2": null,
+            "address2": null,
+            "postal_code2": null,
+            "location2": null,
+            "country2": null,
+            "weblink": null,
+            "specialisation": null,
+            "affiliation": null,
+            "timeline": null,
+            "interests": null,
+            "free_form": null,
+            "balance": "5.00",
+            "decided_search": true,
+            "trial_member": false,
+            "bub_search": true,
+            "foto": null,
+            "paper_expuls": true,
+            "fulltext": null
+        },
+        {
             "id": 48,
             "username": "viktor@example.cde",
             "password_hash": "$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/",
@@ -1399,7 +1456,6 @@
     "core.log": [],
     "core.changelog": [
         {
-            "id": 1,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1461,7 +1517,6 @@
             "paper_expuls": true
         },
         {
-            "id": 2,
             "submitted_by": 2,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1523,7 +1578,6 @@
             "paper_expuls": true
         },
         {
-            "id": 3,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1585,7 +1639,6 @@
             "paper_expuls": true
         },
         {
-            "id": 4,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1647,7 +1700,6 @@
             "paper_expuls": true
         },
         {
-            "id": 5,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1709,7 +1761,6 @@
             "paper_expuls": null
         },
         {
-            "id": 6,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1771,7 +1822,6 @@
             "paper_expuls": true
         },
         {
-            "id": 7,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1833,7 +1883,6 @@
             "paper_expuls": true
         },
         {
-            "id": 8,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1895,7 +1944,6 @@
             "paper_expuls": true
         },
         {
-            "id": 9,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -1957,7 +2005,6 @@
             "paper_expuls": true
         },
         {
-            "id": 10,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2019,7 +2066,6 @@
             "paper_expuls": null
         },
         {
-            "id": 11,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2081,7 +2127,6 @@
             "paper_expuls": null
         },
         {
-            "id": 12,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2143,7 +2188,6 @@
             "paper_expuls": true
         },
         {
-            "id": 13,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2205,7 +2249,6 @@
             "paper_expuls": true
         },
         {
-            "id": 14,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2267,7 +2310,6 @@
             "paper_expuls": null
         },
         {
-            "id": 15,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2329,7 +2371,6 @@
             "paper_expuls": true
         },
         {
-            "id": 16,
             "submitted_by": 6,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2391,7 +2432,6 @@
             "paper_expuls": true
         },
         {
-            "id": 17,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2453,7 +2493,6 @@
             "paper_expuls": true
         },
         {
-            "id": 18,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2515,7 +2554,6 @@
             "paper_expuls": true
         },
         {
-            "id": 19,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2577,7 +2615,6 @@
             "paper_expuls": true
         },
         {
-            "id": 20,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2639,7 +2676,67 @@
             "paper_expuls": true
         },
         {
-            "id": 21,
+            "submitted_by": 1,
+            "reviewed_by": null,
+            "ctime": "---now---",
+            "generation": 1,
+            "change_note": "Init.",
+            "code": 2,
+            "persona_id": 37,
+            "username": "katarina@example.cde",
+            "is_active": true,
+            "notes": null,
+            "is_meta_admin": false,
+            "is_core_admin": false,
+            "is_cde_admin": false,
+            "is_finance_admin": false,
+            "is_event_admin": false,
+            "is_ml_admin": false,
+            "is_assembly_admin": false,
+            "is_cdelokal_admin": false,
+            "is_auditor": true,
+            "is_cde_realm": true,
+            "is_event_realm": true,
+            "is_ml_realm": true,
+            "is_assembly_realm": true,
+            "is_member": true,
+            "is_searchable": true,
+            "is_archived": false,
+            "is_purged": false,
+            "display_name": "Katarina",
+            "given_names": "Katarina",
+            "family_name": "Kassenprüfer",
+            "title": null,
+            "name_supplement":  null,
+            "gender": 1,
+            "birthday": "1999-12-31",
+            "telephone": null,
+            "mobile": null,
+            "address_supplement": null,
+            "address": null,
+            "postal_code":  null,
+            "location": null,
+            "country": "DE",
+            "birth_name":  null,
+            "address_supplement2": null,
+            "address2": null,
+            "postal_code2": null,
+            "location2": null,
+            "country2": null,
+            "weblink": null,
+            "specialisation": null,
+            "affiliation": null,
+            "timeline": null,
+            "interests": null,
+            "free_form": null,
+            "balance": "5.00",
+            "decided_search": true,
+            "trial_member": false,
+            "bub_search": true,
+            "foto": null,
+            "paper_expuls": true
+        },
+        {
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2701,7 +2798,6 @@
             "paper_expuls": true
         },
         {
-            "id": 22,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2763,7 +2859,6 @@
             "paper_expuls": true
         },
         {
-            "id": 23,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2825,7 +2920,6 @@
             "paper_expuls": true
         },
         {
-            "id": 24,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2887,7 +2981,6 @@
             "paper_expuls": true
         },
         {
-            "id": 25,
             "submitted_by": 1,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -2949,7 +3042,6 @@
             "paper_expuls": null
         },
         {
-            "id": 26,
             "submitted_by": 100,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -3011,7 +3103,6 @@
             "paper_expuls": true
         },
         {
-            "id": 27,
             "submitted_by": 100,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -3073,7 +3164,6 @@
             "paper_expuls": true
         },
         {
-            "id": 28,
             "submitted_by": 100,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -3135,7 +3225,6 @@
             "paper_expuls": true
         },
         {
-            "id": 29,
             "submitted_by": 100,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -3197,7 +3286,6 @@
             "paper_expuls": true
         },
         {
-            "id": 30,
             "submitted_by": 100,
             "reviewed_by": null,
             "ctime": "---now---",
@@ -3259,7 +3347,6 @@
             "paper_expuls": true
         },
         {
-            "id": 31,
             "submitted_by": 100,
             "reviewed_by": null,
             "ctime": "---now---",
