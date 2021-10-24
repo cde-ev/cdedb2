@@ -20,7 +20,7 @@ from cdedb.common import (
     COURSE_TRACK_FIELDS, EVENT_FIELD_SPEC, EVENT_PART_FIELDS, FEE_MODIFIER_FIELDS,
     FIELD_DEFINITION_FIELDS, CdEDBObject, CdEDBObjectMap, CdEDBOptionalMap,
     DefaultReturnCode, DeletionBlockers, PathLike, PrivilegeError, PsycoJson,
-    RequestState, mixed_existence_sorter, n_, unwrap,
+    RequestState, mixed_existence_sorter, n_, now, unwrap,
 )
 from cdedb.validation import parse_date, parse_datetime
 
@@ -80,6 +80,7 @@ class EventLowLevelBackend(AbstractBackend):
             "submitted_by": rs.user.persona_id,
             "persona_id": persona_id,
             "change_note": change_note,
+            "ctime": now(),
         }
         return self.sql_insert(rs, "event.log", data)
 
