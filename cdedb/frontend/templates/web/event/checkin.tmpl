@@ -37,8 +37,8 @@
                 <form action="{{ cdedblink('event/checkin') }}" method="GET" id="checkinfilterform"
                           aria-label="{% trans %}Filter{% endtrans %}">
                     {% trans %}Show only participants in parts:{% endtrans %}
-                    {{ util.input_checkboxes(name="part_ids", slice=6,
-                        entries=ambience['event']['parts']|keydictsort(EntitySorter.event_part)|dict_entries('id', 'shortname')) }}
+                    {{ util.input_checkboxes(name="part_ids", slice=4,
+                        entries=ambience['event']['parts']|keydictsort(EntitySorter.event_part)|dict_entries('id', 'title')) }}
                     {{ util.input_submit(label=gettext("Go!"), icon="filter") }}
                 </form>
             </div>
