@@ -518,11 +518,11 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("member", modi={"POST"})
     def signup(self, rs: RequestState, assembly_id: int) -> Response:
         """Join an assembly."""
+        if rs.has_validation_errors():
+            return self.show_assembly(rs, assembly_id)
         if now() > rs.ambience['assembly']['signup_end']:
             rs.notify("warning", n_("Signup already ended."))
             return self.redirect(rs, "assembly/show_assembly")
-        if rs.has_validation_errors():
-            return self.show_assembly(rs, assembly_id)
         self.process_signup(rs, assembly_id)
         return self.redirect(rs, "assembly/show_assembly")
 
@@ -532,12 +532,12 @@ class AssemblyFrontend(AbstractUserFrontend):
     def external_signup(self, rs: RequestState, assembly_id: int,
                         persona_id: CdedbID) -> Response:
         """Add an external participant to an assembly."""
-        if now() > rs.ambience['assembly']['signup_end']:
-            rs.notify("warning", n_("Signup already ended."))
-            return self.redirect(rs, "assembly/list_attendees")
         if rs.has_validation_errors():
             # Shortcircuit for invalid id
             return self.list_attendees(rs, assembly_id)
+        if now() > rs.ambience['assembly']['signup_end']:
+            rs.notify("warning", n_("Signup already ended."))
+            return self.redirect(rs, "assembly/list_attendees")
         if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):
             rs.append_validation_error(
                 ('persona_id',
@@ -901,6 +901,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         """Show a vote in a ballot of an old assembly by providing secret."""
         if (rs.ambience["assembly"]["is_active"]
                 or not rs.ambience["ballot"]["is_tallied"]):
+            rs.ignore_validation_errors()
             return self.show_ballot(rs, assembly_id, ballot_id)
         if rs.has_validation_errors():
             return self.show_ballot_result(rs, assembly_id, ballot_id)

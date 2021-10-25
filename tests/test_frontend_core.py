@@ -1307,9 +1307,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['archivepersonaform']
         f['ack_delete'].checked = True
         self.submit(f, check_notification=False)
-        self.assertValidationError(
-            "note", "Darf nicht leer sein",
-            notification="Archivierungsnotiz muss angegeben werden.")
+        self.assertValidationError("note", "Darf nicht leer sein")
         self.assertTitle("Charly Clown")
         self.assertNonPresence("Der Benutzer ist archiviert.")
         self.assertPresence("Zirkusstadt", div='address')
@@ -1737,6 +1735,9 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesisapprovalform']
         self.submit(f)
         link = self.fetch_link()
+        self.submit(f, check_notification=False)
+        self.assertPresence("Emailadresse bereits vergeben.", div="notifications")
+        self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
         self.logout()
         self.get(link)
         self.assertTitle("Neues Passwort setzen")

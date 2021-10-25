@@ -3349,6 +3349,8 @@ class EventFrontend(AbstractUserFrontend):
     @access("event", modi={"POST"})
     def register(self, rs: RequestState, event_id: int) -> Response:
         """Register for an event."""
+        if rs.has_validation_errors():
+            return self.register_form(rs, event_id)
         if not rs.ambience['event']['is_open']:
             rs.notify("error", n_("Registration not open."))
             return self.redirect(rs, "event/show_event")
@@ -3506,6 +3508,8 @@ class EventFrontend(AbstractUserFrontend):
         Participants are not able to change for which parts they applied on
         purpose. For this they have to communicate with the orgas.
         """
+        if rs.has_validation_errors():
+            return self.amend_registration_form(rs, event_id)
         registration_id = unwrap(self.eventproxy.list_registrations(
             rs, event_id, persona_id=rs.user.persona_id).keys())
         if not registration_id:
@@ -3594,7 +3598,7 @@ class EventFrontend(AbstractUserFrontend):
         """
         kind = const.QuestionnaireUsages.registration
         code = self._set_questionnaire(rs, event_id, kind)
-        if code is None:
+        if rs.has_validation_errors() or code is None:
             return self.configure_registration_form(rs, event_id)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/configure_registration_form")
@@ -3610,7 +3614,7 @@ class EventFrontend(AbstractUserFrontend):
         """
         kind = const.QuestionnaireUsages.additional
         code = self._set_questionnaire(rs, event_id, kind)
-        if code is None:
+        if rs.has_validation_errors() or code is None:
             return self.configure_additional_questionnaire_form(rs, event_id)
         self.notify_return_code(rs, code)
         return self.redirect(
@@ -3707,6 +3711,8 @@ class EventFrontend(AbstractUserFrontend):
         Save data submitted in the additional questionnaire.
         Note that questionnaire rows may also be present during registration.
         """
+        if rs.has_validation_errors():
+            return self.additional_questionnaire_form(rs, event_id, internal=True)
         registration_id = self.eventproxy.list_registrations(
             rs, event_id, persona_id=rs.user.persona_id)
         if not registration_id:
@@ -3725,8 +3731,7 @@ class EventFrontend(AbstractUserFrontend):
         params = self._questionnaire_params(rs, const.QuestionnaireUsages.additional)
         data = request_extractor(rs, params)
         if rs.has_validation_errors():
-            return self.additional_questionnaire_form(
-                rs, event_id, internal=True)
+            return self.additional_questionnaire_form(rs, event_id, internal=True)
 
         change_note = "Fragebogen durch Teilnehmer bearbeitet."
         code = self.eventproxy.set_registration(rs,
@@ -5760,8 +5765,9 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard(check_offline=True)
     def lock_event(self, rs: RequestState, event_id: int) -> Response:
         """Lock an event for offline usage."""
-        code = self.eventproxy.lock_event(rs, event_id)
-        self.notify_return_code(rs, code)
+        if not rs.has_validation_errors():
+            code = self.eventproxy.lock_event(rs, event_id)
+            self.notify_return_code(rs, code)
         return self.redirect(rs, "event/show_event")
 
     @access("event", modi={"POST"})
@@ -5806,6 +5812,7 @@ class EventFrontend(AbstractUserFrontend):
         the past-event stuff generally resides in the cde realm.
         """
         if rs.ambience['event']['is_archived']:
+            rs.ignore_validation_errors()
             rs.notify("warning", n_("Event already archived."))
             return self.redirect(rs, "event/show_event")
         if not ack_archive:

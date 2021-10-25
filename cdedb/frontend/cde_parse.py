@@ -170,7 +170,7 @@ class CdEParseMixin(CdEBaseFrontend):
 
         return self.parse_statement_form(rs, data, params)
 
-    @access("finance_admin", modi={"POST"})
+    @access("finance_admin", modi={"POST"}, check_anti_csrf=False)
     @REQUESTdata("count", "start", "end", "timestamp", "validate", "event",
                  "membership", "excel", "gnucash", "ignore_warnings")
     def parse_download(self, rs: RequestState, count: int, start: datetime.date,
