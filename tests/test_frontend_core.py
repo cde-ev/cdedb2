@@ -1563,13 +1563,21 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Bereichsänderung für Nina Neubauer")
         f = self.response.forms['promotionform']
+        f['pevent_id'] = 1
         f['trial_member'].checked = True
         f['change_note'] = "Per Vorstandsbeschluss aufgenommen."
+        self.submit(f, check_notification=False)
+        f = self.response.forms['promotionform']
+        f['pcourse_id'] = 1
+        f['is_instructor'] = True
         self.submit(f)
         self.assertTitle("Nina Neubauer")
         self.assertPresence("0,00 €", div='balance')
         self.assertPresence("CdE-Mitglied", div="cde-membership")
         self.assertPresence("Probemitgliedschaft", div="cde-membership")
+        self.assertPresence("PfingstAkademie", div="past-events")
+        self.assertPresence("Swish", div="past-events")
+        self.assertPresence("Kursleiter", div="past-events")
 
         # check for correct welcome mail
         mail = self.fetch_mail_content()

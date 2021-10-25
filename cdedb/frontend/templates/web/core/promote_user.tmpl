@@ -102,7 +102,7 @@
                             nulloption=nbsp, label=gettext("Past Event")) }}
                     {% if values.get('pevent_id') %}
                         {{ util.form_input_select(
-                                name='pcourse_id', entries=past_courses|keydictsort(EntitySorter.past_course),
+                                name='pcourse_id', entries=past_courses.items(), sort=True,
                                 nulloption=nbsp, label=gettext("Course"), defaultvalue='') }}
                     {% else %}
                         {# Pass in a sentinel value, so we know, there was no past event selected before. #}
