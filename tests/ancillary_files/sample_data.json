@@ -5106,7 +5106,7 @@
             "title": "Ich bin unter 13 Jahre alt.",
             "info": null,
             "input_size": null,
-            "readonly": null,
+            "readonly": false,
             "default_value": null,
             "kind": 1
         },

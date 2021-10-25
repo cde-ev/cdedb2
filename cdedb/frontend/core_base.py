@@ -1473,13 +1473,22 @@ class CoreBaseFrontend(AbstractFrontend):
         if target_realm and rs.ambience['persona']['is_{}_realm'.format(target_realm)]:
             rs.notify("warning", n_("No promotion necessary."))
             return self.redirect_show_user(rs, persona_id)
-        return self.render(rs, "promote_user")
+        past_events = self.pasteventproxy.list_past_events(rs)
+        past_courses = {}
+        if pevent_id := rs.values.get('pevent_id'):
+            past_courses = self.pasteventproxy.list_past_courses(rs, pevent_id)
+        return self.render(rs, "promote_user", {
+            "past_events": past_events, "past_courses": past_courses,
+        })
 
     @access("core_admin", modi={"POST"})
     @REQUESTdatadict(*CDE_TRANSITION_FIELDS)
-    @REQUESTdata("target_realm", "change_note")
+    @REQUESTdata("target_realm", "change_note", "pevent_id", "is_orga", "is_instructor",
+                 "pcourse_id")
     def promote_user(self, rs: RequestState, persona_id: int, change_note: str,
-                     target_realm: vtypes.Realm, data: CdEDBObject) -> Response:
+                     target_realm: vtypes.Realm, pevent_id: Optional[int],
+                     is_orga: bool, is_instructor: bool,
+                     pcourse_id: Optional[int], data: CdEDBObject) -> Response:
         """Add a new realm to the users ."""
         for key in tuple(k for k in data.keys() if not data[k]):
             # remove irrelevant keys, due to the possible combinations it is
@@ -1507,12 +1516,21 @@ class CoreBaseFrontend(AbstractFrontend):
             data['is_{}_realm'.format(realm)] = True
         data = check(rs, vtypes.Persona, data, transition=True)
         if rs.has_validation_errors():
-            return self.promote_user_form(  # type: ignore
-                rs, persona_id, internal=True)
+            return self.promote_user_form(
+                rs, persona_id, target_realm=target_realm, internal=True)
+        if pevent_id is not None:
+            # Show the form again, if past event was selected for the first time.
+            if pcourse_id == -1:
+                return self.promote_user_form(
+                    rs, persona_id, target_realm=target_realm, internal=True)
         assert data is not None
         code = self.coreproxy.change_persona_realms(rs, data, change_note)
         self.notify_return_code(rs, code)
         if code > 0 and target_realm == "cde":
+            if pevent_id is not None:
+                self.pasteventproxy.add_participant(
+                    rs, pevent_id, pcourse_id, persona_id,
+                    is_instructor=is_instructor, is_orga=is_orga)
             persona = self.coreproxy.get_total_persona(rs, persona_id)
             meta_info = self.coreproxy.get_meta_info(rs)
             self.do_mail(rs, "welcome",

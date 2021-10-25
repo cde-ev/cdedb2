@@ -218,6 +218,15 @@
                                     aclass="btn btn-xs btn-warning") }}
                         {% endif %}
                     </dd>
+                    {% if data['id'] == user.persona_id and not data['is_cde_realm'] %}
+                        <dt></dt>
+                        <dd class="text-info">
+                            {{ util.make_icon('info-circle') }}
+                            {% trans mailto=util.href(util.mailto(MANAGEMENT_ADDRESS), MANAGEMENT_ADDRESS) %}
+                                To request an upgrade to a member account, contact {{ mailto }}.
+                            {% endtrans %}
+                        </dd>
+                    {% endif %}
 
                     <dt>{% trans %}Admin Privileges{% endtrans %}</dt>
                     <dd id="admin-realms">
@@ -431,7 +440,8 @@
         {% endif %}
 
         {% if past_events %}
-            <h4 id="past-events" class="heading-underline">{% trans %}Past Events{% endtrans %}</h4>
+            <div id="past-events">
+            <h4 class="heading-underline">{% trans %}Past Events{% endtrans %}</h4>
             <table class="table table-hover past-event-table">
             <tbody>
                 {% for pevent_id, pevent in past_events|keydictsort(EntitySorter.past_event, reverse=True) %}
@@ -461,6 +471,7 @@
                 {% endfor %}
             </tbody>
             </table>
+            </div>
         {% endif %}
 
         {% if is_relative_admin_view and data["is_cde_realm"] and not CDEDB_OFFLINE_DEPLOYMENT

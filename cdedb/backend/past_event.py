@@ -501,7 +501,7 @@ class PastEventBackend(AbstractBackend):
                     pcourse['pevent_id'], change_note=pcourse['title'])
         return ret
 
-    @access("cde_admin", "event_admin")
+    @access("core_admin", "cde_admin", "event_admin")
     def add_participant(self, rs: RequestState, pevent_id: int,
                         pcourse_id: Optional[int], persona_id: int,
                         is_instructor: bool = False, is_orga: bool = False
@@ -535,7 +535,7 @@ class PastEventBackend(AbstractBackend):
                                     pevent_id, persona_id=persona_id)
         return ret
 
-    @access("cde_admin", "event_admin")
+    @access("core_admin", "cde_admin", "event_admin")
     def remove_participant(self, rs: RequestState, pevent_id: int,
                            pcourse_id: Optional[int], persona_id: int
                            ) -> DefaultReturnCode:
