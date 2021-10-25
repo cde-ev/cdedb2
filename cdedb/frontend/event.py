@@ -3682,27 +3682,6 @@ class EventFrontend(AbstractUserFrontend):
             'add_questionnaire': add_questionnaire,
             'preview': preview})
 
-    def _questionnaire_params(self, rs: RequestState, kind: const.QuestionnaireUsages
-                              ) -> vtypes.TypeMapping:
-        """Helper to construct a TypeMapping to extract questionnaire data."""
-        questionnaire = unwrap(self.eventproxy.get_questionnaire(
-            rs, rs.ambience['event']['id'], kinds=(kind,)))
-
-        def get_validator(row: CdEDBObject) -> Tuple[str, Type[Any]]:
-            field = rs.ambience['event']['fields'][row['field_id']]
-            type_ = VALIDATOR_LOOKUP[field['kind'].name]
-            if kind == const.QuestionnaireUsages.additional:
-                type_ = Optional[type_]  # type: ignore[assignment]
-            elif kind == const.QuestionnaireUsages.registration:
-                if field['kind'] == const.FieldDatatypes.str:
-                    type_ = Optional[type_]  # type: ignore[assignment]
-            return (field['field_name'], type_)
-
-        return dict(
-            get_validator(entry) for entry in questionnaire
-            if entry['field_id'] and not entry['readonly']
-        )
-
     @access("event", modi={"POST"})
     def additional_questionnaire(self, rs: RequestState, event_id: int
                                  ) -> Response:
@@ -3738,6 +3717,27 @@ class EventFrontend(AbstractUserFrontend):
             {'id': registration_id, 'fields': data}, change_note)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/additional_questionnaire_form")
+
+    def _questionnaire_params(self, rs: RequestState, kind: const.QuestionnaireUsages
+                              ) -> vtypes.TypeMapping:
+        """Helper to construct a TypeMapping to extract questionnaire data."""
+        questionnaire = unwrap(self.eventproxy.get_questionnaire(
+            rs, rs.ambience['event']['id'], kinds=(kind,)))
+
+        def get_validator(row: CdEDBObject) -> Tuple[str, Type[Any]]:
+            field = rs.ambience['event']['fields'][row['field_id']]
+            type_ = VALIDATOR_LOOKUP[field['kind'].name]
+            if kind == const.QuestionnaireUsages.additional:
+                type_ = Optional[type_]  # type: ignore[assignment]
+            elif kind == const.QuestionnaireUsages.registration:
+                if field['kind'] == const.FieldDatatypes.str:
+                    type_ = Optional[type_]  # type: ignore[assignment]
+            return (field['field_name'], type_)
+
+        return dict(
+            get_validator(entry) for entry in questionnaire
+            if entry['field_id'] and not entry['readonly']
+        )
 
     @staticmethod
     def process_questionnaire_input(rs: RequestState, num: int,
