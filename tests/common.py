@@ -263,6 +263,12 @@ class BasicTest(unittest.TestCase):
 
         "SELECT <keys> FROM <table> WHERE id = ANY(<ids>)"
 
+        if `keys` is None:
+        "SELECT * FROM <table> WHERE id = ANY(<ids>)"
+
+        if `ids` is None:
+        "SELECT <keys> FROM <table>"
+
         For some fields of some tables we perform a type conversion. These
         should be added as necessary to ease comparison against backend results.
 
