@@ -1473,7 +1473,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         for candidate_id, candidate in candidates.items():
             if candidate and candidate['shortname'] in shortnames:
                 rs.append_validation_error(
-                    (f"shortname_{candidate_id}",
+                    (drow_name("shortname", candidate_id),
                      ValueError(n_("Duplicate shortname.")))
                 )
             if candidate:
