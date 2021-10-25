@@ -1529,11 +1529,20 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Bereichsänderung für Emilia E. Eventis")
         f = self.response.forms['promotionform']
         self.submit(f, check_notification=False)
+        f = self.response.forms['promotionform']
+        f['pevent_id'] = 2
+        self.assertPresence("Die Kursauswahl wird angezeigt, nachdem")
+        f['is_orga'] = True
         self.assertValidationError('change_note', "Darf nicht leer sein.")
-        f['change_note'] = change_note = "Hat an einer Akademie teilgenommen."
+        f['change_note'] = change_note = "Hat eine Akademie organisiert."
+        self.submit(f, check_notification=False)
+        f = self.response.forms['promotionform']
+        self.assertNonPresence("Die Kursauswahl wird angezeigt, nachdem")
+        f['pcourse_id'] = ''
         self.submit(f)
         self.assertTitle("Emilia E. Eventis")
         self.assertPresence("0,00 €", div='balance')
+        self.assertPresence("Geburtstagsfete (Orga)", div="past-events")
         self.assertCheckbox(True, "paper_expuls_checkbox")
         self.assertNonPresence("CdE-Mitglied", div="cde-membership")
         self.assertNonPresence("Probemitgliedschaft", div="cde-membership")
@@ -1550,13 +1559,21 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Bereichsänderung für Nina Neubauer")
         f = self.response.forms['promotionform']
+        f['pevent_id'] = 1
         f['trial_member'].checked = True
         f['change_note'] = "Per Vorstandsbeschluss aufgenommen."
+        self.submit(f, check_notification=False)
+        f = self.response.forms['promotionform']
+        f['pcourse_id'] = 1
+        f['is_instructor'] = True
         self.submit(f)
         self.assertTitle("Nina Neubauer")
         self.assertPresence("0,00 €", div='balance')
         self.assertPresence("CdE-Mitglied", div="cde-membership")
         self.assertPresence("Probemitgliedschaft", div="cde-membership")
+        self.assertPresence("PfingstAkademie", div="past-events")
+        self.assertPresence("Swish", div="past-events")
+        self.assertPresence("Kursleiter", div="past-events")
 
         # check for correct welcome mail
         mail = self.fetch_mail_content()

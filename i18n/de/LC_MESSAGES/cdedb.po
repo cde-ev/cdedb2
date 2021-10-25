@@ -6360,6 +6360,9 @@ msgstr "Interessen"
 msgid "Course choices will be displayed after first search."
 msgstr "Kursauswahl wird nach der ersten Suche angezeigt."
 
+msgid "Course choices will be displayed after selecting an event and submitting."
+msgstr "Die Kursauswahl wird angezeigt, nachdem eine Veranstaltung ausgewählt und das Formular abgeschickt wurde."
+
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:103
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:66
 #: cdedb/frontend/templates/web/core/change_user.tmpl:55
@@ -16491,3 +16494,7 @@ msgstr "Ungültige Eingabe für Enumeration %(enum)s."
 #: cdedb/validation.py:4617
 msgid "SubscriptionState.none is not written into the database."
 msgstr "SubscriptionState.none wird nicht in die Datenbank geschrieben."
+
+
+msgid "To request an upgrade to a member account, contact %(mailto)s."
+msgstr "Um ein Upgrade auf einen Mitgliederaccount zu beantragen, kontaktiere %(mailto)s."

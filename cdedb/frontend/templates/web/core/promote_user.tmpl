@@ -48,7 +48,7 @@
                         small=True) }}
                 {{ util.form_input_checkboxes(name="target_realm", entries=myentries, label=gettext("Target Realm"),
                         radio=True, small=True) }}
-                {{ util.form_input_submit(label=gettext("Confirm"), small=True) }}
+                {{ util.form_input_submit(label=gettext("Continue"), small=True, icon="pen") }}
             </form>
 
         {% else %}
@@ -97,6 +97,22 @@
                 {% endif %}
                 {% if not p['is_cde_realm'] and values['target_realm'] == 'cde'  %}
                     {{ util.form_input_checkbox(name="trial_member", label=gettext("Grant Trialmembership")) }}
+                    {{ util.form_input_select(
+                            name='pevent_id', entries=past_events.items(), sort=True,
+                            nulloption=nbsp, label=gettext("Past Event")) }}
+                    {% if values.get('pevent_id') %}
+                        {{ util.form_input_select(
+                                name='pcourse_id', entries=past_courses.items(), sort=True,
+                                nulloption=nbsp, label=gettext("Course"), defaultvalue='') }}
+                    {% else %}
+                        {# Pass in a sentinel value, so we know, there was no past event selected before. #}
+                        {{ util.input_hidden(name='pcourse_id', value=-1) }}
+                        {{ util.form_input_static(
+                                aclass='text-info', icon='info-circle', label=gettext("Course"),
+                                value=gettext("Course choices will be displayed after selecting an event and submitting.")) }}
+                    {% endif %}
+                    {{ util.form_input_checkbox(name='is_orga', label=gettext("Orga")) }}
+                    {{ util.form_input_checkbox(name='is_instructor', label=gettext("Instructor")) }}
                 {% endif %}
 
                 <div class="panel panel-primary">
