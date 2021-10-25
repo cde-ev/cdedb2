@@ -19,7 +19,7 @@ import tempfile
 from collections import Counter, OrderedDict
 from typing import (
     Any, Callable, Collection, Dict, List, Mapping, NamedTuple, Optional, Set, Tuple,
-    Union, cast,
+    Type, Union, cast,
 )
 
 import werkzeug.exceptions
@@ -3231,9 +3231,8 @@ class EventFrontend(AbstractUserFrontend):
             'course_choices': course_choices, 'semester_fee': semester_fee,
             'reg_questionnaire': reg_questionnaire, 'preview': preview})
 
-    @staticmethod
     def process_registration_input(
-            rs: RequestState, event: CdEDBObject, courses: CdEDBObjectMap,
+            self, rs: RequestState, event: CdEDBObject, courses: CdEDBObjectMap,
             reg_questionnaire: Collection[CdEDBObject],
             parts: CdEDBObjectMap = None) -> CdEDBObject:
         """Helper to handle input by participants.
@@ -3331,13 +3330,7 @@ class EventFrontend(AbstractUserFrontend):
                 )
             reg_tracks[track_id]['choices'] = all_choices
 
-        f = lambda entry: rs.ambience['event']['fields'][entry['field_id']]
-        params: TypeMapping = {
-            f(entry)['field_name']: VALIDATOR_LOOKUP[
-                const.FieldDatatypes(f(entry)['kind']).name]
-            for entry in reg_questionnaire
-            if entry['field_id'] and not entry['readonly']
-        }
+        params = self._questionnaire_params(rs, const.QuestionnaireUsages.additional)
         field_data = request_extractor(rs, params)
 
         registration = {
@@ -3682,6 +3675,27 @@ class EventFrontend(AbstractUserFrontend):
             'add_questionnaire': add_questionnaire,
             'preview': preview})
 
+    def _questionnaire_params(self, rs: RequestState, kind: const.QuestionnaireUsages
+                              ) -> TypeMapping:
+        """Helper to construct a TypeMapping to extract questionnaire data."""
+        questionnaire = unwrap(self.eventproxy.get_questionnaire(
+            rs, rs.ambience['event']['id'], kinds=(kind,)))
+
+        def get_validator(row: CdEDBObject) -> Tuple[str, Type[Any]]:
+            field = rs.ambience['event']['fields'][row['field_id']]
+            type_ = VALIDATOR_LOOKUP[field['kind'].name]
+            if kind == const.QuestionnaireUsages.additional:
+                type_ = Optional[type_]  # type: ignore[assignment]
+            elif kind == const.QuestionnaireUsages.registration:
+                if field['kind'] == const.FieldDatatypes.str:
+                    type_ = Optional[type_]  # type: ignore[assignment]
+            return (field['field_name'], type_)
+
+        return dict(
+            get_validator(entry) for entry in questionnaire
+            if entry['field_id'] and not entry['readonly']
+        )
+
     @access("event", modi={"POST"})
     def additional_questionnaire(self, rs: RequestState, event_id: int
                                  ) -> Response:
@@ -3705,15 +3719,7 @@ class EventFrontend(AbstractUserFrontend):
         if rs.ambience['event']['is_archived']:
             rs.notify("error", n_("Event is already archived."))
             return self.redirect(rs, "event/show_event")
-        add_questionnaire = unwrap(self.eventproxy.get_questionnaire(
-            rs, event_id, kinds=(const.QuestionnaireUsages.additional,)))
-        f = lambda entry: rs.ambience['event']['fields'][entry['field_id']]
-        params: TypeMapping = {
-            f(entry)['field_name']: Optional[  # type: ignore
-                VALIDATOR_LOOKUP[const.FieldDatatypes(f(entry)['kind']).name]]  # noqa: F821
-            for entry in add_questionnaire
-            if entry['field_id'] and not entry['readonly']
-        }
+        params = self._questionnaire_params(rs, const.QuestionnaireUsages.additional)
         data = request_extractor(rs, params)
         if rs.has_validation_errors():
             return self.additional_questionnaire_form(
