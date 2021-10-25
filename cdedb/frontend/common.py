@@ -2248,6 +2248,8 @@ def process_dynamic_input(
         then one dynamic input table is present on the same page.
     """
     additional = additional or dict()
+    # this is the used prefix for the validation
+    field_prefix = f"{prefix}_" if prefix else ""
 
     delete_spec = {drow_delete(anid, prefix): bool for anid in existing}
     delete_flags = request_extractor(rs, delete_spec)
@@ -2276,7 +2278,7 @@ def process_dynamic_input(
             entry["id"] = anid
             entry.update(additional)
             # apply the promised validation
-            ret[anid] = check_validation(rs, type_, entry, field_prefix=f"{prefix}_",
+            ret[anid] = check_validation(rs, type_, entry, field_prefix=field_prefix,
                                          field_postfix=f"_{anid}")  # type: ignore
 
     # extract the new entries which shall be created
@@ -2292,7 +2294,7 @@ def process_dynamic_input(
                 key: data[drow_name(key, -marker, prefix)] for key in spec}
             entry.update(additional)
             ret[-marker] = check_validation(
-                rs, type_, entry, field_prefix=f"{prefix}_",
+                rs, type_, entry, field_prefix=field_prefix,
                 field_postfix=f"_{-marker}", creation=True)  # type: ignore
         else:
             break
