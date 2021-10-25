@@ -1560,6 +1560,12 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         f = self.response.forms['fieldsummaryform']
         f['create_-1'].checked = True
+        f['field_name_-1'] = "anzahl_kissen"
+        f['kind_-1'] = const.FieldDatatypes.int
+        f['association_-1'] = const.FieldAssociations.registration
+        self.submit(f)
+        f = self.response.forms['fieldsummaryform']
+        f['create_-1'].checked = True
         f['field_name_-1'] = "eats_meats"
         f['kind_-1'] = const.FieldDatatypes.str
         f['association_-1'] = const.FieldAssociations.registration
@@ -1609,13 +1615,18 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         f = self.response.forms['configureregistrationform']
         f['create_-1'].checked = True
-        f['title_-1'] = "Essgewohnheiten"
+        f['title_-1'] = "Anzahl an Kissen"
         f['field_id_-1'] = 1004
         self.submit(f)
         f = self.response.forms['configureregistrationform']
         f['create_-1'].checked = True
-        f['title_-1'] = "Dein Lieblingstag"
+        f['title_-1'] = "Essgewohnheiten"
         f['field_id_-1'] = 1005
+        self.submit(f)
+        f = self.response.forms['configureregistrationform']
+        f['create_-1'].checked = True
+        f['title_-1'] = "Dein Lieblingstag"
+        f['field_id_-1'] = 1006
         self.submit(f)
 
         self.traverse("Konfiguration")
@@ -1636,14 +1647,15 @@ etc;anything else""", f['entries_2'].value)
         f['plus_one'].checked = True
         self.assertPresence("Name des Partners", div="registrationquestionnaire")
         f['partner'] = ""
+        f['anzahl_kissen'] = ""
         self.assertPresence("Essgewohnheiten", div="registrationquestionnaire")
         f['eats_meats'] = "vegan"
         self.assertPresence("Dein Lieblingstag", div="registrationquestionnaire")
-        # f['favorite_day'] = now().date().isoformat()
         self.submit(f, check_notification=False)
         f = self.response.forms['registerform']
-        self.assertValidationError('partner', "Darf nicht leer sein.")
-        f['partner'] = "Antonai Akademieleitfaden"
+        self.assertValidationError(
+            'anzahl_kissen', "Ungültige Eingabe für eine Ganzzahl.")
+        f['anzahl_kissen'] = 3
         self.assertValidationError('favorite_day', "Kein Datum gefunden.")
         f['favorite_day'] = now().date().isoformat()
         self.submit(f)
