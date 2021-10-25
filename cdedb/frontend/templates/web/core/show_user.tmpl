@@ -218,6 +218,15 @@
                                     aclass="btn btn-xs btn-warning") }}
                         {% endif %}
                     </dd>
+                    {% if data['id'] == user.persona_id and not data['is_cde_realm'] %}
+                        <dt></dt>
+                        <dd class="text-info">
+                            {{ util.make_icon('info-circle') }}
+                            {% trans mailto=util.href(util.mailto(MANAGEMENT_ADDRESS), MANAGEMENT_ADDRESS) %}
+                                To request an upgrade to a member account, contact {{ mailto }}.
+                            {% endtrans %}
+                        </dd>
+                    {% endif %}
 
                     <dt>{% trans %}Admin Privileges{% endtrans %}</dt>
                     <dd id="admin-realms">

@@ -16477,3 +16477,7 @@ msgstr "Ungültige Eingabe für Enumeration %(enum)s."
 #: cdedb/validation.py:4617
 msgid "SubscriptionState.none is not written into the database."
 msgstr "SubscriptionState.none wird nicht in die Datenbank geschrieben."
+
+
+msgid "To request an upgrade to a member account, contact %(mailto)s."
+msgstr "Um ein Upgrade auf einen Mitgliedsaccount zu beantragen, kontaktiere %(mailto)s."
