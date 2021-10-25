@@ -1261,9 +1261,7 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.render(rs, "change_privileges")
 
     @access("meta_admin", modi={"POST"})
-    @REQUESTdata("is_meta_admin", "is_core_admin", "is_cde_admin",
-                 "is_finance_admin", "is_event_admin", "is_ml_admin",
-                 "is_assembly_admin", "is_cdelokal_admin", "is_auditor", "notes")
+    @REQUESTdata(*ADMIN_KEYS, "notes")
     def change_privileges(self, rs: RequestState, persona_id: int,
                           is_meta_admin: bool, is_core_admin: bool,
                           is_cde_admin: bool, is_finance_admin: bool,
