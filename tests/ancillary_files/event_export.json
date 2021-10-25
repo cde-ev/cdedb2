@@ -1,7 +1,7 @@
 {
     "event.questionnaire_rows": {
         "1": {
-            "readonly": null,
+            "readonly": false,
             "event_id": 1,
             "info": null,
             "pos": 0,
