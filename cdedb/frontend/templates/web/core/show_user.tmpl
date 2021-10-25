@@ -430,7 +430,8 @@
         {% endif %}
 
         {% if past_events %}
-            <h4 id="past-events" class="heading-underline">{% trans %}Past Events{% endtrans %}</h4>
+            <div id="past-events">
+            <h4 class="heading-underline">{% trans %}Past Events{% endtrans %}</h4>
             <table class="table table-hover past-event-table">
             <tbody>
                 {% for pevent_id, pevent in past_events|keydictsort(EntitySorter.past_event, reverse=True) %}
@@ -460,6 +461,7 @@
                 {% endfor %}
             </tbody>
             </table>
+            </div>
         {% endif %}
 
         {% if is_relative_admin_view and data["is_cde_realm"] and not CDEDB_OFFLINE_DEPLOYMENT

@@ -1531,11 +1531,22 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Bereichsänderung für Emilia E. Eventis")
         f = self.response.forms['promotionform']
         self.submit(f, check_notification=False)
+        f = self.response.forms['promotionform']
+        f['pevent_id'] = 2
+        f['is_orga'] = True
+        self.assertPresence("Ein Kurs kann angegeben werden, wenn eine Vergangene"
+                            " Veranstaltung eingetragen ist.")
         self.assertValidationError('change_note', "Darf nicht leer sein.")
-        f['change_note'] = change_note = "Hat an einer Akademie teilgenommen."
+        f['change_note'] = change_note = "Hat eine Akademie organisiert."
+        self.submit(f, check_notification=False)
+        f = self.response.forms['promotionform']
+        self.assertNonPresence("Ein Kurs kann angegeben werden, wenn eine Vergangene"
+                               " Veranstaltung eingetragen ist.")
+        f['pcourse_id'] = ''
         self.submit(f)
         self.assertTitle("Emilia E. Eventis")
         self.assertPresence("0,00 €", div='balance')
+        self.assertPresence("Geburtstagsfete (Orga)", div="past-events")
         self.assertCheckbox(True, "paper_expuls_checkbox")
         self.assertNonPresence("CdE-Mitglied", div="cde-membership")
         self.assertNonPresence("Probemitgliedschaft", div="cde-membership")
