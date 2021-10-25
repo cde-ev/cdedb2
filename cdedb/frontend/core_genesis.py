@@ -370,14 +370,17 @@ class CoreGenesisMixin(CoreBaseFrontend):
         This either creates a new account or declines account creation.
         """
         if rs.has_validation_errors():
-            return self.genesis_list_cases(rs)
+            return self.genesis_show_case(rs, genesis_case_id)
         case = rs.ambience['genesis_case']
         if (not self.is_admin(rs)
                 and "{}_admin".format(case['realm']) not in rs.user.roles):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+        if self.coreproxy.verify_existence(rs, case['username'], include_genesis=False):
+            rs.notify("error", n_("Email address already taken."))
+            return self.genesis_show_case(rs, genesis_case_id)
         if case['case_status'] != const.GenesisStati.to_review:
             rs.notify("error", n_("Case not to review."))
-            return self.genesis_list_cases(rs)
+            return self.genesis_show_case(rs, genesis_case_id)
         data = {
             'id': genesis_case_id,
             'case_status': case_status,

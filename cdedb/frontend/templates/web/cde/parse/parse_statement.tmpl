@@ -30,19 +30,31 @@
     <div class="batch-line-body">
         <div class="row">
             <div class="col-md-6">
-                {% for key in ("reference", "account", "statement_date", "amount", "account_holder", "posting", "iban",
-                               "t_id", "type_confidence", "persona_confidence", "event_confidence") %}
+                {% for key in transaction_keys %}
                     {{ util.input_hidden(name=key + t_id|string) }}
                 {% endfor %}
                 <ul>
                     <li>
                         {% trans %}Reference{% endtrans %}: {{ data["reference{}".format(t_id)] }}
                     </li>
+                    {% if data["other_references{}".format(t_id)] %}
+                    <li>
+                        {% trans %}Other References{% endtrans %}:
+                        <ul>
+                            {% for ref in data["other_references{}".format(t_id)].split(ref_sep) %}
+                                <li>{{ ref }}</li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                    {% endif %}
                     <li>
                         {% trans %}Statement Date{% endtrans %}: {{ data["statement_date{}".format(t_id)] }}
                     </li>
                     <li>
                         {% trans %}Amount{% endtrans %}: {{ data["amount{}".format(t_id)] }}
+                    </li>
+                    <li>
+                        {% trans %}Posting{% endtrans %}: {{ data["posting{}".format(t_id)] }}
                     </li>
                     <li>
                         {% trans %}Account holder{% endtrans %}: {{ data["account_holder{}".format(t_id)] }}

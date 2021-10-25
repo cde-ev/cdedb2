@@ -19,7 +19,7 @@ import tempfile
 from collections import Counter, OrderedDict
 from typing import (
     Any, Callable, Collection, Dict, List, Mapping, NamedTuple, Optional, Set, Tuple,
-    Union, cast,
+    Type, Union, cast,
 )
 
 import werkzeug.exceptions
@@ -56,7 +56,7 @@ from cdedb.query import (
 from cdedb.validation import (
     COURSE_COMMON_FIELDS, EVENT_EXPOSED_FIELDS, EVENT_PART_COMMON_FIELDS,
     EVENT_PART_CREATION_MANDATORY_FIELDS, LODGEMENT_COMMON_FIELDS,
-    PERSONA_FULL_EVENT_CREATION, filter_none,
+    PERSONA_FULL_EVENT_CREATION, QUESTIONNAIRE_ROW_MANDATORY_FIELDS, filter_none,
 )
 from cdedb.validationtypes import VALIDATOR_LOOKUP
 
@@ -248,17 +248,22 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "show_event", params)
 
     @access("anonymous")
-    def course_list(self, rs: RequestState, event_id: int) -> Response:
+    @REQUESTdata("track_ids")
+    def course_list(self, rs: RequestState, event_id: int,
+                    track_ids: Collection[int] = None) -> Response:
         """List courses from an event."""
         if (not rs.ambience['event']['is_course_list_visible']
                 and not (event_id in rs.user.orga or self.is_admin(rs))):
             rs.notify("warning", n_("Course list not published yet."))
             return self.redirect(rs, "event/show_event")
+        if rs.has_validation_errors() or not track_ids:
+            track_ids = rs.ambience['event']['tracks'].keys()
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = None
         if course_ids:
             courses = self.eventproxy.get_courses(rs, course_ids.keys())
-        return self.render(rs, "course_list", {'courses': courses})
+        return self.render(rs, "course_list",
+                           {'courses': courses, 'track_ids': track_ids})
 
     @access("event")
     @REQUESTdata("part_id", "sortkey", "reverse")
@@ -1815,6 +1820,10 @@ class EventFrontend(AbstractUserFrontend):
         This allows flexible filtering of the displayed registrations.
         """
         tracks = rs.ambience['event']['tracks']
+        if not tracks:
+            rs.ignore_validation_errors()
+            rs.notify("error", n_("Event without tracks forbids courses."))
+            return self.redirect(rs, 'event/course_stats')
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         all_reg_ids = self.eventproxy.list_registrations(rs, event_id)
@@ -3237,9 +3246,8 @@ class EventFrontend(AbstractUserFrontend):
             'course_choices': course_choices, 'semester_fee': semester_fee,
             'reg_questionnaire': reg_questionnaire, 'preview': preview})
 
-    @staticmethod
     def process_registration_input(
-            rs: RequestState, event: CdEDBObject, courses: CdEDBObjectMap,
+            self, rs: RequestState, event: CdEDBObject, courses: CdEDBObjectMap,
             reg_questionnaire: Collection[CdEDBObject],
             parts: CdEDBObjectMap = None) -> CdEDBObject:
         """Helper to handle input by participants.
@@ -3337,13 +3345,7 @@ class EventFrontend(AbstractUserFrontend):
                 )
             reg_tracks[track_id]['choices'] = all_choices
 
-        f = lambda entry: rs.ambience['event']['fields'][entry['field_id']]
-        params: vtypes.TypeMapping = {
-            f(entry)['field_name']: VALIDATOR_LOOKUP[
-                const.FieldDatatypes(f(entry)['kind']).name]
-            for entry in reg_questionnaire
-            if entry['field_id'] and not entry['readonly']
-        }
+        params = self._questionnaire_params(rs, const.QuestionnaireUsages.registration)
         field_data = request_extractor(rs, params)
 
         registration = {
@@ -3359,6 +3361,8 @@ class EventFrontend(AbstractUserFrontend):
     @access("event", modi={"POST"})
     def register(self, rs: RequestState, event_id: int) -> Response:
         """Register for an event."""
+        if rs.has_validation_errors():
+            return self.register_form(rs, event_id)
         if not rs.ambience['event']['is_open']:
             rs.notify("error", n_("Registration not open."))
             return self.redirect(rs, "event/show_event")
@@ -3516,6 +3520,8 @@ class EventFrontend(AbstractUserFrontend):
         Participants are not able to change for which parts they applied on
         purpose. For this they have to communicate with the orgas.
         """
+        if rs.has_validation_errors():
+            return self.amend_registration_form(rs, event_id)
         registration_id = unwrap(self.eventproxy.list_registrations(
             rs, event_id, persona_id=rs.user.persona_id).keys())
         if not registration_id:
@@ -3604,7 +3610,7 @@ class EventFrontend(AbstractUserFrontend):
         """
         kind = const.QuestionnaireUsages.registration
         code = self._set_questionnaire(rs, event_id, kind)
-        if code is None:
+        if rs.has_validation_errors() or code is None:
             return self.configure_registration_form(rs, event_id)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/configure_registration_form")
@@ -3620,7 +3626,7 @@ class EventFrontend(AbstractUserFrontend):
         """
         kind = const.QuestionnaireUsages.additional
         code = self._set_questionnaire(rs, event_id, kind)
-        if code is None:
+        if rs.has_validation_errors() or code is None:
             return self.configure_additional_questionnaire_form(rs, event_id)
         self.notify_return_code(rs, code)
         return self.redirect(
@@ -3630,10 +3636,7 @@ class EventFrontend(AbstractUserFrontend):
                            kind: const.QuestionnaireUsages
                            ) -> Optional[DefaultReturnCode]:
         """Deduplicated code to set questionnaire rows of one kind."""
-        other_kinds = set()
-        for x in const.QuestionnaireUsages:
-            if x != kind:
-                other_kinds.add(x)
+        other_kinds = set(const.QuestionnaireUsages) - {kind}
         old_questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, kinds=(kind,)))
         other_questionnaire = self.eventproxy.get_questionnaire(
@@ -3699,6 +3702,8 @@ class EventFrontend(AbstractUserFrontend):
         Save data submitted in the additional questionnaire.
         Note that questionnaire rows may also be present during registration.
         """
+        if rs.has_validation_errors():
+            return self.additional_questionnaire_form(rs, event_id, internal=True)
         registration_id = self.eventproxy.list_registrations(
             rs, event_id, persona_id=rs.user.persona_id)
         if not registration_id:
@@ -3714,25 +3719,37 @@ class EventFrontend(AbstractUserFrontend):
         if rs.ambience['event']['is_archived']:
             rs.notify("error", n_("Event is already archived."))
             return self.redirect(rs, "event/show_event")
-        add_questionnaire = unwrap(self.eventproxy.get_questionnaire(
-            rs, event_id, kinds=(const.QuestionnaireUsages.additional,)))
-        f = lambda entry: rs.ambience['event']['fields'][entry['field_id']]
-        params: vtypes.TypeMapping = {
-            f(entry)['field_name']: Optional[  # type: ignore
-                VALIDATOR_LOOKUP[const.FieldDatatypes(f(entry)['kind']).name]]  # noqa: F821
-            for entry in add_questionnaire
-            if entry['field_id'] and not entry['readonly']
-        }
+        params = self._questionnaire_params(rs, const.QuestionnaireUsages.additional)
         data = request_extractor(rs, params)
         if rs.has_validation_errors():
-            return self.additional_questionnaire_form(
-                rs, event_id, internal=True)
+            return self.additional_questionnaire_form(rs, event_id, internal=True)
 
         change_note = "Fragebogen durch Teilnehmer bearbeitet."
         code = self.eventproxy.set_registration(rs,
             {'id': registration_id, 'fields': data}, change_note)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/additional_questionnaire_form")
+
+    def _questionnaire_params(self, rs: RequestState, kind: const.QuestionnaireUsages
+                              ) -> vtypes.TypeMapping:
+        """Helper to construct a TypeMapping to extract questionnaire data."""
+        questionnaire = unwrap(self.eventproxy.get_questionnaire(
+            rs, rs.ambience['event']['id'], kinds=(kind,)))
+
+        def get_validator(row: CdEDBObject) -> Tuple[str, Type[Any]]:
+            field = rs.ambience['event']['fields'][row['field_id']]
+            type_ = VALIDATOR_LOOKUP[field['kind'].name]
+            if kind == const.QuestionnaireUsages.additional:
+                type_ = Optional[type_]  # type: ignore[assignment]
+            elif kind == const.QuestionnaireUsages.registration:
+                if field['kind'] == const.FieldDatatypes.str:
+                    type_ = Optional[type_]  # type: ignore[assignment]
+            return (field['field_name'], type_)
+
+        return dict(
+            get_validator(entry) for entry in questionnaire
+            if entry['field_id'] and not entry['readonly']
+        )
 
     @staticmethod
     def process_questionnaire_input(rs: RequestState, num: int,
@@ -3752,14 +3769,8 @@ class EventFrontend(AbstractUserFrontend):
         """
         del_flags = request_extractor(rs, {f"delete_{i}": bool for i in range(num)})
         deletes = {i for i in range(num) if del_flags['delete_{}'.format(i)]}
-        spec: vtypes.TypeMapping = {
-            'field_id': Optional[vtypes.ID],  # type: ignore
-            'title': Optional[str],  # type: ignore
-            'info': Optional[str],  # type: ignore
-            'input_size': Optional[int],  # type: ignore
-            'readonly': Optional[bool],  # type: ignore
-            'default_value': Optional[str],  # type: ignore
-        }
+        spec: vtypes.TypeMapping = dict(QUESTIONNAIRE_ROW_MANDATORY_FIELDS,
+                                        field_id=Optional[vtypes.ID])  # type: ignore[arg-type]
         marker = 1
         while marker < 2 ** 10:
             if not unwrap(request_extractor(rs, {f"create_-{marker}": bool})):
@@ -3831,7 +3842,8 @@ class EventFrontend(AbstractUserFrontend):
             if data[dv_key] is None or field_id is None:
                 data[dv_key] = None
                 continue
-            data[dv_key] = check_optional(rs, vtypes.ByFieldDatatype,
+            data[dv_key] = check_optional(
+                rs, vtypes.ByFieldDatatype,
                 data[dv_key], dv_key, kind=reg_fields[field_id]['kind'])
         questionnaire = {
             kind: list(
@@ -5469,7 +5481,7 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard(check_offline=True)
     @REQUESTdata("part_ids")
     def checkin_form(self, rs: RequestState, event_id: int,
-                     part_ids: Optional[vtypes.IntCSVList] = None) -> Response:
+                     part_ids: Collection[int] = None) -> Response:
         """Render form."""
         if rs.has_validation_errors() or not part_ids:
             parts = rs.ambience['event']['parts']
@@ -5503,14 +5515,14 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "checkin", {
             'registrations': registrations, 'personas': personas,
             'lodgements': lodgements, 'checkin_fields': checkin_fields,
-            'part_ids_param': ",".join(map(str, parts))
+            'part_ids': part_ids
         })
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
     @REQUESTdata("registration_id", "part_ids")
     def checkin(self, rs: RequestState, event_id: int, registration_id: vtypes.ID,
-                part_ids: Optional[vtypes.IntCSVList] = None) -> Response:
+                part_ids: Collection[int] = None) -> Response:
         """Check a participant in."""
         if rs.has_validation_errors():
             return self.checkin_form(rs, event_id)
@@ -5527,8 +5539,7 @@ class EventFrontend(AbstractUserFrontend):
         }
         code = self.eventproxy.set_registration(rs, new_reg, "Eingecheckt.")
         self.notify_return_code(rs, code)
-        params = {'part_ids': ",".join(map(str, part_ids))} if part_ids else None
-        return self.redirect(rs, 'event/checkin', params)
+        return self.redirect(rs, 'event/checkin', {'part_ids': part_ids})
 
     FIELD_REDIRECT = {
         const.FieldAssociations.registration: "event/registration_query",
@@ -5763,8 +5774,9 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard(check_offline=True)
     def lock_event(self, rs: RequestState, event_id: int) -> Response:
         """Lock an event for offline usage."""
-        code = self.eventproxy.lock_event(rs, event_id)
-        self.notify_return_code(rs, code)
+        if not rs.has_validation_errors():
+            code = self.eventproxy.lock_event(rs, event_id)
+            self.notify_return_code(rs, code)
         return self.redirect(rs, "event/show_event")
 
     @access("event", modi={"POST"})
@@ -5809,6 +5821,7 @@ class EventFrontend(AbstractUserFrontend):
         the past-event stuff generally resides in the cde realm.
         """
         if rs.ambience['event']['is_archived']:
+            rs.ignore_validation_errors()
             rs.notify("warning", n_("Event already archived."))
             return self.redirect(rs, "event/show_event")
         if not ack_archive:
