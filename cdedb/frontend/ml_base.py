@@ -367,7 +367,8 @@ class MlBaseFrontend(AbstractUserFrontend):
         return self.render(rs, "view_log", {
             'log': log, 'total': total, 'length': _length, 'personas': personas,
             'mailinglists': mailinglists, 'relevant_mailinglists': relevant_mls,
-            'loglinks': loglinks})
+            'loglinks': loglinks, 'may_view': lambda ml: self.mlproxy.may_view(rs, ml),
+        })
 
     @access("ml")
     def show_mailinglist(self, rs: RequestState,
