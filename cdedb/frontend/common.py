@@ -2219,7 +2219,7 @@ def process_dynamic_input(
     additional: CdEDBObject = None,
     prefix: str = "",
 ) -> Dict[int, Optional[CdEDBObject]]:
-    """Retrieve data from rs provided by 'dynamic_row_table' makro.
+    """Retrieve data from rs provided by 'dynamic_row_meta' macros.
 
     This takes a 'spec' of field_names mapped to their validation. Each field_name is
     prepended with the 'prefix' and appended with the entity_id in the form of
