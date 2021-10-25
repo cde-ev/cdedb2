@@ -248,17 +248,22 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "show_event", params)
 
     @access("anonymous")
-    def course_list(self, rs: RequestState, event_id: int) -> Response:
+    @REQUESTdata("track_ids")
+    def course_list(self, rs: RequestState, event_id: int,
+                    track_ids: Collection[int] = None) -> Response:
         """List courses from an event."""
         if (not rs.ambience['event']['is_course_list_visible']
                 and not (event_id in rs.user.orga or self.is_admin(rs))):
             rs.notify("warning", n_("Course list not published yet."))
             return self.redirect(rs, "event/show_event")
+        if rs.has_validation_errors() or not track_ids:
+            track_ids = rs.ambience['event']['tracks'].keys()
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = None
         if course_ids:
             courses = self.eventproxy.get_courses(rs, course_ids.keys())
-        return self.render(rs, "course_list", {'courses': courses})
+        return self.render(rs, "course_list",
+                           {'courses': courses, 'track_ids': track_ids})
 
     @access("event")
     @REQUESTdata("part_id", "sortkey", "reverse")
@@ -5473,7 +5478,7 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard(check_offline=True)
     @REQUESTdata("part_ids")
     def checkin_form(self, rs: RequestState, event_id: int,
-                     part_ids: Optional[vtypes.IntCSVList] = None) -> Response:
+                     part_ids: Collection[int] = None) -> Response:
         """Render form."""
         if rs.has_validation_errors() or not part_ids:
             parts = rs.ambience['event']['parts']
@@ -5507,14 +5512,14 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "checkin", {
             'registrations': registrations, 'personas': personas,
             'lodgements': lodgements, 'checkin_fields': checkin_fields,
-            'part_ids_param': ",".join(map(str, parts))
+            'part_ids': part_ids
         })
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
     @REQUESTdata("registration_id", "part_ids")
     def checkin(self, rs: RequestState, event_id: int, registration_id: vtypes.ID,
-                part_ids: Optional[vtypes.IntCSVList] = None) -> Response:
+                part_ids: Collection[int] = None) -> Response:
         """Check a participant in."""
         if rs.has_validation_errors():
             return self.checkin_form(rs, event_id)
@@ -5531,8 +5536,7 @@ class EventFrontend(AbstractUserFrontend):
         }
         code = self.eventproxy.set_registration(rs, new_reg, "Eingecheckt.")
         self.notify_return_code(rs, code)
-        params = {'part_ids': ",".join(map(str, part_ids))} if part_ids else None
-        return self.redirect(rs, 'event/checkin', params)
+        return self.redirect(rs, 'event/checkin', {'part_ids': part_ids})
 
     FIELD_REDIRECT = {
         const.FieldAssociations.registration: "event/registration_query",
