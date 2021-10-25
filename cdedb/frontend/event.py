@@ -3330,7 +3330,7 @@ class EventFrontend(AbstractUserFrontend):
                 )
             reg_tracks[track_id]['choices'] = all_choices
 
-        params = self._questionnaire_params(rs, const.QuestionnaireUsages.additional)
+        params = self._questionnaire_params(rs, const.QuestionnaireUsages.registration)
         field_data = request_extractor(rs, params)
 
         registration = {
