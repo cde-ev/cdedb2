@@ -6361,7 +6361,7 @@ msgid "Course choices will be displayed after first search."
 msgstr "Kursauswahl wird nach der ersten Suche angezeigt."
 
 msgid "Course choices will be displayed after selecting an event and submitting."
-msgstr "Kustauswahl wird angezeigt, nach dem eine Veranstaltung ausgewählt und das Formular abgeschickt wurde."
+msgstr "Die Kursauswahl wird angezeigt, nachdem eine Veranstaltung ausgewählt und das Formular abgeschickt wurde."
 
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:103
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:66

@@ -1533,15 +1533,13 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         f = self.response.forms['promotionform']
         f['pevent_id'] = 2
+        self.assertPresence("Die Kursauswahl wird angezeigt, nachdem")
         f['is_orga'] = True
-        self.assertPresence("Ein Kurs kann angegeben werden, wenn eine Vergangene"
-                            " Veranstaltung eingetragen ist.")
         self.assertValidationError('change_note', "Darf nicht leer sein.")
         f['change_note'] = change_note = "Hat eine Akademie organisiert."
         self.submit(f, check_notification=False)
         f = self.response.forms['promotionform']
-        self.assertNonPresence("Ein Kurs kann angegeben werden, wenn eine Vergangene"
-                               " Veranstaltung eingetragen ist.")
+        self.assertNonPresence("Die Kursauswahl wird angezeigt, nachdem")
         f['pcourse_id'] = ''
         self.submit(f)
         self.assertTitle("Emilia E. Eventis")
