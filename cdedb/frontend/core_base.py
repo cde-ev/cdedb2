@@ -40,7 +40,7 @@ from cdedb.query import Query, QueryOperators, QueryScope
 from cdedb.subman.machine import SubscriptionPolicy
 from cdedb.validation import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
-    PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS, TypeMapping,
+    PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS,
 )
 from cdedb.validationtypes import CdedbID
 
@@ -191,7 +191,7 @@ class CoreBaseFrontend(AbstractFrontend):
     def change_meta_info(self, rs: RequestState) -> Response:
         """Change the meta info constants."""
         info = self.coreproxy.get_meta_info(rs)
-        data_params: TypeMapping = {
+        data_params: vtypes.TypeMapping = {
             key: Optional[str]  # type: ignore
             for key in info
         }
@@ -641,6 +641,11 @@ class CoreBaseFrontend(AbstractFrontend):
         if "cde" in access_levels and {"event", "cde"} & roles:
             past_events = self.pasteventproxy.participation_info(rs, persona_id)
 
+        # Retrieve number of active sessions if the user is viewing his own profile
+        active_session_count = None
+        if rs.user.persona_id == persona_id:
+            active_session_count = self.coreproxy.count_active_sessions(rs)
+
         # Check whether we should display an option for using the quota
         quoteable = (not quote_me
                      and "cde" not in access_levels
@@ -655,6 +660,7 @@ class CoreBaseFrontend(AbstractFrontend):
             'data': data, 'past_events': past_events, 'meta_info': meta_info,
             'is_relative_admin_view': is_relative_admin_view, 'reference': reference,
             'quoteable': quoteable, 'access_mode': access_mode,
+            'active_session_count': active_session_count,
         })
 
     @access("event")
@@ -1090,7 +1096,7 @@ class CoreBaseFrontend(AbstractFrontend):
                     is_search: bool, query: Query = None) -> Response:
         """Perform search."""
         events = self.pasteventproxy.list_past_events(rs)
-        choices = {
+        choices: Dict[str, Dict[Any, str]] = {
             'pevent_id': collections.OrderedDict(
                 xsorted(events.items(), key=operator.itemgetter(1))),
             'gender': collections.OrderedDict(
@@ -1130,7 +1136,7 @@ class CoreBaseFrontend(AbstractFrontend):
         otherwise.
         """
         events = self.pasteventproxy.list_past_events(rs)
-        choices = {
+        choices: Dict[str, Dict[Any, str]] = {
             'pevent_id': collections.OrderedDict(
                 xsorted(events.items(), key=operator.itemgetter(1))),
             'gender': collections.OrderedDict(

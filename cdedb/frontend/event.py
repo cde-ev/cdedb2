@@ -56,7 +56,7 @@ from cdedb.query import (
 from cdedb.validation import (
     COURSE_COMMON_FIELDS, EVENT_EXPOSED_FIELDS, EVENT_PART_COMMON_FIELDS,
     EVENT_PART_CREATION_MANDATORY_FIELDS, LODGEMENT_COMMON_FIELDS,
-    PERSONA_FULL_EVENT_CREATION, QUESTIONNAIRE_ROW_MANDATORY_FIELDS, TypeMapping,
+    PERSONA_FULL_EVENT_CREATION, QUESTIONNAIRE_ROW_MANDATORY_FIELDS,
     filter_none,
 )
 from cdedb.validationtypes import VALIDATOR_LOOKUP
@@ -187,7 +187,7 @@ class EventFrontend(AbstractUserFrontend):
         otherwise.
         """
         events = self.pasteventproxy.list_past_events(rs)
-        choices = {
+        choices: Dict[str, Dict[Any, str]] = {
             'pevent_id': OrderedDict(
                 xsorted(events.items(), key=operator.itemgetter(1))),
             'gender': OrderedDict(
@@ -894,7 +894,7 @@ class EventFrontend(AbstractUserFrontend):
                    if delete_flags['delete_{}'.format(field_id)]}
         ret: CdEDBOptionalMap = {}
 
-        def params_change(anid: int) -> TypeMapping:
+        def params_change(anid: int) -> vtypes.TypeMapping:
             """Return specification of parameters for changing an existing field."""
             return {
                 f"kind_{anid}": const.FieldDatatypes,
@@ -921,7 +921,7 @@ class EventFrontend(AbstractUserFrontend):
             ret[field_id] = None
         marker = 1
 
-        def params_creation(anid: int) -> TypeMapping:
+        def params_creation(anid: int) -> vtypes.TypeMapping:
             """Return specification of parameters for creating a new field."""
             return {
                 f"field_name_-{anid}": str,
@@ -1205,7 +1205,7 @@ class EventFrontend(AbstractUserFrontend):
         data['id'] = course_id
         data['segments'] = segments
         data['active_segments'] = active_segments
-        field_params: TypeMapping = {
+        field_params: vtypes.TypeMapping = {
             f"fields.{field['field_name']}": Optional[  # type: ignore
                 VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]  # noqa: F821
             for field in rs.ambience['event']['fields'].values()
@@ -1244,7 +1244,7 @@ class EventFrontend(AbstractUserFrontend):
         """Create a new course associated to an event organized via DB."""
         data['event_id'] = event_id
         data['segments'] = segments
-        field_params: TypeMapping = {
+        field_params: vtypes.TypeMapping = {
             f"fields.{field['field_name']}": Optional[  # type: ignore
                 VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]  # noqa: F821
             for field in rs.ambience['event']['fields'].values()
@@ -1809,6 +1809,10 @@ class EventFrontend(AbstractUserFrontend):
         This allows flexible filtering of the displayed registrations.
         """
         tracks = rs.ambience['event']['tracks']
+        if not tracks:
+            rs.ignore_validation_errors()
+            rs.notify("error", n_("Event without tracks forbids courses."))
+            return self.redirect(rs, 'event/course_stats')
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         all_reg_ids = self.eventproxy.list_registrations(rs, event_id)
@@ -3248,7 +3252,7 @@ class EventFrontend(AbstractUserFrontend):
         :returns: registration data set
         """
         tracks = event['tracks']
-        standard_params: TypeMapping = {
+        standard_params: vtypes.TypeMapping = {
             "mixed_lodging": bool,
             "notes": Optional[str],  # type: ignore
             "list_consent": bool
@@ -3260,14 +3264,14 @@ class EventFrontend(AbstractUserFrontend):
             standard['parts'] = tuple(
                 part_id for part_id, entry in parts.items()
                 if const.RegistrationPartStati(entry['status']).is_involved())
-        choice_params: TypeMapping = {
+        choice_params: vtypes.TypeMapping = {
             f"course_choice{track_id}_{i}": Optional[vtypes.ID]  # type: ignore
             for part_id in standard['parts']
             for track_id in event['parts'][part_id]['tracks']
             for i in range(event['tracks'][track_id]['num_choices'])
         }
         choices = request_extractor(rs, choice_params)
-        instructor_params: TypeMapping = {
+        instructor_params: vtypes.TypeMapping = {
             f"course_instructor{track_id}": Optional[vtypes.ID]  # type: ignore
             for part_id in standard['parts']
             for track_id in event['parts'][part_id]['tracks']
@@ -3676,7 +3680,7 @@ class EventFrontend(AbstractUserFrontend):
             'preview': preview})
 
     def _questionnaire_params(self, rs: RequestState, kind: const.QuestionnaireUsages
-                              ) -> TypeMapping:
+                              ) -> vtypes.TypeMapping:
         """Helper to construct a TypeMapping to extract questionnaire data."""
         questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, rs.ambience['event']['id'], kinds=(kind,)))
@@ -3749,8 +3753,8 @@ class EventFrontend(AbstractUserFrontend):
         """
         del_flags = request_extractor(rs, {f"delete_{i}": bool for i in range(num)})
         deletes = {i for i in range(num) if del_flags['delete_{}'.format(i)]}
-        spec: TypeMapping = dict(QUESTIONNAIRE_ROW_MANDATORY_FIELDS,
-                                 field_id=Optional[vtypes.ID])  # type: ignore[arg-type]
+        spec: vtypes.TypeMapping = dict(QUESTIONNAIRE_ROW_MANDATORY_FIELDS,
+                                        field_id=Optional[vtypes.ID])  # type: ignore[arg-type]
         marker = 1
         while marker < 2 ** 10:
             if not unwrap(request_extractor(rs, {f"create_-{marker}": bool})):
@@ -3813,7 +3817,7 @@ class EventFrontend(AbstractUserFrontend):
              duplicate_kind_constraint(idx))
             for idx in indices))
 
-        params: TypeMapping = {
+        params: vtypes.TypeMapping = {
             f"{key}_{i}": value for i in indices for key, value in spec.items()}
         data = request_extractor(rs, params, constraints)
         for idx in indices:
@@ -4012,7 +4016,7 @@ class EventFrontend(AbstractUserFrontend):
         :returns: registration data set
         """
 
-        def filter_parameters(params: TypeMapping) -> TypeMapping:
+        def filter_parameters(params: vtypes.TypeMapping) -> vtypes.TypeMapping:
             """Helper function to filter parameters by `skip` list and `enabled`
             checkboxes"""
             params = {key: kind for key, kind in params.items() if key not in skip}
@@ -4025,7 +4029,7 @@ class EventFrontend(AbstractUserFrontend):
 
         # Extract parameters from request
         tracks = event['tracks']
-        reg_params: TypeMapping = {
+        reg_params: vtypes.TypeMapping = {
             "reg.notes": Optional[str],  # type: ignore
             "reg.orga_notes": Optional[str],  # type: ignore
             "reg.payment": Optional[datetime.date],  # type: ignore
@@ -4035,14 +4039,14 @@ class EventFrontend(AbstractUserFrontend):
             "reg.checkin": Optional[datetime.datetime],  # type: ignore
             "reg.list_consent": bool,
         }
-        part_params: TypeMapping = {}
+        part_params: vtypes.TypeMapping = {}
         for part_id in event['parts']:
             part_params.update({  # type: ignore
                 f"part{part_id}.status": const.RegistrationPartStati,
                 f"part{part_id}.lodgement_id": Optional[vtypes.ID],
                 f"part{part_id}.is_camping_mat": bool
             })
-        track_params: TypeMapping = {}
+        track_params: vtypes.TypeMapping = {}
         for track_id, track in tracks.items():
             track_params.update({  # type: ignore
                 f"track{track_id}.{key}": Optional[vtypes.ID]
@@ -4052,7 +4056,7 @@ class EventFrontend(AbstractUserFrontend):
                 f"track{track_id}.course_choice_{i}": Optional[vtypes.ID]
                 for i in range(track['num_choices'])
             })
-        field_params: TypeMapping = {
+        field_params: vtypes.TypeMapping = {
             f"fields.{field['field_name']}": Optional[  # type: ignore
                 VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]  # noqa: F821
             for field in event['fields'].values()
@@ -4828,7 +4832,7 @@ class EventFrontend(AbstractUserFrontend):
                          data: CdEDBObject) -> Response:
         """Add a new lodgement."""
         data['event_id'] = event_id
-        field_params: TypeMapping = {
+        field_params: vtypes.TypeMapping = {
             f"fields.{field['field_name']}": Optional[  # type: ignore
                 VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]  # noqa: F821
             for field in rs.ambience['event']['fields'].values()
@@ -4870,7 +4874,7 @@ class EventFrontend(AbstractUserFrontend):
         This does not enable changing the inhabitants of this lodgement.
         """
         data['id'] = lodgement_id
-        field_params: TypeMapping = {
+        field_params: vtypes.TypeMapping = {
             f"fields.{field['field_name']}": Optional[  # type: ignore
                 VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]  # noqa: F821
             for field in rs.ambience['event']['fields'].values()
@@ -4994,7 +4998,7 @@ class EventFrontend(AbstractUserFrontend):
                       == lodgement_id]
             for part_id in rs.ambience['event']['parts']}
         # Parse request data
-        params: TypeMapping = {
+        params: vtypes.TypeMapping = {
             **{
                 f"new_{part_id}": Collection[Optional[vtypes.ID]]
                 for part_id in rs.ambience['event']['parts']
@@ -5052,7 +5056,7 @@ class EventFrontend(AbstractUserFrontend):
     def swap_inhabitants(self, rs: RequestState, event_id: int,
                          lodgement_id: int) -> Response:
         """Swap inhabitants of two lodgements of the same part."""
-        params: TypeMapping = {
+        params: vtypes.TypeMapping = {
             f"swap_with_{part_id}": Optional[vtypes.ID]  # type: ignore
             for part_id in rs.ambience['event']['parts']
         }
@@ -5180,7 +5184,7 @@ class EventFrontend(AbstractUserFrontend):
             for track_id in rs.ambience['course']['segments']}
 
         # Parse request data
-        params: TypeMapping = {
+        params: vtypes.TypeMapping = {
             **{
                 f"new_{track_id}": Collection[Optional[vtypes.ID]]
                 for track_id in rs.ambience['course']['segments']
@@ -5686,7 +5690,7 @@ class EventFrontend(AbstractUserFrontend):
             rs.append_validation_error(
                 (None, ValueError(n_("change_note only supported for registrations."))))
 
-        data_params: TypeMapping = {
+        data_params: vtypes.TypeMapping = {
             f"input{anid}": Optional[  # type: ignore
                 VALIDATOR_LOOKUP[const.FieldDatatypes(field['kind']).name]]
             for anid in entities

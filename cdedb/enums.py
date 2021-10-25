@@ -10,8 +10,8 @@ from typing import Tuple, Type
 
 import cdedb.database.constants as const
 from cdedb.common import (
-    Accounts, AgeClasses, CourseChoiceToolActions, CourseFilterPositions,
-    LineResolutions, LodgementsSortkeys, TransactionType,
+    Accounts, AgeClasses, ConfidenceLevel, CourseChoiceToolActions,
+    CourseFilterPositions, LineResolutions, LodgementsSortkeys, TransactionType,
 )
 from cdedb.query import QueryOperators, QueryScope
 from cdedb.subman.machine import SubscriptionAction, SubscriptionPolicy
@@ -48,6 +48,7 @@ ALL_ENUMS: Tuple[Type[Enum], ...] = (
     LodgementsSortkeys,
     Accounts,
     TransactionType,
+    ConfidenceLevel,
 )
 
 #: The list of infinite enums

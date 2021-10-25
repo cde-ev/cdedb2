@@ -133,6 +133,7 @@
                         var $actionSelect = $('#input-action');
                         var $courseSelect = $('#input-course_id');
                         var updateCourseVisibility = function() {
+                            // value is correct here, since this is an infinite enum
                             if ($actionSelect.val() == {{ enums.CourseChoiceToolActions.assign_fixed.value }})
                                 $courseSelect.show();
                             else

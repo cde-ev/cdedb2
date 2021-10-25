@@ -1254,7 +1254,7 @@ class CourseChoiceToolActions(enum.IntEnum):
 
 
 @enum.unique
-class Accounts(enum.Enum):
+class Accounts(enum.IntEnum):
     """Store the existing CdE Accounts."""
     Account0 = 8068900
     Account1 = 8068901
@@ -1264,6 +1264,35 @@ class Accounts(enum.Enum):
 
     def display_str(self) -> str:
         return str(self.value)
+
+
+@enum.unique
+class ConfidenceLevel(enum.IntEnum):
+    """Store the different Levels of Confidence about the prediction."""
+    Null = 0
+    Low = 1
+    Medium = 2
+    High = 3
+    Full = 4
+
+    @classmethod
+    def destroy(cls) -> "ConfidenceLevel":
+        return cls.Null
+
+    def decrease(self, amount: int = 1) -> "ConfidenceLevel":
+        if self.value - amount > self.__class__.Null.value:
+            return self.__class__(self.value - amount)
+        else:
+            return self.__class__.Null
+
+    def increase(self, amount: int = 1) -> "ConfidenceLevel":
+        if self.value + amount < self.__class__.Full.value:
+            return self.__class__(self.value + amount)
+        else:
+            return self.__class__.Full
+
+    def __format__(self, format_spec: str) -> str:
+        return str(self)
 
 
 @enum.unique

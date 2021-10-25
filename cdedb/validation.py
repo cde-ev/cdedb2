@@ -106,7 +106,6 @@ _LOGGER = logging.getLogger(__name__)
 
 T = TypeVar('T')
 F = TypeVar('F', bound=Callable[..., Any])
-TypeMapping = Mapping[str, Type[Any]]
 
 
 class ValidationSummary(ValueError, Sequence[Exception]):

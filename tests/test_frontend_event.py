@@ -3088,6 +3088,16 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/3/log'})
         self.assertPresence("Kurs eingeteilt.", div="1-1004")
 
+    @as_users("anton")
+    def test_invalid_course_choices(self) -> None:
+        # Check there is no error for without courses
+        self.get('/event/event/2/course/choices')
+        self.follow()
+        self.basic_validate()
+        self.assertTitle("Kurse verwalten (CdE-Party 2050)")
+        self.assertPresence("sind nur in Veranstaltungen mit Kursschienen möglich.",
+                            div='notifications')
+
     @as_users("garcia")
     def test_automatic_assignment(self) -> None:
         self.traverse({'href': '/event/$'},

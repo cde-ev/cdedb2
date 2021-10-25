@@ -31,7 +31,6 @@ from cdedb.frontend.common import (
     inspect_validation as inspect, inspect_validation_optional as inspect_optional,
     make_postal_address, request_extractor,
 )
-from cdedb.validation import TypeMapping
 
 
 class CdEParseMixin(CdEBaseFrontend):
@@ -53,24 +52,25 @@ class CdEParseMixin(CdEBaseFrontend):
         params = {
             'params': params or None,
             'data': data,
+            'transaction_keys': parse.Transaction.get_request_params(hidden_only=True),
+            'ref_sep': parse.REFERENCE_SEPARATOR,
             'TransactionType': parse.TransactionType,
             'event_entries': event_entries,
             'events': events,
         }
         return self.render(rs, "parse/parse_statement", params)
 
+    @staticmethod
     def organize_transaction_data(
-            self, rs: RequestState, transactions: List[parse.Transaction],
-            start: Optional[datetime.date], end: Optional[datetime.date],
-            timestamp: datetime.datetime) -> Tuple[CdEDBObject, CdEDBObject]:
+        rs: RequestState, transactions: List[parse.Transaction],
+        start: Optional[datetime.date], end: Optional[datetime.date],
+        timestamp: datetime.datetime
+    ) -> Tuple[CdEDBObject, CdEDBObject]:
         """Organize transactions into data and params usable in the form."""
-
-        get_persona = functools.partial(self.coreproxy.get_persona, rs)
-        get_event = functools.partial(self.eventproxy.get_event, rs)
 
         data = {"{}{}".format(k, t.t_id): v
                 for t in transactions
-                for k, v in t.to_dict(get_persona, get_event).items()}
+                for k, v in t.to_dict().items()}
         data["count"] = len(transactions)
         data["start"] = start
         data["end"] = end
@@ -99,8 +99,8 @@ class CdEParseMixin(CdEBaseFrontend):
             else:
                 params["has_none"].append(t.t_id)
             params["accounts"][t.account] += 1
-            if t.event_id and t.type == TransactionType.EventFee:
-                params["events"][t.event_id] += 1
+            if t.event and t.type == TransactionType.EventFee:
+                params["events"][t.event['id']] += 1
             if t.type == TransactionType.MembershipFee:
                 params["memberships"] += 1
         return data, params
@@ -131,42 +131,35 @@ class CdEParseMixin(CdEBaseFrontend):
         assert statement_file.filename is not None
         filename = pathlib.Path(statement_file.filename).parts[-1]
         start, end, timestamp = parse.dates_from_filename(filename)
-        # The statements from BFS are encoded in latin-1
-        statement_file = check(rs, vtypes.CSVFile, statement_file,
-                               "statement_file", encoding="latin-1")
+        statement_file = check(rs, vtypes.CSVFile, statement_file, "statement_file")
         if rs.has_validation_errors():
             return self.parse_statement_form(rs)
         assert statement_file is not None
         statementlines = statement_file.splitlines()
 
-        event_list = self.eventproxy.list_events(rs)
-        events = self.eventproxy.get_events(rs, event_list)
+        event_ids = self.eventproxy.list_events(rs)
+        events = self.eventproxy.get_events(rs, event_ids)
 
         get_persona = functools.partial(self.coreproxy.get_persona, rs)
 
         # This does not use the cde csv dialect, but rather the bank's.
-        reader = csv.DictReader(statementlines, delimiter=";",
-                                quotechar='"',
-                                fieldnames=parse.STATEMENT_CSV_FIELDS,
-                                restkey=parse.STATEMENT_CSV_RESTKEY,
-                                restval="")
+        reader = csv.DictReader(statementlines, delimiter=";", quotechar='"')
 
         transactions = []
 
-        for i, line in enumerate(reversed(list(reader))):
-            if not len(line) == 23:
+        for i, line in enumerate(reader):
+            if not line.keys() <= parse.STATEMENT_CSV_ALL_KEY:
                 p = ("statement_file",
                      ValueError(n_("Line %(lineno)s does not have "
-                                   "the correct number of "
-                                   "columns."),
+                                   "the correct columns."),
                                 {'lineno': i + 1}
                                 ))
                 rs.append_validation_error(p)
                 continue
-            line["id"] = i  # type: ignore
+            line["id"] = i  # type: ignore[assignment]
             t = parse.Transaction.from_csv(line)
             t.analyze(events, get_persona)
-            t.inspect(get_persona)
+            t.inspect()
 
             transactions.append(t)
         if rs.has_validation_errors():
@@ -193,35 +186,16 @@ class CdEParseMixin(CdEBaseFrontend):
         """
         rs.ignore_validation_errors()
 
-        def params_generator(i: int) -> TypeMapping:
-            return {
-                f"reference{i}": Optional[str],  # type: ignore
-                f"account{i}": Accounts,
-                f"statement_date{i}": datetime.date,
-                f"amount{i}": decimal.Decimal,
-                f"account_holder{i}": Optional[str],  # type: ignore
-                f"posting{i}": str,
-                f"iban{i}": Optional[vtypes.IBAN],  # type: ignore
-                f"t_id{i}": vtypes.ID,
-                f"transaction_type{i}": TransactionType,
-                f"transaction_type_confidence{i}": int,
-                f"transaction_type_confirm{i}": Optional[bool],  # type: ignore
-                f"cdedbid{i}": Optional[vtypes.CdedbID],  # type: ignore
-                f"persona_id_confidence{i}": Optional[int],  # type: ignore
-                f"persona_id_confirm{i}": Optional[bool],  # type: ignore
-                f"event_id{i}": Optional[vtypes.ID],  # type: ignore
-                f"event_id_confidence{i}": Optional[int],  # type: ignore
-                f"event_id_confirm{i}": Optional[bool],  # type: ignore
-            }
-
         get_persona = functools.partial(self.coreproxy.get_persona, rs)
-        get_event = functools.partial(self.eventproxy.get_event, rs)
+        event_ids = self.eventproxy.list_events(rs)
+        events = self.eventproxy.get_events(rs, event_ids)
 
         transactions = []
         for i in range(1, count + 1):
-            t = request_extractor(rs, params_generator(i))
-            t = parse.Transaction({k.rstrip(str(i)): v for k, v in t.items()})
-            t.inspect(get_persona)
+            t_data = request_extractor(rs, parse.Transaction.get_request_params(i))
+            t = parse.Transaction(t_data, index=i)
+            t.get_data(get_persona=get_persona, events=events)
+            t.inspect()
             transactions.append(t)
 
         data, params = self.organize_transaction_data(
@@ -242,7 +216,7 @@ class CdEParseMixin(CdEBaseFrontend):
             event_data = self.eventproxy.get_event(rs, aux)
             filename = event_data["shortname"]
             transactions = [t for t in transactions
-                            if t.event_id == aux
+                            if t.event and t.event['id'] == aux
                             and t.type == TransactionType.EventFee]
             fields = parse.EVENT_EXPORT_FIELDS
             write_header = False
@@ -251,21 +225,22 @@ class CdEParseMixin(CdEBaseFrontend):
             fields = parse.GNUCASH_EXPORT_FIELDS
             write_header = True
         elif excel is not None:
-            account = excel
-            filename = "transactions_" + account
-            transactions = [t for t in transactions
-                            if str(t.account) == account]
+            account, _ = inspect(Accounts, excel)
+            if not account:
+                rs.notify("error", n_("Unknown account."))
+                return self.parse_statement_form(rs, data, params)
+            filename = "transactions_" + str(account.value)
+            transactions = [t for t in transactions if t.account == account]
             fields = parse.EXCEL_EXPORT_FIELDS
             write_header = False
         else:
             rs.notify("error", n_("Unknown action."))
             return self.parse_statement_form(rs, data, params)
         if end is None:
-            filename += "_{}".format(start)
+            filename += "_{}.csv".format(start)
         else:
             filename += "_{}_bis_{}.csv".format(start, end)
-        csv_data = [t.to_dict(get_persona, get_event)
-                    for t in transactions]
+        csv_data = [t.to_dict() for t in transactions]
         csv_data = csv_output(csv_data, fields, write_header)
         return self.send_csv_file(rs, "text/csv", filename, data=csv_data)
 
