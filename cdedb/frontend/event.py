@@ -4702,13 +4702,8 @@ class EventFrontend(AbstractUserFrontend):
             for key, value in group.items() if key != 'id'}
         merge_dicts(rs.values, current)
 
-        lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
-        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
-        referenced_groups = {e["group_id"] for e in lodgements.values()}
-
         return self.render(rs, "lodgement_group_summary", {
-            "sorted_group_ids": sorted_group_ids,
-            "referenced_groups": referenced_groups})
+            "sorted_group_ids": sorted_group_ids})
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
@@ -4720,16 +4715,6 @@ class EventFrontend(AbstractUserFrontend):
         groups = process_dynamic_input(rs, vtypes.LodgementGroup, group_ids.keys(),
                                        spec, additional={'event_id': event_id})
 
-        lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
-        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
-        # filter the implicit lodgement group "None"
-        referenced_groups: Set[int] = set(
-            filter(None, {e["group_id"] for e in lodgements.values()}))
-
-        msg = n_("Lodgement group is referenced and can not be deleted.")
-        for anid in referenced_groups:
-            if groups[anid] is None:
-                rs.append_validation_error((drow_name("title", anid), ValueError(msg)))
         if rs.has_validation_errors():
             return self.lodgement_group_summary_form(rs, event_id)
 
