@@ -410,6 +410,15 @@ class TestEventFrontend(FrontendTest):
         self.assertTitle("Kursliste Große Testakademie 2222")
         self.assertPresence("ToFi")
         self.assertPresence("Wir werden die Bäume drücken.")
+        f = self.response.forms['coursefilterform']
+        f['track_ids'] = [1, 3]
+        self.submit(f)
+        self.assertTitle("Kursliste Große Testakademie 2222")
+        self.assertNonPresence("Kurzer Kurs")
+        f = self.response.forms['coursefilterform']
+        f['track_ids'] = [2, 3]
+        self.submit(f)
+        self.assertPresence("γ. Kurzer Kurs")
 
     @as_users("annika", "garcia", "ferdinand")
     def test_change_event(self) -> None:
@@ -3076,6 +3085,16 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/3/log'})
         self.assertPresence("Kurs eingeteilt.", div="1-1004")
 
+    @as_users("anton")
+    def test_invalid_course_choices(self) -> None:
+        # Check there is no error for without courses
+        self.get('/event/event/2/course/choices')
+        self.follow()
+        self.basic_validate()
+        self.assertTitle("Kurse verwalten (CdE-Party 2050)")
+        self.assertPresence("sind nur in Veranstaltungen mit Kursschienen möglich.",
+                            div='notifications')
+
     @as_users("garcia")
     def test_automatic_assignment(self) -> None:
         self.traverse({'href': '/event/$'},
@@ -3589,28 +3608,37 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence("anzahl_GROSSBUCHSTABEN", div="checkin-list")
 
         # Check the filtering per event part.
-        # TODO place and check actual links.
         self.assertPresence("Anton Armin", div="checkin-list")
         self.assertPresence("Bertålotta Beispiel", div="checkin-list")
         self.assertPresence("Emilia E.", div="checkin-list")
-        self.get("/event/event/1/checkin?part_ids=1,2,3")
+        f = self.response.forms['checkinfilterform']
+        f['part_ids'] = [1, 2, 3]
+        self.submit(f)
         self.assertPresence("Anton Armin", div="checkin-list")
         self.assertPresence("Bertålotta Beispiel", div="checkin-list")
         self.assertPresence("Emilia E.", div="checkin-list")
-        self.get("/event/event/1/checkin?part_ids=1")
+        f = self.response.forms['checkinfilterform']
+        f['part_ids'] = [1]
+        self.submit(f)
         self.assertNonPresence("Anton Armin", div="checkin-list")
         self.assertPresence("Bertålotta Beispiel", div="checkin-list")
         self.assertNonPresence("Emilia E.", div="checkin-list")
-        self.get("/event/event/1/checkin?part_ids=2")
+        f = self.response.forms['checkinfilterform']
+        f['part_ids'] = [2]
+        self.submit(f)
         self.assertNonPresence("Anton Armin", div="checkin-list")
         self.assertNonPresence("Bertålotta Beispiel", div="checkin-list")
         self.assertPresence("Emilia E.", div="checkin-list")
-        self.get("/event/event/1/checkin?part_ids=3")
+        f = self.response.forms['checkinfilterform']
+        f['part_ids'] = [3]
+        self.submit(f)
         self.assertPresence("Anton Armin", div="checkin-list")
         self.assertNonPresence("Bertålotta Beispiel", div="checkin-list")
         self.assertPresence("Emilia E.", div="checkin-list")
         # TODO this check does not really make sense with the existing data.
-        self.get("/event/event/1/checkin?part_ids=2,3")
+        f = self.response.forms['checkinfilterform']
+        f['part_ids'] = [2, 3]
+        self.submit(f)
         self.assertPresence("Anton Armin", div="checkin-list")
         self.assertNonPresence("Bertålotta Beispiel", div="checkin-list")
         self.assertPresence("Emilia E.", div="checkin-list")

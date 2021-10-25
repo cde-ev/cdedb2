@@ -80,7 +80,7 @@
     {% call util.bootstrap_panel(title=gettext("Filter"), icon="search", aclass="panel-primary") %}
         <form action="{{ cdedblink(endpoint) }}" method="GET" id="logshowform" class="form-horizontal">
             {{ util.form_input_checkboxes("codes", label=gettext("Categories"), info=gettext("No selection means everything."),
-                    entries=enum|enum_entries(processing=gettext), small=True) }}
+                    entries=enum|enum_entries(processing=gettext), small=True, wide=True, slice=2) }}
             {{ util.form_input_text(name="submitted_by", label=gettext("Submitted By"), small=True,
                         anid="input-submitted_by") }}
             {{ util.form_input_text(name="persona_id", label=gettext("Affected"), small=True,

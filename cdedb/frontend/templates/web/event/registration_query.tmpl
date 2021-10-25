@@ -91,9 +91,11 @@
         </div>
 
         <div class="p pull-right">
-            <button type="button" class="btn btn-info btn-sm" id="btn-course-choices">
-                {{ util.make_icon('crosshairs') }} {% trans %}Course Assignment{% endtrans %}
-            </button>
+            {% if ambience['event']['tracks'] %}
+                <button type="button" class="btn btn-info btn-sm" id="btn-course-choices">
+                    {{ util.make_icon('crosshairs') }} {% trans %}Course Assignment{% endtrans %}
+                </button>
+            {% endif %}
             {{ generic.query_button_field_set(enums['FieldAssociations'].registration) }}
             <button type="button" class="btn btn-warning btn-sm" id="btn-edit">
                 {{ util.make_icon('pen') }} {% trans %}Edit{% endtrans %}

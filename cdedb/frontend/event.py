@@ -248,17 +248,22 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "show_event", params)
 
     @access("anonymous")
-    def course_list(self, rs: RequestState, event_id: int) -> Response:
+    @REQUESTdata("track_ids")
+    def course_list(self, rs: RequestState, event_id: int,
+                    track_ids: Collection[int] = None) -> Response:
         """List courses from an event."""
         if (not rs.ambience['event']['is_course_list_visible']
                 and not (event_id in rs.user.orga or self.is_admin(rs))):
             rs.notify("warning", n_("Course list not published yet."))
             return self.redirect(rs, "event/show_event")
+        if rs.has_validation_errors() or not track_ids:
+            track_ids = rs.ambience['event']['tracks'].keys()
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = None
         if course_ids:
             courses = self.eventproxy.get_courses(rs, course_ids.keys())
-        return self.render(rs, "course_list", {'courses': courses})
+        return self.render(rs, "course_list",
+                           {'courses': courses, 'track_ids': track_ids})
 
     @access("event")
     @REQUESTdata("part_id", "sortkey", "reverse")
@@ -1808,6 +1813,10 @@ class EventFrontend(AbstractUserFrontend):
         This allows flexible filtering of the displayed registrations.
         """
         tracks = rs.ambience['event']['tracks']
+        if not tracks:
+            rs.ignore_validation_errors()
+            rs.notify("error", n_("Event without tracks forbids courses."))
+            return self.redirect(rs, 'event/course_stats')
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         all_reg_ids = self.eventproxy.list_registrations(rs, event_id)
@@ -3352,6 +3361,8 @@ class EventFrontend(AbstractUserFrontend):
     @access("event", modi={"POST"})
     def register(self, rs: RequestState, event_id: int) -> Response:
         """Register for an event."""
+        if rs.has_validation_errors():
+            return self.register_form(rs, event_id)
         if not rs.ambience['event']['is_open']:
             rs.notify("error", n_("Registration not open."))
             return self.redirect(rs, "event/show_event")
@@ -3509,6 +3520,8 @@ class EventFrontend(AbstractUserFrontend):
         Participants are not able to change for which parts they applied on
         purpose. For this they have to communicate with the orgas.
         """
+        if rs.has_validation_errors():
+            return self.amend_registration_form(rs, event_id)
         registration_id = unwrap(self.eventproxy.list_registrations(
             rs, event_id, persona_id=rs.user.persona_id).keys())
         if not registration_id:
@@ -3597,7 +3610,7 @@ class EventFrontend(AbstractUserFrontend):
         """
         kind = const.QuestionnaireUsages.registration
         code = self._set_questionnaire(rs, event_id, kind)
-        if code is None:
+        if rs.has_validation_errors() or code is None:
             return self.configure_registration_form(rs, event_id)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/configure_registration_form")
@@ -3613,7 +3626,7 @@ class EventFrontend(AbstractUserFrontend):
         """
         kind = const.QuestionnaireUsages.additional
         code = self._set_questionnaire(rs, event_id, kind)
-        if code is None:
+        if rs.has_validation_errors() or code is None:
             return self.configure_additional_questionnaire_form(rs, event_id)
         self.notify_return_code(rs, code)
         return self.redirect(
@@ -3692,6 +3705,8 @@ class EventFrontend(AbstractUserFrontend):
         Save data submitted in the additional questionnaire.
         Note that questionnaire rows may also be present during registration.
         """
+        if rs.has_validation_errors():
+            return self.additional_questionnaire_form(rs, event_id, internal=True)
         registration_id = self.eventproxy.list_registrations(
             rs, event_id, persona_id=rs.user.persona_id)
         if not registration_id:
@@ -3718,8 +3733,7 @@ class EventFrontend(AbstractUserFrontend):
         }
         data = request_extractor(rs, params)
         if rs.has_validation_errors():
-            return self.additional_questionnaire_form(
-                rs, event_id, internal=True)
+            return self.additional_questionnaire_form(rs, event_id, internal=True)
 
         change_note = "Fragebogen durch Teilnehmer bearbeitet."
         code = self.eventproxy.set_registration(rs,
@@ -5464,7 +5478,7 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard(check_offline=True)
     @REQUESTdata("part_ids")
     def checkin_form(self, rs: RequestState, event_id: int,
-                     part_ids: Optional[vtypes.IntCSVList] = None) -> Response:
+                     part_ids: Collection[int] = None) -> Response:
         """Render form."""
         if rs.has_validation_errors() or not part_ids:
             parts = rs.ambience['event']['parts']
@@ -5498,14 +5512,14 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "checkin", {
             'registrations': registrations, 'personas': personas,
             'lodgements': lodgements, 'checkin_fields': checkin_fields,
-            'part_ids_param': ",".join(map(str, parts))
+            'part_ids': part_ids
         })
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
     @REQUESTdata("registration_id", "part_ids")
     def checkin(self, rs: RequestState, event_id: int, registration_id: vtypes.ID,
-                part_ids: Optional[vtypes.IntCSVList] = None) -> Response:
+                part_ids: Collection[int] = None) -> Response:
         """Check a participant in."""
         if rs.has_validation_errors():
             return self.checkin_form(rs, event_id)
@@ -5522,8 +5536,7 @@ class EventFrontend(AbstractUserFrontend):
         }
         code = self.eventproxy.set_registration(rs, new_reg, "Eingecheckt.")
         self.notify_return_code(rs, code)
-        params = {'part_ids': ",".join(map(str, part_ids))} if part_ids else None
-        return self.redirect(rs, 'event/checkin', params)
+        return self.redirect(rs, 'event/checkin', {'part_ids': part_ids})
 
     FIELD_REDIRECT = {
         const.FieldAssociations.registration: "event/registration_query",
@@ -5758,8 +5771,9 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard(check_offline=True)
     def lock_event(self, rs: RequestState, event_id: int) -> Response:
         """Lock an event for offline usage."""
-        code = self.eventproxy.lock_event(rs, event_id)
-        self.notify_return_code(rs, code)
+        if not rs.has_validation_errors():
+            code = self.eventproxy.lock_event(rs, event_id)
+            self.notify_return_code(rs, code)
         return self.redirect(rs, "event/show_event")
 
     @access("event", modi={"POST"})
@@ -5804,6 +5818,7 @@ class EventFrontend(AbstractUserFrontend):
         the past-event stuff generally resides in the cde realm.
         """
         if rs.ambience['event']['is_archived']:
+            rs.ignore_validation_errors()
             rs.notify("warning", n_("Event already archived."))
             return self.redirect(rs, "event/show_event")
         if not ack_archive:
