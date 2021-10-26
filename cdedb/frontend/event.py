@@ -42,7 +42,7 @@ from cdedb.frontend.common import (
     AbstractUserFrontend, CustomCSVDialect, RequestConstraint, REQUESTdata,
     REQUESTdatadict, REQUESTfile, TransactionObserver, access, calculate_db_logparams,
     calculate_loglinks, cdedbid_filter, cdedburl, check_validation as check,
-    check_validation_optional as check_optional, event_guard,
+    check_validation_optional as check_optional, drow_name, event_guard,
     inspect_validation as inspect, make_event_fee_reference, make_persona_name,
     periodic, process_dynamic_input, request_extractor,
 )
@@ -682,15 +682,22 @@ class EventFrontend(AbstractUserFrontend):
                          ) -> Response:
         part = rs.ambience['event']['parts'][part_id]
 
+        sorted_fee_modifier_ids = [
+            e["id"] for e in xsorted(part["fee_modifiers"].values(),
+                                     key=EntitySorter.fee_modifier)]
+        sorted_track_ids = [
+            e["id"] for e in xsorted(part["tracks"].values(),
+                                     key=EntitySorter.course_track)]
+
         current = copy.deepcopy(part)
         del current['id']
         del current['tracks']
         for track_id, track in part['tracks'].items():
             for k in ('title', 'shortname', 'num_choices', 'min_choices', 'sortkey'):
-                current[f"track_{k}_{track_id}"] = track[k]
-        for m in rs.ambience['event']['fee_modifiers'].values():
+                current[drow_name(k, entity_id=track_id, prefix="track")] = track[k]
+        for m_id, m in rs.ambience['event']['fee_modifiers'].items():
             for k in ('modifier_name', 'amount', 'field_id'):
-                current[f"fee_modifier_{k}_{m['id']}"] = m[k]
+                current[drow_name(k, entity_id=m_id, prefix="fee_modifier")] = m[k]
         merge_dicts(rs.values, current)
 
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
@@ -703,11 +710,6 @@ class EventFrontend(AbstractUserFrontend):
             (field['id'], field['field_name']) for field in sorted_fields
             if field['association'] in legal_assocs and field['kind'] in legal_datatypes
         ]
-        fee_modifiers = {
-            e['id']: e
-            for e in rs.ambience['event']['fee_modifiers'].values()
-            if e['part_id'] == part_id
-        }
         legal_datatypes, legal_assocs = EVENT_FIELD_SPEC['waitlist']
         waitlist_fields = [
             (field['id'], field['field_name']) for field in sorted_fields
@@ -715,8 +717,9 @@ class EventFrontend(AbstractUserFrontend):
         ]
         return self.render(rs, "change_part", {
             'part_id': part_id,
+            "sorted_track_ids": sorted_track_ids,
+            "sorted_fee_modifier_ids": sorted_fee_modifier_ids,
             'fee_modifier_fields': fee_modifier_fields,
-            'fee_modifiers': fee_modifiers,
             'waitlist_fields': waitlist_fields,
             'referenced_tracks': referenced_tracks,
             'has_registrations': has_registrations,
@@ -761,7 +764,7 @@ class EventFrontend(AbstractUserFrontend):
             'sortkey': int
         }
         track_data = process_dynamic_input(
-            rs, vtypes.EventTrack, track_existing, track_spec, prefix="track_")
+            rs, vtypes.EventTrack, track_existing, track_spec, prefix="track")
         if rs.has_validation_errors():
             return self.change_part_form(rs, event_id, part_id)
 
@@ -786,7 +789,7 @@ class EventFrontend(AbstractUserFrontend):
             'amount': decimal.Decimal,
             'field_id': vtypes.ID,
         }
-        fee_modifier_prefix = "fee_modifier_"
+        fee_modifier_prefix = "fee_modifier"
         # do not change fee modifiers once registrations exist
         if has_registrations:
             fee_modifier_data = dict()
@@ -807,11 +810,13 @@ class EventFrontend(AbstractUserFrontend):
             field = rs.ambience["event"]["fields"].get(modifier["field_id"])
             if field is None:
                 rs.append_validation_error(
-                    (f"{fee_modifier_prefix}field_id_{anid}", ValueError(missing_msg)))
+                    (drow_name("field_id", anid, prefix=fee_modifier_prefix),
+                     ValueError(missing_msg)))
             elif (field["association"] not in legal_assocs
                   or field["kind"] not in legal_datatypes):
                 rs.append_validation_error(
-                    (f"{fee_modifier_prefix}field_id_{anid}", ValueError(spec_msg)))
+                    (drow_name("field_id", anid, prefix=fee_modifier_prefix),
+                     ValueError(spec_msg)))
 
         # Check if each linked field and fee modifier name is unique.
         used_fields: Set[int] = set()
@@ -825,11 +830,13 @@ class EventFrontend(AbstractUserFrontend):
                 continue
             if modifier['field_id'] in used_fields:
                 rs.append_validation_error(
-                    (f"{fee_modifier_prefix}field_id_{anid}", ValueError(field_msg))
+                    (drow_name("field_id", anid, prefix=fee_modifier_prefix),
+                     ValueError(field_msg))
                 )
             if modifier['modifier_name'] in used_names:
                 rs.append_validation_error(
-                    (f"{fee_modifier_prefix}modifier_name_{anid}", ValueError(name_msg))
+                    (drow_name("modifier_name", anid, prefix=fee_modifier_prefix),
+                     ValueError(name_msg))
                 )
             used_fields.add(modifier['field_id'])
             used_names.add(modifier['modifier_name'])
@@ -4698,21 +4705,17 @@ class EventFrontend(AbstractUserFrontend):
                                      ) -> Response:
         group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
         groups = self.eventproxy.get_lodgement_groups(rs, group_ids)
+        sorted_group_ids = [
+            e["id"] for e in xsorted(groups.values(), key=EntitySorter.lodgement_group)]
 
         current = {
-            "{}_{}".format(key, group_id): value
+            drow_name(field_name=key, entity_id=group_id): value
             for group_id, group in groups.items()
             for key, value in group.items() if key != 'id'}
         merge_dicts(rs.values, current)
 
-        is_referenced = set()
-        lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
-        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
-        for lodgement in lodgements.values():
-            is_referenced.add(lodgement['group_id'])
-
         return self.render(rs, "lodgement_group_summary", {
-            'lodgement_groups': groups, 'is_referenced': is_referenced})
+            "sorted_group_ids": sorted_group_ids})
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
@@ -4723,8 +4726,10 @@ class EventFrontend(AbstractUserFrontend):
         spec = {'title': str}
         groups = process_dynamic_input(rs, vtypes.LodgementGroup, group_ids.keys(),
                                        spec, additional={'event_id': event_id})
+
         if rs.has_validation_errors():
             return self.lodgement_group_summary_form(rs, event_id)
+
         code = 1
         for group_id, group in groups.items():
             if group is None:
