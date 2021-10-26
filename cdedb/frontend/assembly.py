@@ -22,17 +22,17 @@ from cdedb.common import (
     schulze_evaluate, unwrap, xsorted,
 )
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, REQUESTfile, AbstractUserFrontend, access,
+    AbstractUserFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, access,
     assembly_guard, calculate_db_logparams, calculate_loglinks, cdedburl,
-    check_validation as check, periodic, process_dynamic_input, request_extractor,
-    RequestConstraint
+    check_validation as check, drow_name, periodic, process_dynamic_input,
+    request_extractor,
 )
+from cdedb.query import QueryScope
 from cdedb.validation import (
     ASSEMBLY_COMMON_FIELDS, BALLOT_EXPOSED_FIELDS, PERSONA_FULL_ASSEMBLY_CREATION,
     filter_none,
 )
 from cdedb.validationtypes import CdedbID, Email
-from cdedb.query import QueryScope
 
 #: Magic value to signal abstention during voting. Used during the emulation
 #: of classical voting. This can not occur as a shortname since it contains
@@ -72,8 +72,7 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     @access("core_admin", "assembly_admin", modi={"POST"})
     @REQUESTdatadict(*filter_none(PERSONA_FULL_ASSEMBLY_CREATION))
-    def create_user(self, rs: RequestState, data: CdEDBObject,
-                    ignore_warnings: bool = False) -> Response:
+    def create_user(self, rs: RequestState, data: CdEDBObject) -> Response:
         defaults = {
             'is_cde_realm': False,
             'is_event_realm': False,
@@ -82,7 +81,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             'is_active': True,
         }
         data.update(defaults)
-        return super().create_user(rs, data, ignore_warnings)
+        return super().create_user(rs, data)
 
     @access("core_admin", "assembly_admin")
     @REQUESTdata("download", "is_search")
@@ -520,11 +519,11 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("member", modi={"POST"})
     def signup(self, rs: RequestState, assembly_id: int) -> Response:
         """Join an assembly."""
+        if rs.has_validation_errors():
+            return self.show_assembly(rs, assembly_id)
         if now() > rs.ambience['assembly']['signup_end']:
             rs.notify("warning", n_("Signup already ended."))
             return self.redirect(rs, "assembly/show_assembly")
-        if rs.has_validation_errors():
-            return self.show_assembly(rs, assembly_id)
         self.process_signup(rs, assembly_id)
         return self.redirect(rs, "assembly/show_assembly")
 
@@ -534,12 +533,12 @@ class AssemblyFrontend(AbstractUserFrontend):
     def external_signup(self, rs: RequestState, assembly_id: int,
                         persona_id: CdedbID) -> Response:
         """Add an external participant to an assembly."""
-        if now() > rs.ambience['assembly']['signup_end']:
-            rs.notify("warning", n_("Signup already ended."))
-            return self.redirect(rs, "assembly/list_attendees")
         if rs.has_validation_errors():
             # Shortcircuit for invalid id
             return self.list_attendees(rs, assembly_id)
+        if now() > rs.ambience['assembly']['signup_end']:
+            rs.notify("warning", n_("Signup already ended."))
+            return self.redirect(rs, "assembly/list_attendees")
         if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):
             rs.append_validation_error(
                 ('persona_id',
@@ -903,6 +902,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         """Show a vote in a ballot of an old assembly by providing secret."""
         if (rs.ambience["assembly"]["is_active"]
                 or not rs.ambience["ballot"]["is_tallied"]):
+            rs.ignore_validation_errors()
             return self.show_ballot(rs, assembly_id, ballot_id)
         if rs.has_validation_errors():
             return self.show_ballot_result(rs, assembly_id, ballot_id)
@@ -946,11 +946,14 @@ class AssemblyFrontend(AbstractUserFrontend):
         else:
             merge_dicts(rs.values, {'vote': vote_dict['own_vote']})
 
-        # this is used for the flux candidate table
+        # this is used for the dynamic row candidate table
         current = {
-            f"{key}_{candidate_id}": value
+            drow_name(field_name=key, entity_id=candidate_id): value
             for candidate_id, candidate in ballot['candidates'].items()
             for key, value in candidate.items() if key != 'id'}
+        sorted_candidate_ids = [
+            e["id"] for e in xsorted(ballot["candidates"].values(),
+                                     key=EntitySorter.candidates)]
         merge_dicts(rs.values, current)
 
         ballots_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
@@ -969,6 +972,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         next_ballot = ballots[ballot_list[i+1]] if i + 1 < length else None
 
         return self.render(rs, "show_ballot", {
+            "sorted_candidate_ids": sorted_candidate_ids,
             'latest_versions': latest_versions,
             'definitive_versions': definitive_versions,
             'MAGIC_ABSTAIN': MAGIC_ABSTAIN,
@@ -1455,25 +1459,21 @@ class AssemblyFrontend(AbstractUserFrontend):
                         ballot_id: int) -> Response:
         """Create, edit and delete candidates of a ballot."""
 
-        def constraint_maker(candidate_id: int, prefix: str) -> List[RequestConstraint]:
-            """Create constraints for each individual candidate"""
-            constraints: List[RequestConstraint] = [
-                (lambda c: c[f'shortname_{candidate_id}'] != ASSEMBLY_BAR_SHORTNAME,
-                 (f'shortname_{candidate_id}',
-                  ValueError(n_("Mustn’t be the bar shortname.")))),
-            ]
-            return constraints
-
-        spec = {'shortname': vtypes.RestrictiveIdentifier, 'title': str}
+        spec = {
+            'shortname': vtypes.ShortnameRestrictiveIdentifier,
+            'title': vtypes.LegacyShortname
+        }
+        existing_candidates = rs.ambience['ballot']['candidates'].keys()
         candidates = process_dynamic_input(
-            rs, rs.ambience['ballot']['candidates'].keys(), spec,
-            constraint_maker=constraint_maker)
+            rs, vtypes.BallotCandidate, existing_candidates, spec)
+        if rs.has_validation_errors():
+            return self.show_ballot(rs, assembly_id, ballot_id)
 
         shortnames: Set[str] = set()
         for candidate_id, candidate in candidates.items():
             if candidate and candidate['shortname'] in shortnames:
                 rs.append_validation_error(
-                    (f"shortname_{candidate_id}",
+                    (drow_name("shortname", candidate_id),
                      ValueError(n_("Duplicate shortname.")))
                 )
             if candidate:

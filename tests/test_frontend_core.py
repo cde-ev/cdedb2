@@ -8,10 +8,12 @@ from typing import Dict, Optional
 import webtest
 
 import cdedb.database.constants as const
-from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, CdEDBObject, get_hash
+from cdedb.common import (
+    ADMIN_VIEWS_COOKIE_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, get_hash,
+)
 from cdedb.query import QueryOperators
 from tests.common import (
-    FrontendTest, UserIdentifier, UserObject, USER_DICT, as_users, storage
+    USER_DICT, FrontendTest, UserIdentifier, UserObject, as_users, storage,
 )
 
 
@@ -1305,9 +1307,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['archivepersonaform']
         f['ack_delete'].checked = True
         self.submit(f, check_notification=False)
-        self.assertValidationError(
-            "note", "Darf nicht leer sein",
-            notification="Archivierungsnotiz muss angegeben werden.")
+        self.assertValidationError("note", "Darf nicht leer sein")
         self.assertTitle("Charly Clown")
         self.assertNonPresence("Der Benutzer ist archiviert.")
         self.assertPresence("Zirkusstadt", div='address')
@@ -1529,11 +1529,20 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Bereichsänderung für Emilia E. Eventis")
         f = self.response.forms['promotionform']
         self.submit(f, check_notification=False)
+        f = self.response.forms['promotionform']
+        f['pevent_id'] = 2
+        self.assertPresence("Die Kursauswahl wird angezeigt, nachdem")
+        f['is_orga'] = True
         self.assertValidationError('change_note', "Darf nicht leer sein.")
-        f['change_note'] = change_note = "Hat an einer Akademie teilgenommen."
+        f['change_note'] = change_note = "Hat eine Akademie organisiert."
+        self.submit(f, check_notification=False)
+        f = self.response.forms['promotionform']
+        self.assertNonPresence("Die Kursauswahl wird angezeigt, nachdem")
+        f['pcourse_id'] = ''
         self.submit(f)
         self.assertTitle("Emilia E. Eventis")
         self.assertPresence("0,00 €", div='balance')
+        self.assertPresence("Geburtstagsfete (Orga)", div="past-events")
         self.assertCheckbox(True, "paper_expuls_checkbox")
         self.assertNonPresence("CdE-Mitglied", div="cde-membership")
         self.assertNonPresence("Probemitgliedschaft", div="cde-membership")
@@ -1550,13 +1559,21 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Bereichsänderung für Nina Neubauer")
         f = self.response.forms['promotionform']
+        f['pevent_id'] = 1
         f['trial_member'].checked = True
         f['change_note'] = "Per Vorstandsbeschluss aufgenommen."
+        self.submit(f, check_notification=False)
+        f = self.response.forms['promotionform']
+        f['pcourse_id'] = 1
+        f['is_instructor'] = True
         self.submit(f)
         self.assertTitle("Nina Neubauer")
         self.assertPresence("0,00 €", div='balance')
         self.assertPresence("CdE-Mitglied", div="cde-membership")
         self.assertPresence("Probemitgliedschaft", div="cde-membership")
+        self.assertPresence("PfingstAkademie", div="past-events")
+        self.assertPresence("Swish", div="past-events")
+        self.assertPresence("Kursleiter", div="past-events")
 
         # check for correct welcome mail
         mail = self.fetch_mail_content()
@@ -1595,6 +1612,7 @@ class TestCoreFrontend(FrontendTest):
     @as_users("vera")
     def test_ignore_warnings_postal_code(self) -> None:
         self.admin_view_profile("vera")
+
         self.traverse({'description': 'Bearbeiten \\(normal\\)'})
         f = self.response.forms['changedataform']
         f['postal_code'] = "11111"
@@ -1603,8 +1621,10 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Ungültige Postleitzahl")
         self.assertPresence("Warnungen ignorieren")
         f = self.response.forms['changedataform']
-        self.submit(f, button="ignore_warnings")
+        f[IGNORE_WARNINGS_NAME].checked = True
+        self.submit(f)
         self.assertTitle("Vera Verwaltung")
+
         self.traverse({'description': 'Bearbeiten \\(mit Adminrechten\\)'})
         f = self.response.forms['changedataform']
         self.assertNonPresence("Warnungen ignorieren")
@@ -1612,7 +1632,9 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Ungültige Postleitzahl")
         self.assertPresence("Warnungen ignorieren")
         f = self.response.forms['changedataform']
-        self.submit(f, button="ignore_warnings")
+        f[IGNORE_WARNINGS_NAME].checked = True
+        self.submit(f)
+
         self.get("/core/genesis/request")
         self.assertTitle("Account anfordern")
         f = self.response.forms['genesisform']
@@ -1631,10 +1653,12 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Ungültige Postleitzahl")
         self.assertPresence("Warnungen ignorieren")
         f = self.response.forms['genesisform']
-        self.submit(f, button="ignore_warnings")
+        f[IGNORE_WARNINGS_NAME].checked = True
+        self.submit(f)
         link = self.fetch_link()
         self.get(link)
         self.follow()
+
         self.traverse({'description': 'Accountanfragen'},
                       {'description': 'Details'},
                       {'description': 'Bearbeiten'})
@@ -1644,7 +1668,8 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Ungültige Postleitzahl")
         self.assertPresence("Warnungen ignorieren")
         f = self.response.forms['genesismodifyform']
-        self.submit(f, button="ignore_warnings")
+        f[IGNORE_WARNINGS_NAME].checked = True
+        self.submit(f)
         f = self.response.forms['genesisapprovalform']
         self.submit(f)
 
@@ -1727,6 +1752,9 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesisapprovalform']
         self.submit(f)
         link = self.fetch_link()
+        self.submit(f, check_notification=False)
+        self.assertPresence("Emailadresse bereits vergeben.", div="notifications")
+        self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
         self.logout()
         self.get(link)
         self.assertTitle("Neues Passwort setzen")

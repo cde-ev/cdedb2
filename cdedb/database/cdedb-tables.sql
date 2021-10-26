@@ -915,14 +915,16 @@ GRANT SELECT, UPDATE ON event.course_choices_id_seq TO cdb_persona;
 CREATE TABLE event.questionnaire_rows (
         id                      bigserial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
-        -- may be NULL for text
+        -- This is NULL for text-only entries.
         field_id                integer REFERENCES event.field_definitions(id),
         pos                     integer NOT NULL,
         title                   varchar,
         info                    varchar,
         input_size              integer,
-        -- may be NULL for text
+        -- This must be NULL exactly for text-only entries.
         readonly                boolean,
+        CONSTRAINT questionnaire_row_readonly_field
+            CHECK ((field_id IS NULL) = (readonly IS NULL)),
         default_value           varchar,
         -- Where the row will be used (registration, questionnaire). See cdedb.constants.QuestionnaireUsages.
         kind                    integer NOT NULL

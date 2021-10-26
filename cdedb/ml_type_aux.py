@@ -5,8 +5,7 @@ import itertools
 import typing
 from collections import OrderedDict
 from typing import (
-    TYPE_CHECKING, Any, Collection, Dict, List, Literal, Mapping, Optional, Set, Type,
-    Union,
+    TYPE_CHECKING, Collection, Dict, List, Literal, Mapping, Optional, Set, Type, Union,
 )
 
 import cdedb.validationtypes as vtypes
@@ -16,11 +15,10 @@ from cdedb.common import (
 from cdedb.database.constants import (
     MailinglistDomain, MailinglistTypes, RegistrationPartStati,
 )
-from cdedb.subman.machine import SubscriptionPolicy
 from cdedb.query import Query, QueryOperators, QueryScope
+from cdedb.subman.machine import SubscriptionPolicy
 
 SubscriptionPolicyMap = Dict[int, SubscriptionPolicy]
-TypeMapping = Mapping[str, Type[Any]]
 
 
 class BackendContainer:
@@ -86,8 +84,8 @@ class GeneralMailinglist:
     allow_unsub: bool = True
 
     # Additional fields for validation. See docstring for details.
-    mandatory_validation_fields: TypeMapping = {}
-    optional_validation_fields: TypeMapping = {}
+    mandatory_validation_fields: vtypes.TypeMapping = {}
+    optional_validation_fields: vtypes.TypeMapping = {}
 
     @classmethod
     def get_additional_fields(cls) -> Mapping[
@@ -283,7 +281,7 @@ class AllMembersImplicitMeta(GeneralMailinglist):
 class EventAssociatedMeta(GeneralMailinglist):
     """Metaclass for all event associated mailinglists."""
     # Allow empty event_id to mark legacy event-lists.
-    mandatory_validation_fields: TypeMapping = {
+    mandatory_validation_fields: vtypes.TypeMapping = {
         "event_id": Optional[vtypes.ID]  # type: ignore
     }
 
@@ -406,7 +404,7 @@ class RestrictedTeamMailinglist(TeamMeta, MemberInvitationOnlyMailinglist):
 
 
 class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
-    mandatory_validation_fields: TypeMapping = {
+    mandatory_validation_fields: vtypes.TypeMapping = {
             **EventAssociatedMeta.mandatory_validation_fields,
             "registration_stati": List[RegistrationPartStati],
     }

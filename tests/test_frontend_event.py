@@ -14,11 +14,11 @@ import lxml.etree
 import webtest
 
 import cdedb.database.constants as const
-from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, CdEDBObject, now
+from cdedb.common import ADMIN_VIEWS_COOKIE_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, now
 from cdedb.filter import iban_filter
 from cdedb.frontend.common import CustomCSVDialect
 from cdedb.query import QueryOperators
-from tests.common import UserObject, USER_DICT, FrontendTest, as_users, prepsql, storage
+from tests.common import USER_DICT, FrontendTest, UserObject, as_users, prepsql, storage
 
 
 class TestEventFrontend(FrontendTest):
@@ -410,6 +410,15 @@ class TestEventFrontend(FrontendTest):
         self.assertTitle("Kursliste Große Testakademie 2222")
         self.assertPresence("ToFi")
         self.assertPresence("Wir werden die Bäume drücken.")
+        f = self.response.forms['coursefilterform']
+        f['track_ids'] = [1, 3]
+        self.submit(f)
+        self.assertTitle("Kursliste Große Testakademie 2222")
+        self.assertNonPresence("Kurzer Kurs")
+        f = self.response.forms['coursefilterform']
+        f['track_ids'] = [2, 3]
+        self.submit(f)
+        self.assertPresence("γ. Kurzer Kurs")
 
     @as_users("annika", "garcia", "ferdinand")
     def test_change_event(self) -> None:
@@ -756,6 +765,10 @@ class TestEventFrontend(FrontendTest):
                       {'href': '/event/event/1/part/2/change'})
         f = self.response.forms['changepartform']
         f['track_num_choices_2'] = "2"
+        self.submit(f, check_notification=False)
+        self.assertValidationWarning("track_shortname_1", "länger als 10 Zeichen.")
+        # prevent warnings about too long shortname for this test
+        f['track_shortname_1'] = "Morgen"
         self.submit(f)
 
         # Change course choices as Orga
@@ -1369,6 +1382,13 @@ etc;anything else""", f['entries_2'].value)
             'course_choice3_1',
             "Du kannst diesen Kurs nicht als 1. und 2. Wahl wählen.")
         f['course_choice3_1'] = 4
+        # Chose instructed course also as course choice -> expecting error
+        self.submit(f, check_notification=False)
+        self.assertTitle("Anmeldung für Große Testakademie 2222")
+        self.assertValidationError(
+            'course_choice3_0',
+            "Bitte wähle nicht deinen eigenen Kurs.")
+        f['course_choice3_0'] = 5
         # Now, we did it right.
         self.submit(f)
         text = self.fetch_mail_content()
@@ -1395,13 +1415,14 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence("Kaffeekränzchen")
         self.assertPresence("Arbeitssitzung")
         f = self.response.forms['amendregistrationform']
+        self.assertEqual("5", f['course_choice3_0'].value)
         self.assertEqual("4", f['course_choice3_1'].value)
         self.assertEqual("", f['course_choice3_2'].value)
         self.assertEqual("2", f['course_instructor3'].value)
         self.assertPresence("Ich freu mich schon so zu kommen")
         f['notes'] = "Ich kann es kaum erwarten!"
         f['course_choice3_0'] = 4
-        f['course_choice3_1'] = 1
+        f['course_choice3_1'] = 2
         f['course_choice3_2'] = 5
         f['course_instructor3'] = 1
         self.submit(f)
@@ -1411,6 +1432,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Anmeldung für Große Testakademie 2222 ändern")
         f = self.response.forms['amendregistrationform']
         self.assertEqual("4", f['course_choice3_0'].value)
+        self.assertEqual("2", f['course_choice3_1'].value)
         self.assertEqual("5", f['course_choice3_2'].value)
         self.assertEqual("1", f['course_instructor3'].value)
         self.assertPresence("Ich kann es kaum erwarten!")
@@ -1547,6 +1569,12 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         f = self.response.forms['fieldsummaryform']
         f['create_-1'].checked = True
+        f['field_name_-1'] = "anzahl_kissen"
+        f['kind_-1'] = const.FieldDatatypes.int
+        f['association_-1'] = const.FieldAssociations.registration
+        self.submit(f)
+        f = self.response.forms['fieldsummaryform']
+        f['create_-1'].checked = True
         f['field_name_-1'] = "eats_meats"
         f['kind_-1'] = const.FieldDatatypes.str
         f['association_-1'] = const.FieldAssociations.registration
@@ -1596,13 +1624,18 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         f = self.response.forms['configureregistrationform']
         f['create_-1'].checked = True
-        f['title_-1'] = "Essgewohnheiten"
+        f['title_-1'] = "Anzahl an Kissen"
         f['field_id_-1'] = 1004
         self.submit(f)
         f = self.response.forms['configureregistrationform']
         f['create_-1'].checked = True
-        f['title_-1'] = "Dein Lieblingstag"
+        f['title_-1'] = "Essgewohnheiten"
         f['field_id_-1'] = 1005
+        self.submit(f)
+        f = self.response.forms['configureregistrationform']
+        f['create_-1'].checked = True
+        f['title_-1'] = "Dein Lieblingstag"
+        f['field_id_-1'] = 1006
         self.submit(f)
 
         self.traverse("Konfiguration")
@@ -1623,14 +1656,15 @@ etc;anything else""", f['entries_2'].value)
         f['plus_one'].checked = True
         self.assertPresence("Name des Partners", div="registrationquestionnaire")
         f['partner'] = ""
+        f['anzahl_kissen'] = ""
         self.assertPresence("Essgewohnheiten", div="registrationquestionnaire")
         f['eats_meats'] = "vegan"
         self.assertPresence("Dein Lieblingstag", div="registrationquestionnaire")
-        # f['favorite_day'] = now().date().isoformat()
         self.submit(f, check_notification=False)
         f = self.response.forms['registerform']
-        self.assertValidationError('partner', "Darf nicht leer sein.")
-        f['partner'] = "Antonai Akademieleitfaden"
+        self.assertValidationError(
+            'anzahl_kissen', "Ungültige Eingabe für eine Ganzzahl.")
+        f['anzahl_kissen'] = 3
         self.assertValidationError('favorite_day', "Kein Datum gefunden.")
         f['favorite_day'] = now().date().isoformat()
         self.submit(f)
@@ -2248,6 +2282,9 @@ etc;anything else""", f['entries_2'].value)
         f["qsel_persona.family_name"] = False
         f["qsel_persona.username"] = False
         f["qsel_reg_fields.xfield_anzahl_GROSSBUCHSTABEN"].checked = True
+        f["qop_reg_fields.xfield_anzahl_GROSSBUCHSTABEN"] = \
+            QueryOperators.nonempty.value
+        f["qord_primary"] = "reg_fields.xfield_anzahl_GROSSBUCHSTABEN"
         f["query_name"] = "Großbuchstaben"
         self.submit(f, button="store_query", check_button_attrs=True)
         self.assertPresence("anzahl_GROSSBUCHSTABEN", div="query-result")
@@ -2271,6 +2308,10 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
 
         self.traverse("Anmeldungen", "Großbuchstaben")
+        # Remove the old constraint, because all field data is now empty.
+        f = self.response.forms["queryform"]
+        f["qop_reg_fields.xfield_anzahl_GROSSBUCHSTABEN"] = ""
+        self.submit(f)
         self.assertPresence("anzahl_GROSSBUCHSTABEN", div="query-result")
 
     @as_users("annika")
@@ -2550,6 +2591,15 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f, check_notification=False)
         self.assertValidationError(
             'persona.persona_id', "Dieser Nutzer ist kein Veranstaltungsnutzer.")
+        # Check invalid course choices
+        f['track1.course_choice_0'] = 5
+        f['track1.course_choice_1'] = 5
+        f['track1.course_instructor'] = 5
+        self.submit(f, check_notification=False)
+        self.assertValidationError(
+            "track1.course_choice_0", "Geleiteter Kurs kann nicht gewählt werden.")
+        self.assertValidationError(
+            "track1.course_choice_1", "Bitte verschiedene Kurse wählen.")
         # Now add an actually valid user.
         f['persona.persona_id'] = USER_DICT['charly']['DB-ID']
         f['reg.orga_notes'] = "Du entkommst uns nicht."
@@ -2560,6 +2610,8 @@ etc;anything else""", f['entries_2'].value)
         f['part1.lodgement_id'] = 4
         f['track1.course_id'] = 5
         f['track1.course_choice_0'] = 5
+        f['track1.course_choice_1'] = 4
+        f['track1.course_instructor'] = 2
         self.submit(f)
         self.assertTitle("\nAnmeldung von Charly Clown (Große Testakademie 2222)\n")
         self.assertPresence("Du entkommst uns nicht.")
@@ -2576,6 +2628,8 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("4", f['part1.lodgement_id'].value)
         self.assertEqual("5", f['track1.course_id'].value)
         self.assertEqual("5", f['track1.course_choice_0'].value)
+        self.assertEqual("4", f['track1.course_choice_1'].value)
+        self.assertEqual("2", f['track1.course_instructor'].value)
 
     @as_users("garcia")
     def test_add_illegal_registration(self) -> None:
@@ -3042,6 +3096,16 @@ etc;anything else""", f['entries_2'].value)
         # Check log
         self.traverse({'href': '/event/event/3/log'})
         self.assertPresence("Kurs eingeteilt.", div="1-1004")
+
+    @as_users("anton")
+    def test_invalid_course_choices(self) -> None:
+        # Check there is no error for without courses
+        self.get('/event/event/2/course/choices')
+        self.follow()
+        self.basic_validate()
+        self.assertTitle("Kurse verwalten (CdE-Party 2050)")
+        self.assertPresence("sind nur in Veranstaltungen mit Kursschienen möglich.",
+                            div='notifications')
 
     @as_users("garcia")
     def test_automatic_assignment(self) -> None:
@@ -3556,28 +3620,37 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence("anzahl_GROSSBUCHSTABEN", div="checkin-list")
 
         # Check the filtering per event part.
-        # TODO place and check actual links.
         self.assertPresence("Anton Armin", div="checkin-list")
         self.assertPresence("Bertålotta Beispiel", div="checkin-list")
         self.assertPresence("Emilia E.", div="checkin-list")
-        self.get("/event/event/1/checkin?part_ids=1,2,3")
+        f = self.response.forms['checkinfilterform']
+        f['part_ids'] = [1, 2, 3]
+        self.submit(f)
         self.assertPresence("Anton Armin", div="checkin-list")
         self.assertPresence("Bertålotta Beispiel", div="checkin-list")
         self.assertPresence("Emilia E.", div="checkin-list")
-        self.get("/event/event/1/checkin?part_ids=1")
+        f = self.response.forms['checkinfilterform']
+        f['part_ids'] = [1]
+        self.submit(f)
         self.assertNonPresence("Anton Armin", div="checkin-list")
         self.assertPresence("Bertålotta Beispiel", div="checkin-list")
         self.assertNonPresence("Emilia E.", div="checkin-list")
-        self.get("/event/event/1/checkin?part_ids=2")
+        f = self.response.forms['checkinfilterform']
+        f['part_ids'] = [2]
+        self.submit(f)
         self.assertNonPresence("Anton Armin", div="checkin-list")
         self.assertNonPresence("Bertålotta Beispiel", div="checkin-list")
         self.assertPresence("Emilia E.", div="checkin-list")
-        self.get("/event/event/1/checkin?part_ids=3")
+        f = self.response.forms['checkinfilterform']
+        f['part_ids'] = [3]
+        self.submit(f)
         self.assertPresence("Anton Armin", div="checkin-list")
         self.assertNonPresence("Bertålotta Beispiel", div="checkin-list")
         self.assertPresence("Emilia E.", div="checkin-list")
         # TODO this check does not really make sense with the existing data.
-        self.get("/event/event/1/checkin?part_ids=2,3")
+        f = self.response.forms['checkinfilterform']
+        f['part_ids'] = [2, 3]
+        self.submit(f)
         self.assertPresence("Anton Armin", div="checkin-list")
         self.assertNonPresence("Bertålotta Beispiel", div="checkin-list")
         self.assertPresence("Emilia E.", div="checkin-list")
@@ -3919,9 +3992,13 @@ etc;anything else""", f['entries_2'].value)
 
         # Erste Hälfte
         self.traverse({"href": "/event/event/1/part/2/change"})
-        f = self.response.forms['changepartform']
+        f = self.response.forms["changepartform"]
+        self.submit(f, check_notification=False)
+        self.assertValidationWarning("track_shortname_1", "länger als 10 Zeichen.")
+        f = self.response.forms["changepartform"]
         f['part_begin'] = past_past_date
         f['part_end'] = past_date
+        f[IGNORE_WARNINGS_NAME].checked = True
         self.submit(f)
 
         # Zweite Hälfte
@@ -4069,8 +4146,12 @@ etc;anything else""", f['entries_2'].value)
         # Erste Hälfte
         self.traverse({"href": "/event/event/1/part/2/change"})
         f = self.response.forms["changepartform"]
+        self.submit(f, check_notification=False)
+        self.assertValidationWarning("track_shortname_1", "länger als 10 Zeichen.")
+        f = self.response.forms["changepartform"]
         f['part_begin'] = "2003-11-01"
         f['part_end'] = "2003-11-11"
+        f[IGNORE_WARNINGS_NAME].checked = True
         self.submit(f)
         self.assertTitle("Veranstaltungsteile konfigurieren (Große Testakademie 2222)")
 
@@ -4249,6 +4330,12 @@ etc;anything else""", f['entries_2'].value)
         for part_id in [1, 2, 3]:
             self.traverse({"href": f"/event/event/1/part/{part_id}/change"})
             f = self.response.forms['changepartform']
+            if part_id == 2:
+                self.submit(f, check_notification=False)
+                self.assertValidationWarning(
+                    "track_shortname_1", "länger als 10 Zeichen.")
+                f = self.response.forms["changepartform"]
+                f[IGNORE_WARNINGS_NAME].checked = True
             f['fee'] = 0
             self.submit(f)
 
@@ -4302,6 +4389,10 @@ etc;anything else""", f['entries_2'].value)
                       "Veranstaltungsteile")
         self.traverse({"href": "/event/event/1/part/2/change"})
         f = self.response.forms['changepartform']
+        self.submit(f, check_notification=False)
+        self.assertValidationWarning("track_shortname_1", "länger als 10 Zeichen.")
+        f = self.response.forms["changepartform"]
+        f[IGNORE_WARNINGS_NAME].checked = True
         f['track_num_choices_1'] = 0
         f['track_min_choices_1'] = 0
         f['track_num_choices_2'] = 0

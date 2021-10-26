@@ -25,23 +25,22 @@ from cdedb.common import (
     REALM_ADMINS, REALM_INHERITANCE, REALM_SPECIFIC_GENESIS_FIELDS, ArchiveError,
     CdEDBObject, CdEDBObjectMap, DefaultReturnCode, EntitySorter, PrivilegeError, Realm,
     RequestState, extract_roles, format_country_code, get_persona_fields_by_realm,
-    implied_realms, merge_dicts, n_, now, pairwise, unwrap, xsorted, sanitize_filename
+    implied_realms, merge_dicts, n_, now, pairwise, sanitize_filename, unwrap, xsorted,
 )
-
 from cdedb.filter import date_filter, enum_entries_filter, markdown_parse_safe
 from cdedb.frontend.common import (
-    AbstractFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, access, basic_redirect,
-    calculate_db_logparams, calculate_loglinks, check_validation as check,
-    check_validation_optional as check_optional, make_membership_fee_reference,
-    periodic, request_dict_extractor, request_extractor, make_persona_name,
-    TransactionObserver,
+    AbstractFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, TransactionObserver,
+    access, basic_redirect, calculate_db_logparams, calculate_loglinks,
+    check_validation as check, check_validation_optional as check_optional,
+    inspect_validation as inspect, make_membership_fee_reference, make_persona_name,
+    periodic, request_dict_extractor, request_extractor,
 )
 from cdedb.ml_type_aux import MailinglistGroup
 from cdedb.query import Query, QueryOperators, QueryScope
 from cdedb.subman.machine import SubscriptionPolicy
 from cdedb.validation import (
-    TypeMapping, PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
-    PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS, validate_check,
+    PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
+    PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS,
 )
 from cdedb.validationtypes import CdedbID
 
@@ -192,7 +191,7 @@ class CoreBaseFrontend(AbstractFrontend):
     def change_meta_info(self, rs: RequestState) -> Response:
         """Change the meta info constants."""
         info = self.coreproxy.get_meta_info(rs)
-        data_params: TypeMapping = {
+        data_params: vtypes.TypeMapping = {
             key: Optional[str]  # type: ignore
             for key in info
         }
@@ -642,6 +641,11 @@ class CoreBaseFrontend(AbstractFrontend):
         if "cde" in access_levels and {"event", "cde"} & roles:
             past_events = self.pasteventproxy.participation_info(rs, persona_id)
 
+        # Retrieve number of active sessions if the user is viewing his own profile
+        active_session_count = None
+        if rs.user.persona_id == persona_id:
+            active_session_count = self.coreproxy.count_active_sessions(rs)
+
         # Check whether we should display an option for using the quota
         quoteable = (not quote_me
                      and "cde" not in access_levels
@@ -656,6 +660,7 @@ class CoreBaseFrontend(AbstractFrontend):
             'data': data, 'past_events': past_events, 'meta_info': meta_info,
             'is_relative_admin_view': is_relative_admin_view, 'reference': reference,
             'quoteable': quoteable, 'access_mode': access_mode,
+            'active_session_count': active_session_count,
         })
 
     @access("event")
@@ -810,12 +815,12 @@ class CoreBaseFrontend(AbstractFrontend):
         """
         if rs.has_validation_errors():
             return self.index(rs)
-        anid, errs = validate_check(vtypes.CdedbID, phrase, argname="phrase")
+        anid, errs = inspect(vtypes.CdedbID, phrase, argname="phrase")
         if not errs:
             assert anid is not None
             if self.coreproxy.verify_id(rs, anid, is_archived=None):
                 return self.redirect_show_user(rs, anid)
-        anid, errs = validate_check(vtypes.ID, phrase, argname="phrase")
+        anid, errs = inspect(vtypes.ID, phrase, argname="phrase")
         if not errs:
             assert anid is not None
             if self.coreproxy.verify_id(rs, anid, is_archived=None):
@@ -968,16 +973,14 @@ class CoreBaseFrontend(AbstractFrontend):
         # Core admins are allowed to search by raw ID or CDEDB-ID
         if "core_admin" in rs.user.roles:
             anid: Optional[vtypes.ID]
-            anid, errs = validate_check(
-                vtypes.CdedbID, phrase, argname="phrase")
+            anid, errs = inspect(vtypes.CdedbID, phrase, argname="phrase")
             if not errs:
                 assert anid is not None
                 tmp = self.coreproxy.get_personas(rs, (anid,))
                 if tmp:
                     data = (unwrap(tmp),)
             else:
-                anid, errs = validate_check(
-                    vtypes.ID, phrase, argname="phrase")
+                anid, errs = inspect(vtypes.ID, phrase, argname="phrase")
                 if not errs:
                     assert anid is not None
                     tmp = self.coreproxy.get_personas(rs, (anid,))
@@ -993,7 +996,7 @@ class CoreBaseFrontend(AbstractFrontend):
             terms = tuple(t.strip() for t in phrase.split(' ') if t)
             valid = True
             for t in terms:
-                _, errs = validate_check(vtypes.NonRegex, t, argname="phrase")
+                _, errs = inspect(vtypes.NonRegex, t, argname="phrase")
                 if errs:
                     valid = False
             if not valid:
@@ -1070,23 +1073,20 @@ class CoreBaseFrontend(AbstractFrontend):
         })
 
     @access("persona", modi={"POST"})
-    @REQUESTdata("generation", "ignore_warnings")
-    def change_user(self, rs: RequestState, generation: int,
-                    ignore_warnings: bool = False) -> Response:
+    @REQUESTdata("generation")
+    def change_user(self, rs: RequestState, generation: int) -> Response:
         """Change own data set."""
         assert rs.user.persona_id is not None
         attributes = get_persona_fields_by_realm(rs.user.roles, restricted=True)
         data = request_dict_extractor(rs, attributes)
         data['id'] = rs.user.persona_id
-        data = check(rs, vtypes.Persona, data, "persona",
-                     _ignore_warnings=ignore_warnings)
+        data = check(rs, vtypes.Persona, data, "persona")
         if rs.has_validation_errors():
             return self.change_user_form(rs)
         assert data is not None
         change_note = "Normale Änderung."
         code = self.coreproxy.change_persona(
-            rs, data, generation=generation, change_note=change_note,
-            ignore_warnings=ignore_warnings)
+            rs, data, generation=generation, change_note=change_note)
         self.notify_return_code(rs, code)
         return self.redirect_show_user(rs, rs.user.persona_id)
 
@@ -1096,7 +1096,7 @@ class CoreBaseFrontend(AbstractFrontend):
                     is_search: bool, query: Query = None) -> Response:
         """Perform search."""
         events = self.pasteventproxy.list_past_events(rs)
-        choices = {
+        choices: Dict[str, Dict[Any, str]] = {
             'pevent_id': collections.OrderedDict(
                 xsorted(events.items(), key=operator.itemgetter(1))),
             'gender': collections.OrderedDict(
@@ -1136,7 +1136,7 @@ class CoreBaseFrontend(AbstractFrontend):
         otherwise.
         """
         events = self.pasteventproxy.list_past_events(rs)
-        choices = {
+        choices: Dict[str, Dict[Any, str]] = {
             'pevent_id': collections.OrderedDict(
                 xsorted(events.items(), key=operator.itemgetter(1))),
             'gender': collections.OrderedDict(
@@ -1189,10 +1189,9 @@ class CoreBaseFrontend(AbstractFrontend):
         })
 
     @access(*REALM_ADMINS, modi={"POST"})
-    @REQUESTdata("generation", "change_note", "ignore_warnings")
+    @REQUESTdata("generation", "change_note")
     def admin_change_user(self, rs: RequestState, persona_id: int,
-                          generation: int, change_note: Optional[str],
-                          ignore_warnings: Optional[bool] = False) -> Response:
+                          generation: int, change_note: Optional[str]) -> Response:
         """Privileged edit of data set."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
@@ -1201,13 +1200,12 @@ class CoreBaseFrontend(AbstractFrontend):
         attributes = get_persona_fields_by_realm(roles, restricted=False)
         data = request_dict_extractor(rs, attributes)
         data['id'] = persona_id
-        data = check(rs, vtypes.Persona, data, _ignore_warnings=ignore_warnings)
+        data = check(rs, vtypes.Persona, data)
         if rs.has_validation_errors():
             return self.admin_change_user_form(rs, persona_id)
         assert data is not None
         code = self.coreproxy.change_persona(
-            rs, data, generation=generation, change_note=change_note,
-            ignore_warnings=bool(ignore_warnings))
+            rs, data, generation=generation, change_note=change_note)
         self.notify_return_code(rs, code)
         return self.redirect_show_user(rs, persona_id)
 
@@ -1501,13 +1499,22 @@ class CoreBaseFrontend(AbstractFrontend):
         if target_realm and rs.ambience['persona']['is_{}_realm'.format(target_realm)]:
             rs.notify("warning", n_("No promotion necessary."))
             return self.redirect_show_user(rs, persona_id)
-        return self.render(rs, "promote_user")
+        past_events = self.pasteventproxy.list_past_events(rs)
+        past_courses = {}
+        if pevent_id := rs.values.get('pevent_id'):
+            past_courses = self.pasteventproxy.list_past_courses(rs, pevent_id)
+        return self.render(rs, "promote_user", {
+            "past_events": past_events, "past_courses": past_courses,
+        })
 
     @access("core_admin", modi={"POST"})
     @REQUESTdatadict(*CDE_TRANSITION_FIELDS)
-    @REQUESTdata("target_realm", "change_note")
+    @REQUESTdata("target_realm", "change_note", "pevent_id", "is_orga", "is_instructor",
+                 "pcourse_id")
     def promote_user(self, rs: RequestState, persona_id: int, change_note: str,
-                     target_realm: vtypes.Realm, data: CdEDBObject) -> Response:
+                     target_realm: vtypes.Realm, pevent_id: Optional[int],
+                     is_orga: bool, is_instructor: bool,
+                     pcourse_id: Optional[int], data: CdEDBObject) -> Response:
         """Add a new realm to the users ."""
         for key in tuple(k for k in data.keys() if not data[k]):
             # remove irrelevant keys, due to the possible combinations it is
@@ -1535,12 +1542,21 @@ class CoreBaseFrontend(AbstractFrontend):
             data['is_{}_realm'.format(realm)] = True
         data = check(rs, vtypes.Persona, data, transition=True)
         if rs.has_validation_errors():
-            return self.promote_user_form(  # type: ignore
-                rs, persona_id, internal=True)
+            return self.promote_user_form(
+                rs, persona_id, target_realm=target_realm, internal=True)
+        if pevent_id is not None:
+            # Show the form again, if past event was selected for the first time.
+            if pcourse_id == -1:
+                return self.promote_user_form(
+                    rs, persona_id, target_realm=target_realm, internal=True)
         assert data is not None
         code = self.coreproxy.change_persona_realms(rs, data, change_note)
         self.notify_return_code(rs, code)
         if code > 0 and target_realm == "cde":
+            if pevent_id is not None:
+                self.pasteventproxy.add_participant(
+                    rs, pevent_id, pcourse_id, persona_id,
+                    is_instructor=is_instructor, is_orga=is_orga)
             persona = self.coreproxy.get_total_persona(rs, persona_id)
             meta_info = self.coreproxy.get_meta_info(rs)
             self.do_mail(rs, "welcome",
@@ -2094,8 +2110,6 @@ class CoreBaseFrontend(AbstractFrontend):
         if not ack_delete:
             rs.append_validation_error(
                 ("ack_delete", ValueError(n_("Must be checked."))))
-        if not note:
-            rs.notify("error", n_("Must supply archival note."))
         if rs.has_validation_errors():
             return self.show_user(
                 rs, persona_id, confirm_id=persona_id, internal=True,

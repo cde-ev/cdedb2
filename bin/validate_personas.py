@@ -3,7 +3,7 @@ from typing import Optional
 
 from cdedb.script import Script
 import cdedb.validationtypes as vtypes
-from cdedb.backend.common import affirm_validation_typed as affirm
+from cdedb.backend.common import affirm_validation as affirm
 
 # Prepare stuff
 
@@ -25,7 +25,7 @@ with script:
         # Validate ml data
         persona = core.get_ml_user(rs, persona_id)
         try:
-            affirm(vtypes.Persona, persona, _ignore_warnings=True)
+            affirm(vtypes.Persona, persona)
         except Exception as e:
             print("-" * 80)
             print(f"Error for persona {persona_id}:")
@@ -39,7 +39,7 @@ with script:
 
         persona = core.get_event_user(rs, persona_id)
         try:
-            affirm(vtypes.Persona, persona, _ignore_warnings=True)
+            affirm(vtypes.Persona, persona)
         except Exception as e:
             print("-" * 80)
             print(f"Error for persona {persona_id}:")
@@ -53,7 +53,7 @@ with script:
 
         persona = core.get_total_persona(rs, persona_id)
         try:
-            affirm(vtypes.Persona, persona, _ignore_warnings=True)
+            affirm(vtypes.Persona, persona)
         except Exception as e:
             print("-" * 80)
             print(f"Error for persona {persona_id}:")

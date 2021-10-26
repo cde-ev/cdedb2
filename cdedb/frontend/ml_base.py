@@ -12,12 +12,10 @@ from werkzeug import Response
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    LOG_FIELDS_COMMON, FULL_MOD_REQUIRING_FIELDS, MOD_ALLOWED_FIELDS,
+    FULL_MOD_REQUIRING_FIELDS, LOG_FIELDS_COMMON, MOD_ALLOWED_FIELDS,
     RESTRICTED_MOD_ALLOWED_FIELDS, CdEDBObject, CdEDBObjectMap, EntitySorter, PathLike,
     PrivilegeError, RequestState, merge_dicts, n_, now, unwrap, xsorted,
 )
-from cdedb.subman.exceptions import SubscriptionError
-from cdedb.subman.machine import SubscriptionAction
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend, REQUESTdata, REQUESTdatadict, access, calculate_db_logparams,
@@ -25,12 +23,14 @@ from cdedb.frontend.common import (
     csv_output, mailinglist_guard, periodic,
 )
 from cdedb.ml_type_aux import (
-    ADDITIONAL_TYPE_FIELDS, TYPE_MAP, MailinglistGroup, get_type
-)
-from cdedb.validation import (
-    ALL_MAILINGLIST_FIELDS, PERSONA_FULL_ML_CREATION, filter_none
+    ADDITIONAL_TYPE_FIELDS, TYPE_MAP, MailinglistGroup, get_type,
 )
 from cdedb.query import QueryScope
+from cdedb.subman.exceptions import SubscriptionError
+from cdedb.subman.machine import SubscriptionAction
+from cdedb.validation import (
+    ALL_MAILINGLIST_FIELDS, PERSONA_FULL_ML_CREATION, filter_none,
+)
 
 
 class MlBaseFrontend(AbstractUserFrontend):
@@ -78,6 +78,8 @@ class MlBaseFrontend(AbstractUserFrontend):
         This will usually be done by a cron job, but sometimes it can be nice to trigger
         this immediately.
         """
+        if rs.has_validation_errors():
+            return self.index(rs)
         mailinglist_ids = self.mlproxy.list_mailinglists(rs)
 
         code = self.mlproxy.write_subscription_states(rs, mailinglist_ids)
@@ -96,8 +98,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("core_admin", "ml_admin", modi={"POST"})
     @REQUESTdatadict(*filter_none(PERSONA_FULL_ML_CREATION))
-    def create_user(self, rs: RequestState, data: Dict[str, Any],
-                    ignore_warnings: bool = False) -> Response:
+    def create_user(self, rs: RequestState, data: Dict[str, Any]) -> Response:
         defaults = {
             'is_cde_realm': False,
             'is_event_realm': False,
@@ -106,7 +107,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             'is_active': True,
         }
         data.update(defaults)
-        return super().create_user(rs, data, ignore_warnings)
+        return super().create_user(rs, data)
 
     @access("core_admin", "ml_admin")
     @REQUESTdata("download", "is_search")

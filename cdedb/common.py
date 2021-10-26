@@ -20,9 +20,9 @@ import re
 import string
 import sys
 from typing import (
-    Generic, TYPE_CHECKING, Any, Callable, Collection, Container, Dict, Generator,
+    TYPE_CHECKING, Any, Callable, Collection, Container, Dict, Generator, Generic,
     Iterable, KeysView, List, Mapping, MutableMapping, Optional, Set, Tuple, Type,
-    TypeVar, Union, cast, overload
+    TypeVar, Union, cast, overload,
 )
 
 import icu
@@ -184,6 +184,9 @@ class RequestState:
         self._conn: IrradiatedConnection = None  # type: ignore
         # Toggle to disable logging
         self.is_quiet = False
+        # Toggle to ignore validation warnings. The value is parsed directly inside
+        # application.py
+        self.ignore_warnings = False
         # Is true, if the application detected an invalid (or no) CSRF token
         self.csrf_alert = False
         # Used for validation enforcement, set to False if a validator
@@ -666,6 +669,10 @@ class EntitySorter:
     @staticmethod
     def course_track(course_track: CdEDBObject) -> Sortkey:
         return (course_track['sortkey'], course_track['id'])
+
+    @staticmethod
+    def fee_modifier(fee_modifier: CdEDBObject) -> Sortkey:
+        return (fee_modifier['modifier_name'], fee_modifier['id'])
 
     @staticmethod
     def event_field(event_field: CdEDBObject) -> Sortkey:
@@ -1251,7 +1258,7 @@ class CourseChoiceToolActions(enum.IntEnum):
 
 
 @enum.unique
-class Accounts(enum.Enum):
+class Accounts(enum.IntEnum):
     """Store the existing CdE Accounts."""
     Account0 = 8068900
     Account1 = 8068901
@@ -1261,6 +1268,35 @@ class Accounts(enum.Enum):
 
     def display_str(self) -> str:
         return str(self.value)
+
+
+@enum.unique
+class ConfidenceLevel(enum.IntEnum):
+    """Store the different Levels of Confidence about the prediction."""
+    Null = 0
+    Low = 1
+    Medium = 2
+    High = 3
+    Full = 4
+
+    @classmethod
+    def destroy(cls) -> "ConfidenceLevel":
+        return cls.Null
+
+    def decrease(self, amount: int = 1) -> "ConfidenceLevel":
+        if self.value - amount > self.__class__.Null.value:
+            return self.__class__(self.value - amount)
+        else:
+            return self.__class__.Null
+
+    def increase(self, amount: int = 1) -> "ConfidenceLevel":
+        if self.value + amount < self.__class__.Full.value:
+            return self.__class__(self.value + amount)
+        else:
+            return self.__class__.Full
+
+    def __format__(self, format_spec: str) -> str:
+        return str(self)
 
 
 @enum.unique
@@ -1832,6 +1868,10 @@ NOTIFICATION_TYPES: Set[NotificationType] = {"success", "info", "question",
 ANTI_CSRF_TOKEN_NAME = "_anti_csrf"
 #: The value the anti CSRF token is expected to have
 ANTI_CSRF_TOKEN_PAYLOAD = "_anti_csrf_check"
+
+#: The form field name used to ignore ValidationWarnings.
+#: This is added on-the-fly by util.form_input_submit if needed
+IGNORE_WARNINGS_NAME = "_magic_ignore_warnings"
 
 #: Map of available privilege levels to those present in the SQL database
 #: (where we have less differentiation for the sake of simplicity).

@@ -5,7 +5,7 @@
                 "title": "Akademiekleidung",
                 "info": "Bitte gib hier Deine Kleidungsw\u00fcnsche an.",
                 "input_size": 0,
-                "readonly": false,
+                "readonly": null,
                 "default_value": null,
                 "field_name": null
             },
@@ -13,7 +13,7 @@
                 "title": "Unisex T-Shirt",
                 "info": null,
                 "input_size": 0,
-                "readonly": true,
+                "readonly": false,
                 "default_value": null,
                 "field_name": "KleidungTShirtCreator"
             },
@@ -21,7 +21,7 @@
                 "title": "Unisex T-Shirt Gr\u00f6\u00dfe",
                 "info": null,
                 "input_size": 0,
-                "readonly": true,
+                "readonly": false,
                 "default_value": null,
                 "field_name": "KleidungTShirtCreatorGroesse"
             },
@@ -29,7 +29,7 @@
                 "title": "Damen T-Shirt",
                 "info": null,
                 "input_size": 0,
-                "readonly": true,
+                "readonly": false,
                 "default_value": null,
                 "field_name": "KleidungTShirtExpresser"
             },
@@ -37,7 +37,7 @@
                 "title": "Damen T-Shirt Gr\u00f6\u00dfe",
                 "info": null,
                 "input_size": 0,
-                "readonly": true,
+                "readonly": false,
                 "default_value": null,
                 "field_name": "KleidungTShirtExpresserGroesse"
             },
@@ -45,7 +45,7 @@
                 "title": "Anmerkungen zur Kleidungsbestellung",
                 "info": null,
                 "input_size": 2,
-                "readonly": true,
+                "readonly": false,
                 "default_value": null,
                 "field_name": "KleidungAnmerkungen"
             }

@@ -2,11 +2,13 @@
 
 import datetime
 import decimal
-from typing import Any, Dict, List, NewType as _NewType, Type
+from typing import Any, Dict, List, Mapping, NewType as _NewType, Type
 
 from cdedb.common import CdEDBObject
-from cdedb.subman import SubscriptionState
 from cdedb.query import Query
+from cdedb.subman import SubscriptionState
+
+TypeMapping = Mapping[str, Type[Any]]
 
 # SIMPLE/PRIMITIVE/ATOMIC TYPES
 
@@ -27,6 +29,11 @@ EmptyList = _NewType("EmptyList", List[Any])
 
 Realm = _NewType("Realm", str)
 StringType = _NewType("StringType", str)
+Shortname = _NewType("Shortname", str)
+ShortnameIdentifier = _NewType("ShortnameIdentifier", Shortname)
+ShortnameRestrictiveIdentifier = _NewType(
+    "ShortnameRestrictiveIdentifier", ShortnameIdentifier)
+LegacyShortname = _NewType("LegacyShortname", str)
 PrintableASCIIType = _NewType("PrintableASCIIType", str)
 PrintableASCII = _NewType("PrintableASCII", str)  # TODO make these subtypes?
 Alphanumeric = _NewType("Alphanumeric", str)

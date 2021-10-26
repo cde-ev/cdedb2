@@ -14,11 +14,12 @@ from werkzeug import Response
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    LOG_FIELDS_COMMON, RequestState, SemesterSteps, lastschrift_reference, n_, unwrap, )
+    LOG_FIELDS_COMMON, RequestState, SemesterSteps, lastschrift_reference, n_, unwrap,
+)
 from cdedb.frontend.cde_base import CdEBaseFrontend
 from cdedb.frontend.common import (
-    REQUESTdata, access, calculate_db_logparams, calculate_loglinks,
-    make_membership_fee_reference, make_postal_address, Worker, TransactionObserver,
+    REQUESTdata, TransactionObserver, Worker, access, calculate_db_logparams,
+    calculate_loglinks, make_membership_fee_reference, make_postal_address,
 )
 
 
@@ -140,6 +141,8 @@ class CdESemesterMixin(CdEBaseFrontend):
     @access("finance_admin", modi={"POST"})
     def semester_eject(self, rs: RequestState) -> Response:
         """Eject members without enough credit and archive inactive users."""
+        if rs.has_validation_errors():
+            self.redirect(rs, "cde/show_semester")
         period_id = self.cdeproxy.current_period(rs)
         if not self.cdeproxy.may_start_semester_ejection(rs):
             rs.notify("error", n_("Wrong timing for ejection."))
@@ -192,6 +195,8 @@ class CdESemesterMixin(CdEBaseFrontend):
     @access("finance_admin", modi={"POST"})
     def semester_balance_update(self, rs: RequestState) -> Response:
         """Deduct membership fees from all member accounts."""
+        if rs.has_validation_errors():
+            self.redirect(rs, "cde/show_semester")
         period_id = self.cdeproxy.current_period(rs)
         if not self.cdeproxy.may_start_semester_balance_update(rs):
             rs.notify("error", n_("Wrong timing for balance update."))
@@ -212,6 +217,8 @@ class CdESemesterMixin(CdEBaseFrontend):
     @access("finance_admin", modi={"POST"})
     def semester_advance(self, rs: RequestState) -> Response:
         """Proceed to next period."""
+        if rs.has_validation_errors():
+            self.redirect(rs, "cde/show_semester")
         period_id = self.cdeproxy.current_period(rs)
         period = self.cdeproxy.get_period(rs, period_id)
         if not period['balance_done']:

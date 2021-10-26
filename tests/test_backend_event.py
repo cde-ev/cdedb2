@@ -8,14 +8,15 @@ import decimal
 import json
 from typing import Any, Dict, List
 
+import freezegun
 import psycopg2
 import pytz
 
 import cdedb.database.constants as const
 from cdedb.backend.common import cast_fields
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, InfiniteEnum, PartialImportError, PrivilegeError,
-    CourseFilterPositions, nearly_now
+    CdEDBObject, CdEDBObjectMap, CourseFilterPositions, InfiniteEnum,
+    PartialImportError, PrivilegeError, nearly_now, now,
 )
 from cdedb.query import Query, QueryOperators, QueryScope
 from tests.common import USER_DICT, BackendTest, as_users, json_keys_to_int, storage
@@ -1483,7 +1484,7 @@ class TestEventBackend(BackendTest):
                      'default_value': None,
                      'info': None,
                      'pos': 0,
-                     'readonly': None,
+                     'readonly': False,
                      'input_size': None,
                      'title': 'Ich bin unter 13 Jahre alt.',
                      'kind': const.QuestionnaireUsages.registration,
@@ -1620,7 +1621,7 @@ class TestEventBackend(BackendTest):
                     'default_value': None,
                     'info': "Du kannst freiwillig etwas mehr bezahlen um zukünftige"
                             " Akademien zu unterstützen.",
-                    'readonly': None,
+                    'readonly': False,
                     'input_size': None,
                     'title': "Ich möchte den Solidaritätszuschlag bezahlen.",
                 },
@@ -3940,3 +3941,41 @@ class TestEventBackend(BackendTest):
 
         result = self.event.retrieve_log(self.key, offset=offset)
         self.assertEqual(expectation, result)
+
+    def _create_registration(self, persona_id: int, event_id: int) -> int:
+        event = self.event.get_event(self.key, event_id)
+        return self.event.create_registration(self.key, {
+            'persona_id': persona_id,
+            'event_id': event['id'],
+            'mixed_lodging': True,
+            'list_consent': True,
+            'notes': None,
+            'parts': {
+                p_id: {'status': const.RegistrationPartStati.applied}
+                for p_id in event['parts']
+            },
+            'tracks': {
+                t_id: {}
+                for p_id in event['parts'] for t_id in event['parts'][p_id]['tracks']
+            }
+        })
+
+    @as_users("annika")
+    def test_registration_timestamps(self) -> None:
+        persona_id = self.user['id']
+        event_ids = [1, 2]
+        reg_ids = {}
+        base_time = now()
+        delta = datetime.timedelta(seconds=42)
+        with freezegun.freeze_time(base_time) as frozen_time:
+            for event_id in event_ids:
+                reg_id = self._create_registration(persona_id, event_id)
+                frozen_time.tick(delta)
+                self.event.set_registration(
+                    self.key, {'id': reg_id, 'notes': "Important change!"})
+                frozen_time.tick(delta)
+                reg_ids[event_id] = reg_id
+            for i, (event_id, reg_id) in enumerate(reg_ids.items()):
+                reg = self.event.get_registration(self.key, reg_id)
+                self.assertEqual(reg['ctime'], base_time + 2 * i * delta)
+                self.assertEqual(reg['mtime'], base_time + (2 * i + 1) * delta)

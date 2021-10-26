@@ -3,13 +3,12 @@
 import datetime
 import decimal
 import enum
+import logging
 import re
 import threading
-
-import logging
 from typing import (
-    Any, Callable, Collection, Container, Dict, Iterable, ItemsView, List, Literal,
-    Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, overload
+    Any, Callable, Collection, Container, Dict, ItemsView, Iterable, List, Literal,
+    Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, overload,
 )
 
 import bleach
@@ -20,8 +19,8 @@ import markdown.extensions.toc
 import markupsafe
 import phonenumbers
 
-from cdedb.common import CdEDBObject, compute_checkdigit, xsorted
 import cdedb.database.constants as const
+from cdedb.common import CdEDBObject, compute_checkdigit, xsorted
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -564,8 +563,10 @@ def map_dict_filter(d: Dict[str, str], processing: Callable[[Any], str]
     return {k: processing(v) for k, v in d.items()}.items()
 
 
-def enum_entries_filter(enum: enum.EnumMeta, processing: Callable[[Any], str] = None,
-                        raw: bool = False, prefix: str = "") -> List[Tuple[int, str]]:
+def enum_entries_filter(enum: Iterable[enum.Enum],
+                        processing: Callable[[Any], str] = None,
+                        raw: bool = False, prefix: str = "",
+                        ) -> List[Tuple[enum.Enum, str]]:
     """
     Transform an Enum into a list of of (value, string) tuple entries. The
     string is piped trough the passed processing callback function to get the
@@ -585,9 +586,8 @@ def enum_entries_filter(enum: enum.EnumMeta, processing: Callable[[Any], str] = 
     if raw:
         pre = lambda x: x
     else:
-        pre = (lambda x: x.display_str()) if hasattr(enum, "display_str") else str  # type: ignore[assignment]
-    to_sort = ((entry, prefix + processing(pre(entry)))  # type: ignore[var-annotated]
-               for entry in enum)
+        pre = lambda x: (x.display_str() if hasattr(x, "display_str") else str(x))
+    to_sort = ((entry, prefix + processing(pre(entry))) for entry in enum)
     return xsorted(to_sort, key=lambda e: e[0].value)
 
 

@@ -3,38 +3,84 @@
 import collections
 import datetime
 import decimal
-import enum
 import json
 import re
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    Accounts, CdEDBObject, CdEDBObjectMap, Error, TransactionType, diacritic_patterns,
-    n_, now, EntitySorter, xsorted, PARSE_OUTPUT_DATEFORMAT
+    PARSE_OUTPUT_DATEFORMAT, Accounts, CdEDBObject, CdEDBObjectMap, ConfidenceLevel,
+    EntitySorter, Error, TransactionType, diacritic_patterns, n_, now, xsorted,
 )
 from cdedb.filter import cdedbid_filter
-from cdedb.validation import validate_check
+from cdedb.frontend.common import inspect_validation as inspect
 
-# This is the specification of the order of the fields in the input.
-# This could be changed in the online banking, but we woud lose backwards
-# compability with multiple years of saved csv exports.
-# Note that "reference" is a `restkey` rather than a real key.
-STATEMENT_CSV_FIELDS = ("myBLZ", "myAccNr", "statementNr",
-                        "statementDate", "currency", "valuta", "date",
-                        "currency2", "amount", "textKey",
-                        "customerReference", "instituteReference",
-                        "transaction", "posting", "primanota",
-                        "textKey2", "BLZ", "KontoNr", "BIC", "IBAN",
-                        "accHolder", "accHolder2")
-# Since the reference is split over multiple columns, gather all of them here.
-STATEMENT_CSV_RESTKEY = "reference"
+# This is the specification of keys in the file exported from the bank. This is
+# configurable in the online banking interface, but changes will cause loss of
+# backwards compatibility.
+# The export contains these keys in the first row. This will be checked.
+STATEMENT_CSV_ACCOUNT_KEY = "Kontonummer"
+STATEMENT_CSV_STATEMENT_NR_KEY = "Auszugsnummer"
+STATEMENT_CSV_STATEMENT_DATE_KEY = "Buchungsdatum"
+STATEMENT_CSV_AMOUNT_KEY = "Betrag"
+STATEMENT_CSV_ACCOUNT_HOLDER_KEYS = [
+    "Auftraggeber-/Empfängername 1",
+    "Auftraggeber-/Empfängername 2",
+]
+STATEMENT_CSV_IBAN_KEY = "Auftraggeber-/Empfängerkonto"
+STATEMENT_CSV_BIC_KEY = "Auftraggeber-/Empfängerbank"
+STATEMENT_CSV_REFERENCE_KEYS = [
+    "Verwendungszweck " + str(i + 1) for i in range(14)
+]
+STATEMENT_CSV_OTHER_REFERENCE_KEYS = [
+    "Ende-zu-Ende-Referenz",
+]
+STATEMENT_CSV_KREF_KEY = "Kundenreferenz (KREF)"
+STATEMENT_CSV_POSTING_KEY = "Buchungstext"
+STATEMENT_CSV_GVC_KEY = "Geschäftsvorfallcode"
+
+STATEMENT_CSV_ALL_KEY = {
+    STATEMENT_CSV_ACCOUNT_KEY,
+    STATEMENT_CSV_STATEMENT_NR_KEY,
+    STATEMENT_CSV_STATEMENT_DATE_KEY,
+    STATEMENT_CSV_AMOUNT_KEY,
+    *STATEMENT_CSV_ACCOUNT_HOLDER_KEYS,
+    STATEMENT_CSV_IBAN_KEY,
+    STATEMENT_CSV_BIC_KEY,
+    STATEMENT_CSV_KREF_KEY,
+    STATEMENT_CSV_POSTING_KEY,
+    STATEMENT_CSV_GVC_KEY,
+    *STATEMENT_CSV_OTHER_REFERENCE_KEYS,
+    *STATEMENT_CSV_REFERENCE_KEYS,
+}
+
+# Map common GVCs to readable descriptions.
+GVC_DESCRIPTIONS = {
+    '088': 'Eilüberweisung',
+    '105': 'Basislastschrift',
+    '109': 'Rückruf Basislastschrift',
+    '116': 'Überweisung',
+    '152': 'Gutschrift Dauerauftrag',
+    '153': 'Gutschrift Lohn/Gehalt/Rente',
+    '159': 'Überweisung Retoure',
+    '166': 'Gutschriftt',
+    '169': 'Gutschrift Spende',
+    '171': 'Einzug Basislastschrift',
+    '191': 'Sammelüberweisung',
+    '192': 'Sammeleinzug Basislastschrift',
+    '201': 'Auslandsüberweisung',
+    '808': 'Gebühren',
+    '814': 'Verwahrentgelt',
+}
+
 # Specification for how the date is formatted in the input.
-STATEMENT_INPUT_DATEFORMAT = "%d.%m.%y"
+STATEMENT_INPUT_DATEFORMAT = "%d.%m.%Y"
+REFERENCE_SEPARATOR = ";"
+STATEMENT_REFERENCE_IGNORES = {"", "NOTPROVIDED"}
 
 # This specifies the export fields for the (eventual) use with GnuCash.
 # Since this is not yet currently in use this is very much subject to change.
-GNUCASH_EXPORT_FIELDS = ("statement_date", "amount", "account", "t_id",
+GNUCASH_EXPORT_FIELDS = ("statement_date", "amount", "account_nr", "t_id",
                          "posting", "category", "reference", "summary")
 
 # This is the specification for how the export for membership fees should look
@@ -49,14 +95,12 @@ MEMBERSHIP_EXPORT_FIELDS = ("amount", "cdedbid", "family_name", "given_names",
 # `cdedb.frontend.event::batch_fees`, everything after that is currently
 # ignored.
 EVENT_EXPORT_FIELDS = ("amount", "cdedbid", "family_name", "given_names",
-                       "statement_date", "persona_id_confidence_str",
-                       "transaction_type", "transaction_type_confidence_str",
-                       "event_name", "event_id_confidence_str")
+                       "statement_date")
 
 # This is the specification for how the export to be used in our (old)
 # Excel-based bookkeeping should look like.
 EXCEL_EXPORT_FIELDS = ("statement_date", "amount_german", "cdedbid",
-                       "family_name", "given_names", "category_old", "account",
+                       "family_name", "given_names", "category_old", "account_nr",
                        "reference", "account_holder", "iban", "bic")
 
 # These are the available delimiter available in a SEPA reference as per SEPA
@@ -77,16 +121,13 @@ STATEMENT_RELEVANT_REFERENCE_DELIMITERS = ["SVWZ", "EREF"]
 # postings and references:
 
 # Match the Posting for the Account fee special case.
-POSTING_ACCOUNT_FEE = re.compile(
-    r"BUCHUNGSPOSTENGEBUEHREN|KONTOFUEHRUNGSGEBUEHREN", flags=re.I)
+POSTING_ACCOUNT_FEE = re.compile(r"^Gebühren$", flags=re.I)
 
 # Match the Posting for most (active) outgoing transactions.
-POSTING_REFUND = re.compile(
-    r"(Sammel-?)?(ü|ue|u|\s+)berweisung", flags=re.I)
+POSTING_REFUND = re.compile(r"^(Sammel)?überweisung$", flags=re.I)
 
 # Match the Posting for a (incoming) direct debit.
-POSTING_DIRECT_DEBIT = re.compile(
-    r"SAMMELEINZ\.BASIS-LS", flags=re.I)
+POSTING_DIRECT_DEBIT = re.compile(r"^(Sammel)Einzug Basislastschrift$", flags=re.I)
 
 # Match a refund of an event participant fee.
 REFERENCE_REFUND_EVENT_FEE = re.compile(
@@ -105,6 +146,10 @@ REFERENCE_REFUND_EXPENSES = re.compile(
 REFERENCE_MEMBERSHIP = re.compile(
     r"Mitglied(schaft)?(sbeitrag)?|(Halb)?Jahresbeitrag", flags=re.I)
 
+# Match a reference indicating an event fee.
+REFERENCE_EVENT_FEE = re.compile(
+    r"Teiln(ahme|ehmer)[-\s]*(beitrag)?", flags=re.I)
+
 # Match a donation.
 REFERENCE_DONATION = re.compile(
     r"Spende", flags=re.I)
@@ -121,11 +166,11 @@ STATEMENT_DB_ID_EXACT = re.compile(
 # This matches something very close to a correct DB-ID. Either the D or the B
 # might be missing and there may be some additional whitespaces/delimiters.
 STATEMENT_DB_ID_CLOSE = re.compile(
-    r"(?:D\w|\wB)[-.\s]*([0-9][-.\s0-9]{0,9}[0-9X])", flags=re.I)
+    r"(?:D\w|\wB)[-./\s]*([0-9][-./\s0-9]{0,9}[0-9X])", flags=re.I)
 # Helper Patterns to remove the format markers from the DB-ID.
 STATEMENT_DB_ID_REMOVE = (
-    re.compile(r"DB", flags=re.I),
-    re.compile(r"[-.\s]", flags=re.I),
+    re.compile(r"^DB", flags=re.I),
+    re.compile(r"[-./\s]", flags=re.I),
 )
 
 # Minimum amount for us to consider a transaction an Event fee.
@@ -211,6 +256,13 @@ def get_event_name_pattern(event: CdEDBObject) -> str:
     return result_pattern
 
 
+def format_events(events: CdEDBObjectMap) -> List[Tuple[(CdEDBObject, str)]]:
+    return [
+        (e, get_event_name_pattern(e))
+        for e in xsorted(events.values(), key=EntitySorter.event, reverse=True)
+    ]
+
+
 def parse_amount(amount: str) -> decimal.Decimal:
     """Safely determine how to interpret a string as Decimal."""
     if not amount:
@@ -234,14 +286,17 @@ def _reconstruct_cdedbid(db_id: str) -> Tuple[Optional[int], List[Error]]:
     of the persona_id and the checkdigit and then validates it.
     """
 
+    db_id, p = inspect(str, db_id)
+    if not db_id:
+        return None, p
+
     value = db_id[:-1]
     for pattern in STATEMENT_DB_ID_REMOVE:
         value = re.sub(pattern, "", value)
     checkdigit = db_id[-1].upper()
 
     # Check the DB-ID
-    p_id, p = validate_check(
-        vtypes.CdedbID, "DB-{}-{}".format(value, checkdigit), argname="persona_id")
+    p_id, p = inspect(vtypes.CdedbID, f"DB-{value}-{checkdigit}", argname="persona_id")
 
     return p_id, p
 
@@ -252,7 +307,7 @@ def number_to_german(number: Union[decimal.Decimal, int, str]) -> str:
         ret = "{:,.2f}".format(number)
     else:
         ret = str(number)
-    ret = ret.replace(",", "_").replace(".", ",").replace("_", ".")
+    ret = ret.replace(",", "").replace(".", ",")
     return ret
 
 
@@ -269,86 +324,58 @@ def simplify_amount(amt: Union[decimal.Decimal, int, str]) -> str:
     return str(number_to_german(amt)).rstrip("0").rstrip(",")
 
 
-@enum.unique
-class ConfidenceLevel(enum.IntEnum):
-    """Store the different Levels of Confidence about the prediction."""
-    Null = 0
-    Low = 1
-    Medium = 2
-    High = 3
-    Full = 4
-
-    @classmethod
-    def destroy(cls) -> "ConfidenceLevel":
-        return cls.Null
-
-    def decrease(self, amount: int = 1) -> "ConfidenceLevel":
-        if self.value - amount > self.__class__.Null.value:
-            return self.__class__(self.value - amount)
-        else:
-            return self.__class__.Null
-
-    def increase(self, amount: int = 1) -> "ConfidenceLevel":
-        if self.value + amount < self.__class__.Full.value:
-            return self.__class__(self.value + amount)
-        else:
-            return self.__class__.Full
-
-    def __format__(self, format_spec: str) -> str:
-        return str(self)
-
-
 class Transaction:
     """Class to hold all transaction information,"""
 
-    def __init__(self, data: CdEDBObject) -> None:
+    def __init__(self, data: CdEDBObject, index: int = None) -> None:
         """We reconstruct a Transaction from the validation form dict here."""
+        # Fix parameter suffix.
+        if index is not None:
+            data = {k.rstrip(str(index)): v for k, v in data.items()}
+
         # These fields are all very essential and need to be present.
         self.t_id = data["t_id"]
         self.account = data["account"]
+        self.statement_nr = data["statement_nr"]
         self.statement_date = data["statement_date"]
         self.amount = data["amount"]
         self.reference = data["reference"]
-        ref_parts_default = {
-                STATEMENT_RELEVANT_REFERENCE_DELIMITERS[0]: self.reference
-            }
-        self.reference_parts = data.get("reference_parts", ref_parts_default)
+        self.other_references = (data["other_references"] or "").split(
+            REFERENCE_SEPARATOR)
         self.account_holder = data["account_holder"]
         self.iban = data["iban"]
-        self.bic = data.get("bic")
+        self.bic = data["bic"]
         self.posting = data["posting"]
 
         # We need the following fields, but we actually set them later.
         self.errors = data.get("errors", [])
         self.warnings = data.get("warnings", [])
-        self.type: TransactionType
-        self.type = data.get("transaction_type")  # type: ignore
-        self.event_id = data.get("event_id")
-        if data.get("cdedbid"):
-            self.persona_id = data["cdedbid"]
-        else:
-            self.persona_id = data.get("persona_id")
+        self.type: Optional[TransactionType] = data.get("type")
+        self._event_id = data.get("event_id")
+        self.event: Optional[CdEDBObject] = None
+        self._persona_id = data.get("cdedbid")
+        self.persona: Optional[CdEDBObject] = None
 
         # We can be confident in our data if it was manually confirmed.
         cl = ConfidenceLevel
-        if data.get("transaction_type_confirm"):
+        if data.get("type_confirm"):
             self.type_confidence = cl.Full
-        elif data.get("transaction_type_confidence"):
-            self.type_confidence = cl(data["transaction_type_confidence"])
+        elif val := data.get("type_confidence"):
+            self.type_confidence = cl(val)
         else:
             self.type_confidence = cl.Null
-        if data.get("persona_id_confirm"):
-            self.persona_id_confidence = cl.Full
-        elif data.get("persona_id_confidence"):
-            self.persona_id_confidence = cl(data["persona_id_confidence"])
+        if data.get("persona_confirm"):
+            self.persona_confidence = cl.Full
+        elif val := data.get("persona_confidence"):
+            self.persona_confidence = cl(val)
         else:
-            self.persona_id_confidence = cl.Null
-        if data.get("event_id_confirm"):
-            self.event_id_confidence = cl.Full
-        elif data.get("event_id_confidence"):
-            self.event_id_confidence = cl(data["event_id_confidence"])
+            self.persona_confidence = cl.Null
+        if data.get("event_confirm"):
+            self.event_confidence = cl.Full
+        elif val := data.get("event_confidence"):
+            self.event_confidence = cl(val)
         else:
-            self.event_id_confidence = cl.Null
+            self.event_confidence = cl.Null
 
     @classmethod
     def from_csv(cls, raw: CdEDBObject) -> "Transaction":
@@ -363,92 +390,118 @@ class Transaction:
         errors = []
 
         try:
-            data["account"] = Accounts(int(raw["myAccNr"]))
+            data["account"] = Accounts(int(raw[STATEMENT_CSV_ACCOUNT_KEY]))
         except ValueError:
             errors.append(
-                ("MyAccNr",
+                ("account",
                  ValueError("Unknown Account %(acc)s in Transaction %(t_id)s",
-                            {"acc": raw["myAccNr"], "t_id": data["t_id"]})))
+                            {"acc": raw[STATEMENT_CSV_ACCOUNT_KEY],
+                             "t_id": data["t_id"]})))
             data["account"] = Accounts.Unknown
 
+        data["statement_nr"] = int(raw[STATEMENT_CSV_STATEMENT_NR_KEY])
         try:
             data["statement_date"] = datetime.datetime.strptime(
-                raw["statementDate"], STATEMENT_INPUT_DATEFORMAT).date()
+                raw[STATEMENT_CSV_STATEMENT_DATE_KEY], STATEMENT_INPUT_DATEFORMAT
+            ).date()
         except ValueError:
-            errors.append(
-                ("statementDate",
-                 ValueError("Incorrect Date Format in Transaction %(t_id)s",
-                            {"t_id": t_id})))
+            errors.append((STATEMENT_CSV_STATEMENT_DATE_KEY,
+                           ValueError("Incorrect Date Format in Transaction %(t_id)s",
+                                      {"t_id": t_id})))
             data["statement_date"] = datetime.datetime.now().date()
 
         try:
-            data["amount"] = parse_amount(raw["amount"])
+            data["amount"] = parse_amount(raw[STATEMENT_CSV_AMOUNT_KEY])
         except ValueError as e:
             if "Could not parse." in e.args:
                 errors.append(
-                    ("amount",
+                    (STATEMENT_CSV_AMOUNT_KEY,
                      ValueError("Could not parse Transaction Amount (%(amt)s)"
                                 "for Transaction %(t_id)s",
-                                {"amt": raw["amount"], "t_id": t_id})))
+                                {"amt": raw[STATEMENT_CSV_AMOUNT_KEY], "t_id": t_id})))
                 data["amount"] = decimal.Decimal(0)
             else:
                 raise
         else:
             # Check whether the original input can be reconstructed
-            if raw["amount"] != number_to_german(data["amount"]):
+            raw_amount = raw[STATEMENT_CSV_AMOUNT_KEY]
+            reconstructed_amount = number_to_german(data["amount"])
+            if raw_amount != reconstructed_amount:
                 errors.append(
                     ("amount",
                      ValueError("Problem in line %(t_id)s: raw value "
                                 "%(amt_r)s != parsed value %(amt_p)s.",
                                 {"t_id": t_id,
-                                 "amt_r": raw["amount"],
-                                 "amt_p": number_to_german(data["amount"]),
+                                 "amt_r": raw_amount,
+                                 "amt_p": reconstructed_amount,
                                  })))
 
-        if STATEMENT_CSV_RESTKEY in raw:
-            # The complete reference might be split over multiple columns.
-            reference = "".join(raw[STATEMENT_CSV_RESTKEY])
+        data["reference"] = "".join(
+            raw[k].strip("'") for k in STATEMENT_CSV_REFERENCE_KEYS)
+        data["other_references"] = REFERENCE_SEPARATOR.join(
+            raw[k].strip("'") for k in STATEMENT_CSV_OTHER_REFERENCE_KEYS
+            if raw[k] not in STATEMENT_REFERENCE_IGNORES)
 
-            # Split the reference at all SEPA reference delimiters.
-            reference_parts = {}
-            for delimiter in STATEMENT_REFERENCE_DELIMITERS:
-                pattern = re.compile(r"{}\+(.*)$".format(delimiter))
-                result = pattern.findall(reference)
-                if result:
-                    reference_parts[delimiter] = result[0]
-                    reference = pattern.sub("", reference)
-            if reference_parts:
-                # Construct a single reference string.
-                data["reference"] = ";".join(
-                    v for k, v in reference_parts.items()
-                    if v and v != "NOTPROVIDED")
-                # Save the actually useful parts separately.
-                data["reference_parts"] = {
-                    k: v for k, v in reference_parts.items()
-                    if (v and v != "NOTPROVIDED"
-                        and k in STATEMENT_RELEVANT_REFERENCE_DELIMITERS)}
-            else:
-                data["reference"] = "".join(raw[STATEMENT_CSV_RESTKEY])
-                data["reference_parts"] = {
-                    STATEMENT_RELEVANT_REFERENCE_DELIMITERS[0]:
-                        data["reference"]
-                }
-        else:
-            data["reference"] = ""
-            data["reference_parts"] = {
-                STATEMENT_RELEVANT_REFERENCE_DELIMITERS[0]: ""
-            }
+        data["account_holder"] = "".join(
+            raw[k] for k in STATEMENT_CSV_ACCOUNT_HOLDER_KEYS)
+        data["iban"] = raw[STATEMENT_CSV_IBAN_KEY]
+        data["bic"] = raw[STATEMENT_CSV_BIC_KEY]
 
-        data["account_holder"] = "".join([raw["accHolder"], raw["accHolder2"]])
-        data["iban"] = raw["IBAN"]
-        data["bic"] = raw["BIC"]
-
-        data["posting"] = str(raw["posting"]).split(" ", 1)[0]
+        data["posting"] = GVC_DESCRIPTIONS.get(
+            raw[STATEMENT_CSV_GVC_KEY], raw[STATEMENT_CSV_POSTING_KEY])
 
         data["errors"] = errors
         data["warnings"] = []
 
         return Transaction(data)
+
+    @property
+    def all_references(self) -> List[str]:
+        return [self.reference, *self.other_references]
+
+    @property
+    def full_reference(self) -> str:
+        return REFERENCE_SEPARATOR.join(self.all_references)
+
+    @staticmethod
+    def get_request_params(index: int = None, *, hidden_only: bool = False
+                           ) -> vtypes.TypeMapping:
+        """Returns a specification for the parameters that should be extracted from
+        the request to create a `Transaction` object.
+
+        The return should be used with `request_extractor`. The data thusly extracted
+        can be used to call `Transaction.__init__`. The appended suffix can be passed
+        there too, where it will automatically be stripped away.
+
+        :param hidden_only: If True, only return the keys used for hidden form inputs.
+        """
+        suffix = "" if index is None else str(index)
+        ret: vtypes.TypeMapping = {
+            f"t_id{suffix}": vtypes.ID,
+            f"account{suffix}": Accounts,
+            f"statement_nr{suffix}": vtypes.ID,
+            f"statement_date{suffix}": datetime.date,
+            f"amount{suffix}": decimal.Decimal,
+            f"reference{suffix}": Optional[str],  # type: ignore[dict-item]
+            f"other_references{suffix}": Optional[str],  # type: ignore[dict-item]
+            f"account_holder{suffix}": Optional[str],  # type: ignore[dict-item]
+            f"iban{suffix}": Optional[vtypes.IBAN],  # type: ignore[dict-item]
+            f"bic{suffix}": Optional[str],  # type: ignore[dict-item]
+            f"posting{suffix}": str,
+            f"type_confidence{suffix}": ConfidenceLevel,
+            f"persona_confidence{suffix}": ConfidenceLevel,
+            f"event_confidence{suffix}": ConfidenceLevel,
+        }
+        if not hidden_only:
+            ret = dict(**ret, **{  # type: ignore[arg-type]
+                f"type{suffix}": TransactionType,
+                f"type_confirm{suffix}": bool,
+                f"cdedbid{suffix}": Optional[vtypes.CdedbID],
+                f"persona_confirm{suffix}": bool,
+                f"event_id{suffix}": Optional[vtypes.ID],
+                f"event_confirm{suffix}": bool,
+            })
+        return ret
 
     def _find_cdedbids(self, confidence: ConfidenceLevel = ConfidenceLevel.Full
                        ) -> Dict[int, ConfidenceLevel]:
@@ -460,17 +513,14 @@ class Transaction:
         patterns = [STATEMENT_DB_ID_EXACT, STATEMENT_DB_ID_CLOSE]
         orig_confidence = confidence
         for pattern in patterns:
-            for kind in STATEMENT_RELEVANT_REFERENCE_DELIMITERS:
-                if kind in self.reference_parts:
-                    result = re.findall(pattern, self.reference_parts[kind])
-                    if result:
-                        for db_id in result:
-                            p_id, p = _reconstruct_cdedbid(db_id)
-
-                            if not p:
-                                assert p_id is not None
-                                if p_id not in ret:
-                                    ret[p_id] = confidence
+            for ref in self.all_references:
+                if result := re.findall(pattern, ref):
+                    for db_id in result:
+                        p_id, p = _reconstruct_cdedbid(db_id)
+                        if not p:
+                            assert p_id is not None
+                            if p_id not in ret:
+                                ret[p_id] = confidence
 
                 confidence = confidence.decrease(1)
 
@@ -482,8 +532,7 @@ class Transaction:
 
         return ret
 
-    def analyze(self, events: CdEDBObjectMap,
-                get_persona: BackendGetter) -> None:
+    def analyze(self, events: CdEDBObjectMap, get_persona: BackendGetter) -> None:
         """
         Try to guess the TransactionType.
 
@@ -497,13 +546,13 @@ class Transaction:
         confidence = ConfidenceLevel.Full
 
         # Try to find and match an event.
-        events = [
-            (e, get_event_name_pattern(e))
-            for e in xsorted(events.values(), key=EntitySorter.event, reverse=True)
-        ]
         self._match_event(events)
         # Try to find and match cdedbids.
         self._match_members(get_persona)
+
+        # Return early, if we already matched a type.
+        if self.type:
+            return
 
         # Sanity check whether we know the Account.
         if self.account == Accounts.Unknown:
@@ -518,22 +567,22 @@ class Transaction:
             if re.search(POSTING_REFUND, self.posting):
 
                 # Special case for incoming (or outgoing) donations.
-                if re.search(REFERENCE_DONATION, self.reference):
+                if re.search(REFERENCE_DONATION, self.full_reference):
                     self.type = TransactionType.Donation
                     self.type_confidence = ConfidenceLevel.Full
                     return
 
                 # Check for refund of participant fee:
-                if re.search(REFERENCE_REFUND_EVENT_FEE, self.reference):
+                if re.search(REFERENCE_REFUND_EVENT_FEE, self.full_reference):
                     self.type = TransactionType.EventFeeRefund
                     self.type_confidence = confidence
                 # Check for refund of instructor fee:
-                elif re.search(REFERENCE_REFUND_INSTRUCTOR, self.reference):
+                elif re.search(REFERENCE_REFUND_INSTRUCTOR, self.full_reference):
                     self.type = TransactionType.InstructorRefund
                     self.type_confidence = confidence
 
-                elif re.search(REFERENCE_REFUND_EXPENSES, self.reference):
-                    if self.event_id:
+                elif re.search(REFERENCE_REFUND_EXPENSES, self.full_reference):
+                    if self.event:
                         self.type = TransactionType.EventExpenses
                     else:
                         self.type = TransactionType.Expenses
@@ -562,21 +611,27 @@ class Transaction:
                 self.type_confidence = confidence
 
             # Special case for incoming (or outgoing) donations.
-            elif re.search(REFERENCE_DONATION, self.reference):
+            elif re.search(REFERENCE_DONATION, self.full_reference):
                 self.type = TransactionType.Donation
                 self.type_confidence = ConfidenceLevel.Full
                 return
 
             # Look for Membership fees.
-            elif re.search(REFERENCE_MEMBERSHIP, self.reference):
+            elif re.search(REFERENCE_MEMBERSHIP, self.full_reference):
                 self.type = TransactionType.MembershipFee
                 self.type_confidence = confidence
 
-            elif self.event_id and self.amount > AMOUNT_MIN_EVENT_FEE:
+            elif self.event and self.amount > AMOUNT_MIN_EVENT_FEE:
                 self.type = TransactionType.EventFee
                 self.type_confidence = confidence
 
-            elif self.persona_id:
+            # Look for event fee without event match.
+            elif self.amount > AMOUNT_MIN_EVENT_FEE and re.search(REFERENCE_EVENT_FEE,
+                                                                  self.full_reference):
+                self.type = TransactionType.EventFee
+                self.type_confidence = confidence.decrease()
+
+            elif self.persona:
                 self.type = TransactionType.MembershipFee
                 self.type_confidence = confidence
 
@@ -593,6 +648,20 @@ class Transaction:
         else:
             raise RuntimeError("Impossible!")
 
+    def get_data(self, *, get_persona: BackendGetter = None,
+                 events: CdEDBObjectMap = None) -> None:
+        """Try retrieving the persona and event belonging to this transaction."""
+        if self._persona_id and get_persona:
+            try:
+                self.persona = get_persona(self._persona_id)
+            except KeyError:
+                self._persona_id = None
+        if self._event_id and events:
+            try:
+                self.event = events[self._event_id]
+            except KeyError:
+                self._event_id = None
+
     def _match_members(self, get_persona: BackendGetter) -> None:
         """
         Assign all matching members to self.member_matches.
@@ -600,76 +669,72 @@ class Transaction:
         Assign the best match to self.best_member_match and it's Confidence to
         self.best_member_confidence.
         """
+        self.get_data(get_persona=get_persona)
+        # Return early, if we already matched a persona.
+        if self.persona:
+            return
 
         members = []
-        Member = collections.namedtuple("Member", ("persona_id", "confidence"))
+        Member = collections.namedtuple("Member", ("persona", "confidence"))
 
-        result = self._find_cdedbids()
-        p: Error
-        if result:
+        if result := self._find_cdedbids():
             if len(result) > 1:
-                p = ("reference",
-                     ValueError(n_(
-                         "Multiple (%(count)s) DB-IDs found in line %(t_id)s."),
-                         {"count": len(result), "t_id": self.t_id}))
-                self.errors.append(p)
+                self.errors.append(
+                    ("reference",
+                     ValueError(
+                         n_("Multiple (%(count)s) DB-IDs found in line %(t_id)s."),
+                         {"count": len(result), "t_id": self.t_id})))
+        else:
+            return
 
-            for p_id, confidence in result.items():
-
-                try:
-                    persona = get_persona(p_id)
-                except KeyError as e:
-                    if p_id in e.args:
-                        p = ("persona_id",
-                             KeyError(n_("No Member with ID %(p_id)s found."),
-                                      {"p_id": p_id}))
-                        self.errors.append(p)
-                    else:
-                        p = ("persona_id", e)
-                        self.errors.append(p)
-                    continue
+        for p_id, confidence in result.items():
+            # Check that the persona exists.
+            try:
+                persona = get_persona(p_id)
+            except KeyError as e:
+                if p_id in e.args:
+                    p = ("persona", KeyError(n_("No Member with ID %(p_id)s found."),
+                                                {"p_id": p_id}))
+                    self.errors.append(p)
                 else:
-                    d_p = diacritic_patterns
-                    given_names = persona.get('given_names', "")
-                    gn_pattern = d_p(re.escape(given_names),
-                                     two_way_replace=True)
-                    family_name = persona.get('family_name', "")
-                    fn_pattern = d_p(re.escape(family_name),
-                                     two_way_replace=True)
-                    try:
-                        if not re.search(gn_pattern, self.reference,
-                                         flags=re.IGNORECASE):
-                            p = ("given_names",
-                                 KeyError(
-                                     n_("(%(p)s) not found in (%(ref)s)."),
-                                     {"p": given_names, "ref": self.reference}))
-                            self.warnings.append(p)
-                            confidence = confidence.decrease()
-                    except re.error as e:
-                        p = ("given_names",
-                             TypeError(
-                                 n_("(%(p)s) is not a valid regEx (%(e)s)."),
-                                 {"p": gn_pattern, "e": e}))
-                        self.warnings.append(p)
-                        confidence = confidence.decrease()
-                    try:
-                        if not re.search(fn_pattern, self.reference,
-                                         flags=re.IGNORECASE):
-                            p = ("family_name",
-                                 KeyError(
-                                     n_("(%(p)s) not found in (%(ref)s)."),
-                                     {"p": family_name, "ref": self.reference}))
-                            self.warnings.append(p)
-                            confidence = confidence.decrease()
-                    except re.error as e:
-                        p = ("family_name",
-                             TypeError(
-                                 n_("(%(p)s) is not a valid regEx (%(e)s)."),
-                                 {"p": fn_pattern, "e": e}))
-                        self.warnings.append(p)
-                        confidence = confidence.decrease()
+                    p = ("persona", e)
+                    self.errors.append(p)
+                continue
 
-                    members.append(Member(p_id, confidence))
+            # TODO improve pattern construction.
+            d_p = diacritic_patterns
+            # Search reference for given_names.
+            given_names = persona['given_names']
+            gn_pattern = d_p(re.escape(given_names), two_way_replace=True)
+            try:
+                if not re.search(gn_pattern, self.full_reference, flags=re.I):
+                    self.warnings.append(
+                        ("given_names", KeyError(n_("(%(p)s) not found in reference."),
+                                                 {"p": given_names})))
+                    confidence = confidence.decrease()
+            except re.error as e:
+                self.warnings.append(
+                    ("given_names",
+                     TypeError(n_("(%(p)s) is not a valid regEx (%(e)s)."),
+                               {"p": gn_pattern, "e": e})))
+                confidence = confidence.decrease()
+            # Search reference for family_name.
+            family_name = persona['family_name']
+            fn_pattern = d_p(re.escape(family_name), two_way_replace=True)
+            try:
+                if not re.search(fn_pattern, self.full_reference, flags=re.I):
+                    self.warnings.append(
+                        ("family_name", KeyError(n_("(%(p)s) not found in reference."),
+                                                 {"p": family_name})))
+                    confidence = confidence.decrease()
+            except re.error as e:
+                self.warnings.append(
+                    ("family_name",
+                     TypeError(n_("(%(p)s) is not a valid regEx (%(e)s)."),
+                               {"p": fn_pattern, "e": e})))
+                confidence = confidence.decrease()
+
+            members.append(Member(persona, confidence))
 
         if members:
             # Find the member with the best confidence
@@ -682,37 +747,39 @@ class Transaction:
                     best_match = member
 
             if best_match and best_confidence > ConfidenceLevel.Null:
-                self.persona_id = best_match.persona_id
-                self.persona_id_confidence = best_confidence
+                self.persona_confidence = best_confidence
+                self.persona = best_match.persona
 
-    def _match_event(self, processed_events: List[Tuple[CdEDBObject, str]]) -> None:
+    def _match_event(self, events: CdEDBObjectMap) -> None:
         """
         Assign all matching Events to self.event_matches.
 
-        :param processed_events: This should be a sorted list of events, and
-            event name patterns derived from them.
+        :param events: Collection of events as returned by `EventBackend.get_events`.
 
         Assign the best match to self.best_event_match and
         the confidence of the best match to self.best_event_confidence.
         """
+        self.get_data(events=events)
+        # Return early if we already matched an event.
+        if self.event:
+            return
 
         confidence = ConfidenceLevel.Full
 
-        Event = collections.namedtuple("Event", ("event_id", "confidence"))
+        Event = collections.namedtuple("Event", ("event", "confidence"))
 
         matched_events = []
-        for e, pattern in processed_events:
+        for e, pattern in format_events(events):
             if e["is_archived"]:
                 confidence = confidence.decrease()
 
-            if re.search(re.escape(e["title"]), self.reference,
-                         flags=re.IGNORECASE):
+            if re.search(re.escape(e["title"]), self.reference, flags=re.IGNORECASE):
                 # Exact match to Event Name
-                matched_events.append(Event(e["id"], confidence))
+                matched_events.append(Event(e, confidence))
                 continue
             elif re.search(pattern, self.reference, flags=re.IGNORECASE):
                 # Similar to Event Name
-                matched_events.append(Event(e["id"], confidence.decrease()))
+                matched_events.append(Event(e, confidence.decrease()))
 
         if matched_events:
             best_match = None
@@ -724,83 +791,66 @@ class Transaction:
                     best_match = event
 
             if best_match and best_confidence > ConfidenceLevel.Null:
-                self.event_id = best_match.event_id
-                self.event_id_confidence = best_confidence
+                self.event_confidence = best_confidence
+                self.event = best_match.event
 
-    def inspect(self, get_persona: BackendGetter) -> None:
+    def inspect(self) -> None:
         """Inspect transaction for problems."""
-        cl = ConfidenceLevel
+        cutoff = ConfidenceLevel.High
+        if not self.type:
+            self.type = TransactionType.Unknown
 
-        if self.type and self.type_confidence \
-                and self.type_confidence >= cl.High:
+        # First: Check whether we are confident about the transaction type.
+        if self.type and self.type_confidence and self.type_confidence >= cutoff:
             pass
         elif not self.type or self.type == TransactionType.Unknown:
             self.errors.append(
-                ("type", ValueError(n_(
-                    "Could not determine transaction type."))))
-        elif not self.type_confidence \
-                or self.type_confidence < ConfidenceLevel.High:
+                ("type", ValueError(n_("Could not determine transaction type."))))
+        elif not self.type_confidence or self.type_confidence < cutoff:
             self.errors.append(
-                ("transaction_type", ValueError(n_(
+                ("type", ValueError(n_(
                     "Not confident about transaction type."))))
 
+        # Second: If the type needs an event, check the event.
         if self.type.has_event:
-            if self.event_id and self.event_id_confidence \
-                    and self.event_id_confidence >= cl.High:
-                pass
-            elif self.event_id:
-                self.errors.append(
-                    ("event_id", ValueError(n_(
-                        "Not confident about event match."))))
-            else:
-                self.errors.append(
-                    ("event_id", ValueError(n_(
-                        "Needs event match."))))
-
-        if self.type.has_member:
-            if self.persona_id and self.persona_id_confidence \
-                    and self.persona_id_confidence >= cl.High:
-                pass
-            elif self.persona_id:
-                self.errors.append(
-                    ("cdedbid", ValueError(n_(
-                        "Not confident about member match."))))
-            else:
-                self.errors.append(
-                    ("cdedbid", ValueError(n_(
-                        "Needs member match."))))
-
-        p: Error
-        if self.type == TransactionType.MembershipFee:
-            if self.persona_id:
-                try:
-                    persona = get_persona(self.persona_id)
-                except KeyError as e:
-                    if self.persona_id in e.args:
-                        p = ("persona_id",
-                             KeyError(n_("No Member with ID %(p_id)s found."),
-                                      {"p_id": self.persona_id}))
-                        self.errors.append(p)
-                    else:
-                        p = ("persona_id", e)
-                        self.errors.append(p)
+            if self.event:
+                if self.event_confidence and self.event_confidence >= cutoff:
+                    pass
                 else:
-                    if not persona.get("is_cde_realm"):
-                        p = ("persona_id",
-                             ValueError(n_("Not a CdE-Account.")))
-                        self.errors.append(p)
-            if self.amount > AMOUNT_MIN_EVENT_FEE:
-                p = ("amount",
-                     ValueError(n_(
-                         "Amount higher than expected for membership fee.")))
-                self.warnings.append(p)
+                    self.errors.append(
+                        ("event", ValueError(n_(
+                            "Not confident about event match."))))
+            else:
+                self.errors.append(
+                    ("event", ValueError(n_("Needs event match."))))
 
-        if self.type == TransactionType.EventFee:
-            if self.amount < AMOUNT_MIN_EVENT_FEE:
-                p = ("amount",
-                     ValueError(n_(
-                         "Amount lower than expected for event fee.")))
-                self.warnings.append(p)
+            if self.type == TransactionType.EventFee:
+                if self.amount < AMOUNT_MIN_EVENT_FEE:
+                    self.warnings.append(
+                        ("amount", ValueError(n_(
+                            "Amount lower than expected for event fee."))))
+
+        # Third: If the type needs a persona, check the persona.
+        if self.type.has_member:
+            if self.persona:
+                if self.persona_confidence and self.persona_confidence >= cutoff:
+                    pass
+                else:
+                    self.errors.append(
+                        ("cdedbid", ValueError(n_(
+                            "Not confident about member match."))))
+            else:
+                self.errors.append(
+                    ("cdedbid", ValueError(n_("Needs member match."))))
+
+            if self.type == TransactionType.MembershipFee:
+                if self.persona and not self.persona['is_cde_realm']:
+                    self.errors.append(
+                        ("persona", ValueError(n_("Not a CdE-Account."))))
+                if self.amount > AMOUNT_MIN_EVENT_FEE:
+                    self.warnings.append(
+                        ("amount", ValueError(n_(
+                            "Amount higher than expected for membership fee."))))
 
     @property
     def amount_german(self) -> str:
@@ -817,8 +867,7 @@ class Transaction:
         """German way of writing the amount with simplified decimal places."""
         return simplify_amount(self.amount)
 
-    def to_dict(self, get_persona: BackendGetter, get_event: BackendGetter
-                ) -> CdEDBObject:
+    def to_dict(self) -> CdEDBObject:
         """
         Convert the transaction to a dict to be displayed in the validation
         form or to be written to a csv file.
@@ -828,56 +877,45 @@ class Transaction:
         See also the export definitons at the top of this file.
         """
 
+        if not self.type:
+            raise RuntimeError(n_("This transaction has not been analyzed yet."))
+
         ret = {
             "reference": self.reference,
-            "account": self.account.value,
+            "other_references": REFERENCE_SEPARATOR.join(self.other_references),
+            "account": self.account,
+            "account_nr": self.account.value,
+            "statement_nr": self.statement_nr,
             "statement_date": self.statement_date.strftime(PARSE_OUTPUT_DATEFORMAT),
             "amount": self.amount_english,
             "amount_german": self.amount_german,
             "account_holder": self.account_holder,
             "posting": self.posting,
-            "transaction_type": self.type,
-            "category": self.type.display_str(),
-            "transaction_type_confidence": self.type_confidence.value,
-            "transaction_type_confidence_str": str(self.type_confidence),
-            "cdedbid":
-                cdedbid_filter(self.persona_id) if self.persona_id else None,
-            "persona_id": self.persona_id,
-            "persona_id_confidence":
-                getattr(self.persona_id_confidence, "value", None),
-            "persona_id_confidence_str": str(self.persona_id_confidence),
-            "event_id": self.event_id,
-            "event_id_confidence":
-                getattr(self.event_id_confidence, "value", None),
-            "event_id_confidence_str": str(self.event_id_confidence),
+            "type": self.type,
+            "category": ((self.event['shortname'] + '-') if self.event else '')
+                        + self.type.display_str(),
+            "type_confidence": self.type_confidence,
+            "cdedbid": cdedbid_filter(self.persona['id']) if self.persona else None,
+            "persona_confidence": self.persona_confidence,
+            "given_names": self.persona['given_names'] if self.persona else "",
+            "family_name": self.persona['family_name'] if self.persona else "",
+            "event_id": self.event['id'] if self.event else None,
+            "event_confidence": self.event_confidence,
+            "event_name": self.event['shortname'] if self.event else None,
             "errors_str": ", ".join("{}: {}".format(
                 key, e.args[0].format(**e.args[1]) if len(e.args) == 2 else e)
-                                for key, e in self.errors),
+                                    for key, e in self.errors),
             "warnings_str": ", ".join("{}: {}".format(
                 key, w.args[0].format(**w.args[1]) if len(w.args) == 2 else w)
-                                for key, w in self.warnings),
+                                      for key, w in self.warnings),
             "iban": self.iban,
             "bic": self.bic,
             "t_id": self.t_id,
-            "given_names": "",
-            "family_name": "",
-            "event_name": "",
-            "category_old": self.type.old(),
+            "category_old": self.event['shortname'] if self.event else self.type.old(),
         }
-        if self.persona_id:
-            persona = get_persona(self.persona_id)
-            ret.update({
-                "given_names": persona["given_names"],
-                "family_name": persona["family_name"],
-            })
-        if self.event_id:
-            event = get_event(self.event_id)
-            ret.update({
-                "event_name": event["shortname"],
-                "category": event["shortname"] + "-" + str(self.type),
-                "category_old": event["shortname"],
-            })
         ret["summary"] = json.dumps(ret)
+        ret["persona"] = self.persona
+        ret["event"] = self.event
         ret["errors"] = self.errors
         ret["warnings"] = self.warnings
 
