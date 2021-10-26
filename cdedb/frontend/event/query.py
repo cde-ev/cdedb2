@@ -2,12 +2,11 @@
 
 """Services for the event realm."""
 
-import collections.abc
+import collections
 import copy
 import datetime
 import functools
 import pprint
-from collections import OrderedDict
 from typing import Callable, Collection, Dict, List, Optional
 
 import werkzeug.exceptions
@@ -49,7 +48,7 @@ class EventQueryMixin(EventBaseFrontend):
 
         # Tests for participant/registration statistics.
         # `e` is the event, `r` is a registration, `p` is a registration_part.
-        tests1 = OrderedDict((
+        tests1 = collections.OrderedDict((
             ('pending', (lambda e, r, p: (
                     p['status'] == stati.applied))),
             (' payed', (lambda e, r, p: (
@@ -100,7 +99,7 @@ class EventQueryMixin(EventBaseFrontend):
             ('total', (lambda e, r, p: (
                     p['status'] != stati.not_applied))),
         ))
-        per_part_statistics: Dict[str, Dict[int, int]] = OrderedDict()
+        per_part_statistics: Dict[str, Dict[int, int]] = collections.OrderedDict()
         for key, test1 in tests1.items():
             per_part_statistics[key] = {
                 part_id: sum(
@@ -110,7 +109,7 @@ class EventQueryMixin(EventBaseFrontend):
 
         # Test for course statistics
         # `c` is a course, `t` is a track.
-        tests2 = OrderedDict((
+        tests2 = collections.OrderedDict((
             ('courses', lambda c, t: (
                     t in c['segments'])),
             ('cancelled courses', lambda c, t: (
@@ -121,7 +120,7 @@ class EventQueryMixin(EventBaseFrontend):
         # Tests for course attendee statistics
         # `e` is the event, `r` is the registration, `p` is a event_part,
         # `t` is a track.
-        tests3 = OrderedDict((
+        tests3 = collections.OrderedDict((
             ('all instructors', (lambda e, r, p, t: (
                     p['status'] == stati.participant
                     and t['course_instructor']))),
@@ -137,8 +136,9 @@ class EventQueryMixin(EventBaseFrontend):
                     p['status'] == stati.participant
                     and not t['course_id']
                     and r['persona_id'] not in e['orgas']))),))
-        per_track_statistics: Dict[str, Dict[int, Optional[int]]] = OrderedDict()
-        regs_in_choice_x: Dict[str, Dict[int, List[int]]] = OrderedDict()
+        per_track_statistics: Dict[str, Dict[int, Optional[int]]]
+        per_track_statistics = collections.OrderedDict()
+        regs_in_choice_x: Dict[str, Dict[int, List[int]]] = collections.OrderedDict()
         if tracks:
             # Additional dynamic tests for course attendee statistics
             for i in range(max(t['num_choices'] for t in tracks.values())):
