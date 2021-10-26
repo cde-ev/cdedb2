@@ -471,7 +471,7 @@ class EventQueryMixin(EventBaseFrontend):
                 rs, download, "registration_result", scope, query, params)
         else:
             rs.values['is_search'] = is_search = False
-            return self.render(rs, "registration_query", params)
+            return self.render(rs, "registration/registration_query", params)
 
     @access("event", modi={"POST"}, anti_csrf_token_name="store_query")
     @event_guard()
@@ -586,7 +586,7 @@ class EventQueryMixin(EventBaseFrontend):
                 rs, download, "course_result", scope, query, params)
         else:
             rs.values['is_search'] = is_search = False
-            return self.render(rs, "course_query", params)
+            return self.render(rs, "course/course_query", params)
 
     make_lodgement_query_aux = staticmethod(make_lodgement_query_aux)
 
@@ -643,7 +643,7 @@ class EventQueryMixin(EventBaseFrontend):
                 rs, download, "lodgement_result", scope, query, params)
         else:
             rs.values['is_search'] = is_search = False
-            return self.render(rs, "lodgement_query", params)
+            return self.render(rs, "lodgement/lodgement_query", params)
 
     def _send_query_result(self, rs: RequestState, download: Optional[str],
                            filename: str, scope: QueryScope, query: Query,
@@ -655,7 +655,7 @@ class EventQueryMixin(EventBaseFrontend):
                 filename=f"{shortname}_{filename}",
                 substitutions=params['choices'])
         else:
-            return self.render(rs, scope.get_target(prepend_realm=False), params)
+            return self.render(rs, scope.get_target(redirect=False), params)
 
     @access("event")
     @REQUESTdata("phrase", "kind", "aux")
