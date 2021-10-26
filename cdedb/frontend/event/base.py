@@ -1,6 +1,19 @@
 #!/usr/bin/env python3
 
-"""Services for the event realm."""
+"""
+The `EventBaseFrontend` provides some basic frontend functionality for the event realm.
+
+This implements the `AbstractUserFrontend` and overrides the `AbstractFrontend.render`
+method to do some event specific preparation before rendering templates.
+
+This offers both a global and a event-specific event log.
+
+In addition the `EventBaseFrontend` provides a few helper methods that are used across
+multiple of its subclasses.
+
+The base aswell as all its subclasses (the event frontend mixins) combine together to
+become the full `EventFrontend` in this modules `__init__.py`.
+"""
 
 import datetime
 import operator
@@ -27,7 +40,7 @@ from cdedb.validation import PERSONA_FULL_EVENT_CREATION, filter_none
 
 
 class EventBaseFrontend(AbstractUserFrontend):
-    """This mainly allows the organization of events."""
+    """Provide the base for event frontend mixins."""
     realm = "event"
 
     def render(self, rs: RequestState, templatename: str,
