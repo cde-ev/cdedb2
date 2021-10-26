@@ -631,7 +631,8 @@ class CoreBackend(AbstractBackend):
         if is_archived is not None:
             constraints.append("is_archived = %s")
             params.append(is_archived)
-        query += " WHERE " + " AND ".join(constraints)
+        if constraints:
+            query += " WHERE " + " AND ".join(constraints)
         return unwrap(self.query_one(rs, query, params))
 
     def commit_persona(self, rs: RequestState, data: CdEDBObject,
