@@ -20,7 +20,6 @@ from cdedb.frontend.event.query import EventQueryMixin
 from cdedb.frontend.event.questionnaire import EventQuestionnaireMixin
 from cdedb.frontend.event.registration import EventRegistrationMixin
 
-
 __all__ = ['EventFrontend']
 
 
