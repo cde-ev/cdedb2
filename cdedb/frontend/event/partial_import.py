@@ -30,7 +30,7 @@ class EventImportMixin(EventBaseFrontend):
     @event_guard()
     def questionnaire_import_form(self, rs: RequestState, event_id: int) -> Response:
         """Render form for uploading questionnaire data."""
-        return self.render(rs, "questionnaire_import")
+        return self.render(rs, "import/questionnaire_import")
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
@@ -72,7 +72,7 @@ class EventImportMixin(EventBaseFrontend):
     @event_guard()
     def partial_import_form(self, rs: RequestState, event_id: int) -> Response:
         """First step of partial import process: Render form to upload file"""
-        return self.render(rs, "partial_import")
+        return self.render(rs, "import/partial_import")
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
@@ -284,7 +284,7 @@ class EventImportMixin(EventBaseFrontend):
             'course_choices': course_choices,
             'lodgement_titles': lodgement_titles,
         }
-        return self.render(rs, "partial_import_check", template_data)
+        return self.render(rs, "import/partial_import_check", template_data)
 
     # TODO: be more specific about the return types.
     @staticmethod
