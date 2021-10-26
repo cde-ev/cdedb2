@@ -10,7 +10,7 @@ script = Script(dbuser="cdb")
 rs = script.rs()
 
 core: CoreBackend = script.make_backend("core", proxy=False)
-phone = partial(validate_assert_optional, vtypes.Phone, _ignore_warnings=True)
+phone = partial(validate_assert_optional, vtypes.Phone, ignore_warnings=True)
 
 phone_fields = ('telephone', 'mobile')
 
