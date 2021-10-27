@@ -77,7 +77,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             'bub_search': False,
         }
         merge_dicts(rs.values, defaults)
-        return super().create_user_form(rs)
+        return self.render(rs, "user/create_user")
 
     @access("core_admin", "event_admin", modi={"POST"})
     @REQUESTdatadict(*filter_none(PERSONA_FULL_EVENT_CREATION))
@@ -109,7 +109,8 @@ class EventBaseFrontend(AbstractUserFrontend):
         }
         return self.generic_user_search(
             rs, download, is_search, QueryScope.event_user, QueryScope.event_user,
-            self.eventproxy.submit_general_query, choices=choices)
+            self.eventproxy.submit_general_query, choices=choices,
+            endpoint="user/user_search")
 
     @access("core_admin", "event_admin")
     @REQUESTdata("download", "is_search")
@@ -133,7 +134,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             rs, download, is_search,
             QueryScope.archived_past_event_user, QueryScope.archived_persona,
             self.eventproxy.submit_general_query, choices=choices,
-            endpoint="archived_user_search")
+            endpoint="user/archived_user_search")
 
     @access("event")
     @REQUESTdata("part_id", "sortkey", "reverse")
