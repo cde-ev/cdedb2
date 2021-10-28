@@ -10,7 +10,7 @@ from mailmanclient import Client, MailingList
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, RequestState
 from cdedb.frontend.common import cdedburl, make_persona_name, periodic
-from cdedb.frontend.ml_base import MlBaseFrontend
+from cdedb.frontend.ml.ml_base import MlBaseFrontend
 
 POLICY_MEMBER_CONVERT = {
     const.ModerationPolicy.unmoderated: 'accept',
@@ -35,7 +35,7 @@ def template_url(name: str) -> str:
     return "https://db.cde-ev.de/mailman_templates/{}".format(name)
 
 
-class MailmanMixin(MlBaseFrontend):
+class MlMailmanMixin(MlBaseFrontend):
     def mailman_sync_list_meta(self, rs: RequestState, mailman: Client,
                                db_list: CdEDBObject,
                                mm_list: MailingList) -> None:
