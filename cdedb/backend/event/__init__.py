@@ -13,12 +13,12 @@ import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
     Silencer, access, affirm_set_validation as affirm_set, affirm_validation as affirm,
 )
-from cdedb.backend.event.event_base import EventBaseBackend
-from cdedb.backend.event.event_course import EventCourseBackend
-from cdedb.backend.event.event_lodgement import EventLodgementBackend
-from cdedb.backend.event.event_lowlevel import EventLowLevelBackend
-from cdedb.backend.event.event_query import EventQueryBackend
-from cdedb.backend.event.event_registration import EventRegistrationBackend
+from cdedb.backend.event.base import EventBaseBackend
+from cdedb.backend.event.course import EventCourseBackend
+from cdedb.backend.event.lodgement import EventLodgementBackend
+from cdedb.backend.event.lowlevel import EventLowLevelBackend
+from cdedb.backend.event.query import EventQueryBackend
+from cdedb.backend.event.registration import EventRegistrationBackend
 from cdedb.common import (
     EVENT_SCHEMA_VERSION, CdEDBObject, CdEDBOptionalMap, DefaultReturnCode,
     DeletionBlockers, PartialImportError, PrivilegeError, RequestState, get_hash,
