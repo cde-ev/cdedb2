@@ -10,11 +10,13 @@ from werkzeug import Response
 import cdedb.database.constants as const
 from cdedb.common import RequestState, n_
 from cdedb.frontend.common import REQUESTdata, access, mailinglist_guard
-from cdedb.frontend.ml_base import MlBaseFrontend
-from cdedb.frontend.ml_mailman import MailmanMixin
+from cdedb.frontend.ml.base import MlBaseFrontend
+from cdedb.frontend.ml.mailman import MlMailmanMixin
+
+__all__ = ['MlFrontend']
 
 
-class MlFrontend(MailmanMixin, MlBaseFrontend):
+class MlFrontend(MlMailmanMixin, MlBaseFrontend):
     @access("ml")
     @mailinglist_guard()
     def message_moderation_form(self, rs: RequestState, mailinglist_id: int

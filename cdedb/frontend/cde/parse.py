@@ -18,13 +18,13 @@ from typing import List, Optional, Sequence, Tuple, cast
 from werkzeug import Response
 from werkzeug.datastructures import FileStorage
 
-import cdedb.frontend.parse_statement as parse
+import cdedb.frontend.cde.parse_statement as parse
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
     Accounts, CdEDBObject, EntitySorter, RequestState, TransactionType,
     diacritic_patterns, get_hash, merge_dicts, n_, xsorted,
 )
-from cdedb.frontend.cde_base import CdEBaseFrontend
+from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
     CustomCSVDialect, REQUESTdata, REQUESTfile, TransactionObserver, access,
     check_validation as check, check_validation_optional as check_optional, csv_output,

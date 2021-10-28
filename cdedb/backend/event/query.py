@@ -13,7 +13,7 @@ from cdedb.backend.common import (
     PYTHON_TO_SQL_MAP, DatabaseValue_s, access, affirm_set_validation as affirm_set,
     affirm_validation as affirm,
 )
-from cdedb.backend.event_base import EventBaseBackend
+from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
     STORED_EVENT_QUERY_FIELDS, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
     PrivilegeError, RequestState, implying_realms, json_serialize, n_,

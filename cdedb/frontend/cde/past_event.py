@@ -22,7 +22,7 @@ from cdedb.common import (
     LOG_FIELDS_COMMON, CdEDBObject, CdEDBObjectMap, EntitySorter, RequestState,
     merge_dicts, n_, xsorted,
 )
-from cdedb.frontend.cde_base import CdEBaseFrontend
+from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
     CustomCSVDialect, REQUESTdata, REQUESTdatadict, TransactionObserver, access,
     calculate_db_logparams, calculate_loglinks, check_validation as check, csv_output,
