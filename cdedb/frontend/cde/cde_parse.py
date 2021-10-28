@@ -18,7 +18,7 @@ from typing import List, Optional, Sequence, Tuple, cast
 from werkzeug import Response
 from werkzeug.datastructures import FileStorage
 
-import cdedb.frontend.parse_statement as parse
+import cdedb.frontend.cde.parse_statement as parse
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
     Accounts, CdEDBObject, EntitySorter, RequestState, TransactionType,
