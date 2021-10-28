@@ -10,7 +10,7 @@ from mailmanclient import Client, MailingList
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, RequestState
 from cdedb.frontend.common import cdedburl, make_persona_name, periodic
-from cdedb.frontend.ml.ml_base import MlBaseFrontend
+from cdedb.frontend.ml.base import MlBaseFrontend
 
 POLICY_MEMBER_CONVERT = {
     const.ModerationPolicy.unmoderated: 'accept',

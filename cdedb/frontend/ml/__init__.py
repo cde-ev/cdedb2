@@ -10,8 +10,8 @@ from werkzeug import Response
 import cdedb.database.constants as const
 from cdedb.common import RequestState, n_
 from cdedb.frontend.common import REQUESTdata, access, mailinglist_guard
-from cdedb.frontend.ml.ml_base import MlBaseFrontend
-from cdedb.frontend.ml.ml_mailman import MlMailmanMixin
+from cdedb.frontend.ml.base import MlBaseFrontend
+from cdedb.frontend.ml.mailman import MlMailmanMixin
 
 __all__ = ['MlFrontend']
 
