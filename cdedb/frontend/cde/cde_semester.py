@@ -16,7 +16,7 @@ import cdedb.validationtypes as vtypes
 from cdedb.common import (
     LOG_FIELDS_COMMON, RequestState, SemesterSteps, lastschrift_reference, n_, unwrap,
 )
-from cdedb.frontend.cde_base import CdEBaseFrontend
+from cdedb.frontend.cde.cde_base import CdEBaseFrontend
 from cdedb.frontend.common import (
     REQUESTdata, TransactionObserver, Worker, access, calculate_db_logparams,
     calculate_loglinks, make_membership_fee_reference, make_postal_address,
