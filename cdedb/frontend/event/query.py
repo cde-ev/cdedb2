@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
-"""Services for the event realm."""
+"""
+The `EventQueryMixin` subclasses the `EventBaseFrontend` and provides endpoints for
+querying registrations, courses and lodgements.
+"""
 
 import collections
 import copy
