@@ -19,7 +19,7 @@ from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, TransactionObserver, access,
     check_validation as check, periodic,
 )
-from cdedb.frontend.core_base import CoreBaseFrontend
+from cdedb.frontend.core.core_base import CoreBaseFrontend
 from cdedb.validation import GENESIS_CASE_EXPOSED_FIELDS, PERSONA_COMMON_FIELDS
 
 # Name of each realm's option in the genesis form
