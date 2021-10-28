@@ -22,7 +22,7 @@ from cdedb.backend.common import (
     affirm_set_validation as affirm_set, affirm_validation as affirm,
     affirm_validation_optional as affirm_optional, cast_fields, internal, singularize,
 )
-from cdedb.backend.event_base import EventBaseBackend
+from cdedb.backend.event.event_base import EventBaseBackend
 from cdedb.common import (
     REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS, REGISTRATION_TRACK_FIELDS,
     CdEDBObject, CdEDBObjectMap, CourseFilterPositions, DefaultReturnCode,

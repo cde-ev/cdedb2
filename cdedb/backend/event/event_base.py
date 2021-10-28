@@ -25,7 +25,7 @@ from cdedb.backend.common import (
     Silencer, access, affirm_set_validation as affirm_set, affirm_validation as affirm,
     affirm_validation_optional as affirm_optional, cast_fields, internal, singularize,
 )
-from cdedb.backend.event_lowlevel import EventLowLevelBackend
+from cdedb.backend.event.event_lowlevel import EventLowLevelBackend
 from cdedb.common import (
     COURSE_FIELDS, COURSE_TRACK_FIELDS, EVENT_FIELDS, EVENT_PART_FIELDS,
     EVENT_SCHEMA_VERSION, FEE_MODIFIER_FIELDS, FIELD_DEFINITION_FIELDS,

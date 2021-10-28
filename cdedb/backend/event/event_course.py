@@ -13,7 +13,7 @@ from cdedb.backend.common import (
     access, affirm_set_validation as affirm_set, affirm_validation as affirm,
     cast_fields, singularize,
 )
-from cdedb.backend.event_base import EventBaseBackend
+from cdedb.backend.event.event_base import EventBaseBackend
 from cdedb.common import (
     COURSE_FIELDS, COURSE_SEGMENT_FIELDS, CdEDBObject, CdEDBObjectMap,
     DefaultReturnCode, DeletionBlockers, PrivilegeError, PsycoJson, RequestState, glue,

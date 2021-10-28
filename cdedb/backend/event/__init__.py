@@ -13,18 +13,20 @@ import cdedb.validationtypes as vtypes
 from cdedb.backend.common import (
     Silencer, access, affirm_set_validation as affirm_set, affirm_validation as affirm,
 )
-from cdedb.backend.event_base import EventBaseBackend
-from cdedb.backend.event_course import EventCourseBackend
-from cdedb.backend.event_lodgement import EventLodgementBackend
-from cdedb.backend.event_lowlevel import EventLowLevelBackend
-from cdedb.backend.event_query import EventQueryBackend
-from cdedb.backend.event_registration import EventRegistrationBackend
+from cdedb.backend.event.event_base import EventBaseBackend
+from cdedb.backend.event.event_course import EventCourseBackend
+from cdedb.backend.event.event_lodgement import EventLodgementBackend
+from cdedb.backend.event.event_lowlevel import EventLowLevelBackend
+from cdedb.backend.event.event_query import EventQueryBackend
+from cdedb.backend.event.event_registration import EventRegistrationBackend
 from cdedb.common import (
     EVENT_SCHEMA_VERSION, CdEDBObject, CdEDBOptionalMap, DefaultReturnCode,
     DeletionBlockers, PartialImportError, PrivilegeError, RequestState, get_hash,
     json_serialize, mixed_existence_sorter, n_, unwrap,
 )
 from cdedb.database.connection import Atomizer
+
+__all__ = ['EventBackend']
 
 
 class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
