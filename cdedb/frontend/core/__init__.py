@@ -2,8 +2,8 @@
 
 """Services for the core realm."""
 
-from cdedb.frontend.core.core_base import CoreBaseFrontend
-from cdedb.frontend.core.core_genesis import CoreGenesisMixin
+from cdedb.frontend.core.base import CoreBaseFrontend
+from cdedb.frontend.core.genesis import CoreGenesisMixin
 
 __all__ = ['CoreFrontend']
 
