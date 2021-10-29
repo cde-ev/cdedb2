@@ -22,6 +22,16 @@ from cdedb.database.connection import Atomizer
 from cdedb.query import Query, QueryOperators, QueryScope
 
 
+def _get_field_select_columns(fields: CdEDBObjectMap,
+                              association: const.FieldAssociations) -> Tuple[str, ...]:
+    """Construct SELECT column entries for the given fields of the given association."""
+    colum_template = '''(fields->>'{name}')::{kind} AS "xfield_{name}"'''
+    return tuple(
+        colum_template.format(name=e['field_name'], kind=PYTHON_TO_SQL_MAP[e['kind']])
+        for e in fields.values() if e['association'] == association
+    )
+
+
 class EventQueryBackend(EventBaseBackend):
     @access("event", "core_admin", "ml_admin")
     def submit_general_query(self, rs: RequestState, query: Query,
