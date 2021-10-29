@@ -3384,11 +3384,11 @@ etc;anything else""", f['entries_2'].value)
         self.assertIn('reg.id;persona.id;persona.given_names;', self.response.text)
         # courselist
         self.response = save.click(href='/event/event/1/download/csv_courses')
-        self.assertIn('course.id;course.course_id;course.nr;', self.response.text)
+        self.assertIn('course.id;course_fields.id;course.nr;', self.response.text)
         # lodgementlist
         self.response = save.click(href='/event/event/1/download/csv_lodgements')
         self.assertIn(
-            'lodgement.id;lodgement.lodgement_id;lodgement.title;', self.response.text)
+            'lodgement.id;lodgement_fields.id;lodgement.title;', self.response.text)
         # dokuteam courselist
         self.response = save.click(href='/event/event/1/download/dokuteam_course')
         self.assertPresence('|cde')
