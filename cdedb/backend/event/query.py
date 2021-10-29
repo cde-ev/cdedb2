@@ -63,13 +63,13 @@ class EventQueryBackend(EventBaseBackend):
                     for part in event['parts'].values()
                 }
                 lodgement_view = registration_lodgement_view()
-                lodgement_groupd_view = registration_lodgement_group_view()
+                lodgement_groups_view = registration_lodgement_group_view()
                 full_part_tables = "\n".join(f"""
                     LEFT OUTER JOIN ({reg_part_table}) AS part{part_id}
                         ON reg.id = part{part_id}.registration_id
                     LEFT OUTER JOIN ({lodgement_view}) AS lodgement{part_id}
                         ON part{part_id}.lodgement_id = lodgement{part_id}.id
-                    LEFT OUTER JOIN ({lodgement_groupd_view})
+                    LEFT OUTER JOIN ({lodgement_groups_view})
                         AS lodgement_group{part_id}
                         ON lodgement{part_id}.group_id = lodgement_group{part_id}.id
                     """ for part_id, reg_part_table in reg_part_tables.items())
