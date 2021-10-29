@@ -94,6 +94,7 @@ class EventQueryBackend(EventBaseBackend):
                     f"LEFT OUTER JOIN ({choices_table}) AS course_choices{t_id}"
                     f" ON reg.id = course_choices{t_id}.base_id"
                     for t_id, choices_table in course_choices_track_tables.items()
+                    if choices_table is not None
                 )
                 return f"""
                     (
@@ -175,7 +176,9 @@ class EventQueryBackend(EventBaseBackend):
                 """
 
             # Step 4.2: Template for the final course choices table for a track.
-            def course_choices_track_table(track: CdEDBObject) -> str:
+            def course_choices_track_table(track: CdEDBObject) -> Optional[str]:
+                if track['num_choices'] <= 0:
+                    return None
                 # noinspection PyUnboundLocalVariable
                 single_choice_tables = {
                     rank: single_choice_table(track, rank)
