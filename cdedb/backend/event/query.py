@@ -242,8 +242,6 @@ class EventQueryBackend(EventBaseBackend):
 
             # Step 7: Construct the final view.
             view = registration_view_template()
-            with open("/cdedb2/registration_view.sql", "w", encoding="utf8") as f:
-                f.write(view)
         elif query.scope == QueryScope.quick_registration:
             event_id = affirm(vtypes.ID, event_id)
             if (not self.is_orga(rs, event_id=event_id)
