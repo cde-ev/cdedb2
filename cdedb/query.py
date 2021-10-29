@@ -95,8 +95,25 @@ MULTI_VALUE_OPERATORS = {_ops.oneof, _ops.otherthan, _ops.containsall,
 NO_VALUE_OPERATORS = {_ops.empty, _ops.nonempty}
 
 
+# A query constraint translates to (part of) a WHERE clause. All constraints are
+# conjugated.
 QueryConstraint = Tuple[str, QueryOperators, Any]
+# A query order translate to an ORDER BY clause. The bool decides whether the sorting
+# is ASC (i.e. True -> ASC, False -> DESC).
 QueryOrder = Tuple[str, bool]
+
+QuerySpec = Dict[str, str]
+
+# A query choices dict maps some columns to a lookup, in order to display stored
+# (numerical) values as more useful string representations, mostly mapping IntEnum
+# members (stored as integers) to their (translated) string representations or entity
+# ids to a string representation of the referenced entity.
+QueryChoices = Dict[str, Dict[int, str]]
+# A query titles dict maps column names to more useful (translated) title strings.
+QueryTitles = Dict[str, str]
+# Choices and titles are created via `make_foo_query_aux` functions, which might require
+# additional data about the foo and/or its entities.
+QueryAux = Tuple[QueryChoices, QueryTitles]
 
 
 class QueryScope(enum.IntEnum):
@@ -794,12 +811,11 @@ def make_registration_query_spec(event: CdEDBObject) -> Dict[str, str]:
     return spec
 
 
-# TODO specify return type as OrderedDict.
 def make_registration_query_aux(
     rs: RequestState, event: CdEDBObject, courses: CdEDBObjectMap,
     lodgements: CdEDBObjectMap, lodgement_groups: CdEDBObjectMap,
-    fixed_gettext: bool = False
-) -> Tuple[Dict[str, Dict[int, str]], Dict[str, str]]:
+    fixed_gettext: bool = False,
+) -> QueryAux:
     """Un-inlined code to prepare input for template.
     :param fixed_gettext: whether or not to use a fixed translation
         function. True means static, False means localized.
@@ -1128,12 +1144,10 @@ def make_course_query_spec(event: CdEDBObject) -> Dict[str, str]:
     return spec
 
 
-# TODO specify return type as OrderedDict.
-def make_course_query_aux(rs: RequestState, event: CdEDBObject,
-                          courses: CdEDBObjectMap,
-                          fixed_gettext: bool = False
-                          ) -> Tuple[Dict[str, Dict[int, str]],
-                                     Dict[str, str]]:
+def make_course_query_aux(
+    rs: RequestState, event: CdEDBObject, courses: CdEDBObjectMap,
+    fixed_gettext: bool = False,
+) -> QueryAux:
     """Un-inlined code to prepare input for template.
 
     :param fixed_gettext: whether or not to use a fixed translation
@@ -1270,12 +1284,10 @@ def make_lodgement_query_spec(event: CdEDBObject) -> Dict[str, str]:
     return spec
 
 
-def make_lodgement_query_aux(rs: RequestState, event: CdEDBObject,
-                             lodgements: CdEDBObjectMap,
-                             lodgement_groups: CdEDBObjectMap,
-                             fixed_gettext: bool = False
-                             ) -> Tuple[Dict[str, Dict[int, str]],
-                                        Dict[str, str]]:
+def make_lodgement_query_aux(
+    rs: RequestState, event: CdEDBObject, lodgements: CdEDBObjectMap,
+    lodgement_groups: CdEDBObjectMap, fixed_gettext: bool = False,
+) -> QueryAux:
     """Un-inlined code to prepare input for template.
 
     :param fixed_gettext: whether or not to use a fixed translation

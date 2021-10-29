@@ -418,8 +418,6 @@ class EventQueryMixin(EventBaseFrontend):
             'per_track_statistics': per_track_statistics,
             'get_query': get_query, 'get_query_page': get_query_page})
 
-    make_registration_query_aux = staticmethod(make_registration_query_aux)
-
     @access("event")
     @event_guard()
     @REQUESTdata("download", "is_search")
@@ -445,7 +443,7 @@ class EventQueryMixin(EventBaseFrontend):
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
         lodgement_group_ids = self.eventproxy.list_lodgement_groups(rs, event_id)
         lodgement_groups = self.eventproxy.get_lodgement_groups(rs, lodgement_group_ids)
-        choices, titles = self.make_registration_query_aux(
+        choices, titles = make_registration_query_aux(
             rs, rs.ambience['event'], courses, lodgements, lodgement_groups,
             fixed_gettext=download is not None)
         choices_lists = {k: list(v.items()) for k, v in choices.items()}
@@ -537,8 +535,6 @@ class EventQueryMixin(EventBaseFrontend):
             self._send_mail(msg)
         return state
 
-    make_course_query_aux = staticmethod(make_course_query_aux)
-
     @access("event")
     @event_guard()
     @REQUESTdata("download", "is_search")
@@ -556,7 +552,7 @@ class EventQueryMixin(EventBaseFrontend):
 
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
-        choices, titles = self.make_course_query_aux(
+        choices, titles = make_course_query_aux(
             rs, rs.ambience['event'], courses,
             fixed_gettext=download is not None)
         choices_lists = {k: list(v.items()) for k, v in choices.items()}
@@ -588,8 +584,6 @@ class EventQueryMixin(EventBaseFrontend):
             rs.values['is_search'] = is_search = False
             return self.render(rs, "course_query", params)
 
-    make_lodgement_query_aux = staticmethod(make_lodgement_query_aux)
-
     @access("event")
     @event_guard()
     @REQUESTdata("download", "is_search")
@@ -611,7 +605,7 @@ class EventQueryMixin(EventBaseFrontend):
             rs, event_id)
         lodgement_groups = self.eventproxy.get_lodgement_groups(
             rs, lodgement_group_ids)
-        choices, titles = self.make_lodgement_query_aux(
+        choices, titles = make_lodgement_query_aux(
             rs, rs.ambience['event'], lodgements, lodgement_groups,
             fixed_gettext=download is not None)
         choices_lists = {k: list(v.items()) for k, v in choices.items()}
