@@ -147,7 +147,7 @@ class EventQueryBackend(EventBaseBackend):
                     event['fields'], const.FieldAssociations.lodgement)
                 columns = LODGEMENT_FIELDS + lodge_field_columns
                 return f"""
-                    SELECT {', '.join(lodge_field_columns + LODGEMENT_FIELDS)}
+                    SELECT {', '.join(columns)}
                     FROM event.lodgements
                     WHERE event_id = {event_id}
                 """
