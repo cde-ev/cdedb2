@@ -12,6 +12,7 @@ Each persona can have the following privileges:
 * meta admin
 * finance admin
 * cdelokal admin
+* auditor
 * membership
 * searchability
 
@@ -56,6 +57,46 @@ Due to complex inter-realm dependencies, mailinglist privileges have some caveat
 which are explained further at :doc:`Realm_Mailinglist_Privileges`.
 
 .. todo:: Weiterführende Referenz auf Realm_Core_Personas
+
+Realm Admins
+------------
+
+Realm admins have full access to the entities in there realm, i.e. assembly admins to
+assemblies, cde admins to past events, event admins to events, and ml admins to
+mailinglists. Since all personas live in the core realm, core admins have full access
+to all personas.
+
+Additionally realm admins have full access to users that belong to their realm, but not
+to any higher or equivalent realm. For example an event admin may manage, create and
+view all simple event-users, but not a user that belongs to the event and the assembly
+realm or a user belonging to the cde realm (i.e. a former or current member).
+
+Special Admins
+--------------
+
+Meta Admins
+^^^^^^^^^^^
+
+Meta admins have no actual privileges except that they are the only ones who can grant
+or revoke admin privileges. Doing so requires the approval of two meta admins.
+
+Finance Admins
+^^^^^^^^^^^^^^
+
+Finance admins are the only ones with access to the semester management where payment
+reminders and address checks are sent, inactive member ejected and the balance of
+members is updated. In addition they may manage, create and revoke lastschrift permits.
+
+CdELokal Admins
+^^^^^^^^^^^^^^^
+
+CdELokal admins may manage and create cdelokal mailinglists.
+
+Auditors
+^^^^^^^^
+
+Auditors are special, since they do not actually have any privileges, except that they
+may view all log pages.
 
 Droids
 ------
