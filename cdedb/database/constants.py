@@ -354,6 +354,9 @@ class EventLogCodes(enum.IntEnum):
     minor_form_removed = 86  #:
     query_stored = 90  #:
     query_deleted = 91  #:
+    part_group_created = 100  #:
+    part_group_changed = 101  #:
+    part_group_deleted = 102  #:
 
 
 @enum.unique

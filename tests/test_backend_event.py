@@ -162,6 +162,7 @@ class TestEventBackend(BackendTest):
                           1002: data['parts'][-2]['tracks'][-1]}
         data['parts'][-2]['fee_modifiers'][-1].update({'id': 1001, 'part_id': 1002})
         data['fee_modifiers'] = {1001: data['parts'][-2]['fee_modifiers'][-1]}
+        data['part_groups'] = {}
         # correct part and field ids
         tmp = self.event.get_event(self.key, new_id)
         part_map = {}
@@ -326,6 +327,7 @@ class TestEventBackend(BackendTest):
             },
         }
         data['fee_modifiers'] = changed_part['fee_modifiers']
+        data['part_groups'] = {}
 
         self.assertEqual(data, self.event.get_event(self.key, new_id))
 
@@ -439,6 +441,12 @@ class TestEventBackend(BackendTest):
             ("event_parts", "course_tracks", "field_definitions", "courses",
              "orgas", "lodgement_groups", "lodgements", "registrations", "log",
              "questionnaire", "stored_queries", "mailinglists", "fee_modifiers")))
+
+        # Test deletion of event, cascading all blockers.
+        self.assertLess(
+            0,
+            self.event.delete_event(
+                self.key, 1, self.event.delete_event_blockers(self.key, 1)))
 
     @storage
     @as_users("annika", "garcia")

@@ -356,6 +356,7 @@ class EventLowLevelBackend(AbstractBackend):
                          registration fields.
         * course_tracks: A course track in this part.
         * registration_part: A registration part for this part.
+        * part_group_parts: A link to a part group.
 
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
@@ -381,6 +382,11 @@ class EventLowLevelBackend(AbstractBackend):
         if registration_parts:
             blockers["registration_parts"] = [
                 e["id"] for e in registration_parts]
+
+        part_group_parts = self.sql_select(
+            rs, "event.part_group_parts", ("id",), (part_id,), entity_key="part_id")
+        if part_group_parts:
+            blockers["part_group_parts"] = [e["id"] for e in part_group_parts]
 
         return blockers
 
@@ -423,6 +429,9 @@ class EventLowLevelBackend(AbstractBackend):
             if "registration_parts" in cascade:
                 ret *= self.sql_delete(rs, "event.registration_parts",
                                        blockers["registration_parts"])
+            if "part_group_parts" in cascade:
+                ret *= self.sql_delete(rs, "event.part_group_parts",
+                                       blockers["part_group_parts"])
             blockers = self._delete_event_part_blockers(rs, part_id)
 
         if not blockers:
@@ -512,6 +521,70 @@ class EventLowLevelBackend(AbstractBackend):
             for x in mixed_existence_sorter(deleted_parts):
                 ret *= self._delete_event_part(rs, part_id=x, cascade=cascade)
 
+        return ret
+
+    def _delete_part_group_blockers(self, rs: RequestState,
+                                    part_group_id: int) -> DeletionBlockers:
+        """Determine what keeps a part group from being deleted.
+
+        Possible blockers:
+
+        * part_group_parts: A link between an event part and the part group.
+
+        :return: List of blockers, separated by type. The values of the dict
+            are the ids of the blockers.
+        """
+        part_group_id = affirm(vtypes.ID, part_group_id)
+        blockers = {}
+
+        part_group_parts = self.sql_select(
+            rs, "event.part_group_parts", ("id",), (part_group_id,),
+            entity_key="part_group_id")
+        if part_group_parts:
+            blockers["part_group_parts"] = [e["id"] for e in part_group_parts]
+
+        return blockers
+
+    def _delete_part_group(self, rs: RequestState, part_group_id: int,
+                           cascade: Collection[str] = None) -> DefaultReturnCode:
+        """Helper to delete one part group.
+
+        :note: This has to be called inside an atomized context.
+
+        :param cascade: Specify which deletion blockers to cascadingly
+            remove or ignore. If None or empty, cascade none.
+        """
+        part_group_id = affirm(vtypes.ID, part_group_id)
+        blockers = self._delete_part_group_blockers(rs, part_group_id)
+        cascade = affirm_set(str, cascade or set()) & blockers.keys()
+        if blockers.keys() - cascade:
+            raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
+                             {
+                                 "type": "part group",
+                                 "block": blockers.keys() - cascade,
+                             })
+
+        ret = 1
+        self.affirm_atomized_context(rs)
+        if cascade:
+            if "part_group_parts" in cascade:
+                ret *= self.sql_delete(
+                    rs, "event.part_group_parts", blockers["part_group_parts"])
+
+            blockers = self._delete_part_group_blockers(rs, part_group_id)
+
+        if not blockers:
+            part_group = self.sql_select_one(
+                rs, "event.part_groups", ("event_id", "title"), part_group_id)
+            assert part_group is not None
+            ret *= self.sql_delete_one(rs, "event.part_groups", part_group_id)
+            self.event_log(rs, const.EventLogCodes.part_group_deleted,
+                           event_id=part_group["event_id"],
+                           change_note=part_group["title"])
+        else:
+            raise ValueError(
+                n_("Deletion of %(type)s blocked by %(block)s."),
+                {"type": "part group", "block": blockers.keys()})
         return ret
 
     def _delete_event_field_blockers(self, rs: RequestState,

@@ -29,7 +29,7 @@ from cdedb.backend.event.lowlevel import EventLowLevelBackend
 from cdedb.common import (
     COURSE_FIELDS, COURSE_TRACK_FIELDS, EVENT_FIELDS, EVENT_PART_FIELDS,
     EVENT_SCHEMA_VERSION, FEE_MODIFIER_FIELDS, FIELD_DEFINITION_FIELDS,
-    LODGEMENT_FIELDS, LODGEMENT_GROUP_FIELDS, PERSONA_EVENT_FIELDS,
+    LODGEMENT_FIELDS, LODGEMENT_GROUP_FIELDS, PART_GROUP_FIELDS, PERSONA_EVENT_FIELDS,
     PERSONA_STATUS_FIELDS, QUESTIONNAIRE_ROW_FIELDS, REGISTRATION_FIELDS,
     REGISTRATION_PART_FIELDS, REGISTRATION_TRACK_FIELDS, CdEDBLog, CdEDBObject,
     CdEDBObjectMap, DefaultReturnCode, PrivilegeError, RequestState, glue, n_, now,
@@ -188,18 +188,32 @@ class EventBaseBackend(EventLowLevelBackend):
             ret = {e['id']: e for e in data}
             data = self.sql_select(rs, "event.event_parts", EVENT_PART_FIELDS,
                                    event_ids, entity_key="event_id")
-            all_parts = tuple(e['id'] for e in data)
+            all_parts = {e['id']: e['event_id'] for e in data}
             for anid in event_ids:
                 parts = {d['id']: d for d in data if d['event_id'] == anid}
                 if 'parts' in ret[anid]:
                     raise RuntimeError()
                 ret[anid]['parts'] = parts
+            part_group_data = self.sql_select(
+                rs, "event.part_groups", PART_GROUP_FIELDS,
+                event_ids, entity_key="event_id")
+            part_group_part_data = self.sql_select(
+                rs, "event.part_group_parts", ("part_group_id", "part_id"),
+                all_parts.keys(), entity_key="part_id")
+            for anid in event_ids:
+                ret[anid]['part_groups'] = {}
+            for d in part_group_data:
+                d['part_ids'] = set()
+                ret[d['event_id']]['part_groups'][d['id']] = d
+            for d in part_group_part_data:
+                part_groups = ret[all_parts[d['part_id']]]['part_groups']
+                part_groups[d['part_group_id']]['part_ids'].add(d['part_id'])
             track_data = self.sql_select(
                 rs, "event.course_tracks", COURSE_TRACK_FIELDS,
-                all_parts, entity_key="part_id")
+                all_parts.keys(), entity_key="part_id")
             fee_modifier_data = self.sql_select(
                 rs, "event.fee_modifiers", FEE_MODIFIER_FIELDS,
-                all_parts, entity_key="part_id")
+                all_parts.keys(), entity_key="part_id")
             for anid in event_ids:
                 for part_id in ret[anid]['parts']:
                     tracks = {d['id']: d for d in track_data if d['part_id'] == part_id}
@@ -789,6 +803,7 @@ class EventBaseBackend(EventLowLevelBackend):
         del export_event['orgas']
         del export_event['tracks']
         del export_event['fee_modifiers']
+        del export_event['part_groups']
         for part in export_event['parts'].values():
             del part['id']
             del part['event_id']
