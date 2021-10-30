@@ -201,7 +201,7 @@ class EventBackend(EventCourseBackend, EventLodgementBackend, EventQueryBackend,
                         'camping_mat_field': None,
                     }
                     ret *= self.sql_update(rs, "event.events", deletor)
-                    field_cascade = {"fee_modifiers"} & cascade
+                    field_cascade = {"fee_modifiers"}
                     with Silencer(rs):
                         for anid in blockers["field_definitions"]:
                             ret *= self._delete_event_field(rs, anid, field_cascade)
