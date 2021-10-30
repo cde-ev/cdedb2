@@ -876,7 +876,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
         Allowed kinds:
 
-        - ``admin_persona``: Search for users as core_admin
+        - ``admin_persona``: Search for users as core_admin, cde_admin or auditor.
         - ``cde_user``: Search for a cde user as cde_admin.
         - ``past_event_user``: Search for an event user to add to a past
           event as cde_admin
@@ -908,15 +908,15 @@ class CoreBaseFrontend(AbstractFrontend):
                                 if {"core_admin"} & rs.user.roles
                                 else self.conf["NUM_PREVIEW_PERSONAS"])
         if kind == "admin_persona":
-            if not {"core_admin", "cde_admin"} & rs.user.roles:
+            if not {"core_admin", "cde_admin", "auditor"} & rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         elif kind == "cde_user":
-            if "cde_admin" not in rs.user.roles:
+            if not {"cde_admin", "auditor"} & rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append(
                 ("is_cde_realm", QueryOperators.equal, True))
         elif kind == "past_event_user":
-            if "cde_admin" not in rs.user.roles:
+            if not {"cde_admin", "auditor"} & rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append(
                 ("is_event_realm", QueryOperators.equal, True))
@@ -930,21 +930,21 @@ class CoreBaseFrontend(AbstractFrontend):
                 ("is_member", QueryOperators.equal, False))
         elif kind == "assembly_user":
             # No check by assembly, as this behaves identical for each assembly.
-            if not rs.user.presider and "assembly_admin" not in rs.user.roles:
+            if not (rs.user.presider or {"assembly_admin", "auditor"} & rs.user.roles):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append(
                 ("is_assembly_realm", QueryOperators.equal, True))
         elif kind == "event_user":
             # No check by event, as this behaves identical for each event.
-            if not rs.user.orga and "event_admin" not in rs.user.roles:
+            if not (rs.user.orga or {"event_admin", "auditor"} & rs.user.roles):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append(
                 ("is_event_realm", QueryOperators.equal, True))
         elif kind == "ml_user":
-            relevant_admin_roles = {"core_admin", "cde_admin", "event_admin",
+            relevant_admin_roles = {"core_admin", "cde_admin", "event_admin", "auditor",
                                     "assembly_admin", "cdelokal_admin", "ml_admin"}
             # No check by mailinglist, as this behaves identical for each list.
-            if not rs.user.moderator and not relevant_admin_roles & rs.user.roles:
+            if not (rs.user.moderator or relevant_admin_roles & rs.user.roles):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append(
                 ("is_ml_realm", QueryOperators.equal, True))
