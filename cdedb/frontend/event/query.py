@@ -415,7 +415,7 @@ class EventRegistrationTrackStatistic(enum.Enum):
                 [
                     _participant_constraint(part),
                     (f"track{track_id}.course_id", QueryOperators.empty, None),
-                    (f"persona.id", QueryOperators.otherthan, event['orgas']),
+                    ('persona.id', QueryOperators.otherthan, event['orgas']),
                 ],
                 []
             )
@@ -497,7 +497,6 @@ class EventQueryMixin(EventBaseFrontend):
         courses = self.eventproxy.get_courses(rs, course_ids)
         personas = self.coreproxy.get_event_users(
             rs, tuple(e['persona_id'] for e in registrations.values()), event_id)
-        stati = const.RegistrationPartStati
         # Precompute age classes of participants for all registration parts.
         for reg in registrations.values():
             for part_id, reg_part in reg['parts'].items():
