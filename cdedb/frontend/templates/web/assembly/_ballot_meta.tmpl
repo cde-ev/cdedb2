@@ -73,7 +73,7 @@
             {% if now() < ambience['ballot']['vote_begin'] %}
                 <strong>{% trans %}This ballot has not yet begun.{% endtrans %}</strong><br />
                 {% trans %}Admins can still make changes to description, files and candidates.{% endtrans %}
-                {% if "assembly_presider" in user.admin_views %}
+                {% if "assembly_presider" in user.admin_views or ambience['assembly']['id'] in user.presider %}
                     {% trans %}
                         All CdE-Members and external assembly participants can already
                         see this ballot and all associated information.
@@ -156,7 +156,8 @@
         {% endif %}
     </dl>
 
-    {% if "assembly_presider" in user.admin_views and ambience['ballot']['notes'] %}
+    {% if ("assembly_presider" in user.admin_views or ambience['assembly']['id'] in user.presider)
+           and ambience['ballot']['notes'] %}
         {% call util.bootstrap_panel(title=gettext("Admin-Notes"), icon="tag", aclass="panel-default panel-condensed") %}
             {{ ambience['ballot']['notes']|md }}
         {% endcall %}

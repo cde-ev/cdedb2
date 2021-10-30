@@ -157,8 +157,7 @@ class CdEBackend(AbstractBackend):
                             raise ValueError(n_(
                                 "Failed to revoke active lastschrift permit"))
                         revoked_permits.append(active_permit)
-            code = self.core.change_membership_easy_mode(
-                rs, persona_id, is_member)
+            code = self.core.change_membership_easy_mode(rs, persona_id, is_member)
         return code, revoked_permits, collateral_transactions
 
     @access("member", "core_admin", "cde_admin")

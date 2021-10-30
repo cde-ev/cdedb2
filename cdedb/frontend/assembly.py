@@ -24,7 +24,8 @@ from cdedb.common import (
 from cdedb.frontend.common import (
     AbstractUserFrontend, REQUESTdata, REQUESTdatadict, REQUESTfile, access,
     assembly_guard, calculate_db_logparams, calculate_loglinks, cdedburl,
-    check_validation as check, periodic, process_dynamic_input, request_extractor,
+    check_validation as check, drow_name, periodic, process_dynamic_input,
+    request_extractor,
 )
 from cdedb.query import QueryScope
 from cdedb.validation import (
@@ -944,11 +945,14 @@ class AssemblyFrontend(AbstractUserFrontend):
         else:
             merge_dicts(rs.values, {'vote': vote_dict['own_vote']})
 
-        # this is used for the flux candidate table
+        # this is used for the dynamic row candidate table
         current = {
-            f"{key}_{candidate_id}": value
+            drow_name(field_name=key, entity_id=candidate_id): value
             for candidate_id, candidate in ballot['candidates'].items()
             for key, value in candidate.items() if key != 'id'}
+        sorted_candidate_ids = [
+            e["id"] for e in xsorted(ballot["candidates"].values(),
+                                     key=EntitySorter.candidates)]
         merge_dicts(rs.values, current)
 
         ballots_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
@@ -967,6 +971,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         next_ballot = ballots[ballot_list[i+1]] if i + 1 < length else None
 
         return self.render(rs, "show_ballot", {
+            "sorted_candidate_ids": sorted_candidate_ids,
             'latest_versions': latest_versions,
             'definitive_versions': definitive_versions,
             'MAGIC_ABSTAIN': MAGIC_ABSTAIN,
@@ -1467,7 +1472,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         for candidate_id, candidate in candidates.items():
             if candidate and candidate['shortname'] in shortnames:
                 rs.append_validation_error(
-                    (f"shortname_{candidate_id}",
+                    (drow_name("shortname", candidate_id),
                      ValueError(n_("Duplicate shortname.")))
                 )
             if candidate:

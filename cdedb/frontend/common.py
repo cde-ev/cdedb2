@@ -322,6 +322,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'staticurl': functools.partial(staticurl,
                                            version=self.conf["GIT_COMMIT"][:8]),
             'docurl': docurl,
+            "drow_name": drow_name,
+            "drow_create": drow_create,
+            "drow_delete": drow_delete,
+            "drow_last_index": drow_last_index,
             'CDEDB_OFFLINE_DEPLOYMENT': self.conf["CDEDB_OFFLINE_DEPLOYMENT"],
             'CDEDB_DEV': self.conf["CDEDB_DEV"],
             'UNCRITICAL_PARAMETER_TIMEOUT': self.conf[
@@ -2188,6 +2192,23 @@ def make_persona_name(persona: CdEDBObject,
     return " ".join(ret)
 
 
+def drow_name(field_name: str, entity_id: int, prefix: str = "") -> str:
+    prefix = prefix + "_" if prefix else ""
+    return f"{prefix}{field_name}_{entity_id}"
+
+
+def drow_create(entity_id: int, prefix: str = "") -> str:
+    return drow_name("create", entity_id, prefix)
+
+
+def drow_delete(entity_id: int, prefix: str = "") -> str:
+    return drow_name("delete", entity_id, prefix)
+
+
+def drow_last_index(prefix: str = "") -> str:
+    return f"{prefix}create_last_index"
+
+
 # TODO maybe retrieve the spec from the type_?
 def process_dynamic_input(
     rs: RequestState,
@@ -2198,7 +2219,7 @@ def process_dynamic_input(
     additional: CdEDBObject = None,
     prefix: str = "",
 ) -> Dict[int, Optional[CdEDBObject]]:
-    """Retrieve data from rs provided by 'dynamic_row_table' makro.
+    """Retrieve data from rs provided by 'dynamic_row_meta' macros.
 
     This takes a 'spec' of field_names mapped to their validation. Each field_name is
     prepended with the 'prefix' and appended with the entity_id in the form of
@@ -2227,14 +2248,16 @@ def process_dynamic_input(
         then one dynamic input table is present on the same page.
     """
     additional = additional or dict()
+    # this is the used prefix for the validation
+    field_prefix = f"{prefix}_" if prefix else ""
 
-    delete_spec = {f"{prefix}delete_{anid}": bool for anid in existing}
+    delete_spec = {drow_delete(anid, prefix): bool for anid in existing}
     delete_flags = request_extractor(rs, delete_spec)
-    deletes = {anid for anid in existing if delete_flags[f"{prefix}delete_{anid}"]}
+    deletes = {anid for anid in existing if delete_flags[drow_delete(anid, prefix)]}
     non_deleted_existing = {anid for anid in existing if anid not in deletes}
 
     existing_data_spec: vtypes.TypeMapping = {
-        f"{prefix}{key}_{anid}": value
+        drow_name(key, anid, prefix): value
         for anid in non_deleted_existing
         for key, value in spec.items()
     }
@@ -2243,7 +2266,7 @@ def process_dynamic_input(
 
     # build the return dict of all existing entries and check if they pass validation
     ret: Dict[int, Optional[CdEDBObject]] = {
-        anid: {key: data[f"{prefix}{key}_{anid}"] for key in spec}
+        anid: {key: data[drow_name(key, anid, prefix)] for key in spec}
         for anid in non_deleted_existing
     }
     for anid in existing:
@@ -2255,25 +2278,28 @@ def process_dynamic_input(
             entry["id"] = anid
             entry.update(additional)
             # apply the promised validation
-            ret[anid] = check_validation(rs, type_, entry, field_prefix=prefix,
+            ret[anid] = check_validation(rs, type_, entry, field_prefix=field_prefix,
                                          field_postfix=f"_{anid}")  # type: ignore
 
     # extract the new entries which shall be created
     marker = 1
     while marker < 2 ** 10:
-        will_create = unwrap(request_extractor(rs, {f"{prefix}create_-{marker}": bool}))
+        will_create = unwrap(
+            request_extractor(rs, {drow_create(-marker, prefix): bool}))
         if will_create:
-            params = {f"{prefix}{key}_-{marker}": value for key, value in spec.items()}
+            params = {
+                drow_name(key, -marker, prefix): value for key, value in spec.items()}
             data = request_extractor(rs, params, postpone_validation=True)
-            entry = {key: data[f"{prefix}{key}_-{marker}"] for key in spec}
+            entry = {
+                key: data[drow_name(key, -marker, prefix)] for key in spec}
             entry.update(additional)
             ret[-marker] = check_validation(
-                rs, type_, entry, field_prefix=prefix, field_postfix=f"_-{marker}",
-                creation=True)  # type: ignore
+                rs, type_, entry, field_prefix=field_prefix,
+                field_postfix=f"_{-marker}", creation=True)  # type: ignore
         else:
             break
         marker += 1
-    rs.values[f'{prefix}create_last_index'] = marker - 1
+    rs.values[drow_last_index(prefix)] = marker - 1
     return ret
 
 
