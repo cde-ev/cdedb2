@@ -7,10 +7,10 @@ BEGIN;
             notes                   varchar,
             constraint_type         integer NOT NULL
     );
-    CREATE INDEX idx_event_part_groups_event_id ON event.event_part_groups(event_id);
+    CREATE INDEX idx_event_part_groups_event_id ON event.part_groups(event_id);
     GRANT INSERT, SELECT, UPDATE, DELETE ON event.part_groups TO cdb_persona;
     GRANT SELECT, UPDATE ON event.part_groups_id_seq TO cdb_persona;
-    GRANT SELECT ON event.event_part_groups TO cdb_anonymous;
+    GRANT SELECT ON event.part_groups TO cdb_anonymous;
 
     CREATE TABLE event.part_group_parts (
             id                      serial PRIMARY KEY,
