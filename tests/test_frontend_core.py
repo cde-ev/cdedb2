@@ -490,6 +490,41 @@ class TestCoreFrontend(FrontendTest):
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
 
+    @as_users("katarina")
+    def test_selectpersona_auditor(self) -> None:
+        self.get('/core/persona/select?kind=admin_persona&phrase=din')
+        expectation = {
+            'personas': [
+                {
+                    'id': 4,
+                    'name': 'Daniel Dino',
+                },
+                {
+                    'id': 6,
+                    'name': 'Ferdinand Findus',
+                },
+            ],
+        }
+        self.assertEqual(expectation, self.response.json)
+        self.get('/core/persona/select?kind=ml_user&phrase=@exam')
+        expectation = (1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 13, 14)
+        reality = tuple(e['id'] for e in self.response.json['personas'])
+        self.assertEqual(expectation[:self.conf["NUM_PREVIEW_PERSONAS"]], reality)
+        self.get('/core/persona/select?kind=event_user&phrase=bert')
+        expectation = (2,)
+        reality = tuple(e['id'] for e in self.response.json['personas'])
+        self.assertEqual(expectation, reality)
+        self.get('/core/persona/select?kind=past_event_user&phrase=emil')
+        expectation = (5,)
+        reality = tuple(e['id'] for e in self.response.json['personas'])
+        self.assertEqual(expectation, reality)
+        self.get('/core/persona/select?kind=assembly_user&phrase=kalif')
+        expectation = (11,)
+        reality = tuple(e['id'] for e in self.response.json['personas'])
+        self.assertEqual(expectation, reality)
+        self.get('/core/persona/select?kind=pure_assembly_user&phrase=kal', status=403)
+        self.get('/core/persona/select?kind=pure_ml_user&phrase=@exam', status=403)
+
     @as_users("vera")
     def test_adminshowuser_advanced(self) -> None:
         for phrase, user in (("DB-2-7", USER_DICT['berta']),
