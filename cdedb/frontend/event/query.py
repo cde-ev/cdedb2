@@ -6,11 +6,10 @@ querying registrations, courses and lodgements.
 """
 
 import collections
-import copy
 import datetime
-import functools
+import enum
 import pprint
-from typing import Callable, Collection, Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -18,7 +17,7 @@ from werkzeug import Response
 import cdedb.database.constants as const
 import cdedb.validationtypes as vtypes
 from cdedb.common import (
-    AgeClasses, CdEDBObject, EntitySorter, RequestState, deduct_years,
+    AgeClasses, CdEDBObject, CdEDBObjectMap, EntitySorter, RequestState, deduct_years,
     determine_age_class, n_, unwrap, xsorted,
 )
 from cdedb.frontend.common import (
@@ -31,12 +30,464 @@ from cdedb.query import (
     make_course_query_aux, make_lodgement_query_aux, make_registration_query_aux,
 )
 
+RPS = const.RegistrationPartStati
+
+StatQueryAux = Tuple[List[str], List[QueryConstraint], List[QueryOrder]]
+
+
+def _is_participant(reg_part: CdEDBObject) -> bool:
+    return reg_part['status'] == RPS.participant
+
+
+def _is_involved(reg_part: CdEDBObject) -> bool:
+    return reg_part['status'].is_involved()
+
+
+def _status_constraint(part: CdEDBObject, status: RPS, negate: bool = False
+                       ) -> QueryConstraint:
+    return (
+        f"part{part['id']}.status",
+        QueryOperators.unequal if negate else QueryOperators.equal,
+        status.value
+    )
+
+
+def _participant_constraint(part: CdEDBObject) -> QueryConstraint:
+    return _status_constraint(part, RPS.participant)
+
+
+def _involved_constraint(part: CdEDBObject) -> QueryConstraint:
+    return (f"part{part['id']}.status", QueryOperators.oneof,
+            (status.value for status in RPS if status.is_involved()))
+
+
+def _age_constraint(part: CdEDBObject, max_age: int, min_age: int = None
+                    ) -> QueryConstraint:
+    min_date = deduct_years(part['part_begin'], max_age)
+    if min_age is None:
+        return ('persona.birthday', QueryOperators.greater, min_date)
+    else:
+        min_date += datetime.timedelta(days=1)
+        max_date = deduct_years(part['part_begin'], min_age)
+        return ('persona.birthday', QueryOperators.between, (min_date, max_date))
+
+
+def _waitlist_order(event: CdEDBObject, part: CdEDBObject) -> List[QueryOrder]:
+    ret = []
+    if field_id := part['waitlist_field']:
+        field_name = event['fields'][field_id]['field_name']
+        ret.append((f'reg_fields.xfield_{field_name}', True))
+    return ret + [('reg.payment', True), ('ctime.creation_time', True)]
+
+
+class EventRegistrationPartStatistic(enum.Enum):
+    pending = n_("Open Registrations")
+    _payed = n_("Paid")
+    participant = n_("Participants")
+    _minors = n_("All minors")
+    _u18 = n_("U18")
+    _u16 = n_("U16")
+    _u14 = n_("U14")
+    _checked_in = n_("Checked-In")
+    _not_checked_in = n_("Not Checked-In")
+    _orgas = n_("Orgas")
+    waitlist = n_("Waitinglist")
+    guest = n_("Guests")
+    involved = n_("Total Active Registrations")
+    _not_payed = n_("Not Paid")
+    _no_parental_agreement = n_("Parental Consent Pending")
+    _no_lodgement = n_("No Lodgement")
+    cancelled = n_("Registration Cancelled")
+    rejected = n_("Registration Rejected")
+    total = n_("Total Registrations")
+
+    @property
+    def indent(self):
+        return self.name.startswith("_")
+
+    def test(self, event: CdEDBObject, reg: CdEDBObject, part_id: CdEDBObject) -> bool:
+        part = reg['parts'][part_id]
+        if self == self.pending:
+            return part['status'] == RPS.applied
+        elif self == self._payed:
+            return part['status'] == RPS.applied and reg['payment']
+        elif self == self.participant:
+            return _is_participant(part)
+        elif self == self._minors:
+            return _is_participant(part) and part['age_class'].is_minor()
+        elif self == self._u18:
+            return _is_participant(part) and part['age_class'] == AgeClasses.u18
+        elif self == self._u16:
+            return _is_participant(part) and part['age_class'] == AgeClasses.u16
+        elif self == self._u14:
+            return _is_participant(part) and part['age_class'] == AgeClasses.u14
+        elif self == self._checked_in:
+            return _is_participant(part) and reg['checkin']
+        elif self == self._not_checked_in:
+            return _is_participant(part) and not reg['checkin']
+        elif self == self._orgas:
+            return _is_participant(part) and reg['persona_id'] in event['orgas']
+        elif self == self.waitlist:
+            return part['status'] == RPS.waitlist
+        elif self == self.guest:
+            return part['status'] == RPS.guest
+        elif self == self.involved:
+            return _is_involved(part)
+        elif self == self._not_payed:
+            return _is_involved(part) and not reg['payment']
+        elif self == self._no_parental_agreement:
+            return (_is_involved(part) and part['age_class'].is_minor()
+                    and not reg['parental_agreement'])
+        elif self == self._no_lodgement:
+            return part['status'].is_present() and not part['lodgement_id']
+        elif self == self.cancelled:
+            return part['status'] == RPS.cancelled
+        elif self == self.rejected:
+            return part['status'] == RPS.rejected
+        elif self == self.total:
+            return part['status'] != RPS.not_applied
+        else:
+            raise RuntimeError
+
+    def _get_query_aux(self, event: CdEDBObject, part_id: int) -> StatQueryAux:
+        part = event['parts'][part_id]
+        if self == self.pending:
+            return ([], [_status_constraint(part, RPS.applied)], [])
+        elif self == self._payed:
+            return (
+                ['reg.payment'],
+                [
+                    _status_constraint(part, RPS.applied),
+                    ('reg.payment', QueryOperators.nonempty, None),
+                ],
+                []
+            )
+        elif self == self.participant:
+            return ([], [_participant_constraint(part)], [])
+        elif self == self._minors:
+            return (
+                ['persona.birthday'],
+                [_participant_constraint(part), _age_constraint(part, 18)],
+                []
+            )
+        elif self == self._u18:
+            return (
+                ['persona.birthday'],
+                [
+                    _participant_constraint(part),
+                    _age_constraint(part, 18, 16),
+                ],
+                []
+            )
+        elif self == self._u16:
+            return (
+                ['persona.birthday'],
+                [
+                    _participant_constraint(part),
+                    _age_constraint(part, 16, 14),
+                ],
+                []
+            )
+        elif self == self._u14:
+            return (
+                ['persona.birthday'],
+                [
+                    _participant_constraint(part),
+                    _age_constraint(part, 14),
+                ],
+                []
+            )
+        elif self == self._checked_in:
+            return (
+                ['reg.checkin'],
+                [
+                    _participant_constraint(part),
+                    ('reg.checkin', QueryOperators.nonempty, None),
+                ],
+                []
+            )
+        elif self == self._not_checked_in:
+            return (
+                [],
+                [
+                    _participant_constraint(part),
+                    ('reg.checkin', QueryOperators.empty, None),
+                ],
+                []
+            )
+        elif self == self._orgas:
+            return (
+                [],
+                [
+                    _participant_constraint(part),
+                    ('persona.id', QueryOperators.oneof, event['orgas']),
+                ],
+                []
+            )
+        elif self == self.waitlist:
+            return (
+                ['reg.payment', 'ctime.creation_time'],
+                [_status_constraint(part, RPS.waitlist)],
+                _waitlist_order(event, part)
+            )
+        elif self == self.guest:
+            return ([], [_status_constraint(part, RPS.guest)], [])
+        elif self == self.involved:
+            return ([f"part{part['id']}.status"], [_involved_constraint(part)], [])
+        elif self == self._not_payed:
+            return (
+                [f"part{part['id']}.status"],
+                [
+                    _involved_constraint(part),
+                    ('reg.payment', QueryOperators.empty, None),
+                ],
+                []
+            )
+        elif self == self._no_parental_agreement:
+            return (
+                [f"part{part['id']}.status"],
+                [
+                    _involved_constraint(part),
+                    ('reg.parental_agreement', QueryOperators.equal, False),
+                ],
+                []
+            )
+        elif self == self._no_lodgement:
+            return (
+                [f"part{part['id']}.status"],
+                [
+                    (f"part{part['id']}.status", QueryOperators.oneof,
+                     (status for status in RPS if status.is_present())),
+                    ('reg.parental_agreement', QueryOperators.equal, False),
+                ],
+                []
+            )
+        elif self == self.cancelled:
+            return (
+                ['reg.amount_paid'],
+                [_status_constraint(part, RPS.cancelled)],
+                []
+            )
+        elif self == self.rejected:
+            return (
+                ['reg.amount_paid'],
+                [_status_constraint(part, RPS.rejected)],
+                []
+            )
+        elif self == self.total:
+            return (
+                [f"part{part['id']}.status"],
+                [_status_constraint(part, RPS.not_applied, negate=True)],
+                []
+            )
+        else:
+            raise RuntimeError
+
+    def get_query(self, event: CdEDBObject, part_id: int) -> Query:
+        query = Query(
+            QueryScope.registration,
+            QueryScope.registration.get_spec(event=event),
+            fields_of_interest=['reg.id', 'persona.given_names', 'persona.family_name',
+                                'persona.username'],
+            constraints=[],
+            order=[('persona.family_name', True), ('persona.given_names', True)]
+        )
+        fields, constraints, order = self._get_query_aux(event, part_id)
+        query.fields_of_interest.extend(fields)
+        query.constraints.extend(constraints)
+        # Prepend the specific order.
+        query.order = order + query.order
+        return query
+
+
+class EventCourseStatistic(enum.Enum):
+    offered = n_("Course Offers")
+    cancelled = n_("Cancelled Courses")
+
+    def test(self, course: CdEDBObject, track_id: int) -> bool:
+        if self == self.offered:
+            return track_id in course['segments']
+        elif self == self.cancelled:
+            return (track_id in course['segments']
+                    and track_id not in course['active_segments'])
+        else:
+            raise RuntimeError
+
+    def _get_query_aux(self, track_id: int) -> StatQueryAux:
+        if self == self.offered:
+            return (
+                ['course.instructors'],
+                [(f"track{track_id}.is_offered", QueryOperators.equal, True)],
+                []
+            )
+        elif self == self.cancelled:
+            return (
+                ['course.instructors'],
+                [
+                    (f"track{track_id}.is_offered", QueryOperators.equal, True),
+                    (f"track{track_id}.takes_place", QueryOperators.equal, False),
+                ],
+                []
+            )
+        else:
+            raise RuntimeError
+
+    def get_query(self, event: CdEDBObject, track_id: int) -> Query:
+        query = Query(
+            QueryScope.event_course,
+            QueryScope.event_course.get_spec(event=event),
+            fields_of_interest=['course_fields.id'],
+            constraints=[],
+            order=[('course.nr', True)]
+        )
+        fields, constraints, order = self._get_query_aux(track_id)
+        query.fields_of_interest.extend(fields)
+        query.constraints.extend(constraints)
+        # Prepend the specific order.
+        query.order = order + query.order
+        return query
+
+
+class EventRegistrationTrackStatistic(enum.Enum):
+    all_instructors = n_("(Potential) Instructor")
+    instructors = n_("Instructor")
+    attendees = n_("Attendees")
+    no_course = n_("No Course")
+
+    def test(self, event: CdEDBObject, reg: CdEDBObject, track_id: int) -> bool:
+        track = reg['tracks'][track_id]
+        part = reg['parts'][event['tracks'][track_id]['part_id']]
+
+        # All checks require the registration to be a participant in the given track.
+        if part['status'] != RPS.participant:
+            return False
+
+        if self == self.all_instructors:
+            return track['course_instructor']
+        elif self == self.instructors:
+            return (track['course_id']
+                    and track['course_id'] == track['course_instructor'])
+        elif self == self.attendees:
+            return (track['course_id']
+                    and track['course_id'] != track['course_instructor'])
+        elif self == self.no_course:
+            return not track['course_id'] and reg['persona_id'] not in event['orgas']
+        else:
+            raise RuntimeError
+
+    def _get_query_aux(self, event: CdEDBObject, track_id: int) -> StatQueryAux:
+        track = event['tracks'][track_id]
+        part = event['parts'][track['part_id']]
+        if self == self.all_instructors:
+            return (
+                [f"track{track_id}.course_id", f"track{track_id}.course_instructor"],
+                [
+                    _participant_constraint(part),
+                    (f"track{track_id}.course_instructor",
+                     QueryOperators.nonempty, None),
+                ],
+                [(f"course_instructor{track_id}.nr", True)]
+            )
+        elif self == self.instructors:
+            return (
+                [f"track{track_id}.course_instructor"],
+                [
+                    _participant_constraint(part),
+                    (f"track{track_id}.is_course_instructor",
+                     QueryOperators.equal, True),
+                ],
+                [(f"course_instructor{track_id}.nr", True)]
+            )
+        elif self == self.attendees:
+            return (
+                [f"track{track_id}.course_id"],
+                [
+                    _participant_constraint(part),
+                    (f"track{track_id}.course_id", QueryOperators.nonempty, None),
+                    (f"track{track_id}.is_course_instructor",
+                     QueryOperators.equal, False),
+                ],
+                [(f"course{track_id}.nr", True)]
+            )
+        elif self == self.no_course:
+            return (
+                [],
+                [
+                    _participant_constraint(part),
+                    (f"track{track_id}.course_id", QueryOperators.empty, None),
+                    (f"persona.id", QueryOperators.otherthan, event['orgas']),
+                ],
+                []
+            )
+        else:
+            raise RuntimeError
+
+    def get_query(self, event: CdEDBObject, track_id: int) -> Query:
+        query = Query(
+            QueryScope.registration,
+            QueryScope.registration.get_spec(event=event),
+            fields_of_interest=['reg.id', 'persona.given_names', 'persona.family_name',
+                                'persona.username'],
+            constraints=[],
+            order=[('persona.family_name', True), ('persona.given_names', True)]
+        )
+        fields, constraints, order = self._get_query_aux(event, track_id)
+        query.fields_of_interest.extend(fields)
+        query.constraints.extend(constraints)
+        # Prepend the specific order.
+        query.order = order + query.order
+        return query
+
+
+class EventRegistrationInXChoiceGrouper:
+    def __init__(self, event: CdEDBObject, regs: CdEDBObjectMap):
+        tracks = event['tracks']
+        self.max_choices = max(track['num_choices'] for track in tracks.values())
+        self.choice_track_map: Dict[int, Dict[int, List[int]]] = {
+            x: {
+                track_id: [] if track['num_choices'] > x else None
+                for track_id, track in tracks.items()
+            }
+            for x in range(self.max_choices)
+        }
+
+        for reg_id, reg in regs.items():
+            for track_id in tracks:
+                for x in range(self.max_choices):
+                    if self.test(event, reg, track_id, x):
+                        self.choice_track_map[x][track_id].append(reg_id)
+                        break
+
+    @staticmethod
+    def test(event: CdEDBObject, reg: CdEDBObject, track_id: int, x: int) -> bool:
+        course_track = event['tracks'][track_id]
+        event_part = event['parts'][course_track['part_id']]
+        part = reg['parts'][event_part['id']]
+        track = reg['tracks'][track_id]
+        return (_is_participant(part) and track['course_id']
+                and len(track['choices']) > x
+                and track['choices'][x] == track['course_id'])
+
+    def get_query(self, event: CdEDBObject, track_id: int, x: int) -> Query:
+        return Query(
+            QueryScope.registration,
+            QueryScope.registration.get_spec(event=event),
+            fields_of_interest=['reg.id', 'persona.given_names', 'persona.family_name',
+                                'persona.username', f"track{track_id}.course_id"],
+            constraints=[
+                ('reg.id', QueryOperators.oneof, self.choice_track_map[x][track_id]),
+            ],
+            order=[(f"course{track_id}.nr", True), ('persona.family_name', True),
+                   ('persona.given_names', True)]
+        )
+
 
 class EventQueryMixin(EventBaseFrontend):
     @access("event")
     @event_guard()
     def stats(self, rs: RequestState, event_id: int) -> Response:
         """Present an overview of the basic stats."""
+        event_parts = rs.ambience['event']['parts']
         tracks = rs.ambience['event']['tracks']
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
@@ -45,378 +496,49 @@ class EventQueryMixin(EventBaseFrontend):
         personas = self.coreproxy.get_event_users(
             rs, tuple(e['persona_id'] for e in registrations.values()), event_id)
         stati = const.RegistrationPartStati
-        get_age = lambda u, p: determine_age_class(
-            u['birthday'],
-            rs.ambience['event']['parts'][p['part_id']]['part_begin'])
+        # Precompute age classes of participants for all registration parts.
+        for reg in registrations.values():
+            for part_id, reg_part in reg['parts'].items():
+                reg_part['age_class'] = determine_age_class(
+                    personas[reg['persona_id']]['birthday'],
+                    event_parts[part_id]['part_begin'])
 
-        # Tests for participant/registration statistics.
-        # `e` is the event, `r` is a registration, `p` is a registration_part.
-        tests1 = collections.OrderedDict((
-            ('pending', (lambda e, r, p: (
-                    p['status'] == stati.applied))),
-            (' payed', (lambda e, r, p: (
-                    p['status'] == stati.applied
-                    and r['payment']))),
-            ('participant', (lambda e, r, p: (
-                    p['status'] == stati.participant))),
-            (' all minors', (lambda e, r, p: (
-                    (p['status'] == stati.participant)
-                    and (get_age(personas[r['persona_id']], p).is_minor())))),
-            (' u16', (lambda e, r, p: (
-                    (p['status'] == stati.participant)
-                    and (get_age(personas[r['persona_id']], p)
-                         == AgeClasses.u16)))),
-            (' u14', (lambda e, r, p: (
-                    (p['status'] == stati.participant)
-                    and (get_age(personas[r['persona_id']], p)
-                         == AgeClasses.u14)))),
-            (' checked in', (lambda e, r, p: (
-                    p['status'] == stati.participant
-                    and r['checkin']))),
-            (' not checked in', (lambda e, r, p: (
-                    p['status'] == stati.participant
-                    and not r['checkin']))),
-            (' orgas', (lambda e, r, p: (
-                    p['status'] == stati.participant
-                    and r['persona_id'] in e['orgas']))),
-            ('waitlist', (lambda e, r, p: (
-                    p['status'] == stati.waitlist))),
-            ('guest', (lambda e, r, p: (
-                    p['status'] == stati.guest))),
-            ('total involved', (lambda e, r, p: (
-                stati(p['status']).is_involved()))),
-            (' not payed', (lambda e, r, p: (
-                    stati(p['status']).is_involved()
-                    and not r['payment']))),
-            (' no parental agreement', (lambda e, r, p: (
-                    stati(p['status']).is_involved()
-                    and get_age(personas[r['persona_id']], p).is_minor()
-                    and not r['parental_agreement']))),
-            ('no lodgement', (lambda e, r, p: (
-                    stati(p['status']).is_present()
-                    and not p['lodgement_id']))),
-            ('cancelled', (lambda e, r, p: (
-                    p['status'] == stati.cancelled))),
-            ('rejected', (lambda e, r, p: (
-                    p['status'] == stati.rejected))),
-            ('total', (lambda e, r, p: (
-                    p['status'] != stati.not_applied))),
-        ))
         per_part_statistics: Dict[str, Dict[int, int]] = collections.OrderedDict()
-        for key, test1 in tests1.items():
-            per_part_statistics[key] = {
+        for reg_stat in EventRegistrationPartStatistic:
+            per_part_statistics[reg_stat] = {
                 part_id: sum(
-                    1 for r in registrations.values()
-                    if test1(rs.ambience['event'], r, r['parts'][part_id]))
-                for part_id in rs.ambience['event']['parts']}
+                    1 for reg in registrations.values()
+                    if reg_stat.test(rs.ambience['event'], reg, part_id))
+                for part_id in event_parts
+            }
 
-        # Test for course statistics
-        # `c` is a course, `t` is a track.
-        tests2 = collections.OrderedDict((
-            ('courses', lambda c, t: (
-                    t in c['segments'])),
-            ('cancelled courses', lambda c, t: (
-                    t in c['segments']
-                    and t not in c['active_segments'])),
-        ))
-
-        # Tests for course attendee statistics
-        # `e` is the event, `r` is the registration, `p` is a event_part,
-        # `t` is a track.
-        tests3 = collections.OrderedDict((
-            ('all instructors', (lambda e, r, p, t: (
-                    p['status'] == stati.participant
-                    and t['course_instructor']))),
-            ('instructors', (lambda e, r, p, t: (
-                    p['status'] == stati.participant
-                    and t['course_id']
-                    and t['course_id'] == t['course_instructor']))),
-            ('attendees', (lambda e, r, p, t: (
-                    p['status'] == stati.participant
-                    and t['course_id']
-                    and t['course_id'] != t['course_instructor']))),
-            ('no course', (lambda e, r, p, t: (
-                    p['status'] == stati.participant
-                    and not t['course_id']
-                    and r['persona_id'] not in e['orgas']))),))
         per_track_statistics: Dict[str, Dict[int, Optional[int]]]
         per_track_statistics = collections.OrderedDict()
-        regs_in_choice_x: Dict[str, Dict[int, List[int]]] = collections.OrderedDict()
+        # regs_in_choice_x: Dict[str, Dict[int, List[int]]] = collections.OrderedDict()
         if tracks:
-            # Additional dynamic tests for course attendee statistics
-            for i in range(max(t['num_choices'] for t in tracks.values())):
-                key = rs.gettext('In {}. Choice').format(i + 1)
-                checker = (
-                    functools.partial(
-                        lambda p, t, j: (
-                            p['status'] == stati.participant
-                            and t['course_id']
-                            and len(t['choices']) > j
-                            and (t['choices'][j] == t['course_id'])),
-                        j=i))
-                per_track_statistics[key] = {
+            for reg_track_stat in EventRegistrationTrackStatistic:
+                per_track_statistics[reg_track_stat] = {
                     track_id: sum(
-                        1 for r in registrations.values()
-                        if checker(r['parts'][tracks[track_id]['part_id']],
-                                   r['tracks'][track_id]))
-                    if i < tracks[track_id]['num_choices'] else None
+                        1 for reg in registrations.values()
+                        if reg_track_stat.test(rs.ambience['event'], reg, track_id))
+                    for track_id in tracks
+                }
+            for course_stat in EventCourseStatistic:
+                per_track_statistics[course_stat] = {
+                    track_id: sum(
+                        1 for course in courses.values()
+                        if course_stat.test(course, track_id))
                     for track_id in tracks
                 }
 
-                # the ids are used later on for the query page
-                regs_in_choice_x[key] = {
-                    track_id: [
-                        r['id'] for r in registrations.values()
-                        if checker(r['parts'][tracks[track_id]['part_id']],
-                                   r['tracks'][track_id])
-                    ]
-                    for track_id in tracks
-                }
-
-            for key, test2 in tests2.items():
-                per_track_statistics[key] = {
-                    track_id: sum(
-                        1 for c in courses.values()
-                        if test2(c, track_id))
-                    for track_id in tracks}
-            for key, test3 in tests3.items():
-                per_track_statistics[key] = {
-                    track_id: sum(
-                        1 for r in registrations.values()
-                        if test3(rs.ambience['event'], r,
-                                r['parts'][tracks[track_id]['part_id']],
-                                r['tracks'][track_id]))
-                    for track_id in tracks}
-
-        # The base query object to use for links to event/registration_query
-        persona_order = ("persona.family_name", True), ("persona.given_names", True)
-        base_registration_query = Query(
-            QueryScope.registration,
-            QueryScope.registration.get_spec(event=rs.ambience['event']),
-            ["reg.id", "persona.given_names", "persona.family_name",
-             "persona.username"],
-            [],
-            persona_order,
-        )
-        base_course_query = Query(
-            QueryScope.event_course,
-            QueryScope.event_course.get_spec(event=rs.ambience['event']),
-            ["course.course_id"],
-            [],
-            (("course.nr", True),)
-        )
-        # Some reusable query filter definitions
-        involved_filter = lambda p: (
-            'part{}.status'.format(p['id']),
-            QueryOperators.oneof,
-            [x.value for x in stati if x.is_involved()],
-        )
-        participant_filter = lambda p: (
-            'part{}.status'.format(p['id']),
-            QueryOperators.equal,
-            stati.participant.value,
-        )
-        QueryFilterGetter = Callable[
-            [CdEDBObject, CdEDBObject, CdEDBObject], Collection[QueryConstraint]]
-        # Query filters for all the registration statistics defined and calculated above
-        # They are customized and inserted into the query on the fly by get_query().
-        # `e` is the event, `p` is the event_part, `t` is the track.
-        registration_query_filters: Dict[str, QueryFilterGetter] = {
-            'pending': lambda e, p, t: (
-                ('part{}.status'.format(p['id']), QueryOperators.equal,
-                 stati.applied.value),),
-            ' payed': lambda e, p, t: (
-                ('part{}.status'.format(p['id']), QueryOperators.equal,
-                 stati.applied.value),
-                ("reg.payment", QueryOperators.nonempty, None),),
-            'participant': lambda e, p, t: (participant_filter(p),),
-            ' all minors': lambda e, p, t: (
-                participant_filter(p),
-                ("persona.birthday", QueryOperators.greater,
-                 (deduct_years(p['part_begin'], 18)))),
-            ' u18': lambda e, p, t: (
-                participant_filter(p),
-                ("persona.birthday", QueryOperators.between,
-                 (deduct_years(p['part_begin'], 18)
-                    + datetime.timedelta(days=1),
-                  deduct_years(p['part_begin'], 16)),),),
-            ' u16': lambda e, p, t: (
-                participant_filter(p),
-                ("persona.birthday", QueryOperators.between,
-                 (deduct_years(p['part_begin'], 16)
-                    + datetime.timedelta(days=1),
-                  deduct_years(p['part_begin'], 14)),),),
-            ' u14': lambda e, p, t: (
-                participant_filter(p),
-                ("persona.birthday", QueryOperators.greater,
-                 deduct_years(p['part_begin'], 14)),),
-            ' checked in': lambda e, p, t: (
-                participant_filter(p),
-                ("reg.checkin", QueryOperators.nonempty, None),),
-            ' not checked in': lambda e, p, t: (
-                participant_filter(p),
-                ("reg.checkin", QueryOperators.empty, None),),
-            ' orgas': lambda e, p, t: (
-                participant_filter(p),
-                ('persona.id', QueryOperators.oneof,
-                 rs.ambience['event']['orgas']),),
-            'waitlist': lambda e, p, t: (
-                involved_filter(p),
-                ('part{}.status'.format(p['id']), QueryOperators.equal,
-                 stati.waitlist.value),),
-            'guest': lambda e, p, t: (
-                ('part{}.status'.format(p['id']), QueryOperators.equal,
-                 stati.guest.value),),
-            'total involved': lambda e, p, t: (involved_filter(p),),
-            ' not payed': lambda e, p, t: (
-                involved_filter(p),
-                ("reg.payment", QueryOperators.empty, None),),
-            ' no parental agreement': lambda e, p, t: (
-                involved_filter(p),
-                ("persona.birthday", QueryOperators.greater,
-                 deduct_years(p['part_begin'], 18)),
-                ("reg.parental_agreement", QueryOperators.equal, False),),
-            'no lodgement': lambda e, p, t: (
-                ('part{}.status'.format(p['id']), QueryOperators.oneof,
-                 [x.value for x in stati if x.is_present()]),
-                ('lodgement{}.id'.format(p['id']),
-                 QueryOperators.empty, None)),
-            'cancelled': lambda e, p, t: (
-                ('part{}.status'.format(p['id']), QueryOperators.equal,
-                 stati.cancelled.value),),
-            'rejected': lambda e, p, t: (
-                ('part{}.status'.format(p['id']), QueryOperators.equal,
-                 stati.rejected.value),),
-            'total': lambda e, p, t: (
-                ('part{}.status'.format(p['id']), QueryOperators.unequal,
-                 stati.not_applied.value),),
-
-            'all instructors': lambda e, p, t: (
-                participant_filter(p),
-                ('course_instructor{}.id'.format(t['id']),
-                 QueryOperators.nonempty, None),),
-            'instructors': lambda e, p, t: (
-                participant_filter(p),
-                ('track{}.is_course_instructor'.format(t['id']),
-                 QueryOperators.equal, True),),
-            'attendees': lambda e, p, t: (
-                participant_filter(p),
-                (f'course{t["id"]}.id', QueryOperators.nonempty, None),
-                (f'track{t["id"]}.is_course_instructor',
-                 QueryOperators.equalornull, False),),
-            'no course': lambda e, p, t: (
-                participant_filter(p),
-                ('course{}.id'.format(t['id']),
-                 QueryOperators.empty, None),
-                ('persona.id', QueryOperators.otherthan,
-                 rs.ambience['event']['orgas']),)
-        }
-        for name, track_regs in regs_in_choice_x.items():
-            registration_query_filters[name] = functools.partial(
-                lambda e, p, t, t_r: (
-                    ("reg.id", QueryOperators.oneof, t_r[t['id']]),
-                ), t_r=track_regs
-            )
-        # Query filters for all the course statistics defined and calculated above.
-        # They are customized and inserted into the query on the fly by get_query().
-        # `e` is the event, `p` is the event_part, `t` is the track.
-        course_query_filters: Dict[str, QueryFilterGetter] = {
-            'courses': lambda e, p, t: (
-                (f'track{t["id"]}.is_offered', QueryOperators.equal, True),),
-            'cancelled courses': lambda e, p, t: (
-                (f'track{t["id"]}.is_offered', QueryOperators.equal, True),
-                (f'track{t["id"]}.takes_place', QueryOperators.equal, False),),
-        }
-
-        query_additional_fields: Dict[str, Collection[str]] = {
-            ' payed': ('reg.payment',),
-            ' all minors': ('persona.birthday',),
-            ' u18': ('persona.birthday',),
-            ' u16': ('persona.birthday',),
-            ' u14': ('persona.birthday',),
-            ' checked in': ('reg.checkin',),
-            'waitlist': ('reg.payment', 'ctime.creation_time',),
-            'total involved': ('part{part}.status',),
-            ' not payed': ('part{part}.status',),
-            ' no parental agreement': ('part{part}.status',),
-            'no lodgement': ('part{part}.status',),
-            'cancelled': ('reg.amount_paid',),
-            'rejected': ('reg.amount_paid',),
-            'total': ('part{part}.status',),
-
-            'all instructors': ('track{track}.course_id',
-                                'track{track}.course_instructor',),
-            'instructors': ('track{track}.course_instructor',),
-            'attendees': ('track{track}.course_id',),
-            'courses': ('course.instructors',),
-            'cancelled courses': ('course.instructors',),
-        }
-        for name, track_regs in regs_in_choice_x.items():
-            query_additional_fields[name] = ('track{track}.course_id',)
-
-        def waitlist_query_order(
-            e: CdEDBObject, p: CdEDBObject, t: CdEDBObject
-        ) -> List[QueryOrder]:
-            order = [("reg.payment", True), ("ctime.creation_time", True)]
-            if p["waitlist_field"]:
-                field_name = e["fields"][p["waitlist_field"]]["field_name"]
-                waitlist_field_position = (f'reg_fields.xfield_{field_name}', True)
-                order.insert(0, waitlist_field_position)
-            return order
-
-        # overwrites the default query order
-        QueryOrderGetter = Callable[
-            [CdEDBObject, CdEDBObject, CdEDBObject], List[QueryOrder]]
-        registration_query_order: Dict[str, QueryOrderGetter] = {
-            'waitlist': waitlist_query_order,
-            'all instructors': lambda e, p, t: (
-                [(f"track{t['id']}.course_instructor", True), *persona_order]),
-            'instructors': lambda e, p, t: (
-                [(f"track{t['id']}.course_instructor", True), *persona_order]),
-            'attendees': lambda e, p, t: (
-                [(f"course{t['id']}.nr", True), *persona_order]),
-        }
-        for name, track_regs in regs_in_choice_x.items():
-            registration_query_order[name] = functools.partial(
-                lambda e, p, t, t_r: (
-                    [(f"course{t['id']}.nr", True), *persona_order]
-                ), t_r=track_regs
-            )
-
-        def get_query(category: str, part_id: int, track_id: int = None
-                      ) -> Optional[Query]:
-            if category in registration_query_filters:
-                q = copy.deepcopy(base_registration_query)
-                filters = registration_query_filters
-            elif category in course_query_filters:
-                q = copy.deepcopy(base_course_query)
-                filters = course_query_filters
-            else:
-                return None
-            e = rs.ambience['event']
-            p = e['parts'][part_id]
-            t = e['tracks'][track_id] if track_id else None
-            for c in filters[category](e, p, t):
-                q.constraints.append(c)
-            if category in query_additional_fields:
-                for f in query_additional_fields[category]:
-                    q.fields_of_interest.append(f.format(track=track_id, part=part_id))
-            if category in registration_query_order:
-                q.order = registration_query_order[category](e, p, t)
-            return q
-
-        def get_query_page(category: str) -> Optional[str]:
-            if category in registration_query_filters:
-                return "event/registration_query"
-            elif category in course_query_filters:
-                return "event/course_query"
-            return None
+            grouper = EventRegistrationInXChoiceGrouper(
+                rs.ambience['event'], registrations)
 
         return self.render(rs, "stats", {
             'registrations': registrations, 'personas': personas,
             'courses': courses, 'per_part_statistics': per_part_statistics,
-            'per_track_statistics': per_track_statistics,
-            'get_query': get_query, 'get_query_page': get_query_page})
+            'per_track_statistics': per_track_statistics, 'grouper': grouper,
+        })
 
     @access("event")
     @event_guard()
