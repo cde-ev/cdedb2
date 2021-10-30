@@ -9,7 +9,7 @@ import collections
 import datetime
 import enum
 import pprint
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -102,7 +102,7 @@ class EventRegistrationPartStatistic(enum.Enum):
     total = n_("Total Registrations")
 
     @property
-    def indent(self):
+    def indent(self) -> bool:
         return self.name.startswith("_")
 
     def test(self, event: CdEDBObject, reg: CdEDBObject, part_id: CdEDBObject) -> bool:
@@ -442,20 +442,22 @@ class EventRegistrationTrackStatistic(enum.Enum):
 class EventRegistrationInXChoiceGrouper:
     def __init__(self, event: CdEDBObject, regs: CdEDBObjectMap):
         tracks = event['tracks']
-        self.max_choices = max(track['num_choices'] for track in tracks.values())
-        self.choice_track_map: Dict[int, Dict[int, List[int]]] = {
+        max_choices = max(track['num_choices'] for track in tracks.values())
+        self.choice_track_map: Dict[int, Dict[int, Optional[List[int]]]] = {
             x: {
                 track_id: [] if track['num_choices'] > x else None
                 for track_id, track in tracks.items()
             }
-            for x in range(self.max_choices)
+            for x in range(max_choices)
         }
 
         for reg_id, reg in regs.items():
-            for track_id in tracks:
-                for x in range(self.max_choices):
+            for track_id, track in tracks.items():
+                for x in range(track['num_choices']):
                     if self.test(event, reg, track_id, x):
-                        self.choice_track_map[x][track_id].append(reg_id)
+                        target = self.choice_track_map[x][track_id]
+                        assert target is not None
+                        target.append(reg_id)
                         break
 
     @staticmethod
@@ -503,7 +505,8 @@ class EventQueryMixin(EventBaseFrontend):
                     personas[reg['persona_id']]['birthday'],
                     event_parts[part_id]['part_begin'])
 
-        per_part_statistics: Dict[str, Dict[int, int]] = collections.OrderedDict()
+        per_part_statistics: Dict[EventRegistrationPartStatistic, Dict[int, int]]
+        per_part_statistics = collections.OrderedDict()
         for reg_stat in EventRegistrationPartStatistic:
             per_part_statistics[reg_stat] = {
                 part_id: sum(
@@ -512,9 +515,11 @@ class EventQueryMixin(EventBaseFrontend):
                 for part_id in event_parts
             }
 
-        per_track_statistics: Dict[str, Dict[int, Optional[int]]]
+        per_track_statistics: Dict[
+            Union[EventRegistrationTrackStatistic, EventCourseStatistic],
+            Dict[int, int]]
         per_track_statistics = collections.OrderedDict()
-        # regs_in_choice_x: Dict[str, Dict[int, List[int]]] = collections.OrderedDict()
+        grouper = None
         if tracks:
             for reg_track_stat in EventRegistrationTrackStatistic:
                 per_track_statistics[reg_track_stat] = {
