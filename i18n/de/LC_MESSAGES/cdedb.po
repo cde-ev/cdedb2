@@ -2423,8 +2423,8 @@ msgid "Course cannot be deleted, because it still has attendees."
 msgstr "Kurs kann nicht gelöscht werden, da ihm noch Personen zugeteilt sind."
 
 #: cdedb/frontend/event.py:1410
-msgid "In {}. Choice"
-msgstr "In {}. Wahl"
+msgid "In %(x)s. Choice"
+msgstr "In %(x)s. Wahl"
 
 #: cdedb/frontend/event.py:1891
 msgid "somehow know"
