@@ -520,18 +520,18 @@ class EventQueryMixin(EventBaseFrontend):
         per_track_statistics = collections.OrderedDict()
         grouper = None
         if tracks:
-            for reg_track_stat in EventRegistrationTrackStatistic:
-                per_track_statistics[reg_track_stat] = {
-                    track_id: sum(
-                        1 for reg in registrations.values()
-                        if reg_track_stat.test(rs.ambience['event'], reg, track_id))
-                    for track_id in tracks
-                }
             for course_stat in EventCourseStatistic:
                 per_track_statistics[course_stat] = {
                     track_id: sum(
                         1 for course in courses.values()
                         if course_stat.test(course, track_id))
+                    for track_id in tracks
+                }
+            for reg_track_stat in EventRegistrationTrackStatistic:
+                per_track_statistics[reg_track_stat] = {
+                    track_id: sum(
+                        1 for reg in registrations.values()
+                        if reg_track_stat.test(rs.ambience['event'], reg, track_id))
                     for track_id in tracks
                 }
 
