@@ -18,6 +18,14 @@ from tests.common import (
 class TestAssemblyBackend(BackendTest):
     used_backends = ("core", "assembly")
 
+    def _get_sample_quorum(self, assembly_id: int) -> int:
+        attendees = {
+            e['persona_id'] for e in self.get_sample_data('assembly.attendees').values()
+            if e['assembly_id'] == assembly_id}
+        return sum(
+            1 for e in self.get_sample_data('core.personas').values()
+            if e['is_member'] or e['id'] in attendees)
+
     @as_users("kalif")
     def test_basics(self) -> None:
         data = self.core.get_assembly_user(self.key, self.user['id'])
@@ -398,7 +406,7 @@ class TestAssemblyBackend(BackendTest):
         for key in ('use_bar', 'notes', 'vote_extension_end', 'rel_quorum'):
             expectation[key] = data[key]
         expectation['abs_quorum'] = 0
-        expectation['quorum'] = 11
+        expectation['quorum'] = self._get_sample_quorum(assembly_id)
         expectation['candidates'][6]['title'] = data['candidates'][6]['title']
         expectation['candidates'][6]['shortname'] = data['candidates'][6]['shortname']
         del expectation['candidates'][7]
@@ -632,7 +640,7 @@ class TestAssemblyBackend(BackendTest):
         base_time = now()
         delta = datetime.timedelta(seconds=42)
         with freezegun.freeze_time(base_time) as frozen_time:
-            NUMBER_OF_MEMBERS = 9
+            NUMBER_OF_MEMBERS = self._get_sample_quorum(0)
             assembly_data = {
                 'description': None,
                 'notes': None,

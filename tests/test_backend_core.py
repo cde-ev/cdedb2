@@ -1288,21 +1288,27 @@ class TestCoreBackend(BackendTest):
 
     @as_users("janis")
     def test_list_personas(self) -> None:
-        reality = self.core.list_all_personas(self.key, is_active=True)
-        active_personas = {1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 13, 14, 16, 17, 18, 22,
-                           23, 27, 32, 37, 48, 100}
-        self.assertEqual(active_personas, reality)
+        all_personas = tuple(e for e in self.get_sample_data("core.personas").values()
+                             if not e['is_archived'])
         reality = self.core.list_all_personas(self.key, is_active=False)
-        self.assertEqual(active_personas | {15}, reality)
+        self.assertEqual(reality, {e['id'] for e in all_personas})
+        active_personas = {e['id'] for e in all_personas if e['is_active']}
+        reality = self.core.list_all_personas(self.key, is_active=True)
+        self.assertEqual(reality, active_personas)
+        current_active_members = {
+            e['id'] for e in all_personas if e['is_member'] and e['is_active']}
         reality = self.core.list_current_members(self.key, is_active=True)
-        self.assertEqual({1, 2, 3, 6, 7, 9, 37, 100}, reality)
+        self.assertEqual(reality, current_active_members)
+        current_members = {e['id'] for e in all_personas if e['is_member']}
         reality = self.core.list_current_members(self.key, is_active=False)
-        self.assertEqual({1, 2, 3, 6, 7, 9, 15, 37, 100}, reality)
+        self.assertEqual(reality, current_members)
+        all_moderators = {
+            e['persona_id'] for e in self.get_sample_data("ml.moderators").values()}
         reality = self.core.list_all_moderators(self.key)
-        self.assertEqual({1, 2, 3, 4, 5, 7, 9, 10, 11, 15, 23, 27, 100}, reality)
+        self.assertEqual(reality, all_moderators)
         MT = const.MailinglistTypes
-        reality = self.core.list_all_moderators(self.key, {MT.member_moderated_opt_in,
-                                                           MT.cdelokal})
+        reality = self.core.list_all_moderators(
+            self.key, {MT.member_moderated_opt_in, MT.cdelokal})
         self.assertEqual({2, 5, 9, 100}, reality)
 
     @as_users("vera")

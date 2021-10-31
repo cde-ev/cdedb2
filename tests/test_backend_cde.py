@@ -121,7 +121,8 @@ class TestCdEBackend(BackendTest):
                 ("country,country2", QueryOperators.empty, None)],
             order=(("family_name,birth_name", True),),)
         result = self.cde.submit_general_query(self.key, query)
-        self.assertEqual({6, 9, 15, 37, 100}, {e['id'] for e in result})
+        expectation = {6, 9, 15, 100}
+        self.assertEqual({e['id'] for e in result}, expectation)
 
     @as_users("vera")
     def test_user_search(self) -> None:
