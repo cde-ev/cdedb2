@@ -639,6 +639,10 @@ CDEDB_PATHS = werkzeug.routing.Map((
                     sub("/<int:attachment_id>", (
                         rule("/latest", methods=_GET,
                              endpoint="get_attachment"),
+                        # allow this simple link for convenience
+                        rule("/", endpoint="",
+                             redirect_to='assembly/assembly/<assembly_id>/attachment'
+                                         '/<attachment_id>/latest'),
                         # this is kept as legacy support
                         rule("/get", endpoint="",
                              redirect_to='assembly/assembly/<assembly_id>/attachment'

@@ -16,7 +16,7 @@ import subprocess
 import sys
 from typing import Collection
 
-from psycopg2.extras import Json, DictCursor
+from psycopg2.extras import DictCursor, Json
 
 from cdedb.common import CdEDBObject
 from cdedb.script import Script

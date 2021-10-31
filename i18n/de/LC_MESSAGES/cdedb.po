@@ -18,6 +18,12 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "Generated-By: Babel 2.6.0\n"
 
+msgid "Send Mail to all registrations listed below."
+msgstr "E-Mail an alle unten aufgeführten Anmeldungen senden."
+
+msgid "email to all"
+msgstr "E-Mail an alle"
+
 #: bin/archive/migrate_execute.py:394
 msgid "Initial import."
 msgstr "Ursprünglicher Import."
@@ -2425,6 +2431,10 @@ msgstr "Kurs kann nicht gelöscht werden, da ihm noch Personen zugeteilt sind."
 #: cdedb/frontend/event.py:1410
 msgid "In %(x)s. Choice"
 msgstr "In %(x)s. Wahl"
+
+#: cdedb/frontend/event.py:1410
+msgid "In {}. Choice"
+msgstr "In {}. Wahl"
 
 #: cdedb/frontend/event.py:1891
 msgid "somehow know"
