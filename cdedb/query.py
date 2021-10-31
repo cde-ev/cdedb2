@@ -773,10 +773,7 @@ def make_registration_query_spec(event: CdEDBObject) -> Dict[str, str]:
             event['tracks'], EntitySorter.course_track)
     }
     track_specs = {
-        track_id: {
-            **get_track_spec(track),
-            ",".join(course_choice_specs[track_id].keys()): "id",
-        }
+        track_id: get_track_spec(track)
         for track_id, track in keydictsort_filter(
             event['tracks'], EntitySorter.course_track)
     }
@@ -785,9 +782,13 @@ def make_registration_query_spec(event: CdEDBObject) -> Dict[str, str]:
         for track_id, track in keydictsort_filter(event['parts'][part_id]['tracks'],
                                                   EntitySorter.course_track):
             spec.update(track_specs[track_id])
+            if key := ",".join(course_choice_specs[track_id].keys()):
+                spec[key] = "id"
             spec.update(course_choice_specs[track_id])
 
     for part_ids in (event['parts'].keys(),):
+        if len(part_ids) <= 1:
+            continue
         all_items = tuple(tuple(part_specs[part_id].items()) for part_id in part_ids)
         for i, (k, v) in enumerate(all_items[0]):
             spec[",".join(items[i][0] for items in all_items)] = v
@@ -795,7 +796,7 @@ def make_registration_query_spec(event: CdEDBObject) -> Dict[str, str]:
     for part_ids in (event['parts'].keys(),):
         track_ids = xsorted(itertools.chain.from_iterable(
             event['parts'][part_id]['tracks'].keys() for part_id in part_ids))
-        if not track_ids:
+        if len(track_ids) <= 1:
             continue
 
         all_items = tuple(tuple(track_specs[track_id].items())
@@ -941,7 +942,7 @@ def make_registration_query_aux(
     for part_ids in (event['parts'].keys(),):
         track_ids = xsorted(itertools.chain.from_iterable(
             event['parts'][part_id]['tracks'].keys() for part_id in part_ids))
-        if not track_ids:
+        if len(track_ids) <= 1:
             continue
 
         prefix = gettext("any track: ")
@@ -990,8 +991,9 @@ def make_registration_query_aux(
         key = ",".join(f"course_choices{track_id}.rank{i}"
                        for track_id in track_ids
                        for i in range(tracks[track_id]['num_choices']))
-        titles[key] = prefix + gettext("Any Choice")
-        choices[key] = course_choices
+        if key:
+            titles[key] = prefix + gettext("Any Choice")
+            choices[key] = course_choices
         any_track_coices = {
             ",".join(f"course_choices{track_id}.rank{i}"
                      for track_id in track_ids if tracks[track_id]['num_choices'] > i):
@@ -1052,6 +1054,8 @@ def make_registration_query_aux(
             })
 
     for part_ids in (event['parts'].keys(),):
+        if len(part_ids) <= 1:
+            continue
 
         prefix = gettext("any part: ")
         titles.update({
