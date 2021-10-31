@@ -12,6 +12,7 @@ up an environment for passing a query from frontend to backend.
 import collections
 import copy
 import enum
+import itertools
 import re
 from typing import Any, Collection, Dict, Tuple
 
@@ -769,14 +770,16 @@ def make_registration_query_spec(event: CdEDBObject) -> Dict[str, str]:
     }
     course_choice_specs = {
         track_id: get_course_choice_spec(track)
-        for track_id, track in tracks.items()
+        for track_id, track in keydictsort_filter(
+            event['tracks'], EntitySorter.course_track)
     }
     track_specs = {
         track_id: {
             **get_track_spec(track),
             ",".join(course_choice_specs[track_id].keys()): "id",
         }
-        for track_id, track in tracks.items()
+        for track_id, track in keydictsort_filter(
+            event['tracks'], EntitySorter.course_track)
     }
     for part_id, part_spec in part_specs.items():
         spec.update(part_spec)
@@ -784,15 +787,23 @@ def make_registration_query_spec(event: CdEDBObject) -> Dict[str, str]:
                                                   EntitySorter.course_track):
             spec.update(track_specs[track_id])
             spec.update(course_choice_specs[track_id])
-    if len(part_specs) > 1:
-        all_items = tuple(tuple(part_spec.items()) for part_spec in part_specs.values())
+
+    for part_ids in (event['parts'].keys(),):
+        all_items = tuple(tuple(part_specs[part_id].items()) for part_id in part_ids)
         for i, (k, v) in enumerate(all_items[0]):
             spec[",".join(items[i][0] for items in all_items)] = v
-    if len(tracks) > 1:
-        all_items = tuple(tuple(track_spec.items())
-                          for track_spec in track_specs.values())
+
+    for part_ids in (event['parts'].keys(),):
+        track_ids = xsorted(itertools.chain.from_iterable(
+            event['parts'][part_id]['tracks'].keys() for part_id in part_ids))
+        if not track_ids:
+            continue
+
+        all_items = tuple(tuple(track_specs[track_id].items())
+                          for track_id in track_ids)
         for i, (k, v) in enumerate(all_items[0]):
             spec[",".join(items[i][0] for items in all_items)] = v
+
         all_items = tuple(tuple(cc_spec.items())
                           for cc_spec in course_choice_specs.values())
         for i in range(max(len(cc_spec) for cc_spec in course_choice_specs.values())):
@@ -825,6 +836,7 @@ def make_registration_query_aux(
         gettext = rs.gettext
         enum_gettext = rs.gettext
 
+    # Precompute some choices
     course_identifier = lambda c: "{}. {}".format(c["nr"], c["shortname"])
     course_choices = collections.OrderedDict(
         (c_id, course_identifier(c))
@@ -839,207 +851,165 @@ def make_registration_query_aux(
         (g_id, lodgement_group_identifier(g))
         for g_id, g in keydictsort_filter(lodgement_groups,
                                           EntitySorter.lodgement_group))
-    # First we construct the choices
-    choices: Dict[str, Dict[Any, str]] = {
-        # Genders enum
-        'persona.gender': collections.OrderedDict(
-            enum_entries_filter(
-                const.Genders, enum_gettext, raw=fixed_gettext)),
-        'persona.country': collections.OrderedDict(get_localized_country_codes(rs)),
-    }
-
-    # Precompute some choices
-    reg_part_stati_choices = collections.OrderedDict(
-        enum_entries_filter(
-            const.RegistrationPartStati, enum_gettext, raw=fixed_gettext))
+    reg_part_stati_choices = collections.OrderedDict(enum_entries_filter(
+        const.RegistrationPartStati, enum_gettext, raw=fixed_gettext))
     lodge_fields = {
         field_id: field for field_id, field in event['fields'].items()
         if field['association'] == const.FieldAssociations.lodgement
-        }
+    }
     course_fields = {
         field_id: field for field_id, field in event['fields'].items()
         if field['association'] == const.FieldAssociations.course
-        }
+    }
     reg_fields = {
         field_id: field for field_id, field in event['fields'].items()
         if field['association'] == const.FieldAssociations.registration
-        }
+    }
 
-    for part_id in event['parts']:
-        choices.update({
-            # RegistrationPartStati enum
-            "part{0}.status".format(part_id): reg_part_stati_choices,
-            # Lodgement choices for the JS selector
-            "part{0}.lodgement_id".format(part_id): lodgement_choices,
-            "lodgement{0}.group_id".format(part_id): lodgement_group_choices,
-        })
-        if not fixed_gettext:
-            # Lodgement fields value -> description
-            choices.update({
-                f"lodgement{part_id}.xfield_{field['field_name']}":
-                    collections.OrderedDict(field['entries'])
-                for field in lodge_fields.values() if field['entries']
-            })
-    for track_id, track in tracks.items():
-        choices.update({
-            # Course choices for the JS selector
-            "track{0}.course_id".format(track_id): course_choices,
-            "track{0}.course_instructor".format(track_id): course_choices,
-        })
-        for i in range(track['num_choices']):
-            choices[f"course_choices{track_id}.rank{i}"] = course_choices
-        if track['num_choices'] > 1:
-            choices[",".join(
-                f"course_choices{track_id}.rank{i}"
-                for i in range(track['num_choices']))] = course_choices
-        if not fixed_gettext:
-            # Course fields value -> description
-            for temp in ("course", "course_instructor"):
-                for field in course_fields.values():
-                    key = f"{temp}{track_id}.xfield_{field['field_name']}"
-                    if field['entries']:
-                        choices[key] = collections.OrderedDict(field['entries'])
-    if len(event['parts']) > 1:
-        choices.update({
-            # RegistrationPartStati enum
-            ",".join(f"part{part_id}.status" for part_id in event['parts']):
-                reg_part_stati_choices,
-            ",".join(f"part{part_id}.lodgement_id" for part_id in event['parts']):
-                lodgement_choices,
-            ",".join(f"lodgement{part_id}.group_id" for part_id in event['parts']):
-                lodgement_group_choices,
-        })
-    if len(tracks) > 1:
-        choices[",".join(f"course_choices{track_id}.rank{i}"
-                for track_id, track in tracks.items()
-                for i in range(track['num_choices']))] = course_choices
+    choices: Dict[str, Dict[Any, str]] = {
+        # Genders enum
+        'persona.gender': collections.OrderedDict(
+            enum_entries_filter(const.Genders, enum_gettext, raw=fixed_gettext)),
+        'persona.country': collections.OrderedDict(get_localized_country_codes(rs)),
+    }
+    titles: Dict[str, str] = {
+        f"reg_fields.xfield_{field['field_name']}": field['field_name']
+        for field in reg_fields.values()
+    }
+
     if not fixed_gettext:
         # Registration fields value -> description
         choices.update({
-            "reg_fields.xfield_{}".format(field['field_name']):
+            f"reg_fields.xfield_{field['field_name']}":
                 collections.OrderedDict(field['entries'])
             for field in reg_fields.values() if field['entries']
         })
 
-    # Second we construct the titles
-    titles: Dict[str, str] = {
-        "reg_fields.xfield_{}".format(field['field_name']):
-            field['field_name']
-        for field in reg_fields.values()
-    }
     for track_id, track in tracks.items():
         if len(tracks) > 1:
-            prefix = "{shortname}: ".format(shortname=track['shortname'])
+            prefix = f"{track['shortname']}: "
         else:
             prefix = ""
         titles.update({
-            "track{0}.is_course_instructor".format(track_id):
+            f"track{track_id}.is_course_instructor":
                 prefix + gettext("instructs their course"),
-            "track{0}.course_id".format(track_id):
+            f"track{track_id}.course_id":
                 prefix + gettext("course"),
-            "track{0}.course_instructor".format(track_id):
+            f"track{track_id}.course_instructor":
                 prefix + gettext("instructed course"),
-            "course{0}.id".format(track_id):
+            f"course{track_id}.id":
                 prefix + gettext("course ID"),
-            "course{0}.nr".format(track_id):
+            f"course{track_id}.nr":
                 prefix + gettext("course nr"),
-            "course{0}.title".format(track_id):
+            f"course{track_id}.title":
                 prefix + gettext("course title"),
-            "course{0}.shortname".format(track_id):
+            f"course{track_id}.shortname":
                 prefix + gettext("course shortname"),
-            "course{0}.notes".format(track_id):
+            f"course{track_id}.notes":
                 prefix + gettext("course notes"),
-            "course_instructor{0}.id".format(track_id):
+            f"course_instructor{track_id}.id":
                 prefix + gettext("instructed course ID"),
-            "course_instructor{0}.nr".format(track_id):
+            f"course_instructor{track_id}.nr":
                 prefix + gettext("instructed course nr"),
-            "course_instructor{0}.title".format(track_id):
+            f"course_instructor{track_id}.title":
                 prefix + gettext("instructed course title"),
-            "course_instructor{0}.shortname".format(track_id):
+            f"course_instructor{track_id}.shortname":
                 prefix + gettext("instructed course shortname"),
-            "course_instructor{0}.notes".format(track_id):
+            f"course_instructor{track_id}.notes":
                 prefix + gettext("instructed courese notes"),
         })
-        titles.update({
-            f"course{track_id}.xfield_{field['field_name']}":
-                prefix + gettext("course {field}").format(field=field['field_name'])
-            for field in course_fields.values()
-        })
-        titles.update({
-            f"course_instructor{track_id}.xfield_{field['field_name']}":
-                prefix + gettext("instructed course {field}").format(
+        for temp in ("course", "course_instructor"):
+            for field in course_fields.values():
+                key = f"{temp}{track_id}.xfield_{field['field_name']}"
+                titles[key] = prefix + gettext("instructed course {field}").format(
                     field=field['field_name'])
-            for field in course_fields.values()
+                if not fixed_gettext and field['entries']:
+                    choices[key] = collections.OrderedDict(field['entries'])
+        choices.update({
+            f"track{track_id}.course_id": course_choices,
+            f"track{track_id}.course_instructor": course_choices,
         })
         for i in range(track['num_choices']):
-            titles[f"course_choices{track_id}.rank{i}"] = \
-                prefix + gettext("%s. Choice") % (i + 1)
+            key = f"course_choices{track_id}.rank{i}"
+            titles[key] = prefix + gettext("%s. Choice") % (i + 1)
+            choices[key] = course_choices
         if track['num_choices'] > 1:
-            titles[",".join(f"course_choices{track_id}.rank{i}"
-                            for i in range(track['num_choices']))] = \
-                prefix + gettext("Any Choice")
-    if len(event['tracks']) > 1:
+            key = ",".join(f"course_choices{track_id}.rank{i}"
+                           for i in range(track['num_choices']))
+            titles[key] = prefix + gettext("Any Choice")
+            choices[key] = course_choices
+
+    for part_ids in (event['parts'].keys(),):
+        track_ids = xsorted(itertools.chain.from_iterable(
+            event['parts'][part_id]['tracks'].keys() for part_id in part_ids))
+        if not track_ids:
+            continue
+
         prefix = gettext("any track: ")
         titles.update({
-            ",".join(f"track{track_id}.is_course_instructor" for track_id in tracks):
+            ",".join(f"track{track_id}.is_course_instructor" for track_id in track_ids):
                 prefix + gettext("instructs their course"),
-            ",".join(f"track{track_id}.course_id" for track_id in tracks):
+            ",".join(f"track{track_id}.course_id" for track_id in track_ids):
                 prefix + gettext("course"),
-            ",".join(f"track{track_id}.course_instructor" for track_id in tracks):
+            ",".join(f"track{track_id}.course_instructor" for track_id in track_ids):
                 prefix + gettext("instructed course"),
-            ",".join(f"course{track_id}.id" for track_id in tracks):
+            ",".join(f"course{track_id}.id" for track_id in track_ids):
                 prefix + gettext("course ID"),
-            ",".join(f"course{track_id}.nr" for track_id in tracks):
+            ",".join(f"course{track_id}.nr" for track_id in track_ids):
                 prefix + gettext("course nr"),
-            ",".join(f"course{track_id}.title" for track_id in tracks):
+            ",".join(f"course{track_id}.title" for track_id in track_ids):
                 prefix + gettext("course title"),
-            ",".join(f"course{track_id}.shortname" for track_id in tracks):
+            ",".join(f"course{track_id}.shortname" for track_id in track_ids):
                 prefix + gettext("course shortname"),
-            ",".join(f"course{track_id}.notes" for track_id in tracks):
+            ",".join(f"course{track_id}.notes" for track_id in track_ids):
                 prefix + gettext("course notes"),
-            ",".join(f"course_instructor{track_id}.id" for track_id in tracks):
+            ",".join(f"course_instructor{track_id}.id" for track_id in track_ids):
                 prefix + gettext("instructed course ID"),
-            ",".join(f"course_instructor{track_id}.nr" for track_id in tracks):
+            ",".join(f"course_instructor{track_id}.nr" for track_id in track_ids):
                 prefix + gettext("instructed course nr"),
-            ",".join(f"course_instructor{track_id}.title" for track_id in tracks):
+            ",".join(f"course_instructor{track_id}.title" for track_id in track_ids):
                 prefix + gettext("instructed course title"),
-            ",".join(f"course_instructor{track_id}.shortname" for track_id in tracks):
+            ",".join(f"course_instructor{track_id}.shortname"
+                     for track_id in track_ids):
                 prefix + gettext("instructed course shortname"),
-            ",".join(f"course_instructor{track_id}.notes" for track_id in tracks):
+            ",".join(f"course_instructor{track_id}.notes" for track_id in track_ids):
                 prefix + gettext("instructed course notes"),
         })
-        key = "course{0}.xfield_{1}"
         titles.update({
-            ",".join(key.format(track_id, field['field_name'])
-                     for track_id in tracks):
-                gettext("any track: course {field}").format(
-                    field=field['field_name'])
+            ",".join(f"course{track_id}.xfield_{field['field_name']}"
+                     for track_id in track_ids):
+                gettext("any track: course {field}").format(field=field['field_name'])
             for field in course_fields.values()
         })
-        key = "course_instructor{0}.xfield_{1}"
         titles.update({
-            ",".join(key.format(track_id, field['field_name'])
-                     for track_id in tracks):
+            ",".join(f"course_instructor{track_id}.xfield_{field['field_name']}"
+                     for track_id in track_ids):
                 gettext("any track: instructed course {field}").format(
                     field=field['field_name'])
             for field in course_fields.values()
         })
         key = ",".join(f"course_choices{track_id}.rank{i}"
-                       for track_id, track in tracks.items()
-                       for i in range(track['num_choices']))
+                       for track_id in track_ids
+                       for i in range(tracks[track_id]['num_choices']))
         titles[key] = prefix + gettext("Any Choice")
+        choices[key] = course_choices
         any_track_coices = {
             ",".join(f"course_choices{track_id}.rank{i}"
-                     for track_id, track in tracks.items() if track['num_choices'] > i):
+                     for track_id in track_ids if tracks[track_id]['num_choices'] > i):
                 prefix + gettext("%s. Choice") % (i + 1)
-            for i in range(max(track['num_choices'] for track in tracks.values()))
+            for i in range(max(tracks[track_id]['num_choices']
+                               for track_id in track_ids))
         }
         titles.update({
             k: v for k, v in any_track_coices.items() if k not in titles
         })
+        choices.update({
+            k: course_choices for k in any_track_coices
+        })
+
     for part_id, part in event['parts'].items():
         if len(event['parts']) > 1:
-            prefix = "{shortname}: ".format(shortname=part['shortname'])
+            prefix = f"{part['shortname']}: "
         else:
             prefix = ""
         titles.update({
@@ -1067,34 +1037,60 @@ def make_registration_query_aux(
                 prefix + gettext("lodgement {field}").format(field=field['field_name'])
             for field in lodge_fields.values()
         })
-    if len(event['parts']) > 1:
+        choices.update({
+            # RegistrationPartStati enum
+            f"part{part_id}.status": reg_part_stati_choices,
+            # Lodgement choices for the JS selector
+            f"part{part_id}.lodgement_id": lodgement_choices,
+            f"lodgement{part_id}.group_id": lodgement_group_choices,
+        })
+        if not fixed_gettext:
+            # Lodgement fields value -> description
+            choices.update({
+                f"lodgement{part_id}.xfield_{field['field_name']}":
+                    collections.OrderedDict(field['entries'])
+                for field in lodge_fields.values() if field['entries']
+            })
+
+    for part_ids in (event['parts'].keys(),):
+
         prefix = gettext("any part: ")
         titles.update({
-            ",".join(f"part{part_id}.status" for part_id in event['parts']):
+            ",".join(f"part{part_id}.status" for part_id in part_ids):
                 prefix + gettext("registration status"),
-            ",".join(f"part{part_id}.is_camping_mat" for part_id in event['parts']):
+            ",".join(f"part{part_id}.is_camping_mat" for part_id in part_ids):
                 prefix + gettext("camping mat user"),
-            ",".join(f"part{part_id}.lodgement_id" for part_id in event['parts']):
+            ",".join(f"part{part_id}.lodgement_id" for part_id in part_ids):
                 prefix + gettext("lodgement"),
-            ",".join(f"lodgement{part_id}.id" for part_id in event['parts']):
+            ",".join(f"lodgement{part_id}.id" for part_id in part_ids):
                 prefix + gettext("lodgement ID"),
-            ",".join(f"lodgement{part_id}.group_id" for part_id in event['parts']):
+            ",".join(f"lodgement{part_id}.group_id" for part_id in part_ids):
                 prefix + gettext("lodgement group"),
-            ",".join(f"lodgement{part_id}.title" for part_id in event['parts']):
+            ",".join(f"lodgement{part_id}.title" for part_id in part_ids):
                 prefix + gettext("lodgement title"),
-            ",".join(f"lodgement{part_id}.notes" for part_id in event['parts']):
+            ",".join(f"lodgement{part_id}.notes" for part_id in part_ids):
                 prefix + gettext("lodgement notes"),
-            ",".join(f"lodgement_group{part_id}.id" for part_id in event['parts']):
+            ",".join(f"lodgement_group{part_id}.id" for part_id in part_ids):
                 prefix + gettext("lodgement group ID"),
-            ",".join(f"lodgement_group{part_id}.title" for part_id in event['parts']):
+            ",".join(f"lodgement_group{part_id}.title" for part_id in part_ids):
                 prefix + gettext("lodgement group title"),
+        })
+        choices.update({
+            # RegistrationPartStati enum
+            ",".join(f"part{part_id}.status" for part_id in part_ids):
+                reg_part_stati_choices,
+            ",".join(f"part{part_id}.lodgement_id" for part_id in part_ids):
+                lodgement_choices,
+            ",".join(f"lodgement{part_id}.group_id" for part_id in part_ids):
+                lodgement_group_choices,
         })
         titles.update({
             ",".join(f"lodgement{part_id}.xfield_{field['field_name']}"
-                     for part_id in event['parts']):
+                     for part_id in part_ids):
                 prefix + gettext("lodgement {field}").format(field=field['field_name'])
             for field in lodge_fields.values()
         })
+
     return choices, titles
 
 
