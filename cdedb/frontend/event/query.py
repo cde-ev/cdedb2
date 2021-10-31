@@ -35,6 +35,7 @@ RPS = const.RegistrationPartStati
 StatQueryAux = Tuple[List[str], List[QueryConstraint], List[QueryOrder]]
 
 
+# Helper functions that are frequently used when testing stats.
 def _is_participant(reg_part: CdEDBObject) -> bool:
     return reg_part['status'] == RPS.participant
 
@@ -43,6 +44,7 @@ def _is_involved(reg_part: CdEDBObject) -> bool:
     return reg_part['status'].is_involved()
 
 
+# Helper functions to build query constraints frequently used by stats.
 def _status_constraint(part: CdEDBObject, status: RPS, negate: bool = False
                        ) -> QueryConstraint:
     return (
@@ -72,6 +74,7 @@ def _age_constraint(part: CdEDBObject, max_age: int, min_age: int = None
         return ('persona.birthday', QueryOperators.between, (min_date, max_date))
 
 
+# Helper function to construct ordering for waitlist queries.
 def _waitlist_order(event: CdEDBObject, part: CdEDBObject) -> List[QueryOrder]:
     ret = []
     if field_id := part['waitlist_field']:
@@ -80,7 +83,22 @@ def _waitlist_order(event: CdEDBObject, part: CdEDBObject) -> List[QueryOrder]:
     return ret + [('reg.payment', True), ('ctime.creation_time', True)]
 
 
+# These enums each offer a collection of statistics for the stats page.
+# They implement a test and query building interface:
+# A `.test` method that takes the event data and a registrations, returning
+# a bool indicating whether the given registration fits that statistic.
+# A `.get_query` method that builds a `Query` object of the appropriate query scope
+# that will show all fitting entities for that statistic.
+# The enum member values are translatable strings to be used as labels for that
+# statistic. The order of member definition inidicates the order they will be displayed.
+
 class EventRegistrationPartStatistic(enum.Enum):
+    """This enum implements statistics for registration parts.
+
+    Some member names begin with an underscore, indicating, that they should be
+    indented under the previous member without an underscore. This can be checked using
+    the `.indent` property.
+    """
     pending = n_("Open Registrations")
     _payed = n_("Paid")
     participant = n_("Participants")
@@ -301,6 +319,7 @@ class EventRegistrationPartStatistic(enum.Enum):
 
 
 class EventCourseStatistic(enum.Enum):
+    """This enum implements statistics for courses in course tracks."""
     offered = n_("Course Offers")
     cancelled = n_("Cancelled Courses")
 
@@ -349,6 +368,7 @@ class EventCourseStatistic(enum.Enum):
 
 
 class EventRegistrationTrackStatistic(enum.Enum):
+    """This enum implements statistics for registration tracks."""
     all_instructors = n_("(Potential) Instructor")
     instructors = n_("Instructor")
     attendees = n_("Attendees")
@@ -440,6 +460,15 @@ class EventRegistrationTrackStatistic(enum.Enum):
 
 
 class EventRegistrationInXChoiceGrouper:
+    """This class helps group registrations by their course choices for each track.
+
+    Instantiating the `EventRegistrationInXChoiceGrouper` will populate a dictionary
+    accessible via the `choice_track_map` attribute, mapping choice rank to a mapping
+    of track id to list of regisration ids.
+
+    Iterating over the outer mapping will yield ranks and row data to be displayed on
+    the stats page.
+    """
     def __init__(self, event: CdEDBObject, regs: CdEDBObjectMap):
         tracks = event['tracks']
         max_choices = max(track['num_choices'] for track in tracks.values())
