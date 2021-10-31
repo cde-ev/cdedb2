@@ -231,12 +231,20 @@ The original message as received by Mailman is attached.
         for address in delete_owners:
             mm_list.remove_owner(address)
 
-    @staticmethod
-    def mailman_sync_list_whites(rs: RequestState, mailman: Client,
-                                 db_list: CdEDBObject,
-                                 mm_list: MailingList) -> None:
+    def mailman_sync_list_whites(self, rs: RequestState, mailman: Client,
+                                 db_list: CdEDBObject, mm_list: MailingList) -> None:
         db_whitelist = db_list['whitelist']
         mm_whitelist = {n.email: n for n in mm_list.nonmembers}
+
+        # implicitly whitelist username for personas with custom address
+        if db_list['mod_policy'] == const.ModerationPolicy.non_subscribers:
+            persona_ids = self.mlproxy.get_subscription_states(
+                rs, db_list['id'], states=const.SubscriptionState.subscribing_states())
+            for persona_id, address in self.mlproxy.get_subscription_addresses(
+                    rs, db_list['id'], persona_ids, explicits_only=True).items():
+                if address:
+                    username = self.coreproxy.get_persona(rs, persona_id)['username']
+                    db_whitelist.add(username)
 
         new_whites = set(db_whitelist) - set(mm_whitelist)
         current_whites = set(mm_whitelist) - new_whites
