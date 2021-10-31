@@ -3254,7 +3254,7 @@ etc;anything else""", f['entries_2'].value)
         # to construct the lxml ElementTree from unicode, which is not supported
         # by lxml (see https://github.com/Pylons/webtest/issues/236). So, let's
         # do it manually.
-        xml = lxml.etree.XML(self.response.body)
+        xml = lxml.etree.XML(self.response.body)  # pylint: disable=c-extension-no-member
         xml_namespaces = {'svg': "http://www.w3.org/2000/svg",
                           'xlink': "http://www.w3.org/1999/xlink"}
 
@@ -3286,7 +3286,7 @@ etc;anything else""", f['entries_2'].value)
         f['show_lodgements'] = True
         f['part_id'] = 2
         self.submit(f, check_notification=False)
-        xml = lxml.etree.XML(self.response.body)
+        xml = lxml.etree.XML(self.response.body)  # pylint: disable=c-extension-no-member
 
         self.assertIn("Emilia", self.response.text)
         self.assertIn("Einzelzelle", self.response.text)

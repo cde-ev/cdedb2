@@ -216,7 +216,7 @@ cron:
 ###############################
 
 format:
-	$(ISORT) cdedb tests
+	$(ISORT) bin/*.py cdedb tests
 
 mypy:
 	$(MYPY) bin/*.py cdedb tests
@@ -228,7 +228,7 @@ isort:
 	@echo "All of isort"
 	@echo $(BANNERLINE)
 	@echo ""
-	$(ISORT) --check-only cdedb tests
+	$(ISORT) --check-only bin/*.py cdedb tests
 
 flake8:
 	@echo $(BANNERLINE)

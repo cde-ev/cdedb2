@@ -820,10 +820,12 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             with self.subTest(url=url):
                 self.assertRedirect(url, target_url=version_target)
 
-        # Check that legacy urls without a version redirect to the latest version.
+        # Check that urls without a version redirect to the latest version.
         non_version_target = urls[0]
 
         urls = (
+            # simple url for convenience
+            f"/assembly/assembly/{assembly_id}/attachment/{attachment_id}/",
             # Legacy url that used to retrieve the latest version.
             f"/assembly/assembly/{assembly_id}/attachment/{attachment_id}/get",
         ) + tuple(
