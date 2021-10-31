@@ -96,7 +96,8 @@ def merge_constraints(*constraints: QueryConstraint) -> Optional[QueryConstraint
     The fields are collected in a dict, with ensures uniqueness, while preserving the
     original order, which sets don't.
     """
-    fields, operators, values = {}, set(), set()
+    fields: Dict[str, None] = {}
+    operators, values = set(), set()
     for con in constraints:
         field, op, value = con
         fields[field] = None
