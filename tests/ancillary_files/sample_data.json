@@ -1273,7 +1273,7 @@
             "is_event_realm": true,
             "is_ml_realm": true,
             "is_assembly_realm": true,
-            "is_member": true,
+            "is_member": false,
             "is_searchable": true,
             "is_archived": false,
             "is_purged": false,
@@ -2699,7 +2699,7 @@
             "is_event_realm": true,
             "is_ml_realm": true,
             "is_assembly_realm": true,
-            "is_member": true,
+            "is_member": false,
             "is_searchable": true,
             "is_archived": false,
             "is_purged": false,
@@ -7372,11 +7372,6 @@
         },
         {
             "mailinglist_id": 1,
-            "persona_id": 37,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 1,
             "persona_id": 100,
             "subscription_state": 30
         },
@@ -7449,11 +7444,6 @@
             "mailinglist_id": 2,
             "persona_id": 32,
             "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 2,
-            "persona_id": 37,
-            "subscription_state": 30
         },
         {
             "mailinglist_id": 2,
@@ -7862,11 +7852,6 @@
         },
         {
             "mailinglist_id": 51,
-            "persona_id": 37,
-            "subscription_state": 30
-        },
-        {
-            "mailinglist_id": 51,
             "persona_id": 100,
             "subscription_state": 30
         },
@@ -7939,11 +7924,6 @@
             "mailinglist_id": 52,
             "persona_id": 32,
             "subscription_state": 2
-        },
-        {
-            "mailinglist_id": 52,
-            "persona_id": 37,
-            "subscription_state": 30
         },
         {
             "mailinglist_id": 52,

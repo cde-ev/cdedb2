@@ -1809,7 +1809,7 @@ class TestCdEFrontend(FrontendTest):
 
         # 1.2 Remove Inactive Members
         self.assertPresence("Erledigt am", div='payment-request')
-        self.assertPresence("9 E-Mails versandt", div='payment-request')
+        self.assertPresence("8 E-Mails versandt", div='payment-request')
         self.assertPresence("Später zu erledigen.", div='balance-update')
         self.assertPresence("Später zu erledigen.", div='next-semester')
 
@@ -1833,7 +1833,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Erledigt am", div='eject-members')
         self.assertPresence("Später zu erledigen.", div='next-semester')
 
-        self.assertPresence("Insgesamt 9 Mitglieder, 2 davon haben eine "
+        self.assertPresence("Insgesamt 8 Mitglieder, 2 davon haben eine "
                             "Probemitgliedschaft", div='balance-update')
         # Check error handling for eject
         self.submit(f, check_notification=False)
@@ -1887,7 +1887,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Semesterverwaltung")
 
         # 2.3 Update Balances
-        self.assertPresence("Insgesamt 6 Mitglieder, 0 davon haben eine "
+        self.assertPresence("Insgesamt 5 Mitglieder, 0 davon haben eine "
                             "Probemitgliedschaft", div='balance-update')
 
         f = self.response.forms['balanceform']
@@ -1911,11 +1911,11 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("0 inaktive Mitglieder gestrichen.", div="3-1003")
         self.assertPresence("1 Accounts archiviert.", div="4-1004")
         self.assertPresence("2 Probemitgliedschaften beendet", div="5-1005")
-        self.assertPresence("17.50 € Guthaben abgebucht.", div="5-1005")
+        self.assertPresence("15.00 € Guthaben abgebucht.", div="5-1005")
 
         self.assertPresence("3 inaktive Mitglieder gestrichen.", div="9-1009")
         self.assertPresence("0 Probemitgliedschaften beendet", div="11-1011")
-        self.assertPresence("15.00 € Guthaben abgebucht.", div="11-1011")
+        self.assertPresence("12.50 € Guthaben abgebucht.", div="11-1011")
 
         # Check that the weak references to all workers are dead.
         for name, ref in Worker.active_workers.items():
