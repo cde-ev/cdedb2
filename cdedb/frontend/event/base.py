@@ -174,7 +174,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         data['list_consent'] = list_consent
         data['last_sortkey'] = sortkey
         data['last_reverse'] = reverse
-        return self.render(rs, "participant_list", data)
+        return self.render(rs, "base/participant_list", data)
 
     def _get_participant_list_data(
             self, rs: RequestState, event_id: int,
@@ -265,7 +265,7 @@ class EventBaseFrontend(AbstractUserFrontend):
                     {const.RegistrationPartStati.participant}):
                 rs.notify('warning', n_("No participant of event."))
                 return self.redirect(rs, "event/show_event")
-        return self.render(rs, "participant_info")
+        return self.render(rs, "base/participant_info")
 
     def _questionnaire_params(self, rs: RequestState, kind: const.QuestionnaireUsages
                               ) -> vtypes.TypeMapping:
@@ -383,7 +383,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         events = self.eventproxy.get_events(rs, event_ids)
         all_events = self.eventproxy.list_events(rs)
         loglinks = calculate_loglinks(rs, total, offset, length)
-        return self.render(rs, "view_log", {
+        return self.render(rs, "base/view_log", {
             'log': log, 'total': total, 'length': _length,
             'personas': personas, 'events': events, 'all_events': all_events,
             'registration_map': registration_map, 'loglinks': loglinks})
@@ -420,6 +420,6 @@ class EventBaseFrontend(AbstractUserFrontend):
         personas = self.coreproxy.get_personas(rs, persona_ids)
         registration_map = self.eventproxy.get_registration_map(rs, (event_id,))
         loglinks = calculate_loglinks(rs, total, offset, length)
-        return self.render(rs, "view_event_log", {
+        return self.render(rs, "base/view_event_log", {
             'log': log, 'total': total, 'length': _length, 'personas': personas,
             'registration_map': registration_map, 'loglinks': loglinks})

@@ -176,14 +176,14 @@ class QueryScope(enum.IntEnum):
     def get_target(self, *, redirect: bool = True) -> str:
         """For scopes that support storing, where to redirect to after storing."""
         if self == QueryScope.registration:
-            realm, domain, target = "event", "registration", "registration_query"
+            realm, target = "event", "registration_query"
         elif self == QueryScope.lodgement:
-            realm, domain, target = "event", "lodgement", "lodgement_query"
+            realm, target = "event", "lodgement_query"
         elif self == QueryScope.event_course:
-            realm, domain, target = "event", "course", "course_query"
+            realm, target = "event", "course_query"
         else:
-            realm, domain, target = "", "", ""
-        return f"{realm if redirect else domain + '/'}/{target}"
+            realm, target = "", ""
+        return f"{realm if redirect else 'query'}/{target}"
 
     def mangle_query_input(self, rs: RequestState, defaults: CdEDBObject = None,
                            ) -> Dict[str, str]:
