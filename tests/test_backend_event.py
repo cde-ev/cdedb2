@@ -113,14 +113,14 @@ class TestEventBackend(BackendTest):
                 -1: {
                     'association': 1,
                     'field_name': "instrument",
-                    'kind': 1,
+                    'kind': const.FieldDatatypes.str,
                     'entries': None,
                     'checkin': False,
                 },
                 -2: {
                     'association': 1,
                     'field_name': "preferred_excursion_date",
-                    'kind': 5,
+                    'kind': const.FieldDatatypes.date,
                     'entries': [["2109-08-16", "In the first coming"],
                                 ["2110-08-16", "During the second coming"]],
                     'checkin': True,
@@ -238,15 +238,15 @@ class TestEventBackend(BackendTest):
             },
         }
         newfield = {
-            'association': 3,
+            'association': const.FieldAssociations.lodgement,
             'field_name': "kuea",
-            'kind': 1,
+            'kind': const.FieldDatatypes.str,
             'entries': None,
             'checkin': False,
         }
         changed_field = {
-            'association': 2,
-            'kind': 5,
+            'association': const.FieldAssociations.course,
+            'kind': const.FieldDatatypes.date,
             'entries': [
                 ["2110-08-15", "early second coming"],
                 ["2110-08-17", "late second coming"],
@@ -3536,15 +3536,15 @@ class TestEventBackend(BackendTest):
                        'sortkey': 3}}
         }
         newfield = {
-            'association': 1,
+            'association': const.FieldAssociations.registration,
             'field_name': "kuea",
-            'kind': 1,
+            'kind': const.FieldDatatypes.date,
             'entries': None,
             'checkin': False,
         }
         changed_field = {
-            'association': 1,
-            'kind': 5,
+            'association': const.FieldAssociations.registration,
+            'kind': const.FieldDatatypes.date,
             'entries': [
                 ["2110-8-15", "early second coming"],
                 ["2110-8-17", "late second coming"],
