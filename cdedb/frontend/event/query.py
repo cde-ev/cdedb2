@@ -58,7 +58,7 @@ def _participant_constraint(part: CdEDBObject) -> QueryConstraint:
 
 def _involved_constraint(part: CdEDBObject) -> QueryConstraint:
     return (f"part{part['id']}.status", QueryOperators.oneof,
-            (status.value for status in RPS if status.is_involved()))
+            tuple(status.value for status in RPS if status.is_involved()))
 
 
 def _age_constraint(part: CdEDBObject, max_age: int, min_age: int = None
@@ -220,7 +220,7 @@ class EventRegistrationPartStatistic(enum.Enum):
                 [],
                 [
                     _participant_constraint(part),
-                    ('persona.id', QueryOperators.oneof, event['orgas']),
+                    ('persona.id', QueryOperators.oneof, tuple(event['orgas'])),
                 ],
                 []
             )
@@ -257,7 +257,7 @@ class EventRegistrationPartStatistic(enum.Enum):
                 [f"part{part['id']}.status"],
                 [
                     (f"part{part['id']}.status", QueryOperators.oneof,
-                     (status for status in RPS if status.is_present())),
+                     tuple(status for status in RPS if status.is_present())),
                     ('reg.parental_agreement', QueryOperators.equal, False),
                 ],
                 []
