@@ -939,18 +939,24 @@ def make_registration_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = N
             course_choice_specs, part['tracks'], prefix=part['shortname']))
 
     # Add entries for groups of parts and tracks in those parts.
-    part_groups = (
-        event['parts'].keys(),
-    )
-    for part_ids in part_groups:
-        spec.update(_combine_specs(part_specs, part_ids, prefix=n_("any part")))
+    sorted_part_groups = xsorted(
+        event['part_groups'].values(), key=EntitySorter.event_part_group)
+    sorted_part_groups.append({'part_ids': event['parts'].keys(), 'title': None})
+    for part_group in sorted_part_groups:
+        if constraint := part_group['constraint_type']:
+            if constraint != const.EventPartGroupType.Statistic:
+                continue
+        part_ids = part_group['part_ids']
+        prefix = part_group['title']
+        spec.update(_combine_specs(
+            part_specs, part_ids, prefix=prefix or n_("any part")))
         # Add entries for track combinations.
         track_ids = tuple(itertools.chain.from_iterable(
             event['parts'][part_id]['tracks'].keys() for part_id in part_ids))
         spec.update(_combine_specs(
-            track_specs, track_ids, prefix=n_("any track")))
+            track_specs, track_ids, prefix=prefix or n_("any track")))
         spec.update(_combine_specs(
-            course_choice_specs, track_ids, prefix=n_("any track")))
+            course_choice_specs, track_ids, prefix=prefix or n_("any track")))
 
     spec.update({
         f"reg_fields.xfield_{f['field_name']}": QuerySpecEntry(
@@ -1039,16 +1045,28 @@ def make_course_query_spec(event: CdEDBObject, courses: CdEDBObjectMap = None,
         spec.update(course_choice_spec)
 
     # Add entries for groups of tracks.
+    sorted_parts = xsorted(event['parts'].values(), key=EntitySorter.event_part)
+    sorted_part_groups = xsorted(
+        event['part_groups'].values(), key=EntitySorter.event_part_group)
     track_groups = (
         {'track_ids': event['tracks'].keys(), 'title': n_("any track")},
         *(
             {'track_ids': part['tracks'].keys(), 'title': part['shortname']}
-            for part in event['parts'].values()
+            for part in sorted_parts
         ),
+        *(
+            {
+                'track_ids': tuple(itertools.chain.from_iterable(
+                    event['parts'][part_id]['tracks'].keys()
+                    for part_id in part_group['part_ids'])),
+                'title': part_group['shortname'],
+            }
+            for part_group in sorted_part_groups
+        )
     )
     for track_group in track_groups:
         track_ids = track_group['track_ids']
-        prefix = f"{track_group['title']}: "
+        prefix = track_group['title'] or n_("any track")
         spec.update(_combine_specs(track_specs, track_ids, prefix))
         spec.update(_combine_specs(course_choice_specs, track_ids, prefix))
 
