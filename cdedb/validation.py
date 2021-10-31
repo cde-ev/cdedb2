@@ -1430,7 +1430,7 @@ def _phone(
         phone: phonenumbers.PhoneNumber = phonenumbers.parse(raw, region="DE")
     except phonenumbers.NumberParseException:
         msg = n_("Phone number can not be parsed.")
-        raise ValidationSummary(ValueError(argname, msg))
+        raise ValidationSummary(ValueError(argname, msg)) from None
     if not phonenumbers.is_valid_number(phone) and not ignore_warnings:
         msg = n_("Phone number seems to be not valid.")
         raise ValidationSummary(ValidationWarning(argname, msg))
