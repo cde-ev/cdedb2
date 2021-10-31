@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from functools import partial
 
-from cdedb.common import PERSONA_ALL_FIELDS
+from cdedb.common import PERSONA_ALL_FIELDS, CdEDBObject
 from cdedb.script import Script, CoreBackend
 from cdedb.validation import validate_assert_optional
 import cdedb.validationtypes as vtypes
@@ -21,7 +21,7 @@ with script:
         # Adjust stored values in personas table.
         persona = core.get_total_persona(rs, p_id)
         if any(persona[k] for k in phone_fields):
-            update = {
+            update: CdEDBObject = {
                 'id': p_id,
                 **{k: phone(persona[k]) for k in phone_fields},
             }
