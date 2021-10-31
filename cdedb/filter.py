@@ -203,6 +203,7 @@ def hidden_iban_filter(val: Optional[str]) -> Optional[str]:
         val = val[:4] + "*" * (len(val) - 8) + val[-4:]
         return iban_filter(val)
 
+
 @overload
 def phone_filter(val: None) -> None: ...
 
