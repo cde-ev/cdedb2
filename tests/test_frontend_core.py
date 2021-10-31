@@ -524,6 +524,9 @@ class TestCoreFrontend(FrontendTest):
         self.assertEqual(expectation, reality)
         self.get('/core/persona/select?kind=pure_assembly_user&phrase=kal', status=403)
         self.get('/core/persona/select?kind=pure_ml_user&phrase=@exam', status=403)
+        for ml_id in self.ml.list_mailinglists(self.key):
+            self.get(f'/core/persona/select?kind=ml_subscriber'
+                     f'&phrase=@exam&aux={ml_id}', status=403)
 
     @as_users("vera")
     def test_adminshowuser_advanced(self) -> None:
