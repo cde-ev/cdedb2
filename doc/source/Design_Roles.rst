@@ -83,9 +83,10 @@ or revoke admin privileges. Doing so requires the approval of two meta admins.
 Finance Admins
 ^^^^^^^^^^^^^^
 
-Finance admins are the only ones with access to the semester management where payment
-reminders and address checks are sent, inactive member ejected and the balance of
-members is updated. In addition they may manage, create and revoke lastschrift permits.
+Finance admins must be cde admins aswell and are the only ones with access to the
+semester management where payment reminders and address checks are sent, inactive
+member ejected and the balance of members is updated. In addition they may manage,
+create and revoke lastschrift permits.
 
 CdELokal Admins
 ^^^^^^^^^^^^^^^
