@@ -5,7 +5,7 @@ from typing import Any, Callable, Dict, List, Set, Tuple, Type, TypedDict
 
 from cdedb.backend.common import PsycoJson
 from cdedb.common import CdEDBObject, RequestState
-from cdedb.script import Script, CoreBackend
+from cdedb.script import CoreBackend, Script
 
 
 class AuxData(TypedDict):
