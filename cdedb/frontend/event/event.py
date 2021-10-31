@@ -811,9 +811,11 @@ class EventEventMixin(EventBaseFrontend):
             return self.redirect(rs, "event/show_event")
 
         blockers = self.eventproxy.delete_event_blockers(rs, event_id)
-        cascade = {"registrations", "courses", "lodgement_groups", "lodgements",
-                   "field_definitions", "course_tracks", "event_parts", "orgas",
-                   "questionnaire", "stored_queries", "log", "mailinglists"}
+        cascade = {
+            "registrations", "courses", "lodgement_groups", "lodgements",
+            "field_definitions", "course_tracks", "event_parts", "orgas",
+            "questionnaire", "stored_queries", "log", "mailinglists", "part_groups"
+        }
 
         code = self.eventproxy.delete_event(rs, event_id, cascade & blockers.keys())
         if not code:
