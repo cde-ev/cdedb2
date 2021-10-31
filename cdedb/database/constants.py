@@ -115,6 +115,11 @@ class QuestionnaireUsages(enum.IntEnum):
 
 
 @enum.unique
+class EventPartGroupType(enum.IntEnum):
+    Statistic = 100
+
+
+@enum.unique
 class GenesisStati(enum.IntEnum):
     """Spec for field case_status of core.genesis_cases."""
     #: created, data logged, email unconfirmed

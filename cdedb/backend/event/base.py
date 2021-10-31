@@ -204,6 +204,7 @@ class EventBaseBackend(EventLowLevelBackend):
                 ret[anid]['part_groups'] = {}
             for d in part_group_data:
                 d['part_ids'] = set()
+                d['constraint_type'] = const.EventPartGroupType(d['constraint_type'])
                 ret[d['event_id']]['part_groups'][d['id']] = d
             for d in part_group_part_data:
                 part_groups = ret[all_parts[d['part_id']]]['part_groups']
