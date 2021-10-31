@@ -86,6 +86,27 @@ def _waitlist_order(event: CdEDBObject, part: CdEDBObject) -> List[QueryOrder]:
     return ret + [('reg.payment', True), ('ctime.creation_time', True)]
 
 
+def merge_constraints(*constraints: QueryConstraint) -> Optional[QueryConstraint]:
+    """
+    Helper function to try to merge a collection of query constraints into a single one.
+
+    In order to be mergable all constraints must have the same `QueryOperator` and the
+    same value. All differing constraint fields are joined together, respecting order.
+
+    The fields are collected in a dict, with ensures uniqueness, while preserving the
+    original order, which sets don't.
+    """
+    fields, operators, values = {}, set(), set()
+    for con in constraints:
+        field, op, value = con
+        fields[field] = None
+        operators.add(op)
+        values.add(value)
+    if len(operators) != 1 or len(values) != 1:
+        return None
+    return (",".join(fields), unwrap(operators), unwrap(values))
+
+
 # These enums each offer a collection of statistics for the stats page.
 # They implement a test and query building interface:
 # A `.test` method that takes the event data and a registrations, returning
@@ -127,7 +148,7 @@ class EventRegistrationPartStatistic(enum.Enum):
     def indent(self) -> bool:
         return self.name.startswith("_")
 
-    def test(self, event: CdEDBObject, reg: CdEDBObject, part_id: CdEDBObject) -> bool:
+    def test(self, event: CdEDBObject, reg: CdEDBObject, part_id: int) -> bool:
         part = reg['parts'][part_id]
         if self == self.pending:
             return part['status'] == RPS.applied
@@ -172,6 +193,11 @@ class EventRegistrationPartStatistic(enum.Enum):
             return part['status'] != RPS.not_applied
         else:
             raise RuntimeError
+
+    def test_part_group(self, event: CdEDBObject, reg: CdEDBObject, part_group_id: int
+                        ) -> bool:
+        part_group = event['part_groups'][part_group_id]
+        return any(self.test(event, reg, part_id) for part_id in part_group['part_ids'])
 
     def _get_query_aux(self, event: CdEDBObject, part_id: int) -> StatQueryAux:
         part = event['parts'][part_id]
@@ -323,6 +349,28 @@ class EventRegistrationPartStatistic(enum.Enum):
         query.constraints.extend(constraints)
         # Prepend the specific order.
         query.order = order + query.order
+        return query
+
+    def get_query_part_group(self, event: CdEDBObject, part_group_id: int
+                             ) -> Optional[Query]:
+        query = Query(
+            QueryScope.registration,
+            QueryScope.registration.get_spec(event=event),
+            fields_of_interest=['reg.id', 'persona.given_names', 'persona.family_name',
+                                'persona.username'],
+            constraints=[],
+            order=[('persona.family_name', True), ('persona.given_names', True)]
+        )
+        all_fields, all_constraints = [], []
+        for part_id in event['part_groups'][part_group_id]['part_ids']:
+            fields, constraints, _ = self._get_query_aux(event, part_id)
+            all_fields.extend(fields)
+            all_constraints.append(constraints)
+        for i in range(len(all_constraints[0])):
+            new_constraint = merge_constraints(*(clist[i] for clist in all_constraints))
+            if new_constraint is None or new_constraint[0] not in query.spec:
+                return None
+            query.constraints.append(new_constraint)
         return query
 
 
@@ -550,6 +598,13 @@ class EventQueryMixin(EventBaseFrontend):
                     if reg_stat.test(rs.ambience['event'], reg, part_id))
                 for part_id in event_parts
             }
+            per_part_statistics[reg_stat].update({
+                -part_group_id: sum(
+                    1 for reg in registrations.values()
+                    if reg_stat.test_part_group(
+                        rs.ambience['event'], reg, part_group_id))
+                for part_group_id in rs.ambience['event']['part_groups']
+            })
 
         per_track_statistics: Dict[
             Union[EventRegistrationTrackStatistic, EventCourseStatistic],

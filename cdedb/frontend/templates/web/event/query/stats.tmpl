@@ -22,11 +22,16 @@
                     <th colspan="2"></th>
                     {% for part_id, part in ambience['event']['parts']|keydictsort(EntitySorter.event_part) %}
                         <th class="text-right">
-                            {% if ambience['event']['parts']|length > 1 %}
+                            {% if ambience['event']['parts']|length + ambience['event']['part_groups']|length > 1 %}
                                 {{ part['shortname'] }}
                             {% else %}
                                 {% trans %}Count{% endtrans %}
                             {% endif %}
+                        </th>
+                    {% endfor %}
+                    {% for part_group_id, part_group in ambience['event']['part_groups']|keydictsort(EntitySorter.event_part_group) %}
+                        <th class="text-right">
+                            {{ part_group['shortname'] }}
                         </th>
                     {% endfor %}
                 </tr>
@@ -48,6 +53,19 @@
                                     {{ util.href(
                                         cdedblink('event/registration_query', query.serialize()) + "#query-results",
                                         datum, anid="part_" + stat.name + "_" + part_id|string) }}
+                                {% else %}
+                                    {{ datum }}
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                        {% for part_group_id, part_group in ambience['event']['part_groups']|keydictsort(EntitySorter.event_part_group) %}
+                            <td class="text-right">
+                                {% set query = stat.get_query_part_group(ambience['event'], part_group_id) %}
+                                {% set datum = row[-part_group_id] %}
+                                {% if query %}
+                                    {{ util.href(
+                                        cdedblink('event/registration_query', query.serialize()) + "#query-results",
+                                        datum, anid="part_group_" + stat.name + "_" + part_group_id|string) }}
                                 {% else %}
                                     {{ datum }}
                                 {% endif %}
