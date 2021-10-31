@@ -4037,26 +4037,6 @@
             "part_id": 11
         }
     ],
-    "event.part_groups": [
-        {
-            "id": 1,
-            "title": "Hauptteil",
-            "shortname": "main_event",
-            "notes": null,
-            "event_id": 1,
-            "constraint_type": 100
-        }
-    ],
-    "event.part_group_parts": [
-        {
-            "part_group_id": 1,
-            "part_id": 2
-        },
-        {
-            "part_group_id": 1,
-            "part_id": 3
-        }
-    ],
     "event.course_tracks": [
         {
             "id": 1,
