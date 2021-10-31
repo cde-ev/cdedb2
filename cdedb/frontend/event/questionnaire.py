@@ -34,7 +34,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         """Render form."""
         reg_questionnaire, reg_fields = self._prepare_questionnaire_form(
             rs, event_id, const.QuestionnaireUsages.registration)
-        return self.render(rs, "configure_registration",
+        return self.render(rs, "questionnaire/configure_registration",
                            {'reg_questionnaire': reg_questionnaire,
                             'registration_fields': reg_fields})
 
@@ -45,7 +45,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         """Render form."""
         add_questionnaire, reg_fields = self._prepare_questionnaire_form(
             rs, event_id, const.QuestionnaireUsages.additional)
-        return self.render(rs, "configure_additional_questionnaire", {
+        return self.render(rs, "questionnaire/configure_additional_questionnaire", {
             'add_questionnaire': add_questionnaire,
             'registration_fields': reg_fields})
 
@@ -157,7 +157,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
                 rs.notify("info", n_("Questionnaire is not enabled yet."))
         add_questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, kinds=(const.QuestionnaireUsages.additional,)))
-        return self.render(rs, "additional_questionnaire", {
+        return self.render(rs, "questionnaire/additional_questionnaire", {
             'add_questionnaire': add_questionnaire,
             'preview': preview})
 
@@ -335,7 +335,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         if not questionnaire:
             rs.notify("info", n_("No questionnaire rows of this kind found."))
             return self.redirect(rs, redirects[kind])
-        return self.render(rs, "reorder_questionnaire", {
+        return self.render(rs, "questionnaire/reorder_questionnaire", {
             'questionnaire': questionnaire, 'kind': kind, 'redirect': redirects[kind]})
 
     @access("event", modi={"POST"})

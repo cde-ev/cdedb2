@@ -55,7 +55,7 @@ class EventEventMixin(EventBaseFrontend):
                     rs, event_id, rs.user.persona_id)
                 event['registration'] = bool(registration)
 
-        return self.render(rs, "index", {
+        return self.render(rs, "event/index", {
             'open_events': open_events, 'orga_events': orga_events,
             'other_events': other_events})
 
@@ -80,7 +80,7 @@ class EventEventMixin(EventBaseFrontend):
             params['event_id'] = event_id
             return cdedburl(rs, 'event/registration_query', params)
 
-        return self.render(rs, "list_events",
+        return self.render(rs, "event/list_events",
                            {'events': events, 'querylink': querylink})
 
     @access("anonymous")
@@ -104,7 +104,7 @@ class EventEventMixin(EventBaseFrontend):
         elif not rs.ambience['event']['is_visible']:
             raise werkzeug.exceptions.Forbidden(
                 n_("The event is not published yet."))
-        return self.render(rs, "show_event", params)
+        return self.render(rs, "event/show_event", params)
 
     @access("event")
     @event_guard()
@@ -131,7 +131,7 @@ class EventEventMixin(EventBaseFrontend):
             if field['association'] == const.FieldAssociations.course
             and field['kind'] == const.FieldDatatypes.str
         ]
-        return self.render(rs, "change_event", {
+        return self.render(rs, "event/change_event", {
             'institutions': institutions,
             'accounts': self.conf["EVENT_BANK_ACCOUNTS"],
             'lodge_fields': lodge_fields,
@@ -309,7 +309,7 @@ class EventEventMixin(EventBaseFrontend):
             for part_id in rs.ambience['event']['parts']
         }
 
-        return self.render(rs, "part_summary", {
+        return self.render(rs, "event/part_summary", {
             'fee_modifiers_by_part': fee_modifiers_by_part,
             'referenced_parts': referenced_parts,
             'has_registrations': has_registrations})
@@ -352,7 +352,7 @@ class EventEventMixin(EventBaseFrontend):
             (field['id'], field['field_name']) for field in sorted_fields
             if field['association'] in legal_assocs and field['kind'] in legal_datatypes
         ]
-        return self.render(rs, "add_part", {
+        return self.render(rs, "event/add_part", {
             'waitlist_fields': waitlist_fields,
             'DEFAULT_NUM_COURSE_CHOICES': DEFAULT_NUM_COURSE_CHOICES})
 
@@ -424,7 +424,7 @@ class EventEventMixin(EventBaseFrontend):
             (field['id'], field['field_name']) for field in sorted_fields
             if field['association'] in legal_assocs and field['kind'] in legal_datatypes
         ]
-        return self.render(rs, "change_part", {
+        return self.render(rs, "event/change_part", {
             'part_id': part_id,
             'sorted_track_ids': sorted_track_ids,
             'sorted_fee_modifier_ids': sorted_fee_modifier_ids,
@@ -619,7 +619,7 @@ class EventEventMixin(EventBaseFrontend):
         """Render form."""
         institution_ids = self.pasteventproxy.list_institutions(rs).keys()
         institutions = self.pasteventproxy.get_institutions(rs, institution_ids)
-        return self.render(rs, "create_event",
+        return self.render(rs, "event/create_event",
                            {'institutions': institutions,
                             'accounts': self.conf["EVENT_BANK_ACCOUNTS"]})
 

@@ -60,7 +60,7 @@ class EventFieldMixin(EventBaseFrontend):
         for part in rs.ambience['event']['parts'].values():
             if part['waitlist_field']:
                 referenced.add(part['waitlist_field'])
-        return self.render(rs, "field_summary", {
+        return self.render(rs, "fields/field_summary", {
             'referenced': referenced, 'fee_modifiers': fee_modifiers})
 
     @staticmethod
@@ -255,7 +255,7 @@ class EventFieldMixin(EventBaseFrontend):
                          kind: const.FieldAssociations) -> Response:
         """Select a field for manipulation across multiple entities."""
         if rs.has_validation_errors():
-            return self.render(rs, "field_set_select")
+            return self.render(rs, "fields/field_set_select")
         if ids is None:
             ids = cast(vtypes.IntCSVList, [])
 
@@ -271,7 +271,7 @@ class EventFieldMixin(EventBaseFrontend):
                                        key=EntitySorter.event_field)
                   if field['association'] == kind]
         return self.render(
-            rs, "field_set_select", {
+            rs, "fields/field_set_select", {
                 'ids': (','.join(str(i) for i in ids) if ids else None),
                 'ordered': ordered_ids, 'labels': labels, 'fields': fields,
                 'kind': kind.value, 'cancellink': self.FIELD_REDIRECT[kind]})
@@ -301,7 +301,7 @@ class EventFieldMixin(EventBaseFrontend):
         values = {f"input{anid}": entity['fields'].get(field['field_name'])
                   for anid, entity in entities.items()}
         merge_dicts(rs.values, values)
-        return self.render(rs, "field_set", {
+        return self.render(rs, "fields/field_set", {
             'ids': (','.join(str(i) for i in ids) if ids else None),
             'entities': entities, 'labels': labels, 'ordered': ordered_ids,
             'kind': kind.value, 'change_note': change_note,
