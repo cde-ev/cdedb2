@@ -11640,9 +11640,15 @@ msgstr "Zeitpunkt der letzten Änderung"
 msgid "bcc email to all"
 msgstr "BCC-E-Mail an alle"
 
+msgid "email to all"
+msgstr "E-Mail an alle"
+
 #: cdedb/frontend/templates/web/event/registration_query.tmpl:85
 msgid "Send Mail to all registrations listed below as BCC."
 msgstr "E-Mail an alle unten aufgeführten Anmeldungen als BCC senden."
+
+msgid "Send Mail to all registrations listed below."
+msgstr "E-Mail an alle unten aufgeführten Anmeldungen senden."
 
 #: cdedb/frontend/templates/web/event/registration_query.tmpl:89
 msgid "Email button is only available, if the email field is shown."

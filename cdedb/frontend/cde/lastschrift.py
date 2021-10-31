@@ -28,7 +28,7 @@ from cdedb.common import (
     determine_age_class, glue, int_to_words, lastschrift_reference, merge_dicts, n_,
     now, xsorted,
 )
-from cdedb.frontend.cde_base import CdEBaseFrontend
+from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, cdedbid_filter, check_validation as check,
     make_postal_address, periodic,

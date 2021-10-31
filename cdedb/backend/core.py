@@ -1132,9 +1132,10 @@ class CoreBackend(AbstractBackend):
                                     is_member: bool) -> DefaultReturnCode:
         """Special modification function for membership.
 
-        This variant only works for easy cases, that is if no active
-        lastschrift permits exist. Otherwise (i.e. in the general case) the
-        change_membership function from the cde-backend has to be used.
+        This variant only works for easy cases, that is for gaining membership
+        or if no active lastschrift permits exist. Otherwise (i.e. in the
+        general case) the change_membership function from the cde-backend
+        has to be used.
 
         :param is_member: Desired target state of membership.
         """
@@ -1152,15 +1153,14 @@ class CoreBackend(AbstractBackend):
             if current['is_member'] == is_member:
                 return 0
 
-            # Peek at the CdE-realm, this is somewhat of a transgression,
-            # but sadly necessary duct tape to keep the whole thing working.
-            query = ("SELECT id FROM cde.lastschrift"
-                     " WHERE persona_id = %s AND revoked_at IS NULL")
-            params = [persona_id]
-            if self.query_all(rs, query, params):
-                raise RuntimeError(n_("Active lastschrift permit found."))
-
             if not is_member:
+                # Peek at the CdE-realm, this is somewhat of a transgression,
+                # but sadly necessary duct tape to keep the whole thing working.
+                query = ("SELECT id FROM cde.lastschrift"
+                         " WHERE persona_id = %s AND revoked_at IS NULL")
+                params = [persona_id]
+                if self.query_all(rs, query, params):
+                    raise RuntimeError(n_("Active lastschrift permit found."))
                 delta = -current['balance']
                 new_balance = decimal.Decimal(0)
                 code = const.FinanceLogCodes.lose_membership
