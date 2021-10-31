@@ -3802,6 +3802,35 @@
             "lodge_field": null,
             "camping_mat_field": null,
             "course_room_field": null
+        },
+        {
+            "id": 4,
+            "title": "TripelAkademie",
+            "shortname": "triaka",
+            "institution": 1,
+            "description": "Ich habe gehört, du magst DoppelAkademien, also habe ich eine DoppelAkademie in Deine DoppelAkademie gepackt.",
+            "registration_start": null,
+            "registration_soft_limit": null,
+            "registration_hard_limit": null,
+            "iban": "DE26370205000008068900",
+            "nonmember_surcharge": "0.00",
+            "orga_address": null,
+            "registration_text": null,
+            "mail_text": null,
+            "participant_info": null,
+            "use_additional_questionnaire": false,
+            "notes": null,
+            "offline_lock": false,
+            "is_visible": true,
+            "is_course_list_visible": true,
+            "is_course_state_visible": false,
+            "is_participant_list_visible": false,
+            "is_course_assignment_visible": false,
+            "is_archived": false,
+            "is_cancelled": false,
+            "lodge_field": null,
+            "camping_mat_field": null,
+            "course_room_field": null
         }
     ],
     "event.event_parts": [
@@ -3854,6 +3883,178 @@
             "part_end": "2003-03-04",
             "fee": "0.00",
             "waitlist_field": null
+        },
+        {
+            "id": 6,
+            "event_id": 4,
+            "title": "1. Hälfte Oberwesel",
+            "shortname": "O1",
+            "part_begin": "3000-01-01",
+            "part_end": "3000-02-01",
+            "fee": "0.00",
+            "waitlist_field": null
+        },
+        {
+            "id": 7,
+            "event_id": 4,
+            "title": "1. Hälfte Windischleuba",
+            "shortname": "W1",
+            "part_begin": "3000-01-01",
+            "part_end": "3000-02-01",
+            "fee": "0.00",
+            "waitlist_field": null
+        },
+        {
+            "id": 8,
+            "event_id": 4,
+            "title": "1. Hälfte Kaub",
+            "shortname": "K1",
+            "part_begin": "3000-01-01",
+            "part_end": "3000-02-01",
+            "fee": "0.00",
+            "waitlist_field": null
+        },
+        {
+            "id": 9,
+            "event_id": 4,
+            "title": "2. Hälfte Oberwesel",
+            "shortname": "O2",
+            "part_begin": "3000-02-01",
+            "part_end": "3000-03-01",
+            "fee": "0.00",
+            "waitlist_field": null
+        },
+        {
+            "id": 10,
+            "event_id": 4,
+            "title": "2. Hälfte Windischleuba",
+            "shortname": "W2",
+            "part_begin": "3000-02-01",
+            "part_end": "3000-03-01",
+            "fee": "0.00",
+            "waitlist_field": null
+        },
+        {
+            "id": 11,
+            "event_id": 4,
+            "title": "2. Hälfte Kaub",
+            "shortname": "K2",
+            "part_begin": "3000-02-01",
+            "part_end": "3000-03-01",
+            "fee": "0.00",
+            "waitlist_field": null
+        }
+    ],
+    "event.part_groups": [
+        {
+            "id": 1,
+            "title": "1. Hälfte",
+            "shortname": "1.H.",
+            "notes": null,
+            "event_id": 4,
+            "constraint_type": 100
+        },
+        {
+            "id": 2,
+            "title": "2. Hälfte",
+            "shortname": "2.H.",
+            "notes": null,
+            "event_id": 4,
+            "constraint_type": 100
+        },
+        {
+            "id": 3,
+            "title": "Oberwesel",
+            "shortname": "OW",
+            "notes": null,
+            "event_id": 4,
+            "constraint_type": 100
+        },
+        {
+            "id": 4,
+            "title": "Windischleuba",
+            "shortname": "WS",
+            "notes": null,
+            "event_id": 4,
+            "constraint_type": 100
+        },
+        {
+            "id": 5,
+            "title": "Kaub",
+            "shortname": "KA",
+            "notes": null,
+            "event_id": 4,
+            "constraint_type": 100
+        }
+    ],
+    "event.part_group_parts": [
+        {
+            "part_group_id": 1,
+            "part_id": 6
+        },
+        {
+            "part_group_id": 1,
+            "part_id": 7
+        },
+        {
+            "part_group_id": 1,
+            "part_id": 8
+        },
+        {
+            "part_group_id": 2,
+            "part_id": 9
+        },
+        {
+            "part_group_id": 2,
+            "part_id": 10
+        },
+        {
+            "part_group_id": 2,
+            "part_id": 11
+        },
+        {
+            "part_group_id": 3,
+            "part_id": 6
+        },
+        {
+            "part_group_id": 3,
+            "part_id": 9
+        },
+        {
+            "part_group_id": 4,
+            "part_id": 7
+        },
+        {
+            "part_group_id": 4,
+            "part_id": 10
+        },
+        {
+            "part_group_id": 5,
+            "part_id": 8
+        },
+        {
+            "part_group_id": 5,
+            "part_id": 11
+        }
+    ],
+    "event.part_groups": [
+        {
+            "id": 1,
+            "title": "Hauptteil",
+            "shortname": "main_event",
+            "notes": null,
+            "event_id": 1,
+            "constraint_type": 100
+        }
+    ],
+    "event.part_group_parts": [
+        {
+            "part_group_id": 1,
+            "part_id": 2
+        },
+        {
+            "part_group_id": 1,
+            "part_id": 3
         }
     ],
     "event.course_tracks": [
@@ -3890,6 +4091,60 @@
             "title": "CyberTestAkademie",
             "shortname": "cyta",
             "num_choices": 3,
+            "min_choices": 2,
+            "sortkey": 1
+        },
+        {
+            "id": 6,
+            "part_id": 6,
+            "title": "Oberwesel Kurs 1",
+            "shortname": "OK1",
+            "num_choices": 4,
+            "min_choices": 2,
+            "sortkey": 1
+        },
+        {
+            "id": 7,
+            "part_id": 7,
+            "title": "Windischleuba Kurs 1",
+            "shortname": "WK1",
+            "num_choices": 4,
+            "min_choices": 2,
+            "sortkey": 1
+        },
+        {
+            "id": 8,
+            "part_id": 8,
+            "title": "Kaub Kurs 1",
+            "shortname": "KK1",
+            "num_choices": 4,
+            "min_choices": 2,
+            "sortkey": 1
+        },
+        {
+            "id": 9,
+            "part_id": 9,
+            "title": "Oberwesel Kurs 2",
+            "shortname": "OK2",
+            "num_choices": 4,
+            "min_choices": 2,
+            "sortkey": 1
+        },
+        {
+            "id": 10,
+            "part_id": 10,
+            "title": "Windischleuba Kurs 2",
+            "shortname": "WK1",
+            "num_choices": 4,
+            "min_choices": 2,
+            "sortkey": 1
+        },
+        {
+            "id": 11,
+            "part_id": 11,
+            "title": "Kaub Kurs 2",
+            "shortname": "KK2",
+            "num_choices": 4,
             "min_choices": 2,
             "sortkey": 1
         }
