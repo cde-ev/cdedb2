@@ -681,7 +681,6 @@ def make_registration_query_spec(event: CdEDBObject) -> Dict[str, str]:
     have amend the query spec on the fly.
     """
 
-    tracks = event['tracks']
     sorted_fields = sorted(event['fields'].values(), key=EntitySorter.event_field)
     spec = collections.OrderedDict([
         ("reg.id", "id"),
