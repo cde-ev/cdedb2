@@ -27,12 +27,12 @@ import queue
 import sys
 import tempfile
 import time
-from typing import Collection, List, NamedTuple, Optional, Set, TYPE_CHECKING
+from typing import TYPE_CHECKING, Collection, List, NamedTuple, Optional, Set
 
 import webtest
+from bin.test_runner_helpers import check_test_setup
 
 from cdedb.frontend.application import Application
-from bin.test_runner_helpers import check_test_setup
 
 # Custom type definitions.
 ResponseData = NamedTuple("ResponseData", [("response", webtest.TestResponse),

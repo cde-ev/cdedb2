@@ -4,9 +4,8 @@ from itertools import chain
 from typing import Any, Callable, Dict, List, Set, Tuple, Type, TypedDict
 
 from cdedb.backend.common import PsycoJson
-from cdedb.backend.core import CoreBackend
-from cdedb.common import RequestState, CdEDBObject
-from cdedb.script import Script
+from cdedb.common import CdEDBObject, RequestState
+from cdedb.script import Script, CoreBackend
 
 
 class AuxData(TypedDict):
