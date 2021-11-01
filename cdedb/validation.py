@@ -986,7 +986,7 @@ def _password_strength(
             errors.append(ValueError(argname, fb))
         if not errors:
             # generate custom feedback
-            # TODO this should never be the case
+            _LOGGER.warning("No zxcvbn output feedback found.")
             errors.append(ValueError(argname, n_("Password too weak.")))
 
     if admin and results['score'] < 4:
