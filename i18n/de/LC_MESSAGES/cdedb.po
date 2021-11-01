@@ -12332,6 +12332,14 @@ msgstr "Admin"
 msgid "Core"
 msgstr "Core"
 
+#: cdedb/frontend/templates/web/generic.tmpl:165
+msgid "Finance"
+msgstr "Finanzen"
+
+#: cdedb/frontend/templates/web/generic.tmpl:166
+msgid "CdElokal"
+msgstr "CdElokal"
+
 #: cdedb/frontend/templates/web/generic.tmpl:167
 msgid "Any"
 msgstr "bel."
