@@ -84,7 +84,7 @@
                                         –
                                     {% else %}
                                         {% set query = grouper.get_query(ambience['event'], track_id, x) %}
-                                        {% set page = query.scope.get_target(prepend_realm=True) %}
+                                        {% set page = query.scope.get_target() %}
                                         {% if query %}
                                             {{ util.href(
                                                 cdedblink(page, query.serialize()) + "#query-results",
@@ -106,7 +106,7 @@
                                         –
                                     {% else %}
                                         {% set query = stat.get_query(ambience['event'], track_id) %}
-                                        {% set page = query.scope.get_target(prepend_realm=True) %}
+                                        {% set page = query.scope.get_target() %}
                                         {% if query %}
                                             {{ util.href(
                                                 cdedblink(page, query.serialize()) + "#query-results",
