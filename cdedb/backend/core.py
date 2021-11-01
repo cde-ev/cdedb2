@@ -2450,9 +2450,7 @@ class CoreBackend(AbstractBackend):
             if orig_conn:
                 rs.conn = orig_conn
 
-        admin = any(persona[admin] for admin in
-                    ("is_meta_admin", "is_core_admin", "is_cde_admin",
-                     "is_event_admin", "is_ml_admin", "is_assembly_admin"))
+        admin = any(persona[admin] for admin in ADMIN_KEYS)
         inputs = (persona['username'].split('@') +
                   persona['given_names'].replace('-', ' ').split() +
                   persona['family_name'].replace('-', ' ').split() +
