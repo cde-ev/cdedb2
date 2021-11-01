@@ -1606,16 +1606,8 @@ PRIVILEGE_CHANGE_COMMON_FIELDS: TypeMapping = {
     'notes': str,
 }
 
-PRIVILEGE_CHANGE_OPTIONAL_FIELDS: Mapping[str, Any] = {
-    'is_meta_admin': Optional[bool],
-    'is_core_admin': Optional[bool],
-    'is_cde_admin': Optional[bool],
-    'is_finance_admin': Optional[bool],
-    'is_event_admin': Optional[bool],
-    'is_ml_admin': Optional[bool],
-    'is_assembly_admin': Optional[bool],
-    'is_cdelokal_admin': Optional[bool],
-}
+PRIVILEGE_CHANGE_OPTIONAL_FIELDS: Mapping[str, Any] = \
+    {k: Optional[bool] for k in ADMIN_KEYS}
 
 
 @_add_typed_validator
