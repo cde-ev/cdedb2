@@ -1606,8 +1606,9 @@ PRIVILEGE_CHANGE_COMMON_FIELDS: TypeMapping = {
     'notes': str,
 }
 
-PRIVILEGE_CHANGE_OPTIONAL_FIELDS: Mapping[str, Any] = \
-    {k: Optional[bool] for k in ADMIN_KEYS}
+PRIVILEGE_CHANGE_OPTIONAL_FIELDS: Mapping[str, Any] = {
+    k: Optional[bool] for k in ADMIN_KEYS
+}
 
 
 @_add_typed_validator
