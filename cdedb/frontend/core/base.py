@@ -660,7 +660,7 @@ class CoreBaseFrontend(AbstractFrontend):
             'data': data, 'past_events': past_events, 'meta_info': meta_info,
             'is_relative_admin_view': is_relative_admin_view, 'reference': reference,
             'quoteable': quoteable, 'access_mode': access_mode,
-            'active_session_count': active_session_count,
+            'active_session_count': active_session_count, 'ADMIN_KEYS': ADMIN_KEYS,
         })
 
     @access("event")
@@ -803,7 +803,8 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.render(rs, "show_history", {
             'entries': history, 'constants': constants, 'current': current,
             'pending': pending, 'eventual_status': eventual_status,
-            'personas': personas})
+            'personas': personas, 'ADMIN_KEYS': ADMIN_KEYS,
+        })
 
     @access("core_admin")
     @REQUESTdata("phrase")

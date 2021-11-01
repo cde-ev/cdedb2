@@ -1119,3 +1119,39 @@ mailto:
         {{ gettext("(trial member)") -}}
     {% endif -%}
 {% endmacro %}
+
+{% macro realm_icon(realm, desc=False) %}
+    {% with title_icon_map = {
+        "is_cde_realm": (gettext("cde_realm"), "graduation-cap"),
+        "is_event_realm": (gettext("Events"), "chalkboard-teacher"),
+        "is_ml_realm": (gettext("Mailinglists"), "envelope"),
+        "is_assembly_realm": (gettext("Assembly"), "bullhorn"),
+        } %}
+        {% set description, icon = title_icon_map[realm] %}
+        {{ make_icon(icon, title=description) }}
+        {% if desc %}
+            {{ description }}
+        {% endif %}
+    {% endwith %}
+{% endmacro %}
+
+
+{% macro privilege_icon(privilege, desc=False) %}
+    {% with title_icon_map = {
+        "is_meta_admin": (gettext("Meta-Admin"), "wrench"),
+        "is_core_admin": (gettext("Core-Admin"), "user"),
+        "is_cde_admin": (gettext("CdE-Admin"), "graduation-cap"),
+        "is_finance_admin": (gettext("Finance-Admin"), "euro-sign"),
+        "is_event_admin": (gettext("Event-Admin"), "chalkboard-teacher"),
+        "is_ml_admin": (gettext("Mailinglist-Admin"), "envelope"),
+        "is_cdelokal_admin": (gettext("CdElokal-Admin"), "city"),
+        "is_assembly_admin": (gettext("Assembly-Admin"), "bullhorn"),
+        "is_auditor": (gettext("Auditor"), "search-dollar"),
+        } %}
+        {% set description, icon = title_icon_map[privilege] %}
+        {{ make_icon(icon, title=description) }}
+        {% if desc %}
+            {{ description }}
+        {% endif %}
+    {% endwith %}
+{% endmacro %}
