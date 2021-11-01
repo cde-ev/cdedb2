@@ -240,11 +240,14 @@ The original message as received by Mailman is attached.
         if db_list['mod_policy'] == const.ModerationPolicy.non_subscribers:
             persona_ids = self.mlproxy.get_subscription_states(
                 rs, db_list['id'], states=const.SubscriptionState.subscribing_states())
-            for persona_id, address in self.mlproxy.get_subscription_addresses(
-                    rs, db_list['id'], persona_ids, explicits_only=True).items():
-                if address:
-                    username = self.coreproxy.get_persona(rs, persona_id)['username']
-                    db_whitelist.add(username)
+            persona_ids = {
+                persona_id for persona_id, address
+                in self.mlproxy.get_subscription_addresses(
+                    rs, db_list['id'], persona_ids, explicits_only=True).items()
+                if address
+            }
+            db_whitelist |= {persona['username'] for persona
+                             in self.coreproxy.get_ml_users(rs, persona_ids).values()}
 
         new_whites = set(db_whitelist) - set(mm_whitelist)
         current_whites = set(mm_whitelist) - new_whites
