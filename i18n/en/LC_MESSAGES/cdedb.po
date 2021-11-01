@@ -13724,13 +13724,12 @@ msgid "is_assembly_admin"
 msgstr "Assembly-Admin"
 
 #: cdedb/i18n_additional.py:297
-#, fuzzy
 msgid "is_cdelokal_admin"
-msgstr "CdE-Admin"
+msgstr "CdElokal-Admin"
 
 #: cdedb/i18n_additional.py:298
 msgid "is_auditor"
-msgstr ""
+msgstr "Auditor"
 
 #: cdedb/i18n_additional.py:301
 msgid "Use a few words, avoid common phrases."
