@@ -852,7 +852,8 @@ class TestEventBackend(BackendTest):
 
     @as_users("annika", "garcia")
     def test_visible_events(self) -> None:
-        expectation = {1: 'Große Testakademie 2222', 3: 'CyberTestAkademie'}
+        expectation = {
+            1: 'Große Testakademie 2222', 3: 'CyberTestAkademie', 4: 'TripelAkademie'}
         self.assertEqual(expectation, self.event.list_events(
             self.key, visible=True, archived=False))
 

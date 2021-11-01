@@ -227,6 +227,7 @@ def get_event_name_pattern(event: CdEDBObject) -> str:
         ("Seminar", "rSeminar"),
         ("Test", r"Test"),  # For testing purposes.
         ("Party", r"Party"),  # For testing purposes.
+        ("Tripel", r"Tripel"),  # For testing purposes.
         ("Biomodels", r"Biomodels"),
         ("Academy", r"(Academy|Akademie)"),
         ("Aka(demie)?", r"Aka(demie)?"),
