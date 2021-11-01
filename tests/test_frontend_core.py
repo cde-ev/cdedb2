@@ -940,21 +940,23 @@ class TestCoreFrontend(FrontendTest):
         self.get('/core/search/user')
         save = self.response
         self.response = save.click(description="Alle Admins")
-        self.assertPresence("Ergebnis [14]", div='query-results')
+        self.assertPresence("Ergebnis [16]", div='query-results')
         self.assertPresence("Akira", div='query-result')
         self.assertPresence("Anton Armin A.", div='query-result')
+        self.assertPresence("Annika", div='query-result')
         self.assertPresence("Beispiel", div='query-result')
+        self.assertPresence("Quintus", div='query-result')
         self.assertPresence("Farin", div='query-result')
         self.assertPresence("Findus", div='query-result')
         self.assertPresence("Generalis", div='query-result')
+        self.assertPresence("Inga", div='query-result')
+        self.assertPresence("Katarina", div='query-result')
         self.assertPresence("Meister", div='query-result')
-        self.assertPresence("Olaf", div='query-result')
-        self.assertPresence("Panther", div='query-result')
-        self.assertPresence("Quintus", div='query-result')
         self.assertPresence("Neubauer", div='query-result')
         self.assertPresence("Olafson", div='query-result')
-        self.assertPresence("Vera", div='query-result')
+        self.assertPresence("Panther", div='query-result')
         self.assertPresence("Viktor", div='query-result')
+        self.assertPresence("Vera", div='query-result')
 
     def test_privilege_change(self) -> None:
         # Grant new admin privileges.
