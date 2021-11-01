@@ -17,7 +17,7 @@ from typing import Any, Collection, Dict, Tuple
 
 import cdedb.database.constants as const
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, EntitySorter, RequestState,
+    ADMIN_KEYS, CdEDBObject, CdEDBObjectMap, EntitySorter, RequestState,
     get_localized_country_codes, n_, xsorted,
 )
 from cdedb.filter import enum_entries_filter, keydictsort_filter
@@ -287,12 +287,7 @@ _QUERY_SPECS = {
             ("is_cde_realm", "bool"),
             ("is_member", "bool"),
             ("is_searchable", "bool"),
-            ("is_ml_admin", "bool"),
-            ("is_event_admin", "bool"),
-            ("is_assembly_admin", "bool"),
-            ("is_cde_admin", "bool"),
-            ("is_core_admin", "bool"),
-            ("is_meta_admin", "bool"),
+            *[(k, "bool") for k in ADMIN_KEYS],
             ("notes", "str"),
             ("fulltext", "str"),
         ]),
@@ -310,14 +305,8 @@ _QUERY_SPECS = {
             ("is_cde_realm", "bool"),
             ("is_member", "bool"),
             ("is_searchable", "bool"),
-            ("is_ml_admin", "bool"),
-            ("is_event_admin", "bool"),
-            ("is_assembly_admin", "bool"),
-            ("is_cde_admin", "bool"),
-            ("is_core_admin", "bool"),
-            ("is_meta_admin", "bool"),
-            ("is_ml_admin,is_event_admin,is_assembly_admin,is_cde_admin,"
-             "is_core_admin,is_meta_admin", "bool"),
+            *[(k, "bool") for k in ADMIN_KEYS],
+            (",".join(ADMIN_KEYS), "bool"),
             ("pevent_id", "id"),
             ("notes", "str"),
             ("fulltext", "str"),
@@ -353,12 +342,7 @@ _QUERY_SPECS = {
             ("is_searchable", "bool"),
             ("decided_search", "bool"),
             ("balance", "float"),
-            ("is_ml_admin", "bool"),
-            ("is_event_admin", "bool"),
-            ("is_assembly_admin", "bool"),
-            ("is_cde_admin", "bool"),
-            ("is_core_admin", "bool"),
-            ("is_meta_admin", "bool"),
+            *[(k, "bool") for k in ADMIN_KEYS],
             ("weblink", "str"),
             ("specialisation", "str"),
             ("affiliation", "str"),

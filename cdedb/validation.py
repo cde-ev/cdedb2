@@ -986,7 +986,7 @@ def _password_strength(
             errors.append(ValueError(argname, fb))
         if not errors:
             # generate custom feedback
-            # TODO this should never be the case
+            _LOGGER.warning("No zxcvbn output feedback found.")
             errors.append(ValueError(argname, n_("Password too weak.")))
 
     if admin and results['score'] < 4:
@@ -1607,14 +1607,7 @@ PRIVILEGE_CHANGE_COMMON_FIELDS: TypeMapping = {
 }
 
 PRIVILEGE_CHANGE_OPTIONAL_FIELDS: Mapping[str, Any] = {
-    'is_meta_admin': Optional[bool],
-    'is_core_admin': Optional[bool],
-    'is_cde_admin': Optional[bool],
-    'is_finance_admin': Optional[bool],
-    'is_event_admin': Optional[bool],
-    'is_ml_admin': Optional[bool],
-    'is_assembly_admin': Optional[bool],
-    'is_cdelokal_admin': Optional[bool],
+    k: Optional[bool] for k in ADMIN_KEYS
 }
 
 

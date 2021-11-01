@@ -2427,10 +2427,9 @@ class CoreBackend(AbstractBackend):
         assert persona_id is not None
 
         columns_of_interest = [
-            "is_cde_realm", "is_meta_admin", "is_core_admin", "is_cde_admin",
-            "is_event_admin", "is_ml_admin", "is_assembly_admin", "username",
-            "given_names", "family_name", "display_name", "title",
-            "name_supplement", "birthday"]
+            *ADMIN_KEYS, "username", "given_names", "family_name", "display_name",
+            "title", "name_supplement", "birthday",
+        ]
 
         # escalate db privilege role in case of resetting passwords
         orig_conn = None
@@ -2450,9 +2449,7 @@ class CoreBackend(AbstractBackend):
             if orig_conn:
                 rs.conn = orig_conn
 
-        admin = any(persona[admin] for admin in
-                    ("is_meta_admin", "is_core_admin", "is_cde_admin",
-                     "is_event_admin", "is_ml_admin", "is_assembly_admin"))
+        admin = any(persona[admin] for admin in ADMIN_KEYS)
         inputs = (persona['username'].split('@') +
                   persona['given_names'].replace('-', ' ').split() +
                   persona['family_name'].replace('-', ' ').split() +
