@@ -490,6 +490,44 @@ class TestCoreFrontend(FrontendTest):
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
 
+    @as_users("katarina")
+    def test_selectpersona_auditor(self) -> None:
+        self.get('/core/persona/select?kind=admin_persona&phrase=din')
+        expectation = {
+            'personas': [
+                {
+                    'id': 4,
+                    'name': 'Daniel Dino',
+                },
+                {
+                    'id': 6,
+                    'name': 'Ferdinand Findus',
+                },
+            ],
+        }
+        self.assertEqual(expectation, self.response.json)
+        self.get('/core/persona/select?kind=ml_user&phrase=@exam')
+        expectation = (1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 13, 14)
+        reality = tuple(e['id'] for e in self.response.json['personas'])
+        self.assertEqual(expectation[:self.conf["NUM_PREVIEW_PERSONAS"]], reality)
+        self.get('/core/persona/select?kind=event_user&phrase=bert')
+        expectation = (2,)
+        reality = tuple(e['id'] for e in self.response.json['personas'])
+        self.assertEqual(expectation, reality)
+        self.get('/core/persona/select?kind=past_event_user&phrase=emil')
+        expectation = (5,)
+        reality = tuple(e['id'] for e in self.response.json['personas'])
+        self.assertEqual(expectation, reality)
+        self.get('/core/persona/select?kind=assembly_user&phrase=kalif')
+        expectation = (11,)
+        reality = tuple(e['id'] for e in self.response.json['personas'])
+        self.assertEqual(expectation, reality)
+        self.get('/core/persona/select?kind=pure_assembly_user&phrase=kal', status=403)
+        self.get('/core/persona/select?kind=pure_ml_user&phrase=@exam', status=403)
+        for ml_id in self.ml.list_mailinglists(self.key):
+            self.get(f'/core/persona/select?kind=ml_subscriber'
+                     f'&phrase=@exam&aux={ml_id}', status=403)
+
     @as_users("vera")
     def test_adminshowuser_advanced(self) -> None:
         for phrase, user in (("DB-2-7", USER_DICT['berta']),
@@ -967,8 +1005,9 @@ class TestCoreFrontend(FrontendTest):
         f['is_finance_admin'] = True
         f['notes'] = "Berta ist jetzt Praktikant der Finanz Vorstände."
         self.submit(f, check_notification=False)
-        self.assertPresence("Nur CdE Admins können Finanz Admin werden.",
-                            div='notifications')
+        self.assertValidationError(
+            "is_finance_admin",
+            "Diese Rolle kann nicht an nicht-CdE-Admin vergeben werden.")
         f['is_cde_admin'] = True
         f['notes'] = "Dann ist Berta jetzt eben CdE und Finanz Admin."
         self.submit(f)
@@ -1229,7 +1268,7 @@ class TestCoreFrontend(FrontendTest):
                 f[field].checked = True
         self.submit(f)
         self.assertTitle("Allgemeine Nutzerverwaltung")
-        self.assertPresence("Ergebnis [13]", div='query-results')
+        self.assertPresence("Ergebnis [14]", div='query-results')
         self.assertPresence("Jalapeño", div='query-result')
 
     @as_users("vera")
@@ -2210,3 +2249,19 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence(promotion_change_note)
         self.assertPresence("zelda@example.cde")
         self.assertPresence("bertalotta@example.cde")
+
+    @as_users("katarina")
+    def test_auditor(self) -> None:
+        realm_logs = {
+            "Index": ("Account-Log", "Nutzerdaten-Log",),
+            "Mitglieder": ("CdE-Log", "Finanz-Log", "Verg.-Veranstaltungen-Log",),
+            "Veranstaltungen": ("Log",),
+            "Mailinglisten": ("Log",),
+            "Versammlungen": ("Log",),
+        }
+        for realm, logs in realm_logs.items():
+            self.traverse(realm, *logs, realm)
+            self._click_admin_view_button("Kassenprüfer")
+            for log in logs:
+                self.assertNonPresence(log, div="sidebar-navigation")
+            self._click_admin_view_button("Kassenprüfer")

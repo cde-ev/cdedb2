@@ -2671,7 +2671,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("vera")
     def test_changelog_meta(self) -> None:
         self.traverse({'description': 'Nutzerdaten-Log'})
-        self.assertTitle("Nutzerdaten-Log [1–31 von 31]")
+        self.assertTitle("Nutzerdaten-Log [1–32 von 32]")
         f = self.response.forms['logshowform']
         f['persona_id'] = "DB-2-7"
         self.submit(f)

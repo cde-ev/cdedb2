@@ -18,6 +18,14 @@ from tests.common import (
 class TestAssemblyBackend(BackendTest):
     used_backends = ("core", "assembly")
 
+    def _get_sample_quorum(self, assembly_id: int) -> int:
+        attendees = {
+            e['persona_id'] for e in self.get_sample_data('assembly.attendees').values()
+            if e['assembly_id'] == assembly_id}
+        return sum(
+            1 for e in self.get_sample_data('core.personas').values()
+            if e['is_member'] or e['id'] in attendees)
+
     @as_users("kalif")
     def test_basics(self) -> None:
         data = self.core.get_assembly_user(self.key, self.user['id'])
@@ -169,7 +177,7 @@ class TestAssemblyBackend(BackendTest):
             "submitted_by": self.user['id'],
             "assembly_id": new_id,
         })
-        self.assertLogEqual(log, "assembly", offset=log_offset)
+        self.assertLogEqual(log, realm="assembly", offset=log_offset)
 
         cascade = {"assembly_is_locked", "log", "presiders", "attachments"}
         self.assertEqual(
@@ -181,7 +189,7 @@ class TestAssemblyBackend(BackendTest):
             "submitted_by": self.user['id'],
             "change_note": expectation["title"],
         }]
-        self.assertLogEqual(log, "assembly", offset=log_offset)
+        self.assertLogEqual(log, realm="assembly", offset=log_offset)
 
     @as_users("viktor")
     def test_ticket_176(self) -> None:
@@ -398,7 +406,7 @@ class TestAssemblyBackend(BackendTest):
         for key in ('use_bar', 'notes', 'vote_extension_end', 'rel_quorum'):
             expectation[key] = data[key]
         expectation['abs_quorum'] = 0
-        expectation['quorum'] = 10
+        expectation['quorum'] = self._get_sample_quorum(assembly_id)
         expectation['candidates'][6]['title'] = data['candidates'][6]['title']
         expectation['candidates'][6]['shortname'] = data['candidates'][6]['shortname']
         del expectation['candidates'][7]
@@ -571,7 +579,8 @@ class TestAssemblyBackend(BackendTest):
             15: 'Welche Sprache ist die Beste?',
             new_id: 'Verstehen wir Spaß'}
         self.assertEqual(expectation, self.assembly.list_ballots(self.key, assembly_id))
-        self.assertLogEqual(log, "assembly", offset=log_offset, assembly_id=assembly_id)
+        self.assertLogEqual(
+            log, realm="assembly", offset=log_offset, assembly_id=assembly_id)
 
     @as_users("werner")
     def test_quorum(self) -> None:
@@ -631,6 +640,7 @@ class TestAssemblyBackend(BackendTest):
         base_time = now()
         delta = datetime.timedelta(seconds=42)
         with freezegun.freeze_time(base_time) as frozen_time:
+            NUMBER_OF_MEMBERS = self._get_sample_quorum(0)
             assembly_data = {
                 'description': None,
                 'notes': None,
@@ -673,17 +683,26 @@ class TestAssemblyBackend(BackendTest):
                           cm.exception.args[0])
 
             # Initial quorum should be number of members.
-            self.assertEqual(8, self.assembly.get_ballot(self.key, ballot_id)["quorum"])
+            self.assertEqual(
+                self.assembly.get_ballot(self.key, ballot_id)["quorum"],
+                NUMBER_OF_MEMBERS
+            )
 
             # Adding a non-member attendee increases the quorum.
             self.assembly.external_signup(self.key, assembly_id, 4)
-            self.assertEqual(9, self.assembly.get_ballot(self.key, ballot_id)["quorum"])
+            self.assertEqual(
+                self.assembly.get_ballot(self.key, ballot_id)["quorum"],
+                NUMBER_OF_MEMBERS + 1
+            )
 
             frozen_time.tick(delta=4*delta)
             self.assembly.check_voting_period_extension(self.key, ballot_id)
             # Now adding an attendee does not change the quorum.
             self.assembly.external_signup(self.key, assembly_id, 11)
-            self.assertEqual(9, self.assembly.get_ballot(self.key, ballot_id)["quorum"])
+            self.assertEqual(
+                self.assembly.get_ballot(self.key, ballot_id)["quorum"],
+                NUMBER_OF_MEMBERS + 1
+            )
 
     def test_extension(self) -> None:
         base_time = now()
@@ -1224,7 +1243,8 @@ class TestAssemblyBackend(BackendTest):
         del expectation[new_id]
         self.assertEqual(
             expectation, self.assembly.get_attachments(self.key, attachment_ids))
-        self.assertLogEqual(log, "assembly", offset=log_offset, assembly_id=assembly_id)
+        self.assertLogEqual(
+            log, realm="assembly", offset=log_offset, assembly_id=assembly_id)
 
     @storage
     @as_users("werner")
@@ -1350,7 +1370,8 @@ class TestAssemblyBackend(BackendTest):
                     self.assembly.get_definitive_attachments_version(
                         self.key, ballot_id)
                 )
-        self.assertLogEqual(log, "assembly", offset=log_offset, assembly_id=assembly_id)
+        self.assertLogEqual(
+            log, realm="assembly", offset=log_offset, assembly_id=assembly_id)
 
     @as_users("werner")
     @prepsql("""INSERT INTO assembly.assemblies

@@ -100,7 +100,7 @@ class PastEventBackend(AbstractBackend):
         }
         return self.sql_insert(rs, "past_event.log", data)
 
-    @access("cde_admin", "event_admin")
+    @access("cde_admin", "event_admin", "auditor")
     def retrieve_past_log(self, rs: RequestState,
                           codes: Collection[const.PastEventLogCodes] = None,
                           pevent_id: int = None, offset: int = None,

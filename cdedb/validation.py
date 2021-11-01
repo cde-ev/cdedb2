@@ -64,8 +64,8 @@ import string
 import typing
 from enum import Enum
 from typing import (
-    Callable, Iterable, Mapping, Optional, Protocol, Sequence, Set, Tuple, TypeVar,
-    Union, cast, get_args, get_origin, get_type_hints, overload,
+    Callable, Iterable, Optional, Protocol, Sequence, Set, Tuple, TypeVar, Union, cast,
+    get_args, get_origin, get_type_hints, overload,
 )
 
 import magic
@@ -78,10 +78,10 @@ import zxcvbn
 import cdedb.database.constants as const
 import cdedb.ml_type_aux as ml_type
 from cdedb.common import (
-    ASSEMBLY_BAR_SHORTNAME, EPSILON, EVENT_SCHEMA_VERSION, INFINITE_ENUM_MAGIC_NUMBER,
-    REALM_SPECIFIC_GENESIS_FIELDS, CdEDBObjectMap, Error, InfiniteEnum, LineResolutions,
-    ValidationWarning, asciificator, compute_checkdigit, extract_roles, n_, now,
-    xsorted,
+    ADMIN_KEYS, ASSEMBLY_BAR_SHORTNAME, EPSILON, EVENT_SCHEMA_VERSION,
+    INFINITE_ENUM_MAGIC_NUMBER, REALM_SPECIFIC_GENESIS_FIELDS, CdEDBObjectMap, Error,
+    InfiniteEnum, LineResolutions, ValidationWarning, asciificator, compute_checkdigit,
+    extract_roles, n_, now, xsorted,
 )
 from cdedb.config import BasicConfig, Config
 from cdedb.database.constants import FieldAssociations, FieldDatatypes
@@ -1144,6 +1144,7 @@ PERSONA_COMMON_FIELDS: Mapping[str, Any] = {
     'is_ml_admin': bool,
     'is_assembly_admin': bool,
     'is_cdelokal_admin': bool,
+    'is_auditor': bool,
     'is_cde_realm': bool,
     'is_event_realm': bool,
     'is_ml_realm': bool,
@@ -1215,18 +1216,8 @@ def _persona(
     if creation:
         temp = _examine_dictionary_fields(
             val, PERSONA_TYPE_FIELDS, {}, allow_superfluous=True, **kwargs)
-        temp.update({
-            'is_meta_admin': False,
-            'is_archived': False,
-            'is_purged': False,
-            'is_assembly_admin': False,
-            'is_cde_admin': False,
-            'is_finance_admin': False,
-            'is_core_admin': False,
-            'is_event_admin': False,
-            'is_ml_admin': False,
-            'is_cdelokal_admin': False,
-        })
+        temp.update({'is_archived': False, 'is_purged': False})
+        temp.update({k: False for k in ADMIN_KEYS})
         roles = extract_roles(temp)
         optional_fields: TypeMapping = {}
         mandatory_fields: Dict[str, Any] = {**PERSONA_TYPE_FIELDS,

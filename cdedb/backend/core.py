@@ -227,7 +227,7 @@ class CoreBackend(AbstractBackend):
                 data.update(members=0, total=0)
             return self.sql_insert(rs, "cde.finance_log", data)
 
-    @access("core_admin")
+    @access("core_admin", "auditor")
     def retrieve_log(self, rs: RequestState,
                      codes: Collection[const.CoreLogCodes] = None,
                      offset: int = None, length: int = None,
@@ -246,7 +246,7 @@ class CoreBackend(AbstractBackend):
             submitted_by=submitted_by, change_note=change_note,
             time_start=time_start, time_stop=time_stop)
 
-    @access("core_admin")
+    @access("core_admin", "auditor")
     def retrieve_changelog_meta(
             self, rs: RequestState,
             stati: Collection[const.MemberChangeStati] = None,
@@ -700,7 +700,7 @@ class CoreBackend(AbstractBackend):
                 and ("core_admin" not in rs.user.roles
                      or not {"realms", "purge"} & set(allow_specials))):
             raise PrivilegeError(n_("Realm modification prevented."))
-        if (set(data) & ADMIN_KEYS
+        if (set(data) & ADMIN_KEYS.keys()
                 and ("meta_admin" not in rs.user.roles
                      or "admins" not in allow_specials)):
             if any(data[key] for key in ADMIN_KEYS):
@@ -733,7 +733,7 @@ class CoreBackend(AbstractBackend):
             raise PrivilegeError(n_("Own activation prevented."))
 
         # check for permission to edit
-        allow_meta_admin = data.keys() <= ADMIN_KEYS | {"id"}
+        allow_meta_admin = data.keys() <= ADMIN_KEYS.keys() | {"id"}
         if (rs.user.persona_id != data['id']
                 and not self.is_relative_admin(rs, data['id'],
                                                allow_meta_admin)):
@@ -887,32 +887,19 @@ class CoreBackend(AbstractBackend):
                     stati=(const.PrivilegeChangeStati.pending,)):
                 raise ValueError(n_("Pending privilege change."))
 
-            persona = unwrap(self.get_total_personas(rs, (data['persona_id'],)))
+            persona = self.get_total_persona(rs, data['persona_id'])
 
             # see also cdedb.frontend.templates.core.change_privileges
             # and change_privileges in cdedb.frontend.core
 
             errormsg = n_("User does not fit the requirements for this"
                           " admin privilege.")
-            realms = {"cde", "event", "ml", "assembly"}
-            for realm in realms:
-                if not persona['is_{}_realm'.format(realm)]:
-                    if data.get('is_{}_admin'.format(realm)):
+            for admin, required in ADMIN_KEYS.items():
+                if data.get(admin):
+                    if data.get(required) is False:
                         raise ValueError(errormsg)
-
-            if data.get('is_finance_admin'):
-                if (data.get('is_cde_admin') is False
-                    or (not persona['is_cde_admin']
-                        and not data.get('is_cde_admin'))):
-                    raise ValueError(errormsg)
-
-            if data.get('is_core_admin') or data.get('is_meta_admin'):
-                if not persona['is_cde_realm']:
-                    raise ValueError(errormsg)
-
-            if data.get('is_cdelokal_admin'):
-                if not persona['is_ml_realm']:
-                    raise ValueError(errormsg)
+                    if not persona[required] and not data.get(required):
+                        raise ValueError(errormsg)
 
             self.core_log(
                 rs, const.CoreLogCodes.privilege_change_pending,
@@ -1436,6 +1423,7 @@ class CoreBackend(AbstractBackend):
                 'is_ml_admin': False,
                 'is_assembly_admin': False,
                 'is_cdelokal_admin': False,
+                'is_auditor': False,
                 # Do no touch the realms, to preserve integrity and
                 # allow reactivation.
                 # 'is_cde_realm'
@@ -1945,18 +1933,8 @@ class CoreBackend(AbstractBackend):
         data = affirm(vtypes.Persona, data, creation=True)
         submitted_by = affirm_optional(vtypes.ID, submitted_by)
         # zap any admin attempts
-        data.update({
-            'is_meta_admin': False,
-            'is_archived': False,
-            'is_assembly_admin': False,
-            'is_cde_admin': False,
-            'is_finance_admin': False,
-            'is_core_admin': False,
-            'is_event_admin': False,
-            'is_ml_admin': False,
-            'is_cdelokal_admin': False,
-            'is_purged': False,
-        })
+        data.update({'is_archived': False, 'is_purged': False})
+        data.update({k: False for k in ADMIN_KEYS})
         # Check if admin has rights to create the user in its realms
         if not any(admin <= rs.user.roles
                    for admin in privilege_tier(extract_roles(data),

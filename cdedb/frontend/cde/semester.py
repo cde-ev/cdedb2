@@ -284,7 +284,7 @@ class CdESemesterMixin(CdEBaseFrontend):
         rs.notify("success", n_("New expuls started."))
         return self.redirect(rs, "cde/show_semester")
 
-    @access("cde_admin")
+    @access("cde_admin", "auditor")
     @REQUESTdata(*LOG_FIELDS_COMMON)
     def view_cde_log(self, rs: RequestState,
                      codes: Collection[const.CdeLogCodes],

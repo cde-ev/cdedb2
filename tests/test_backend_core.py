@@ -268,6 +268,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_purged': False,
             'is_cdelokal_admin': False,
+            'is_auditor': False,
         })
         self.assertEqual(data, new_data)
         expectation = {
@@ -311,6 +312,7 @@ class TestCoreBackend(BackendTest):
                 'is_ml_admin': False,
                 'is_ml_realm': False,
                 'is_cdelokal_admin': False,
+                'is_auditor': False,
                 'is_purged': False,
                 'is_searchable': False,
                 'location': None,
@@ -387,6 +389,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_purged': False,
             'is_cdelokal_admin': False,
+            'is_auditor': False,
         })
         self.assertEqual(data, new_data)
 
@@ -424,6 +427,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_purged': False,
             'is_cdelokal_admin': False,
+            'is_auditor': False,
         })
         self.assertEqual(data, new_data)
 
@@ -448,6 +452,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_purged': False,
             'is_cdelokal_admin': False,
+            'is_auditor': False,
         })
         self.assertEqual(data, new_data)
 
@@ -486,6 +491,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_purged': False,
             'is_cdelokal_admin': False,
+            'is_auditor': False,
         })
         self.assertEqual(data, new_data)
 
@@ -688,6 +694,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_purged': False,
             'is_cdelokal_admin': False,
+            'is_auditor': False,
             'id': new_id,
             'display_name': 'Zelda',
             'is_active': True,
@@ -765,6 +772,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_purged': False,
             'is_cdelokal_admin': False,
+            'is_auditor': False,
             'id': new_id,
             'display_name': 'Zelda',
             'is_active': True,
@@ -830,8 +838,7 @@ class TestCoreBackend(BackendTest):
         expectation.update(update)
         new_id = self.core.genesis(self.key, case_id)
         self.assertLess(0, new_id)
-        expectation = {k: v for k, v in expectation.items() if
-                       k in PERSONA_CDE_FIELDS}
+        expectation = {k: v for k, v in expectation.items() if k in PERSONA_CDE_FIELDS}
         expectation.update({
             'is_meta_admin': False,
             'is_archived': False,
@@ -844,6 +851,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_purged': False,
             'is_cdelokal_admin': False,
+            'is_auditor': False,
             'id': new_id,
             'display_name': 'Zelda',
             'is_active': True,
@@ -954,6 +962,7 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_ml_realm': True,
             'is_cdelokal_admin': False,
+            'is_auditor': False,
             'is_purged': False,
             'is_searchable': True,
             'username': 'berta@example.cde'}
@@ -1279,21 +1288,27 @@ class TestCoreBackend(BackendTest):
 
     @as_users("janis")
     def test_list_personas(self) -> None:
-        reality = self.core.list_all_personas(self.key, is_active=True)
-        active_personas = {1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 13, 14, 16, 17, 18, 22,
-                           23, 27, 32, 48, 100}
-        self.assertEqual(active_personas, reality)
+        all_personas = tuple(e for e in self.get_sample_data("core.personas").values()
+                             if not e['is_archived'])
         reality = self.core.list_all_personas(self.key, is_active=False)
-        self.assertEqual(active_personas | {15}, reality)
+        self.assertEqual(reality, {e['id'] for e in all_personas})
+        active_personas = {e['id'] for e in all_personas if e['is_active']}
+        reality = self.core.list_all_personas(self.key, is_active=True)
+        self.assertEqual(reality, active_personas)
+        current_active_members = {
+            e['id'] for e in all_personas if e['is_member'] and e['is_active']}
         reality = self.core.list_current_members(self.key, is_active=True)
-        self.assertEqual({1, 2, 3, 6, 7, 9, 100}, reality)
+        self.assertEqual(reality, current_active_members)
+        current_members = {e['id'] for e in all_personas if e['is_member']}
         reality = self.core.list_current_members(self.key, is_active=False)
-        self.assertEqual({1, 2, 3, 6, 7, 9, 15, 100}, reality)
+        self.assertEqual(reality, current_members)
+        all_moderators = {
+            e['persona_id'] for e in self.get_sample_data("ml.moderators").values()}
         reality = self.core.list_all_moderators(self.key)
-        self.assertEqual({1, 2, 3, 4, 5, 7, 9, 10, 11, 15, 23, 27, 100}, reality)
+        self.assertEqual(reality, all_moderators)
         MT = const.MailinglistTypes
-        reality = self.core.list_all_moderators(self.key, {MT.member_moderated_opt_in,
-                                                           MT.cdelokal})
+        reality = self.core.list_all_moderators(
+            self.key, {MT.member_moderated_opt_in, MT.cdelokal})
         self.assertEqual({2, 5, 9, 100}, reality)
 
     @as_users("vera")
@@ -1351,8 +1366,29 @@ class TestCoreBackend(BackendTest):
     @as_users("vera")
     def test_changelog_meta(self) -> None:
         expectation = self.get_sample_data(
-            "core.changelog", range(1, 32),
-            ("id", "submitted_by", "reviewed_by", "ctime", "generation",
-             "change_note", "code", "persona_id"))
+            "core.changelog", ids=None,
+            keys=("id", "submitted_by", "reviewed_by", "ctime", "generation",
+                  "change_note", "code", "persona_id"))
         self.assertEqual((len(expectation), tuple(expectation.values())),
                          self.core.retrieve_changelog_meta(self.key))
+
+    @as_users("katarina")
+    def test_auditor(self) -> None:
+        for retriever, table in (
+            (self.core.retrieve_log, "core.log"),
+            (self.core.retrieve_changelog_meta, "core.changelog"),
+            (self.cde.retrieve_cde_log, "cde.log"),
+            (self.cde.retrieve_finance_log, "cde.finance_log"),
+            (self.event.retrieve_log, "event.log"),
+            (self.assembly.retrieve_log, "assembly.log"),
+            (self.ml.retrieve_log, "ml.log"),
+        ):
+            with self.subTest(log=table):
+                keys = None
+                if table == "core.changelog":
+                    keys = ("change_note", "code", "ctime", "generation", "id",
+                            "persona_id", "reviewed_by", "submitted_by")
+                self.assertLogEqual(
+                    tuple(self.get_sample_data(table, keys=keys).values()),
+                    log_retriever=retriever,  # type: ignore[arg-type]
+                )
