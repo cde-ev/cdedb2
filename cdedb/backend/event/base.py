@@ -30,9 +30,10 @@ from cdedb.common import (
     COURSE_FIELDS, COURSE_TRACK_FIELDS, EVENT_FIELDS, EVENT_PART_FIELDS,
     EVENT_SCHEMA_VERSION, FEE_MODIFIER_FIELDS, FIELD_DEFINITION_FIELDS,
     LODGEMENT_FIELDS, LODGEMENT_GROUP_FIELDS, PERSONA_EVENT_FIELDS,
-    QUESTIONNAIRE_ROW_FIELDS, REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS,
-    REGISTRATION_TRACK_FIELDS, CdEDBLog, CdEDBObject, CdEDBObjectMap, DefaultReturnCode,
-    PrivilegeError, RequestState, glue, n_, now, unwrap, xsorted,
+    PERSONA_STATUS_FIELDS, QUESTIONNAIRE_ROW_FIELDS, REGISTRATION_FIELDS,
+    REGISTRATION_PART_FIELDS, REGISTRATION_TRACK_FIELDS, CdEDBLog, CdEDBObject,
+    CdEDBObjectMap, DefaultReturnCode, PrivilegeError, RequestState, glue, n_, now,
+    unwrap, xsorted,
 )
 from cdedb.database.connection import Atomizer
 
@@ -97,7 +98,7 @@ class EventBaseBackend(EventLowLevelBackend):
         def __call__(self, rs: RequestState, persona_id: int) -> Set[int]: ...
     orga_info: _OrgaInfoProtocol = singularize(orga_infos, "persona_ids", "persona_id")
 
-    @access("event")
+    @access("event", "auditor")
     def retrieve_log(self, rs: RequestState,
                      codes: Collection[const.EventLogCodes] = None,
                      event_id: int = None, offset: int = None,
@@ -112,7 +113,7 @@ class EventBaseBackend(EventLowLevelBackend):
         """
         event_id = affirm_optional(vtypes.ID, event_id)
         if (not (event_id and self.is_orga(rs, event_id=event_id))
-                and not self.is_admin(rs)):
+                and not self.is_admin(rs) and "auditor" not in rs.user.roles):
             raise PrivilegeError(n_("Not privileged."))
         event_ids = [event_id] if event_id else None
         return self.generic_retrieve_log(
@@ -836,12 +837,7 @@ class EventBaseBackend(EventLowLevelBackend):
         for reg_id, registration in ret['registrations'].items():
             persona = personas[backup_registrations[reg_id]['persona_id']]
             persona['is_orga'] = persona['id'] in event['orgas']
-            for attr in ('is_active', 'is_meta_admin', 'is_archived',
-                         'is_assembly_admin', 'is_assembly_realm',
-                         'is_cde_admin', 'is_finance_admin', 'is_cde_realm',
-                         'is_core_admin', 'is_event_admin',
-                         'is_event_realm', 'is_ml_admin', 'is_ml_realm',
-                         'is_searchable', 'is_cdelokal_admin', 'is_purged'):
+            for attr in set(PERSONA_STATUS_FIELDS) - {'is_member'}:
                 del persona[attr]
             registration['persona'] = persona
         return ret

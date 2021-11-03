@@ -19,7 +19,9 @@
             {% set link = None %}
             {% if entry['event_id'] %}
                 {% set link = util.href(cdedblink('event/show_event', {'event_id': entry['event_id']}),
-                                                                      events[entry['event_id']]['title']) %}
+                                        events[entry['event_id']]['title'],
+                                        readonly=(not is_admin and entry['event_id'] not in user.orga
+                                                  and not events[entry['event_id']]['is_visible'])) %}
             {% endif %}
             {% set personalink = None %}
             {% if (entry['event_id'], entry['persona_id']) in registration_map %}

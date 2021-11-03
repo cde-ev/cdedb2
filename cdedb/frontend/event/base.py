@@ -77,7 +77,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             'bub_search': False,
         }
         merge_dicts(rs.values, defaults)
-        return super().create_user_form(rs)
+        return self.render(rs, "user/create_user")
 
     @access("core_admin", "event_admin", modi={"POST"})
     @REQUESTdatadict(*filter_none(PERSONA_FULL_EVENT_CREATION))
@@ -109,7 +109,8 @@ class EventBaseFrontend(AbstractUserFrontend):
         }
         return self.generic_user_search(
             rs, download, is_search, QueryScope.event_user, QueryScope.event_user,
-            self.eventproxy.submit_general_query, choices=choices)
+            self.eventproxy.submit_general_query, choices=choices,
+            endpoint="user/user_search")
 
     @access("core_admin", "event_admin")
     @REQUESTdata("download", "is_search")
@@ -133,7 +134,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             rs, download, is_search,
             QueryScope.archived_past_event_user, QueryScope.archived_persona,
             self.eventproxy.submit_general_query, choices=choices,
-            endpoint="archived_user_search")
+            endpoint="user/archived_user_search")
 
     @access("event")
     @REQUESTdata("part_id", "sortkey", "reverse")
@@ -173,7 +174,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         data['list_consent'] = list_consent
         data['last_sortkey'] = sortkey
         data['last_reverse'] = reverse
-        return self.render(rs, "participant_list", data)
+        return self.render(rs, "base/participant_list", data)
 
     def _get_participant_list_data(
             self, rs: RequestState, event_id: int,
@@ -264,7 +265,7 @@ class EventBaseFrontend(AbstractUserFrontend):
                     {const.RegistrationPartStati.participant}):
                 rs.notify('warning', n_("No participant of event."))
                 return self.redirect(rs, "event/show_event")
-        return self.render(rs, "participant_info")
+        return self.render(rs, "base/participant_info")
 
     def _questionnaire_params(self, rs: RequestState, kind: const.QuestionnaireUsages
                               ) -> vtypes.TypeMapping:
@@ -349,7 +350,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             for sub_id in sub_ids
         }
 
-    @access("event_admin")
+    @access("event_admin", "auditor")
     @REQUESTdata(*LOG_FIELDS_COMMON, "event_id")
     def view_log(self, rs: RequestState, codes: Collection[const.EventLogCodes],
                  event_id: Optional[vtypes.ID], offset: Optional[int],
@@ -378,11 +379,14 @@ class EventBaseFrontend(AbstractUserFrontend):
                 | {entry['persona_id'] for entry in log if entry['persona_id']})
         personas = self.coreproxy.get_personas(rs, persona_ids)
         event_ids = {entry['event_id'] for entry in log if entry['event_id']}
-        registration_map = self.eventproxy.get_registration_map(rs, event_ids)
+        if self.is_admin(rs):
+            registration_map = self.eventproxy.get_registration_map(rs, event_ids)
+        else:
+            registration_map = {}
         events = self.eventproxy.get_events(rs, event_ids)
         all_events = self.eventproxy.list_events(rs)
         loglinks = calculate_loglinks(rs, total, offset, length)
-        return self.render(rs, "view_log", {
+        return self.render(rs, "base/view_log", {
             'log': log, 'total': total, 'length': _length,
             'personas': personas, 'events': events, 'all_events': all_events,
             'registration_map': registration_map, 'loglinks': loglinks})
@@ -419,6 +423,6 @@ class EventBaseFrontend(AbstractUserFrontend):
         personas = self.coreproxy.get_personas(rs, persona_ids)
         registration_map = self.eventproxy.get_registration_map(rs, (event_id,))
         loglinks = calculate_loglinks(rs, total, offset, length)
-        return self.render(rs, "view_event_log", {
+        return self.render(rs, "base/view_event_log", {
             'log': log, 'total': total, 'length': _length, 'personas': personas,
             'registration_map': registration_map, 'loglinks': loglinks})

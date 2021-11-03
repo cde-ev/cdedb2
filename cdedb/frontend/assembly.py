@@ -107,7 +107,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             self.assemblyproxy.submit_general_query,
             endpoint="archived_user_search")
 
-    @access("assembly_admin")
+    @access("assembly_admin", "auditor")
     @REQUESTdata(*LOG_FIELDS_COMMON, "assembly_id")
     def view_log(self, rs: RequestState,
                  codes: Collection[const.AssemblyLogCodes],
@@ -134,15 +134,14 @@ class AssemblyFrontend(AbstractUserFrontend):
                  entry['submitted_by']}
                 | {entry['persona_id'] for entry in log if entry['persona_id']})
         personas = self.coreproxy.get_personas(rs, personas)
-        assemblies = {entry['assembly_id']
-                      for entry in log if entry['assembly_id']}
-        assemblies = self.assemblyproxy.get_assemblies(rs, assemblies)
         all_assemblies = self.assemblyproxy.list_assemblies(rs)
         loglinks = calculate_loglinks(rs, total, offset, length)
         return self.render(rs, "view_log", {
             'log': log, 'total': total, 'length': _length, 'personas': personas,
-            'assemblies': assemblies, 'all_assemblies': all_assemblies,
-            'loglinks': loglinks})
+            'all_assemblies': all_assemblies, 'loglinks': loglinks,
+            'may_view': lambda assembly_id: self.assemblyproxy.may_assemble(
+                rs, assembly_id=assembly_id),
+        })
 
     @access("assembly")
     @assembly_guard

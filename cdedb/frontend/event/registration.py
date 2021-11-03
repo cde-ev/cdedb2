@@ -48,7 +48,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         csvfields = csvfields or tuple()
         csv_position = {key: ind for ind, key in enumerate(csvfields)}
         csv_position['persona_id'] = csv_position.pop('id', -1)
-        return self.render(rs, "batch_fees",
+        return self.render(rs, "registration/batch_fees",
                            {'data': data, 'csvfields': csv_position,
                             'saldo': saldo})
 
@@ -297,7 +297,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs.values.setlist('parts', event['parts'])
         reg_questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, kinds=(const.QuestionnaireUsages.registration,)))
-        return self.render(rs, "register", {
+        return self.render(rs, "registration/register", {
             'persona': persona, 'age': age, 'courses': courses,
             'course_choices': course_choices, 'semester_fee': semester_fee,
             'reg_questionnaire': reg_questionnaire, 'preview': preview})
@@ -502,7 +502,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs, event_id, (const.QuestionnaireUsages.registration,)))
         waitlist_position = self.eventproxy.get_waitlist_position(
             rs, event_id, persona_id=rs.user.persona_id)
-        return self.render(rs, "registration_status", {
+        return self.render(rs, "registration/registration_status", {
             'registration': registration, 'age': age, 'courses': courses,
             'meta_info': meta_info, 'fee': fee, 'semester_fee': semester_fee,
             'reg_questionnaire': reg_questionnaire, 'reference': reference,
@@ -563,7 +563,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         merge_dicts(rs.values, non_trivials, registration)
         reg_questionnaire = unwrap(self.eventproxy.get_questionnaire(
             rs, event_id, kinds=(const.QuestionnaireUsages.registration,)))
-        return self.render(rs, "amend_registration", {
+        return self.render(rs, "registration/amend_registration", {
             'age': age, 'courses': courses, 'course_choices': course_choices,
             'involved_tracks': involved_tracks,
             'reg_questionnaire': reg_questionnaire,
@@ -634,7 +634,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         fee = self.eventproxy.calculate_fee(rs, registration_id)
         waitlist_position = self.eventproxy.get_waitlist_position(
             rs, event_id, persona_id=persona['id'])
-        return self.render(rs, "show_registration", {
+        return self.render(rs, "registration/show_registration", {
             'persona': persona, 'age': age, 'courses': courses,
             'lodgements': lodgements, 'meta_info': meta_info, 'fee': fee,
             'reference': reference, 'waitlist_position': waitlist_position,
@@ -700,7 +700,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             reg_values['reg.real_persona_id'])
         merge_dicts(rs.values, reg_values, field_values,
                     *(part_values + track_values))
-        return self.render(rs, "change_registration", {
+        return self.render(rs, "registration/change_registration", {
             'persona': persona, 'courses': courses,
             'course_choices': course_choices, 'lodgements': lodgements,
             'skip': skip or [], 'change_note': change_note})
@@ -885,7 +885,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             for part_id in rs.ambience['event']['parts']
         }
         merge_dicts(rs.values, defaults)
-        return self.render(rs, "add_registration", {
+        return self.render(rs, "registration/add_registration", {
             'courses': courses, 'course_choices': course_choices,
             'lodgements': lodgements,
             'registered_personas': registrations.values()})
@@ -1034,7 +1034,7 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         registrations = OrderedDict(
             (reg_id, registrations[reg_id]) for reg_id in reg_order)
-        return self.render(rs, "change_registrations", {
+        return self.render(rs, "registration/change_registrations", {
             'registrations': registrations, 'personas': personas,
             'courses': courses, 'course_choices': course_choices,
             'lodgements': lodgements, 'change_note': change_note})
@@ -1112,7 +1112,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             field_id: f for field_id, f in rs.ambience['event']['fields'].items()
             if f['checkin'] and f['association'] == const.FieldAssociations.registration
         }
-        return self.render(rs, "checkin", {
+        return self.render(rs, "registration/checkin", {
             'registrations': registrations, 'personas': personas,
             'lodgements': lodgements, 'checkin_fields': checkin_fields,
             'part_ids': part_ids

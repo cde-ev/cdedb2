@@ -43,7 +43,7 @@ class EventCourseMixin(EventBaseFrontend):
         courses = None
         if course_ids:
             courses = self.eventproxy.get_courses(rs, course_ids.keys())
-        return self.render(rs, "course_list",
+        return self.render(rs, "course/course_list",
                            {'courses': courses, 'track_ids': track_ids})
 
     @access("event")
@@ -84,7 +84,7 @@ class EventCourseMixin(EventBaseFrontend):
             instructors = self.coreproxy.get_personas(rs, instructor_ids)
             params['instructor_emails'] = [p['username']
                                            for p in instructors.values()]
-        return self.render(rs, "show_course", params)
+        return self.render(rs, "course/show_course", params)
 
     @access("event")
     @event_guard(check_offline=True)
@@ -100,7 +100,7 @@ class EventCourseMixin(EventBaseFrontend):
             "fields.{}".format(key): value
             for key, value in rs.ambience['course']['fields'].items()}
         merge_dicts(rs.values, rs.ambience['course'], field_values)
-        return self.render(rs, "change_course")
+        return self.render(rs, "course/change_course")
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
@@ -142,7 +142,7 @@ class EventCourseMixin(EventBaseFrontend):
             return self.redirect(rs, 'event/course_stats')
         if 'segments' not in rs.values:
             rs.values.setlist('segments', tracks)
-        return self.render(rs, "create_course")
+        return self.render(rs, "course/create_course")
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
@@ -315,7 +315,7 @@ class EventCourseMixin(EventBaseFrontend):
                     EntitySorter.persona(
                         personas[registrations[problem[0]]['persona_id']]))
 
-        return self.render(rs, "course_assignment_checks", {
+        return self.render(rs, "course/course_assignment_checks", {
             'registrations': registrations, 'personas': personas,
             'courses': courses, 'course_problems': course_problems,
             'reg_problems': reg_problems})
@@ -421,7 +421,7 @@ class EventCourseMixin(EventBaseFrontend):
              rs.gettext("in the course …")),
             (CourseChoiceToolActions.assign_auto.value,
              rs.gettext("automatically"))))
-        return self.render(rs, "course_choices", {
+        return self.render(rs, "course/course_choices", {
             'courses': courses, 'personas': personas,
             'registrations': OrderedDict(
                 xsorted(registrations.items(),
@@ -627,7 +627,7 @@ class EventCourseMixin(EventBaseFrontend):
             }
             for course_id, course_p_data in course_participant_lists.items()
         }
-        return self.render(rs, "course_stats", {
+        return self.render(rs, "course/course_stats", {
             'courses': courses, 'choice_counts': choice_counts,
             'assign_counts': assign_counts, 'include_active': include_active})
 
@@ -696,7 +696,7 @@ class EventCourseMixin(EventBaseFrontend):
             in self.eventproxy.get_courses(rs, courses.keys()).items()
         }
 
-        return self.render(rs, "manage_attendees", {
+        return self.render(rs, "course/manage_attendees", {
             'registrations': registrations,
             'personas': personas, 'attendees': attendees,
             'without_course': without_course,
