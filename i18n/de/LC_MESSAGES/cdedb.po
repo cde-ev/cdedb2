@@ -12189,6 +12189,9 @@ msgstr "Bezahlt"
 msgid "Parental Consent Pending"
 msgstr "Einverständniserklärung fehlt"
 
+msgid "Present"
+msgstr "Anwesend"
+
 #: cdedb/frontend/templates/web/event/stats.tmpl:36
 msgid "No Lodgement"
 msgstr "Keine Unterkunft"
