@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 from functools import partial
 
-from cdedb.common import PERSONA_ALL_FIELDS, CdEDBObject
-from cdedb.script import Script, CoreBackend
-from cdedb.validation import validate_assert_optional
 import cdedb.validationtypes as vtypes
+from cdedb.common import PERSONA_ALL_FIELDS, CdEDBObject
+from cdedb.script import CoreBackend, Script
+from cdedb.validation import validate_assert_optional
 
 script = Script(dbuser="cdb")
 rs = script.rs()
