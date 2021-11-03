@@ -93,8 +93,12 @@ class TestEventFrontend(FrontendTest):
         self.traverse({'description': self.user['display_name']},
                       {'description': 'Bearbeiten'})
         f = self.response.forms['changedataform']
+        self.submit(f, check_notification=False)
+        self.assertValidationWarning("mobile", "Telefonnummer scheint invalide zu")
+        f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
         f['location'] = "Hyrule"
+        f[IGNORE_WARNINGS_NAME].checked = True
         self.submit(f)
         self.assertTitle("Emilia E. Eventis")
         self.assertPresence("(Zelda)", div='personal-information')
@@ -105,9 +109,13 @@ class TestEventFrontend(FrontendTest):
         self.realm_admin_view_profile('emilia', 'event')
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['changedataform']
+        self.submit(f, check_notification=False)
+        self.assertValidationWarning("mobile", "Telefonnummer scheint invalide zu")
+        f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
         f['birthday'] = "3.4.1933"
         self.assertNotIn('free_form', f.fields)
+        f[IGNORE_WARNINGS_NAME].checked = True
         self.submit(f)
         self.assertPresence("(Zelda)", div='personal-information')
         self.assertTitle("Emilia E. Eventis")
