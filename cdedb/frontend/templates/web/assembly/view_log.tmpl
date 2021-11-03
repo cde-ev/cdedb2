@@ -19,7 +19,8 @@
             {% set link = None %}
             {% if entry['assembly_id'] %}
                 {% set link = util.href(cdedblink('assembly/show_assembly', {'assembly_id': entry['assembly_id']}),
-                                        assemblies[entry['assembly_id']]['title']) %}
+                                        all_assemblies[entry['assembly_id']]['title'],
+                                        readonly=not may_view(entry['assembly_id'])) %}
             {% endif %}
             {{ logging.row(entry, enums['AssemblyLogCodes'], loop.index, 'assembly_id', link) }}
         {% endfor %}

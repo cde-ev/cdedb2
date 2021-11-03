@@ -18,13 +18,15 @@
 {% endblock %}
 
 {% block content %}
-    {% trans %}
-        Privilege changes will have to be approved by another Meta-Admin.
-    {% endtrans %}
+    <p>
+        {% trans %}
+            Privilege changes will have to be approved by another Meta-Admin.
+        {% endtrans %}
+    </p>
     <form action="{{ cdedblink('core/change_privileges') }}" method="POST" id="privilegechangeform">
         {{ util.anti_csrf_token('core/change_privileges') }}
         <div class="row">
-            {{ util.form_input_static(label=gettext("User"),
+            {{ util.form_input_static(label=gettext("User"), small=True,
                                       value=util.persona_name(ambience['persona'], given_and_display_names=True)) }}
             {# see also change_privileges in cdedb.frontend.core and initialize_privilege_change in cdedb.backend.core #}
             {% if ambience['persona']['is_cde_realm'] %}
@@ -32,13 +34,14 @@
                 {{ util.form_input_checkbox(name="is_core_admin", label=gettext("Core-Admin"), small=True) }}
                 {{ util.form_input_checkbox(name="is_cde_admin", label=gettext("CdE-Admin"), small=True) }}
                 {{ util.form_input_checkbox(name="is_finance_admin", label=gettext("Finance-Admin"), small=True) }}
-                {{ util.form_input_checkbox(name="is_cdelokal_admin", label=gettext("CdElokal-Admin"), small=True) }}
+                {{ util.form_input_checkbox(name="is_auditor", label=gettext("Auditor"), small=True) }}
             {% endif %}
             {% if ambience['persona']['is_event_realm'] %}
                 {{ util.form_input_checkbox(name="is_event_admin", label=gettext("Event-Admin"), small=True) }}
             {% endif %}
             {% if ambience['persona']['is_ml_realm'] %}
                 {{ util.form_input_checkbox(name="is_ml_admin", label=gettext("Mailinglist-Admin"), small=True) }}
+                {{ util.form_input_checkbox(name="is_cdelokal_admin", label=gettext("CdElokal-Admin"), small=True) }}
             {% endif %}
             {% if ambience['persona']['is_assembly_realm'] %}
                 {{ util.form_input_checkbox(name="is_assembly_admin", label=gettext("Assembly-Admin"), small=True) }}

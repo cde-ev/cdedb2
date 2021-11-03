@@ -1374,16 +1374,17 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             f['votes'] = ""
             self.submit(f)
             self.assertTitle("Maximale Länge der Verfassung (Internationaler Kongress)")
+            ballot = self.assembly.get_ballot(self.key, 1001)
             self.assertPresence(
-                "Verlängerung bis 01.05.2037, 00:00:00, falls 10 Stimmen nicht "
-                "erreicht werden.", div='voting-period')
+                f"Verlängerung bis 01.05.2037, 00:00:00, falls {ballot['quorum']}"
+                f" Stimmen nicht erreicht werden.", div='voting-period')
 
             frozen_time.tick(delta=4*delta)
             self.traverse({'href': '/assembly/1/ballot/list'},
                           {'description': 'Maximale Länge der Verfassung'},)
             self.assertTitle("Maximale Länge der Verfassung (Internationaler Kongress)")
-            s = ("Wurde bis 01.05.2037, 00:00:00 verlängert, da 10 Stimmen nicht "
-                 "erreicht wurden.")
+            s = (f"Wurde bis 01.05.2037, 00:00:00 verlängert, da {ballot['quorum']}"
+                 f" Stimmen nicht erreicht wurden.")
             self.assertPresence(s, div='voting-period')
 
     @storage

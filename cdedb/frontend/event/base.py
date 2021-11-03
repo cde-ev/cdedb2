@@ -350,7 +350,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             for sub_id in sub_ids
         }
 
-    @access("event_admin")
+    @access("event_admin", "auditor")
     @REQUESTdata(*LOG_FIELDS_COMMON, "event_id")
     def view_log(self, rs: RequestState, codes: Collection[const.EventLogCodes],
                  event_id: Optional[vtypes.ID], offset: Optional[int],
@@ -379,7 +379,10 @@ class EventBaseFrontend(AbstractUserFrontend):
                 | {entry['persona_id'] for entry in log if entry['persona_id']})
         personas = self.coreproxy.get_personas(rs, persona_ids)
         event_ids = {entry['event_id'] for entry in log if entry['event_id']}
-        registration_map = self.eventproxy.get_registration_map(rs, event_ids)
+        if self.is_admin(rs):
+            registration_map = self.eventproxy.get_registration_map(rs, event_ids)
+        else:
+            registration_map = {}
         events = self.eventproxy.get_events(rs, event_ids)
         all_events = self.eventproxy.list_events(rs)
         loglinks = calculate_loglinks(rs, total, offset, length)

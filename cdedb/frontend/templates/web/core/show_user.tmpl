@@ -199,13 +199,11 @@
                 <dl class="dl-horizontal">
                     <dt>{% trans %}Realms{% endtrans %}</dt>
                     <dd id="has-realm">
+                        {% set realm_bits = ['is_cde_realm','is_event_realm', 'is_ml_realm', 'is_assembly_realm'] %}
                         {% set vars = {'any_realm_not': False} %}
-                        {% for bit, desc, icon in (("is_cde_realm", gettext("cde_realm"), "graduation-cap"),
-                                                   ("is_event_realm", gettext("Events"), "chalkboard-teacher"),
-                                                   ("is_ml_realm", gettext("Mailinglists"), "envelope"),
-                                                   ("is_assembly_realm", gettext("Assemblies"), "bullhorn"),)%}
+                        {% for bit in realm_bits %}
                             {% if data[bit] %}
-                                {{ util.make_icon(icon, title=desc) }}
+                                {{ util.realm_icon(bit) }}
                             {% else %}
                                 {# Dirty hack to workaround Jinjas set drawbacks #}
                                 {% do vars.update({'any_realm_not': True}) %}
@@ -230,24 +228,11 @@
 
                     <dt>{% trans %}Admin Privileges{% endtrans %}</dt>
                     <dd id="admin-realms">
-                        {% set vars = {'any_privilege': False} %}
-                        {% for bit, desc, icon in (("is_meta_admin", gettext("Meta-Admin"), "wrench"),
-                                                  ("is_core_admin", gettext("Core-Admin"), "user"),
-                                                  ("is_cde_admin", gettext("CdE-Admin"), "graduation-cap"),
-                                                  ("is_finance_admin", gettext("Finance-Admin"), "euro-sign"),
-                                                  ("is_event_admin", gettext("Event-Admin"), "chalkboard-teacher"),
-                                                  ("is_ml_admin", gettext("Mailinglist-Admin"), "envelope"),
-                                                  ("is_cdelokal_admin", gettext("CdElokal-Admin"), "city"),
-                                                  ("is_assembly_admin", gettext("Assembly-Admin"), "bullhorn"),
-                                                  )%}
-                            {% if data[bit] %}
-                                {{ util.make_icon(icon, title=desc) }}
-                                {% do vars.update({'any_privilege': True}) %}
-                            {% endif %}
-                        {% endfor %}
-                        {% if not vars['any_privilege'] %}
+                        {% for key in ADMIN_KEYS if data[key] %}
+                            {{ util.privilege_icon(key) }}
+                        {% else %}
                             <i>{% trans %}None{% endtrans %}</i>
-                        {% endif %}
+                        {% endfor %}
                         {% if 'meta_admin' in user.admin_views and not ambience['persona']['is_archived'] %}
                             {{ util.href(cdedblink("core/change_privileges_form"), gettext("Edit"), icon="pen",
                                     aclass="btn btn-xs btn-warning") }}
