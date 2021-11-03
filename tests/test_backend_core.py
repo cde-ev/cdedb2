@@ -976,10 +976,10 @@ class TestCoreBackend(BackendTest):
             'country': "DE",
             'gender': 1,
             'location': 'Utopia',
-            'mobile': '0163/123456789',
+            'mobile': '+49163123456789',
             'name_supplement': 'MdB',
             'postal_code': '34576',
-            'telephone': '+49 (5432) 987654321',
+            'telephone': '+495432987654321',
             'title': 'Dr.',
             })
         self.assertEqual(expectation, self.core.get_event_user(self.key, 2))
@@ -1000,7 +1000,7 @@ class TestCoreBackend(BackendTest):
             'paper_expuls': True,
             'postal_code2': '8XA 45-$',
             'specialisation': 'Alles\nUnd noch mehr',
-            'telephone': '+49 (5432) 987654321',
+            'telephone': '+495432987654321',
             'timeline': 'Überall',
             'trial_member': False,
             'username': 'berta@example.cde',
