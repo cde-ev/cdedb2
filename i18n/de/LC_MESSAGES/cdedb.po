@@ -16258,6 +16258,12 @@ msgstr "Muss eine valides Datum mit Uhrzeit sein."
 msgid "More than one digit."
 msgstr "Darf nur einstellig sein."
 
+msgid "Phone number can not be parsed."
+msgstr "Telefonnummer kann nicht validiert werden."
+
+msgid "Phone number seems to be not valid."
+msgstr "Telefonnummer scheint invalide zu sein."
+
 #: cdedb/validation.py:1422 cdedb/validation.py:1870
 msgid "Too short."
 msgstr "Zu kurz."
