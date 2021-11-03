@@ -289,7 +289,7 @@ class EventQueryBackend(EventBaseBackend):
                 )
                 return f"""
                     (
-                        SELECT {', '.join(COURSE_FIELDS + ('id AS course_id'))}
+                        SELECT {', '.join(COURSE_FIELDS + ('id AS course_id',))}
                         FROM event.courses
                         WHERE event_id = {event_id}
                     ) AS course
