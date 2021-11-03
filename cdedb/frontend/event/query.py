@@ -40,10 +40,6 @@ def _is_participant(reg_part: CdEDBObject) -> bool:
     return reg_part['status'] == RPS.participant
 
 
-def _is_involved(reg_part: CdEDBObject) -> bool:
-    return reg_part['status'].is_involved()
-
-
 # Helper functions to build query constraints frequently used by stats.
 def _status_constraint(part: CdEDBObject, status: RPS, negate: bool = False
                        ) -> QueryConstraint:
@@ -61,6 +57,11 @@ def _participant_constraint(part: CdEDBObject) -> QueryConstraint:
 def _involved_constraint(part: CdEDBObject) -> QueryConstraint:
     return (f"part{part['id']}.status", QueryOperators.oneof,
             tuple(status.value for status in RPS if status.is_involved()))
+
+
+def _present_constraint(part: CdEDBObject) -> QueryConstraint:
+    return (f"part{part['id']}.status", QueryOperators.oneof,
+            tuple(status.value for status in RPS if status.is_present()))
 
 
 def _age_constraint(part: CdEDBObject, max_age: int, min_age: int = None
@@ -114,6 +115,7 @@ class EventRegistrationPartStatistic(enum.Enum):
     involved = n_("Total Active Registrations")
     _not_payed = n_("Not Paid")
     _no_parental_agreement = n_("Parental Consent Pending")
+    present = n_("Present")
     _no_lodgement = n_("No Lodgement")
     cancelled = n_("Registration Cancelled")
     rejected = n_("Registration Rejected")
@@ -150,12 +152,14 @@ class EventRegistrationPartStatistic(enum.Enum):
         elif self == self.guest:
             return part['status'] == RPS.guest
         elif self == self.involved:
-            return _is_involved(part)
+            return part['status'].is_involved()
         elif self == self._not_payed:
-            return _is_involved(part) and not reg['payment']
+            return part['status'].is_involved() and not reg['payment']
         elif self == self._no_parental_agreement:
-            return (_is_involved(part) and part['age_class'].is_minor()
+            return (part['status'].is_involved() and part['age_class'].is_minor()
                     and not reg['parental_agreement'])
+        elif self == self.present:
+            return part['status'].is_present()
         elif self == self._no_lodgement:
             return part['status'].is_present() and not part['lodgement_id']
         elif self == self.cancelled:
@@ -266,17 +270,19 @@ class EventRegistrationPartStatistic(enum.Enum):
                 [f"part{part['id']}.status"],
                 [
                     _involved_constraint(part),
+                    _age_constraint(part, 18),
                     ('reg.parental_agreement', QueryOperators.equal, False),
                 ],
                 []
             )
+        elif self == self.present:
+            return ([f"part{part['id']}.status"], [_present_constraint(part)], [])
         elif self == self._no_lodgement:
             return (
                 [f"part{part['id']}.status"],
                 [
-                    (f"part{part['id']}.status", QueryOperators.oneof,
-                     tuple(status for status in RPS if status.is_present())),
-                    ('reg.parental_agreement', QueryOperators.equal, False),
+                    _present_constraint(part),
+                    (f"part{part['id'].lodgement_id}", QueryOperators.empty, None),
                 ],
                 []
             )
@@ -425,7 +431,7 @@ class EventRegistrationTrackStatistic(enum.Enum):
                     _participant_constraint(part),
                     (f"track{track_id}.course_id", QueryOperators.nonempty, None),
                     (f"track{track_id}.is_course_instructor",
-                     QueryOperators.equal, False),
+                     QueryOperators.equalornull, False),
                 ],
                 [(f"course{track_id}.nr", True)]
             )
