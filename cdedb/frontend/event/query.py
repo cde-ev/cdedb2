@@ -355,7 +355,7 @@ class EventCourseStatistic(enum.Enum):
         query = Query(
             QueryScope.event_course,
             QueryScope.event_course.get_spec(event=event),
-            fields_of_interest=['course_fields.id'],
+            fields_of_interest=['course.course_id'],
             constraints=[],
             order=[('course.nr', True)]
         )

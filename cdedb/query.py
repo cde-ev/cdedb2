@@ -1110,7 +1110,7 @@ def make_course_query_spec(event: CdEDBObject) -> Dict[str, str]:
     # This is an OrderedDict, so order should be respected.
     spec = collections.OrderedDict([
                     ("course.id", "id"),
-                    ("course_fields.id", "id"),
+                    ("course.course_id", "id"),
                     ("course.nr", "str"),
                     ("course.title", "str"),
                     ("course.description", "str"),
@@ -1164,7 +1164,7 @@ def make_course_query_aux(
     course_choices = collections.OrderedDict(
         xsorted((c["id"], course_identifier(c)) for c in courses.values()))
     choices: Dict[str, Dict[int, str]] = {
-        "course_fields.id": course_choices
+        "course.course_id": course_choices
     }
     course_fields = {
         field_id: field for field_id, field in event['fields'].items()
@@ -1181,7 +1181,7 @@ def make_course_query_aux(
     # Construct titles.
     titles: Dict[str, str] = {
         "course.id": gettext("course id"),
-        "course_fields.id": gettext("course"),
+        "course.course_id": gettext("course"),
         "course.nr": gettext("course nr"),
         "course.title": gettext("course title"),
         "course.description": gettext("course description"),
@@ -1243,7 +1243,7 @@ def make_lodgement_query_spec(event: CdEDBObject) -> Dict[str, str]:
     # This is an OrderedDcit, so order should be respected.
     spec = collections.OrderedDict([
                     ("lodgement.id", "id"),
-                    ("lodgement_fields.id", "id"),
+                    ("lodgement.lodgement_id", "id"),
                     ("lodgement.title", "str"),
                     ("lodgement.regular_capacity", "int"),
                     ("lodgement.camping_mat_capacity", "int"),
@@ -1309,7 +1309,7 @@ def make_lodgement_query_aux(
         [(lg_id, lg['title']) for lg_id, lg in keydictsort_filter(
             lodgement_groups, EntitySorter.lodgement_group)])
     choices: Dict[str, Dict[int, str]] = {
-        "lodgement_fields.id": lodgement_choices,
+        "lodgement.lodgement_id": lodgement_choices,
         "lodgement.group_id": lodgement_group_choices,
     }
     lodgement_fields = {
@@ -1327,7 +1327,7 @@ def make_lodgement_query_aux(
     # Construct titles.
     titles: Dict[str, str] = {
         "lodgement.id": gettext(n_("Lodgement ID")),
-        "lodgement_fields.id": gettext(n_("Lodgement")),
+        "lodgement.lodgement_id": gettext(n_("Lodgement")),
         "lodgement.title": gettext(n_("Title_[[name of an entity]]")),
         "lodgement.regular_capacity": gettext(n_("Regular Capacity")),
         "lodgement.camping_mat_capacity":

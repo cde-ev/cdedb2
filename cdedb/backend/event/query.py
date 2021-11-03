@@ -289,7 +289,7 @@ class EventQueryBackend(EventBaseBackend):
                 )
                 return f"""
                     (
-                        SELECT {', '.join(COURSE_FIELDS)}
+                        SELECT {', '.join(COURSE_FIELDS + ('id AS course_id'))}
                         FROM event.courses
                         WHERE event_id = {event_id}
                     ) AS course
@@ -427,6 +427,8 @@ class EventQueryBackend(EventBaseBackend):
             # For more detailed information see `doc/Lodgement_Query`.
             def lodgement_view() -> str:
                 tmp_group_id = 'COALESCE(group_id, -1) AS tmp_group_id'
+                lodgement_id = 'id AS lodgement_id'
+                columns = LODGEMENT_FIELDS + (tmp_group_id, lodgement_id)
                 event_part_tables = {
                     part['id']: event_part_table(part)
                     for part in event['parts'].values()
@@ -437,7 +439,7 @@ class EventQueryBackend(EventBaseBackend):
                 )
                 return f"""
                     (
-                        SELECT {', '.join(LODGEMENT_FIELDS + (tmp_group_id,))}
+                        SELECT {', '.join(columns)}
                         FROM event.lodgements
                         WHERE event_id = {event_id}
                     ) AS lodgement
