@@ -282,7 +282,7 @@ class EventRegistrationPartStatistic(enum.Enum):
                 [f"part{part['id']}.status"],
                 [
                     _present_constraint(part),
-                    (f"part{part['id'].lodgement_id}", QueryOperators.empty, None),
+                    (f"part{part['id']}.lodgement_id", QueryOperators.empty, None),
                 ],
                 []
             )
