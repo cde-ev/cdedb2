@@ -976,7 +976,7 @@ class TestCoreBackend(BackendTest):
             'country': "DE",
             'gender': 1,
             'location': 'Utopia',
-            'mobile': '+49163123456789',
+            'mobile': '+4916312345678',
             'name_supplement': 'MdB',
             'postal_code': '34576',
             'telephone': '+495432987654321',
