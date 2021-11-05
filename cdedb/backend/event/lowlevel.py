@@ -268,7 +268,7 @@ class EventLowLevelBackend(AbstractBackend):
                 }
                 ret *= self.sql_update(rs, "event.course_tracks", update)
                 self.event_log(rs, const.EventLogCodes.track_updated, event_id,
-                               change_note=track_data['title'])
+                               change_note=track_data.get('title', current[x]['title']))
 
         # deleted
         if deleted:
