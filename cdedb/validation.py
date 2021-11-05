@@ -2449,7 +2449,7 @@ def _event_track(
         mandatory_fields = {**EVENT_TRACK_COMMON_FIELDS}
         optional_fields: TypeMapping = {}
     else:
-        mandatory_fields = {'id': ID}
+        mandatory_fields = {}
         optional_fields = {**EVENT_TRACK_COMMON_FIELDS}
 
     val = _examine_dictionary_fields(
