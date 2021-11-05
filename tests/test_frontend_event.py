@@ -2410,7 +2410,7 @@ etc;anything else""", f['entries_2'].value)
         # Fake JS link redirection
         self.get("/event/event/1/registration/multiedit?reg_ids=2,3")
         self.assertTitle("Anmeldungen bearbeiten (Große Testakademie 2222)")
-        f = self.response.forms['changeregistrationform']
+        f = self.response.forms['changeregistrationsform']
         self.assertEqual(False, f['enable_part2.status'].checked)
         self.assertEqual(True, f['enable_part3.status'].checked)
         self.assertEqual(
@@ -2423,7 +2423,7 @@ etc;anything else""", f['entries_2'].value)
         f['fields.may_reserve'] = True
         self.submit(f)
         self.get("/event/event/1/registration/multiedit?reg_ids=2,3")
-        f = self.response.forms['changeregistrationform']
+        f = self.response.forms['changeregistrationsform']
         self.assertEqual(True, f['enable_fields.transportation'].checked)
         self.assertEqual(True, f['enable_fields.may_reserve'].checked)
         self.assertEqual("pedes", f['fields.transportation'].value)
@@ -2451,7 +2451,7 @@ etc;anything else""", f['entries_2'].value)
         # Now, check with change_note
         self.get("/event/event/1/registration/multiedit?reg_ids=2,3")
         self.assertTitle("Anmeldungen bearbeiten (Große Testakademie 2222)")
-        f = self.response.forms['changeregistrationform']
+        f = self.response.forms['changeregistrationsform']
         f['fields.transportation'] = "etc"
         f['change_note'] = "Muss doch nicht laufen."
         self.submit(f)
@@ -2494,7 +2494,7 @@ etc;anything else""", f['entries_2'].value)
         # Fake JS link redirection
         self.get("/event/event/1/registration/multiedit?reg_ids=1,2,3,4")
         self.assertTitle("Anmeldungen bearbeiten (Große Testakademie 2222)")
-        f = self.response.forms['changeregistrationform']
+        f = self.response.forms['changeregistrationsform']
         self.assertEqual(False, f['enable_track2.course_id'].checked)
         self.submit(f)
         self.traverse({'description': 'Alle Anmeldungen'},
