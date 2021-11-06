@@ -15,8 +15,7 @@ import webtest
 
 import cdedb.database.constants as const
 from cdedb.common import (
-    ADMIN_VIEWS_COOKIE_NAME, IGNORE_WARNINGS_NAME, CdEDBObject,
-    now, unwrap,
+    ADMIN_VIEWS_COOKIE_NAME, IGNORE_WARNINGS_NAME, CdEDBObject, now, unwrap,
 )
 from cdedb.filter import iban_filter
 from cdedb.frontend.common import CustomCSVDialect
@@ -2487,8 +2486,10 @@ etc;anything else""", f['entries_2'].value)
                 event['tracks'][track_id]['part_id']: {
                     'tracks': {
                         track_id: {
+                            'id': track_id,
                             'num_choices': 0,
                             'min_choices': 0,
+                            'title': event['tracks'][track_id]['title']
                         }
                     }
                 }
