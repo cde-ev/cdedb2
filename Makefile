@@ -242,8 +242,7 @@ pylint:
 	@echo "All of pylint"
 	@echo $(BANNERLINE)
 	@echo ""
-	# test_subman crashes pylint seemingly due to symlinking
-	$(PYLINT) cdedb tests --ignore=test_subman.py
+	$(PYLINT) cdedb tests
 
 template-line-length:
 	@echo $(BANNERLINE)
