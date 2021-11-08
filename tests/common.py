@@ -1028,6 +1028,7 @@ class FrontendTest(BackendTest):
         return body.get_content()
 
     def fetch_link(self, index: int = 0, num: int = 1) -> str:
+        """Extract the <num>th link out of the <index>th mail just sent."""
         for line in self.fetch_mail_content(index).splitlines():
             if line.startswith(f'[{num}] '):
                 return line.split(maxsplit=1)[-1]
