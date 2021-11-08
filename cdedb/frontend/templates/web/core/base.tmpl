@@ -15,7 +15,7 @@
             {{ util.href(cdedblink("core/view_admins"), gettext("Admin Overview"), aclass="list-group-item",
                     icon="wrench", active=(sidenav_active=='core_admins')) }}
         </div>
-        {% if user.admin_views.intersection(["core_user", "genesis", "meta_admin"]|set) %}
+        {% if user.admin_views.intersection(("core_user", "genesis", "meta_admin", "auditor")) %}
             <div class="list-group tear-down">
             {% if "core_user" in user.admin_views %}
                 {{ util.href(cdedblink("core/user_search"), gettext("Manage Users"), aclass="list-group-item",
@@ -33,7 +33,7 @@
                 {{ util.href(cdedblink("core/list_privilege_changes"), gettext("Privilege Changes"), aclass="list-group-item",
                         icon="wrench", active=(sidenav_active=='core_privilege_changes')) }}
             {% endif %}
-            {% if "core_user" in user.admin_views %}
+            {% if user.admin_views.intersection(('core_user', 'auditor')) %}
                 {{ util.href(cdedblink("core/view_log"), gettext("Account Log"), aclass="list-group-item",
                         icon="far fa-list-alt", active=(sidenav_active=='core_log')) }}
                 {{ util.href(cdedblink("core/view_changelog_meta"), gettext("Userdata Log"), aclass="list-group-item",
@@ -52,7 +52,10 @@
 {% endblock %}
 
 {% block adminviews %}
-    {{ util.admin_views_toggle(((gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"], ["core_user", "genesis"]),
-                                (gettext("Admin Administration"), ["meta_admin"], None),
-                                (gettext("Core Administration"), ["core"], None))) }}
+    {{ util.admin_views_toggle((
+            (gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"], ["core_user", "genesis"]),
+            (gettext("Admin Administration"), ["meta_admin"], None),
+            (gettext("Core Administration"), ["core"], None),
+            (gettext("Auditor"), ["auditor"], None),
+        )) }}
 {% endblock %}

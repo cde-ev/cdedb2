@@ -70,7 +70,7 @@ from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.common import (
-    ALL_MGMT_ADMIN_VIEWS, ALL_MOD_ADMIN_VIEWS, ANTI_CSRF_TOKEN_NAME,
+    ADMIN_KEYS, ALL_MGMT_ADMIN_VIEWS, ALL_MOD_ADMIN_VIEWS, ANTI_CSRF_TOKEN_NAME,
     ANTI_CSRF_TOKEN_PAYLOAD, IGNORE_WARNINGS_NAME, PERSONA_DEFAULTS,
     REALM_SPECIFIC_GENESIS_FIELDS, CdEDBMultiDict, CdEDBObject, CustomJSONEncoder,
     EntitySorter, Error, Notification, NotificationType, PathLike, PrivilegeError,
@@ -824,7 +824,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         choices_lists = {k: list(v.items()) for k, v in choices.items()}
         params = {
             'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
-            'default_queries': default_queries, 'query': query, 'scope': scope}
+            'default_queries': default_queries, 'query': query, 'scope': scope,
+            'ADMIN_KEYS': ADMIN_KEYS,
+        }
         # Tricky logic: In case of no validation errors we perform a query
         if not rs.has_validation_errors() and is_search and query:
             result = submit_general_query(rs, query)

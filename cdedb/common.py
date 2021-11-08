@@ -1689,6 +1689,8 @@ def extract_roles(session: CdEDBObject, introspection_only: bool = False
             ret.add("member")
             if session.get("is_searchable"):
                 ret.add("searchable")
+        if session.get("is_auditor"):
+            ret.add("auditor")
     if "ml" in ret:
         if session.get("is_cdelokal_admin"):
             ret.add("cdelokal_admin")
@@ -1884,10 +1886,18 @@ else:
     role_map_type = collections.OrderedDict
 
 #: List of all roles we consider admin roles. Changes in these roles must be
-#: approved by two meta admins in total.
-ADMIN_KEYS = {"is_meta_admin", "is_core_admin", "is_cde_admin",
-              "is_finance_admin", "is_event_admin", "is_ml_admin",
-              "is_assembly_admin", "is_cdelokal_admin"}
+#: approved by two meta admins in total. Values are required roles.
+ADMIN_KEYS = {
+    "is_meta_admin": "is_cde_realm",
+    "is_core_admin": "is_cde_realm",
+    "is_cde_admin": "is_cde_realm",
+    "is_finance_admin": "is_cde_admin",
+    "is_event_admin": "is_event_realm",
+    "is_ml_admin": "is_ml_realm",
+    "is_assembly_admin": "is_assembly_realm",
+    "is_cdelokal_admin": "is_ml_realm",
+    "is_auditor": "is_cde_realm",
+}
 
 #: List of all admin roles who actually have a corresponding realm with a user role.
 REALM_ADMINS = {"core_admin", "cde_admin", "event_admin", "ml_admin", "assembly_admin"}
@@ -1906,6 +1916,7 @@ DB_ROLE_MAPPING: role_map_type = collections.OrderedDict((
     ("member", "cdb_member"),
     ("cde", "cdb_member"),
     ("assembly", "cdb_member"),
+    ("auditor", "cdb_member"),
 
     ("event", "cdb_persona"),
     ("ml", "cdb_persona"),
@@ -1943,7 +1954,9 @@ ALL_ADMIN_VIEWS: Set[AdminView] = {
     "ml_mgmt_cdelokal", "ml_mod_cdelokal",
     "assembly_user", "assembly_mgmt", "assembly_presider",
     "ml_mgmt_assembly", "ml_mod_assembly",
-    "genesis"}
+    "auditor",
+    "genesis",
+}
 
 ALL_MOD_ADMIN_VIEWS: Set[AdminView] = {
     "ml_mod", "ml_mod_cde", "ml_mod_event", "ml_mod_cdelokal",
@@ -1976,6 +1989,8 @@ def roles_to_admin_views(roles: Set[Role]) -> Set[AdminView]:
     if "assembly_admin" in roles:
         result |= {"assembly_user", "assembly_mgmt", "assembly_presider",
                    "ml_mgmt_assembly", "ml_mod_assembly"}
+    if "auditor" in roles:
+        result |= {"auditor"}
     if roles & ({'core_admin'} | set(
             "{}_admin".format(realm)
             for realm in REALM_SPECIFIC_GENESIS_FIELDS)):
@@ -1998,7 +2013,9 @@ PERSONA_STATUS_FIELDS = (
     "is_active", "is_meta_admin", "is_core_admin", "is_cde_admin",
     "is_finance_admin", "is_event_admin", "is_ml_admin", "is_assembly_admin",
     "is_cde_realm", "is_event_realm", "is_ml_realm", "is_assembly_realm",
-    "is_cdelokal_admin", "is_member", "is_searchable", "is_archived", "is_purged")
+    "is_cdelokal_admin", "is_auditor", "is_member", "is_searchable", "is_archived",
+    "is_purged",
+)
 
 #: Names of all columns associated to an abstract persona.
 #: This does not include the ``password_hash`` for security reasons.
@@ -2139,10 +2156,11 @@ def get_persona_fields_by_realm(roles: Set[Role], restricted: bool = True
 
 #: Fields of a pending privilege change.
 PRIVILEGE_CHANGE_FIELDS = (
-    "id", "ctime", "ftime", "persona_id", "submitted_by", "status",
-    "is_meta_admin", "is_core_admin", "is_cde_admin",
-    "is_finance_admin", "is_event_admin", "is_ml_admin",
-    "is_assembly_admin", "is_cdelokal_admin", "notes", "reviewer")
+    "id", "ctime", "ftime", "persona_id", "submitted_by", "status", "is_meta_admin",
+    "is_core_admin", "is_cde_admin", "is_finance_admin", "is_event_admin",
+    "is_ml_admin", "is_assembly_admin", "is_cdelokal_admin", "is_auditor", "notes",
+    "reviewer",
+)
 
 #: Fields for institutions of events
 INSTITUTION_FIELDS = ("id", "title", "shortname")

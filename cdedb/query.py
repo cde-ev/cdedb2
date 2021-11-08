@@ -17,7 +17,7 @@ from typing import Any, Collection, Dict, Tuple
 
 import cdedb.database.constants as const
 from cdedb.common import (
-    CdEDBObject, CdEDBObjectMap, EntitySorter, RequestState,
+    ADMIN_KEYS, CdEDBObject, CdEDBObjectMap, EntitySorter, RequestState,
     get_localized_country_codes, n_, xsorted,
 )
 from cdedb.filter import enum_entries_filter, keydictsort_filter
@@ -173,7 +173,7 @@ class QueryScope(enum.IntEnum):
         return self in {QueryScope.registration, QueryScope.lodgement,
                         QueryScope.event_course}
 
-    def get_target(self, *, prepend_realm: bool = True) -> str:
+    def get_target(self, *, redirect: bool = True) -> str:
         """For scopes that support storing, where to redirect to after storing."""
         if self == QueryScope.registration:
             realm, target = "event", "registration_query"
@@ -183,9 +183,7 @@ class QueryScope(enum.IntEnum):
             realm, target = "event", "course_query"
         else:
             realm, target = "", ""
-        if prepend_realm:
-            return f"{realm}/{target}"
-        return target
+        return f"{realm if redirect else 'query'}/{target}"
 
     def mangle_query_input(self, rs: RequestState, defaults: CdEDBObject = None,
                            ) -> Dict[str, str]:
@@ -289,12 +287,7 @@ _QUERY_SPECS = {
             ("is_cde_realm", "bool"),
             ("is_member", "bool"),
             ("is_searchable", "bool"),
-            ("is_ml_admin", "bool"),
-            ("is_event_admin", "bool"),
-            ("is_assembly_admin", "bool"),
-            ("is_cde_admin", "bool"),
-            ("is_core_admin", "bool"),
-            ("is_meta_admin", "bool"),
+            *[(k, "bool") for k in ADMIN_KEYS],
             ("notes", "str"),
             ("fulltext", "str"),
         ]),
@@ -312,14 +305,8 @@ _QUERY_SPECS = {
             ("is_cde_realm", "bool"),
             ("is_member", "bool"),
             ("is_searchable", "bool"),
-            ("is_ml_admin", "bool"),
-            ("is_event_admin", "bool"),
-            ("is_assembly_admin", "bool"),
-            ("is_cde_admin", "bool"),
-            ("is_core_admin", "bool"),
-            ("is_meta_admin", "bool"),
-            ("is_ml_admin,is_event_admin,is_assembly_admin,is_cde_admin,"
-             "is_core_admin,is_meta_admin", "bool"),
+            *[(k, "bool") for k in ADMIN_KEYS],
+            (",".join(ADMIN_KEYS), "bool"),
             ("pevent_id", "id"),
             ("notes", "str"),
             ("fulltext", "str"),
@@ -355,12 +342,7 @@ _QUERY_SPECS = {
             ("is_searchable", "bool"),
             ("decided_search", "bool"),
             ("balance", "float"),
-            ("is_ml_admin", "bool"),
-            ("is_event_admin", "bool"),
-            ("is_assembly_admin", "bool"),
-            ("is_cde_admin", "bool"),
-            ("is_core_admin", "bool"),
-            ("is_meta_admin", "bool"),
+            *[(k, "bool") for k in ADMIN_KEYS],
             ("weblink", "str"),
             ("specialisation", "str"),
             ("affiliation", "str"),

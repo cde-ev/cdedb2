@@ -269,7 +269,7 @@ class EventLodgementMxin(EventBaseFrontend):
                 [(None, None)])  # type: ignore
         ])
 
-        return self.render(rs, "lodgements", {
+        return self.render(rs, "lodgement/lodgements", {
             'groups': groups,
             'grouped_lodgements': sorted_grouped_lodgements,
             'regular_inhabitants': regular_inhabitant_nums,
@@ -304,7 +304,7 @@ class EventLodgementMxin(EventBaseFrontend):
             for key, value in group.items() if key != 'id'}
         merge_dicts(rs.values, current)
 
-        return self.render(rs, "lodgement_group_summary", {
+        return self.render(rs, "lodgement/lodgement_group_summary", {
             'sorted_group_ids': sorted_group_ids
         })
 
@@ -362,7 +362,7 @@ class EventLodgementMxin(EventBaseFrontend):
         if not any(reg_ids for reg_ids in inhabitants.values()):
             merge_dicts(rs.values, {'ack_delete': True})
 
-        return self.render(rs, "show_lodgement", {
+        return self.render(rs, "lodgement/show_lodgement", {
             'registrations': registrations, 'personas': personas,
             'inhabitants': inhabitants, 'problems': problems,
             'groups': groups,
@@ -383,7 +383,7 @@ class EventLodgementMxin(EventBaseFrontend):
                 registrations, personas, event, restrict_part_id=None)
         else:
             problems = []
-        return self.render(rs, "lodgement_wishes_graph_form",
+        return self.render(rs, "lodgement/lodgement_wishes_graph_form",
                            {'problems': problems})
 
     @access("event")
@@ -428,7 +428,7 @@ class EventLodgementMxin(EventBaseFrontend):
                               ) -> Response:
         """Render form."""
         groups = self.eventproxy.list_lodgement_groups(rs, event_id)
-        return self.render(rs, "create_lodgement", {'groups': groups})
+        return self.render(rs, "lodgement/create_lodgement", {'groups': groups})
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
@@ -467,7 +467,7 @@ class EventLodgementMxin(EventBaseFrontend):
             "fields.{}".format(key): value
             for key, value in rs.ambience['lodgement']['fields'].items()}
         merge_dicts(rs.values, rs.ambience['lodgement'], field_values)
-        return self.render(rs, "change_lodgement", {'groups': groups})
+        return self.render(rs, "lodgement/change_lodgement", {'groups': groups})
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
@@ -578,7 +578,7 @@ class EventLodgementMxin(EventBaseFrontend):
         other_lodgements = {
             anid: name for anid, name in lodgement_names.items() if anid != lodgement_id
         }
-        return self.render(rs, "manage_inhabitants", {
+        return self.render(rs, "lodgement/manage_inhabitants", {
             'registrations': registrations,
             'personas': personas, 'inhabitants': inhabitants,
             'without_lodgement': without_lodgement,

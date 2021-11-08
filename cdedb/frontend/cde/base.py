@@ -768,7 +768,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
                     or rs.gettext("*Nothing here yet.*"))
         return self.render(rs, "view_misc", {"cde_misc": cde_misc})
 
-    @access("cde_admin")
+    @access("cde_admin", "auditor")
     @REQUESTdata(*LOG_FIELDS_COMMON)
     def view_finance_log(self, rs: RequestState,
                          codes: Collection[const.FinanceLogCodes],

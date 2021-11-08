@@ -125,7 +125,7 @@
                              active=(sidenav_active == 'event_index')) }}
             {% endif %}
         </div>
-        {% if user.admin_views.intersection(('event_mgmt', 'event_user')) %}
+        {% if user.admin_views.intersection(('event_mgmt', 'event_user', 'auditor')) %}
             <div class="list-group tear-down">
                 {% if 'event_user' in user.admin_views %}
                         {{ util.href(cdedblink("event/user_search"), gettext("Manage Users"),
@@ -133,7 +133,7 @@
                         {{ util.href(cdedblink("event/archived_user_search"), gettext("Search Archived Users"),
                                      aclass="list-group-item", icon="inbox", active=(sidenav_active=='event_manage_archive')) }}
                 {% endif %}
-                {% if 'event_mgmt' in user.admin_views %}
+                {% if user.admin_views.intersection(('event_mgmt', 'auditor')) %}
                         {{ util.href(cdedblink("event/view_log"), gettext("Log"), aclass="list-group-item", icon="far fa-list-alt",
                                      active=(sidenav_active == 'event_log')) }}
                 {% endif %}
@@ -146,13 +146,20 @@
 {% block adminviews %}
     {% if ambience['event'] %}
         {% if user.persona_id in ambience['event']['orgas'] %}
-            {{ util.admin_views_toggle(((gettext("Event Administration"), ["event_mgmt"], None),)) }}
+            {{ util.admin_views_toggle((
+                    (gettext("Event Administration"), ["event_mgmt"], None),
+                )) }}
         {% else %}
-            {{ util.admin_views_toggle(((gettext("Event Administration"), ["event_mgmt"], None),
-                                        (gettext("Orga Controls"), ["event_orga"], None))) }}
+            {{ util.admin_views_toggle((
+                    (gettext("Event Administration"), ["event_mgmt"], None),
+                    (gettext("Orga Controls"), ["event_orga"], None),
+                )) }}
         {% endif %}
     {% else %}
-        {{ util.admin_views_toggle(((gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"], ["event_user"]),
-                                    (gettext("Event Administration"), ["event_mgmt"], None))) }}
+        {{ util.admin_views_toggle((
+                (gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user", "genesis"], ["event_user"]),
+                (gettext("Event Administration"), ["event_mgmt"], None),
+                (gettext("Auditor"), ["auditor"], None),
+            )) }}
     {% endif %}
 {% endblock %}
