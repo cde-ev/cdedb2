@@ -1549,7 +1549,7 @@ class TestMlBackend(BackendTest):
                                   persona_ids: Collection[int]) -> None:
         expectation = {persona['username'] for persona
                        in self.core.get_ml_users(self.key, persona_ids).values()}
-        result = self.ml.build_implicit_whitelist(self.key, mailinglist_id)
+        result = self.ml.get_implicit_whitelist(self.key, mailinglist_id)
         self.assertEqual(result, expectation)
 
     @as_users("janis")

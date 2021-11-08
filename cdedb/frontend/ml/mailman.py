@@ -5,8 +5,6 @@
 This utilizes the mailman REST API to drive the mailinglists residing
 on the mail VM from within the CdEDB.
 """
-from typing import Set
-
 from mailmanclient import Client, MailingList
 
 import cdedb.database.constants as const
@@ -240,7 +238,7 @@ The original message as received by Mailman is attached.
 
         # implicitly whitelist username for personas with custom address
         if db_list['mod_policy'] == const.ModerationPolicy.non_subscribers:
-            db_whitelist |= self.mlproxy.build_implicit_whitelist(rs, db_list['id'])
+            db_whitelist |= self.mlproxy.get_implicit_whitelist(rs, db_list['id'])
 
         new_whites = set(db_whitelist) - set(mm_whitelist)
         current_whites = set(mm_whitelist) - new_whites
