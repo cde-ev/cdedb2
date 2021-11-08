@@ -5,6 +5,8 @@
 This utilizes the mailman REST API to drive the mailinglists residing
 on the mail VM from within the CdEDB.
 """
+from typing import Set
+
 from mailmanclient import Client, MailingList
 
 import cdedb.database.constants as const
@@ -231,6 +233,29 @@ The original message as received by Mailman is attached.
         for address in delete_owners:
             mm_list.remove_owner(address)
 
+    def _build_implicit_whitelist(self, rs: RequestState, mailinglist_id: int
+                                  ) -> Set[str]:
+        """Get all usernames of users which have a custom subscription address
+        configured for the mailinglist.
+
+        This allows those users to also pass moderation with mails sent from
+        their username address instead of just their subscription address,
+        if the ml has non_subscribers moderation policy.
+        Take care to use this function only in this case!
+
+        :returns: Set of mailadresses to whitelist
+        """
+        persona_ids = self.mlproxy.get_subscription_states(
+            rs, mailinglist_id, states=const.SubscriptionState.subscribing_states())
+        persona_ids = {
+            persona_id for persona_id, address
+            in self.mlproxy.get_subscription_addresses(
+                rs, mailinglist_id, persona_ids, explicits_only=True).items()
+            if address
+        }
+        return {persona['username'] for persona
+                in self.coreproxy.get_ml_users(rs, persona_ids).values()}
+
     def mailman_sync_list_whites(self, rs: RequestState, mailman: Client,
                                  db_list: CdEDBObject, mm_list: MailingList) -> None:
         db_whitelist = db_list['whitelist']
@@ -238,16 +263,7 @@ The original message as received by Mailman is attached.
 
         # implicitly whitelist username for personas with custom address
         if db_list['mod_policy'] == const.ModerationPolicy.non_subscribers:
-            persona_ids = self.mlproxy.get_subscription_states(
-                rs, db_list['id'], states=const.SubscriptionState.subscribing_states())
-            persona_ids = {
-                persona_id for persona_id, address
-                in self.mlproxy.get_subscription_addresses(
-                    rs, db_list['id'], persona_ids, explicits_only=True).items()
-                if address
-            }
-            db_whitelist |= {persona['username'] for persona
-                             in self.coreproxy.get_ml_users(rs, persona_ids).values()}
+            db_whitelist |= self._build_implicit_whitelist(rs, db_list['id'])
 
         new_whites = set(db_whitelist) - set(mm_whitelist)
         current_whites = set(mm_whitelist) - new_whites
