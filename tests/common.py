@@ -313,6 +313,7 @@ class BasicTest(unittest.TestCase):
 
 class CdEDBTest(BasicTest):
     """Reset the DB for every test."""
+    longMessage = False
 
     def setUp(self) -> None:
         with Script(
@@ -412,6 +413,9 @@ class BackendTest(CdEDBTest):
                 exp['ctime'] = nearly_now()
             if 'submitted_by' not in exp:
                 exp['submitted_by'] = self.user['id']
+            for k in ('event_id', 'assembly_id', 'mailinglist_id'):
+                if k in kwargs and k not in exp:
+                    exp[k] = kwargs[k]
             for k in ('persona_id', 'change_note'):
                 if k not in exp:
                     exp[k] = None
@@ -1216,7 +1220,8 @@ class FrontendTest(BackendTest):
             raise NotImplementedError
 
         if notification is not None:
-            self.assertIn(f"alert alert-{alert_type}", self.response.text)
+            self.assertIn(f"alert alert-{alert_type}", self.response.text,
+                          f"No Notification of type {kind!r} found.")
             self.assertPresence(notification, div="notifications", regex=True)
 
         nodes = self.response.lxml.xpath(
