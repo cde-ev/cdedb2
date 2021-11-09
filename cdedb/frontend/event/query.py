@@ -70,6 +70,7 @@ def _age_constraint(part: CdEDBObject, max_age: int, min_age: int = None
     if min_age is None:
         return ('persona.birthday', QueryOperators.greater, min_date)
     else:
+        # Add an offset of one, because `between` is inclusive on both ends.
         min_date += datetime.timedelta(days=1)
         max_date = deduct_years(part['part_begin'], min_age)
         return ('persona.birthday', QueryOperators.between, (min_date, max_date))
